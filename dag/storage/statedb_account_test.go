@@ -21,28 +21,41 @@
 package storage
 
 import (
+	"github.com/palletone/go-palletone/dag/modules"
+	"testing"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestStateDb_AccountInfo(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	l := log.NewTestLog()
 	statedb := NewStateDb(db, l)
-
+	vote := make(map[common.Address]bool)
 	addr, _ := common.StringToAddress("P173mPBwP1kXmfpg4p7rzZ5XRsGN1G1WQC8")
-	info, err := statedb.GetAccountInfo(addr)
-	assert.Nil(t, info)
-	assert.NotNil(t, err)
-	t.Logf("correct throw error:%s", err)
-	info = &modules.AccountInfo{PtnBalance: 12345, PtnVoteResult: []byte("MediatorA")}
-	err = statedb.SaveAccountInfo(addr, info)
-	assert.Nil(t, err)
-	info2, err := statedb.GetAccountInfo(addr)
+	// store
+	infoooo := new(modules.AccountInfo)
+	infobase := new(modules.AccountInfoBase)
+	infobase.PtnBalance = 12345
+	infoooo.AccountInfoBase = infobase
+	infoooo.VotedMediators = vote
+	statedb.StoreAccountInfo(addr, infoooo)
+
+	// retrieve
+	info, err := statedb.RetrieveAccountInfo(addr)
+	if assert.Nil(t, err) {
+		t.Logf("success  error:%v", err)
+	}
+	info.PtnBalance = 12345
+	info.VotedMediators[addr] = true
+
+	//Votes: []vote.VoteInfo{{Contents: , VoteType: vote.TYPE_MEDIATOR}}
+	// err = statedb.StoreAccountInfo(addr, info)
+	// assert.Nil(t, err)
+	info2, err := statedb.RetrieveAccountInfo(addr)
 	assert.NotNil(t, info2)
 	assert.Equal(t, info.PtnBalance, info2.PtnBalance)
 }

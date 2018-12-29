@@ -21,15 +21,29 @@
 package tokenengine
 
 import (
+	"bytes"
+	"fmt"
+	"sort"
+
 	"github.com/palletone/go-palletone/common"
-	//"github.com/btcsuite/btcd/btcec"
-        "fmt"
-	"crypto/ecdsa"
-	"errors"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 )
+
+const (
+	SigHashOld          uint32 = 0x0
+	SigHashAll          uint32 = 0x1
+	SigHashNone         uint32 = 0x2
+	SigHashSingle       uint32 = 0x3
+	SigHashAnyOneCanPay uint32 = 0x80
+	// sigHashMask defines the number of bits of the hash type which is used
+	// to identify which outputs are signed.
+	sigHashMask = 0x1f
+)
+
+type AddressGetSign func(common.Address, []byte) ([]byte, error)
+type AddressGetPubKey func(common.Address) ([]byte, error)
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.
 //You can use Address.Bytes() to get address hash.
@@ -47,6 +61,13 @@ func GenerateP2SHLockScript(redeemScriptHash []byte) []byte {
 
 	lock, _ := txscript.NewScriptBuilder().AddOp(txscript.OP_HASH160).
 		AddData(redeemScriptHash).AddOp(txscript.OP_EQUAL).
+		Script()
+	return lock
+}
+
+//
+func GenerateP2CHLockScript(contractId common.Address) []byte {
+	lock, _ := txscript.NewScriptBuilder().AddData(contractId.Bytes()).AddOp(txscript.OP_JURY_REDEEM_EQUAL).
 		Script()
 	return lock
 }
@@ -69,9 +90,30 @@ func GetAddressFromScript(lockScript []byte) (common.Address, error) {
 	return addrs[0], nil
 }
 
+type PubKey4Sort [][]byte
+
+func (c PubKey4Sort) Len() int {
+	return len(c)
+}
+func (c PubKey4Sort) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+func (c PubKey4Sort) Less(i, j int) bool {
+	return bytes.Compare(c[i], c[j]) > 0
+}
+
 //生成多签用的赎回脚本
 //Generate redeem script
 func GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
+	if needed == 0x0 {
+		return []byte{}
+	}
+	if len(pubKeys) == 1 { //Mediator单签
+		redeemScript, _ := txscript.NewScriptBuilder().AddData(pubKeys[0]).AddOp(txscript.OP_CHECKSIG).Script()
+		return redeemScript
+	}
+	// pubkeys 排序
+	sort.Sort(PubKey4Sort(pubKeys))
 	builder := txscript.NewScriptBuilder().AddOp(needed + 80) //OP_Number
 	for _, pubKey := range pubKeys {
 		builder = builder.AddData(pubKey)
@@ -128,9 +170,19 @@ func GenerateP2SHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 	return unlock
 }
 
+//根据收集到的签名和脚本生成解锁合约上的Token的脚本
+func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte, version int) []byte {
+	builder := txscript.NewScriptBuilder()
+	for _, sign := range signs {
+		builder = builder.AddData(sign)
+	}
+	unlock, _ := builder.AddData(redeemScript).AddInt64(int64(version)).Script()
+	return unlock
+}
+
 //validate this transaction and input index script can unlock the utxo.
-func ScriptValidate(utxoLockScript []byte, tx *modules.Transaction, msgIdx, inputIndex int) error {
-	vm, err := txscript.NewEngine(utxoLockScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, 0)
+func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, inputIndex int) error {
+	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, 0)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
@@ -138,85 +190,96 @@ func ScriptValidate(utxoLockScript []byte, tx *modules.Transaction, msgIdx, inpu
 	return vm.Execute()
 }
 
-
 //对交易中的Payment类型中的某个Input生成解锁脚本
-func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey) ([]byte, error) {
-	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
-		return privKey, true, nil
+//func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey, juryVersion int) ([]byte, error) {
+//	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
+//		return privKey, true, nil
+//	}
+//	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashAll,
+//		txscript.KeyClosure(lookupKey), nil, nil, juryVersion)
+//	if err != nil {
+//		return []byte{}, err
+//	}
+//	return sigScript, nil
+//}
+func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, redeemScript []byte,
+	pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte, juryVersion int) ([]byte, error) {
+
+	lookupRedeemScript := func(a common.Address) ([]byte, error) {
+		return redeemScript, nil
 	}
+	tmpAcc := &account{pubKeyFn: pubKeyFn, hashFn: hashFn}
 	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashAll,
-		txscript.KeyClosure(lookupKey), nil, nil)
+		tmpAcc, txscript.ScriptClosure(lookupRedeemScript), previousScript, juryVersion)
 	if err != nil {
 		return []byte{}, err
 	}
 	return sigScript, nil
 }
-func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, redeemScript []byte, privKeys map[common.Address]*ecdsa.PrivateKey, previousScript []byte) ([]byte, error) {
-	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
-		if privKey, ok := privKeys[a]; ok {
-			return privKey, true, nil
-		}
-		return nil, false, errors.New("PrivateKey not exist")
+
+type account struct {
+	pubKeyFn AddressGetPubKey
+	hashFn   AddressGetSign
+}
+
+func (a *account) GetSignFunction(addr common.Address) txscript.SignHash {
+	signFn := func(hash []byte) ([]byte, error) {
+		return a.hashFn(addr, hash)
 	}
-	lookupRedeemScript := func(a common.Address) ([]byte, error) {
-		return redeemScript, nil
-	}
-	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashAll,
-		txscript.KeyClosure(lookupKey), txscript.ScriptClosure(lookupRedeemScript), previousScript)
-	if err != nil {
-		return []byte{}, err
-	}
-	return sigScript, nil
+	return signFn
+}
+func (a *account) GetPubKey(addr common.Address) ([]byte, error) {
+	return a.pubKeyFn(addr)
+}
+
+//为钱包计算要签名某个Input对应的Hash
+func CalcSignatureHash(tx *modules.Transaction, msgIdx, inputIdx int, lockOrRedeemScript []byte) ([]byte, error) {
+	return txscript.CalcSignatureHash(lockOrRedeemScript, txscript.SigHashAll, tx, msgIdx, inputIdx)
 }
 
 //Sign a full transaction
-func SignTxAllPaymentInput(tx *modules.Transaction,hashType uint32, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte,privKeys map[common.Address]*ecdsa.PrivateKey) ([]common.SignatureError ,error){
-	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
-		if privKey, ok := privKeys[a]; ok {
-			return privKey, true, nil
-		}
-		return nil, false, nil
-	}
+func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
+	redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign, juryVersion int) ([]common.SignatureError, error) {
+
 	lookupRedeemScript := func(a common.Address) ([]byte, error) {
-		//addrStr := a.String()
-		//redeemScript, ok := scripts[addrStr]
-		//if !ok {
-		//	return nil, errors.New("no script for address")
-		//}
+
 		return redeemScript, nil
 	}
+	tmpAcc := &account{pubKeyFn: pubKeyFn, hashFn: hashFn}
 	var signErrors []common.SignatureError
 	for i, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
-			pay , ok:= msg.Payload.(*modules.PaymentPayload)
+			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
-				fmt.Println("Get Payment payload error:")
+				log.Debug(fmt.Sprintln("Get Payment payload error:"))
+
 			} else {
-	 			fmt.Println("Payment payload:", pay)
-	 		}
-			for j, input := range pay.Input {
-				utxoLockScript , _:= utxoLockScripts[*input.PreviousOutPoint]
+				log.Debug(fmt.Sprintln("Payment payload:", pay))
+			}
+			for j, input := range pay.Inputs {
+				utxoLockScript, _ := utxoLockScripts[*input.PreviousOutPoint]
 				checkscript := make([]byte, len(utxoLockScript))
-	 			copy(checkscript, utxoLockScript)
-                if (hashType&txscript.SigHashSingle) !=
-				txscript.SigHashSingle || j < len(pay.Output) {
-				sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, hashType,
-					txscript.KeyClosure(lookupKey),  txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
-				if err != nil {
-					signErrors = append(signErrors, common.SignatureError{
-	 						InputIndex: uint32(j),
-	 						MsgIndex :  uint32(i),
-	 						Error:      err,
-	 					})
-					return signErrors,err
+				copy(checkscript, utxoLockScript)
+				if (hashType&txscript.SigHashSingle) !=
+					txscript.SigHashSingle || j < len(pay.Outputs) {
+					sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, hashType,
+						tmpAcc, txscript.ScriptClosure(lookupRedeemScript),
+						input.SignatureScript, juryVersion)
+					if err != nil {
+						signErrors = append(signErrors, common.SignatureError{
+							InputIndex: uint32(j),
+							MsgIndex:   uint32(i),
+							Error:      err,
+						})
+						return signErrors, err
+					}
+					input.SignatureScript = sigScript
+					checkscript = nil
 				}
-				input.SignatureScript = sigScript
-				checkscript = nil
-			   }
 			}
 		}
 	}
-	return signErrors,nil
+	return signErrors, nil
 }
 
 //传入一个脚本二进制，解析为可读的文本形式

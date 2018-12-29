@@ -23,6 +23,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+
 	"math/big"
 	"reflect"
 	"strings"
@@ -32,23 +33,31 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type IUnitRepository interface {
+	//设置稳定单元的Hash
+	SetStableUnitHash(hash common.Hash)
+	//清空Unstable数据，回滚到稳定点状态
+	RollbackToStableUnit()
+	//批量增加多个Unit，主要用于主链切换的情形
+	BatchSaveUnit(units []*modules.Unit)
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GenesisHeight() modules.ChainIndex
-	SaveUnit(unit *modules.Unit, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
+	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -61,19 +70,21 @@ type UnitRepository struct {
 }
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *UnitRepository {
-	val := NewValidate(dagdb, utxodb, statedb, l)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
+	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
+
 func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
 	dagdb := storage.NewDagDb(db, l)
 	utxodb := storage.NewUtxoDb(db, l)
 	statedb := storage.NewStateDb(db, l)
 	idxdb := storage.NewIndexDb(db, l)
-	val := NewValidate(dagdb, utxodb, statedb, l)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
+	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
+
 func RHashStr(x interface{}) string {
 	x_byte, err := json.Marshal(x)
 	if err != nil {
@@ -134,7 +145,7 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 		return unit, errors.New("error.")
 	}
 
-	unit.UnitHeader.Authors = &modules.Authentifier{
+	unit.UnitHeader.Authors = modules.Authentifier{
 		Address: signer,
 		R:       r,
 		S:       s,
@@ -147,6 +158,18 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	// unit.UnitHeader.GroupSign = sign
 	return unit, nil
 }
+func (rep *UnitRepository) SetStableUnitHash(hash common.Hash) {
+	rep.dagdb.SetStableUnitHash(hash)
+}
+
+func (rep *UnitRepository) RollbackToStableUnit() {
+	//TODO Devin
+}
+
+//批量增加多个Unit，主要用于主链切换的情形
+func (rep *UnitRepository) BatchSaveUnit(units []*modules.Unit) {
+	//TODO Devin
+}
 
 /**
 创建单元
@@ -155,40 +178,89 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
-	if txpool == nil || mAddr == nil || ks == nil {
+	if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
+		log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
 		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	}
 	units := []modules.Unit{}
 	// step1. get mediator responsible for asset (for now is ptn)
-	bAsset, _, _ := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
-	if len(bAsset) <= 0 {
-		return nil, fmt.Errorf("Create unit error: query asset info empty")
-	}
-	var asset modules.Asset
-	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
-		return nil, fmt.Errorf("Create unit: %s", err.Error())
-	}
+	// bAsset, _, _ := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
+	// if len(bAsset) <= 0 {
+	// 	return nil, fmt.Errorf("Create unit error: query asset info empty")
+	// }
+	// var asset modules.Asset
+	// if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
+	// 	return nil, fmt.Errorf("Create unit: %s", err.Error())
+	// }
+
+	// @jay
+	//var asset modules.Asset
+	//assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
+	//asset.AssetId = assetId
+	//asset.UniqueId = assetId
+	asset := modules.NewPTNAsset()
 	// step2. compute chain height
+	// get current world_state index.
+
 	index := uint64(1)
 	isMain := true
-	chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
+	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
+	chainIndex, err := unitOp.statedb.GetCurrentChainIndex(asset.AssetId)
+	if err != nil {
+		chainIndex = &modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index + 1}
+		unitOp.logger.Error("GetCurrentChainIndex is failed.", "error", err)
+	} else {
+		chainIndex.Index += 1
+	}
+	// step3. generate genesis unit header
+	header := modules.Header{
+		AssetIDs: []modules.IDType16{},
+		Number:   *chainIndex,
+		//TxRoot:   root,
+		//		Creationdate: time.Now().Unix(),
+	}
+	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
+	h_hash := header.HashWithOutTxRoot()
 
-	// step3. get transactions from txspool
-	poolTxs, _ := txpool.GetSortedTxs()
-	// step4. compute minner income: transaction fees + interest
-	//txs := txspool.PoolTxstoTxs(poolTxs)
+	// step4. get transactions from txspool
+	poolTxs, _ := txpool.GetSortedTxs(h_hash)
+
+	// step5. compute minner income: transaction fees + interest
 	fees, err := unitOp.utxoRepository.ComputeFees(poolTxs)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("ComputeFees is failed.", "error", err.Error())
 		return nil, err
+	} else {
+		log.Debug("THE unit transactions fee is here. ", "fees", fees)
 	}
-	coinbase, err := CreateCoinbase(mAddr, fees, &asset, t)
+	additions := make(map[common.Address]*modules.Addition)
+	//TODO 附加利息收益
+	//获取保证金利息
+	contractAddition, err := unitOp.utxoRepository.ComputeAwards(poolTxs, unitOp.dagdb)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-
-	txs := modules.Transactions{coinbase}
+	if contractAddition != nil {
+		addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+		additions[addr] = contractAddition
+	}
+	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
+	coinbase, rewards, err := CreateCoinbase(mAddr, fees, additions, asset, t)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+	// 若配置增发，或者该单元包含有效交易（rewards>0），则将增发奖励和交易费全发给该mediator。
+	txs := make(modules.Transactions, 0)
+	if rewards > 0 || dagconfig.DefaultConfig.IsRewardCoin {
+		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+		txs = append(txs, coinbase)
+	} else {
+		//log.Debug("======================= success  ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+	}
+	// step6 get unit's txs in txpool's txs
+	//TODO must recover
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
 			t := txspool.PooltxToTx(tx)
@@ -201,25 +273,26 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
 	*/
 
-	// step5. transactions merkle root
+	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
 
-	// step6. generate genesis unit header
-	header := modules.Header{
-		AssetIDs: []modules.IDType16{},
-		Number:   chainIndex,
-		TxRoot:   root,
-		//		Creationdate: time.Now().Unix(),
-	}
-	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
+	// step9. generate genesis unit header
+	header.TxRoot = root
 	unit := modules.Unit{}
 	unit.UnitHeader = &header
-	// step7. copy txs
+	unit.UnitHash = header.Hash()
+
+	// step10. copy txs
 	unit.CopyBody(txs)
-	// step8. set size
+
+	// step11. set size
 	unit.UnitSize = unit.Size()
 	units = append(units, unit)
 	return units, nil
+}
+
+func (unitOp *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+	return unitOp.statedb.GetCurrentChainIndex(assetId)
 }
 
 /**
@@ -228,50 +301,51 @@ To get genesis unit info from leveldb
 */
 func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
-	key := fmt.Sprintf("%s%v_", modules.HEADER_PREFIX, index)
-	// encNum := ptndb.EncodeBlockNumber(index)
-	// key := append(modules.HEADER_PREFIX, encNum...)
+	//key := fmt.Sprintf("%s%v_", constants.HEADER_PREFIX, index)
 
-	//if memdb, ok := db.(*ptndb.MemDatabase); ok {
-	//	hash, err := memdb.Get([]byte(key))
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	var h common.Hash
-	//	h.SetBytes(hash)
-	//	unit := unitOp.dagdb.GetUnit( h)
-	//	return unit, nil
-	//} else if _, ok := db.(*ptndb.LDBDatabase); ok {
-	data := unitOp.dagdb.GetPrefix([]byte(key))
-	if len(data) > 1 {
-		return nil, fmt.Errorf("multiple genesis unit")
-	} else if len(data) <= 0 {
-		return nil, errors.ErrNotFound
+	// data := unitOp.dagdb.GetPrefix([]byte(key))
+	// if len(data) > 1 {
+	// 	return nil, fmt.Errorf("multiple genesis unit")
+	// } else if len(data) <= 0 {
+	// 	return nil, errors.ErrNotFound
+	// }
+	// for _, v := range data {
+	// 	// get unit header
+	// 	var uHeader modules.Header
+	// 	if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
+	// 		return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
+	// 	}
+	// 	// generate unit
+	// 	unit := modules.Unit{
+	// 		UnitHeader: &uHeader,
+	// 	}
+	// 	// compute unit hash
+	// 	unit.UnitHash = unit.Hash()
+	// 	// get transaction list
+	// 	txs, err := unitOp.dagdb.GetUnitTransactions(unit.UnitHash)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
+	// 	}
+	// 	unit.Txs = txs
+	// 	unit.UnitSize = unit.Size()
+	// 	return &unit, nil
+	// 	//}
+	// }
+	// return nil, nil
+	number := modules.ChainIndex{}
+	number.Index = index
+	number.IsMain = true
+
+	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	//asset := modules.NewPTNAsset()
+	number.AssetID = modules.CoreAsset.AssetId
+	hash, err := unitOp.dagdb.GetHashByNumber(number)
+	if err != nil {
+		log.Debug("unitOp: getgenesis by number , current error.", "error", err)
+		return nil, err
 	}
-	for _, v := range data {
-		// get unit header
-		var uHeader modules.Header
-		if err := rlp.DecodeBytes([]byte(v), &uHeader); err != nil {
-			return nil, fmt.Errorf("Get genesis unit header:%s", err.Error())
-		}
-		// generate unit
-		unit := modules.Unit{
-			UnitHeader: &uHeader,
-		}
-		// compute unit hash
-		unit.UnitHash = unit.Hash()
-		// get transaction list
-		txs, err := unitOp.dagdb.GetUnitTransactions(unit.UnitHash)
-		if err != nil {
-			//TODO xiaozhi
-			return nil, fmt.Errorf("Get genesis unit transactions: %s", err.Error())
-		}
-		unit.Txs = txs
-		unit.UnitSize = unit.Size()
-		return &unit, nil
-		//}
-	}
-	return nil, nil
+	log.Debug("unitOp: get genesis(hash):", "geneseis_hash", hash)
+	return unitOp.dagdb.GetUnit(hash)
 }
 
 /**
@@ -317,7 +391,7 @@ To generate config payload for genesis unit
 */
 func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (modules.ConfigPayload, error) {
 	var confPay modules.ConfigPayload
-	confPay.ConfigSet = []modules.PayloadMapStruct{}
+	confPay.ConfigSet = []modules.ContractWriteSet{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
@@ -338,8 +412,10 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 					sk = strings.Replace(sk, "Initial", "", -1)
 				}
 
+				//confPay.ConfigSet = append(confPay.ConfigSet,
+				//	modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
 				confPay.ConfigSet = append(confPay.ConfigSet,
-					modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
+					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
 			}
 		} else {
 			sk := tt.Field(i).Name
@@ -347,44 +423,52 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 				sk = strings.Replace(sk, "Initial", "", -1)
 			}
 			confPay.ConfigSet = append(confPay.ConfigSet,
-				modules.PayloadMapStruct{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
+				modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
 		}
 	}
 
 	confPay.ConfigSet = append(confPay.ConfigSet,
-		modules.PayloadMapStruct{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
-
-	// comment by Albert·Gou, 不是交易，已在其他地方处理
-	//Put Mediator info into config
-	//d, _ := rlp.EncodeToBytes(genesisConf.InitialMediatorCandidates)
-	//med := modules.PayloadMapStruct{Key: "Mediator", Value: d}
-	//confPay.ConfigSet = append(confPay.ConfigSet, med)
+		modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
 	return confPay, nil
 }
 
 //Yiran
-func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Message) bool {
-	var payload interface{}
-	payload = msg.Payload
-	VotePayLoad, ok := payload.(*modules.VotePayload)
-	if ok == false {
-		//fmt.Println("not a valid vote payload")
-		return false
-	}
-	voter, err := getRequesterAddress(tx)
-	if err != nil {
-		//getAddress Error
-		return false
+func (unitOp *UnitRepository) SaveVote(msg *modules.Message, voter common.Address) error {
+
+	// type deduct
+	VotePayLoad, ok := msg.Payload.(*vote.VoteInfo)
+	if !ok {
+		return errors.New("not a valid vote payload")
 	}
 
-	Candidate := common.BytesToAddress(VotePayLoad.Address)
-	err = unitOp.statedb.AddVote(voter, Candidate)
-	if err != nil {
-		//fmt.Println(AddVote error)
-		return false
+	// save by type
+	switch {
+	case VotePayLoad.VoteType == vote.TypeMediator:
+		//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
+		mediator := common.BytesToAddress(VotePayLoad.Contents)
+
+		if err := unitOp.statedb.AppendVotedMediator(voter, mediator); err != nil {
+			return err
+		}
+
 	}
-	return true
+	return nil
+
+}
+
+//Get who send this transaction
+func (unitOp *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	msg0 := tx.TxMessages[0]
+	if msg0.App != modules.APP_PAYMENT {
+		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
+	}
+	pay := msg0.Payload.(*modules.PaymentPayload)
+	utxo, err := unitOp.uxtodb.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return tokenengine.GetAddressFromScript(utxo.PkScript)
 
 }
 
@@ -392,13 +476,22 @@ func (unitOp *UnitRepository) SaveVote(tx *modules.Transaction, msg *modules.Mes
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
+func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error {
+
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
 	}
+	// step1 验证 群签名
+	// if passed == true , don't validate group sign
+	//if !passed {
+	//	if state := unitOp.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); state ==
+	// 		modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
+	//		return fmt.Errorf("Validate unit's group sign failed, err number=%d", state)
+	//	}
+	//}
 
-	// step1. check unit signature, should be compare to mediator list
+	// step2. check unit signature, should be compare to mediator list
 	if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
 		errno := unitOp.validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
 		if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
@@ -406,74 +499,32 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 		}
 	}
 
-	// step2. check unit size
+	// step3. check unit size
 	if unit.UnitSize != unit.Size() {
 		log.Info("Validate size", "error", "Size is invalid")
 		return modules.ErrUnit(-1)
 	}
-	// step3. check transactions in unit
+	// log.Info("===dag ValidateTransactions===")
+	// step4. check transactions in unit
+	// TODO must recover
 	_, isSuccess, err := unitOp.validate.ValidateTransactions(&unit.Txs, isGenesis)
-	if isSuccess != true {
+	if err != nil || !isSuccess {
 		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	}
-	// step4. save unit header
-	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := unitOp.dagdb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
-		log.Info("SaveHeader:", "error", err.Error())
-		return modules.ErrUnit(-3)
-	}
-	// step5. save unit hash and chain index relation
-	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SaveHashNumber:", "error", err.Error())
-		return fmt.Errorf("Save unit number hash error, %s", err)
-	}
-	if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SaveNumberByHash:", "error", err.Error())
-		return fmt.Errorf("Save unit number error, %s", err)
-	}
-	// step6. traverse transactions and save them
+
+	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
-		// traverse messages
-		for msgIndex, msg := range tx.TxMessages {
-			// handle different messages
-			switch msg.App {
-			case modules.APP_PAYMENT:
-				if ok := unitOp.savePaymentPayload(tx.TxHash, msg, uint32(msgIndex)); ok != true {
-					return fmt.Errorf("Save payment payload error.")
-				}
-			case modules.APP_CONTRACT_TPL:
-				if ok := unitOp.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract template error.")
-				}
-			case modules.APP_CONTRACT_DEPLOY:
-				if ok := unitOp.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract init payload error.")
-				}
-			case modules.APP_CONTRACT_INVOKE:
-				if ok := unitOp.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-					return fmt.Errorf("Save contract invode payload error.")
-				}
-			case modules.APP_CONFIG:
-				if ok := unitOp.saveConfigPayload(tx.TxHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-					return fmt.Errorf("Save contract invode payload error.")
-				}
-			case modules.APP_VOTE:
-				if ok := unitOp.SaveVote(tx, msg); ok == false {
-					return fmt.Errorf("Save vote payload error.")
-				}
-			case modules.APP_TEXT:
-			default:
-				return fmt.Errorf("Message type is not supported now: %v", msg.App)
-			}
-		}
-		// step7. save transaction
-		if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
-			log.Info("Save transaction:", "error", err.Error())
+		err := unitOp.saveTx4Unit(unit, txIndex, tx)
+		if err != nil {
 			return err
 		}
-		txHashSet = append(txHashSet, tx.TxHash)
+		txHashSet = append(txHashSet, tx.Hash())
+	}
+
+	// step7  send unitHash set to txpool, to update txpool's pending
+	if txpool != nil {
+		go txpool.SendStoredTxs(txHashSet[:])
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -481,17 +532,136 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
-	// step 10  save txlookupEntry
+
+	// step 9  save txlookupEntry
 	if err := unitOp.dagdb.SaveTxLookupEntry(unit); err != nil {
+		log.Info("SaveTxLookupEntry", "error", err.Error())
 		return err
 	}
-	// update state
+
+	// step10. save unit header
+	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
+	if err := unitOp.dagdb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+		log.Info("SaveHeader:", "error", err.Error())
+		return modules.ErrUnit(-3)
+	}
+	// step11. save unit hash and chain index relation
+	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
+	if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Info("SaveHashNumber:", "error", err.Error())
+		return fmt.Errorf("Save unit number hash error, %s", err)
+	}
+	// step12 SaveHashByNumber
+	if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+		log.Info("SaveNumberByHash:", "error", err.Error())
+		return fmt.Errorf("Save unit number error, %s", err)
+	}
+
+	// step13 update state
 	unitOp.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
 	unitOp.dagdb.PutHeadHeaderHash(unit.UnitHash)
 	unitOp.dagdb.PutHeadUnitHash(unit.UnitHash)
 	unitOp.dagdb.PutHeadFastUnitHash(unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
+}
+
+//Save tx in unit
+func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modules.Transaction) error {
+	var requester common.Address
+	var err error
+	if txIndex > 0 { //coinbase don't have requester
+		requester, err = unitOp.getRequesterAddress(tx)
+		if err != nil {
+			return err
+		}
+	}
+	txHash := tx.Hash()
+	// traverse messages
+	for msgIndex, msg := range tx.TxMessages {
+		// handle different messages
+		switch msg.App {
+		case modules.APP_PAYMENT:
+			if ok := unitOp.savePaymentPayload(txHash, msg, uint32(msgIndex)); ok != true {
+				return fmt.Errorf("Save payment payload error.")
+			}
+		case modules.APP_CONTRACT_TPL:
+			if ok := unitOp.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract template error.")
+			}
+		case modules.APP_CONTRACT_DEPLOY:
+			if ok := unitOp.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract init payload error.")
+			}
+		case modules.APP_CONTRACT_INVOKE:
+			if ok := unitOp.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+				return fmt.Errorf("Save contract invode payload error.")
+			}
+		case modules.APP_CONFIG:
+			if ok := unitOp.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+				return fmt.Errorf("Save contract invode payload error.")
+			}
+		case modules.APP_VOTE:
+			if err = unitOp.SaveVote(msg, requester); err != nil {
+				return fmt.Errorf("Save vote payload error.")
+			}
+		case modules.OP_MEDIATOR_CREATE:
+			if ok := unitOp.ApplyOperation(msg, true); ok == false {
+				return fmt.Errorf("Apply Mediator Creating Operation error.")
+			}
+
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			//todo
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			//todo
+		case modules.APP_SIGNATURE:
+			//todo
+
+		case modules.APP_TEXT:
+		default:
+			return fmt.Errorf("Message type is not supported now: %v", msg.App)
+		}
+	}
+	// step6. save transaction
+	if err := unitOp.dagdb.SaveTransaction(tx); err != nil {
+		log.Info("Save transaction:", "error", err.Error())
+		return err
+	}
+	//Index TxId for address
+	addresses := getPayToAddresses(tx)
+	for _, addr := range addresses {
+		unitOp.idxdb.SaveAddressTxId(addr, txHash)
+	}
+
+	return nil
+}
+func getPayToAddresses(tx *modules.Transaction) []common.Address {
+	resultMap := map[common.Address]int{}
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			pay := msg.Payload.(*modules.PaymentPayload)
+			for _, out := range pay.Outputs {
+				addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+				if _, ok := resultMap[addr]; !ok {
+					resultMap[addr] = 1
+				}
+			}
+		}
+	}
+	keys := make([]common.Address, 0, len(resultMap))
+	for k := range resultMap {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
+	outpoints, _ := tx.GetAddressInfo()
+	return outpoints
 }
 
 /**
@@ -503,7 +673,6 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
-
 	// save utxo
 	err := unitOp.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
 	if err != nil {
@@ -556,36 +725,26 @@ func (unitOp *UnitRepository) saveContractInvokePayload(tx *modules.Transaction,
 			TxIndex: txIndex,
 		}
 		//user just want to update it's statedb
-		if payload.ContractId == nil || len(payload.ContractId) == 0 {
-			addr, _ := getRequesterAddress(tx)
-			unitOp.statedb.SaveContractState(addr, ws.Key, ws.Value, version)
+
+		// if payload.ContractId == nil || len(payload.ContractId) == 0 {
+		// 	addr, _ := getRequesterAddress(tx)
+		// 	// contractid
+		// 	unitOp.statedb.SaveContractState(addr, ws.Key, ws.Value, version)
+		// }
+		//@jay
+		// contractId is never nil.
+		if payload.ContractId != nil {
+			//addr, _ := getRequesterAddress(tx)
+			// contractid
+			unitOp.statedb.SaveContractState(payload.ContractId, ws.Key, ws.Value, version)
 		}
 
 		// save new state to database
-		if unitOp.updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
-			continue
-		}
+		// if unitOp.updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
+		// 	continue
+		// }
 	}
 	return true
-}
-
-//Get who send this transaction
-func getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	msg0 := tx.TxMessages[0]
-	if msg0.App != modules.APP_PAYMENT {
-		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
-	}
-	pay := msg0.Payload.(*modules.PaymentPayload)
-	return getFirstInputAddress(pay)
-}
-
-func getFirstInputAddress(pay *modules.PaymentPayload) (common.Address, error) {
-
-	unlockScript := pay.Input[0].SignatureScript
-	if unlockScript == nil { // coinbase?
-		return common.Address{}, errors.New("Coinbase don't have input address")
-	}
-	return tokenengine.GetAddressFromScript(unlockScript)
 }
 
 /**
@@ -612,13 +771,13 @@ func (unitOp *UnitRepository) saveContractInitPayload(height modules.ChainIndex,
 			continue
 		}
 	}
-	addr := common.NewAddress(payload.ContractId, common.ContractHash)
+	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
 	// save contract name
-	if unitOp.statedb.SaveContractState(addr, "ContractName", payload.Name, version) != nil {
+	if unitOp.statedb.SaveContractState(payload.ContractId, "ContractName", payload.Name, version) != nil {
 		return false
 	}
 	// save contract jury list
-	if unitOp.statedb.SaveContractState(addr, "ContractJury", payload.Jury, version) != nil {
+	if unitOp.statedb.SaveContractState(payload.ContractId, "ContractJury", payload.Jury, version) != nil {
 		return false
 	}
 	return true
@@ -677,11 +836,29 @@ To get unit information by its ChainIndex
 To create coinbase transaction
 */
 
-func CreateCoinbase(addr *common.Address, income uint64, asset *modules.Asset, t time.Time) (*modules.Transaction, error) {
+func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, int64, error) {
+	//创建合约保证金币龄的奖励output
+	payload := modules.PaymentPayload{}
+	if len(addition) != 0 {
+		for k, v := range addition {
+			script := tokenengine.GenerateLockScript(k)
+			createT := big.Int{}
+			additionalInput := modules.Input{
+				Extra: createT.SetInt64(t.Unix()).Bytes(),
+			}
+			additionalOutput := modules.Output{
+				Value:    v.Amount,
+				Asset:    &v.Asset,
+				PkScript: script,
+			}
+			payload.Inputs = append(payload.Inputs, &additionalInput)
+			payload.Outputs = append(payload.Outputs, &additionalOutput)
+		}
+	}
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
-	totalIncome := int64(income) + int64(ComputeInterest())
+	totalIncome := int64(income) + int64(ComputeRewards())
 	// step2. create payload
 	createT := big.Int{}
 	input := modules.Input{
@@ -692,25 +869,23 @@ func CreateCoinbase(addr *common.Address, income uint64, asset *modules.Asset, t
 		Asset:    asset,
 		PkScript: script,
 	}
-	payload := modules.PaymentPayload{
-		Input:  []*modules.Input{&input},
-		Output: []*modules.Output{&output},
-	}
+	payload.Inputs = append(payload.Inputs, &input)
+	payload.Outputs = append(payload.Outputs, &output)
 	// step3. create message
 	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: &payload,
 	}
 	// step4. create coinbase
-	var coinbase modules.Transaction
+	coinbase := new(modules.Transaction)
 	//coinbase := modules.Transaction{
 	//	TxMessages: []modules.Message{msg},
 	//}
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	// coinbase.CreationDate = coinbase.CreateDate()
-	coinbase.TxHash = coinbase.Hash()
+	//coinbase.TxHash = coinbase.Hash()
 
-	return &coinbase, nil
+	return coinbase, totalIncome, nil
 }
 
 /**
@@ -719,7 +894,7 @@ To delete contract state
 */
 func (unitOp *UnitRepository) deleteContractState(contractID []byte, field string) {
 	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
-		modules.CONTRACT_STATE_PREFIX,
+		constants.CONTRACT_STATE_PREFIX,
 		hexutil.Encode(contractID[:]),
 		field)
 	data := unitOp.statedb.GetPrefix([]byte(oldKeyPrefix))
@@ -769,12 +944,12 @@ func (unitOp *UnitRepository) updateState(contractID []byte, key string, version
 		unitOp.deleteContractState(contractID, key)
 		// insert new state
 		key := fmt.Sprintf("%s%s^*^%s^*^%s",
-			modules.CONTRACT_STATE_PREFIX,
+			constants.CONTRACT_STATE_PREFIX,
 			hexutil.Encode(contractID[:]),
 			key,
 			version.String())
-		addr := common.NewAddress(contractID, common.ContractHash)
-		if err := unitOp.statedb.SaveContractState(addr, key, val, version); err != nil {
+		// addr := common.NewAddress(contractID, common.ContractHash)
+		if err := unitOp.statedb.SaveContractState(contractID, key, val, version); err != nil {
 			log.Error("Save state", "error", err.Error())
 			return false
 		}
@@ -785,4 +960,32 @@ func (unitOp *UnitRepository) updateState(contractID []byte, key string, version
 func IsGenesis(hash common.Hash) bool {
 	genHash := common.HexToHash(dagconfig.DefaultConfig.GenesisHash)
 	return genHash == hash
+}
+
+// GetAddrTransactions containing from && to address
+func (unitOp *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
+	address, _ := common.StringToAddress(addr)
+	hashs, err := unitOp.idxdb.GetAddressTxIds(address)
+	if err != nil {
+		return nil, err
+	}
+	alltxs := make(map[string]modules.Transactions)
+	txs := make(modules.Transactions, 0)
+	for _, hash := range hashs {
+		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
+		txs = append(txs, tx)
+	}
+	alltxs["into"] = txs
+
+	// from tx
+	txs = make(modules.Transactions, 0)
+	from_hashs, err1 := unitOp.idxdb.GetFromAddressTxIds(addr)
+	if err1 == nil {
+		for _, hash := range from_hashs {
+			tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
+			txs = append(txs, tx)
+		}
+	}
+	alltxs["out"] = txs
+	return alltxs, err1
 }

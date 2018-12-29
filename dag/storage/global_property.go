@@ -26,57 +26,81 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
-	GlobalPropDBKey    = append(modules.GLOBALPROPERTY_PREFIX, []byte("GlobalProperty")...)
-	DynGlobalPropDBKey = append(modules.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
+	GlobalPropDBKey    = append(constants.GLOBALPROPERTY_PREFIX, []byte("GlobalProperty")...)
+	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
+// only for serialization(storage)
 type globalProperty struct {
-	ChainParameters core.ChainParameters
+	*modules.GlobalPropBase
 
-	ActiveMediators []core.MediatorInfo
+	ActiveJuries       []common.Address
+	ActiveMediators    []common.Address
+	PrecedingMediators []common.Address
 }
 
-func getGPT(gp *modules.GlobalProperty) globalProperty {
-	ams := make([]core.MediatorInfo, 0)
+func getGPT(gp *modules.GlobalProperty) *globalProperty {
+	ajs := make([]common.Address, 0)
+	ams := make([]common.Address, 0)
+	pms := make([]common.Address, 0)
 
-	for _, med := range gp.ActiveMediators {
-		medInfo := med.MediatorToInfo()
-		ams = append(ams, medInfo)
+	for juryAdd, _ := range gp.ActiveJuries {
+		ajs = append(ajs, juryAdd)
 	}
 
-	gpt := globalProperty{
-		ChainParameters: gp.ChainParameters,
-		ActiveMediators: ams,
+	for medAdd, _ := range gp.ActiveMediators {
+		ams = append(ams, medAdd)
+	}
+
+	for medAdd, _ := range gp.PrecedingMediators {
+		pms = append(pms, medAdd)
+	}
+
+	gpt := &globalProperty{
+		GlobalPropBase:     gp.GlobalPropBase,
+		ActiveJuries:       ajs,
+		ActiveMediators:    ams,
+		PrecedingMediators: pms,
 	}
 
 	return gpt
 }
 
-func getGP(gpt *globalProperty) *modules.GlobalProperty {
-	ams := make(map[common.Address]core.Mediator, 0)
-	for _, medInfo := range gpt.ActiveMediators {
-		med := medInfo.InfoToMediator()
-		ams[med.Address] = med
+func (gpt *globalProperty) getGP() *modules.GlobalProperty {
+	ajs := make(map[common.Address]bool, 0)
+	ams := make(map[common.Address]bool, 0)
+	pms := make(map[common.Address]bool, 0)
+
+	for _, addStr := range gpt.ActiveJuries {
+		ajs[addStr] = true
+	}
+
+	for _, addStr := range gpt.ActiveMediators {
+		ams[addStr] = true
+	}
+
+	for _, addStr := range gpt.PrecedingMediators {
+		pms[addStr] = true
 	}
 
 	gp := modules.NewGlobalProp()
-	gp.ChainParameters = gpt.ChainParameters
+	gp.GlobalPropBase = gpt.GlobalPropBase
+	gp.ActiveJuries = ajs
 	gp.ActiveMediators = ams
+	gp.PrecedingMediators = pms
 
 	return gp
 }
 
 func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
-
 	gpt := getGPT(gp)
 
 	err := StoreBytes(db, GlobalPropDBKey, gpt)
-
 	if err != nil {
 		log.Error(fmt.Sprintf("Store global properties error:%s", err))
 	}
@@ -85,7 +109,6 @@ func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
 }
 
 func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) error {
-
 	err := StoreBytes(db, DynGlobalPropDBKey, *dgp)
 	if err != nil {
 		log.Error(fmt.Sprintf("Store dynamic global properties error: %s", err))
@@ -102,7 +125,7 @@ func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
 		log.Error(fmt.Sprintf("Retrieve global properties error: %s", err))
 	}
 
-	gp := getGP(gpt)
+	gp := gpt.getGP()
 
 	return gp, err
 }

@@ -17,15 +17,11 @@
 package ptn
 
 import (
-	//"fmt"
-	//"io"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-
-	//"github.com/palletone/go-palletone/common/rlp"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"time"
 )
 
 // Constants to match up protocol versions and messages
@@ -40,7 +36,7 @@ var ProtocolName = "ptn"
 var ProtocolVersions = []uint{ptn1}
 
 // Number of implemented message corresponding to different protocol versions.
-var ProtocolLengths = []uint64{17, 8}
+var ProtocolLengths = []uint64{100, 8} //{17, 8}
 
 const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
 
@@ -56,19 +52,19 @@ const (
 	BlockBodiesMsg     = 0x06
 	NewBlockMsg        = 0x07
 	ConsensusMsg       = 0x08
-	NewUnitMsg         = 0x09
+	NewProducedUnitMsg = 0x09
 	VSSDealMsg         = 0x0a
 	VSSResponseMsg     = 0x0b
 	SigShareMsg        = 0x0c
 	GroupSigMsg        = 0x0d
 
-	GetNodeDataMsg = 0x20
-	NodeDataMsg    = 0x21
-	GetReceiptsMsg = 0x22
-	ReceiptsMsg    = 0x23
-
-	//TransitionReq  = 0x11
-	//TransitionResp = 0x12
+	ContractExecMsg    = 0x10
+	ContractSigMsg     = 0x11
+	ContractSpecialMsg = 0x12
+	GetNodeDataMsg     = 0x20
+	NodeDataMsg        = 0x21
+	GetReceiptsMsg     = 0x22
+	ReceiptsMsg        = 0x23
 )
 
 type errCode int
@@ -102,17 +98,58 @@ var errorToString = map[int]string{
 	ErrSuspendedPeer:           "Suspended peer",
 }
 
+type sTxDesc struct {
+	// Tx is the transaction associated with the entry.
+	Tx *modules.Transaction
+
+	// Added is the time when the entry was added to the source pool.
+	Added time.Time
+
+	// Height is the block height when the entry was added to the the source
+	// pool.
+	Height int32
+
+	// Fee is the total fee the transaction associated with the entry pays.
+	Fee int64
+
+	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
+	FeePerKB int64
+}
+
+// TxDesc is a descriptor containing a transaction in the mempool along with
+// additional metadata.
+type TxDesc struct {
+	sTxDesc
+
+	// StartingPriority is the priority of the transaction when it was added
+	// to the pool.
+	StartingPriority float64
+}
+
 type txPool interface {
 	// AddRemotes should add the given transactions to the pool.
-	AddRemotes([]*modules.Transaction) []error
+	Stop()
+	AddLocal(tx *modules.TxPoolTransaction) error
+	AddLocals(txs []*modules.TxPoolTransaction) []error
+	AllHashs() []*common.Hash
+	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
+	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
+	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
+	GetNonce(hash common.Hash) uint64
+	Stats() (int, int)
+	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
+	SendStoredTxs(hashs []common.Hash) error
 
+	AddRemotes([]*modules.Transaction) []error
+	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
-	Pending() (map[common.Hash]*modules.TxPoolTransaction, error)
-
+	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
+	GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
+	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
 }
 
 // statusData is the network packet for the status message.
@@ -121,8 +158,8 @@ type statusData struct {
 	NetworkId       uint64
 	Index           modules.ChainIndex
 	GenesisUnit     common.Hash
-	Mediator        bool
-	//CurrentBlock common.Hash
+	CurrentHeader   common.Hash
+	//Mediator        bool
 }
 
 // newBlockHashesData is the network packet for the block announcements.
@@ -152,9 +189,9 @@ func (hn *hashOrNumber) EncodeRLP(w io.Writer) error {
 	if hn.Hash == (common.Hash{}) {
 		return rlp.Encode(w, hn.Number)
 	}
-	if hn.Number.Index != 0 {
-		return fmt.Errorf("both origin hash (%x) and number (%d) provided", hn.Hash, hn.Number)
-	}
+	//if hn.Number.Index != 0 {
+	//	return fmt.Errorf("both origin hash (%x) and number (%d) provided", hn.Hash, hn.Number)
+	//}
 	return rlp.Encode(w, hn.Hash)
 }
 
@@ -163,36 +200,38 @@ func (hn *hashOrNumber) EncodeRLP(w io.Writer) error {
 func (hn *hashOrNumber) DecodeRLP(s *rlp.Stream) error {
 	_, size, _ := s.Kind()
 	origin, err := s.Raw()
+	log.Debug("hashOrNumber", "DecodeRLP size:", size, "origin:", string(origin))
+
 	if err == nil {
 		switch {
 		case size == 32:
 			err = rlp.DecodeBytes(origin, &hn.Hash)
-		case size <= 8:
-			err = rlp.DecodeBytes(origin, &hn.Number)
+		//case size <= 8:
 		default:
-			err = fmt.Errorf("invalid input size %d for origin", size)
+			err = rlp.DecodeBytes(origin, &hn.Number)
+			//default:
+			//	err = fmt.Errorf("invalid input size %d for origin", size)
 		}
 	}
 	return err
 }
 */
-
 // blockBody represents the data content of a single block.
 type blockBody struct {
 	Transactions []*modules.Transaction // Transactions contained within a block
 }
 
 // blockBodiesData is the network packet for block content distribution.
-type blockBodiesData []*blockBody
+type blockBodiesData []blockBody
 
 // vss boardcast the data content of a single vss message.
-type vssDealMsg struct {
-	NodeId string
-	Deal   *mp.VSSDealEvent
-}
+//type vssDealMsg struct {
+//	NodeId string
+//	Deal   *mp.VSSDealEvent
+//}
 
 // vss response boardcast the data content of a single vss message.
-type vssRespMsg struct {
-	NodeId string
-	Resp   *mp.VSSResponseEvent
-}
+//type vssRespMsg struct {
+//	NodeId string
+//	Resp   *mp.VSSResponseEvent
+//}

@@ -1,3 +1,5 @@
+// Copyright 2018 PalletOne
+
 // Copyright 2014 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
@@ -15,6 +17,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package p2p implements the PalletOne p2p network protocols.
+
 package p2p
 
 import (
@@ -23,6 +26,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -177,6 +181,10 @@ type Server struct {
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
 	// log           log.Plogger
+
+	// append by albert·gou, for all active mediator peers connect to each other
+	addtrusted    chan *discover.Node
+	removetrusted chan *discover.Node
 }
 
 type peerOpFunc func(map[discover.NodeID]*Peer)
@@ -187,7 +195,7 @@ type peerDrop struct {
 	requested bool // true if signaled by the peer
 }
 
-type connFlag int
+type connFlag int32
 
 const (
 	dynDialedConn connFlag = 1 << iota
@@ -255,6 +263,21 @@ func (c *conn) is(f connFlag) bool {
 	return c.flags&f != 0
 }
 
+func (c *conn) set(f connFlag, val bool) {
+	for {
+		oldFlags := connFlag(atomic.LoadInt32((*int32)(&c.flags)))
+		flags := oldFlags
+		if val {
+			flags |= f
+		} else {
+			flags &= ^f
+		}
+		if atomic.CompareAndSwapInt32((*int32)(&c.flags), int32(oldFlags), int32(flags)) {
+			return
+		}
+	}
+}
+
 // Peers returns all connected peers.
 func (srv *Server) Peers() []*Peer {
 	var ps []*Peer
@@ -298,6 +321,23 @@ func (srv *Server) AddPeer(node *discover.Node) {
 func (srv *Server) RemovePeer(node *discover.Node) {
 	select {
 	case srv.removestatic <- node:
+	case <-srv.quit:
+	}
+}
+
+// AddTrustedPeer adds the given node to a reserved whitelist which allows the
+// node to always connect, even if the slot are full.
+func (srv *Server) AddTrustedPeer(node *discover.Node) {
+	select {
+	case srv.addtrusted <- node:
+	case <-srv.quit:
+	}
+}
+
+// RemoveTrustedPeer removes the given node from the trusted peer set.
+func (srv *Server) RemoveTrustedPeer(node *discover.Node) {
+	select {
+	case srv.removetrusted <- node:
 	case <-srv.quit:
 	}
 }
@@ -415,6 +455,9 @@ func (srv *Server) Start() (err error) {
 	srv.removestatic = make(chan *discover.Node)
 	srv.peerOp = make(chan peerOpFunc)
 	srv.peerOpDone = make(chan struct{})
+
+	srv.addtrusted = make(chan *discover.Node)
+	srv.removetrusted = make(chan *discover.Node)
 
 	var (
 		conn *net.UDPConn
@@ -553,8 +596,8 @@ func (srv *Server) run(dialstate dialer) {
 		queuedTasks  []task // tasks that can't run yet
 	)
 	// Put trusted nodes into a map to speed up checks.
-	// Trusted peers are loaded on startup and cannot be
-	// modified while the server is running.
+	// Trusted peers are loaded on startup
+	// or updated mediator peer at the maintenance interval via AddTrustedPeer and RemoveTrustedPeer.
 	for _, n := range srv.TrustedNodes {
 		trusted[n.ID] = true
 	}
@@ -611,6 +654,26 @@ running:
 			if p, ok := peers[n.ID]; ok {
 				p.Disconnect(DiscRequested)
 			}
+		case n := <-srv.addtrusted:
+			// This channel is used by AddTrustedPeer to add an pnode
+			// to the trusted node set.
+			log.Debug("Adding trusted node", "node", n)
+			trusted[n.ID] = true
+			// Mark any already-connected peer as trusted
+			if p, ok := peers[n.ID]; ok {
+				p.rw.set(trustedConn, true)
+			}
+		case n := <-srv.removetrusted:
+			// This channel is used by RemoveTrustedPeer to remove an pnode
+			// from the trusted node set.
+			log.Debug("Removing trusted node", "node", n)
+			if _, ok := trusted[n.ID]; ok {
+				delete(trusted, n.ID)
+			}
+			// Unmark any already-connected peer as trusted
+			if p, ok := peers[n.ID]; ok {
+				p.rw.set(trustedConn, false)
+			}
 		case op := <-srv.peerOp:
 			// This channel is used by Peers and PeerCount.
 			op(peers)
@@ -650,7 +713,7 @@ running:
 				name := truncateName(c.name)
 				go srv.runPeer(p)
 				peers[c.id] = p
-				log.Info("Adding p2p peer", "name", name, "addr",
+				log.Debug("Adding p2p peer", "name", name, "addr",
 					c.fd.RemoteAddr(), "peers", len(peers),
 					"peers address:", &peers)
 				if p.Inbound() {
@@ -920,7 +983,7 @@ func (srv *Server) runPeer(p *Peer) {
 type NodeInfo struct {
 	ID    string `json:"id"`    // Unique node identifier (also the encryption key)
 	Name  string `json:"name"`  // Name of the node, including client type, version, OS, custom data
-	Enode string `json:"pnode"` // Enode URL for adding this peer from remote peers
+	Pnode string `json:"pnode"` // Pnode URL for adding this peer from remote peers
 	IP    string `json:"ip"`    // IP address of the node
 	Ports struct {
 		Discovery int `json:"discovery"` // UDP listening port for discovery protocol
@@ -937,7 +1000,7 @@ func (srv *Server) NodeInfo() *NodeInfo {
 	// Gather and assemble the generic node infos
 	info := &NodeInfo{
 		Name:       srv.Name,
-		Enode:      node.String(),
+		Pnode:      node.String(),
 		ID:         node.ID.String(),
 		IP:         node.IP.String(),
 		ListenAddr: srv.ListenAddr,

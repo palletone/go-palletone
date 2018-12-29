@@ -15,22 +15,26 @@
  *
  *  * @author PalletOne core developers <dev@pallet.one>
  *  * @date 2018
- *  
+ *
  */
 
 package memunit
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type IMemDag interface {
-	Save(unit *modules.Unit) error
+	Save(unit *modules.Unit, txpool txspool.ITxPool) error
+	GetUnit(hash common.Hash) (*modules.Unit, error)
+	UpdateMemDag(hash common.Hash, sign []byte, txpool txspool.ITxPool) error
 	Exists(uHash common.Hash) bool
-	Prune(assetId string, maturedUnitHash common.Hash) error
+	Prune(assetId string, hashs []common.Hash) error
 	SwitchMainChain() error
-	QueryIndex(assetId string, maturedUnitHash common.Hash) (int, int)
-	GetCurrentUnit(assetid modules.IDType16) (*modules.Unit, error)
+	QueryIndex(assetId string, maturedUnitHash common.Hash) (uint64, int)
+	GetCurrentUnit(assetid modules.IDType16, index uint64) (*modules.Unit, error)
+	GetDelhashs() chan common.Hash
+	PushDelHashs(hashs []common.Hash)
 }
-

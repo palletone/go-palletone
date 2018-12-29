@@ -252,6 +252,12 @@ var (
 		Usage: "Maximum amount of time non-executable transaction are queued",
 		Value: ptn.DefaultConfig.TxPool.Lifetime,
 	}
+	TxPoolRemovetimeFlag = cli.DurationFlag{
+		Name:  "txpool.removetime",
+		Usage: "Maximum amount of time txpool transaction are removed",
+		Value: ptn.DefaultConfig.TxPool.Removetime,
+	}
+
 	// Performance tuning settings
 	CacheFlag = cli.IntFlag{
 		Name:  "cache",
@@ -814,7 +820,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 // SetNodeConfig applies node-related command line flags to the config.
 // 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
-	// SetP2PConfig(ctx, &cfg.P2P)
+	SetP2PConfig(ctx, &cfg.P2P)
 	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
@@ -880,6 +886,9 @@ func setTxPool(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
 	}
 	if ctx.GlobalIsSet(TxPoolLifetimeFlag.Name) {
 		cfg.Lifetime = ctx.GlobalDuration(TxPoolLifetimeFlag.Name)
+	}
+	if ctx.GlobalIsSet(TxPoolRemovetimeFlag.Name) {
+		cfg.Removetime = ctx.GlobalDuration(TxPoolRemovetimeFlag.Name)
 	}
 }
 
@@ -1032,7 +1041,7 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	switch {
 	case ctx.GlobalBool(TestnetFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
-			cfg.NetworkId = 3
+			cfg.NetworkId = 1
 		}
 		cfg.Genesis = gen.DefaultTestnetGenesisBlock()
 	case ctx.GlobalBool(DeveloperFlag.Name):

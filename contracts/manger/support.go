@@ -30,7 +30,7 @@ import (
 
 	chaincode "github.com/palletone/go-palletone/contracts/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	unit "github.com/palletone/go-palletone/dag/modules"
+	md "github.com/palletone/go-palletone/dag/modules"
 	ut "github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -59,8 +59,8 @@ func (s *SupportImpl) IsSysCC(name string) bool {
 }
 
 //Execute - execute proposal, return original response of chaincode
-func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
-	cccid := ccprovider.NewCCContext(cid, name, version, txid, syscc, signedProp, prop)
+func (s *SupportImpl) Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	cccid := ccprovider.NewCCContext(contractid, cid, name, version, txid, syscc, signedProp, prop)
 
 	switch spec.(type) {
 	case *pb.ChaincodeDeploymentSpec:
@@ -68,7 +68,7 @@ func (s *SupportImpl) Execute(ctxt context.Context, cid, name, version, txid str
 	case *pb.ChaincodeInvocationSpec:
 		cis := spec.(*pb.ChaincodeInvocationSpec)
 
-		logger.Infof("cis:%v", cis)
+		//logger.Infof("cis:%v", cis)
 		//decorate the chaincode input
 
 		//decorators := library.InitRegistry(library.Config{}).Lookup(library.Decoration).([]decoration.Decorator)
@@ -94,48 +94,57 @@ func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
 	return eventBytes, err
 }
 
-func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	logger.Debug("enter")
-	invokeData := ut.ContractInvokePayload{}
-	invokeData.ContractId = []byte(txid)
+	//invokeData := ut.ContractInvokePayload{}
+	//invokeData.ContractId = []byte(txid)
 
 	rd, wt, err := tx.GetRwData(nm)
 	if err != nil {
 		return nil, err
 	}
-
-	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
-	invoke := &unit.ContractInvokePayload{
-		ContractId:   deployId,
-		Args:         args,
-		Excutiontime: timeout,
-		ReadSet:      make([]unit.ContractReadSet, 0),
-		WriteSet:     make([]unit.PayloadMapStruct, 0),
+	tokenPay, err := tx.GetPayOutData(nm)
+	if err != nil {
+		return nil, err
+	}
+	tokenDefine, _ := tx.GetTokenDefineData(nm)
+	tokenSupply, _ := tx.GetTokenSupplyData(nm)
+	logger.Infof("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
+	invoke := &md.ContractInvokeResult{
+		//FunctionName:  string(args[0]),
+		ContractId: deployId,
+		Args:       args,
+		//ExecutionTime: timeout,
+		ReadSet:     make([]md.ContractReadSet, 0),
+		WriteSet:    make([]md.ContractWriteSet, 0),
+		TokenPayOut: tokenPay,
+		TokenDefine: tokenDefine,
+		TokenSupply: tokenSupply,
 	}
 
 	for idx, val := range rd {
-		rd := unit.ContractReadSet{
+		rd := md.ContractReadSet{
 			Key:     val.GetKey(),
 			Version: val.GetVersion(),
 		}
 		invoke.ReadSet = append(invoke.ReadSet, rd)
-		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.GetKey(), *val.GetVersion())
+		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
-		rd := unit.PayloadMapStruct{
+		rd := md.ContractWriteSet{
 			Key:      val.GetKey(),
 			Value:    val.GetValue(),
 			IsDelete: val.GetIsDelete(),
 		}
 		invoke.WriteSet = append(invoke.WriteSet, rd)
-		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return invoke, nil
 }
 
 //func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractDeployPayload, error) {
-func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*unit.ContractDeployPayload, error) {
+func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractDeployPayload, error) {
 	logger.Debug("enter")
 	data := ut.ContractDeployPayload{}
 	data.ContractId = []byte(txid)
@@ -145,32 +154,32 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 		return nil, err
 	}
 	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
-	deploy := &unit.ContractDeployPayload{
-		TemplateId:   templateId,
-		ContractId:   deployId,
-		Name:         nm,
-		Args:         args,
-		Excutiontime: timeout,
-		ReadSet:      make([]unit.ContractReadSet, 0),
-		WriteSet:     make([]unit.PayloadMapStruct, 0),
+	deploy := &md.ContractDeployPayload{
+		TemplateId: templateId,
+		ContractId: deployId,
+		Name:       nm,
+		Args:       args,
+		//ExecutionTime: timeout,
+		ReadSet:  make([]md.ContractReadSet, 0),
+		WriteSet: make([]md.ContractWriteSet, 0),
 	}
 
 	for idx, val := range rd {
-		rd := unit.ContractReadSet{
+		rd := md.ContractReadSet{
 			Key:     val.GetKey(),
 			Version: val.GetVersion(),
 		}
 		deploy.ReadSet = append(deploy.ReadSet, rd)
-		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[0], val.GetKey(), *val.GetVersion())
+		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
-		rd := unit.PayloadMapStruct{
+		rd := md.ContractWriteSet{
 			Key:      val.GetKey(),
 			Value:    val.GetValue(),
 			IsDelete: val.GetIsDelete(),
 		}
 		deploy.WriteSet = append(deploy.WriteSet, rd)
-		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[0], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return deploy, nil

@@ -23,6 +23,8 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -43,11 +45,22 @@ var DefaultConfig = Config{
 	UtxoIndex: true,
 
 	// memory unit, unit number
-	MemoryUnitSize: 128,
+	MemoryUnitSize: 1280,
 	// Irreversible Height
 	IrreversibleHeight:           16,
 	WhetherValidateUnitSignature: false,
 	GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
+	PtnAssetHex:                  modules.CoreAsset.AssetId.String(),
+	PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
+	IsRewardCoin:                 false,
+}
+
+func init() {
+	if DefaultConfig.PtnAssetHex != "" {
+		id, _ := modules.SetIdTypeByHex(DefaultConfig.PtnAssetHex)
+		DefaultConfig.PtnAssetId = id[:]
+		modules.PTNCOIN.SetBytes(DefaultConfig.PtnAssetId)
+	}
 }
 
 // global configuration of dag modules
@@ -72,7 +85,7 @@ type Config struct {
 	UtxoIndex bool
 
 	// memory unit size, unit number
-	MemoryUnitSize uint8
+	MemoryUnitSize uint
 
 	// Irreversible height
 	IrreversibleHeight int
@@ -81,6 +94,10 @@ type Config struct {
 	WhetherValidateUnitSignature bool
 	// genesis hash‘s hex
 	GenesisHash string
+	PtnAssetHex string
+	PtnAssetId  []byte
+
+	IsRewardCoin bool
 }
 
 type Sconfig struct {

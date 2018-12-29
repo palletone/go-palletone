@@ -19,14 +19,37 @@
  */
 
 package modules
+
+import "github.com/palletone/go-palletone/common"
+
 //一个账户（地址）的状态信息
 //Include:
 // personal account P1*
 //P2SH account P3*
 //Contract account PC*
-type AccountInfo struct {
+type AccountInfoBase struct {
+	//AccountName string
 	//当前账户的PTN余额
-	PtnBalance    uint64
-	//当前账户对Mediator选举的投票结果
-	PtnVoteResult []byte
+	PtnBalance uint64
+	//通用可改选投票的结果
+	//Votes []vote.VoteInfo
+}
+
+func NewAccountInfoBase() *AccountInfoBase {
+	return &AccountInfoBase{
+		PtnBalance: 0,
+	}
+}
+
+type AccountInfo struct {
+	*AccountInfoBase
+	//当前账户投票的Mediator
+	VotedMediators map[common.Address]bool
+}
+
+func NewAccountInfo() *AccountInfo {
+	return &AccountInfo{
+		AccountInfoBase: NewAccountInfoBase(),
+		VotedMediators:  make(map[common.Address]bool),
+	}
 }

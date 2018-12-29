@@ -8,17 +8,18 @@ import (
 	"bytes"
 	"container/list"
 	"encoding/hex"
-	"github.com/pkg/errors"
+	"github.com/palletone/go-palletone/common"
+	cp "github.com/palletone/go-palletone/common/crypto"
+	db "github.com/palletone/go-palletone/contracts/comm"
+	cclist "github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	unit "github.com/palletone/go-palletone/dag/modules"
-	cp "github.com/palletone/go-palletone/common/crypto"
-	db "github.com/palletone/go-palletone/contracts/comm"
-	cclist "github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/dag"
+	md "github.com/palletone/go-palletone/dag/modules"
+	"github.com/pkg/errors"
 )
 
 var debugX bool = true
@@ -123,7 +124,7 @@ func GetUsrCCList() {
 }
 
 //install but not into db
-func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
 	logger.Infof("==========install enter=======")
 	logger.Infof("name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
 	defer logger.Infof("-----------install exit--------")
@@ -145,7 +146,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	buffer.Write([]byte(ccVersion))
 	tpid := cp.Keccak256Hash(buffer.Bytes())
 
-	payloadUnit := &unit.ContractTplPayload{
+	payloadUnit := &md.ContractTplPayload{
 		TemplateId: []byte(tpid[:]),
 		Name:       ccName,
 		Path:       ccPath,
@@ -208,6 +209,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 		},
 	}
 
+	//err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.New("Deploy fail")
@@ -229,7 +231,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 	return cc.Id, nil, err
 }
 
-func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
+func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	logger.Infof("==========Deploy enter=======")
 	defer logger.Infof("-----------Deploy exit--------")
 	logger.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txid)
@@ -276,7 +278,8 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 		return nil, nil, errors.WithMessage(err, "crypto.GetRandomNonce error")
 	}
 
-	usrccName := templateCC.Name + "-" + hex.EncodeToString(randNum)//[0:8]
+	usrccName := templateCC.Name + "-" + hex.EncodeToString(randNum) //[0:8]
+	//usrccName := templateCC.Name //[0:8]
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -319,14 +322,13 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	logger.Infof("==========Invoke enter=======")
 	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Invoke exit--------")
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
-
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
 		return nil, err
@@ -358,27 +360,33 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	}
 
 	rsp, unit, err := es.ProcessProposal(idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
-	t0 := time.Now()
-	duration := t0.Sub(start)
 
 	if err != nil {
 		logger.Errorf("ProcessProposal error[%v]", err)
 		return nil, err
 	}
-
+	t0 := time.Now()
+	duration := t0.Sub(start)
+	//unit.ExecutionTime = duration
+	requstId, err := common.NewHashFromStr(txid)
+	unit.RequestId = *requstId
+	if err != nil {
+		logger.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
+		return nil, err
+	}
 	logger.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
 
 	return unit, nil
 }
 
-func StopByName(chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
+func StopByName(contractid []byte, chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
 		Version: ccVersion,
 		Enabled: true,
 	}
-	err := ucc.StopUserCC(chainID, usrcc, txid, deleteImage)
+	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage)
 	if err != nil {
 		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, ccName, err)
 		return errors.New(errMsg)
@@ -387,7 +395,7 @@ func StopByName(chainID string, txid string, ccName string, ccPath string, ccVer
 	return nil
 }
 
-func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error {
+func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) error {
 	logger.Infof("==========Stop enter=======")
 	logger.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	defer logger.Infof("-----------Stop exit--------")
@@ -403,7 +411,7 @@ func Stop(chainID string, deployId []byte, txid string, deleteImage bool) error 
 	if err != nil {
 		return err
 	}
-	err = StopByName(setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
+	err = StopByName(contractid, setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}

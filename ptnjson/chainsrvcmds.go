@@ -1,19 +1,20 @@
-
 package ptnjson
+
 import (
-//	"encoding/json"
-	"fmt"
+	//	"encoding/json"
 	"errors"
-	"math"
+	"fmt"
 	"hash"
+
 	//"bytes"
+	"crypto/ecdsa"
 	"crypto/sha256"
-	"github.com/palletone/go-palletone/common"
-        "crypto/ecdsa"
 	"github.com/btcsuite/btcd/btcec"
-	"golang.org/x/crypto/ripemd160"
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/palletone/go-palletone/common"
+	"golang.org/x/crypto/ripemd160"
 )
+
 // Standard JSON-RPC 2.0 errors.
 var (
 	ErrRPCInvalidRequest = &RPCError{
@@ -38,7 +39,6 @@ var (
 	}
 )
 
-
 // General application defined JSON errors.
 const (
 	ErrRPCMisc                RPCErrorCode = -1
@@ -60,9 +60,11 @@ const (
 )
 
 const (
-	pubkeyCompressed   byte = 0x2 // y_bit + x coord
-	pubkeyUncompressed byte = 0x4 // x coord + y coord
-	pubkeyHybrid       byte = 0x6 // y_bit + x coord + y coord
+	pubkeyCompressed     byte = 0x2 // y_bit + x coord
+	pubkeyUncompressed   byte = 0x4 // x coord + y coord
+	pubkeyHybrid         byte = 0x6 // y_bit + x coord + y coord
+	MinCoinbaseScriptLen      = 2
+	MaxCoinbaseScriptLen      = 100
 )
 
 // Wallet JSON errors
@@ -89,16 +91,39 @@ const (
 	ErrRPCInvalidTxVout     RPCErrorCode = -5
 	ErrRPCRawTxString       RPCErrorCode = -32602
 	ErrRPCDecodeHexString   RPCErrorCode = -22
+	ErrBadTxOutValue        RPCErrorCode = -23
+	ErrDuplicateTxInputs    RPCErrorCode = -24
+	ErrBadCoinbaseScriptLen RPCErrorCode = -25
+	ErrBadTxInput           RPCErrorCode = -26
+)
+const (
+	// MaxBlockWeight defines the maximum block weight, where "block
+	// weight" is interpreted as defined in BIP0141. A block's weight is
+	// calculated as the sum of the of bytes in the existing transactions
+	// and header, plus the weight of each byte within a transaction. The
+	// weight of a "base" byte is 4, while the weight of a witness byte is
+	// 1. As a result, for a block to be valid, the BlockWeight MUST be
+	// less than, or equal to MaxBlockWeight.
+	MaxBlockWeight = 4000000
+
+	// MaxBlockBaseSize is the maximum number of bytes within a block
+	// which can be allocated to non-witness data.
+	MaxBlockBaseSize = 1000000
+
+	// MaxBlockSigOpsCost is the maximum number of signature operations
+	// allowed for a block. It is calculated via a weighted algorithm which
+	// weights segregated witness sig ops lower than regular sig ops.
+	MaxBlockSigOpsCost = 80000
 )
 const (
 	// SatoshiPerBitcent is the number of satoshi in one bitcoin cent.
-	SatoshiPerBitcent = 1e6
+	DaoPerPtncent = 1e6
 
 	// SatoshiPerBitcoin is the number of satoshi in one bitcoin (1 BTC).
-	SatoshiPerBitcoin = 1e8
+	DaoPerPtn = 1e8
 
 	// MaxSatoshi is the maximum transaction amount allowed in satoshi.
-	MaxSatoshi = 21e6 * SatoshiPerBitcoin
+	MaxDao = 10e8 * DaoPerPtn
 )
 
 // These constants define the lengths of serialized public keys.
@@ -108,8 +133,190 @@ const (
 	PubKeyBytesLenHybrid       = 65
 )
 
+type ErrorCode int
 
+// These constants are used to identify a specific RuleError.
+const (
+	// ErrDuplicateBlock indicates a block with the same hash already
+	// exists.
+	ErrDuplicateBlock ErrorCode = iota
 
+	// ErrBlockTooBig indicates the serialized block size exceeds the
+	// maximum allowed size.
+	ErrBlockTooBig
+
+	// ErrBlockWeightTooHigh indicates that the block's computed weight
+	// metric exceeds the maximum allowed value.
+	ErrBlockWeightTooHigh
+
+	// ErrBlockVersionTooOld indicates the block version is too old and is
+	// no longer accepted since the majority of the network has upgraded
+	// to a newer version.
+	ErrBlockVersionTooOld
+
+	// ErrInvalidTime indicates the time in the passed block has a precision
+	// that is more than one second.  The chain consensus rules require
+	// timestamps to have a maximum precision of one second.
+	ErrInvalidTime
+
+	// ErrTimeTooOld indicates the time is either before the median time of
+	// the last several blocks per the chain consensus rules or prior to the
+	// most recent checkpoint.
+	ErrTimeTooOld
+
+	// ErrTimeTooNew indicates the time is too far in the future as compared
+	// the current time.
+	ErrTimeTooNew
+
+	// ErrDifficultyTooLow indicates the difficulty for the block is lower
+	// than the difficulty required by the most recent checkpoint.
+	ErrDifficultyTooLow
+
+	// ErrUnexpectedDifficulty indicates specified bits do not align with
+	// the expected value either because it doesn't match the calculated
+	// valued based on difficulty regarted rules or it is out of the valid
+	// range.
+	ErrUnexpectedDifficulty
+
+	// ErrHighHash indicates the block does not hash to a value which is
+	// lower than the required target difficultly.
+	ErrHighHash
+
+	// ErrBadMerkleRoot indicates the calculated merkle root does not match
+	// the expected value.
+	ErrBadMerkleRoot
+
+	// ErrBadCheckpoint indicates a block that is expected to be at a
+	// checkpoint height does not match the expected one.
+	ErrBadCheckpoint
+
+	// ErrForkTooOld indicates a block is attempting to fork the block chain
+	// before the most recent checkpoint.
+	ErrForkTooOld
+
+	// ErrCheckpointTimeTooOld indicates a block has a timestamp before the
+	// most recent checkpoint.
+	ErrCheckpointTimeTooOld
+
+	// ErrNoTransactions indicates the block does not have a least one
+	// transaction.  A valid block must have at least the coinbase
+	// transaction.
+	ErrNoTransactions
+
+	// ErrNoTxInputs indicates a transaction does not have any inputs.  A
+	// valid transaction must have at least one input.
+	ErrNoTxInputs
+
+	// ErrNoTxOutputs indicates a transaction does not have any outputs.  A
+	// valid transaction must have at least one output.
+	ErrNoTxOutputs
+
+	// ErrTxTooBig indicates a transaction exceeds the maximum allowed size
+	// when serialized.
+	ErrTxTooBig
+
+	// ErrDuplicateTxInputs indicates a transaction references the same
+	// input more than once.
+
+	// ErrBadTxInput indicates a transaction input is invalid in some way
+	// such as referencing a previous transaction outpoint which is out of
+	// range or not referencing one at all.
+	// ErrMissingTxOut indicates a transaction output referenced by an input
+	// either does not exist or has already been spent.
+	ErrMissingTxOut
+
+	// ErrUnfinalizedTx indicates a transaction has not been finalized.
+	// A valid block may only contain finalized transactions.
+	ErrUnfinalizedTx
+
+	// ErrDuplicateTx indicates a block contains an identical transaction
+	// (or at least two transactions which hash to the same value).  A
+	// valid block may only contain unique transactions.
+	ErrDuplicateTx
+
+	// ErrOverwriteTx indicates a block contains a transaction that has
+	// the same hash as a previous transaction which has not been fully
+	// spent.
+	ErrOverwriteTx
+
+	// ErrImmatureSpend indicates a transaction is attempting to spend a
+	// coinbase that has not yet reached the required maturity.
+	ErrImmatureSpend
+
+	// ErrSpendTooHigh indicates a transaction is attempting to spend more
+	// value than the sum of all of its inputs.
+	ErrSpendTooHigh
+
+	// ErrBadFees indicates the total fees for a block are invalid due to
+	// exceeding the maximum possible value.
+	ErrBadFees
+
+	// ErrTooManySigOps indicates the total number of signature operations
+	// for a transaction or block exceed the maximum allowed limits.
+	ErrTooManySigOps
+
+	// ErrFirstTxNotCoinbase indicates the first transaction in a block
+	// is not a coinbase transaction.
+	ErrFirstTxNotCoinbase
+
+	// ErrMultipleCoinbases indicates a block contains more than one
+	// coinbase transaction.
+	ErrMultipleCoinbases
+
+	// ErrBadCoinbaseScriptLen indicates the length of the signature script
+	// for a coinbase transaction is not within the valid range.
+
+	// ErrBadCoinbaseValue indicates the amount of a coinbase value does
+	// not match the expected value of the subsidy plus the sum of all fees.
+	ErrBadCoinbaseValue
+
+	// ErrMissingCoinbaseHeight indicates the coinbase transaction for a
+	// block does not start with the serialized block block height as
+	// required for version 2 and higher blocks.
+	ErrMissingCoinbaseHeight
+
+	// ErrBadCoinbaseHeight indicates the serialized block height in the
+	// coinbase transaction for version 2 and higher blocks does not match
+	// the expected value.
+	ErrBadCoinbaseHeight
+
+	// ErrScriptMalformed indicates a transaction script is malformed in
+	// some way.  For example, it might be longer than the maximum allowed
+	// length or fail to parse.
+	ErrScriptMalformed
+
+	// ErrScriptValidation indicates the result of executing transaction
+	// script failed.  The error covers any failure when executing scripts
+	// such signature verification failures and execution past the end of
+	// the stack.
+	ErrScriptValidation
+
+	// ErrUnexpectedWitness indicates that a block includes transactions
+	// with witness data, but doesn't also have a witness commitment within
+	// the coinbase transaction.
+	ErrUnexpectedWitness
+
+	// ErrInvalidWitnessCommitment indicates that a block's witness
+	// commitment is not well formed.
+	ErrInvalidWitnessCommitment
+
+	// ErrWitnessCommitmentMismatch indicates that the witness commitment
+	// included in the block's coinbase transaction doesn't match the
+	// manually computed witness commitment.
+	ErrWitnessCommitmentMismatch
+
+	// ErrPreviousBlockUnknown indicates that the previous block is not known.
+	ErrPreviousBlockUnknown
+
+	// ErrInvalidAncestorBlock indicates that an ancestor of this block has
+	// already failed validation.
+	ErrInvalidAncestorBlock
+
+	// ErrPrevBlockNotBest indicates that the block's previous block is not the
+	// current chain tip. This is not a block validation rule, but is required
+	// for block proposals submitted via getblocktemplate RPC.
+	ErrPrevBlockNotBest
+)
 
 type RawTxInput struct {
 	Txid         string `json:"txid"`
@@ -126,6 +333,7 @@ type SignRawTransactionCmd struct {
 	PrivKeys *[]string
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }
+
 func NewSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput, privKeys *[]string, flags *string) *SignRawTransactionCmd {
 	return &SignRawTransactionCmd{
 		RawTx:    hexEncodedTx,
@@ -161,6 +369,7 @@ type RPCError struct {
 	Code    RPCErrorCode `json:"code,omitempty"`
 	Message string       `json:"message,omitempty"`
 }
+
 // Guarantee RPCError satisifies the builtin error interface.
 var _, _ error = RPCError{}, (*RPCError)(nil)
 
@@ -185,6 +394,7 @@ type AddressPubKeyHash struct {
 	hash  [ripemd160.Size]byte
 	netID byte
 }
+
 // NewAddressPubKeyHash returns a new AddressPubKeyHash.  pkHash mustbe 20
 // bytes.
 func NewAddressPubKeyHash(pkHash []byte, netID byte) (*AddressPubKeyHash, error) {
@@ -205,6 +415,7 @@ func encodeAddress(hash160 []byte, netID byte) string {
 	// P2SH), 20 bytes for a RIPEMD160 hash, and 4 bytes of checksum.
 	return base58.CheckEncode(hash160[:ripemd160.Size], netID)
 }
+
 // EncodeAddress returns the string encoding of a pay-to-pubkey-hash
 // address.  Part of the Address interface.
 func (a *AddressPubKeyHash) EncodeAddress() string {
@@ -223,6 +434,7 @@ type AddressScriptHash struct {
 	hash  [ripemd160.Size]byte
 	netID byte
 }
+
 // Amount represents the base bitcoin monetary unit (colloquially referred
 // to as a `Satoshi').  A single Amount is equal to 1e-8 of a bitcoin.
 type Amount int64
@@ -238,35 +450,39 @@ func round(f float64) Amount {
 	return Amount(f + 0.5)
 }
 
-func NewAmount(f float64) (Amount, error) {
-	// The amount is only considered invalid if it cannot be represented
-	// as an integer type.  This may happen if f is NaN or +-Infinity.
-	switch {
-	case math.IsNaN(f):
-		fallthrough
-	case math.IsInf(f, 1):
-		fallthrough
-	case math.IsInf(f, -1):
-		return 0, errors.New("invalid bitcoin amount")
-	}
-
-	return round(f * SatoshiPerBitcoin), nil
-}
+//
+//func NewAmount(f decimal.Decimal) (Amount, error) {
+//	// The amount is only considered invalid if it cannot be represented
+//	// as an integer type.  This may happen if f is NaN or +-Infinity.
+//	switch {
+//	case math.IsNaN(f):
+//		fallthrough
+//	case math.IsInf(f, 1):
+//		fallthrough
+//	case math.IsInf(f, -1):
+//		return 0, errors.New("invalid bitcoin amount")
+//	}
+//
+//	return round(f * DaoPerPtn), nil
+//}
 
 // Calculate the hash of hasher over buf.
 func calcHash(buf []byte, hasher hash.Hash) []byte {
 	hasher.Write(buf)
 	return hasher.Sum(nil)
 }
+
 // Hash160 calculates the hash ripemd160(sha256(b)).
 func Hash160(buf []byte) []byte {
 	return calcHash(calcHash(buf, sha256.New()), ripemd160.New())
 }
+
 // NewAddressScriptHash returns a new AddressScriptHash.
 func NewAddressScriptHash(serializedScript []byte, netScriptHashAddrID byte) (*AddressScriptHash, error) {
 	scriptHash := Hash160(serializedScript)
 	return newAddressScriptHashFromHash(scriptHash, netScriptHashAddrID)
 }
+
 // newAddressScriptHashFromHash is the internal API to create a script hash
 // address with a known leading identifier byte for a network, rather than
 // looking it up through its parameters.  This is useful when creating a new
@@ -289,6 +505,7 @@ func newAddressScriptHashFromHash(scriptHash []byte, netID byte) (*AddressScript
 func (a *AddressScriptHash) String() string {
 	return a.EncodeAddress()
 }
+
 // EncodeAddress returns the string encoding of a pay-to-script-hash
 // address.  Part of the Address interface.
 func (a *AddressScriptHash) EncodeAddress() string {
@@ -297,12 +514,14 @@ func (a *AddressScriptHash) EncodeAddress() string {
 
 // PubKeyFormat describes what format to use for a pay-to-pubkey address.
 type PubKeyFormat int
+
 // AddressPubKey is an Address for a pay-to-pubkey transaction.
 type AddressPubKey struct {
 	pubKeyFormat PubKeyFormat
 	pubKey       *btcec.PublicKey
 	pubKeyHashID byte
 }
+
 const (
 	// PKFUncompressed indicates the pay-to-pubkey address format is an
 	// uncompressed public key.
@@ -336,6 +555,7 @@ var (
 	// returned and the caller must decide how to decode the address.
 	ErrAddressCollision = errors.New("address collision")
 )
+
 // EncodeAddress returns the string encoding of a pay-to-pubkey-hash
 // address.  Part of the Address interface.
 
@@ -385,11 +605,13 @@ func (a *AddressPubKey) serialize() []byte {
 	}
 }
 
-
 const compressMagic byte = 0x01
+
 // PrivKeyBytesLen defines the length in bytes of a serialized private key.
 const PrivKeyBytesLen = 32
+
 var ErrMalformedPrivateKey = errors.New("malformed private key")
+
 /*func DecodeWIF(wif string) (*WIF, error) {
 	decoded := base58.Decode(wif)
 	decodedLen := len(decoded)
@@ -443,6 +665,7 @@ type WIF struct {
 	// WIF encoding the private key.
 	netID byte
 }
+
 // paddedAppend appends the src byte slice to dst, returning the new slice.
 // If the length of the source is smaller than the passed size, leading zero
 // bytes are appended to the dst slice before appending src.
@@ -452,6 +675,7 @@ func paddedAppend(size uint, dst, src []byte) []byte {
 	}
 	return append(dst, src...)
 }
+
 // SerializePubKey serializes the associated public key of the imported or
 // exported private key in either a compressed or uncompressed format.  The
 // serialization format chosen depends on the value of w.CompressPubKey.
@@ -462,6 +686,7 @@ func (w *WIF) SerializePubKey() []byte {
 	}
 	return pk.SerializeUncompressed()
 }
+
 // String creates the Wallet Import Format string encoding of a WIF structure.
 // See DecodeWIF for a detailed breakdown of the format and requirements of
 // a valid WIF string.
@@ -495,19 +720,23 @@ func String(v string) *string {
 	*p = v
 	return p
 }
- // NewAddressScriptHash returns a new AddressScriptHash.
+
+// NewAddressScriptHash returns a new AddressScriptHash.
 // NewAddressScriptHashFromHash returns a new AddressScriptHash.  scriptHash
 // must be 20 bytes.
 func NewAddressScriptHashFromHash(scriptHash []byte, netScriptHashAddrID byte) (*AddressScriptHash, error) {
 	return newAddressScriptHashFromHash(scriptHash, netScriptHashAddrID)
 }
- // GetTxOutResult models the data from the getTransactionsByTxid command.
+
+// GetTxOutResult models the data from the getTransactionsByTxid command.
 type GetTxIdResult struct {
-	Txid        string             `json:"txid"`
-	Apptype     string              `json:"apptype"`
-	Content     []byte            `json:"content"`
-	Coinbase    bool               `json:"coinbase"`
+	Txid     string `json:"txid"`
+	Apptype  string `json:"apptype"`
+	Content  []byte `json:"content"`
+	Coinbase bool   `json:"coinbase"`
+	UnitHash string `json:"unit_hash"`
 }
+
 func NewWIF(privKey *ecdsa.PrivateKey, netid byte, compress bool) (*WIF, error) {
 	return &WIF{privKey, compress, netid}, nil
 }

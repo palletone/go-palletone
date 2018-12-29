@@ -254,8 +254,8 @@ func (c *Config) name() string {
 }
 
 // These resources are resolved differently for "gptn" instances.
-var isOldGethResource = map[string]bool{
-	"chaindata":          true,
+var isOldGptnResource = map[string]bool{
+	"leveldb":            true,
 	"nodes":              true,
 	"nodekey":            true,
 	"static-nodes.json":  true,
@@ -272,7 +272,7 @@ func (c *Config) resolvePath(path string) string {
 	}
 	// Backwards-compatibility: ensure that data directory files created
 	// by gptn 1.4 are used if they exist.
-	if c.name() == "gptn" && isOldGethResource[path] {
+	if c.name() == "gptn" && isOldGptnResource[path] {
 		oldpath := ""
 		if c.Name == "gptn" {
 			oldpath = filepath.Join(c.DataDir, path)
@@ -330,12 +330,12 @@ func (c *Config) NodeKey() *ecdsa.PrivateKey {
 	return key
 }
 
-// StaticNodes returns a list of node enode URLs configured as static nodes.
+// StaticNodes returns a list of node pnode URLs configured as static nodes.
 func (c *Config) StaticNodes() []*discover.Node {
 	return c.parsePersistentNodes(c.resolvePath(datadirStaticNodes))
 }
 
-// TrustedNodes returns a list of node enode URLs configured as trusted nodes.
+// TrustedNodes returns a list of node pnode URLs configured as trusted nodes.
 func (c *Config) TrustedNodes() []*discover.Node {
 	return c.parsePersistentNodes(c.resolvePath(datadirTrustedNodes))
 }

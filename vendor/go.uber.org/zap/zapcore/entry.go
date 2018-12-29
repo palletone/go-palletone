@@ -21,10 +21,12 @@
 package zapcore
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	"go.uber.org/zap/internal/bufferpool"
 	"go.uber.org/zap/internal/exit"
@@ -110,7 +112,7 @@ func (ec EntryCaller) TrimmedRootPath() string {
 
 	substr := "go-palletone"
 	count := strings.Count(caller, substr)
-	if count != 2 {
+	if count <1 {
 		return ""
 	}
 	index := strings.LastIndex(caller, substr)
@@ -245,6 +247,11 @@ func (ce *CheckedEntry) reset() {
 	ce.cores = ce.cores[:0]
 }
 
+type jsonFiled struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
 // Write writes the entry to the stored Cores, returns any errors, and returns
 // the CheckedEntry reference to a pool for immediate re-use. Finally, it
 // executes any required CheckWriteAction.
@@ -275,6 +282,15 @@ func (ce *CheckedEntry) Write(fields ...Field) {
 			fmt.Fprintf(ce.ErrorOutput, "%v write error: %v\n", time.Now(), err)
 			ce.ErrorOutput.Sync()
 		}
+		var fs string
+		data, _ := json.Marshal(fields)
+
+		fs = *(*string)(unsafe.Pointer(&data))
+		if ce.Entry.Level >= ErrorLevel {
+			fmt.Fprintf(ce.ErrorOutput, "%v  %v  %v  %v  %v\n \n", ce.Time,ce.Level.String(), ce.Stack , ce.Message, fs)
+			ce.ErrorOutput.Sync()
+		}
+
 	}
 
 	should, msg := ce.should, ce.Message

@@ -113,12 +113,12 @@ EnableStaleProduction = true
 [[MediatorPlugin.Mediators]]
 Address = ""
 Password = ""
-InitPartSec = ""
-InitPartPub = ""
+InitPrivKey = ""
+InitPubKey = ""
 
-$ gptn initdks
-InitPartSec = private key
-InitPartPub = public key
+$ gptn mediator initdks
+InitPrivKey = private key
+InitPubKey = public key
 
 When gptn --datadir="your_dir" newgenesis will create Address and input your password.
 ```

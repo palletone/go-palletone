@@ -25,7 +25,7 @@ import (
 )
 
 // NewUnitEvent is posted when a unit has been produced.
-type NewUnitEvent struct {
+type NewProducedUnitEvent struct {
 	Unit *modules.Unit
 }
 

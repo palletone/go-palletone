@@ -47,8 +47,10 @@ type txsync struct {
 func (pm *ProtocolManager) syncTransactions(p *peer) {
 	var txs modules.Transactions
 	pending, _ := pm.txpool.Pending()
-	for _, batch := range pending {
-		txs = append(txs, txspool.PooltxToTx(batch))
+	for _, this := range pending {
+		for _, batch := range this {
+			txs = append(txs, txspool.PooltxToTx(batch))
+		}
 	}
 	if len(txs) == 0 {
 		return
@@ -154,6 +156,7 @@ func (pm *ProtocolManager) syncer() {
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
+			log.Debug("start force Sync")
 			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 
 		case <-pm.noMorePeers:
@@ -165,12 +168,13 @@ func (pm *ProtocolManager) syncer() {
 
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
-	log.Info("=============Enter ProtocolManager synchronise===========")
-	defer log.Info("=============End ProtocolManager synchronise===========")
 	// Short circuit if no peers are available
 	if peer == nil {
+		log.Debug("ProtocolManager synchronise peer is nil")
 		return
 	}
+	log.Debug("Enter ProtocolManager synchronise", "peer id:", peer.id)
+	defer log.Debug("End ProtocolManager synchronise", "peer id:", peer.id)
 
 	// Make sure the peer's TD is higher than our own
 	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
@@ -183,9 +187,10 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
 
-	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex)
-	if index > pindex && pindex > 0 {
-		log.Info("===synchronise peer.index < local index===", "peer.index:", pindex, "local index:", number.Index)
+	log.Debug("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
+	if index >= pindex && pindex > 0 /*||common.EmptyHash(pHead) */ {
+		atomic.StoreUint32(&pm.acceptTxs, 1)
+		log.Debug("===synchronise peer.index < local index===", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
 		return
 	}
 
@@ -200,15 +205,15 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 		//			return
 		//		}
 	}
-	log.Info("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex)
+	log.Debug("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
-		log.Info("ptn sync downloader.", "Synchronise err:", err)
+		log.Debug("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}
 
 	if atomic.LoadUint32(&pm.fastSync) == 1 {
-		log.Info("Fast sync complete, auto disabling")
+		log.Debug("Fast sync complete, auto disabling")
 		atomic.StoreUint32(&pm.fastSync, 0)
 		//TODO notice mediator execute vss
 		//
@@ -217,7 +222,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 
 	head := pm.dag.CurrentUnit()
 	if head != nil && head.UnitHeader.Number.Index > 0 {
-		go pm.BroadcastUnit(head, false)
+		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
 	}
 
 }

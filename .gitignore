@@ -74,3 +74,5 @@ cmd/gptn/gptn/
 cmd/gptn/keystore/
 cmd/gptn/
 gptn/
+dag/transactions.rlp.new
+dag/transactions.rlp

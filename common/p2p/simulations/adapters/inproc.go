@@ -25,10 +25,10 @@ import (
 
 	"github.com/palletone/go-palletone/common/event"
 	//"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/node"
 )
 
 // SimAdapter is a NodeAdapter which creates in-memory simulation nodes and
@@ -83,7 +83,7 @@ func (s *SimAdapter) NewNode(config *NodeConfig) (Node, error) {
 			Dialer:          s,
 			EnableMsgEvents: true,
 		},
-		NoUSB:  true,
+		NoUSB: true,
 		//Logger: log.New("node.id", id.String()),
 	})
 	if err != nil {
@@ -309,7 +309,7 @@ func (self *SimNode) NodeInfo() *p2p.NodeInfo {
 	if server == nil {
 		return &p2p.NodeInfo{
 			ID:    self.ID.String(),
-			Enode: self.Node().String(),
+			Pnode: self.Node().String(),
 		}
 	}
 	return server.NodeInfo()

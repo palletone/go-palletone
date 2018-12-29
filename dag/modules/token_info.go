@@ -20,29 +20,19 @@ package modules
 
 import (
 	"encoding/json"
+
 	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/dag/constants"
 	"time"
 	"unsafe"
 )
 
-var (
-	TimeFormatString = "2006/01/02 15:04:05"
-
-	PTNCOIN = IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
-	BTCCOIN = IDType16{'b', 't', 'c', 'c', 'o', 'i', 'n'}
-)
-
-// type 	Hash 		[]byte
-const (
-	ID_LENGTH = 16
-)
-
-type IDType16 [ID_LENGTH]byte
 type AllTokenInfo struct {
 	Items map[string]*TokenInfo //  token_info’json string
 }
 type TokenInfo struct {
 	Name         string   `json:"name"`
+	TokenStr     string   `json:"token_str"`
 	TokenHex     string   `json:"token_hex"` // idtype16's hex
 	Token        IDType16 `json:"token_id"`
 	Creator      string   `json:"creator"`
@@ -50,42 +40,10 @@ type TokenInfo struct {
 }
 
 func NewTokenInfo(name, token, creator string) *TokenInfo {
-	id, _ := SetIdTypeByHex(token)
-	return &TokenInfo{Name: name, TokenHex: token, Token: id, Creator: creator, CreationDate: time.Now().Format(TimeFormatString)}
-}
-
-func ZeroIdType16() IDType16 {
-	return IDType16{}
-}
-
-func (it *IDType16) String() string {
-	return hexutil.Encode(it.Bytes()[:])
-}
-
-func (it *IDType16) Bytes() []byte {
-	idBytes := make([]byte, len(it))
-	for i := 0; i < len(it); i++ {
-		idBytes[i] = it[i]
-	}
-	return idBytes
-}
-
-func (it *IDType16) SetBytes(b []byte) {
-	if len(b) > len(it) {
-		b = b[len(b)-ID_LENGTH:]
-	}
-
-	copy(it[ID_LENGTH-len(b):], b)
-}
-
-func SetIdTypeByHex(id string) (IDType16, error) {
-	bytes, err := hexutil.Decode(id)
-	if err != nil {
-		return IDType16{}, err
-	}
-	var id_type IDType16
-	copy(id_type[0:], bytes)
-	return id_type, nil
+	// 字符串转hex
+	hex := hexutil.Encode([]byte(token))
+	id, _ := SetIdTypeByHex(hex)
+	return &TokenInfo{Name: name, TokenStr: token, TokenHex: hex, Token: id, Creator: creator, CreationDate: time.Now().Format(TimeFormatString)}
 }
 
 func (ti *TokenInfo) String() string {
@@ -100,6 +58,7 @@ func Jsonbytes2AllTokenInfo(data []byte) (*AllTokenInfo, error) {
 
 	return info, err
 }
+
 func (tf *AllTokenInfo) String() string {
 	bytes, err := json.Marshal(tf)
 	if err != nil {
@@ -115,5 +74,5 @@ func (tf *AllTokenInfo) Add(token *TokenInfo) {
 	if tf.Items == nil {
 		tf.Items = make(map[string]*TokenInfo)
 	}
-	tf.Items[string(TOKENTYPE)+token.TokenHex] = token
+	tf.Items[string(constants.TOKENTYPE)+token.TokenHex] = token
 }

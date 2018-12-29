@@ -22,12 +22,14 @@ package scc
 
 import (
 	"github.com/palletone/go-palletone/contracts/example/go/deposit"
+	"github.com/palletone/go-palletone/contracts/example/go/prc20"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
+	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
 )
 
 var systemChaincodes = []*SystemChaincode{
 	{
-		Id:        []byte{0x95, 0x27},
+		Id:        TestRunContractAddress.Bytes(), //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 		Enabled:   true,
 		Name:      "sample_syscc",
 		Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",
@@ -58,7 +60,7 @@ var systemChaincodes = []*SystemChaincode{
 	//	Chaincode: &samplesyscc2.SampleSysCC2{},
 	//},
 	{
-		Id:        []byte{0x01},
+		Id:        DepositContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "deposit_syscc",
 		Path:      "../example/go/deposit/deposit",
@@ -66,7 +68,24 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &deposit.DepositChaincode{},
 	},
-
+	{
+		Id:        CreateTokenContractAddress.Bytes(), //合约ID为20字节
+		Enabled:   true,
+		Name:      "createToken_sycc",
+		Path:      "../example/go/prc20/prc20",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &prc20.PRC20{},
+	},
+	{
+		Id:        TestContractAddress.Bytes(),
+		Enabled:   true,
+		Name:      "debug_sycc",
+		Path:      ".",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &debugcc.DebugChainCode{},
+	},
 	//TODO add other system chaincodes ...
 }
 

@@ -1,0 +1,77 @@
+# Copyright Palletone Corp. All Rights Reserved.
+#
+#
+version: '2'
+
+services:
+  mediator0:
+    container_name: mediator0
+    image: palletone/pallet-gptn
+    working_dir: /opt/gopath/src/github.com/palletone/go-palletone
+    volumes:
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/ptn-config.toml:/var/palletone/conf/ptn-config.toml
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/palletone:/var/palletone/production
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/log:/var/palletone/log
+    command: /var/palletone/conf/ptn-config.toml
+    ports:
+     - 8545:8545
+     - 8546:8546
+     - 8080:8080
+     - 30303:30303
+     - 18332:18332
+     - 12345:12345
+
+  mediator1:
+    container_name: mediator1
+    image: palletone/pallet-gptn
+    working_dir: /opt/gopath/src/github.com/palletone/go-palletone
+    volumes:
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator1/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator1/ptn-config.toml:/var/palletone/conf/ptn-config.toml
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator1/palletone:/var/palletone/production
+     - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator1/log:/var/palletone/log
+    command: /var/palletone/conf/ptn-config.toml
+    ports:
+     - 8555:8545
+     - 8556:8546
+     - 8081:8080
+     - 30304:30303
+     - 18342:18332
+     - 12355:12345
+
+  mediator2:
+   container_name: mediator2
+   image: palletone/pallet-gptn
+   working_dir: /opt/gopath/src/github.com/palletone/go-palletone
+   volumes:
+    - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator2/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
+    - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator2/ptn-config.toml:/var/palletone/conf/ptn-config.toml
+    - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator2/palletone:/var/palletone/production
+    - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator2/log:/var/palletone/log
+   command: /var/palletone/conf/ptn-config.toml
+   ports:
+    - 8565:8545
+    - 8566:8546
+    - 8082:8080
+    - 30305:30303
+    - 18352:18332
+    - 12365:12345
+
+  client01:
+   container_name: client01
+   image: palletone/pallet-gptn
+   working_dir: /opt/gopath/src/github.com/palletone/go-palletone
+   volumes:
+    - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/client01/ptn-genesis.json:/var/palletone/conf/ptn-genesis.json
+    - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/client01/ptn-config.toml:/var/palletone/conf/ptn-config.toml
+    - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/client01/palletone:/var/palletone/production
+    - /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/client01/log:/var/palletone/log
+   command: /var/palletone/conf/ptn-config.toml
+   ports:
+    - 8575:8545
+    - 8576:8546
+    - 8083:8080
+    - 30306:30303
+    - 18362:18332
+    - 12375:12345

@@ -256,12 +256,12 @@ func (ks *KeyStore) Delete(a accounts.Account, passphrase string) error {
 
 // SignHash calculates a ECDSA signature for the given hash. The produced
 // signature is in the [R || S || V] format where V is 0 or 1.
-func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
+func (ks *KeyStore) SignHash(addr common.Address, hash []byte) ([]byte, error) {
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
 	defer ks.mu.RUnlock()
 
-	unlockedKey, found := ks.unlocked[a.Address]
+	unlockedKey, found := ks.unlocked[addr]
 	if !found {
 		return nil, ErrLocked
 	}
@@ -466,6 +466,14 @@ func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey [
 	return crypto.FromECDSA(key.PrivateKey), nil
 
 }
+func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (privateKey *ecdsa.PrivateKey, err error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return nil, err
+	}
+	return key.PrivateKey, nil
+
+}
 
 // Import stores the given encrypted JSON key into the key directory.
 func (ks *KeyStore) Import(keyJSON []byte, passphrase, newPassphrase string) (accounts.Account, error) {
@@ -534,12 +542,12 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 	if !found {
 		return nil, ErrLocked
 	}
-	return crypto.FromECDSAPub(&unlockedKey.PrivateKey.PublicKey), nil
+	return crypto.CompressPubkey(&unlockedKey.PrivateKey.PublicKey), nil
 }
 
 func (ks *KeyStore) SigUnit(unitHeader *modules.Header, address common.Address) ([]byte, error) {
 	emptyHeader := modules.CopyHeader(unitHeader)
-	emptyHeader.Authors = nil
+	//emptyHeader.Authors = nil
 	emptyHeader.GroupSign = make([]byte, 0)
 	return ks.SigData(emptyHeader, address)
 }
@@ -554,7 +562,6 @@ func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
-	//unit signature
 	sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
 		return nil, err

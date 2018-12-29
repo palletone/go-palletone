@@ -28,11 +28,10 @@ var DefaultConfig = Config{
 }
 
 type Config struct {
-	// logger
-	OutputPaths      []string
-	ErrorOutputPaths []string
-	OpenModule       []string
-	LoggerLvl        string // log level
-	Encoding         string // encoding
-	Development      bool
+	OutputPaths      []string `json:"outputPaths" yaml:"outputPaths"`           // output file path
+	ErrorOutputPaths []string `json:"errorOutputPaths" yaml:"errorOutputPaths"` // error file path
+	OpenModule       []string // open module
+	LoggerLvl        string   `json:"level" yaml:"level"`       // log level
+	Encoding         string   `json:"encoding" yaml:"encoding"` // encoding
+	Development      bool     `json:"development" yaml:"development"`
 }

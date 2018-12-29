@@ -41,9 +41,12 @@ import (
 
 	log2 "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"math/big"
 	"time"
@@ -91,11 +94,12 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 		0,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, idag, typemux, pro, genesisUint)
+
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, idag, typemux, pro, genesisUint, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-	pm.SetForTest()
+	//pm.SetForTest()
 	config := p2p.DefaultConfig
 	running := &p2p.Server{Config: config}
 	pm.Start(running, 1000)
@@ -106,7 +110,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 // with the given number of blocks already known, and potential notification
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
-func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, pro producer, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database) {
+func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, pro producer, newtx chan<- []*modules.Transaction, ju *jury.Processor) (*ProtocolManager, ptndb.Database) {
 	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, dag, pro, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
@@ -125,6 +129,41 @@ type testTxPool struct {
 
 // AddRemotes appends a batch of transactions to the pool, and notifies any
 // listeners if the addition channel is non nil
+
+func (p *testTxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
+	return true, nil
+}
+
+func (p *testTxPool) AddLocal(tx *modules.TxPoolTransaction) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.pool = append(p.pool, tx.Tx)
+	if p.added != nil {
+		p.added <- p.pool
+	}
+	return nil
+}
+
+func (p *testTxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
+	errs := make([]error, 0)
+	for _, tx := range txs {
+		errs = append(errs, p.AddLocal(tx))
+	}
+	return errs
+}
+
+func (p *testTxPool) AllHashs() []*common.Hash {
+	hashs := make([]*common.Hash, 0)
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	for _, tx := range p.pool {
+		hash := tx.Hash()
+		hashs = append(hashs, &hash)
+	}
+	return hashs
+}
+
 func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -136,12 +175,36 @@ func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	return make([]error, len(txs))
 }
 
+func (p *testTxPool) Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
+	return nil, nil
+}
+
+func (p *testTxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
+	return nil, (common.Hash{})
+}
+
+func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
+	return 0
+}
+
+func (p *testTxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
+	return nil, 0
+}
+func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
+	return nil
+}
+func (p *testTxPool) Stats() (int, int) {
+	return 0, 0
+}
+
+func (p *testTxPool) Stop() {}
+
 // Pending returns all the transactions known to the pool
-func (p *testTxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, error) {
+func (p *testTxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, error) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	batches := make(map[common.Hash]*modules.TxPoolTransaction)
+	batches := make(map[common.Hash][]*modules.TxPoolTransaction)
 	//for _, tx := range p.pool {
 	// from, _ := types.Sender(types.HomesteadSigner{}, tx)
 	// batches[from] = append(batches[from], tx)
@@ -154,6 +217,16 @@ func (p *testTxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, erro
 
 func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return p.txFeed.Subscribe(ch)
+}
+
+func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error) {
+	return []*txspool.TxDesc{}, nil
+}
+func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
+	return nil
+}
+func (p *testTxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
+	return &modules.InvokeFees{}, nil
 }
 
 // newTestTransaction create a new dummy transaction.
@@ -233,7 +306,7 @@ func (p *testPeer) handshake(t *testing.T, index modules.ChainIndex, head common
 		NetworkId:       DefaultConfig.NetworkId,
 		Index:           index,
 		GenesisUnit:     genesis,
-		Mediator:        false,
+		//Mediator:        false,
 	}
 	if err := p2p.ExpectMsg(p.app, StatusMsg, msg); err != nil {
 		//log.Fatalf("status recv: %v", err)
@@ -250,7 +323,7 @@ func (p *testPeer) close() {
 }
 
 func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
-	dag, _ := dag.NewDagForTest(Memdb)
+	dag, _ := dag.NewDagForTest(Memdb, nil)
 	genesisUnit := newGenesisForTest(dag.Db)
 	newDag(dag.Db, genesisUnit, unitAccount)
 	return dag, nil
@@ -260,8 +333,9 @@ func unitForTest(index int) *modules.Unit {
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = uint64(index)
-	header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+	header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 	header.GroupSign = []byte{}
+	header.GroupPubKey = []byte{}
 	//tx, _ := NewCoinbaseTransaction()
 	tx, _ := CreateCoinbase()
 	fmt.Printf("----------%#v\n", tx)
@@ -275,8 +349,9 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
-	header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+	header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 	header.GroupSign = []byte{}
+	header.GroupPubKey = []byte{}
 	//tx, _ := NewCoinbaseTransaction()
 	tx, _ := CreateCoinbase()
 	fmt.Printf("----------%#v\n", tx)
@@ -297,8 +372,9 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
-		header.Authors = &modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+		header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
 		header.GroupSign = []byte{}
+		header.GroupPubKey = []byte{}
 		//tx, _ := NewCoinbaseTransaction()
 		tx, _ := CreateCoinbase()
 		txs := modules.Transactions{tx}
@@ -341,11 +417,7 @@ func CreateCoinbase() (*modules.Transaction, error) {
 	//	fmt.Println("lalall")
 	//	return nil, fmt.Errorf("Create unit: %s", err.Error())
 	//}
-	asset := modules.Asset{
-		modules.PTNCOIN,
-		modules.PTNCOIN,
-		1,
-	}
+	asset := modules.NewPTNAsset()
 	// setp1. create P2PKH script
 	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
@@ -357,12 +429,12 @@ func CreateCoinbase() (*modules.Transaction, error) {
 	}
 	output := modules.Output{
 		Value:    uint64(totalIncome),
-		Asset:    &asset,
+		Asset:    asset,
 		PkScript: script,
 	}
 	payload := modules.PaymentPayload{
-		Input:  []*modules.Input{&input},
-		Output: []*modules.Output{&output},
+		Inputs:  []*modules.Input{&input},
+		Outputs: []*modules.Output{&output},
 	}
 	// step3. create message
 	msg := &modules.Message{
@@ -376,7 +448,7 @@ func CreateCoinbase() (*modules.Transaction, error) {
 	//}
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	// coinbase.CreationDate = coinbase.CreateDate()
-	coinbase.TxHash = coinbase.Hash()
+	//coinbase.TxHash = coinbase.Hash()
 
 	return &coinbase, nil
 }
@@ -426,7 +498,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 			log.Println("Save transaction:", "error", err.Error())
 			return err
 		}
-		txHashSet = append(txHashSet, tx.TxHash)
+		txHashSet = append(txHashSet, tx.Hash())
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -471,8 +543,8 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}
 	output := &modules.Output{}
 	payload := modules.PaymentPayload{
-		Input:  []*modules.Input{input},
-		Output: []*modules.Output{output},
+		Inputs:  []*modules.Input{input},
+		Outputs: []*modules.Output{output},
 	}
 	msg := modules.Message{
 		App:     modules.APP_PAYMENT,
@@ -480,12 +552,12 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	}
 	var coinbase modules.Transaction
 	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	coinbase.TxHash = coinbase.Hash()
+	//coinbase.TxHash = coinbase.Hash()
 	return &coinbase, nil
 }
 
 func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
-	key := fmt.Sprintf("%s%v_", modules.HEADER_PREFIX, index)
+	key := fmt.Sprintf("%s%v_", constants.HEADER_PREFIX, index)
 	err := db.Put([]byte(key), hash.Bytes())
 	return err
 }

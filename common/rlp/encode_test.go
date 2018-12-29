@@ -20,12 +20,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/big"
 	"sync"
 	"testing"
-	"log"
 )
 
 type testEncoder struct {
@@ -284,7 +285,7 @@ func TestEncodeToBytes(t *testing.T) {
 	m["Alice"] = uint16(9)
 	m["Bob"] = "Unknown"
 	b, err := EncodeToBytes(m)
-	if err!=nil {
+	if err != nil {
 		log.Printf("Encode map error:%s", err)
 	} else {
 		log.Printf("Encoding data: %v", b)
@@ -348,4 +349,16 @@ func TestEncodeToReaderReturnToPool(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+func TestDecodeMap(t *testing.T) {
+	testMap := map[string]*uint64{}
+	a := uint64(100)
+	testMap["a"] = &a
+	testMap["b"] = &a
+	b, err := EncodeToBytes(testMap)
+	assert.Nil(t, err)
+	t.Logf("Encode Result:%x", b)
+	result := make(map[string]*uint64)
+	DecodeBytes(b, &result)
+	t.Logf("Decode Result:%+v", result)
 }

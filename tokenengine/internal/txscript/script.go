@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // Bip16Activation is the timestamp where BIP0016 is valid to use in the
@@ -60,6 +60,11 @@ func isScriptHash(pops []parsedOpcode) bool {
 		pops[1].opcode.value == OP_DATA_20 &&
 		pops[2].opcode.value == OP_EQUAL
 }
+func isContractHash(pops []parsedOpcode) bool {
+	return len(pops) == 2 &&
+		pops[0].opcode.value == OP_DATA_20 &&
+		pops[1].opcode.value == OP_JURY_REDEEM_EQUAL
+}
 
 // IsPayToScriptHash returns true if the script is in the standard
 // pay-to-script-hash (P2SH) format, false otherwise.
@@ -69,6 +74,13 @@ func IsPayToScriptHash(script []byte) bool {
 		return false
 	}
 	return isScriptHash(pops)
+}
+func IsPayToContractHash(script []byte) bool {
+	pops, err := parseScript(script)
+	if err != nil {
+		return false
+	}
+	return isContractHash(pops)
 }
 
 // isWitnessScriptHash returns true if the passed script is a
@@ -378,10 +390,10 @@ func removeOpcodeByData(pkscript []parsedOpcode, data []byte) []parsedOpcode {
 // hashing computation, reducing the complexity of validating SigHashAll inputs
 // from  O(N^2) to O(N).
 func calcHashPrevOuts(tx *modules.Transaction) common.Hash {
-	payment:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	//TODO Devin: don't know what's this function mean
 	var b bytes.Buffer
-	for _, in := range payment.Input {
+	for _, in := range payment.Inputs {
 		// First write out the 32-byte transaction ID one of whose
 		// outputs are being referenced by this input.
 		b.Write(in.PreviousOutPoint.TxHash[:])
@@ -423,9 +435,9 @@ func calcHashPrevOuts(tx *modules.Transaction) common.Hash {
 // cached, reducing the total hashing complexity from O(N^2) to O(N).
 func calcHashOutputs(tx *modules.Transaction) common.Hash {
 	//TODO Devin don't know what to do
-	payment:=tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	var b bytes.Buffer
-	for _, out := range payment.Output {
+	for _, out := range payment.Outputs {
 		modules.WriteTxOut(&b, 0, 0, out)
 	}
 
@@ -444,7 +456,7 @@ func calcHashOutputs(tx *modules.Transaction) common.Hash {
 // wallet if fed an invalid input amount, the real sighash will differ causing
 // the produced signature to be invalid.
 func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
-	hashType uint32, tx *modules.Transaction,msgIdx, idx int, amt uint64) ([]byte, error) {
+	hashType uint32, tx *modules.Transaction, msgIdx, idx int, amt uint64) ([]byte, error) {
 
 	//// As a sanity check, ensure the passed input index for the transaction
 	//// is valid.
@@ -570,25 +582,25 @@ func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
 // calculating the signature hash.  It is used over the Copy method on the
 // transaction itself since that is a deep copy and therefore does more work and
 // allocates much more space than needed.
-func shallowCopyTx(tx *modules.Transaction/**wire.MsgTx*/) modules.Transaction {
+func shallowCopyTx(tx *modules.Transaction /**wire.MsgTx*/) modules.Transaction {
 	return tx.Clone()
 }
 
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func CalcSignatureHash(script []byte, hashType uint32, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, idx int) ([]byte, error) {
+func CalcSignatureHash(script []byte, hashType uint32, tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int) ([]byte, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
 	}
-	return calcSignatureHash(parsedScript, hashType, tx,msgIdx, idx), nil
+	return calcSignatureHash(parsedScript, hashType, tx, msgIdx, idx), nil
 }
 
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Transaction/*wire.MsgTx*/,msgIdx, idx int) []byte {
+func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Transaction /*wire.MsgTx*/, msgIdx, idx int) []byte {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
@@ -621,17 +633,17 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 	// Make a shallow copy of the transaction, zeroing out the script for
 	// all inputs that are not currently being processed.
 	txCopy := shallowCopyTx(tx)
-	txCopy.TxHash= common.Hash{}//Clean Tx Hash
-	for i,msg :=range txCopy.TxMessages{
-		if(msg.App== modules.APP_PAYMENT){
-			payment:=msg.Payload.(*modules.PaymentPayload)
-			for j := range payment.Input {
-				if i==msgIdx && j == idx {
+	//txCopy.TxHash = common.Hash{} //Clean Tx Hash
+	for i, msg := range txCopy.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			payment := msg.Payload.(*modules.PaymentPayload)
+			for j := range payment.Inputs {
+				if i == msgIdx && j == idx {
 
 					sigScript, _ := unparseScript(script)
-					payment.Input[idx].SignatureScript = sigScript
+					payment.Inputs[idx].SignatureScript = sigScript
 				} else {
-					payment.Input[i].SignatureScript = nil
+					payment.Inputs[i].SignatureScript = nil
 				}
 			}
 		}
@@ -680,7 +692,7 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 	// The final hash is the double sha256 of both the serialized modified
 	// transaction and the hash type (encoded as a 4-byte little-endian
 	// value) appended.
-	txBytes,_:=rlp.EncodeToBytes(txCopy)
+	txBytes, _ := rlp.EncodeToBytes(txCopy)
 
 	return crypto.Keccak256(txBytes)
 }

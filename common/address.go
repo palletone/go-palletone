@@ -28,6 +28,8 @@ import (
 
 	"math/big"
 
+	"bytes"
+	"encoding/json"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
@@ -55,8 +57,16 @@ const (
 	ContractHash  AddressType = 28
 )
 
-func (a Address) GetType() AddressType {
+func (a *Address) GetType() AddressType {
 	return AddressType(a[20])
+}
+
+//如果是合约地址，那么是不是一个系统合约地址？
+func (a *Address) IsSystemContractAddress() bool {
+	bb := make([]byte, 20)
+	bb[18] = 0xff
+	bb[19] = 0xff
+	return bytes.Compare(a.Bytes(), bb) < 0
 }
 func NewAddress(hash160 []byte, ty AddressType) Address {
 	newBytes := make([]byte, 21)
@@ -85,10 +95,17 @@ func StringToAddress(a string) (Address, error) {
 		return Address{}, errors.New("Invalid address type")
 	}
 }
+
+func StringToAddressGodBlessMe(a string) Address {
+	addr, _ := StringToAddress(a)
+	return addr
+}
+
 func (a Address) Validate() (AddressType, error) {
 	var ty AddressType = AddressType(a[20])
 	return ty, nil
 }
+
 func IsValidAddress(s string) bool {
 	_, err := StringToAddress(s)
 	// if err!=nil{
@@ -101,6 +118,19 @@ func BytesToAddress(b []byte) Address {
 	var a Address
 	a.SetBytes(b)
 	return a
+}
+
+func BytesListToAddressList(b []byte) []Address {
+
+	var stringArray []string
+	json.Unmarshal(b, &stringArray)
+	var Addresses []Address
+
+	for _, str := range stringArray {
+		addr, _ := StringToAddress(str)
+		Addresses = append(Addresses, addr)
+	}
+	return Addresses
 }
 
 func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }
@@ -123,8 +153,15 @@ func IsHexAddress(s string) bool {
 func (a Address) Str() string {
 	return "P" + base58.CheckEncode(a[0:20], byte(a[20]))
 }
+
+//Return account 20 bytes without address type
 func (a Address) Bytes() []byte {
 	return a[0:20]
+}
+
+//Return address all 21 bytes, you can use SetBytes function to get Address object
+func (a Address) Bytes21() []byte {
+	return a[:]
 }
 
 func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a.Bytes()) }
@@ -173,6 +210,30 @@ func (a *Address) UnmarshalText(input []byte) error {
 // UnmarshalJSON parses a hash in hex syntax.
 func (a *Address) UnmarshalJSON(input []byte) error {
 	return hexutil.UnmarshalFixedJSON(addressT, input, a[:])
+}
+
+//YiRan
+//Returns true when the contents of the two Address are exactly the same
+func (a *Address) Equal(b Address) bool {
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *Address) Less(b Address) bool {
+	for i, v := range a {
+		if v < b[i] {
+			return true
+		} else if v > b[i] {
+			return false
+		}
+	}
+
+	// 两个地址相同
+	return false
 }
 
 // UnprefixedHash allows marshaling an Address without 0x prefix.

@@ -210,7 +210,7 @@ func (n *Node) Start() error {
 	}
 	// 用配置创建了一个p2p.Server实例
 	running := &p2p.Server{Config: n.serverConfig}
-	n.log.Info("Starting peer-to-peer node：")
+	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
 	// Otherwise copy and specialize the P2P configuration
 	services := make(map[reflect.Type]Service)
@@ -669,7 +669,7 @@ func (n *Node) OpenDatabase(name string, cache, handles int) (ptndb.Database, er
 		log.Debug("Open a memery database.")
 		return ptndb.NewMemDatabase()
 	}
-	log.Debug("Open a leveldb, path:", n.config.resolvePath(name))
+	log.Debug("Open a leveldb, path:", "info", n.config.resolvePath(name))
 	//return ptndb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
 	return storage.Init(n.config.resolvePath(name), cache, handles)
 }

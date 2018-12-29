@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rlp"
 	//mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -71,7 +72,7 @@ func getUnitHashbyNumber(pm *ProtocolManager, index0 modules.ChainIndex) common.
 	return u.Hash()
 }
 func testGetBlockHeaders(t *testing.T, protocol int) {
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil, nil, nil)
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil, nil, nil, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
 	// Create a "random" unknown hash for testing
@@ -339,6 +340,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 		return mockUnit.Transactions(), nil
 	}).AnyTimes()
 
+	dag.EXPECT().SubscribeActiveMediatorsUpdatedEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	pro.EXPECT().LocalHaveActiveMediator().Return(false).AnyTimes()
 	/*
 		pro.EXPECT().SubscribeNewUnitEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.NewUnitEvent) event.Subscription {
@@ -358,7 +360,8 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 		}).AnyTimes()
 	*/
 	pro = pro
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, dag, nil, nil)
+
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, dag, nil, nil, nil)
 
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()

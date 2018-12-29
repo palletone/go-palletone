@@ -33,11 +33,11 @@ var DefaultConfig = Config{
 	DataDir:          DefaultDataDir(),
 	HTTPHost:         DefaultHTTPHost,
 	HTTPPort:         DefaultHTTPPort,
-	HTTPModules:      []string{"net", "web3"},
+	HTTPModules:      []string{"net", "web3", "wallet", "dag"},
 	HTTPVirtualHosts: []string{"localhost"},
 	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
-	WSModules:        []string{"net", "web3"},
+	WSModules:        []string{"net", "web3", "dag"},
 	//	P2P: p2p.Config{
 	//		ListenAddr: ":30303",
 	//		MaxPeers:   25,
@@ -62,8 +62,8 @@ func DefaultDataDir() string {
 	//}
 	//// As we cannot guess a stable location, return empty and handle later
 	//return ""
-
-	return "./"
+	//return "./"
+	return "./palletone"
 }
 
 func homeDir() string {

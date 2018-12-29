@@ -19,36 +19,41 @@
 package mediatorplugin
 
 import (
+	"github.com/dedis/kyber"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"gopkg.in/urfave/cli.v1"
 )
 
 const (
-	DefaultInitPartSec = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
-	DefaultInitPartPub = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
-		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
+	DefaultPassword    = "password"
+	DefaultInitPrivKey = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
 )
 
 var (
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "enable-stale-production",
-		Usage: "Enable Verified Unit production, even if the chain is stale.",
+		Usage: "Enable Unit production, even if the chain is stale.",
 	}
 )
 
 // config data for mediator plugin
 type Config struct {
-	EnableStaleProduction bool // Enable Verified Unit production, even if the chain is stale.
+	EnableStaleProduction bool // Enable Unit production, even if the chain is stale.
 	//	RequiredParticipation float32	// Percent of mediators (0-99) that must be participating in order to produce
-	Mediators []MediatorConf // the set of the mediator info
+	Mediators []*MediatorConf // the set of the mediator info
+}
+
+func DefaultMediatorConf() *MediatorConf {
+	return &MediatorConf{core.DefaultMediator, DefaultPassword,
+		DefaultInitPrivKey, core.DefaultInitPubKey}
 }
 
 // mediator plugin default config
 var DefaultConfig = Config{
 	EnableStaleProduction: false,
-	Mediators: []MediatorConf{
-		MediatorConf{core.DefaultTokenHolder, core.DefaultPassword,
-			DefaultInitPartSec, DefaultInitPartPub},
+	Mediators: []*MediatorConf{
+		DefaultMediatorConf(),
 	},
 }
 
@@ -62,6 +67,31 @@ func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
 type MediatorConf struct {
 	Address,
 	Password,
-	InitPartSec,
-	InitPartPub string
+	InitPrivKey,
+	InitPubKey string
+}
+
+func (medConf *MediatorConf) configToAccount() *MediatorAccount {
+	// 1. 解析 mediator 账户地址
+	addr := core.StrToMedAdd(medConf.Address)
+
+	// 2. 解析 mediator 的 DKS 初始公私钥
+	sec, _ := core.StrToScalar(medConf.InitPrivKey)
+	pub, _ := core.StrToPoint(medConf.InitPubKey)
+
+	medAcc := &MediatorAccount{
+		addr,
+		medConf.Password,
+		sec,
+		pub,
+	}
+
+	return medAcc
+}
+
+type MediatorAccount struct {
+	Address     common.Address
+	Password    string
+	InitPrivKey kyber.Scalar
+	InitPubKey  kyber.Point
 }

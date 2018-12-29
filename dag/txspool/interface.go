@@ -27,26 +27,30 @@ import (
 )
 
 type ITxPool interface {
-	AddRemote(tx *modules.Transaction) error
+	// AddRemote(tx *modules.Transaction) error
 	Stop()
 
 	AddLocal(tx *modules.TxPoolTransaction) error
 	AddLocals(txs []*modules.TxPoolTransaction) []error
 	AllHashs() []*common.Hash
+	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
 
 	// AddRemotes should add the given transactions to the pool.
 	AddRemotes([]*modules.Transaction) []error
-
+	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
-	Pending() (map[common.Hash]*modules.TxPoolTransaction, error)
+	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
+	SendStoredTxs(hashs []common.Hash) error
 
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	GetSortedTxs() ([]*modules.TxPoolTransaction, common.StorageSize)
+	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
 	GetNonce(hash common.Hash) uint64
-	Get(hash common.Hash) *modules.TxPoolTransaction
+	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
 	Stats() (int, int)
 	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
+	GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
+	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
 }

@@ -21,6 +21,8 @@
 package common
 
 import (
+	"log"
+	"reflect"
 	"testing"
 	"time"
 
@@ -32,8 +34,6 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"log"
-	"reflect"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -47,11 +47,18 @@ func mockUnitRepository() *UnitRepository {
 //	return NewUnitRepository4Db(db)
 //}
 
-func TestNewGenesisUnit(t *testing.T) {
-	gUnit, _ := NewGenesisUnit(modules.Transactions{}, time.Now().Unix(), &modules.Asset{})
+func TestGenesisUnit(t *testing.T) {
+	payload := new(modules.PaymentPayload)
+	payload.LockTime = 999
+
+	msg := modules.NewMessage(modules.APP_PAYMENT, payload)
+	msgs := make([]*modules.Message, 0)
+	tx := modules.NewTransaction(append(msgs, msg))
+	asset := modules.NewPTNAsset()
+
+	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset)
 
 	log.Println("Genesis unit struct:")
-	log.Println("--- Genesis unit header --- ")
 	log.Println("parent units:", gUnit.UnitHeader.ParentsHash)
 	log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
 	log.Println("group_sign:", gUnit.UnitHeader.GroupSign)
@@ -62,7 +69,7 @@ func TestNewGenesisUnit(t *testing.T) {
 
 func TestGenGenesisConfigPayload(t *testing.T) {
 	var genesisConf core.Genesis
-	genesisConf.SystemConfig.DepositRate = 0.02
+	genesisConf.SystemConfig.DepositRate = "0.02"
 
 	genesisConf.InitialParameters.MediatorInterval = 10
 
@@ -103,7 +110,7 @@ func TestSaveUnit(t *testing.T) {
 	auth.S = sig[32:64]
 	auth.V = sig[64:]
 	auth.Address = addr0
-	header.Authors = auth
+	header.Authors = *auth
 	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
 		"TestContractTpl", "./contract", "1.1.1", 1024,
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
@@ -112,7 +119,7 @@ func TestSaveUnit(t *testing.T) {
 		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
-	writeSet := []modules.PayloadMapStruct{
+	writeSet := []modules.ContractWriteSet{
 		{
 			Key:   "name",
 			Value: modules.ToPayloadMapValueBytes("Joe"),
@@ -129,7 +136,7 @@ func TestSaveUnit(t *testing.T) {
 		ContractId: []byte("contract0000"),
 		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,
-		WriteSet: []modules.PayloadMapStruct{
+		WriteSet: []modules.ContractWriteSet{
 			{
 				Key:   "name",
 				Value: modules.ToPayloadMapValueBytes("Alice"),
@@ -150,7 +157,8 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx1.TxHash = tx1.Hash()
+	t.Logf("Tx Hash:%s", tx1.Hash().String())
+	//tx1.TxHash = tx1.Hash()
 
 	tx2 := modules.Transaction{
 		TxMessages: []*modules.Message{
@@ -160,8 +168,8 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx2.TxHash = tx2.Hash()
-
+	//tx2.TxHash = tx2.Hash()
+	t.Logf("Tx Hash:%s", tx2.Hash().String())
 	tx3 := modules.Transaction{
 		TxMessages: []*modules.Message{
 			{
@@ -169,8 +177,8 @@ func TestSaveUnit(t *testing.T) {
 				Payload: invokePayload,
 			},
 		}}
-	tx3.TxHash = tx3.Hash()
-
+	//tx3.TxHash = tx3.Hash()
+	t.Logf("Tx Hash:%s", tx3.Hash().String())
 	txs := modules.Transactions{}
 	//txs = append(txs, &tx1)
 	txs = append(txs, &tx2)
@@ -182,7 +190,7 @@ func TestSaveUnit(t *testing.T) {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	if err := rep.SaveUnit(unit, true); err != nil {
+	if err := rep.SaveUnit(unit, nil, true, true); err != nil {
 		log.Println(err)
 	}
 }
@@ -283,12 +291,11 @@ func TestPaymentTransactionRLP(t *testing.T) {
 		Asset: &modules.Asset{
 			AssetId:  aid,
 			UniqueId: aid,
-			ChainId:  11,
 		},
 	}
 	payment := modules.PaymentPayload{
-		Input:    []*modules.Input{&txin},
-		Output:   []*modules.Output{&txout},
+		Inputs:   []*modules.Input{&txin},
+		Outputs:  []*modules.Output{&txout},
 		LockTime: 12,
 	}
 
@@ -300,7 +307,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 			},
 		},
 	}
-	tx2.TxHash = tx2.Hash()
+	//tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
 	b, _ := rlp.EncodeToBytes(tx2)
 	var tx modules.Transaction
@@ -344,10 +351,10 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 			},
 		},
 	}
-	tx1.TxHash = tx1.Hash()
+	//tx1.TxHash = tx1.Hash()
 
 	fmt.Println(">>>>>>>>  Original transaction:")
-	fmt.Println(">>>>>>>>  hash:", tx1.TxHash)
+	fmt.Println(">>>>>>>>  hash:", tx1.Hash())
 	for index, msg := range tx1.TxMessages {
 		fmt.Printf(">>>>>>>>  message[%d]:%v\n", index, msg)
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
@@ -362,7 +369,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 			fmt.Println("Decode tx error:", err.Error())
 		} else {
 			fmt.Println("======== Decode transaction:")
-			fmt.Println("======== hash:", txDecode.TxHash)
+			fmt.Println("======== hash:", txDecode.Hash())
 			for index, msg := range txDecode.TxMessages {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {
@@ -387,7 +394,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		Height:  rep.GenesisHeight(),
 		TxIndex: 0,
 	}})
-	writeSet := []modules.PayloadMapStruct{
+	writeSet := []modules.ContractWriteSet{
 		{
 			Key:   "name",
 			Value: []byte("Joe"),
@@ -399,16 +406,16 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	}
 	addr := common.Address{}
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
-	et := time.Duration(12)
+	//et := time.Duration(12)
 	deployPayload := modules.ContractDeployPayload{
-		TemplateId:   []byte("contract_template0000"),
-		ContractId:   []byte("contract0000"),
-		Name:         "testdeploy",
-		Args:         [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
-		Excutiontime: et,
-		Jury:         []common.Address{addr},
-		ReadSet:      readSet,
-		WriteSet:     writeSet,
+		TemplateId:    []byte("contract_template0000"),
+		ContractId:    []byte("contract0000"),
+		Name:          "testdeploy",
+		Args:          [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
+		//ExecutionTime: et,
+		Jury:          []common.Address{addr},
+		ReadSet:       readSet,
+		WriteSet:      writeSet,
 	}
 	tx1 := modules.Transaction{
 		TxMessages: []*modules.Message{
@@ -418,10 +425,10 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 			},
 		},
 	}
-	tx1.TxHash = tx1.Hash()
+	//tx1.TxHash = tx1.Hash()
 
 	fmt.Println(">>>>>>>>  Original transaction:")
-	fmt.Println(">>>>>>>>  hash:", tx1.TxHash)
+	fmt.Println(">>>>>>>>  hash:", tx1.Hash())
 	for index, msg := range tx1.TxMessages {
 		fmt.Printf(">>>>>>>>  message[%d]:%v\n", index, msg)
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
@@ -437,7 +444,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 			fmt.Println("Decode tx error:", err.Error())
 		} else {
 			fmt.Println("======== Decode transaction:")
-			fmt.Println("======== hash:", txDecode.TxHash)
+			fmt.Println("======== hash:", txDecode.Hash())
 			for index, msg := range txDecode.TxMessages {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {
@@ -448,7 +455,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 					} else {
 						fmt.Println(deployPayload.Name)
 						fmt.Println(deployPayload.ContractId)
-						fmt.Println(deployPayload.Excutiontime)
+						//fmt.Println(deployPayload.ExecutionTime)
 					}
 				}
 			}

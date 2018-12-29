@@ -85,14 +85,14 @@ type tester struct {
 
 func DevGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate: 0.02,
+		DepositRate: "0.02",
 	}
 
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
 		Version:                "0.6.0",
-		TokenAmount:            1000000000,
+		TokenAmount:            "1000000000",
 		TokenDecimal:           8,
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
@@ -101,7 +101,7 @@ func DevGenesisBlock() *core.Genesis {
 		InitialTimestamp:       gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultMediatorCount,
-			core.DefaultTokenHolder),
+			core.DefaultMediator),
 		SystemConfig: SystemConfig,
 	}
 }
@@ -122,7 +122,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		t.Fatalf("failed to create node: %v", err)
 	}
 	ptnConf := &ptn.Config{
-		Genesis:   DevGenesisBlock(),
+		Genesis: DevGenesisBlock(),
 		//Etherbase: common.HexToAddress(testAddress),
 	}
 
@@ -154,12 +154,12 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 
 	// modified by Albert·Gou
-	unit, err := gen.SetupGenesisUnit( ptnConf.Genesis, ks, account)
+	unit, err := gen.SetupGenesisUnit(ptnConf.Genesis, ks, account)
 	if err != nil {
 		fmt.Printf("Failed to write genesis unit: %v \n", err)
 		return nil
 	}
-	dag.SaveUnit4GenesisInit(unit)
+	dag.SaveUnit4GenesisInit(unit, nil)
 
 	err = dag.InitPropertyDB(ptnConf.Genesis, unit.UnitHash)
 	if err != nil {

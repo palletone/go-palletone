@@ -24,20 +24,29 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common/log"
+	"strconv"
 )
 
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
-	DepositRate float64 `json:"depositRate"`
+	//年利率
+	DepositRate string `json:"depositRate"`
 	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	FoundationAddress string `json:"foundationAddress"`
+	//保证金的数量
+	DepositAmountForMediator  string `json:"depositAmountForMediator"`
+	DepositAmountForJury      string `json:"depositAmountForJury"`
+	DepositAmountForDeveloper string `json:"depositAmountForDeveloper"`
+	//保证金周期
+	DepositPeriod string `json:"depositPeriod"`
 }
 
 type Genesis struct {
-	Version      string       `json:"version"`
-	Alias        string       `json:"alias"`
-	TokenAmount  uint64       `json:"tokenAmount"`
+	Version string `json:"version"`
+	Alias   string `json:"alias"`
+	//TokenAmount  uint64       `json:"tokenAmount"`
+	TokenAmount  string       `json:"tokenAmount"`
 	TokenDecimal uint32       `json:"tokenDecimal"`
 	DecimalUnit  string       `json:"decimal_unit"`
 	ChainID      uint64       `json:"chainId"`
@@ -49,18 +58,40 @@ type Genesis struct {
 	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`
 	InitialTimestamp          int64                    `json:"initialTimestamp"`
 	InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
-	InitialMediatorCandidates []*MediatorInfo          `json:"initialMediatorCandidates"`
+	InitialMediatorCandidates []*InitialMediator       `json:"initialMediatorCandidates"`
 }
 
 func (g *Genesis) GetTokenAmount() uint64 {
-	return g.TokenAmount
+	amount, err := strconv.ParseInt(g.TokenAmount, 10, 64)
+	if err != nil {
+		log.Error("genesis", "get token amount err:", err)
+		return uint64(0)
+	}
+	return uint64(amount)
 }
 
-type MediatorInfo struct {
-	Address     string
-	InitPartPub string
-	Node        string
-	//WebsiteUrl  string
+type MediatorInfoBase struct {
+	AddStr     string `json:"account"`
+	InitPubKey string `json:"initPubKey"`
+	Node       string `json:"node"`
+}
+
+func NewMediatorInfoBase() *MediatorInfoBase {
+	return &MediatorInfoBase{
+		AddStr:     "",
+		InitPubKey: "",
+		Node:       "",
+	}
+}
+
+type InitialMediator struct {
+	*MediatorInfoBase
+}
+
+func NewInitialMediator() *InitialMediator {
+	return &InitialMediator{
+		MediatorInfoBase: NewMediatorInfoBase(),
+	}
 }
 
 // author Albert·Gou
@@ -83,21 +114,12 @@ func PointToStr(pub kyber.Point) string {
 	return base58.Encode(pubB)
 }
 
-func (medInfo *MediatorInfo) InfoToMediator() Mediator {
-	// 1. 解析 mediator 账户地址
-	add := StrToMedAdd(medInfo.Address)
+// author Albert·Gou
+func CreateInitDKS() (secStr, pubStr string) {
+	sec, pub := GenInitPair()
 
-	// 2. 解析 mediator 的 DKS 初始公钥
-	pub := StrToPoint(medInfo.InitPartPub)
+	secStr = ScalarToStr(sec)
+	pubStr = PointToStr(pub)
 
-	// 3. 解析mediator 的 node 节点信息
-	node := StrToMedNode(medInfo.Node)
-
-	md := Mediator{
-		Address:     add,
-		InitPartPub: pub,
-		Node:        node,
-	}
-
-	return md
+	return
 }

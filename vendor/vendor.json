@@ -363,10 +363,10 @@
 			"revisionTime": "2016-01-25T20:49:56Z"
 		},
 		{
-			"checksumSHA1": "Ir3s/8Q+8qJ0leCGpeTd/lsNs5M=",
+			"checksumSHA1": "2+SnBjdg833EuBx5H4jxntcsi/s=",
 			"path": "github.com/golang/mock/gomock",
-			"revision": "22bbf0ddf08105dfa364d0a2fa619dfa71014af5",
-			"revisionTime": "2018-05-03T01:48:54Z"
+			"revision": "51421b967af1f557f93a59e0057aaf15ca02e29c",
+			"revisionTime": "2018-12-05T17:17:00Z"
 		},
 		{
 			"checksumSHA1": "yqF125xVSkmfLpIVGrLlfE05IUk=",
@@ -568,6 +568,12 @@
 			"revisionTime": "2018-05-15T20:40:05Z"
 		},
 		{
+			"checksumSHA1": "x/OWLjRC0cZiYtU+irn4XQFR/5A=",
+			"path": "github.com/martinlindhe/base36",
+			"revision": "5cda0030da1725952be91a1223090c4ecef8dfb2",
+			"revisionTime": "2018-07-29T04:29:28Z"
+		},
+		{
 			"checksumSHA1": "7hln62oZPZmyqEmgXaybf9WxQ7A=",
 			"path": "github.com/maruel/panicparse/stack",
 			"revision": "ad661195ed0e88491e0f14be6613304e3b1141d6",
@@ -748,6 +754,12 @@
 			"revisionTime": "2016-06-18T19:32:21Z"
 		},
 		{
+			"checksumSHA1": "etcUdlsnZXEYrw5vs6/tH6E37Wo=",
+			"path": "github.com/shopspring/decimal",
+			"revision": "cd690d0c9e2447b1ef2a129a6b7b49077da89b8e",
+			"revisionTime": "2018-07-09T20:31:17Z"
+		},
+		{
 			"checksumSHA1": "r7cX1z931ZHnJIbJXCHP7jwrBCQ=",
 			"path": "github.com/sirupsen/logrus",
 			"revision": "e54a77765aca7bbdd8e56c1c54f60579968b2dc9",
@@ -802,10 +814,10 @@
 			"revisionTime": "2017-07-05T02:17:15Z"
 		},
 		{
-			"checksumSHA1": "k13cCuMJO7+KhR8ZXx5oUqDKGQA=",
+			"checksumSHA1": "KRd3/Yyn3Kk0KOii9i8IUKx5ov8=",
 			"path": "github.com/syndtr/goleveldb/leveldb",
-			"revision": "ae970a0732be3a1f5311da86118d37b9f4bd2a5a",
-			"revisionTime": "2018-05-02T07:23:49Z"
+			"revision": "b001fa50d6b27f3f0bb175a87d0cb55426d0a0ae",
+			"revisionTime": "2018-11-28T10:09:59Z"
 		},
 		{
 			"checksumSHA1": "EKIow7XkgNdWvR/982ffIZxKG8Y=",

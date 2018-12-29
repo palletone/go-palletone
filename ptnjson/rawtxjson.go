@@ -1,3 +1,23 @@
+/*
+ *
+ *    This file is part of go-palletone.
+ *    go-palletone is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    go-palletone is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+ * /
+ *
+ *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @date 2018
+ *
+ */
+
 package ptnjson
 
 import (
@@ -5,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 )
 
 // TransactionInput represents the inputs to a transaction.  Specifically a
@@ -18,14 +39,18 @@ type TransactionInput struct {
 // CreateRawTransactionCmd defines the createrawtransaction JSON-RPC command.
 type CreateRawTransactionCmd struct {
 	Inputs   []TransactionInput
-	Amounts  map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
+	Amounts  []AddressAmt `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
 	LockTime *int64
+}
+type AddressAmt struct {
+	Address string          `json:"address"`
+	Amount  decimal.Decimal `json:"amount"`
 }
 
 // CreateVoteTransactionCmd defines the createrawtransaction JSON-RPC command.
 type CreateVoteTransactionCmd struct {
 	Inputs          []TransactionInput
-	Amounts         map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
+	Amounts         map[string]decimal.Decimal `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
 	LockTime        *int64
 	MediatorAddress string
 	ExpiredTerm     uint16
@@ -35,7 +60,7 @@ type CreateVoteTransactionCmd struct {
 // a createrawtransaction JSON-RPC command.
 //
 // Amounts are in BTC.
-func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
+func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts []AddressAmt,
 	lockTime *int64) *CreateRawTransactionCmd {
 
 	return &CreateRawTransactionCmd{
@@ -45,7 +70,7 @@ func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]fl
 	}
 }
 
-func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
+func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]decimal.Decimal,
 	lockTime *int64, mediatorAddress string, expiredTerm uint16) *CreateVoteTransactionCmd {
 
 	return &CreateVoteTransactionCmd{
@@ -57,6 +82,15 @@ func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]f
 	}
 }
 
+type CmdTransactionGenParams struct {
+	Address string `json:"address"`
+	Outputs []struct {
+		Address string          `json:"address"`
+		Amount  decimal.Decimal `json:"amount"`
+	} `json:"outputs"`
+	Locktime int64 `json:"locktime"`
+}
+
 type RawTransactionGenParams struct {
 	Inputs []struct {
 		Txid         string `json:"txid"`
@@ -64,8 +98,8 @@ type RawTransactionGenParams struct {
 		MessageIndex uint32 `json:"messageindex"`
 	} `json:"inputs"`
 	Outputs []struct {
-		Address string  `json:"address"`
-		Amount  float64 `json:"amount"`
+		Address string          `json:"address"`
+		Amount  decimal.Decimal `json:"amount"`
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
@@ -107,9 +141,6 @@ func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.Paymen
 	}
 
 	return pay, nil
-}
-func Ptn2Dao(ptnAmount float64) uint64 {
-	return uint64(ptnAmount * 100000000)
 }
 
 func ConvertRawTxJson2Tx(rawTxJson RawTransactionGenParams) *modules.Transaction {

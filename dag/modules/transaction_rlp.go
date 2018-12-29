@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -22,13 +23,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	vote2 "github.com/palletone/go-palletone/dag/vote"
 )
 
 type transactionTemp struct {
-	TxHash     common.Hash
-	TxMessages []messageTemp
+	TxMessages  []messageTemp
 }
 type messageTemp struct {
 	App  MessageType
@@ -40,33 +40,39 @@ func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
 	if err != nil {
 		return err
 	}
-	var txTemp transactionTemp
-	rlp.DecodeBytes(raw, &txTemp)
-	temp2Tx(txTemp, tx)
-	//fmt.Println("Use DecodeRLP")
-	return nil
+	txTemp := &transactionTemp{}
+	err = rlp.DecodeBytes(raw, txTemp)
+	if err != nil {
+		return err
+	}
+	return temp2Tx(txTemp, tx)
 }
 func (tx *Transaction) EncodeRLP(w io.Writer) error {
-	temp := tx2Temp(*tx)
-	//fmt.Println("Use EncodeRLP")
+	temp, err := tx2Temp(tx)
+	if err != nil {
+		return err
+	}
 	return rlp.Encode(w, temp)
 }
-func tx2Temp(tx Transaction) transactionTemp {
-	temp := transactionTemp{TxHash: tx.TxHash}
+func tx2Temp(tx *Transaction) (*transactionTemp, error) {
+	temp := &transactionTemp{}
 
 	for _, m := range tx.TxMessages {
-
 		m1 := messageTemp{
 			App: m.App,
 		}
-		m1.Data, _ = rlp.EncodeToBytes(m.Payload)
+		d, err := rlp.EncodeToBytes(m.Payload)
+		if err != nil {
+			return nil, err
+		}
+		m1.Data = d
+
 		temp.TxMessages = append(temp.TxMessages, m1)
 
 	}
-	return temp
+	return temp, nil
 }
-func temp2Tx(temp transactionTemp, tx *Transaction) {
-	tx.TxHash = temp.TxHash
+func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 
 	for _, m := range temp.TxMessages {
 		m1 := &Message{
@@ -74,37 +80,53 @@ func temp2Tx(temp transactionTemp, tx *Transaction) {
 		}
 		if m.App == APP_PAYMENT {
 			var pay PaymentPayload
-			rlp.DecodeBytes(m.Data, &pay)
+			err := rlp.DecodeBytes(m.Data, &pay)
+			if err != nil {
+				return err
+			}
 			m1.Payload = &pay
-
 		} else if m.App == APP_TEXT {
 			var text TextPayload
 			rlp.DecodeBytes(m.Data, &text)
 			m1.Payload = &text
-
+		} else if m.App == APP_CONTRACT_INVOKE_REQUEST {
+			var invokeReq ContractInvokeRequestPayload
+			rlp.DecodeBytes(m.Data, &invokeReq)
+			m1.Payload = &invokeReq
 		} else if m.App == APP_CONTRACT_INVOKE {
 			var invoke ContractInvokePayload
 			rlp.DecodeBytes(m.Data, &invoke)
 			m1.Payload = &invoke
-
 		} else if m.App == APP_CONTRACT_DEPLOY {
 			var deploy ContractDeployPayload
 			rlp.DecodeBytes(m.Data, &deploy)
 			m1.Payload = &deploy
-
 		} else if m.App == APP_CONFIG {
 			var conf ConfigPayload
 			rlp.DecodeBytes(m.Data, &conf)
 			m1.Payload = &conf
-
 		} else if m.App == APP_CONTRACT_TPL {
 			var tplPayload ContractTplPayload
 			rlp.DecodeBytes(m.Data, &tplPayload)
 			m1.Payload = &tplPayload
+		} else if m.App == APP_SIGNATURE {
+			var sigPayload SignaturePayload
+			rlp.DecodeBytes(m.Data, &sigPayload)
+			m1.Payload = &sigPayload
+		} else if m.App == APP_VOTE {
+			var vote vote2.VoteInfo
+			rlp.DecodeBytes(m.Data, &vote)
+			m1.Payload = &vote
+		} else if m.App == OP_MEDIATOR_CREATE {
+			var mediatorCreateOp MediatorCreateOperation
+			rlp.DecodeBytes(m.Data, &mediatorCreateOp)
+			m1.Payload = &mediatorCreateOp
 		} else {
 			fmt.Println("Unknown message app type:", m.App)
 		}
 		tx.TxMessages = append(tx.TxMessages, m1)
 
 	}
+	return nil
+
 }

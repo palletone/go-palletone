@@ -3919,15 +3919,17 @@ var outputPostFormatter = function(post){
 };
 
 var inputAddressFormatter = function (address) {
-    var iban = new Iban(address);
-    if (iban.isValid() && iban.isDirect()) {
-        return '0x' + iban.address();
-    } else if (utils.isStrictAddress(address)) {
-        return address;
-    } else if (utils.isAddress(address)) {
-        return '0x' + address;
-    }
-    throw new Error('invalid address');
+    //TODO check PalletOne address format.
+    return address
+    // var iban = new Iban(address);
+    // if (iban.isValid() && iban.isDirect()) {
+    //     return '0x' + iban.address();
+    // } else if (utils.isStrictAddress(address)) {
+    //     return address;
+    // } else if (utils.isAddress(address)) {
+    //     return '0x' + address;
+    // }
+    // throw new Error('invalid address');
 };
 
 
@@ -5208,7 +5210,7 @@ var transfer = require('../transfer');
 
 var blockCall = function (args) {
     return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? "ptn_getBlockByHash" : "ptn_getBlockByNumber";
-};
+}; 
 
 var transactionFromBlockCall = function (args) {
     return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'ptn_getTransactionByBlockHashAndIndex' : 'ptn_getTransactionByBlockNumberAndIndex';
@@ -5268,20 +5270,43 @@ Object.defineProperty(Ptn.prototype, 'defaultAccount', {
 
 var methods = function () {
 
-	  var forking = new Method({
-	      name: 'forking',
-	      call: 'ptn_forking',
-	      params: 1,
-	      inputFormatter: [null],
-	      outputFormatter: formatters.outputBigNumberFormatter
-	  });
+    var forking = new Method({
+        name: 'forking',
+        call: 'ptn_forking',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBigNumberFormatter
+    });
+
+    var getUnitByHash = new Method({
+        name: 'getUnitByHash',
+        call: 'ptn_getUnitByHash',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
+
+    var getUnitByNumber = new Method({
+        name: 'getUnitByNumber',
+        call: 'ptn_getUnitByNumber',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
+
+    var getPrefix = new Method({
+        name: 'getPrefix',
+        call: 'ptn_getPrefix',
+        params: 1,
+        inputFormatter: [null],
+        outputFormatter: formatters.outputBlockFormatter
+    });
 
     var getBalance = new Method({
         name: 'getBalance',
         call: 'ptn_getBalance',
-        params: 2,
-        inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter],
-        outputFormatter: formatters.outputBigNumberFormatter
+        params: 1,
+        inputFormatter: [null]
     });
 
     var getStorageAt = new Method({
@@ -5366,7 +5391,19 @@ var methods = function () {
         inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
         outputFormatter: utils.toDecimal
     });
-
+    var walletCreateTransaction = new Method({
+        name: 'walletCreateTransaction',
+        call: 'wallet_createRawTransaction',
+        params: 4,
+        inputFormatter: [null,null,null,null]
+    });
+    var cmdCreateTransaction = new Method({
+        name: 'cmdCreateTransaction',
+        call: 'ptn_cmdCreateTransaction',
+        params: 4,
+        inputFormatter: [null,null,null,null]
+    });
+    
     var createRawTransaction = new Method({
         name: 'createRawTransaction',
         call: 'ptn_createRawTransaction',
@@ -5374,23 +5411,29 @@ var methods = function () {
         inputFormatter: [null]
     });
 
-    var createVoteTransaction = new Method({
-        name: 'createVoteTransaction',
-        call: 'ptn_createVoteTransaction',
-        params: 1,
-        inputFormatter: [null]
+    var createMediatorVote = new Method({
+        name: 'createMediatorVote',
+        call: 'ptn_createMediatorVote',
+        params: 2,
     });
 
+    
     var signRawTransaction = new Method({
         name: 'signRawTransaction',
         call: 'ptn_signRawTransaction',
-        params: 1,
-        inputFormatter: [null]
+        params: 3,
+        inputFormatter: [null,null,null]
     });
-
+    
     var sendRawTransaction = new Method({
         name: 'sendRawTransaction',
         call: 'ptn_sendRawTransaction',
+        params: 1,
+        inputFormatter: [null]
+    });
+    var walletSendTransaction = new Method({
+        name: 'walletSendRawTransaction',
+        call: 'wallet_sendRawTransaction',
         params: 1,
         inputFormatter: [null]
     });
@@ -5559,36 +5602,78 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
+
     var getAllUtxos = new Method({
         name: 'getAllUtxos',
         call: 'ptn_getAllUtxos',
         params: 0,
         // inputFormatter: [null]
     });
-    var getAddrTxs = new Method({
-        name: 'getAddrTxs',
-        call: 'ptn_getAddrTxs',
+    var getAddrTransactions = new Method({
+        name: 'getAddrTransactions',
+        call: 'ptn_getAddrTransactions',
         params: 1,
         // inputFormatter: [null]
     });
     var getTokenInfo = new Method({
         name: 'getTokenInfo',
-        call: 'ptn_getTokenInfo',
+        call: 'dag_getTokenInfo',
         params: 1,
         // inputFormatter: [null]
     });
     var getAllTokenInfo = new Method({
         name: 'getAllTokenInfo',
-        call: 'ptn_getAllTokenInfo',
+        call: 'dag_getAllTokenInfo',
         params: 0,
         // inputFormatter: [null]
     });
-    var saveTokenInfo = new Method({
+    var saveTokenInfo = new Method({  
         name: 'saveTokenInfo',
-        call: 'ptn_saveTokenInfo',
-        params: 3,   
+        call: 'dag_saveTokenInfo',
+        params: 3,
         //inputFormatter: [null]
     });
+    var getCommon = new Method({
+        name: 'getCommon',
+        call: 'dag_getCommon',
+        params: 1,
+    });
+    var getCommonByPrefix = new Method({
+        name: 'getCommonByPrefix',
+        call: 'dag_getCommonByPrefix',
+        params: 1,
+    });
+    var getUnitTxsInfo = new Method({
+        name: 'getUnitTxsInfo', 
+        call: 'dag_getUnitTxsInfo',   
+        params: 1, 
+        // inputFormatter: [null]
+    });
+    var getUnitTxsHashHex = new Method({ 
+        name: 'getUnitTxsHashHex',
+        call: 'dag_getUnitTxsHashHex',  
+        params: 1,
+        // inputFormatter: [null]
+    }); 
+    var getTxByHash = new Method({     
+        name: 'getTxByHash', 
+        call: 'dag_getTxByHash',   
+        params: 1,  
+        // inputFormatter: [null]
+    });    
+    var getTxSearchEntry = new Method({     
+        name: 'getTxSearchEntry',  
+        call: 'dag_getTxSearchEntry',   
+        params: 1,  
+        // inputFormatter: [null]
+    }); 
+    var getTxPoolTxByHash = new Method({  
+        name: 'getTxPoolTxByHash',
+        call: 'ptn_getTxPoolTxByHash',  
+        params: 1,
+        // inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
+        // outputFormatter: utils.toDecimal
+    }); 
 
 
 // del ptn_getStorageAt
@@ -5607,13 +5692,6 @@ var methods = function () {
         inputFormatter: [null, null, null],
     });
 
-    var ccinvoke = new Method({
-        name: 'ccinvoke',
-        call: 'ptn_ccinvoke',
-        params: 3, //deployId string, txid string, args[]string------>["fun", "key", "value"]
-        inputFormatter: [null, null, null],
-    });
-
     var ccstop = new Method({
         name: 'ccstop',
         call: 'ptn_ccstop',
@@ -5622,7 +5700,10 @@ var methods = function () {
     });
 
     return [
-		    forking,
+        forking,
+        getUnitByHash,
+        getUnitByNumber,
+        getPrefix,
         getBalance,
         getStorageAt,
         getCode,
@@ -5631,14 +5712,18 @@ var methods = function () {
         getCompilers,
         getBlockTransactionCount,
         getBlockUncleCount,
+        getTxPoolTxByHash, 
         getTransaction,
         getTransactionFromBlock,
         getTransactionReceipt,
         getTransactionCount,
         call,
         estimateGas,
+        walletCreateTransaction,
+        walletSendTransaction,
+        cmdCreateTransaction,
         createRawTransaction,
-        createVoteTransaction,
+        createMediatorVote,
         signRawTransaction,
         sendRawTransaction,
         signTransaction,
@@ -5651,6 +5736,8 @@ var methods = function () {
         getWork,
         walletTokens,
         walletBalance,
+        getCommon,
+        getCommonByPrefix,
         getContract,
         getHeader,
         getUnit,
@@ -5666,14 +5753,18 @@ var methods = function () {
         getAddrOutpoints,
         getAddrUtxos,
         getAllUtxos,
-        getAddrTxs, 
+        getAddrTransactions,
         getAllTokenInfo,
         getTokenInfo,
         saveTokenInfo,
         ccinstall,
         ccdeploy,
-        ccinvoke,
         ccstop,
+        // createPayment,
+        getUnitTxsInfo,
+        getUnitTxsHashHex, 
+        getTxByHash, 
+        getTxSearchEntry,
     ];
 };
 
@@ -5792,7 +5883,7 @@ var properties = function () {
             outputFormatter: utils.toDecimal
         })
     ];
-};
+}; 
 
 module.exports = Net;
 
@@ -5873,7 +5964,7 @@ var methods = function () {
         name: 'unlockAccount',
         call: 'personal_unlockAccount',
         params: 3,
-        inputFormatter: [formatters.inputAddressFormatter, null, null]
+        inputFormatter: [null, null, null]
     });
 
     var sendTransaction = new Method({
@@ -5886,8 +5977,7 @@ var methods = function () {
     var lockAccount = new Method({
         name: 'lockAccount',
         call: 'personal_lockAccount',
-        params: 1,
-        inputFormatter: [formatters.inputAddressFormatter]
+        params: 1
     });
 
     return [

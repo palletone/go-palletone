@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -45,7 +46,7 @@ func TestGetUtxos(t *testing.T) {
 	utxo := new(modules.Utxo)
 	utxo.Amount = 10000000000000000
 
-	utxo.Asset = &modules.Asset{AssetId: modules.PTNCOIN, ChainId: 1}
+	utxo.Asset = &modules.Asset{AssetId: modules.PTNCOIN}
 	utxo.LockTime = 123
 
 	utxodb.SaveUtxoEntity(key, utxo)
@@ -56,7 +57,7 @@ func TestGetUtxos(t *testing.T) {
 		utxodb.logger.Debugf("key:%s", key.ToKey())
 		utxodb.logger.Debugf("utxo value:%s", u)
 	}
-	result := utxodb.GetPrefix(modules.UTXO_PREFIX)
+	result := utxodb.GetPrefix(constants.UTXO_PREFIX)
 	for key, b := range result {
 		utxodb.logger.Debugf("result::%s", key)
 		utxo := new(modules.Utxo)
@@ -66,7 +67,7 @@ func TestGetUtxos(t *testing.T) {
 		}
 	}
 
-	result1 := utxodb.GetPrefix(modules.AddrOutPoint_Prefix)
+	result1 := utxodb.GetPrefix(constants.AddrOutPoint_Prefix)
 	for key, b := range result1 {
 		utxodb.logger.Debugf("result:", key)
 		out := new(modules.OutPoint)

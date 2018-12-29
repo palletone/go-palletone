@@ -21,8 +21,8 @@ package shim
 
 import (
 	"github.com/golang/protobuf/ptypes/timestamp"
-
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // Chaincode interface must be implemented by all chaincodes. The runs
@@ -113,6 +113,56 @@ type ChaincodeStubInterface interface {
 	// the ledger when the transaction is validated and successfully committed.
 	DelState(key string) error
 
+	// GetTxTimestamp returns the timestamp when the transaction was created. This
+	// is taken from the transaction ChannelHeader, therefore it will indicate the
+	// client's timestamp and will have the same value across all endorsers.
+	GetTxTimestamp() (*timestamp.Timestamp, error)
+
+	// SetEvent allows the chaincode to set an event on the response to the
+	// proposal to be included as part of a transaction. The event will be
+	// available within the transaction in the committed block regardless of the
+	// validity of the transaction.
+	SetEvent(name string, payload []byte) error
+
+	//获取合约的一些配置参数
+	GetSystemConfig(filed string) (value string, err error)
+	//获取支付合约的 from 地址
+	GetInvokeAddress() (addr string, err error)
+	//获取支付ptn数量
+	GetInvokeTokens() (invokeTokens *modules.InvokeTokens, err error)
+	//获取所有的世界状态
+	GetContractAllState() (states map[string]*modules.ContractStateValue, err error)
+	//获取调用合约所支付的PTN手续费
+	GetInvokeFees() (invokeFees *modules.InvokeFees, err error)
+	//获得某地址的Token余额
+	//如果地址为空则表示当前合约
+	//如果token为空则表示查询所有Token余额
+	GetTokenBalance(address string, token *modules.Asset) ([]*modules.InvokeTokens, error)
+	//将合约上锁定的某种Token支付出去
+	PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error
+	//获取invoke参数，包括invokeAddr,tokens,fee,funcName,params
+	GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error)
+	//定义并发行一种全新的Token
+	DefineToken(tokenType byte, define []byte, creator string) error
+	//增发一种之前已经定义好的Token
+	//如果是ERC20增发，则uniqueId为空，如果是ERC721增发，则必须指定唯一的uniqueId
+	SupplyToken(assetId []byte, uniqueId []byte, amt uint64, creator string) error
+	//获取申请退保证金列表
+	GetListForCashback() ([]*modules.Cashback, error)
+	//获取申请没收保证金列表
+	GetListForForfeiture() ([]*modules.Forfeiture, error)
+	//获取保证金账户信息
+	GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error)
+	//获取候选列表
+	GetCandidateList(role string) ([]string, error)
+	//获取mediator申请加入列表
+	GetBecomeMediatorApplyList() ([]*modules.MediatorInfo, error)
+	//获取同意mediator申请加入列表
+	GetAgreeForBecomeMediatorList() ([]*modules.MediatorInfo, error)
+	//获取 mediator 申请退出列表
+	GetQuitMediatorApplyList() ([]*modules.MediatorInfo, error)
+	//获取mediator 候选列表
+	GetCandidateListForMediator() ([]*modules.MediatorInfo, error)
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).
@@ -122,7 +172,8 @@ type ChaincodeStubInterface interface {
 	// Call Close() on the returned StateQueryIteratorInterface object when done.
 	// The query is re-executed during validation phase to ensure result set
 	// has not changed since transaction endorsement (phantom reads detected).
-	GetStateByRange(startKey, endKey string) (StateQueryIteratorInterface, error)
+	//TODO
+	//GetStateByRange(startKey, endKey string) (StateQueryIteratorInterface, error)
 
 	// GetStateByPartialCompositeKey queries the state in the ledger based on
 	// a given partial composite key. This function returns an iterator
@@ -134,20 +185,23 @@ type ChaincodeStubInterface interface {
 	// Call Close() on the returned StateQueryIteratorInterface object when done.
 	// The query is re-executed during validation phase to ensure result set
 	// has not changed since transaction endorsement (phantom reads detected).
-	GetStateByPartialCompositeKey(objectType string, keys []string) (StateQueryIteratorInterface, error)
+	//TODO
+	//GetStateByPartialCompositeKey(objectType string, keys []string) (StateQueryIteratorInterface, error)
 
 	// CreateCompositeKey combines the given `attributes` to form a composite
 	// key. The objectType and attributes are expected to have only valid utf8
 	// strings and should not contain U+0000 (nil byte) and U+10FFFF
 	// (biggest and unallocated code point).
 	// The resulting composite key can be used as the key in PutState().
-	CreateCompositeKey(objectType string, attributes []string) (string, error)
+	//TODO
+	//CreateCompositeKey(objectType string, attributes []string) (string, error)
 
 	// SplitCompositeKey splits the specified key into attributes on which the
 	// composite key was formed. Composite keys found during range queries
 	// or partial composite key queries can therefore be split into their
 	// composite parts.
-	SplitCompositeKey(compositeKey string) (string, []string, error)
+	//TODO
+	//SplitCompositeKey(compositeKey string) (string, []string, error)
 
 	// GetQueryResult performs a "rich" query against a state database. It is
 	// only supported for state databases that support rich query,
@@ -160,7 +214,8 @@ type ChaincodeStubInterface interface {
 	// be detected at validation/commit time.  Applications susceptible to this
 	// should therefore not use GetQueryResult as part of transactions that update
 	// ledger, and should limit use to read-only chaincode operations.
-	GetQueryResult(query string) (StateQueryIteratorInterface, error)
+	//TODO
+	//GetQueryResult(query string) (StateQueryIteratorInterface, error)
 
 	// GetHistoryForKey returns a history of key values across time.
 	// For each historic key update, the historic value and associated
@@ -179,7 +234,8 @@ type ChaincodeStubInterface interface {
 	// GetCreator returns `SignatureHeader.Creator` (e.g. an identity)
 	// of the `SignedProposal`. This is the identity of the agent (or user)
 	// submitting the transaction.
-	GetCreator() ([]byte, error)
+	//TODO
+	//GetCreator() ([]byte, error)
 
 	// GetTransient returns the `ChaincodeProposalPayload.Transient` field.
 	// It is a map that contains data (e.g. cryptographic material)
@@ -187,70 +243,49 @@ type ChaincodeStubInterface interface {
 	// confidentiality. The contents of this field, as prescribed by
 	// `ChaincodeProposalPayload`, are supposed to always
 	// be omitted from the transaction and excluded from the ledger.
-	GetTransient() (map[string][]byte, error)
+	//TODO
+	//GetTransient() (map[string][]byte, error)
 
 	// GetBinding returns the transaction binding, which is used to enforce a
 	// link between application data (like those stored in the transient field
 	// above) to the proposal itself. This is useful to avoid possible replay
 	// attacks.
-	GetBinding() ([]byte, error)
+	//TODO
+	//GetBinding() ([]byte, error)
 
 	// GetDecorations returns additional data (if applicable) about the proposal
 	// that originated from the peer. This data is set by the decorators of the
 	// peer, which append or mutate the chaincode input passed to the chaincode.
-	GetDecorations() map[string][]byte
+	//TODO
+	//GetDecorations() map[string][]byte
 
 	// GetSignedProposal returns the SignedProposal object, which contains all
 	// data elements part of a transaction proposal.
-	GetSignedProposal() (*pb.SignedProposal, error)
-
-	// GetTxTimestamp returns the timestamp when the transaction was created. This
-	// is taken from the transaction ChannelHeader, therefore it will indicate the
-	// client's timestamp and will have the same value across all endorsers.
-	GetTxTimestamp() (*timestamp.Timestamp, error)
-
-	// SetEvent allows the chaincode to set an event on the response to the
-	// proposal to be included as part of a transaction. The event will be
-	// available within the transaction in the committed block regardless of the
-	// validity of the transaction.
-	SetEvent(name string, payload []byte) error
-
-	//合约接口
-	ContractInterface
-}
-
-type ContractInterface interface {
-	//TODO xiaozhi
-	//获取保证金合约的一些配置参数
-	GetDepositConfig() ([]byte, error)
-	//获取支付保证金节点的地址
-	GetPayToContractAddr() ([]byte, error)
-	//获取支付保证金数量
-	GetPayToContractTokens() ([]byte, error)
-	//
+	//TODO
+	//GetSignedProposal() (*pb.SignedProposal, error)
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result
 // to be fetched from an iterator and close it when done.
-type CommonIteratorInterface interface {
-	// HasNext returns true if the range query iterator contains additional keys
-	// and values.
-	HasNext() bool
+//type CommonIteratorInterface interface {
+// HasNext returns true if the range query iterator contains additional keys
+// and values.
+//HasNext() bool
 
-	// Close closes the iterator. This should be called when done
-	// reading from the iterator to free up resources.
-	Close() error
-}
+// Close closes the iterator. This should be called when done
+// reading from the iterator to free up resources.
+//Close() error
+//}
 
 // StateQueryIteratorInterface allows a chaincode to iterate over a set of
 // key/value pairs returned by range and execute query.
-type StateQueryIteratorInterface interface {
-	// Inherit HasNext() and Close()
-	CommonIteratorInterface
+//type StateQueryIteratorInterface interface {
+// Inherit HasNext() and Close()
+//CommonIteratorInterface
 
-	// Next returns the next key and value in the range and execute query iterator.
-	//Next() (*queryresult.KV, error)
-}
+// Next returns the next key and value in the range and execute query iterator.
+//Next() (*queryresult.KV, error)
+//}
 
 // HistoryQueryIteratorInterface allows a chaincode to iterate over a set of
 // key/value pairs returned by a history query.
@@ -266,6 +301,6 @@ type StateQueryIteratorInterface interface {
 // key/value pairs returned by range query.
 // TODO: Once the execute query and history query are implemented in MockStub,
 // we need to update this interface
-type MockQueryIteratorInterface interface {
-	StateQueryIteratorInterface
-}
+//type MockQueryIteratorInterface interface {
+//	StateQueryIteratorInterface
+//}

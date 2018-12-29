@@ -22,13 +22,13 @@ package modules
 import (
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 )
 
 // Mediator调度顺序结构体
 type MediatorSchedule struct {
-	CurrentShuffledMediators []core.Mediator
+	CurrentShuffledMediators []common.Address
 }
 
 func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
@@ -41,45 +41,43 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 	}
 
 	// Create witness scheduler
-	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Address, aSize, aSize)
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {
-		med := gp.GetActiveMediator(add)
-		ms.CurrentShuffledMediators[i] = *med
+		ms.CurrentShuffledMediators[i] = add
 	}
 
-	//	ms.UpdateMediatorSchedule(gp, dgp)
+	ms.UpdateMediatorSchedule(gp, dgp)
 
 	return ms
 }
 
 func NewMediatorSchl() *MediatorSchedule {
 	return &MediatorSchedule{
-		CurrentShuffledMediators: []core.Mediator{},
+		CurrentShuffledMediators: []common.Address{},
 	}
 }
 
 // 洗牌算法，更新mediator的调度顺序
-func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) {
+func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *DynamicGlobalProperty) bool {
 	aSize := uint64(len(gp.ActiveMediators))
 	if aSize == 0 {
 		log.Error("The current number of active mediators is 0!")
-		return
+		return false
 	}
 
 	// 1. 判断是否到达洗牌时刻
 	if dgp.HeadUnitNum%aSize != 0 {
-		return
+		return false
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-	ms.CurrentShuffledMediators = make([]core.Mediator, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Address, aSize, aSize)
 
 	// 3. 初始化数据
 	meds := gp.GetActiveMediators()
 	for i, add := range meds {
-		med := gp.GetActiveMediator(add)
-		ms.CurrentShuffledMediators[i] = *med
+		ms.CurrentShuffledMediators[i] = add
 	}
 
 	// 4. 打乱证人的调度顺序
@@ -100,6 +98,8 @@ func (ms *MediatorSchedule) UpdateMediatorSchedule(gp *GlobalProperty, dgp *Dyna
 		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
 			ms.CurrentShuffledMediators[j], ms.CurrentShuffledMediators[i]
 	}
+
+	return true
 }
 
 /**
@@ -113,25 +113,25 @@ slotNum always corresponds to a time in the future.
 If slotNum == 1, return the next scheduled mediator.
 
 如果slotNum == 2，则返回下下一个调度Mediator。
-If slotNum == 2, return the next scheduled mediator after 1 verified uint gap.
+If slotNum == 2, return the next scheduled mediator after 1 uint gap.
 */
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) *core.Mediator {
+func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) common.Address {
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	csmLen := len(ms.CurrentShuffledMediators)
 	if csmLen == 0 {
 		log.Error("The current number of shuffled mediators is 0!")
-		return nil
+		return common.Address{}
 	}
 
 	// 由于创世单元不是有mediator生产，所以这里需要减1
 	index := (currentASlot - 1) % uint64(csmLen)
-	return &ms.CurrentShuffledMediators[index]
+	return ms.CurrentShuffledMediators[index]
 }
 
 /**
 计算在过去的128个见证单元生产slots中miss的百分比，不包括当前验证单元。
-Calculate the percent of verifiedUnit production slots that were missed in the past 128 verifiedUnits,
-not including the current verifiedUnit.
+Calculate the percent of unit production slots that were missed in the past 128 units,
+not including the current unit.
 */
 //func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
 //	return dgp.RecentSlotsFilled / 128.0
@@ -144,7 +144,7 @@ Get the time at which the given slot occurs.
 如果slotNum == 0，则返回time.Unix(0,0)。
 If slotNum == 0, return time.Unix(0,0).
 
-如果slotNum == N 且 N > 0，则返回大于verifiedUnitTime的第N个单元验证间隔的对齐时间
+如果slotNum == N 且 N > 0，则返回大于UnitTime的第N个单元验证间隔的对齐时间
 If slotNum == N for N > 0, return the Nth next unit-interval-aligned time greater than head_block_time().
 */
 func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32) time.Time {
@@ -158,16 +158,16 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	if dgp.HeadUnitNum == 0 {
 		/**
 		注：第一个验证单元在genesisTime加上一个验证单元间隔
-		n.b. first verifiedUnit is at genesisTime plus one verifiedUnitInterval
+		n.b. first Unit is at genesisTime plus one UnitInterval
 		*/
 		genesisTime := dgp.HeadUnitTime
 		return time.Unix(genesisTime+int64(slotNum)*int64(interval), 0)
 	}
 
 	// 最近的验证单元的绝对slot
-	var verifiedUnitAbsSlot = dgp.HeadUnitTime / int64(interval)
+	var unitAbsSlot = dgp.HeadUnitTime / int64(interval)
 	// 最近的时间槽起始时间
-	verifiedUnitSlotTime := time.Unix(verifiedUnitAbsSlot*int64(interval), 0)
+	unitSlotTime := time.Unix(unitAbsSlot*int64(interval), 0)
 
 	// 在此处添加区块链网络参数修改维护的所需要的slot
 
@@ -175,10 +175,10 @@ func GetSlotTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, slotNum uint32)
 	如果是维护周期的话，加上维护间隔时间
 	如果不是，就直接加上验证单元的slot时间
 	*/
-	// "slot 1" is verifiedUnitSlotTime,
-	// plus maintenance interval if last uint is a maintenance verifiedUnit
-	// plus verifiedUnit interval if last uint is not a maintenance verifiedUnit
-	return verifiedUnitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
+	// "slot 1" is UnitSlotTime,
+	// plus maintenance interval if last uint is a maintenance Unit
+	// plus Unit interval if last uint is not a maintenance Unit
+	return unitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
 }
 
 /**
@@ -205,15 +205,14 @@ func GetSlotAtTime(gp *GlobalProperty, dgp *DynamicGlobalProperty, when time.Tim
 	return uint32(diffSecs/interval) + 1
 }
 
-// UpdateGlobalDynProp, update global dynamic data
+// UpdateDynGlobalProp, update global dynamic data
 // @author Albert·Gou
-func (dgp *DynamicGlobalProperty) UpdateGlobalDynProp(gp *GlobalProperty, unit *Unit, missedUnits uint64) {
-	timestamp := unit.UnitHeader.Creationdate
-
-	dgp.HeadUnitNum = unit.UnitHeader.Number.Index
-	dgp.HeadUnitHash = unit.UnitHash
-	dgp.HeadUnitTime = timestamp
+func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits uint64) {
+	dgp.HeadUnitNum = unit.NumberU64()
+	dgp.HeadUnitHash = unit.Hash()
+	dgp.HeadUnitTime = unit.Timestamp()
 
 	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
+
 }

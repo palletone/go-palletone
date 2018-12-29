@@ -20,18 +20,19 @@ package ptnapi
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/ptnjson"
-	//"github.com/palletone/go-palletone/dag/coredata"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"time"
+	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/shopspring/decimal"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -62,6 +63,8 @@ type Backend interface {
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
+	GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error)
+
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (pending int, queued int)
 	TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
@@ -77,49 +80,64 @@ type Backend interface {
 	WalletTokens(address string) (map[string]*modules.AccountToken, error)
 	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
+	// dag's get common
+	GetCommon(key []byte) ([]byte, error)
+	GetCommonByPrefix(prefix []byte) map[string][]byte
 	// Get Contract Api
-	GetContract(id common.Address) (*modules.Contract, error)
+	GetContract(hex_id string) (*modules.Contract, error)
 
-	// Get Header
-	GetHeader(hash common.Hash, index uint64) (*modules.Header, error)
+	//get level db
+	GetUnitByHash(hash common.Hash) *modules.Unit
+	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
+	GetHeaderByHash(hash common.Hash) *modules.Header
+	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
 
-	// Get Unit
-	GetUnit(hash common.Hash) *modules.Unit
+	// get transaction interface
+	GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error)
+	GetUnitTxsHashHex(hash common.Hash) ([]string, error)
+	GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson, error)
+	GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error)
 
-	// Get UnitNumber
-	GetUnitNumber(hash common.Hash) uint64
-
-	// GetCanonicalHash
-	GetCanonicalHash(number uint64) (common.Hash, error)
-
-	// Get state
-	GetHeadHeaderHash() (common.Hash, error)
-
-	GetHeadUnitHash() (common.Hash, error)
-
-	GetHeadFastUnitHash() (common.Hash, error)
-
-	GetTrieSyncProgress() (uint64, error)
+	//TODO wangjiyou
+	GetPrefix(prefix string) map[string][]byte //getprefix
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
-
+	QueryDbByKey(key []byte) *ptnjson.DbRowJson
+	QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
-	GetAddrUtxos(addr string) ([]ptnjson.UtxoJson, error)
-	GetAllUtxos() ([]ptnjson.UtxoJson, error)
+	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
+	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 
 	/* ---------------------save token info ------------------------*/
-	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
+	SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
 
-	GetAddrTransactions(addr string) (modules.Transactions, error)
+	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
-	GetTokenInfo(key []byte) (*ptnjson.TokenInfoJson, error)
+	GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
-	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	ContractInvoke(txBytes []byte) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
+	DecodeTx(hex string) (string, error)
+	EncodeTx(jsonStr string) (string, error)
+
+	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error)
+	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error)
+	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error)
+
+	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+
+	//Dag() dag.IDag
+	//SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
+	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error)
+
+	// get tx hash by req id
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
@@ -128,7 +146,7 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 		{
 			Namespace: "ptn",
 			Version:   "1.0",
-			Service:   NewPublicEthereumAPI(apiBackend),
+			Service:   NewPublicPalletOneAPI(apiBackend),
 			Public:    true,
 		}, {
 			Namespace: "ptn",
@@ -165,9 +183,14 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Service:   NewPrivateAccountAPI(apiBackend, nonceLock),
 			Public:    false,
 		}, {
-			Namespace: "ptn",
-			Version:   "1.0",
+			Namespace: "dag",
+			Version:   "2.0",
 			Service:   NewPublicDagAPI(apiBackend),
+			Public:    true,
+		}, {
+			Namespace: "wallet",
+			Version:   "1.0",
+			Service:   NewPublicWalletAPI(apiBackend),
 			Public:    true,
 		},
 	}

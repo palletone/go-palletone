@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -19,8 +20,8 @@
 package modules
 
 import (
-	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -29,28 +30,29 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 )
 
 var (
-	TXFEE      = big.NewInt(5000000) // transaction fee =5ptn
+	TXFEE      = big.NewInt(100000000) // transaction fee =1ptn
 	TX_MAXSIZE = uint32(256 * 1024)
 )
 
 // TxOut defines a bitcoin transaction output.
 type TxOut struct {
-	Value    int64
-	PkScript []byte
-	Asset    *Asset
+	Value    int64  `json:"value"`
+	PkScript []byte `json:"pk_script"`
+	Asset    *Asset `json:"asset_info"`
 }
 
 // TxIn defines a bitcoin transaction input.
 type TxIn struct {
-	PreviousOutPoint *OutPoint
-	SignatureScript  []byte
-	Sequence         uint32
+	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
+	SignatureScript  []byte    `json:"signature_script"`
+	Sequence         uint32    `json:"sequence"`
 }
 
 func NewTransaction(msg []*Message) *Transaction {
@@ -66,83 +68,24 @@ func newTransaction(msg []*Message) *Transaction {
 	for _, m := range msg {
 		tx.TxMessages = append(tx.TxMessages, m)
 	}
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = tx.Hash()
 
 	return tx
 }
 
 // AddTxIn adds a transaction input to the message.
-func (tx *Transaction) AddMessage(me *Message) {
-	tx.TxMessages = append(tx.TxMessages, me)
+func (tx *Transaction) AddMessage(msg *Message) {
+	tx.TxMessages = append(tx.TxMessages, msg)
 }
 
 // AddTxIn adds a transaction input to the message.
 func (pld *PaymentPayload) AddTxIn(ti *Input) {
-	pld.Input = append(pld.Input, ti)
+	pld.Inputs = append(pld.Inputs, ti)
 }
 
 // AddTxOut adds a transaction output to the message.
 func (pld *PaymentPayload) AddTxOut(to *Output) {
-	pld.Output = append(pld.Output, to)
-}
-
-func (t *Transaction) SetHash(hash common.Hash) {
-	if t.TxHash == (common.Hash{}) {
-		t.TxHash = hash
-	} else {
-		t.TxHash.Set(hash)
-	}
-}
-
-func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
-	return &PaymentPayload{
-		Input:    inputs,
-		Output:   outputs,
-		LockTime: defaultTxInOutAlloc,
-	}
-}
-
-func NewContractTplPayload(templateId []byte, name string, path string, version string, memory uint16, bytecode []byte) *ContractTplPayload {
-	return &ContractTplPayload{
-		TemplateId: templateId,
-		Name:       name,
-		Path:       path,
-		Version:    version,
-		Memory:     memory,
-		Bytecode:   bytecode,
-	}
-}
-
-func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte, excutiontime time.Duration,
-	jury []common.Address, readset []ContractReadSet, writeset []PayloadMapStruct) *ContractDeployPayload {
-	return &ContractDeployPayload{
-		TemplateId:   templateid,
-		ContractId:   contractid,
-		Name:         name,
-		Args:         args,
-		Excutiontime: excutiontime,
-		Jury:         jury,
-		ReadSet:      readset,
-		WriteSet:     writeset,
-	}
-}
-func NewVotePayload(Address []byte, ExpiredTerm uint16) *VotePayload {
-	return &VotePayload{
-		Address:     Address,
-		ExpiredTerm: ExpiredTerm,
-	}
-}
-
-func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
-	readset []ContractReadSet, writeset []PayloadMapStruct, payload []byte) *ContractInvokePayload {
-	return &ContractInvokePayload{
-		ContractId:   contractid,
-		Args:         args,
-		Excutiontime: excutiontime,
-		ReadSet:      readset,
-		WriteSet:     writeset,
-		Payload:      payload,
-	}
+	pld.Outputs = append(pld.Outputs, to)
 }
 
 type TxPoolTransaction struct {
@@ -154,7 +97,9 @@ type TxPoolTransaction struct {
 	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
-	Index        int `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
+	RemStatus    bool        // will remove txspool
+	TxFee        *InvokeFees `json:"tx_fee"`
+	Index        int         `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
 }
 
@@ -209,7 +154,7 @@ func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 		return tx.Priority_lvl
 	}
 	var priority_lvl float64
-	if txfee := tx.Tx.Fee(); txfee.Int64() > 0 {
+	if txfee := tx.GetTxFee(); txfee.Int64() > 0 {
 		// t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
 		if tx.CreationDate.Unix() <= 0 {
 			tx.CreationDate = time.Now()
@@ -222,24 +167,65 @@ func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
 	tx.Priority_lvl = priority
 }
+func (tx *TxPoolTransaction) GetTxFee() *big.Int {
+	var fee uint64
+	if tx.TxFee != nil {
+		fee = tx.TxFee.Amount
+	} else {
+		fee = 20 // 20dao
+	}
+	return big.NewInt(int64(fee))
+}
 
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-	if tx.TxHash != (common.Hash{}) {
-		return tx.TxHash
-	}
+	//	b, err := json.Marshal(tx)
+	//	if err != nil {
+	//		log.Error("json marshal error", "error", err)
+	//		return common.Hash{}
+	//	}
+	//	v := rlp.RlpHash(b[:])
+	//	return v
+	//}
+	//func (tx *Transaction) Hash_old() common.Hash {
+
 	v := rlp.RlpHash(tx)
-	tx.TxHash = v
 	return v
+}
+
+func (tx *Transaction) RequestHash() common.Hash {
+	req := &Transaction{}
+	for _, msg := range tx.TxMessages {
+		req.AddMessage(msg)
+		if msg.App >= APP_CONTRACT_TPL_REQUEST { //100以上的APPCode是请求
+			break
+		}
+	}
+	//b, err := json.Marshal(req)
+	//if err != nil {
+	//	log.Error("json marshal error", "error", err)
+	//	return common.Hash{}
+	//}
+	return rlp.RlpHash(req)
+}
+
+func (tx *Transaction) Messages() []*Message {
+	msgs := make([]*Message, 0)
+	for _, msg := range tx.TxMessages {
+		msgs = append(msgs, msg)
+	}
+	return msgs
 }
 
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
-	c := writeCounter(0)
-	rlp.Encode(&c, &tx)
-	return common.StorageSize(c)
+	//c := WriteCounter(0)
+	//rlp.Encode(&c, &tx)
+	//return common.StorageSize(c)
+
+	return CalcDateSize(tx)
 }
 
 func (tx *Transaction) CreateDate() string {
@@ -247,21 +233,28 @@ func (tx *Transaction) CreateDate() string {
 	return n.Format(TimeFormatString)
 }
 
-func (tx *Transaction) Fee() *big.Int {
-	return TXFEE
-}
+// address return the tx's original address  of from and to
+func (tx *Transaction) GetAddressInfo() ([]*OutPoint, [][]byte) {
+	froms := make([]*OutPoint, 0)
+	tos := make([][]byte, 0)
+	if len(tx.Messages()) > 0 {
+		msg := tx.Messages()[0]
+		if msg.App == APP_PAYMENT {
+			payment, ok := msg.Payload.(*PaymentPayload)
+			if ok {
+				for _, input := range payment.Inputs {
+					if input.PreviousOutPoint != nil {
+						froms = append(froms, input.PreviousOutPoint)
+					}
+				}
 
-func (tx *Transaction) Address() common.Address {
-	return common.Address{}
-}
-
-// Cost returns amount + price
-func (tx *Transaction) Cost() *big.Int {
-	//if tx.TxFee.Cmp(TXFEE) < 0 {
-	//	tx.TxFee = TXFEE
-	//}
-	//return tx.TxFee
-	return TXFEE
+				for _, out := range payment.Outputs {
+					tos = append(tos, out.PkScript[:])
+				}
+			}
+		}
+	}
+	return froms, tos
 }
 
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
@@ -282,7 +275,13 @@ func (s Transactions) GetRlp(i int) []byte {
 	return enc
 }
 func (s Transactions) Hash() common.Hash {
-	v := rlp.RlpHash(s)
+	b, err := json.Marshal(s)
+	if err != nil {
+		log.Error("json marshal error", "error", err)
+		return common.Hash{}
+	}
+
+	v := rlp.RlpHash(b[:])
 	return v
 }
 
@@ -352,11 +351,17 @@ func (s *TxByPriority) Pop() interface{} {
 //
 // NOTE: In a future PR this will be removed.
 
-type writeCounter common.StorageSize
+type WriteCounter common.StorageSize
 
-func (c *writeCounter) Write(b []byte) (int, error) {
-	*c += writeCounter(len(b))
+func (c *WriteCounter) Write(b []byte) (int, error) {
+	*c += WriteCounter(len(b))
 	return len(b), nil
+}
+
+func CalcDateSize(data interface{}) common.StorageSize {
+	c := WriteCounter(0)
+	rlp.Encode(&c, data)
+	return common.StorageSize(c)
 }
 
 var (
@@ -364,20 +369,26 @@ var (
 )
 
 type TxLookupEntry struct {
-	UnitHash  common.Hash
-	UnitIndex uint64
-	Index     uint64
+	UnitHash  common.Hash `json:"unit_hash"`
+	UnitIndex uint64      `json:"unit_index"`
+	Index     uint64      `json:"index"`
 }
 type Transactions []*Transaction
 type Transaction struct {
-	TxHash     common.Hash `json:"txhash"`
-	TxMessages []*Message  `json:"messages"`
+	TxMessages []*Message `json:"messages"`
+}
+
+//增发的利息
+type Addition struct {
+	//Addr   common.Address
+	Asset  Asset
+	Amount uint64
 }
 
 type OutPoint struct {
-	TxHash       common.Hash // reference Utxo struct key field
-	MessageIndex uint32      // message index in transaction
-	OutIndex     uint32
+	TxHash       common.Hash `json:"txhash"`        // reference Utxo struct key field
+	MessageIndex uint32      `json:"message_index"` // message index in transaction
+	OutIndex     uint32      `json:"out_index"`
 }
 
 func (outpoint *OutPoint) String() string {
@@ -392,52 +403,6 @@ func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPo
 	}
 }
 
-// key: message.UnitHash(message+timestamp)
-//type Message struct {
-//	App     string      `json:"app"`     // message type
-//	Payload interface{} `json:"payload"` // the true transaction data
-//}
-/************************** Payload Details ******************************************/
-//type PayloadMapStruct struct {
-//
-//	Key   string
-//	Value interface{}
-//}
-// Token exchange message and verify message
-// App: payment
-//type PaymentPayload struct {
-//	Input  []*Input  `json:"inputs"`
-//	Output []*Output `json:"outputs"`
-//	LockTime uint32  `json:"lock_time"`
-//}
-// NewTxOut returns a new bitcoin transaction output with the provided
-// transaction value and public key script.
-//func NewTxOut(value uint64, pkScript []byte,asset Asset) *Output {
-//	return &Output{
-//		Value:    value,
-//		PkScript: pkScript,
-//		Asset : asset,
-//	}
-//}
-//type Output struct {
-//	Value    uint64
-//	PkScript []byte
-//	Asset    Asset
-//}
-//type Input struct {
-//	PreviousOutPoint OutPoint
-//	SignatureScript  []byte
-//	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
-//}
-// NewTxIn returns a new ptn transaction input with the provided
-// previous outpoint point and signature script with a default sequence of
-// MaxTxInSequenceNum.
-//func NewTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
-//	return &Input{
-//		PreviousOutPoint: *prevOut,
-//		SignatureScript:  signatureScript,
-//	}
-//}
 // VarIntSerializeSize returns the number of bytes it would take to serialize
 // val as a variable length integer.
 func VarIntSerializeSize(val uint64) int {
@@ -472,10 +437,11 @@ func (t *Input) SerializeSize() int {
 	return 40 + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
 		len(t.SignatureScript)
 }
-func (msg *PaymentPayload) SerializeSize() int {
-	n := msg.baseSize()
-	return n
-}
+
+//func (msg *PaymentPayload) SerializeSize() int {
+//	n := msg.baseSize()
+//	return n
+//}
 func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
@@ -504,15 +470,15 @@ type Hash [HashSize]byte
 // DoubleHashH calculates hash(hash(b)) and returns the resulting bytes as a
 // Hash.
 // TxHash generates the Hash for the transaction.
-func (msg *PaymentPayload) TxHash() common.Hash {
-	// Encode the transaction and calculate double sha256 on the result.
-	// Ignore the error returns since the only way the encode could fail
-	// is being out of memory or due to nil pointers, both of which would
-	// cause a run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSizeStripped()))
-	_ = msg.SerializeNoWitness(buf)
-	return common.DoubleHashH(buf.Bytes())
-}
+//func (msg *PaymentPayload) TxHash() common.Hash {
+//	// Encode the transaction and calculate double sha256 on the result.
+//	// Ignore the error returns since the only way the encode could fail
+//	// is being out of memory or due to nil pointers, both of which would
+//	// cause a run-time panic.
+//	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSizeStripped()))
+//	_ = msg.SerializeNoWitness(buf)
+//	return common.DoubleHashH(buf.Bytes())
+//}
 
 // SerializeNoWitness encodes the transaction to w in an identical manner to
 // Serialize, however even if the source transaction has inputs with witness
@@ -524,44 +490,70 @@ func (msg *PaymentPayload) SerializeNoWitness(w io.Writer) error {
 
 // baseSize returns the serialized size of the transaction without accounting
 // for any witness data.
-func (msg *PaymentPayload) baseSize() int {
-	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
-	// number of transaction inputs and outputs.
-	n := 8 + VarIntSerializeSize(uint64(len(msg.Input))) +
-		VarIntSerializeSize(uint64(len(msg.Output)))
-	for _, txIn := range msg.Input {
-		n += txIn.SerializeSize()
-	}
-	for _, txOut := range msg.Output {
-		n += txOut.SerializeSize()
-	}
-	return n
-}
+//func (msg *PaymentPayload) baseSize() int {
+//	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
+//	// number of transaction inputs and outputs.
+//	n := 8 + VarIntSerializeSize(uint64(len(msg.Inputs))) +
+//		VarIntSerializeSize(uint64(len(msg.Outputs)))
+//	for _, txIn := range msg.Inputs {
+//		n += txIn.SerializeSize()
+//	}
+//	for _, txOut := range msg.Outputs {
+//		n += txOut.SerializeSize()
+//	}
+//	return n
+//}
+
 func (msg *Transaction) baseSize() int {
-	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
-	// number of transaction inputs and outputs.
-	n := 16 + VarIntSerializeSize(uint64(len(msg.TxMessages))) +
-		VarIntSerializeSize(uint64(len(msg.TxHash)))
-	for _, mtx := range msg.TxMessages {
-		payload := mtx.Payload
-		payment, ok := payload.(PaymentPayload)
-		if ok == true {
-			for _, txIn := range payment.Input {
-				n += txIn.SerializeSize()
-			}
-			for _, txOut := range payment.Output {
-				n += txOut.SerializeSize()
-			}
+	b, _ := rlp.EncodeToBytes(msg)
+	return len(b)
+}
+func (tx *Transaction) IsContractTx() bool {
+	for _, m := range tx.TxMessages {
+		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE {
+			return true
 		}
 	}
-	return n
+	return false
 }
+
+//判断一个交易是否是一个合约请求交易，并且还没有被执行
+func (tx *Transaction) IsNewContractInvokeRequest() bool {
+	lastMsg := tx.TxMessages[len(tx.TxMessages)-1]
+	return lastMsg.App >= 100
+
+}
+
+//判断一个交易是否是完整交易，如果是普通转账交易就是完整交易，
+//如果是合约请求交易，那么带了结果Msg的就是完整交易
+//func (tx *Transaction) IsFullTx() bool{
+//	if
+//}
+
+//	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
+//	// number of transaction inputs and outputs.
+//	n := 16 + VarIntSerializeSize(uint64(len(msg.TxMessages))) +
+//		VarIntSerializeSize(uint64(len(msg.TxHash)))
+//	for _, mtx := range msg.TxMessages {
+//		payload := mtx.Payload
+//		payment, ok := payload.(PaymentPayload)
+//		if ok == true {
+//			for _, txIn := range payment.Inputs {
+//				n += txIn.SerializeSize()
+//			}
+//			for _, txOut := range payment.Outputs {
+//				n += txOut.SerializeSize()
+//			}
+//		}
+//	}
+//	return n
+//}
 
 // SerializeSizeStripped returns the number of bytes it would take to serialize
 // the transaction, excluding any included witness data.
-func (msg *PaymentPayload) SerializeSizeStripped() int {
-	return msg.baseSize()
-}
+//func (msg *PaymentPayload) SerializeSizeStripped() int {
+//	return msg.baseSize()
+//}
 
 // SerializeSizeStripped returns the number of bytes it would take to serialize
 // the transaction, excluding any included witness data.
@@ -743,7 +735,7 @@ func (l binaryFreeList) PutUint64(w io.Writer, byteOrder binary.ByteOrder, val u
 	return err
 }
 func WriteTxOut(w io.Writer, pver uint32, version int32, to *Output) error {
-	err := binarySerializer.PutUint64(w, littleEndian, uint64(to.Value))
+	err := binarySerializer.PutUint64(w, littleEndian, to.Value)
 	if err != nil {
 		return err
 	}

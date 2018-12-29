@@ -26,20 +26,21 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/platforms/util"
+	ccmetadata "github.com/palletone/go-palletone/core/vmContractPub/ccprovider/metadata"
+	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cutil "github.com/palletone/go-palletone/vm/common"
+	"github.com/spf13/viper"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
-	"github.com/palletone/go-palletone/contracts/platforms/util"
-	ccmetadata "github.com/palletone/go-palletone/core/vmContractPub/ccprovider/metadata"
-	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	cutil "github.com/palletone/go-palletone/vm/common"
-	"io/ioutil"
-	"github.com/spf13/viper"
-    cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"runtime"
 )
 
 // Platform for chaincodes written in Go
@@ -85,7 +86,14 @@ func getGopath() (string, error) {
 		return "", err
 	}
 	// Only take the first element of GOPATH
-	splitGoPath := filepath.SplitList(env["GOPATH"])
+	splitGoPath := make([]string, 0)
+	os := runtime.GOOS
+	if os == "windows" {
+		splitGoPath = filepath.SplitList(env["set GOPATH"])
+	} else  {
+		splitGoPath = filepath.SplitList(env["GOPATH"])
+	}
+
 	if len(splitGoPath) == 0 {
 		return "", fmt.Errorf("invalid GOPATH environment variable value:[%s]", env["GOPATH"])
 	}
@@ -497,7 +505,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 			// Hidden files are not supported as metadata, therefore ignore them.
 			// User often doesn't know that hidden files are there, and may not be able to delete them, therefore warn user rather than error out.
 			if strings.HasPrefix(filename, ".") {
-				logger.Warningf("Ignoring hidden file in metadata directory: %s", file.Name)
+				logger.Warnf("Ignoring hidden file in metadata directory: %s", file.Name)
 				continue
 			}
 
@@ -532,7 +540,7 @@ func (goPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) 
 	var buf []string
 	//glh
 	//buf = append(buf, "FROM "+"palletimg")
-	buf = append(buf, "FROM "+ cfg.GetConfig().ContractBuilder)
+	buf = append(buf, "FROM "+cfg.GetConfig().ContractBuilder)
 	buf = append(buf, "ADD binpackage.tar /usr/local/bin")
 
 	dockerFileContents := strings.Join(buf, "\n")

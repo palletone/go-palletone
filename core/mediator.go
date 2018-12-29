@@ -30,18 +30,48 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
-// mediator 结构体 和具体的账户模型有关
-type Mediator struct {
-	Address     common.Address
-	InitPartPub kyber.Point
-	Node        *discover.Node
-	//WebsiteUrl  string
+var Suite = bn256.NewSuiteG2()
+
+func GenInitPair() (kyber.Scalar, kyber.Point) {
+	sc := Suite.Scalar().Pick(Suite.RandomStream())
+
+	return sc, Suite.Point().Mul(sc, nil)
 }
 
-func StrToMedNode(mn string) *discover.Node {
-	node, err := discover.ParseNode(mn)
+// mediator 结构体 和具体的账户模型有关
+type Mediator struct {
+	Address    common.Address
+	InitPubKey kyber.Point
+	Node       *discover.Node
+	*MediatorInfoExpand
+}
+
+type MediatorInfoExpand struct {
+	Url                  string
+	TotalMissed          uint64
+	LastConfirmedUnitNum uint32
+	TotalVotes           uint64
+}
+
+func NewMediatorBase() *MediatorInfoExpand {
+	return &MediatorInfoExpand{
+		Url:                  "",
+		TotalMissed:          0,
+		LastConfirmedUnitNum: 0,
+		TotalVotes:           0,
+	}
+}
+
+func NewMediator() *Mediator {
+	return &Mediator{
+		MediatorInfoExpand: NewMediatorBase(),
+	}
+}
+
+func StrToMedNode(medNode string) *discover.Node {
+	node, err := discover.ParseNode(medNode)
 	if err != nil {
-		log.Error(fmt.Sprintf("Invalid mediator node \"%v\" : %v", mn, err))
+		log.Error(fmt.Sprintf("Invalid mediator node \"%v\" : %v", medNode, err))
 	}
 
 	return node
@@ -60,34 +90,26 @@ func StrToMedAdd(addStr string) common.Address {
 	return addr
 }
 
-func StrToScalar(secStr string) kyber.Scalar {
+func StrToScalar(secStr string) (kyber.Scalar, error) {
 	secB := base58.Decode(secStr)
-	sec := bn256.NewSuiteG2().Scalar()
+	sec := Suite.Scalar()
 
 	err := sec.UnmarshalBinary(secB)
 	if err != nil {
-		log.Error(fmt.Sprintln(err))
+		return nil, err
 	}
 
-	return sec
+	return sec, nil
 }
 
-func StrToPoint(pubStr string) kyber.Point {
+func StrToPoint(pubStr string) (kyber.Point, error) {
 	pubB := base58.Decode(pubStr)
-	pub := bn256.NewSuiteG2().Point()
+	pub := Suite.Point()
 
 	err := pub.UnmarshalBinary(pubB)
 	if err != nil {
-		//log.Error(fmt.Sprintln(err))
+		return nil, err
 	}
 
-	return pub
-}
-
-func (m *Mediator) MediatorToInfo() MediatorInfo {
-	return MediatorInfo{
-		Address:     m.Address.Str(),
-		InitPartPub: PointToStr(m.InitPartPub),
-		Node:        m.Node.String(),
-	}
+	return pub, nil
 }

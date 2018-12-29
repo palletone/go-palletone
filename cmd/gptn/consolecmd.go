@@ -26,6 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
@@ -121,28 +122,42 @@ func remoteConsole(ctx *cli.Context) error {
 	// Attach to a remotely running gptn instance and start the JavaScript console
 	endpoint := ctx.Args().First()
 	if endpoint == "" {
-		path := node.DefaultDataDir()
-		if ctx.GlobalIsSet(utils.DataDirFlag.Name) {
-			path = ctx.GlobalString(utils.DataDirFlag.Name)
-		}
-		if path != "" {
-			if ctx.GlobalBool(utils.TestnetFlag.Name) {
-				path = filepath.Join(path, "testnet")
-			}
-		}
-		endpoint = fmt.Sprintf("%s/gptn.ipc", path)
+		cfg := &FullConfig{Node: defaultNodeConfig()}
+		configPath := getConfigPath(ctx)
 
 		// On windows we can only use plain top-level pipes
 		if runtime.GOOS == "windows" {
-			configPath := filepath.Join(path, defaultConfigPath)
-			cfg := new(FullConfig)
-			loadConfig(configPath, cfg)
+			err := loadConfig(configPath, cfg)
+			if err != nil {
+				utils.Fatalf("%v", err)
+				return err
+			}
 
 			endpoint = cfg.Node.IPCPath
 
 			if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
 				endpoint = `\\.\pipe\` + endpoint
 			}
+		} else {
+			dataPath := node.DefaultDataDir()
+			if ctx.GlobalIsSet(utils.DataDirFlag.Name) {
+				dataPath = ctx.GlobalString(utils.DataDirFlag.Name)
+			} else if common.FileExist(configPath) {
+				err := loadConfig(configPath, cfg)
+				if err != nil {
+					utils.Fatalf("%v", err)
+					return err
+				}
+
+				dataPath = cfg.Node.DataDir
+			}
+
+			if dataPath != "" {
+				if ctx.GlobalBool(utils.TestnetFlag.Name) {
+					dataPath = filepath.Join(dataPath, "testnet")
+				}
+			}
+			endpoint = fmt.Sprintf("%s/gptn.ipc", dataPath)
 		}
 	}
 

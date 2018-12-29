@@ -33,40 +33,55 @@ import (
 )
 
 type IDag interface {
+	Close()
+
+	//common geter
+	GetCommon(key []byte) ([]byte, error)
+	GetCommonByPrefix(prefix []byte) map[string][]byte
+
 	IsEmpty() bool
 	CurrentUnit() *modules.Unit
 	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
-	GetActiveMediatorNodes() map[string]*discover.Node
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
-	GetCurrentMemUnit(assetId modules.IDType16) *modules.Unit
-	InsertDag(units modules.Units) (int, error)
+	GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit
+	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
 	// GetHeaderByHash retrieves a header from the local chain.
 	GetHeaderByHash(common.Hash) *modules.Header
 	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
+
+	GetPrefix(prefix string) map[string][]byte
+
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
-	GetTransactionByHash(hash common.Hash) (*modules.Transaction, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
+	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
+	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
+	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
+
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
+	UnitIsConfirmedByHash(hash common.Hash) bool
+	ParentsIsConfirmByHash(hash common.Hash) bool
 	Exists(hash common.Hash) bool
-	SaveUnit(unit *modules.Unit, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	GetAllLeafNodes() ([]*modules.Header, error)
-	GetUnit(common.Hash) (*modules.Unit, error)
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
-	ValidateUnitGroupSig(hash common.Hash) (bool, error)
+	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
-	GetContractState(id string, field string) (*modules.StateVersion, []byte)
+
+	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
+	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetHeadHeaderHash() (common.Hash, error)
@@ -76,39 +91,55 @@ type IDag interface {
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	//GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
-	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
-	GetAddrUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
+	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
-	GetAddrTransactions(addr string) (modules.Transactions, error)
+	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
 	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
-	GetContract(id common.Address) (*modules.Contract, error)
+	GetContract(id []byte) (*modules.Contract, error)
 	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
+
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
 	GetActiveMediatorNode(index int) *discover.Node
-	//获得所有Mediator候选人列表
+	GetActiveMediatorNodes() map[string]*discover.Node
 
-	// todo albert·gou
-	//GetCandidateMediators() []*core.MediatorInfo
-	//Get all elected mediators.
-	GetElectedMediatorsAddress() ([]common.Address, error)
-
-	// comment by albert·gou
-	//UpdateGlobalDynProp(unit *modules.Unit)
-	//SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) error
-	//GetGlobalProp() *modules.GlobalProperty
-	//SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) error
-	//GetDynGlobalProp() *modules.DynamicGlobalProperty
-	//SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) error
-	//GetMediatorSchl() *modules.MediatorSchedule
+	/* Vote */
+	//GetElectedMediatorsAddress() (map[string]uint64, error)
+	//GetAccountMediatorVote(address common.Address) []common.Address
 
 	// get token info
-	GetTokenInfo(key []byte) (*modules.TokenInfo, error)
+	GetTokenInfo(key string) (*modules.TokenInfo, error)
 	GetAllTokenInfo() (*modules.AllTokenInfo, error)
 	// save token info
-	SaveTokenInfo(token_info *modules.TokenInfo) (string, error)
+	SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
+
+	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
+	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
+	// set groupsign
+	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
+
+	IsSynced() bool
+	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
+	GetPrecedingMediatorNodes() map[string]*discover.Node
+	UnitIrreversibleTime() uint
+	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+
+	QueryDbByKey(key []byte) ([]byte, error)
+	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
+
+	// SaveReqIdByTx
+	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	SaveReqIdByTx(tx *modules.Transaction) error
+
+	// get texthash
+	GetTextHash(hash common.Hash) ([]byte, error)
 }

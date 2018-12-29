@@ -413,14 +413,37 @@ func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint6
 	return uint64(hex), nil
 }
 
+func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from, to, amount)
+	return result, err
+}
+
+func (ec *Client) GetPtnTestCoin(ctx context.Context, from string, to string, amount string, password string, duration *uint64) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "wallet_getPtnTestCoin", from, to, amount, password, duration)
+	return result, err
+}
+
+func (ec *Client) TransferToken(ctx context.Context, asset string, from string, to string, amount uint64, fee uint64, password string, duration *uint64) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_transferToken", asset, from, to, amount, fee, password, duration)
+	return result, err
+}
+
+func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "wallet_createRawTransaction", from, to, amount)
+	return result, err
+}
 func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_createRawTransaction", params)
 	return result, err
 }
-func (ec *Client) SignRawTransaction(ctx context.Context, params string) (*ptnjson.SignRawTransactionResult, error) {
+func (ec *Client) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (*ptnjson.SignRawTransactionResult, error) {
 	var result *ptnjson.SignRawTransactionResult
-	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params)
+	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params, password, duration)
 	return result, err
 }
 
@@ -435,7 +458,11 @@ func (ec *Client) SendTransaction(ctx context.Context, tx *modules.Transaction) 
 	}
 	return ec.c.CallContext(ctx, nil, "ptn_sendRawTransaction", common.ToHex(data))
 }
-
+func (ec *Client) WalletSendTransaction(ctx context.Context, params string) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "wallet_sendRawTransaction", params)
+	return result, err
+}
 func toCallArg(msg palletone.CallMsg) interface{} {
 	arg := map[string]interface{}{
 		"from": msg.From,
@@ -462,6 +489,29 @@ func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate ui
 	var result hexutil.Uint64
 	err := ec.c.CallContext(ctx, &result, "ptn_forking", account, rate)
 	return uint64(result), err
+}
+
+func (ec *Client) GetUnitByHashAt(ctx context.Context, condition string) (string, error) {
+	var result string
+	log.Println("GetUnitByHashAt condition:", condition)
+	err := ec.c.CallContext(ctx, &result, "ptn_getUnitByHash", condition)
+	return result, err
+}
+
+//GetUnitByNumber
+func (ec *Client) GetUnitByNumberAt(ctx context.Context, condition string) (string, error) {
+	var result string
+	log.Println("GetUnitByNumberAt condition:", condition)
+	err := ec.c.CallContext(ctx, &result, "ptn_getUnitByNumber", condition)
+	return result, err
+}
+
+//GetPrefix
+func (ec *Client) GetPrefix(ctx context.Context, condition string) (string, error) {
+	var result string
+	log.Println("GetPrefix condition:", condition)
+	err := ec.c.CallContext(ctx, &result, "ptn_getPrefix", condition)
+	return result, err
 }
 
 func (ec *Client) CcinstallAt(ctx context.Context, ccname string, ccpath string, ccversion string) (uint64, error) {
@@ -602,30 +652,89 @@ func (ec *Client) GetAllUtxos(ctx context.Context) ([]ptnjson.UtxoJson, error) {
 	return result, err
 }
 
-func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (modules.Transactions, error) {
-	result := make(modules.Transactions, 0)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAddrTxs", addr)
+func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (map[string]modules.Transactions, error) {
+	result := make(map[string]modules.Transactions)
+	err := ec.c.CallContext(ctx, &result, "ptn_getAddrTransactions", addr)
 	return result, err
 }
 
 func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, error) {
 	result := new(modules.AllTokenInfo)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAllTokenInfo", nil)
+	err := ec.c.CallContext(ctx, &result, "dag_getAllTokenInfo", nil)
 	return result, err
 }
 
 func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenInfo, error) {
 	result := new(modules.TokenInfo)
-	// id, err := modules.SetIdTypeByHex(key)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	err := ec.c.CallContext(ctx, &result, "ptn_getTokenInfo", key)
+
+	err := ec.c.CallContext(ctx, &result, "dag_getTokenInfo", key)
 	return result, err
 }
 
 func (ec *Client) SaveTokenInfo(ctx context.Context, name, token, creator string) (*modules.TokenInfo, error) {
 	result := new(modules.TokenInfo)
-	err := ec.c.CallContext(ctx, nil, "ptn_saveTokenInfo", name, token, creator)
+
+	err := ec.c.CallContext(ctx, &result, "dag_saveTokenInfo", name, token, creator)
+	return result, err
+}
+
+func (ec *Client) GetCommon(ctx context.Context, key string) ([]byte, error) {
+	result := make([]byte, 0)
+	err := ec.c.CallContext(ctx, &result, "dag_getCommon", key)
+	return result, err
+}
+
+func (ec *Client) GetCommonByPrefix(ctx context.Context, prefix string) (map[string][]byte, error) {
+	result := make(map[string][]byte, 0)
+	err := ec.c.CallContext(ctx, &result, "dag_getCommonByPrefix", prefix)
+	return result, err
+}
+func (ec *Client) DecodeTx(ctx context.Context, hex string) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_decodeTx", hex)
+	return result, err
+}
+func (ec *Client) EncodeTx(ctx context.Context, jsonStr string) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_encodeTx", jsonStr)
+	return result, err
+}
+func (ec *Client) GetUnitTransactions(ctx context.Context, hashHex string) ([]*ptnjson.TransactionJson, error) {
+	result := make([]*ptnjson.TransactionJson, 0)
+	err := ec.c.CallContext(ctx, &result, "dag_getUnitTxsInfo", hashHex)
+	return result, err
+}
+
+func (ec *Client) GetUnitTxsHash(ctx context.Context, hashHex string) ([]string, error) {
+	result := make([]string, 0)
+	err := ec.c.CallContext(ctx, &result, "dag_getUnitTxsHashHex", hashHex)
+	return result, err
+}
+
+// GetTransactionByHash
+func (ec *Client) GetTransactionByHash(ctx context.Context, hashHex string) (*ptnjson.TransactionJson, error) {
+	result := new(ptnjson.TransactionJson)
+	err := ec.c.CallContext(ctx, &result, "dag_getTxByHash", hashHex)
+	return result, err
+}
+
+// GetTxSearchEntry.
+func (ec *Client) GetTxSearchEntry(ctx context.Context, hashHex string) (*ptnjson.TxSerachEntryJson, error) {
+	result := new(ptnjson.TxSerachEntryJson)
+	err := ec.c.CallContext(ctx, &result, "dag_getTxSearchEntry", hashHex)
+	return result, err
+}
+
+// GetPoolTxByHash
+func (ec *Client) GetTxPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
+	result := new(ptnjson.TxPoolTxJson)
+	err := ec.c.CallContext(ctx, &result, "ptn_getTxPoolTxByHash", hex)
+	return result, err
+}
+
+// GetTxHashByReqId
+func (ec *Client) GetTxHashByReqId(ctx context.Context, hex string) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_getTxHashByReqId", hex)
 	return result, err
 }

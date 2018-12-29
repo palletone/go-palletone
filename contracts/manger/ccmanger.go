@@ -150,7 +150,7 @@ func peerServerInit() error {
 	var opts []grpc.ServerOption
 
 	grpcServer = grpc.NewServer(opts...)
-	peerAddress := cfg.GetConfig().Address
+	peerAddress := cfg.GetConfig().ContractAddress
 	if peerAddress == "" {
 		peerAddress = "0.0.0.0:21726"
 	}

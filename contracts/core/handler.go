@@ -27,8 +27,12 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/rlp"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/outchain"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
@@ -37,6 +41,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/sysccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	"github.com/pkg/errors"
@@ -104,156 +109,40 @@ type Handler struct {
 	nextState chan *nextStateInfo
 }
 
-//TODO xiaozhi
-func (handler *Handler) enterGetDepositConfig(e *fsm.Event) {
-	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
-	if !ok {
-		e.Cancel(errors.New("received unexpected message type"))
-		return
-	}
-	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST)
-	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
-	// is completed before the next one is triggered. The previous state transition is deemed complete only when
-	// the afterGetState function is exited. Interesting bug fix!!
-	go func() {
-		// Check if this is the unique state request from this chaincode txid
-		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
-		if !uniqueReq {
-			// Drop this request
-			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
-			return
-		}
+// HandleChaincodeStream Main loop for handling the associated Chaincode stream
+func HandleChaincodeStream(chaincodeSupport *ChaincodeSupport, ctxt context.Context, stream ccintf.ChaincodeStream) error {
+	deadline, ok := ctxt.Deadline()
+	chaincodeLogger.Debugf("Current context deadline = %s, ok = %v", deadline, ok)
+	handler := newChaincodeSupportHandler(chaincodeSupport, stream)
+	return handler.processStream()
+}
 
-		var serialSendMsg *pb.ChaincodeMessage
-		var txContext *transactionContext
-		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-
-		defer func() {
-			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			if serialSendMsg != nil {
-				chaincodeLogger.Debugf("[%s]handleenterGetDepositConfig serial send %s",
-					shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-				handler.serialSendAsync(serialSendMsg, nil)
+// Filter the Errors to allow NoTransitionError and CanceledError to not propagate for cases where embedded Err == nil
+func filterError(errFromFSMEvent error) error {
+	if errFromFSMEvent != nil {
+		if noTransitionErr, ok := errFromFSMEvent.(*fsm.NoTransitionError); ok {
+			if noTransitionErr.Err != nil {
+				// Squash the NoTransitionError
+				return errFromFSMEvent
 			}
-		}()
-
-		if txContext == nil {
-			chaincodeLogger.Error("txContext is nil.")
-			return
+			chaincodeLogger.Debugf("Ignoring NoTransitionError: %s", noTransitionErr)
 		}
-		chaincodeID := handler.getCCRootName()
-		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
-		//TODO 这里要获取配置文件的信息
-		configBytes := []byte("配置文件")
-		chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: configBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
-	}()
-}
-func (handler *Handler) enterGetPayToContractAddr(e *fsm.Event) {
-	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
-	if !ok {
-		e.Cancel(errors.New("received unexpected message type"))
-		return
-	}
-	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_USER_ADDR_REQUEST)
-	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
-	// is completed before the next one is triggered. The previous state transition is deemed complete only when
-	// the afterGetState function is exited. Interesting bug fix!!
-	go func() {
-		// Check if this is the unique state request from this chaincode txid
-		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
-		if !uniqueReq {
-			// Drop this request
-			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
-			return
-		}
-
-		var serialSendMsg *pb.ChaincodeMessage
-		var txContext *transactionContext
-		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-
-		defer func() {
-			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			if serialSendMsg != nil {
-				chaincodeLogger.Debugf("[%s]handleenterGetDepositConfig serial send %s",
-					shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-				handler.serialSendAsync(serialSendMsg, nil)
+		if canceledErr, ok := errFromFSMEvent.(*fsm.CanceledError); ok {
+			if canceledErr.Err != nil {
+				// Squash the CanceledError
+				return canceledErr
 			}
-		}()
-
-		if txContext == nil {
-			chaincodeLogger.Error("txContext is nil.")
-			return
+			chaincodeLogger.Debugf("Ignoring CanceledError: %s", canceledErr)
 		}
-		chaincodeID := handler.getCCRootName()
-		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
-		//TODO 这里要获取支付保证金节点的地址
-		configBytes := []byte("用户地址")
-		chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: configBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
-	}()
-}
-func (handler *Handler) enterGetPayToContractTokens(e *fsm.Event) {
-	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
-	if !ok {
-		e.Cancel(errors.New("received unexpected message type"))
-		return
 	}
-	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST)
-	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
-	// is completed before the next one is triggered. The previous state transition is deemed complete only when
-	// the afterGetState function is exited. Interesting bug fix!!
-	go func() {
-		// Check if this is the unique state request from this chaincode txid
-		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
-		if !uniqueReq {
-			// Drop this request
-			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
-			return
-		}
-
-		var serialSendMsg *pb.ChaincodeMessage
-		var txContext *transactionContext
-		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-
-		defer func() {
-			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			if serialSendMsg != nil {
-				chaincodeLogger.Debugf("[%s]handleenterGetDepositConfig serial send %s",
-					shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-				handler.serialSendAsync(serialSendMsg, nil)
-			}
-		}()
-
-		if txContext == nil {
-			chaincodeLogger.Error("txContext is nil.")
-			return
-		}
-		chaincodeID := handler.getCCRootName()
-		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
-		//TODO 这里要获取支付保证金数量
-		configBytes := []byte("支付保证金数量")
-		chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: configBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
-	}()
+	return nil
 }
-func shorttxid(txid string) string {
-	if len(txid) < 8 {
-		return txid
+
+func isCollectionSet(collection string) bool {
+	if collection == "" {
+		return false
 	}
-	return txid[0:8]
-}
-
-//gets chaincode instance from the canonical name of the chaincode.
-//Called exactly once per chaincode when registering chaincode.
-//This is needed for the "one-instance-per-chain" model when
-//starting up the chaincode for each chain. It will still
-//work for the "one-instance-for-all-chains" as the version
-//and suffix will just be absent (also note that LSCC reserves
-//"/:[]${}" as special chars mainly for such namespace uses)
-func (handler *Handler) decomposeRegisteredName(cid *pb.ChaincodeID) {
-
-	handler.ccInstance = getChaincodeInstance(cid.Name)
+	return true
 }
 
 func getChaincodeInstance(ccName string) *sysccprovider.ChaincodeInstance {
@@ -281,6 +170,250 @@ func getChaincodeInstance(ccName string) *sysccprovider.ChaincodeInstance {
 	ci.ChaincodeName = string(b)
 
 	return ci
+}
+
+func shorttxid(txid string) string {
+	if len(txid) < 8 {
+		return txid
+	}
+	return txid[0:8]
+}
+
+func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStream ccintf.ChaincodeStream) *Handler {
+	v := &Handler{
+		ChatStream: peerChatStream,
+	}
+	v.chaincodeSupport = chaincodeSupport
+	//we want this to block
+	v.nextState = make(chan *nextStateInfo)
+
+	v.FSM = fsm.NewFSM(
+		createdstate,
+		fsm.Events{
+			//Send REGISTERED, then, if deploy { trigger INIT(via INIT) } else { trigger READY(via COMPLETED) }
+			{Name: pb.ChaincodeMessage_REGISTER.String(), Src: []string{createdstate}, Dst: establishedstate},
+			{Name: pb.ChaincodeMessage_READY.String(), Src: []string{establishedstate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_PUT_STATE.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_OUTCHAIN_ADDRESS.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_OUTCHAIN_TRANSACTION.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_OUTCHAIN_QUERY.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_DEL_STATE.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_INVOKE_CHAINCODE.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_COMPLETED.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_GET_STATE.String(), Src: []string{readystate}, Dst: readystate},
+			//{Name: pb.ChaincodeMessage_GET_STATE_BY_RANGE.String(), Src: []string{readystate}, Dst: readystate},
+			//{Name: pb.ChaincodeMessage_GET_QUERY_RESULT.String(), Src: []string{readystate}, Dst: readystate},
+			//{Name: pb.ChaincodeMessage_GET_HISTORY_FOR_KEY.String(), Src: []string{readystate}, Dst: readystate},
+			//{Name: pb.ChaincodeMessage_QUERY_STATE_NEXT.String(), Src: []string{readystate}, Dst: readystate},
+			//{Name: pb.ChaincodeMessage_QUERY_STATE_CLOSE.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_ERROR.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_RESPONSE.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_INIT.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_TRANSACTION.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_GET_TOKEN_BALANCE.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_PAY_OUT_TOKEN.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_SUPPLY_TOKEN.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_DEFINE_TOKEN.String(), Src: []string{readystate}, Dst: readystate},
+		},
+		fsm.Callbacks{
+			"before_" + pb.ChaincodeMessage_REGISTER.String():  func(e *fsm.Event) { v.beforeRegisterEvent(e, v.FSM.Current()) },
+			"before_" + pb.ChaincodeMessage_COMPLETED.String(): func(e *fsm.Event) { v.beforeCompletedEvent(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_GET_STATE.String():  func(e *fsm.Event) { v.afterGetState(e, v.FSM.Current()) },
+			//"after_" + pb.ChaincodeMessage_GET_STATE_BY_RANGE.String():        func(e *fsm.Event) { v.afterGetStateByRange(e, v.FSM.Current()) },
+			//"after_" + pb.ChaincodeMessage_GET_QUERY_RESULT.String():          func(e *fsm.Event) { v.afterGetQueryResult(e, v.FSM.Current()) },
+			//"after_" + pb.ChaincodeMessage_GET_HISTORY_FOR_KEY.String():       func(e *fsm.Event) { v.afterGetHistoryForKey(e, v.FSM.Current()) },
+			//"after_" + pb.ChaincodeMessage_QUERY_STATE_NEXT.String():          func(e *fsm.Event) { v.afterQueryStateNext(e, v.FSM.Current()) },
+			//"after_" + pb.ChaincodeMessage_QUERY_STATE_CLOSE.String():         func(e *fsm.Event) { v.afterQueryStateClose(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_PUT_STATE.String():                 func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_OUTCHAIN_ADDRESS.String():          func(e *fsm.Event) { v.enterOutChainAddress(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_OUTCHAIN_TRANSACTION.String():      func(e *fsm.Event) { v.enterOutChainTransaction(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_OUTCHAIN_QUERY.String():            func(e *fsm.Event) { v.enterOutChainQuery(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_DEL_STATE.String():                 func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_INVOKE_CHAINCODE.String():          func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
+			"enter_" + establishedstate:                                       func(e *fsm.Event) { v.enterEstablishedState(e, v.FSM.Current()) },
+			"enter_" + readystate:                                             func(e *fsm.Event) { v.enterReadyState(e, v.FSM.Current()) },
+			"enter_" + endstate:                                               func(e *fsm.Event) { v.enterEndState(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST.String(): func(e *fsm.Event) { v.enterGetSystemConfig(e) },
+			"after_" + pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE.String():    func(e *fsm.Event) { v.enterGetContractAllState(e) },
+			"after_" + pb.ChaincodeMessage_GET_TOKEN_BALANCE.String():         func(e *fsm.Event) { v.enterGetTokenBalance(e) },
+			"after_" + pb.ChaincodeMessage_PAY_OUT_TOKEN.String():             func(e *fsm.Event) { v.enterPayOutToken(e) },
+			"after_" + pb.ChaincodeMessage_DEFINE_TOKEN.String():              func(e *fsm.Event) { v.enterDefineToken(e) },
+			"after_" + pb.ChaincodeMessage_SUPPLY_TOKEN.String():              func(e *fsm.Event) { v.enterSupplyToken(e) },
+		},
+	)
+
+	return v
+}
+
+func (p *pendingQueryResult) cut() []*pb.QueryResultBytes {
+	batch := p.batch
+	p.batch = nil
+	p.count = 0
+	return batch
+}
+
+func (p *pendingQueryResult) add(queryResult commonledger.QueryResult) error {
+	queryResultBytes, err := proto.Marshal(queryResult.(proto.Message))
+	if err != nil {
+		chaincodeLogger.Errorf("Failed to get encode query result as bytes")
+		return err
+	}
+	p.batch = append(p.batch, &pb.QueryResultBytes{ResultBytes: queryResultBytes})
+	p.count = len(p.batch)
+	return nil
+}
+
+func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
+	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+	if !ok {
+		e.Cancel(errors.New("received unexpected message type"))
+		return
+	}
+	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST)
+	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+	// is completed before the next one is triggered. The previous state transition is deemed complete only when
+	// the afterGetState function is exited. Interesting bug fix!!
+	go func() {
+		// Check if this is the unique state request from this chaincode txid
+		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+		if !uniqueReq {
+			// Drop this request
+			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+			return
+		}
+
+		var serialSendMsg *pb.ChaincodeMessage
+		var txContext *transactionContext
+		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
+			"[%s]No ledger context for GetState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+		if txContext == nil {
+			return
+		}
+		defer func() {
+			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+			chaincodeLogger.Debugf("[%s]handleenterGetDepositConfig serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
+		}()
+		keyForSystemConfig := &pb.KeyForSystemConfig{}
+		unmarshalErr := proto.Unmarshal(msg.Payload, keyForSystemConfig)
+		if unmarshalErr != nil {
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
+		}
+		chaincodeID := handler.getCCRootName()
+
+		//TODO 通过 keyForSystemConfig 获取相应的系统的配置
+		//var payloadBytes []byte
+		//var err error
+		//systemConfig := &core.SystemConfig{
+		//	FoundationAddress:         "P1N4hGvGhjzfxmXGGKSFRL2vWZnSCXYojZU",
+		//	DepositAmountForMediator:  2000,
+		//	DepositAmountForJury:      1000,
+		//	DepositAmountForDeveloper: 800,
+		//	DepositRate:               0.02,
+		//	DepositPeriod:             0,
+		//}
+		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, keyForSystemConfig.Key)
+		payloadBytes, err := txContext.txsimulator.GetConfig(keyForSystemConfig.Key)
+
+		//fmt.Println("keyForSystemConfig.Key = ", keyForSystemConfig.Key)
+		//if strings.Compare("DepositAmountForJury", keyForSystemConfig.Key) == 0 {
+		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForJury, 10)
+		//
+		//	payloadBytes = []byte(depositAmount)
+		//} else if strings.Compare("FoundationAddress", keyForSystemConfig.Key) == 0 {
+		//	payloadBytes = []byte(systemConfig.FoundationAddress)
+		//} else if strings.Compare("DepositAmountForMediator", keyForSystemConfig.Key) == 0 {
+		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForMediator, 10)
+		//	payloadBytes = []byte(depositAmount)
+		//} else if strings.Compare("DepositAmountForDeveloper", keyForSystemConfig.Key) == 0 {
+		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForDeveloper, 10)
+		//	payloadBytes = []byte(depositAmount)
+		//} else if strings.Compare("DepositPeriod", keyForSystemConfig.Key) == 0 {
+		//	payloadBytes = []byte(strconv.Itoa(systemConfig.DepositPeriod))
+		//}
+		//chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
+		if err != nil {
+			chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
+		}
+		chaincodeLogger.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+	}()
+}
+
+func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
+	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+	if !ok {
+		e.Cancel(errors.New("received unexpected message type"))
+		return
+	}
+	chaincodeLogger.Debugf("[%s]Received %s, invoking GetContractAllState from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE)
+	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+	// is completed before the next one is triggered. The previous state transition is deemed complete only when
+	// the afterGetState function is exited. Interesting bug fix!!
+	go func() {
+		// Check if this is the unique state request from this chaincode txid
+		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+		if !uniqueReq {
+			// Drop this request
+			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+			return
+		}
+		var serialSendMsg *pb.ChaincodeMessage
+		var txContext *transactionContext
+		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
+			"[%s]No ledger context for GetContractAllState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+		defer func() {
+			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+			chaincodeLogger.Debugf("[%s]enterGetContractAllState serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
+		}()
+		if txContext == nil {
+			return
+		}
+		chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] getting contract all states for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
+		//返回 map[modules.StateVersion][]byte
+		//contractAllStates := make(map[modules.StateVersion][]byte, 0)
+		contractAllStates, err := txContext.txsimulator.GetContractStatesById(msg.ContractId)
+
+		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
+		if err != nil {
+			// Send error msg back to chaincode. GetState will not trigger event
+			payload := []byte(err.Error())
+			chaincodeLogger.Errorf("[%s]Failed to get contract all states(%s). Sending %s",
+				shorttxid(msg.Txid), err, pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		} else {
+			res, err := json.Marshal(contractAllStates)
+			if err != nil {
+				serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+				return
+			}
+			// Send response msg back to chaincode. GetState will not trigger event
+			chaincodeLogger.Debugf("[%s]Got contract all states. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		}
+	}()
+}
+
+//gets chaincode instance from the canonical name of the chaincode.
+//Called exactly once per chaincode when registering chaincode.
+//This is needed for the "one-instance-per-chain" model when
+//starting up the chaincode for each chain. It will still
+//work for the "one-instance-for-all-chains" as the version
+//and suffix will just be absent (also note that LSCC reserves
+//"/:[]${}" as special chars mainly for such namespace uses)
+func (handler *Handler) decomposeRegisteredName(cid *pb.ChaincodeID) {
+
+	handler.ccInstance = getChaincodeInstance(cid.Name)
 }
 
 func (handler *Handler) getCCRootName() string {
@@ -360,61 +493,6 @@ func (handler *Handler) deleteTxContext(chainID, txid string) {
 	}
 }
 
-//glh
-/*
-func (handler *Handler) initializeQueryContext(txContext *transactionContext, queryID string,
-	queryIterator commonledger.ResultsIterator) {
-	handler.Lock()
-	defer handler.Unlock()
-	txContext.queryIteratorMap[queryID] = queryIterator
-	txContext.pendingQueryResults[queryID] = &pendingQueryResult{batch: make([]*pb.QueryResultBytes, 0)}
-}
-*/
-func (handler *Handler) getQueryIterator(txContext *transactionContext, queryID string) commonledger.ResultsIterator {
-	handler.Lock()
-	defer handler.Unlock()
-	return txContext.queryIteratorMap[queryID]
-}
-
-func (handler *Handler) cleanupQueryContext(txContext *transactionContext, queryID string) {
-	handler.Lock()
-	defer handler.Unlock()
-	//glh
-	//txContext.queryIteratorMap[queryID].Close()
-	delete(txContext.queryIteratorMap, queryID)
-	delete(txContext.pendingQueryResults, queryID)
-}
-
-//glh
-/*
-// Check if the transactor is allow to call this chaincode on this channel
-func (handler *Handler) checkACL(signedProp *pb.SignedProposal, proposal *pb.Proposal, ccIns *sysccprovider.ChaincodeInstance) error {
-	// ensure that we don't invoke a system chaincode
-	// that is not invokable through a cc2cc invocation
-	if sysccprovider.GetSystemChaincodeProvider().IsSysCCAndNotInvokableCC2CC(ccIns.ChaincodeName) {
-		return errors.Errorf("system chaincode %s cannot be invoked with a cc2cc invocation", ccIns.ChaincodeName)
-	}
-
-	// if we are here, all we know is that the invoked chaincode is either
-	// - a system chaincode that *is* invokable through a cc2cc
-	//   (but we may still have to determine whether the invoker
-	//   can perform this invocation)
-	// - an application chaincode (and we still need to determine
-	//   whether the invoker can invoke it)
-
-	if sysccprovider.GetSystemChaincodeProvider().IsSysCC(ccIns.ChaincodeName) {
-		// Allow this call
-		return nil
-	}
-
-	// A Nil signedProp will be rejected for non-system chaincodes
-	if signedProp == nil {
-		return errors.Errorf("signed proposal must not be nil from caller [%s]", ccIns.String())
-	}
-
-	return aclmgmt.GetACLProvider().CheckACL(resources.CC2CC, ccIns.ChainID, signedProp)
-}
-*/
 func (handler *Handler) deregister() error {
 	if handler.registered {
 		handler.chaincodeSupport.deregisterHandler(handler)
@@ -548,76 +626,6 @@ func (handler *Handler) processStream() error {
 	}
 }
 
-// HandleChaincodeStream Main loop for handling the associated Chaincode stream
-func HandleChaincodeStream(chaincodeSupport *ChaincodeSupport, ctxt context.Context, stream ccintf.ChaincodeStream) error {
-	deadline, ok := ctxt.Deadline()
-	chaincodeLogger.Debugf("Current context deadline = %s, ok = %v", deadline, ok)
-	handler := newChaincodeSupportHandler(chaincodeSupport, stream)
-	return handler.processStream()
-}
-
-func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStream ccintf.ChaincodeStream) *Handler {
-	v := &Handler{
-		ChatStream: peerChatStream,
-	}
-	v.chaincodeSupport = chaincodeSupport
-	//we want this to block
-	v.nextState = make(chan *nextStateInfo)
-
-	v.FSM = fsm.NewFSM(
-		createdstate,
-		fsm.Events{
-			//Send REGISTERED, then, if deploy { trigger INIT(via INIT) } else { trigger READY(via COMPLETED) }
-			{Name: pb.ChaincodeMessage_REGISTER.String(), Src: []string{createdstate}, Dst: establishedstate},
-			{Name: pb.ChaincodeMessage_READY.String(), Src: []string{establishedstate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_PUT_STATE.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_OUTCHAIN_ADDRESS.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_OUTCHAIN_TRANSACTION.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_OUTCHAIN_QUERY.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_DEL_STATE.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_INVOKE_CHAINCODE.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_COMPLETED.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_GET_STATE.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_GET_STATE_BY_RANGE.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_GET_QUERY_RESULT.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_GET_HISTORY_FOR_KEY.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_QUERY_STATE_NEXT.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_QUERY_STATE_CLOSE.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_ERROR.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_RESPONSE.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_INIT.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_TRANSACTION.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_USER_ADDR_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST.String(), Src: []string{readystate}, Dst: readystate},
-		},
-		fsm.Callbacks{
-			"before_" + pb.ChaincodeMessage_REGISTER.String():              func(e *fsm.Event) { v.beforeRegisterEvent(e, v.FSM.Current()) },
-			"before_" + pb.ChaincodeMessage_COMPLETED.String():             func(e *fsm.Event) { v.beforeCompletedEvent(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_GET_STATE.String():              func(e *fsm.Event) { v.afterGetState(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_GET_STATE_BY_RANGE.String():     func(e *fsm.Event) { v.afterGetStateByRange(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_GET_QUERY_RESULT.String():       func(e *fsm.Event) { v.afterGetQueryResult(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_GET_HISTORY_FOR_KEY.String():    func(e *fsm.Event) { v.afterGetHistoryForKey(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_QUERY_STATE_NEXT.String():       func(e *fsm.Event) { v.afterQueryStateNext(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_QUERY_STATE_CLOSE.String():      func(e *fsm.Event) { v.afterQueryStateClose(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_PUT_STATE.String():              func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_OUTCHAIN_ADDRESS.String():       func(e *fsm.Event) { v.enterOutChainAddress(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_OUTCHAIN_TRANSACTION.String():   func(e *fsm.Event) { v.enterOutChainTransaction(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_OUTCHAIN_QUERY.String():         func(e *fsm.Event) { v.enterOutChainQuery(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_DEL_STATE.String():              func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_INVOKE_CHAINCODE.String():       func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
-			"enter_" + establishedstate:                                    func(e *fsm.Event) { v.enterEstablishedState(e, v.FSM.Current()) },
-			"enter_" + readystate:                                          func(e *fsm.Event) { v.enterReadyState(e, v.FSM.Current()) },
-			"enter_" + endstate:                                            func(e *fsm.Event) { v.enterEndState(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_DEPOSIT_CONFIG_REQUEST.String(): func(e *fsm.Event) { v.enterGetDepositConfig(e) },
-			"after_" + pb.ChaincodeMessage_USER_ADDR_REQUEST.String():      func(e *fsm.Event) { v.enterGetPayToContractAddr(e) },
-			"after_" + pb.ChaincodeMessage_PAYTO_TOKEN_REQUEST.String():    func(e *fsm.Event) { v.enterGetPayToContractTokens(e) },
-		},
-	)
-
-	return v
-}
-
 func (handler *Handler) createTXIDEntry(channelID, txid string) bool {
 	if handler.txidMap == nil {
 		return false
@@ -639,7 +647,7 @@ func (handler *Handler) deleteTXIDEntry(channelID, txid string) {
 	if handler.txidMap != nil {
 		delete(handler.txidMap, txCtxID)
 	} else {
-		chaincodeLogger.Warningf("TXID %s not found!", txCtxID)
+		chaincodeLogger.Warnf("TXID %s not found!", txCtxID)
 	}
 }
 
@@ -665,7 +673,7 @@ func (handler *Handler) notifyDuringStartup(val bool) {
 				chaincodeLogger.Errorf("Error during startup .. not sending READY")
 			}
 		} else {
-			chaincodeLogger.Warningf("trying to manually run chaincode when not in devmode ?")
+			chaincodeLogger.Warn("trying to manually run chaincode when not in devmode ?")
 		}
 	}
 }
@@ -748,6 +756,322 @@ func (handler *Handler) afterGetState(e *fsm.Event, state string) {
 	// Query ledger for state
 	handler.handleGetState(msg)
 }
+func (handler *Handler) enterGetTokenBalance(e *fsm.Event) {
+	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+	if !ok {
+		e.Cancel(errors.New("received unexpected message type"))
+		return
+	}
+	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_TOKEN_BALANCE)
+
+	// Query ledger for state
+	handler.handleGetTokenBalance(msg)
+}
+
+// Handles query to ledger to get state
+func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
+	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+	// is completed before the next one is triggered. The previous state transition is deemed complete only when
+	// the afterGetState function is exited. Interesting bug fix!!
+	go func() {
+		// Check if this is the unique state request from this chaincode txid
+		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+		if !uniqueReq {
+			// Drop this request
+			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+			return
+		}
+
+		var serialSendMsg *pb.ChaincodeMessage
+		var txContext *transactionContext
+		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
+			"[%s]No ledger context for GetTokenBalance. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+
+		defer func() {
+			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+			//if serialSendMsg != nil {
+			//	chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
+			//		shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			//	handler.serialSendAsync(serialSendMsg, nil)
+			//}
+			chaincodeLogger.Debugf("[%s]handleGetTokenBalance serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
+		}()
+
+		if txContext == nil {
+			return
+			//serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			//return
+		}
+		getBalance := &pb.GetTokenBalance{}
+		unmarshalErr := proto.Unmarshal(msg.Payload, getBalance)
+		if unmarshalErr != nil {
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
+		}
+		chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] getting balance for chaincode %s, asset: %s,address: %s, channel %s",
+			shorttxid(msg.Txid), chaincodeID, getBalance.Asset, getBalance.Address, txContext.chainID)
+		var balance map[modules.Asset]uint64
+		var err error
+		addr := getBalance.Address
+		if len(addr) == 0 { //Get current contract address balance
+			addr = crypto.ContractIdToAddress(msg.ContractId).String()
+		}
+
+		address, err := common.StringToAddress(addr)
+		if err != nil {
+			chaincodeLogger.Error(err.Error())
+			return
+		}
+
+		if len(getBalance.Asset) > 0 {
+			asset := &modules.Asset{}
+			asset.SetString(getBalance.Asset)
+			balance, err = txContext.txsimulator.GetTokenBalance(chaincodeID, address, asset)
+		} else { // get all token type balance
+			balance, err = txContext.txsimulator.GetTokenBalance(chaincodeID, address, nil)
+
+		}
+
+		if err != nil {
+			// Send error msg back to chaincode. GetState will not trigger event
+			payload := []byte(err.Error())
+			chaincodeLogger.Errorf("[%s]Failed to get chaincode state(%s). Sending %s",
+				shorttxid(msg.Txid), err, pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		} else if balance == nil {
+			//The state object being requested does not exist
+			chaincodeLogger.Debugf("[%s]No state associated with key: %s. Sending %s with an empty payload",
+				shorttxid(msg.Txid), getBalance.Asset, pb.ChaincodeMessage_RESPONSE)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: nil, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		} else {
+			// Send response msg back to chaincode. GetState will not trigger event
+			result := []*modules.InvokeTokens{}
+			for asset, amt := range balance {
+				result = append(result, &modules.InvokeTokens{Amount: amt, Asset: &asset})
+			}
+			res, _ := rlp.EncodeToBytes(result)
+			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		}
+	}()
+}
+
+func (handler *Handler) enterPayOutToken(e *fsm.Event) {
+	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+	if !ok {
+		e.Cancel(errors.New("received unexpected message type"))
+		return
+	}
+	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_PAY_OUT_TOKEN)
+
+	handler.handlePayOutToken(msg)
+}
+func (handler *Handler) handlePayOutToken(msg *pb.ChaincodeMessage) {
+	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+	// is completed before the next one is triggered. The previous state transition is deemed complete only when
+	// the afterGetState function is exited. Interesting bug fix!!
+	go func() {
+		// Check if this is the unique state request from this chaincode txid
+		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+		if !uniqueReq {
+			// Drop this request
+			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+			return
+		}
+
+		var serialSendMsg *pb.ChaincodeMessage
+		var txContext *transactionContext
+		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
+			"[%s]No ledger context for handlePayOutToken. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+
+		defer func() {
+			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+			//if serialSendMsg != nil {
+			//	chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
+			//		shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			//	handler.serialSendAsync(serialSendMsg, nil)
+			//}
+			chaincodeLogger.Debugf("[%s]handlePayOutToken serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
+		}()
+
+		if txContext == nil {
+			return
+			//serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			//return
+		}
+		payout := &pb.PayOutToken{}
+		unmarshalErr := proto.Unmarshal(msg.Payload, payout)
+		if unmarshalErr != nil {
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
+		}
+		//
+		asset := &modules.Asset{}
+		asset.SetBytes(payout.Asset)
+		chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] getting balance for chaincode %s, key %#v, channel %s",
+			shorttxid(msg.Txid), chaincodeID, asset, txContext.chainID)
+		err := txContext.txsimulator.PayOutToken(chaincodeID, payout.Address, asset, payout.Amount, payout.Locktime)
+		if err != nil {
+			// Send error msg back to chaincode. GetState will not trigger event
+			payload := []byte(err.Error())
+			chaincodeLogger.Errorf("[%s]Failed to get chaincode state(%s). Sending %s",
+				shorttxid(msg.Txid), err, pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		} else {
+			// Send response msg back to chaincode. GetState will not trigger event
+			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: nil, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		}
+	}()
+}
+
+func (handler *Handler) enterDefineToken(e *fsm.Event) {
+	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+	if !ok {
+		e.Cancel(errors.New("received unexpected message type"))
+		return
+	}
+	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_DEFINE_TOKEN)
+
+	handler.handleDefineToken(msg)
+}
+func (handler *Handler) handleDefineToken(msg *pb.ChaincodeMessage) {
+	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+	// is completed before the next one is triggered. The previous state transition is deemed complete only when
+	// the afterGetState function is exited. Interesting bug fix!!
+	go func() {
+		// Check if this is the unique state request from this chaincode txid
+		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+		if !uniqueReq {
+			// Drop this request
+			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+			return
+		}
+
+		var serialSendMsg *pb.ChaincodeMessage
+		var txContext *transactionContext
+		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
+			"[%s]No ledger context for handlePayOutToken. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+
+		defer func() {
+			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+			//if serialSendMsg != nil {
+			//	chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
+			//		shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			//	handler.serialSendAsync(serialSendMsg, nil)
+			//}
+			chaincodeLogger.Debugf("[%s]handlePayOutToken serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
+		}()
+
+		if txContext == nil {
+			return
+			//serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			//return
+		}
+		payout := &pb.DefineToken{}
+		unmarshalErr := proto.Unmarshal(msg.Payload, payout)
+		if unmarshalErr != nil {
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
+		}
+		chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] define token for chaincode %s, token define %s, channel %s",
+			shorttxid(msg.Txid), chaincodeID, string(payout.Define), txContext.chainID)
+
+		err := txContext.txsimulator.DefineToken(chaincodeID, payout.TokenType, payout.Define, payout.Creator)
+
+		if err != nil {
+			// Send error msg back to chaincode. GetState will not trigger event
+			payload := []byte(err.Error())
+			chaincodeLogger.Errorf("[%s]Failed to get chaincode state(%s). Sending %s",
+				shorttxid(msg.Txid), err, pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		} else {
+			// Send response msg back to chaincode. GetState will not trigger event
+			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: nil, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		}
+	}()
+}
+
+func (handler *Handler) enterSupplyToken(e *fsm.Event) {
+	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+	if !ok {
+		e.Cancel(errors.New("received unexpected message type"))
+		return
+	}
+	chaincodeLogger.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_SUPPLY_TOKEN)
+
+	handler.handleSupplyToken(msg)
+}
+func (handler *Handler) handleSupplyToken(msg *pb.ChaincodeMessage) {
+	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+	// is completed before the next one is triggered. The previous state transition is deemed complete only when
+	// the afterGetState function is exited. Interesting bug fix!!
+	go func() {
+		// Check if this is the unique state request from this chaincode txid
+		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+		if !uniqueReq {
+			// Drop this request
+			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+			return
+		}
+
+		var serialSendMsg *pb.ChaincodeMessage
+		var txContext *transactionContext
+		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
+			"[%s]No ledger context for handlePayOutToken. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+
+		defer func() {
+			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+			//if serialSendMsg != nil {
+			//	chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
+			//		shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			//	handler.serialSendAsync(serialSendMsg, nil)
+			//}
+			chaincodeLogger.Debugf("[%s]handlePayOutToken serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
+		}()
+
+		if txContext == nil {
+			return
+			//serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			//return
+		}
+		payout := &pb.SupplyToken{}
+		unmarshalErr := proto.Unmarshal(msg.Payload, payout)
+		if unmarshalErr != nil {
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
+		}
+		chaincodeID := handler.getCCRootName()
+		chaincodeLogger.Debugf("[%s] define token for chaincode %s, token asset id: %X, channel %s",
+			shorttxid(msg.Txid), chaincodeID, payout.AssetId, txContext.chainID)
+
+		err := txContext.txsimulator.SupplyToken(chaincodeID, payout.AssetId, payout.UniqueId, payout.Amount, payout.Creator)
+
+		if err != nil {
+			// Send error msg back to chaincode. GetState will not trigger event
+			payload := []byte(err.Error())
+			chaincodeLogger.Errorf("[%s]Failed to get chaincode state(%s). Sending %s",
+				shorttxid(msg.Txid), err, pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		} else {
+			// Send response msg back to chaincode. GetState will not trigger event
+			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: nil, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		}
+	}()
+}
 
 // is this a txid for which there is a valid txsim
 func (handler *Handler) isValidTxSim(channelID string, txid string, fmtStr string, args ...interface{}) (*transactionContext, *pb.ChaincodeMessage) {
@@ -761,6 +1085,12 @@ func (handler *Handler) isValidTxSim(channelID string, txid string, fmtStr strin
 			return nil, &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(errStr), Txid: txid, ChannelId: channelID}
 		}
 	*/
+	if txContext == nil || txContext.txsimulator == nil {
+		// Send error msg back to chaincode. No ledger context
+		errStr := fmt.Sprintf(fmtStr, args...)
+		chaincodeLogger.Errorf(errStr)
+		return nil, &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(errStr), Txid: txid, ChannelId: channelID}
+	}
 	return txContext, nil
 }
 
@@ -785,27 +1115,27 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			if serialSendMsg != nil {
-				chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
-					shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-				handler.serialSendAsync(serialSendMsg, nil)
-			}
+			//if serialSendMsg != nil {
+			//	chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
+			//		shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			//	handler.serialSendAsync(serialSendMsg, nil)
+			//}
+			chaincodeLogger.Debugf("[%s]handleGetState serial send %s",
+				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+			handler.serialSendAsync(serialSendMsg, nil)
 		}()
 
 		if txContext == nil {
-			//return
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			return
+			//serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			//return
 		}
-
-		key := string(msg.Payload)
 		getState := &pb.GetState{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, getState)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			return
 		}
-		//fmt.Println("xiaozhi", handler.ChaincodeID.String())
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, key %s, channel %s",
 			shorttxid(msg.Txid), chaincodeID, getState.Key, txContext.chainID)
@@ -816,564 +1146,30 @@ func (handler *Handler) handleGetState(msg *pb.ChaincodeMessage) {
 			//glh
 			//res, err = txContext.txsimulator.GetPrivateData(chaincodeID, getState.Collection, getState.Key)
 		} else {
+			res, err = txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 			//glh
 			//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
 		}
-		if txContext.txsimulator != nil {
-			res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
-		}
+		//if txContext.txsimulator != nil {
+		//	res, err = txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
+		//}
 		if err != nil {
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
-			return
-		}
-		if res == nil {
+			// Send error msg back to chaincode. GetState will not trigger event
+			payload := []byte(err.Error())
+			chaincodeLogger.Errorf("[%s]Failed to get chaincode state(%s). Sending %s",
+				shorttxid(msg.Txid), err, pb.ChaincodeMessage_ERROR)
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		} else if res == nil {
 			//The state object being requested does not exist
 			chaincodeLogger.Debugf("[%s]No state associated with key: %s. Sending %s with an empty payload",
-				shorttxid(msg.Txid), key, pb.ChaincodeMessage_RESPONSE)
+				shorttxid(msg.Txid), getState.Key, pb.ChaincodeMessage_RESPONSE)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
-			return
 		} else {
 			// Send response msg back to chaincode. GetState will not trigger event
 			chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
-			return
 		}
-		//TODO xiaozhi
-		//if err != nil {
-		//	// Send error msg back to chaincode. GetState will not trigger event
-		//	payload := []byte(err.Error())
-		//	chaincodeLogger.Errorf("[%s]Failed to get chaincode state(%s). Sending %s",
-		//		shorttxid(msg.Txid), err, pb.ChaincodeMessage_ERROR)
-		//	serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
-		//} else if res == nil {
-		//	//The state object being requested does not exist
-		//	chaincodeLogger.Debugf("[%s]No state associated with key: %s. Sending %s with an empty payload",
-		//		shorttxid(msg.Txid), key, pb.ChaincodeMessage_RESPONSE)
-		//	serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
-		//} else {
-		//	// Send response msg back to chaincode. GetState will not trigger event
-		//	chaincodeLogger.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-		//	serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
-		//}
 	}()
-}
-
-// afterGetStateByRange handles a GET_STATE_BY_RANGE request from the chaincode.
-func (handler *Handler) afterGetStateByRange(e *fsm.Event, state string) {
-	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
-	if !ok {
-		e.Cancel(errors.New("received unexpected message type"))
-		return
-	}
-	chaincodeLogger.Debugf("Received %s, invoking get state from ledger", pb.ChaincodeMessage_GET_STATE_BY_RANGE)
-
-	// Query ledger for state
-	handler.handleGetStateByRange(msg)
-	chaincodeLogger.Debug("Exiting GET_STATE_BY_RANGE")
-}
-
-// Handles query to ledger to rage query state
-func (handler *Handler) handleGetStateByRange(msg *pb.ChaincodeMessage) {
-	//glh
-	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
-	// is completed before the next one is triggered. The previous state transition is deemed complete only when
-	// the afterGetStateByRange function is exited. Interesting bug fix!!
-	/*
-		go func() {
-			// Check if this is the unique state request from this chaincode txid
-			uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
-			if !uniqueReq {
-				// Drop this request
-				chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
-				return
-			}
-
-			var serialSendMsg *pb.ChaincodeMessage
-
-			defer func() {
-				handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-				chaincodeLogger.Debugf("[%s]handleGetStateByRange serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-				handler.serialSendAsync(serialSendMsg, nil)
-			}()
-
-			getStateByRange := &pb.GetStateByRange{}
-			unmarshalErr := proto.Unmarshal(msg.Payload, getStateByRange)
-			if unmarshalErr != nil {
-				payload := []byte(unmarshalErr.Error())
-				chaincodeLogger.Errorf("Failed to unmarshall range query request. Sending %s", pb.ChaincodeMessage_ERROR)
-				serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
-				return
-			}
-
-			iterID := util.GenerateUUID()
-
-			var txContext *transactionContext
-
-			txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetStateByRange. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-			if txContext == nil {
-				return
-			}
-			chaincodeID := handler.getCCRootName()
-
-			errHandler := func(err error, iter commonledger.ResultsIterator, errFmt string, errArgs ...interface{}) {
-				if iter != nil {
-					handler.cleanupQueryContext(txContext, iterID)
-				}
-				payload := []byte(err.Error())
-				chaincodeLogger.Errorf(errFmt, errArgs...)
-				serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
-			}
-			var rangeIter commonledger.ResultsIterator
-			var err error
-
-			if isCollectionSet(getStateByRange.Collection) {
-				rangeIter, err = txContext.txsimulator.GetPrivateDataRangeScanIterator(chaincodeID, getStateByRange.Collection, getStateByRange.StartKey, getStateByRange.EndKey)
-			} else {
-				rangeIter, err = txContext.txsimulator.GetStateRangeScanIterator(chaincodeID, getStateByRange.StartKey, getStateByRange.EndKey)
-			}
-			if err != nil {
-				errHandler(err, nil, "Failed to get ledger scan iterator. Sending %s", pb.ChaincodeMessage_ERROR)
-				return
-			}
-
-			handler.initializeQueryContext(txContext, iterID, rangeIter)
-
-			var payload *pb.QueryResponse
-			payload, err = getQueryResponse(handler, txContext, rangeIter, iterID)
-			if err != nil {
-				errHandler(err, rangeIter, "Failed to get query result. Sending %s", pb.ChaincodeMessage_ERROR)
-				return
-			}
-
-			var payloadBytes []byte
-			payloadBytes, err = proto.Marshal(payload)
-			if err != nil {
-				errHandler(err, rangeIter, "Failed to marshal response. Sending %s", pb.ChaincodeMessage_ERROR)
-				return
-			}
-			chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
-
-		}()
-	*/
-}
-
-const maxResultLimit = 100
-
-//getQueryResponse takes an iterator and fetch state to construct QueryResponse
-func getQueryResponse(handler *Handler, txContext *transactionContext, iter commonledger.ResultsIterator,
-	iterID string) (*pb.QueryResponse, error) {
-	pendingQueryResults := txContext.pendingQueryResults[iterID]
-	for {
-		queryResult, err := iter.Next()
-		switch {
-		case err != nil:
-			chaincodeLogger.Errorf("Failed to get query result from iterator")
-			handler.cleanupQueryContext(txContext, iterID)
-			return nil, err
-		case queryResult == nil:
-			// nil response from iterator indicates end of query results
-			batch := pendingQueryResults.cut()
-			handler.cleanupQueryContext(txContext, iterID)
-			return &pb.QueryResponse{Results: batch, HasMore: false, Id: iterID}, nil
-		case pendingQueryResults.count == maxResultLimit:
-			// max number of results queued up, cut batch, then add current result to pending batch
-			batch := pendingQueryResults.cut()
-			if err := pendingQueryResults.add(queryResult); err != nil {
-				handler.cleanupQueryContext(txContext, iterID)
-				return nil, err
-			}
-			return &pb.QueryResponse{Results: batch, HasMore: true, Id: iterID}, nil
-		default:
-			if err := pendingQueryResults.add(queryResult); err != nil {
-				handler.cleanupQueryContext(txContext, iterID)
-				return nil, err
-			}
-		}
-	}
-}
-
-func (p *pendingQueryResult) cut() []*pb.QueryResultBytes {
-	batch := p.batch
-	p.batch = nil
-	p.count = 0
-	return batch
-}
-
-func (p *pendingQueryResult) add(queryResult commonledger.QueryResult) error {
-	queryResultBytes, err := proto.Marshal(queryResult.(proto.Message))
-	if err != nil {
-		chaincodeLogger.Errorf("Failed to get encode query result as bytes")
-		return err
-	}
-	p.batch = append(p.batch, &pb.QueryResultBytes{ResultBytes: queryResultBytes})
-	p.count = len(p.batch)
-	return nil
-}
-
-// afterQueryStateNext handles a QUERY_STATE_NEXT request from the chaincode.
-func (handler *Handler) afterQueryStateNext(e *fsm.Event, state string) {
-	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
-	if !ok {
-		e.Cancel(errors.New("received unexpected message type"))
-		return
-	}
-	chaincodeLogger.Debugf("Received %s, invoking query state next from ledger", pb.ChaincodeMessage_QUERY_STATE_NEXT)
-
-	// Query ledger for state
-	handler.handleQueryStateNext(msg)
-	chaincodeLogger.Debug("Exiting QUERY_STATE_NEXT")
-}
-
-// Handles query to ledger for query state next
-func (handler *Handler) handleQueryStateNext(msg *pb.ChaincodeMessage) {
-	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
-	// is completed before the next one is triggered. The previous state transition is deemed complete only when
-	// the afterGetStateByRange function is exited. Interesting bug fix!!
-	go func() {
-		// Check if this is the unique state request from this chaincode txid
-		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
-		if !uniqueReq {
-			// Drop this request
-			chaincodeLogger.Debug("Another state request pending for this Txid. Cannot process.")
-			return
-		}
-
-		var serialSendMsg *pb.ChaincodeMessage
-
-		defer func() {
-			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			chaincodeLogger.Debugf("[%s]handleQueryStateNext serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-			handler.serialSendAsync(serialSendMsg, nil)
-		}()
-
-		var txContext *transactionContext
-		var queryStateNext *pb.QueryStateNext
-
-		errHandler := func(payload []byte, iter commonledger.ResultsIterator, errFmt string, errArgs ...interface{}) {
-			if iter != nil {
-				handler.cleanupQueryContext(txContext, queryStateNext.Id)
-			}
-			chaincodeLogger.Errorf(errFmt, errArgs...)
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
-		}
-
-		queryStateNext = &pb.QueryStateNext{}
-
-		unmarshalErr := proto.Unmarshal(msg.Payload, queryStateNext)
-		if unmarshalErr != nil {
-			errHandler([]byte(unmarshalErr.Error()), nil, "Failed to unmarshall state next query request. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		txContext = handler.getTxContext(msg.ChannelId, msg.Txid)
-		if txContext == nil {
-			errHandler([]byte("transaction context not found (timed out ?)"), nil, "[%s]Failed to get transaction context. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		queryIter := handler.getQueryIterator(txContext, queryStateNext.Id)
-
-		if queryIter == nil {
-			errHandler([]byte("query iterator not found"), nil, "query iterator not found. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		payload, err := getQueryResponse(handler, txContext, queryIter, queryStateNext.Id)
-		if err != nil {
-			errHandler([]byte(err.Error()), queryIter, "Failed to get query result. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-		payloadBytes, err := proto.Marshal(payload)
-		if err != nil {
-			errHandler([]byte(err.Error()), queryIter, "Failed to marshal response. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-		chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
-
-	}()
-}
-
-// afterQueryStateClose handles a QUERY_STATE_CLOSE request from the chaincode.
-func (handler *Handler) afterQueryStateClose(e *fsm.Event, state string) {
-	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
-	if !ok {
-		e.Cancel(errors.New("received unexpected message type"))
-		return
-	}
-	chaincodeLogger.Debugf("Received %s, invoking query state close from ledger", pb.ChaincodeMessage_QUERY_STATE_CLOSE)
-
-	// Query ledger for state
-	handler.handleQueryStateClose(msg)
-	chaincodeLogger.Debug("Exiting QUERY_STATE_CLOSE")
-}
-
-// Handles the closing of a state iterator
-func (handler *Handler) handleQueryStateClose(msg *pb.ChaincodeMessage) {
-	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
-	// is completed before the next one is triggered. The previous state transition is deemed complete only when
-	// the afterGetStateByRange function is exited. Interesting bug fix!!
-	go func() {
-		// Check if this is the unique state request from this chaincode txid
-		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
-		if !uniqueReq {
-			// Drop this request
-			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
-			return
-		}
-
-		var serialSendMsg *pb.ChaincodeMessage
-
-		defer func() {
-			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			chaincodeLogger.Debugf("[%s]handleQueryStateClose serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-			handler.serialSendAsync(serialSendMsg, nil)
-		}()
-
-		errHandler := func(payload []byte, errFmt string, errArgs ...interface{}) {
-			chaincodeLogger.Errorf(errFmt, errArgs...)
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
-		}
-
-		queryStateClose := &pb.QueryStateClose{}
-		unmarshalErr := proto.Unmarshal(msg.Payload, queryStateClose)
-		if unmarshalErr != nil {
-			errHandler([]byte(unmarshalErr.Error()), "Failed to unmarshall state query close request. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		txContext := handler.getTxContext(msg.ChannelId, msg.Txid)
-		if txContext == nil {
-			errHandler([]byte("transaction context not found (timed out ?)"), "[%s]Failed to get transaction context. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-			return
-		}
-		//glh
-		/*
-			iter := handler.getQueryIterator(txContext, queryStateClose.Id)
-			if iter != nil {
-				handler.cleanupQueryContext(txContext, queryStateClose.Id)
-			}
-		*/
-		payload := &pb.QueryResponse{HasMore: false, Id: queryStateClose.Id}
-		payloadBytes, err := proto.Marshal(payload)
-		if err != nil {
-			errHandler([]byte(err.Error()), "Failed marshall resopnse. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		chaincodeLogger.Debugf("Closed. Sending %s", pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
-
-	}()
-}
-
-// afterGetQueryResult handles a GET_QUERY_RESULT request from the chaincode.
-func (handler *Handler) afterGetQueryResult(e *fsm.Event, state string) {
-	//glh
-	/*
-		msg, ok := e.Args[0].(*pb.ChaincodeMessage)
-		if !ok {
-			e.Cancel(errors.New("received unexpected message type"))
-			return
-		}
-		chaincodeLogger.Debugf("Received %s, invoking get state from ledger", pb.ChaincodeMessage_GET_QUERY_RESULT)
-
-		// Query ledger for state
-		handler.handleGetQueryResult(msg)
-		chaincodeLogger.Debug("Exiting GET_QUERY_RESULT")
-	*/
-}
-
-//glh
-// Handles query to ledger to execute query state
-/*
-func (handler *Handler) handleGetQueryResult(msg *pb.ChaincodeMessage) {
-	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
-	// is completed before the next one is triggered. The previous state transition is deemed complete only when
-	// the afterQueryState function is exited. Interesting bug fix!!
-	go func() {
-		// Check if this is the unique state request from this chaincode txid
-		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
-		if !uniqueReq {
-			// Drop this request
-			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
-			return
-		}
-
-		var serialSendMsg *pb.ChaincodeMessage
-
-		defer func() {
-			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			chaincodeLogger.Debugf("[%s]handleGetQueryResult serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-			handler.serialSendAsync(serialSendMsg, nil)
-		}()
-
-		var txContext *transactionContext
-		var iterID string
-
-		errHandler := func(payload []byte, iter commonledger.ResultsIterator, errFmt string, errArgs ...interface{}) {
-			if iter != nil {
-				handler.cleanupQueryContext(txContext, iterID)
-			}
-			chaincodeLogger.Errorf(errFmt, errArgs...)
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
-		}
-
-		getQueryResult := &pb.GetQueryResult{}
-		unmarshalErr := proto.Unmarshal(msg.Payload, getQueryResult)
-		if unmarshalErr != nil {
-			errHandler([]byte(unmarshalErr.Error()), nil, "Failed to unmarshall query request. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		iterID = util.GenerateUUID()
-
-		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetQueryResult. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-		if txContext == nil {
-			return
-		}
-
-		chaincodeID := handler.getCCRootName()
-
-		var err error
-		var executeIter commonledger.ResultsIterator
-		if isCollectionSet(getQueryResult.Collection) {
-			executeIter, err = txContext.txsimulator.ExecuteQueryOnPrivateData(chaincodeID, getQueryResult.Collection, getQueryResult.Query)
-		} else {
-			executeIter, err = txContext.txsimulator.ExecuteQuery(chaincodeID, getQueryResult.Query)
-		}
-
-		if err != nil {
-			errHandler([]byte(err.Error()), nil, "Failed to get ledger query iterator. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		handler.initializeQueryContext(txContext, iterID, executeIter)
-
-		var payload *pb.QueryResponse
-		payload, err = getQueryResponse(handler, txContext, executeIter, iterID)
-		if err != nil {
-			errHandler([]byte(err.Error()), executeIter, "Failed to get query result. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		var payloadBytes []byte
-		payloadBytes, err = proto.Marshal(payload)
-		if err != nil {
-			errHandler([]byte(err.Error()), executeIter, "Failed marshall response. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
-
-	}()
-}
-*/
-// afterGetHistoryForKey handles a GET_HISTORY_FOR_KEY request from the chaincode.
-func (handler *Handler) afterGetHistoryForKey(e *fsm.Event, state string) {
-	//glh
-	/*
-		msg, ok := e.Args[0].(*pb.ChaincodeMessage)
-		if !ok {
-			e.Cancel(errors.New("received unexpected message type"))
-			return
-		}
-		chaincodeLogger.Debugf("Received %s, invoking get state from ledger", pb.ChaincodeMessage_GET_HISTORY_FOR_KEY)
-
-		// Query ledger history db
-
-		//handler.handleGetHistoryForKey(msg)
-		chaincodeLogger.Debug("Exiting GET_HISTORY_FOR_KEY")
-	*/
-}
-
-//glh
-// Handles query to ledger history db
-/*
-func (handler *Handler) handleGetHistoryForKey(msg *pb.ChaincodeMessage) {
-	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
-	// is completed before the next one is triggered. The previous state transition is deemed complete only when
-	// the afterQueryState function is exited. Interesting bug fix!!
-	go func() {
-		// Check if this is the unique state request from this chaincode txid
-		uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
-		if !uniqueReq {
-			// Drop this request
-			chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
-			return
-		}
-
-		var serialSendMsg *pb.ChaincodeMessage
-
-		defer func() {
-			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			chaincodeLogger.Debugf("[%s]handleGetHistoryForKey serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
-			handler.serialSendAsync(serialSendMsg, nil)
-		}()
-
-		var iterID string
-		var txContext *transactionContext
-
-		errHandler := func(payload []byte, iter commonledger.ResultsIterator, errFmt string, errArgs ...interface{}) {
-			if iter != nil {
-				handler.cleanupQueryContext(txContext, iterID)
-			}
-			chaincodeLogger.Errorf(errFmt, errArgs...)
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
-		}
-
-		getHistoryForKey := &pb.GetHistoryForKey{}
-		unmarshalErr := proto.Unmarshal(msg.Payload, getHistoryForKey)
-		if unmarshalErr != nil {
-			errHandler([]byte(unmarshalErr.Error()), nil, "Failed to unmarshall query request. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		iterID = util.GenerateUUID()
-
-		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetHistoryForKey. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-		if txContext == nil {
-			return
-		}
-		chaincodeID := handler.getCCRootName()
-
-		historyIter, err := txContext.historyQueryExecutor.GetHistoryForKey(chaincodeID, getHistoryForKey.Key)
-		if err != nil {
-			errHandler([]byte(err.Error()), nil, "Failed to get ledger history iterator. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		handler.initializeQueryContext(txContext, iterID, historyIter)
-
-		var payload *pb.QueryResponse
-		payload, err = getQueryResponse(handler, txContext, historyIter, iterID)
-
-		if err != nil {
-			errHandler([]byte(err.Error()), historyIter, "Failed to get query result. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		var payloadBytes []byte
-		payloadBytes, err = proto.Marshal(payload)
-		if err != nil {
-			errHandler([]byte(err.Error()), historyIter, "Failed marshal response. Sending %s", pb.ChaincodeMessage_ERROR)
-			return
-		}
-
-		chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
-
-	}()
-}
-*/
-
-func isCollectionSet(collection string) bool {
-	if collection == "" {
-		return false
-	}
-	return true
 }
 
 func (handler *Handler) getTxContextForMessage(channelID string, txid string, msgType string, payload []byte, fmtStr string, args ...interface{}) (*transactionContext, *pb.ChaincodeMessage) {
@@ -1470,6 +1266,10 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 				errHandler([]byte(unmarshalErr.Error()), "[%s]Unable to decipher payload. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
 				return
 			}
+			//vState := new(valueState)
+			//err = json.Unmarshal(putState.Value, vState)
+			//fmt.Println("vState===", vState)
+			//fmt.Println()
 			//glh
 			/*
 				if isCollectionSet(putState.Collection) {
@@ -1478,7 +1278,9 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 					err = txContext.txsimulator.SetState(chaincodeID, putState.Key, putState.Value)
 				}
 			*/
-			if txContext.txsimulator != nil {
+			if isCollectionSet(putState.Collection) {
+				//err = txContext.txsimulator.SetPrivateData(chaincodeID, putState.Collection, putState.Key, putState.Value)
+			} else {
 				err = txContext.txsimulator.SetState(chaincodeID, putState.Key, putState.Value)
 			}
 		} else if msg.Type.String() == pb.ChaincodeMessage_DEL_STATE.String() {
@@ -1498,8 +1300,11 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 					err = txContext.txsimulator.DeleteState(chaincodeID, delState.Key)
 				}
 			*/
-			err = txContext.txsimulator.DeleteState(chaincodeID, delState.Key)
-
+			if isCollectionSet(delState.Collection) {
+				//err = txContext.txsimulator.DeletePrivateData(chaincodeID, delState.Collection, delState.Key)
+			} else {
+				err = txContext.txsimulator.DeleteState(chaincodeID, delState.Key)
+			}
 		} else if msg.Type.String() == pb.ChaincodeMessage_INVOKE_CHAINCODE.String() {
 			chaincodeLogger.Debugf("[%s] C-call-C", shorttxid(msg.Txid))
 			chaincodeSpec := &pb.ChaincodeSpec{}
@@ -1588,7 +1393,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 				version = util.GetSysCCVersion()
 			}
 
-			cccid := ccprovider.NewCCContext(calledCcIns.ChainID, calledCcIns.ChaincodeName, version, msg.Txid, false, txContext.signedProp, txContext.proposal)
+			cccid := ccprovider.NewCCContext(msg.ContractId, calledCcIns.ChainID, calledCcIns.ChaincodeName, version, msg.Txid, false, txContext.signedProp, txContext.proposal)
 
 			// Launch the new chaincode if not already running
 			chaincodeLogger.Debugf("[%s] launching chaincode %s on channel %s",
@@ -1603,7 +1408,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			// TODO: Need to handle timeout correctly
 			//timeout := time.Duration(30000) * time.Millisecond
 			timeout := cfg.GetConfig().ContractDeploytimeout
-			ccMsg, _ := createCCMessage(pb.ChaincodeMessage_TRANSACTION, calledCcIns.ChainID, msg.Txid, chaincodeInput)
+			ccMsg, _ := createCCMessage(msg.ContractId, pb.ChaincodeMessage_TRANSACTION, calledCcIns.ChainID, msg.Txid, chaincodeInput)
 
 			// Execute the chaincode... this CANNOT be an init at least for now
 			response, execErr := handler.chaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)
@@ -1673,6 +1478,7 @@ func (handler *Handler) enterOutChainAddress(e *fsm.Event, state string) {
 		unmarshalErr := proto.Unmarshal(msg.Payload, outChainAddr)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
 		}
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, key %s, channel %s",
@@ -1758,6 +1564,7 @@ func (handler *Handler) enterOutChainTransaction(e *fsm.Event, state string) {
 		unmarshalErr := proto.Unmarshal(msg.Payload, outChainTx)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
 		}
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, key %s, channel %s",
@@ -1843,6 +1650,7 @@ func (handler *Handler) enterOutChainQuery(e *fsm.Event, state string) {
 		unmarshalErr := proto.Unmarshal(msg.Payload, outChainQuery)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
 		}
 		chaincodeID := handler.getCCRootName()
 		chaincodeLogger.Debugf("[%s] getting state for chaincode %s, key %s, channel %s",
@@ -1975,27 +1783,6 @@ func (handler *Handler) handleMessage(msg *pb.ChaincodeMessage) error {
 	return filteredErr
 }
 
-// Filter the Errors to allow NoTransitionError and CanceledError to not propagate for cases where embedded Err == nil
-func filterError(errFromFSMEvent error) error {
-	if errFromFSMEvent != nil {
-		if noTransitionErr, ok := errFromFSMEvent.(*fsm.NoTransitionError); ok {
-			if noTransitionErr.Err != nil {
-				// Squash the NoTransitionError
-				return errFromFSMEvent
-			}
-			chaincodeLogger.Debugf("Ignoring NoTransitionError: %s", noTransitionErr)
-		}
-		if canceledErr, ok := errFromFSMEvent.(*fsm.CanceledError); ok {
-			if canceledErr.Err != nil {
-				// Squash the CanceledError
-				return canceledErr
-			}
-			chaincodeLogger.Debugf("Ignoring CanceledError: %s", canceledErr)
-		}
-	}
-	return nil
-}
-
 func (handler *Handler) sendExecuteMessage(ctxt context.Context, chainID string, msg *pb.ChaincodeMessage, signedProp *pb.SignedProposal, prop *pb.Proposal) (chan *pb.ChaincodeMessage, error) {
 	chaincodeLogger.Infof("+++++++++++++++++ msg.Txid[%s]", msg.Txid)
 
@@ -2029,3 +1816,552 @@ func (handler *Handler) isRunning() bool {
 		return true
 	}
 }
+
+//glh
+/*
+func (handler *Handler) initializeQueryContext(txContext *transactionContext, queryID string,
+   queryIterator commonledger.ResultsIterator) {
+   handler.Lock()
+   defer handler.Unlock()
+   txContext.queryIteratorMap[queryID] = queryIterator
+   txContext.pendingQueryResults[queryID] = &pendingQueryResult{batch: make([]*pb.QueryResultBytes, 0)}
+}
+*/
+//func (handler *Handler) getQueryIterator(txContext *transactionContext, queryID string) commonledger.ResultsIterator {
+// handler.Lock()
+// defer handler.Unlock()
+// return txContext.queryIteratorMap[queryID]
+//}
+
+//func (handler *Handler) cleanupQueryContext(txContext *transactionContext, queryID string) {
+// handler.Lock()
+// defer handler.Unlock()
+// //glh
+// //txContext.queryIteratorMap[queryID].Close()
+// delete(txContext.queryIteratorMap, queryID)
+// delete(txContext.pendingQueryResults, queryID)
+//}
+
+//glh
+/*
+// Check if the transactor is allow to call this chaincode on this channel
+func (handler *Handler) checkACL(signedProp *pb.SignedProposal, proposal *pb.Proposal, ccIns *sysccprovider.ChaincodeInstance) error {
+   // ensure that we don't invoke a system chaincode
+   // that is not invokable through a cc2cc invocation
+   if sysccprovider.GetSystemChaincodeProvider().IsSysCCAndNotInvokableCC2CC(ccIns.ChaincodeName) {
+      return errors.Errorf("system chaincode %s cannot be invoked with a cc2cc invocation", ccIns.ChaincodeName)
+   }
+
+   // if we are here, all we know is that the invoked chaincode is either
+   // - a system chaincode that *is* invokable through a cc2cc
+   //   (but we may still have to determine whether the invoker
+   //   can perform this invocation)
+   // - an application chaincode (and we still need to determine
+   //   whether the invoker can invoke it)
+
+   if sysccprovider.GetSystemChaincodeProvider().IsSysCC(ccIns.ChaincodeName) {
+      // Allow this call
+      return nil
+   }
+
+   // A Nil signedProp will be rejected for non-system chaincodes
+   if signedProp == nil {
+      return errors.Errorf("signed proposal must not be nil from caller [%s]", ccIns.String())
+   }
+
+   return aclmgmt.GetACLProvider().CheckACL(resources.CC2CC, ccIns.ChainID, signedProp)
+}
+*/
+
+// afterGetStateByRange handles a GET_STATE_BY_RANGE request from the chaincode.
+//func (handler *Handler) afterGetStateByRange(e *fsm.Event, state string) {
+// msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+// if !ok {
+//    e.Cancel(errors.New("received unexpected message type"))
+//    return
+// }
+// chaincodeLogger.Debugf("Received %s, invoking get state from ledger", pb.ChaincodeMessage_GET_STATE_BY_RANGE)
+//
+// // Query ledger for state
+// handler.handleGetStateByRange(msg)
+// chaincodeLogger.Debug("Exiting GET_STATE_BY_RANGE")
+//}
+
+// Handles query to ledger to rage query state
+//func (handler *Handler) handleGetStateByRange(msg *pb.ChaincodeMessage) {
+//glh
+// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+// is completed before the next one is triggered. The previous state transition is deemed complete only when
+// the afterGetStateByRange function is exited. Interesting bug fix!!
+/*
+   go func() {
+      // Check if this is the unique state request from this chaincode txid
+      uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+      if !uniqueReq {
+         // Drop this request
+         chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+         return
+      }
+
+      var serialSendMsg *pb.ChaincodeMessage
+
+      defer func() {
+         handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+         chaincodeLogger.Debugf("[%s]handleGetStateByRange serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+         handler.serialSendAsync(serialSendMsg, nil)
+      }()
+
+      getStateByRange := &pb.GetStateByRange{}
+      unmarshalErr := proto.Unmarshal(msg.Payload, getStateByRange)
+      if unmarshalErr != nil {
+         payload := []byte(unmarshalErr.Error())
+         chaincodeLogger.Errorf("Failed to unmarshall range query request. Sending %s", pb.ChaincodeMessage_ERROR)
+         serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+         return
+      }
+
+      iterID := util.GenerateUUID()
+
+      var txContext *transactionContext
+
+      txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetStateByRange. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+      if txContext == nil {
+         return
+      }
+      chaincodeID := handler.getCCRootName()
+
+      errHandler := func(err error, iter commonledger.ResultsIterator, errFmt string, errArgs ...interface{}) {
+         if iter != nil {
+            handler.cleanupQueryContext(txContext, iterID)
+         }
+         payload := []byte(err.Error())
+         chaincodeLogger.Errorf(errFmt, errArgs...)
+         serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+      }
+      var rangeIter commonledger.ResultsIterator
+      var err error
+
+      if isCollectionSet(getStateByRange.Collection) {
+         rangeIter, err = txContext.txsimulator.GetPrivateDataRangeScanIterator(chaincodeID, getStateByRange.Collection, getStateByRange.StartKey, getStateByRange.EndKey)
+      } else {
+         rangeIter, err = txContext.txsimulator.GetStateRangeScanIterator(chaincodeID, getStateByRange.StartKey, getStateByRange.EndKey)
+      }
+      if err != nil {
+         errHandler(err, nil, "Failed to get ledger scan iterator. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      handler.initializeQueryContext(txContext, iterID, rangeIter)
+
+      var payload *pb.QueryResponse
+      payload, err = getQueryResponse(handler, txContext, rangeIter, iterID)
+      if err != nil {
+         errHandler(err, rangeIter, "Failed to get query result. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      var payloadBytes []byte
+      payloadBytes, err = proto.Marshal(payload)
+      if err != nil {
+         errHandler(err, rangeIter, "Failed to marshal response. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+      chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
+      serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+
+   }()
+*/
+//}
+/*
+const maxResultLimit = 100
+//getQueryResponse takes an iterator and fetch state to construct QueryResponse
+func getQueryResponse(handler *Handler, txContext *transactionContext, iter commonledger.ResultsIterator,
+   iterID string) (*pb.QueryResponse, error) {
+   pendingQueryResults := txContext.pendingQueryResults[iterID]
+   for {
+      queryResult, err := iter.Next()
+      switch {
+      case err != nil:
+         chaincodeLogger.Errorf("Failed to get query result from iterator")
+         handler.cleanupQueryContext(txContext, iterID)
+         return nil, err
+      case queryResult == nil:
+         // nil response from iterator indicates end of query results
+         batch := pendingQueryResults.cut()
+         handler.cleanupQueryContext(txContext, iterID)
+         return &pb.QueryResponse{Results: batch, HasMore: false, Id: iterID}, nil
+      case pendingQueryResults.count == maxResultLimit:
+         // max number of results queued up, cut batch, then add current result to pending batch
+         batch := pendingQueryResults.cut()
+         if err := pendingQueryResults.add(queryResult); err != nil {
+            handler.cleanupQueryContext(txContext, iterID)
+            return nil, err
+         }
+         return &pb.QueryResponse{Results: batch, HasMore: true, Id: iterID}, nil
+      default:
+         if err := pendingQueryResults.add(queryResult); err != nil {
+            handler.cleanupQueryContext(txContext, iterID)
+            return nil, err
+         }
+      }
+   }
+}
+*/
+
+// afterQueryStateNext handles a QUERY_STATE_NEXT request from the chaincode.
+//func (handler *Handler) afterQueryStateNext(e *fsm.Event, state string) {
+// msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+// if !ok {
+//    e.Cancel(errors.New("received unexpected message type"))
+//    return
+// }
+// chaincodeLogger.Debugf("Received %s, invoking query state next from ledger", pb.ChaincodeMessage_QUERY_STATE_NEXT)
+//
+// // Query ledger for state
+// handler.handleQueryStateNext(msg)
+// chaincodeLogger.Debug("Exiting QUERY_STATE_NEXT")
+//}
+/*
+// Handles query to ledger for query state next
+func (handler *Handler) handleQueryStateNext(msg *pb.ChaincodeMessage) {
+   // The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+   // is completed before the next one is triggered. The previous state transition is deemed complete only when
+   // the afterGetStateByRange function is exited. Interesting bug fix!!
+   go func() {
+      // Check if this is the unique state request from this chaincode txid
+      uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+      if !uniqueReq {
+         // Drop this request
+         chaincodeLogger.Debug("Another state request pending for this Txid. Cannot process.")
+         return
+      }
+
+      var serialSendMsg *pb.ChaincodeMessage
+
+      defer func() {
+         handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+         chaincodeLogger.Debugf("[%s]handleQueryStateNext serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+         handler.serialSendAsync(serialSendMsg, nil)
+      }()
+
+      var txContext *transactionContext
+      var queryStateNext *pb.QueryStateNext
+
+      errHandler := func(payload []byte, iter commonledger.ResultsIterator, errFmt string, errArgs ...interface{}) {
+         if iter != nil {
+            handler.cleanupQueryContext(txContext, queryStateNext.Id)
+         }
+         chaincodeLogger.Errorf(errFmt, errArgs...)
+         serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+      }
+
+      queryStateNext = &pb.QueryStateNext{}
+
+      unmarshalErr := proto.Unmarshal(msg.Payload, queryStateNext)
+      if unmarshalErr != nil {
+         errHandler([]byte(unmarshalErr.Error()), nil, "Failed to unmarshall state next query request. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      txContext = handler.getTxContext(msg.ChannelId, msg.Txid)
+      if txContext == nil {
+         errHandler([]byte("transaction context not found (timed out ?)"), nil, "[%s]Failed to get transaction context. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      queryIter := handler.getQueryIterator(txContext, queryStateNext.Id)
+
+      if queryIter == nil {
+         errHandler([]byte("query iterator not found"), nil, "query iterator not found. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      payload, err := getQueryResponse(handler, txContext, queryIter, queryStateNext.Id)
+      if err != nil {
+         errHandler([]byte(err.Error()), queryIter, "Failed to get query result. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+      payloadBytes, err := proto.Marshal(payload)
+      if err != nil {
+         errHandler([]byte(err.Error()), queryIter, "Failed to marshal response. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+      chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
+      serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+
+   }()
+}
+*/
+// afterQueryStateClose handles a QUERY_STATE_CLOSE request from the chaincode.
+//func (handler *Handler) afterQueryStateClose(e *fsm.Event, state string) {
+// msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+// if !ok {
+//    e.Cancel(errors.New("received unexpected message type"))
+//    return
+// }
+// chaincodeLogger.Debugf("Received %s, invoking query state close from ledger", pb.ChaincodeMessage_QUERY_STATE_CLOSE)
+//
+// // Query ledger for state
+// handler.handleQueryStateClose(msg)
+// chaincodeLogger.Debug("Exiting QUERY_STATE_CLOSE")
+//}
+/*
+// Handles the closing of a state iterator
+func (handler *Handler) handleQueryStateClose(msg *pb.ChaincodeMessage) {
+   // The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+   // is completed before the next one is triggered. The previous state transition is deemed complete only when
+   // the afterGetStateByRange function is exited. Interesting bug fix!!
+   go func() {
+      // Check if this is the unique state request from this chaincode txid
+      uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+      if !uniqueReq {
+         // Drop this request
+         chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+         return
+      }
+
+      var serialSendMsg *pb.ChaincodeMessage
+
+      defer func() {
+         handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+         chaincodeLogger.Debugf("[%s]handleQueryStateClose serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+         handler.serialSendAsync(serialSendMsg, nil)
+      }()
+
+      errHandler := func(payload []byte, errFmt string, errArgs ...interface{}) {
+         chaincodeLogger.Errorf(errFmt, errArgs...)
+         serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+      }
+
+      queryStateClose := &pb.QueryStateClose{}
+      unmarshalErr := proto.Unmarshal(msg.Payload, queryStateClose)
+      if unmarshalErr != nil {
+         errHandler([]byte(unmarshalErr.Error()), "Failed to unmarshall state query close request. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      txContext := handler.getTxContext(msg.ChannelId, msg.Txid)
+      if txContext == nil {
+         errHandler([]byte("transaction context not found (timed out ?)"), "[%s]Failed to get transaction context. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+         return
+      }
+      //glh
+      /*
+         iter := handler.getQueryIterator(txContext, queryStateClose.Id)
+         if iter != nil {
+            handler.cleanupQueryContext(txContext, queryStateClose.Id)
+         }
+*/
+//    payload := &pb.QueryResponse{HasMore: false, Id: queryStateClose.Id}
+//    payloadBytes, err := proto.Marshal(payload)
+//    if err != nil {
+//       errHandler([]byte(err.Error()), "Failed marshall resopnse. Sending %s", pb.ChaincodeMessage_ERROR)
+//       return
+//    }
+//
+//    chaincodeLogger.Debugf("Closed. Sending %s", pb.ChaincodeMessage_RESPONSE)
+//    serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+//
+// }()
+//}
+//*/
+// afterGetQueryResult handles a GET_QUERY_RESULT request from the chaincode.
+//func (handler *Handler) afterGetQueryResult(e *fsm.Event, state string) {
+//glh
+/*
+   msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+   if !ok {
+      e.Cancel(errors.New("received unexpected message type"))
+      return
+   }
+   chaincodeLogger.Debugf("Received %s, invoking get state from ledger", pb.ChaincodeMessage_GET_QUERY_RESULT)
+
+   // Query ledger for state
+   handler.handleGetQueryResult(msg)
+   chaincodeLogger.Debug("Exiting GET_QUERY_RESULT")
+*/
+//}
+
+//glh
+// Handles query to ledger to execute query state
+/*
+func (handler *Handler) handleGetQueryResult(msg *pb.ChaincodeMessage) {
+   // The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+   // is completed before the next one is triggered. The previous state transition is deemed complete only when
+   // the afterQueryState function is exited. Interesting bug fix!!
+   go func() {
+      // Check if this is the unique state request from this chaincode txid
+      uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+      if !uniqueReq {
+         // Drop this request
+         chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+         return
+      }
+
+      var serialSendMsg *pb.ChaincodeMessage
+
+      defer func() {
+         handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+         chaincodeLogger.Debugf("[%s]handleGetQueryResult serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+         handler.serialSendAsync(serialSendMsg, nil)
+      }()
+
+      var txContext *transactionContext
+      var iterID string
+
+      errHandler := func(payload []byte, iter commonledger.ResultsIterator, errFmt string, errArgs ...interface{}) {
+         if iter != nil {
+            handler.cleanupQueryContext(txContext, iterID)
+         }
+         chaincodeLogger.Errorf(errFmt, errArgs...)
+         serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+      }
+
+      getQueryResult := &pb.GetQueryResult{}
+      unmarshalErr := proto.Unmarshal(msg.Payload, getQueryResult)
+      if unmarshalErr != nil {
+         errHandler([]byte(unmarshalErr.Error()), nil, "Failed to unmarshall query request. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      iterID = util.GenerateUUID()
+
+      txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetQueryResult. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+      if txContext == nil {
+         return
+      }
+
+      chaincodeID := handler.getCCRootName()
+
+      var err error
+      var executeIter commonledger.ResultsIterator
+      if isCollectionSet(getQueryResult.Collection) {
+         executeIter, err = txContext.txsimulator.ExecuteQueryOnPrivateData(chaincodeID, getQueryResult.Collection, getQueryResult.Query)
+      } else {
+         executeIter, err = txContext.txsimulator.ExecuteQuery(chaincodeID, getQueryResult.Query)
+      }
+
+      if err != nil {
+         errHandler([]byte(err.Error()), nil, "Failed to get ledger query iterator. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      handler.initializeQueryContext(txContext, iterID, executeIter)
+
+      var payload *pb.QueryResponse
+      payload, err = getQueryResponse(handler, txContext, executeIter, iterID)
+      if err != nil {
+         errHandler([]byte(err.Error()), executeIter, "Failed to get query result. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      var payloadBytes []byte
+      payloadBytes, err = proto.Marshal(payload)
+      if err != nil {
+         errHandler([]byte(err.Error()), executeIter, "Failed marshall response. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
+      serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+
+   }()
+}
+*/
+// afterGetHistoryForKey handles a GET_HISTORY_FOR_KEY request from the chaincode.
+//func (handler *Handler) afterGetHistoryForKey(e *fsm.Event, state string) {
+//glh
+/*
+   msg, ok := e.Args[0].(*pb.ChaincodeMessage)
+   if !ok {
+      e.Cancel(errors.New("received unexpected message type"))
+      return
+   }
+   chaincodeLogger.Debugf("Received %s, invoking get state from ledger", pb.ChaincodeMessage_GET_HISTORY_FOR_KEY)
+
+   // Query ledger history db
+
+   //handler.handleGetHistoryForKey(msg)
+   chaincodeLogger.Debug("Exiting GET_HISTORY_FOR_KEY")
+*/
+//}
+
+//glh
+// Handles query to ledger history db
+/*
+func (handler *Handler) handleGetHistoryForKey(msg *pb.ChaincodeMessage) {
+   // The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
+   // is completed before the next one is triggered. The previous state transition is deemed complete only when
+   // the afterQueryState function is exited. Interesting bug fix!!
+   go func() {
+      // Check if this is the unique state request from this chaincode txid
+      uniqueReq := handler.createTXIDEntry(msg.ChannelId, msg.Txid)
+      if !uniqueReq {
+         // Drop this request
+         chaincodeLogger.Error("Another state request pending for this Txid. Cannot process.")
+         return
+      }
+
+      var serialSendMsg *pb.ChaincodeMessage
+
+      defer func() {
+         handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
+         chaincodeLogger.Debugf("[%s]handleGetHistoryForKey serial send %s", shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
+         handler.serialSendAsync(serialSendMsg, nil)
+      }()
+
+      var iterID string
+      var txContext *transactionContext
+
+      errHandler := func(payload []byte, iter commonledger.ResultsIterator, errFmt string, errArgs ...interface{}) {
+         if iter != nil {
+            handler.cleanupQueryContext(txContext, iterID)
+         }
+         chaincodeLogger.Errorf(errFmt, errArgs...)
+         serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
+      }
+
+      getHistoryForKey := &pb.GetHistoryForKey{}
+      unmarshalErr := proto.Unmarshal(msg.Payload, getHistoryForKey)
+      if unmarshalErr != nil {
+         errHandler([]byte(unmarshalErr.Error()), nil, "Failed to unmarshall query request. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      iterID = util.GenerateUUID()
+
+      txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid, "[%s]No ledger context for GetHistoryForKey. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+      if txContext == nil {
+         return
+      }
+      chaincodeID := handler.getCCRootName()
+
+      historyIter, err := txContext.historyQueryExecutor.GetHistoryForKey(chaincodeID, getHistoryForKey.Key)
+      if err != nil {
+         errHandler([]byte(err.Error()), nil, "Failed to get ledger history iterator. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      handler.initializeQueryContext(txContext, iterID, historyIter)
+
+      var payload *pb.QueryResponse
+      payload, err = getQueryResponse(handler, txContext, historyIter, iterID)
+
+      if err != nil {
+         errHandler([]byte(err.Error()), historyIter, "Failed to get query result. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      var payloadBytes []byte
+      payloadBytes, err = proto.Marshal(payload)
+      if err != nil {
+         errHandler([]byte(err.Error()), historyIter, "Failed marshal response. Sending %s", pb.ChaincodeMessage_ERROR)
+         return
+      }
+
+      chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
+      serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+
+   }()
+}
+*/

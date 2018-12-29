@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -81,10 +80,13 @@ var (
 
 type dags interface {
 	CurrentUnit() *modules.Unit
-	GetUnit(hash common.Hash) (*modules.Unit, error)
+	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
+	//GetStoredUnitTxs(hashs chan<- common.Hash) error
 
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
+	// getTxfee
+	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -101,7 +103,8 @@ type TxPoolConfig struct {
 	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
 	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
 
-	Lifetime time.Duration // Maximum amount of time non-executable transaction are queued
+	Lifetime   time.Duration // Maximum amount of time non-executable transaction are queued
+	Removetime time.Duration // Maximum amount of time txpool transaction are removed
 }
 
 // DefaultTxPoolConfig contains the default configurations for the transaction
@@ -119,7 +122,8 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	AccountQueue: 64,
 	GlobalQueue:  1024,
 
-	Lifetime: 3 * time.Hour,
+	Lifetime:   3 * time.Hour,
+	Removetime: 30 * time.Minute,
 }
 
 // sanitize checks the provided user configurations and changes anything that's
@@ -146,7 +150,7 @@ type TxPool struct {
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
-	mu           sync.RWMutex
+	mu           *sync.RWMutex
 
 	locals  *utxoSet   // Set of local transaction to exempt from eviction rules
 	journal *txJournal // Journal of local transaction to back up to disk
@@ -154,15 +158,44 @@ type TxPool struct {
 	beats map[modules.OutPoint]time.Time
 	queue map[common.Hash]*modules.TxPoolTransaction
 
-	pending         map[common.Hash]*modules.TxPoolTransaction // All currently processable transactions
-	all             map[common.Hash]*modules.TxPoolTransaction // All transactions to allow lookups
-	priority_priced *txPricedList                              // All transactions sorted by price and priority
+	pending         map[common.Hash][]*modules.TxPoolTransaction // All currently processable transactions
+	all             map[common.Hash]*modules.TxPoolTransaction   // All transactions to allow lookups
+	priority_priced *txPricedList                                // All transactions sorted by price and priority
 
 	outpoints map[modules.OutPoint]*modules.TxPoolTransaction //
 
 	wg sync.WaitGroup // for shutdown sync
 
 	homestead bool
+	quit      chan struct{} // used for exit
+}
+
+type sTxDesc struct {
+	// Tx is the transaction associated with the entry.
+	Tx *modules.Transaction
+
+	// Added is the time when the entry was added to the source pool.
+	Added time.Time
+
+	// Height is the block height when the entry was added to the the source
+	// pool.
+	Height int32
+
+	// Fee is the total fee the transaction associated with the entry pays.
+	Fee int64
+
+	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
+	FeePerKB int64
+}
+
+// TxDesc is a descriptor containing a transaction in the mempool along with
+// additional metadata.
+type TxDesc struct {
+	sTxDesc
+
+	// StartingPriority is the priority of the transaction when it was added
+	// to the pool.
+	StartingPriority float64
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -178,7 +211,7 @@ func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chain
 		logger:      l,
 		queue:       make(map[common.Hash]*modules.TxPoolTransaction),
 		beats:       make(map[modules.OutPoint]time.Time),
-		pending:     make(map[common.Hash]*modules.TxPoolTransaction),
+		pending:     make(map[common.Hash][]*modules.TxPoolTransaction),
 		all:         make(map[common.Hash]*modules.TxPoolTransaction),
 		chainHeadCh: make(chan modules.ChainHeadEvent, chainHeadChanSize),
 		txfee:       new(big.Int).SetUint64(config.FeeLimit),
@@ -203,6 +236,7 @@ func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chain
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
 
+	pool.mu = new(sync.RWMutex)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
@@ -227,10 +261,12 @@ func (pool *TxPool) loop() {
 
 	journal := time.NewTicker(pool.config.Rejournal)
 	defer journal.Stop()
+	// delete txspool's confirmed tx
+	deleteTxTimer := time.NewTicker(10 * time.Minute)
+	defer deleteTxTimer.Stop()
 
 	// Track the previous head headers for transaction reorgs
 	head := pool.unit.CurrentUnit()
-
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
@@ -273,7 +309,16 @@ func (pool *TxPool) loop() {
 				}
 				pool.mu.Unlock()
 			}
+			// delete tx
+		case <-deleteTxTimer.C:
+			go pool.DeleteTx()
+
+			// quit
+		case <-pool.quit:
+			log.Info("txspool are quit now", "time", time.Now().String())
+			return
 		}
+
 	}
 }
 
@@ -296,31 +341,31 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 			var discarded, included modules.Transactions
 
 			var (
-				rem, _ = pool.unit.GetUnit(oldHead.Hash())
-				add, _ = pool.unit.GetUnit(newHead.Hash())
+				rem, _ = pool.unit.GetUnitByHash(oldHead.Hash())
+				add, _ = pool.unit.GetUnitByHash(newHead.Hash())
 			)
 			for rem.NumberU64() > add.NumberU64() {
 				discarded = append(discarded, rem.Transactions()...)
-				if rem, _ = pool.unit.GetUnit(rem.ParentHash()[0]); rem == nil {
+				if rem, _ = pool.unit.GetUnitByHash(rem.ParentHash()[0]); rem == nil {
 					log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
 					return
 				}
 			}
 			for add.NumberU64() > rem.NumberU64() {
 				included = append(included, add.Transactions()...)
-				if add, _ = pool.unit.GetUnit(add.ParentHash()[0]); add == nil {
+				if add, _ = pool.unit.GetUnitByHash(add.ParentHash()[0]); add == nil {
 					log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
 					return
 				}
 			}
 			for rem.Hash() != add.Hash() {
 				discarded = append(discarded, rem.Transactions()...)
-				if rem, _ = pool.unit.GetUnit(rem.ParentHash()[0]); rem == nil {
+				if rem, _ = pool.unit.GetUnitByHash(rem.ParentHash()[0]); rem == nil {
 					log.Error("Unrooted old unit seen by tx pool", "block", oldHead.Number, "hash", oldHead.Hash())
 					return
 				}
 				included = append(included, add.Transactions()...)
-				if add, _ = pool.unit.GetUnit(add.ParentHash()[0]); add == nil {
+				if add, _ = pool.unit.GetUnitByHash(add.ParentHash()[0]); add == nil {
 					log.Error("Unrooted new unit seen by tx pool", "block", newHead.Number, "hash", newHead.Hash())
 					return
 				}
@@ -375,7 +420,11 @@ func (pool *TxPool) Stats() (int, int) {
 // stats retrieves the current pool stats, namely the number of pending and the
 // number of queued (non-executable) transactions.
 func (pool *TxPool) stats() (int, int) {
-	return len(pool.pending), len(pool.queue)
+	count := 0
+	for _, txs := range pool.pending {
+		count += len(txs)
+	}
+	return count, len(pool.queue)
 }
 
 // Content retrieves the data content of the transaction pool, returning all the
@@ -386,8 +435,10 @@ func (pool *TxPool) Content() (map[common.Hash]*modules.Transaction, map[common.
 
 	pending := make(map[common.Hash]*modules.Transaction)
 	queue := make(map[common.Hash]*modules.Transaction)
-	for hash, tx := range pool.pending {
-		pending[hash] = tx.Tx
+	for _, txs := range pool.pending {
+		for _, tx := range txs {
+			pending[tx.Tx.Hash()] = tx.Tx
+		}
 	}
 	for hash, tx := range pool.queue {
 		queue[hash] = tx.Tx
@@ -398,13 +449,15 @@ func (pool *TxPool) Content() (map[common.Hash]*modules.Transaction, map[common.
 // Pending retrieves all currently processable transactions, groupped by origin
 // account and sorted by priority level. The returned transaction set is a copy and can be
 // freely modified by calling code.
-func (pool *TxPool) Pending() (map[common.Hash]*modules.TxPoolTransaction, error) {
+func (pool *TxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, error) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
-	pending := make(map[common.Hash]*modules.TxPoolTransaction)
-	for addr, tx := range pool.pending {
-		pending[addr] = tx
+	pending := make(map[common.Hash][]*modules.TxPoolTransaction)
+	for unit_hash, txs := range pool.pending {
+		this := make([]*modules.TxPoolTransaction, 0)
+		this = txs[:]
+		pending[unit_hash] = this
 	}
 	return pending, nil
 }
@@ -421,6 +474,13 @@ func (pool *TxPool) AllHashs() []*common.Hash {
 	}
 	pool.mu.RUnlock()
 	return hashs
+}
+
+func (pool *TxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
+	txs := pool.all
+	return txs
 }
 
 //
@@ -448,9 +508,11 @@ func (pool *TxPool) Count() int {
 // freely modified by calling code.
 func (pool *TxPool) local() map[common.Hash]*modules.TxPoolTransaction {
 	txs := make(map[common.Hash]*modules.TxPoolTransaction)
-	for hash, tx := range pool.pending {
-		if tx != nil {
-			txs[hash] = tx
+	for _, list := range pool.pending {
+		for _, tx := range list {
+			if tx != nil {
+				txs[tx.Tx.Hash()] = tx
+			}
 		}
 	}
 	return txs
@@ -473,7 +535,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if len(tx.From) > 0 {
 		for _, from := range tx.From {
 			local = local || pool.locals.contains(*from) // account may be local even if the transaction arrived from the network
-			if !local && pool.txfee.Cmp(tx.Tx.Fee()) > 0 {
+			if !local && pool.txfee.Cmp(tx.GetTxFee()) > 0 {
 				return ErrTxFeeTooLow
 			}
 		}
@@ -509,7 +571,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for _, script := range msg.Input {
+				for _, script := range msg.Inputs {
 					txpool_tx.From = append(txpool_tx.From, script.PreviousOutPoint)
 				}
 			}
@@ -517,13 +579,13 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	}
 
 	txpool_tx.CreationDate = time.Now()
-	txpool_tx.Nonce = txpool.GetNonce(tx.TxHash) + 1
+	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
+	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 
 	return txpool_tx
 }
 
-// CheckSpend checks whether the passed outpoint is already spent by a transaction in the txpool
 func PooltxToTx(pooltx *modules.TxPoolTransaction) *modules.Transaction {
 	return pooltx.Tx
 }
@@ -555,12 +617,12 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	hash := tx.Tx.Hash()
 
 	if pool.all[hash] != nil {
-		log.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.TxHash)
+		pool.logger.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.Hash())
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
 	// If the transaction fails basic validation, discard it
 	if err := pool.validateTx(tx, local); err != nil {
-		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		pool.logger.Trace("Discarding invalid transaction", "hash", hash, "err", err)
 		return false, err
 	}
 
@@ -573,13 +635,14 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		pool.logger.Errorf("fetchInputUtxos by txid[%s] failed:%s", tx.Tx.Hash().String(), err)
 		return false, err
 	}
-	log.Info("fetch utxoview info====================================", "info", utxoview.entries)
+
+	pool.logger.Debug("fetch utxoview info:", "utxoinfo", utxoview)
 	// Check the transaction if it exists in the main chain and is not already fully spent.
 	preout := modules.OutPoint{TxHash: hash}
 	for i, msgcopy := range tx.Tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for j := range msg.Output {
+				for j := range msg.Outputs {
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
 					// get utxo entry , if the utxo entry is spent, then return  error.
@@ -592,47 +655,52 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			}
 		}
 	}
-	log.Info("add output utxoview info====================================", "info", utxoview.entries[preout])
+	log.Debug("add output utxoview info: ", "utxoinfo", utxoview.entries[preout])
 
 	// If the transaction pool is full, discard underpriced transactions
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underpriced, don't accept it
 		if pool.priority_priced.Underpriced(tx, pool.locals) {
-			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.Tx.Fee())
+			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.GetTxFee().Int64())
 			return false, ErrUnderpriced
 		}
 		// New transaction is better than our worse ones, make room for it
 		drop := pool.priority_priced.Discard(len(pool.all)-int(pool.config.GlobalSlots+pool.config.GlobalQueue-1), pool.locals)
 		for _, tx := range drop {
-			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.TxHash, "price", tx.Tx.Fee())
+			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.Hash(), "price", tx.GetTxFee().Int64())
 			pool.removeTransaction(tx, true)
 		}
 	}
 	// If the transaction is replacing an already pending one, do directly
-	if list := pool.pending[tx.Tx.Hash()]; list != nil {
-		// Nonce already pending, check if required price bump is met
-		old := list
-
-		// New transaction is better, replace old one
-		if old != nil {
-			if old.Priority_lvl <= tx.Priority_lvl {
-				delete(pool.all, old.Tx.Hash())
-				pool.priority_priced.Removed()
+	txHash := tx.Tx.Hash()
+	for _, lists := range pool.pending {
+		for _, list := range lists {
+			if list != nil {
+				// New transaction is better, replace old one
+				if txHash.String() == list.Tx.Hash().String() {
+					if list.Priority_lvl < tx.Priority_lvl {
+						//delete(pool.all, txHash)
+						tx.RemStatus = true
+						pool.priority_priced.Removed(txHash)
+					}
+					return true, nil
+				}
 			}
 		}
-		return old != nil, nil
 	}
+
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
-	pool.all[tx.Tx.Hash()] = tx
+	pool.all[hash] = tx
 	for _, msgcopy := range tx.Tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for _, txin := range msg.Input {
-					pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
+				for _, txin := range msg.Inputs {
+					if pool.outpoints == nil {
+						pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
+					}
 					pool.outpoints[*txin.PreviousOutPoint] = tx
 				}
 			}
-
 		}
 	}
 	pool.priority_priced.Put(tx)
@@ -654,7 +722,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// pool.journalTx(tx)
 
-	log.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
+	pool.logger.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
 	return replace, nil
 }
 
@@ -684,7 +752,7 @@ func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
 	if len(tx.From) > 0 {
 		for _, from := range tx.From {
 			if pool.journal == nil || !pool.locals.contains(*from) {
-				log.Trace("Pool journal is nil.", "journal", pool.journal.path, "locals", pool.locals.utxos)
+				log.Trace("Pool journal is nil.", "journal", pool.journal.path)
 				return
 			}
 		}
@@ -700,31 +768,61 @@ func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
 // Note, this method assumes the pool lock is held!
 func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 	// Try to insert the transaction into the pending queue
+	tx_hash := tx.Tx.Hash()
 	old := new(modules.TxPoolTransaction)
-	if pool.pending[hash] != nil {
-		old := pool.pending[hash]
-		if old.Pending || old.Confirmed {
-			// An older transaction was better, discard this
-			delete(pool.all, hash)
-			pool.priority_priced.Removed()
-			return
+	for _, lists := range pool.pending {
+		for _, this := range lists {
+			if this.Tx.Hash().String() == tx_hash.String() {
+				old := this
+				if old.Pending || old.Confirmed {
+					// An older transaction was better, discard this
+					//delete(pool.all, hash)
+					old.RemStatus = true
+					pool.all[hash] = old
+					pool.priority_priced.Removed(hash)
+					return
+				}
+			}
 		}
 	}
 
 	// Otherwise discard any previous transaction and mark this
 	if old.Tx != nil {
-		delete(pool.all, old.Tx.Hash())
-		pool.priority_priced.Removed()
+		//delete(pool.all, old.Tx.Hash())
+		pool.priority_priced.Removed(old.Tx.Hash())
 	}
 	// Failsafe to work around direct pending inserts (tests)
-	if pool.all[hash] == nil {
+	if pool.all[tx_hash] == nil {
 		tx.Pending = true
-		pool.all[hash] = tx
-		pool.pending[hash] = tx
+		pool.all[tx_hash] = tx
+		list := pool.pending[hash]
+		if list == nil {
+			list = make([]*modules.TxPoolTransaction, 0)
+		}
+		list = append(list, tx)
+		pool.pending[hash] = list
 
 	} else {
 		tx.Pending = true
-		pool.pending[hash] = tx
+		list := pool.pending[hash]
+		if list == nil {
+			list = make([]*modules.TxPoolTransaction, 0)
+			list = append(list, tx)
+		} else {
+			var exist bool
+			for i, this := range list {
+				if this.Tx.Hash().String() == tx.Tx.Hash().String() {
+					list[i] = tx
+					exist = true
+					break
+				}
+			}
+			if !exist {
+				list = append(list, tx)
+			}
+		}
+		pool.pending[hash] = list
+		pool.all[hash] = old
 	}
 	// Set the potentially new pending nonce and notify any subsystems of the new tx
 	if len(tx.From) > 0 {
@@ -768,6 +866,177 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 		pool_txs = append(pool_txs, TxtoTxpoolTx(pool, tx))
 	}
 	return pool.addTxs(pool_txs, false)
+}
+
+type Tag uint64
+
+func (mp *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
+	//log.Trace("Processing transaction %v", tx.Hash())
+
+	// Protect concurrent access.
+	mp.mu.Lock()
+	defer mp.mu.Unlock()
+
+	// Potentially accept the transaction to the memory pool.
+	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit, false)
+	if err != nil {
+		log.Info("txpool", "accept transaction err:", err)
+		return nil, err
+	}
+	missingParents = missingParents
+	txD = txD
+
+	// if len(missingParents) == 0 {
+	// 	// Accept any orphan transactions that depend on this
+	// 	// transaction (they may no longer be orphans if all inputs
+	// 	// are now available) and repeat for those accepted
+	// 	// transactions until there are no more.
+	// 	newTxs := mp.processOrphans(tx)
+	// 	acceptedTxs := make([]*TxDesc, len(newTxs)+1)
+
+	// 	// Add the parent transaction first so remote nodes
+	// 	// do not add orphans.
+	// 	acceptedTxs[0] = txD
+	// 	copy(acceptedTxs[1:], newTxs)
+
+	// 	return acceptedTxs, nil
+	// }
+
+	// The transaction is an orphan (has inputs missing).  Reject
+	// it if the flag to allow orphans is not set.
+	/*if !allowOrphan {
+		// Only use the first missing parent transaction in
+		// the error message.
+		//
+		// NOTE: RejectDuplicate is really not an accurate
+		// reject code here, but it matches the reference
+		// implementation and there isn't a better choice due
+		// to the limited number of reject codes.  Missing
+		// inputs is assumed to mean they are already spent
+		// which is not really always the case.
+		str := fmt.Sprintf("orphan transaction %v references "+
+			"outputs of unknown or fully-spent "+
+			"transaction %v", tx.Hash(), missingParents[0])
+		return nil, txRuleError(wire.RejectDuplicate, str)
+	}*/
+
+	// Potentially add the orphan transaction to the orphan pool.
+	//err = mp.maybeAddOrphan(tx, tag)
+	return nil, nil
+}
+
+func IsCoinBase(tx *modules.Transaction) bool {
+	if len(tx.TxMessages) != 1 {
+		return false
+	}
+	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	if !ok {
+		return false
+	}
+	prevOut := msg.Inputs[0].PreviousOutPoint
+	if prevOut.TxHash != (common.Hash{}) {
+		return false
+	}
+	return true
+}
+
+// maybeAcceptTransaction is the internal function which implements the public
+// MaybeAcceptTransaction.  See the comment for MaybeAcceptTransaction for
+// more details.
+//
+// This function MUST be called with the mempool lock held (for writes).
+func (mp *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateLimit, rejectDupOrphans bool) ([]*common.Hash, *TxDesc, error) {
+	txHash := tx.Hash()
+	// Don't accept the transaction if it already exists in the pool.  This
+	// applies to orphan transactions as well when the reject duplicate
+	// orphans flag is set.  This check is intended to be a quick check to
+	// weed out duplicates.
+	if mp.isTransactionInPool(&txHash) {
+		str := fmt.Sprintf("already have transaction %v", txHash)
+		//str = str
+		log.Info("txpool", "", str)
+		return nil, nil, nil //txRuleError(RejectDuplicate, str)
+	}
+
+	// Perform preliminary sanity checks on the transaction.  This makes
+	// use of blockchain which contains the invariant rules for what
+	// transactions are allowed into blocks.
+	err := CheckTransactionSanity(tx)
+	if err != nil {
+		log.Info("txpool", "Check Transaction Sanity err:", err)
+		return nil, nil, err
+	}
+
+	// A standalone transaction must not be a coinbase transaction.
+	if IsCoinBase(tx) {
+		str := fmt.Sprintf("transaction %v is an individual coinbase",
+			txHash)
+		//str = str
+		log.Info("txpool", "", str)
+		return nil, nil, nil //txRuleError(RejectInvalid, str)
+	}
+
+	// The transaction may not use any of the same outputs as other
+	// transactions already in the pool as that would ultimately result in a
+	// double spend.  This check is intended to be quick and therefore only
+	// detects double spends within the transaction pool itself.  The
+	// transaction could still be double spending coins from the main chain
+	// at this point.  There is a more in-depth check that happens later
+	// after fetching the referenced transaction inputs from the main chain
+	// which examines the actual spend data and prevents double spends.
+	txpooltx := TxtoTxpoolTx(mp, tx)
+	err = mp.checkPoolDoubleSpend(txpooltx)
+	if err != nil {
+		log.Info("txpool", "check PoolD oubleSpend err:", err)
+		return nil, nil, err
+	}
+
+	// Fetch all of the unspent transaction outputs referenced by the inputs
+	// to this transaction.  This function also attempts to fetch the
+	// transaction itself to be used for detecting a duplicate transaction
+	// without needing to do a separate lookup.
+	/*utxoView, err := mp.fetchInputUtxos(tx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Don't allow the transaction if it exists in the main chain and is not
+	// not already fully spent.
+	prevOut := wire.OutPoint{Hash: *txHash}
+	for txOutIdx := range tx.MsgTx().TxOut {
+		prevOut.Index = uint32(txOutIdx)
+		entry := utxoView.LookupEntry(prevOut)
+		if entry != nil && !entry.IsSpent() {
+			return nil, nil, txRuleError(wire.RejectDuplicate,
+				"transaction already exists")
+		}
+		utxoView.RemoveEntry(prevOut)
+	}*/
+
+	// NOTE: if you modify this code to accept non-standard transactions,
+	// you should add code here to check that the transaction does a
+	// reasonable number of ECDSA signature verifications.
+
+	/*
+		// Verify crypto signatures for each input and reject the transaction if
+		// any don't verify.
+		err = blockchain.ValidateTransactionScripts(tx, utxoView,
+			txscript.StandardVerifyFlags, mp.cfg.SigCache,
+			mp.cfg.HashCache)
+		if err != nil {
+			if cerr, ok := err.(blockchain.RuleError); ok {
+				return nil, nil, chainRuleError(cerr)
+			}
+			return nil, nil, err
+		}*/
+
+	// Add to transaction pool.
+	//txD := mp.addTransaction(utxoView, tx, bestHeight, txFee)
+
+	//log.Debugf("Accepted transaction %v (pool size: %v)", txHash,
+	//	len(mp.pool))
+
+	return nil, nil, nil
 }
 
 // addTx enqueues a single transaction into the pool if it is valid.
@@ -848,10 +1117,10 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 	for i, hash := range hashes {
 		if tx := pool.all[hash]; tx != nil {
 			//from := modules.RSVtoAddress(tx) // already validated
-			if pool.pending[tx.Tx.Hash()] != nil { //&& pool.pending[tx.TxHash].txs.items[tx.Nonce()] != nil
-				status[i] = TxStatusPending
-			} else {
+			if pool.queue[hash] != nil { //&& pool.pending[tx.TxHash].txs.items[tx.Nonce()] != nil
 				status[i] = TxStatusQueued
+			} else {
+				status[i] = TxStatusPending
 			}
 		}
 	}
@@ -860,11 +1129,91 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
-func (pool *TxPool) Get(hash common.Hash) *modules.TxPoolTransaction {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
+	// pool.mu.RLock()
+	// defer pool.mu.RUnlock()
 
-	return pool.all[hash]
+	tx := pool.all[hash]
+	log.Debug("get tx info by hash in txpool... ", "info", tx)
+	var u_hash common.Hash
+	pending, err := pool.Pending()
+	if err == nil {
+		for unit_hash, txs := range pending {
+			for _, p_tx := range txs {
+				if p_tx.Tx.Hash() == hash {
+					log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", unit_hash, "p_tx", p_tx)
+					return p_tx, unit_hash
+				}
+			}
+		}
+	}
+	return tx, u_hash
+}
+
+// DeleteTx
+func (pool *TxPool) DeleteTx() error {
+	pool.mu.Lock()
+	for hash, tx := range pool.all {
+		if !tx.Confirmed {
+			if tx.CreationDate.Add(DefaultTxPoolConfig.Lifetime).Before(time.Now()) {
+				continue
+			} else {
+				// delete
+				log.Debug("delete the non confirmed tx(overtime).", "tx_hash", tx.Tx.Hash())
+				pool.DeleteTxByHash(hash)
+			}
+		}
+		if tx.CreationDate.Add(DefaultTxPoolConfig.Removetime).After(time.Now()) {
+			// delete
+			log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
+			pool.DeleteTxByHash(hash)
+		}
+	}
+	pool.mu.Unlock()
+	return nil
+}
+
+func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
+	tx, ok := pool.all[hash]
+	if !ok {
+		return errors.New(fmt.Sprintf("the tx(%s) isn't exist.", hash.String()))
+	}
+	log.Debug("delete the tx.", "time", time.Now().Second()-tx.CreationDate.Second(), "hash", hash.String())
+	pool.priority_priced.Removed(hash)
+	delete(pool.all, hash)
+	// Remove the transaction from the pending lists and reset the account nonce
+	for unit_hash, list := range pool.pending {
+		for i, tx := range list {
+			if tx.Tx.Hash().String() == hash.String() {
+				newList := make([]*modules.TxPoolTransaction, 0)
+				if i > 0 {
+					newList = append(newList, list[:i]...)
+				}
+				if len(list) > i+1 {
+					newList = append(newList, list[i+1:]...)
+				}
+				pool.pending[unit_hash] = newList
+				if len(tx.From) > 0 {
+					for _, from := range tx.From {
+						delete(pool.beats, *from)
+					}
+				}
+				// delete outpoints 's
+				for _, msg := range tx.Tx.Messages() {
+					if msg.App == modules.APP_PAYMENT {
+						payment, ok := msg.Payload.(*modules.PaymentPayload)
+						if ok {
+							for _, input := range payment.Inputs {
+								delete(pool.outpoints, *input.PreviousOutPoint)
+							}
+						}
+					}
+				}
+				break
+			}
+		}
+	}
+	return nil
 }
 
 // removeTx removes a single transaction from the queue, moving all subsequent
@@ -876,35 +1225,52 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 		return
 	}
 	if tx.Tx.Hash() != hash {
-		delete(pool.all, tx.Tx.Hash())
+		tx.Confirmed = true
+		pool.all[tx.Tx.Hash()] = tx
+		//delete(pool.all, tx.Tx.Hash())
 	}
 	// Remove it from the list of known transactions
-	delete(pool.all, hash)
-	pool.priority_priced.Removed()
+	//delete(pool.all, hash)
 
+	pool.priority_priced.Removed(hash)
+	tx.Confirmed = true
+	pool.all[hash] = tx
 	// Remove the transaction from the pending lists and reset the account nonce
-	if pending := pool.pending[hash]; pending != nil {
-		delete(pool.pending, hash)
-		if len(tx.From) > 0 {
-			for _, from := range tx.From {
-				delete(pool.beats, *from)
+	for unit_hash, list := range pool.pending {
+		for i, tx := range list {
+			if tx.Tx.Hash().String() == hash.String() {
+				newList := make([]*modules.TxPoolTransaction, 0)
+				if i > 0 {
+					newList = append(newList, list[:i]...)
+				}
+				if len(list) > i+1 {
+					newList = append(newList, list[i+1:]...)
+				}
+				pool.pending[unit_hash] = newList
+				if len(tx.From) > 0 {
+					for _, from := range tx.From {
+						delete(pool.beats, *from)
+					}
+				}
+				break
 			}
 		}
-
-		// if removed, invalids := pending.Remove(tx); removed {
-		// 	// If no more pending transactions are left, remove the list
-		// 	if pending.Empty() {
-		// 		delete(pool.pending, hash)
-		// 		from := modules.MsgstoAddress(tx.TxMessages)
-		// 		delete(pool.beats, from)
-		// 	}
-		// 	// Postpone any invalidated transactions
-		// 	for _, tx := range invalids {
-		// 		pool.enqueueTx(tx.TxHash, tx)
-		// 	}
-		// 	return
-		// }
 	}
+
+	// if removed, invalids := pending.Remove(tx); removed {
+	// 	// If no more pending transactions are left, remove the list
+	// 	if pending.Empty() {
+	// 		delete(pool.pending, hash)
+	// 		from := modules.MsgstoAddress(tx.TxMessages)
+	// 		delete(pool.beats, from)
+	// 	}
+	// 	// Postpone any invalidated transactions
+	// 	for _, tx := range invalids {
+	// 		pool.enqueueTx(tx.TxHash, tx)
+	// 	}
+	// 	return
+	// }
+
 }
 func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
 	for _, hash := range hashs {
@@ -919,7 +1285,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 		for i, msgcopy := range tx.Tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-					for j := uint32(0); j < uint32(len(msg.Output)); j++ {
+					for j := uint32(0); j < uint32(len(msg.Outputs)); j++ {
 						preout := modules.OutPoint{TxHash: hash, MessageIndex: uint32(i), OutIndex: j}
 						if pooltxRedeemer, exist := pool.outpoints[preout]; exist {
 							pool.removeTransaction(pooltxRedeemer, true)
@@ -930,11 +1296,23 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 		}
 	}
 	// Remove the transaction from the pending lists and reset the account nonce
-	if pending := pool.pending[hash]; pending != nil {
-		delete(pool.pending, hash)
-		if len(tx.From) > 0 {
-			for _, from := range tx.From {
-				delete(pool.beats, *from)
+	for unit_hash, list := range pool.pending {
+		for i, tx := range list {
+			if tx.Tx.Hash().String() == hash.String() {
+				newList := make([]*modules.TxPoolTransaction, 0)
+				if i > 0 {
+					newList = append(newList, list[:i]...)
+				}
+				if len(list) > i+1 {
+					newList = append(newList, list[i+1:]...)
+				}
+				pool.pending[unit_hash] = newList
+				if len(tx.From) > 0 {
+					for _, from := range tx.From {
+						delete(pool.beats, *from)
+					}
+				}
+				break
 			}
 		}
 	}
@@ -945,14 +1323,16 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 		for _, msgcopy := range pooltx.Tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-					for _, input := range msg.Input {
+					for _, input := range msg.Inputs {
 						delete(pool.outpoints, *input.PreviousOutPoint)
 					}
 				}
 			}
 		}
-		delete(pool.all, hash)
-		pool.priority_priced.Removed()
+		//delete(pool.all, hash)
+		tx.Confirmed = true
+		pool.all[hash] = tx
+		pool.priority_priced.Removed(hash)
 	}
 }
 func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
@@ -976,7 +1356,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(*modules.PaymentPayload)
-			for _, input := range inputs.Input {
+			for _, input := range inputs.Inputs {
 				if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
 					pool.removeTransaction(tx, true)
 				}
@@ -994,23 +1374,40 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 				continue
 			}
 			if inputs != nil {
-				for _, input := range inputs.Input {
+				for _, input := range inputs.Inputs {
 					if input == nil {
 						break
 					}
-					if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
-						str := fmt.Sprintf("output %v already spent by "+
-							"transaction %v in the memory pool",
-							input.PreviousOutPoint, tx.Tx.Hash())
-						return errors.New(str)
+					//if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
+					//	str := fmt.Sprintf("output %v already spent by "+
+					//		"transaction %x in the memory pool",
+					//		input.PreviousOutPoint, tx.Tx.Hash())
+					//	return errors.New(str)
+					//}
+
+					if _, err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
+						return err
 					}
 				}
 			}
 		}
 	}
+
 	return nil
 }
 
+func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
+	if tx, ok := pool.outpoints[*outPoint]; ok {
+		str := fmt.Sprintf("output %v already spent by "+
+			"transaction %x in the memory pool",
+			outPoint, tx.Tx.Hash())
+		return true, errors.New(str)
+	}
+
+	return false, nil
+}
+
+// CheckSpend checks whether the passed outpoint is already spent by a transaction in the txpool
 func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 	pool.mu.RLock()
 	tx := pool.outpoints[output]
@@ -1031,7 +1428,7 @@ func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 	for i, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for _, txIn := range msg.Input {
+				for _, txIn := range msg.Inputs {
 					preout := txIn.PreviousOutPoint
 					utxo := utxoView.LookupUtxo(*preout)
 					if utxo != nil && utxo.IsSpent() {
@@ -1054,17 +1451,22 @@ func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
 
 	// If the pending limit is overflown, start equalizing allowances
-	pending := uint64(len(pool.pending))
-	if pending > pool.config.GlobalSlots {
+	pending := 0
+	for _, list := range pool.pending {
+		pending += len(list)
+	}
+	if uint64(pending) > pool.config.GlobalSlots {
 		// Assemble a spam order to penalize large transactors first
 		spammers := prque.New()
-		for hash := range pool.pending {
+		for _, list := range pool.pending {
 			// Only evict transactions from high rollers
-			spammers.Push(hash, float32(1))
+			for i, tx := range list {
+				spammers.Push(tx.Tx.Hash(), float32(i))
+			}
 		}
 		// Gradually drop transactions from offenders
 		offenders := []common.Hash{}
-		for pending > pool.config.GlobalSlots && !spammers.Empty() {
+		for uint64(pending) > pool.config.GlobalSlots && !spammers.Empty() {
 			// Retrieve the next offender if not local address
 			offender, _ := spammers.Pop()
 			offenders = append(offenders, offender.(common.Hash))
@@ -1074,30 +1476,41 @@ func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
 				// Calculate the equalization threshold for all current offenders
 
 				// Iteratively reduce all offenders until below limit or threshold reached
-				for pending > pool.config.GlobalSlots {
+				for uint64(pending) > pool.config.GlobalSlots {
 					for i := 0; i < len(offenders)-1; i++ {
-						tx := pool.pending[offenders[i]]
-						// Drop the transaction from the global pools too
-						hash := tx.Tx.Hash()
-						delete(pool.all, hash)
-						pool.priority_priced.Removed()
-						log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
-						pending--
+						for _, list := range pool.pending {
+							for _, tx := range list {
+								hash := tx.Tx.Hash()
+								if offenders[i].String() == hash.String() {
+									// Drop the transaction from the global pools too
+									delete(pool.all, hash)
+									pool.priority_priced.Removed(hash)
+									log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
+									pending--
+									break
+								}
+							}
+						}
 					}
 				}
 			}
 		}
 		// If still above threshold, reduce to limit or min allowance
-		if pending > pool.config.GlobalSlots && len(offenders) > 0 {
-			for pending > pool.config.GlobalSlots {
+		if uint64(pending) > pool.config.GlobalSlots && len(offenders) > 0 {
+			for uint64(pending) > pool.config.GlobalSlots {
 				for _, addr := range offenders {
-					tx := pool.pending[addr]
-					// Drop the transaction from the global pools too
-					hash := tx.Tx.Hash()
-					delete(pool.all, hash)
-					pool.priority_priced.Removed()
-					log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
-					pending--
+					for _, list := range pool.pending {
+						for _, tx := range list {
+							hash := tx.Tx.Hash()
+							if addr.String() == hash.String() {
+								delete(pool.all, hash)
+								pool.priority_priced.Removed(hash)
+								log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
+								pending--
+								break
+							}
+						}
+					}
 				}
 			}
 		}
@@ -1109,10 +1522,10 @@ func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
 // are moved back into the future queue.
 func (pool *TxPool) demoteUnexecutables() {
 	// Iterate over all accounts and demote any non-executable transactions
-	for hash, tx := range pool.pending {
+	for hash, tx := range pool.queue {
 		// Delete the entire queue entry if it became empty.
 		if tx == nil {
-			delete(pool.pending, hash)
+			delete(pool.queue, hash)
 			if len(tx.From) > 0 {
 				for _, from := range tx.From {
 					delete(pool.beats, *from)
@@ -1197,27 +1610,36 @@ func (as *utxoSet) add(addr modules.OutPoint) {
 	as.utxos[addr] = struct{}{}
 }
 
+func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
+	pool.RemoveTxs(hashs)
+	return nil
+}
+
 /******  end utxoSet  *****/
 //  这个接口后期需要调整， 需要先将all 进行排序， 然后按序从前到后一次取出足够多tx。
-func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.StorageSize) {
+func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
 	for {
 		tx := pool.priority_priced.Get()
 		if tx == nil {
-			log.Debug("Txspool get priority_priced tx failed.", "error", "tx is null")
+			log.Debug("Txspool get  priority_pricedtx failed.", "error", "tx is null")
 			break
 			//continue
 		} else {
-
-			// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
-			if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
-				list = append(list, tx)
-				// add  pending
-				pool.promoteTx(tx.Tx.Hash(), tx)
-			} else {
-				total = total - tx.Tx.Size()
-				break
+			log.Debug("Txspool get  priority_pricedtx success.", "tx_info", tx)
+			if !tx.Pending && !tx.Confirmed {
+				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
+				if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
+					list = append(list, tx)
+					// add  pending
+					pool.promoteTx(hash, tx)
+				} else {
+					total = total - tx.Tx.Size()
+					break
+				}
 			}
 		}
 	}
@@ -1228,4 +1650,8 @@ func (pool *TxPool) GetSortedTxs() ([]*modules.TxPoolTransaction, common.Storage
 // starts sending event to the given channel.
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
+}
+
+func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
+	return pool.unit.GetTxFee(tx)
 }

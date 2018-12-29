@@ -23,9 +23,14 @@ import (
 	"time"
 	"unsafe"
 
+	"encoding/json"
+	"errors"
+	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/core"
 )
 
 // validate unit state
@@ -44,11 +49,19 @@ const (
 	UNIT_STATE_OTHER_ERROR              = 0xFF
 )
 
+// unit state
+const (
+	U_STATE_NO_GROUPSIGN = 0x20
+	U_STATE_NO_CONFIRMED = 0x21
+	U_STATE_CONFIRMED    = 0x22
+)
+
 type Header struct {
 	ParentsHash  []common.Hash `json:"parents_hash"`
 	AssetIDs     []IDType16    `json:"assets"`
-	Authors      *Authentifier `json:"author" rlp:"-"`  // the unit creation authors
-	GroupSign    []byte        `json:"witness" rlp:"-"` // 群签名
+	Authors      Authentifier  `json:"mediator"`    // the unit creation authors
+	GroupSign    []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
+	GroupPubKey  []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
 	TxRoot       common.Hash   `json:"root"`
 	Number       ChainIndex    `json:"index"`
 	Extra        []byte        `json:"extra"`
@@ -92,15 +105,34 @@ func HeaderEqual(oldh, newh *Header) bool {
 func (h *Header) Index() uint64 {
 	return h.Number.Index
 }
-func (h *Header) ChainIndex() ChainIndex {
-	return h.Number
+func (h *Header) ChainIndex() *ChainIndex {
+	return &h.Number
 }
 
 func (h *Header) Hash() common.Hash {
 	emptyHeader := CopyHeader(h)
-	emptyHeader.Authors = nil
-	emptyHeader.GroupSign = make([]byte, 0)
+	// 计算header’hash时 剔除签名和群签
+	emptyHeader.Authors = Authentifier{}
+	emptyHeader.GroupSign = nil
+	emptyHeader.GroupPubKey = nil
 	return rlp.RlpHash(emptyHeader)
+}
+
+// HashWithOutTxRoot return  header's hash without txs root.
+func (h *Header) HashWithOutTxRoot() common.Hash {
+	emptyHeader := CopyHeader(h)
+	// 计算header’hash时 剔除签名和群签
+	emptyHeader.Authors = Authentifier{}
+	emptyHeader.GroupSign = nil
+	emptyHeader.GroupPubKey = nil
+	emptyHeader.TxRoot = common.Hash{}
+	b, err := json.Marshal(emptyHeader)
+	if err != nil {
+		log.Error("json marshal error", "error", err)
+		return common.Hash{}
+	}
+	return rlp.RlpHash(b[:])
+
 }
 
 func (h *Header) Size() common.StorageSize {
@@ -127,6 +159,10 @@ func CopyHeader(h *Header) *Header {
 		copy(cpy.GroupSign, h.GroupSign)
 	}
 
+	if len(h.GroupPubKey) > 0 {
+		copy(cpy.GroupPubKey, h.GroupPubKey)
+	}
+
 	if len(h.TxRoot) > 0 {
 		cpy.TxRoot.Set(h.TxRoot)
 	}
@@ -138,9 +174,9 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 	if len(txs) > 0 {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
-			tx := Transaction{
-				TxHash: pTx.TxHash,
-			}
+			//hash := pTx.Hash()
+
+			tx := Transaction{}
 			if len(pTx.TxMessages) > 0 {
 				tx.TxMessages = make([]*Message, len(pTx.TxMessages))
 				for j := 0; j < len(pTx.TxMessages); j++ {
@@ -161,18 +197,31 @@ type Unit struct {
 	UnitHeader *Header            `json:"unit_header"`  // unit header
 	Txs        Transactions       `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
-	UnitSize   common.StorageSize `json:"UnitSize"`     // unit size
+	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time
 	ReceivedFrom interface{}
 }
 
-func (unit *Unit) UnitAuthor() *common.Address {
-	if unit != nil {
-		return &unit.UnitHeader.Authors.Address
+func (unit *Unit) Author() common.Address {
+	if unit == nil {
+		log.Error("the Unit pointer is nil!")
 	}
-	return nil
+
+	return unit.UnitHeader.Authors.Address
+}
+
+func (unit *Unit) GroupPubKey() (kyber.Point, error) {
+	pubKeyB := unit.UnitHeader.GroupPubKey
+	if len(pubKeyB) == 0 {
+		return nil, errors.New("Group public key is null.")
+	}
+
+	pubKey := core.Suite.Point()
+	err := pubKey.UnmarshalBinary(pubKeyB)
+
+	return pubKey, err
 }
 
 //type OutPoint struct {
@@ -182,7 +231,7 @@ func (unit *Unit) UnitAuthor() *common.Address {
 //}
 
 func (unit *Unit) IsEmpty() bool {
-	if unit == nil || len(unit.Txs) <= 0 {
+	if unit == nil || unit.Hash() == (common.Hash{}) {
 		return true
 	}
 	return false
@@ -198,9 +247,9 @@ type TxPoolTxs []*TxPoolTransaction
 //}
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
-	AssetID IDType16
-	IsMain  bool
-	Index   uint64
+	AssetID IDType16 `json:"asset_id"`
+	IsMain  bool     `json:"is_main"`
+	Index   uint64   `json:"index"`
 }
 
 func (height ChainIndex) String() string {
@@ -214,17 +263,24 @@ func (height ChainIndex) Bytes() []byte {
 	return data[:]
 }
 
-type Author struct {
-	Address        common.Address `json:"address"`
-	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
-	TxAuthentifier *Authentifier `json:"authentifiers"`
-}
+//type Author struct {
+//	Address        common.Address `json:"address"`
+//	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
+//	TxAuthentifier *Authentifier `json:"authentifiers"`
+//}
 
 type Authentifier struct {
 	Address common.Address `json:"address"`
 	R       []byte         `json:"r"`
 	S       []byte         `json:"s"`
 	V       []byte         `json:"v"`
+}
+
+func (au *Authentifier) Empty() bool {
+	if common.IsValidAddress(au.Address.String()) || len(au.R) == 0 || len(au.S) == 0 || len(au.V) == 0 {
+		return true
+	}
+	return false
 }
 
 func NewUnit(header *Header, txs Transactions) *Unit {
@@ -257,7 +313,7 @@ func (u *Unit) Transactions() []*Transaction {
 // return transaction
 func (u *Unit) Transaction(hash common.Hash) *Transaction {
 	for _, transaction := range u.Txs {
-		if transaction.TxHash == hash {
+		if transaction.Hash() == hash {
 			return transaction
 		}
 	}
@@ -280,9 +336,9 @@ func (u *Unit) Size() common.StorageSize {
 	}
 	emptyUnit := Unit{}
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
-	emptyUnit.UnitHeader.Authors = nil
+	//emptyUnit.UnitHeader.Authors = nil
 	emptyUnit.UnitHeader.GroupSign = make([]byte, 0)
-	emptyUnit.CopyBody(u.Txs)
+	emptyUnit.CopyBody(u.Txs[:])
 
 	b, err := rlp.EncodeToBytes(emptyUnit)
 	if err != nil {
@@ -299,13 +355,24 @@ func (u *Unit) Size() common.StorageSize {
 func (u *Unit) Number() ChainIndex {
 	return u.UnitHeader.Number
 }
+
 func (u *Unit) NumberU64() uint64 {
 	return u.UnitHeader.Number.Index
+}
+
+func (u *Unit) Timestamp() int64 {
+	return u.UnitHeader.Creationdate
 }
 
 // return unit's parents UnitHash
 func (u *Unit) ParentHash() []common.Hash {
 	return u.UnitHeader.ParentsHash
+}
+
+func (u *Unit) SetGroupSign(sign []byte) {
+	if len(sign) > 0 {
+		u.UnitHeader.GroupSign = sign
+	}
 }
 
 type ErrUnit float64
@@ -344,7 +411,6 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// check transactions merkle root
 	txs := b.CopyBody(transactions)
 	//fmt.Printf("withbody==>%#v\n", txs[0])
-	//TODO xiaozhi
 	//root := core.DeriveSha(txs)
 	//if strings.Compare(root.String(), b.UnitHeader.TxRoot.String()) != 0 {
 	//	return nil
@@ -375,7 +441,7 @@ func MsgstoAddress(msgs []*Message) common.Address {
 		if !ok {
 			break
 		}
-		for _, pay := range payment.Input {
+		for _, pay := range payment.Inputs {
 			// 通过签名信息还原出address
 			from := new(common.Address)
 			from.SetBytes(pay.Extra[:])
@@ -424,13 +490,14 @@ const (
 	TxValidationCode_ILLEGAL_WRITESET             TxValidationCode = 23
 	TxValidationCode_INVALID_WRITESET             TxValidationCode = 24
 	TxValidationCode_INVALID_MSG                  TxValidationCode = 25
-	TxValidationCode_INVALID_PAYMMENTLOAd         TxValidationCode = 26
+	TxValidationCode_INVALID_PAYMMENTLOAD         TxValidationCode = 26
 	TxValidationCode_INVALID_PAYMMENT_INPUT       TxValidationCode = 27
 	TxValidationCode_INVALID_PAYMMENT_OUTPUT      TxValidationCode = 28
 	TxValidationCode_INVALID_PAYMMENT_LOCKTIME    TxValidationCode = 29
 	TxValidationCode_INVALID_OUTPOINT             TxValidationCode = 30
 	TxValidationCode_INVALID_AMOUNT               TxValidationCode = 31
 	TxValidationCode_INVALID_ASSET                TxValidationCode = 32
+	TxValidationCode_INVALID_CONTRACT             TxValidationCode = 33
 	TxValidationCode_NOT_VALIDATED                TxValidationCode = 254
 	TxValidationCode_NOT_COMPARE_SIZE             TxValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 256

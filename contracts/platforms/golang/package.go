@@ -44,7 +44,7 @@ var includeFileTypes = map[string]bool{
 var logger = flogging.MustGetLogger("golang-platform")
 
 func getCodeFromFS(path string) (codegopath string, err error) {
-	logger.Debugf("glh getCodeFromFS %s", path)
+	logger.Debugf("getCodeFromFS %s", path)
 	gopath, err := getGopath()
 	if err != nil {
 		return "", err
@@ -136,7 +136,7 @@ func findSource(gopath, pkg string) (SourceMap, error) {
 
 		ext := filepath.Ext(path)
 		// we only want 'fileTypes' source files at this point
-		if _, ok := includeFileTypes[ext]; ok != true {
+		if _, ok := includeFileTypes[ext]; !ok {
 			return nil
 		}
 

@@ -20,10 +20,11 @@ package txspool
 
 import (
 	"container/heap"
+	"math/big"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
-	"math/big"
 )
 
 // priceHeap is a heap.Interface implementation over transactions for retrieving
@@ -31,7 +32,7 @@ import (
 type priceHeap []*modules.TxPoolTransaction
 
 func (h priceHeap) Len() int           { return len(h) }
-func (h priceHeap) Less(i, j int) bool { return h[i].Tx.Fee().Cmp(h[j].Tx.Fee()) < 0 }
+func (h priceHeap) Less(i, j int) bool { return h[i].GetTxFee().Cmp(h[j].GetTxFee()) < 0 }
 func (h priceHeap) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 	h[i].Index, h[j].Index = i, j
@@ -98,7 +99,7 @@ func (h *priorityHeap) Update(item *modules.TxPoolTransaction, priority float64)
 
 // txPricedList is a price-sorted heap to allow operating on transactions pool
 // contents in a price-incrementing way.
-type  txPricedList struct {
+type txPricedList struct {
 	all    *map[common.Hash]*modules.TxPoolTransaction // Pointer to the map of all transactions
 	items  *priorityHeap                               // Heap of prices of all the stored transactions
 	stales int                                         // Number of stale price points to (re-heap trigger)
@@ -115,14 +116,19 @@ func newTxPricedList(all *map[common.Hash]*modules.TxPoolTransaction) *txPricedL
 // Put inserts a new transaction into the heap.
 func (l *txPricedList) Put(tx *modules.TxPoolTransaction) *priorityHeap {
 	heap.Push(l.items, tx)
+	(*l.all)[tx.Tx.Hash()] = tx
 	//sort.Sort(l.items)
 	return l.items
 }
 func (l *txPricedList) Get() *modules.TxPoolTransaction {
 	if l != nil {
 		if l.items.Len() > 0 {
-			//return l.items.Pop().(*modules.TxPoolTransaction)
-			return heap.Pop(l.items).(*modules.TxPoolTransaction)
+			tx, ok := heap.Pop(l.items).(*modules.TxPoolTransaction)
+			if ok {
+				if tx.Tx != nil {
+					return tx
+				}
+			}
 		}
 	}
 	return nil
@@ -131,18 +137,23 @@ func (l *txPricedList) Get() *modules.TxPoolTransaction {
 // Removed notifies the prices transaction list that an old transaction dropped
 // from the pool. The list will just keep a counter of stale objects and update
 // the heap if a large enough ratio of transactions go stale.
-func (l *txPricedList) Removed() {
-	// Bump the stale counter, but exit if still too low (< 25%)
-	l.stales++
-	if l.stales <= len(*l.items)/4 {
-		return
-	}
+func (l *txPricedList) Removed(hash common.Hash) {
+	//// Bump the stale counter, but exit if still too low (< 25%)
+	//l.stales++
+	//if l.stales <= len(*l.items)/4 {
+	//	return
+	//}
 	// Seems we've reached a critical number of stale transactions, reheap
 	reheap := make(priorityHeap, 0, len(*l.all))
 
 	l.stales, l.items = 0, &reheap
-	for _, tx := range *l.all {
-		*l.items = append(*l.items, tx)
+
+	for key, tx := range *l.all {
+		if hash != key {
+			*l.items = append(*l.items, tx)
+		} else {
+			l.stales--
+		}
 	}
 	heap.Init(l.items)
 }
@@ -161,7 +172,7 @@ func (l *txPricedList) Cap(threshold *big.Int, local *utxoSet) modules.TxPoolTxs
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if tx.Tx.Fee().Cmp(threshold) >= 0 {
+		if tx.GetTxFee().Cmp(threshold) >= 0 {
 			save = append(save, tx)
 			break
 		}

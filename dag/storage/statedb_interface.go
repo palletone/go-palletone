@@ -22,36 +22,60 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type IStateDb interface {
 	GetConfig(name []byte) ([]byte, *modules.StateVersion, error)
 	GetPrefix(prefix []byte) map[string][]byte
-	SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error
+	SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error
 	SaveAssetInfo(assetInfo *modules.AssetInfo) error
 	GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
 	SaveContract(contract *modules.Contract) error
-	SaveContractState(id common.Address, name string, value interface{}, version *modules.StateVersion) error
+	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
-	GetContractState(id common.Address, field string) (*modules.StateVersion, []byte)
+	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
-	GetContractAllState(id common.Address) []*modules.ContractReadSet
+	GetContractAllState() []*modules.ContractReadSet
+	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
-	GetContract(id common.Address) (*modules.Contract, error)
-	GetAccountInfo(address common.Address) (*modules.AccountInfo, error)
-	SaveAccountInfo(address common.Address, info *modules.AccountInfo) error
-	GetCandidateMediatorAddrList() ([]common.Address, error)
-	//GetActiveMediatorAddrList() ([]common.Address, error)
+	GetContract(id []byte) (*modules.Contract, error)
 
-	AddVote(voter common.Address, candidate common.Address) error
-	GetSortedVote(ReturnNumber uint) ([]common.Address, error)
+	/* Account_Info */
+	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
+	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
+	UpdateAccountInfoBalance(addr common.Address, addAmount int64) error
+	//AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
+	//GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 
-	// todo albert·gou
-	//SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error
-	//GetAccountMediatorInfo(address common.Address) (*core.MediatorInfo, error)
-	//SaveAccountMediatorInfo(address common.Address, info *core.MediatorInfo, version *modules.StateVersion) error
+	//GetSortedMediatorVote(returnNumber int) (map[string]uint64, error)
+	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
+	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
+	//GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
+	AppendVotedMediator(voter, mediator common.Address) error
+
+	// world state chainIndex
+	GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
+	SaveChainIndex(index *modules.ChainIndex) error
+	//GetCurrentUnit(assetId modules.IDType16) *modules.Unit
+
+	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
+
+	StoreMediator(med *core.Mediator) error
+	StoreMediatorInfo(add common.Address, mi *MediatorInfo) error
+	RetrieveMediator(address common.Address) (*core.Mediator, error)
+	GetMediatorCount() int
+	IsMediator(address common.Address) bool
+	GetMediators() map[common.Address]bool
+	LookupMediator() map[common.Address]*core.Mediator
+
+	GetMediatorCandidateList() ([]*modules.MediatorInfo, error)
+	IsInMediatorCandidateList(address common.Address) bool
+
+	LookupAccount() map[common.Address]*modules.AccountInfo
+	RetrieveMediatorInfo(address common.Address) (*MediatorInfo, error)
 }

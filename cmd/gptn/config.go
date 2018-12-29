@@ -18,6 +18,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -30,19 +31,22 @@ import (
 
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
-const defaultConfigPath = "palletone.toml"
+const defaultConfigPath = "./ptn-config.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
@@ -62,6 +66,25 @@ var (
 		Name:  "configfile",
 		Usage: "TOML configuration file",
 		Value: defaultConfigPath,
+	}
+
+	dumpJsonCommand = cli.Command{
+		Action:    utils.MigrateFlags(dumpJson),
+		Name:      "dumpjson",
+		Usage:     "Dumps genesis json to a specified file",
+		ArgsUsage: "<jsonFilePath>",
+		//		Flags:       append(append(nodeFlags, rpcFlags...)),
+		Flags: []cli.Flag{
+			ConfigFileFlag,
+		},
+		Category:    "MISCELLANEOUS COMMANDS",
+		Description: `The dumpjson command dumps genesis json to a specified file.`,
+	}
+
+	JsonFileFlag = cli.StringFlag{
+		Name:  "jsonfile",
+		Usage: "Genesis json file",
+		Value: defaultGenesisJsonPath,
 	}
 )
 
@@ -104,6 +127,7 @@ type FullConfig struct {
 	Node           node.Config
 	Ptnstats       ptnstatsConfig
 	Dashboard      dashboard.Config
+	Jury           jury.Config
 	MediatorPlugin mp.Config
 	Log            *log.Config
 	Dag            *dagconfig.Config
@@ -138,9 +162,10 @@ func defaultNodeConfig() node.Config {
 }
 
 func adaptorConfig(config FullConfig) FullConfig {
-	//config.Node.P2P = config.P2P
+	config.Node.P2P = config.P2P
 	config.Ptn.Dag = *config.Dag
 	config.Ptn.Log = *config.Log
+	config.Ptn.Jury = config.Jury
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
 	config.Ptn.Contract = config.Contract
 
@@ -149,41 +174,32 @@ func adaptorConfig(config FullConfig) FullConfig {
 
 // 根据指定路径和配置参数获取配置文件的路径
 // @author Albert·Gou
-func getConfigPath(configPath, dataDir string) (string, error) {
-	if filepath.IsAbs(configPath) {
-		return configPath, nil
+func getConfigPath(ctx *cli.Context) string {
+	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
+	configPath := defaultConfigPath
+	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+		configPath = temp
 	}
 
-	if dataDir != "" && configPath == "" {
-		return filepath.Join(dataDir, defaultConfigPath), nil
-	}
-
-	if configPath != "" {
-		return filepath.Abs(configPath)
-	}
-
-	return "", nil
+	return configPath
 }
 
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
 func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
-	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
-	configPath := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-		configPath, _ = getConfigPath(temp, cfg.Node.DataDir)
-	}
+	configPath := getConfigPath(ctx)
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
-	if _, err := os.Stat(configPath); err != nil && os.IsNotExist(err) {
+	if !common.FileExist(configPath) {
 		defaultConfig := makeDefaultConfig()
-		err = makeConfigFile(&defaultConfig, configPath)
+		err := makeConfigFile(&defaultConfig, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
 			return err
 		}
 
 		fmt.Println("Writing new config file at: ", configPath)
+		return nil
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
@@ -210,24 +226,24 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 3. 将命令行中的配置参数覆盖cfg中对应的配置,
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
-	utils.SetNodeConfig(ctx, &cfg.Node)
 	cfg = adaptorConfig(cfg)
-	cfg.Node.P2P = cfg.P2P
+	utils.SetNodeConfig(ctx, &cfg.Node)
+
+	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
 	// 4. 通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
-	cfg = adaptorConfig(cfg)
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 	//fmt.Println("cfg.Ptn.Log.OpenModule", cfg.Ptn.Log.OpenModule)
-	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
 
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
 	mp.SetMediatorPluginConfig(ctx, &cfg.MediatorPlugin)
+	jury.SetJuryConfig(ctx, &cfg.Jury)
 
 	return stack, cfg
 }
@@ -276,32 +292,61 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 }
 
 // dumpConfig is the dumpconfig command.
-// modify by Albert·Gou
 func dumpConfig(ctx *cli.Context) error {
 	cfg := makeDefaultConfig()
-	//	comment := ""
-
-	//if cfg.Ptn.Genesis != nil {
-	//	cfg.Ptn.Genesis = nil
-	//	comment += "# Note: this config doesn't contain the genesis block.\n\n"
-	//}
-
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
 	if len(configPath) == 0 {
-		configPath, _ = getConfigPath(defaultConfigPath, cfg.Node.DataDir)
+		configPath = defaultConfigPath
 	}
-
-	//	io.WriteString(os.Stdout, comment)
 
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
-
 	fmt.Println("Dumping new config file at " + configPath)
+	return nil
+}
 
+// dumpConfig is the dumpconfig command.
+func dumpJson(ctx *cli.Context) error {
+	account := core.DefaultTokenHolder
+	mediators := make([]*mp.MediatorConf, 0)
+	nodeStr := core.DefaultNodeInfo
+
+	mediator := mp.DefaultMediatorConf()
+	mediators = append(mediators, mediator)
+
+	genesis := createExampleGenesis(account, mediators, nodeStr)
+	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	filePath := getGenesisPath(ctx)
+
+	err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	file, err1 := os.Create(filePath)
+	defer file.Close()
+	if err1 != nil {
+		utils.Fatalf("%v", err1)
+		return err1
+	}
+
+	_, err = file.Write(genesisJson)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	fmt.Println("Creating example genesis state in file " + filePath)
 	return nil
 }
 
@@ -314,6 +359,7 @@ func makeDefaultConfig() FullConfig {
 		Node:           defaultNodeConfig(),
 		Dashboard:      dashboard.DefaultConfig,
 		P2P:            p2p.DefaultConfig,
+		Jury:           jury.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
 		Dag:            &dagconfig.DefaultConfig,
 		Log:            &log.DefaultConfig,

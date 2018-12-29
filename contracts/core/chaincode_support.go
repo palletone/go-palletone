@@ -31,7 +31,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/op/go-logging"
+
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms"
@@ -214,16 +214,16 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 
 // getLogLevelFromViper gets the chaincode container log levels from viper
 func getLogLevelFromViper(module string) string {
-	levelString := viper.GetString("chaincode.logging." + module)
-	_, err := logging.LogLevel(levelString)
-
-	if err == nil {
-		chaincodeLogger.Debugf("CORE_CHAINCODE_%s set to level %s", strings.ToUpper(module), levelString)
-	} else {
-		chaincodeLogger.Warningf("CORE_CHAINCODE_%s has invalid log level %s. defaulting to %s", strings.ToUpper(module), levelString, flogging.DefaultLevel())
-		levelString = flogging.DefaultLevel()
-	}
-	return levelString
+	//levelString := viper.GetString("chaincode.logging." + module)
+	//_, err := logging.LogLevel(levelString)
+	//
+	//if err == nil {
+	//	chaincodeLogger.Debugf("CORE_CHAINCODE_%s set to level %s", strings.ToUpper(module), levelString)
+	//} else {
+	//	chaincodeLogger.Warnf("CORE_CHAINCODE_%s has invalid log level %s. defaulting to %s", strings.ToUpper(module), levelString, flogging.DefaultLevel())
+	//	levelString = flogging.DefaultLevel()
+	//}
+	return flogging.DefaultLevel()
 }
 
 // ChaincodeSupport responsible for providing interfacing with chaincodes from the Peer.
@@ -417,7 +417,8 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	}
 	switch cLang {
 	case pb.ChaincodeSpec_GOLANG, pb.ChaincodeSpec_CAR:
-		args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
+		//args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
+		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C /usr/local/bin && cd /usr/local/bin && ./chaincode"}
 	case pb.ChaincodeSpec_JAVA:
 		args = []string{"java", "-jar", "chaincode.jar", "--peerAddress", chaincodeSupport.peerAddress}
 	case pb.ChaincodeSpec_NODE:
@@ -607,7 +608,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/ , Version: cccid.Version}, Timeout: 0, Dontremove: true}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: true}
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
@@ -708,9 +709,9 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 			return cID, cMsg, err
 		}
 		if chrte.handler.isRunning() {
-			if chaincodeLogger.IsEnabledFor(logging.DEBUG) {
-				chaincodeLogger.Debugf("chaincode is running(no need to launch) : %s", canName)
-			}
+			//if chaincodeLogger.IsEnabledFor(logging.DEBUG) {
+			chaincodeLogger.Debugf("chaincode is running(no need to launch) : %s", canName)
+			//}
 			chaincodeSupport.runningChaincodes.Unlock()
 			return cID, cMsg, nil
 		}
@@ -740,7 +741,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		var depPayload []byte
 		//hopefully we are restarting from existing image and the deployed transaction exists
 		//(this will also validate the ID from the LSCC if we're not using the config-tree approach)
-		depPayload, err = GetCDS(context, cccid.TxID, cccid.SignedProposal, cccid.Proposal, cccid.ChainID, cID.Name)
+		depPayload, err = GetCDS(cccid.ContractId, context, cccid.TxID, cccid.SignedProposal, cccid.Proposal, cccid.ChainID, cID.Name)
 		if err != nil {
 			return cID, cMsg, errors.WithMessage(err, fmt.Sprintf("could not get ChaincodeDeploymentSpec for %s", canName))
 		}
@@ -825,13 +826,13 @@ func (chaincodeSupport *ChaincodeSupport) Register(stream pb.ChaincodeSupport_Re
 }
 
 // createCCMessage creates a transaction message.
-func createCCMessage(typ pb.ChaincodeMessage_Type, cid string, txid string, cMsg *pb.ChaincodeInput) (*pb.ChaincodeMessage, error) {
+func createCCMessage(contractid []byte, typ pb.ChaincodeMessage_Type, cid string, txid string, cMsg *pb.ChaincodeInput) (*pb.ChaincodeMessage, error) {
 	payload, err := proto.Marshal(cMsg)
 	if err != nil {
 		fmt.Printf(err.Error())
 		return nil, err
 	}
-	return &pb.ChaincodeMessage{Type: typ, Payload: payload, Txid: txid, ChannelId: cid}, nil
+	return &pb.ChaincodeMessage{Type: typ, Payload: payload, Txid: txid, ChannelId: cid, ContractId: contractid}, nil
 }
 
 // Execute executes a transaction and waits for it to complete until a timeout value.

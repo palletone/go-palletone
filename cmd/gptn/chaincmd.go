@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -29,8 +31,9 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
+	// "github.com/palletone/go-palletone/dag/txspool"
 	"gopkg.in/urfave/cli.v1"
-	"os"
 )
 
 var (
@@ -40,10 +43,10 @@ var (
 		Usage:     "Bootstrap and initialize a new genesis block",
 		ArgsUsage: "<genesisPath>",
 		Flags: []cli.Flag{
-			//			utils.DataDirFlag,
+			utils.DataDirFlag,
 			GenesisJsonPathFlag,
 			GenesisTimestampFlag,
-			//			utils.LightModeFlag,
+			// utils.LightModeFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `
@@ -116,15 +119,8 @@ func getAccountFromConf(configPath string) (account accounts.Account, passphrase
 func initGenesis(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 
-	// Make sure we have a valid genesis JSON
-	genesisPath := ctx.Args().First()
-	//if len(genesisPath) == 0 {
-	//	utils.Fatalf("Must supply path to genesis JSON file")
-	//}
-	// If no path is specified, the default path is used
-	if len(genesisPath) == 0 {
-		genesisPath, _ = getGenesisPath(defaultGenesisJsonPath, node.DataDir())
-	}
+	genesisPath := getGenesisPath(ctx)
+
 	file, err := os.Open(genesisPath)
 	if err != nil {
 		utils.Fatalf("Failed to read genesis file: %v", err)
@@ -151,10 +147,7 @@ func initGenesis(ctx *cli.Context) error {
 	// modify by Albert·Gou
 	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
 	// 从配置文件中获取账户和密码
-	//configPath := defaultConfigPath
-	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-	//	configPath, _ = getConfigPath(temp, node.DataDir())
-	//}
+	//configPath := getConfigPath(ctx)
 	//account, password := getAccountFromConf(configPath)
 
 	err = ks.Unlock(account, password)
@@ -172,21 +165,33 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("Failed to generate genesis unit: %v", err)
 		return err
 	}
+	//new txpool
+
+	//txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, dag, log.New("newgenesis"))
 	//将Unit存入数据库中
-	err = dag.SaveUnit4GenesisInit(unit)
+	err = dag.SaveUnit4GenesisInit(unit, nil)
 	if err != nil {
 		fmt.Println("Save Genesis unit to db error:", err)
 		return err
 	}
+	// @jay
+	// asset 存入数据库中
+	// dag.SaveCommon(key,asset)   key=[]byte(modules.FIELD_GENESIS_ASSET)
+	chainIndex := unit.UnitHeader.ChainIndex()
+	if err := dag.SaveChainIndex(chainIndex); err != nil {
+		log.Info("save chain index is failed.", "error", err)
+	} else {
+		token_info := modules.NewTokenInfo("ptncoin", "ptn", "creator_jay")
+		idhex, _ := dag.SaveTokenInfo(token_info)
+		log.Info("save chain index is success.", "idhex", idhex)
+	}
+
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
 
 	// 2, 重写配置文件，修改当前节点的mediator的地址和密码
 	// @author Albert·Gou
-	//configPath := defaultConfigPath
-	//if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
-	//	configPath, _ = getConfigPath(temp, node.DataDir())
-	//}
+	//configPath := getConfigPath(ctx)
 	//modifyMediatorInConf(configPath, password, account.Address)
 
 	//3. initial globalproperty
@@ -213,9 +218,9 @@ func modifyMediatorInConf(configPath, password string, address common.Address) e
 	}
 
 	cfg.MediatorPlugin.EnableStaleProduction = true
-	cfg.MediatorPlugin.Mediators = []mp.MediatorConf{
-		mp.MediatorConf{address.Str(), password,
-			mp.DefaultInitPartSec, mp.DefaultInitPartPub},
+	cfg.MediatorPlugin.Mediators = []*mp.MediatorConf{
+		&mp.MediatorConf{address.Str(), password,
+			mp.DefaultInitPrivKey, core.DefaultInitPubKey},
 	}
 
 	err = makeConfigFile(cfg, configPath)

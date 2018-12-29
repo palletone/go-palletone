@@ -24,7 +24,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/palletone/go-palletone/common/crypto"
+	//"github.com/palletone/go-palletone/common/crypto"
+	"encoding/json"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -35,20 +37,53 @@ func TestGetContractState(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	l := log.NewTestLog()
 	statedb := NewStateDb(db, l)
-	addr := crypto.ContractIdToAddress([]byte("TestContract"))
-	contract := &modules.Contract{Id: addr, Name: "TestContract1", Code: []byte("code")}
+	id := []byte("TestContract")
+	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code")}
 	err := statedb.SaveContract(contract)
 	assert.Nil(t, err, "save contract to statedb fail")
 	version := &modules.StateVersion{Height: modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
-	err = statedb.SaveContractState(addr, "name", "TestName", version)
+	err = statedb.SaveContractState(id, "name", "TestName1", version)
 	assert.Nil(t, err, "Save contract state fail")
-	version, value := statedb.GetContractState(addr, "name")
-	log.Debug("version:", version.String())
-	log.Debug(fmt.Sprintf("value:%#x", value))
-	assert.Equal(t, value, []byte("TestName"), "value not same.")
-	data := statedb.GetContractAllState(addr)
-	for _, v := range data {
-		log.Debug(fmt.Sprintf("K:%s,V:%x,version:%s", v.Key, v.Value, v.Version))
+	version2, value := statedb.GetContractState(id, "name")
+	log.Debug("test debug: ", "version", version.String())
+	assert.Equal(t, version, version2, "version not same.")
+	log.Debug(fmt.Sprintf("get value from db:%s", value))
+	assert.Equal(t, value, []byte("TestName1"), "value not same.")
+	data, _ := statedb.GetContractStatesById(id)
+	assert.True(t, len(data) > 0, "GetContractAllState don't return any data.")
+	for key, v := range data {
+		log.Debug(fmt.Sprintf("Key:%s,V:%s,version:%s", key, v.Value, v.Version))
+	}
+}
+
+func TestStateDb_GetMediatorCandidateList(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	l := log.NewTestLog()
+	statedb := NewStateDb(db, l)
+	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
+	contractId := depositeContractAddress.Bytes()
+	//fmt.Println(contractId)
+	addr1 := "P1G988UGLytFgPwxy1bzY3FkzPT46ThDhTJ"
+	mediator1 := &modules.MediatorInfo{
+		Address: addr1,
+	}
+	//assert.Nil(t, err, "string 2 address fail: ")
+	addr2 := "P1FbTqEaSLNfhp1hCwNmRkj5BkMjTNU8jRp"
+	mediator2 := &modules.MediatorInfo{
+		Address: addr2,
+	}
+	//assert.Nil(t, err, "string 2 address fail: ")
+	mediatorList := []*modules.MediatorInfo{mediator1, mediator2}
+	mediatorListBytes, err := json.Marshal(mediatorList)
+	assert.Nil(t, err, "json marshal error: ")
+	version := &modules.StateVersion{Height: modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	err = statedb.SaveContractState(contractId, "MediatorList", mediatorListBytes, version)
+	assert.Nil(t, err, "save mediatorlist error: ")
+	list, err := statedb.GetMediatorCandidateList()
+	assert.Nil(t, err, "get mediator candidate list error: ")
+	assert.True(t, len(list) == 2, "len is erroe")
+	for _, mediatorAddr := range list {
+		fmt.Println(mediatorAddr)
 	}
 }
 

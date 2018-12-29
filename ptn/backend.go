@@ -37,13 +37,18 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
+	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 )
 
 //type LesServer interface {
@@ -86,7 +91,8 @@ type PalletOne struct {
 	//etherbase  common.Address
 
 	// append by Albert·Gou
-	mediatorPlugin *mp.MediatorPlugin
+	mediatorPlugin    *mp.MediatorPlugin
+	contractPorcessor *jury.Processor
 }
 
 // New creates a new PalletOne object (including the
@@ -96,7 +102,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
 
-	db, err := CreateDB(ctx, config, "leveldb")
+	db, err := CreateDB(ctx, config, "leveldb") //MUST same with isOldGptnResource
 	if err != nil {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
@@ -126,12 +132,26 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag, logger)
+	pool := txspool.NewTxPool(config.TxPool, ptn.dag, logger)
+	ptn.txPool = pool
+	// // loop txspool to delete overtime tx.
+	// go txspool.LoopTxsPool(pool)
+	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
+	if err != nil {
+		log.Error("Contract Initialize err:", "error", err)
+		return nil, err
+	}
 
 	// append by Albert·Gou
 	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, dag, &config.MediatorPlugin)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
+		return nil, err
+	}
+
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract, &config.Jury)
+	if err != nil {
+		log.Error("contract processor creat:", "error", err)
 		return nil, err
 	}
 
@@ -142,14 +162,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
-		return nil, err
-	}
-
-	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
-	if err != nil {
-		log.Error("Contract Initialize err:", "error", err)
 		return nil, err
 	}
 
@@ -194,14 +208,16 @@ func (s *PalletOne) APIs() []rpc.API {
 		{
 			Namespace: "ptn",
 			Version:   "1.0",
-			Service:   NewPublicEthereumAPI(s),
+			Service:   NewPublicPalletOneAPI(s),
 			Public:    true,
-		}, {
-			Namespace: "ptn",
-			Version:   "1.0",
-			//Service:   NewPublicMinerAPI(s),
-			Public: true,
-		}, {
+		},
+		//{
+		//	Namespace: "ptn",
+		//	Version:   "1.0",
+		//	//Service:   NewPublicMinerAPI(s),
+		//	Public: true,
+		//},
+		{
 			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
@@ -209,9 +225,10 @@ func (s *PalletOne) APIs() []rpc.API {
 		},
 		//{
 		//	Namespace: "miner",
-		//	Version:   "1.0",
+		//	Version:   "2.0",
 		//	//Service:   NewPrivateMinerAPI(s),
-		//	Public: false,
+		//	Service: NewPublicDagAPI(s),
+		//	Public:  true,
 		//},
 		{
 			Namespace: "ptn",
@@ -242,6 +259,35 @@ func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
 func (s *PalletOne) Dag() dag.IDag                      { return s.dag }
 
+func (s *PalletOne) ContractProcessor() *jury.Processor { return s.contractPorcessor }
+func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManager }
+
+func (s *PalletOne) MockContractLocalSend(event jury.ContractExeEvent) {
+	s.protocolManager.ContractReqLocalSend(event)
+}
+func (s *PalletOne) MockContractSigLocalSend(event jury.ContractSigEvent) {
+	s.protocolManager.ContractSigLocalSend(event)
+}
+
+func (s *PalletOne) ContractBroadcast(event jury.ContractExeEvent) {
+	s.protocolManager.ContractBroadcast(event)
+
+}
+func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
+	s.protocolManager.ContractSigBroadcast(event)
+}
+
+func (s *PalletOne) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
+	s.protocolManager.ContractSpecialBroadcast(event)
+}
+
+func (s *PalletOne) GetLocalMediators() []common.Address {
+	return s.mediatorPlugin.LocalMediators()
+}
+func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {
+	return s.mediatorPlugin.IsLocalActiveMediator(addr)
+}
+
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *PalletOne) Protocols() []p2p.Protocol {
@@ -252,6 +298,9 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 // Start implements node.Service, starting all internal goroutines needed by the
 // PalletOne protocol implementation.
 func (s *PalletOne) Start(srvr *p2p.Server) error {
+	// append by Albert·Gou
+	s.mediatorPlugin.Start(srvr)
+
 	// Start the bloom bits servicing goroutines
 	s.startBloomHandlers()
 
@@ -264,8 +313,7 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(srvr, maxPeers)
 
-	// append by Albert·Gou
-	s.mediatorPlugin.Start(srvr)
+	s.contractPorcessor.Start(srvr)
 
 	return nil
 }
@@ -284,6 +332,8 @@ func (s *PalletOne) Stop() error {
 
 	// append by Albert·Gou
 	s.mediatorPlugin.Stop()
+
+	s.dag.Close()
 
 	return nil
 }
@@ -321,4 +371,113 @@ func (s *PalletOne) Etherbase() (eb common.Address, err error) {
 // @author Albert·Gou
 func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 	return p.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+}
+
+func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
+	inputpoints := make(map[modules.OutPoint][]byte)
+	findPayLoad := false
+
+	for i := 0; !findPayLoad && i < len(tx.TxMessages); i++ {
+		// 1. 获取PaymentPayload
+		msg := tx.TxMessages[i]
+		if msg.App != modules.APP_PAYMENT {
+			continue
+		}
+
+		// 一个 tx 只有一个PaymentPayload， 简书查询次数
+		findPayLoad = true
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if !ok {
+			log.Debug("PaymentPayload conversion error, does not match TxMessage'APP type!")
+		}
+
+		// 2. 查询每个 Input 的 PkScript
+		for _, txin := range payload.Inputs {
+			inpoint := txin.PreviousOutPoint
+			utxo, err := p.dag.GetUtxoEntry(inpoint)
+			if err != nil {
+				return nil, err
+			}
+
+			inputpoints[*inpoint] = utxo.PkScript
+		}
+	}
+
+	// 3. 使用tokenengine 和 KeyStore 给 tx 签名
+	ks := p.GetKeyStore()
+	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
+		ks.GetPublicKey, ks.SignHash, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx, nil
+}
+
+// @author Albert·Gou
+func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
+	// 3. 签名 tx
+	tx, err := p.SignGenericTransaction(addr, tx)
+	if err != nil {
+		return err
+	}
+
+	// 4. 将 tx 放入 pool
+	txPool := p.TxPool()
+	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// @author Albert·Gou
+func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
+	// 参数检查
+	if from == to {
+		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
+	}
+
+	fromAdd, err := common.StringToAddress(from)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", from)
+	}
+
+	toAdd, err := common.StringToAddress(to)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", to)
+	}
+
+	// 判断本节点是否同步完成，数据是否最新
+	if !p.dag.IsSynced() {
+		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
+	}
+
+	// 1. 创建交易
+	tx, fee, err := p.dag.GenTransferPtnTx(fromAdd, toAdd, ptnjson.Ptn2Dao(amount), text, p.txPool)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. 签名和发送交易
+	err = p.SignAndSendTransaction(fromAdd, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. 返回执行结果
+	textStr := ""
+	if text != nil {
+		textStr = *text
+	}
+
+	res := &mp.TxExecuteResult{}
+	res.TxContent = fmt.Sprintf("Account %s transfer %vPTN to account %s with message: '%s'",
+		from, amount, to, textStr)
+	res.TxHash = tx.Hash()
+	res.TxSize = tx.Size().TerminalString()
+	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = mp.DefaultResult
+
+	return res, nil
 }

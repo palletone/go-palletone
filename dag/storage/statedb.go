@@ -25,9 +25,13 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 
+	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
+	"strings"
 )
 
 //保存了对合约写集、Config、Asset信息
@@ -56,7 +60,7 @@ func (statedb *StateDb) DeleteState(key []byte) error {
 // ######################### GET IMPL START ###########################
 
 func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
-	key := append(modules.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
+	key := append(constants.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
 	data, err := statedb.db.Get(key)
 	if err != nil {
 		return nil, err
@@ -76,76 +80,123 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 
-// todo albert·gou
-func (statedb *StateDb) GetCandidateMediatorAddrList() ([]common.Address, error) {
-	//	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
-	//	data, _, err := retrieveWithVersion(statedb.db, key)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	result := []common.Address{}
-	//	rlp.DecodeBytes(data, result)
-	//	return result, nil
-	return nil, nil
+// ######################### GET IMPL END ###########################
+
+// author albert·gou
+func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
+	return StoreMediator(statedb.db, med)
 }
 
-// todo albert·gou
-//func (statedb *StateDb) SaveCandidateMediatorAddrList(addrs []common.Address, v *modules.StateVersion) error {
-//	key := constants.STATE_CANDIDATE_MEDIATOR_LIST
-//	addrsStr := ""
-//	for _, addr := range addrs {
-//		addrsStr += addr.String() + ","
-//	}
-//	statedb.logger.Debugf("Try to save candidate mediator address list:%s", addrsStr)
-//	return StoreBytesWithVersion(statedb.db, key, v, addrs)
-//}
-
-//Yiran
-func (statedb *StateDb) AddVote(voter common.Address, candidate common.Address) error {
-	key := KeyConnector(constants.STATE_VOTE_LIST, voter.Bytes())
-	return StoreBytes(statedb.db, key, candidate.Bytes())
+// author albert·gou
+func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *MediatorInfo) error {
+	return StoreMediatorInfo(statedb.db, add, mi)
 }
 
-//Yiran
-func (statedb *StateDb) GetSortedVote(ReturnNumber uint) ([]common.Address, error) {
-	key := constants.STATE_VOTE_LIST
-	bVoteMap := getprefix(statedb.db, key)
-	voteBox := NewVoteBox()
-	addresses, err := statedb.GetCandidateMediatorAddrList()
-	if err != nil { // get candidates address list error
+func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*MediatorInfo, error) {
+	return RetrieveMediatorInfo(statedb.db, address)
+}
+
+// author albert·gou
+func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
+	return RetrieveMediator(statedb.db, address)
+}
+
+func (statedb *StateDb) SaveChainIndex(index *modules.ChainIndex) error {
+	bytes, err := rlp.EncodeToBytes(index)
+	if err != nil {
+		return err
+	}
+	key := constants.CURRENTCHAININDEX_PREFIX + index.AssetID.String()
+	if err := statedb.db.Put([]byte(key), bytes); err != nil {
+		return err
+	}
+	return nil
+}
+func (statedb *StateDb) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+	// get current chainIndex
+	key := constants.CURRENTCHAININDEX_PREFIX + assetId.String()
+	bytes, err := statedb.db.Get([]byte(key))
+	if err != nil {
 		return nil, err
 	}
-	voteBox.Register(addresses)
-	for voter, bVoteAddress := range bVoteMap {
-		voterAddress, err := common.StringToAddress(voter)
-		voteAddress := common.BytesToAddress(bVoteAddress)
-		if err != nil { // string to address error
-			return nil, err
-		}
-		info, err := statedb.GetAccountInfo(voterAddress)
-		if err != nil { // get account info error
-			return nil, err
-		}
-		voterBalance := info.PtnBalance
-
-		voteBox.AddToBoxIfNotVoted(voterBalance, voterAddress, voteAddress)
+	chainIndex := new(modules.ChainIndex)
+	if err := rlp.DecodeBytes(bytes, &chainIndex); err != nil {
+		return nil, err
 	}
-
-	return voteBox.HeadN(ReturnNumber), nil
-
+	return chainIndex, nil
 }
 
-// todo albert·gou
-//func (statedb *StateDb) GetActiveMediatorAddrList() ([]common.Address, error) {
-//
-//	key := constants.STATE_ACTIVE_MEDIATOR_LIST
-//	data, _, err := retrieveWithVersion(statedb.db, key)
-//	if err != nil {
-//		return nil, err
-//	}
-//	result := []common.Address{}
-//	rlp.DecodeBytes(data, result)
-//	return result, nil
-//}
+// author albert·gou
+func (statedb *StateDb) GetMediatorCount() int {
+	return GetMediatorCount(statedb.db)
+}
 
-// ######################### GET IMPL END ###########################
+// author albert·gou
+func (statedb *StateDb) IsMediator(address common.Address) bool {
+	return IsMediator(statedb.db, address)
+}
+
+// author albert·gou
+func (statedb *StateDb) GetMediators() map[common.Address]bool {
+	return GetMediators(statedb.db)
+}
+
+// author albert·gou
+func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
+	return LookupMediator(statedb.db)
+}
+
+//xiaozhi
+func (statedb *StateDb) GetMediatorCandidateList() ([]*modules.MediatorInfo, error) {
+	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
+	_, val := statedb.GetContractState(depositeContractAddress.Bytes(), "MediatorList")
+	if val == nil {
+		return nil, fmt.Errorf("mediator candidate list is nil.")
+	}
+	var candidateList []*modules.MediatorInfo
+	err := json.Unmarshal(val, &candidateList)
+	if err != nil {
+		return nil, err
+	}
+	return candidateList, nil
+}
+
+func (statedb *StateDb) IsInMediatorCandidateList(address common.Address) bool {
+	list, err := statedb.GetMediatorCandidateList()
+	if err != nil {
+		return false
+	}
+	for _, v := range list {
+		if strings.Compare(v.Address, address.String()) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (statedb *StateDb) GetJuryCandidateList() ([]string, error) {
+	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
+	_, val := statedb.GetContractState(depositeContractAddress.Bytes(), "JuryList")
+	if val == nil {
+		return nil, fmt.Errorf("jury candidate list is nil.")
+	}
+	var candidateList []string
+	err := json.Unmarshal(val, &candidateList)
+	if err != nil {
+		return nil, err
+	}
+	return candidateList, nil
+}
+
+func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
+	list, err := statedb.GetJuryCandidateList()
+	if err != nil {
+		return false
+	}
+	for _, v := range list {
+		if strings.Compare(v, address.String()) == 0 {
+			return true
+		}
+	}
+	return false
+}

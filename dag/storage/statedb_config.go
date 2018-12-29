@@ -22,6 +22,7 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -30,7 +31,7 @@ import (
 get config information
 */
 func (statedb *StateDb) GetConfig(name []byte) ([]byte, *modules.StateVersion, error) {
-	key := append(modules.CONF_PREFIX, name...)
+	key := append(constants.CONF_PREFIX, name...)
 	return retrieveWithVersion(statedb.db, key)
 
 }
@@ -38,19 +39,12 @@ func (statedb *StateDb) GetConfig(name []byte) ([]byte, *modules.StateVersion, e
 /**
 存储配置信息
 */
-func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersion *modules.StateVersion) error {
+func (statedb *StateDb) SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error {
 	for _, conf := range confs {
 
-		statedb.logger.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)
+		//statedb.logger.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)
 
-		//if conf.Key == "Mediator" {
-		//	mediators := []*core.MediatorInfo{}
-		//	rlp.DecodeBytes(conf.Value, &mediators)
-		//	statedb.saveMediators(mediators, stateVersion)
-		//	continue
-		//}
-
-		key := append(modules.CONF_PREFIX, conf.Key...)
+		key := append(constants.CONF_PREFIX, conf.Key...)
 		//key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
 		err := StoreBytesWithVersion(statedb.db, key, stateVersion, conf.Value)
 		if err != nil {
@@ -60,14 +54,3 @@ func (statedb *StateDb) SaveConfig(confs []modules.PayloadMapStruct, stateVersio
 	}
 	return nil
 }
-
-// todo albert·gou
-//func (statedb *StateDb) saveMediators(mediators []*core.MediatorInfo, v *modules.StateVersion) {
-//	addressList := []common.Address{}
-//	for _, mediator := range mediators {
-//		addr, _ := common.StringToAddress(mediator.Address)
-//		addressList = append(addressList, addr)
-//		statedb.SaveAccountMediatorInfo(addr, mediator, v)
-//	}
-//	statedb.SaveCandidateMediatorAddrList(addressList, v)
-//}

@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -25,6 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var DAO uint64 = 100000000
@@ -39,71 +41,27 @@ const (
 	tfModified
 )
 
-//Asset to identify token
-//By default, system asset id=0,UniqueId=0,ChainId=1
-//默认的PTN资产，则AssetId=0，UniqueId=0,ChainId是当前链的ID
-type Asset struct {
-	AssetId  IDType16 `json:"asset_id"`  // 资产类别
-	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
-	ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id,read from toml config NetworkId
-}
-
-func (asset *Asset) String() string {
-	data, err := rlp.EncodeToBytes(asset)
-	if err != nil {
-		return ""
-	}
-	return string(data)
-}
-
-func (asset *Asset) SetString(data string) error {
-	if err := rlp.DecodeBytes([]byte(data), asset); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (asset *Asset) IsEmpty() bool {
-	if len(asset.AssetId) <= 0 || len(asset.UniqueId) <= 0 {
-		return true
-	}
-	return false
-}
-
-func (asset *Asset) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(asset)
-	if err != nil {
-		return nil
-	}
-	return data
-}
-
-func (asset *Asset) SetBytes(data []byte) error {
-	if err := rlp.DecodeBytes(data, asset); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (asset *Asset) IsSimilar(similar *Asset) bool {
-	if !strings.EqualFold(asset.AssetId.String(), similar.AssetId.String()) {
-		return false
-	}
-	if !strings.EqualFold(asset.UniqueId.String(), similar.UniqueId.String()) {
-		return false
-	}
-	return true
-}
-
 type Utxo struct {
-	Amount     uint64         `json:"amount"`    // 数量
-	Asset      *Asset         `json:"Asset"`     // 资产类别
-	PkScript   []byte         `json:"pk_script"` // 锁定脚本
-	LockTime   uint32         `json:"lock_time"`
-	VoteResult common.Address `json:"vote_info"` //edit by Yiran
+	Amount   uint64 `json:"amount"`    // 数量
+	Asset    *Asset `json:"asset"`     // 资产类别
+	PkScript []byte `json:"pk_script"` // 锁定脚本
+	LockTime uint32 `json:"lock_time"`
+	//VoteResult common.Address `json:"vote_info"` //这个字段删掉
 	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
 	Flags txoFlags
+}
+type UtxoWithOutPoint struct {
+	Utxo
+	OutPoint
+}
+
+func (u *UtxoWithOutPoint) GetAmount() uint64 {
+	return u.Amount
+}
+func (u *UtxoWithOutPoint) Set(utxo *Utxo, o *OutPoint) {
+	u.Utxo = *utxo
+	u.OutPoint = *o
 }
 
 func (utxo *Utxo) StrPkScript() string {
@@ -147,6 +105,9 @@ func (utxo *Utxo) Clone() *Utxo {
 		Flags:    utxo.Flags,
 	}
 }
+func (utxo *Utxo) Flag2Str() string {
+	return UtxoFlags2String(utxo.Flags)
+}
 
 // UtxoIndex is key
 // utxo index db value: amount
@@ -163,7 +124,7 @@ type UtxoIndexValue struct {
 
 func (utxoIndex *UtxoIndex) AssetKey() []byte {
 	key := fmt.Sprintf("%s%s||%s",
-		UTXO_INDEX_PREFIX,
+		constants.UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String(),
 		utxoIndex.Asset.String())
 	return []byte(key)
@@ -171,13 +132,13 @@ func (utxoIndex *UtxoIndex) AssetKey() []byte {
 
 func (utxoIndex *UtxoIndex) AccountKey() []byte {
 	key := fmt.Sprintf("%s%s",
-		UTXO_INDEX_PREFIX,
+		constants.UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String())
 	return []byte(key)
 }
 
 func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
-	preLen := len(UTXO_INDEX_PREFIX)
+	preLen := len(constants.UTXO_INDEX_PREFIX)
 	s := string(key[preLen:])
 	ss := strings.Split(s, "||")
 	if len(ss) != 3 {
@@ -199,7 +160,7 @@ func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 
 func (utxoIndex *UtxoIndex) ToKey() []byte {
 	key := fmt.Sprintf("%s%s||%s||%s",
-		UTXO_INDEX_PREFIX,
+		constants.UTXO_INDEX_PREFIX,
 		utxoIndex.AccountAddr.String(),
 		utxoIndex.Asset.String(),
 		utxoIndex.OutPoint.String())
@@ -208,22 +169,20 @@ func (utxoIndex *UtxoIndex) ToKey() []byte {
 
 func (outpoint *OutPoint) ToKey() []byte {
 	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
-	key := append(UTXO_PREFIX, outpoint.TxHash.Bytes()...)
+	key := append(constants.UTXO_PREFIX, outpoint.TxHash.Bytes()...)
 	key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
 	key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
 	return key[:]
-	// out := fmt.Sprintf("%s%s%d_%d",
-	// 	UTXO_PREFIX,
-	// 	outpoint.TxHash.String(),
-	// 	outpoint.MessageIndex,
-	// 	outpoint.OutIndex,
-	// )
-	//  return []byte(out)
+
+}
+func (outpoint *OutPoint) ToKeyStr() string {
+	b := outpoint.ToKey()
+	return string(b)
 }
 
 func (outpoint *OutPoint) SetString(data string) error {
 	rs := []rune(data)
-	data = string(rs[len(UTXO_PREFIX):])
+	data = string(rs[len(constants.UTXO_PREFIX):])
 	if err := rlp.DecodeBytes([]byte(data), outpoint); err != nil {
 		return err
 	}
@@ -256,7 +215,7 @@ func (outpoint *OutPoint) IsEmpty() bool {
 
 func KeyToOutpoint(key []byte) *OutPoint {
 	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
-	preLen := len(UTXO_PREFIX)
+	preLen := len(constants.UTXO_PREFIX)
 	sTxHash := key[preLen : len(key)-8]
 	sMessage := key[(preLen + common.HashLength) : len(key)-4]
 	sIndex := key[(preLen + common.HashLength + 4):]
@@ -270,15 +229,15 @@ func KeyToOutpoint(key []byte) *OutPoint {
 }
 
 type Output struct {
-	Value    uint64
-	PkScript []byte
-	Asset    *Asset
-	Vote     common.Address // 投票结果
+	Value    uint64 `json:"value,string"`
+	PkScript []byte `json:"pk_script"`
+	Asset    *Asset `json:"asset"`
 }
+
 type Input struct {
-	PreviousOutPoint *OutPoint
-	SignatureScript  []byte
-	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
+	SignatureScript  []byte    `json:"signature_script"`
+	Extra            []byte    `json:"extra"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
 }
 
 // NewTxIn returns a new ptn transaction input with the provided
@@ -310,7 +269,7 @@ type AssetInfo struct {
 
 func (assetInfo *AssetInfo) Tokey() []byte {
 	key := fmt.Sprintf("%s%s",
-		ASSET_INFO_PREFIX,
+		constants.ASSET_INFO_PREFIX,
 		assetInfo.AssetID.AssetId.String())
 	return []byte(key)
 }
@@ -319,7 +278,7 @@ func (assetInfo *AssetInfo) Print() {
 	fmt.Println("Asset alias", assetInfo.Alias)
 	fmt.Println("Asset Assetid", assetInfo.AssetID.AssetId)
 	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
-	fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
+	//fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
 	fmt.Println("Asset Decimal", assetInfo.Decimal)
 	fmt.Println("Asset DecimalUnit", assetInfo.DecimalUnit)
 	fmt.Println("Asset OriginalHolder", assetInfo.OriginalHolder.String())
@@ -329,4 +288,19 @@ type AccountToken struct {
 	Alias   string `json:"alias"`
 	AssetID *Asset `json:"asset_id"`
 	Balance uint64 `json:"balance"`
+}
+
+func UtxoFlags2String(flag txoFlags) string {
+	var str string
+	switch flag {
+	case tfCoinBase:
+		str = "coin_base"
+	case tfSpent:
+		str = "spent"
+	case tfModified:
+		str = "modified"
+	default:
+		str = "normal"
+	}
+	return str
 }

@@ -45,18 +45,22 @@ message ChaincodeMessage {
         DEL_STATE = 10;
         INVOKE_CHAINCODE = 11;
         RESPONSE = 13;
-        GET_STATE_BY_RANGE = 14;
-        GET_QUERY_RESULT = 15;
-        QUERY_STATE_NEXT = 16;
-        QUERY_STATE_CLOSE = 17;
+//        GET_STATE_BY_RANGE = 14;
+//        GET_QUERY_RESULT = 15;
+//        QUERY_STATE_NEXT = 16;
+//        QUERY_STATE_CLOSE = 17;
         KEEPALIVE = 18;
-        GET_HISTORY_FOR_KEY = 19;
+//        GET_HISTORY_FOR_KEY = 19;
         OUTCHAIN_ADDRESS = 20;
         OUTCHAIN_TRANSACTION = 21;
         OUTCHAIN_QUERY = 22;
-        PAYTO_TOKEN_REQUEST = 23;
-        DEPOSIT_CONFIG_REQUEST = 24;
-        USER_ADDR_REQUEST = 25;
+        GET_SYSTEM_CONFIG_REQUEST = 23;
+        GET_CONTRACT_ALL_STATE = 24;
+        GET_TOKEN_BALANCE=25;
+        PAY_OUT_TOKEN=26;
+        DEFINE_TOKEN=27;
+        SUPPLY_TOKEN=28;
+
     }
 
     Type type = 1;
@@ -73,6 +77,8 @@ message ChaincodeMessage {
 
     //channel id
     string channel_id = 7;
+    //contract id
+    bytes contract_id = 8;
 }
 
 // TODO: We need to finalize the design on chaincode container
@@ -144,7 +150,30 @@ message OutChainQuery {
     bytes params = 2;
     string collection = 3;
 }
-
+message GetTokenBalance {
+    string address = 1;
+    string asset = 2;
+}
+message PayOutToken {
+    bytes asset = 1;
+    uint64 amount = 2;
+    uint32 locktime =3;
+    string address = 4;
+}
+message DefineToken{
+    int32 tokenType=1 ;
+    bytes define=2;
+    string creator = 3;
+}
+message SupplyToken{
+    bytes assetId=1;
+    bytes uniqueId=2;
+    uint64 amount=3;
+    string creator = 4;
+}
+message KeyForSystemConfig{
+    string key = 1;
+}
 // Interface that provides support to chaincode execution. ChaincodeContext
 // provides the context necessary for the server to respond appropriately.
 service ChaincodeSupport {

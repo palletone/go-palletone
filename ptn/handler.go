@@ -17,11 +17,9 @@
 package ptn
 
 import (
-	//"encoding/json"
+	"encoding/json"
 	"errors"
 	"fmt"
-
-	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -31,10 +29,11 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
@@ -47,6 +46,8 @@ const (
 	// txChanSize is the size of channel listening to TxPreEvent.
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
+	//needBroadcastMediator = 0
+	//noBroadcastMediator   = 1
 )
 
 var (
@@ -97,9 +98,9 @@ type ProtocolManager struct {
 	ceSub      event.Subscription
 
 	// append by Albert·Gou
-	producer   producer
-	newUnitCh  chan mp.NewUnitEvent
-	newUnitSub event.Subscription
+	producer           producer
+	newProducedUnitCh  chan mp.NewProducedUnitEvent
+	newProducedUnitSub event.Subscription
 
 	// append by Albert·Gou
 	sigShareCh  chan mp.SigShareEvent
@@ -117,50 +118,63 @@ type ProtocolManager struct {
 	vssResponseCh  chan mp.VSSResponseEvent
 	vssResponseSub event.Subscription
 
+	//contract exec
+	contractProc    contractInf
+	contractExecCh  chan jury.ContractExeEvent
+	contractExecSub event.Subscription
+
+	contractSigCh  chan jury.ContractSigEvent
+	contractSigSub event.Subscription
+
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg sync.WaitGroup
 
 	genesis *modules.Unit
 
-	peersTransition  *peerSet
-	transCycleConnCh chan int
+	//peersTransition  *peerSet
+	//transCycleConnCh chan int
 
 	//For Test
-	isTest bool
+	//isTest bool
+
+	activeMediatorsUpdatedCh  chan dag.ActiveMediatorsUpdatedEvent
+	activeMediatorsUpdatedSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
 	engine core.ConsensusEngine, dag dag.IDag, mux *event.TypeMux, producer producer,
-	genesis *modules.Unit) (*ProtocolManager, error) {
+	genesis *modules.Unit, contractProc contractInf) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:        networkId,
-		dag:              dag,
-		txpool:           txpool,
-		eventMux:         mux,
-		consEngine:       engine,
-		peers:            newPeerSet(),
-		newPeerCh:        make(chan *peer),
-		noMorePeers:      make(chan struct{}),
-		txsyncCh:         make(chan *txsync),
-		quitSync:         make(chan struct{}),
-		transCycleConnCh: make(chan int, 1),
-		genesis:          genesis,
-		producer:         producer,
-		peersTransition:  newPeerSet(),
-		isTest:           false,
+		networkId:   networkId,
+		dag:         dag,
+		txpool:      txpool,
+		eventMux:    mux,
+		consEngine:  engine,
+		peers:       newPeerSet(),
+		newPeerCh:   make(chan *peer),
+		noMorePeers: make(chan struct{}),
+		txsyncCh:    make(chan *txsync),
+		quitSync:    make(chan struct{}),
+		//transCycleConnCh: make(chan int, 1),
+		genesis:      genesis,
+		producer:     producer,
+		contractProc: contractProc,
+		//peersTransition:  newPeerSet(),
+		//isTest:           false,
 	}
 
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
-	if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
-		log.Info("dag not empty, fast sync disabled")
-		mode = downloader.FullSync
-	}
+	//if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
+	//	log.Info("dag not empty, fast sync disabled")
+	//	mode = downloader.FullSync
+	//}
+
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
 	}
@@ -205,11 +219,14 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	}
 
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag)
+	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
 
 	validator := func(header *modules.Header) error {
-		//TODO must recover
-		return nil //dag.VerifyHeader(header, false)
+		//dag.VerifyHeader(header, false)
+		if _, err := dag.GetUnitByHash(header.Hash()); err != nil {
+			return dagerrors.ErrFutureBlock
+		}
+		return nil
 	}
 	heighter := func(assetId modules.IDType16) uint64 {
 		unit := dag.GetCurrentUnit(assetId)
@@ -221,36 +238,16 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 	inserter := func(blocks modules.Units) (int, error) {
 		// If fast sync is running, deny importing weird blocks
 		if atomic.LoadUint32(&manager.fastSync) == 1 {
-			log.Warn("Discarded bad propagated block", "number", blocks[0].Number(), "hash", blocks[0].Hash())
-			return 0, nil
+			log.Warn("Discarded bad propagated block", "number", blocks[0].Number().Index, "hash", blocks[0].Hash())
+			return 0, errors.New("fasting sync")
 		}
+		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
+
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
-		return manager.dag.InsertDag(blocks)
+		return manager.dag.InsertDag(blocks, manager.txpool)
 	}
 	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
 	return manager, nil
-}
-
-func (pm *ProtocolManager) SetForTest() {
-	pm.isTest = true
-}
-
-func (pm *ProtocolManager) removeTransitionPeer(id string) {
-	// Short circuit if the peer was already removed
-	peer := pm.peersTransition.Peer(id)
-	if peer == nil {
-		return
-	}
-	log.Debug("Removing PalletOne peer", "peer", id)
-
-	// Unregister the peer from the PalletOne peer set
-	if err := pm.peersTransition.Unregister(id); err != nil {
-		log.Error("Peer removal failed", "peer", id, "err", err)
-	}
-	// Hard disconnect at the networking layer
-	if peer != nil {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
-	}
 }
 
 func (pm *ProtocolManager) removePeer(id string) {
@@ -276,7 +273,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
-	go pm.mediatorConnect()
+	//go pm.mediatorConnect()
 
 	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
@@ -303,9 +300,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 
 	// append by Albert·Gou
 	// broadcast new unit produced by mediator
-	pm.newUnitCh = make(chan mp.NewUnitEvent)
-	pm.newUnitSub = pm.producer.SubscribeNewUnitEvent(pm.newUnitCh)
-	go pm.newUnitBroadcastLoop()
+	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
+	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
+	go pm.newProducedUnitBroadcastLoop()
 
 	// append by Albert·Gou
 	// send signature share
@@ -330,17 +327,32 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
+
+	//TODO must modify for ptn test
+	//contract exec
+	if pm.contractProc != nil {
+		pm.contractExecCh = make(chan jury.ContractExeEvent)
+		pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
+
+		pm.contractSigCh = make(chan jury.ContractSigEvent)
+		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
+	}
+
+	pm.activeMediatorsUpdatedCh = make(chan dag.ActiveMediatorsUpdatedEvent)
+	pm.activeMediatorsUpdatedSub = pm.dag.SubscribeActiveMediatorsUpdatedEvent(pm.activeMediatorsUpdatedCh)
+	go pm.activeMediatorsUpdatedEventRecvLoop()
 }
 
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
 	// append by Albert·Gou
-	pm.newUnitSub.Unsubscribe()
+	pm.newProducedUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
+	pm.activeMediatorsUpdatedSub.Unsubscribe()
 
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 
@@ -372,34 +384,20 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 // handle is the callback invoked to manage the life cycle of an ptn peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
-	log.Debug("================================Enter ProtocolManager handle======================================")
+	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
 
-	defer log.Debug("================================End ProtocolManager handle======================================")
+	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
 	// Ignore maxPeers if this is a trusted peer
-	//TODO must modify make sure  have enough connections for mediators
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
 
-	//TODO Devin
-	//var unitRep common2.IUnitRepository
-	//unitRep = common2.NewUnitRepository4Db(pm.dag.Db)
-
-	mediator := false
-	if !pm.isTest {
-		mediator = pm.producer.LocalHaveActiveMediator()
-	}
-
 	head := pm.dag.CurrentHeader()
 	// Execute the PalletOne handshake
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), mediator); err != nil {
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash() /*mediator,*/, head.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
-		return err
-	}
-
-	if err := pm.peerCheck(p); err != nil {
 		return err
 	}
 
@@ -493,11 +491,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.ConsensusMsg(msg, p)
 
 	// append by Albert·Gou
-	case msg.Code == NewUnitMsg:
+	case msg.Code == NewProducedUnitMsg:
 		// Retrieve and decode the propagated new produced unit
-		return pm.NewUnitMsg(msg, p)
+		pm.NewProducedUnitMsg(msg, p)
+		return pm.NewBlockMsg(msg, p)
 
-		// append by Albert·Gou
+	// append by Albert·Gou
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
 
@@ -512,6 +511,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == GroupSigMsg:
 		return pm.GroupSigMsg(msg, p)
+
+	case msg.Code == ContractExecMsg:
+		log.Debug("===============ContractExecMsg")
+		return pm.ContractExecMsg(msg, p)
+
+	case msg.Code == ContractSigMsg:
+		log.Debug("===============ContractSigMsg")
+		return pm.ContractSigMsg(msg, p)
+	case msg.Code == ContractSpecialMsg:
+		log.Debug("===============ContractSigMsg")
+		return pm.ContractSpecialMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
@@ -550,37 +560,26 @@ func (self *ProtocolManager) txBroadcastLoop() {
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	hash := unit.Hash()
-	peers := pm.peers.PeersWithoutUnit(hash)
 
-	// If propagation is requested, send to a subset of the peer
-	if propagate {
-		//TODO must recover
-		/*
-			for _, parentHash := range unit.ParentHash() {
-				if parent := pm.dag.GetUnit(parentHash); parent == nil {
-					log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash)
-					return
-				}
-			}
-		*/
-		// Send the block to a subset of our peers
-		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
-		for _, peer := range transfer {
-			peer.SendNewUnit(unit)
+	for _, parentHash := range unit.ParentHash() {
+		if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
+			log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash, "parent_hash", parentHash.String())
+			return
 		}
-		log.Trace("BroadcastUnit Propagated block", "hash", hash, "recipients", len(transfer), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+	}
+
+	data, err := json.Marshal(unit)
+	if err != nil {
+		log.Error("ProtocolManager", "BroadcastUnit json marshal err:", err)
 		return
 	}
 
-	// Otherwise if the block is indeed in out own chain, announce it
-	if pm.dag.HasUnit(hash) {
-		for _, peer := range peers {
-			peer.SendNewUnitHashes([]common.Hash{hash}, []modules.ChainIndex{unit.Number()})
-		}
-		log.Trace("BroadcastUnit Announced block", "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
-	} else {
-		log.Debug("===BroadcastUnit===", "pm.dag.HasUnit(hash) is false hash:", hash.String())
+	// If propagation is requested, send to a subset of the peer
+	peers := pm.peers.PeersWithoutUnit(hash)
+	for _, peer := range peers {
+		peer.SendNewRawUnit(unit, data)
 	}
+	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 
 func (self *ProtocolManager) ceBroadcastLoop() {
@@ -625,56 +624,4 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		Genesis: genesisHash,
 		Head:    unit.UnitHash,
 	}
-}
-
-func TestMakeTransaction(nonce uint64) *modules.Transaction {
-	pay := modules.PaymentPayload{
-		Input:  []*modules.Input{},
-		Output: []*modules.Output{},
-	}
-	holder := common.Address{}
-	holder.SetString("P1MEh8GcaAwS3TYTomL1hwcbuhnQDStTmgc")
-	msg0 := &modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: pay,
-	}
-	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{msg0},
-	}
-	txHash, err := rlp.EncodeToBytes(tx.TxMessages)
-	if err != nil {
-		msg := fmt.Sprintf("Get genesis transactions hash error: %s", err)
-		log.Error(msg)
-		return nil
-	}
-	tx.TxHash.SetBytes(txHash)
-
-	return tx
-}
-
-func (pm *ProtocolManager) getTransitionPeer(node *discover.Node) (p *peer, self bool) {
-	id := node.ID
-	if pm.srvr.Self().ID == id {
-		self = true
-	}
-
-	p = pm.peersTransition.Peer(id.TerminalString())
-	if p == nil && !self {
-		log.Debug(fmt.Sprintf("Active Mediator Peer not exist: %v", node.String()))
-	}
-
-	return
-}
-func (pm *ProtocolManager) GetTransitionPeers() map[string]*peer {
-	nodes := pm.dag.GetActiveMediatorNodes()
-	list := make(map[string]*peer, len(nodes))
-
-	for id, node := range nodes {
-		peer, self := pm.getTransitionPeer(node)
-		if peer != nil || self {
-			list[id] = peer
-		}
-	}
-
-	return list
 }

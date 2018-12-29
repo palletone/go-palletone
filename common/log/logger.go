@@ -55,7 +55,9 @@ type ILogger interface {
 	Debug(msg string, ctx ...interface{})
 	Debugf(format string, ctx ...interface{})
 	Info(msg string, ctx ...interface{})
+	Infof(format string, ctx ...interface{})
 	Warn(msg string, ctx ...interface{})
+	Warnf(format string, ctx ...interface{})
 	Error(msg string, ctx ...interface{})
 	Errorf(format string, ctx ...interface{})
 	Crit(msg string, ctx ...interface{})
@@ -114,9 +116,15 @@ func (pl *Plogger) Info(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
 	pl.logger.Info(msg, fileds...)
 }
+func (pl *Plogger) Infof(format string, ctx ...interface{}) {
+	pl.logger.Info(fmt.Sprintf(format, ctx...))
+}
 func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
 	pl.logger.Warn(msg, fileds...)
+}
+func (pl *Plogger) Warnf(format string, ctx ...interface{}) {
+	pl.logger.Warn(fmt.Sprintf(format, ctx...))
 }
 func (pl *Plogger) Error(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
@@ -145,7 +153,7 @@ func InitLogger() {
 	// isDebug := DefaultConfig.IsDebug
 	// if the config file is damaged or lost, then initialize the config if log system.
 	if len(path) == 0 {
-		path = []string{"log/out.log"}
+		path = []string{"log/all.log"}
 	}
 	if len(err_path) == 0 {
 		err_path = []string{"log/err.log"}
@@ -233,9 +241,7 @@ func initLogger() {
 		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, arr...)
 		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
 	} else {
-		if len(DefaultConfig.OpenModule[0]) == 1 && DefaultConfig.OpenModule[0] == "all" {
-
-		} else {
+		if !(len(DefaultConfig.OpenModule) == 1 && DefaultConfig.OpenModule[0] == "all") {
 			DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
 		}
 	}

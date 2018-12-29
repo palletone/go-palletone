@@ -11,8 +11,8 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // ScriptFlags is a bitmask defining additional operations or tests that will be
@@ -118,25 +118,27 @@ var halfOrder = new(big.Int).Rsh(btcec.S256().N, 1)
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
-	scripts         [][]parsedOpcode
-	scriptIdx       int
-	scriptOff       int
-	lastCodeSep     int
-	dstack          stack // data stack
-	astack          stack // alt stack
-	tx              modules.Transaction
-	msgIdx			int
-	txIdx           int
-	condStack       []int
-	numOps          int
-	flags           ScriptFlags
-	sigCache        *SigCache
-	hashCache       *TxSigHashes
-	bip16           bool     // treat execution as pay-to-script-hash
-	savedFirstStack [][]byte // stack from first script for bip16 scripts
-	witnessVersion  int
-	witnessProgram  []byte
-	inputAmount     uint64
+	scripts                [][]parsedOpcode
+	scriptIdx              int
+	scriptOff              int
+	lastCodeSep            int
+	dstack                 stack // data stack
+	astack                 stack // alt stack
+	tx                     modules.Transaction
+	msgIdx                 int
+	txIdx                  int
+	condStack              []int
+	numOps                 int
+	flags                  ScriptFlags
+	sigCache               *SigCache
+	hashCache              *TxSigHashes
+	bip16                  bool     // treat execution as pay-to-script-hash
+	p2ch                   bool     // pay to contract hash
+	savedFirstStack        [][]byte // stack from first script for bip16 scripts
+	witnessVersion         int
+	witnessProgram         []byte
+	pickupJuryRedeemScript PickupJuryRedeemScript
+	inputAmount            uint64
 }
 
 // hasFlag returns whether the script engine instance has the passed flag set.
@@ -424,8 +426,8 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 		// Log interesting data.
 		s0, _ := vm.DisasmScript(0)
 		s1, _ := vm.DisasmScript(1)
-                s0 = s0
-                s1 = s1
+		s0 = s0
+		s1 = s1
 		//log.Trace(fmt.Sprintf("scripts failed: script0: %s\n script1: %s", s0, s1))
 
 		return scriptError(ErrEvalFalse,
@@ -479,10 +481,14 @@ func (vm *Engine) Step() (done bool, err error) {
 
 		vm.numOps = 0 // number of ops is per script.
 		vm.scriptOff = 0
-		if vm.scriptIdx == 0 && vm.bip16 {
+		if vm.scriptIdx == 0 && (vm.bip16 || vm.p2ch) {
 			vm.scriptIdx++
 			vm.savedFirstStack = vm.GetStack()
-		} else if vm.scriptIdx == 1 && vm.bip16 {
+		} else if vm.scriptIdx == 1 && (vm.bip16 || vm.p2ch) {
+			redeemIdx := 1
+			if vm.p2ch {
+				redeemIdx = 2
+			}
 			// Put us past the end for CheckErrorCondition()
 			vm.scriptIdx++
 			// Check script ran successfully and pull the script
@@ -492,7 +498,7 @@ func (vm *Engine) Step() (done bool, err error) {
 				return false, err
 			}
 
-			script := vm.savedFirstStack[len(vm.savedFirstStack)-1]
+			script := vm.savedFirstStack[len(vm.savedFirstStack)-redeemIdx]
 			pops, err := parseScript(script)
 			if err != nil {
 				return false, err
@@ -501,7 +507,7 @@ func (vm *Engine) Step() (done bool, err error) {
 
 			// Set stack to be the stack from first script minus the
 			// script itself
-			vm.SetStack(vm.savedFirstStack[:len(vm.savedFirstStack)-1])
+			vm.SetStack(vm.savedFirstStack[:len(vm.savedFirstStack)-redeemIdx])
 		} else if (vm.scriptIdx == 1 && vm.witnessProgram != nil) ||
 			(vm.scriptIdx == 2 && vm.witnessProgram != nil && vm.bip16) { // Nested P2SH.
 
@@ -535,7 +541,7 @@ func (vm *Engine) Execute() (err error) {
 		if err != nil {
 			log.Error(fmt.Sprintf("stepping (%v)", err))
 		}
-                dis = dis
+		dis = dis
 		//log.Trace(fmt.Sprintf("stepping %v", dis))
 
 		done, err = vm.Step()
@@ -552,8 +558,8 @@ func (vm *Engine) Execute() (err error) {
 		if vm.astack.Depth() != 0 {
 			astr = "AltStack:\n" + vm.astack.String()
 		}
-                dstr= dstr 
-                astr = astr
+		dstr = dstr
+		astr = astr
 		//log.Trace(dstr + astr)
 	}
 
@@ -801,21 +807,21 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, tx *modules.Transaction/**wire.MsgTx*/,msgIdx, txIdx int, flags ScriptFlags,
+func NewEngine(scriptPubKey []byte, pickupJuryRedeemScript PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, txIdx int, flags ScriptFlags,
 	sigCache *SigCache, hashCache *TxSigHashes, inputAmount uint64) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
-	if txIdx < 0 || msgIdx<0 || msgIdx>=len(tx.TxMessages) {
+	if txIdx < 0 || msgIdx < 0 || msgIdx >= len(tx.TxMessages) {
 		str := fmt.Sprintf("transaction input index %d is negative or "+
 			">= %d", msgIdx, len(tx.TxMessages))
 		return nil, scriptError(ErrInvalidIndex, str)
 	}
-	msg:=tx.TxMessages[msgIdx]
-	if msg.App!= modules.APP_PAYMENT{
+	msg := tx.TxMessages[msgIdx]
+	if msg.App != modules.APP_PAYMENT {
 		return nil, scriptError(ErrInvalidIndex, "Message not a payment payload")
 	}
-	payment:=msg.Payload.(*modules.PaymentPayload)
-	scriptSig := payment.Input[txIdx].SignatureScript
+	payment := msg.Payload.(*modules.PaymentPayload)
+	scriptSig := payment.Inputs[txIdx].SignatureScript
 
 	// When both the signature script and public key script are empty the
 	// result is necessarily an error since the stack would end up being
@@ -885,6 +891,14 @@ func NewEngine(scriptPubKey []byte, tx *modules.Transaction/**wire.MsgTx*/,msgId
 		}
 		vm.bip16 = true
 	}
+	if isContractHash(vm.scripts[1]) {
+		// Only accept input scripts that push data for P2SH.
+		if !isPushOnly(vm.scripts[0]) {
+			return nil, scriptError(ErrNotPushOnly,
+				"pay to contract hash is not push only")
+		}
+		vm.p2ch = true
+	}
 	if vm.hasFlag(ScriptVerifyMinimalData) {
 		vm.dstack.verifyMinimalData = true
 		vm.astack.verifyMinimalData = true
@@ -918,7 +932,7 @@ func NewEngine(scriptPubKey []byte, tx *modules.Transaction/**wire.MsgTx*/,msgId
 			witProgram = scriptPubKey
 
 		}
-          witProgram=witProgram
+		witProgram = witProgram
 		/*if witProgram != nil {
 			var err error
 			vm.witnessVersion, vm.witnessProgram, err = ExtractWitnessProgramInfo(witProgram)
@@ -940,6 +954,7 @@ func NewEngine(scriptPubKey []byte, tx *modules.Transaction/**wire.MsgTx*/,msgId
 
 	vm.tx = *tx
 	vm.txIdx = txIdx
-	vm.msgIdx=msgIdx
+	vm.msgIdx = msgIdx
+	vm.pickupJuryRedeemScript = pickupJuryRedeemScript
 	return &vm, nil
 }

@@ -21,25 +21,24 @@ package dockercontroller
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/hex"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"time"
-	"bufio"
-	"regexp"
 
-	"github.com/op/go-logging"
-	"github.com/spf13/viper"
-	"golang.org/x/net/context"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	"github.com/palletone/go-palletone/vm/ccintf"
 	container "github.com/palletone/go-palletone/vm/api"
+	"github.com/palletone/go-palletone/vm/ccintf"
 	com "github.com/palletone/go-palletone/vm/common"
+	"github.com/spf13/viper"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -49,10 +48,11 @@ var (
 	imageRegExp  = regexp.MustCompile("^[a-z0-9]+(([._-][a-z0-9]+)+)?$")
 )
 
-func getClientMe()(dockerClient, error) {
+func getClientMe() (dockerClient, error) {
 	client, err := docker.NewClient("unix:///var/run/docker.sock")
 	return client, err
 }
+
 // getClient returns an instance that implements dockerClient interface
 type getClient func() (dockerClient, error)
 
@@ -111,7 +111,7 @@ func getDockerHostConfig() *docker.HostConfig {
 	getInt64 := func(key string) int64 {
 		defer func() {
 			if err := recover(); err != nil {
-				dockerLogger.Warningf("load vm.docker.hostConfig.%s failed, error: %v", key, err)
+				dockerLogger.Warnf("load vm.docker.hostConfig.%s failed, error: %v", key, err)
 			}
 		}()
 		n := viper.GetInt(dockerKey(key))
@@ -121,7 +121,7 @@ func getDockerHostConfig() *docker.HostConfig {
 	var logConfig docker.LogConfig
 	err := viper.UnmarshalKey(dockerKey("LogConfig"), &logConfig)
 	if err != nil {
-		dockerLogger.Warningf("load docker HostConfig.LogConfig failed, error: %s", err.Error())
+		dockerLogger.Warnf("load docker HostConfig.LogConfig failed, error: %s", err.Error())
 	}
 	networkMode := viper.GetString(dockerKey("NetworkMode"))
 	if networkMode == "" {
@@ -171,13 +171,13 @@ func (vm *DockerVM) createContainer(ctxt context.Context, client dockerClient,
 	if err != nil {
 		return err
 	}
-	dockerLogger.Debugf("Created container: %s", imageID)
+	//dockerLogger.Debugf("Created container: %s", imageID)
 	return nil
 }
 
 func (vm *DockerVM) deployImage(client dockerClient, ccid ccintf.CCID,
 	args []string, env []string, reader io.Reader) error {
-	id, err := vm.GetVMName(ccid, formatImageName)
+	id, err := vm.GetImageId(ccid)
 	if err != nil {
 		return err
 	}
@@ -190,13 +190,13 @@ func (vm *DockerVM) deployImage(client dockerClient, ccid ccintf.CCID,
 	}
 	//glh
 	/*
-	opts := docker.BuildImageOptions{
-		Name:         "ubuntu",
-		Pull:         false,
-		InputStream:  reader,
-		OutputStream: outputbuf,
-	}
-*/
+		opts := docker.BuildImageOptions{
+			Name:         "ubuntu",
+			Pull:         false,
+			InputStream:  reader,
+			OutputStream: outputbuf,
+		}
+	*/
 	if err := client.BuildImage(opts); err != nil {
 		dockerLogger.Errorf("Error building images: %s", err)
 		dockerLogger.Errorf("Image Output:\n********************\n%s\n********************", outputbuf.String())
@@ -232,19 +232,22 @@ func (vm *DockerVM) Deploy(ctxt context.Context, ccid ccintf.CCID,
 //这里还可以指定对容器日志的输出
 func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	args []string, env []string, filesToUpload map[string][]byte, builder container.BuildSpecFactory, prelaunchFunc container.PrelaunchFunc) error {
-	imageID, err := vm.GetVMName(ccid, formatImageName)
+	//获取本地基础镜像
+	imageID, err := vm.GetImageId(ccid)
 	if err != nil {
+		dockerLogger.Errorf("get image id error: %s", err)
 		return err
 	}
-
+	//获取docker客户端
 	client, err := vm.getClientFnc()
 	if err != nil {
-		dockerLogger.Debugf("start - cannot create client %s", err)
+		dockerLogger.Debugf("start - cannot create client: ", err)
 		return err
 	}
 
-	containerID, err := vm.GetVMName(ccid, nil)
+	containerID, err := vm.GetContainerId(ccid)
 	if err != nil {
+		dockerLogger.Debugf("get container %s error: ", containerID, err)
 		return err
 	}
 
@@ -252,38 +255,48 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 
 	//stop,force remove if necessary
 	dockerLogger.Debugf("Cleanup container %s", containerID)
+	//停止容器
 	vm.stopInternal(ctxt, client, containerID, 0, false, false)
-
+	//创建容器
 	dockerLogger.Debugf("Start container %s", containerID)
 	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
+	//var reader io.Reader
+	//var err1 error
+	//var isInit = false
 	if err != nil {
 		//if image not found try to create image and retry
 		if err == docker.ErrNoSuchImage {
-			if builder != nil {
-				dockerLogger.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
-					"attempt to recreate image", imageID, containerID, err)
-
-				reader, err1 := builder()
-				if err1 != nil {
-					dockerLogger.Errorf("Error creating image builder for image <%s> (container id <%s>), "+
-						"because of <%s>", imageID, containerID, err1)
-				}
-
-				if err1 = vm.deployImage(client, ccid, args, env, reader); err1 != nil {
-					return err1
-				}
-
-				dockerLogger.Debug("start-recreated image successfully")
-				if err1 = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout); err1 != nil {
-					dockerLogger.Errorf("start-could not recreate container post recreate image: %s", err1)
-					return err1
-				}
-			} else {
-				dockerLogger.Errorf("start-could not find image <%s>, because of %s", imageID, err)
-				return err
-			}
+			dockerLogger.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
+				"attempt to recreate image", imageID, containerID, err)
+			return fmt.Errorf("no such image with image name is %s, should pull this image from docker hub.", imageID)
+			//if builder != nil {
+			//	dockerLogger.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
+			//		"attempt to recreate image", imageID, containerID, err)
+			//	//获取上传container的文件
+			//	reader, err1 = builder()
+			//	if err1 != nil {
+			//		dockerLogger.Errorf("Error creating image builder for image <%s> (container id <%s>), "+
+			//			"because of <%s>", imageID, containerID, err1)
+			//	}
+			//	////创建镜像
+			//	if err1 = vm.deployImage(client, ccid, args, env, reader); err1 != nil {
+			//		return err1
+			//	}
+			//	//imageID = "2bdd5196cd89"
+			//	//args = []string{"/bin/sh","-c","cd / && tar binpackage.tar && mv chaincode /usr/local/bin && cd /usr/local/bin && ./chaincode"}
+			//	isInit = true
+			//	dockerLogger.Debug("start-recreated image successfully")
+			//	//再次创建容器
+			//	if err1 = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout); err1 != nil {
+			//		dockerLogger.Errorf("start-could not recreate container post recreate image: %s", err1)
+			//		return err1
+			//	}
+			//} else {
+			//	dockerLogger.Errorf("start-could not find image <%s>, because of %s", imageID, err)
+			//	return err
+			//}
 		} else {
-			dockerLogger.Errorf("start-could not recreate container <%s>, because of %s", containerID, err)
+			dockerLogger.Errorf("start-could not recreate container <%s> with image id <%s>, because of %s", containerID, imageID, err)
 			return err
 		}
 	}
@@ -336,7 +349,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 
 			// Acquire a custom logger for our chaincode, inheriting the level from the peer
 			containerLogger := flogging.MustGetLogger(containerID)
-			logging.SetLevel(logging.GetLevel("peer"), containerID)
+			//logging.SetLevel(logging.GetLevel("peer"), containerID)
 
 			for {
 				// Loop forever dumping lines of text into the containerLogger
@@ -394,7 +407,23 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			return err
 		}
 	}
+	//获取上传container的文件
+	reader, err1 := builder()
+	if err1 != nil {
+		dockerLogger.Errorf("Error creating image builder for image <%s> (container id <%s>), "+
+			"because of <%s>", imageID, containerID, err1)
+		return err1
+	}
+	//上传文件到容器
+	err = client.UploadToContainer(containerID, docker.UploadToContainerOptions{
+		InputStream:          reader,
+		Path:                 "/",
+		NoOverwriteDirNonDir: false,
+	})
 
+	if err != nil {
+		return fmt.Errorf("Error uploading files to the container instance %s: %s", containerID, err)
+	}
 	// start container with HostConfig was deprecated since v1.10 and removed in v1.2
 	err = client.StartContainer(containerID, nil)
 	if err != nil {
@@ -408,19 +437,19 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 
 //Stop stops a running chaincode
 func (vm *DockerVM) Stop(ctxt context.Context, ccid ccintf.CCID, timeout uint, dontkill bool, dontremove bool) error {
-	id, err := vm.GetVMName(ccid, nil)
+	containerId, err := vm.GetContainerId(ccid)
 	if err != nil {
+		dockerLogger.Errorf("get image id error: %s", err)
 		return err
 	}
-
 	client, err := vm.getClientFnc()
 	if err != nil {
 		dockerLogger.Debugf("stop - cannot create client %s", err)
 		return err
 	}
-	id = strings.Replace(id, ":", "_", -1)
+	//id = strings.Replace(id, ":", "_", -1)
 
-	err = vm.stopInternal(ctxt, client, id, timeout, dontkill, dontremove)
+	err = vm.stopInternal(ctxt, client, containerId, timeout, dontkill, dontremove)
 
 	return err
 }
@@ -454,26 +483,26 @@ func (vm *DockerVM) stopInternal(ctxt context.Context, client dockerClient,
 
 //Destroy destroys an image
 func (vm *DockerVM) Destroy(ctxt context.Context, ccid ccintf.CCID, force bool, noprune bool) error {
-	id, err := vm.GetVMName(ccid, formatImageName)
+	imageID, err := vm.GetImageId(ccid)
 	if err != nil {
+		dockerLogger.Errorf("get image id error: %s", err)
 		return err
 	}
-
-	dockerLogger.Infof("image id[%s]", id)
+	dockerLogger.Infof("image id[%s]", imageID)
 
 	client, err := vm.getClientFnc()
 	if err != nil {
 		dockerLogger.Errorf("destroy-cannot create client %s", err)
 		return err
 	}
-	id = strings.Replace(id, ":", "_", -1)
+	//id = strings.Replace(id, ":", "_", -1)
 
-	err = client.RemoveImageExtended(id, docker.RemoveImageOptions{Force: force, NoPrune: noprune})
+	err = client.RemoveImageExtended(imageID, docker.RemoveImageOptions{Force: force, NoPrune: noprune})
 
 	if err != nil {
 		dockerLogger.Errorf("error while destroying image: %s", err)
 	} else {
-		dockerLogger.Debugf("Destroyed image %s", id)
+		dockerLogger.Debugf("Destroyed image %s", imageID)
 	}
 
 	return err
@@ -506,6 +535,36 @@ func (vm *DockerVM) GetVMName(ccid ccintf.CCID, format func(string) (string, err
 	name = vmRegExp.ReplaceAllString(name, "-")
 
 	return name, nil
+}
+func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
+	name := ccid.GetName()
+
+	if ccid.NetworkID != "" && ccid.PeerID != "" {
+		name = fmt.Sprintf("%s-%s-%s", ccid.NetworkID, ccid.PeerID, name)
+	} else if ccid.NetworkID != "" {
+		name = fmt.Sprintf("%s-%s", ccid.NetworkID, name)
+	} else if ccid.PeerID != "" {
+		name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
+	}
+	// replace any invalid characters with "-" (either in network id, peer id, or in the
+	// entire name returned by any format function)
+	name = vmRegExp.ReplaceAllString(name, "-")
+
+	return name, nil
+}
+
+func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
+	vmName := ccid.ChaincodeSpec.Type
+	switch vmName {
+	case 1:
+		return "palletone/palletimg", nil
+	case 2:
+		return "node", nil
+	case 3:
+		return "java", nil
+	default:
+		return "palletone", nil
+	}
 }
 
 // formatImageName formats the docker image from peer information. This is

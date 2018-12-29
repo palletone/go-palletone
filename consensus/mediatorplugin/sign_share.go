@@ -53,7 +53,7 @@ func (self *sigShareSet) unlock() {
 	self.opLock.Unlock()
 }
 
-func (self *sigShareSet) apend(sigShare []byte) {
+func (self *sigShareSet) append(sigShare []byte) {
 	self.dataLock.Lock()
 	defer self.dataLock.Unlock()
 

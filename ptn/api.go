@@ -18,37 +18,58 @@ package ptn
 
 import (
 	"context"
-	//"fmt"
+	"encoding/json"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/shopspring/decimal"
 )
 
-// PublicEthereumAPI provides an API to access PalletOne full node-related
+// PublicPalletOneAPI provides an API to access PalletOne full node-related
 // information.
-type PublicEthereumAPI struct {
+type PublicPalletOneAPI struct {
 	p *PalletOne
 }
 
-// NewPublicEthereumAPI creates a new PalletOne protocol API for full nodes.
-func NewPublicEthereumAPI(p *PalletOne) *PublicEthereumAPI {
-	return &PublicEthereumAPI{p}
+// NewPublicPalletOneAPI creates a new PalletOne protocol API for full nodes.
+func NewPublicPalletOneAPI(p *PalletOne) *PublicPalletOneAPI {
+	return &PublicPalletOneAPI{p}
 }
 
 // Etherbase is the address that mining rewards will be send to
-func (api *PublicEthereumAPI) Etherbase() (common.Address, error) {
+func (api *PublicPalletOneAPI) Etherbase() (common.Address, error) {
 	return api.p.Etherbase()
 }
 
 // Coinbase is the address that mining rewards will be send to (alias for Etherbase)
-func (api *PublicEthereumAPI) Coinbase() (common.Address, error) {
+func (api *PublicPalletOneAPI) Coinbase() (common.Address, error) {
 	return api.Etherbase()
 }
 
 // Hashrate returns the POW hashrate
-func (api *PublicEthereumAPI) Hashrate() hexutil.Uint64 {
+func (api *PublicPalletOneAPI) Hashrate() hexutil.Uint64 {
 	//return hexutil.Uint64(api.p.Miner().HashRate())
 	return hexutil.Uint64(0)
+}
+
+type PublicDagAPI struct {
+	p *PalletOne
+}
+
+func NewPublicDagAPI(p *PalletOne) *PublicDagAPI {
+	return &PublicDagAPI{p}
+}
+func (api *PublicDagAPI) TokenInfos() (string, error) {
+	all, err := api.p.dag.GetAllTokenInfo()
+	if err != nil {
+		return "get failed.", err
+	}
+	if bytes, err := json.Marshal(all); err != nil {
+		return "error", err
+	} else {
+		return string(bytes), nil
+	}
 }
 
 /*
@@ -93,4 +114,15 @@ type storageMap map[common.Hash]storageEntry
 type storageEntry struct {
 	Key   *common.Hash `json:"key"`
 	Value common.Hash  `json:"value"`
+}
+
+type TransferPtnArgs struct {
+	From   string          `json:"from"`
+	To     string          `json:"to"`
+	Amount decimal.Decimal `json:"amount"`
+	Text   *string         `json:"text"`
+}
+
+func (api *PublicPalletOneAPI) TransferPtn(args TransferPtnArgs) (*mp.TxExecuteResult, error) {
+	return api.p.TransferPtn(args.From, args.To, args.Amount, args.Text)
 }

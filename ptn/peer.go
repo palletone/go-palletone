@@ -26,6 +26,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/consensus/jury"
+	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
 )
@@ -40,14 +42,14 @@ var (
 )
 
 const (
-	maxKnownTxs      = 32768 // Maximum transactions hashes to keep in the known list (prevent DOS)
-	maxKnownBlocks   = 1024  // Maximum block hashes to keep in the known list (prevent DOS)
-	maxKnownVsss     = 25    // Maximum Vss hashes to keep in the known list (prevent DOS)
+	maxKnownTxs    = 32768 // Maximum transactions hashes to keep in the known list (prevent DOS)
+	maxKnownBlocks = 1024  // Maximum block hashes to keep in the known list (prevent DOS)
+	//maxKnownVsss     = 25    // Maximum Vss hashes to keep in the known list (prevent DOS)
 	handshakeTimeout = 5 * time.Second
 
-	transitionStep1  = 1 //All transition mediator each other connected to star vss
-	transitionStep2  = 2 //vss success
-	transitionCancel = 3 //retranstion
+	//transitionStep1  = 1 //All transition mediator each other connected to star vss
+	//transitionStep2  = 2 //vss success
+	//transitionCancel = 3 //retranstion
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -81,10 +83,9 @@ type peer struct {
 	knownBlocks   *set.Set // Set of block hashes known to be known by this peer
 	knownGroupSig *set.Set // Set of block hashes known to be known by this peer
 
-	index modules.ChainIndex
-
-	mediator     bool
-	transitionCh chan int
+	//index modules.ChainIndex
+	//mediator bool
+	//transitionCh chan int
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -99,14 +100,23 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownBlocks:   set.New(),
 		knownGroupSig: set.New(),
 		peermsg:       map[modules.IDType16]peerMsg{},
-		mediator:      false,
-		transitionCh:  make(chan int, 1),
+		//mediator:      false,
+		//transitionCh:  make(chan int, 1),
 	}
 }
 
+/*func (p *peer) ID() int32 {
+	p.lock.Lock()
+	id := p.id
+	p.lock.Unlock()
+
+	return id
+}*/
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
-	hash, number := p.Head(modules.PTNCOIN)
+	//ptnAssetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
+	//asset := modules.NewPTNAsset()
+	hash, number := p.Head(modules.CoreAsset.AssetId)
 
 	return &PeerInfo{
 		Version: p.version,
@@ -184,6 +194,18 @@ func (p *peer) SendTransactions(txs modules.Transactions) error {
 	return p2p.Send(p.rw, TxMsg, txs)
 }
 
+func (p *peer) SendContractExeTransaction(event jury.ContractExeEvent) error {
+	return p2p.Send(p.rw, ContractExecMsg, event)
+}
+
+func (p *peer) SendContractSigTransaction(event jury.ContractSigEvent) error {
+	return p2p.Send(p.rw, ContractSigMsg, event)
+}
+
+func (p *peer) SendContractSpecialTransaction(event jury.ContractSpecialEvent) error {
+	return p2p.Send(p.rw, ContractSpecialMsg, event)
+}
+
 //SendConsensus sends consensus msg to the peer
 func (p *peer) SendConsensus(msgs string) error {
 	return p2p.Send(p.rw, ConsensusMsg, msgs)
@@ -204,9 +226,15 @@ func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []modules.ChainIn
 }
 
 // SendNewBlock propagates an entire block to a remote peer.
-func (p *peer) SendNewUnit(unit *modules.Unit) error {
+//func (p *peer) SendNewUnit(unit *modules.Unit) error {
+//	p.knownBlocks.Add(unit.UnitHash)
+//	return p2p.Send(p.rw, NewBlockMsg, unit)
+//}
+
+// SendNewBlock propagates an entire block to a remote peer.
+func (p *peer) SendNewRawUnit(unit *modules.Unit, data []byte) error {
 	p.knownBlocks.Add(unit.UnitHash)
-	return p2p.Send(p.rw, NewBlockMsg, unit)
+	return p2p.Send(p.rw, NewBlockMsg, data)
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
@@ -215,13 +243,13 @@ func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
 }
 
 // SendBlockBodies sends a batch of block contents to the remote peer.
-func (p *peer) SendBlockBodies(bodies []*blockBody) error {
+func (p *peer) SendBlockBodies(bodies []blockBody) error {
 	return p2p.Send(p.rw, BlockBodiesMsg, blockBodiesData(bodies))
 }
 
 // SendBlockBodiesRLP sends a batch of block contents to the remote peer from
 // an already RLP encoded format.
-func (p *peer) SendBlockBodiesRLP(bodies []rlp.RawValue) error {
+func (p *peer) SendBlockBodiesRLP(bodies [][]byte /*[]rlp.RawValue*/) error {
 	return p2p.Send(p.rw, BlockBodiesMsg, bodies)
 }
 
@@ -272,7 +300,7 @@ func (p *peer) RequestHeadersByNumber(origin modules.ChainIndex, amount int, ski
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
 // specified.
 func (p *peer) RequestBodies(hashes []common.Hash) error {
-	log.Debug("Fetching batch of block bodies", "count", len(hashes))
+	log.Debug("Fetching batch of block bodies", "peer id:", p.id, "count", len(hashes))
 	return p2p.Send(p.rw, GetBlockBodiesMsg, hashes)
 }
 
@@ -291,7 +319,8 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash, mediator bool) error {
+func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash,
+	/*mediator bool,*/ headHash common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -302,7 +331,8 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 			NetworkId:       network,
 			Index:           index,
 			GenesisUnit:     genesis,
-			Mediator:        mediator,
+			//Mediator:        mediator,
+			CurrentHeader: headHash,
 		})
 	}()
 	go func() {
@@ -320,8 +350,8 @@ func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis commo
 			return p2p.DiscReadTimeout
 		}
 	}
-	p.index, p.mediator = status.Index, status.Mediator
-	//p.index, p.head = status.TD, status.CurrentBlock
+	//p.mediator = status.Mediator
+	p.SetHead(status.CurrentHeader, status.Index)
 	return nil
 }
 
@@ -363,73 +393,73 @@ func (p *peer) String() string {
 // peerSet represents the collection of active peers currently participating in
 // the PalletOne sub-protocol.
 type peerSet struct {
-	peers        map[string]*peer
-	knownVss     *set.Set
-	knownVssResp *set.Set
-	mediators    *set.Set
-	lock         sync.RWMutex
-	closed       bool
+	peers map[string]*peer
+	//knownVss     *set.Set
+	//knownVssResp *set.Set
+	//mediators    *set.Set
+	lock   sync.RWMutex
+	closed bool
 }
 
 // newPeerSet creates a new peer set to track the active participants.
 func newPeerSet() *peerSet {
 	return &peerSet{
-		peers:        make(map[string]*peer),
-		knownVss:     set.New(),
-		knownVssResp: set.New(),
-		mediators:    set.New(),
+		peers: make(map[string]*peer),
+		//knownVss:     set.New(),
+		//knownVssResp: set.New(),
+		//mediators:    set.New(),
 	}
 }
 
-func (ps *peerSet) MediatorsAllConnected() int {
-	return 0
-}
+//func (ps *peerSet) MediatorsAllConnected() int {
+//	return 0
+//}
 
-func (ps *peerSet) MediatorsSize() int {
-	ps.lock.Lock()
-	defer ps.lock.Unlock()
-	return ps.mediators.Size()
-}
+//func (ps *peerSet) MediatorsSize() int {
+//	ps.lock.Lock()
+//	defer ps.lock.Unlock()
+//	return ps.mediators.Size()
+//}
 
-func (ps *peerSet) MediatorsReset(nodes []string) {
-	ps.lock.Lock()
-	defer ps.lock.Unlock()
-	ps.mediators.Clear()
-	for _, node := range nodes {
-		ps.mediators.Add(node)
-	}
-}
+//func (ps *peerSet) MediatorsReset(nodes []string) {
+//	ps.lock.Lock()
+//	defer ps.lock.Unlock()
+//	ps.mediators.Clear()
+//	for _, node := range nodes {
+//		ps.mediators.Add(node)
+//	}
+//}
 
-func (ps *peerSet) MediatorsClean() {
-	ps.lock.Lock()
-	defer ps.lock.Unlock()
-	ps.mediators.Clear()
-}
+//func (ps *peerSet) MediatorsClean() {
+//	ps.lock.Lock()
+//	defer ps.lock.Unlock()
+//	ps.mediators.Clear()
+//}
 
 //Make sure there is plenty of connection for Mediator
-func (ps *peerSet) noMediatorCheck(maxPeers int, mediators int) bool {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-
-	size := 0
-	for _, p := range ps.peers {
-		if !p.mediator {
-			size++
-		}
-	}
-	if size > maxPeers-mediators {
-		return false
-	}
-	return true
-}
+//func (ps *peerSet) noMediatorCheck(maxPeers int, mediators int) bool {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//
+//	size := 0
+//	for _, p := range ps.peers {
+//		if !p.mediator {
+//			size++
+//		}
+//	}
+//	if size > maxPeers-mediators {
+//		return false
+//	}
+//	return true
+//}
 
 //Make sure there is plenty of connection for Mediator
-func (ps *peerSet) MediatorCheck() bool {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-	ps.mediators.Size()
-	return true
-}
+//func (ps *peerSet) MediatorCheck() bool {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//	ps.mediators.Size()
+//	return true
+//}
 
 // Register injects a new peer into the working set, or returns an error if the
 // peer is already known.
@@ -522,43 +552,43 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 
 // PeersWithoutVss retrieves a list of peers that do not have a given transaction
 // in their set of known hashes.
-func (ps *peerSet) PeersWithoutVss(nodeId string) bool {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-
-	return ps.knownVss.Has(nodeId)
-}
+//func (ps *peerSet) PeersWithoutVss(nodeId string) bool {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//
+//	return ps.knownVss.Has(nodeId)
+//}
 
 // MarkVss marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
-func (ps *peerSet) MarkVss(nodeId string) {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-	// If we reached the memory allowance, drop a previously known block hash
-	for ps.knownVss.Size() >= maxKnownVsss {
-		ps.knownVss.Pop()
-	}
-	ps.knownVss.Add(nodeId)
-}
+//func (ps *peerSet) MarkVss(nodeId string) {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//	// If we reached the memory allowance, drop a previously known block hash
+//	for ps.knownVss.Size() >= maxKnownVsss {
+//		ps.knownVss.Pop()
+//	}
+//	ps.knownVss.Add(nodeId)
+//}
 
 // PeersWithoutVssResp retrieves a list of peers that do not have a given transaction
 // in their set of known hashes.
-func (ps *peerSet) PeersWithoutVssResp(nodeId string) bool {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-
-	return ps.knownVssResp.Has(nodeId)
-}
+//func (ps *peerSet) PeersWithoutVssResp(nodeId string) bool {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//
+//	return ps.knownVssResp.Has(nodeId)
+//}
 
 // MarkVssResp marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
-func (ps *peerSet) MarkVssResp(nodeId string) {
-	// If we reached the memory allowance, drop a previously known block hash
-	for ps.knownVssResp.Size() >= maxKnownVsss {
-		ps.knownVssResp.Pop()
-	}
-	ps.knownVssResp.Add(nodeId)
-}
+//func (ps *peerSet) MarkVssResp(nodeId string) {
+//	// If we reached the memory allowance, drop a previously known block hash
+//	for ps.knownVssResp.Size() >= maxKnownVsss {
+//		ps.knownVssResp.Pop()
+//	}
+//	ps.knownVssResp.Add(nodeId)
+//}
 
 // BestPeer retrieves the known peer with the currently highest total difficulty.
 func (ps *peerSet) BestPeer(assetId modules.IDType16) *peer {

@@ -1,3 +1,21 @@
+/*
+	This file is part of go-palletone.
+	go-palletone is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	go-palletone is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018
+ */
 package contracts
 
 import (
@@ -6,8 +24,9 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	cc "github.com/palletone/go-palletone/contracts/manger"
+
 	"github.com/palletone/go-palletone/dag"
-	unit "github.com/palletone/go-palletone/dag/modules"
+	md "github.com/palletone/go-palletone/dag/modules"
 	"sync/atomic"
 	"time"
 )
@@ -19,6 +38,16 @@ type Contract struct {
 	name string
 	dag  dag.IDag
 	//status int32 //   1:init   2:start
+}
+
+type ContractInf interface {
+	Close() error
+	Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error)
+	Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
+	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokePayload, error)
+	Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
+	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
+	Stop(chainID string, deployId []byte, txid string, deleteImage bool) error
 }
 
 var (
@@ -33,7 +62,8 @@ var (
 func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag > 0 {
-		return nil, errors.New("contract already init")
+		//todo  tmp delete
+		//return nil, errors.New("contract already init")
 	}
 
 	var contractCfg contractcfg.Config
@@ -72,7 +102,7 @@ func (c *Contract) Close() error {
 // Contract installation, packaging the specified contract path file,
 // and forming a contract template unit together with the contract name and version
 // Chain code ID for multiple chains
-func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *unit.ContractTplPayload, err error) {
+func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		return nil, errors.New("Contract not initialized")
@@ -88,7 +118,7 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 // The contract deployment timeout is specified according to the configuration of server.The default is 40 seconds.
 // The interface returns the contract deployment ID (there is a different return ID for each deployment)
 // and the deployment unit
-func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *unit.ContractDeployPayload, e error) {
+func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		return nil, nil, errors.New("Contract not initialized")
@@ -99,7 +129,7 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [
 // Invoke 合约invoke调用，根据指定合约调用参数执行已经部署的合约，函数返回合约调用单元。
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
-func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*unit.ContractInvokePayload, error) {
+func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		return nil, errors.New("Contract not initialized")
@@ -114,5 +144,5 @@ func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImag
 	if initFlag == 0 {
 		return errors.New("Contract not initialized")
 	}
-	return cc.Stop(chainID, deployId, txid, deleteImage)
+	return cc.Stop(deployId, chainID, deployId, txid, deleteImage)
 }

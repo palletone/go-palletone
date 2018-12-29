@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptnjson"
 	//"github.com/btcsuite/btcd/btcjson"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -372,7 +373,7 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 	return *match
 }
 
-// @author Albert·Gou
+// accountCreate creates a new account into the keystore defined by the CLI flags.
 func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	cfg := FullConfig{Node: defaultNodeConfig()}
 	// Load config file.
@@ -527,8 +528,8 @@ type RawTransactionGenParams struct {
 		MessageIndex uint32 `json:"messageindex"`
 	} `json:"inputs"`
 	Outputs []struct {
-		Address string  `json:"address"`
-		Amount  float64 `json:"amount"`
+		Address string          `json:"address"`
+		Amount  decimal.Decimal `json:"amount"`
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
@@ -577,12 +578,12 @@ func accountCreateTx(ctx *cli.Context) error {
 		return nil
 	}
 	//realNet := &chaincfg.MainNetParams
-	amounts := map[string]float64{}
+	amounts := []ptnjson.AddressAmt{}
 	for _, outOne := range rawTransactionGenParams.Outputs {
-		if len(outOne.Address) == 0 || outOne.Amount <= 0 {
+		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
 			continue
 		}
-		amounts[outOne.Address] = float64(outOne.Amount * 1e8)
+		amounts = append(amounts, ptnjson.AddressAmt{outOne.Address, outOne.Amount})
 	}
 	if len(amounts) == 0 {
 		return nil
@@ -642,20 +643,21 @@ func accountSignTx(ctx *cli.Context) error {
 	//	// All returned errors (not OOM, which panics) encounted during
 	//	// bytes.Buffer writes are unexpected.
 	send_args := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, nil)
-	signtxout, err := ptnapi.SignRawTransaction(send_args)
-	if signtxout == nil {
-		utils.Fatalf("Invalid signature")
-	}
-	signtx := signtxout.(ptnjson.SignRawTransactionResult)
-	if err != nil {
-		utils.Fatalf("signtx error:%s", err)
-	}
-	if signtx.Complete == true {
-		fmt.Println("Signature success")
-		fmt.Println(signtx.Hex)
-	} else {
-		utils.Fatalf("Invalid signature")
-	}
+	send_args = send_args
+	//signtxout, err := ptnapi.SignRawTransaction(send_args)
+	//if signtxout == nil {
+	//	utils.Fatalf("Invalid signature")
+	//}
+	//signtx := signtxout.(ptnjson.SignRawTransactionResult)
+	//if err != nil {
+	//	utils.Fatalf("signtx error:%s", err)
+	//}
+	//if signtx.Complete == true {
+	//	fmt.Println("Signature success")
+	//	fmt.Println(signtx.Hex)
+	//} else {
+	//	utils.Fatalf("Invalid signature")
+	//}
 	return nil
 }
 func accountImport(ctx *cli.Context) error {

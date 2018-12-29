@@ -31,11 +31,12 @@ import (
 
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
@@ -95,8 +96,8 @@ type Config struct {
 
 	// Mining-related options
 	//Etherbase    common.Address `toml:",omitempty"`
-	MinerThreads int            `toml:",omitempty"`
-	ExtraData    []byte         `toml:",omitempty"`
+	MinerThreads int    `toml:",omitempty"`
+	ExtraData    []byte `toml:",omitempty"`
 	GasPrice     *big.Int
 
 	// Transaction pool options
@@ -111,6 +112,9 @@ type Config struct {
 	Dag dagconfig.Config `toml:"-"`
 	//Log config
 	Log log.Config `toml:"-"`
+
+	//jury Account
+	Jury jury.Config`toml:"-"`
 
 	//Contract config
 	Contract contractcfg.Config `toml:"-"`

@@ -24,14 +24,17 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 
-	asset2 "github.com/palletone/go-palletone/dag/asset"
+	//asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
 
+	"crypto/ecdsa"
+	"github.com/palletone/go-palletone/common/crypto"
+	cm "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -95,7 +98,7 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	txs, asset := GetGensisTransctions(ks, genesis)
 	log.Info("-> Genesis transactions:")
 	for i, tx := range txs {
-		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.TxHash.String())
+		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.Hash().String())
 		log.Info(msg)
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
@@ -113,18 +116,17 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 
 	assetInfo := modules.AssetInfo{
 		Alias:          genesis.Alias,
-		InitialTotal:   genesis.TokenAmount,
+		InitialTotal:   genesis.GetTokenAmount(),
 		Decimal:        genesis.TokenDecimal,
 		DecimalUnit:    genesis.DecimalUnit,
 		OriginalHolder: holder,
 	}
 	// get new asset id
-	assetId := asset2.NewAsset()
-	asset := &modules.Asset{
-		AssetId:  assetId,
-		UniqueId: assetId,
-		ChainId:  genesis.ChainID,
-	}
+	asset := modules.NewPTNAsset()
+	//err = err
+	//asset := &modules.Asset{
+	//	AssetId: assetId,
+	//}
 	assetInfo.AssetID = asset
 	extra, err := rlp.EncodeToBytes(assetInfo)
 	if err != nil {
@@ -139,18 +141,19 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	pkscript := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 
 	txout := &modules.Output{
-		Value:    genesis.TokenAmount,
+		Value:    genesis.GetTokenAmount(),
 		Asset:    asset,
 		PkScript: pkscript,
 	}
 	pay := &modules.PaymentPayload{
-		Input:  []*modules.Input{txin},
-		Output: []*modules.Output{txout},
+		Inputs:  []*modules.Input{txin},
+		Outputs: []*modules.Output{txout},
 	}
 	msg0 := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
+
 	// step2, generate global config payload message
 	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
@@ -163,17 +166,89 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	}
 	msg2 := &modules.Message{
 		App:     modules.APP_TEXT,
-		Payload: &modules.TextPayload{Text: []byte(genesis.Text)},
+		Payload: &modules.TextPayload{TextHash: []byte(genesis.Text)},
 	}
+
+	initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
+
 	// step3, genesis transaction
 	tx := &modules.Transaction{
 		TxMessages: []*modules.Message{msg0, msg1, msg2},
 	}
+	tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
+
 	// tx.CreationDate = tx.CreateDate()
-	tx.TxHash = tx.Hash()
+	//tx.TxHash = tx.Hash()
 
 	txs := []*modules.Transaction{tx}
 	return txs, asset
+}
+
+func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
+	txBytes, _ := rlp.EncodeToBytes(data)
+	hash := crypto.Keccak256(txBytes)
+	sign, err := crypto.Sign(hash, key)
+
+	return sign[0:64], err
+}
+
+func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) (*modules.Transaction, error) {
+	if orgTx == nil || len(orgTx.TxMessages) < 2 {
+		return nil, errors.New(fmt.Sprintf("GenContractTransction param is error"))
+	}
+	tx := &modules.Transaction{}
+	for i := 0; i < len(orgTx.TxMessages); i++ {
+		tx.AddMessage(orgTx.TxMessages[i])
+	}
+	for i := 0; i < len(msgs); i++ {
+		tx.AddMessage(msgs[i])
+	}
+
+	return tx, nil
+}
+
+func GenContractSigTransction(singer common.Address, password string, orgTx *modules.Transaction, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	if orgTx == nil || len(orgTx.TxMessages) < 3 {
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
+	}
+	if password != "" {
+		err := ks.Unlock(accounts.Account{Address: singer}, password)
+		if err != nil {
+			return nil, err
+		}
+	}
+	tx := orgTx
+	var sigPayload *modules.SignaturePayload
+	sigs := make([]modules.SignatureSet, 0)
+	for _, v := range tx.TxMessages {
+		if v.App == modules.APP_SIGNATURE {
+			sigPayload = v.Payload.(*modules.SignaturePayload)
+			sigs = append(sigs, sigPayload.Signatures...)
+		}
+	}
+	pubKey, err := ks.GetPublicKey(singer)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
+	}
+	sig, err := cm.GetTxSig(tx, ks, singer)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.RequestHash().String()))
+	}
+	sigSet := modules.SignatureSet{
+		PubKey:    pubKey,
+		Signature: sig,
+	}
+	sigs = append(sigs, sigSet)
+	msgSig := &modules.Message{
+		App: modules.APP_SIGNATURE,
+		Payload: &modules.SignaturePayload{
+			Signatures: sigs,
+		},
+	}
+	tx.TxMessages = append(tx.TxMessages, msgSig)
+	log.Debug("GenContractSigTransactions", "orgTx.TxId id ok:", tx.Hash())
+
+	return tx, nil
 }
 
 //func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {
@@ -190,7 +265,12 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate: core.DefaultDepositRate,
+		DepositRate:               core.DefaultDepositRate,
+		FoundationAddress:         core.DefaultFoundationAddress,
+		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
+		DepositAmountForJury:      core.DefaultDepositAmountForJury,
+		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
+		DepositPeriod:             core.DefaultDepositPeriod,
 	}
 
 	initParams := core.NewChainParams()
@@ -207,14 +287,19 @@ func DefaultGenesisBlock() *core.Genesis {
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
-			core.DefaultTokenHolder),
+			core.DefaultMediator),
 	}
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *core.Genesis {
 	SystemConfig := core.SystemConfig{
-		DepositRate: core.DefaultDepositRate,
+		DepositRate:               core.DefaultDepositRate,
+		FoundationAddress:         core.DefaultFoundationAddress,
+		DepositAmountForJury:      core.DefaultDepositAmountForJury,
+		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
+		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
+		DepositPeriod:             core.DefaultDepositPeriod,
 	}
 
 	initParams := core.NewChainParams()
@@ -231,18 +316,18 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
-			core.DefaultTokenHolder),
+			core.DefaultMediator),
 	}
 }
 
-func InitialMediatorCandidates(len int, address string) []*core.MediatorInfo {
-	initialMediator := make([]*core.MediatorInfo, len)
+func InitialMediatorCandidates(len int, address string) []*core.InitialMediator {
+	initialMediator := make([]*core.InitialMediator, len)
 	for i := 0; i < len; i++ {
-		initialMediator[i] = &core.MediatorInfo{
-			Address:     address,
-			InitPartPub: mp.DefaultInitPartPub,
-			Node:        deFaultNode,
-		}
+		im := core.NewInitialMediator()
+		im.AddStr = address
+		im.InitPubKey = core.DefaultInitPubKey
+		im.Node = deFaultNode
+		initialMediator[i] = im
 	}
 
 	return initialMediator

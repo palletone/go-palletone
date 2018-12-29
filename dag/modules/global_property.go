@@ -23,51 +23,79 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 )
 
+type GlobalPropBase struct {
+	ChainParameters core.ChainParameters // 区块链网络参数
+}
+
+func NewGlobalPropBase() *GlobalPropBase {
+	return &GlobalPropBase{
+		ChainParameters: core.NewChainParams(),
+	}
+}
+
 // 全局属性的结构体定义
 type GlobalProperty struct {
-	ChainParameters core.ChainParameters // 区块链网络参数
+	*GlobalPropBase
 
-	ActiveMediators map[common.Address]core.Mediator // 当前活跃mediator集合；每个维护间隔更新一次
+	ActiveJuries       map[common.Address]bool //当前活跃Jury集合
+	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
+	PrecedingMediators map[common.Address]bool // 上一届 mediator
+}
+
+func NewGlobalProp() *GlobalProperty {
+	return &GlobalProperty{
+		GlobalPropBase:     NewGlobalPropBase(),
+		ActiveJuries:       make(map[common.Address]bool, 0),
+		ActiveMediators:    make(map[common.Address]bool, 0),
+		PrecedingMediators: make(map[common.Address]bool, 0),
+	}
 }
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	HeadUnitNum uint64 // 最近的验证单元编号(数量)
+	HeadUnitNum  uint64      // 最近的单元编号(数量)
+	HeadUnitHash common.Hash // 最近的单元hash
+	HeadUnitTime int64       // 最近的单元时间
 
-	HeadUnitHash common.Hash // 最近的验证单元hash
+	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
 
-	//	LastVerifiedUnit *v.VerifiedUnit	// 最近生产的验证单元
+	NextMaintenanceTime int64 // 下一次系统维护时间
 
-	HeadUnitTime int64 // 最近的验证单元时间
-
-	//	CurrentMediator *Mediator // 当前生产验证单元的mediator, 用于判断是否连续同一个mediator生产验证单元
-
-	//	NextMaintenanceTime time.Time // 下一次系统维护时间
-
-	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == verifiedUnitNum + 丢失的槽数量
+	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentASlot uint64
 
 	/**
-	在过去的128个见证单元生产slots中miss的数量。
-	The count of verifiedUnit production slots that were missed in the past 128 verifiedUnits
+	在过去的128个单元生产slots中miss的数量。
+	The count of Unit production slots that were missed in the past 128 Units
 	用于计算mediator的参与率。used to compute mediator participation.
 	*/
-	//	RecentSlotsFilled float32
+	// RecentSlotsFilled float32
+
+	LastIrreversibleUnitNum uint32
+}
+
+func NewDynGlobalProp() *DynamicGlobalProperty {
+	return &DynamicGlobalProperty{
+		HeadUnitNum:             0,
+		HeadUnitHash:            common.Hash{},
+		NextMaintenanceTime:     0,
+		CurrentASlot:            0,
+		LastIrreversibleUnitNum: 0,
+	}
 }
 
 const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000
+
 func (gp *GlobalProperty) GetActiveMediatorCount() int {
 	return len(gp.ActiveMediators)
 }
 
-func (gp *GlobalProperty) GetCurThreshold() int {
+func (gp *GlobalProperty) ChainThreshold() int {
 	aSize := gp.GetActiveMediatorCount()
 	offset := (core.PalletOne100Percent - core.PalletOneIrreversibleThreshold) * aSize /
 		core.PalletOne100Percent
@@ -75,35 +103,26 @@ func (gp *GlobalProperty) GetCurThreshold() int {
 	return aSize - offset
 }
 
-func (gp *GlobalProperty) GetActiveMediatorInitPubs() []kyber.Point {
-	aSize := gp.GetActiveMediatorCount()
-	pubs := make([]kyber.Point, aSize, aSize)
+func (gp *GlobalProperty) IsActiveJury(add common.Address) bool {
+	return gp.ActiveJuries[add]
+}
 
-	meds := gp.GetActiveMediators()
-	for i, add := range meds {
-		med := gp.GetActiveMediator(add)
-
-		pubs[i] = med.InitPartPub
+func (gp *GlobalProperty) GetActiveJuries() []common.Address {
+	juries := make([]common.Address, 0, len(gp.ActiveJuries))
+	for addr, _ := range gp.ActiveJuries {
+		juries = append(juries, addr)
 	}
+	sortAddress(juries)
 
-	return pubs
+	return juries
 }
 
 func (gp *GlobalProperty) IsActiveMediator(add common.Address) bool {
-	_, ok := gp.ActiveMediators[add]
-
-	return ok
+	return gp.ActiveMediators[add]
 }
 
-func (gp *GlobalProperty) GetActiveMediator(add common.Address) *core.Mediator {
-	if !gp.IsActiveMediator(add) {
-		log.Error(fmt.Sprintf("%v is not active mediator!", add.Str()))
-		return nil
-	}
-
-	med, _ := gp.ActiveMediators[add]
-
-	return &med
+func (gp *GlobalProperty) IsPrecedingMediator(add common.Address) bool {
+	return gp.PrecedingMediators[add]
 }
 
 func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
@@ -116,19 +135,12 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 	return meds[index]
 }
 
-func (gp *GlobalProperty) GetActiveMediatorNode(index int) *discover.Node {
-	ma := gp.GetActiveMediatorAddr(index)
-	med := gp.GetActiveMediator(ma)
-
-	return med.Node
-}
-
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
 	mediators := make([]common.Address, 0, gp.GetActiveMediatorCount())
 
-	for _, m := range gp.ActiveMediators {
-		mediators = append(mediators, m.Address)
+	for medAdd, _ := range gp.ActiveMediators {
+		mediators = append(mediators, medAdd)
 	}
 
 	sortAddress(mediators)
@@ -150,35 +162,6 @@ func sortAddress(adds []common.Address) {
 	}
 }
 
-func (gp *GlobalProperty) GetActiveMediatorNodes() map[string]*discover.Node {
-	nodes := make(map[string]*discover.Node)
-
-	meds := gp.GetActiveMediators()
-	for _, add := range meds {
-		med := gp.GetActiveMediator(add)
-		node := med.Node
-
-		nodes[node.ID.TerminalString()] = node
-	}
-
-	return nodes
-}
-
-func NewGlobalProp() *GlobalProperty {
-	return &GlobalProperty{
-		ChainParameters: core.NewChainParams(),
-		ActiveMediators: map[common.Address]core.Mediator{},
-	}
-}
-
-func NewDynGlobalProp() *DynamicGlobalProperty {
-	return &DynamicGlobalProperty{
-		HeadUnitNum:  0,
-		HeadUnitHash: common.Hash{},
-		CurrentASlot: 0,
-	}
-}
-
 func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	log.Debug("initialize global property...")
 
@@ -191,10 +174,8 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	log.Debug("Set active mediators...")
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
-		medInfo := genesis.InitialMediatorCandidates[i]
-		md := medInfo.InfoToMediator()
-
-		gp.ActiveMediators[md.Address] = md
+		initMed := genesis.InitialMediatorCandidates[i]
+		gp.ActiveMediators[core.StrToMedAdd(initMed.AddStr)] = true
 	}
 
 	return gp
