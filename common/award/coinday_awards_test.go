@@ -21,6 +21,7 @@ package award
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -99,4 +100,22 @@ func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
 	} else {
 		t.Logf("succeeded,want 2 and get %d", awards)
 	}
+}
+
+func TestTime(t *testing.T) {
+	//txid := strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	//fmt.Println(txid)
+	//fmt.Println(time.Now().UTC().Unix())
+	//time.Sleep(1 * time.Second)
+	//txid = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	//fmt.Println(txid)
+
+	tx := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	fmt.Println(tx)
+	time.Sleep(1 * time.Second)
+	tx = fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	fmt.Println(tx)
+	time.Sleep(1 * time.Second)
+	tx = fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	fmt.Println(tx)
 }

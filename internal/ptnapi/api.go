@@ -51,6 +51,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"math/rand"
 )
 
 const (
@@ -598,8 +599,10 @@ func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, para
 	msgArg := []byte("query has no msg0")
 	fullArgs = append(fullArgs, msgArg)
 	fullArgs = append(fullArgs, args...)
-	txid := strconv.Itoa(time.Now().Nanosecond())
-	rsp, err := s.b.ContractQuery(contractId[:], txid[:4], fullArgs, 0)
+
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+
+	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
 	}
