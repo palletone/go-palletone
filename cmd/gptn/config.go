@@ -258,7 +258,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	//	}
 	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
 	stack, cfg := makeConfigNode(ctx)
-	log.InitLogger()
+	//log.InitLogger()
 	//	if ctx.String("log.path") != "stdout" {
 	//		log.FileInitLogger(ctx.String("log.path"))
 	//	}
