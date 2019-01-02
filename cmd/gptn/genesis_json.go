@@ -138,7 +138,7 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState := createExampleGenesis(account, mcs, nodeStr)
 
 	var genesisJson []byte
-	genesisJson, err = json.MarshalIndent(*genesisState, "", "  ")
+	genesisJson, err = json.MarshalIndent(genesisState, "", "  ")
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
