@@ -34,7 +34,7 @@ func TestConsoleWelcome(t *testing.T) {
 	gptn := runGptn(t, "console")
 	// Gather all the infos the welcome message needs to contain
 
-	gptn.Expect("2018")
+	gptn.Expect("2019")
 	//gptn.ExpectExitConsoleWelcome()
 }
 

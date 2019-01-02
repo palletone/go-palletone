@@ -296,12 +296,28 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction) bool {
 		return msgsCompare(ctx.rstTx.TxMessages, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 	} else {
 		log.Debug("CheckContractTxValid  ctx.rstTx == nil") //todo del
-		_, msgs, err := runContractCmd(p.dag, p.contract, tx)
+
+		p.locker.Lock()
+		p.mtx[reqId] = &contractTx{
+			reqTx:      tx,
+			tm:         time.Now(),
+			valid:      true,
+			executable: true, //default
+		}
+		p.locker.Unlock()
+
+		_, msgs, err := runContractCmd(p.dag, p.contract, tx) // long time ...
 		if err != nil {
 			log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
 			return false
 		}
+		rstTx, err := gen.GenContractTransction(tx, msgs)
+
+		p.locker.Lock()
+		p.mtx[reqId].rstTx = rstTx
 		p.mtx[reqId].valid = false
+		p.locker.Unlock()
+
 		return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 	}
 }
