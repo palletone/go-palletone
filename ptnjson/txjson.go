@@ -24,21 +24,46 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/vote"
+	"time"
 )
 
 type TxJson struct {
-	TxHash        string             `json:"tx_hash"`
-	Payment       *PaymentJson       `json:"payment"`
-	Vote          *VoteJson          `json:"vote"`
-	InvokeRequest *InvokeRequestJson `json:"invoke_request"`
+	TxHash  string       `json:"tx_hash"`
+	Payment *PaymentJson `json:"payment"`
+	Vote    *VoteJson    `json:"vote"`
+
+	InstallRequest *InstallRequestJson `json:"install_request"`
+	DeployRequest  *DeployRequestJson  `json:"deploy_request"`
+	InvokeRequest  *InvokeRequestJson  `json:"invoke_request"`
+	StopRequest    *StopRequestJson    `json:"stop_request"`
 }
 type VoteJson struct {
 	Content string
 }
+
 type InvokeRequestJson struct {
 	ContractAddr string
 	FunctionName string
 	Args         []string
+}
+
+type InstallRequestJson struct {
+	TplName string
+	Path    string
+	Version string
+}
+
+type DeployRequestJson struct {
+	TplId   string
+	TxId    string
+	Args    []string
+	Timeout time.Duration
+}
+
+type StopRequestJson struct {
+	ContractId  string
+	Txid        string
+	DeleteImage bool
 }
 
 func ConvertTx2Json(tx *modules.Transaction) TxJson {
@@ -54,11 +79,19 @@ func ConvertTx2Json(tx *modules.Transaction) TxJson {
 				vote := &VoteJson{Content: string(v.Contents)}
 				json.Vote = vote
 			}
+		} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {
+			req := m.Payload.(*modules.ContractInstallRequestPayload)
+			json.InstallRequest = convertInstallRequest2Json(req)
+		} else if m.App == modules.APP_CONTRACT_DEPLOY_REQUEST {
+			req := m.Payload.(*modules.ContractDeployRequestPayload)
+			json.DeployRequest = convertDeployRequest2Json(req)
 		} else if m.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			req := m.Payload.(*modules.ContractInvokeRequestPayload)
 			json.InvokeRequest = convertInvokeRequest2Json(req)
+		} else if m.App == modules.APP_CONTRACT_STOP_REQUEST {
+			req := m.Payload.(*modules.ContractStopRequestPayload)
+			json.StopRequest = convertStopRequest2Json(req)
 		}
-
 	}
 	return json
 }
@@ -78,5 +111,32 @@ func convertInvokeRequest2Json(req *modules.ContractInvokeRequestPayload) *Invok
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))
 	}
+	return reqJson
+}
+
+func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *InstallRequestJson {
+	reqJson := &InstallRequestJson{}
+	reqJson.TplName = req.TplName
+	reqJson.Path = req.Path
+	reqJson.Version = req.Version
+	return reqJson
+}
+
+func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *DeployRequestJson {
+	reqJson := &DeployRequestJson{}
+	reqJson.TplId  =  string(req.TplId)
+	reqJson.TxId = req.TxId
+	reqJson.Args = []string{}
+	for _, arg := range req.Args {
+		reqJson.Args = append(reqJson.Args, string(arg))
+	}
+	return reqJson
+}
+
+func convertStopRequest2Json(req *modules.ContractStopRequestPayload) *StopRequestJson {
+	reqJson := &StopRequestJson{}
+	reqJson.ContractId = string(req.ContractId)
+	reqJson.Txid = req.Txid
+
 	return reqJson
 }

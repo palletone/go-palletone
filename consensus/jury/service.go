@@ -119,7 +119,6 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
-
 	accounts := make(map[common.Address]*JuryAccount, 0)
 	for _, cfg := range cfg.Accounts {
 		account := cfg.configToAccount()

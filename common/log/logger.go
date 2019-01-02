@@ -300,6 +300,10 @@ func Error(msg string, ctx ...interface{}) {
 	Logger.Error(msg, fileds...)
 }
 
+func Errorf(format string, ctx ...interface{}) {
+	Logger.Error(fmt.Sprintf(format, ctx...))
+}
+
 // Crit
 func Crit(msg string, ctx ...interface{}) {
 	if Logger == nil {
