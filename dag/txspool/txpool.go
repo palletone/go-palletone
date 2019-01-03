@@ -150,7 +150,7 @@ type TxPool struct {
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
-	mu           *sync.RWMutex
+	mu           sync.RWMutex
 
 	locals  *utxoSet   // Set of local transaction to exempt from eviction rules
 	journal *txJournal // Journal of local transaction to back up to disk
@@ -236,7 +236,6 @@ func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chain
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
 
-	pool.mu = new(sync.RWMutex)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
