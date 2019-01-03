@@ -150,7 +150,7 @@ type TxPool struct {
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
-	mu           sync.RWMutex
+	mu           *sync.RWMutex
 
 	locals  *utxoSet   // Set of local transaction to exempt from eviction rules
 	journal *txJournal // Journal of local transaction to back up to disk
@@ -217,6 +217,7 @@ func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chain
 		txfee:       new(big.Int).SetUint64(config.FeeLimit),
 		outpoints:   make(map[modules.OutPoint]*modules.TxPoolTransaction),
 	}
+	pool.mu = new(sync.RWMutex)
 	pool.locals = newUtxoSet()
 	pool.priority_priced = newTxPricedList(&pool.all)
 	//pool.reset(nil, unit.CurrentUnit().Header())
@@ -1277,6 +1278,8 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 
 }
 func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	for _, hash := range hashs {
 		pool.removeTx(hash)
 	}
