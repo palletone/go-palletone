@@ -1278,6 +1278,8 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 
 }
 func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	for _, hash := range hashs {
 		pool.removeTx(hash)
 	}
