@@ -101,7 +101,7 @@ type MediatorPlugin struct {
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一条链时，第一个节点必须设为true，其他节点必须设为false
 	productionEnabled bool
-	// Mediator`s account and passphrase controlled by this node
+	// Mediator`s info controlled by this node, 本节点配置的mediator信息
 	mediators map[common.Address]*MediatorAccount
 
 	// 新生产unit的事件订阅
@@ -125,7 +125,7 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]chan *modules.Unit
+	toTBLSSignBuf    map[common.Address]chan *modules.Unit // todo 重定义数据类型
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 
 	// unit 签名分片的事件订阅
