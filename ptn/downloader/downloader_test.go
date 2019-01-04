@@ -992,7 +992,7 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 
 //func TestForkedSync63Full(t *testing.T) { testForkedSync(t, 2, FullSync) }
 
-//func TestForkedSync63Fast(t *testing.T) { testForkedSync(t, 1, FastSync) }
+func TestForkedSync63Fast(t *testing.T) { testForkedSync(t, 1, FastSync) }
 
 //func TestForkedSync64Full(t *testing.T)  { testForkedSync(t, 3, FullSync) }
 //func TestForkedSync64Fast(t *testing.T)  { testForkedSync(t, 64, FastSync) }
@@ -1018,7 +1018,7 @@ func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 		t.Fatalf("failed to synchronise blocks: %v", err)
 	}
 	assertOwnChain(t, tester, common+fork+1)
-	//fmt.Println("xz  fork A finished")
+
 	// Synchronise with the second peer and make sure that fork is pulled too
 	if err := tester.sync("fork B", 0, mode); err != nil {
 		t.Fatalf("failed to synchronise blocks: %v", err)

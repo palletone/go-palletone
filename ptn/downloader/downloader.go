@@ -427,28 +427,20 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return err
 	}
 
-	height := latest.Number.Index
-	localIndex := d.dag.CurrentUnit().Number().Index
-
-	log.Debug("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
-	if localIndex >= height {
-		return nil
-	}
-
 	origin, err := d.findAncestor(p, latest, assetId)
 	if err != nil {
 		return err
 	}
-	log.Debug("=====findAncestor=====", "origin:", origin)
+	log.Debug("Synchronisation findAncestor", "origin:", origin)
 
 	// Ensure our origin point is below any fast sync pivot point
 	pivot := uint64(0)
 	//fmt.Println("Downloader->syncWithPeer pre", "height:", height, "origin:", origin, "pivot:", pivot)
 	if d.mode == FastSync {
-		if height <= uint64(fsMinFullBlocks) {
+		if latest.Number.Index <= uint64(fsMinFullBlocks) {
 			origin = 0
 		} else {
-			pivot = height - uint64(fsMinFullBlocks)
+			pivot = latest.Number.Index - uint64(fsMinFullBlocks)
 			if pivot <= origin {
 				origin = pivot - 1
 			}
@@ -463,7 +455,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Initiate the sync using a concurrent header and content retrieval algorithm
 	d.queue.Prepare(origin+1, d.mode)
 	if d.syncInitHook != nil {
-		d.syncInitHook(origin, height)
+		d.syncInitHook(origin, latest.Number.Index)
 	}
 
 	fetchers := []func() error{
@@ -559,11 +551,6 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 	log.Debug("Retrieving remote chain height", "peer", p.id)
 
 	// Request the advertised remote head block and wait for the response
-	//headerHash, number := p.peer.Head(assetId)
-	//if common.EmptyHash(headerHash) && number.Index <= 0 {
-	//	log.Debug("Downloader", "fetchHeight header hash:", headerHash, "number:", number.Index)
-	//	return nil, errPeersUnavailable
-	//}
 	headerHash, _ := p.peer.Head(assetId)
 	go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
 
