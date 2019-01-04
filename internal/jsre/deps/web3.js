@@ -5302,12 +5302,12 @@ var methods = function () {
         outputFormatter: formatters.outputBlockFormatter
     });
 
-    var getBalance = new Method({
+    /*var getBalance = new Method({
         name: 'getBalance',
         call: 'ptn_getBalance',
         params: 1,
         inputFormatter: [null]
-    });
+    });*/
 
     var getStorageAt = new Method({
         name: 'getStorageAt',
@@ -5391,13 +5391,13 @@ var methods = function () {
         inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
         outputFormatter: utils.toDecimal
     });
-    var walletCreateTransaction = new Method({
+    /*var walletCreateTransaction = new Method({
         name: 'walletCreateTransaction',
         call: 'wallet_createRawTransaction',
         params: 4,
         inputFormatter: [null,null,null,null]
     });
-   /* var cmdCreateTransaction = new Method({
+    var cmdCreateTransaction = new Method({
         name: 'cmdCreateTransaction',
         call: 'ptn_cmdCreateTransaction',
         params: 4,
@@ -5430,7 +5430,7 @@ var methods = function () {
         call: 'ptn_sendRawTransaction',
         params: 1,
         inputFormatter: [null]
-    });*/
+    });
     var walletSendTransaction = new Method({
         name: 'walletSendRawTransaction',
         call: 'wallet_sendRawTransaction',
@@ -5450,7 +5450,7 @@ var methods = function () {
         call: 'ptn_signTransaction',
         params: 1,
         inputFormatter: [formatters.inputTransactionFormatter]
-    });
+    });*/
 
     var sign = new Method({
         name: 'sign',
@@ -5503,7 +5503,7 @@ var methods = function () {
         call: 'ptn_getWork',
         params: 0
     });
-    var getTransactionsByTxid = new Method({
+    /* var getTransactionsByTxid = new Method({
         name: 'getTransactionsByTxid',
         call: 'ptn_getTransactionsByTxid',
         params: 1,
@@ -5521,7 +5521,7 @@ var methods = function () {
         call: 'ptn_walletBalance',
         params: 4,
         // inputFormatter: [null]
-    });
+    });*/
 
     var getContract = new Method({
         name: 'getContract',
@@ -5578,12 +5578,12 @@ var methods = function () {
         params: 0,
         // inputFormatter: [null]
     });
-    var getUtxoEntry = new Method({
+    /*var getUtxoEntry = new Method({
         name: 'getUtxoEntry',
         call: 'ptn_getUtxoEntry',
         params: 1,
         // inputFormatter: [null]
-    });
+    });*/
     var getAddrOutput = new Method({
         name: 'getAddrOutput',
         call: 'ptn_getAddrOutput',
@@ -5603,7 +5603,7 @@ var methods = function () {
         // inputFormatter: [null]
     });
 
-    var getAllUtxos = new Method({
+    /*var getAllUtxos = new Method({
         name: 'getAllUtxos',
         call: 'ptn_getAllUtxos',
         params: 0,
@@ -5614,7 +5614,7 @@ var methods = function () {
         call: 'ptn_getAddrTransactions',
         params: 1,
         // inputFormatter: [null]
-    });
+    });*/
     var getTokenInfo = new Method({
         name: 'getTokenInfo',
         call: 'dag_getTokenInfo',
@@ -5667,13 +5667,13 @@ var methods = function () {
         params: 1,  
         // inputFormatter: [null]
     }); 
-    var getTxPoolTxByHash = new Method({  
+    /*var getTxPoolTxByHash = new Method({  
         name: 'getTxPoolTxByHash',
         call: 'ptn_getTxPoolTxByHash',  
         params: 1,
         // inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
         // outputFormatter: utils.toDecimal
-    }); 
+    }); */
 
 
 // del ptn_getStorageAt

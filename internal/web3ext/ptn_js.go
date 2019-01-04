@@ -171,6 +171,42 @@ web3._extend({
 			params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration
 			inputFormatter: [null, null, null,null, null, null, null, null]
 		}),
+        new web3._extend.Method({
+			name: 'getBalance',
+			call: 'ptn_getBalance',
+			params: 1,
+			inputFormatter: [null]
+		}),
+        new web3._extend.Method({
+			name: 'getTransactionsByTxid',
+            call: 'ptn_getTransactionsByTxid',
+			params: 1,
+			inputFormatter: [null]
+		}),
+		
+        new web3._extend.Method({
+			name: 'getUtxoEntry',
+            call: 'ptn_getUtxoEntry',
+			params: 1,
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getAllUtxos',
+            call: 'ptn_getAllUtxos',
+			params: 0,
+		}),
+        new web3._extend.Method({
+			name: 'getAddrTransactions',
+            call: 'ptn_getAddrTransactions',
+			params: 1,
+			inputFormatter: [null]
+		}),
+        new web3._extend.Method({
+			name: 'getTxPoolTxByHash',
+            call: 'ptn_getTxPoolTxByHash',
+			params: 1,
+			inputFormatter: [null]
+		}),
 	],
 
 	properties: [
