@@ -145,22 +145,26 @@ web3._extend({
 			name: 'cmdCreateTransaction',
 			call: 'ptn_cmdCreateTransaction',
 			params: 4,
+			inputFormatter: [null,null,null, null]
 		}),
 		new web3._extend.Method({
 			name: 'createRawTransaction',
 			call: 'ptn_createRawTransaction',
 			params: 1,
+			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
 			name: 'signRawTransaction',
 			call: 'ptn_signRawTransaction',
 			params: 1,
+			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
 			name: 'sendRawTransaction',
 			call: 'ptn_sendRawTransaction',
 			params: 1,
-				}),
+			inputFormatter: [null]
+		}),
         new web3._extend.Method({
 			name: 'ccinvoketxPass',
 			call: 'ptn_ccinvoketxPass',
