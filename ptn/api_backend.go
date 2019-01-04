@@ -474,8 +474,22 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
-	return b.ptn.contractPorcessor.ContractTxBroadcast(txBytes)
+//func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
+//	return b.ptn.contractPorcessor.ContractTxBroadcast(txBytes)
+//}
+
+func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
+
+	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
+	//todo print rwset
+	if err != nil {
+		return nil, err
+	}
+	return unit.Payload, err
+	// todo tmp
+	//b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
+	//return nil, nil
 }
 
 func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
@@ -498,7 +512,7 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 }
 
 //
-func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error) {
+func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId []byte, tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true)
 }
 func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {

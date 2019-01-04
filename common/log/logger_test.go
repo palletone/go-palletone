@@ -103,6 +103,13 @@ func TestNewExample(t *testing.T) {
 	l.Error("error", zap.String("3", "3"))
 }
 
+func TestLogError(t *testing.T) {
+	err := fmt.Errorf("Save data error.")
+	log := NewTestLog()
+	log.Error("test error", err)
+	log.Error("test error2", "test222", err)
+}
+
 // func TestMain(m *testing.M) {
 // 	//setup()
 // 	code := m.Run()
