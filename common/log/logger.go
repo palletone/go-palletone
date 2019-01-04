@@ -293,6 +293,7 @@ func Error(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	}
+
 	fileds := ctxTOfileds(ctx...)
 	Logger.Error(msg, fileds...)
 }
@@ -325,7 +326,12 @@ func ctxTOfileds(ctx ...interface{}) []zap.Field {
 	}
 
 	for i := 0; i < len(prefix); i++ {
-		fileds = append(fileds, zap.Any(prefix[i].(string), suffix[i]))
+		pr := prefix[i]
+		if e, ok := pr.(error); ok {
+			fileds = append(fileds, zap.Any(e.Error(), suffix[i]))
+		} else {
+			fileds = append(fileds, zap.Any(pr.(string), suffix[i]))
+		}
 	}
 	return fileds
 }
