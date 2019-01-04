@@ -243,7 +243,13 @@ func (mp *MediatorPlugin) ToUnitTBLSSign(newUnit *modules.Unit) error {
 
 func (mp *MediatorPlugin) addToTBLSSignBuf(newUnit *modules.Unit) {
 	lams := mp.GetLocalActiveMediators()
+	curThrshd := mp.dag.ChainThreshold()
+
 	for _, localMed := range lams {
+		if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
+			mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
+		}
+
 		mp.toTBLSSignBuf[localMed] <- newUnit
 	}
 }

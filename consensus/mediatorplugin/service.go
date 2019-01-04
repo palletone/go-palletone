@@ -125,7 +125,7 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]chan *modules.Unit // todo 重定义数据类型
+	toTBLSSignBuf    map[common.Address]chan *modules.Unit
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 
 	// unit 签名分片的事件订阅
@@ -331,15 +331,20 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 
 // initTBLSBuf, 初始化与TBLS签名相关的buf
 func (mp *MediatorPlugin) initTBLSBuf() {
-	lams := mp.GetLocalActiveMediators()
-	lamc := len(mp.mediators)
+	//lams := mp.GetLocalActiveMediators()
+	//lamc := len(mp.mediators)
+	//
+	//mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lamc)
+	//mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
+	//
+	//curThrshd := mp.dag.ChainThreshold()
+	//for _, localMed := range lams {
+	//	mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
+	//	mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
+	//}
 
-	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lamc)
-	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
+	lmc := len(mp.mediators)
 
-	curThrshd := mp.dag.ChainThreshold()
-	for _, localMed := range lams {
-		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
-		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
-	}
+	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lmc)
+	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
 }
