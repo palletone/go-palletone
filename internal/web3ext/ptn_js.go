@@ -131,12 +131,6 @@ web3._extend({
 			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-		    name: 'getTxHashByReqId',
-		    call: 'ptn_getTxHashByReqId',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
 			name: 'transferPtn',
 			call: 'ptn_transferPtn',
 			params: 1,
@@ -180,30 +174,6 @@ web3._extend({
         new web3._extend.Method({
 			name: 'getTransactionsByTxid',
             call: 'ptn_getTransactionsByTxid',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		
-        new web3._extend.Method({
-			name: 'getUtxoEntry',
-            call: 'ptn_getUtxoEntry',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'getAllUtxos',
-            call: 'ptn_getAllUtxos',
-			params: 0,
-		}),
-        new web3._extend.Method({
-			name: 'getAddrTransactions',
-            call: 'ptn_getAddrTransactions',
-			params: 1,
-			inputFormatter: [null]
-		}),
-        new web3._extend.Method({
-			name: 'getTxPoolTxByHash',
-            call: 'ptn_getTxPoolTxByHash',
 			params: 1,
 			inputFormatter: [null]
 		}),

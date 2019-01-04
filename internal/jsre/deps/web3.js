@@ -5547,102 +5547,13 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
-
-    var getCanonicalHash = new Method({
-        name: 'getCanonicalHash',
-        call: 'ptn_getCanonicalHash',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getHeadHeaderHash = new Method({
-        name: 'getHeadHeaderHash',
-        call: 'ptn_getHeadHeaderHash',
-        params: 0,
-        // inputFormatter: [null]
-    });
-    var getHeadUnitHash = new Method({
-        name: 'getHeadUnitHash',
-        call: 'ptn_getHeadUnitHash',
-        params: 0,
-        // inputFormatter: [null]
-    });
-    var getHeadFastUnitHash = new Method({
-        name: 'getHeadFastUnitHash',
-        call: 'ptn_getHeadFastUnitHash',
-        params: 0,
-        // inputFormatter: [null]
-    });
     var getTrieSyncProgress = new Method({
         name: 'getTrieSyncProgress',
         call: 'ptn_getTrieSyncProgress',
         params: 0,
         // inputFormatter: [null]
     });
-    /*var getUtxoEntry = new Method({
-        name: 'getUtxoEntry',
-        call: 'ptn_getUtxoEntry',
-        params: 1,
-        // inputFormatter: [null]
-    });*/
-    var getAddrOutput = new Method({
-        name: 'getAddrOutput',
-        call: 'ptn_getAddrOutput',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getAddrOutpoints = new Method({
-        name: 'getAddrOutpoints',
-        call: 'ptn_getAddrOutpoints',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getAddrUtxos = new Method({
-        name: 'getAddrUtxos',
-        call: 'ptn_getAddrUtxos',
-        params: 1,
-        // inputFormatter: [null]
-    });
 
-    /*var getAllUtxos = new Method({
-        name: 'getAllUtxos',
-        call: 'ptn_getAllUtxos',
-        params: 0,
-        // inputFormatter: [null]
-    });
-    var getAddrTransactions = new Method({
-        name: 'getAddrTransactions',
-        call: 'ptn_getAddrTransactions',
-        params: 1,
-        // inputFormatter: [null]
-    });*/
-    var getTokenInfo = new Method({
-        name: 'getTokenInfo',
-        call: 'dag_getTokenInfo',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getAllTokenInfo = new Method({
-        name: 'getAllTokenInfo',
-        call: 'dag_getAllTokenInfo',
-        params: 0,
-        // inputFormatter: [null]
-    });
-    var saveTokenInfo = new Method({  
-        name: 'saveTokenInfo',
-        call: 'dag_saveTokenInfo',
-        params: 3,
-        //inputFormatter: [null]
-    });
-    var getCommon = new Method({
-        name: 'getCommon',
-        call: 'dag_getCommon',
-        params: 1,
-    });
-    var getCommonByPrefix = new Method({
-        name: 'getCommonByPrefix',
-        call: 'dag_getCommonByPrefix',
-        params: 1,
-    });
     var getUnitTxsInfo = new Method({
         name: 'getUnitTxsInfo', 
         call: 'dag_getUnitTxsInfo',   
@@ -5655,25 +5566,6 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     }); 
-    var getTxByHash = new Method({     
-        name: 'getTxByHash', 
-        call: 'dag_getTxByHash',   
-        params: 1,  
-        // inputFormatter: [null]
-    });    
-    var getTxSearchEntry = new Method({     
-        name: 'getTxSearchEntry',  
-        call: 'dag_getTxSearchEntry',   
-        params: 1,  
-        // inputFormatter: [null]
-    }); 
-    /*var getTxPoolTxByHash = new Method({  
-        name: 'getTxPoolTxByHash',
-        call: 'ptn_getTxPoolTxByHash',  
-        params: 1,
-        // inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
-        // outputFormatter: utils.toDecimal
-    }); */
 
 
 // del ptn_getStorageAt
@@ -5712,7 +5604,6 @@ var methods = function () {
         getCompilers,
         getBlockTransactionCount,
         getBlockUncleCount,
-        getTxPoolTxByHash, 
         getTransaction,
         getTransactionFromBlock,
         getTransactionReceipt,
@@ -5736,35 +5627,18 @@ var methods = function () {
         getWork,
         walletTokens,
         walletBalance,
-        getCommon,
-        getCommonByPrefix,
         getContract,
         getHeader,
         getUnit,
         getUnitNumber,
-        getCanonicalHash,
-        getHeadUnitHash,
-        getHeadHeaderHash,
-        getHeadFastUnitHash,
         getTrieSyncProgress,
         getTransactionsByTxid,
-        getUtxoEntry,
-        getAddrOutput,
-        getAddrOutpoints,
-        getAddrUtxos,
-        getAllUtxos,
-        getAddrTransactions,
-        getAllTokenInfo,
-        getTokenInfo,
-        saveTokenInfo,
         ccinstall,
         ccdeploy,
         ccstop,
         // createPayment,
         getUnitTxsInfo,
         getUnitTxsHashHex, 
-        getTxByHash, 
-        getTxSearchEntry,
     ];
 };
 
