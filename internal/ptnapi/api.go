@@ -673,6 +673,56 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 	return hex.EncodeToString(rsp), err
 }
 
+func (s *PublicBlockChainAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
+	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var d time.Duration
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return errors.New("unlock duration too large")
+	} else {
+		d = time.Duration(*duration) * time.Second
+	}
+	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	if err != nil {
+		errors.New("get addr by outpoint is err")
+		return err
+	}
+	return nil
+}
+func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, password string, duration *uint64) (string, error) {
+	contractAddr, _ := common.StringToAddress(deployId)
+
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
+	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+
+	log.Info("-----Ccinvoketx:", "contractId", contractAddr.String())
+	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
+	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
+	log.Info("-----Ccinvoketx:", "amount", amount)
+	log.Info("-----Ccinvoketx:", "fee", fee)
+
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d], value[%s]\n", i, arg)
+	}
+
+	//2.
+	err := s.unlockKS(fromAddr, password, duration)
+	if err != nil {
+		return "", err
+	}
+
+	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+
+	return hex.EncodeToString(rsp), err
+}
+
 func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, txid, deleteImage string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
