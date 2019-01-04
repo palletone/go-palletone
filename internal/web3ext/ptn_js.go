@@ -141,6 +141,12 @@ web3._extend({
 			call: 'ptn_transferPtn',
 			params: 1,
 		}),
+		new web3._extend.Method({
+			name: 'ccinvoketxPass',
+			call: 'ptn_ccinvoketxPass',
+			params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration
+			inputFormatter: [null, null, null,null, null, null, null, null]
+		}),
 	],
 
 	properties: [
