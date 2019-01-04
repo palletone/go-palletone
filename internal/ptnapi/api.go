@@ -639,7 +639,17 @@ func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string
 	return s.b.EncodeTx(json)
 }
 
-func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version string) (string, error) {
+type ContractInstallRsp struct {
+	ReqId string `json:"reqId"`
+	TplId string `json:"tplId"`
+}
+
+type ContractDeployRsp struct {
+	ReqId      string `json:"reqId"`
+	ContractId string `json:"ContractId"`
+}
+
+func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version string) (*ContractInstallRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
@@ -655,10 +665,17 @@ func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmou
 	log.Info("-----Ccinstalltx:", "path", path)
 	log.Info("-----Ccinstalltx:", "version", version)
 
-	rsp, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version)
-	log.Info("-----Ccinstalltx:" + hex.EncodeToString(rsp))
+	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version)
+	sReqId := hex.EncodeToString(reqId)
+	sTplId := hex.EncodeToString(tplId)
+	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)
 
-	return hex.EncodeToString(rsp), err
+	rsp := &ContractInstallRsp{
+		ReqId: sReqId,
+		TplId: sTplId,
+	}
+
+	return rsp, err
 }
 func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount, daoFee, tplId, txid string, param []string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
@@ -1775,23 +1792,23 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 	for _, json := range utxoJsons {
 		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
-				MessageIndex:   json.MessageIndex,
-				OutIndex:       json.OutIndex,
-				Amount:         json.Amount,
-				Asset:          json.Asset,
-				PkScriptHex:    json.PkScriptHex,
+				MessageIndex: json.MessageIndex,
+				OutIndex: json.OutIndex,
+				Amount: json.Amount,
+				Asset: json.Asset,
+				PkScriptHex: json.PkScriptHex,
 				PkScriptString: json.PkScriptString,
-				LockTime:       json.LockTime})
+				LockTime: json.LockTime})
 		} else {
 			if json.Asset == asset {
 				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
-					MessageIndex:   json.MessageIndex,
-					OutIndex:       json.OutIndex,
-					Amount:         json.Amount,
-					Asset:          json.Asset,
-					PkScriptHex:    json.PkScriptHex,
+					MessageIndex: json.MessageIndex,
+					OutIndex: json.OutIndex,
+					Amount: json.Amount,
+					Asset: json.Asset,
+					PkScriptHex: json.PkScriptHex,
 					PkScriptString: json.PkScriptString,
-					LockTime:       json.LockTime})
+					LockTime: json.LockTime})
 			}
 		}
 	}
@@ -1852,7 +1869,7 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/ , params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
