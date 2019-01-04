@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/files"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"time"
 )
 
 const errorKey = "ZAPLOG_ERROR"
@@ -140,23 +141,17 @@ func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
 
 // init zap.logger
 func InitLogger() {
-	// log path
+	date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
 	path := DefaultConfig.OutputPaths
-	//log.Println("Current log path:" + strings.Join(path, ","))
-	// error path
+
 	err_path := DefaultConfig.ErrorOutputPaths
-	// log level
-	// lvl := DefaultConfig.LoggerLvl
-	//  encoding
-	// encoding := DefaultConfig.Encoding
-	// // is debug?
-	// isDebug := DefaultConfig.IsDebug
+
 	// if the config file is damaged or lost, then initialize the config if log system.
 	if len(path) == 0 {
-		path = []string{"log/all.log"}
+		path = []string{"log/all_" + date + ".log"}
 	}
 	if len(err_path) == 0 {
-		err_path = []string{"log/err.log"}
+		err_path = []string{"log/err_" + date + ".log"}
 	}
 	// if lvl == "" {
 	// 	lvl = "INFO"
@@ -167,14 +162,19 @@ func InitLogger() {
 	// if err := mkdirPath(path, err_path); err != nil {
 	// 	panic(err)
 	// }
-	for _, p := range path {
-
-		if err := files.MakeDirAndFile(p); err != nil {
+	for _, filename := range path {
+		//index := strings.LastIndex(filename, ".")
+		//filename = fmt.Sprintf("%s_%s.%s", Substr(filename, 0, index), date, Substr(filename, index+1, len(filename)-index))
+		//fmt.Println("===================================================filename:", filename)
+		if err := files.MakeDirAndFile(filename); err != nil {
 			panic(err)
 		}
 	}
-	for _, ep := range err_path {
-		if err := files.MakeDirAndFile(ep); err != nil {
+	for _, filename := range err_path {
+		//index := strings.LastIndex(filename, ".")
+		//filename = fmt.Sprintf("%s_%s.%s", Substr(filename, 0, index), date, Substr(filename, index+1, len(filename)-index))
+		//fmt.Println("===================================================filename:", filename)
+		if err := files.MakeDirAndFile(filename); err != nil {
 			panic(err)
 		}
 	}
@@ -232,9 +232,6 @@ func initLogger() {
 		log.Fatal("init logger error: ", err)
 	}
 	// add openModule
-
-	//fmt.Println("====================DefaultConfig.OpenModule:", DefaultConfig.OpenModule)
-	//fmt.Println("====================len(DefaultConfig.OpenModule):", len(DefaultConfig.OpenModule))
 	if strings.Contains(DefaultConfig.OpenModule[0], ",") {
 		arr := strings.Split(DefaultConfig.OpenModule[0], ",")
 		DefaultConfig.OpenModule[0] = ""
@@ -296,8 +293,13 @@ func Error(msg string, ctx ...interface{}) {
 	if Logger == nil {
 		InitLogger()
 	}
+
 	fileds := ctxTOfileds(ctx...)
 	Logger.Error(msg, fileds...)
+}
+
+func Errorf(format string, ctx ...interface{}) {
+	Logger.Error(fmt.Sprintf(format, ctx...))
 }
 
 // Crit
@@ -324,7 +326,12 @@ func ctxTOfileds(ctx ...interface{}) []zap.Field {
 	}
 
 	for i := 0; i < len(prefix); i++ {
-		fileds = append(fileds, zap.Any(prefix[i].(string), suffix[i]))
+		pr := prefix[i]
+		if e, ok := pr.(error); ok {
+			fileds = append(fileds, zap.Any(e.Error(), suffix[i]))
+		} else {
+			fileds = append(fileds, zap.Any(pr.(string), suffix[i]))
+		}
 	}
 	return fileds
 }
@@ -379,4 +386,34 @@ func (c Ctx) toArray() []interface{} {
 	}
 
 	return arr
+}
+
+func Substr(str string, start, length int) string {
+	rs := []rune(str)
+	rl := len(rs)
+	end := 0
+
+	if start < 0 {
+		start = rl - 1 + start
+	}
+	end = start + length
+
+	if start > end {
+		start, end = end, start
+	}
+
+	if start < 0 {
+		start = 0
+	}
+	if start > rl {
+		start = rl
+	}
+	if end < 0 {
+		end = 0
+	}
+	if end > rl {
+		end = rl
+	}
+
+	return string(rs[start:end])
 }

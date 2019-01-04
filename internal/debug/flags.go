@@ -115,7 +115,7 @@ func Setup(ctx *cli.Context) error {
 	// glogger.Vmodule(ctx.GlobalString(vmoduleFlag.Name))
 	// glogger.BacktraceAt(ctx.GlobalString(backtraceAtFlag.Name))
 	//log.Root().SetHandler(glogger)
-	log.InitLogger()
+	//log.InitLogger()
 
 	// profiling, tracing
 	runtime.MemProfileRate = ctx.GlobalInt(memprofilerateFlag.Name)

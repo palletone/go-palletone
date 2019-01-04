@@ -12,6 +12,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/palletone/go-palletone/common/log"
 	comdb "github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
@@ -136,12 +137,18 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 
 	if 1 == 1 {
 		envpath, err := platforms.GetPlatformEnvPath(spec)
+		if err != nil {
+			log.Error("getPlatformEnvPath err:", "error", err)
+			return nil, err
+		}
 		dag, err := comdb.GetCcDagHand()
 		if err != nil {
+			log.Error("getCcDagHand err:", "error", err)
 			return nil, err
 		}
 		v, data, name, path := dag.GetContractTpl(templateId)
 		if data == nil || name == "" || path == "" {
+			log.Error("getContractTpl err:", "error")
 			return nil, errors.New("GetContractTpl contract template err")
 		}
 		targzFile := envpath + "/tmp/" + name + ".tar.gz"

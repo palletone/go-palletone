@@ -217,6 +217,7 @@ func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chain
 		txfee:       new(big.Int).SetUint64(config.FeeLimit),
 		outpoints:   make(map[modules.OutPoint]*modules.TxPoolTransaction),
 	}
+	pool.mu = new(sync.RWMutex)
 	pool.locals = newUtxoSet()
 	pool.priority_priced = newTxPricedList(&pool.all)
 	//pool.reset(nil, unit.CurrentUnit().Header())
@@ -236,7 +237,6 @@ func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chain
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
 
-	pool.mu = new(sync.RWMutex)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
@@ -1278,6 +1278,8 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 
 }
 func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	for _, hash := range hashs {
 		pool.removeTx(hash)
 	}

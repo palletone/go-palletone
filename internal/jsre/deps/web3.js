@@ -5397,7 +5397,7 @@ var methods = function () {
         params: 4,
         inputFormatter: [null,null,null,null]
     });
-    var cmdCreateTransaction = new Method({
+   /* var cmdCreateTransaction = new Method({
         name: 'cmdCreateTransaction',
         call: 'ptn_cmdCreateTransaction',
         params: 4,
@@ -5409,7 +5409,7 @@ var methods = function () {
         call: 'ptn_createRawTransaction',
         params: 1,
         inputFormatter: [null]
-    });
+    });*/
 
     var createMediatorVote = new Method({
         name: 'createMediatorVote',
@@ -5418,7 +5418,7 @@ var methods = function () {
     });
 
     
-    var signRawTransaction = new Method({
+   /* var signRawTransaction = new Method({
         name: 'signRawTransaction',
         call: 'ptn_signRawTransaction',
         params: 3,
@@ -5430,7 +5430,7 @@ var methods = function () {
         call: 'ptn_sendRawTransaction',
         params: 1,
         inputFormatter: [null]
-    });
+    });*/
     var walletSendTransaction = new Method({
         name: 'walletSendRawTransaction',
         call: 'wallet_sendRawTransaction',
@@ -5721,11 +5721,11 @@ var methods = function () {
         estimateGas,
         walletCreateTransaction,
         walletSendTransaction,
-        cmdCreateTransaction,
-        createRawTransaction,
+        //cmdCreateTransaction,
+        //createRawTransaction,
         createMediatorVote,
-        signRawTransaction,
-        sendRawTransaction,
+        //signRawTransaction,
+        //sendRawTransaction,
         signTransaction,
         sendTransaction,
         sign,

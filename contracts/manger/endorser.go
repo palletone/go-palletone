@@ -227,9 +227,8 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 	}
 
 	//1 -- simulate
-	res, _, ccevent, err := e.simulateProposal(deployId, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
+	res, _, _, err := e.simulateProposal(deployId, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
 	if err != nil {
-		logger.Error("ProcessProposal simulateProposal error", ccevent)
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
 	if res != nil {
