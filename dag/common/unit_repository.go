@@ -631,12 +631,13 @@ func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *m
 		log.Info("Save transaction:", "error", err.Error())
 		return err
 	}
-	//Index TxId for address
-	addresses := getPayToAddresses(tx)
-	for _, addr := range addresses {
-		unitOp.idxdb.SaveAddressTxId(addr, txHash)
+	if dagconfig.DefaultConfig.AddressTxsIndex {
+		//Index TxId for address
+		addresses := getPayToAddresses(tx)
+		for _, addr := range addresses {
+			unitOp.idxdb.SaveAddressTxId(addr, txHash)
+		}
 	}
-
 	return nil
 }
 func getPayToAddresses(tx *modules.Transaction) []common.Address {

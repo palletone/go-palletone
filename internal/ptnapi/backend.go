@@ -91,6 +91,11 @@ type Backend interface {
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	GetHeaderByHash(hash common.Hash) *modules.Header
 	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+	// get state
+	GetHeadUnitHash() (common.Hash, error)
+	GetHeadHeaderHash() (common.Hash, error)
+	GetHeadFastUnitHash() (common.Hash, error)
+	GetCanonicalHash(number uint64) (common.Hash, error)
 
 	// get transaction interface
 	GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error)
@@ -120,12 +125,13 @@ type Backend interface {
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
-	ContractInvoke(txBytes []byte) (rspPayload []byte, err error)
+	//ContractInvoke(txBytes []byte) (rspPayload []byte, err error)
+	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 	DecodeTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)
 
-	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error)
+	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId []byte, tplId []byte, err error)
 	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error)
 	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error)
