@@ -579,9 +579,24 @@ func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex
 	txB, _ := rlp.EncodeToBytes(tx)
 	return fmt.Sprintf("%X", txB), nil
 }
-func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (string, error) {
-	txBytes, _ := hex.DecodeString(txhex)
-	rsp, err := s.b.ContractInvoke(txBytes)
+
+//func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (string, error) {
+//	txBytes, _ := hex.DecodeString(txhex)
+//	rsp, err := s.b.ContractInvoke(txBytes)
+//	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+//	return hex.EncodeToString(rsp), err
+//}
+
+func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
+	depId, _ := hex.DecodeString(deployId)
+	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
+
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d], value[%s]\n", i, arg)
+	}
+	rsp, err := s.b.ContractInvoke(depId, txid, args, 0)
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }
@@ -638,6 +653,7 @@ func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmou
 	log.Info("-----Ccinstalltx:", "fee", fee)
 	log.Info("-----Ccinstalltx:", "tplName", tplName)
 	log.Info("-----Ccinstalltx:", "path", path)
+	log.Info("-----Ccinstalltx:", "version", version)
 
 	rsp, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version)
 	log.Info("-----Ccinstalltx:" + hex.EncodeToString(rsp))
