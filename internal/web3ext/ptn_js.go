@@ -131,12 +131,6 @@ web3._extend({
 			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-		    name: 'getTxHashByReqId',
-		    call: 'ptn_getTxHashByReqId',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
 			name: 'transferPtn',
 			call: 'ptn_transferPtn',
 			params: 1,
@@ -170,6 +164,18 @@ web3._extend({
 			call: 'ptn_ccinvoketxPass',
 			params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration
 			inputFormatter: [null, null, null,null, null, null, null, null]
+		}),
+        new web3._extend.Method({
+			name: 'getBalance',
+			call: 'ptn_getBalance',
+			params: 1,
+			inputFormatter: [null]
+		}),
+        new web3._extend.Method({
+			name: 'getTransactionsByTxid',
+            call: 'ptn_getTransactionsByTxid',
+			params: 1,
+			inputFormatter: [null]
 		}),
 	],
 
