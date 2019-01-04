@@ -91,6 +91,11 @@ type Backend interface {
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
 	GetHeaderByHash(hash common.Hash) *modules.Header
 	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+	// get state
+	GetHeadUnitHash() (common.Hash, error)
+	GetHeadHeaderHash() (common.Hash, error)
+	GetHeadFastUnitHash() (common.Hash, error)
+	GetCanonicalHash(number uint64) (common.Hash, error)
 
 	// get transaction interface
 	GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error)
