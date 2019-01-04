@@ -26,22 +26,134 @@ web3._extend({
 	methods: [
 		new web3._extend.Method({
 			name: 'getUnitByNumber',
-        	call: 'ptn_getUnitByNumber',
+        	call: 'dag_getUnitByNumber',
         	params: 1,
         	inputFormatter: [null]
 		}),
 		new web3._extend.Method({
 			name: 'getUnitByHash',
-       		call: 'ptn_getUnitByHash',
+       		call: 'dag_getUnitByHash',
         	params: 1,
         	inputFormatter: [null]
 		}),
 		new web3._extend.Method({
 			name: 'getTransaction',
-        	call: 'ptn_getTransactionByHash',
+        	call: 'dag_getTransactionByHash',
         	params: 1
 		}),
-		
+		new web3._extend.Method({
+		    name: 'getTxHashByReqId',
+		    call: 'dag_getTxHashByReqId',
+			params: 1,
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+            name: 'getCommon',
+            call: 'dag_getCommon',
+            params: 1,
+        }),
+        new web3._extend.Method({
+            name: 'getCommonByPrefix',
+            call: 'dag_getCommonByPrefix',
+            params: 1,
+        }),
+        new web3._extend.Method({   
+            name: 'getTxByHash', 
+            call: 'dag_getTxByHash',   
+            params: 1,  
+            // inputFormatter: [null]
+        }),   
+        new web3._extend.Method({   
+            name: 'getTxSearchEntry',  
+            call: 'dag_getTxSearchEntry',   
+            params: 1,  
+            // inputFormatter: [null]
+        }), 
+        new web3._extend.Method({
+            name: 'getTxPoolTxByHash',
+            call: 'dag_getTxPoolTxByHash',  
+            params: 1,
+            // inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
+            // outputFormatter: utils.toDecimal
+        }), 
+        new web3._extend.Method({
+            name: 'getUtxoEntry',
+            call: 'dag_getUtxoEntry',
+            params: 1,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getAddrOutput',
+            call: 'dag_getAddrOutput',
+            params: 1,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getAddrOutpoints',
+            call: 'dag_getAddrOutpoints',
+            params: 1,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getAddrUtxos',
+            call: 'dag_getAddrUtxos',
+            params: 1,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getAllUtxos',
+            call: 'dag_getAllUtxos',
+            params: 0,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getAddrTransactions',
+            call: 'dag_getAddrTransactions',
+            params: 1,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getTokenInfo',
+            call: 'dag_getTokenInfo',
+            params: 1,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getAllTokenInfo',
+            call: 'dag_getAllTokenInfo',
+            params: 0,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'saveTokenInfo',
+            call: 'dag_saveTokenInfo',
+            params: 3,
+            //inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getCanonicalHash',
+            call: 'dag_getCanonicalHash',
+            params: 1,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getHeadHeaderHash',
+            call: 'dag_getHeadHeaderHash',
+            params: 0,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getHeadUnitHash',
+            call: 'dag_getHeadUnitHash',
+            params: 0,
+            // inputFormatter: [null]
+        }),
+        new web3._extend.Method({
+            name: 'getHeadFastUnitHash',
+            call: 'dag_getHeadFastUnitHash',
+            params: 0,
+            // inputFormatter: [null]
+        }),
 	],
 	properties: []
 });

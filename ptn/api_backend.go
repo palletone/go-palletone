@@ -247,7 +247,6 @@ func (b *PtnApiBackend) QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson {
 	return result
 }
 
-/*
 // Get Header
 func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Header, error) {
 	return b.ptn.dag.GetHeader(hash, index)
@@ -290,7 +289,6 @@ func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
-*/
 
 func (b *PtnApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 	unit, err := b.ptn.dag.GetUnitByHash(hash)
