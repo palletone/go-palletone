@@ -988,10 +988,8 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 // Tests that simple synchronization against a forked chain works correctly.
 // In this test common ancestor lookup should *not* be short circuited,
 // and a full binary search should be executed.
-//func TestForkedSync1(t *testing.T) { testForkedSync(t, 1, FullSync) }
-
-//func TestForkedSync63Full(t *testing.T) { testForkedSync(t, 2, FullSync) }
-
+func TestForkedSync1(t *testing.T)      { testForkedSync(t, 1, FullSync) }
+func TestForkedSync63Full(t *testing.T) { testForkedSync(t, 2, FullSync) }
 func TestForkedSync63Fast(t *testing.T) { testForkedSync(t, 1, FastSync) }
 
 //func TestForkedSync64Full(t *testing.T)  { testForkedSync(t, 3, FullSync) }
@@ -1064,11 +1062,10 @@ func testHeavyForkedSync(t *testing.T, protocol int, mode SyncMode) {
 
 // Tests that chain forks are contained within a certain interval of the current chain head,
 // ensuring that malicious peers cannot waste resources by feeding long dead chains.
-//func TestBoundedForkedSync1(t *testing.T) { testBoundedForkedSync(t, 1, FullSync) }
+func TestBoundedForkedSync1(t *testing.T)      { testBoundedForkedSync(t, 1, FullSync) }
+func TestBoundedForkedSync63Full(t *testing.T) { testBoundedForkedSync(t, 2, FullSync) }
+func TestBoundedForkedSync63Fast(t *testing.T) { testBoundedForkedSync(t, 1, FastSync) }
 
-//func TestBoundedForkedSync63Full(t *testing.T) { testBoundedForkedSync(t, 2, FullSync) }
-
-//func TestBoundedForkedSync63Fast(t *testing.T)  { testBoundedForkedSync(t, 63, FastSync) }
 //func TestBoundedForkedSync64Full(t *testing.T)  { testBoundedForkedSync(t, 64, FullSync) }
 //func TestBoundedForkedSync64Fast(t *testing.T)  { testBoundedForkedSync(t, 64, FastSync) }
 //func TestBoundedForkedSync64Light(t *testing.T) { testBoundedForkedSync(t, 64, LightSync) }
