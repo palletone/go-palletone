@@ -826,15 +826,9 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 	}
 	if hs := len(tester.ownHeaders); hs != headers {
 		t.Fatalf("synchronised headers mismatch: have %v, want %v", hs, headers)
-		//if hs+fsMinFullBlocks != headers {
-		//	t.Fatalf("synchronised headers mismatch: have %v, want %v", hs, headers)
-		//}
 	}
 	if bs := len(tester.ownBlocks); bs != blocks {
 		t.Fatalf("synchronised blocks mismatch: have %v, want %v", bs, blocks)
-		//if bs+fsMinFullBlocks != blocks {
-		//	t.Fatalf("synchronised blocks mismatch: have %v, want %v", bs, blocks)
-		//}
 	}
 	// Verify the state trie too for fast syncs
 	//if tester.downloader.mode == FastSync {
@@ -974,8 +968,8 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 		retrieved = len(tester.ownBlocks)
 		tester.lock.RUnlock()
 		if cached != blockCacheItems && retrieved+cached+frozen != targetBlocks+1 {
-			break
-			//t.Fatalf("block count mismatch: have %v, want %v (owned %v, blocked %v, target %v)", cached, blockCacheItems, retrieved, frozen, targetBlocks+1)
+			//break
+			t.Fatalf("block count mismatch: have %v, want %v (owned %v, blocked %v, target %v)", cached, blockCacheItems, retrieved, frozen, targetBlocks+1)
 		}
 		// Permit the blocked blocks to import
 		if atomic.LoadUint32(&blocked) > 0 {
@@ -998,7 +992,8 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 
 //func TestForkedSync63Full(t *testing.T) { testForkedSync(t, 2, FullSync) }
 
-//func TestForkedSync63Fast(t *testing.T)  { testForkedSync(t, 2, FastSync) }
+//func TestForkedSync63Fast(t *testing.T) { testForkedSync(t, 1, FastSync) }
+
 //func TestForkedSync64Full(t *testing.T)  { testForkedSync(t, 3, FullSync) }
 //func TestForkedSync64Fast(t *testing.T)  { testForkedSync(t, 64, FastSync) }
 //func TestForkedSync64Light(t *testing.T) { testForkedSync(t, 64, LightSync) }
@@ -1069,7 +1064,7 @@ func testHeavyForkedSync(t *testing.T, protocol int, mode SyncMode) {
 
 // Tests that chain forks are contained within a certain interval of the current chain head,
 // ensuring that malicious peers cannot waste resources by feeding long dead chains.
-func TestBoundedForkedSync1(t *testing.T) { testBoundedForkedSync(t, 1, FullSync) }
+//func TestBoundedForkedSync1(t *testing.T) { testBoundedForkedSync(t, 1, FullSync) }
 
 //func TestBoundedForkedSync63Full(t *testing.T) { testBoundedForkedSync(t, 2, FullSync) }
 
@@ -1099,9 +1094,7 @@ func testBoundedForkedSync(t *testing.T, protocol int, mode SyncMode) {
 
 	// Synchronise with the second peer and ensure that the fork is rejected to being too old
 	if err := tester.sync("rewriter", 0, mode); err != errInvalidAncestor {
-		if err != nil {
-			t.Fatalf("sync failure mismatch: have %v, want %v", err, errInvalidAncestor)
-		}
+		t.Fatalf("sync failure mismatch: have %v, want %v", err, errInvalidAncestor)
 	}
 }
 
@@ -1829,7 +1822,8 @@ func testFailedSyncProgress(t *testing.T, protocol int, mode SyncMode) {
 
 //func TestFakedSyncProgress63Full(t *testing.T) { testFakedSyncProgress(t, 2, FullSync) }
 
-//func TestFakedSyncProgress63Fast(t *testing.T)  { testFakedSyncProgress(t, 63, FastSync) }
+//func TestFakedSyncProgress63Fast(t *testing.T) { testFakedSyncProgress(t, 1, FastSync) }
+
 //func TestFakedSyncProgress64Full(t *testing.T)  { testFakedSyncProgress(t, 64, FullSync) }
 //func TestFakedSyncProgress64Fast(t *testing.T)  { testFakedSyncProgress(t, 64, FastSync) }
 //func TestFakedSyncProgress64Light(t *testing.T) { testFakedSyncProgress(t, 64, LightSync) }

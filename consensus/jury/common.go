@@ -419,3 +419,15 @@ func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
 	}
 	return modules.APP_UNKNOW, errors.New("getContractTxType not contract Tx")
 }
+
+func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageType) (interface{}, error) {
+	if tx == nil {
+		return modules.APP_UNKNOW, errors.New("getContractTxType get param is nil")
+	}
+	for _, msg := range tx.TxMessages {
+		if msg.App == msgType {
+			return msg.Payload, nil
+		}
+	}
+	return modules.APP_UNKNOW, errors.New("getContractTxContractInfo not find")
+}
