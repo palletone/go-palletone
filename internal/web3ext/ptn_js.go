@@ -141,6 +141,26 @@ web3._extend({
 			call: 'ptn_transferPtn',
 			params: 1,
 		}),
+		new web3._extend.Method({
+			name: 'cmdCreateTransaction',
+			call: 'ptn_cmdCreateTransaction',
+			params: 4,
+		}),
+		new web3._extend.Method({
+			name: 'createRawTransaction',
+			call: 'ptn_createRawTransaction',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'signRawTransaction',
+			call: 'ptn_signRawTransaction',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'sendRawTransaction',
+			call: 'ptn_sendRawTransaction',
+			params: 1,
+		}),
 	],
 
 	properties: [
