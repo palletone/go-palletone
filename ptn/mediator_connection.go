@@ -52,7 +52,6 @@ type producer interface {
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
-	return
 	for {
 		select {
 		case <-pm.activeMediatorsUpdatedCh:
