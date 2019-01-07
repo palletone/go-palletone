@@ -820,6 +820,10 @@ func (unitOp *UnitRepository) saveContractTpl(height modules.ChainIndex, txIndex
 		log.Error("SaveContractTemplateState when save memory", "error", err.Error())
 		return false
 	}
+	if err := unitOp.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Version, payload.Version, version); err != nil {
+		log.Error("SaveContractTemplateState when save version", "error", err.Error())
+		return false
+	}
 	return true
 }
 

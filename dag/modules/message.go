@@ -249,6 +249,7 @@ const (
 	FIELD_TPL_Memory    = "TplMemory"
 	FIELD_SPLIT_STR     = "^*^"
 	FIELD_GENESIS_ASSET = "GenesisAsset"
+	FIELD_TPL_Version   = "TplVersion"
 )
 
 type DelContractState struct {

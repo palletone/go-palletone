@@ -4,15 +4,8 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
-	"github.com/pkg/errors"
-	"golang.org/x/net/context"
-	"io"
-	"io/ioutil"
-	"os"
-	"path"
-	"time"
-	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -20,6 +13,13 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/rwset"
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
+	"time"
 )
 
 type UserChaincode struct {
@@ -136,18 +136,11 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 		log.Error("getCcDagHand err:", "error", err)
 		return nil, err
 	}
-	fmt.Println("templateId========",templateId)
-	v, data, name, path := dag.GetContractTpl(templateId)
-	fmt.Println("templateId========",v)
-	fmt.Println("templateId========",data)
-	fmt.Println("templateId========",name)
-	fmt.Println("templateId========",path)
+	v, data, name, path, tplVer := dag.GetContractTpl(templateId)
 	if data == nil || name == "" || path == "" {
-		log.Error("getContractTpl err:", "error",v)
+		log.Error("getContractTpl err:", "error", v)
 		return nil, errors.New("GetContractTpl contract template err")
 	}
-	fmt.Println("name==", name)
-	fmt.Println("name==", path)
 	spec.ChaincodeId.Name = name
 	spec.ChaincodeId.Path = path
 	envpath, err := platforms.GetPlatformEnvPath(spec)
@@ -174,11 +167,10 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 	if err = UnTarGz(targzFile, decompressFile); err != nil {
 		return nil, err
 	}
-
 	usrCC := &UserChaincode{
-		Name: name,
-		//Version:ver,
-		Path: path,
+		Name:    name,
+		Version: tplVer,
+		Path:    path,
 	}
 	//todo
 	return usrCC, nil
