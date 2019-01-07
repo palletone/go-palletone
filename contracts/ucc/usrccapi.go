@@ -167,6 +167,10 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 	if err = UnTarGz(targzFile, decompressFile); err != nil {
 		return nil, err
 	}
+	err = os.Remove(targzFile)
+	if err != nil {
+		return nil, err
+	}
 	usrCC := &UserChaincode{
 		Name:    name,
 		Version: tplVer,
