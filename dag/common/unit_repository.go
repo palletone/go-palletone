@@ -631,7 +631,7 @@ func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *m
 		log.Info("Save transaction:", "error", err.Error())
 		return err
 	}
-	if dagconfig.DefaultConfig.AddressTxsIndex {
+	if dagconfig.DefaultConfig.AddrTxsIndex {
 		//Index TxId for address
 		addresses := getPayToAddresses(tx)
 		for _, addr := range addresses {
