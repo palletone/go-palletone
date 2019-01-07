@@ -11,9 +11,8 @@ import (
 	"os"
 	"path"
 	"time"
-
+	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/common/log"
-	comdb "github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -131,86 +130,138 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId []byte) (*UserChaincode, error) {
 	//从数据库读取
 	//解压到指定路径下
-	//todo del
-	usrCC := &UserChaincode{}
-	return usrCC, nil
 
-	if 1 == 1 {
-		envpath, err := platforms.GetPlatformEnvPath(spec)
-		if err != nil {
-			log.Error("getPlatformEnvPath err:", "error", err)
-			return nil, err
-		}
-		dag, err := comdb.GetCcDagHand()
-		if err != nil {
-			log.Error("getCcDagHand err:", "error", err)
-			return nil, err
-		}
-		v, data, name, path := dag.GetContractTpl(templateId)
-		if data == nil || name == "" || path == "" {
-			log.Error("getContractTpl err:", "error")
-			return nil, errors.New("GetContractTpl contract template err")
-		}
-		targzFile := envpath + "/tmp/" + name + ".tar.gz"
-		decompressFile := envpath
-		logger.Infof("name[%s]path[%s]ver[%v]-tar[%s]untar path[%s]", name, path, v, targzFile, decompressFile)
-
-		_, err = os.Stat(targzFile)
-		if err != nil {
-			if os.IsExist(err) {
-				os.Remove(targzFile)
-			}
-		}
-
-		err = ioutil.WriteFile(targzFile, data, 0644)
-		if err != nil {
-			logger.Errorf("write file[%s] fail:%s", targzFile, err)
-			return nil, errors.New("write file fail")
-		}
-		if err = UnTarGz(targzFile, decompressFile); err != nil {
-			return nil, err
-		}
-
-		usrCC := &UserChaincode{
-			Name: name,
-			//Version:ver,
-			Path: path,
-		}
-		//todo
-		return usrCC, nil
-	} else {
-		testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
-		zipName := "test.tar.gz"
-		dir := "/home/glh/go/src/chaincode/"
-		//version, zipdata, name, path := storage.GetContractTpl(templateId)
-		//read
-		fi, err := os.Open(testFile)
-		if err != nil {
-			logger.Errorf("open file[%s] fail:%s", testFile, err)
-			return nil, errors.New("open file fail")
-		}
-		defer fi.Close()
-		filedata, err := ioutil.ReadAll(fi)
-		if err != nil {
-			logger.Errorf("read file[%s] fail:%s", testFile, err)
-			return nil, errors.New("read file fail")
-		}
-
-		//write
-		err = ioutil.WriteFile(dir+zipName, filedata, 0644)
-		if err != nil {
-			logger.Errorf("write file[%s] fail:%s", testFile, err)
-			return nil, errors.New("write file fail")
-		}
-
-		if err = UnTarGz(dir+zipName, "./"); err != nil {
-			logger.Errorf("DeCompress[%s] fail:%s", testFile, err)
-			return nil, err
-		}
-
-		usrCC := &UserChaincode{}
-		return usrCC, nil
+	dag, err := comm.GetCcDagHand()
+	if err != nil {
+		log.Error("getCcDagHand err:", "error", err)
+		return nil, err
 	}
+	fmt.Println("templateId========",templateId)
+	v, data, name, path := dag.GetContractTpl(templateId)
+	fmt.Println("templateId========",v)
+	fmt.Println("templateId========",data)
+	fmt.Println("templateId========",name)
+	fmt.Println("templateId========",path)
+	if data == nil || name == "" || path == "" {
+		log.Error("getContractTpl err:", "error",v)
+		return nil, errors.New("GetContractTpl contract template err")
+	}
+	fmt.Println("name==", name)
+	fmt.Println("name==", path)
+	spec.ChaincodeId.Name = name
+	spec.ChaincodeId.Path = path
+	envpath, err := platforms.GetPlatformEnvPath(spec)
+	if err != nil {
+		log.Error("getPlatformEnvPath err:", "error", err)
+		return nil, err
+	}
+	targzFile := envpath + "/tmp/" + name + ".tar.gz"
+	decompressFile := envpath
+	logger.Infof("name[%s]path[%s]ver[%v]-tar[%s]untar path[%s]", name, path, v, targzFile, decompressFile)
+
+	_, err = os.Stat(targzFile)
+	if err != nil {
+		if os.IsExist(err) {
+			os.Remove(targzFile)
+		}
+	}
+
+	err = ioutil.WriteFile(targzFile, data, 0644)
+	if err != nil {
+		logger.Errorf("write file[%s] fail:%s", targzFile, err)
+		return nil, errors.New("write file fail")
+	}
+	if err = UnTarGz(targzFile, decompressFile); err != nil {
+		return nil, err
+	}
+
+	usrCC := &UserChaincode{
+		Name: name,
+		//Version:ver,
+		Path: path,
+	}
+	//todo
+	return usrCC, nil
+	//todo del
+	//usrCC := &UserChaincode{}
+	//return usrCC, nil
+
+	//if 1 == 1 {
+	//	envpath, err := platforms.GetPlatformEnvPath(spec)
+	//	if err != nil {
+	//		log.Error("getPlatformEnvPath err:", "error", err)
+	//		return nil, err
+	//	}
+	//	dag, err := comdb.GetCcDagHand()
+	//	if err != nil {
+	//		log.Error("getCcDagHand err:", "error", err)
+	//		return nil, err
+	//	}
+	//	v, data, name, path := dag.GetContractTpl(templateId)
+	//	if data == nil || name == "" || path == "" {
+	//		log.Error("getContractTpl err:", "error")
+	//		return nil, errors.New("GetContractTpl contract template err")
+	//	}
+	//	targzFile := envpath + "/tmp/" + name + ".tar.gz"
+	//	decompressFile := envpath
+	//	logger.Infof("name[%s]path[%s]ver[%v]-tar[%s]untar path[%s]", name, path, v, targzFile, decompressFile)
+	//
+	//	_, err = os.Stat(targzFile)
+	//	if err != nil {
+	//		if os.IsExist(err) {
+	//			os.Remove(targzFile)
+	//		}
+	//	}
+	//
+	//	err = ioutil.WriteFile(targzFile, data, 0644)
+	//	if err != nil {
+	//		logger.Errorf("write file[%s] fail:%s", targzFile, err)
+	//		return nil, errors.New("write file fail")
+	//	}
+	//	if err = UnTarGz(targzFile, decompressFile); err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	usrCC := &UserChaincode{
+	//		Name: name,
+	//		//Version:ver,
+	//		Path: path,
+	//	}
+	//	//todo
+	//	return usrCC, nil
+	//} else {
+	//	testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
+	//	zipName := "test.tar.gz"
+	//	dir := "/home/glh/go/src/chaincode/"
+	//	//version, zipdata, name, path := storage.GetContractTpl(templateId)
+	//	//read
+	//	fi, err := os.Open(testFile)
+	//	if err != nil {
+	//		logger.Errorf("open file[%s] fail:%s", testFile, err)
+	//		return nil, errors.New("open file fail")
+	//	}
+	//	defer fi.Close()
+	//	filedata, err := ioutil.ReadAll(fi)
+	//	if err != nil {
+	//		logger.Errorf("read file[%s] fail:%s", testFile, err)
+	//		return nil, errors.New("read file fail")
+	//	}
+	//
+	//	//write
+	//	err = ioutil.WriteFile(dir+zipName, filedata, 0644)
+	//	if err != nil {
+	//		logger.Errorf("write file[%s] fail:%s", testFile, err)
+	//		return nil, errors.New("write file fail")
+	//	}
+	//
+	//	if err = UnTarGz(dir+zipName, "./"); err != nil {
+	//		logger.Errorf("DeCompress[%s] fail:%s", testFile, err)
+	//		return nil, err
+	//	}
+	//
+	//	usrCC := &UserChaincode{}
+	//	return usrCC, nil
+	//}
 }
 
 //+++++++++++++

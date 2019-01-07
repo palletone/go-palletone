@@ -259,16 +259,16 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 
 	//test!!!!!!
 	//todo del
-	if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
-		logger.Errorf("cc param is null")
-		//test
-		tmpcc, err := listGet(templateId)
-		if err == nil {
-			templateCC.Name = tmpcc.name
-			templateCC.Path = tmpcc.path
-			templateCC.Version = tmpcc.vers
-		}
-	}
+	//if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
+	//	logger.Errorf("cc param is null")
+	//	//test
+	//	tmpcc, err := listGet(templateId)
+	//	if err == nil {
+	//		templateCC.Name = tmpcc.name
+	//		templateCC.Path = tmpcc.path
+	//		templateCC.Version = tmpcc.vers
+	//	}
+	//}
 	txsim, err := mksupt.GetTxSimulator(idag, chainID, txid)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
