@@ -5346,7 +5346,7 @@ var methods = function () {
         params: 0
     });
 
-    var getBlockTransactionCount = new Method({
+    /*var getBlockTransactionCount = new Method({
         name: 'getBlockTransactionCount',
         call: getBlockTransactionCountCall,
         params: 1,
@@ -5360,7 +5360,7 @@ var methods = function () {
         params: 1,
         inputFormatter: [formatters.inputBlockNumberFormatter],
         outputFormatter: utils.toDecimal
-    });
+    });*/
 
     var getTransaction = new Method({
         name: 'getTransaction',
@@ -5369,7 +5369,7 @@ var methods = function () {
         outputFormatter: formatters.outputTransactionFormatter
     });
 
-    var getTransactionFromBlock = new Method({
+    /* var getTransactionFromBlock = new Method({
         name: 'getTransactionFromBlock',
         call: transactionFromBlockCall,
         params: 2,
@@ -5390,7 +5390,7 @@ var methods = function () {
         params: 2,
         inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
         outputFormatter: utils.toDecimal
-    });
+    });*/
     /*var walletCreateTransaction = new Method({
         name: 'walletCreateTransaction',
         call: 'wallet_createRawTransaction',
@@ -5466,7 +5466,7 @@ var methods = function () {
         inputFormatter: [formatters.inputCallFormatter, formatters.inputDefaultBlockNumberFormatter]
     });
 
-    var estimateGas = new Method({
+    /*var estimateGas = new Method({
         name: 'estimateGas',
         call: 'ptn_estimateGas',
         params: 1,
@@ -5484,7 +5484,7 @@ var methods = function () {
         name: 'compile.lll',
         call: 'ptn_compileLLL',
         params: 1
-    });
+    });*/
 
     var compileSerpent = new Method({
         name: 'compile.serpent',
@@ -5498,11 +5498,11 @@ var methods = function () {
         params: 3
     });
 
-    var getWork = new Method({
+    /*var getWork = new Method({
         name: 'getWork',
         call: 'ptn_getWork',
         params: 0
-    });
+    });*/
     /* var getTransactionsByTxid = new Method({
         name: 'getTransactionsByTxid',
         call: 'ptn_getTransactionsByTxid',
@@ -5547,7 +5547,7 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
-    var getTrieSyncProgress = new Method({
+    /*var getTrieSyncProgress = new Method({
         name: 'getTrieSyncProgress',
         call: 'ptn_getTrieSyncProgress',
         params: 0,
@@ -5565,7 +5565,7 @@ var methods = function () {
         call: 'dag_getUnitTxsHashHex',  
         params: 1,
         // inputFormatter: [null]
-    }); 
+    }); */
 
 
 // del ptn_getStorageAt
