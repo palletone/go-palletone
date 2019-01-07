@@ -534,9 +534,14 @@ func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txi
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractInvoke(depId, txid, args, 0)
+	//参数前面加入msg0,这里为空
+	var fullArgs [][]byte
+	msgArg := []byte("query has no msg0")
+	fullArgs = append(fullArgs, msgArg)
+	fullArgs = append(fullArgs, args...)
+	rsp, err := s.b.ContractInvoke(depId, txid, fullArgs, 0)
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
-	return hex.EncodeToString(rsp), err
+	return string(rsp), err
 }
 
 func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, param []string) (string, error) {

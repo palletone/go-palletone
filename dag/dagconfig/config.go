@@ -53,7 +53,7 @@ var DefaultConfig = Config{
 	PtnAssetHex:                  modules.CoreAsset.AssetId.String(),
 	PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
 	IsRewardCoin:                 false,
-	AddressTxsIndex:              false,
+	AddrTxsIndex:                 false,
 }
 
 func init() {
@@ -98,8 +98,8 @@ type Config struct {
 	PtnAssetHex string
 	PtnAssetId  []byte
 
-	IsRewardCoin    bool
-	AddressTxsIndex bool
+	IsRewardCoin bool
+	AddrTxsIndex bool
 }
 
 type Sconfig struct {
