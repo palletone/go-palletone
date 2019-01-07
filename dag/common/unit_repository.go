@@ -802,7 +802,6 @@ func (unitOp *UnitRepository) saveContractTpl(height modules.ChainIndex, txIndex
 		Height:  height,
 		TxIndex: txIndex,
 	}
-
 	// step2. save contract template bytecode data
 	if err := unitOp.statedb.SaveContractTemplate(payload.TemplateId, payload.Bytecode, version.Bytes()); err != nil {
 		log.Error("SaveContractTemplate", "error", err.Error())

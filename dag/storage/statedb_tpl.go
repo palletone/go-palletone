@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/errors"
 	"strings"
 )
 
@@ -33,6 +34,9 @@ func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte,
 	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, version...)
+	if v,_,_,_:= statedb.GetContractTpl(templateId);v!=nil {
+		return errors.New("the contractTlp is exist.")
+	}
 	if err := StoreBytes(statedb.db, key, bytecode); err != nil {
 		return err
 	}
@@ -78,18 +82,20 @@ To get contract or contract template one field
 func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVersion, []byte) {
 	//key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
 	key := append(constants.CONTRACT_TPL, id...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	//key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(field)...)
 	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return nil, nil
 	}
-	for k, v := range data {
+	//TODO
+	for _, v := range data {
 		var version modules.StateVersion
-		if !version.ParseStringKey(k) {
-			return nil, nil
-		}
-		return &version, v
+		//if !version.ParseStringKey(k) {
+		//	return nil, nil
+		//}
+		version.SetBytes(v[:29])
+		return &version, v[29:]
 	}
 	return nil, nil
 }
@@ -122,7 +128,8 @@ func (statedb *StateDb) GetContractTpl(templateID []byte) (*modules.StateVersion
 	nameByte := make([]byte, 0)
 	version, nameByte = statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
-		return version, bytecode, "", ""
+		statedb.logger.Debug("GetTplState err:version is nil")
+		//return version, bytecode, "", ""
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
 		statedb.logger.Error("GetContractTpl when get name", "error", err.Error())
