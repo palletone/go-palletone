@@ -209,7 +209,6 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 					go mp.signTBLSLoop(localMed)
 					go mp.recoverUnitsTBLS(localMed)
 
-					//go mp.endVSSProtocol(false)
 					delete(mp.respBuf, localMed)
 				}
 
@@ -222,7 +221,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Debug("the following mediator is not local: %v", localMed.Str())
+		log.Debug(fmt.Sprintf("the following mediator also has no signature shares: %v", localMed.Str()))
 		return
 	}
 
@@ -329,6 +328,7 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	dag := mp.dag
 	newUnit, err := dag.GetUnitByHash(newUnitHash)
 	if newUnit == nil || err != nil {
+		log.Debug(fmt.Sprintf("fail to get unit by hash in dag: %v", newUnitHash))
 		return
 	}
 
@@ -337,7 +337,7 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Debug("the following mediator is not local: %v", localMed.Str())
+		log.Debug(fmt.Sprintf("the following mediator's toTBLSRecoverBuf has not initialized yet: %v", localMed.Str()))
 		return
 	}
 
@@ -360,6 +360,7 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	sigShareSet, ok := mp.toTBLSRecoverBuf[localMed][unitHash]
 	if !ok {
+		log.Debug(fmt.Sprintf("the following mediator also has no signature shares: %v", localMed.Str()))
 		return
 	}
 
