@@ -128,6 +128,6 @@ func (dag *Dag) updateActiveMediators() bool {
 	}
 	dag.SaveGlobalProp(gp, false)
 
-	// todo , 返回新一届mediator和上一届mediator是否有变化
+	// todo , 返回新一届mediator和上一届mediator是否有变化, 还要考虑mediator个数变化
 	return true
 }
