@@ -101,7 +101,6 @@ func GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return platform.GetPlatformEnvPath(spec)
 }
 
