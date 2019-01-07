@@ -144,8 +144,12 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 // ApplyUnit, 利用下一个 unit 更新整个区块链状态
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 1. 下一个 unit 和本地 unit 连续性的判断
-	if nextUnit.ParentHash()[0] != dag.HeadUnitHash() {
+	parentHash := nextUnit.ParentHash()[0]
+	headUnitHash := dag.HeadUnitHash()
+	if parentHash != headUnitHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
+		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
+			nextUnit.UnitHash, parentHash, headUnitHash)
 		return
 	}
 
