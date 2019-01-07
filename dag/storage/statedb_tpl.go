@@ -98,34 +98,41 @@ func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVers
 获取合约模板
 To get contract template
 */
-func (statedb *StateDb) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func (statedb *StateDb) GetContractTpl(templateID []byte) (*modules.StateVersion, []byte, string, string) {
 	key := append(constants.CONTRACT_TPL, templateID...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
 	data := statedb.GetPrefix(key)
 
+	version := new(modules.StateVersion)
+	bytecode := make([]byte, 0)
+	var name, path string
+	statedb.logger.Debug("start getcontractTlp")
 	if len(data) == 1 {
+		statedb.logger.Debug("the contractTlp info: data=1", "len", len(data))
 		for _, v := range data {
 			if err := rlp.DecodeBytes(v, &bytecode); err != nil {
 				statedb.logger.Error("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
-				return
+				return nil, bytecode, "", ""
 			}
 		}
+	} else {
+		statedb.logger.Debug("the contractTlp info: data!=1", "len", len(data))
 	}
-
-	version, nameByte := statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
+	nameByte := make([]byte, 0)
+	version, nameByte = statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
-		return
+		return version, bytecode, "", ""
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
 		statedb.logger.Error("GetContractTpl when get name", "error", err.Error())
-		return
+		return version, bytecode, name, ""
 	}
 
 	_, pathByte := statedb.GetTplState(templateID, modules.FIELD_TPL_PATH)
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
 		statedb.logger.Error("GetContractTpl when get path", "error", err.Error())
-		return
+		return version, bytecode, name, ""
 	}
-	return
+	return version, bytecode, name, path
 }
