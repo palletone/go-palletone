@@ -513,7 +513,7 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
-	pm.producer.ToUnitTBLSSign(&unit)
+	pm.producer.AddToTBLSSignBuf(&unit)
 	return nil
 }
 
@@ -523,7 +523,7 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===SigShareMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	pm.producer.ToTBLSRecover(&sigShare)
+	pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 	return nil
 }
 
@@ -537,12 +537,12 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===VSSDealMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	pm.producer.ToProcessDeal(&deal)
+	pm.producer.ProcessVSSDeal(&deal)
 
 	// comment by Albert·Gou
 	////TODO vssmark
 	//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
-	//	pm.producer.ToProcessDeal(vssmsg.Deal)
+	//	pm.producer.ProcessVSSDeal(vssmsg.Deal)
 	//	pm.peers.MarkVss(vssmsg.NodeId)
 	//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
 	//}
@@ -555,7 +555,7 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===VSSResponseMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	pm.producer.ToProcessResponse(&resp)
+	go pm.producer.AddToResponseBuf(&resp)
 	return nil
 }
 

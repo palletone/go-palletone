@@ -145,11 +145,13 @@ func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	unit, err := d.GetUnitByHash(unitHash)
 	if err != nil {
+		log.Debug(err.Error())
 		return err
 	}
 
 	pubKey, err := unit.GroupPubKey()
 	if err != nil {
+		log.Debug(err.Error())
 		return err
 	}
 
@@ -158,9 +160,10 @@ func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error 
 		//log.Debug("the group signature: " + hexutil.Encode(groupSign) +
 		//	" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
 	} else {
-		log.Info("the group signature: " + hexutil.Encode(groupSign) + " of the Unit that hash: " +
+		log.Debug("the group signature: " + hexutil.Encode(groupSign) + " of the Unit that hash: " +
 			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
+		return err
 	}
 
-	return err
+	return nil
 }

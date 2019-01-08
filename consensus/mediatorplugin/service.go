@@ -67,6 +67,7 @@ type iDag interface {
 	IsSynced() bool
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
+	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
@@ -125,7 +126,9 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]chan *modules.Unit
+	// todo 重定义数据类型, 及时清除不需要群签名的单元， 防止程序阻塞或者内存溢出
+	toTBLSSignBuf map[common.Address]chan *modules.Unit
+	// todo 及时清除不需要恢复群签名的单元记忆相关数据，防止内存溢出
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 
 	// unit 签名分片的事件订阅
