@@ -38,9 +38,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
-	"runtime"
 )
 
 // Platform for chaincodes written in Go
@@ -90,7 +90,7 @@ func getGopath() (string, error) {
 	os := runtime.GOOS
 	if os == "windows" {
 		splitGoPath = filepath.SplitList(env["set GOPATH"])
-	} else  {
+	} else {
 		splitGoPath = filepath.SplitList(env["GOPATH"])
 	}
 
@@ -348,8 +348,8 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// Remove any imports that are provided by the ccenv or system
 	// --------------------------------------------------------------------------------------
 	var provided = map[string]bool{ //如下两个包为ccenv已自带，可删除
-		//"github.com/palletone/go-palletone/contracts/shim":                  true,
-		//"github.com/palletone/go-palletone/core/vmContractPub/protos/peer":  true,
+	//"github.com/palletone/go-palletone/contracts/shim":                  true,
+	//"github.com/palletone/go-palletone/core/vmContractPub/protos/peer":  true,
 	}
 
 	// Golang "pseudo-packages" - packages which don't actually exist
@@ -596,20 +596,20 @@ func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec,
 func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
 	var err error
 
-	code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
-	if err != nil {
-		return "", err
-	}
-	if code.Cleanup != nil {
-		defer code.Cleanup()
-	}
+	//code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
+	//if err != nil {
+	//	return "", err
+	//}
+	//if code.Cleanup != nil {
+	//	defer code.Cleanup()
+	//}
 	env, err := getGoEnv()
 	if err != nil {
 		return "", err
 	}
 	gopaths := splitEnvPaths(env["GOPATH"]) //GOPATH
 	//goroots := splitEnvPaths(env["GOROOT"])  //GOROOT，go安装路径
-	gopaths[code.Gopath] = true              //链码真实路径
+	//gopaths[code.Gopath] = true              //链码真实路径
 	env["GOPATH"] = flattenEnvPaths(gopaths) //GOPATH、GOROOT、链码真实路径重新拼合为新GOPATH
 
 	logger.Infof("go path:%s", env["GOPATH"])

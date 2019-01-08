@@ -250,6 +250,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 		Input: &pb.ChaincodeInput{
 			Args: args,
 		},
+		ChaincodeId: &pb.ChaincodeID{},
 	}
 	templateCC, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 	if err != nil {

@@ -37,7 +37,7 @@ type IStateDb interface {
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	DeleteState(key []byte) error
-	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
+	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
 	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
 	GetContractAllState() []*modules.ContractReadSet
