@@ -107,8 +107,6 @@ type IDagDb interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
 
-	// get texthash
-	GetTextHash(hash common.Hash) ([]byte, error)
 }
 
 /* ----- common geter ----- */
@@ -1033,14 +1031,3 @@ func (dagdb *DagDb) SaveReqIdByTx(tx *modules.Transaction) error {
 	return err2
 }
 
-//get Textpayload
-func (dagdb *DagDb) GetTextHash(hash common.Hash) ([]byte, error) {
-	tx, _, _, _ := dagdb.GetTransaction(hash)
-	pay := tx.TxMessages[2].Payload.(*modules.TextPayload)
-
-	texthash := pay.TextHash
-	if pay != nil {
-		return texthash, nil
-	}
-	return nil, errors.New("textpayload is nil !")
-}
