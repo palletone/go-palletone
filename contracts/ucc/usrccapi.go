@@ -148,7 +148,7 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 		log.Error("getPlatformEnvPath err:", "error", err)
 		return nil, err
 	}
-	targzFile := envpath + "/tmp/" + name + ".tar.gz"
+	targzFile := envpath + "/" + name + ".tar.gz"
 	decompressFile := envpath
 	logger.Infof("name[%s]path[%s]ver[%v]-tar[%s]untar path[%s]", name, path, v, targzFile, decompressFile)
 
