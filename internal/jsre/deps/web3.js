@@ -5307,7 +5307,7 @@ var methods = function () {
         call: 'ptn_getBalance',
         params: 1,
         inputFormatter: [null]
-    });*/
+    });
 
     var getStorageAt = new Method({
         name: 'getStorageAt',
@@ -5344,7 +5344,7 @@ var methods = function () {
         name: 'getCompilers',
         call: 'ptn_getCompilers',
         params: 0
-    });
+    });*/
 
     /*var getBlockTransactionCount = new Method({
         name: 'getBlockTransactionCount',
@@ -5450,7 +5450,7 @@ var methods = function () {
         call: 'ptn_signTransaction',
         params: 1,
         inputFormatter: [formatters.inputTransactionFormatter]
-    });*/
+    });
 
     var sign = new Method({
         name: 'sign',
@@ -5464,7 +5464,7 @@ var methods = function () {
         call: 'ptn_call',
         params: 2,
         inputFormatter: [formatters.inputCallFormatter, formatters.inputDefaultBlockNumberFormatter]
-    });
+    });*/
 
     /*var estimateGas = new Method({
         name: 'estimateGas',
@@ -5529,7 +5529,7 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
-    var getHeader = new Method({
+    /*var getHeader = new Method({
         name: 'getHeader',
         call: 'ptn_getHeader',
         params: 2,
@@ -5547,7 +5547,7 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
-    /*var getTrieSyncProgress = new Method({
+    var getTrieSyncProgress = new Method({
         name: 'getTrieSyncProgress',
         call: 'ptn_getTrieSyncProgress',
         params: 0,
