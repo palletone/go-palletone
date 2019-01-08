@@ -186,7 +186,10 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	index := currentUnit.Number().Index
 	pHead, number := peer.Head(assetId)
 	pindex := number.Index
-	_, err := pm.dag.GetUnitByHash(currentUnit.ParentHash()[0])
+	var err error = nil
+	if currentUnit.Number().Index > 0 {
+		_, err = pm.dag.GetUnitByHash(currentUnit.ParentHash()[0])
+	}
 
 	log.Debug("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
 	if index >= pindex && pindex > 0 && err == nil {
