@@ -67,6 +67,7 @@ type iDag interface {
 	IsSynced() bool
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool
+	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit

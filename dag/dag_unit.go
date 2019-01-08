@@ -149,7 +149,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	if parentHash != headUnitHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
 		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
-			nextUnit.UnitHash, parentHash, headUnitHash)
+			nextUnit.UnitHash.TerminalString(), parentHash.TerminalString(), headUnitHash.TerminalString())
 		return
 	}
 
