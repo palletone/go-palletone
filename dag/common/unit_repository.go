@@ -622,6 +622,9 @@ func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *m
 			//todo
 
 		case modules.APP_TEXT:
+			if ok := unitOp.saveTextPayload(txHash, msg, uint32(msgIndex)); ok != true {
+				return fmt.Errorf("Save payment payload error.")
+			}
 		default:
 			return fmt.Errorf("Message type is not supported now: %v", msg.App)
 		}
@@ -680,6 +683,16 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 		log.Error("Update utxo failed.", "error", err)
 		return false
 	}
+
+	return true
+}
+
+/**
+保存TextPayload
+save TextPayload data
+*/
+func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
+
 
 	return true
 }
