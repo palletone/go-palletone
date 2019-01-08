@@ -646,13 +646,14 @@ func (mr *MockIDagMockRecorder) GetAddrTransactions(addr interface{}) *gomock.Ca
 }
 
 // GetContractTpl mocks base method
-func (m *MockIDag) GetContractTpl(templateID []byte) (*modules.StateVersion, []byte, string, string) {
+func (m *MockIDag) GetContractTpl(templateID []byte) (*modules.StateVersion, []byte, string, string, string) {
 	ret := m.ctrl.Call(m, "GetContractTpl", templateID)
 	ret0, _ := ret[0].(*modules.StateVersion)
 	ret1, _ := ret[1].([]byte)
 	ret2, _ := ret[2].(string)
 	ret3, _ := ret[3].(string)
-	return ret0, ret1, ret2, ret3
+	ret4, _ := ret[4].(string)
+	return ret0, ret1, ret2, ret3, ret4
 }
 
 // GetContractTpl indicates an expected call of GetContractTpl
