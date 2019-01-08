@@ -163,9 +163,9 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 		//if err := s.Decode(&d); err != nil {
 		//	log.Error(err.Error())
 		//}
-		//pm.producer.ToProcessDeal(&d)
+		//pm.producer.ProcessVSSDeal(&d)
 
-		pm.producer.ToProcessDeal(deal)
+		pm.producer.ProcessVSSDeal(deal)
 		return
 	}
 
@@ -236,9 +236,9 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 			//if err := s.Decode(&r); err != nil {
 			//	log.Error(err.Error())
 			//}
-			//pm.producer.ToProcessResponse(&r)
+			//go pm.producer.AddToResponseBuf(&r)
 
-			pm.producer.ToProcessResponse(resp)
+			go pm.producer.AddToResponseBuf(resp)
 			continue
 		}
 

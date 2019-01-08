@@ -81,7 +81,7 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 
 func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
-	dkgr := mp.getLocalActiveDKG(add)
+	dkgr, _ := mp.getLocalActiveDKG(add)
 	if dkgr != nil {
 		dks, err := dkgr.DistKeyShare()
 		if err == nil {

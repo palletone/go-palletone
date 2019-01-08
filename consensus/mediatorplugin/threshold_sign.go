@@ -33,24 +33,22 @@ import (
 )
 
 func (mp *MediatorPlugin) startVSSProtocol() {
-	go log.Info("Start completing the VSS protocol.")
+	log.Debug("Start completing the VSS protocol.")
 
 	go mp.BroadcastVSSDeals()
 }
 
-func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) *dkg.DistKeyGenerator {
+func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) (*dkg.DistKeyGenerator, error) {
 	if !mp.IsLocalActiveMediator(add) {
-		log.Debug(fmt.Sprintf("The following mediator is not local active mediator: %v", add.String()))
-		return nil
+		return nil, fmt.Errorf("The following mediator is not local active mediator: %v", add.String())
 	}
 
 	dkg, ok := mp.activeDKGs[add]
 	if !ok || dkg == nil {
-		log.Debug(fmt.Sprintf("The following mediator`s dkg is not existed: %v", add.String()))
-		return nil
+		return nil, fmt.Errorf("The following mediator`s dkg is not existed: %v", add.String())
 	}
 
-	return dkg
+	return dkg, nil
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
@@ -77,23 +75,14 @@ func (mp *MediatorPlugin) SubscribeVSSDealEvent(ch chan<- VSSDealEvent) event.Su
 	return mp.vssDealScope.Track(mp.vssDealFeed.Subscribe(ch))
 }
 
-func (mp *MediatorPlugin) ToProcessDeal(deal *VSSDealEvent) error {
-	select {
-	case <-mp.quit:
-		return errTerminated
-	default:
-		go mp.processVSSDeal(deal)
-		return nil
-	}
-}
-
-func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
+func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 	dag := mp.dag
 	localMed := dag.GetActiveMediatorAddr(dealEvent.DstIndex)
 
-	dkgr := mp.getLocalActiveDKG(localMed)
-	if dkgr == nil {
-		return
+	dkgr, err := mp.getLocalActiveDKG(localMed)
+	if err != nil {
+		log.Debug(err.Error())
+		return err
 	}
 
 	deal := dealEvent.Deal
@@ -101,34 +90,27 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
 		log.Debug(err.Error())
-		return
+		return err
 	}
 
 	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
 	go mp.processResponseLoop(localMed, vrfrMed)
 
 	if resp.Response.Status != vss.StatusApproval {
-		log.Debug(fmt.Sprintf("DKG: own deal gave a complaint: %v", localMed.String()))
-		return
+		err = fmt.Errorf("DKG: own deal gave a complaint: %v", localMed.String())
+		log.Debug(err.Error())
+		return err
 	}
 
 	respEvent := VSSResponseEvent{
 		Resp: resp,
 	}
 	go mp.vssResponseFeed.Send(respEvent)
+
+	return nil
 }
 
-func (mp *MediatorPlugin) ToProcessResponse(resp *VSSResponseEvent) error {
-	select {
-	case <-mp.quit:
-		return errTerminated
-	default:
-		go mp.addToResponseBuf(resp)
-		return nil
-	}
-}
-
-func (mp *MediatorPlugin) addToResponseBuf(respEvent *VSSResponseEvent) {
+func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 	resp := respEvent.Resp
 	lams := mp.GetLocalActiveMediators()
 	for _, localMed := range lams {
@@ -151,8 +133,8 @@ func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) 
 }
 
 func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) {
-	dkgr := mp.getLocalActiveDKG(localMed)
-	if dkgr == nil {
+	dkgr, err := mp.getLocalActiveDKG(localMed)
+	if err != nil {
 		return
 	}
 
@@ -258,8 +240,8 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 }
 
 func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
-	dkgr := mp.getLocalActiveDKG(localMed)
-	if dkgr == nil {
+	dkgr, err := mp.getLocalActiveDKG(localMed)
+	if err != nil {
 		return
 	}
 
@@ -381,8 +363,8 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	dkgr := mp.getLocalActiveDKG(localMed)
-	if dkgr == nil {
+	dkgr, err := mp.getLocalActiveDKG(localMed)
+	if err != nil {
 		return
 	}
 

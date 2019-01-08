@@ -39,10 +39,10 @@ type producer interface {
 	ToTBLSRecover(sigShare *mp.SigShareEvent) error
 
 	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
-	ToProcessDeal(deal *mp.VSSDealEvent) error
+	ProcessVSSDeal(deal *mp.VSSDealEvent) error
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
-	ToProcessResponse(resp *mp.VSSResponseEvent) error
+	AddToResponseBuf(resp *mp.VSSResponseEvent)
 
 	LocalHaveActiveMediator() bool
 	LocalHavePrecedingMediator() bool
