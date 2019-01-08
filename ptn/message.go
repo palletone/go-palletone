@@ -403,18 +403,6 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return err
 	}
 
-	var temptxs modules.Transactions
-	for _, tx := range unit.Txs {
-		//msgs, err1 := storage.ConvertMsg(tx)
-		//if err1 != nil {
-		//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-		//	return err1
-		//}
-		//tx.TxMessages = msgs
-		temptxs = append(temptxs, tx)
-	}
-	unit.Txs = temptxs
-
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
 	log.Debug("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
