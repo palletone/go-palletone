@@ -5307,7 +5307,7 @@ var methods = function () {
         call: 'ptn_getBalance',
         params: 1,
         inputFormatter: [null]
-    });*/
+    });
 
     var getStorageAt = new Method({
         name: 'getStorageAt',
@@ -5344,7 +5344,7 @@ var methods = function () {
         name: 'getCompilers',
         call: 'ptn_getCompilers',
         params: 0
-    });
+    });*/
 
     /*var getBlockTransactionCount = new Method({
         name: 'getBlockTransactionCount',
