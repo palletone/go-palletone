@@ -50,7 +50,7 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			pm.producer.ToUnitTBLSSign(newUnit)
+			pm.producer.AddToTBLSSignBuf(newUnit)
 			continue
 		}
 
@@ -94,9 +94,9 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 		//if err := stream.Decode(&s); err != nil {
 		//	log.Error(err.Error())
 		//}
-		//pm.producer.ToTBLSRecover(&s)
+		//pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 
-		pm.producer.ToTBLSRecover(sigShare)
+		pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return
 	}
 

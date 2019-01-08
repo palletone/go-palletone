@@ -525,7 +525,7 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
-	pm.producer.ToUnitTBLSSign(&unit)
+	pm.producer.AddToTBLSSignBuf(&unit)
 	return nil
 }
 
@@ -535,7 +535,7 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===SigShareMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	pm.producer.ToTBLSRecover(&sigShare)
+	pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 	return nil
 }
 

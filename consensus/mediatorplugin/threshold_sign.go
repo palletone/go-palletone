@@ -40,12 +40,12 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 
 func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) (*dkg.DistKeyGenerator, error) {
 	if !mp.IsLocalActiveMediator(add) {
-		return nil, fmt.Errorf("The following mediator is not local active mediator: %v", add.String())
+		return nil, fmt.Errorf("the following mediator is not local active mediator: %v", add.String())
 	}
 
 	dkg, ok := mp.activeDKGs[add]
 	if !ok || dkg == nil {
-		return nil, fmt.Errorf("The following mediator`s dkg is not existed: %v", add.String())
+		return nil, fmt.Errorf("the following mediator`s dkg is not existed: %v", add.String())
 	}
 
 	return dkg, nil
@@ -212,17 +212,7 @@ func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 	}
 }
 
-func (mp *MediatorPlugin) ToUnitTBLSSign(newUnit *modules.Unit) error {
-	select {
-	case <-mp.quit:
-		return errTerminated
-	default:
-		go mp.addToTBLSSignBuf(newUnit)
-		return nil
-	}
-}
-
-func (mp *MediatorPlugin) addToTBLSSignBuf(newUnit *modules.Unit) {
+func (mp *MediatorPlugin) AddToTBLSSignBuf(newUnit *modules.Unit) {
 	lams := mp.GetLocalActiveMediators()
 	curThrshd := mp.dag.ChainThreshold()
 
@@ -286,32 +276,19 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 			sigShare, success := signTBLS(newUnit)
 			if success {
 				go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
-				//go mp.addToTBLSRecoverBuf(newUnit, sigShare)
 			}
 		}
 	}
 }
 
-func (mp *MediatorPlugin) ToTBLSRecover(sigShare *SigShareEvent) error {
-	select {
-	case <-mp.quit:
-		return errTerminated
-	default:
-		//localMed, _ := mp.dag.GetUnitByHash(sigShare.UnitHash)
-		//go mp.addToTBLSRecoverBuf(localMed, sigShare.SigShare)
-		go mp.addToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
-		return nil
-	}
-}
-
 // 收集签名分片
-//func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnit *modules.Unit, sigShare []byte) {
-func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
+func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error {
 	dag := mp.dag
 	newUnit, err := dag.GetUnitByHash(newUnitHash)
 	if newUnit == nil || err != nil {
-		log.Debug(fmt.Sprintf("fail to get unit by hash in dag: %v", newUnitHash))
-		return
+		err = fmt.Errorf("fail to get unit by hash in dag: %v", newUnitHash)
+		log.Debug(err.Error())
+		return err
 	}
 
 	//newUnitHash := newUnit.UnitHash
@@ -319,21 +296,24 @@ func (mp *MediatorPlugin) addToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Debug(fmt.Sprintf("the following mediator's toTBLSRecoverBuf has not initialized yet: %v", localMed.Str()))
-		return
+		err = fmt.Errorf("the following mediator's toTBLSRecoverBuf has not initialized yet: %v", localMed.Str())
+		log.Debug(err.Error())
+		return err
 	}
 
 	// 当buf不存在时，说明已经recover出群签名，忽略该签名分片
 	sigShareSet, ok := medSigShareBuf[newUnitHash]
 	if !ok {
-		log.Debugf("the unit already has recovered the group signature: %v", newUnitHash)
-		return
+		err = fmt.Errorf("the unit already has recovered the group signature: %v", newUnitHash)
+		log.Debugf(err.Error())
+		return err
 	}
 
 	sigShareSet.append(sigShare)
 
 	// recover群签名
 	go mp.recoverUnitTBLS(localMed, newUnitHash)
+	return nil
 }
 
 func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.Subscription {
