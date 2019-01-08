@@ -435,7 +435,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 
 	// Ensure our origin point is below any fast sync pivot point
 	pivot := uint64(0)
-	//fmt.Println("Downloader->syncWithPeer pre", "height:", height, "origin:", origin, "pivot:", pivot)
 	if d.mode == FastSync {
 		if latest.Number.Index <= uint64(fsMinFullBlocks) {
 			origin = 0
@@ -446,7 +445,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 			}
 		}
 	}
-	//fmt.Println("Downloader->syncWithPeer last", "height:", height, "origin:", origin, "pivot:", pivot)
 	log.Debug("Downloader->syncWithPeer last", "origin:", origin, "pivot:", pivot)
 	d.committed = 1
 	if d.mode == FastSync && pivot != 0 {
