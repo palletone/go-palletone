@@ -1315,8 +1315,11 @@ func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
 
 func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
 	if groupSign == nil {
-		return errors.New("group sign is null.")
+		err := fmt.Errorf("group sign is null")
+		log.Debug(err.Error())
+		return err
 	}
+
 	// 验证群签名：
 	err := d.VerifyUnitGroupSign(unitHash, groupSign)
 	if err != nil {

@@ -212,7 +212,5 @@ func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits ui
 	dgp.HeadUnitHash = unit.Hash()
 	dgp.HeadUnitTime = unit.Timestamp()
 
-	//	println(missedUnits)
 	dgp.CurrentASlot += missedUnits + 1
-
 }

@@ -249,13 +249,20 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 	newUnitBuf := mp.toTBLSSignBuf[localMed]
 
 	signTBLS := func(newUnit *modules.Unit) (sigShare []byte, success bool) {
-		// 1. 验证本 unit
+		// 1.如果单元没有群公钥， 则跳过群签名
+		_, err = newUnit.GroupPubKey()
+		if err != nil {
+			log.Debug(err.Error())
+			return
+		}
+
+		// 2. 验证本 unit
 		if !dag.ValidateUnitExceptGroupSig(newUnit, false) {
 			log.Debugf("the unit validate except group sig fail: %v", newUnit.UnitHash.TerminalString())
 			return
 		}
 
-		// 2. 判断父 unit 是否不可逆
+		// 3. 判断父 unit 是否不可逆
 		parentHash := newUnit.ParentHash()[0]
 		if !dag.IsIrreversibleUnit(parentHash) {
 			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
@@ -273,7 +280,8 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		}
 
 		success = true
-		log.Debugf("the mediator(%v) group-sign the unit(%v)", localMed.Str(), newUnit.UnitHash.TerminalString())
+		log.Debugf("the mediator(%v) group-signed the unit(%v)", localMed.Str(),
+			newUnit.UnitHash.TerminalString())
 		return
 	}
 

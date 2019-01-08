@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -81,14 +82,17 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 
 func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
-	dkgr, _ := mp.getLocalActiveDKG(add)
-	if dkgr != nil {
-		dks, err := dkgr.DistKeyShare()
-		if err == nil {
-			pubKey, err = dks.Public().MarshalBinary()
-			if err != nil {
-				pubKey = nil
-			}
+	dkgr, err := mp.getLocalActiveDKG(add)
+	if err != nil {
+		log.Debug(err.Error())
+		return pubKey
+	}
+
+	dks, err := dkgr.DistKeyShare()
+	if err == nil {
+		pubKey, err = dks.Public().MarshalBinary()
+		if err != nil {
+			pubKey = nil
 		}
 	}
 
