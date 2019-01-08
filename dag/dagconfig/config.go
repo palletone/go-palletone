@@ -54,6 +54,7 @@ var DefaultConfig = Config{
 	PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
 	IsRewardCoin:                 false,
 	AddrTxsIndex:                 false,
+	TextFileHashIndex:            false,
 }
 
 func init() {
@@ -100,6 +101,8 @@ type Config struct {
 
 	IsRewardCoin bool
 	AddrTxsIndex bool
+
+	TextFileHashIndex bool
 }
 
 type Sconfig struct {
