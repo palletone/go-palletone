@@ -5244,8 +5244,8 @@ function Ptn(web3) {
     });
 
 
-    this.iban = Iban;
-    this.sendIBANTransaction = transfer.bind(null, this);
+    //this.iban = Iban;
+    //this.sendIBANTransaction = transfer.bind(null, this);
 }
 
 Object.defineProperty(Ptn.prototype, 'defaultBlock', {
@@ -5645,7 +5645,7 @@ var methods = function () {
 
 var properties = function () {
     return [
-        new Property({
+        /*new Property({
             name: 'coinbase',
             getter: 'ptn_coinbase'
         }),
@@ -5667,12 +5667,12 @@ var properties = function () {
             name: 'gasPrice',
             getter: 'ptn_gasPrice',
             outputFormatter: formatters.outputBigNumberFormatter
-        }),
+        }),*/
         new Property({
             name: 'accounts',
             getter: 'ptn_accounts'
         }),
-        new Property({
+        /*new Property({
             name: 'blockNumber',
             getter: 'ptn_blockNumber',
             outputFormatter: utils.toDecimal
@@ -5680,7 +5680,7 @@ var properties = function () {
         new Property({
             name: 'protocolVersion',
             getter: 'ptn_protocolVersion'
-        })
+        })*/
     ];
 };
 
@@ -5693,17 +5693,17 @@ Ptn.prototype.filter = function (options, callback, filterCreationErrorCallback)
     return new Filter(options, 'ptn', this._requestManager, watches.ptn(), formatters.outputLogFormatter, callback, filterCreationErrorCallback);
 };
 
-Ptn.prototype.namereg = function () {
-    return this.contract(namereg.global.abi).at(namereg.global.address);
-};
+//Ptn.prototype.namereg = function () {
+  //  return this.contract(namereg.global.abi).at(namereg.global.address);
+//};
 
-Ptn.prototype.icapNamereg = function () {
-    return this.contract(namereg.icap.abi).at(namereg.icap.address);
-};
+//Ptn.prototype.icapNamereg = function () {
+  //  return this.contract(namereg.icap.abi).at(namereg.icap.address);
+//};
 
-Ptn.prototype.isSyncing = function (callback) {
-    return new IsSyncing(this._requestManager, callback);
-};
+//Ptn.prototype.isSyncing = function (callback) {
+  //  return new IsSyncing(this._requestManager, callback);
+//};
 
 module.exports = Ptn;
 
