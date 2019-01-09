@@ -165,7 +165,11 @@ func (dagdb *DagDb) SaveNumberByHash(uHash common.Hash, number modules.ChainInde
 	index.AssetID = number.AssetID
 	index.Index = number.Index
 	index.IsMain = number.IsMain
-
+	if _, err := GetBytes(dagdb.db, []byte(key)); err == nil {
+		if !index.IsMain { // 若index不在主链，则不更新。
+			return nil
+		}
+	}
 	return StoreBytes(dagdb.db, []byte(key), index)
 }
 
@@ -176,9 +180,37 @@ func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainInde
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+	if m_data, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key))); err == nil {
+		// step1. 若uHash==m_hash 则无需再次存储。
+		var str string
+		m_hash := common.Hash{}
+		err1 := rlp.DecodeBytes(m_data, &str)
+		if err1 == nil {
+			if str == uHash.String() {
+				return // 已经
+			}
+		}
+		// step2. 若不相等，则更新
+		// 确定前一个为主链单元，保存该number到侧链上。
+		i = 0
+	}
+	key = fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 	//log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
 	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
 }
+
+//func (dagdb *DagDb) UpdateParentChainIndexByHash(hash common.Hash, index modules.ChainIndex) error {
+//	index.IsMain = true
+//	err := dagdb.SaveNumberByHash(hash, index)
+//	if err != nil {
+//		return fmt.Errorf("update parent chainindex by hash error: %s", err.Error())
+//	}
+//	err1 := dagdb.SaveHashByNumber(hash, index)
+//	if err1 != nil {
+//		return fmt.Errorf("update parent hash by chainindex error: %s", err1)
+//	}
+//	return nil
+//}
 
 func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, error) {
 	i := 0
@@ -192,9 +224,8 @@ func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, err
 		return common.Hash{}, err
 	}
 
-	//hash := common.Hash{}
 	strhash := ""
-	err1 := rlp.DecodeBytes(ha, &strhash) //rlp.EncodeToBytes(val)
+	err1 := rlp.DecodeBytes(ha, &strhash)
 	if err1 != nil {
 		log.Debug("GetHashByNumber", "DecodeBytes_err", err1)
 		return common.Hash{}, err1
