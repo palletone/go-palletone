@@ -182,6 +182,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 		nextMaintenanceTime += (y + 1) * maintenanceInterval
 	}
 
+	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.SaveDynGlobalProp(dgp, false)
 

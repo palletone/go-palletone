@@ -210,7 +210,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Debug(fmt.Sprintf("the following mediator also has no signature shares: %v", localMed.Str()))
+		log.Debug(fmt.Sprintf("the following mediator has no signature shares yet: %v", localMed.Str()))
 		return
 	}
 
