@@ -136,11 +136,11 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	if unitHash != (common.Hash{}) {
 		hex_hash = unitHash.String()
 	}
-	var txresult []byte
+	var txresult string
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_TEXT {
 			if msg, ok := msgcopy.Payload.(*modules.TextPayload); ok {
-				txresult = msg.TextHash
+				txresult = msg.FileHash
 			}
 		}
 	}

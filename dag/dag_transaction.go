@@ -231,7 +231,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 		// 1. 组装 message
 		msg := &modules.Message{
 			App:     modules.APP_TEXT,
-			Payload: &modules.TextPayload{TextHash: []byte(*text)},
+			Payload: &modules.TextPayload{FileHash: string(*text)},
 		}
 
 		// 2. 创建 tx
