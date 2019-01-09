@@ -135,7 +135,6 @@ func Trace(msg string, ctx ...interface{}) {
 	//log.Println("logger trace is  ok.")
 	fileds := ctxTOfileds(ctx...)
 	Logger.Debug(msg, fileds...)
-
 }
 
 // Debug
@@ -147,11 +146,10 @@ func Debug(msg string, ctx ...interface{}) {
 	Logger.Debug(msg, fileds...)
 }
 func Debugf(format string, ctx ...interface{}) {
-	Debug(fmt.Sprintf(format, ctx...))
-}
-
-func Infof(msg string, ctx ...interface{}) {
-	Info(fmt.Sprintf(msg, ctx...))
+	if Logger == nil {
+		InitLogger()
+	}
+	Logger.Debug(fmt.Sprintf(format, ctx...))
 }
 
 // Info
@@ -163,6 +161,13 @@ func Info(msg string, ctx ...interface{}) {
 	Logger.Info(msg, fileds...)
 }
 
+func Infof(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
+	Logger.Info(fmt.Sprintf(msg, ctx...))
+}
+
 // Warn
 func Warn(msg string, ctx ...interface{}) {
 	if Logger == nil {
@@ -172,7 +177,10 @@ func Warn(msg string, ctx ...interface{}) {
 	Logger.Warn(msg, fileds...)
 }
 func Warnf(msg string, ctx ...interface{}) {
-	Warn(fmt.Sprintf(msg, ctx...))
+	if Logger == nil {
+		InitLogger()
+	}
+	Logger.Warn(fmt.Sprintf(msg, ctx...))
 }
 
 // Error
@@ -186,7 +194,10 @@ func Error(msg string, ctx ...interface{}) {
 }
 
 func Errorf(format string, ctx ...interface{}) {
-	Error(fmt.Sprintf(format, ctx...))
+	if Logger == nil {
+		InitLogger()
+	}
+	Logger.Error(fmt.Sprintf(format, ctx...))
 }
 
 // Crit
