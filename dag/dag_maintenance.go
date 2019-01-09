@@ -23,6 +23,7 @@ import (
 	"sort"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // 投票统计辅助结构体
@@ -128,6 +129,24 @@ func (dag *Dag) updateActiveMediators() bool {
 	}
 	dag.SaveGlobalProp(gp, false)
 
-	// todo , 返回新一届mediator和上一届mediator是否有变化, 还要考虑mediator个数变化
-	return true
+	return isActiveMediatorsChanged(gp)
+}
+
+// 判断新一届mediator和上一届mediator是否有变化
+func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
+	precedingMediators := gp.PrecedingMediators
+	activeMediators := gp.ActiveMediators
+
+	// 首先考虑活跃mediator个数是否改变
+	if len(precedingMediators) != len(activeMediators) {
+		return true
+	}
+
+	for am, _ := range activeMediators {
+		if !precedingMediators[am] {
+			return true
+		}
+	}
+
+	return false
 }

@@ -131,8 +131,7 @@ func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
 
 // 活跃 mediators 更新事件
 type ActiveMediatorsUpdatedEvent struct {
-	// todo
-	//IsChanged bool // 标记活跃 mediators 是否有改变
+	IsChanged bool // 标记活跃 mediators 是否有改变
 }
 
 func (dag *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription {
@@ -151,13 +150,10 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dag.performAccountMaintenance()
 
 	// 3. 统计投票并更新活跃 mediator 列表
-	if !dag.updateActiveMediators() {
-		// todo , 如果没有变化， 只需做一些特殊处理，不需要发送事件
+	isChanged := dag.updateActiveMediators()
 
-	} else {
-		// 4. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
-		go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{})
-	}
+	// 4. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
+	go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
 
 	// 5. 计算并更新下一次维护时间
 	gp := dag.GetGlobalProp()

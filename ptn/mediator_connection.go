@@ -55,8 +55,10 @@ type producer interface {
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	for {
 		select {
-		case <-pm.activeMediatorsUpdatedCh:
-			go pm.switchMediatorConnect()
+		case event := <-pm.activeMediatorsUpdatedCh:
+			if event.IsChanged {
+				go pm.switchMediatorConnect()
+			}
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.activeMediatorsUpdatedSub.Err():
