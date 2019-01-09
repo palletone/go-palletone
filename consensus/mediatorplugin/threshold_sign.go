@@ -220,11 +220,12 @@ func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) AddToTBLSSignBuf(newUnit *modules.Unit) {
-	log.Debugf("received a unit to be grouped sign: %v", newUnit.UnitHash.TerminalString())
 	lams := mp.GetLocalActiveMediators()
 	curThrshd := mp.dag.ChainThreshold()
 
 	for _, localMed := range lams {
+		log.Debugf("the mediator(%v) received a unit to be grouped sign: %v",
+			localMed.Str(), newUnit.UnitHash.TerminalString())
 		if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
 			mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
 		}
@@ -251,7 +252,12 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 	}
 
 	dag := mp.dag
+	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
+		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, dag.ChainThreshold())
+	}
+
 	newUnitBuf := mp.toTBLSSignBuf[localMed]
+	log.Debugf("the mediator(%v) run the loop of TBLS sign", localMed.Str())
 
 	signTBLS := func(newUnit *modules.Unit) (sigShare []byte, success bool) {
 		// 1.如果单元没有群公钥， 则跳过群签名
