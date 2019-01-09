@@ -126,7 +126,7 @@ func (statedb *StateDb) GetContractTpl(templateID []byte) (*modules.StateVersion
 	version, nameByte = statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
 		statedb.logger.Debug("GetTplState err:version is nil")
-		return version, bytecode, "", ""
+		return version, bytecode, "", "", ""
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
 		statedb.logger.Error("GetContractTpl when get name", "error", err.Error())

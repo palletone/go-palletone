@@ -106,7 +106,6 @@ type IDagDb interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
-
 }
 
 /* ----- common geter ----- */
@@ -179,13 +178,12 @@ func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainInde
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 	if m_data, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key))); err == nil {
-		// step1. 若uHash==m_hash 则无需再次存储。
+		// step1. 若uHash.String()==str 则无需再次存储。
 		var str string
-		m_hash := common.Hash{}
 		err1 := rlp.DecodeBytes(m_data, &str)
 		if err1 == nil {
 			if str == uHash.String() {
-				return // 已经
+				return nil // 无需重复存储
 			}
 		}
 		// step2. 若不相等，则更新
@@ -1061,4 +1059,3 @@ func (dagdb *DagDb) SaveReqIdByTx(tx *modules.Transaction) error {
 	}
 	return err2
 }
-
