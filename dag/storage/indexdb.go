@@ -49,6 +49,7 @@ type IIndexDb interface {
 	GetAddressTxIds(address common.Address) ([]common.Hash, error)
 	GetFromAddressTxIds(addr string) ([]common.Hash, error)
 	GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
+	SaveFileHash(filehash string) error
 }
 
 // ###################### SAVE IMPL START ######################
@@ -132,4 +133,8 @@ func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
 	var str string
 	err0 := rlp.DecodeBytes(data, &str)
 	return str, err0
+}
+
+func (db *IndexDb) SaveFileHash(filehash string) error {
+	return nil
 }

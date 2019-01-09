@@ -328,6 +328,7 @@ func check() {
 			Logger = nil
 			InitLogger()
 			mux.Unlock()
+			return
 		}
 	}
 }

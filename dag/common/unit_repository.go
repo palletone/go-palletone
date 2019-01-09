@@ -621,7 +621,7 @@ func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *m
 			//todo
 
 		case modules.APP_TEXT:
-			if ok := unitOp.saveTextPayload(txHash, msg, uint32(msgIndex)); ok != true {
+			if ok := unitOp.saveTextPayload(msg); ok != true {
 				return fmt.Errorf("Save textment payload error.")
 			}
 		default:
@@ -640,6 +640,7 @@ func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *m
 			unitOp.idxdb.SaveAddressTxId(addr, txHash)
 		}
 	}
+
 	return nil
 }
 func getPayToAddresses(tx *modules.Transaction) []common.Address {
@@ -667,6 +668,19 @@ func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
 	return outpoints
 }
 
+func getFileHash(tx *modules.Transaction) string {
+	var filehash string
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_TEXT {
+			pay := msg.Payload.(*modules.TextPayload)
+			filehash = pay.FileHash
+
+		}
+	}
+
+	return filehash
+}
+
 /**
 保存PaymentPayload
 save PaymentPayload data
@@ -691,9 +705,28 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 save TextPayload data
 */
 
-func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
+func (unitOp *UnitRepository) saveTextPayload(msg *modules.Message) bool {
+	var pl interface{}
+	pl = msg.Payload
 
+	payload, ok := pl.(*modules.TextPayload)
+	if ok == false {
+		return false
+	}
 
+	fh := payload.FileHash
+	var tp modules.TextPayload
+
+	if dagconfig.DefaultConfig.TextFileHashIndex {
+		if err := json.Unmarshal([]byte(fh), &tp); err != nil {
+			log.Error("error decoding textpayload", "err", err)
+		}
+	}
+	err := unitOp.idxdb.SaveFileHash(fh)
+	if err != nil {
+		log.Error("error savefilehash","err",err)
+		return false
+	}
 	return true
 }
 
