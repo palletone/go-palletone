@@ -1155,7 +1155,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 func (d *Dag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	return d.unitRep.GetGenesisUnit(index)
 }
-func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
 	return d.statedb.GetContractTpl(templateID)
 }
 
@@ -1315,8 +1315,11 @@ func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
 
 func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
 	if groupSign == nil {
-		return errors.New("group sign is null.")
+		err := fmt.Errorf("group sign is null")
+		log.Debug(err.Error())
+		return err
 	}
+
 	// 验证群签名：
 	err := d.VerifyUnitGroupSign(unitHash, groupSign)
 	if err != nil {
@@ -1395,7 +1398,3 @@ func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 	return d.dagdb.GetReqIdByTxHash(hash)
 }
 
-// GetTextHash
-func (d *Dag) GetTextHash(hash common.Hash) ([]byte, error) {
-	return d.dagdb.GetTextHash(hash)
-}

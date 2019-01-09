@@ -153,27 +153,13 @@ func InitLogger() {
 	if len(err_path) == 0 {
 		err_path = []string{"log/err_" + date + ".log"}
 	}
-	// if lvl == "" {
-	// 	lvl = "INFO"
-	// }
-	// if encoding == "" {
-	// 	encoding = "console"
-	// }
-	// if err := mkdirPath(path, err_path); err != nil {
-	// 	panic(err)
-	// }
+
 	for _, filename := range path {
-		//index := strings.LastIndex(filename, ".")
-		//filename = fmt.Sprintf("%s_%s.%s", Substr(filename, 0, index), date, Substr(filename, index+1, len(filename)-index))
-		//fmt.Println("===================================================filename:", filename)
 		if err := files.MakeDirAndFile(filename); err != nil {
 			panic(err)
 		}
 	}
 	for _, filename := range err_path {
-		//index := strings.LastIndex(filename, ".")
-		//filename = fmt.Sprintf("%s_%s.%s", Substr(filename, 0, index), date, Substr(filename, index+1, len(filename)-index))
-		//fmt.Println("===================================================filename:", filename)
 		if err := files.MakeDirAndFile(filename); err != nil {
 			panic(err)
 		}
@@ -196,27 +182,7 @@ func FileInitLogger(logfile string) {
 
 // init logger.
 func initLogger() {
-	// var js string
-	// if isDebug {
-	// 	js = fmt.Sprintf(`{
-	//   "level": "%s",
-	//   "encoding": "%s",
-	//   "outputPaths": ["stdout","%s"],
-	//   "errorOutputPaths": ["stderr","%s"]
-	//   }`, lvl, encoding, path, err_path)
-	// } else {
-	// 	js = fmt.Sprintf(`{
-	//   "level": "%s",
-	//   "encoding": "%s",
-	//   "outputPaths": ["%s"],
-	//   "errorOutputPaths": ["%s"]
-	//   }`, lvl, encoding, path, err_path)
-	// }
 	var cfg zap.Config
-	//log.Println("Zap config json:" + js)
-	// if err := json.Unmarshal([]byte(js), &cfg); err != nil {
-	// 	panic(err)
-	// }
 	cfg.OutputPaths = DefaultConfig.OutputPaths
 	cfg.ErrorOutputPaths = DefaultConfig.ErrorOutputPaths
 	var lvl zap.AtomicLevel

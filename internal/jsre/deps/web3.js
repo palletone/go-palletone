@@ -5244,8 +5244,8 @@ function Ptn(web3) {
     });
 
 
-    this.iban = Iban;
-    this.sendIBANTransaction = transfer.bind(null, this);
+    //this.iban = Iban;
+    //this.sendIBANTransaction = transfer.bind(null, this);
 }
 
 Object.defineProperty(Ptn.prototype, 'defaultBlock', {
@@ -5307,7 +5307,7 @@ var methods = function () {
         call: 'ptn_getBalance',
         params: 1,
         inputFormatter: [null]
-    });*/
+    });
 
     var getStorageAt = new Method({
         name: 'getStorageAt',
@@ -5344,9 +5344,9 @@ var methods = function () {
         name: 'getCompilers',
         call: 'ptn_getCompilers',
         params: 0
-    });
+    });*/
 
-    var getBlockTransactionCount = new Method({
+    /*var getBlockTransactionCount = new Method({
         name: 'getBlockTransactionCount',
         call: getBlockTransactionCountCall,
         params: 1,
@@ -5360,7 +5360,7 @@ var methods = function () {
         params: 1,
         inputFormatter: [formatters.inputBlockNumberFormatter],
         outputFormatter: utils.toDecimal
-    });
+    });*/
 
     var getTransaction = new Method({
         name: 'getTransaction',
@@ -5369,7 +5369,7 @@ var methods = function () {
         outputFormatter: formatters.outputTransactionFormatter
     });
 
-    var getTransactionFromBlock = new Method({
+    /* var getTransactionFromBlock = new Method({
         name: 'getTransactionFromBlock',
         call: transactionFromBlockCall,
         params: 2,
@@ -5390,7 +5390,7 @@ var methods = function () {
         params: 2,
         inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
         outputFormatter: utils.toDecimal
-    });
+    });*/
     /*var walletCreateTransaction = new Method({
         name: 'walletCreateTransaction',
         call: 'wallet_createRawTransaction',
@@ -5450,7 +5450,7 @@ var methods = function () {
         call: 'ptn_signTransaction',
         params: 1,
         inputFormatter: [formatters.inputTransactionFormatter]
-    });*/
+    });
 
     var sign = new Method({
         name: 'sign',
@@ -5464,9 +5464,9 @@ var methods = function () {
         call: 'ptn_call',
         params: 2,
         inputFormatter: [formatters.inputCallFormatter, formatters.inputDefaultBlockNumberFormatter]
-    });
+    });*/
 
-    var estimateGas = new Method({
+    /*var estimateGas = new Method({
         name: 'estimateGas',
         call: 'ptn_estimateGas',
         params: 1,
@@ -5484,7 +5484,7 @@ var methods = function () {
         name: 'compile.lll',
         call: 'ptn_compileLLL',
         params: 1
-    });
+    });*/
 
     var compileSerpent = new Method({
         name: 'compile.serpent',
@@ -5498,11 +5498,11 @@ var methods = function () {
         params: 3
     });
 
-    var getWork = new Method({
+    /*var getWork = new Method({
         name: 'getWork',
         call: 'ptn_getWork',
         params: 0
-    });
+    });*/
     /* var getTransactionsByTxid = new Method({
         name: 'getTransactionsByTxid',
         call: 'ptn_getTransactionsByTxid',
@@ -5529,7 +5529,7 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
-    var getHeader = new Method({
+    /*var getHeader = new Method({
         name: 'getHeader',
         call: 'ptn_getHeader',
         params: 2,
@@ -5565,7 +5565,7 @@ var methods = function () {
         call: 'dag_getUnitTxsHashHex',  
         params: 1,
         // inputFormatter: [null]
-    }); 
+    }); */
 
 
 // del ptn_getStorageAt
@@ -5594,58 +5594,58 @@ var methods = function () {
     return [
         forking,
         getUnitByHash,
-        getUnitByNumber,
-        getPrefix,
-        getBalance,
-        getStorageAt,
-        getCode,
-        getBlock,
-        getUncle,
-        getCompilers,
-        getBlockTransactionCount,
-        getBlockUncleCount,
+        //getUnitByNumber,
+        //getPrefix,
+        //getBalance,
+        //getStorageAt,
+        //getCode,
+       // getBlock,
+        //getUncle,
+       // getCompilers,
+        //getBlockTransactionCount,
+        //getBlockUncleCount,
         getTransaction,
-        getTransactionFromBlock,
-        getTransactionReceipt,
-        getTransactionCount,
-        call,
-        estimateGas,
-        walletCreateTransaction,
-        walletSendTransaction,
+        //getTransactionFromBlock,
+        //getTransactionReceipt,
+        //getTransactionCount,
+        //call,
+        //estimateGas,
+        //walletCreateTransaction,
+        //walletSendTransaction,
         //cmdCreateTransaction,
         //createRawTransaction,
         createMediatorVote,
         //signRawTransaction,
         //sendRawTransaction,
-        signTransaction,
-        sendTransaction,
-        sign,
-        compileSolidity,
-        compileLLL,
+        //signTransaction,
+        //sendTransaction,
+        //sign,
+        //compileSolidity,
+        //compileLLL,
         compileSerpent,
         submitWork,
-        getWork,
-        walletTokens,
-        walletBalance,
+        //getWork,
+        //walletTokens,
+        //walletBalance,
         getContract,
-        getHeader,
-        getUnit,
-        getUnitNumber,
-        getTrieSyncProgress,
-        getTransactionsByTxid,
+        //getHeader,
+        //getUnit,
+        //getUnitNumber,
+        //getTrieSyncProgress,
+        //getTransactionsByTxid,
         ccinstall,
         ccdeploy,
         ccstop,
         // createPayment,
-        getUnitTxsInfo,
-        getUnitTxsHashHex, 
+        //getUnitTxsInfo,
+        //getUnitTxsHashHex, 
     ];
 };
 
 
 var properties = function () {
     return [
-        new Property({
+        /*new Property({
             name: 'coinbase',
             getter: 'ptn_coinbase'
         }),
@@ -5667,12 +5667,12 @@ var properties = function () {
             name: 'gasPrice',
             getter: 'ptn_gasPrice',
             outputFormatter: formatters.outputBigNumberFormatter
-        }),
+        }),*/
         new Property({
             name: 'accounts',
             getter: 'ptn_accounts'
         }),
-        new Property({
+        /*new Property({
             name: 'blockNumber',
             getter: 'ptn_blockNumber',
             outputFormatter: utils.toDecimal
@@ -5680,7 +5680,7 @@ var properties = function () {
         new Property({
             name: 'protocolVersion',
             getter: 'ptn_protocolVersion'
-        })
+        })*/
     ];
 };
 
@@ -5693,17 +5693,17 @@ Ptn.prototype.filter = function (options, callback, filterCreationErrorCallback)
     return new Filter(options, 'ptn', this._requestManager, watches.ptn(), formatters.outputLogFormatter, callback, filterCreationErrorCallback);
 };
 
-Ptn.prototype.namereg = function () {
-    return this.contract(namereg.global.abi).at(namereg.global.address);
-};
+//Ptn.prototype.namereg = function () {
+  //  return this.contract(namereg.global.abi).at(namereg.global.address);
+//};
 
-Ptn.prototype.icapNamereg = function () {
-    return this.contract(namereg.icap.abi).at(namereg.icap.address);
-};
+//Ptn.prototype.icapNamereg = function () {
+  //  return this.contract(namereg.icap.abi).at(namereg.icap.address);
+//};
 
-Ptn.prototype.isSyncing = function (callback) {
-    return new IsSyncing(this._requestManager, callback);
-};
+//Ptn.prototype.isSyncing = function (callback) {
+  //  return new IsSyncing(this._requestManager, callback);
+//};
 
 module.exports = Ptn;
 
