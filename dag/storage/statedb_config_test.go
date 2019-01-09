@@ -23,15 +23,14 @@ package storage
 import (
 	"testing"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 func MockStateMemDb() IStateDb {
 	db, _ := ptndb.NewMemDatabase()
-	l := log.NewTestLog()
+	//l := log.NewTestLog()
 	//db, _ := ptndb.NewLDBDatabase("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb", 0, 0)
-	statedb := NewStateDb(db, l)
+	statedb := NewStateDb(db)
 	return statedb
 }
 

@@ -53,15 +53,15 @@ type UnitDag4Test struct {
 
 // NewTxPool4Test return TxPool structure for testing.
 func NewTxPool4Test() *TxPool {
-	l := log.NewTestLog()
-	testDag := NewUnitDag4Test(l)
-	return NewTxPool(DefaultTxPoolConfig, testDag, l)
+	//l := log.NewTestLog()
+	testDag := NewUnitDag4Test()
+	return NewTxPool(DefaultTxPoolConfig, testDag)
 }
 
-func NewUnitDag4Test(logger log.ILogger) *UnitDag4Test {
+func NewUnitDag4Test() *UnitDag4Test {
 	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db, logger)
-	idagdb := storage.NewDagDb(db, logger)
+	utxodb := storage.NewUtxoDb(db)
+	idagdb := storage.NewDagDb(db)
 
 	idagdb.PutHeadUnitHash(common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729"))
 	mutex := new(sync.RWMutex)
@@ -128,14 +128,14 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	l := log.NewTestLog()
-	utxodb := storage.NewUtxoDb(db, l)
+	//l := log.NewTestLog()
+	utxodb := storage.NewUtxoDb(db)
 	mutex := new(sync.RWMutex)
 	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
 	var pending_cache, queue_cache, all, origin int
-	pool := NewTxPool(config, unitchain, l)
+	pool := NewTxPool(config, unitchain)
 
 	defer pool.Stop()
 
