@@ -529,7 +529,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep),
+		Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep, propRep),
 		utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil

@@ -267,10 +267,10 @@ func (forkIndex *ForkIndex) addDate(hash common.Hash, parentsHash []common.Hash,
 }
 
 // the  index of parameter is fork's index
-func (forkIndex *ForkIndex) IsReachedIrreversibleHeight(index uint64, main_index uint64) bool {
+func (forkIndex *ForkIndex) IsReachedIrreversibleHeight(index uint64, main_index uint64, threshold int) bool {
 	forkIndexLock.RLock()
 	defer forkIndexLock.RUnlock()
-	if index <= 15 {
+	if int(index) <= threshold {
 		return false
 	}
 

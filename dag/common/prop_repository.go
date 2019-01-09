@@ -20,6 +20,7 @@
 package common
 
 import (
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -27,10 +28,19 @@ type PropRepository struct {
 	db storage.IPropertyDb
 }
 type IPropRepository interface {
+	GetGlobalProperty() (*modules.GlobalProperty, error)
+
+	GetDynGlobalProperty() (*modules.DynamicGlobalProperty, error)
 }
 
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
 	return &PropRepository{db: db}
+}
+func (pRep *PropRepository) GetGlobalProperty() (*modules.GlobalProperty, error) {
+	return pRep.db.RetrieveGlobalProp()
+}
+func (pRep *PropRepository) GetDynGlobalProperty() (*modules.DynamicGlobalProperty, error) {
+	return pRep.db.RetrieveDynGlobalProp()
 }
 
 /**
