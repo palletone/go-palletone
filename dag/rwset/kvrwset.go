@@ -20,11 +20,10 @@ package rwset
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-var logger = flogging.MustGetLogger("rwset")
+//var log = flogging.MustGetLogger("rwset")
 
 type KVRWSet struct {
 	Reads  map[string]*KVRead  `protobuf:"bytes,1,rep,name=reads" json:"reads,omitempty"`

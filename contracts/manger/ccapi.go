@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"golang.org/x/net/context"
 	"time"
-
 	"bytes"
 	"container/list"
 	"encoding/hex"
+	
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
 	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
@@ -50,7 +51,7 @@ func listDel(templateId []byte) {
 }
 
 func listGet(templateId []byte) (*TempCC, error) {
-	logger.Infof("listGet [%v]", templateId)
+	log.Infof("listGet [%v]", templateId)
 	for e := listCC.Front(); e != nil; e = e.Next() {
 		if bytes.Equal(e.Value.(TempCC).templateId, templateId) == true {
 			cc := &TempCC{
@@ -72,21 +73,21 @@ func Init(dag dag.IDag) error {
 		return err
 	}
 	if err := peerServerInit(); err != nil {
-		logger.Errorf("peerServerInit:%s", err)
+		log.Errorf("peerServerInit:%s", err)
 		return err
 	}
 	if err := systemContractInit(); err != nil {
-		logger.Errorf("systemContractInit error:%s", err)
+		log.Errorf("systemContractInit error:%s", err)
 		return err
 	}
-	logger.Info("contract manger init ok")
+	log.Info("contract manger init ok")
 
 	return nil
 }
 
 func InitNoSysCCC() error {
 	if err := peerServerInit(); err != nil {
-		logger.Errorf("peerServerInit error:%s", err)
+		log.Errorf("peerServerInit error:%s", err)
 		return err
 	}
 	return nil
@@ -94,12 +95,12 @@ func InitNoSysCCC() error {
 
 func Deinit() error {
 	if err := peerServerDeInit(); err != nil {
-		logger.Errorf("peerServerDeInit error:%s", err)
+		log.Errorf("peerServerDeInit error:%s", err)
 		return err
 	}
 
 	if err := systemContractDeInit(); err != nil {
-		logger.Errorf("systemContractDeInit error:%s", err)
+		log.Errorf("systemContractDeInit error:%s", err)
 		return err
 	}
 	return nil
@@ -125,9 +126,9 @@ func GetUsrCCList() {
 
 //install but not into db
 func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
-	logger.Infof("==========install enter=======")
-	logger.Infof("name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
-	defer logger.Infof("-----------install exit--------")
+	log.Infof("==========install enter=======")
+	log.Infof("name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
+	defer log.Infof("-----------install exit--------")
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
@@ -157,7 +158,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	//test
 	tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 	listAdd(tcc)
-	logger.Infof("template id [%v]", tcc.templateId)
+	log.Infof("template id [%v]", tcc.templateId)
 
 	return payloadUnit, nil
 }
@@ -225,16 +226,16 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 	}
 	err = cclist.SetChaincode(setChainId, 0, cc)
 	if err != nil {
-		logger.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
+		log.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
 	}
 
 	return cc.Id, nil, err
 }
 
 func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
-	logger.Infof("==========Deploy enter=======")
-	defer logger.Infof("-----------Deploy exit--------")
-	logger.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txid)
+	log.Infof("==========Deploy enter=======")
+	defer log.Infof("-----------Deploy exit--------")
+	log.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txid)
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -254,14 +255,14 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 	}
 	templateCC, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 	if err != nil {
-		logger.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, err)
+		log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, err)
 		return nil, nil, err
 	}
 
 	//test!!!!!!
 	//todo del
 	//if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
-	//	logger.Errorf("cc param is null")
+	//	log.Errorf("cc param is null")
 	//	//test
 	//	tmpcc, err := listGet(templateId)
 	//	if err == nil {
@@ -309,12 +310,12 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 	}
 	err = cclist.SetChaincode(setChainId, 0, cc)
 	if err != nil {
-		logger.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
+		log.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
 	}
 
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, txid, cc.Name, cc.Id, args, timeout)
 	if err != nil {
-		logger.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
+		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
 	return cc.Id, unit, err
@@ -324,9 +325,9 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
-	logger.Infof("==========Invoke enter=======")
-	logger.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
-	defer logger.Infof("-----------Invoke exit--------")
+	log.Infof("==========Invoke enter=======")
+	log.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
+	defer log.Infof("-----------Invoke exit--------")
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
@@ -339,7 +340,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 		return nil, errors.New(errstr)
 	}
 
-	logger.Infof("Invoke [%s][%s]", chainID, cc.Name)
+	log.Infof("Invoke [%s][%s]", chainID, cc.Name)
 	start := time.Now()
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
@@ -356,14 +357,14 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 
 	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
 	if err != nil {
-		logger.Errorf("signedEndorserProposa error[%v]", err)
+		log.Errorf("signedEndorserProposa error[%v]", err)
 		return nil, err
 	}
 
 	rsp, unit, err := es.ProcessProposal(idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 
 	if err != nil {
-		logger.Errorf("ProcessProposal error[%v]", err)
+		log.Errorf("ProcessProposal error[%v]", err)
 		return nil, err
 	}
 	t0 := time.Now()
@@ -372,10 +373,10 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	requstId, err := common.NewHashFromStr(txid)
 	unit.RequestId = *requstId
 	if err != nil {
-		logger.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
+		log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
 		return nil, err
 	}
-	logger.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
+	log.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
 
 	return unit, nil
 }
@@ -397,9 +398,9 @@ func StopByName(contractid []byte, chainID string, txid string, ccName string, c
 }
 
 func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) error {
-	logger.Infof("==========Stop enter=======")
-	logger.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	defer logger.Infof("-----------Stop exit--------")
+	log.Infof("==========Stop enter=======")
+	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
+	defer log.Infof("-----------Stop exit--------")
 
 	setChainId := "palletone"
 	if chainID != "" {

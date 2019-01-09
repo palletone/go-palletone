@@ -28,7 +28,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"strings"
@@ -36,12 +35,11 @@ import (
 
 //保存了对合约写集、Config、Asset信息
 type StateDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
 }
 
-func NewStateDb(db ptndb.Database, l log.ILogger) *StateDb {
-	return &StateDb{db: db, logger: l}
+func NewStateDb(db ptndb.Database) *StateDb {
+	return &StateDb{db: db}
 }
 
 // ######################### SAVE IMPL START ###########################

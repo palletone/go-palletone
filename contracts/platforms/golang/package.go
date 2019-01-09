@@ -22,12 +22,11 @@ package golang
 import (
 	"errors"
 	"fmt"
-	"strings"
-
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/palletone/go-palletone/common/log"
 	ccutil "github.com/palletone/go-palletone/contracts/platforms/util"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
@@ -41,10 +40,10 @@ var includeFileTypes = map[string]bool{
 	".json": true,
 }
 
-var logger = flogging.MustGetLogger("golang-platform")
+//var log = flogging.MustGetLogger("golang-platform")
 
 func getCodeFromFS(path string) (codegopath string, err error) {
-	logger.Debugf("getCodeFromFS %s", path)
+	log.Debugf("getCodeFromFS %s", path)
 	gopath, err := getGopath()
 	if err != nil {
 		return "", err
@@ -125,12 +124,12 @@ func findSource(gopath, pkg string) (SourceMap, error) {
 			// Allow import of META-INF metadata directories into chaincode code package tar.
 			// META-INF directories contain chaincode metadata artifacts such as statedb index definitions
 			if isMetadataDir(path, tld) {
-				logger.Debug("Files in META-INF directory will be included in code package tar:", path)
+				log.Debug("Files in META-INF directory will be included in code package tar:", path)
 				return nil
 			}
 
 			// Do not import any other directories into chaincode code package
-			logger.Debugf("skipping dir: %s", path)
+			log.Debugf("skipping dir: %s", path)
 			return filepath.SkipDir
 		}
 

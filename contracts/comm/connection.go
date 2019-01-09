@@ -30,16 +30,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/palletone/go-palletone/common/log"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 )
 
 const defaultTimeout = time.Second * 3
 
-var commLogger = flogging.MustGetLogger("comm")
+//var log = flogging.MustGetLogger("comm")
 var credSupport *CredentialSupport
 var once sync.Once
 
@@ -146,7 +145,7 @@ func (cs *CredentialSupport) GetDeliverServiceCredentials(channelID string) (cre
 
 	rootCACerts, exists := cs.OrdererRootCAsByChain[channelID]
 	if !exists {
-		commLogger.Errorf("Attempted to obtain root CA certs of a non existent channel: %s", channelID)
+		log.Errorf("Attempted to obtain root CA certs of a non existent channel: %s", channelID)
 		return nil, fmt.Errorf("didn't find any root CA certs for channel %s", channelID)
 	}
 
@@ -157,10 +156,10 @@ func (cs *CredentialSupport) GetDeliverServiceCredentials(channelID string) (cre
 			if err == nil {
 				certPool.AddCert(cert)
 			} else {
-				commLogger.Warnf("Failed to add root cert to credentials (%s)", err)
+				log.Warnf("Failed to add root cert to credentials (%s)", err)
 			}
 		} else {
-			commLogger.Warn("Failed to add root cert to credentials")
+			log.Warn("Failed to add root cert to credentials")
 		}
 	}
 	tlsConfig.RootCAs = certPool
@@ -183,7 +182,7 @@ func (cs *CredentialSupport) GetPeerCredentials() credentials.TransportCredentia
 		for _, root := range roots {
 			err := AddPemToCertPool(root, certPool)
 			if err != nil {
-				commLogger.Warningf("Failed adding certificates to peer's client TLS trust pool: %s", err)
+				log.Warningf("Failed adding certificates to peer's client TLS trust pool: %s", err)
 			}
 		}
 	*/
@@ -236,23 +235,23 @@ func InitTLSForShim(key, certStr string) credentials.TransportCredentials {
 	var sn string
 	priv, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
-		commLogger.Errorf("failed decoding private key from base64, string: %s, error: %v", key, err)
+		log.Errorf("failed decoding private key from base64, string: %s, error: %v", key, err)
 	}
 	pub, err := base64.StdEncoding.DecodeString(certStr)
 	if err != nil {
-		commLogger.Errorf("failed decoding public key from base64, string: %s, error: %v", certStr, err)
+		log.Errorf("failed decoding public key from base64, string: %s, error: %v", certStr, err)
 	}
 	cert, err := tls.X509KeyPair(pub, priv)
 	if err != nil {
-		commLogger.Errorf("failed loading certificate: %v", err)
+		log.Errorf("failed loading certificate: %v", err)
 	}
 	b, err := ioutil.ReadFile("" /*config.GetPath("peer.tls.rootcert.file")*/)
 	if err != nil {
-		commLogger.Errorf("failed loading root ca cert: %v", err)
+		log.Errorf("failed loading root ca cert: %v", err)
 	}
 	cp := x509.NewCertPool()
 	if !cp.AppendCertsFromPEM(b) {
-		commLogger.Errorf("failed to append certificates")
+		log.Errorf("failed to append certificates")
 	}
 	return credentials.NewTLS(&tls.Config{
 		Certificates: []tls.Certificate{cert},

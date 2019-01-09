@@ -22,7 +22,6 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -32,8 +31,8 @@ func TestGetUnit(t *testing.T) {
 	//log.Println("dbconn is nil , renew db  start ...")
 
 	db, _ := ptndb.NewMemDatabase()
-	l := log.NewTestLog()
-	dagdb := NewDagDb(db, l)
+	//l := log.NewTestLog()
+	dagdb := NewDagDb(db)
 	u, err := dagdb.GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 	assert.Nil(t, u, "empty db, must return nil Unit")
 	assert.NotNil(t, err)

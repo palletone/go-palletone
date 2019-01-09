@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	plog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -147,8 +146,8 @@ func TestSaveUtxos(t *testing.T) {
 		fmt.Println("Connect mem db error.")
 		return
 	}
-	l := plog.NewTestLog()
-	utxodb := NewUtxoDb(Dbconn, l)
+	//l := plog.NewTestLog()
+	utxodb := NewUtxoDb(Dbconn)
 
 	//1. construct object
 	myplane := NewAirPlane()

@@ -124,7 +124,7 @@ func newTestTx() *Transaction {
 	}
 	msg2 := &Message{
 		App:     APP_TEXT,
-		Payload: &TextPayload{TextHash: []byte("Hello PalletOne")},
+		Payload: &TextPayload{FileHash: string("Hello PalletOne")},
 	}
 	//txmsg2 := NewTransaction(
 	//	[]*Message{msg, msg},
