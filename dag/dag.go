@@ -52,7 +52,6 @@ type Dag struct {
 
 	unitRep  dagcommon.IUnitRepository
 	dagdb    storage.IDagDb
-	utxodb   storage.IUtxoDb
 	statedb  storage.IStateDb
 	propdb   storage.IPropertyDb
 	utxoRep  dagcommon.IUtxoRepository
@@ -516,11 +515,11 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		unitRep:       unitRep,
-		dagdb:         dagDb,
-		utxodb:        utxoDb,
+		Cache:   freecache.NewCache(200 * 1024 * 1024),
+		Db:      db,
+		unitRep: unitRep,
+		dagdb:   dagDb,
+
 		statedb:       stateDb,
 		propdb:        propDb,
 		utxoRep:       utxoRep,
@@ -550,11 +549,11 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		unitRep:       unitRep,
-		dagdb:         dagDb,
-		utxodb:        utxoDb,
+		Cache:   freecache.NewCache(200 * 1024 * 1024),
+		Db:      db,
+		unitRep: unitRep,
+		dagdb:   dagDb,
+
 		statedb:       stateDb,
 		propdb:        propDb,
 		utxoRep:       utxoRep,
@@ -582,11 +581,11 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		unitRep:       unitRep,
-		dagdb:         dagDb,
-		utxodb:        utxoDb,
+		Cache:   freecache.NewCache(200 * 1024 * 1024),
+		Db:      db,
+		unitRep: unitRep,
+		dagdb:   dagDb,
+
 		statedb:       stateDb,
 		utxoRep:       utxoRep,
 		validate:      validate,
@@ -667,7 +666,7 @@ func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	d.Mutex.RLock()
 	defer d.Mutex.RUnlock()
-	return d.utxodb.GetUtxoEntry(outpoint)
+	return d.utxoRep.GetUtxoEntry(outpoint)
 }
 
 //func (d *Dag) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
@@ -706,7 +705,7 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
-	err := view.FetchUtxos(d.utxodb, neededSet)
+	err := view.FetchUtxos(d.utxoRep, neededSet)
 	// get current hash
 	// assetId 暂时默认为ptn的assetId
 	unit := d.GetCurrentUnit(modules.PTNCOIN)
@@ -743,7 +742,7 @@ func (d *Dag) GetUtxosOutViewbyUnit(unit *modules.Unit) *txspool.UtxoViewpoint {
 // GetAllUtxos is return all utxo.
 func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	d.Mutex.RLock()
-	items, err := d.utxodb.GetAllUtxos()
+	items, err := d.utxoRep.GetAllUtxos()
 	// TODO---> merge dag.cache
 	// if d.utxos_cache != nil {
 	// 	for key, utxo := range d.utxos_cache {
@@ -779,7 +778,7 @@ func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 func (d *Dag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
 	// TODO
 	// merge dag.cache
-	all, err := d.utxodb.GetAddrOutpoints(addr)
+	all, err := d.utxoRep.GetAddrOutpoints(addr)
 	if d.utxos_cache != nil {
 		for hash, utxos := range d.utxos_cache {
 			for key, utxo := range utxos {
@@ -811,7 +810,7 @@ func (d *Dag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) 
 }
 
 func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
-	utxo, err := d.utxodb.GetUtxoEntry(outPoint)
+	utxo, err := d.utxoRep.GetUtxoEntry(outPoint)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -828,7 +827,7 @@ func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	//TODO only get one token's UTXO
-	all, err := d.utxodb.GetAddrUtxos(addr)
+	all, err := d.utxoRep.GetAddrUtxos(addr)
 	if d.utxos_cache != nil {
 		assetStr := asset.String()
 		for hash, utxos := range d.utxos_cache {
@@ -866,7 +865,7 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// TODO
 	// merge dag.cache
-	all, err := d.utxodb.GetAddrUtxos(addr)
+	all, err := d.utxoRep.GetAddrUtxos(addr)
 	if d.utxos_cache != nil {
 		for hash, utxos := range d.utxos_cache {
 			for key, utxo := range utxos {
@@ -899,7 +898,7 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 
 func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 
-	return d.utxodb.SaveUtxoView(view.Entries())
+	return d.utxoRep.SaveUtxoView(view.Entries())
 }
 
 func (d *Dag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
@@ -986,7 +985,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	go func(unit *modules.Unit) {
 		view := txspool.NewUtxoViewpoint()
 		if unitState == modules.UNIT_STATE_VALIDATED {
-			view.FetchUnitUtxos(d.utxodb, unit)
+			view.FetchUnitUtxos(d.utxoRep, unit)
 			// update leveldb
 			if view != nil {
 				needSet := make(map[modules.OutPoint]struct{})
@@ -994,7 +993,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 					needSet[key] = struct{}{}
 				}
 
-				if err := view.SpentUtxo(d.utxodb, needSet); err != nil {
+				if err := view.SpentUtxo(d.utxoRep, needSet); err != nil {
 					log.Error("update utxo failed", "error", err)
 					// TODO
 					// 回滚 view utxo  ，回滚world_state
@@ -1004,7 +1003,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			//view.FetchOutputUtxos(db, unit)
 			view2 := d.GetUtxosOutViewbyUnit(unit)
 			for key, utxo := range view2.Entries() {
-				if err := d.utxodb.SaveUtxoEntity(&key, utxo); err != nil {
+				if err := d.utxoRep.SaveUtxoEntity(&key, utxo); err != nil {
 					log.Error("update output utxo failed", "error", err)
 					// TODO
 					// add  d.cache
@@ -1013,7 +1012,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 
 		} else {
 			// get input utxos
-			view.FetchUnitUtxos(d.utxodb, unit)
+			view.FetchUnitUtxos(d.utxoRep, unit)
 			// update  cache
 			utxos := make(map[modules.OutPoint]*modules.Utxo)
 			var exist bool
@@ -1365,7 +1364,7 @@ func (d *Dag) UpdateUtxosByUnit(hash common.Hash) error {
 	if !has {
 		return errors.New("the hash is not exist in utxoscache.")
 	}
-	return d.utxodb.SaveUtxoView(utxos)
+	return d.utxoRep.SaveUtxoView(utxos)
 }
 func (d *Dag) QueryDbByKey(key []byte) ([]byte, error) {
 	return d.Db.Get(key)
