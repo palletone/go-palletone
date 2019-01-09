@@ -51,6 +51,7 @@ type Logger struct {
 	callerSkip int
 
 	openModule []string
+	fileName string
 }
 
 // New constructs a new Logger from the provided zapcore.Core and Options. If
@@ -150,6 +151,14 @@ func (log *Logger) Named(s string) *Logger {
 		l.name = strings.Join([]string{l.name, s}, ".")
 	}
 	return l
+}
+
+func (log *Logger) SetFileName(filename string){
+	log.fileName = filename
+}
+
+func (log *Logger) GetFileName()string{
+	return log.fileName
 }
 
 // WithOptions clones the current Logger, applies the supplied Options, and

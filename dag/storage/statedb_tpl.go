@@ -21,11 +21,12 @@
 package storage
 
 import (
+	"strings"
+
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strings"
 )
 
 func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error {
@@ -88,12 +89,8 @@ func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVers
 	if data == nil || len(data) != 1 {
 		return nil, nil
 	}
-	//TODO
 	for _, v := range data {
 		var version modules.StateVersion
-		//if !version.ParseStringKey(k) {
-		//	return nil, nil
-		//}
 		version.SetBytes(v[:29])
 		return &version, v[29:]
 	}
@@ -123,13 +120,13 @@ func (statedb *StateDb) GetContractTpl(templateID []byte) (*modules.StateVersion
 			}
 		}
 	} else {
-		statedb.logger.Debug("the contractTlp info: data!=1", "len", len(data))
+		statedb.logger.Debug("The contractTlp info: data!=1", "len", len(data))
 	}
 	nameByte := make([]byte, 0)
 	version, nameByte = statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
 		statedb.logger.Debug("GetTplState err:version is nil")
-		//return version, bytecode, "", ""
+		return version, bytecode, "", "", ""
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
 		statedb.logger.Error("GetContractTpl when get name", "error", err.Error())
