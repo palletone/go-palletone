@@ -32,6 +32,8 @@ import (
 	"math/big"
 	"net"
 	"time"
+	
+	"github.com/palletone/go-palletone/common/log"
 )
 
 type KeyGenFunc func() (*certKeyPair, error)
@@ -101,10 +103,10 @@ func newCertKeyPair(isCA bool, isServer bool, host string, certSigner crypto.Sig
 		template.NotAfter = tenYearsFromNow
 		template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
 		if ip := net.ParseIP(host); ip != nil {
-			logger.Debug("Classified", host, "as an IP address, adding it as an IP SAN")
+			log.Debug("Classified", host, "as an IP address, adding it as an IP SAN")
 			template.IPAddresses = append(template.IPAddresses, ip)
 		} else {
-			logger.Debug("Classified", host, "as a hostname, adding it as a DNS SAN")
+			log.Debug("Classified", host, "as a hostname, adding it as a DNS SAN")
 			template.DNSNames = append(template.DNSNames, host)
 		}
 	}

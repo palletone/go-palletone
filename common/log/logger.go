@@ -21,18 +21,16 @@
 package log
 
 import (
-	//"fmt"
-	"log"
-	"strings"
-
 	"fmt"
 	"github.com/palletone/go-palletone/common/files"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"log"
+	"strings"
+	"sync"
 	"time"
 )
 
-const errorKey = "ZAPLOG_ERROR"
 const (
 	RootBuild      = "build"
 	RootCmd        = "cmd"
@@ -45,12 +43,18 @@ const (
 	RootStatistics = "statistics"
 	RootVendor     = "vendor"
 	RootWallet     = "wallet"
+
+	errorKey  = "ZAPLOG_ERROR"
+	LogStdout = "stdout"
 )
 
 var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
 
 var Logger *zap.Logger
+var originFileName string
+var mux sync.RWMutex
 
+/*
 type ILogger interface {
 	Trace(msg string, ctx ...interface{})
 	Debug(msg string, ctx ...interface{})
@@ -78,6 +82,152 @@ func New(ctx ...interface{}) *Plogger {
 	pl.logger = *Logger
 	return pl
 }
+*/
+// init zap.logger
+func InitLogger() {
+	date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
+	for i, path := range DefaultConfig.OutputPaths {
+		if path == LogStdout {
+			continue
+		}
+		if originFileName == "" {
+			originFileName = path
+		}
+		index := strings.LastIndex(originFileName, ".")
+		if -1 == index {
+			index = len(originFileName)
+		}
+
+		DefaultConfig.OutputPaths[i] = fmt.Sprintf("%s_%s.%s", Substr(originFileName, 0, index), date, Substr(originFileName, index+1, len(originFileName)-index))
+		if err := files.MakeDirAndFile(DefaultConfig.OutputPaths[i]); err != nil {
+			panic(err)
+		}
+	}
+
+	initLogger()
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
+	go check()
+}
+
+func ConInitLogger() {
+
+	DefaultConfig.LoggerLvl = "FATAL"
+	initLogger()
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
+}
+
+func FileInitLogger(logfile string) {
+	DefaultConfig.OutputPaths = []string{logfile}
+	initLogger()
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
+}
+
+// init logger.
+func initLogger() {
+	var cfg zap.Config
+	cfg.OutputPaths = DefaultConfig.OutputPaths
+	cfg.ErrorOutputPaths = DefaultConfig.ErrorOutputPaths
+	var lvl zap.AtomicLevel
+	lvl.UnmarshalText([]byte(DefaultConfig.LoggerLvl))
+	cfg.Level = lvl
+	cfg.Encoding = DefaultConfig.Encoding
+	cfg.Development = DefaultConfig.Development
+	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	//cfg.EncoderConfig.EncodeLevel=zapcore.LowercaseColorLevelEncoder
+	l, err := cfg.Build()
+	if err != nil {
+		log.Fatal("init logger error: ", err)
+	}
+	// add openModule
+	if strings.Contains(DefaultConfig.OpenModule[0], ",") {
+		arr := strings.Split(DefaultConfig.OpenModule[0], ",")
+		DefaultConfig.OpenModule[0] = ""
+		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, arr...)
+		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
+	} else {
+		if !(len(DefaultConfig.OpenModule) == 1 && DefaultConfig.OpenModule[0] == "all") {
+			DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
+		}
+	}
+	l.SetOpenModule(DefaultConfig.OpenModule)
+	Logger = l.WithOptions(zap.AddCallerSkip(1))
+	Logger.SetFileName(DefaultConfig.OutputPaths[1])
+}
+
+// Trace
+func Trace(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		//log.Println("logger is nil.")
+		InitLogger()
+	}
+	//log.Println("logger trace is  ok.")
+	fileds := ctxTOfileds(ctx...)
+	Logger.Debug(msg, fileds...)
+
+}
+
+// Debug
+func Debug(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Debug(msg, fileds...)
+}
+func Debugf(format string, ctx ...interface{}) {
+	Logger.Debug(fmt.Sprintf(format, ctx...))
+}
+
+func Infof(msg string, ctx ...interface{}) {
+	Logger.Info(fmt.Sprintf(msg, ctx...))
+}
+
+// Info
+func Info(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Info(msg, fileds...)
+}
+
+// Warn
+func Warn(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Warn(msg, fileds...)
+}
+func Warnf(msg string, ctx ...interface{}) {
+	Logger.Warn(fmt.Sprintf(msg, ctx...))
+}
+
+// Error
+func Error(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
+
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
+}
+
+func Errorf(format string, ctx ...interface{}) {
+	Logger.Error(fmt.Sprintf(format, ctx...))
+}
+
+// Crit
+func Crit(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
+	fileds := ctxTOfileds(ctx...)
+	Logger.Error(msg, fileds...)
+}
+
+/*
 func NewTestLog() *Plogger {
 	DefaultConfig = Config{
 		OutputPaths:      []string{"stdout"},
@@ -138,179 +288,7 @@ func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
 	pl.logger.Error(msg, fileds...)
 }
-
-// init zap.logger
-func InitLogger() {
-	date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
-	path := DefaultConfig.OutputPaths
-
-	err_path := DefaultConfig.ErrorOutputPaths
-
-	// if the config file is damaged or lost, then initialize the config if log system.
-	if len(path) == 0 {
-		path = []string{"log/all_" + date + ".log"}
-	}
-	if len(err_path) == 0 {
-		err_path = []string{"log/err_" + date + ".log"}
-	}
-	// if lvl == "" {
-	// 	lvl = "INFO"
-	// }
-	// if encoding == "" {
-	// 	encoding = "console"
-	// }
-	// if err := mkdirPath(path, err_path); err != nil {
-	// 	panic(err)
-	// }
-	for _, filename := range path {
-		//index := strings.LastIndex(filename, ".")
-		//filename = fmt.Sprintf("%s_%s.%s", Substr(filename, 0, index), date, Substr(filename, index+1, len(filename)-index))
-		//fmt.Println("===================================================filename:", filename)
-		if err := files.MakeDirAndFile(filename); err != nil {
-			panic(err)
-		}
-	}
-	for _, filename := range err_path {
-		//index := strings.LastIndex(filename, ".")
-		//filename = fmt.Sprintf("%s_%s.%s", Substr(filename, 0, index), date, Substr(filename, index+1, len(filename)-index))
-		//fmt.Println("===================================================filename:", filename)
-		if err := files.MakeDirAndFile(filename); err != nil {
-			panic(err)
-		}
-	}
-	initLogger()
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
-}
-func ConInitLogger() {
-
-	DefaultConfig.LoggerLvl = "FATAL"
-	initLogger()
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
-}
-
-func FileInitLogger(logfile string) {
-	DefaultConfig.OutputPaths = []string{logfile}
-	initLogger()
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
-}
-
-// init logger.
-func initLogger() {
-	// var js string
-	// if isDebug {
-	// 	js = fmt.Sprintf(`{
-	//   "level": "%s",
-	//   "encoding": "%s",
-	//   "outputPaths": ["stdout","%s"],
-	//   "errorOutputPaths": ["stderr","%s"]
-	//   }`, lvl, encoding, path, err_path)
-	// } else {
-	// 	js = fmt.Sprintf(`{
-	//   "level": "%s",
-	//   "encoding": "%s",
-	//   "outputPaths": ["%s"],
-	//   "errorOutputPaths": ["%s"]
-	//   }`, lvl, encoding, path, err_path)
-	// }
-	var cfg zap.Config
-	//log.Println("Zap config json:" + js)
-	// if err := json.Unmarshal([]byte(js), &cfg); err != nil {
-	// 	panic(err)
-	// }
-	cfg.OutputPaths = DefaultConfig.OutputPaths
-	cfg.ErrorOutputPaths = DefaultConfig.ErrorOutputPaths
-	var lvl zap.AtomicLevel
-	lvl.UnmarshalText([]byte(DefaultConfig.LoggerLvl))
-	cfg.Level = lvl
-	cfg.Encoding = DefaultConfig.Encoding
-	cfg.Development = DefaultConfig.Development
-	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	//cfg.EncoderConfig.EncodeLevel=zapcore.LowercaseColorLevelEncoder
-	l, err := cfg.Build()
-	if err != nil {
-		log.Fatal("init logger error: ", err)
-	}
-	// add openModule
-	if strings.Contains(DefaultConfig.OpenModule[0], ",") {
-		arr := strings.Split(DefaultConfig.OpenModule[0], ",")
-		DefaultConfig.OpenModule[0] = ""
-		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, arr...)
-		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
-	} else {
-		if !(len(DefaultConfig.OpenModule) == 1 && DefaultConfig.OpenModule[0] == "all") {
-			DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
-		}
-	}
-	l.SetOpenModule(DefaultConfig.OpenModule)
-	Logger = l.WithOptions(zap.AddCallerSkip(1))
-}
-
-// Trace
-func Trace(msg string, ctx ...interface{}) {
-	if Logger == nil {
-		//log.Println("logger is nil.")
-		InitLogger()
-	}
-	//log.Println("logger trace is  ok.")
-	fileds := ctxTOfileds(ctx...)
-	Logger.Debug(msg, fileds...)
-
-}
-
-// Debug
-func Debug(msg string, ctx ...interface{}) {
-	if Logger == nil {
-		InitLogger()
-	}
-	fileds := ctxTOfileds(ctx...)
-	Logger.Debug(msg, fileds...)
-}
-func Debugf(format string, ctx ...interface{}) {
-	Logger.Debug(fmt.Sprintf(format, ctx...))
-}
-
-// Info
-func Info(msg string, ctx ...interface{}) {
-	if Logger == nil {
-		InitLogger()
-	}
-	fileds := ctxTOfileds(ctx...)
-	Logger.Info(msg, fileds...)
-}
-
-// Warn
-func Warn(msg string, ctx ...interface{}) {
-	if Logger == nil {
-		InitLogger()
-	}
-	fileds := ctxTOfileds(ctx...)
-	Logger.Warn(msg, fileds...)
-}
-
-// Error
-func Error(msg string, ctx ...interface{}) {
-	if Logger == nil {
-		InitLogger()
-	}
-
-	fileds := ctxTOfileds(ctx...)
-	Logger.Error(msg, fileds...)
-}
-
-func Errorf(format string, ctx ...interface{}) {
-	Logger.Error(fmt.Sprintf(format, ctx...))
-}
-
-// Crit
-func Crit(msg string, ctx ...interface{}) {
-	if Logger == nil {
-		InitLogger()
-	}
-	fileds := ctxTOfileds(ctx...)
-	Logger.Error(msg, fileds...)
-}
-
+*/
 // ctx transfer to  fileds
 func ctxTOfileds(ctx ...interface{}) []zap.Field {
 	// ctx translate into zap.Filed
@@ -416,4 +394,20 @@ func Substr(str string, start, length int) string {
 	}
 
 	return string(rs[start:end])
+}
+
+func check() {
+	for {
+		time.Sleep(time.Duration(5) * time.Second)
+		date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
+		mux.RLock()
+		filename := Logger.GetFileName()
+		mux.RUnlock()
+		if strings.Index(filename, date) == -1 {
+			mux.Lock()
+			Logger = nil
+			InitLogger()
+			mux.Unlock()
+		}
+	}
 }

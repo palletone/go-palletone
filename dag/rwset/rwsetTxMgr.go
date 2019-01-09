@@ -21,7 +21,9 @@ package rwset
 
 import (
 	"errors"
+
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 type RwSetTxMgr struct {
@@ -37,11 +39,11 @@ func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
 
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
 func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string) (TxSimulator, error) {
-	logger.Debugf("constructing new tx simulator")
+	log.Debugf("constructing new tx simulator")
 
 	if _, ok := m.baseTxSim[chainid]; ok {
 		if m.baseTxSim[chainid].(*RwSetTxSimulator).txid == txid {
-			logger.Infof("chainid[%s] , txid[%s]already exit", chainid, txid)
+			log.Infof("chainid[%s] , txid[%s]already exit", chainid, txid)
 			return m.baseTxSim[chainid], nil
 		}
 	}
@@ -51,7 +53,7 @@ func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string) 
 		return nil, errors.New("NewBaseTxSimulator is failed.")
 	}
 	m.baseTxSim[chainid] = t
-	logger.Infof("creat new rwSetTx")
+	log.Infof("creat new rwSetTx")
 
 	return t, nil
 }

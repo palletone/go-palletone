@@ -162,7 +162,7 @@ func TestAccessControl(t *testing.T) {
 	}
 	logger.SetBackend(logAsserter)
 	defer func() {
-		logger = flogging.MustGetLogger("accessControl")
+		//logger = flogging.MustGetLogger("accessControl")
 	}()
 
 	chaincodeID := &pb.ChaincodeID{Name: "example02"}

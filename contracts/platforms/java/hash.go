@@ -22,19 +22,19 @@ package java
 import (
 	"archive/tar"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
-	"errors"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	ccutil "github.com/palletone/go-palletone/contracts/platforms/util"
+	"github.com/palletone/go-palletone/common/log"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
 )
 
-var logger = flogging.MustGetLogger("java/hash")
+//var log = flogging.MustGetLogger("java/hash")
 
 //collectChaincodeFiles collects chaincode files and generates hashcode for the
 //package.
@@ -73,7 +73,7 @@ func collectChaincodeFiles(spec *pb.ChaincodeSpec, tw *tar.Writer) (string, erro
 
 	//install will not have inputs and we don't have to collect hash for it
 	if spec.Input == nil || len(spec.Input.Args) == 0 {
-		logger.Debugf("not using input for hash computation for %v ", chaincodeID)
+		log.Debugf("not using input for hash computation for %v ", chaincodeID)
 	} else {
 		inputbytes, err2 := proto.Marshal(spec.Input)
 		if err2 != nil {

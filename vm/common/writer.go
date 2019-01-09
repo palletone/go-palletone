@@ -29,11 +29,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/pkg/errors"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 )
 
-var vmLogger = flogging.MustGetLogger("container")
+//var log = flogging.MustGetLogger("container")
 
 // These filetypes are excluded while creating the tar package sent to Docker
 // Generated .class and other temporary files can be excluded
@@ -53,7 +53,7 @@ func WriteFolderToTarPackage(tw *tar.Writer, srcPath string, excludeDir string, 
 		rootDirectory = rootDirectory[:len(rootDirectory)-1]
 	}
 
-	vmLogger.Infof("rootDirectory = %s", rootDirectory)
+	log.Infof("rootDirectory = %s", rootDirectory)
 
 	//append "/" if necessary
 	if excludeDir != "" && strings.LastIndex(excludeDir, "/") < len(excludeDir)-1 {
@@ -110,7 +110,7 @@ func WriteFolderToTarPackage(tw *tar.Writer, srcPath string, excludeDir string, 
 			//// Hidden files are not supported as metadata, therefore ignore them.
 			//// User often doesn't know that hidden files are there, and may not be able to delete them, therefore warn user rather than error out.
 			//if strings.HasPrefix(filename, ".") {
-			//	vmLogger.Warningf("Ignoring hidden file in metadata directory: %s", packagepath)
+			//	log.Warningf("Ignoring hidden file in metadata directory: %s", packagepath)
 			//	return nil
 			//}
 			//
@@ -142,7 +142,7 @@ func WriteFolderToTarPackage(tw *tar.Writer, srcPath string, excludeDir string, 
 	}
 
 	if err := filepath.Walk(rootDirectory, walkFn); err != nil {
-		vmLogger.Infof("Error walking rootDirectory: %s", err)
+		log.Infof("Error walking rootDirectory: %s", err)
 		return err
 	}
 	// return error if no files were found
@@ -155,11 +155,11 @@ func WriteFolderToTarPackage(tw *tar.Writer, srcPath string, excludeDir string, 
 //Package Java project to tar file from the source path
 func WriteJavaProjectToPackage(tw *tar.Writer, srcPath string) error {
 
-	vmLogger.Debugf("Packaging Java project from path %s", srcPath)
+	log.Debugf("Packaging Java project from path %s", srcPath)
 
 	if err := WriteFolderToTarPackage(tw, srcPath, "", nil, javaExcludeFileTypes); err != nil {
 
-		vmLogger.Errorf("Error writing folder to tar package %s", err)
+		log.Errorf("Error writing folder to tar package %s", err)
 		return err
 	}
 	// Write the tar file out
@@ -173,7 +173,7 @@ func WriteJavaProjectToPackage(tw *tar.Writer, srcPath string) error {
 //WriteFileToPackage writes a file to the tarball
 func WriteFileToPackage(localpath string, packagepath string, tw *tar.Writer) error {
 	//glh
-	//vmLogger.Debug("Writing file to tarball:", packagepath)
+	//log.Debug("Writing file to tarball:", packagepath)
 	fd, err := os.Open(localpath)
 	if err != nil {
 		return fmt.Errorf("%s: %s", localpath, err)

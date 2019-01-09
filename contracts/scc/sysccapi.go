@@ -25,18 +25,17 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	"github.com/palletone/go-palletone/vm/inproccontroller"
-
+	"github.com/palletone/go-palletone/common/log"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	cclist "github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/palletone/go-palletone/vm/inproccontroller"
 )
 
-var sysccLogger = flogging.MustGetLogger("sccapi")
+//var log = flogging.MustGetLogger("sccapi")
 
 // SystemChaincode defines the metadata needed to initialize system chaincode
 // when the comes up. SystemChaincodes are installed by adding an
@@ -77,7 +76,7 @@ type SystemChaincode struct {
 // registerSysCC registers the given system chaincode with the peer
 func registerSysCC(syscc *SystemChaincode) (bool, error) {
 	if !syscc.Enabled || isWhitelisted(syscc) {
-		sysccLogger.Info(fmt.Sprintf("system chaincode (%s,%s,%t) disabled", syscc.Name, syscc.Path, syscc.Enabled))
+		log.Info(fmt.Sprintf("system chaincode (%s,%s,%t) disabled", syscc.Name, syscc.Path, syscc.Enabled))
 		return false, nil
 	}
 
@@ -86,19 +85,19 @@ func registerSysCC(syscc *SystemChaincode) (bool, error) {
 		//if the type is registered, the instance may not be... keep going
 		if _, ok := err.(inproccontroller.SysCCRegisteredErr); !ok {
 			errStr := fmt.Sprintf("could not register (%s,%v): %s", syscc.Path, syscc, err)
-			sysccLogger.Error(errStr)
+			log.Error(errStr)
 			return false, fmt.Errorf(errStr)
 		}
 	}
 
-	sysccLogger.Infof("system chaincode %s(%s) registered", syscc.Name, syscc.Path)
+	log.Infof("system chaincode %s(%s) registered", syscc.Name, syscc.Path)
 	return true, err
 }
 
 // deploySysCC deploys the given system chaincode on a chain
 func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	if !syscc.Enabled || isWhitelisted(syscc) {
-		sysccLogger.Info(fmt.Sprintf("system chaincode (%s,%s) disabled", syscc.Name, syscc.Path))
+		log.Info(fmt.Sprintf("system chaincode (%s,%s) disabled", syscc.Name, syscc.Path))
 		return nil
 	}
 	var err error
@@ -131,20 +130,20 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	chaincodeDeploymentSpec, err := buildSysCC(ctxt, spec)
 
 	if err != nil {
-		sysccLogger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
+		log.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
 		return err
 	}
-	sysccLogger.Infof("buildSysCC chaincodeDeploymentSpec =%v", chaincodeDeploymentSpec)
+	log.Infof("buildSysCC chaincodeDeploymentSpec =%v", chaincodeDeploymentSpec)
 	version := util.GetSysCCVersion()
 	cccid := ccprov.GetCCContext(syscc.Id, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
 
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, 0)
 
 	if err != nil {
-		sysccLogger.Errorf("ExecuteWithErrorFilter with syscc.Name[%s] chainId[%s] err !!", syscc.Name, chainID)
+		log.Errorf("ExecuteWithErrorFilter with syscc.Name[%s] chainId[%s] err !!", syscc.Name, chainID)
 	} else {
-		sysccLogger.Info("system chaincode deployed ok!!")
-		sysccLogger.Infof("contract name[%s],path[%s]", syscc.Name, syscc.Path)
+		log.Info("system chaincode deployed ok!!")
+		log.Infof("contract name[%s],path[%s]", syscc.Name, syscc.Path)
 		cc := &cclist.CCInfo{
 			Id:      syscc.Id,
 			Name:    syscc.Name,
@@ -153,7 +152,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 		}
 		err = cclist.SetChaincode(chainID, 0, cc)
 		if err != nil {
-			sysccLogger.Errorf("setchaincode[%s]-[%s] fail", chainID, cc.Name)
+			log.Errorf("setchaincode[%s]-[%s] fail", chainID, cc.Name)
 			return err
 		}
 	}
@@ -168,7 +167,7 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode) error {
 	// First build and get the deployment spec
 	chaincodeDeploymentSpec, err := buildSysCC(ctx, spec)
 	if err != nil {
-		sysccLogger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
+		log.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
 		return err
 	}
 
@@ -202,7 +201,7 @@ func isWhitelisted(syscc *SystemChaincode) bool {
 //note the chaincode must still be deployed and launched like a user chaincode will be
 func RegisterSysCCs() {
 	for _, sysCC := range systemChaincodes {
-		sysccLogger.Infof("<%v>", sysCC)
+		log.Infof("<%v>", sysCC)
 		registerSysCC(sysCC)
 	}
 }

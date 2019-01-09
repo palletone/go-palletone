@@ -23,7 +23,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-
 	"math/big"
 	"reflect"
 	"strings"
@@ -66,22 +65,22 @@ type UnitRepository struct {
 	statedb        storage.IStateDb
 	validate       Validator
 	utxoRepository IUtxoRepository
-	logger         log.ILogger
+	//logger         log.ILogger
 }
 
-func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *UnitRepository {
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
-	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
+func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb) *UnitRepository {
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 
-func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
-	dagdb := storage.NewDagDb(db, l)
-	utxodb := storage.NewUtxoDb(db, l)
-	statedb := storage.NewStateDb(db, l)
-	idxdb := storage.NewIndexDb(db, l)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
-	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
+func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
+	dagdb := storage.NewDagDb(db)
+	utxodb := storage.NewUtxoDb(db)
+	statedb := storage.NewStateDb(db)
+	idxdb := storage.NewIndexDb(db)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 
@@ -208,7 +207,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	chainIndex, err := unitOp.statedb.GetCurrentChainIndex(asset.AssetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index + 1}
-		unitOp.logger.Error("GetCurrentChainIndex is failed.", "error", err)
+		log.Error("GetCurrentChainIndex is failed.", "error", err)
 	} else {
 		chainIndex.Index += 1
 	}
@@ -691,7 +690,9 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 保存TextPayload
 save TextPayload data
 */
-func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.Message, txIndex uint32) bool {
+
+func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
+
 
 	return true
 }

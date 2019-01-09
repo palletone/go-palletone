@@ -30,13 +30,13 @@ import (
 	"path/filepath"
 
 	"github.com/fsouza/go-dockerclient"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
-var logger = flogging.MustGetLogger("util")
+//var log = flogging.MustGetLogger("util")
 
 //ComputeHash computes contents hash based on previous hash
 func ComputeHash(contents []byte, hash []byte) []byte {
@@ -59,7 +59,7 @@ func ComputeHash(contents []byte, hash []byte) []byte {
 //hash value is returned for the entire directory structure
 func HashFilesInDir(rootDir string, dir string, hash []byte, tw *tar.Writer) ([]byte, error) {
 	currentDir := filepath.Join(rootDir, dir)
-	logger.Debugf("hashFiles %s", currentDir)
+	log.Debugf("hashFiles %s", currentDir)
 	//ReadDir returns sorted list of files in dir
 	fis, err := ioutil.ReadDir(currentDir)
 	if err != nil {
@@ -78,7 +78,7 @@ func HashFilesInDir(rootDir string, dir string, hash []byte, tw *tar.Writer) ([]
 		fqp := filepath.Join(rootDir, name)
 		buf, err := ioutil.ReadFile(fqp)
 		if err != nil {
-			logger.Errorf("Error reading %s\n", err)
+			log.Errorf("Error reading %s\n", err)
 			return hash, err
 		}
 
@@ -159,7 +159,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 		}
 	}
 
-	logger.Debugf("Attempting build with image %s", opts.Image)
+	log.Debugf("Attempting build with image %s", opts.Image)
 
 	//-----------------------------------------------------------------------------------
 	// Ensure the image exists locally, or pull it from a registry if it doesn't
@@ -167,7 +167,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	//-----------------------------------------------------------------------------------
 	_, err = client.InspectImage(opts.Image)
 	if err != nil {
-		logger.Debugf("Image %s does not exist locally, attempt pull", opts.Image)
+		log.Debugf("Image %s does not exist locally, attempt pull", opts.Image)
 
 		err = client.PullImage(docker.PullImageOptions{Repository: opts.Image}, docker.AuthConfiguration{})
 		if err != nil {

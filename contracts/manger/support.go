@@ -20,6 +20,7 @@
 package manger
 
 import (
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
@@ -68,7 +69,7 @@ func (s *SupportImpl) Execute(contractid []byte, ctxt context.Context, cid, name
 	case *pb.ChaincodeInvocationSpec:
 		cis := spec.(*pb.ChaincodeInvocationSpec)
 
-		//logger.Infof("cis:%v", cis)
+		//log.Infof("cis:%v", cis)
 		//decorate the chaincode input
 
 		//decorators := library.InitRegistry(library.Config{}).Lookup(library.Decoration).([]decoration.Decorator)
@@ -95,7 +96,7 @@ func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
 }
 
 func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
-	logger.Debug("enter")
+	log.Debug("enter")
 	//invokeData := ut.ContractInvokePayload{}
 	//invokeData.ContractId = []byte(txid)
 
@@ -109,7 +110,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	}
 	tokenDefine, _ := tx.GetTokenDefineData(nm)
 	tokenSupply, _ := tx.GetTokenSupplyData(nm)
-	logger.Infof("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
+	log.Infof("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
 	invoke := &md.ContractInvokeResult{
 		//FunctionName:  string(args[0]),
 		ContractId: deployId,
@@ -128,7 +129,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			Version: val.GetVersion(),
 		}
 		invoke.ReadSet = append(invoke.ReadSet, rd)
-		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
+		log.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := md.ContractWriteSet{
@@ -137,7 +138,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			IsDelete: val.GetIsDelete(),
 		}
 		invoke.WriteSet = append(invoke.WriteSet, rd)
-		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		log.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return invoke, nil
@@ -145,7 +146,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 
 //func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractDeployPayload, error) {
 func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractDeployPayload, error) {
-	logger.Debug("enter")
+	log.Debug("enter")
 	data := ut.ContractDeployPayload{}
 	data.ContractId = []byte(txid)
 
@@ -153,7 +154,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 	if err != nil {
 		return nil, err
 	}
-	logger.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
+	log.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
 	deploy := &md.ContractDeployPayload{
 		TemplateId: templateId,
 		ContractId: deployId,
@@ -170,7 +171,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 			Version: val.GetVersion(),
 		}
 		deploy.ReadSet = append(deploy.ReadSet, rd)
-		logger.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
+		log.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := md.ContractWriteSet{
@@ -179,7 +180,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid stri
 			IsDelete: val.GetIsDelete(),
 		}
 		deploy.WriteSet = append(deploy.WriteSet, rd)
-		logger.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		log.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return deploy, nil
@@ -191,6 +192,6 @@ func init() {
 	var err error
 	rwM, err = rwset.NewRwSetMgr("default")
 	if err != nil {
-		logger.Error("fail!")
+		log.Error("fail!")
 	}
 }

@@ -20,19 +20,17 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type PropRepository struct {
-	db     storage.IPropertyDb
-	logger log.ILogger
+	db storage.IPropertyDb
 }
 type IPropRepository interface {
 }
 
-func NewPropRepository(db storage.IPropertyDb, l log.ILogger) *PropRepository {
-	return &PropRepository{db: db, logger: l}
+func NewPropRepository(db storage.IPropertyDb) *PropRepository {
+	return &PropRepository{db: db}
 }
 
 /**

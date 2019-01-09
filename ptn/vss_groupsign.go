@@ -34,9 +34,7 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		case event := <-self.newProducedUnitCh:
 			// 广播给其他活跃 mediator，进行验证并群签名
 			self.BroadcastNewProducedUnit(event.Unit)
-
-			self.BroadcastUnit(event.Unit, true /*, needBroadcastMediator*/)
-			//self.BroadcastUnit(event.Unit, false /*, noBroadcastMediator*/)
+			self.BroadcastUnit(event.Unit, true)
 
 		case <-self.newProducedUnitSub.Err():
 			return
@@ -50,7 +48,7 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			pm.producer.ToUnitTBLSSign(newUnit)
+			pm.producer.AddToTBLSSignBuf(newUnit)
 			continue
 		}
 
@@ -94,9 +92,9 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 		//if err := stream.Decode(&s); err != nil {
 		//	log.Error(err.Error())
 		//}
-		//pm.producer.ToTBLSRecover(&s)
+		//pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 
-		pm.producer.ToTBLSRecover(sigShare)
+		pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return
 	}
 
@@ -163,9 +161,9 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 		//if err := s.Decode(&d); err != nil {
 		//	log.Error(err.Error())
 		//}
-		//pm.producer.ToProcessDeal(&d)
+		//pm.producer.ProcessVSSDeal(&d)
 
-		pm.producer.ToProcessDeal(deal)
+		pm.producer.ProcessVSSDeal(deal)
 		return
 	}
 
@@ -236,9 +234,9 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 			//if err := s.Decode(&r); err != nil {
 			//	log.Error(err.Error())
 			//}
-			//pm.producer.ToProcessResponse(&r)
+			//go pm.producer.AddToResponseBuf(&r)
 
-			pm.producer.ToProcessResponse(resp)
+			go pm.producer.AddToResponseBuf(resp)
 			continue
 		}
 

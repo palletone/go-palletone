@@ -55,7 +55,7 @@ func (s *inProcStream) Send(msg *pb.ChaincodeMessage) (err error) {
 		}
 	}()
 
-	//chaincodeLogger.Debugf("inProcStream msg Send  >>>>>>:", msg)
+	//log.Debugf("inProcStream msg Send  >>>>>>:", msg)
 	s.send <- msg
 	return
 }
@@ -63,7 +63,7 @@ func (s *inProcStream) Send(msg *pb.ChaincodeMessage) (err error) {
 func (s *inProcStream) Recv() (*pb.ChaincodeMessage, error) {
 	msg := <-s.recv
 
-	//chaincodeLogger.Debugf("inProcStream msg Recv <<<<<<<:%s", msg)
+	//log.Debugf("inProcStream msg Recv <<<<<<<:%s", msg)
 	return msg, nil
 }
 

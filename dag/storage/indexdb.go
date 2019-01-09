@@ -33,12 +33,11 @@ import (
 )
 
 type IndexDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
 }
 
-func NewIndexDb(db ptndb.Database, l log.ILogger) *IndexDb {
-	return &IndexDb{db: db, logger: l}
+func NewIndexDb(db ptndb.Database) *IndexDb {
+	return &IndexDb{db: db}
 }
 
 type IIndexDb interface {
@@ -77,7 +76,7 @@ func (idxdb *IndexDb) DeleteUtxoByIndex(idx *modules.UtxoIndex) error {
 func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) error {
 	key := append(constants.AddrTransactionsHash_Prefix, address.Bytes()...)
 	key = append(key, txid[:]...)
-	db.logger.Debugf("Index address[%s] and tx[%s]", address.String(), txid.String())
+	log.Debugf("Index address[%s] and tx[%s]", address.String(), txid.String())
 	return db.db.Put(key, txid[:])
 }
 func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error) {
