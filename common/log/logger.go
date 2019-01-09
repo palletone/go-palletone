@@ -21,18 +21,17 @@
 package log
 
 import (
-	//"fmt"
+	"fmt"
 	"log"
 	"strings"
+	"sync"
+	"time"
 
-	"fmt"
 	"github.com/palletone/go-palletone/common/files"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"time"
 )
 
-const errorKey = "ZAPLOG_ERROR"
 const (
 	RootBuild      = "build"
 	RootCmd        = "cmd"
@@ -45,11 +44,16 @@ const (
 	RootStatistics = "statistics"
 	RootVendor     = "vendor"
 	RootWallet     = "wallet"
+
+	errorKey  = "ZAPLOG_ERROR"
+	LogStdout = "stdout"
 )
 
 var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
 
 var Logger *zap.Logger
+var originFileName string
+var mux sync.RWMutex
 
 type ILogger interface {
 	Trace(msg string, ctx ...interface{})
@@ -78,95 +82,33 @@ func New(ctx ...interface{}) *Plogger {
 	pl.logger = *Logger
 	return pl
 }
-func NewTestLog() *Plogger {
-	DefaultConfig = Config{
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
-		OpenModule:       []string{"all"},
-		LoggerLvl:        "DEBUG",
-		Encoding:         "console",
-		Development:      true,
-	}
-	initLogger()
-	return &Plogger{logger: *Logger}
-}
-func (pl *Plogger) New(ctx ...interface{}) *Plogger {
-	if pl != nil {
-		return pl
-	}
-	if Logger == nil {
-		InitLogger()
-	}
-
-	pl.logger = *Logger
-	return pl
-}
-func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Debug(msg, fileds...)
-}
-
-func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Debug(msg, fileds...)
-}
-func (pl *Plogger) Debugf(format string, ctx ...interface{}) {
-	pl.logger.Debug(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Info(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Info(msg, fileds...)
-}
-func (pl *Plogger) Infof(format string, ctx ...interface{}) {
-	pl.logger.Info(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Warn(msg, fileds...)
-}
-func (pl *Plogger) Warnf(format string, ctx ...interface{}) {
-	pl.logger.Warn(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Error(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Error(msg, fileds...)
-}
-func (pl *Plogger) Errorf(format string, ctx ...interface{}) {
-	pl.logger.Error(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Error(msg, fileds...)
-}
 
 // init zap.logger
 func InitLogger() {
 	date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
-	path := DefaultConfig.OutputPaths
+	for i, path := range DefaultConfig.OutputPaths {
+		if path == LogStdout {
+			continue
+		}
+		if originFileName == "" {
+			originFileName = path
+		}
+		index := strings.LastIndex(originFileName, ".")
+		if -1 == index {
+			index = len(originFileName)
+		}
 
-	err_path := DefaultConfig.ErrorOutputPaths
-
-	// if the config file is damaged or lost, then initialize the config if log system.
-	if len(path) == 0 {
-		path = []string{"log/all_" + date + ".log"}
-	}
-	if len(err_path) == 0 {
-		err_path = []string{"log/err_" + date + ".log"}
-	}
-
-	for _, filename := range path {
-		if err := files.MakeDirAndFile(filename); err != nil {
+		DefaultConfig.OutputPaths[i] = fmt.Sprintf("%s_%s.%s", Substr(originFileName, 0, index), date, Substr(originFileName, index+1, len(originFileName)-index))
+		if err := files.MakeDirAndFile(DefaultConfig.OutputPaths[i]); err != nil {
 			panic(err)
 		}
 	}
-	for _, filename := range err_path {
-		if err := files.MakeDirAndFile(filename); err != nil {
-			panic(err)
-		}
-	}
+
 	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
+	go check()
 }
+
 func ConInitLogger() {
 
 	DefaultConfig.LoggerLvl = "FATAL"
@@ -210,6 +152,7 @@ func initLogger() {
 	}
 	l.SetOpenModule(DefaultConfig.OpenModule)
 	Logger = l.WithOptions(zap.AddCallerSkip(1))
+	Logger.SetFileName(DefaultConfig.OutputPaths[1])
 }
 
 // Trace
@@ -275,6 +218,67 @@ func Crit(msg string, ctx ...interface{}) {
 	}
 	fileds := ctxTOfileds(ctx...)
 	Logger.Error(msg, fileds...)
+}
+
+func NewTestLog() *Plogger {
+	DefaultConfig = Config{
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+		OpenModule:       []string{"all"},
+		LoggerLvl:        "DEBUG",
+		Encoding:         "console",
+		Development:      true,
+	}
+	initLogger()
+	return &Plogger{logger: *Logger}
+}
+func (pl *Plogger) New(ctx ...interface{}) *Plogger {
+	if pl != nil {
+		return pl
+	}
+	if Logger == nil {
+		InitLogger()
+	}
+
+	pl.logger = *Logger
+	return pl
+}
+func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Debug(msg, fileds...)
+}
+
+func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Debug(msg, fileds...)
+}
+func (pl *Plogger) Debugf(format string, ctx ...interface{}) {
+	pl.logger.Debug(fmt.Sprintf(format, ctx...))
+}
+func (pl *Plogger) Info(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Info(msg, fileds...)
+}
+func (pl *Plogger) Infof(format string, ctx ...interface{}) {
+	pl.logger.Info(fmt.Sprintf(format, ctx...))
+}
+func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Warn(msg, fileds...)
+}
+func (pl *Plogger) Warnf(format string, ctx ...interface{}) {
+	pl.logger.Warn(fmt.Sprintf(format, ctx...))
+}
+func (pl *Plogger) Error(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Error(msg, fileds...)
+}
+func (pl *Plogger) Errorf(format string, ctx ...interface{}) {
+	pl.logger.Error(fmt.Sprintf(format, ctx...))
+}
+func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Error(msg, fileds...)
 }
 
 // ctx transfer to  fileds
@@ -382,4 +386,20 @@ func Substr(str string, start, length int) string {
 	}
 
 	return string(rs[start:end])
+}
+
+func check() {
+	for {
+		time.Sleep(time.Duration(5) * time.Second)
+		date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
+		mux.RLock()
+		filename := Logger.GetFileName()
+		mux.RUnlock()
+		if strings.Index(filename, date) == -1 {
+			mux.Lock()
+			Logger = nil
+			InitLogger()
+			mux.Unlock()
+		}
+	}
 }
