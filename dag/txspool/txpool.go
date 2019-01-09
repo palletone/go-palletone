@@ -781,7 +781,6 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 				old := this
 				if old.Pending || old.Confirmed {
 					// An older transaction was better, discard this
-					//delete(pool.all, hash)
 					old.RemStatus = true
 					pool.all[hash] = old
 					pool.priority_priced.Removed(hash)
@@ -793,7 +792,6 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 
 	// Otherwise discard any previous transaction and mark this
 	if old.Tx != nil {
-		//delete(pool.all, old.Tx.Hash())
 		pool.priority_priced.Removed(old.Tx.Hash())
 	}
 	// Failsafe to work around direct pending inserts (tests)
