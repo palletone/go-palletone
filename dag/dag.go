@@ -50,9 +50,9 @@ type Dag struct {
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
-	unitRep  dagcommon.IUnitRepository
-	dagdb    storage.IDagDb
-	propdb   storage.IPropertyDb
+	unitRep dagcommon.IUnitRepository
+	dagdb   storage.IDagDb
+	//propdb   storage.IPropertyDb
 	utxoRep  dagcommon.IUtxoRepository
 	propRep  dagcommon.IPropRepository
 	stateRep dagcommon.IStateRepository
@@ -514,11 +514,11 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		unitRep:       unitRep,
-		dagdb:         dagDb,
-		propdb:        propDb,
+		Cache:   freecache.NewCache(200 * 1024 * 1024),
+		Db:      db,
+		unitRep: unitRep,
+		dagdb:   dagDb,
+		//propdb:        propDb,
 		utxoRep:       utxoRep,
 		propRep:       propRep,
 		stateRep:      stateRep,
@@ -546,11 +546,11 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		unitRep:       unitRep,
-		dagdb:         dagDb,
-		propdb:        propDb,
+		Cache:   freecache.NewCache(200 * 1024 * 1024),
+		Db:      db,
+		unitRep: unitRep,
+		dagdb:   dagDb,
+		//propdb:        propDb,
 		utxoRep:       utxoRep,
 		propRep:       propRep,
 		validate:      validate,
@@ -1395,3 +1395,4 @@ func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 func (d *Dag) GetTxByFileHash(filehash string) (map[string]modules.Transactions, error) {
 	return d.unitRep.GetTxByFileHash(filehash)
 }
+

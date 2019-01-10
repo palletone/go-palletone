@@ -33,17 +33,17 @@ import (
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
-	gp, _ := d.propdb.RetrieveGlobalProp()
+	gp, _ := d.propRep.RetrieveGlobalProp()
 	return gp
 }
 
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	dgp, _ := d.propdb.RetrieveDynGlobalProp()
+	dgp, _ := d.propRep.RetrieveDynGlobalProp()
 	return dgp
 }
 
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
-	ms, _ := d.propdb.RetrieveMediatorSchl()
+	ms, _ := d.propRep.RetrieveMediatorSchl()
 	return ms
 }
 
@@ -52,7 +52,7 @@ func (d *Dag) SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) {
 		// todo 更新缓存
 	}
 
-	d.propdb.StoreGlobalProp(gp)
+	d.propRep.StoreGlobalProp(gp)
 	return
 }
 
@@ -61,7 +61,7 @@ func (d *Dag) SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bo
 		// todo 更新缓存
 	}
 
-	d.propdb.StoreDynGlobalProp(dgp)
+	d.propRep.StoreDynGlobalProp(dgp)
 	return
 }
 
@@ -70,7 +70,7 @@ func (d *Dag) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) {
 		// todo 更新缓存
 	}
 
-	d.propdb.StoreMediatorSchl(ms)
+	d.propRep.StoreMediatorSchl(ms)
 	return
 }
 

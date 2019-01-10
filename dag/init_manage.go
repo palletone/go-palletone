@@ -83,21 +83,21 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Has
 	//  全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
-	if err := dag.propdb.StoreGlobalProp(gp); err != nil {
+	if err := dag.propRep.StoreGlobalProp(gp); err != nil {
 		return err
 	}
 
 	//  动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
-	if err := dag.propdb.StoreDynGlobalProp(dgp); err != nil {
+	if err := dag.propRep.StoreDynGlobalProp(dgp); err != nil {
 		return err
 	}
 
 	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	if err := dag.propdb.StoreMediatorSchl(ms); err != nil {
+	if err := dag.propRep.StoreMediatorSchl(ms); err != nil {
 		return err
 	}
 
