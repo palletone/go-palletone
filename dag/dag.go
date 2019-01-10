@@ -389,16 +389,6 @@ func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
 	return data
 }
 
-
-func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
-	number, err := d.dagdb.GetNumberWithUnitHash(hash)
-	if err != nil {
-		log.Error("Get header rlp ", "error", err.Error())
-		return nil
-	}
-	return d.dagdb.GetHeaderRlp(hash, number.Index)
-}
-
 //func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
 //	number, err := d.unitRep.GetNumberWithUnitHash(hash)
 //	if err != nil {
@@ -407,7 +397,6 @@ func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawV
 //	}
 //	return d.unitRep.GetHeaderRlp(hash, number.Index)
 //}
-
 
 // InsertHeaderDag attempts to insert the given header chain in to the local
 // chain, possibly creating a reorg. If an error is returned, it will return the

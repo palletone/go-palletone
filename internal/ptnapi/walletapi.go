@@ -241,16 +241,15 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	return submitTransaction(ctx, s.b, mtx)
 }
 
-
 func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string) (string, error) {
-    
-    var proofTransactionGenParams ptnjson.ProofTransactionGenParams
+
+	var proofTransactionGenParams ptnjson.ProofTransactionGenParams
 	err := json.Unmarshal([]byte(params), &proofTransactionGenParams)
 	if err != nil {
 		return "", err
 	}
-    var amount decimal.Decimal
-    //realNet := &chaincfg.MainNetParams
+	var amount decimal.Decimal
+	//realNet := &chaincfg.MainNetParams
 	amounts := []ptnjson.AddressAmt{}
 	for _, outOne := range proofTransactionGenParams.Outputs {
 		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
@@ -302,7 +301,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	if len(inputs) == 0 {
 		return "", nil
 	}
-	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime,proofTransactionGenParams.Proof)
+	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime, proofTransactionGenParams.Proof)
 	result, _ := WalletCreateProofTransaction(arg)
 	//fmt.Println(result)
 	return result, nil
@@ -317,8 +316,8 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 			Message: "Locktime out of range",
 		}
 	}
-	textPayload := new(modules.TextPayload)
-	textPayload.FileHash = c.Record
+	textPayload := new(modules.DataPayload)
+	textPayload.MainData = []byte(c.Record)
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
 	//先构造PaymentPayload结构，再组装成Transaction结构
@@ -395,7 +394,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		TxMessages: make([]*modules.Message, 0),
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
-	
+
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_TEXT, textPayload))
 	//mtx.TxHash = mtx.Hash()
 	// sign mtx
@@ -410,7 +409,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	ProofJson := walletjson.ProofJson{}
 	ProofJson.Inputs = inputjson
 	ProofJson.Outputs = OutputJson
-	ProofJson.Record = textPayload.FileHash
+	ProofJson.Record = string(textPayload.MainData)
 	txproofjson := walletjson.TxProofJson{}
 	txproofjson.Payload = append(txproofjson.Payload, ProofJson)
 	bytetxproofjson, err := json.Marshal(txproofjson)
@@ -694,7 +693,7 @@ func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, d
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
 
-    if fee <= 0 {
+	if fee <= 0 {
 		return "", fmt.Errorf("fee is ZERO ")
 	}
 	args := make([][]byte, len(param))

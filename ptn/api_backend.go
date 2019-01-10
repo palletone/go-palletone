@@ -363,7 +363,7 @@ func (b *PtnApiBackend) GetHeaderByNumber(number modules.ChainIndex) *modules.He
 }
 
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix(prefix)
+	return b.ptn.dag.GetCommonByPrefix([]byte(prefix))
 } //getprefix
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
