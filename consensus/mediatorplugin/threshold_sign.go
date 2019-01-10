@@ -64,6 +64,9 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 			continue
 		}
 
+		go mp.processResponseLoop(localMed, localMed)
+		log.Debugf("the mediator(%v) broadcast vss deals", localMed.Str())
+
 		for index, deal := range deals {
 			event := VSSDealEvent{
 				DstIndex: index,
@@ -72,8 +75,6 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 
 			go mp.vssDealFeed.Send(event)
 		}
-
-		go mp.processResponseLoop(localMed, localMed)
 	}
 }
 
@@ -100,6 +101,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 	}
 
 	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
+	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)", localMed.Str(), vrfrMed.Str())
 	go mp.processResponseLoop(localMed, vrfrMed)
 
 	if resp.Response.Status != vss.StatusApproval {
@@ -112,6 +114,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 		Resp: resp,
 	}
 	go mp.vssResponseFeed.Send(respEvent)
+	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)", localMed.Str(), vrfrMed.Str())
 
 	return nil
 }
@@ -130,6 +133,13 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 		}
 
 		vrfrMed := dag.GetActiveMediatorAddr(int(resp.Index))
+		log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
+			localMed.Str(), srcMed.Str(), vrfrMed.Str())
+
+		if _, ok := mp.respBuf[localMed][vrfrMed]; !ok {
+			log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
+				localMed.Str(), vrfrMed.Str())
+		}
 		mp.respBuf[localMed][vrfrMed] <- resp
 	}
 }
@@ -183,7 +193,15 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		return
 	}
 
+	if _, ok := mp.respBuf[localMed][vrfrMed]; !ok {
+		log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
+			localMed.Str(), vrfrMed.Str())
+	}
+
+	log.Debugf("the mediator(%v) run the loop to process response regarding the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
 	respCh := mp.respBuf[localMed][vrfrMed]
+
 	for {
 		select {
 		case <-mp.quit:
@@ -226,6 +244,7 @@ func (mp *MediatorPlugin) AddToTBLSSignBuf(newUnit *modules.Unit) {
 	for _, localMed := range lams {
 		log.Debugf("the mediator(%v) received a unit to be grouped sign: %v",
 			localMed.Str(), newUnit.UnitHash.TerminalString())
+
 		if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
 			mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
 		}
@@ -296,6 +315,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		return
 	}
 
+	// todo 到达一定时刻强制关闭循环
 	for {
 		select {
 		case <-mp.quit:
@@ -353,7 +373,7 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	sigShareSet, ok := mp.toTBLSRecoverBuf[localMed][unitHash]
 	if !ok {
-		log.Debugf(fmt.Sprintf("the following mediator also has no sign shares: %v", localMed.Str()))
+		log.Debugf(fmt.Sprintf("the following mediator has no sign shares yet: %v", localMed.Str()))
 		return
 	}
 
