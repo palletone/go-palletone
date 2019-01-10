@@ -84,6 +84,9 @@ var (
 	// ReqId && TxHash maping
 	ReqIdPrefix      = []byte("req")
 	TxHash2ReqPrefix = []byte("tx2req")
+
+	//filehash
+	IDX_FileHash_Txid = []byte("idx_filehash_txid")
 )
 
 // suffix

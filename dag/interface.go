@@ -140,4 +140,5 @@ type IDag interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
 
+
 }

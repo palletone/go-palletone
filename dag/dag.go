@@ -1395,3 +1395,4 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 	return d.dagdb.GetReqIdByTxHash(hash)
 }
+
