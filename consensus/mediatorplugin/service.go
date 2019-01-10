@@ -190,7 +190,8 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 	dag := mp.dag
 	if !mp.productionEnabled && !dag.IsSynced() {
-		return //we're not synced.
+		log.Debug("we're not synced")
+		return
 	}
 
 	lams := mp.GetLocalActiveMediators()
@@ -228,14 +229,15 @@ func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
-
 	mp.srvr = server
 
 	// 1. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	log.Debug("mediator plugin startup end")
+	// 2. 开始完成 vss 协议
+	go mp.startVSSProtocol()
 
+	log.Debug("mediator plugin startup end")
 	return nil
 }
 
@@ -265,7 +267,6 @@ func (mp *MediatorPlugin) Stop() error {
 	mp.groupSigScope.Close()
 
 	log.Debug("mediator plugin stopped")
-
 	return nil
 }
 
@@ -296,7 +297,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 
 	if ptn == nil || dag == nil || cfg == nil {
 		err := "pointer parameters of NewMediatorPlugin are nil!"
-		//log.Error(err)
+		log.Error(err)
 		panic(err)
 	}
 
@@ -306,11 +307,10 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 	for _, medConf := range mss {
 		medAcc := medConf.configToAccount()
 		addr := medAcc.Address
-		//log.Debug(fmt.Sprintf("this node control mediator account address: %v", addr.Str()))
+		log.Debug(fmt.Sprintf("this node control mediator account address: %v", addr.Str()))
 
 		msm[addr] = medAcc
 	}
-
 	log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
 
 	mp := MediatorPlugin{
@@ -325,10 +325,11 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		activeDKGs:    make(map[common.Address]*dkg.DistKeyGenerator),
 		precedingDKGs: make(map[common.Address]*dkg.DistKeyGenerator),
 	}
+
+	mp.newActiveMediatorsDKG()
 	mp.initTBLSBuf()
 
 	log.Debug("mediator plugin initialize end")
-
 	return &mp, nil
 }
 
