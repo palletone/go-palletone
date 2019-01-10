@@ -93,12 +93,23 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 
 const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000
 
-func (gp *GlobalProperty) GetActiveMediatorCount() int {
+func (gp *GlobalProperty) ActiveMediatorsCount() int {
 	return len(gp.ActiveMediators)
 }
 
+func (gp *GlobalProperty) PrecedingMediatorsCount() int {
+	return len(gp.PrecedingMediators)
+}
+
 func (gp *GlobalProperty) ChainThreshold() int {
-	aSize := gp.GetActiveMediatorCount()
+	return calcThreshold(gp.ActiveMediatorsCount())
+}
+
+func (gp *GlobalProperty) PrecedingThreshold() int {
+	return calcThreshold(gp.PrecedingMediatorsCount())
+}
+
+func calcThreshold(aSize int) int {
 	offset := (core.PalletOne100Percent - core.PalletOneIrreversibleThreshold) * aSize /
 		core.PalletOne100Percent
 
@@ -128,7 +139,7 @@ func (gp *GlobalProperty) IsPrecedingMediator(add common.Address) bool {
 }
 
 func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
-	if index < 0 || index > gp.GetActiveMediatorCount()-1 {
+	if index < 0 || index > gp.ActiveMediatorsCount()-1 {
 		log.Error(fmt.Sprintf("%v is out of the bounds of active mediator list!", index))
 	}
 
@@ -139,7 +150,7 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
-	mediators := make([]common.Address, 0, gp.GetActiveMediatorCount())
+	mediators := make([]common.Address, 0, gp.ActiveMediatorsCount())
 
 	for medAdd, _ := range gp.ActiveMediators {
 		mediators = append(mediators, medAdd)

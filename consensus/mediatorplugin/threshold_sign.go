@@ -155,7 +155,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		return
 	}
 
-	aSize := mp.dag.GetActiveMediatorCount()
+	aSize := mp.dag.ActiveMediatorsCount()
 	respCount := 0
 	// localMed 对 vrfrMed 的 response 在 ProcessDeal 生成 response 时 自动处理了
 	if vrfrMed != localMed {
@@ -315,7 +315,7 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 		return
 	}
 
-	// todo 到达一定时刻强制关闭循环
+	// todo 换届后，如果该mediator不是活跃的话，则到达一定时刻强制关闭循环
 	for {
 		select {
 		case <-mp.quit:
@@ -386,12 +386,26 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	}
 
 	dag := mp.dag
-	aSize := dag.GetActiveMediatorCount()
-	curThreshold := dag.ChainThreshold()
+	unit, err := dag.GetUnitByHash(unitHash)
+	if unit == nil || err != nil {
+		err = fmt.Errorf("fail to get unit by hash in dag: %v", unitHash.TerminalString())
+		log.Debug(err.Error())
+		return
+	}
 
-	if sigShareSet.len() < curThreshold {
+	var mSize, threshold int
+	// 判断是否是换届前的单元
+	if unit.Timestamp() <= dag.GetDynGlobalProp().LastMaintenanceTime {
+		mSize = dag.PrecedingMediatorsCount()
+		threshold = dag.PrecedingThreshold()
+	} else {
+		mSize = dag.ActiveMediatorsCount()
+		threshold = dag.ChainThreshold()
+	}
+
+	if sigShareSet.len() < threshold {
 		log.Debugf("the count of sign shares of the unit(%v) does not reach the threshold(%v)",
-			unitHash.TerminalString(), curThreshold)
+			unitHash.TerminalString(), threshold)
 		return
 	}
 
@@ -409,7 +423,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	suite := mp.suite
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
-	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), curThreshold, aSize)
+	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), threshold, mSize)
 	if err != nil {
 		log.Debug(err.Error())
 		return

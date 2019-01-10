@@ -228,7 +228,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 }
 
 func (mp *MediatorPlugin) initTBLSRecoverBuf(localMed common.Address, newUnitHash common.Hash) {
-	aSize := mp.dag.GetActiveMediatorCount()
+	aSize := mp.dag.ActiveMediatorsCount()
 	curThrshd := mp.dag.ChainThreshold()
 	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
