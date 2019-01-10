@@ -53,7 +53,7 @@ type IDag interface {
 	GetHeaderByHash(common.Hash) *modules.Header
 	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
 
-	GetPrefix(prefix string) map[string][]byte
+	//GetPrefix(prefix string) map[string][]byte
 
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
@@ -138,6 +138,5 @@ type IDag interface {
 	// SaveReqIdByTx
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
-	SaveReqIdByTx(tx *modules.Transaction) error
-
+	//SaveReqIdByTx(tx *modules.Transaction) error
 }

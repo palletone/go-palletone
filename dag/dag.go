@@ -26,7 +26,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"unsafe"
 
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
@@ -51,7 +50,7 @@ type Dag struct {
 	currentUnit atomic.Value
 
 	unitRep dagcommon.IUnitRepository
-	dagdb   storage.IDagDb
+	//dagdb   storage.IDagDb
 	//propdb   storage.IPropertyDb
 	utxoRep  dagcommon.IUtxoRepository
 	propRep  dagcommon.IPropRepository
@@ -93,7 +92,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	// step2. get unit height
 	height, err := d.GetUnitNumber(hash)
 	// get unit header
-	uHeader, err := d.dagdb.GetHeader(hash, height)
+	uHeader, err := d.unitRep.GetHeader(hash, height)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -102,7 +101,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	uHash := common.Hash{}
 	uHash.SetBytes(hash.Bytes())
 	// get transaction list
-	txs, err := d.dagdb.GetUnitTransactions(uHash)
+	txs, err := d.unitRep.GetUnitTransactions(uHash)
 	if err != nil {
 		log.Error("Current unit when get transactions", "error", err.Error())
 		return nil
@@ -140,7 +139,7 @@ func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules
 }
 
 func (d *Dag) HasUnit(hash common.Hash) bool {
-	u, err := d.dagdb.GetUnit(hash)
+	u, err := d.unitRep.GetUnit(hash)
 	if err != nil {
 		return false
 	}
@@ -177,14 +176,14 @@ func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
 }
 
 func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
-	//return d.dagdb.GetUnitFormIndex(number)
-	hash, err := d.dagdb.GetHashByNumber(number)
+	//return d.unitRep.GetUnitFormIndex(number)
+	hash, err := d.unitRep.GetHashByNumber(number)
 	if err != nil {
 		log.Debug("GetUnitByNumber dagdb.GetHashByNumber err:", "error", err)
 		return nil, err
 	}
 	//log.Debug("Dag", "GetUnitByNumber GetUnit(hash):", hash)
-	return d.dagdb.GetUnit(hash)
+	return d.unitRep.GetUnit(hash)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
@@ -194,7 +193,7 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 		return nil
 	}
 	// get unit header
-	uHeader, err := d.dagdb.GetHeader(hash, height)
+	uHeader, err := d.unitRep.GetHeader(hash, height)
 	if err != nil {
 		log.Debug("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -204,13 +203,13 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
 
 func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 	//log.Debug("Dag", "GetHeaderByNumber ChainIndex:", number)
-	hash, err := d.dagdb.GetHashByNumber(number)
+	hash, err := d.unitRep.GetHashByNumber(number)
 	if err != nil {
 		log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
 		return nil
 	}
 
-	uHeader, err1 := d.dagdb.GetHeader(hash, &number)
+	uHeader, err1 := d.unitRep.GetHeader(hash, &number)
 	if err1 != nil {
 		log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", hash.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
@@ -219,9 +218,9 @@ func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
 	return uHeader
 }
 
-func (d *Dag) GetPrefix(prefix string) map[string][]byte {
-	return d.dagdb.GetPrefix(*(*[]byte)(unsafe.Pointer(&prefix)))
-}
+//func (d *Dag) GetPrefix(prefix string) map[string][]byte {
+//	return d.unitRep.GetPrefix(*(*[]byte)(unsafe.Pointer(&prefix)))
+//}
 
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return d.ChainHeadFeed.Subscribe(ch)
@@ -325,7 +324,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	return d.GetHeaderByHash(hash) != nil
 }
 func (d *Dag) Exists(hash common.Hash) bool {
-	if unit, err := d.dagdb.GetUnit(hash); err == nil && unit != nil {
+	if unit, err := d.unitRep.GetUnit(hash); err == nil && unit != nil {
 		log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 		return true
 	}
@@ -347,24 +346,24 @@ func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
 
 // GetUnitTransactions is return unit's body, all transactions of unit.
 func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-	return d.dagdb.GetUnitTransactions(hash)
+	return d.unitRep.GetUnitTransactions(hash)
 }
 
 // GetUnitTxsHash is return the unit's txs hash list.
 func (d *Dag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
-	return d.dagdb.GetBody(hash)
+	return d.unitRep.GetBody(hash)
 }
 
 // GetTransactionByHash is return the tx by tx's hash
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
-	tx, uhash, _, _ := d.dagdb.GetTransaction(hash)
+	tx, uhash, _, _ := d.unitRep.GetTransaction(hash)
 	if tx == nil {
 		return nil, uhash, errors.New("get transaction by hash is failed,none the transaction.")
 	}
 	return tx, uhash, nil
 }
 func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
-	unitHash, unitNumber, txIndex, err := d.dagdb.GetTxLookupEntry(hash)
+	unitHash, unitNumber, txIndex, err := d.unitRep.GetTxLookupEntry(hash)
 	return &modules.TxLookupEntry{
 		UnitHash:  unitHash,
 		UnitIndex: unitNumber,
@@ -375,7 +374,7 @@ func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
 	txs := modules.Transactions{}
 	// get hash list
-	txs, err := d.dagdb.GetUnitTransactions(hash)
+	txs, err := d.unitRep.GetUnitTransactions(hash)
 	if err != nil {
 		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
 		return nil
@@ -391,12 +390,12 @@ func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
 }
 
 func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
-	number, err := d.dagdb.GetNumberWithUnitHash(hash)
+	number, err := d.unitRep.GetNumberWithUnitHash(hash)
 	if err != nil {
 		log.Error("Get header rlp ", "error", err.Error())
 		return nil
 	}
-	return d.dagdb.GetHeaderRlp(hash, number.Index)
+	return d.unitRep.GetHeaderRlp(hash, number.Index)
 }
 
 // InsertHeaderDag attempts to insert the given header chain in to the local
@@ -414,16 +413,16 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, er
 		index := header.Number.Index
 
 		// ###save unit hash and chain index relation
-		err := d.dagdb.SaveNumberByHash(hash, number)
+		err := d.unitRep.SaveNumberByHash(hash, number)
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveNumberByHash Error", i)
 		}
-		err = d.dagdb.SaveHashByNumber(hash, number)
+		err = d.unitRep.SaveHashByNumber(hash, number)
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
 		}
 		// ###save HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
-		err = d.dagdb.UpdateHeadByBatch(hash, index)
+		err = d.unitRep.UpdateHeadByBatch(hash, index)
 		if err != nil {
 			return i, err
 		}
@@ -453,7 +452,7 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 //All leaf nodes for dag downloader.
 //MUST have Priority.
 //func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
-//	return d.dagdb.GetAllLeafNodes()
+//	return d.unitRep.GetAllLeafNodes()
 //}
 
 /**
@@ -517,7 +516,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		Cache:   freecache.NewCache(200 * 1024 * 1024),
 		Db:      db,
 		unitRep: unitRep,
-		dagdb:   dagDb,
+		//dagdb:   dagDb,
 		//propdb:        propDb,
 		utxoRep:       utxoRep,
 		propRep:       propRep,
@@ -549,7 +548,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		Cache:   freecache.NewCache(200 * 1024 * 1024),
 		Db:      db,
 		unitRep: unitRep,
-		dagdb:   dagDb,
+		//dagdb:   dagDb,
 		//propdb:        propDb,
 		utxoRep:       utxoRep,
 		propRep:       propRep,
@@ -576,10 +575,10 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		unitRep:       unitRep,
-		dagdb:         dagDb,
+		Cache:   freecache.NewCache(200 * 1024 * 1024),
+		Db:      db,
+		unitRep: unitRep,
+		//dagdb:         dagDb,
 		utxoRep:       utxoRep,
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
@@ -603,7 +602,7 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 	}
 	//TODO compare index with number
 	if index.Index == number {
-		head, err := d.dagdb.GetHeader(hash, index)
+		head, err := d.unitRep.GetHeader(hash, index)
 		if err != nil {
 			log.Info("get unit header faled,", "error", err)
 		}
@@ -614,17 +613,17 @@ func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error
 
 // Get UnitNumber
 func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
-	return d.dagdb.GetNumberWithUnitHash(hash)
+	return d.unitRep.GetNumberWithUnitHash(hash)
 }
 
 // GetCanonicalHash
 func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
-	return d.dagdb.GetCanonicalHash(number)
+	return d.unitRep.GetCanonicalHash(number)
 }
 
 // Get state
 func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
-	return d.dagdb.GetHeadHeaderHash()
+	return d.unitRep.GetHeadHeaderHash()
 }
 
 func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
@@ -638,7 +637,7 @@ func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
 		}
 		mem_hash = unit.Hash()
 	}
-	head_hash, err := d.dagdb.GetHeadUnitHash()
+	head_hash, err := d.unitRep.GetHeadUnitHash()
 	head_unit, _ := d.GetUnitByHash(head_hash)
 	if head_unit != nil {
 		if unit.NumberU64() > head_unit.NumberU64() {
@@ -649,11 +648,11 @@ func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
 }
 
 func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
-	return d.dagdb.GetHeadFastUnitHash()
+	return d.unitRep.GetHeadFastUnitHash()
 }
 
 func (d *Dag) GetTrieSyncProgress() (uint64, error) {
-	return d.dagdb.GetTrieSyncProgress()
+	return d.unitRep.GetTrieSyncProgress()
 }
 
 func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
@@ -815,7 +814,7 @@ func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
 }
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
-	return d.dagdb.GetAddrOutput(addr)
+	return d.unitRep.GetAddrOutput(addr)
 }
 
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
@@ -1153,17 +1152,17 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 //
 //// save token info
 //func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
-//	return d.dagdb.SaveTokenInfo(token_info)
+//	return d.unitRep.SaveTokenInfo(token_info)
 //}
 //
 //// Get token info
 //func (d *Dag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
-//	return d.dagdb.GetTokenInfo(key)
+//	return d.unitRep.GetTokenInfo(key)
 //}
 //
 //// Get all token info
 //func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-//	return d.dagdb.GetAllTokenInfo()
+//	return d.unitRep.GetAllTokenInfo()
 //}
 
 //@Yiran
@@ -1289,12 +1288,12 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 
 // dag's common geter
 func (d *Dag) GetCommon(key []byte) ([]byte, error) {
-	return d.dagdb.GetCommon(key)
+	return d.unitRep.GetCommon(key)
 }
 
 // GetCommonByPrefix  return the prefix's all key && value.
 func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
-	return d.dagdb.GetCommonByPrefix(prefix)
+	return d.unitRep.GetCommonByPrefix(prefix)
 }
 
 //func (d *Dag) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
@@ -1377,16 +1376,16 @@ func (d *Dag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
 }
 
 // SaveReqIdByTx
-func (d *Dag) SaveReqIdByTx(tx *modules.Transaction) error {
-	return d.dagdb.SaveReqIdByTx(tx)
-}
+//func (d *Dag) SaveReqIdByTx(tx *modules.Transaction) error {
+//	return d.unitRep.SaveReqIdByTx(tx)
+//}
 
 // GetTxHashByReqId
 func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
-	return d.dagdb.GetTxHashByReqId(reqid)
+	return d.unitRep.GetTxHashByReqId(reqid)
 }
 
 // GetReqIdByTxHash
 func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-	return d.dagdb.GetReqIdByTxHash(hash)
+	return d.unitRep.GetReqIdByTxHash(hash)
 }

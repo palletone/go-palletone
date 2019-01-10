@@ -238,20 +238,6 @@ func (mr *MockIDagMockRecorder) GetHeader(hash, number interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeader", reflect.TypeOf((*MockIDag)(nil).GetHeader), hash, number)
 }
 
-// GetPrefix mocks base method
-func (m *MockIDag) GetPrefix(prefix string) map[string][]byte {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPrefix", prefix)
-	ret0, _ := ret[0].(map[string][]byte)
-	return ret0
-}
-
-// GetPrefix indicates an expected call of GetPrefix
-func (mr *MockIDagMockRecorder) GetPrefix(prefix interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrefix", reflect.TypeOf((*MockIDag)(nil).GetPrefix), prefix)
-}
-
 // CurrentHeader mocks base method
 func (m *MockIDag) CurrentHeader() *modules.Header {
 	m.ctrl.T.Helper()
@@ -410,21 +396,6 @@ func (m *MockIDag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesi
 func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnit", reflect.TypeOf((*MockIDag)(nil).SaveUnit), unit, txpool, isGenesis)
-}
-
-// GetAllLeafNodes mocks base method
-func (m *MockIDag) GetAllLeafNodes() ([]*modules.Header, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllLeafNodes")
-	ret0, _ := ret[0].([]*modules.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllLeafNodes indicates an expected call of GetAllLeafNodes
-func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllLeafNodes", reflect.TypeOf((*MockIDag)(nil).GetAllLeafNodes))
 }
 
 // CreateUnit mocks base method
@@ -1049,18 +1020,4 @@ func (m *MockIDag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (mr *MockIDagMockRecorder) GetTxHashByReqId(reqid interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxHashByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxHashByReqId), reqid)
-}
-
-// SaveReqIdByTx mocks base method
-func (m *MockIDag) SaveReqIdByTx(tx *modules.Transaction) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveReqIdByTx", tx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveReqIdByTx indicates an expected call of SaveReqIdByTx
-func (mr *MockIDagMockRecorder) SaveReqIdByTx(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveReqIdByTx", reflect.TypeOf((*MockIDag)(nil).SaveReqIdByTx), tx)
 }

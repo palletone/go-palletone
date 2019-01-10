@@ -203,7 +203,7 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	unit, err := dag.dagdb.GetUnit(hash)
+	unit, err := dag.unitRep.GetUnit(hash)
 
 	if err != nil && dag.Memdag != nil {
 		unit, err = dag.Memdag.GetUnit(hash)

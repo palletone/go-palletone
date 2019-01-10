@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -50,6 +51,30 @@ type IUnitRepository interface {
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
+
+	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
+	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
+	GetUnit(hash common.Hash) (*modules.Unit, error)
+	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
+	GetBody(unitHash common.Hash) ([]common.Hash, error)
+	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
+	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
+	GetCommon(key []byte) ([]byte, error)
+	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	GetAddrOutput(addr string) ([]modules.Output, error)
+	GetTrieSyncProgress() (uint64, error)
+	GetHeadHeaderHash() (common.Hash, error)
+	GetHeadUnitHash() (common.Hash, error)
+	GetHeadFastUnitHash() (common.Hash, error)
+	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
+	GetCanonicalHash(number uint64) (common.Hash, error)
+
+	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
+	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
+	UpdateHeadByBatch(hash common.Hash, number uint64) error
+	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -75,6 +100,67 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
 	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
+}
+
+func (rep *UnitRepository) GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
+	return rep.dagdb.GetHeader(hash, index)
+}
+
+func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
+	return rep.dagdb.GetUnit(hash)
+}
+func (rep *UnitRepository) GetHashByNumber(number modules.ChainIndex) (common.Hash, error) {
+	return rep.dagdb.GetHashByNumber(number)
+}
+func (rep *UnitRepository) GetBody(unitHash common.Hash) ([]common.Hash, error) {
+	return rep.dagdb.GetBody(unitHash)
+}
+func (rep *UnitRepository) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+	return rep.dagdb.GetTransaction(hash)
+}
+func (rep *UnitRepository) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
+	return rep.dagdb.GetTxLookupEntry(hash)
+}
+func (rep *UnitRepository) GetCommon(key []byte) ([]byte, error) { return rep.dagdb.GetCommon(key) }
+func (rep *UnitRepository) GetCommonByPrefix(prefix []byte) map[string][]byte {
+	return rep.dagdb.GetCommonByPrefix(prefix)
+}
+func (rep *UnitRepository) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
+	return rep.dagdb.GetReqIdByTxHash(hash)
+}
+func (rep *UnitRepository) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
+	return rep.dagdb.GetTxHashByReqId(reqid)
+}
+func (rep *UnitRepository) GetAddrOutput(addr string) ([]modules.Output, error) {
+	return rep.dagdb.GetAddrOutput(addr)
+}
+func (rep *UnitRepository) GetTrieSyncProgress() (uint64, error) {
+	return rep.dagdb.GetTrieSyncProgress()
+}
+func (rep *UnitRepository) GetHeadHeaderHash() (common.Hash, error) {
+	return rep.dagdb.GetHeadHeaderHash()
+}
+func (rep *UnitRepository) GetHeadUnitHash() (common.Hash, error) { return rep.dagdb.GetHeadUnitHash() }
+func (rep *UnitRepository) GetHeadFastUnitHash() (common.Hash, error) {
+	return rep.dagdb.GetHeadFastUnitHash()
+}
+func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
+	return rep.dagdb.GetNumberWithUnitHash(hash)
+}
+func (rep *UnitRepository) GetCanonicalHash(number uint64) (common.Hash, error) {
+	return rep.dagdb.GetCanonicalHash(number)
+}
+func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
+	return rep.dagdb.SaveNumberByHash(uHash, number)
+}
+func (rep *UnitRepository) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
+	return rep.dagdb.SaveHashByNumber(uHash, number)
+}
+func (rep *UnitRepository) UpdateHeadByBatch(hash common.Hash, number uint64) error {
+	return rep.dagdb.UpdateHeadByBatch(hash, number)
+}
+func (rep *UnitRepository) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
+	return rep.dagdb.GetHeaderRlp(hash, index)
 }
 
 //func RHashStr(x interface{}) string {
@@ -1040,7 +1126,6 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash string) (map[string]modul
 		txs = append(txs, tx)
 	}
 	alltxs[filehash] = txs
-
 
 	return alltxs, nil
 }
