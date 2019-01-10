@@ -123,7 +123,7 @@ func newTestTx() *Transaction {
 		Payload: pay1s,
 	}
 	msg2 := &Message{
-		App:     APP_TEXT,
+		App:     APP_DATA,
 		Payload: &DataPayload{FileHash: string("Hello PalletOne")},
 	}
 	//txmsg2 := NewTransaction(

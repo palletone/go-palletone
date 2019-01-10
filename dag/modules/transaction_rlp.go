@@ -84,7 +84,7 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 				return err
 			}
 			m1.Payload = &pay
-		} else if m.App == APP_TEXT {
+		} else if m.App == APP_DATA {
 			var text DataPayload
 			rlp.DecodeBytes(m.Data, &text)
 			m1.Payload = &text

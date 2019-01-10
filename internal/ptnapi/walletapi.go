@@ -395,7 +395,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 
-	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_TEXT, textPayload))
+	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	//mtx.TxHash = mtx.Hash()
 	// sign mtx
 	for index, input := range inputjson {

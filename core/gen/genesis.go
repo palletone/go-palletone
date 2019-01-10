@@ -165,7 +165,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		Payload: &configPayload,
 	}
 	msg2 := &modules.Message{
-		App:     modules.APP_TEXT,
+		App:     modules.APP_DATA,
 		Payload: &modules.DataPayload{MainData: []byte(genesis.Text)},
 	}
 
