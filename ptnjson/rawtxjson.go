@@ -47,6 +47,14 @@ type AddressAmt struct {
 	Amount  decimal.Decimal `json:"amount"`
 }
 
+// CreateRawTransactionCmd defines the createrawtransaction JSON-RPC command.
+type CreateProofTransactionCmd struct {
+	Inputs   []TransactionInput
+	Amounts  []AddressAmt `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
+	Record   string
+	LockTime *int64
+}
+
 // CreateVoteTransactionCmd defines the createrawtransaction JSON-RPC command.
 type CreateVoteTransactionCmd struct {
 	Inputs          []TransactionInput
@@ -70,6 +78,16 @@ func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts []AddressAmt,
 	}
 }
 
+func NewCreateProofTransactionCmd(inputs []TransactionInput, amounts []AddressAmt,
+	lockTime *int64,record string) *CreateProofTransactionCmd {
+
+	return &CreateProofTransactionCmd{
+		Inputs:   inputs,
+		Amounts:  amounts,
+		Record :  record,
+		LockTime: lockTime,
+	}
+}
 func NewCreateVoteTransactionCmd(inputs []TransactionInput, amounts map[string]decimal.Decimal,
 	lockTime *int64, mediatorAddress string, expiredTerm uint16) *CreateVoteTransactionCmd {
 
@@ -101,6 +119,16 @@ type RawTransactionGenParams struct {
 		Address string          `json:"address"`
 		Amount  decimal.Decimal `json:"amount"`
 	} `json:"outputs"`
+	Locktime int64 `json:"locktime"`
+}
+type ProofTransactionGenParams struct {
+	From string  `json:"from"`
+	Outputs []struct {
+		Address string          `json:"address"`
+		Amount  decimal.Decimal `json:"amount"`
+	} `json:"outputs"`
+	Proof string  `json:"proof"`
+	Fee decimal.Decimal `json:"fee"`
 	Locktime int64 `json:"locktime"`
 }
 
