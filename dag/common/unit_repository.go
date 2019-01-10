@@ -51,7 +51,6 @@ type IUnitRepository interface {
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-
 	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnit(hash common.Hash) (*modules.Unit, error)
@@ -75,6 +74,7 @@ type IUnitRepository interface {
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	UpdateHeadByBatch(hash common.Hash, number uint64) error
 	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
+	GetTxByFileHash(filehash string) (map[string]modules.Transactions, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -793,13 +793,15 @@ func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.M
 		if err := json.Unmarshal([]byte(fh), &tp); err != nil {
 			log.Error("error decoding textpayload", "err", err)
 		}
+		err := unitOp.idxdb.SaveFileHash(fh, txHash)
+		if err != nil {
+			log.Error("error savefilehash", "err", err)
+			return false
+		}
+		return true
 	}
-	err := unitOp.idxdb.SaveFileHash(fh, txHash)
-	if err != nil {
-		log.Error("error savefilehash", "err", err)
-		return false
-	}
-	return true
+	log.Error("error dagconfig textfileindex is false ", "err")
+	return false
 }
 
 /**

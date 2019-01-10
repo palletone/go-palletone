@@ -1389,3 +1389,9 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 	return d.unitRep.GetReqIdByTxHash(hash)
 }
+
+// GetTxByFileHash
+func (d *Dag) GetTxByFileHash(filehash string) (map[string]modules.Transactions, error) {
+	return d.unitRep.GetTxByFileHash(filehash)
+}
+
