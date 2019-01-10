@@ -70,9 +70,9 @@ type peerConnection struct {
 
 	peer Peer
 
-	version int         // Eth protocol version number to switch strategies
-	log     log.Plogger // Contextual logger to add extra infos to peer logs
-	lock    sync.RWMutex
+	version int // Eth protocol version number to switch strategies
+	//log     log.Plogger // Contextual logger to add extra infos to peer logs
+	lock sync.RWMutex
 }
 
 // LightPeer encapsulates the methods required to synchronise with a remote light peer.
@@ -126,7 +126,7 @@ func (w *lightPeerWrapper) RequestLeafNodes() error {
 }
 
 // newPeerConnection creates a new downloader peer.
-func newPeerConnection(id string, version int, peer Peer, logger log.Plogger) *peerConnection {
+func newPeerConnection(id string, version int, peer Peer) *peerConnection {
 	return &peerConnection{
 		id:      id,
 		lacking: make(map[common.Hash]struct{}),
@@ -134,7 +134,6 @@ func newPeerConnection(id string, version int, peer Peer, logger log.Plogger) *p
 		peer: peer,
 
 		version: version,
-		log:     logger,
 	}
 }
 
@@ -294,7 +293,7 @@ func (p *peerConnection) setIdle(started time.Time, delivered int, throughput *f
 	*throughput = (1-measurementImpact)*(*throughput) + measurementImpact*measured
 	p.rtt = time.Duration((1-measurementImpact)*float64(p.rtt) + measurementImpact*float64(elapsed))
 
-	p.log.Trace("Peer throughput measurements updated",
+	log.Trace("Peer throughput measurements updated",
 		"hps", p.headerThroughput, "bps", p.blockThroughput,
 		"rps", p.receiptThroughput, "sps", p.stateThroughput,
 		"miss", len(p.lacking), "rtt", p.rtt)

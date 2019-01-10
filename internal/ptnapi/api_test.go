@@ -19,29 +19,29 @@
 package ptnapi
 
 import (
-	"fmt"
-	//"encoding/json"
-	//"github.com/palletone/go-palletone/ptnjson"
-	//"strings"
-	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/dag/modules"
-	"testing"
-	//"github.com/shopspring/decimal"
-	// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
+//"fmt"
+//"eggncoding/json"
+//"github.com/palletone/go-palletone/ptnjson"
+//"strings"
+//"github.com/palletone/go-palletone/common/hexutil"
+//"github.com/palletone/go-palletone/dag/modules"
+//"testing"
+//"github.com/shopspring/decimal"
+// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
 )
 
-func TestHex(t *testing.T) {
-	str := "ptn"
-	hex := hexutil.Encode([]byte(str))
-
-	info := modules.NewTokenInfo("jay", str, "jay2")
-	fmt.Println("info", info.String(), hex)
-	if info.Token.String() == hex {
-		fmt.Println("success.")
-	}
-	fmt.Println("tokenHex: ", info.Token.String())
-	fmt.Println("tokenString: ", info.Token.Str())
-}
+//func TestHex(t *testing.T) {
+//	str := "ptn"
+//	hex := hexutil.Encode([]byte(str))
+//
+//	info := modules.NewTokenInfo("jay", str, "jay2")
+//	fmt.Println("info", info.String(), hex)
+//	if info.Token.String() == hex {
+//		fmt.Println("success.")
+//	}
+//	fmt.Println("tokenHex: ", info.Token.String())
+//	fmt.Println("tokenString: ", info.Token.Str())
+//}
 
 /*func TestRawTransactionGen(t *testing.T) {
 // txid from btc

@@ -107,8 +107,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	logger := log.New()
-	dag, err := dag.NewDag(db, logger)
+	//logger := log.New()
+	dag, err := dag.NewDag(db)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -132,7 +132,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	pool := txspool.NewTxPool(config.TxPool, ptn.dag, logger)
+	pool := txspool.NewTxPool(config.TxPool, ptn.dag)
 	ptn.txPool = pool
 	// // loop txspool to delete overtime tx.
 	// go txspool.LoopTxsPool(pool)

@@ -24,6 +24,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/palletone/go-palletone/common/log"
 	"golang.org/x/net/context"
 	"github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
@@ -87,12 +88,12 @@ func (vmc *VMController) lockContainer(id string) {
 		vmcontroller.containerLocks[id] = refLck
 	} else {
 		refLck.refCount++
-		vmLogger.Debugf("refcount %d (%s)", refLck.refCount, id)
+		log.Debugf("refcount %d (%s)", refLck.refCount, id)
 	}
 	vmcontroller.Unlock()
-	vmLogger.Debugf("waiting for container(%s) lock", id)
+	log.Debugf("waiting for container(%s) lock", id)
 	refLck.lock.Lock()
-	vmLogger.Debugf("got container (%s) lock", id)
+	log.Debugf("got container (%s) lock", id)
 }
 
 func (vmc *VMController) unlockContainer(id string) {
@@ -103,11 +104,11 @@ func (vmc *VMController) unlockContainer(id string) {
 		}
 		refLck.lock.Unlock()
 		if refLck.refCount--; refLck.refCount == 0 {
-			vmLogger.Debugf("container lock deleted(%s)", id)
+			log.Debugf("container lock deleted(%s)", id)
 			delete(vmcontroller.containerLocks, id)
 		}
 	} else {
-		vmLogger.Debugf("no lock to unlock(%s)!!", id)
+		log.Debugf("no lock to unlock(%s)!!", id)
 	}
 	vmcontroller.Unlock()
 }

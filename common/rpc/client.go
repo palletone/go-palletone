@@ -464,7 +464,7 @@ func (c *Client) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMes
 func (c *Client) send(ctx context.Context, op *requestOp, msg interface{}) error {
 	select {
 	case c.requestOp <- op:
-		log.Trace("", "msg", fmt.Sprint("sending ", msg))
+		log.Trace(fmt.Sprint("sending ", msg))
 		err := c.write(ctx, msg)
 		c.sendDone <- err
 		return err

@@ -33,12 +33,11 @@ import (
 )
 
 type IndexDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
 }
 
-func NewIndexDb(db ptndb.Database, l log.ILogger) *IndexDb {
-	return &IndexDb{db: db, logger: l}
+func NewIndexDb(db ptndb.Database) *IndexDb {
+	return &IndexDb{db: db}
 }
 
 type IIndexDb interface {
@@ -50,6 +49,9 @@ type IIndexDb interface {
 	GetAddressTxIds(address common.Address) ([]common.Hash, error)
 	GetFromAddressTxIds(addr string) ([]common.Hash, error)
 	GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
+
+	SaveFileHash(filehash string,txid common.Hash) error
+	GetTxByFileHash(filehash string)([]common.Hash,error)
 }
 
 // ###################### SAVE IMPL START ######################
@@ -77,7 +79,7 @@ func (idxdb *IndexDb) DeleteUtxoByIndex(idx *modules.UtxoIndex) error {
 func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) error {
 	key := append(constants.AddrTransactionsHash_Prefix, address.Bytes()...)
 	key = append(key, txid[:]...)
-	db.logger.Debugf("Index address[%s] and tx[%s]", address.String(), txid.String())
+	log.Debugf("Index address[%s] and tx[%s]", address.String(), txid.String())
 	return db.db.Put(key, txid[:])
 }
 func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error) {
@@ -133,4 +135,30 @@ func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
 	var str string
 	err0 := rlp.DecodeBytes(data, &str)
 	return str, err0
+}
+
+//save filehash key:IDX_FileHash_Txid   value:Txid
+func (db *IndexDb) SaveFileHash(filehash string,txid common.Hash) error {
+	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
+	count := getCountByPrefix(db.db,key)
+	if count > 0 {
+		//There may be duplicate operations
+		log.Info("Filehash already exists!",filehash)
+		return db.db.Put(key,txid[:])
+	}
+	return db.db.Put(key,txid[:])
+}
+
+func (db *IndexDb) GetTxByFileHash(filehash string)([]common.Hash,error) {
+	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
+	bytes,err := db.db.Get(key[:])
+	if err != nil {
+		log.Error("err",err)
+		return nil,err
+	}
+	txid := make([]common.Hash,0)
+	if err := rlp.DecodeBytes(bytes, &txid); err != nil {
+		return nil,err
+	}
+	return txid,err
 }

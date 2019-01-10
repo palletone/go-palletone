@@ -136,11 +136,11 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	if unitHash != (common.Hash{}) {
 		hex_hash = unitHash.String()
 	}
-	var txresult []byte
+	var txresult string
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_TEXT {
 			if msg, ok := msgcopy.Payload.(*modules.TextPayload); ok {
-				txresult = msg.TextHash
+				txresult = msg.FileHash
 			}
 		}
 	}
@@ -363,7 +363,7 @@ func (b *PtnApiBackend) GetHeaderByNumber(number modules.ChainIndex) *modules.He
 }
 
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
-	return b.ptn.dag.GetPrefix(prefix)
+	return b.ptn.dag.GetCommonByPrefix([]byte(prefix))
 } //getprefix
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
@@ -422,31 +422,33 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 
 }
 
-func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-	all, err := b.ptn.dag.GetAllTokenInfo()
-	if err != nil {
-		return nil, err
-	}
-	return all, nil
-}
-func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error) {
-	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
-	if err != nil {
-		return nil, err
-	}
-	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(tokenInfo)
-	return tokenInfoJson, nil
-}
+//所有TokenInfo信息从创币合约读取
+//func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+//	all, err := b.ptn.dag.GetAllTokenInfo()
+//	if err != nil {
+//		return nil, err
+//	}
+//	return all, nil
+//}
+//func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error) {
+//	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
+//	if err != nil {
+//		return nil, err
+//	}
+//	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(tokenInfo)
+//	return tokenInfoJson, nil
+//}
 
-func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenInfoJson, error) {
-	s_token, err := b.ptn.dag.SaveTokenInfo(token)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(s_token)
-	return tokenInfoJson, nil
-}
+//
+//func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenInfoJson, error) {
+//	s_token, err := b.ptn.dag.SaveTokenInfo(token)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(s_token)
+//	return tokenInfoJson, nil
+//}
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	return b.ptn.dag.GetAddrTransactions(addr)

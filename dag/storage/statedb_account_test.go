@@ -25,15 +25,14 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStateDb_AccountInfo(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	l := log.NewTestLog()
-	statedb := NewStateDb(db, l)
+	//l := log.NewTestLog()
+	statedb := NewStateDb(db)
 	vote := make(map[common.Address]bool)
 	addr, _ := common.StringToAddress("P173mPBwP1kXmfpg4p7rzZ5XRsGN1G1WQC8")
 	// store

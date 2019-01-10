@@ -21,6 +21,7 @@ package ptn
 import (
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -29,20 +30,20 @@ import (
 
 // @author Albert·Gou
 type producer interface {
-	// SubscribeNewUnitEvent should return an event subscription of
-	// NewUnitEvent and send events to the given channel.
+	// SubscribeNewProducedUnitEvent should return an event subscription of
+	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
-	// UnitBLSSign is to TBLS sign the unit
-	ToUnitTBLSSign(newUnit *modules.Unit) error
+	// AddToTBLSSignBuf is to TBLS sign the unit
+	AddToTBLSSignBuf(newUnit *modules.Unit)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
-	ToTBLSRecover(sigShare *mp.SigShareEvent) error
+	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error
 
 	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
-	ToProcessDeal(deal *mp.VSSDealEvent) error
+	ProcessVSSDeal(deal *mp.VSSDealEvent) error
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
-	ToProcessResponse(resp *mp.VSSResponseEvent) error
+	AddToResponseBuf(resp *mp.VSSResponseEvent)
 
 	LocalHaveActiveMediator() bool
 	LocalHavePrecedingMediator() bool
@@ -54,8 +55,10 @@ type producer interface {
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	for {
 		select {
-		case <-pm.activeMediatorsUpdatedCh:
-			go pm.switchMediatorConnect()
+		case event := <-pm.activeMediatorsUpdatedCh:
+			if event.IsChanged {
+				go pm.switchMediatorConnect()
+			}
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.activeMediatorsUpdatedSub.Err():

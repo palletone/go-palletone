@@ -35,8 +35,8 @@ import (
 
 func TestGetContractState(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	l := log.NewTestLog()
-	statedb := NewStateDb(db, l)
+	//l := log.NewTestLog()
+	statedb := NewStateDb(db)
 	id := []byte("TestContract")
 	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code")}
 	err := statedb.SaveContract(contract)
@@ -58,8 +58,8 @@ func TestGetContractState(t *testing.T) {
 
 func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	l := log.NewTestLog()
-	statedb := NewStateDb(db, l)
+	//l := log.NewTestLog()
+	statedb := NewStateDb(db)
 	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
 	contractId := depositeContractAddress.Bytes()
 	//fmt.Println(contractId)
