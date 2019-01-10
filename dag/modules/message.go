@@ -38,7 +38,7 @@ const (
 	APP_SIGNATURE
 
 	APP_CONFIG
-	APP_TEXT
+	APP_DATA
 	APP_VOTE
 	OP_MEDIATOR_CREATE
 
@@ -70,7 +70,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	switch cpyMsg.App {
 	// modified by albert·gou
 	default:
-		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
+		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
 		msg.Payload = cpyMsg.Payload
 	case APP_CONFIG:
 		payload, _ := cpyMsg.Payload.(*ConfigPayload)
@@ -479,7 +479,7 @@ type SignatureSet struct {
 // Token exchange message and verify message
 // App: text
 type DataPayload struct {
-	MainData []byte `json:"main_data"`
+	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
 }
 

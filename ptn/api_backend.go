@@ -138,7 +138,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	}
 	var txresult []byte
 	for _, msgcopy := range tx.TxMessages {
-		if msgcopy.App == modules.APP_TEXT {
+		if msgcopy.App == modules.APP_DATA {
 			if msg, ok := msgcopy.Payload.(*modules.DataPayload); ok {
 				txresult = msg.MainData
 			}
@@ -146,7 +146,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	}
 	txOutReply := &ptnjson.GetTxIdResult{
 		Txid:     txid,
-		Apptype:  "APP_TEXT",
+		Apptype:  "APP_DATA",
 		Content:  txresult,
 		Coinbase: true,
 		UnitHash: hex_hash,
@@ -363,7 +363,7 @@ func (b *PtnApiBackend) GetHeaderByNumber(number modules.ChainIndex) *modules.He
 }
 
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix(prefix)
+	return b.ptn.dag.GetCommonByPrefix([]byte(prefix))
 } //getprefix
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {

@@ -166,7 +166,7 @@ func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 	msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
-	if msg.App == modules.APP_TEXT {
+	if msg.App == modules.APP_DATA {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
 	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, txPool)
@@ -230,7 +230,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 	} else {
 		// 1. 组装 message
 		msg := &modules.Message{
-			App:     modules.APP_TEXT,
+			App:     modules.APP_DATA,
 			Payload: &modules.DataPayload{MainData: []byte(*text)},
 		}
 

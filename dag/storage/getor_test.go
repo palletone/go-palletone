@@ -116,7 +116,7 @@ func TestRLPTxDecode(t *testing.T) {
 		Payload: pay1s,
 	}
 	msg2 := &modules.Message{
-		App:     modules.APP_TEXT,
+		App:     modules.APP_DATA,
 		Payload: &modules.DataPayload{FileHash: string("Hello PalletOne")},
 	}
 
@@ -145,7 +145,7 @@ func TestRLPTxDecode(t *testing.T) {
 				fmt.Println("input:= ", in)
 			}
 
-		} else if msg.App == modules.APP_TEXT {
+		} else if msg.App == modules.APP_DATA {
 			text := msg.Payload.(*modules.DataPayload)
 			fmt.Println("msg_app", msg.App, "text", string(text.FileHash))
 		} else {

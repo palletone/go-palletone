@@ -99,7 +99,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment2))
 
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_TEXT, &modules.DataPayload{FileHash: string("Hello PalletOne")}))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_DATA, &modules.DataPayload{FileHash: string("Hello PalletOne")}))
 
 	//signResult, err := SignOnePaymentInput(tx, 0, 0, lockScript, privKey)
 	//if err != nil {

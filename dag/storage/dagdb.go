@@ -787,7 +787,7 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 //		}
 //		switch msg.App {
 //		default:
-//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
+//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
 //			// payment := new(modules.PaymentPayload)
 //			// err2 := json.Unmarshal(data1, &payment)
 //			// if err2 != nil {
@@ -858,7 +858,7 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 //			}
 //			msg.Payload = payment
 //			msgs = append(msgs, msg)
-//		case modules.APP_TEXT: //6
+//		case modules.APP_DATA: //6
 //			payment := new(modules.DataPayload)
 //			err2 := json.Unmarshal(data1, &payment)
 //			if err2 != nil {

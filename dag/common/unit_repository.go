@@ -75,7 +75,6 @@ type IUnitRepository interface {
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error)
-
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -694,8 +693,8 @@ func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *m
 		case modules.APP_SIGNATURE:
 			//todo
 
-		case modules.APP_TEXT:
-			if ok := unitOp.saveTextPayload(txHash, msg); ok != true {
+		case modules.APP_DATA:
+			if ok := unitOp.saveDataPayload(txHash, msg); ok != true {
 				return fmt.Errorf("Save textment payload error.")
 			}
 		default:
@@ -745,7 +744,7 @@ func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
 func getFileHash(tx *modules.Transaction) []byte {
 	var filehash []byte
 	for _, msg := range tx.TxMessages {
-		if msg.App == modules.APP_TEXT {
+		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
 			filehash = pay.MainData
 
@@ -779,7 +778,7 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 save DataPayload data
 */
 
-func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.Message) bool {
+func (unitOp *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 
@@ -797,8 +796,8 @@ func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.M
 		}
 		return true
 	}
-	log.Warn("error dagconfig textfileindex is false ", "err")
-	return false
+	log.Debug("dagconfig textfileindex is false, don't build index for data")
+	return true
 }
 
 /**
