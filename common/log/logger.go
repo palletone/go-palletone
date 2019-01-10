@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/files"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"log"
 	"strings"
 	"sync"
@@ -56,7 +57,7 @@ var mux sync.RWMutex
 
 // init zap.logger
 func InitLogger() {
-	date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
+	//date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
 	for i, path := range DefaultConfig.OutputPaths {
 		if path == LogStdout {
 			continue
@@ -69,7 +70,7 @@ func InitLogger() {
 			index = len(originFileName)
 		}
 
-		DefaultConfig.OutputPaths[i] = fmt.Sprintf("%s_%s.%s", Substr(originFileName, 0, index), date, Substr(originFileName, index+1, len(originFileName)-index))
+		// DefaultConfig.OutputPaths[i] = fmt.Sprintf("%s_%s.%s", Substr(originFileName, 0, index), date, Substr(originFileName, index+1, len(originFileName)-index))
 		if err := files.MakeDirAndFile(DefaultConfig.OutputPaths[i]); err != nil {
 			panic(err)
 		}
@@ -77,7 +78,7 @@ func InitLogger() {
 
 	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
-	go check()
+	// go check()
 }
 
 func ConInitLogger() {
@@ -122,8 +123,29 @@ func initLogger() {
 		}
 	}
 	l.SetOpenModule(DefaultConfig.OpenModule)
-	Logger = l.WithOptions(zap.AddCallerSkip(1))
-	Logger.SetFileName(DefaultConfig.OutputPaths[1])
+	l = l.WithOptions(zap.AddCallerSkip(1))
+	if DefaultConfig.RotationMaxSize > 0 {
+
+		rotateLogCore := func(core zapcore.Core) zapcore.Core {
+			w := zapcore.AddSync(&lumberjack.Logger{
+				Filename:   DefaultConfig.OutputPaths[1],
+				MaxSize:    DefaultConfig.RotationMaxSize, // megabytes
+				MaxBackups: 3,
+				MaxAge:     DefaultConfig.RotationMaxAge, // days
+			})
+			stdout, _, _ := zap.Open("stdout")
+			w = zap.CombineWriteSyncers(stdout, w)
+			encoder := zapcore.NewConsoleEncoder(cfg.EncoderConfig)
+			core2 := zapcore.NewCore(
+				encoder,
+				w,
+				cfg.Level,
+			)
+			return core2
+		}
+		l = l.WithOptions(zap.WrapCore(rotateLogCore))
+	}
+	Logger = l
 }
 
 // Trace
