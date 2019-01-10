@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
+	//"github.com/palletone/go-palletone/dag/modules"
 	// "github.com/palletone/go-palletone/dag/txspool"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -178,9 +178,9 @@ func initGenesis(ctx *cli.Context) error {
 	//if err := dag.SaveChainIndex(chainIndex); err != nil {
 	//	log.Info("save chain index is failed.", "error", err)
 	//} else {
-	token_info := modules.NewTokenInfo("ptncoin", "ptn", "creator_jay")
-	idhex, _ := dag.SaveTokenInfo(token_info)
-	log.Info("save chain index is success.", "idhex", idhex)
+	//token_info := modules.NewTokenInfo("ptncoin", "ptn", "creator_jay")
+	//idhex, _ := dag.SaveTokenInfo(token_info)
+	//log.Info("save chain index is success.", "idhex", idhex)
 	//}
 
 	genesisUnitHash := unit.UnitHash

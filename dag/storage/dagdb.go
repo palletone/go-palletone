@@ -51,9 +51,7 @@ func NewDagDb(db ptndb.Database) *DagDb {
 }
 
 type IDagDb interface {
-	//设置稳定单元的Hash
-	SetStableUnitHash(hash common.Hash)
-	GetStableUnitHash() common.Hash
+
 	//GetGenesisUnit() (*modules.Unit, error)
 	//SaveUnit(unit *modules.Unit, isGenesis bool) error
 
@@ -65,8 +63,8 @@ type IDagDb interface {
 	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	SaveTxLookupEntry(unit *modules.Unit) error
-	SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
-	SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
+	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
+	//SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
 
 	PutCanonicalHash(hash common.Hash, number uint64) error
 	PutHeadHeaderHash(hash common.Hash) error
@@ -92,11 +90,11 @@ type IDagDb interface {
 	GetHeadHeaderHash() (common.Hash, error)
 	GetHeadUnitHash() (common.Hash, error)
 	GetHeadFastUnitHash() (common.Hash, error)
-	GetAllLeafNodes() ([]*modules.Header, error)
+	//GetAllLeafNodes() ([]*modules.Header, error)
 	GetTrieSyncProgress() (uint64, error)
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
-	GetTokenInfo(key string) (*modules.TokenInfo, error)
-	GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	//GetTokenInfo(key string) (*modules.TokenInfo, error)
+	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
 
 	// common geter
 	GetCommon(key []byte) ([]byte, error)
@@ -126,15 +124,6 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 		fmt.Println("key:::::::::  ", k, string(val))
 	}
 	return result
-}
-func (db *DagDb) SetStableUnitHash(hash common.Hash) {
-	StoreBytes(db.db, constants.StableUnitHash, hash.Bytes())
-}
-func (db *DagDb) GetStableUnitHash() common.Hash {
-	data, _ := GetBytes(db.db, constants.StableUnitHash)
-	hash := common.Hash{}
-	hash.SetBytes(data)
-	return hash
 }
 
 // ###################### SAVE IMPL START ######################
@@ -382,34 +371,35 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	}
 	return nil
 }
-func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
-	if token_info == nil {
-		return token_info, errors.New("token info is null.")
-	}
-	// id, _ := modules.SetIdTypeByHex(token_info.TokenHex)
 
-	key := string(constants.TOKENTYPE) + token_info.TokenHex
-	log.Info("================save token info =========", "key", key)
-	if err := StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), token_info); err != nil {
-		return token_info, err
-	}
-	// 更新all token_info table.
-	infos, _ := dagdb.GetAllTokenInfo()
-	if infos == nil {
-		infos = new(modules.AllTokenInfo)
-	}
-
-	infos.Add(token_info)
-	dagdb.SaveAllTokenInfo(infos)
-	return token_info, nil
-}
-
-func (dagdb *DagDb) SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error {
-	if err := StoreString(dagdb.db, string(constants.TOKENINFOS), token_itmes.String()); err != nil {
-		return err
-	}
-	return nil
-}
+//func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
+//	if token_info == nil {
+//		return token_info, errors.New("token info is null.")
+//	}
+//	// id, _ := modules.SetIdTypeByHex(token_info.TokenHex)
+//
+//	key := string(constants.TOKENTYPE) + token_info.TokenHex
+//	log.Info("================save token info =========", "key", key)
+//	if err := StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), token_info); err != nil {
+//		return token_info, err
+//	}
+//	// 更新all token_info table.
+//	infos, _ := dagdb.GetAllTokenInfo()
+//	if infos == nil {
+//		infos = new(modules.AllTokenInfo)
+//	}
+//
+//	infos.Add(token_info)
+//	dagdb.SaveAllTokenInfo(infos)
+//	return token_info, nil
+//}
+//
+//func (dagdb *DagDb) SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error {
+//	if err := StoreString(dagdb.db, string(constants.TOKENINFOS), token_itmes.String()); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
@@ -980,59 +970,60 @@ func (dagdb *DagDb) PutTrieSyncProgress(count uint64) error {
 	return nil
 }
 
-// GetTokenInfo
-func (dagdb *DagDb) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-	data, err := dagdb.db.Get(constants.TOKENINFOS)
-	if err != nil {
-		log.Info("123123123123", "all", data)
-		return nil, err
-	}
-	if all, err := modules.Jsonbytes2AllTokenInfo(data); err != nil {
-		log.Info("78787878", "all", all)
-		return nil, err
-	} else {
-		log.Info("56565656", "all", all)
-		return all, nil
-	}
-}
-func (dagdb *DagDb) GetTokenInfo(key string) (*modules.TokenInfo, error) {
-	log.Info("================get token info =========", "key", string(key))
-	key = *(*string)(unsafe.Pointer(&constants.TOKENTYPE)) + key
-	data, err := dagdb.db.Get([]byte(key))
-	if err != nil {
-		return nil, err
-	}
-
-	info := new(modules.TokenInfo)
-	if err := rlp.DecodeBytes(data, &info); err != nil {
-		return nil, err
-	}
-	return info, nil
-}
-
-func (dagdb *DagDb) GetAllLeafNodes() ([]*modules.Header, error) {
-	all_token, err := dagdb.GetAllTokenInfo()
-	if err != nil {
-		return nil, err
-	}
-	if all_token == nil {
-		return nil, errors.New("all token info is nil.")
-	}
-	if all_token.Items == nil {
-		return nil, errors.New("items's map is nil.")
-	}
-	headers := make([]*modules.Header, 0)
-	for _, tokenInfo := range all_token.Items {
-		unit, err := dagdb.GetLastIrreversibleUnit(tokenInfo.Token)
-		if err != nil {
-			log.Error("GetLastIrreversibleUnit failed,", "error", err)
-		}
-		if unit != nil {
-			headers = append(headers, unit.UnitHeader)
-		}
-	}
-	return headers, nil
-}
+//
+//// GetTokenInfo
+//func (dagdb *DagDb) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+//	data, err := dagdb.db.Get(constants.TOKENINFOS)
+//	if err != nil {
+//		log.Info("123123123123", "all", data)
+//		return nil, err
+//	}
+//	if all, err := modules.Jsonbytes2AllTokenInfo(data); err != nil {
+//		log.Info("78787878", "all", all)
+//		return nil, err
+//	} else {
+//		log.Info("56565656", "all", all)
+//		return all, nil
+//	}
+//}
+//func (dagdb *DagDb) GetTokenInfo(key string) (*modules.TokenInfo, error) {
+//	log.Info("================get token info =========", "key", string(key))
+//	key = *(*string)(unsafe.Pointer(&constants.TOKENTYPE)) + key
+//	data, err := dagdb.db.Get([]byte(key))
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	info := new(modules.TokenInfo)
+//	if err := rlp.DecodeBytes(data, &info); err != nil {
+//		return nil, err
+//	}
+//	return info, nil
+//}
+//
+//func (dagdb *DagDb) GetAllLeafNodes() ([]*modules.Header, error) {
+//	all_token, err := dagdb.GetAllTokenInfo()
+//	if err != nil {
+//		return nil, err
+//	}
+//	if all_token == nil {
+//		return nil, errors.New("all token info is nil.")
+//	}
+//	if all_token.Items == nil {
+//		return nil, errors.New("items's map is nil.")
+//	}
+//	headers := make([]*modules.Header, 0)
+//	for _, tokenInfo := range all_token.Items {
+//		unit, err := dagdb.GetLastIrreversibleUnit(tokenInfo.Token)
+//		if err != nil {
+//			log.Error("GetLastIrreversibleUnit failed,", "error", err)
+//		}
+//		if unit != nil {
+//			headers = append(headers, unit.UnitHeader)
+//		}
+//	}
+//	return headers, nil
+//}
 
 // ###################### GET IMPL END ######################
 

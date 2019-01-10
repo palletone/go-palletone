@@ -155,7 +155,7 @@ type LightDag interface {
 	GetHeaderByHash(common.Hash) *modules.Header
 	CurrentHeader() *modules.Header
 	InsertHeaderDag([]*modules.Header, int) (int, error)
-	GetAllLeafNodes() ([]*modules.Header, error)
+	//GetAllLeafNodes() ([]*modules.Header, error)
 	//Rollback([]common.Hash)
 }
 

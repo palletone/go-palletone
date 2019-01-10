@@ -452,9 +452,9 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 
 //All leaf nodes for dag downloader.
 //MUST have Priority.
-func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
-	return d.dagdb.GetAllLeafNodes()
-}
+//func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
+//	return d.dagdb.GetAllLeafNodes()
+//}
 
 /**
 获取account address下面的token信息
@@ -1150,20 +1150,21 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 	return d.stateRep.GetContractTpl(templateID)
 }
 
-// save token info
-func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
-	return d.dagdb.SaveTokenInfo(token_info)
-}
-
-// Get token info
-func (d *Dag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
-	return d.dagdb.GetTokenInfo(key)
-}
-
-// Get all token info
-func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-	return d.dagdb.GetAllTokenInfo()
-}
+//
+//// save token info
+//func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
+//	return d.dagdb.SaveTokenInfo(token_info)
+//}
+//
+//// Get token info
+//func (d *Dag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
+//	return d.dagdb.GetTokenInfo(key)
+//}
+//
+//// Get all token info
+//func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+//	return d.dagdb.GetAllTokenInfo()
+//}
 
 //@Yiran
 func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
