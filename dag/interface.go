@@ -140,3 +140,9 @@ type IDag interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
 }
+type ICache interface {
+	Set(key, value []byte, expireSeconds int) (err error)
+	Get(key []byte) (value []byte, err error)
+	Del(key []byte) bool
+	Clear()
+}

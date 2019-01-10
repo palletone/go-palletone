@@ -45,7 +45,7 @@ import (
 )
 
 type Dag struct {
-	Cache       *freecache.Cache
+	Cache       ICache
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
@@ -1394,4 +1394,3 @@ func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 func (d *Dag) GetTxByFileHash(filehash string) (map[string]modules.Transactions, error) {
 	return d.unitRep.GetTxByFileHash(filehash)
 }
-
