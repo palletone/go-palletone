@@ -22,7 +22,6 @@ package core
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -38,7 +37,7 @@ func (u *Utxo4Test) GetAmount() uint64 {
 	return u.Amount
 }
 func TestSelect_utxo_Greedy(t *testing.T) {
-	log.NewTestLog()
+	//log.NewTestLog()
 
 	utxos := []*Utxo4Test{}
 	utxos = append(utxos, &Utxo4Test{Amount: 3, TxId: common.Hash{}, MsgIdx: 0, OutIdx: 2})

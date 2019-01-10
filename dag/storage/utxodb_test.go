@@ -34,8 +34,8 @@ import (
 func TestGetUtxos(t *testing.T) {
 
 	db, _ := ptndb.NewMemDatabase()
-	l := log.NewTestLog()
-	utxodb := NewUtxoDb(db, l)
+	//l := log.NewTestLog()
+	utxodb := NewUtxoDb(db)
 	key := new(modules.OutPoint)
 	key.MessageIndex = 1
 	key.OutIndex = 0
@@ -53,32 +53,32 @@ func TestGetUtxos(t *testing.T) {
 
 	utxos, err := utxodb.GetAllUtxos()
 	for key, u := range utxos {
-		utxodb.logger.Debugf("get all utxo error:%s", err)
-		utxodb.logger.Debugf("key:%s", key.ToKey())
-		utxodb.logger.Debugf("utxo value:%s", u)
+		log.Debugf("get all utxo error:%s", err)
+		log.Debugf("key:%s", key.ToKey())
+		log.Debugf("utxo value:%s", u)
 	}
 	result := utxodb.GetPrefix(constants.UTXO_PREFIX)
 	for key, b := range result {
-		utxodb.logger.Debugf("result::%s", key)
+		log.Debugf("result::%s", key)
 		utxo := new(modules.Utxo)
 		err := rlp.DecodeBytes(b, utxo)
 		if err != nil {
-			utxodb.logger.Errorf("utxo error:%s ", err)
+			log.Errorf("utxo error:%s ", err)
 		}
 	}
 
 	result1 := utxodb.GetPrefix(constants.AddrOutPoint_Prefix)
 	for key, b := range result1 {
-		utxodb.logger.Debugf("result:", key)
+		log.Debugf("result:", key)
 		out := new(modules.OutPoint)
 		rlp.DecodeBytes(b, out)
-		utxodb.logger.Debugf("outpoint ", err, out)
+		log.Debugf("outpoint ", err, out)
 		if utxo_byte, err := db.Get(out.ToKey()); err != nil {
-			utxodb.logger.Errorf("get utxo from outpoint error:%s", err)
+			log.Errorf("get utxo from outpoint error:%s", err)
 		} else {
 			utxo := new(modules.Utxo)
 			err := rlp.DecodeBytes(utxo_byte, utxo)
-			utxodb.logger.Errorf("get utxo by outpoint :%s,%s", err, utxo)
+			log.Errorf("get utxo by outpoint :%s,%s", err, utxo)
 		}
 	}
 }

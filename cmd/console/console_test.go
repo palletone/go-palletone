@@ -27,7 +27,7 @@ import (
 	"time"
 
 	//"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/log"
+	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
@@ -115,7 +115,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		t.Fatalf("failed to create temporary keystore: %v", err)
 	}
 	testCfg := &node.Config{DataDir: workspace, UseLightweightKDF: true, Name: testInstance}
-	testCfg.Logger = log.NewTestLog()
+	//testCfg.Logger = log.NewTestLog()
 	// Create a networkless protocol stack and start an PalletOne service within
 	stack, err := node.New(testCfg)
 	if err != nil {
