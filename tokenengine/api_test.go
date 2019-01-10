@@ -99,7 +99,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment2))
 
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_TEXT, &modules.TextPayload{FileHash: string("Hello PalletOne")}))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_TEXT, &modules.DataPayload{FileHash: string("Hello PalletOne")}))
 
 	//signResult, err := SignOnePaymentInput(tx, 0, 0, lockScript, privKey)
 	//if err != nil {
@@ -134,9 +134,9 @@ func TestSignAndVerifyATx(t *testing.T) {
 	if err != nil {
 		t.Logf("validate error:%s", err)
 	}
-	// textPayload :=tx.TxMessages[2].Payload.(*modules.TextPayload)
+	// textPayload :=tx.TxMessages[2].Payload.(*modules.DataPayload)
 	//textPayload.Text=[]byte("Bad")
-	//fmt.Printf("%s", tx.TxMessages[2].Payload.(*modules.TextPayload))
+	//fmt.Printf("%s", tx.TxMessages[2].Payload.(*modules.DataPayload))
 
 	err = ScriptValidate(lockScript, nil, tx, 1, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))

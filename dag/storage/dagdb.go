@@ -859,7 +859,7 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 //			msg.Payload = payment
 //			msgs = append(msgs, msg)
 //		case modules.APP_TEXT: //6
-//			payment := new(modules.TextPayload)
+//			payment := new(modules.DataPayload)
 //			err2 := json.Unmarshal(data1, &payment)
 //			if err2 != nil {
 //				return nil, err2

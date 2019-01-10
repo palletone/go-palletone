@@ -732,7 +732,7 @@ func NewAddressScriptHashFromHash(scriptHash []byte, netScriptHashAddrID byte) (
 type GetTxIdResult struct {
 	Txid     string `json:"txid"`
 	Apptype  string `json:"apptype"`
-	Content  string `json:"content"`
+	Content  []byte `json:"content"`
 	Coinbase bool   `json:"coinbase"`
 	UnitHash string `json:"unit_hash"`
 }

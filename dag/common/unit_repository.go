@@ -20,7 +20,6 @@
 package common
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -74,7 +73,7 @@ type IUnitRepository interface {
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	UpdateHeadByBatch(hash common.Hash, number uint64) error
 	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetTxByFileHash(filehash string) (map[string]modules.Transactions, error)
+	GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -740,12 +739,12 @@ func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
 	return outpoints
 }
 
-func getFileHash(tx *modules.Transaction) string {
-	var filehash string
+func getFileHash(tx *modules.Transaction) []byte {
+	var filehash []byte
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_TEXT {
-			pay := msg.Payload.(*modules.TextPayload)
-			filehash = pay.FileHash
+			pay := msg.Payload.(*modules.DataPayload)
+			filehash = pay.MainData
 
 		}
 	}
@@ -774,33 +773,28 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 
 /**
 保存TextPayload
-save TextPayload data
+save DataPayload data
 */
 
 func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 
-	payload, ok := pl.(*modules.TextPayload)
+	payload, ok := pl.(*modules.DataPayload)
 	if ok == false {
 		return false
 	}
 
-	fh := payload.FileHash
-	var tp modules.TextPayload
-
 	if dagconfig.DefaultConfig.TextFileHashIndex {
-		if err := json.Unmarshal([]byte(fh), &tp); err != nil {
-			log.Error("error decoding textpayload", "err", err)
-		}
-		err := unitOp.idxdb.SaveFileHash(fh, txHash)
+
+		err := unitOp.idxdb.SaveFileHash(payload.MainData, txHash)
 		if err != nil {
 			log.Error("error savefilehash", "err", err)
 			return false
 		}
 		return true
 	}
-	log.Error("error dagconfig textfileindex is false ", "err")
+	log.Warn("error dagconfig textfileindex is false ", "err")
 	return false
 }
 
@@ -1115,7 +1109,7 @@ func (unitOp *UnitRepository) GetAddrTransactions(addr string) (map[string]modul
 }
 
 //get a map  key:filehash value:tx or txs
-func (unitOp *UnitRepository) GetTxByFileHash(filehash string) (map[string]modules.Transactions, error) {
+func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error) {
 	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
 	if err != nil {
 		return nil, err
@@ -1127,7 +1121,8 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash string) (map[string]modul
 		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
 		txs = append(txs, tx)
 	}
-	alltxs[filehash] = txs
+	var strfilehash string = string(filehash[:])
+	alltxs[strfilehash] = txs
 
 	return alltxs, nil
 }

@@ -50,8 +50,8 @@ type IIndexDb interface {
 	GetFromAddressTxIds(addr string) ([]common.Hash, error)
 	GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
 
-	SaveFileHash(filehash string,txid common.Hash) error
-	GetTxByFileHash(filehash string)([]common.Hash,error)
+	SaveFileHash(filehash []byte,txid common.Hash) error
+	GetTxByFileHash(filehash []byte)([]common.Hash,error)
 }
 
 // ###################### SAVE IMPL START ######################
@@ -138,7 +138,7 @@ func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
 }
 
 //save filehash key:IDX_FileHash_Txid   value:Txid
-func (db *IndexDb) SaveFileHash(filehash string,txid common.Hash) error {
+func (db *IndexDb) SaveFileHash(filehash []byte,txid common.Hash) error {
 	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
 	count := getCountByPrefix(db.db,key)
 	if count > 0 {
@@ -149,7 +149,7 @@ func (db *IndexDb) SaveFileHash(filehash string,txid common.Hash) error {
 	return db.db.Put(key,txid[:])
 }
 
-func (db *IndexDb) GetTxByFileHash(filehash string)([]common.Hash,error) {
+func (db *IndexDb) GetTxByFileHash(filehash []byte)([]common.Hash,error) {
 	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
 	bytes,err := db.db.Get(key[:])
 	if err != nil {
