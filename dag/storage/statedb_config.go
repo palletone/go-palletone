@@ -30,7 +30,7 @@ import (
 获取配置信息
 get config information
 */
-func (statedb *StateDb) GetConfig(name []byte) ([]byte, *modules.StateVersion, error) {
+func (statedb *StateDb) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 	key := append(constants.CONF_PREFIX, name...)
 	return retrieveWithVersion(statedb.db, key)
 

@@ -49,7 +49,9 @@ type IIndexDb interface {
 	GetAddressTxIds(address common.Address) ([]common.Hash, error)
 	GetFromAddressTxIds(addr string) ([]common.Hash, error)
 	GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
-	SaveFileHash(filehash string) error
+
+	SaveFileHash(filehash []byte,txid common.Hash) error
+	GetTxByFileHash(filehash []byte)([]common.Hash,error)
 }
 
 // ###################### SAVE IMPL START ######################
@@ -135,6 +137,28 @@ func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
 	return str, err0
 }
 
-func (db *IndexDb) SaveFileHash(filehash string) error {
-	return nil
+//save filehash key:IDX_FileHash_Txid   value:Txid
+func (db *IndexDb) SaveFileHash(filehash []byte,txid common.Hash) error {
+	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
+	count := getCountByPrefix(db.db,key)
+	if count > 0 {
+		//There may be duplicate operations
+		log.Info("Filehash already exists!",filehash)
+		return db.db.Put(key,txid[:])
+	}
+	return db.db.Put(key,txid[:])
+}
+
+func (db *IndexDb) GetTxByFileHash(filehash []byte)([]common.Hash,error) {
+	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
+	bytes,err := db.db.Get(key[:])
+	if err != nil {
+		log.Error("err",err)
+		return nil,err
+	}
+	txid := make([]common.Hash,0)
+	if err := rlp.DecodeBytes(bytes, &txid); err != nil {
+		return nil,err
+	}
+	return txid,err
 }

@@ -443,9 +443,10 @@ func (dl *downloadTester) GetTd(hash common.Hash, number uint64) uint64 {
 
 	return dl.ownChainTd[hash]
 }
-func (dl *downloadTester) GetAllLeafNodes() ([]*modules.Header, error) {
-	return []*modules.Header{}, nil
-}
+
+//func (dl *downloadTester) GetAllLeafNodes() ([]*modules.Header, error) {
+//	return []*modules.Header{}, nil
+//}
 
 // InsertHeaderChain injects a new batch of headers into the simulated chain.
 func (dl *downloadTester) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, error) {

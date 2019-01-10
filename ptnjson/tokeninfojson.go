@@ -21,7 +21,7 @@
 package ptnjson
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
+// "github.com/palletone/go-palletone/dag/modules"
 )
 
 // TokenInfoJson Yiran@ sturct made for display
@@ -35,13 +35,13 @@ type TokenInfoJson struct {
 }
 
 // ConvertTokenInfo2Json Yiran@convert token info to json format
-func ConvertTokenInfo2Json(tokenInfo *modules.TokenInfo) *TokenInfoJson {
-	return &TokenInfoJson{
-		Name:         tokenInfo.Name,
-		TokenStr:     tokenInfo.TokenStr,
-		TokenHex:     tokenInfo.TokenHex,
-		Token:        tokenInfo.Token.TokenType(),
-		Creator:      tokenInfo.Creator,
-		CreationDate: tokenInfo.CreationDate,
-	}
-}
+// func ConvertTokenInfo2Json(tokenInfo *modules.TokenInfo) *TokenInfoJson {
+// 	return &TokenInfoJson{
+// 		Name:         tokenInfo.Name,
+// 		TokenStr:     tokenInfo.TokenStr,
+// 		TokenHex:     tokenInfo.TokenHex,
+// 		Token:        tokenInfo.Token.TokenType(),
+// 		Creator:      tokenInfo.Creator,
+// 		CreationDate: tokenInfo.CreationDate,
+// 	}
+// }

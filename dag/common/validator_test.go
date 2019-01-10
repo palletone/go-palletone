@@ -64,7 +64,7 @@ func TestValidator(t *testing.T) {
 	outputs = append(outputs, output)
 	tx := new(modules.Transaction)
 	tx.TxMessages = append(tx.TxMessages, &modules.Message{App: modules.APP_PAYMENT, Payload: &modules.PaymentPayload{Inputs: inputs, Outputs: outputs, LockTime: uint32(999)}},
-		&modules.Message{App: modules.APP_TEXT, Payload: &modules.TextPayload{FileHash: string("test text.")}}, &modules.Message{App: modules.APP_CONTRACT_TPL, Payload: &modules.ContractTplPayload{Name: "contract name"}})
+		&modules.Message{App: modules.APP_TEXT, Payload: &modules.DataPayload{FileHash: string("test text.")}}, &modules.Message{App: modules.APP_CONTRACT_TPL, Payload: &modules.ContractTplPayload{Name: "contract name"}})
 	tx.Hash()
 	//log.Debugf("tx hash :", tx.Hash().String(), tx.TxMessages[2])
 	//dbconn := storage.ReNewDbConn("D:\\Workspace\\Code\\Go\\src\\github.com\\palletone\\go-palletone\\bin\\gptn\\leveldb")

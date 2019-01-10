@@ -478,8 +478,9 @@ type SignatureSet struct {
 
 // Token exchange message and verify message
 // App: text
-type TextPayload struct {
-	FileHash string `json:"filehash"`
+type DataPayload struct {
+	MainData []byte `json:"main_data"`
+	ExtraData []byte `json:"extra_data"`
 }
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {

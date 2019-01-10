@@ -40,7 +40,7 @@ type idxSignaturePayload struct {
 }
 type idxTextPayload struct {
 	Index int
-	*TextPayload
+	*DataPayload
 }
 type idxMediatorCreateOperation struct {
 	Index int
@@ -144,7 +144,7 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 					ContractStopRequestPayload: msg.Payload.(*ContractStopRequestPayload),
 				})
 		} else if msg.App == APP_TEXT {
-			temp.Text = append(temp.Text, &idxTextPayload{Index: idx, TextPayload: msg.Payload.(*TextPayload)})
+			temp.Text = append(temp.Text, &idxTextPayload{Index: idx, DataPayload: msg.Payload.(*DataPayload)})
 		} else if msg.App == APP_SIGNATURE {
 			temp.Signature = append(temp.Signature, &idxSignaturePayload{Index: idx, SignaturePayload: msg.Payload.(*SignaturePayload)})
 		} else if msg.App == APP_CONFIG {
@@ -202,7 +202,7 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 	}
 
 	for _, p := range temp.Text {
-		tx.TxMessages[p.Index] = NewMessage(APP_TEXT, p.TextPayload)
+		tx.TxMessages[p.Index] = NewMessage(APP_TEXT, p.DataPayload)
 		processed++
 	}
 	for _, p := range temp.Signature {

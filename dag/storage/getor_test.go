@@ -117,7 +117,7 @@ func TestRLPTxDecode(t *testing.T) {
 	}
 	msg2 := &modules.Message{
 		App:     modules.APP_TEXT,
-		Payload: &modules.TextPayload{FileHash: string("Hello PalletOne")},
+		Payload: &modules.DataPayload{FileHash: string("Hello PalletOne")},
 	}
 
 	req := &modules.ContractInvokeRequestPayload{ContractId: []byte{0xcc}, FunctionName: "TestFun", Args: [][]byte{[]byte{0x11}, {0x22}}}
@@ -146,7 +146,7 @@ func TestRLPTxDecode(t *testing.T) {
 			}
 
 		} else if msg.App == modules.APP_TEXT {
-			text := msg.Payload.(*modules.TextPayload)
+			text := msg.Payload.(*modules.DataPayload)
 			fmt.Println("msg_app", msg.App, "text", string(text.FileHash))
 		} else {
 			req := msg.Payload.(*modules.ContractInvokeRequestPayload)

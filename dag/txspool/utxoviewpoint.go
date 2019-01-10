@@ -25,10 +25,14 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 )
+
+type utxoBaseOp interface {
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
+}
 
 //  UtxoViewpoint
 type UtxoViewpoint struct {
@@ -61,7 +65,7 @@ func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
 	}
 	return view.entries[outpoint]
 }
-func (view *UtxoViewpoint) SpentUtxo(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) SpentUtxo(db utxoBaseOp, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
@@ -80,7 +84,7 @@ func (view *UtxoViewpoint) SpentUtxo(db storage.IUtxoDb, outpoints map[modules.O
 	}
 	return nil
 }
-func (view *UtxoViewpoint) FetchUnitUtxos(db storage.IUtxoDb, unit *modules.Unit) error {
+func (view *UtxoViewpoint) FetchUnitUtxos(db utxoBaseOp, unit *modules.Unit) error {
 	transactions := unit.Transactions()
 	if len(transactions) <= 1 {
 		return nil
@@ -146,7 +150,7 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db storage.IUtxoDb, unit *modules.Unit
 // 	}
 // 	return needSet, nil
 // }
-func (view *UtxoViewpoint) FetchUtxos(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) FetchUtxos(db utxoBaseOp, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
@@ -160,7 +164,7 @@ func (view *UtxoViewpoint) FetchUtxos(db storage.IUtxoDb, outpoints map[modules.
 	return view.fetchUtxosMain(db, neededSet)
 
 }
-func (view *UtxoViewpoint) fetchUtxosMain(db storage.IUtxoDb, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) fetchUtxosMain(db utxoBaseOp, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}

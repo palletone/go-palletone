@@ -117,11 +117,11 @@ type Backend interface {
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 
 	/* ---------------------save token info ------------------------*/
-	SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
+	//SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
 
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-	GetAllTokenInfo() (*modules.AllTokenInfo, error)
-	GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
+	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	//GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
