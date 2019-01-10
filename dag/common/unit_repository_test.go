@@ -220,19 +220,19 @@ func TestRlpDecode(t *testing.T) {
 	fmt.Printf("%q", data)
 }
 
-func TestCreateUnit(t *testing.T) {
-
-	rep := mockUnitRepository()
-	addr := common.Address{} // minner addr
-	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
-	//units, err := CreateUnit(&addr, time.Now())
-	units, err := rep.CreateUnit(&addr, nil, nil, time.Now())
-	if err != nil {
-		log.Println("create unit error:", err)
-	} else {
-		log.Println("New unit:", units)
-	}
-}
+//func TestCreateUnit(t *testing.T) {
+//
+//	rep := mockUnitRepository()
+//	addr := common.Address{} // minner addr
+//	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
+//	//units, err := CreateUnit(&addr, time.Now())
+//	units, err := rep.CreateUnit(&addr, nil, time.Now())
+//	if err != nil {
+//		log.Println("create unit error:", err)
+//	} else {
+//		log.Println("New unit:", units)
+//	}
+//}
 
 //func TestGetContractState(t *testing.T) {
 //	rep:=mockUnitRepository()
