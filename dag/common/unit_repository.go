@@ -30,8 +30,8 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
+
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -47,7 +47,7 @@ type IUnitRepository interface {
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
@@ -72,8 +72,10 @@ type IUnitRepository interface {
 	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	UpdateHeadByBatch(hash common.Hash, number uint64) error
-	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
+
+	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error)
+
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -158,9 +160,10 @@ func (rep *UnitRepository) SaveHashByNumber(uHash common.Hash, number modules.Ch
 func (rep *UnitRepository) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	return rep.dagdb.UpdateHeadByBatch(hash, number)
 }
-func (rep *UnitRepository) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
-	return rep.dagdb.GetHeaderRlp(hash, index)
-}
+
+//func (rep *UnitRepository) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
+//	return rep.dagdb.GetHeaderRlp(hash, index)
+//}
 
 //func RHashStr(x interface{}) string {
 //	x_byte, err := json.Marshal(x)
@@ -242,11 +245,11 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
-	if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
-		log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
-		return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
-	}
+func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+	//if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
+	//	log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
+	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
+	//}
 	units := []modules.Unit{}
 	// step1. get mediator responsible for asset (for now is ptn)
 	// bAsset, _, _ := unitOp.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))

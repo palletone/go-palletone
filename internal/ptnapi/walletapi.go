@@ -242,20 +242,28 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 }
 
 
-func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
-
-	//realNet := &chaincfg.MainNetParams
-	var LockTime int64
-	LockTime = 0
-
+func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string) (string, error) {
+    
+    var proofTransactionGenParams ptnjson.ProofTransactionGenParams
+	err := json.Unmarshal([]byte(params), &proofTransactionGenParams)
+	if err != nil {
+		return "", err
+	}
+    var amount decimal.Decimal
+    //realNet := &chaincfg.MainNetParams
 	amounts := []ptnjson.AddressAmt{}
-	if to == "" {
-		return "", fmt.Errorf("amounts is empty")
+	for _, outOne := range proofTransactionGenParams.Outputs {
+		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
+			continue
+		}
+		amounts = append(amounts, ptnjson.AddressAmt{outOne.Address, outOne.Amount})
+		amount = amount.Add(outOne.Amount)
+	}
+	if len(amounts) == 0 || !amount.IsPositive() {
+		return "", nil
 	}
 
-	amounts = append(amounts, ptnjson.AddressAmt{to, amount})
-
-	utxoJsons, err := s.b.GetAddrUtxos(from)
+	utxoJsons, err := s.b.GetAddrUtxos(proofTransactionGenParams.From)
 	if err != nil {
 		return "", err
 	}
@@ -267,11 +275,11 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, from strin
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
 		}
 	}
+	fee := proofTransactionGenParams.Fee
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is ZERO ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
-
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
@@ -288,15 +296,18 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, from strin
 	}
 
 	if change > 0 {
-		amounts = append(amounts, ptnjson.AddressAmt{from, ptnjson.Dao2Ptn(change)})
+		amounts = append(amounts, ptnjson.AddressAmt{proofTransactionGenParams.From, ptnjson.Dao2Ptn(change)})
 	}
 
-	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
+	if len(inputs) == 0 {
+		return "", nil
+	}
+	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime,proofTransactionGenParams.Proof)
 	result, _ := WalletCreateProofTransaction(arg)
 	//fmt.Println(result)
 	return result, nil
 }
-func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
+func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransactionCmd) (string, error) {
 
 	// Validate the locktime, if given.
 	if c.LockTime != nil &&
@@ -306,6 +317,8 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransact
 			Message: "Locktime out of range",
 		}
 	}
+	textPayload := new(modules.TextPayload)
+	textPayload.FileHash = c.Record
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
 	//先构造PaymentPayload结构，再组装成Transaction结构
@@ -382,6 +395,8 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransact
 		TxMessages: make([]*modules.Message, 0),
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	
+	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_TEXT, textPayload))
 	//mtx.TxHash = mtx.Hash()
 	// sign mtx
 	for index, input := range inputjson {
@@ -392,17 +407,18 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransact
 		sh := common.BytesToHash(hashforsign)
 		inputjson[index].HashForSign = sh.String()
 	}
-	PaymentJson := walletjson.PaymentJson{}
-	PaymentJson.Inputs = inputjson
-	PaymentJson.Outputs = OutputJson
-	txjson := walletjson.TxJson{}
-	txjson.Payload = append(txjson.Payload, PaymentJson)
-	bytetxjson, err := json.Marshal(txjson)
+	ProofJson := walletjson.ProofJson{}
+	ProofJson.Inputs = inputjson
+	ProofJson.Outputs = OutputJson
+	ProofJson.Record = textPayload.FileHash
+	txproofjson := walletjson.TxProofJson{}
+	txproofjson.Payload = append(txproofjson.Payload, ProofJson)
+	bytetxproofjson, err := json.Marshal(txproofjson)
 	if err != nil {
 		return "", err
 	}
 
-	return string(bytetxjson), nil
+	return string(bytetxproofjson), nil
 }
 
 func (s *PublicWalletAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {

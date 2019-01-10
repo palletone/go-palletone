@@ -84,7 +84,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// 1. 判断是否满足生产的若干条件
 
 	// 2. 生产验证单元，添加交易集、时间戳、签名
-	newUnits, err := dag.CreateUnit(&producer, txpool, ks, when)
+	newUnits, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
 		log.Debug("GenerateUnit", "error", err.Error())
 		return nil

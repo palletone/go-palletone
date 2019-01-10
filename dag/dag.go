@@ -35,7 +35,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -46,7 +45,7 @@ import (
 )
 
 type Dag struct {
-	Cache       *freecache.Cache
+	Cache       ICache
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
@@ -390,6 +389,7 @@ func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
 	return data
 }
 
+
 func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
 	number, err := d.dagdb.GetNumberWithUnitHash(hash)
 	if err != nil {
@@ -398,6 +398,16 @@ func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawV
 	}
 	return d.dagdb.GetHeaderRlp(hash, number.Index)
 }
+
+//func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
+//	number, err := d.unitRep.GetNumberWithUnitHash(hash)
+//	if err != nil {
+//		log.Error("Get header rlp ", "error", err.Error())
+//		return nil
+//	}
+//	return d.unitRep.GetHeaderRlp(hash, number.Index)
+//}
+
 
 // InsertHeaderDag attempts to insert the given header chain in to the local
 // chain, possibly creating a reorg. If an error is returned, it will return the
@@ -913,8 +923,8 @@ func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStat
 	return d.stateRep.GetContractStatesById(id)
 }
 
-func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
-	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
+func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+	return d.unitRep.CreateUnit(mAddr, txpool, t)
 }
 
 //modified by Albert·Gou
@@ -1395,4 +1405,3 @@ func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 func (d *Dag) GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error) {
 	return d.unitRep.GetTxByFileHash(filehash)
 }
-
