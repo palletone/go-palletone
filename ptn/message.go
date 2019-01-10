@@ -403,6 +403,25 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return err
 	}
 
+	var temptxs modules.Transactions
+	for _, tx := range unit.Txs {
+		if tx.IsContractTx() {
+			if !pm.contractProc.CheckContractTxValid(tx, true) {
+				log.Debug("NewBlockMsg", "CheckContractTxValid is false")
+				return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
+			}
+		}
+
+		//msgs, err1 := storage.ConvertMsg(tx)
+		//if err1 != nil {
+		//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
+		//	return err1
+		//}
+		//tx.TxMessages = msgs
+		temptxs = append(temptxs, tx)
+	}
+	unit.Txs = temptxs
+
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
 	log.Debug("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
@@ -456,7 +475,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		if tx.IsContractTx() {
-			if !pm.contractProc.CheckContractTxValid(tx) {
+			if !pm.contractProc.CheckContractTxValid(tx, false) {
 				log.Debug("TxMsg", "CheckContractTxValid is false")
 				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
@@ -570,69 +589,32 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-func (pm *ProtocolManager) ContractExecMsg(msg p2p.Msg, p *peer) error {
-	var event jury.ContractExeEvent
+func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ContractEvent
 	if err := msg.Decode(&event); err != nil {
-		log.Info("===ContractExecMsg===", "err:", err)
+		log.Info("===ContractMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	pm.contractProc.ProcessContractEvent(&event)
-	return nil
-}
 
-func (pm *ProtocolManager) ContractSigMsg(msg p2p.Msg, p *peer) error {
-	var event jury.ContractSigEvent
-	if err := msg.Decode(&event); err != nil {
-		log.Info("===ContractExecMsg===", "err:", err)
-		return errResp(ErrDecode, "%v: %v", msg, err)
+	log.Info("===ContractMsg===", "event type:",event.CType)
+	err := pm.contractProc.ProcessContractEvent(&event)
+	if err != nil {
+		log.Debug("ContractMsg", "error:", err)
 	}
-	pm.contractProc.ProcessContractSigEvent(&event)
-	return nil
-}
-
-func (pm *ProtocolManager) ContractSpecialMsg(msg p2p.Msg, p *peer) error {
-	var event jury.ContractSpecialEvent
-	if err := msg.Decode(&event); err != nil {
-		log.Info("===ContractSpecialMsg===", "err:", err)
-		return errResp(ErrDecode, "%v: %v", msg, err)
-	}
-	pm.contractProc.ProcessContractSpecialEvent(&event)
 	return nil
 }
 
 //local test
-func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractExeEvent) {
+func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
-	pm.contractExecCh <- event
+	pm.contractCh <- event
 }
 
-func (pm *ProtocolManager) ContractSigLocalSend(event jury.ContractSigEvent) {
-	log.Info("ContractSigLocalSend", "event", event.Tx.Hash())
-	pm.contractSigCh <- event
-}
-
-func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
-	log.Debug("ContractBroadcast", "event", event.Tx.Hash())
+func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent) {
+	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
-		peer.SendContractExeTransaction(event)
-	}
-}
-
-func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
-	log.Info("ContractSigBroadcast", "event", event.Tx.Hash())
-	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
-	peers := pm.peers.GetPeers()
-	for _, peer := range peers {
-		peer.SendContractSigTransaction(event)
-	}
-}
-
-func (pm *ProtocolManager) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
-	log.Info("ContractSpecialBroadcast", "event", event.Tx.Hash())
-	peers := pm.peers.GetPeers()
-	for _, peer := range peers {
-		peer.SendContractSpecialTransaction(event)
+		peer.SendContractTransaction(event)
 	}
 }

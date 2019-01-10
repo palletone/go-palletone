@@ -119,12 +119,9 @@ type ProtocolManager struct {
 	vssResponseSub event.Subscription
 
 	//contract exec
-	contractProc    contractInf
-	contractExecCh  chan jury.ContractExeEvent
-	contractExecSub event.Subscription
-
-	contractSigCh  chan jury.ContractSigEvent
-	contractSigSub event.Subscription
+	contractProc contractInf
+	contractCh   chan jury.ContractEvent
+	contractSub  event.Subscription
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
@@ -328,14 +325,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)
 	go pm.vssResponseBroadcastLoop()
 
-	//TODO must modify for ptn test
 	//contract exec
 	if pm.contractProc != nil {
-		pm.contractExecCh = make(chan jury.ContractExeEvent)
-		pm.contractExecSub = pm.contractProc.SubscribeContractEvent(pm.contractExecCh)
-
-		pm.contractSigCh = make(chan jury.ContractSigEvent)
-		pm.contractSigSub = pm.contractProc.SubscribeContractSigEvent(pm.contractSigCh)
+		pm.contractCh = make(chan jury.ContractEvent)
+		pm.contractSub = pm.contractProc.SubscribeContractEvent(pm.contractCh)
 	}
 
 	pm.activeMediatorsUpdatedCh = make(chan dag.ActiveMediatorsUpdatedEvent)
@@ -512,16 +505,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == GroupSigMsg:
 		return pm.GroupSigMsg(msg, p)
 
-	case msg.Code == ContractExecMsg:
-		log.Debug("===============ContractExecMsg")
-		return pm.ContractExecMsg(msg, p)
-
-	case msg.Code == ContractSigMsg:
-		log.Debug("===============ContractSigMsg")
-		return pm.ContractSigMsg(msg, p)
-	case msg.Code == ContractSpecialMsg:
-		log.Debug("===============ContractSigMsg")
-		return pm.ContractSpecialMsg(msg, p)
+	case msg.Code == ContractMsg:
+		log.Debug("===============ContractMsg")
+		return pm.ContractMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)

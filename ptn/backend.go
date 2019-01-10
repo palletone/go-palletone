@@ -262,23 +262,12 @@ func (s *PalletOne) Dag() dag.IDag                      { return s.dag }
 func (s *PalletOne) ContractProcessor() *jury.Processor { return s.contractPorcessor }
 func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManager }
 
-func (s *PalletOne) MockContractLocalSend(event jury.ContractExeEvent) {
+func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
 }
-func (s *PalletOne) MockContractSigLocalSend(event jury.ContractSigEvent) {
-	s.protocolManager.ContractSigLocalSend(event)
-}
 
-func (s *PalletOne) ContractBroadcast(event jury.ContractExeEvent) {
+func (s *PalletOne) ContractBroadcast(event jury.ContractEvent) {
 	s.protocolManager.ContractBroadcast(event)
-
-}
-func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
-	s.protocolManager.ContractSigBroadcast(event)
-}
-
-func (s *PalletOne) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
-	s.protocolManager.ContractSpecialBroadcast(event)
 }
 
 func (s *PalletOne) GetLocalMediators() []common.Address {
