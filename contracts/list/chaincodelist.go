@@ -96,7 +96,7 @@ func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
 		for _, v := range clist.CClist {
 			//log.Infof("++++:%v",  *v)
 			log.Infof("GetChaincode find,%s, id[%s]--[%s], ", v.Name, hex.EncodeToString(v.Id), hex.EncodeToString(deployId))
-			if bytes.Equal(v.Id, deployId) == true {
+			if bytes.Equal(v.Id, deployId) {
 				//log.Infof("++++++++++++++++find,%s", v.Name)
 				return v, nil
 			}

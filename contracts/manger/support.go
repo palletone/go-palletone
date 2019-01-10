@@ -32,7 +32,6 @@ import (
 	chaincode "github.com/palletone/go-palletone/contracts/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	md "github.com/palletone/go-palletone/dag/modules"
-	ut "github.com/palletone/go-palletone/dag/modules"
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
@@ -145,22 +144,19 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 }
 
 //func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractDeployPayload, error) {
-func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractDeployPayload, error) {
+func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractDeployPayload, error) {
 	log.Debug("enter")
-	data := ut.ContractDeployPayload{}
-	data.ContractId = []byte(txid)
 
 	rd, wt, err := tx.GetRwData(nm)
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("txid=%s, nm=%s, rd=%v, wt=%v", txid, nm, rd, wt)
+	log.Infof(" nm=%s, rd=%v, wt=%v",  nm, rd, wt)
 	deploy := &md.ContractDeployPayload{
 		TemplateId: templateId,
 		ContractId: deployId,
 		Name:       nm,
 		Args:       args,
-		//ExecutionTime: timeout,
 		ReadSet:  make([]md.ContractReadSet, 0),
 		WriteSet: make([]md.ContractWriteSet, 0),
 	}

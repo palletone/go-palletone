@@ -79,6 +79,16 @@ const (
 	maxProtocolVersion = 70002
 )
 
+type ContractInstallRsp struct {
+	ReqId string `json:"reqId"`
+	TplId string `json:"tplId"`
+}
+
+type ContractDeployRsp struct {
+	ReqId      string `json:"reqId"`
+	ContractId string `json:"ContractId"`
+}
+
 // PublicPalletOneAPI provides an API to access PalletOne related information.
 // It offers only methods that operate on public data that is freely available to anyone.
 type PublicPalletOneAPI struct {
@@ -580,16 +590,6 @@ func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string,
 }
 func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {
 	return s.b.EncodeTx(json)
-}
-
-type ContractInstallRsp struct {
-	ReqId string `json:"reqId"`
-	TplId string `json:"tplId"`
-}
-
-type ContractDeployRsp struct {
-	ReqId      string `json:"reqId"`
-	ContractId string `json:"ContractId"`
 }
 
 func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version string) (*ContractInstallRsp, error) {

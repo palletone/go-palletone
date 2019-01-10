@@ -194,16 +194,8 @@ func (p *peer) SendTransactions(txs modules.Transactions) error {
 	return p2p.Send(p.rw, TxMsg, txs)
 }
 
-func (p *peer) SendContractExeTransaction(event jury.ContractExeEvent) error {
-	return p2p.Send(p.rw, ContractExecMsg, event)
-}
-
-func (p *peer) SendContractSigTransaction(event jury.ContractSigEvent) error {
-	return p2p.Send(p.rw, ContractSigMsg, event)
-}
-
-func (p *peer) SendContractSpecialTransaction(event jury.ContractSpecialEvent) error {
-	return p2p.Send(p.rw, ContractSpecialMsg, event)
+func (p *peer) SendContractTransaction(event jury.ContractEvent) error {
+	return p2p.Send(p.rw, ContractMsg, event)
 }
 
 //SendConsensus sends consensus msg to the peer

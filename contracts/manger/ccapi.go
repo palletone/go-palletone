@@ -44,7 +44,7 @@ func listAdd(cc *TempCC) error {
 
 func listDel(templateId []byte) {
 	for e := listCC.Front(); e != nil; e = e.Next() {
-		if bytes.Equal(e.Value.(TempCC).templateId, templateId) == true {
+		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
 			listCC.Remove(e)
 		}
 	}
@@ -53,7 +53,7 @@ func listDel(templateId []byte) {
 func listGet(templateId []byte) (*TempCC, error) {
 	log.Infof("listGet [%v]", templateId)
 	for e := listCC.Front(); e != nil; e = e.Next() {
-		if bytes.Equal(e.Value.(TempCC).templateId, templateId) == true {
+		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
 			cc := &TempCC{
 				templateId: templateId,
 				name:       e.Value.(TempCC).name,
@@ -232,10 +232,10 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 	return cc.Id, nil, err
 }
 
-func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Infof("==========Deploy enter=======")
 	defer log.Infof("-----------Deploy exit--------")
-	log.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txid)
+	log.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txId)
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -261,27 +261,28 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 
 	//test!!!!!!
 	//todo del
-	//if txid == "" || templateCC.Name == "" || templateCC.Path == "" {
-	//	log.Errorf("cc param is null")
-	//	//test
-	//	tmpcc, err := listGet(templateId)
-	//	if err == nil {
-	//		templateCC.Name = tmpcc.name
-	//		templateCC.Path = tmpcc.path
-	//		templateCC.Version = tmpcc.vers
-	//	}
-	//}
-	txsim, err := mksupt.GetTxSimulator(idag, chainID, txid)
+	if txId == "" || templateCC.Name == "" || templateCC.Path == "" {
+		log.Errorf("cc param is null")
+		//test tmp
+		tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}
+		listAdd(tcc)
+		tmpcc, err := listGet(templateId)
+		if err == nil {
+			templateCC.Name = tmpcc.name
+			templateCC.Path = tmpcc.path
+			templateCC.Version = tmpcc.vers
+		} else {
+			errMsg := fmt.Sprintf("Deploy not find tplId[%s] in list", hex.EncodeToString(templateId))
+			log.Error(errMsg)
+			return nil, nil, errors.New(errMsg)
+		}
+	}
+	txsim, err := mksupt.GetTxSimulator(idag, chainID, txId)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
-	randNum, err := crypto.GetRandomNonce()
-	if err != nil {
-		return nil, nil, errors.WithMessage(err, "crypto.GetRandomNonce error")
-	}
 
-	usrccName := templateCC.Name + "-" + hex.EncodeToString(randNum) //[0:8]
-	//usrccName := templateCC.Name //[0:8]
+	usrccName := templateCC.Name + "-" + txId 
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -296,12 +297,18 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 		Version: usrcc.Version,
 	}
 	spec.ChaincodeId = chaincodeID
-	err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
+	err = ucc.DeployUserCC(spec, setChainId, usrcc, txId, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
+	btxId, err := hex.DecodeString(txId)
+	ctxId := make([]byte, 24, 24)
+	copy(ctxId, btxId[:24])
+
+	//log.Debug("Deploy----------------+", "txid", btxId, "len", len(btxId), "cap", cap(btxId), "ctxId cap", cap(ctxId))
+
 	cc := &cclist.CCInfo{
-		Id:      randNum,
+		Id:      ctxId,
 		Name:    usrccName,
 		Path:    templateCC.Path,
 		Version: templateCC.Version,
@@ -313,7 +320,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txid string, args 
 		log.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
 	}
 
-	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, txid, cc.Name, cc.Id, args, timeout)
+	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, cc.Name, cc.Id, args, timeout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
