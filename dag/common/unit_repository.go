@@ -607,7 +607,7 @@ func (unitOp *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *m
 			//todo
 
 		case modules.APP_TEXT:
-			if ok := unitOp.saveTextPayload(txHash,msg); ok != true {
+			if ok := unitOp.saveTextPayload(txHash, msg); ok != true {
 				return fmt.Errorf("Save textment payload error.")
 			}
 		default:
@@ -691,7 +691,7 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 save TextPayload data
 */
 
-func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash,msg *modules.Message) bool {
+func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 
@@ -708,7 +708,7 @@ func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash,msg *modules.Me
 			log.Error("error decoding textpayload", "err", err)
 		}
 	}
-	err := unitOp.idxdb.SaveFileHash(fh,txHash)
+	err := unitOp.idxdb.SaveFileHash(fh, txHash)
 	if err != nil {
 		log.Error("error savefilehash", "err", err)
 		return false
@@ -1026,7 +1026,21 @@ func (unitOp *UnitRepository) GetAddrTransactions(addr string) (map[string]modul
 	return alltxs, err1
 }
 
+//get a map  key:filehash value:tx or txs
+func (unitOp *UnitRepository) GetTxByFileHash(filehash string) (map[string]modules.Transactions, error) {
+	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
+	if err != nil {
+		return nil, err
+	}
 
-func (unitOp *UnitRepository) GetTxByFileHash(filehash string) (map[string]modules.Transactions,error) {
-    return nil,nil
+	alltxs := make(map[string]modules.Transactions)
+	txs := make(modules.Transactions, 0)
+	for _, hash := range hashs {
+		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
+		txs = append(txs, tx)
+	}
+	alltxs[filehash] = txs
+
+
+	return alltxs, nil
 }

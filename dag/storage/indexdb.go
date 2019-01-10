@@ -51,7 +51,7 @@ type IIndexDb interface {
 	GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
 
 	SaveFileHash(filehash string,txid common.Hash) error
-	GetTxByFileHash(filehash string)(common.Hash,error)
+	GetTxByFileHash(filehash string)([]common.Hash,error)
 }
 
 // ###################### SAVE IMPL START ######################
@@ -149,16 +149,16 @@ func (db *IndexDb) SaveFileHash(filehash string,txid common.Hash) error {
 	return db.db.Put(key,txid[:])
 }
 
-func (db *IndexDb) GetTxByFileHash(filehash string)(common.Hash,error) {
+func (db *IndexDb) GetTxByFileHash(filehash string)([]common.Hash,error) {
 	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
 	bytes,err := db.db.Get(key[:])
 	if err != nil {
 		log.Error("err",err)
-		return common.Hash{},err
+		return nil,err
 	}
-	var txid common.Hash
+	txid := make([]common.Hash,0)
 	if err := rlp.DecodeBytes(bytes, &txid); err != nil {
-		return common.Hash{},err
+		return nil,err
 	}
 	return txid,err
 }
