@@ -205,7 +205,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		if i == 2 {
 			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload2))
 		}
-		msgs = append(msgs, modules.NewMessage(modules.APP_TEXT, &modules.DataPayload{FileHash: string(fmt.Sprintf("text%d%v", i, time.Now()))}))
+		msgs = append(msgs, modules.NewMessage(modules.APP_DATA, &modules.DataPayload{MainData: []byte(fmt.Sprintf("text%d%v", i, time.Now()))}))
 	}
 
 	for j := 0; j < int(config.AccountSlots)*1; j++ {

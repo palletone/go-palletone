@@ -22,15 +22,15 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-//install deploy invoke stop
-type ContractExeEvent struct {
-	Tx *modules.Transaction
-}
+type ContractEventType int
 
-type ContractSigEvent struct {
-	Tx *modules.Transaction
-}
+const (
+	CONTRACT_EVENT_EXEC   ContractEventType = 1 //合约执行，系统合约由Mediator完成，用户合约由Jury完成
+	CONTRACT_EVENT_SIG                      = 2 //多Jury执行合约并签名转发确认，由Jury接收并处理
+	CONTRACT_EVENT_COMMIT                   = 4 //提交给Mediator进行验证确认并写到交易池
+)
 
-type ContractSpecialEvent struct {
-	Tx *modules.Transaction
+type ContractEvent struct {
+	CType ContractEventType
+	Tx    *modules.Transaction
 }

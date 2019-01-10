@@ -10,7 +10,6 @@ import (
 	event "github.com/palletone/go-palletone/common/event"
 	discover "github.com/palletone/go-palletone/common/p2p/discover"
 	core "github.com/palletone/go-palletone/core"
-	keystore "github.com/palletone/go-palletone/core/accounts/keystore"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/dag/txspool"
 	reflect "reflect"
@@ -399,18 +398,18 @@ func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *g
 }
 
 // CreateUnit mocks base method
-func (m *MockIDag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
+func (m *MockIDag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUnit", mAddr, txpool, ks, t)
+	ret := m.ctrl.Call(m, "CreateUnit", mAddr, txpool, t)
 	ret0, _ := ret[0].([]modules.Unit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateUnit indicates an expected call of CreateUnit
-func (mr *MockIDagMockRecorder) CreateUnit(mAddr, txpool, ks, t interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) CreateUnit(mAddr, txpool, t interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnit", reflect.TypeOf((*MockIDag)(nil).CreateUnit), mAddr, txpool, ks, t)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnit", reflect.TypeOf((*MockIDag)(nil).CreateUnit), mAddr, txpool, t)
 }
 
 // FastSyncCommitHead mocks base method
@@ -1020,4 +1019,82 @@ func (m *MockIDag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (mr *MockIDagMockRecorder) GetTxHashByReqId(reqid interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxHashByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxHashByReqId), reqid)
+}
+
+// MockICache is a mock of ICache interface
+type MockICache struct {
+	ctrl     *gomock.Controller
+	recorder *MockICacheMockRecorder
+}
+
+// MockICacheMockRecorder is the mock recorder for MockICache
+type MockICacheMockRecorder struct {
+	mock *MockICache
+}
+
+// NewMockICache creates a new mock instance
+func NewMockICache(ctrl *gomock.Controller) *MockICache {
+	mock := &MockICache{ctrl: ctrl}
+	mock.recorder = &MockICacheMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockICache) EXPECT() *MockICacheMockRecorder {
+	return m.recorder
+}
+
+// Set mocks base method
+func (m *MockICache) Set(key, value []byte, expireSeconds int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Set", key, value, expireSeconds)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Set indicates an expected call of Set
+func (mr *MockICacheMockRecorder) Set(key, value, expireSeconds interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockICache)(nil).Set), key, value, expireSeconds)
+}
+
+// Get mocks base method
+func (m *MockICache) Get(key []byte) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", key)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get
+func (mr *MockICacheMockRecorder) Get(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockICache)(nil).Get), key)
+}
+
+// Del mocks base method
+func (m *MockICache) Del(key []byte) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Del", key)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Del indicates an expected call of Del
+func (mr *MockICacheMockRecorder) Del(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockICache)(nil).Del), key)
+}
+
+// Clear mocks base method
+func (m *MockICache) Clear() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Clear")
+}
+
+// Clear indicates an expected call of Clear
+func (mr *MockICacheMockRecorder) Clear() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Clear", reflect.TypeOf((*MockICache)(nil).Clear))
 }

@@ -229,7 +229,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 			}
 
 		case modules.APP_CONFIG:
-		case modules.APP_TEXT:
+		case modules.APP_DATA:
 		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:
 		default:
@@ -275,7 +275,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 			return true
 		}
 	case *modules.DataPayload:
-		if app == modules.APP_TEXT {
+		if app == modules.APP_DATA {
 			return true
 		}
 	case *vote.VoteInfo:

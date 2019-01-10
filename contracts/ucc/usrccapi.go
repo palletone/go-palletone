@@ -67,7 +67,17 @@ func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 	return cdDeploymentSpec, nil
 }
 
+func mockerDeployUserCC() error{
+	log.Debug("==================mockerDeployUserCC enter")
+	time.Sleep(time.Duration(10)*time.Second)
+	log.Debug("==================mockerDeployUserCC end")
+
+	return nil
+}
+
 func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
+	//todo for test
+	//return mockerDeployUserCC()
 	var err error
 	ccprov := ccprovider.GetChaincodeProvider()
 	ctxt := context.Background()

@@ -123,8 +123,8 @@ func newTestTx() *Transaction {
 		Payload: pay1s,
 	}
 	msg2 := &Message{
-		App:     APP_TEXT,
-		Payload: &DataPayload{FileHash: string("Hello PalletOne")},
+		App:     APP_DATA,
+		Payload: &DataPayload{MainData: []byte("Hello PalletOne")},
 	}
 	//txmsg2 := NewTransaction(
 	//	[]*Message{msg, msg},

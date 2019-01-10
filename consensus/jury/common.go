@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"reflect"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
@@ -15,7 +13,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
-func localIsMinSigure(tx *modules.Transaction) bool {
+func localIsMinSignature(tx *modules.Transaction) bool {
 	if tx == nil || len(tx.TxMessages) < 3 {
 		return false
 	}
@@ -24,17 +22,19 @@ func localIsMinSigure(tx *modules.Transaction) bool {
 			sigPayload := msg.Payload.(*modules.SignaturePayload)
 			sigs := sigPayload.Signatures
 			localSig := sigs[0].Signature
+
 			if len(sigs) < CONTRACT_SIG_NUM {
 				return false
 			}
-			for _, sig := range sigs {
-				if sig.Signature == nil {
+			for i := 1; i < len(sigs); i++ {
+				if sigs[i].Signature == nil {
 					return false
 				}
-				if bytes.Compare(localSig, sig.Signature) >= 1 {
+				if bytes.Compare(localSig, sigs[i].Signature) >= 1 {
 					return false
 				}
 			}
+			log.Debug("localIsMinSignature", "local sig", localSig)
 			return true
 		}
 	}
@@ -120,7 +120,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload))
-				return modules.APP_CONTRACT_DEPLOY, nil, nil
+				return modules.APP_CONTRACT_DEPLOY, msgs, nil
 			}
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			{
@@ -144,7 +144,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -228,10 +228,6 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 			return nil, err
 		}
 
-		//invokeInfo = unit.InvokeInfo{
-		//	InvokeAddress: invokeAddr,
-		//	InvokeFees:    invokeFees,
-		//}
 		invokeInfo.InvokeAddress = invokeAddr.String()
 		invokeInfo.InvokeFees = invokeFees
 
@@ -264,7 +260,7 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 	for i := 0; i < len(local.TxMessages); i++ {
 		if recv.TxMessages[i].App == modules.APP_SIGNATURE {
 			recvSigMsg = recv.TxMessages[i]
-		} else if reflect.DeepEqual(*local.TxMessages[i], *recv.TxMessages[i]) != true {
+		} else if !local.TxMessages[i].CompareMessages(recv.TxMessages[i]) {
 			return false, errors.New("checkAndAddTxData tx msg is not equal")
 		}
 	}
@@ -327,27 +323,21 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 			msg2 = v
 		}
 	}
-
 	if msg1 != nil && msg2 != nil {
-		if reflect.DeepEqual(msg1, msg2) == true {
+		if msg1.CompareMessages(msg2) {
 			log.Debug("msgsCompare", "msg is equal, type", msgType)
 			return true
 		}
 	}
-	log.Debug("msgsCompare", "msg is not equal")
-
+	log.Debug("msgsCompare", "msg is not equal") //todo del
 	return false
 }
 
 func isSystemContract(tx *modules.Transaction) bool {
-	//if tx == nil{
-	//	return true, errors.New("isSystemContract param is nil")
-	//}
-
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*modules.ContractInvokeRequestPayload).ContractId
-			log.Debug("nodeContractExecutable", "contract id", contractId, "len", len(contractId))
+			log.Debug("isSystemContract", "contract id", contractId, "len", len(contractId))
 			contractAddr := common.NewAddress(contractId, common.ContractHash)
 			return contractAddr.IsSystemContractAddress() //, nil
 
@@ -389,7 +379,7 @@ func printTxInfo(tx *modules.Transaction) {
 		} else if app == modules.APP_SIGNATURE {
 			p := pay.(*modules.SignaturePayload)
 			fmt.Printf("Signatures:[%v]", p.Signatures)
-		} else if app == modules.APP_TEXT {
+		} else if app == modules.APP_DATA {
 			p := pay.(*modules.DataPayload)
 			fmt.Printf("Text:[%v]", p.MainData)
 		}
@@ -399,7 +389,7 @@ func printTxInfo(tx *modules.Transaction) {
 func getFileHash(tx *modules.Transaction) []byte {
 	if tx != nil {
 		for _, msg := range tx.TxMessages {
-			if msg.App == modules.APP_TEXT {
+			if msg.App == modules.APP_DATA {
 				return msg.Payload.(*modules.DataPayload).MainData
 			}
 		}
