@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func mediatorKey(address common.Address) []byte {
@@ -37,46 +38,13 @@ func mediatorKey(address common.Address) []byte {
 	return key
 }
 
-// only for serialization(storage)
-type MediatorInfo struct {
-	*core.MediatorInfoBase
-	*core.MediatorInfoExpand
-}
-
-func NewMediatorInfo() *MediatorInfo {
-	return &MediatorInfo{
-		MediatorInfoBase:   core.NewMediatorInfoBase(),
-		MediatorInfoExpand: core.NewMediatorBase(),
-	}
-}
-
-func mediatorToInfo(md *core.Mediator) *MediatorInfo {
-	mi := NewMediatorInfo()
-	mi.AddStr = md.Address.Str()
-	mi.InitPubKey = core.PointToStr(md.InitPubKey)
-	mi.Node = md.Node.String()
-	mi.MediatorInfoExpand = md.MediatorInfoExpand
-
-	return mi
-}
-
-func (mi *MediatorInfo) infoToMediator() *core.Mediator {
-	md := core.NewMediator()
-	md.Address = core.StrToMedAdd(mi.AddStr)
-	md.InitPubKey, _ = core.StrToPoint(mi.InitPubKey)
-	md.Node = core.StrToMedNode(mi.Node)
-	md.MediatorInfoExpand = mi.MediatorInfoExpand
-
-	return md
-}
-
 func StoreMediator(db ptndb.Database, med *core.Mediator) error {
-	mi := mediatorToInfo(med)
+	mi := modules.MediatorToInfo(med)
 
 	return StoreMediatorInfo(db, med.Address, mi)
 }
 
-func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *MediatorInfo) error {
+func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.MediatorInfo) error {
 	//log.Debug(fmt.Sprintf("Store Mediator %v:", mi.AddStr))
 	//add := core.StrToMedAdd(mi.AddStr)
 
@@ -89,8 +57,8 @@ func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *MediatorInfo) 
 	return nil
 }
 
-func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*MediatorInfo, error) {
-	mi := NewMediatorInfo()
+func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*modules.MediatorInfo, error) {
+	mi := modules.NewMediatorInfo()
 
 	err := retrieve(db, mediatorKey(address), mi)
 	if err != nil {
@@ -107,7 +75,7 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 		return nil, err
 	}
 
-	med := mi.infoToMediator()
+	med := mi.InfoToMediator()
 	//med.Address = address
 
 	return med, nil
@@ -163,7 +131,7 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 			continue
 		}
 
-		mi := NewMediatorInfo()
+		mi := modules.NewMediatorInfo()
 		err := rlp.DecodeBytes(value, mi)
 		if err != nil {
 			log.Debug(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))
@@ -171,7 +139,7 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 
 		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 		add := common.BytesToAddress(addB)
-		med := mi.infoToMediator()
+		med := mi.InfoToMediator()
 		//med.Address = add
 
 		result[add] = med

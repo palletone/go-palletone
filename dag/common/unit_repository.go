@@ -20,7 +20,6 @@
 package common
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -45,12 +44,6 @@ import (
 )
 
 type IUnitRepository interface {
-	//设置稳定单元的Hash
-	SetStableUnitHash(hash common.Hash)
-	//清空Unstable数据，回滚到稳定点状态
-	RollbackToStableUnit()
-	//批量增加多个Unit，主要用于主链切换的情形
-	BatchSaveUnit(units []*modules.Unit)
 	GetGenesisUnit(index uint64) (*modules.Unit, error)
 	GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
@@ -84,16 +77,16 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 
-func RHashStr(x interface{}) string {
-	x_byte, err := json.Marshal(x)
-	if err != nil {
-		return ""
-	}
-	s256 := sha256.New()
-	s256.Write(x_byte)
-	return fmt.Sprintf("%x", s256.Sum(nil))
-
-}
+//func RHashStr(x interface{}) string {
+//	x_byte, err := json.Marshal(x)
+//	if err != nil {
+//		return ""
+//	}
+//	s256 := sha256.New()
+//	s256.Write(x_byte)
+//	return fmt.Sprintf("%x", s256.Sum(nil))
+//
+//}
 
 /**
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
@@ -156,18 +149,6 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	// unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
 	// unit.UnitHeader.GroupSign = sign
 	return unit, nil
-}
-func (rep *UnitRepository) SetStableUnitHash(hash common.Hash) {
-	rep.dagdb.SetStableUnitHash(hash)
-}
-
-func (rep *UnitRepository) RollbackToStableUnit() {
-	//TODO Devin
-}
-
-//批量增加多个Unit，主要用于主链切换的情形
-func (rep *UnitRepository) BatchSaveUnit(units []*modules.Unit) {
-	//TODO Devin
 }
 
 /**
@@ -555,7 +536,12 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 		log.Info("SaveNumberByHash:", "error", err.Error())
 		return fmt.Errorf("Save unit number error, %s", err)
 	}
-
+	//step12+ save chain index
+	if isGenesis {
+		if err := unitOp.statedb.SaveChainIndex(unit.Header().ChainIndex()); err != nil {
+			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
+		}
+	}
 	// step13 update state
 	unitOp.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
 	unitOp.dagdb.PutHeadHeaderHash(unit.UnitHash)
@@ -724,7 +710,7 @@ func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash,msg *modules.Me
 	}
 	err := unitOp.idxdb.SaveFileHash(fh,txHash)
 	if err != nil {
-		log.Error("error savefilehash","err",err)
+		log.Error("error savefilehash", "err", err)
 		return false
 	}
 	return true

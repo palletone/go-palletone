@@ -52,7 +52,6 @@ type Dag struct {
 
 	unitRep  dagcommon.IUnitRepository
 	dagdb    storage.IDagDb
-	statedb  storage.IStateDb
 	propdb   storage.IPropertyDb
 	utxoRep  dagcommon.IUtxoRepository
 	propRep  dagcommon.IPropRepository
@@ -453,9 +452,9 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 
 //All leaf nodes for dag downloader.
 //MUST have Priority.
-func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
-	return d.dagdb.GetAllLeafNodes()
-}
+//func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
+//	return d.dagdb.GetAllLeafNodes()
+//}
 
 /**
 获取account address下面的token信息
@@ -515,12 +514,10 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	dag := &Dag{
-		Cache:   freecache.NewCache(200 * 1024 * 1024),
-		Db:      db,
-		unitRep: unitRep,
-		dagdb:   dagDb,
-
-		statedb:       stateDb,
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            db,
+		unitRep:       unitRep,
+		dagdb:         dagDb,
 		propdb:        propDb,
 		utxoRep:       utxoRep,
 		propRep:       propRep,
@@ -549,12 +546,10 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 
 	dag := &Dag{
-		Cache:   freecache.NewCache(200 * 1024 * 1024),
-		Db:      db,
-		unitRep: unitRep,
-		dagdb:   dagDb,
-
-		statedb:       stateDb,
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            db,
+		unitRep:       unitRep,
+		dagdb:         dagDb,
 		propdb:        propDb,
 		utxoRep:       utxoRep,
 		propRep:       propRep,
@@ -581,12 +576,10 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 
 	dag := &Dag{
-		Cache:   freecache.NewCache(200 * 1024 * 1024),
-		Db:      db,
-		unitRep: unitRep,
-		dagdb:   dagDb,
-
-		statedb:       stateDb,
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            db,
+		unitRep:       unitRep,
+		dagdb:         dagDb,
 		utxoRep:       utxoRep,
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
@@ -599,7 +592,7 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 
 // Get Contract Api
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
-	return d.statedb.GetContract(id)
+	return d.stateRep.GetContract(id)
 }
 
 // Get Header
@@ -907,17 +900,17 @@ func (d *Dag) GetAddrTransactions(addr string) (map[string]modules.Transactions,
 
 // get contract state
 func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
-	return d.statedb.GetContractState(id, field)
+	return d.stateRep.GetContractState(id, field)
 	//return d.statedb.GetContractState(common.HexToAddress(id), field)
 }
 
 func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	return d.statedb.GetConfig([]byte(name))
+	return d.stateRep.GetConfig(name)
 }
 
 //get contract all state
 func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
-	return d.statedb.GetContractStatesById(id)
+	return d.stateRep.GetContractStatesById(id)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
@@ -1122,7 +1115,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err != nil {
 
 	}
-	bAsset, _, _ := d.statedb.GetConfig([]byte("GenesisAsset"))
+	bAsset, _, _ := d.stateRep.GetConfig("GenesisAsset")
 	if len(bAsset) <= 0 {
 		return nil, fmt.Errorf("Create unit error: query asset info empty")
 	}
@@ -1154,23 +1147,24 @@ func (d *Dag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
 	return d.unitRep.GetGenesisUnit(index)
 }
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
-	return d.statedb.GetContractTpl(templateID)
+	return d.stateRep.GetContractTpl(templateID)
 }
 
-// save token info
-func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
-	return d.dagdb.SaveTokenInfo(token_info)
-}
-
-// Get token info
-func (d *Dag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
-	return d.dagdb.GetTokenInfo(key)
-}
-
-// Get all token info
-func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-	return d.dagdb.GetAllTokenInfo()
-}
+//
+//// save token info
+//func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
+//	return d.dagdb.SaveTokenInfo(token_info)
+//}
+//
+//// Get token info
+//func (d *Dag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
+//	return d.dagdb.GetTokenInfo(key)
+//}
+//
+//// Get all token info
+//func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+//	return d.dagdb.GetAllTokenInfo()
+//}
 
 //@Yiran
 func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
@@ -1303,13 +1297,14 @@ func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.dagdb.GetCommonByPrefix(prefix)
 }
 
-func (d *Dag) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
-	return d.statedb.GetCurrentChainIndex(assetId)
-}
+//func (d *Dag) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+//	return d.stateRep.GetCurrentChainIndex(assetId)
+//}
 
-func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
-	return d.statedb.SaveChainIndex(index)
-}
+//
+//func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
+//	return d.stateRep.SaveChainIndex(index)
+//}
 
 func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
 	if groupSign == nil {

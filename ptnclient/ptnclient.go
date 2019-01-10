@@ -658,25 +658,26 @@ func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (map[str
 	return result, err
 }
 
-func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, error) {
-	result := new(modules.AllTokenInfo)
-	err := ec.c.CallContext(ctx, &result, "dag_getAllTokenInfo", nil)
-	return result, err
-}
-
-func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenInfo, error) {
-	result := new(modules.TokenInfo)
-
-	err := ec.c.CallContext(ctx, &result, "dag_getTokenInfo", key)
-	return result, err
-}
-
-func (ec *Client) SaveTokenInfo(ctx context.Context, name, token, creator string) (*modules.TokenInfo, error) {
-	result := new(modules.TokenInfo)
-
-	err := ec.c.CallContext(ctx, &result, "dag_saveTokenInfo", name, token, creator)
-	return result, err
-}
+//
+//func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, error) {
+//	result := new(modules.AllTokenInfo)
+//	err := ec.c.CallContext(ctx, &result, "dag_getAllTokenInfo", nil)
+//	return result, err
+//}
+//
+//func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenInfo, error) {
+//	result := new(modules.TokenInfo)
+//
+//	err := ec.c.CallContext(ctx, &result, "dag_getTokenInfo", key)
+//	return result, err
+//}
+//
+//func (ec *Client) SaveTokenInfo(ctx context.Context, name, token, creator string) (*modules.TokenInfo, error) {
+//	result := new(modules.TokenInfo)
+//
+//	err := ec.c.CallContext(ctx, &result, "dag_saveTokenInfo", name, token, creator)
+//	return result, err
+//}
 
 func (ec *Client) GetCommon(ctx context.Context, key string) ([]byte, error) {
 	result := make([]byte, 0)

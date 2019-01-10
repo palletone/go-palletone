@@ -422,31 +422,33 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 
 }
 
-func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-	all, err := b.ptn.dag.GetAllTokenInfo()
-	if err != nil {
-		return nil, err
-	}
-	return all, nil
-}
-func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error) {
-	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
-	if err != nil {
-		return nil, err
-	}
-	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(tokenInfo)
-	return tokenInfoJson, nil
-}
+//所有TokenInfo信息从创币合约读取
+//func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+//	all, err := b.ptn.dag.GetAllTokenInfo()
+//	if err != nil {
+//		return nil, err
+//	}
+//	return all, nil
+//}
+//func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error) {
+//	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
+//	if err != nil {
+//		return nil, err
+//	}
+//	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(tokenInfo)
+//	return tokenInfoJson, nil
+//}
 
-func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenInfoJson, error) {
-	s_token, err := b.ptn.dag.SaveTokenInfo(token)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(s_token)
-	return tokenInfoJson, nil
-}
+//
+//func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenInfoJson, error) {
+//	s_token, err := b.ptn.dag.SaveTokenInfo(token)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(s_token)
+//	return tokenInfoJson, nil
+//}
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	return b.ptn.dag.GetAddrTransactions(addr)

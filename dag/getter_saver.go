@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
@@ -138,9 +137,9 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 }
 
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
-	med, err := d.statedb.RetrieveMediator(add)
+	med, err := d.stateRep.RetrieveMediator(add)
 	if err != nil {
-		log.Debug("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
+		log.Error("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
 		return nil
 	}
 	return med
@@ -151,7 +150,7 @@ func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
 		// todo 更新缓存
 	}
 
-	d.statedb.StoreMediator(med)
+	d.stateRep.StoreMediator(med)
 	return
 }
 
@@ -180,19 +179,19 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 }
 
 func (dag *Dag) GetMediators() map[common.Address]bool {
-	return dag.statedb.GetMediators()
+	return dag.stateRep.GetMediators()
 }
 
 func (dag *Dag) GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error) {
-	return dag.statedb.GetApprovedMediatorList()
+	return dag.stateRep.GetApprovedMediatorList()
 }
 
 func (dag *Dag) IsApprovedMediator(address common.Address) bool {
-	return dag.statedb.IsApprovedMediator(address)
+	return dag.stateRep.IsApprovedMediator(address)
 }
 
 func (dag *Dag) IsMediator(address common.Address) bool {
-	return dag.statedb.IsMediator(address)
+	return dag.stateRep.IsMediator(address)
 }
 
 func (dag *Dag) ActiveMediators() map[common.Address]bool {
@@ -231,7 +230,7 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 }
 
 func (d *Dag) GetVotedMediator(addr common.Address) map[common.Address]bool {
-	accountInfo, err := d.statedb.RetrieveAccountInfo(addr)
+	accountInfo, err := d.stateRep.RetrieveAccountInfo(addr)
 	if err != nil {
 		accountInfo = modules.NewAccountInfo()
 	}
@@ -240,11 +239,11 @@ func (d *Dag) GetVotedMediator(addr common.Address) map[common.Address]bool {
 }
 
 func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
-	return d.statedb.LookupAccount()
+	return d.stateRep.LookupAccount()
 }
 
 func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
-	accountInfo, err := d.statedb.RetrieveAccountInfo(addr)
+	accountInfo, err := d.stateRep.RetrieveAccountInfo(addr)
 	if err != nil {
 		accountInfo = modules.NewAccountInfo()
 	}
@@ -252,8 +251,8 @@ func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
 	return accountInfo.PtnBalance
 }
 
-func (d *Dag) GetMediatorInfo(address common.Address) *storage.MediatorInfo {
-	mi, _ := d.statedb.RetrieveMediatorInfo(address)
+func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
+	mi, _ := d.stateRep.RetrieveMediatorInfo(address)
 	return mi
 }
 

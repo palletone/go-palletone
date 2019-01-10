@@ -18,7 +18,6 @@ package ptn
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -60,17 +59,18 @@ type PublicDagAPI struct {
 func NewPublicDagAPI(p *PalletOne) *PublicDagAPI {
 	return &PublicDagAPI{p}
 }
-func (api *PublicDagAPI) TokenInfos() (string, error) {
-	all, err := api.p.dag.GetAllTokenInfo()
-	if err != nil {
-		return "get failed.", err
-	}
-	if bytes, err := json.Marshal(all); err != nil {
-		return "error", err
-	} else {
-		return string(bytes), nil
-	}
-}
+
+//func (api *PublicDagAPI) TokenInfos() (string, error) {
+//	all, err := api.p.dag.GetAllTokenInfo()
+//	if err != nil {
+//		return "get failed.", err
+//	}
+//	if bytes, err := json.Marshal(all); err != nil {
+//		return "error", err
+//	} else {
+//		return string(bytes), nil
+//	}
+//}
 
 /*
 // PublicDebugAPI is the collection of PalletOne full node APIs exposed
