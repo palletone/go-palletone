@@ -32,8 +32,8 @@ import (
 )
 
 type UtxoDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
+	//logger log.ILogger
 }
 
 func NewUtxoDb(db ptndb.Database) *UtxoDb {
@@ -94,7 +94,7 @@ func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, 
 // ###################### UTXO Entity ######################
 func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
 	key := outpoint.ToKey()
-	utxodb.logger.Debug("Try to save utxo by key:", "outpoint_key", outpoint.String())
+	log.Debug("Try to save utxo by key:", "outpoint_key", outpoint.String())
 	err := StoreBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.U
 // SaveUtxoView to update the utxo set in the database based on the provided utxo view.
 func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
 	batch := utxodb.db.NewBatch()
-	utxodb.logger.Debugf("Start batch save utxo, batch count:%d", len(view))
+	log.Debugf("Start batch save utxo, batch count:%d", len(view))
 	for outpoint, utxo := range view {
 		// No need to update the database if the utxo was not modified.
 		if utxo == nil { // || utxo.IsModified()
@@ -134,18 +134,18 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	//1. get utxo
 	utxo, err := utxodb.GetUtxoEntry(outpoint)
 	if err != nil {
-		utxodb.logger.Errorf("Try to soft delete an unknown utxo by key:%s", outpoint.String())
+		log.Errorf("Try to soft delete an unknown utxo by key:%s", outpoint.String())
 		return err
 	}
 
 	//2. soft delete utxo
 	if utxo.IsSpent() {
-		utxodb.logger.Errorf("Try to soft delete a deleted utxo by key:%s", outpoint.String())
+		log.Errorf("Try to soft delete a deleted utxo by key:%s", outpoint.String())
 		return errors.New("Try to soft delete a deleted utxo")
 	}
 	key := outpoint.ToKey()
 	utxo.Spend()
-	utxodb.logger.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
+	log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
 	err = StoreBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
@@ -193,7 +193,7 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey()
-	utxodb.logger.Debugf("Query utxo by outpoint:%s", outpoint.String())
+	log.Debugf("Query utxo by outpoint:%s", outpoint.String())
 	data, err := utxodb.db.Get(key)
 	if err != nil {
 		log.Error("get utxo entry failed", "error", err, "Query utxo by outpoint:%s", outpoint.String())

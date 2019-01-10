@@ -20,7 +20,6 @@
 package flogging
 
 import (
-	"github.com/palletone/go-palletone/common/log"
 	"os"
 	"sync"
 )
@@ -32,7 +31,7 @@ const (
 )
 
 var (
-	logger        log.ILogger
+	//log        log.ILogger
 	defaultOutput *os.File
 
 	modules          map[string]string // Holds the map of all modules and their respective log level
@@ -43,9 +42,9 @@ var (
 )
 
 func init() {
-	//logger = log.New(pkgLogID)
+	//log = log.New(pkgLogID)
 	Reset()
-	initgrpclogger()
+	//initgrpclog()
 }
 
 // Reset sets to logging to the defaults defined in this package.
@@ -74,7 +73,7 @@ func Reset() {
 //	logging.SetBackend(backendFormatter).SetLevel(defaultLevel, "")
 //}
 
-// DefaultLevel returns the fallback value for loggers to use if parsing fails.
+// DefaultLevel returns the fallback value for logs to use if parsing fails.
 func DefaultLevel() string {
 	return defaultLevel
 }
@@ -99,15 +98,15 @@ func GetModuleLevel(module string) string {
 //	var re *regexp.Regexp
 //	logLevel, err := logging.LogLevel(level)
 //	if err != nil {
-//		logger.Warningf("Invalid logging level '%s' - ignored", level)
+//		log.Warningf("Invalid logging level '%s' - ignored", level)
 //	} else {
 //		if !isRegExp || revert {
 //			logging.SetLevel(logLevel, moduleRegExp)
-//			logger.Debugf("Module '%s' logger enabled for log level '%s'", moduleRegExp, level)
+//			log.Debugf("Module '%s' log enabled for log level '%s'", moduleRegExp, level)
 //		} else {
 //			re, err = regexp.Compile(moduleRegExp)
 //			if err != nil {
-//				logger.Warningf("Invalid regular expression: %s", moduleRegExp)
+//				log.Warningf("Invalid regular expression: %s", moduleRegExp)
 //				return "", err
 //			}
 //			lock.Lock()
@@ -116,7 +115,7 @@ func GetModuleLevel(module string) string {
 //				if re.MatchString(module) {
 //					logging.SetLevel(logging.Level(logLevel), module)
 //					modules[module] = logLevel.String()
-//					logger.Debugf("Module '%s' logger enabled for log level '%s'", module, logLevel)
+//					log.Debugf("Module '%s' log enabled for log level '%s'", module, logLevel)
 //				}
 //			}
 //		}
@@ -125,14 +124,14 @@ func GetModuleLevel(module string) string {
 //}
 
 // MustGetLogger is used in place of `logging.MustGetLogger` to allow us to
-// store a map of all modules and submodules that have loggers in the system.
-func MustGetLogger(module string) log.ILogger {
-	l := log.New(module)
-	lock.Lock()
-	defer lock.Unlock()
-	modules[module] = GetModuleLevel(module)
-	return l
-}
+// store a map of all modules and submodules that have logs in the system.
+//func MustGetLogger(module string) log.ILogger {
+//	l := log.New(module)
+//	lock.Lock()
+//	defer lock.Unlock()
+//	modules[module] = GetModuleLevel(module)
+//	return l
+//}
 
 // InitFromSpec initializes the logging based on the supplied spec. It is
 // exposed externally so that consumers of the flogging package may parse their
@@ -149,28 +148,28 @@ func MustGetLogger(module string) log.ILogger {
 //			switch len(split) {
 //			case 1:
 //				if levelAll, err = logging.LogLevel(field); err != nil {
-//					logger.Warningf("Logging level '%s' not recognized, defaulting to '%s': %s", field, defaultLevel, err)
+//					log.Warningf("Logging level '%s' not recognized, defaulting to '%s': %s", field, defaultLevel, err)
 //					levelAll = defaultLevel // need to reset cause original value was overwritten
 //				}
 //			case 2:
 //				// <module>[,<module>...]=<level>
 //				levelSingle, err := logging.LogLevel(split[1])
 //				if err != nil {
-//					logger.Warningf("Invalid logging level in '%s' ignored", field)
+//					log.Warningf("Invalid logging level in '%s' ignored", field)
 //					continue
 //				}
 //
 //				if split[0] == "" {
-//					logger.Warningf("Invalid logging override specification '%s' ignored - no module specified", field)
+//					log.Warningf("Invalid logging override specification '%s' ignored - no module specified", field)
 //				} else {
 //					modules := strings.Split(split[0], ",")
 //					for _, module := range modules {
-//						logger.Debugf("Setting logging level for module '%s' to '%s'", module, levelSingle)
+//						log.Debugf("Setting logging level for module '%s' to '%s'", module, levelSingle)
 //						logging.SetLevel(levelSingle, module)
 //					}
 //				}
 //			default:
-//				logger.Warningf("Invalid logging override '%s' ignored - missing ':'?", field)
+//				log.Warningf("Invalid logging override '%s' ignored - missing ':'?", field)
 //			}
 //		}
 //	}
@@ -182,7 +181,7 @@ func MustGetLogger(module string) log.ILogger {
 //	for k := range modules {
 //		MustGetLogger(k)
 //	}
-//	// register flogging logger in the modules map
+//	// register flogging log in the modules map
 //	MustGetLogger(pkgLogID)
 //
 //	return levelAll.String()
@@ -226,6 +225,6 @@ func MustGetLogger(module string) log.ILogger {
 //			return err
 //		}
 //	}
-//	logger.Info("Log levels reverted to the levels defined at the end of peer startup")
+//	log.Info("Log levels reverted to the levels defined at the end of peer startup")
 //	return nil
 //}

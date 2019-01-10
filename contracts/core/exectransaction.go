@@ -23,6 +23,7 @@ package core
 import (
 	"fmt"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
@@ -49,12 +50,12 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 
 	_, cMsg, err := theChaincodeSupport.Launch(ctxt, cccid, spec)
 	if err != nil {
-		chaincodeLogger.Errorf("Execute %s error: %+v", cccid.Name, err)
+		log.Errorf("Execute %s error: %+v", cccid.Name, err)
 		return nil, nil, err
 	}
 
 	cMsg.Decorations = cccid.ProposalDecorations
-	chaincodeLogger.Infof("txid[%s]", cccid.TxID)
+	log.Infof("txid[%s]", cccid.TxID)
 	var ccMsg *pb.ChaincodeMessage
 	ccMsg, err = createCCMessage(cccid.ContractId, cctyp, cccid.ChainID, cccid.TxID, cMsg)
 	if err != nil {
@@ -98,12 +99,12 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 func ExecuteWithErrorFilter(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error) {
 	res, event, err := Execute(ctxt, cccid, spec, timeout)
 	if err != nil {
-		chaincodeLogger.Errorf("ExecuteWithErrorFilter %s error: %+v", cccid.Name, err)
+		log.Errorf("ExecuteWithErrorFilter %s error: %+v", cccid.Name, err)
 		return nil, nil, err
 	}
 
 	if res == nil {
-		chaincodeLogger.Errorf("ExecuteWithErrorFilter %s get nil response without error", cccid.Name)
+		log.Errorf("ExecuteWithErrorFilter %s get nil response without error", cccid.Name)
 		return nil, nil, err
 	}
 

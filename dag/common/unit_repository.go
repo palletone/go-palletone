@@ -23,7 +23,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-
 	"math/big"
 	"reflect"
 	"strings"
@@ -66,7 +65,7 @@ type UnitRepository struct {
 	statedb        storage.IStateDb
 	validate       Validator
 	utxoRepository IUtxoRepository
-	logger         log.ILogger
+	//logger         log.ILogger
 }
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb) *UnitRepository {
@@ -208,7 +207,7 @@ func (unitOp *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.I
 	chainIndex, err := unitOp.statedb.GetCurrentChainIndex(asset.AssetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index + 1}
-		unitOp.logger.Error("GetCurrentChainIndex is failed.", "error", err)
+		log.Error("GetCurrentChainIndex is failed.", "error", err)
 	} else {
 		chainIndex.Index += 1
 	}

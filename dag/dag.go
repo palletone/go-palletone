@@ -63,7 +63,6 @@ type Dag struct {
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
 	Mutex  sync.RWMutex
-	logger log.ILogger
 	Memdag memunit.IMemDag // memory unit
 	// memutxo
 	// 按unit单元划分存储Utxo

@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	"github.com/pkg/errors"
 	"sync"
+
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/pkg/errors"
 )
 
-var logger = flogging.MustGetLogger("cclist")
+//var log = flogging.MustGetLogger("cclist")
 
 type CCInfo struct {
 	Id      []byte
@@ -43,7 +44,7 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 
 	for k, v := range c.CClist {
 		if k == cc.Name && v.Version == cc.Version {
-			logger.Errorf("chaincode [%s] , version[%s] already exit, %v", cc.Name, cc.Version, v)
+			log.Errorf("chaincode [%s] , version[%s] already exit, %v", cc.Name, cc.Version, v)
 			return errors.New("already exit chaincode")
 		}
 	}
@@ -56,10 +57,10 @@ func SetChaincode(cid string, version int, chaincode *CCInfo) error {
 	chains.mu.Lock()
 	defer chains.mu.Unlock()
 
-	logger.Infof("chainId[%s] ,%d, chaincode[%s]id[%s]", cid, version, chaincode.Name, hex.EncodeToString(chaincode.Id))
+	log.Infof("chainId[%s] ,%d, chaincode[%s]id[%s]", cid, version, chaincode.Name, hex.EncodeToString(chaincode.Id))
 	for k, v := range chains.Clist {
 		if k == cid {
-			logger.Infof("chainId[%s] already exit, %v", cid, v)
+			log.Infof("chainId[%s] already exit, %v", cid, v)
 
 			return addChainCodeInfo(v, chaincode)
 		}
@@ -93,10 +94,10 @@ func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
 	if chains.Clist[cid] != nil {
 		clist := chains.Clist[cid]
 		for _, v := range clist.CClist {
-			//logger.Infof("++++:%v",  *v)
-			logger.Infof("GetChaincode find,%s, id[%s]--[%s], ", v.Name, hex.EncodeToString(v.Id), hex.EncodeToString(deployId))
+			//log.Infof("++++:%v",  *v)
+			log.Infof("GetChaincode find,%s, id[%s]--[%s], ", v.Name, hex.EncodeToString(v.Id), hex.EncodeToString(deployId))
 			if bytes.Equal(v.Id, deployId) == true {
-				//logger.Infof("++++++++++++++++find,%s", v.Name)
+				//log.Infof("++++++++++++++++find,%s", v.Name)
 				return v, nil
 			}
 		}
@@ -115,10 +116,10 @@ func DelChaincode(cid string, ccName string, version string) error {
 
 	if chains.Clist[cid] != nil {
 		delete(chains.Clist[cid].CClist, ccName)
-		logger.Infof("del chaincode[%s]", ccName)
+		log.Infof("del chaincode[%s]", ccName)
 		return nil
 	}
-	logger.Infof("not find chaincode[%s]", ccName)
+	log.Infof("not find chaincode[%s]", ccName)
 
 	return nil
 }

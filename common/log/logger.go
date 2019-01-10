@@ -22,14 +22,13 @@ package log
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/common/files"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"log"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/palletone/go-palletone/common/files"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -55,6 +54,7 @@ var Logger *zap.Logger
 var originFileName string
 var mux sync.RWMutex
 
+/*
 type ILogger interface {
 	Trace(msg string, ctx ...interface{})
 	Debug(msg string, ctx ...interface{})
@@ -82,7 +82,7 @@ func New(ctx ...interface{}) *Plogger {
 	pl.logger = *Logger
 	return pl
 }
-
+*/
 // init zap.logger
 func InitLogger() {
 	date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
@@ -179,6 +179,10 @@ func Debugf(format string, ctx ...interface{}) {
 	Logger.Debug(fmt.Sprintf(format, ctx...))
 }
 
+func Infof(msg string, ctx ...interface{}) {
+	Logger.Info(fmt.Sprintf(msg, ctx...))
+}
+
 // Info
 func Info(msg string, ctx ...interface{}) {
 	if Logger == nil {
@@ -195,6 +199,9 @@ func Warn(msg string, ctx ...interface{}) {
 	}
 	fileds := ctxTOfileds(ctx...)
 	Logger.Warn(msg, fileds...)
+}
+func Warnf(msg string, ctx ...interface{}) {
+	Logger.Warn(fmt.Sprintf(msg, ctx...))
 }
 
 // Error
@@ -220,6 +227,7 @@ func Crit(msg string, ctx ...interface{}) {
 	Logger.Error(msg, fileds...)
 }
 
+/*
 func NewTestLog() *Plogger {
 	DefaultConfig = Config{
 		OutputPaths:      []string{"stdout"},
@@ -280,7 +288,7 @@ func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
 	fileds := ctxTOfileds(ctx...)
 	pl.logger.Error(msg, fileds...)
 }
-
+*/
 // ctx transfer to  fileds
 func ctxTOfileds(ctx ...interface{}) []zap.Field {
 	// ctx translate into zap.Filed

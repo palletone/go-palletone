@@ -25,11 +25,11 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	
+	"github.com/palletone/go-palletone/common/log"
 )
 
-var logger = flogging.MustGetLogger("metadata")
+//var log = flogging.MustGetLogger("metadata")
 
 // fileValidators are used as handlers to validate specific metadata directories
 type fileValidator func(fileName string, fileBytes []byte) error
@@ -150,7 +150,7 @@ func validateIndexJSON(indexDefinition map[string]interface{}) error {
 				return fmt.Errorf("Invalid entry, \"ddoc\" must be a string")
 			}
 
-			logger.Debugf("Found index object: \"%s\":\"%s\"", jsonKey, jsonValue)
+			log.Debugf("Found index object: \"%s\":\"%s\"", jsonKey, jsonValue)
 
 		case "name":
 
@@ -159,7 +159,7 @@ func validateIndexJSON(indexDefinition map[string]interface{}) error {
 				return fmt.Errorf("Invalid entry, \"name\" must be a string")
 			}
 
-			logger.Debugf("Found index object: \"%s\":\"%s\"", jsonKey, jsonValue)
+			log.Debugf("Found index object: \"%s\":\"%s\"", jsonKey, jsonValue)
 
 		case "type":
 
@@ -167,7 +167,7 @@ func validateIndexJSON(indexDefinition map[string]interface{}) error {
 				return fmt.Errorf("Index type must be json")
 			}
 
-			logger.Debugf("Found index object: \"%s\":\"%s\"", jsonKey, jsonValue)
+			log.Debugf("Found index object: \"%s\":\"%s\"", jsonKey, jsonValue)
 
 		default:
 
@@ -207,7 +207,7 @@ func processIndexMap(jsonFragment map[string]interface{}) error {
 
 					case reflect.String:
 						//String is a valid field descriptor  ex: "color", "size"
-						logger.Debugf("Found index field name: \"%s\"", itemValue)
+						log.Debugf("Found index field name: \"%s\"", itemValue)
 
 					case reflect.Map:
 						//Handle the case where a sort is included  ex: {"size":"asc"}, {"color":"desc"}
@@ -255,7 +255,7 @@ func validateFieldMap(jsonFragment map[string]interface{}) error {
 			if !(strings.ToLower(jsonValue.(string)) == "asc" || strings.ToLower(jsonValue.(string)) == "desc") {
 				return fmt.Errorf("Sort must be either \"asc\" or \"desc\".  \"%s\" was found.", jsonValue)
 			}
-			logger.Debugf("Found index field name: \"%s\":\"%s\"", jsonKey, jsonValue)
+			log.Debugf("Found index field name: \"%s\":\"%s\"", jsonKey, jsonValue)
 
 		default:
 			return fmt.Errorf("Invalid field definition, fields must be in the form \"fieldname\":\"sort\"")

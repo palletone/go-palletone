@@ -744,11 +744,11 @@ func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.Invoke
 //}
 
 // ------------- Chaincode Loggers ---------------
-
+/*
 // ChaincodeLogger is an abstraction of a logging object for use by
 // chaincodes. These objects are created by the NewLogger API.
 type ChaincodeLogger struct {
-	logger log.ILogger
+	log log.ILogger
 }
 
 // NewLogger allows a Go language chaincode to create one or more logging
@@ -760,89 +760,89 @@ func NewLogger(name string) *ChaincodeLogger {
 	return &ChaincodeLogger{log.New(name)}
 }
 
-// SetLevel sets the logging level for a chaincode logger. Note that currently
-// the levels are actually controlled by the name given when the logger is
-// created, so loggers should be given unique names other than "shim".
+// SetLevel sets the logging level for a chaincode log. Note that currently
+// the levels are actually controlled by the name given when the log is
+// created, so logs should be given unique names other than "shim".
 //func (c *ChaincodeLogger) SetLevel(level LoggingLevel) {
-//	logging.SetLevel(logging.Level(level), c.logger.Module)
+//	logging.SetLevel(logging.Level(level), c.log.Module)
 //}
 
-// IsEnabledFor returns true if the logger is enabled to creates logs at the
+// IsEnabledFor returns true if the log is enabled to creates logs at the
 // given logging level.
 //func (c *ChaincodeLogger) IsEnabledFor(level LoggingLevel) bool {
-//	return c.logger.IsEnabledFor(logging.Level(level))
+//	return c.log.IsEnabledFor(logging.Level(level))
 //}
 
 // Debug logs will only appear if the ChaincodeLogger LoggingLevel is set to
 // LogDebug.
 func (c *ChaincodeLogger) Debug(args ...interface{}) {
-	c.logger.Debug("Chaincode", args...)
+	c.log.Debug("Chaincode", args...)
 }
 
 // Info logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogInfo or LogDebug.
 func (c *ChaincodeLogger) Info(args ...interface{}) {
-	c.logger.Info("Chaincode", args...)
+	c.log.Info("Chaincode", args...)
 }
 
 // Notice logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Notice(args ...interface{}) {
-	c.logger.Info("Chaincode", args...)
+	c.log.Info("Chaincode", args...)
 }
 
 // Warning logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogWarning, LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Warning(args ...interface{}) {
-	c.logger.Warn("Chaincode", args...)
+	c.log.Warn("Chaincode", args...)
 }
 
 // Error logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogError, LogWarning, LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Error(args ...interface{}) {
-	c.logger.Error("Chaincode", args...)
+	c.log.Error("Chaincode", args...)
 }
 
 // Critical logs always appear; They can not be disabled.
 func (c *ChaincodeLogger) Critical(args ...interface{}) {
-	c.logger.Error("Chaincode", args...)
+	c.log.Error("Chaincode", args...)
 }
 
 // Debugf logs will only appear if the ChaincodeLogger LoggingLevel is set to
 // LogDebug.
 func (c *ChaincodeLogger) Debugf(format string, args ...interface{}) {
-	c.logger.Debugf(format, args...)
+	c.log.Debugf(format, args...)
 }
 
 // Infof logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogInfo or LogDebug.
 func (c *ChaincodeLogger) Infof(format string, args ...interface{}) {
-	c.logger.Infof(format, args...)
+	c.log.Infof(format, args...)
 }
 
 // Noticef logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Noticef(format string, args ...interface{}) {
-	c.logger.Infof(format, args...)
+	c.log.Infof(format, args...)
 }
 
 // Warningf logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogWarning, LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Warningf(format string, args ...interface{}) {
-	c.logger.Warnf(format, args...)
+	c.log.Warnf(format, args...)
 }
 
 // Errorf logs will appear if the ChaincodeLogger LoggingLevel is set to
 // LogError, LogWarning, LogNotice, LogInfo or LogDebug.
 func (c *ChaincodeLogger) Errorf(format string, args ...interface{}) {
-	c.logger.Errorf(format, args...)
+	c.log.Errorf(format, args...)
 }
 
 // Criticalf logs always appear; They can not be disabled.
 func (c *ChaincodeLogger) Criticalf(format string, args ...interface{}) {
-	c.logger.Errorf(format, args...)
+	c.log.Errorf(format, args...)
 }
-
+*/
 //func (stub *ChaincodeStub) GetDecorations() map[string][]byte {
 //	return stub.decorations
 //}
