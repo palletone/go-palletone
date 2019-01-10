@@ -86,7 +86,7 @@ var (
 	TxHash2ReqPrefix = []byte("tx2req")
 
 	//filehash
-	IDX_FileHash_Txid = []byte("idx_filehash_txid")
+	IDX_FileHash_Txid = []byte("mda")
 )
 
 // suffix

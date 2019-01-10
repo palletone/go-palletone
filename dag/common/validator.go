@@ -274,7 +274,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_CONFIG {
 			return true
 		}
-	case *modules.TextPayload:
+	case *modules.DataPayload:
 		if app == modules.APP_TEXT {
 			return true
 		}
