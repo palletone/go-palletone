@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -71,7 +70,7 @@ type IDag interface {
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	//All leaf nodes for dag downloader
 	//GetAllLeafNodes() ([]*modules.Header, error)
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
 	//ValidateUnitGroupSig(hash common.Hash) (bool, error)

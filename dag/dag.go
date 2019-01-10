@@ -34,7 +34,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -912,8 +911,8 @@ func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStat
 	return d.stateRep.GetContractStatesById(id)
 }
 
-func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error) {
-	return d.unitRep.CreateUnit(mAddr, txpool, ks, t)
+func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+	return d.unitRep.CreateUnit(mAddr, txpool, t)
 }
 
 //modified by Albert·Gou
