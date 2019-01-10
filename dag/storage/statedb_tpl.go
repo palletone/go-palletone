@@ -23,6 +23,7 @@ package storage
 import (
 	"strings"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -110,37 +111,37 @@ func (statedb *StateDb) GetContractTpl(templateID []byte) (*modules.StateVersion
 	version := new(modules.StateVersion)
 	bytecode := make([]byte, 0)
 	var name, path, tplVersion string
-	statedb.logger.Debug("start getcontractTlp")
+	log.Debug("start getcontractTlp")
 	if len(data) == 1 {
-		statedb.logger.Debug("the contractTlp info: data=1", "len", len(data))
+		log.Debug("the contractTlp info: data=1", "len", len(data))
 		for _, v := range data {
 			if err := rlp.DecodeBytes(v, &bytecode); err != nil {
-				statedb.logger.Error("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
+				log.Error("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
 				return nil, bytecode, "", "", ""
 			}
 		}
 	} else {
-		statedb.logger.Debug("The contractTlp info: data!=1", "len", len(data))
+		log.Debug("The contractTlp info: data!=1", "len", len(data))
 	}
 	nameByte := make([]byte, 0)
 	version, nameByte = statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
-		statedb.logger.Debug("GetTplState err:version is nil")
-		return version, bytecode, "", ""
+		log.Debug("GetTplState err:version is nil")
+		return version, bytecode, "", "", ""
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
-		statedb.logger.Error("GetContractTpl when get name", "error", err.Error())
+		log.Error("GetContractTpl when get name", "error", err.Error())
 		return version, bytecode, "", "", ""
 	}
 
 	_, pathByte := statedb.GetTplState(templateID, modules.FIELD_TPL_PATH)
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
-		statedb.logger.Error("GetContractTpl when get path", "error", err.Error())
+		log.Error("GetContractTpl when get path", "error", err.Error())
 		return version, bytecode, name, "", ""
 	}
 	_, verByte := statedb.GetTplState(templateID, modules.FIELD_TPL_Version)
 	if err := rlp.DecodeBytes(verByte, &tplVersion); err != nil {
-		statedb.logger.Error("GetContractTpl when get version", "error", err.Error())
+		log.Error("GetContractTpl when get version", "error", err.Error())
 		return version, bytecode, name, path, ""
 	}
 	return version, bytecode, name, path, tplVersion

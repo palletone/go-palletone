@@ -38,11 +38,10 @@ type UtxoRepository struct {
 	utxodb  storage.IUtxoDb
 	idxdb   storage.IIndexDb
 	statedb storage.IStateDb
-	logger  log.ILogger
 }
 
-func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb, l log.ILogger) *UtxoRepository {
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, logger: l}
+func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb) *UtxoRepository {
+	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
 }
 
 type IUtxoRepository interface {

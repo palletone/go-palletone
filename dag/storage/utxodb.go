@@ -36,14 +36,8 @@ type UtxoDb struct {
 	logger log.ILogger
 }
 
-func NewUtxoDb(db ptndb.Database, logger log.ILogger) *UtxoDb {
-	var l log.ILogger
-	if logger != nil {
-		l = logger
-	} else {
-		l = &log.NothingLogger{}
-	}
-	return &UtxoDb{db: db, logger: l}
+func NewUtxoDb(db ptndb.Database) *UtxoDb {
+	return &UtxoDb{db: db}
 }
 
 type IUtxoDb interface {

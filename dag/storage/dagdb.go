@@ -42,12 +42,12 @@ import (
 
 //对DAG对象的操作，包括：Unit，Tx等
 type DagDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
+	//logger log.ILogger
 }
 
-func NewDagDb(db ptndb.Database, l log.ILogger) *DagDb {
-	return &DagDb{db: db, logger: l}
+func NewDagDb(db ptndb.Database) *DagDb {
+	return &DagDb{db: db}
 }
 
 type IDagDb interface {
@@ -106,7 +106,6 @@ type IDagDb interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
-
 }
 
 /* ----- common geter ----- */
@@ -181,11 +180,11 @@ func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainInde
 	if m_data, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key))); err == nil {
 		// step1. 若uHash==m_hash 则无需再次存储。
 		var str string
-		m_hash := common.Hash{}
+		//m_hash := common.Hash{}
 		err1 := rlp.DecodeBytes(m_data, &str)
 		if err1 == nil {
 			if str == uHash.String() {
-				return // 已经
+				return nil // 已经
 			}
 		}
 		// step2. 若不相等，则更新
@@ -249,7 +248,7 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
-	dagdb.logger.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
+	log.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
 	return StoreBytes(dagdb.db, append(constants.BODY_PREFIX, unitHash.Bytes()...), txsHash)
 }
 
@@ -550,14 +549,14 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	}
 	//dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 	if err != nil {
-		dagdb.logger.Error("GetUnit when GetUnitNumber failed", "error:", err)
+		log.Error("GetUnit when GetUnitNumber failed", "error:", err)
 		return nil, err
 	}
 	// 2. unit header
 	uHeader, err := dagdb.GetHeader(hash, height)
 	if err != nil {
-		dagdb.logger.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
-		dagdb.logger.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
+		log.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
+		log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}
 	// get unit hash
@@ -566,7 +565,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	// get transaction list
 	txs, err := dagdb.GetUnitTransactions(uHash)
 	if err != nil {
-		dagdb.logger.Error("GetUnit when GetUnitTransactions failed , error:", err)
+		log.Error("GetUnit when GetUnitTransactions failed , error:", err)
 		return nil, err
 	}
 	// generate unit
@@ -582,7 +581,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		dagdb.logger.Info("GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
+		log.Info("GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -643,7 +642,7 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 		var hex string
 		err := rlp.DecodeBytes(rlpUnitHash, &hex)
 		if err != nil {
-			dagdb.logger.Error("GetLastIrreversibleUnit error:" + err.Error())
+			log.Error("GetLastIrreversibleUnit error:" + err.Error())
 			return nil, err
 		}
 		unitHash := common.HexToHash(hex)
@@ -666,7 +665,7 @@ func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*mod
 	}
 	header := new(modules.Header)
 	if err := rlp.Decode(bytes.NewReader(header_bytes), header); err != nil {
-		dagdb.logger.Error("Invalid unit header rlp:", "error", err)
+		log.Error("Invalid unit header rlp:", "error", err)
 		return nil, err
 	}
 	return header, nil
@@ -699,7 +698,7 @@ func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
 	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
 	// rlp  to  Header struct
 	if err != nil {
-		dagdb.logger.Error("GetHeaderRlp error", "error", err)
+		log.Error("GetHeaderRlp error", "error", err)
 	}
 	return header_bytes
 }
@@ -915,13 +914,13 @@ func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*mod
 	}
 	con_bytes, err := dagdb.db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
 	if err != nil {
-		dagdb.logger.Error(fmt.Sprintf("getContract error: %s", err.Error()))
+		log.Error(fmt.Sprintf("getContract error: %s", err.Error()))
 		return nil, err
 	}
 	contract := new(modules.Contract)
 	err = rlp.DecodeBytes(con_bytes, contract)
 	if err != nil {
-		dagdb.logger.Error("getContract failed,decode error:" + err.Error())
+		log.Error("getContract failed,decode error:" + err.Error())
 		return nil, err
 	}
 	return contract, nil
@@ -1061,4 +1060,3 @@ func (dagdb *DagDb) SaveReqIdByTx(tx *modules.Transaction) error {
 	}
 	return err2
 }
-

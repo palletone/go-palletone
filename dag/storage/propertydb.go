@@ -21,15 +21,13 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // modified by Yiran
 type PropertyDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
 	//GlobalProp    *modules.GlobalProperty
 	//DynGlobalProp *modules.DynamicGlobalProperty
 	//MediatorSchl  *modules.MediatorSchedule
@@ -45,8 +43,8 @@ type IPropertyDb interface {
 
 // modified by Yiran
 // initialize PropertyDB , and retrieve gp,dgp,mc from IPropertyDb.
-func NewPropertyDb(db ptndb.Database, l log.ILogger) *PropertyDb {
-	pdb := &PropertyDb{db: db, logger: l}
+func NewPropertyDb(db ptndb.Database) *PropertyDb {
+	pdb := &PropertyDb{db: db}
 
 	//gp, err := pdb.RetrieveGlobalProp()
 	//if err != nil {

@@ -69,19 +69,19 @@ type UnitRepository struct {
 	logger         log.ILogger
 }
 
-func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, l log.ILogger) *UnitRepository {
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
-	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
+func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb) *UnitRepository {
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 
-func NewUnitRepository4Db(db ptndb.Database, l log.ILogger) *UnitRepository {
-	dagdb := storage.NewDagDb(db, l)
-	utxodb := storage.NewUtxoDb(db, l)
-	statedb := storage.NewStateDb(db, l)
-	idxdb := storage.NewIndexDb(db, l)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, l)
-	val := NewValidate(dagdb, utxodb, utxoRep, statedb, l)
+func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
+	dagdb := storage.NewDagDb(db)
+	utxodb := storage.NewUtxoDb(db)
+	statedb := storage.NewStateDb(db)
+	idxdb := storage.NewIndexDb(db)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 
@@ -692,7 +692,6 @@ func (unitOp *UnitRepository) savePaymentPayload(txHash common.Hash, msg *module
 save TextPayload data
 */
 func (unitOp *UnitRepository) saveTextPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
-
 
 	return true
 }

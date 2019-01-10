@@ -142,8 +142,8 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 }
 
 type TxPool struct {
-	config       TxPoolConfig
-	logger       log.ILogger
+	config TxPoolConfig
+	//logger       log.ILogger
 	unit         dags
 	txfee        *big.Int
 	txFeed       event.Feed
@@ -200,15 +200,15 @@ type TxDesc struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, unit dags, l log.ILogger) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 
 	// Create the transaction pool with its initial settings
 	pool := &TxPool{
-		config:      config,
-		unit:        unit,
-		logger:      l,
+		config: config,
+		unit:   unit,
+		//logger:      l,
 		queue:       make(map[common.Hash]*modules.TxPoolTransaction),
 		beats:       make(map[modules.OutPoint]time.Time),
 		pending:     make(map[common.Hash][]*modules.TxPoolTransaction),
@@ -622,12 +622,12 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	hash := tx.Tx.Hash()
 
 	if pool.all[hash] != nil {
-		pool.logger.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.Hash())
+		log.Trace("Discarding already known transaction", "hash", hash, "old_hash", pool.all[hash].Tx.Hash())
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
 	// If the transaction fails basic validation, discard it
 	if err := pool.validateTx(tx, local); err != nil {
-		pool.logger.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
 		return false, err
 	}
 
@@ -637,11 +637,11 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	utxoview, err := pool.FetchInputUtxos(tx.Tx)
 	if err != nil {
-		pool.logger.Errorf("fetchInputUtxos by txid[%s] failed:%s", tx.Tx.Hash().String(), err)
+		log.Errorf("fetchInputUtxos by txid[%s] failed:%s", tx.Tx.Hash().String(), err)
 		return false, err
 	}
 
-	pool.logger.Debug("fetch utxoview info:", "utxoinfo", utxoview)
+	log.Debug("fetch utxoview info:", "utxoinfo", utxoview)
 	// Check the transaction if it exists in the main chain and is not already fully spent.
 	preout := modules.OutPoint{TxHash: hash}
 	for i, msgcopy := range tx.Tx.TxMessages {
@@ -727,7 +727,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// pool.journalTx(tx)
 
-	pool.logger.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
+	log.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
 	return replace, nil
 }
 

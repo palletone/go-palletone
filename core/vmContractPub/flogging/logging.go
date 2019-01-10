@@ -43,7 +43,7 @@ var (
 )
 
 func init() {
-	logger = log.New(pkgLogID)
+	//logger = log.New(pkgLogID)
 	Reset()
 	initgrpclogger()
 }

@@ -502,20 +502,20 @@ func (d *Dag) Utxos() map[common.Hash]map[modules.OutPoint]*modules.Utxo {
 	return d.utxos_cache
 }
 
-func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
+func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
-	dagDb := storage.NewDagDb(db, l)
-	utxoDb := storage.NewUtxoDb(db, l)
-	stateDb := storage.NewStateDb(db, l)
-	idxDb := storage.NewIndexDb(db, l)
-	propDb := storage.NewPropertyDb(db, l)
+	dagDb := storage.NewDagDb(db)
+	utxoDb := storage.NewUtxoDb(db)
+	stateDb := storage.NewStateDb(db)
+	idxDb := storage.NewIndexDb(db)
+	propDb := storage.NewPropertyDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, l)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb, l)
-	propRep := dagcommon.NewPropRepository(propDb, l)
-	stateRep := dagcommon.NewStateRepository(stateDb, l)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
+	propRep := dagcommon.NewPropRepository(propDb)
+	stateRep := dagcommon.NewStateRepository(stateDb)
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
 		Db:            db,
@@ -538,17 +538,17 @@ func NewDag(db ptndb.Database, l log.ILogger) (*Dag, error) {
 
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
-	logger := log.New("Dag")
-	dagDb := storage.NewDagDb(db, logger)
-	utxoDb := storage.NewUtxoDb(db, logger)
-	stateDb := storage.NewStateDb(db, logger)
-	idxDb := storage.NewIndexDb(db, logger)
-	propDb := storage.NewPropertyDb(db, logger)
+	//logger := log.New("Dag")
+	dagDb := storage.NewDagDb(db)
+	utxoDb := storage.NewUtxoDb(db)
+	stateDb := storage.NewStateDb(db)
+	idxDb := storage.NewIndexDb(db)
+	propDb := storage.NewPropertyDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb, logger)
-	propRep := dagcommon.NewPropRepository(propDb, logger)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
+	propRep := dagcommon.NewPropRepository(propDb)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -572,15 +572,15 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	mutex := new(sync.RWMutex)
-	logger := log.New("Dag")
-	dagDb := storage.NewDagDb(db, logger)
-	utxoDb := storage.NewUtxoDb(db, logger)
-	stateDb := storage.NewStateDb(db, logger)
-	idxDb := storage.NewIndexDb(db, logger)
+	//logger := log.New("Dag")
+	dagDb := storage.NewDagDb(db)
+	utxoDb := storage.NewUtxoDb(db)
+	stateDb := storage.NewStateDb(db)
+	idxDb := storage.NewIndexDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, logger)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, logger)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb, logger)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
@@ -1397,4 +1397,3 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 	return d.dagdb.GetReqIdByTxHash(hash)
 }
-

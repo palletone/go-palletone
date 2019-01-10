@@ -39,11 +39,10 @@ type Validate struct {
 	utxodb  storage.IUtxoDb
 	utxoRep IUtxoRepository
 	statedb storage.IStateDb
-	logger  log.ILogger
 }
 
-func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb, l log.ILogger) *Validate {
-	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb, logger: l}
+func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb) *Validate {
+	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb}
 }
 
 type Validator interface {

@@ -21,7 +21,6 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -30,9 +29,9 @@ type IStateRepository interface {
 
 type StateRepository struct {
 	statedb storage.IStateDb
-	logger  log.ILogger
+	//logger  log.ILogger
 }
 
-func NewStateRepository(statedb storage.IStateDb, l log.ILogger) *StateRepository {
-	return &StateRepository{statedb: statedb, logger: l}
+func NewStateRepository(statedb storage.IStateDb) *StateRepository {
+	return &StateRepository{statedb: statedb}
 }

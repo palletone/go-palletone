@@ -894,36 +894,36 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *discover.Node) e
 		log.Trace("Failed RLPx handshake", "addr", c.fd.RemoteAddr(), "conn", c.flags, "err", err)
 		return err
 	}
-	clog := log.New("id", c.id, "addr", c.fd.RemoteAddr(), "conn", c.flags)
+	//clog := log.New("id", c.id, "addr", c.fd.RemoteAddr(), "conn", c.flags)
 	// For dialed connections, check that the remote public key matches.
 	if dialDest != nil && c.id != dialDest.ID {
-		clog.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
+		log.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
 		return DiscUnexpectedIdentity
 	}
 	err = srv.checkpoint(c, srv.posthandshake)
 	if err != nil {
-		clog.Trace("Rejected peer before protocol handshake", "err", err)
+		log.Trace("Rejected peer before protocol handshake", "err", err)
 		return err
 	}
 	// Run the protocol handshake
 	phs, err := c.doProtoHandshake(srv.ourHandshake)
 	if err != nil {
-		clog.Trace("Failed proto handshake", "err", err)
+		log.Trace("Failed proto handshake", "err", err)
 		return err
 	}
 	if phs.ID != c.id {
-		clog.Trace("Wrong devp2p handshake identity", "err", phs.ID)
+		log.Trace("Wrong devp2p handshake identity", "err", phs.ID)
 		return DiscUnexpectedIdentity
 	}
 	c.caps, c.name = phs.Caps, phs.Name
 	err = srv.checkpoint(c, srv.addpeer)
 	if err != nil {
-		clog.Trace("Rejected peer", "err", err)
+		log.Trace("Rejected peer", "err", err)
 		return err
 	}
 	// If the checks completed successfully, runPeer has now been
 	// launched by run.
-	clog.Trace("connection set up", "inbound", dialDest == nil)
+	log.Trace("connection set up", "inbound", dialDest == nil)
 	return nil
 }
 
