@@ -20,7 +20,7 @@ package ptnapi
 
 import (
 //"fmt"
-//"encoding/json"
+//"eggncoding/json"
 //"github.com/palletone/go-palletone/ptnjson"
 //"strings"
 //"github.com/palletone/go-palletone/common/hexutil"
