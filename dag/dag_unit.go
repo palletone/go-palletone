@@ -32,7 +32,8 @@ import (
 )
 
 func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
-	current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
+	current_index, _ := dag.stateRep.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
+	//current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
 

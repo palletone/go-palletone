@@ -555,7 +555,12 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 		log.Info("SaveNumberByHash:", "error", err.Error())
 		return fmt.Errorf("Save unit number error, %s", err)
 	}
-
+	//step12+ save chain index
+	if isGenesis {
+		if err := unitOp.statedb.SaveChainIndex(unit.Header().ChainIndex()); err != nil {
+			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
+		}
+	}
 	// step13 update state
 	unitOp.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
 	unitOp.dagdb.PutHeadHeaderHash(unit.UnitHash)
@@ -724,7 +729,7 @@ func (unitOp *UnitRepository) saveTextPayload(msg *modules.Message) bool {
 	}
 	err := unitOp.idxdb.SaveFileHash(fh)
 	if err != nil {
-		log.Error("error savefilehash","err",err)
+		log.Error("error savefilehash", "err", err)
 		return false
 	}
 	return true

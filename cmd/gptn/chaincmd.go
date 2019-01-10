@@ -174,14 +174,14 @@ func initGenesis(ctx *cli.Context) error {
 	// @jay
 	// asset 存入数据库中
 	// dag.SaveCommon(key,asset)   key=[]byte(modules.FIELD_GENESIS_ASSET)
-	chainIndex := unit.UnitHeader.ChainIndex()
-	if err := dag.SaveChainIndex(chainIndex); err != nil {
-		log.Info("save chain index is failed.", "error", err)
-	} else {
-		token_info := modules.NewTokenInfo("ptncoin", "ptn", "creator_jay")
-		idhex, _ := dag.SaveTokenInfo(token_info)
-		log.Info("save chain index is success.", "idhex", idhex)
-	}
+	//chainIndex := unit.UnitHeader.ChainIndex()
+	//if err := dag.SaveChainIndex(chainIndex); err != nil {
+	//	log.Info("save chain index is failed.", "error", err)
+	//} else {
+	token_info := modules.NewTokenInfo("ptncoin", "ptn", "creator_jay")
+	idhex, _ := dag.SaveTokenInfo(token_info)
+	log.Info("save chain index is success.", "idhex", idhex)
+	//}
 
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
