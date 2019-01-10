@@ -83,7 +83,7 @@ type IDagDb interface {
 	GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
-	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
+	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 
@@ -681,16 +681,16 @@ func (dagdb *DagDb) GetHeaderByHeight(index modules.ChainIndex) (*modules.Header
 	return nil, fmt.Errorf("No such height header")
 }
 
-func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
-	encNum := encodeBlockNumber(index)
-	key := append(constants.HEADER_PREFIX, encNum...)
-	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
-	// rlp  to  Header struct
-	if err != nil {
-		log.Error("GetHeaderRlp error", "error", err)
-	}
-	return header_bytes
-}
+//func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
+//	encNum := encodeBlockNumber(index)
+//	key := append(constants.HEADER_PREFIX, encNum...)
+//	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
+//	// rlp  to  Header struct
+//	if err != nil {
+//		log.Error("GetHeaderRlp error", "error", err)
+//	}
+//	return header_bytes
+//}
 
 func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Header {
 	unit, err := dagdb.GetUnitFormIndex(number)

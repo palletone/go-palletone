@@ -125,16 +125,18 @@ func initLogger() {
 	l.SetOpenModule(DefaultConfig.OpenModule)
 	l = l.WithOptions(zap.AddCallerSkip(1))
 	if DefaultConfig.RotationMaxSize > 0 {
-
+		includeStdout, filePath := getOutputPath(DefaultConfig.OutputPaths)
 		rotateLogCore := func(core zapcore.Core) zapcore.Core {
 			w := zapcore.AddSync(&lumberjack.Logger{
-				Filename:   DefaultConfig.OutputPaths[1],
+				Filename:   filePath,
 				MaxSize:    DefaultConfig.RotationMaxSize, // megabytes
 				MaxBackups: 3,
 				MaxAge:     DefaultConfig.RotationMaxAge, // days
 			})
-			stdout, _, _ := zap.Open("stdout")
-			w = zap.CombineWriteSyncers(stdout, w)
+			if includeStdout {
+				stdout, _, _ := zap.Open("stdout")
+				w = zap.CombineWriteSyncers(stdout, w)
+			}
 			encoder := zapcore.NewConsoleEncoder(cfg.EncoderConfig)
 			core2 := zapcore.NewCore(
 				encoder,
@@ -146,6 +148,19 @@ func initLogger() {
 		l = l.WithOptions(zap.WrapCore(rotateLogCore))
 	}
 	Logger = l
+}
+
+func getOutputPath(paths []string) (bool, string) {
+	includeStdout := false
+	filePath := ""
+	for _, path := range paths {
+		if strings.ToLower(path) == "stdout" {
+			includeStdout = true
+		} else {
+			filePath = path
+		}
+	}
+	return includeStdout, filePath
 }
 
 // Trace

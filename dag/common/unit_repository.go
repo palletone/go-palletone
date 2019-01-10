@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -73,7 +72,7 @@ type IUnitRepository interface {
 	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	UpdateHeadByBatch(hash common.Hash, number uint64) error
-	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
+	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetTxByFileHash(filehash string) (map[string]modules.Transactions, error)
 }
 type UnitRepository struct {
@@ -159,9 +158,10 @@ func (rep *UnitRepository) SaveHashByNumber(uHash common.Hash, number modules.Ch
 func (rep *UnitRepository) UpdateHeadByBatch(hash common.Hash, number uint64) error {
 	return rep.dagdb.UpdateHeadByBatch(hash, number)
 }
-func (rep *UnitRepository) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
-	return rep.dagdb.GetHeaderRlp(hash, index)
-}
+
+//func (rep *UnitRepository) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
+//	return rep.dagdb.GetHeaderRlp(hash, index)
+//}
 
 //func RHashStr(x interface{}) string {
 //	x_byte, err := json.Marshal(x)
