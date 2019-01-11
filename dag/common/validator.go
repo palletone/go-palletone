@@ -641,9 +641,9 @@ func (validate *Validate) validateContractSignature(sinatures []modules.Signatur
 func (validate *Validate) validateDataPayload(payload *modules.DataPayload) modules.TxValidationCode {
 	//验证 maindata是否存在
 	//验证 maindata extradata大小 不可过大
-	if len(payload.MainData) >= 128 || len(payload.ExtraData) >= 128 || len(payload.MainData) == 0{
-		return modules.TxValidationCode_INVALID_DATAPAYLOAD
-	}
+	//if len(payload.MainData) >= 128 || len(payload.ExtraData) >= 128 || len(payload.MainData) == 0{
+	//	return modules.TxValidationCode_INVALID_DATAPAYLOAD
+	//}
 	//TODO 验证maindata其它属性
 	return modules.TxValidationCode_VALID
 }
