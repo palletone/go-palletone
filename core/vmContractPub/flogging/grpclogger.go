@@ -19,46 +19,47 @@
 
 package flogging
 
+/*
 import (
 	"github.com/palletone/go-palletone/common/log"
-	"google.golang.org/grpc/grpclog"
 )
 
 const GRPCModuleID = "grpc"
 
-func initgrpclogger() {
-	glogger := MustGetLogger(GRPCModuleID)
-	grpclog.SetLogger(&grpclogger{glogger})
+func initgrpclog() {
+	//glog := MustGetLogger(GRPCModuleID)
+	grpclog.SetLogger(&grpclog{glog})
 }
 
-// grpclogger implements the standard Go logging interface and wraps the
-// logger provided by the flogging package.  This is required in order to
+// grpclog implements the standard Go logging interface and wraps the
+// log provided by the flogging package.  This is required in order to
 // replace the default log used by the grpclog package.
-type grpclogger struct {
-	logger log.ILogger
+type grpclog struct {
+	log log.ILogger
 }
 
-func (g *grpclogger) Fatal(args ...interface{}) {
-	g.logger.Error(GRPCModuleID, args...)
+func (g *grpclog) Fatal(args ...interface{}) {
+	g.log.Error(GRPCModuleID, args...)
 }
 
-func (g *grpclogger) Fatalf(format string, args ...interface{}) {
-	g.logger.Errorf(format, args...)
+func (g *grpclog) Fatalf(format string, args ...interface{}) {
+	g.log.Errorf(format, args...)
 }
 
-func (g *grpclogger) Fatalln(args ...interface{}) {
-	g.logger.Error(GRPCModuleID, args...)
+func (g *grpclog) Fatalln(args ...interface{}) {
+	g.log.Error(GRPCModuleID, args...)
 }
 
 // NOTE: grpclog does not support leveled logs so for now use DEBUG
-func (g *grpclogger) Print(args ...interface{}) {
-	g.logger.Debug(GRPCModuleID, args...)
+func (g *grpclog) Print(args ...interface{}) {
+	g.log.Debug(GRPCModuleID, args...)
 }
 
-func (g *grpclogger) Printf(format string, args ...interface{}) {
-	g.logger.Debugf(format, args...)
+func (g *grpclog) Printf(format string, args ...interface{}) {
+	g.log.Debugf(format, args...)
 }
 
-func (g *grpclogger) Println(args ...interface{}) {
-	g.logger.Debug(GRPCModuleID, args...)
+func (g *grpclog) Println(args ...interface{}) {
+	g.log.Debug(GRPCModuleID, args...)
 }
+*/

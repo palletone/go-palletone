@@ -23,10 +23,10 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -58,9 +58,9 @@ func SaveContractState(statedb *StateDb, prefix []byte, id []byte, field string,
 	key = append(key, []byte(field)...)
 	//key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	//key = append(key, version.Bytes()...)
-	statedb.logger.Debug(fmt.Sprintf("Try to save contract state with version:%x", version.Bytes()))
+	log.Debug(fmt.Sprintf("Try to save contract state with version:%x", version.Bytes()))
 	if err := StoreBytesWithVersion(statedb.db, key, version, value); err != nil {
-		statedb.logger.Error("Save contract template", err.Error())
+		log.Error("Save contract template", err.Error())
 		return err
 	}
 	return nil
@@ -99,7 +99,7 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 	contract := new(modules.Contract)
 	err = rlp.DecodeBytes(con_bytes, contract)
 	if err != nil {
-		log.Println("err:", err)
+		log.Errorf("err:", err)
 		return nil, err
 	}
 	obj := reflect.ValueOf(contract)
@@ -110,7 +110,7 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 		filed := myref.Field(i)
 		if typeOftype.Field(i).Name == key {
 			val = filed.Interface()
-			log.Println(i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
+			log.Errorf("", i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
 			break
 		} else if i == myref.NumField()-1 {
 			val = nil
@@ -143,7 +143,7 @@ func (statedb *StateDb) GetContractAllState() []*modules.ContractReadSet {
 		sKey := string(k[22:])
 		data, version, err := splitValueAndVersion(v)
 		if err != nil {
-			statedb.logger.Error("Invalid state data, cannot parse and split version")
+			log.Error("Invalid state data, cannot parse and split version")
 			continue
 		}
 		rdSet := &modules.ContractReadSet{
@@ -176,7 +176,7 @@ func (statedb *StateDb) GetContractStatesById(id []byte) (map[string]*modules.Co
 		realKey := dbkey[len(key):]
 		if realKey != "" {
 			result[realKey] = &modules.ContractStateValue{Value: state, Version: version}
-			statedb.logger.Info("the contract's state get info.", "key", realKey)
+			log.Info("the contract's state get info.", "key", realKey)
 		}
 	}
 	return result, err
@@ -212,13 +212,13 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	//}
 	con_bytes, err := statedb.db.Get(append(constants.CONTRACT_PREFIX, id...))
 	if err != nil {
-		statedb.logger.Error("err:", err)
+		log.Errorf("err:", err)
 		return nil, err
 	}
 	contract := new(modules.Contract)
 	err = rlp.DecodeBytes(con_bytes, contract)
 	if err != nil {
-		statedb.logger.Error("err:", err)
+		log.Error("err:", err)
 		return nil, err
 	}
 	return contract, nil

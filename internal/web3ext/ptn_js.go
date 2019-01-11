@@ -79,8 +79,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinvoke',
 			call: 'ptn_ccinvoke',
-			params: 1,
-			inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
+			params: 3,
+			inputFormatter: [null,null,null]
 		}),
 		new web3._extend.Method({
 			name: 'transferToken',
@@ -131,15 +131,51 @@ web3._extend({
 			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-		    name: 'getTxHashByReqId',
-		    call: 'ptn_getTxHashByReqId',
+			name: 'transferPtn',
+			call: 'ptn_transferPtn',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'cmdCreateTransaction',
+			call: 'ptn_cmdCreateTransaction',
+			params: 4,
+			inputFormatter: [null,null,null, null]
+		}),
+		new web3._extend.Method({
+			name: 'createRawTransaction',
+			call: 'ptn_createRawTransaction',
 			params: 1,
 			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-			name: 'transferPtn',
-			call: 'ptn_transferPtn',
+			name: 'signRawTransaction',
+			call: 'ptn_signRawTransaction',
 			params: 1,
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'sendRawTransaction',
+			call: 'ptn_sendRawTransaction',
+			params: 1,
+			inputFormatter: [null]
+		}),
+        new web3._extend.Method({
+			name: 'ccinvoketxPass',
+			call: 'ptn_ccinvoketxPass',
+			params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration
+			inputFormatter: [null, null, null,null, null, null, null, null]
+		}),
+        new web3._extend.Method({
+			name: 'getBalance',
+			call: 'ptn_getBalance',
+			params: 1,
+			inputFormatter: [null]
+		}),
+        new web3._extend.Method({
+			name: 'getTransactionsByTxid',
+            call: 'ptn_getTransactionsByTxid',
+			params: 1,
+			inputFormatter: [null]
 		}),
 	],
 

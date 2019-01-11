@@ -27,7 +27,7 @@ import (
 )
 
 type IStateDb interface {
-	GetConfig(name []byte) ([]byte, *modules.StateVersion, error)
+	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error
 	SaveAssetInfo(assetInfo *modules.AssetInfo) error
@@ -37,7 +37,7 @@ type IStateDb interface {
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	DeleteState(key []byte) error
-	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
+	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
 	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
 	GetContractAllState() []*modules.ContractReadSet
@@ -66,16 +66,16 @@ type IStateDb interface {
 	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
 
 	StoreMediator(med *core.Mediator) error
-	StoreMediatorInfo(add common.Address, mi *MediatorInfo) error
+	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	GetMediatorCount() int
-	IsMediator(address common.Address) bool
+
 	GetMediators() map[common.Address]bool
 	LookupMediator() map[common.Address]*core.Mediator
 
-	GetMediatorCandidateList() ([]*modules.MediatorInfo, error)
-	IsInMediatorCandidateList(address common.Address) bool
-
+	GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error)
+	IsApprovedMediator(address common.Address) bool
+	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
-	RetrieveMediatorInfo(address common.Address) (*MediatorInfo, error)
+	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 }

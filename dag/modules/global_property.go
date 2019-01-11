@@ -65,6 +65,7 @@ type DynamicGlobalProperty struct {
 	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
 
 	NextMaintenanceTime int64 // 下一次系统维护时间
+	LastMaintenanceTime int64 // 上一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentASlot uint64
@@ -84,6 +85,7 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 		HeadUnitNum:             0,
 		HeadUnitHash:            common.Hash{},
 		NextMaintenanceTime:     0,
+		LastMaintenanceTime:     0,
 		CurrentASlot:            0,
 		LastIrreversibleUnitNum: 0,
 	}
@@ -104,7 +106,9 @@ func (gp *GlobalProperty) ChainThreshold() int {
 }
 
 func (gp *GlobalProperty) IsActiveJury(add common.Address) bool {
-	return gp.ActiveJuries[add]
+	return true  //todo for test
+
+	//return gp.ActiveJuries[add]
 }
 
 func (gp *GlobalProperty) GetActiveJuries() []common.Address {

@@ -19,7 +19,6 @@
 
 package controller
 
-
 import (
 	"bytes"
 	"fmt"
@@ -27,10 +26,9 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/fsouza/go-dockerclient"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/contracts/platforms"
-	cutil "github.com/palletone/go-palletone/vm/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cutil "github.com/palletone/go-palletone/vm/common"
 )
 
 // VM implementation of VM management functionality.
@@ -48,7 +46,7 @@ func NewVM() (*VM, error) {
 	return VM, nil
 }
 
-var vmLogger = flogging.MustGetLogger("container")
+//var log = flogging.MustGetLogger("container")
 
 // ListImages list the images available
 func (vm *VM) ListImages(context context.Context) error {
@@ -94,4 +92,3 @@ func (vm *VM) BuildChaincodeContainer(spec *pb.ChaincodeSpec) error {
 
 	return nil
 }
-

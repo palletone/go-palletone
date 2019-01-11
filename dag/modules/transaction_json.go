@@ -30,14 +30,6 @@ type idxPaymentPayload struct {
 	Index int
 	*PaymentPayload
 }
-type idxContractInvokeRequestPayload struct {
-	Index int
-	*ContractInvokeRequestPayload
-}
-type idxContractInvokePayload struct {
-	Index int
-	*ContractInvokePayload
-}
 type idxConfigPayload struct {
 	Index int
 	*ConfigPayload
@@ -48,46 +40,70 @@ type idxSignaturePayload struct {
 }
 type idxTextPayload struct {
 	Index int
-	*TextPayload
+	*DataPayload
 }
 type idxMediatorCreateOperation struct {
 	Index int
 	*MediatorCreateOperation
 }
+
+//install
+type idxContractInstallRequestPayload struct {
+	Index int
+	*ContractInstallRequestPayload
+}
 type idxContractTplPayload struct {
 	Index int
 	*ContractTplPayload
+}
+
+//deploy
+type idxContractDeployRequestPayload struct {
+	Index int
+	*ContractDeployRequestPayload
 }
 type idxContractDeployPayload struct {
 	Index int
 	*ContractDeployPayload
 }
-type idxContractInstallRequestPayload struct {
+
+//invoke
+type idxContractInvokeRequestPayload struct {
 	Index int
-	*ContractInstallRequestPayload
+	*ContractInvokeRequestPayload
+}
+type idxContractInvokePayload struct {
+	Index int
+	*ContractInvokePayload
+}
+
+//stop
+type idxContractStopRequestPayload struct {
+	Index int
+	*ContractStopRequestPayload
 }
 type idxContractStopPayload struct {
 	Index int
 	*ContractStopPayload
 }
-type idxContractStopRequestPayload struct {
-	Index int
-	*ContractStopRequestPayload
-}
+
 type txJsonTemp struct {
 	MsgCount                int
 	Payment                 []*idxPaymentPayload
-	ContractTpl             []*idxContractTplPayload
-	ContractDeploy          []*idxContractDeployPayload
-	ContractInvoke          []*idxContractInvokePayload
-	ContractStop            []*idxContractStopPayload
-	ContractInvokeRequest   []*idxContractInvokeRequestPayload
-	ContractInstallRequest  []*idxContractInstallRequestPayload
-	ContractStopRequest     []*idxContractStopRequestPayload
 	Config                  []*idxConfigPayload
-	Signature               []*idxSignaturePayload
 	Text                    []*idxTextPayload
 	MediatorCreateOperation []*idxMediatorCreateOperation
+	Signature               []*idxSignaturePayload
+
+	ContractInstallRequest []*idxContractInstallRequestPayload
+	ContractDeployRequest  []*idxContractDeployRequestPayload
+	ContractInvokeRequest  []*idxContractInvokeRequestPayload
+	ContractStopRequest    []*idxContractStopRequestPayload
+
+	ContractTpl    []*idxContractTplPayload
+	ContractDeploy []*idxContractDeployPayload
+	ContractInvoke []*idxContractInvokePayload
+	ContractStop   []*idxContractStopPayload
 }
 
 func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
@@ -95,16 +111,40 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 	for idx, msg := range tx.TxMessages {
 		if msg.App == APP_PAYMENT {
 			temp.Payment = append(temp.Payment, &idxPaymentPayload{Index: idx, PaymentPayload: msg.Payload.(*PaymentPayload)})
+		} else if msg.App == APP_CONTRACT_INVOKE {
+			temp.ContractInvoke = append(temp.ContractInvoke, &idxContractInvokePayload{Index: idx, ContractInvokePayload: msg.Payload.(*ContractInvokePayload)})
+		} else if msg.App == APP_CONTRACT_TPL {
+			temp.ContractTpl = append(temp.ContractTpl, &idxContractTplPayload{Index: idx, ContractTplPayload: msg.Payload.(*ContractTplPayload)})
+		} else if msg.App == APP_CONTRACT_DEPLOY {
+			temp.ContractDeploy = append(temp.ContractDeploy, &idxContractDeployPayload{Index: idx, ContractDeployPayload: msg.Payload.(*ContractDeployPayload)})
+		} else if msg.App == APP_CONTRACT_STOP {
+			temp.ContractStop = append(temp.ContractStop, &idxContractStopPayload{Index: idx, ContractStopPayload: msg.Payload.(*ContractStopPayload)})
 		} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			temp.ContractInvokeRequest = append(temp.ContractInvokeRequest,
 				&idxContractInvokeRequestPayload{
 					Index: idx,
 					ContractInvokeRequestPayload: msg.Payload.(*ContractInvokeRequestPayload),
 				})
-		} else if msg.App == APP_CONTRACT_INVOKE {
-			temp.ContractInvoke = append(temp.ContractInvoke, &idxContractInvokePayload{Index: idx, ContractInvokePayload: msg.Payload.(*ContractInvokePayload)})
-		} else if msg.App == APP_TEXT {
-			temp.Text = append(temp.Text, &idxTextPayload{Index: idx, TextPayload: msg.Payload.(*TextPayload)})
+		} else if msg.App == APP_CONTRACT_TPL_REQUEST {
+			temp.ContractInstallRequest = append(temp.ContractInstallRequest,
+				&idxContractInstallRequestPayload{
+					Index: idx,
+					ContractInstallRequestPayload: msg.Payload.(*ContractInstallRequestPayload),
+				})
+		} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
+			temp.ContractDeployRequest = append(temp.ContractDeployRequest,
+				&idxContractDeployRequestPayload{
+					Index: idx,
+					ContractDeployRequestPayload: msg.Payload.(*ContractDeployRequestPayload),
+				})
+		} else if msg.App == APP_CONTRACT_STOP_REQUEST {
+			temp.ContractStopRequest = append(temp.ContractStopRequest,
+				&idxContractStopRequestPayload{
+					Index: idx,
+					ContractStopRequestPayload: msg.Payload.(*ContractStopRequestPayload),
+				})
+		} else if msg.App == APP_DATA {
+			temp.Text = append(temp.Text, &idxTextPayload{Index: idx, DataPayload: msg.Payload.(*DataPayload)})
 		} else if msg.App == APP_SIGNATURE {
 			temp.Signature = append(temp.Signature, &idxSignaturePayload{Index: idx, SignaturePayload: msg.Payload.(*SignaturePayload)})
 		} else if msg.App == APP_CONFIG {
@@ -125,16 +165,44 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 		tx.TxMessages[p.Index] = NewMessage(APP_PAYMENT, p.PaymentPayload)
 		processed++
 	}
+	//request
+	for _, p := range temp.ContractInstallRequest {
+		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_TPL_REQUEST, p.ContractInstallRequestPayload)
+		processed++
+	}
+	for _, p := range temp.ContractDeployRequest {
+		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_DEPLOY_REQUEST, p.ContractDeployRequestPayload)
+		processed++
+	}
 	for _, p := range temp.ContractInvokeRequest {
 		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_INVOKE_REQUEST, p.ContractInvokeRequestPayload)
+		processed++
+	}
+	for _, p := range temp.ContractStopRequest {
+		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_STOP_REQUEST, p.ContractStopRequestPayload)
+		processed++
+	}
+
+	//content
+	for _, p := range temp.ContractTpl {
+		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_TPL, p.ContractTplPayload)
+		processed++
+	}
+	for _, p := range temp.ContractDeploy {
+		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_DEPLOY, p.ContractDeployPayload)
 		processed++
 	}
 	for _, p := range temp.ContractInvoke {
 		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_INVOKE, p.ContractInvokePayload)
 		processed++
 	}
+	for _, p := range temp.ContractStop {
+		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_STOP, p.ContractStopPayload)
+		processed++
+	}
+
 	for _, p := range temp.Text {
-		tx.TxMessages[p.Index] = NewMessage(APP_TEXT, p.TextPayload)
+		tx.TxMessages[p.Index] = NewMessage(APP_DATA, p.DataPayload)
 		processed++
 	}
 	for _, p := range temp.Signature {

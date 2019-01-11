@@ -33,10 +33,8 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		select {
 		case event := <-self.newProducedUnitCh:
 			// 广播给其他活跃 mediator，进行验证并群签名
-			// self.BroadcastNewProducedUnit(event.Unit)
-
-			self.BroadcastUnit(event.Unit, true /*, needBroadcastMediator*/)
-			//self.BroadcastUnit(event.Unit, false /*, noBroadcastMediator*/)
+			self.BroadcastNewProducedUnit(event.Unit)
+			self.BroadcastUnit(event.Unit, true)
 
 		case <-self.newProducedUnitSub.Err():
 			return
@@ -47,11 +45,10 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
 func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
-	return
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			pm.producer.ToUnitTBLSSign(newUnit)
+			pm.producer.AddToTBLSSignBuf(newUnit)
 			continue
 		}
 
@@ -64,7 +61,6 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
 
 // @author Albert·Gou
 func (self *ProtocolManager) sigShareTransmitLoop() {
-	return
 	for {
 		select {
 		case event := <-self.sigShareCh:
@@ -84,7 +80,6 @@ func (self *ProtocolManager) sigShareTransmitLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.SigShareEvent) {
-	return
 	peer, self := pm.GetPeer(node)
 	if self {
 		//size, reader, err := rlp.EncodeToReader(sigShare)
@@ -97,9 +92,9 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 		//if err := stream.Decode(&s); err != nil {
 		//	log.Error(err.Error())
 		//}
-		//pm.producer.ToTBLSRecover(&s)
+		//pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 
-		pm.producer.ToTBLSRecover(sigShare)
+		pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return
 	}
 
@@ -115,7 +110,6 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 
 // @author Albert·Gou
 func (self *ProtocolManager) groupSigBroadcastLoop() {
-	return
 	for {
 		select {
 		case event := <-self.groupSigCh:
@@ -139,7 +133,6 @@ func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
 
 // @author Albert·Gou
 func (self *ProtocolManager) vssDealTransmitLoop() {
-	return
 	for {
 		select {
 		case event := <-self.vssDealCh:
@@ -156,7 +149,6 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDealEvent) {
-	return
 	peer, self := pm.GetPeer(node)
 	if self {
 		//size, reader, err := rlp.EncodeToReader(deal)
@@ -169,9 +161,9 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 		//if err := s.Decode(&d); err != nil {
 		//	log.Error(err.Error())
 		//}
-		//pm.producer.ToProcessDeal(&d)
+		//pm.producer.ProcessVSSDeal(&d)
 
-		pm.producer.ToProcessDeal(deal)
+		pm.producer.ProcessVSSDeal(deal)
 		return
 	}
 
@@ -200,7 +192,6 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 
 // @author Albert·Gou
 func (self *ProtocolManager) vssResponseBroadcastLoop() {
-	return
 	for {
 		select {
 		case event := <-self.vssResponseCh:
@@ -216,7 +207,6 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 // @author Albert·Gou
 //func (pm *ProtocolManager) BroadcastVssResp(dstId string, resp *mp.VSSResponseEvent) {
 func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
-	return
 	// comment by Albert·Gou
 	//dstId := node.ID.TerminalString()
 	//peer := pm.peers.Peer(dstId)
@@ -244,9 +234,9 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 			//if err := s.Decode(&r); err != nil {
 			//	log.Error(err.Error())
 			//}
-			//pm.producer.ToProcessResponse(&r)
+			//go pm.producer.AddToResponseBuf(&r)
 
-			pm.producer.ToProcessResponse(resp)
+			go pm.producer.AddToResponseBuf(resp)
 			continue
 		}
 
@@ -308,7 +298,7 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
 func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
-	p.knownBlocks.Add(newUnit.UnitHash)
+	//p.knownBlocks.Add(newUnit.UnitHash)
 	return p2p.Send(p.rw, NewProducedUnitMsg, newUnit)
 }
 

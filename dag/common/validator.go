@@ -39,11 +39,10 @@ type Validate struct {
 	utxodb  storage.IUtxoDb
 	utxoRep IUtxoRepository
 	statedb storage.IStateDb
-	logger  log.ILogger
 }
 
-func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb, l log.ILogger) *Validate {
-	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb, logger: l}
+func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb) *Validate {
+	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb}
 }
 
 type Validator interface {
@@ -230,7 +229,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 			}
 
 		case modules.APP_CONFIG:
-		case modules.APP_TEXT:
+		case modules.APP_DATA:
 		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:
 		default:
@@ -275,8 +274,8 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_CONFIG {
 			return true
 		}
-	case *modules.TextPayload:
-		if app == modules.APP_TEXT {
+	case *modules.DataPayload:
+		if app == modules.APP_DATA {
 			return true
 		}
 	case *vote.VoteInfo:
@@ -297,7 +296,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 
 	default:
-		log.Debug("The payload of message type is not expect. ", "payload_type", t)
+		log.Debug("The payload of message type is not expect. ", "payload_type", t, "app type", app)
 		return false
 	}
 	return false
@@ -430,8 +429,8 @@ To validate contract template payload
 */
 func (validate *Validate) validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
-	stateVersion, bytecode, name, path := validate.statedb.GetContractTpl(contractTplPayload.TemplateId)
-	if stateVersion == nil && bytecode == nil && name == "" && path == "" {
+	stateVersion, bytecode, name, path, tplV := validate.statedb.GetContractTpl(contractTplPayload.TemplateId)
+	if stateVersion == nil && bytecode == nil && name == "" && path == "" && tplV == "" {
 		return modules.TxValidationCode_VALID
 	}
 	return modules.TxValidationCode_INVALID_CONTRACT_TEMPLATE

@@ -165,8 +165,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		Payload: &configPayload,
 	}
 	msg2 := &modules.Message{
-		App:     modules.APP_TEXT,
-		Payload: &modules.TextPayload{TextHash: []byte(genesis.Text)},
+		App:     modules.APP_DATA,
+		Payload: &modules.DataPayload{MainData: []byte(genesis.Text)},
 	}
 
 	initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)

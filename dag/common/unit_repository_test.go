@@ -29,7 +29,6 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	plog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
@@ -38,8 +37,8 @@ import (
 
 func mockUnitRepository() *UnitRepository {
 	db, _ := ptndb.NewMemDatabase()
-	l := plog.NewTestLog()
-	return NewUnitRepository4Db(db, l)
+	//l := plog.NewTestLog()
+	return NewUnitRepository4Db(db)
 }
 
 //func mockUnitRepositoryLeveldb(path string) *UnitRepository {
@@ -221,19 +220,19 @@ func TestRlpDecode(t *testing.T) {
 	fmt.Printf("%q", data)
 }
 
-func TestCreateUnit(t *testing.T) {
-
-	rep := mockUnitRepository()
-	addr := common.Address{} // minner addr
-	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
-	//units, err := CreateUnit(&addr, time.Now())
-	units, err := rep.CreateUnit(&addr, nil, nil, time.Now())
-	if err != nil {
-		log.Println("create unit error:", err)
-	} else {
-		log.Println("New unit:", units)
-	}
-}
+//func TestCreateUnit(t *testing.T) {
+//
+//	rep := mockUnitRepository()
+//	addr := common.Address{} // minner addr
+//	addr.SetString("P1FYoQg1QHxAuBEgDy7c5XDWh3GLzLTmrNM")
+//	//units, err := CreateUnit(&addr, time.Now())
+//	units, err := rep.CreateUnit(&addr, nil, time.Now())
+//	if err != nil {
+//		log.Println("create unit error:", err)
+//	} else {
+//		log.Println("New unit:", units)
+//	}
+//}
 
 //func TestGetContractState(t *testing.T) {
 //	rep:=mockUnitRepository()
@@ -408,14 +407,14 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
 	//et := time.Duration(12)
 	deployPayload := modules.ContractDeployPayload{
-		TemplateId:    []byte("contract_template0000"),
-		ContractId:    []byte("contract0000"),
-		Name:          "testdeploy",
-		Args:          [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
+		TemplateId: []byte("contract_template0000"),
+		ContractId: []byte("contract0000"),
+		Name:       "testdeploy",
+		Args:       [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
 		//ExecutionTime: et,
-		Jury:          []common.Address{addr},
-		ReadSet:       readSet,
-		WriteSet:      writeSet,
+		Jury:     []common.Address{addr},
+		ReadSet:  readSet,
+		WriteSet: writeSet,
 	}
 	tx1 := modules.Transaction{
 		TxMessages: []*modules.Message{

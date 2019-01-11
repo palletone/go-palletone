@@ -24,7 +24,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	palletone "github.com/palletone/go-palletone"
+	"github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -155,7 +155,7 @@ type LightDag interface {
 	GetHeaderByHash(common.Hash) *modules.Header
 	CurrentHeader() *modules.Header
 	InsertHeaderDag([]*modules.Header, int) (int, error)
-	GetAllLeafNodes() ([]*modules.Header, error)
+	//GetAllLeafNodes() ([]*modules.Header, error)
 	//Rollback([]common.Hash)
 }
 
@@ -263,10 +263,10 @@ func (d *Downloader) Synchronising() bool {
 // RegisterPeer injects a new download peer into the set of block source to be
 // used for fetching hashes and blocks from.
 func (d *Downloader) RegisterPeer(id string, version int, peer Peer) error {
-	logger := log.New("peer", id)
-	logger.Trace("Registering sync peer")
-	if err := d.peers.Register(newPeerConnection(id, version, peer, *logger)); err != nil {
-		logger.Error("Failed to register sync peer", "err", err)
+	//logger := log.New("peer", id)
+	log.Trace("Registering sync peer")
+	if err := d.peers.Register(newPeerConnection(id, version, peer)); err != nil {
+		log.Error("Failed to register sync peer", "err", err)
 		return err
 	}
 	d.qosReduceConfidence()
@@ -284,10 +284,10 @@ func (d *Downloader) RegisterLightPeer(id string, version int, peer LightPeer) e
 // the queue.
 func (d *Downloader) UnregisterPeer(id string) error {
 	// Unregister the peer from the active peer set and revoke any fetch tasks
-	logger := log.New("peer", id)
-	logger.Trace("Unregistering sync peer")
+	//logger := log.New("peer", id)
+	log.Trace("Unregistering sync peer")
 	if err := d.peers.Unregister(id); err != nil {
-		logger.Error("Failed to unregister sync peer", "err", err)
+		log.Error("Failed to unregister sync peer", "err", err)
 		return err
 	}
 	d.queue.Revoke(id)
@@ -427,34 +427,24 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return err
 	}
 
-	height := latest.Number.Index
-	localIndex := d.dag.CurrentUnit().Number().Index
-
-	log.Debug("Downloader", "syncWithPeer local index", localIndex, "latest peer index", height)
-	if localIndex >= height {
-		return nil
-	}
-
 	origin, err := d.findAncestor(p, latest, assetId)
 	if err != nil {
 		return err
 	}
-	log.Debug("=====findAncestor=====", "origin:", origin)
+	log.Debug("Synchronisation findAncestor", "origin:", origin)
 
 	// Ensure our origin point is below any fast sync pivot point
 	pivot := uint64(0)
-	//fmt.Println("Downloader->syncWithPeer pre", "height:", height, "origin:", origin, "pivot:", pivot)
 	if d.mode == FastSync {
-		if height <= uint64(fsMinFullBlocks) {
+		if latest.Number.Index <= uint64(fsMinFullBlocks) {
 			origin = 0
 		} else {
-			pivot = height - uint64(fsMinFullBlocks)
+			pivot = latest.Number.Index - uint64(fsMinFullBlocks)
 			if pivot <= origin {
 				origin = pivot - 1
 			}
 		}
 	}
-	//fmt.Println("Downloader->syncWithPeer last", "height:", height, "origin:", origin, "pivot:", pivot)
 	log.Debug("Downloader->syncWithPeer last", "origin:", origin, "pivot:", pivot)
 	d.committed = 1
 	if d.mode == FastSync && pivot != 0 {
@@ -463,7 +453,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Initiate the sync using a concurrent header and content retrieval algorithm
 	d.queue.Prepare(origin+1, d.mode)
 	if d.syncInitHook != nil {
-		d.syncInitHook(origin, height)
+		d.syncInitHook(origin, latest.Number.Index)
 	}
 
 	fetchers := []func() error{
@@ -559,11 +549,6 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 	log.Debug("Retrieving remote chain height", "peer", p.id)
 
 	// Request the advertised remote head block and wait for the response
-	//headerHash, number := p.peer.Head(assetId)
-	//if common.EmptyHash(headerHash) && number.Index <= 0 {
-	//	log.Debug("Downloader", "fetchHeight header hash:", headerHash, "number:", number.Index)
-	//	return nil, errPeersUnavailable
-	//}
 	headerHash, _ := p.peer.Head(assetId)
 	go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
 
@@ -620,7 +605,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	if ceil >= MaxForkAncestry {
 		floor = int64(ceil - MaxForkAncestry)
 	}
-	p.log.Debug("Looking for common ancestor", "local", ceil, "remote", height)
+	log.Debug("Looking for common ancestor", "local", ceil, "remote", height)
 	// Request the topmost blocks to short circuit binary ancestor lookup
 	head := ceil
 	if head > height {
@@ -665,13 +650,13 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 			// Make sure the peer actually gave something valid
 			headers := packet.(*headerPack).headers
 			if len(headers) == 0 {
-				p.log.Warn("Empty head header set")
+				log.Warn("Empty head header set")
 				return 0, errEmptyHeaderSet
 			}
 			// Make sure the peer's reply conforms to the request
 			for i := 0; i < len(headers); i++ {
 				if number := headers[i].Number.Index; number != uint64(from+int64(i)*16) {
-					p.log.Warn("Head headers broke chain ordering", "index", i, "requested", from+int64(i)*16, "received", number)
+					log.Warn("Head headers broke chain ordering", "index", i, "requested", from+int64(i)*16, "received", number)
 					return 0, errInvalidChain
 				}
 			}
@@ -689,7 +674,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 					number, hash = headers[i].Number.Index, headers[i].Hash()
 					// If every header is known, even future ones, the peer straight out lied about its head
 					if number > height && i == limit-1 {
-						p.log.Warn("Lied about chain head", "reported", height, "found", number)
+						log.Warn("Lied about chain head", "reported", height, "found", number)
 						return 0, errStallingPeer
 					}
 					break
@@ -697,7 +682,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 			}
 
 		case <-timeout:
-			p.log.Debug("Waiting for head header timed out", "elapsed", ttl)
+			log.Debug("Waiting for head header timed out", "elapsed", ttl)
 			return 0, errTimeout
 
 		case <-d.bodyCh:
@@ -708,7 +693,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	// If the head fetch already found an ancestor, return
 	if !common.EmptyHash(hash) {
 		if int64(number) <= floor {
-			p.log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
+			log.Warn("Ancestor below allowance", "number", number, "hash", hash, "allowance", floor)
 			return 0, errInvalidAncestor
 		}
 		log.Debug("Found common ancestor", "number", number, "hash", hash)
@@ -744,7 +729,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 				// Make sure the peer actually gave something valid
 				headers := packer.(*headerPack).headers
 				if len(headers) != 1 {
-					p.log.Debug("Multiple headers for single request", "headers", len(headers))
+					log.Debug("Multiple headers for single request", "headers", len(headers))
 					return 0, errBadPeer
 				}
 				arrived = true
@@ -756,13 +741,13 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 				}
 				header := d.dag.GetHeaderByHash(headers[0].Hash()) // Independent of sync mode, header surely exists
 				if header.Number.Index != check {
-					p.log.Debug("Received non requested header", "number", header.Number.Index, "hash", header.Hash(), "request", check)
+					log.Debug("Received non requested header", "number", header.Number.Index, "hash", header.Hash(), "request", check)
 					return 0, errBadPeer
 				}
 				start = check
 
 			case <-timeout:
-				p.log.Debug("Waiting for search header timed out", "elapsed", ttl)
+				log.Debug("Waiting for search header timed out", "elapsed", ttl)
 				return 0, errTimeout
 
 			case <-d.bodyCh:
@@ -773,10 +758,10 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	}
 	// Ensure valid ancestry and return
 	if int64(start) <= floor {
-		p.log.Warn("Ancestor below allowance", "start", start, "hash", hash, "allowance", floor)
+		log.Warn("Ancestor below allowance", "start", start, "hash", hash, "allowance", floor)
 		return 0, errInvalidAncestor
 	}
-	p.log.Debug("Found common ancestor", "number", start, "hash", hash)
+	log.Debug("Found common ancestor", "number", start, "hash", hash)
 	return start, nil
 }
 
@@ -820,11 +805,11 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 
 		if skeleton {
 			index.Index = from + uint64(MaxHeaderFetch) - 1
-			p.log.Trace("Fetching skeleton headers", "count", MaxSkeletonSize, "from", from, "index:", index.Index)
+			log.Trace("Fetching skeleton headers", "count", MaxSkeletonSize, "from", from, "index:", index.Index)
 			go p.peer.RequestHeadersByNumber(index, MaxSkeletonSize, MaxHeaderFetch-1, false)
 		} else {
 			index.Index = from
-			p.log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from, "index:", index.Index)
+			log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from, "index:", index.Index)
 			go p.peer.RequestHeadersByNumber(index, MaxHeaderFetch, 0, false)
 		}
 	}
@@ -855,7 +840,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			if packet.Items() == 0 {
 				// Don't abort header fetches while the pivot is downloading
 				if atomic.LoadInt32(&d.committed) == 0 && pivot <= from {
-					p.log.Debug("No headers, waiting for pivot commit")
+					log.Debug("No headers, waiting for pivot commit")
 					select {
 					case <-time.After(fsHeaderContCheck):
 						getHeaders(from, assetId)
@@ -879,7 +864,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			if skeleton {
 				filled, proced, err := d.fillHeaderSkeleton(from, headers, assetId)
 				if err != nil {
-					p.log.Debug("Skeleton chain invalid", "err", err)
+					log.Debug("Skeleton chain invalid", "err", err)
 					return errInvalidChain
 				}
 				headers = filled[proced:]
@@ -887,7 +872,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			}
 			// Insert all the new headers and fetch the next batch
 			if len(headers) > 0 {
-				p.log.Trace("Scheduling new headers", "count", len(headers), "from", from)
+				log.Trace("Scheduling new headers", "count", len(headers), "from", from)
 				select {
 				case d.headerProcCh <- headers:
 				case <-d.cancelCh:
@@ -901,11 +886,11 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			if d.dropPeer == nil {
 				// The dropPeer method is nil when `--copydb` is used for a local copy.
 				// Timeouts can occur if e.g. compaction hits at the wrong time, and can be ignored
-				p.log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", p.id)
+				log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", p.id)
 				break
 			}
 			// Header retrieval timed out, consider the peer bad and drop
-			p.log.Debug("Header request timed out", "elapsed", ttl)
+			log.Debug("Header request timed out", "elapsed", ttl)
 			headerTimeoutMeter.Mark(1)
 			d.dropPeer(p.id)
 
@@ -1048,11 +1033,11 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				// Issue a log to the user to see what's going on
 				switch {
 				case err == nil && packet.Items() == 0:
-					peer.log.Trace("Requested data not delivered", "type", kind)
+					log.Trace("Requested data not delivered", "type", kind)
 				case err == nil:
-					peer.log.Trace("Delivered new batch of data", "type", kind, "count", packet.Stats())
+					log.Trace("Delivered new batch of data", "type", kind, "count", packet.Stats())
 				default:
-					peer.log.Trace("Failed to deliver retrieved data", "type", kind, "err", err)
+					log.Trace("Failed to deliver retrieved data", "type", kind, "err", err)
 				}
 			}
 
@@ -1095,14 +1080,14 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 					// and latency of a peer separately, which requires pushing the measures capacity a bit and seeing
 					// how response times reacts, to it always requests one more than the minimum (i.e. min 2).
 					if fails > 2 {
-						peer.log.Trace("Data delivery timed out", "type", kind)
+						log.Trace("Data delivery timed out", "type", kind)
 						setIdle(peer, 0)
 					} else {
-						peer.log.Debug("Stalling delivery, dropping", "type", kind)
+						log.Debug("Stalling delivery, dropping", "type", kind)
 						if d.dropPeer == nil {
 							// The dropPeer method is nil when `--copydb` is used for a local copy.
 							// Timeouts can occur if e.g. compaction hits at the wrong time, and can be ignored
-							peer.log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", pid)
+							log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", pid)
 						} else {
 							d.dropPeer(pid)
 						}
@@ -1146,9 +1131,9 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 					continue
 				}
 				if request.From > 0 {
-					peer.log.Trace("Requesting new batch of data", "type", "peer id", peer.id, kind, "from", request.From)
+					log.Trace("Requesting new batch of data", "type", "peer id", peer.id, kind, "from", request.From)
 				} else {
-					peer.log.Trace("Requesting new batch of data", "type", "peer id", peer.id, kind, "count", len(request.Headers), "from", request.Headers[0].Number.Index)
+					log.Trace("Requesting new batch of data", "type", "peer id", peer.id, kind, "count", len(request.Headers), "from", request.Headers[0].Number.Index)
 				}
 				// Fetch the chunk and make sure any errors return the hashes to the queue
 				if fetchHook != nil {
@@ -1716,9 +1701,9 @@ func (d *Downloader) getMaxNodes(headers []*modules.Header, assetId modules.IDTy
 
 //if header != nil {
 //	ceil = header.Number.Index
-//	p.log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
+//	log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
 //} else {
 //	ceil = 0
-//	p.log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
+//	log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
 //}
 */

@@ -494,7 +494,7 @@ func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate ui
 func (ec *Client) GetUnitByHashAt(ctx context.Context, condition string) (string, error) {
 	var result string
 	log.Println("GetUnitByHashAt condition:", condition)
-	err := ec.c.CallContext(ctx, &result, "ptn_getUnitByHash", condition)
+	err := ec.c.CallContext(ctx, &result, "dag_getUnitByHash", condition)
 	return result, err
 }
 
@@ -502,7 +502,7 @@ func (ec *Client) GetUnitByHashAt(ctx context.Context, condition string) (string
 func (ec *Client) GetUnitByNumberAt(ctx context.Context, condition string) (string, error) {
 	var result string
 	log.Println("GetUnitByNumberAt condition:", condition)
-	err := ec.c.CallContext(ctx, &result, "ptn_getUnitByNumber", condition)
+	err := ec.c.CallContext(ctx, &result, "dag_getUnitByNumber", condition)
 	return result, err
 }
 
@@ -589,33 +589,33 @@ func (ec *Client) GetUnit(ctx context.Context, hash common.Hash) (*modules.Unit,
 // Get UnitNumber
 func (ec *Client) GetUnitNumber(ctx context.Context, hash common.Hash) (uint64, error) {
 	var result uint64
-	err := ec.c.CallContext(ctx, &result, "ptn_getUnitNumber", hash)
+	err := ec.c.CallContext(ctx, &result, "dag_getUnitNumber", hash)
 	return result, err
 }
 
 // GetCanonicalHash
 func (ec *Client) GetCanonicalHash(ctx context.Context, number uint64) (common.Hash, error) {
 	var result common.Hash
-	err := ec.c.CallContext(ctx, &result, "ptn_getCanonicalHash", number)
+	err := ec.c.CallContext(ctx, &result, "dag_getCanonicalHash", number)
 	return result, err
 }
 
 // Get state
 func (ec *Client) GetHeadHeaderHash(ctx context.Context) (common.Hash, error) {
 	var result common.Hash
-	err := ec.c.CallContext(ctx, &result, "ptn_getHeadHeaderHash", nil)
+	err := ec.c.CallContext(ctx, &result, "dag_getHeadHeaderHash", nil)
 	return result, err
 }
 
 func (ec *Client) GetHeadUnitHash(ctx context.Context) (common.Hash, error) {
 	var result common.Hash
-	err := ec.c.CallContext(ctx, &result, "ptn_getHeadUnitHash", nil)
+	err := ec.c.CallContext(ctx, &result, "dag_getHeadUnitHash", nil)
 	return result, err
 }
 
 func (ec *Client) GetHeadFastUnitHash(ctx context.Context) (common.Hash, error) {
 	var result common.Hash
-	err := ec.c.CallContext(ctx, &result, "ptn_getHeadFastUnitHash", nil)
+	err := ec.c.CallContext(ctx, &result, "dag_getHeadFastUnitHash", nil)
 	return result, err
 }
 
@@ -627,56 +627,57 @@ func (ec *Client) GetTrieSyncProgress(ctx context.Context) (uint64, error) {
 
 func (ec *Client) GetUtxoEntry(ctx context.Context, key []byte) (*ptnjson.UtxoJson, error) {
 	result := new(ptnjson.UtxoJson)
-	err := ec.c.CallContext(ctx, &result, "ptn_getUtxoEntry", key)
+	err := ec.c.CallContext(ctx, &result, "dag_getUtxoEntry", key)
 	return result, err
 }
 
 func (ec *Client) GetAddrOutput(ctx context.Context, addr string) ([]modules.Output, error) {
 	result := make([]modules.Output, 0)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAddrOutput", addr)
+	err := ec.c.CallContext(ctx, &result, "dag_getAddrOutput", addr)
 	return result, err
 }
 func (ec *Client) GetAddrOutpoints(ctx context.Context, addr string) ([]modules.OutPoint, error) {
 	result := make([]modules.OutPoint, 0)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAddrOutpoints", addr)
+	err := ec.c.CallContext(ctx, &result, "dag_getAddrOutpoints", addr)
 	return result, err
 }
 func (ec *Client) GetAddrUtxos(ctx context.Context, addr string) ([]ptnjson.UtxoJson, error) {
 	result := make([]ptnjson.UtxoJson, 0)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAddrUtxos", addr)
+	err := ec.c.CallContext(ctx, &result, "dag_getAddrUtxos", addr)
 	return result, err
 }
 func (ec *Client) GetAllUtxos(ctx context.Context) ([]ptnjson.UtxoJson, error) {
 	result := make([]ptnjson.UtxoJson, 0)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAllUtxos", nil)
+	err := ec.c.CallContext(ctx, &result, "dag_getAllUtxos", nil)
 	return result, err
 }
 
 func (ec *Client) GetAddrTransactions(ctx context.Context, addr string) (map[string]modules.Transactions, error) {
 	result := make(map[string]modules.Transactions)
-	err := ec.c.CallContext(ctx, &result, "ptn_getAddrTransactions", addr)
+	err := ec.c.CallContext(ctx, &result, "dag_getAddrTransactions", addr)
 	return result, err
 }
 
-func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, error) {
-	result := new(modules.AllTokenInfo)
-	err := ec.c.CallContext(ctx, &result, "dag_getAllTokenInfo", nil)
-	return result, err
-}
-
-func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenInfo, error) {
-	result := new(modules.TokenInfo)
-
-	err := ec.c.CallContext(ctx, &result, "dag_getTokenInfo", key)
-	return result, err
-}
-
-func (ec *Client) SaveTokenInfo(ctx context.Context, name, token, creator string) (*modules.TokenInfo, error) {
-	result := new(modules.TokenInfo)
-
-	err := ec.c.CallContext(ctx, &result, "dag_saveTokenInfo", name, token, creator)
-	return result, err
-}
+//
+//func (ec *Client) GetAllTokenInfo(ctx context.Context) (*modules.AllTokenInfo, error) {
+//	result := new(modules.AllTokenInfo)
+//	err := ec.c.CallContext(ctx, &result, "dag_getAllTokenInfo", nil)
+//	return result, err
+//}
+//
+//func (ec *Client) GetTokenInfo(ctx context.Context, key string) (*modules.TokenInfo, error) {
+//	result := new(modules.TokenInfo)
+//
+//	err := ec.c.CallContext(ctx, &result, "dag_getTokenInfo", key)
+//	return result, err
+//}
+//
+//func (ec *Client) SaveTokenInfo(ctx context.Context, name, token, creator string) (*modules.TokenInfo, error) {
+//	result := new(modules.TokenInfo)
+//
+//	err := ec.c.CallContext(ctx, &result, "dag_saveTokenInfo", name, token, creator)
+//	return result, err
+//}
 
 func (ec *Client) GetCommon(ctx context.Context, key string) ([]byte, error) {
 	result := make([]byte, 0)
@@ -728,13 +729,13 @@ func (ec *Client) GetTxSearchEntry(ctx context.Context, hashHex string) (*ptnjso
 // GetPoolTxByHash
 func (ec *Client) GetTxPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
 	result := new(ptnjson.TxPoolTxJson)
-	err := ec.c.CallContext(ctx, &result, "ptn_getTxPoolTxByHash", hex)
+	err := ec.c.CallContext(ctx, &result, "dag_getTxPoolTxByHash", hex)
 	return result, err
 }
 
 // GetTxHashByReqId
 func (ec *Client) GetTxHashByReqId(ctx context.Context, hex string) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_getTxHashByReqId", hex)
+	err := ec.c.CallContext(ctx, &result, "dag_getTxHashByReqId", hex)
 	return result, err
 }

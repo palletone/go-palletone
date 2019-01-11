@@ -138,15 +138,15 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	}
 	var txresult []byte
 	for _, msgcopy := range tx.TxMessages {
-		if msgcopy.App == modules.APP_TEXT {
-			if msg, ok := msgcopy.Payload.(*modules.TextPayload); ok {
-				txresult = msg.TextHash
+		if msgcopy.App == modules.APP_DATA {
+			if msg, ok := msgcopy.Payload.(*modules.DataPayload); ok {
+				txresult = msg.MainData
 			}
 		}
 	}
 	txOutReply := &ptnjson.GetTxIdResult{
 		Txid:     txid,
-		Apptype:  "APP_TEXT",
+		Apptype:  "APP_DATA",
 		Content:  txresult,
 		Coinbase: true,
 		UnitHash: hex_hash,
@@ -247,7 +247,6 @@ func (b *PtnApiBackend) QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson {
 	return result
 }
 
-/*
 // Get Header
 func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Header, error) {
 	return b.ptn.dag.GetHeader(hash, index)
@@ -290,7 +289,6 @@ func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
-*/
 
 func (b *PtnApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 	unit, err := b.ptn.dag.GetUnitByHash(hash)
@@ -365,7 +363,7 @@ func (b *PtnApiBackend) GetHeaderByNumber(number modules.ChainIndex) *modules.He
 }
 
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
-	return b.ptn.dag.GetPrefix(prefix)
+	return b.ptn.dag.GetCommonByPrefix([]byte(prefix))
 } //getprefix
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
@@ -424,31 +422,33 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 
 }
 
-func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-	all, err := b.ptn.dag.GetAllTokenInfo()
-	if err != nil {
-		return nil, err
-	}
-	return all, nil
-}
-func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error) {
-	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
-	if err != nil {
-		return nil, err
-	}
-	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(tokenInfo)
-	return tokenInfoJson, nil
-}
+//所有TokenInfo信息从创币合约读取
+//func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+//	all, err := b.ptn.dag.GetAllTokenInfo()
+//	if err != nil {
+//		return nil, err
+//	}
+//	return all, nil
+//}
+//func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error) {
+//	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
+//	if err != nil {
+//		return nil, err
+//	}
+//	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(tokenInfo)
+//	return tokenInfoJson, nil
+//}
 
-func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenInfoJson, error) {
-	s_token, err := b.ptn.dag.SaveTokenInfo(token)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(s_token)
-	return tokenInfoJson, nil
-}
+//
+//func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenInfoJson, error) {
+//	s_token, err := b.ptn.dag.SaveTokenInfo(token)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(s_token)
+//	return tokenInfoJson, nil
+//}
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	return b.ptn.dag.GetAddrTransactions(addr)
@@ -474,8 +474,22 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
-	return b.ptn.contractPorcessor.ContractTxBroadcast(txBytes)
+//func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
+//	return b.ptn.contractPorcessor.ContractTxBroadcast(txBytes)
+//}
+
+func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
+
+	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
+	//todo print rwset
+	if err != nil {
+		return nil, err
+	}
+	return unit.Payload, err
+	// todo tmp
+	//b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
+	//return nil, nil
 }
 
 func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
@@ -498,7 +512,7 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 }
 
 //
-func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) ([]byte, error) {
+func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId []byte, tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true)
 }
 func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {

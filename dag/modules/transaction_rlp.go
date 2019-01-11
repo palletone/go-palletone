@@ -28,7 +28,7 @@ import (
 )
 
 type transactionTemp struct {
-	TxMessages  []messageTemp
+	TxMessages []messageTemp
 }
 type messageTemp struct {
 	App  MessageType
@@ -73,7 +73,6 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	return temp, nil
 }
 func temp2Tx(temp *transactionTemp, tx *Transaction) error {
-
 	for _, m := range temp.TxMessages {
 		m1 := &Message{
 			App: m.App,
@@ -85,30 +84,46 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 				return err
 			}
 			m1.Payload = &pay
-		} else if m.App == APP_TEXT {
-			var text TextPayload
+		} else if m.App == APP_DATA {
+			var text DataPayload
 			rlp.DecodeBytes(m.Data, &text)
 			m1.Payload = &text
-		} else if m.App == APP_CONTRACT_INVOKE_REQUEST {
-			var invokeReq ContractInvokeRequestPayload
-			rlp.DecodeBytes(m.Data, &invokeReq)
-			m1.Payload = &invokeReq
-		} else if m.App == APP_CONTRACT_INVOKE {
-			var invoke ContractInvokePayload
-			rlp.DecodeBytes(m.Data, &invoke)
-			m1.Payload = &invoke
+		} else if m.App == APP_CONTRACT_TPL_REQUEST {
+			var payload ContractInstallRequestPayload
+			rlp.DecodeBytes(m.Data, &payload)
+			m1.Payload = &payload
+		} else if m.App == APP_CONTRACT_TPL {
+			var payload ContractTplPayload
+			rlp.DecodeBytes(m.Data, &payload)
+			m1.Payload = &payload
+		} else if m.App == APP_CONTRACT_DEPLOY_REQUEST {
+			var payload ContractDeployRequestPayload
+			rlp.DecodeBytes(m.Data, &payload)
+			m1.Payload = &payload
 		} else if m.App == APP_CONTRACT_DEPLOY {
-			var deploy ContractDeployPayload
-			rlp.DecodeBytes(m.Data, &deploy)
-			m1.Payload = &deploy
+			var payload ContractDeployPayload
+			rlp.DecodeBytes(m.Data, &payload)
+			m1.Payload = &payload
+		} else if m.App == APP_CONTRACT_INVOKE_REQUEST {
+			var payload ContractInvokeRequestPayload
+			rlp.DecodeBytes(m.Data, &payload)
+			m1.Payload = &payload
+		} else if m.App == APP_CONTRACT_INVOKE {
+			var payload ContractInvokePayload
+			rlp.DecodeBytes(m.Data, &payload)
+			m1.Payload = &payload
+		} else if m.App == APP_CONTRACT_STOP_REQUEST {
+			var payload ContractStopRequestPayload
+			rlp.DecodeBytes(m.Data, &payload)
+			m1.Payload = &payload
+		} else if m.App == APP_CONTRACT_STOP {
+			var payload ContractStopPayload
+			rlp.DecodeBytes(m.Data, &payload)
+			m1.Payload = &payload
 		} else if m.App == APP_CONFIG {
 			var conf ConfigPayload
 			rlp.DecodeBytes(m.Data, &conf)
 			m1.Payload = &conf
-		} else if m.App == APP_CONTRACT_TPL {
-			var tplPayload ContractTplPayload
-			rlp.DecodeBytes(m.Data, &tplPayload)
-			m1.Payload = &tplPayload
 		} else if m.App == APP_SIGNATURE {
 			var sigPayload SignaturePayload
 			rlp.DecodeBytes(m.Data, &sigPayload)

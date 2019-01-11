@@ -23,8 +23,9 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // todo 待删除，jury暂时使用mediator配置
@@ -81,14 +82,17 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 
 func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
-	dkgr := mp.getLocalActiveDKG(add)
-	if dkgr != nil {
-		dks, err := dkgr.DistKeyShare()
-		if err == nil {
-			pubKey, err = dks.Public().MarshalBinary()
-			if err != nil {
-				pubKey = nil
-			}
+	dkgr, err := mp.getLocalActiveDKG(add)
+	if err != nil {
+		log.Debug(err.Error())
+		return pubKey
+	}
+
+	dks, err := dkgr.DistKeyShare()
+	if err == nil {
+		pubKey, err = dks.Public().MarshalBinary()
+		if err != nil {
+			pubKey = nil
 		}
 	}
 
@@ -162,7 +166,7 @@ func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 	return time.Format("2006-01-02 15:04:05")
 }
 
-func (a *PublicMediatorAPI) GetInfo(addStr string) (*storage.MediatorInfo, error) {
+func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error) {
 	mediator, err := common.StringToAddress(addStr)
 	if err != nil {
 		return nil, err

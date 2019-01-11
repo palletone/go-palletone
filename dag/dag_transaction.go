@@ -48,8 +48,14 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 }
 
 func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, txPool txspool.ITxPool) (*modules.Transaction, error) {
+	// 条件判断
 	if daoFee == 0 {
-		return nil, fmt.Errorf("transaction's fee id zero")
+		return nil, fmt.Errorf("transaction fee cannot be 0")
+	}
+
+	daoTotal := daoAmount + daoFee
+	if daoTotal > dag.GetPtnBalance(from) {
+		return nil, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
 	}
 
 	// 1. 获取转出账户所有的PTN utxo
@@ -70,7 +76,7 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 		greedyUtxos = append(greedyUtxos, tg)
 	}
 
-	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoAmount+daoFee)
+	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
 	if err != nil {
 		return nil, fmt.Errorf("select utxo err")
 	}
@@ -160,7 +166,7 @@ func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 	msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
-	if msg.App == modules.APP_TEXT {
+	if msg.App == modules.APP_DATA {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
 	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, txPool)
@@ -224,8 +230,8 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 	} else {
 		// 1. 组装 message
 		msg := &modules.Message{
-			App:     modules.APP_TEXT,
-			Payload: &modules.TextPayload{TextHash: []byte(*text)},
+			App:     modules.APP_DATA,
+			Payload: &modules.DataPayload{MainData: []byte(*text)},
 		}
 
 		// 2. 创建 tx

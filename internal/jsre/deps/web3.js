@@ -5244,8 +5244,8 @@ function Ptn(web3) {
     });
 
 
-    this.iban = Iban;
-    this.sendIBANTransaction = transfer.bind(null, this);
+    //this.iban = Iban;
+    //this.sendIBANTransaction = transfer.bind(null, this);
 }
 
 Object.defineProperty(Ptn.prototype, 'defaultBlock', {
@@ -5302,7 +5302,7 @@ var methods = function () {
         outputFormatter: formatters.outputBlockFormatter
     });
 
-    var getBalance = new Method({
+    /*var getBalance = new Method({
         name: 'getBalance',
         call: 'ptn_getBalance',
         params: 1,
@@ -5344,9 +5344,9 @@ var methods = function () {
         name: 'getCompilers',
         call: 'ptn_getCompilers',
         params: 0
-    });
+    });*/
 
-    var getBlockTransactionCount = new Method({
+    /*var getBlockTransactionCount = new Method({
         name: 'getBlockTransactionCount',
         call: getBlockTransactionCountCall,
         params: 1,
@@ -5360,7 +5360,7 @@ var methods = function () {
         params: 1,
         inputFormatter: [formatters.inputBlockNumberFormatter],
         outputFormatter: utils.toDecimal
-    });
+    });*/
 
     var getTransaction = new Method({
         name: 'getTransaction',
@@ -5369,7 +5369,7 @@ var methods = function () {
         outputFormatter: formatters.outputTransactionFormatter
     });
 
-    var getTransactionFromBlock = new Method({
+    /* var getTransactionFromBlock = new Method({
         name: 'getTransactionFromBlock',
         call: transactionFromBlockCall,
         params: 2,
@@ -5390,8 +5390,8 @@ var methods = function () {
         params: 2,
         inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
         outputFormatter: utils.toDecimal
-    });
-    var walletCreateTransaction = new Method({
+    });*/
+    /*var walletCreateTransaction = new Method({
         name: 'walletCreateTransaction',
         call: 'wallet_createRawTransaction',
         params: 4,
@@ -5409,7 +5409,7 @@ var methods = function () {
         call: 'ptn_createRawTransaction',
         params: 1,
         inputFormatter: [null]
-    });
+    });*/
 
     var createMediatorVote = new Method({
         name: 'createMediatorVote',
@@ -5418,7 +5418,7 @@ var methods = function () {
     });
 
     
-    var signRawTransaction = new Method({
+   /* var signRawTransaction = new Method({
         name: 'signRawTransaction',
         call: 'ptn_signRawTransaction',
         params: 3,
@@ -5464,9 +5464,9 @@ var methods = function () {
         call: 'ptn_call',
         params: 2,
         inputFormatter: [formatters.inputCallFormatter, formatters.inputDefaultBlockNumberFormatter]
-    });
+    });*/
 
-    var estimateGas = new Method({
+    /*var estimateGas = new Method({
         name: 'estimateGas',
         call: 'ptn_estimateGas',
         params: 1,
@@ -5484,7 +5484,7 @@ var methods = function () {
         name: 'compile.lll',
         call: 'ptn_compileLLL',
         params: 1
-    });
+    });*/
 
     var compileSerpent = new Method({
         name: 'compile.serpent',
@@ -5498,12 +5498,12 @@ var methods = function () {
         params: 3
     });
 
-    var getWork = new Method({
+    /*var getWork = new Method({
         name: 'getWork',
         call: 'ptn_getWork',
         params: 0
-    });
-    var getTransactionsByTxid = new Method({
+    });*/
+    /* var getTransactionsByTxid = new Method({
         name: 'getTransactionsByTxid',
         call: 'ptn_getTransactionsByTxid',
         params: 1,
@@ -5521,7 +5521,7 @@ var methods = function () {
         call: 'ptn_walletBalance',
         params: 4,
         // inputFormatter: [null]
-    });
+    });*/
 
     var getContract = new Method({
         name: 'getContract',
@@ -5529,7 +5529,7 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
-    var getHeader = new Method({
+    /*var getHeader = new Method({
         name: 'getHeader',
         call: 'ptn_getHeader',
         params: 2,
@@ -5547,102 +5547,13 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     });
-
-    var getCanonicalHash = new Method({
-        name: 'getCanonicalHash',
-        call: 'ptn_getCanonicalHash',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getHeadHeaderHash = new Method({
-        name: 'getHeadHeaderHash',
-        call: 'ptn_getHeadHeaderHash',
-        params: 0,
-        // inputFormatter: [null]
-    });
-    var getHeadUnitHash = new Method({
-        name: 'getHeadUnitHash',
-        call: 'ptn_getHeadUnitHash',
-        params: 0,
-        // inputFormatter: [null]
-    });
-    var getHeadFastUnitHash = new Method({
-        name: 'getHeadFastUnitHash',
-        call: 'ptn_getHeadFastUnitHash',
-        params: 0,
-        // inputFormatter: [null]
-    });
     var getTrieSyncProgress = new Method({
         name: 'getTrieSyncProgress',
         call: 'ptn_getTrieSyncProgress',
         params: 0,
         // inputFormatter: [null]
     });
-    var getUtxoEntry = new Method({
-        name: 'getUtxoEntry',
-        call: 'ptn_getUtxoEntry',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getAddrOutput = new Method({
-        name: 'getAddrOutput',
-        call: 'ptn_getAddrOutput',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getAddrOutpoints = new Method({
-        name: 'getAddrOutpoints',
-        call: 'ptn_getAddrOutpoints',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getAddrUtxos = new Method({
-        name: 'getAddrUtxos',
-        call: 'ptn_getAddrUtxos',
-        params: 1,
-        // inputFormatter: [null]
-    });
 
-    var getAllUtxos = new Method({
-        name: 'getAllUtxos',
-        call: 'ptn_getAllUtxos',
-        params: 0,
-        // inputFormatter: [null]
-    });
-    var getAddrTransactions = new Method({
-        name: 'getAddrTransactions',
-        call: 'ptn_getAddrTransactions',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getTokenInfo = new Method({
-        name: 'getTokenInfo',
-        call: 'dag_getTokenInfo',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getAllTokenInfo = new Method({
-        name: 'getAllTokenInfo',
-        call: 'dag_getAllTokenInfo',
-        params: 0,
-        // inputFormatter: [null]
-    });
-    var saveTokenInfo = new Method({  
-        name: 'saveTokenInfo',
-        call: 'dag_saveTokenInfo',
-        params: 3,
-        //inputFormatter: [null]
-    });
-    var getCommon = new Method({
-        name: 'getCommon',
-        call: 'dag_getCommon',
-        params: 1,
-    });
-    var getCommonByPrefix = new Method({
-        name: 'getCommonByPrefix',
-        call: 'dag_getCommonByPrefix',
-        params: 1,
-    });
     var getUnitTxsInfo = new Method({
         name: 'getUnitTxsInfo', 
         call: 'dag_getUnitTxsInfo',   
@@ -5654,26 +5565,7 @@ var methods = function () {
         call: 'dag_getUnitTxsHashHex',  
         params: 1,
         // inputFormatter: [null]
-    }); 
-    var getTxByHash = new Method({     
-        name: 'getTxByHash', 
-        call: 'dag_getTxByHash',   
-        params: 1,  
-        // inputFormatter: [null]
-    });    
-    var getTxSearchEntry = new Method({     
-        name: 'getTxSearchEntry',  
-        call: 'dag_getTxSearchEntry',   
-        params: 1,  
-        // inputFormatter: [null]
-    }); 
-    var getTxPoolTxByHash = new Method({  
-        name: 'getTxPoolTxByHash',
-        call: 'ptn_getTxPoolTxByHash',  
-        params: 1,
-        // inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
-        // outputFormatter: utils.toDecimal
-    }); 
+    }); */
 
 
 // del ptn_getStorageAt
@@ -5702,76 +5594,58 @@ var methods = function () {
     return [
         forking,
         getUnitByHash,
-        getUnitByNumber,
-        getPrefix,
-        getBalance,
-        getStorageAt,
-        getCode,
-        getBlock,
-        getUncle,
-        getCompilers,
-        getBlockTransactionCount,
-        getBlockUncleCount,
-        getTxPoolTxByHash, 
+        //getUnitByNumber,
+        //getPrefix,
+        //getBalance,
+        //getStorageAt,
+        //getCode,
+       // getBlock,
+        //getUncle,
+       // getCompilers,
+        //getBlockTransactionCount,
+        //getBlockUncleCount,
         getTransaction,
-        getTransactionFromBlock,
-        getTransactionReceipt,
-        getTransactionCount,
-        call,
-        estimateGas,
-        walletCreateTransaction,
-        walletSendTransaction,
-        cmdCreateTransaction,
-        createRawTransaction,
+        //getTransactionFromBlock,
+        //getTransactionReceipt,
+        //getTransactionCount,
+        //call,
+        //estimateGas,
+        //walletCreateTransaction,
+        //walletSendTransaction,
+        //cmdCreateTransaction,
+        //createRawTransaction,
         createMediatorVote,
-        signRawTransaction,
-        sendRawTransaction,
-        signTransaction,
-        sendTransaction,
-        sign,
-        compileSolidity,
-        compileLLL,
+        //signRawTransaction,
+        //sendRawTransaction,
+        //signTransaction,
+        //sendTransaction,
+        //sign,
+        //compileSolidity,
+        //compileLLL,
         compileSerpent,
         submitWork,
-        getWork,
-        walletTokens,
-        walletBalance,
-        getCommon,
-        getCommonByPrefix,
+        //getWork,
+        //walletTokens,
+        //walletBalance,
         getContract,
-        getHeader,
-        getUnit,
-        getUnitNumber,
-        getCanonicalHash,
-        getHeadUnitHash,
-        getHeadHeaderHash,
-        getHeadFastUnitHash,
-        getTrieSyncProgress,
-        getTransactionsByTxid,
-        getUtxoEntry,
-        getAddrOutput,
-        getAddrOutpoints,
-        getAddrUtxos,
-        getAllUtxos,
-        getAddrTransactions,
-        getAllTokenInfo,
-        getTokenInfo,
-        saveTokenInfo,
+        //getHeader,
+        //getUnit,
+        //getUnitNumber,
+        //getTrieSyncProgress,
+        //getTransactionsByTxid,
         ccinstall,
         ccdeploy,
         ccstop,
         // createPayment,
-        getUnitTxsInfo,
-        getUnitTxsHashHex, 
-        getTxByHash, 
-        getTxSearchEntry,
+        //getUnitTxsInfo,
+        //getUnitTxsHashHex, 
     ];
 };
 
 
 var properties = function () {
     return [
-        new Property({
+        /*new Property({
             name: 'coinbase',
             getter: 'ptn_coinbase'
         }),
@@ -5793,12 +5667,12 @@ var properties = function () {
             name: 'gasPrice',
             getter: 'ptn_gasPrice',
             outputFormatter: formatters.outputBigNumberFormatter
-        }),
+        }),*/
         new Property({
             name: 'accounts',
             getter: 'ptn_accounts'
         }),
-        new Property({
+        /*new Property({
             name: 'blockNumber',
             getter: 'ptn_blockNumber',
             outputFormatter: utils.toDecimal
@@ -5806,7 +5680,7 @@ var properties = function () {
         new Property({
             name: 'protocolVersion',
             getter: 'ptn_protocolVersion'
-        })
+        })*/
     ];
 };
 
@@ -5819,17 +5693,17 @@ Ptn.prototype.filter = function (options, callback, filterCreationErrorCallback)
     return new Filter(options, 'ptn', this._requestManager, watches.ptn(), formatters.outputLogFormatter, callback, filterCreationErrorCallback);
 };
 
-Ptn.prototype.namereg = function () {
-    return this.contract(namereg.global.abi).at(namereg.global.address);
-};
+//Ptn.prototype.namereg = function () {
+  //  return this.contract(namereg.global.abi).at(namereg.global.address);
+//};
 
-Ptn.prototype.icapNamereg = function () {
-    return this.contract(namereg.icap.abi).at(namereg.icap.address);
-};
+//Ptn.prototype.icapNamereg = function () {
+  //  return this.contract(namereg.icap.abi).at(namereg.icap.address);
+//};
 
-Ptn.prototype.isSyncing = function (callback) {
-    return new IsSyncing(this._requestManager, callback);
-};
+//Ptn.prototype.isSyncing = function (callback) {
+  //  return new IsSyncing(this._requestManager, callback);
+//};
 
 module.exports = Ptn;
 

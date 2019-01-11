@@ -26,7 +26,6 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	plog "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -36,11 +35,10 @@ import (
 
 func mockUtxoRepository() *UtxoRepository {
 	db, _ := ptndb.NewMemDatabase()
-	l := plog.NewTestLog()
-	utxodb := storage.NewUtxoDb(db, l)
-	idxdb := storage.NewIndexDb(db, l)
-	statedb := storage.NewStateDb(db, l)
-	return NewUtxoRepository(utxodb, idxdb, statedb, l)
+	utxodb := storage.NewUtxoDb(db)
+	idxdb := storage.NewIndexDb(db)
+	statedb := storage.NewStateDb(db)
+	return NewUtxoRepository(utxodb, idxdb, statedb)
 }
 
 func TestUpdateUtxo(t *testing.T) {

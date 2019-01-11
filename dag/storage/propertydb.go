@@ -21,15 +21,15 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // modified by Yiran
 type PropertyDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
 	//GlobalProp    *modules.GlobalProperty
 	//DynGlobalProp *modules.DynamicGlobalProperty
 	//MediatorSchl  *modules.MediatorSchedule
@@ -41,12 +41,16 @@ type IPropertyDb interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
+
+	//设置稳定单元的Hash
+	SetStableUnitHash(hash common.Hash)
+	GetStableUnitHash() common.Hash
 }
 
 // modified by Yiran
 // initialize PropertyDB , and retrieve gp,dgp,mc from IPropertyDb.
-func NewPropertyDb(db ptndb.Database, l log.ILogger) *PropertyDb {
-	pdb := &PropertyDb{db: db, logger: l}
+func NewPropertyDb(db ptndb.Database) *PropertyDb {
+	pdb := &PropertyDb{db: db}
 
 	//gp, err := pdb.RetrieveGlobalProp()
 	//if err != nil {
@@ -94,4 +98,14 @@ func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalPropert
 
 func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	return RetrieveMediatorSchl(propdb.db)
+}
+
+func (db *PropertyDb) SetStableUnitHash(hash common.Hash) {
+	StoreBytes(db.db, constants.StableUnitHash, hash.Bytes())
+}
+func (db *PropertyDb) GetStableUnitHash() common.Hash {
+	data, _ := GetBytes(db.db, constants.StableUnitHash)
+	hash := common.Hash{}
+	hash.SetBytes(data)
+	return hash
 }

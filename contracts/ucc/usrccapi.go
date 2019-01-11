@@ -4,6 +4,15 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
+
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/comm"
+	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/contracts/platforms"
+	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"io"
@@ -11,15 +20,6 @@ import (
 	"os"
 	"path"
 	"time"
-
-	comdb "github.com/palletone/go-palletone/contracts/comm"
-	"github.com/palletone/go-palletone/contracts/core"
-	"github.com/palletone/go-palletone/contracts/platforms"
-	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 type UserChaincode struct {
@@ -48,7 +48,7 @@ type UserChaincode struct {
 	Enabled bool
 }
 
-var logger = flogging.MustGetLogger("uccapi")
+//var log = flogging.MustGetLogger("uccapi")
 
 // buildLocal builds a given chaincode code
 func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
@@ -58,7 +58,7 @@ func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 }
 
 func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
-	logger.Infof("getting deployment spec for chaincode spec: %v\n", spec)
+	log.Debugf("getting deployment spec for chaincode spec: %v\n", spec)
 	codePackageBytes, err := platforms.GetDeploymentPayload(spec)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,17 @@ func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 	return cdDeploymentSpec, nil
 }
 
+func mockerDeployUserCC() error{
+	log.Debug("==================mockerDeployUserCC enter")
+	time.Sleep(time.Duration(10)*time.Second)
+	log.Debug("==================mockerDeployUserCC end")
+
+	return nil
+}
+
 func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
+	//todo for test
+	//return mockerDeployUserCC()
 	var err error
 	ccprov := ccprovider.GetChaincodeProvider()
 	ctxt := context.Background()
@@ -76,16 +86,16 @@ func DeployUserCC(spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, 
 	}
 	chaincodeDeploymentSpec, err := getDeploymentSpec(ctxt, spec)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
+		log.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
 		return err
 	}
 	// 部署是应该还没有合约ID，返回的才是合约ID
 	cccid := ccprov.GetCCContext(nil, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, timeout)
 	if err != nil {
-		logger.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
+		log.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
 	}
-	logger.Infof("user chaincode %s/%s(%s) deployed", usrcc.Name, chainID, usrcc.Path)
+	log.Debugf("user chaincode %s/%s(%s) deployed", usrcc.Name, chainID, usrcc.Path)
 
 	return err
 }
@@ -130,80 +140,134 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId []byte) (*UserChaincode, error) {
 	//从数据库读取
 	//解压到指定路径下
-	//todo del
-	usrCC := &UserChaincode{}
-	return usrCC, nil
 
-	if 1 == 1 {
-		envpath, err := platforms.GetPlatformEnvPath(spec)
-		dag, err := comdb.GetCcDagHand()
-		if err != nil {
-			return nil, err
-		}
-		v, data, name, path := dag.GetContractTpl(templateId)
-		if data == nil || name == "" || path == "" {
-			return nil, errors.New("GetContractTpl contract template err")
-		}
-		targzFile := envpath + "/tmp/" + name + ".tar.gz"
-		decompressFile := envpath
-		logger.Infof("name[%s]path[%s]ver[%v]-tar[%s]untar path[%s]", name, path, v, targzFile, decompressFile)
-
-		_, err = os.Stat(targzFile)
-		if err != nil {
-			if os.IsExist(err) {
-				os.Remove(targzFile)
-			}
-		}
-
-		err = ioutil.WriteFile(targzFile, data, 0644)
-		if err != nil {
-			logger.Errorf("write file[%s] fail:%s", targzFile, err)
-			return nil, errors.New("write file fail")
-		}
-		if err = UnTarGz(targzFile, decompressFile); err != nil {
-			return nil, err
-		}
-
-		usrCC := &UserChaincode{
-			Name: name,
-			//Version:ver,
-			Path: path,
-		}
-		//todo
-		return usrCC, nil
-	} else {
-		testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
-		zipName := "test.tar.gz"
-		dir := "/home/glh/go/src/chaincode/"
-		//version, zipdata, name, path := storage.GetContractTpl(templateId)
-		//read
-		fi, err := os.Open(testFile)
-		if err != nil {
-			logger.Errorf("open file[%s] fail:%s", testFile, err)
-			return nil, errors.New("open file fail")
-		}
-		defer fi.Close()
-		filedata, err := ioutil.ReadAll(fi)
-		if err != nil {
-			logger.Errorf("read file[%s] fail:%s", testFile, err)
-			return nil, errors.New("read file fail")
-		}
-
-		//write
-		err = ioutil.WriteFile(dir+zipName, filedata, 0644)
-		if err != nil {
-			logger.Errorf("write file[%s] fail:%s", testFile, err)
-			return nil, errors.New("write file fail")
-		}
-
-		if err = UnTarGz(dir+zipName, "./"); err != nil {
-			logger.Errorf("DeCompress[%s] fail:%s", testFile, err)
-			return nil, err
-		}
-
-		usrCC := &UserChaincode{}
-		return usrCC, nil
+	dag, err := comm.GetCcDagHand()
+	if err != nil {
+		log.Error("getCcDagHand err:", "error", err)
+		return nil, err
 	}
+	v, data, name, path, tplVer := dag.GetContractTpl(templateId)
+	if data == nil || name == "" || path == "" {
+		log.Error("getContractTpl err:", "error", v)
+		return nil, errors.New("GetContractTpl contract template err")
+	}
+	spec.ChaincodeId.Name = name
+	spec.ChaincodeId.Path = path
+	envpath, err := platforms.GetPlatformEnvPath(spec)
+	if err != nil {
+		log.Error("getPlatformEnvPath err:", "error", err)
+		return nil, err
+	}
+	targzFile := envpath + "/" + name + ".tar.gz"
+	decompressFile := envpath
+	log.Debugf("name[%s]path[%s]ver[%v]-tar[%s]untar path[%s]", name, path, v, targzFile, decompressFile)
+
+	_, err = os.Stat(targzFile)
+	if err != nil {
+		if os.IsExist(err) {
+			os.Remove(targzFile)
+		}
+	}
+
+	err = ioutil.WriteFile(targzFile, data, 0644)
+	if err != nil {
+		log.Errorf("write file[%s] fail:%s", targzFile, err)
+		return nil, errors.New("write file fail")
+	}
+	if err = UnTarGz(targzFile, decompressFile); err != nil {
+		return nil, err
+	}
+	err = os.Remove(targzFile)
+	if err != nil {
+		return nil, err
+	}
+	usrCC := &UserChaincode{
+		Name:    name,
+		Version: tplVer,
+		Path:    path,
+	}
+	//todo
+	return usrCC, nil
+	//todo del
+	//usrCC := &UserChaincode{}
+	//return usrCC, nil
+
+	//if 1 == 1 {
+	//	envpath, err := platforms.GetPlatformEnvPath(spec)
+	//	if err != nil {
+	//		log.Error("getPlatformEnvPath err:", "error", err)
+	//		return nil, err
+	//	}
+	//	dag, err := comdb.GetCcDagHand()
+	//	if err != nil {
+	//		log.Error("getCcDagHand err:", "error", err)
+	//		return nil, err
+	//	}
+	//	v, data, name, path := dag.GetContractTpl(templateId)
+	//	if data == nil || name == "" || path == "" {
+	//		log.Error("getContractTpl err:", "error")
+	//		return nil, errors.New("GetContractTpl contract template err")
+	//	}
+	//	targzFile := envpath + "/tmp/" + name + ".tar.gz"
+	//	decompressFile := envpath
+	//	log.Infof("name[%s]path[%s]ver[%v]-tar[%s]untar path[%s]", name, path, v, targzFile, decompressFile)
+	//
+	//	_, err = os.Stat(targzFile)
+	//	if err != nil {
+	//		if os.IsExist(err) {
+	//			os.Remove(targzFile)
+	//		}
+	//	}
+	//
+	//	err = ioutil.WriteFile(targzFile, data, 0644)
+	//	if err != nil {
+	//		log.Errorf("write file[%s] fail:%s", targzFile, err)
+	//		return nil, errors.New("write file fail")
+	//	}
+	//	if err = UnTarGz(targzFile, decompressFile); err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	usrCC := &UserChaincode{
+	//		Name: name,
+	//		//Version:ver,
+	//		Path: path,
+	//	}
+	//	//todo
+	//	return usrCC, nil
+	//} else {
+	//	testFile := "/home/glh/go/src/chaincode/abc.tar.gz"
+	//	zipName := "test.tar.gz"
+	//	dir := "/home/glh/go/src/chaincode/"
+	//	//version, zipdata, name, path := storage.GetContractTpl(templateId)
+	//	//read
+	//	fi, err := os.Open(testFile)
+	//	if err != nil {
+	//		log.Errorf("open file[%s] fail:%s", testFile, err)
+	//		return nil, errors.New("open file fail")
+	//	}
+	//	defer fi.Close()
+	//	filedata, err := ioutil.ReadAll(fi)
+	//	if err != nil {
+	//		log.Errorf("read file[%s] fail:%s", testFile, err)
+	//		return nil, errors.New("read file fail")
+	//	}
+	//
+	//	//write
+	//	err = ioutil.WriteFile(dir+zipName, filedata, 0644)
+	//	if err != nil {
+	//		log.Errorf("write file[%s] fail:%s", testFile, err)
+	//		return nil, errors.New("write file fail")
+	//	}
+	//
+	//	if err = UnTarGz(dir+zipName, "./"); err != nil {
+	//		log.Errorf("DeCompress[%s] fail:%s", testFile, err)
+	//		return nil, err
+	//	}
+	//
+	//	usrCC := &UserChaincode{}
+	//	return usrCC, nil
+	//}
 }
 
 //+++++++++++++

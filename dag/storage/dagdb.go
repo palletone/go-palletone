@@ -42,18 +42,16 @@ import (
 
 //对DAG对象的操作，包括：Unit，Tx等
 type DagDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
+	//logger log.ILogger
 }
 
-func NewDagDb(db ptndb.Database, l log.ILogger) *DagDb {
-	return &DagDb{db: db, logger: l}
+func NewDagDb(db ptndb.Database) *DagDb {
+	return &DagDb{db: db}
 }
 
 type IDagDb interface {
-	//设置稳定单元的Hash
-	SetStableUnitHash(hash common.Hash)
-	GetStableUnitHash() common.Hash
+
 	//GetGenesisUnit() (*modules.Unit, error)
 	//SaveUnit(unit *modules.Unit, isGenesis bool) error
 
@@ -65,8 +63,8 @@ type IDagDb interface {
 	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	SaveTxLookupEntry(unit *modules.Unit) error
-	SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
-	SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
+	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
+	//SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
 
 	PutCanonicalHash(hash common.Hash, number uint64) error
 	PutHeadHeaderHash(hash common.Hash) error
@@ -85,18 +83,18 @@ type IDagDb interface {
 	GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
-	GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
+	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 
 	GetHeadHeaderHash() (common.Hash, error)
 	GetHeadUnitHash() (common.Hash, error)
 	GetHeadFastUnitHash() (common.Hash, error)
-	GetAllLeafNodes() ([]*modules.Header, error)
+	//GetAllLeafNodes() ([]*modules.Header, error)
 	GetTrieSyncProgress() (uint64, error)
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
-	GetTokenInfo(key string) (*modules.TokenInfo, error)
-	GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	//GetTokenInfo(key string) (*modules.TokenInfo, error)
+	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
 
 	// common geter
 	GetCommon(key []byte) ([]byte, error)
@@ -106,9 +104,6 @@ type IDagDb interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
-
-	// get texthash
-	GetTextHash(hash common.Hash) ([]byte, error)
 }
 
 /* ----- common geter ----- */
@@ -129,15 +124,6 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 		fmt.Println("key:::::::::  ", k, string(val))
 	}
 	return result
-}
-func (db *DagDb) SetStableUnitHash(hash common.Hash) {
-	StoreBytes(db.db, constants.StableUnitHash, hash.Bytes())
-}
-func (db *DagDb) GetStableUnitHash() common.Hash {
-	data, _ := GetBytes(db.db, constants.StableUnitHash)
-	hash := common.Hash{}
-	hash.SetBytes(data)
-	return hash
 }
 
 // ###################### SAVE IMPL START ######################
@@ -165,7 +151,11 @@ func (dagdb *DagDb) SaveNumberByHash(uHash common.Hash, number modules.ChainInde
 	index.AssetID = number.AssetID
 	index.Index = number.Index
 	index.IsMain = number.IsMain
-
+	if _, err := GetBytes(dagdb.db, []byte(key)); err == nil {
+		if !index.IsMain { // 若index不在主链，则不更新。
+			return nil
+		}
+	}
 	return StoreBytes(dagdb.db, []byte(key), index)
 }
 
@@ -176,9 +166,36 @@ func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainInde
 		i = 1
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+	if m_data, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key))); err == nil {
+		// step1. 若uHash.String()==str 则无需再次存储。
+		var str string
+		err1 := rlp.DecodeBytes(m_data, &str)
+		if err1 == nil {
+			if str == uHash.String() {
+				return nil // 无需重复存储
+			}
+		}
+		// step2. 若不相等，则更新
+		// 确定前一个为主链单元，保存该number到侧链上。
+		i = 0
+	}
+	key = fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 	//log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
 	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
 }
+
+//func (dagdb *DagDb) UpdateParentChainIndexByHash(hash common.Hash, index modules.ChainIndex) error {
+//	index.IsMain = true
+//	err := dagdb.SaveNumberByHash(hash, index)
+//	if err != nil {
+//		return fmt.Errorf("update parent chainindex by hash error: %s", err.Error())
+//	}
+//	err1 := dagdb.SaveHashByNumber(hash, index)
+//	if err1 != nil {
+//		return fmt.Errorf("update parent hash by chainindex error: %s", err1)
+//	}
+//	return nil
+//}
 
 func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, error) {
 	i := 0
@@ -192,9 +209,8 @@ func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, err
 		return common.Hash{}, err
 	}
 
-	//hash := common.Hash{}
 	strhash := ""
-	err1 := rlp.DecodeBytes(ha, &strhash) //rlp.EncodeToBytes(val)
+	err1 := rlp.DecodeBytes(ha, &strhash)
 	if err1 != nil {
 		log.Debug("GetHashByNumber", "DecodeBytes_err", err1)
 		return common.Hash{}, err1
@@ -220,7 +236,7 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
-	dagdb.logger.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
+	log.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
 	return StoreBytes(dagdb.db, append(constants.BODY_PREFIX, unitHash.Bytes()...), txsHash)
 }
 
@@ -355,34 +371,35 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	}
 	return nil
 }
-func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
-	if token_info == nil {
-		return token_info, errors.New("token info is null.")
-	}
-	// id, _ := modules.SetIdTypeByHex(token_info.TokenHex)
 
-	key := string(constants.TOKENTYPE) + token_info.TokenHex
-	log.Info("================save token info =========", "key", key)
-	if err := StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), token_info); err != nil {
-		return token_info, err
-	}
-	// 更新all token_info table.
-	infos, _ := dagdb.GetAllTokenInfo()
-	if infos == nil {
-		infos = new(modules.AllTokenInfo)
-	}
-
-	infos.Add(token_info)
-	dagdb.SaveAllTokenInfo(infos)
-	return token_info, nil
-}
-
-func (dagdb *DagDb) SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error {
-	if err := StoreString(dagdb.db, string(constants.TOKENINFOS), token_itmes.String()); err != nil {
-		return err
-	}
-	return nil
-}
+//func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
+//	if token_info == nil {
+//		return token_info, errors.New("token info is null.")
+//	}
+//	// id, _ := modules.SetIdTypeByHex(token_info.TokenHex)
+//
+//	key := string(constants.TOKENTYPE) + token_info.TokenHex
+//	log.Info("================save token info =========", "key", key)
+//	if err := StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), token_info); err != nil {
+//		return token_info, err
+//	}
+//	// 更新all token_info table.
+//	infos, _ := dagdb.GetAllTokenInfo()
+//	if infos == nil {
+//		infos = new(modules.AllTokenInfo)
+//	}
+//
+//	infos.Add(token_info)
+//	dagdb.SaveAllTokenInfo(infos)
+//	return token_info, nil
+//}
+//
+//func (dagdb *DagDb) SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error {
+//	if err := StoreString(dagdb.db, string(constants.TOKENINFOS), token_itmes.String()); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
@@ -521,14 +538,14 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	}
 	//dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 	if err != nil {
-		dagdb.logger.Error("GetUnit when GetUnitNumber failed", "error:", err)
+		log.Error("GetUnit when GetUnitNumber failed", "error:", err)
 		return nil, err
 	}
 	// 2. unit header
 	uHeader, err := dagdb.GetHeader(hash, height)
 	if err != nil {
-		dagdb.logger.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
-		dagdb.logger.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
+		log.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
+		log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}
 	// get unit hash
@@ -537,7 +554,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	// get transaction list
 	txs, err := dagdb.GetUnitTransactions(uHash)
 	if err != nil {
-		dagdb.logger.Error("GetUnit when GetUnitTransactions failed , error:", err)
+		log.Error("GetUnit when GetUnitTransactions failed , error:", err)
 		return nil, err
 	}
 	// generate unit
@@ -553,7 +570,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		dagdb.logger.Info("GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
+		log.Info("GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -614,7 +631,7 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 		var hex string
 		err := rlp.DecodeBytes(rlpUnitHash, &hex)
 		if err != nil {
-			dagdb.logger.Error("GetLastIrreversibleUnit error:" + err.Error())
+			log.Error("GetLastIrreversibleUnit error:" + err.Error())
 			return nil, err
 		}
 		unitHash := common.HexToHash(hex)
@@ -637,7 +654,7 @@ func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*mod
 	}
 	header := new(modules.Header)
 	if err := rlp.Decode(bytes.NewReader(header_bytes), header); err != nil {
-		dagdb.logger.Error("Invalid unit header rlp:", "error", err)
+		log.Error("Invalid unit header rlp:", "error", err)
 		return nil, err
 	}
 	return header, nil
@@ -664,16 +681,16 @@ func (dagdb *DagDb) GetHeaderByHeight(index modules.ChainIndex) (*modules.Header
 	return nil, fmt.Errorf("No such height header")
 }
 
-func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
-	encNum := encodeBlockNumber(index)
-	key := append(constants.HEADER_PREFIX, encNum...)
-	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
-	// rlp  to  Header struct
-	if err != nil {
-		dagdb.logger.Error("GetHeaderRlp error", "error", err)
-	}
-	return header_bytes
-}
+//func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
+//	encNum := encodeBlockNumber(index)
+//	key := append(constants.HEADER_PREFIX, encNum...)
+//	header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
+//	// rlp  to  Header struct
+//	if err != nil {
+//		log.Error("GetHeaderRlp error", "error", err)
+//	}
+//	return header_bytes
+//}
 
 func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Header {
 	unit, err := dagdb.GetUnitFormIndex(number)
@@ -770,7 +787,7 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 //		}
 //		switch msg.App {
 //		default:
-//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
+//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
 //			// payment := new(modules.PaymentPayload)
 //			// err2 := json.Unmarshal(data1, &payment)
 //			// if err2 != nil {
@@ -841,8 +858,8 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 //			}
 //			msg.Payload = payment
 //			msgs = append(msgs, msg)
-//		case modules.APP_TEXT: //6
-//			payment := new(modules.TextPayload)
+//		case modules.APP_DATA: //6
+//			payment := new(modules.DataPayload)
 //			err2 := json.Unmarshal(data1, &payment)
 //			if err2 != nil {
 //				return nil, err2
@@ -886,13 +903,13 @@ func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*mod
 	}
 	con_bytes, err := dagdb.db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
 	if err != nil {
-		dagdb.logger.Error(fmt.Sprintf("getContract error: %s", err.Error()))
+		log.Error(fmt.Sprintf("getContract error: %s", err.Error()))
 		return nil, err
 	}
 	contract := new(modules.Contract)
 	err = rlp.DecodeBytes(con_bytes, contract)
 	if err != nil {
-		dagdb.logger.Error("getContract failed,decode error:" + err.Error())
+		log.Error("getContract failed,decode error:" + err.Error())
 		return nil, err
 	}
 	return contract, nil
@@ -953,59 +970,60 @@ func (dagdb *DagDb) PutTrieSyncProgress(count uint64) error {
 	return nil
 }
 
-// GetTokenInfo
-func (dagdb *DagDb) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-	data, err := dagdb.db.Get(constants.TOKENINFOS)
-	if err != nil {
-		log.Info("123123123123", "all", data)
-		return nil, err
-	}
-	if all, err := modules.Jsonbytes2AllTokenInfo(data); err != nil {
-		log.Info("78787878", "all", all)
-		return nil, err
-	} else {
-		log.Info("56565656", "all", all)
-		return all, nil
-	}
-}
-func (dagdb *DagDb) GetTokenInfo(key string) (*modules.TokenInfo, error) {
-	log.Info("================get token info =========", "key", string(key))
-	key = *(*string)(unsafe.Pointer(&constants.TOKENTYPE)) + key
-	data, err := dagdb.db.Get([]byte(key))
-	if err != nil {
-		return nil, err
-	}
-
-	info := new(modules.TokenInfo)
-	if err := rlp.DecodeBytes(data, &info); err != nil {
-		return nil, err
-	}
-	return info, nil
-}
-
-func (dagdb *DagDb) GetAllLeafNodes() ([]*modules.Header, error) {
-	all_token, err := dagdb.GetAllTokenInfo()
-	if err != nil {
-		return nil, err
-	}
-	if all_token == nil {
-		return nil, errors.New("all token info is nil.")
-	}
-	if all_token.Items == nil {
-		return nil, errors.New("items's map is nil.")
-	}
-	headers := make([]*modules.Header, 0)
-	for _, tokenInfo := range all_token.Items {
-		unit, err := dagdb.GetLastIrreversibleUnit(tokenInfo.Token)
-		if err != nil {
-			log.Error("GetLastIrreversibleUnit failed,", "error", err)
-		}
-		if unit != nil {
-			headers = append(headers, unit.UnitHeader)
-		}
-	}
-	return headers, nil
-}
+//
+//// GetTokenInfo
+//func (dagdb *DagDb) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
+//	data, err := dagdb.db.Get(constants.TOKENINFOS)
+//	if err != nil {
+//		log.Info("123123123123", "all", data)
+//		return nil, err
+//	}
+//	if all, err := modules.Jsonbytes2AllTokenInfo(data); err != nil {
+//		log.Info("78787878", "all", all)
+//		return nil, err
+//	} else {
+//		log.Info("56565656", "all", all)
+//		return all, nil
+//	}
+//}
+//func (dagdb *DagDb) GetTokenInfo(key string) (*modules.TokenInfo, error) {
+//	log.Info("================get token info =========", "key", string(key))
+//	key = *(*string)(unsafe.Pointer(&constants.TOKENTYPE)) + key
+//	data, err := dagdb.db.Get([]byte(key))
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	info := new(modules.TokenInfo)
+//	if err := rlp.DecodeBytes(data, &info); err != nil {
+//		return nil, err
+//	}
+//	return info, nil
+//}
+//
+//func (dagdb *DagDb) GetAllLeafNodes() ([]*modules.Header, error) {
+//	all_token, err := dagdb.GetAllTokenInfo()
+//	if err != nil {
+//		return nil, err
+//	}
+//	if all_token == nil {
+//		return nil, errors.New("all token info is nil.")
+//	}
+//	if all_token.Items == nil {
+//		return nil, errors.New("items's map is nil.")
+//	}
+//	headers := make([]*modules.Header, 0)
+//	for _, tokenInfo := range all_token.Items {
+//		unit, err := dagdb.GetLastIrreversibleUnit(tokenInfo.Token)
+//		if err != nil {
+//			log.Error("GetLastIrreversibleUnit failed,", "error", err)
+//		}
+//		if unit != nil {
+//			headers = append(headers, unit.UnitHeader)
+//		}
+//	}
+//	return headers, nil
+//}
 
 // ###################### GET IMPL END ######################
 
@@ -1031,16 +1049,4 @@ func (dagdb *DagDb) SaveReqIdByTx(tx *modules.Transaction) error {
 		return err1
 	}
 	return err2
-}
-
-//get Textpayload
-func (dagdb *DagDb) GetTextHash(hash common.Hash) ([]byte, error) {
-	tx, _, _, _ := dagdb.GetTransaction(hash)
-	pay := tx.TxMessages[2].Payload.(*modules.TextPayload)
-
-	texthash := pay.TextHash
-	if pay != nil {
-		return texthash, nil
-	}
-	return nil, errors.New("textpayload is nil !")
 }

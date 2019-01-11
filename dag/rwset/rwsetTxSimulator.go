@@ -21,6 +21,8 @@ package rwset
 
 import (
 	"errors"
+
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -43,7 +45,7 @@ type VersionedValue struct {
 func NewBasedTxSimulator(idag dag.IDag, txid string) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
 
-	logger.Debugf("constructing new tx simulator txid = [%s]", txid)
+	log.Debugf("constructing new tx simulator txid = [%s]", txid)
 	return &RwSetTxSimulator{txid, rwsetBuilder, idag, false, false, false}
 }
 
@@ -68,7 +70,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	ver, val := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if val == nil {
-		logger.Errorf("get value from db[%s] failed", ns)
+		log.Errorf("get value from db[%s] failed", ns)
 		return nil, nil
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
@@ -77,7 +79,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if s.rwsetBuilder != nil {
 		s.rwsetBuilder.AddToReadSet(ns, key, ver)
 	}
-	logger.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, val)
+	log.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, val)
 
 	//todo change.
 	//return testValue, nil
@@ -85,7 +87,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 }
 
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
-	//logger.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
+	//log.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
 	//fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
 	//balance := &modules.DepositBalance{}
 	//_ = json.Unmarshal(value, balance)
@@ -111,7 +113,7 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 	var rd map[string]*KVRead
 	var wt map[string]*KVWrite
 
-	logger.Infof("ns=%s", ns)
+	log.Infof("ns=%s", ns)
 
 	if s.rwsetBuilder != nil {
 		if s.rwsetBuilder.pubRwBuilderMap != nil {

@@ -25,7 +25,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
-
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/pkg/errors"
@@ -46,7 +46,7 @@ func createCIS(ccname string, args [][]byte) (*pb.ChaincodeInvocationSpec, error
 // GetCDS retrieves a chaincode deployment spec for the required chaincode
 func GetCDS(contractid []byte, ctxt context.Context, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, chaincodeID string) ([]byte, error) {
 	version := util.GetSysCCVersion()
-	chaincodeLogger.Infof("chainID[%s] txid[%s]", chainID, txid)
+	log.Infof("chainID[%s] txid[%s]", chainID, txid)
 
 	cccid := ccprovider.NewCCContext(contractid, chainID, "lscc", version, txid, true, signedProp, prop)
 	res, _, err := ExecuteChaincode(ctxt, cccid, [][]byte{[]byte("getdepspec"), []byte(chainID), []byte(chaincodeID)}, 0)
@@ -117,7 +117,7 @@ func ExecuteChaincode(ctxt context.Context, cccid *ccprovider.CCContext, args []
 	res, ccevent, err = Execute(ctxt, cccid, spec, timeout)
 	if err != nil {
 		err = errors.WithMessage(err, "error executing chaincode")
-		chaincodeLogger.Errorf("%+v", err)
+		log.Errorf("%+v", err)
 		return nil, nil, err
 	}
 

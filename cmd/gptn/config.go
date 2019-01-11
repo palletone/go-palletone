@@ -38,7 +38,6 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
@@ -259,7 +258,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	//	}
 	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
 	stack, cfg := makeConfigNode(ctx)
-	log.InitLogger()
+	//log.InitLogger()
 	//	if ctx.String("log.path") != "stdout" {
 	//		log.FileInitLogger(ctx.String("log.path"))
 	//	}
@@ -311,11 +310,11 @@ func dumpConfig(ctx *cli.Context) error {
 
 // dumpConfig is the dumpconfig command.
 func dumpJson(ctx *cli.Context) error {
-	account := core.DefaultTokenHolder
-	mediators := make([]*mp.MediatorConf, 0)
-	nodeStr := core.DefaultNodeInfo
+	account := ""
+	mediators := []*mp.MediatorConf{}
+	nodeStr := ""
 
-	mediator := mp.DefaultMediatorConf()
+	mediator := &mp.MediatorConf{}
 	mediators = append(mediators, mediator)
 
 	genesis := createExampleGenesis(account, mediators, nodeStr)

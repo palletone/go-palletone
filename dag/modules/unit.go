@@ -215,7 +215,7 @@ func (unit *Unit) Author() common.Address {
 func (unit *Unit) GroupPubKey() (kyber.Point, error) {
 	pubKeyB := unit.UnitHeader.GroupPubKey
 	if len(pubKeyB) == 0 {
-		return nil, errors.New("Group public key is null.")
+		return nil, errors.New("group public key is null")
 	}
 
 	pubKey := core.Suite.Point()

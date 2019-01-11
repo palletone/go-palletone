@@ -701,8 +701,8 @@ func (d Decimal) Sign() int {
 //	false if d == 0
 //	false if d < 0
 func (d Decimal) IsPositive() bool {
-	return d.Sign() == 1
-}
+	return d.Sign() >= 1
+} 
 
 // IsNegative return
 //

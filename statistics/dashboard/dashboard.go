@@ -70,9 +70,9 @@ type Dashboard struct {
 
 // client represents active websocket connection with a remote browser.
 type client struct {
-	conn   *websocket.Conn // Particular live websocket connection
-	msg    chan Message    // Message queue for the update messages
-	logger log.Plogger     // Logger for the particular live websocket connection
+	conn *websocket.Conn // Particular live websocket connection
+	msg  chan Message    // Message queue for the update messages
+	//logger log.Plogger     // Logger for the particular live websocket connection
 }
 
 // New creates a new dashboard instance with the given configuration.
@@ -155,7 +155,7 @@ func (db *Dashboard) Stop() error {
 	db.lock.Lock()
 	for _, c := range db.conns {
 		if err := c.conn.Close(); err != nil {
-			c.logger.Warn("Failed to close connection", "err", err)
+			log.Warn("Failed to close connection", "err", err)
 		}
 	}
 	db.lock.Unlock()
@@ -193,9 +193,9 @@ func (db *Dashboard) webHandler(w http.ResponseWriter, r *http.Request) {
 func (db *Dashboard) apiHandler(conn *websocket.Conn) {
 	id := atomic.AddUint32(&nextID, 1)
 	client := &client{
-		conn:   conn,
-		msg:    make(chan Message, 128),
-		logger: *log.New("id", id),
+		conn: conn,
+		msg:  make(chan Message, 128),
+		//logger: *log.New("id", id),
 	}
 	done := make(chan struct{})
 
@@ -210,7 +210,7 @@ func (db *Dashboard) apiHandler(conn *websocket.Conn) {
 				return
 			case msg := <-client.msg:
 				if err := websocket.JSON.Send(client.conn, msg); err != nil {
-					client.logger.Warn("Failed to send the message", "msg", msg, "err", err)
+					log.Warn("Failed to send the message", "msg", msg, "err", err)
 					client.conn.Close()
 					return
 				}

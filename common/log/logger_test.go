@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	//"github.com/palletone/go-palletone/common/log"
 	"go.uber.org/zap"
 )
 
@@ -101,6 +102,13 @@ func TestNewExample(t *testing.T) {
 	l.Error("info", zap.String("1", "1"))
 	l.Error("debug", zap.String("2", "2"))
 	l.Error("error", zap.String("3", "3"))
+}
+
+func TestLogError(t *testing.T) {
+	err := fmt.Errorf("Save data error.")
+	//log := NewTestLog()
+	Errorf("test error", err)
+	Errorf("test error2", "test222", err)
 }
 
 // func TestMain(m *testing.M) {

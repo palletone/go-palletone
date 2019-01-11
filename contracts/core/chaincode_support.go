@@ -32,12 +32,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/vm/api"
@@ -147,7 +147,7 @@ func (chaincodeSupport *ChaincodeSupport) launchStarted(chaincode string) bool {
 func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA) pb.ChaincodeSupportServer {
 	//path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
 	path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
-	chaincodeLogger.Infof("NewChaincodeSupport chaincodes path: %s, cfgpath[%s]\n", path, cfg.GetConfig().ContractFileSystemPath)
+	log.Infof("NewChaincodeSupport chaincodes path: %s, cfgpath[%s]\n", path, cfg.GetConfig().ContractFileSystemPath)
 
 	ccprovider.SetChaincodesPath(path)
 	pnid := viper.GetString("peer.networkId")
@@ -163,7 +163,7 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 
 	theChaincodeSupport.auth = accesscontrol.NewAuthenticator(theChaincodeSupport, ca)
 	theChaincodeSupport.peerAddress = ccEndpoint
-	chaincodeLogger.Infof("Chaincode support using peerAddress: %s\n", theChaincodeSupport.peerAddress)
+	log.Infof("Chaincode support using peerAddress: %s\n", theChaincodeSupport.peerAddress)
 
 	theChaincodeSupport.userRunsCC = userrunsCC
 	theChaincodeSupport.ccStartupTimeout = ccstartuptimeout
@@ -179,10 +179,10 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 	} else {
 		t, terr := strconv.Atoi(ka)
 		if terr != nil {
-			chaincodeLogger.Errorf("Invalid keepalive value %s (%s) defaulting to %d", ka, terr, kadef)
+			log.Errorf("Invalid keepalive value %s (%s) defaulting to %d", ka, terr, kadef)
 			t = kadef
 		} else if t <= 0 {
-			chaincodeLogger.Debugf("Turn off keepalive(value %s)", ka)
+			log.Debugf("Turn off keepalive(value %s)", ka)
 			t = kadef
 		}
 		theChaincodeSupport.keepalive = time.Duration(t) * time.Second
@@ -192,9 +192,9 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 	execto := time.Duration(30) * time.Second
 	//if eto := viper.GetDuration("chaincode.executetimeout"); eto <= time.Duration(1)*time.Second {
 	if eto := cfg.GetConfig().ContractExecutetimeout; eto <= time.Duration(1)*time.Second {
-		chaincodeLogger.Errorf("Invalid execute timeout value %s (should be at least 1s); defaulting to %s", eto, execto)
+		log.Errorf("Invalid execute timeout value %s (should be at least 1s); defaulting to %s", eto, execto)
 	} else {
-		chaincodeLogger.Debugf("Setting execute timeout value to %s", eto)
+		log.Debugf("Setting execute timeout value to %s", eto)
 		execto = eto
 	}
 
@@ -205,27 +205,28 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 
-	theChaincodeSupport.chaincodeLogLevel = getLogLevelFromViper("level")
-	theChaincodeSupport.shimLogLevel = getLogLevelFromViper("shim")
-	theChaincodeSupport.logFormat = viper.GetString("chaincode.logging.format")
+	//theChaincodeSupport.chaincodeLogLevel = getLogLevelFromViper("level")
+	//theChaincodeSupport.shimLogLevel = getLogLevelFromViper("shim")
+	//theChaincodeSupport.logFormat = viper.GetString("chaincode.logging.format")
 
 	return theChaincodeSupport.auth
 }
 
+/*
 // getLogLevelFromViper gets the chaincode container log levels from viper
 func getLogLevelFromViper(module string) string {
 	//levelString := viper.GetString("chaincode.logging." + module)
 	//_, err := logging.LogLevel(levelString)
 	//
 	//if err == nil {
-	//	chaincodeLogger.Debugf("CORE_CHAINCODE_%s set to level %s", strings.ToUpper(module), levelString)
+	//	log.Debugf("CORE_CHAINCODE_%s set to level %s", strings.ToUpper(module), levelString)
 	//} else {
-	//	chaincodeLogger.Warnf("CORE_CHAINCODE_%s has invalid log level %s. defaulting to %s", strings.ToUpper(module), levelString, flogging.DefaultLevel())
+	//	log.Warnf("CORE_CHAINCODE_%s has invalid log level %s. defaulting to %s", strings.ToUpper(module), levelString, flogging.DefaultLevel())
 	//	levelString = flogging.DefaultLevel()
 	//}
 	return flogging.DefaultLevel()
 }
-
+*/
 // ChaincodeSupport responsible for providing interfacing with chaincodes from the Peer.
 type ChaincodeSupport struct {
 	ca                accesscontrol.CA
@@ -265,7 +266,7 @@ func (chaincodeSupport *ChaincodeSupport) registerHandler(chaincodehandler *Hand
 
 	chrte2, ok := chaincodeSupport.chaincodeHasBeenLaunched(key)
 	if ok && chrte2.handler.registered == true {
-		chaincodeLogger.Debugf("duplicate registered handler(key:%s) return error", key)
+		log.Debugf("duplicate registered handler(key:%s) return error", key)
 		// Duplicate, return error
 		return newDuplicateChaincodeHandlerError(chaincodehandler)
 	}
@@ -289,7 +290,7 @@ func (chaincodeSupport *ChaincodeSupport) registerHandler(chaincodehandler *Hand
 	chaincodehandler.txCtxs = make(map[string]*transactionContext)
 	chaincodehandler.txidMap = make(map[string]bool)
 
-	chaincodeLogger.Debugf("registered handler complete for chaincode %s", key)
+	log.Debugf("registered handler complete for chaincode %s", key)
 
 	return nil
 }
@@ -304,7 +305,7 @@ func (chaincodeSupport *ChaincodeSupport) deregisterHandler(chaincodehandler *Ha
 	}
 
 	key := chaincodehandler.ChaincodeID.Name
-	chaincodeLogger.Debugf("Deregister handler: %s", key)
+	log.Debugf("Deregister handler: %s", key)
 	chaincodeSupport.runningChaincodes.Lock()
 	defer chaincodeSupport.runningChaincodes.Unlock()
 	if _, ok := chaincodeSupport.chaincodeHasBeenLaunched(key); !ok {
@@ -312,7 +313,7 @@ func (chaincodeSupport *ChaincodeSupport) deregisterHandler(chaincodehandler *Ha
 		return errors.Errorf("error deregistering handler, could not find handler with key: %s", key)
 	}
 	delete(chaincodeSupport.runningChaincodes.chaincodeMap, key)
-	chaincodeLogger.Debugf("Deregistered handler with key: %s", key)
+	log.Debugf("Deregistered handler with key: %s", key)
 	return nil
 }
 
@@ -326,7 +327,7 @@ func (chaincodeSupport *ChaincodeSupport) sendReady(context context.Context, ccc
 	if chrte, ok = chaincodeSupport.chaincodeHasBeenLaunched(canName); !ok {
 		chaincodeSupport.runningChaincodes.Unlock()
 		err := errors.Errorf("handler not found for chaincode %s", canName)
-		chaincodeLogger.Debugf("%+v", err)
+		log.Debugf("%+v", err)
 		return err
 	}
 	chaincodeSupport.runningChaincodes.Unlock()
@@ -430,10 +431,10 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 
 	filesToUpload = theChaincodeSupport.getTLSFiles(certKeyPair)
 
-	chaincodeLogger.Debugf("Executable is %s", args[0])
-	chaincodeLogger.Debugf("Args %v", args)
-	chaincodeLogger.Debugf("Envs %v", envs)
-	chaincodeLogger.Debugf("FilesToUpload %v", reflect.ValueOf(filesToUpload).MapKeys())
+	log.Debugf("Executable is %s", args[0])
+	log.Debugf("Args %v", args)
+	log.Debugf("Envs %v", envs)
+	log.Debugf("FilesToUpload %v", reflect.ValueOf(filesToUpload).MapKeys())
 
 	return args, envs, filesToUpload, nil
 }
@@ -463,9 +464,9 @@ func (ccl *ccLauncherImpl) launch(ctxt context.Context, notfy chan bool) (interf
 		return nil, err
 	}
 	canName := ccl.cccid.GetCanonicalName()
-	chaincodeLogger.Debugf("start container: %s(networkid:%s,peerid:%s)", canName, ccl.ccSupport.peerNetworkID, ccl.ccSupport.peerID)
-	chaincodeLogger.Debugf("start container with args: %s", strings.Join(args, " "))
-	chaincodeLogger.Debugf("start container with env:\n\t%s", strings.Join(env, "\n\t"))
+	log.Debugf("start container: %s(networkid:%s,peerid:%s)", canName, ccl.ccSupport.peerNetworkID, ccl.ccSupport.peerID)
+	log.Debugf("start container with args: %s", strings.Join(args, " "))
+	log.Debugf("start container with env:\n\t%s", strings.Join(env, "\n\t"))
 
 	//set up the shadow handler JIT before container launch to
 	//reduce window of when an external chaincode can sneak in
@@ -517,7 +518,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 	//Chaincode is not up and is not in the process of being launched. Setup flag
 	//for launching so we can proceed to do that undisturbed by other requests on
 	//this chaincode
-	chaincodeLogger.Debugf("chaincode %s is being launched", canName)
+	log.Debugf("chaincode %s is being launched", canName)
 	chaincodeSupport.runningChaincodes.launchStarted[canName] = true
 
 	//now that chaincode launch sequence is done (whether successful or not),
@@ -528,7 +529,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 		defer chaincodeSupport.runningChaincodes.Unlock()
 
 		delete(chaincodeSupport.runningChaincodes.launchStarted, canName)
-		chaincodeLogger.Debugf("chaincode %s launch seq completed", canName)
+		log.Debugf("chaincode %s launch seq completed", canName)
 	}()
 
 	chaincodeSupport.runningChaincodes.Unlock()
@@ -549,13 +550,13 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 			}
 		}()
 
-		//chaincodeLogger.Debugf("launch info: %+v", launcher)
+		//log.Debugf("launch info: %+v", launcher)
 		resp, err := launcher.launch(ctxt, notfy)
 		if err != nil || (resp != nil && resp.(controller.VMCResp).Err != nil) {
 			if err == nil {
 				err = resp.(controller.VMCResp).Err
 			} else {
-				chaincodeLogger.Debugf("launch error: %+v", err)
+				log.Debugf("launch error: %+v", err)
 			}
 
 			//if the launch was successful and leads to proper registration,
@@ -584,10 +585,10 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 		err = errors.Errorf("timeout expired while starting chaincode %s(networkid:%s,peerid:%s,tx:%s)", canName, chaincodeSupport.peerNetworkID, chaincodeSupport.peerID, cccid.TxID)
 	}
 	if err != nil {
-		chaincodeLogger.Debugf("stopping due to error while launching: %+v", err)
+		log.Debugf("stopping due to error while launching: %+v", err)
 		errIgnore := chaincodeSupport.Stop(ctxt, cccid, cds)
 		if errIgnore != nil {
-			chaincodeLogger.Debugf("stop failed: %+v", errIgnore)
+			log.Debugf("stop failed: %+v", errIgnore)
 		}
 	}
 	return err
@@ -601,7 +602,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	if canName == "" {
 		return errors.New("chaincode name not set")
 	} else {
-		chaincodeLogger.Debugf("stopping : %+v", canName)
+		log.Debugf("stopping : %+v", canName)
 	}
 
 	//stop the chaincode
@@ -635,7 +636,7 @@ func (chaincodeSupport *ChaincodeSupport) Destory(context context.Context, cccid
 	if canName == "" {
 		return errors.New("chaincode name not set")
 	} else {
-		chaincodeLogger.Debugf("destory : %+v", canName)
+		log.Debugf("destory : %+v", canName)
 	}
 
 	sir := controller.DestroyImageReq{
@@ -678,7 +679,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	var cds *pb.ChaincodeDeploymentSpec
 	var ci *pb.ChaincodeInvocationSpec
 
-	chaincodeLogger.Infof("chainId=%s, name=%s, version=%s, syscc=%v", cccid.ChainID, cccid.Name, cccid.Version, cccid.Syscc)
+	log.Infof("chainId=%s, name=%s, version=%s, syscc=%v", cccid.ChainID, cccid.Name, cccid.Version, cccid.Syscc)
 	if cds, _ = spec.(*pb.ChaincodeDeploymentSpec); cds == nil {
 		if ci, _ = spec.(*pb.ChaincodeInvocationSpec); ci == nil {
 			panic("Launch should be called with deployment or invocation spec")
@@ -687,15 +688,15 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	if cds != nil {
 		cID = cds.ChaincodeSpec.ChaincodeId
 		cMsg = cds.ChaincodeSpec.Input
-		chaincodeLogger.Infof("cds != nil----------------------， cID=%v", cID)
+		log.Infof("cds != nil----------------------， cID=%v", cID)
 	} else {
 		cID = ci.ChaincodeSpec.ChaincodeId
 		cMsg = ci.ChaincodeSpec.Input
-		chaincodeLogger.Infof("cds == nil----------------------, cID=%v", cID)
+		log.Infof("cds == nil----------------------, cID=%v", cID)
 	}
 
 	canName := cccid.GetCanonicalName()
-	chaincodeLogger.Infof("canName= %s", canName)
+	log.Infof("canName= %s", canName)
 	chaincodeSupport.runningChaincodes.Lock()
 	var chrte *chaincodeRTEnv
 	var ok bool
@@ -705,17 +706,17 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		if !chrte.handler.registered {
 			chaincodeSupport.runningChaincodes.Unlock()
 			err = errors.Errorf("premature execution - chaincode (%s) launched and waiting for registration", canName)
-			chaincodeLogger.Debugf("%+v", err)
+			log.Debugf("%+v", err)
 			return cID, cMsg, err
 		}
 		if chrte.handler.isRunning() {
-			//if chaincodeLogger.IsEnabledFor(logging.DEBUG) {
-			chaincodeLogger.Debugf("chaincode is running(no need to launch) : %s", canName)
+			//if log.IsEnabledFor(logging.DEBUG) {
+			log.Debugf("chaincode is running(no need to launch) : %s", canName)
 			//}
 			chaincodeSupport.runningChaincodes.Unlock()
 			return cID, cMsg, nil
 		}
-		chaincodeLogger.Debugf("Container not in READY state(%s)...send init/ready", chrte.handler.FSM.Current())
+		log.Debugf("Container not in READY state(%s)...send init/ready", chrte.handler.FSM.Current())
 	} else {
 		//chaincode is not up... but is the launch process underway? this is
 		//strictly not necessary as the actual launch process will catch this
@@ -735,7 +736,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		}
 
 		if chaincodeSupport.userRunsCC {
-			chaincodeLogger.Error("You are attempting to perform an action other than Deploy on Chaincode that is not ready and you are in developer mode. Did you forget to Deploy your chaincode?")
+			log.Error("You are attempting to perform an action other than Deploy on Chaincode that is not ready and you are in developer mode. Did you forget to Deploy your chaincode?")
 		}
 
 		var depPayload []byte
@@ -776,14 +777,14 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 					return cID, cMsg, err
 				}
 				cds = ccpack.GetDepSpec()
-				chaincodeLogger.Debugf("launchAndWaitForRegister fetched %d bytes from file system", len(cds.CodePackage))
+				log.Debugf("launchAndWaitForRegister fetched %d bytes from file system", len(cds.CodePackage))
 			}
 		}
 
 		builder := func() (io.Reader, error) { return platforms.GenerateDockerBuild(cds) }
 		err = chaincodeSupport.launchAndWaitForRegister(context, cccid, cds, &ccLauncherImpl{context, chaincodeSupport, cccid, cds, builder})
 		if err != nil {
-			chaincodeLogger.Errorf("launchAndWaitForRegister failed: %+v", err)
+			log.Errorf("launchAndWaitForRegister failed: %+v", err)
 			return cID, cMsg, err
 		}
 	}
@@ -793,15 +794,15 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		err = chaincodeSupport.sendReady(context, cccid, chaincodeSupport.ccStartupTimeout)
 		if err != nil {
 			err = errors.WithMessage(err, "failed to init chaincode")
-			chaincodeLogger.Errorf("%+v", err)
+			log.Errorf("%+v", err)
 			errIgnore := chaincodeSupport.Stop(context, cccid, cds)
 			if errIgnore != nil {
-				chaincodeLogger.Errorf("stop failed: %+v", errIgnore)
+				log.Errorf("stop failed: %+v", errIgnore)
 			}
 		}
-		chaincodeLogger.Debug("sending init completed")
+		log.Debug("sending init completed")
 	}
-	chaincodeLogger.Debug("LaunchChaincode complete")
+	log.Debug("LaunchChaincode complete")
 
 	return cID, cMsg, err
 }
@@ -837,8 +838,8 @@ func createCCMessage(contractid []byte, typ pb.ChaincodeMessage_Type, cid string
 
 // Execute executes a transaction and waits for it to complete until a timeout value.
 func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *ccprovider.CCContext, msg *pb.ChaincodeMessage, timeout time.Duration) (*pb.ChaincodeMessage, error) {
-	chaincodeLogger.Debugf("Entry, chainId[%s], txid[%s]", msg.ChannelId, msg.Txid)
-	defer chaincodeLogger.Debugf("Exit")
+	log.Debugf("Entry, chainId[%s], txid[%s]", msg.ChannelId, msg.Txid)
+	defer log.Debugf("Exit")
 	//glh
 	setTimeout := 5 * time.Second //default chaincode exectute timeout
 	if timeout > 0 {
@@ -846,13 +847,13 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	}
 
 	canName := cccid.GetCanonicalName()
-	chaincodeLogger.Debugf("chaincode canonical name: %s", canName)
+	log.Debugf("chaincode canonical name: %s", canName)
 	chaincodeSupport.runningChaincodes.Lock()
 	//we expect the chaincode to be running... sanity check
 	chrte, ok := chaincodeSupport.chaincodeHasBeenLaunched(canName)
 	if !ok {
 		chaincodeSupport.runningChaincodes.Unlock()
-		chaincodeLogger.Debugf("cannot execute-chaincode is not running: %s", canName)
+		log.Debugf("cannot execute-chaincode is not running: %s", canName)
 		return nil, errors.Errorf("cannot execute transaction for %s", canName)
 	}
 	chaincodeSupport.runningChaincodes.Unlock()
@@ -867,9 +868,9 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	case ccresp = <-notfy:
 		//response is sent to user or calling chaincode. ChaincodeMessage_ERROR
 		//are typically treated as error
-		//chaincodeLogger.Errorf("{{{{{ time out [%d]", setTimeout)
+		//log.Errorf("{{{{{ time out [%d]", setTimeout)
 	case <-time.After(setTimeout):
-		chaincodeLogger.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
+		log.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
 		err = errors.New("timeout expired while executing transaction")
 	}
 

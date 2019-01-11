@@ -33,7 +33,7 @@ func TestCreateUnit(t *testing.T) {
 		return
 	}
 
-	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag, log.New("newgenesis"))
+	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
 	if err := test_dag.SaveUnit(unit, txpool, true); err != nil {
 		log.Error("Save unit error", "error", err.Error())
 		return
@@ -79,7 +79,7 @@ func TestDagRefreshUtxos(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	test_dag, _ := NewDag4GenesisInit(db)
 
-	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag, log.New("newgenesis"))
+	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
 	// txpool := txspool.NewTxPool4Test()
 	dag_test, err := NewDagForTest(db, txpool)
 	if err != nil {

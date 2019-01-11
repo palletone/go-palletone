@@ -17,7 +17,6 @@
  * @date 2018
  */
 
-
 package node
 
 import (
@@ -32,13 +31,13 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/contracts/platforms/util"
-	cutil "github.com/palletone/go-palletone/vm/common"
+	"github.com/palletone/go-palletone/common/log"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cutil "github.com/palletone/go-palletone/vm/common"
 )
 
-var logger = flogging.MustGetLogger("node-platform")
+//var log = flogging.MustGetLogger("node-platform")
 
 // Platform for chaincodes written in Go
 type Platform struct {
@@ -166,11 +165,11 @@ func (nodePlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]by
 		folder = folder[:len(folder)-1]
 	}
 
-	logger.Debugf("Packaging node.js project from path %s", folder)
+	log.Debugf("Packaging node.js project from path %s", folder)
 
 	if err = cutil.WriteFolderToTarPackage(tw, folder, "node_modules", nil, nil); err != nil {
 
-		logger.Errorf("Error writing folder to tar package %s", err)
+		log.Errorf("Error writing folder to tar package %s", err)
 		return nil, fmt.Errorf("Error writing Chaincode package contents: %s", err)
 	}
 

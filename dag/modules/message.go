@@ -20,10 +20,12 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"reflect"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+
 )
 
 type MessageType byte
@@ -38,7 +40,7 @@ const (
 	APP_SIGNATURE
 
 	APP_CONFIG
-	APP_TEXT
+	APP_DATA
 	APP_VOTE
 	OP_MEDIATOR_CREATE
 
@@ -70,7 +72,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	switch cpyMsg.App {
 	// modified by albert·gou
 	default:
-		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
+		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
 		msg.Payload = cpyMsg.Payload
 	case APP_CONFIG:
 		payload, _ := cpyMsg.Payload.(*ConfigPayload)
@@ -134,6 +136,64 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	}
 
 	return msg
+}
+
+func (msg *Message) CompareMessages(inMsg *Message) bool {
+	return true //todo del
+
+	if inMsg == nil || msg.App != inMsg.App {
+		return false
+	}
+	switch msg.App {
+	case APP_CONTRACT_TPL:
+		payA, _ := msg.Payload.(*ContractTplPayload)
+		payB, _ := inMsg.Payload.(*ContractTplPayload)
+		return reflect.DeepEqual(payA, payB)
+	case APP_CONTRACT_DEPLOY:
+		payA, _ := msg.Payload.(*ContractDeployPayload)
+		payB, _ := inMsg.Payload.(*ContractDeployPayload)
+		//if !bytes.Equal(payA.TemplateId, payB.TemplateId) {
+		//	return false
+		//}
+		//if !bytes.Equal(payA.ContractId, payB.ContractId) {
+		//	return false
+		//}
+
+		return reflect.DeepEqual(payA, payB)
+	case APP_CONTRACT_INVOKE:
+		payA, _ := msg.Payload.(*ContractInvokePayload)
+		payB, _ := inMsg.Payload.(*ContractInvokePayload)
+		return reflect.DeepEqual(payA, payB)
+	case APP_CONTRACT_STOP:
+		payA, _ := msg.Payload.(*ContractStopPayload)
+		payB, _ := inMsg.Payload.(*ContractStopPayload)
+		return reflect.DeepEqual(payA, payB)
+	case APP_SIGNATURE:
+		payA, _ := msg.Payload.(*SignaturePayload)
+		payB, _ := inMsg.Payload.(*SignaturePayload)
+		return reflect.DeepEqual(payA, payB)
+
+	case APP_CONTRACT_TPL_REQUEST:
+		payA, _ := msg.Payload.(*ContractInstallRequestPayload)
+		payB, _ := inMsg.Payload.(*ContractInstallRequestPayload)
+		return reflect.DeepEqual(payA, payB)
+	case APP_CONTRACT_DEPLOY_REQUEST:
+		payA, _ := msg.Payload.(*ContractDeployRequestPayload)
+		payB, _ := inMsg.Payload.(*ContractDeployRequestPayload)
+		return reflect.DeepEqual(payA, payB)
+	case APP_CONTRACT_INVOKE_REQUEST:
+		payA, _ := msg.Payload.(*ContractInvokeRequestPayload)
+		payB, _ := inMsg.Payload.(*ContractInvokeRequestPayload)
+		return payA == payB
+	case APP_CONTRACT_STOP_REQUEST:
+		payA, _ := msg.Payload.(*ContractStopRequestPayload)
+		payB, _ := inMsg.Payload.(*ContractStopRequestPayload)
+		return reflect.DeepEqual(payA, payB)
+	default:
+		return false
+	}
+
+	return false
 }
 
 type ContractWriteSet struct {
@@ -249,6 +309,7 @@ const (
 	FIELD_TPL_Memory    = "TplMemory"
 	FIELD_SPLIT_STR     = "^*^"
 	FIELD_GENESIS_ASSET = "GenesisAsset"
+	FIELD_TPL_Version   = "TplVersion"
 )
 
 type DelContractState struct {
@@ -324,7 +385,7 @@ type InvokeFees struct {
 }
 
 //申请成为Mediator
-type MediatorInfo struct {
+type MediatorRegisterInfo struct {
 	Address string `json:"address"`
 	Content string `json:"content"`
 	Time    int64  `json:"time"`
@@ -388,51 +449,47 @@ type ContractTplPayload struct {
 
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId []byte   `json:"template_id"` // contract template id
-	ContractId []byte   `json:"contract_id"` // contract id
-	Name       string   `json:"name"`        // the name for contract
-	Args       [][]byte `json:"args"`        // contract arguments list
-	//ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
-	Jury     []common.Address   `json:"jury"`      // contract jurors list
-	ReadSet  []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
-	WriteSet []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
+	TemplateId []byte             `json:"template_id"` // contract template id
+	ContractId []byte             `json:"contract_id"` // contract id
+	Name       string             `json:"name"`        // the name for contract
+	Args       [][]byte           `json:"args"`        // contract arguments list
+	Jury       []common.Address   `json:"jury"`        // contract jurors list
+	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 // Contract invoke message
 // App: contract_invoke
 //如果是用户想修改自己的State信息，那么ContractId可以为空或者0字节
 type ContractInvokePayload struct {
-	ContractId   []byte   `json:"contract_id"` // contract id
-	FunctionName string   `json:"function_name"`
-	Args         [][]byte `json:"args"` // contract arguments list
-	//ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
-	ReadSet  []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
-	WriteSet []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
-	Payload  []byte             `json:"payload"`   // the contract execution result
+	ContractId   []byte             `json:"contract_id"` // contract id
+	FunctionName string             `json:"function_name"`
+	Args         [][]byte           `json:"args"`      // contract arguments list
+	ReadSet      []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
+	WriteSet     []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
+	Payload      []byte             `json:"payload"`   // the contract execution result
 }
 
 // App: contract_deploy
 type ContractStopPayload struct {
-	ContractId []byte `json:"contract_id"` // contract id
-	//ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
-	Jury     []common.Address   `json:"jury"`      // contract jurors list
-	ReadSet  []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
-	WriteSet []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
+	ContractId []byte             `json:"contract_id"` // contract id
+	Jury       []common.Address   `json:"jury"`        // contract jurors list
+	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 //contract invoke result
 type ContractInvokeResult struct {
-	ContractId   []byte      `json:"contract_id"` // contract id
-	RequestId    common.Hash `json:"request_id"`
-	FunctionName string      `json:"function_name"`
-	Args         [][]byte    `json:"args"` // contract arguments list
-	//ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
-	ReadSet     []ContractReadSet  `json:"read_set"`     // the set data of read, and value could be any type
-	WriteSet    []ContractWriteSet `json:"write_set"`    // the set data of write, and value could be any type
-	Payload     []byte             `json:"payload"`      // the contract execution result
-	TokenPayOut []*TokenPayOut     `json:"token_payout"` //从合约地址付出Token
-	TokenSupply []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
-	TokenDefine *TokenDefine       `json:"token_define"` //定义新Token
+	ContractId   []byte             `json:"contract_id"` // contract id
+	RequestId    common.Hash        `json:"request_id"`
+	FunctionName string             `json:"function_name"`
+	Args         [][]byte           `json:"args"`         // contract arguments list
+	ReadSet      []ContractReadSet  `json:"read_set"`     // the set data of read, and value could be any type
+	WriteSet     []ContractWriteSet `json:"write_set"`    // the set data of write, and value could be any type
+	Payload      []byte             `json:"payload"`      // the contract execution result
+	TokenPayOut  []*TokenPayOut     `json:"token_payout"` //从合约地址付出Token
+	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
+	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 }
 
 //用户钱包发起的合约调用申请
@@ -477,8 +534,9 @@ type SignatureSet struct {
 
 // Token exchange message and verify message
 // App: text
-type TextPayload struct {
-	TextHash []byte `json:"texthash"`
+type DataPayload struct {
+	MainData  []byte `json:"main_data"`
+	ExtraData []byte `json:"extra_data"`
 }
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {

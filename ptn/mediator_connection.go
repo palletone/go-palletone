@@ -21,6 +21,7 @@ package ptn
 import (
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -29,20 +30,20 @@ import (
 
 // @author Albert·Gou
 type producer interface {
-	// SubscribeNewUnitEvent should return an event subscription of
-	// NewUnitEvent and send events to the given channel.
+	// SubscribeNewProducedUnitEvent should return an event subscription of
+	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
-	// UnitBLSSign is to TBLS sign the unit
-	ToUnitTBLSSign(newUnit *modules.Unit) error
+	// AddToTBLSSignBuf is to TBLS sign the unit
+	AddToTBLSSignBuf(newUnit *modules.Unit)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
-	ToTBLSRecover(sigShare *mp.SigShareEvent) error
+	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error
 
 	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
-	ToProcessDeal(deal *mp.VSSDealEvent) error
+	ProcessVSSDeal(deal *mp.VSSDealEvent) error
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
-	ToProcessResponse(resp *mp.VSSResponseEvent) error
+	AddToResponseBuf(resp *mp.VSSResponseEvent)
 
 	LocalHaveActiveMediator() bool
 	LocalHavePrecedingMediator() bool
@@ -52,11 +53,12 @@ type producer interface {
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
-	return
 	for {
 		select {
-		case <-pm.activeMediatorsUpdatedCh:
-			go pm.switchMediatorConnect()
+		case event := <-pm.activeMediatorsUpdatedCh:
+			if event.IsChanged {
+				go pm.switchMediatorConnect()
+			}
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.activeMediatorsUpdatedSub.Err():
@@ -75,7 +77,7 @@ func (pm *ProtocolManager) switchMediatorConnect() {
 	go pm.connectWitchActiveMediators()
 
 	// 3. 检查是否连接完成，并发送事件
-	//go pm.checkActiveMediatorConnection()
+	go pm.checkActiveMediatorConnected()
 
 	// 4. 延迟关闭和旧活跃mediator节点的连接
 	go pm.delayDiscPrecedingMediator()
@@ -97,7 +99,7 @@ func (pm *ProtocolManager) connectWitchActiveMediators() {
 	}
 }
 
-func (pm *ProtocolManager) checkActiveMediatorConnection() {
+func (pm *ProtocolManager) checkActiveMediatorConnected() {
 	// 2. 是否和所有其他活跃mediator节点相连完成
 	checkFn := func() bool {
 		peers := pm.dag.GetActiveMediatorNodes()
@@ -111,7 +113,7 @@ func (pm *ProtocolManager) checkActiveMediatorConnection() {
 		return true
 	}
 
-	// 3. 发送mediator连接完成的事件
+	// 3. 调用mediator连接完成都的相关处理
 	processFn := func() {
 		go pm.producer.UpdateMediatorsDKG()
 	}

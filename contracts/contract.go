@@ -43,7 +43,7 @@ type Contract struct {
 type ContractInf interface {
 	Close() error
 	Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error)
-	Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
+	Deploy(chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokePayload, error)
 	Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
@@ -118,12 +118,12 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 // The contract deployment timeout is specified according to the configuration of server.The default is 40 seconds.
 // The interface returns the contract deployment ID (there is a different return ID for each deployment)
 // and the deployment unit
-func (c *Contract) Deploy(chainID string, templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+func (c *Contract) Deploy(chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		return nil, nil, errors.New("Contract not initialized")
 	}
-	return cc.Deploy(c.dag, chainID, templateId, txid, args, timeout)
+	return cc.Deploy(c.dag, chainID, templateId, txId, args, timeout)
 }
 
 // Invoke 合约invoke调用，根据指定合约调用参数执行已经部署的合约，函数返回合约调用单元。

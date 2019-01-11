@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
+	//"github.com/palletone/go-palletone/dag/modules"
 	// "github.com/palletone/go-palletone/dag/txspool"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -165,9 +165,6 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("Failed to generate genesis unit: %v", err)
 		return err
 	}
-	//new txpool
-
-	//txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, dag, log.New("newgenesis"))
 	//将Unit存入数据库中
 	err = dag.SaveUnit4GenesisInit(unit, nil)
 	if err != nil {
@@ -177,14 +174,14 @@ func initGenesis(ctx *cli.Context) error {
 	// @jay
 	// asset 存入数据库中
 	// dag.SaveCommon(key,asset)   key=[]byte(modules.FIELD_GENESIS_ASSET)
-	chainIndex := unit.UnitHeader.ChainIndex()
-	if err := dag.SaveChainIndex(chainIndex); err != nil {
-		log.Info("save chain index is failed.", "error", err)
-	} else {
-		token_info := modules.NewTokenInfo("ptncoin", "ptn", "creator_jay")
-		idhex, _ := dag.SaveTokenInfo(token_info)
-		log.Info("save chain index is success.", "idhex", idhex)
-	}
+	//chainIndex := unit.UnitHeader.ChainIndex()
+	//if err := dag.SaveChainIndex(chainIndex); err != nil {
+	//	log.Info("save chain index is failed.", "error", err)
+	//} else {
+	//token_info := modules.NewTokenInfo("ptncoin", "ptn", "creator_jay")
+	//idhex, _ := dag.SaveTokenInfo(token_info)
+	//log.Info("save chain index is success.", "idhex", idhex)
+	//}
 
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))

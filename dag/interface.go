@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -53,7 +52,7 @@ type IDag interface {
 	GetHeaderByHash(common.Hash) *modules.Header
 	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
 
-	GetPrefix(prefix string) map[string][]byte
+	//GetPrefix(prefix string) map[string][]byte
 
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
@@ -70,8 +69,8 @@ type IDag interface {
 	Exists(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	//All leaf nodes for dag downloader
-	GetAllLeafNodes() ([]*modules.Header, error)
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
+	//GetAllLeafNodes() ([]*modules.Header, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
 	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
@@ -98,7 +97,7 @@ type IDag interface {
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string)
+	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
 	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
@@ -115,10 +114,10 @@ type IDag interface {
 	//GetAccountMediatorVote(address common.Address) []common.Address
 
 	// get token info
-	GetTokenInfo(key string) (*modules.TokenInfo, error)
-	GetAllTokenInfo() (*modules.AllTokenInfo, error)
-	// save token info
-	SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
+	//GetTokenInfo(key string) (*modules.TokenInfo, error)
+	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	//// save token info
+	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
@@ -138,8 +137,11 @@ type IDag interface {
 	// SaveReqIdByTx
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
-	SaveReqIdByTx(tx *modules.Transaction) error
-
-	// get texthash
-	GetTextHash(hash common.Hash) ([]byte, error)
+	//SaveReqIdByTx(tx *modules.Transaction) error
+}
+type ICache interface {
+	Set(key, value []byte, expireSeconds int) (err error)
+	Get(key []byte) (value []byte, err error)
+	Del(key []byte) bool
+	Clear()
 }

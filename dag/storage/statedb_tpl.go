@@ -21,10 +21,13 @@
 package storage
 
 import (
+	"strings"
+
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strings"
 )
 
 func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error {
@@ -33,6 +36,9 @@ func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte,
 	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, version...)
+	if v, _, _, _, _ := statedb.GetContractTpl(templateId); v != nil {
+		return errors.New("the contractTlp is exist.")
+	}
 	if err := StoreBytes(statedb.db, key, bytecode); err != nil {
 		return err
 	}
@@ -78,18 +84,16 @@ To get contract or contract template one field
 func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVersion, []byte) {
 	//key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
 	key := append(constants.CONTRACT_TPL, id...)
-	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
+	//key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(field)...)
 	data := getprefix(statedb.db, []byte(key))
 	if data == nil || len(data) != 1 {
 		return nil, nil
 	}
-	for k, v := range data {
+	for _, v := range data {
 		var version modules.StateVersion
-		if !version.ParseStringKey(k) {
-			return nil, nil
-		}
-		return &version, v
+		version.SetBytes(v[:29])
+		return &version, v[29:]
 	}
 	return nil, nil
 }
@@ -98,34 +102,47 @@ func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVers
 获取合约模板
 To get contract template
 */
-func (statedb *StateDb) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string) {
+func (statedb *StateDb) GetContractTpl(templateID []byte) (*modules.StateVersion, []byte, string, string, string) {
 	key := append(constants.CONTRACT_TPL, templateID...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
 	data := statedb.GetPrefix(key)
 
+	version := new(modules.StateVersion)
+	bytecode := make([]byte, 0)
+	var name, path, tplVersion string
+	log.Debug("start getcontractTlp")
 	if len(data) == 1 {
+		log.Debug("the contractTlp info: data=1", "len", len(data))
 		for _, v := range data {
 			if err := rlp.DecodeBytes(v, &bytecode); err != nil {
-				statedb.logger.Error("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
-				return
+				log.Error("GetContractTpl when get bytecode", "error", err.Error(), "codeing:", v, "val:", bytecode)
+				return nil, bytecode, "", "", ""
 			}
 		}
+	} else {
+		log.Debug("The contractTlp info: data!=1", "len", len(data))
 	}
-
-	version, nameByte := statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
+	nameByte := make([]byte, 0)
+	version, nameByte = statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
-		return
+		log.Debug("GetTplState err:version is nil")
+		return version, bytecode, "", "", ""
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {
-		statedb.logger.Error("GetContractTpl when get name", "error", err.Error())
-		return
+		log.Error("GetContractTpl when get name", "error", err.Error())
+		return version, bytecode, "", "", ""
 	}
 
 	_, pathByte := statedb.GetTplState(templateID, modules.FIELD_TPL_PATH)
 	if err := rlp.DecodeBytes(pathByte, &path); err != nil {
-		statedb.logger.Error("GetContractTpl when get path", "error", err.Error())
-		return
+		log.Error("GetContractTpl when get path", "error", err.Error())
+		return version, bytecode, name, "", ""
 	}
-	return
+	_, verByte := statedb.GetTplState(templateID, modules.FIELD_TPL_Version)
+	if err := rlp.DecodeBytes(verByte, &tplVersion); err != nil {
+		log.Error("GetContractTpl when get version", "error", err.Error())
+		return version, bytecode, name, path, ""
+	}
+	return version, bytecode, name, path, tplVersion
 }
