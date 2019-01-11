@@ -182,6 +182,10 @@ func (p *testTxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.H
 	return nil, (common.Hash{})
 }
 
+func (p *testTxPool) GetTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+	return nil, nil
+}
+
 func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 	return 0
 }
