@@ -223,9 +223,9 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 
 	// Create the transaction pool with its initial settings
 	pool := &TxPool{
-		config:         config,
-		unit:           unit,
-		logger:         l,
+		config: config,
+		unit:   unit,
+		//logger:         l,
 		queue:          make(map[common.Hash]*modules.TxPoolTransaction),
 		beats:          make(map[modules.OutPoint]time.Time),
 		pending:        make(map[common.Hash][]*modules.TxPoolTransaction),
@@ -671,11 +671,11 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 
 	if ok, err := pool.validateOrphanTx(tx); err != nil {
-		pool.logger.Debug(err.Error())
+		log.Debug(err.Error())
 		return false, err
 	} else {
 		if ok {
-			pool.logger.Debug("validated the orphanTx", "hash", hash.String())
+			log.Debug("validated the orphanTx", "hash", hash.String())
 			pool.addOrphan(tx, 0)
 			return true, nil
 		}
