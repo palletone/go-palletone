@@ -301,7 +301,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	if len(inputs) == 0 {
 		return common.Hash{}, nil
 	}
-	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime, proofTransactionGenParams.Proof)
+	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime, proofTransactionGenParams.Proof,proofTransactionGenParams.Extra)
 	result, _ := WalletCreateProofTransaction(arg)
 	//fmt.Println(result)
 	fmt.Println(result)
@@ -428,7 +428,8 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		}
 	}
 	textPayload := new(modules.DataPayload)
-	textPayload.MainData = []byte(c.Record)
+	textPayload.MainData  = []byte(c.Proof)
+	textPayload.ExtraData = []byte(c.Extra)
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
 	//先构造PaymentPayload结构，再组装成Transaction结构
@@ -520,9 +521,10 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	ProofJson := walletjson.ProofJson{}
 	ProofJson.Inputs = inputjson
 	ProofJson.Outputs = OutputJson
-	ProofJson.Record = string(textPayload.MainData)
+	ProofJson.Proof = string(textPayload.MainData)
+	ProofJson.Extra = string(textPayload.ExtraData)
 	txproofjson := walletjson.TxProofJson{}
-	txproofjson.Payload = append(txproofjson.Payload, ProofJson)
+	txproofjson.Payload = append(txproofjson.Payload,ProofJson)
 	bytetxproofjson, err := json.Marshal(txproofjson)
 	if err != nil {
 		return "", err
