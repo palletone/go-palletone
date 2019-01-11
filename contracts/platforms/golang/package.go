@@ -67,11 +67,10 @@ type CodeDescriptor struct {
 //
 //NOTE: for dev mode, user builds and runs chaincode manually. The name provided
 //by the user is equivalent to the path.
-func getCode(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
+func getCodeDescriptor(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
 	if spec == nil {
 		return nil, errors.New("Cannot collect files from nil spec")
 	}
-
 	chaincodeID := spec.ChaincodeId
 	if chaincodeID == nil || chaincodeID.Path == "" {
 		return nil, errors.New("Cannot collect files from empty chaincode path")
@@ -83,7 +82,6 @@ func getCode(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error getting code %s", err)
 	}
-
 	return &CodeDescriptor{Gopath: gopath, Pkg: chaincodeID.Path, Cleanup: nil}, nil
 }
 
