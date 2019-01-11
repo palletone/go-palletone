@@ -90,7 +90,7 @@ func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
-	aSize := d.GetActiveMediatorCount()
+	aSize := d.ActiveMediatorsCount()
 	pubs := make([]kyber.Point, aSize, aSize)
 
 	meds := d.GetActiveMediators()
@@ -104,8 +104,12 @@ func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
 }
 
 // author Albert·Gou
-func (d *Dag) GetActiveMediatorCount() int {
-	return d.GetGlobalProp().GetActiveMediatorCount()
+func (d *Dag) ActiveMediatorsCount() int {
+	return d.GetGlobalProp().ActiveMediatorsCount()
+}
+
+func (d *Dag) PrecedingMediatorsCount() int {
+	return d.GetGlobalProp().PrecedingMediatorsCount()
 }
 
 // author Albert·Gou

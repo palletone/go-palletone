@@ -1221,7 +1221,7 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 ////@Yiran
 //func (d *Dag) UpdateActiveMediators() error {
 //	var TermInterval uint64 = 50
-//	MediatorNumber := d.GetActiveMediatorCount()
+//	MediatorNumber := d.ActiveMediatorsCount()
 //	// <1> Get election unit
 //	hash := d.CurrentUnit().UnitHash
 //	index, err := d.GetUnitNumber(hash)
@@ -1265,7 +1265,7 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 //	//if err != nil {
 //	//	return nil, err
 //	//}
-//	//MediatorNumber := gp.GetActiveMediatorCount()
+//	//MediatorNumber := gp.ActiveMediatorsCount()
 //	return dag.statedb.GetSortedMediatorVote(0)
 //}
 

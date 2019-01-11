@@ -21,6 +21,7 @@ package ptn
 import (
 	"fmt"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -136,7 +137,6 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:
-			// todo 应当转给选上的即将上任的mediator的节点
 			node := self.dag.GetActiveMediatorNode(event.DstIndex)
 			self.TransmitVSSDeal(node, &event)
 
@@ -298,7 +298,14 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
 func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
-	return p2p.Send(p.rw, NewProducedUnitMsg, newUnit)
+	data, err := json.Marshal(newUnit)
+	if err != nil {
+		log.Debug(err.Error())
+		return err
+	}
+
+	p.knownBlocks.Add(newUnit.UnitHash)
+	return p2p.Send(p.rw, NewProducedUnitMsg, data)
 }
 
 // @author Albert·Gou

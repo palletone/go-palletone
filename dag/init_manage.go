@@ -125,6 +125,10 @@ func (d *Dag) ChainThreshold() int {
 	return d.GetGlobalProp().ChainThreshold()
 }
 
+func (d *Dag) PrecedingThreshold() int {
+	return d.GetGlobalProp().PrecedingThreshold()
+}
+
 func (d *Dag) UnitIrreversibleTime() uint {
 	gp := d.GetGlobalProp()
 	return uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
