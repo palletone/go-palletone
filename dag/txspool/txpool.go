@@ -573,6 +573,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	}
 	// 交易费太低的交易，不能通过验证。
 	if pool.txfee.Cmp(tx.GetTxFee()) > 0 {
+		log.Debug(fmt.Sprintf("txfee is too low, pool's fee: (%d) , tx's fee: (%d)", pool.txfee.Int64(), tx.GetTxFee().Int64()))
 		return ErrTxFeeTooLow
 	}
 
