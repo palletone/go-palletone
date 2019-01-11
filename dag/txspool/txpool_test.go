@@ -80,7 +80,9 @@ func (ud *UnitDag4Test) CurrentUnit() *modules.Unit {
 func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return ud.CurrentUnit(), nil
 }
-
+func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return ud.utxodb.GetUtxoEntry(outpoint)
+}
 func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
 }

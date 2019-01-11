@@ -168,13 +168,14 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		true,
 		3,
 	}
+	head, _ := pm.dag.GetHeaderByNumber(&index0)
 	tests := []struct {
 		query  *getBlockHeadersData // The query to execute for header retrieval
 		expect []common.Hash        // The hashes of the block whose headers are expected
 	}{
 		// A single random block should be retrievable by hash and number too
 		{
-			&getBlockHeadersData{Origin: hashOrNumber{Hash: pm.dag.GetHeaderByNumber(index0).Hash()}, Amount: 1},
+			&getBlockHeadersData{Origin: hashOrNumber{Hash: head.Hash()}, Amount: 1},
 			[]common.Hash{getUnitHashbyNumber(pm, index0)},
 		}, {
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index0}, Amount: 1},

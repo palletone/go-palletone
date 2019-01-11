@@ -127,20 +127,20 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	dagDb := storage.NewDagDb(db)
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+	if err := dagDb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Println("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Println("SaveHashNumber:", "error", err.Error())
-		return fmt.Errorf("Save unit hash and number error")
-	}
-	if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Println("SaveNumberByHash:", "error", err.Error())
-		return fmt.Errorf("Save unit hash and number error")
-	}
+	//if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Println("SaveHashNumber:", "error", err.Error())
+	//	return fmt.Errorf("Save unit hash and number error")
+	//}
+	//if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Println("SaveNumberByHash:", "error", err.Error())
+	//	return fmt.Errorf("Save unit hash and number error")
+	//}
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
