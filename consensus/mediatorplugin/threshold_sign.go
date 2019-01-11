@@ -429,8 +429,8 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	log.Debug("Recovered the Unit that hash: " + unitHash.TerminalString() +
-		" the group signature: " + hexutil.Encode(groupSig))
+	log.Debugf("Recovered the Unit(%v)'s the group signature: ",
+		unitHash.TerminalString(), hexutil.Encode(groupSig))
 
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
