@@ -75,7 +75,7 @@ type IUnitRepository interface {
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error)
+	GetTxByFileHash(filehash []byte) ([]modules.MainDataInfo, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -1122,20 +1122,30 @@ func (unitOp *UnitRepository) GetAddrTransactions(addr string) (map[string]modul
 }
 
 //get a map  key:filehash value:tx or txs
-func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error) {
+func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.MainDataInfo, error) {
+	var mds []modules.MainDataInfo
 	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
 	if err != nil {
 		return nil, err
 	}
-
-	alltxs := make(map[string]modules.Transactions)
-	txs := make(modules.Transactions, 0)
 	for _, hash := range hashs {
-		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
-		txs = append(txs, tx)
-	}
-	var strfilehash string = string(filehash[:])
-	alltxs[strfilehash] = txs
+		var md modules.MainDataInfo
+		unithash,unitindex,_,err:= unitOp.dagdb.GetTxLookupEntry(hash)
+		if err != nil {
+			return nil, err
+		}
 
-	return alltxs, nil
+		header,err := unitOp.dagdb.GetHeader(unithash)
+		if err != nil {
+			return nil, err
+		}
+
+		md.UnitHash = unithash
+		md.UintHeight = unitindex
+		md.ParentsHash = header.ParentsHash[:1]
+		md.Txid = hash
+		md.Timestamp = header.Creationdate
+		mds = append(mds,md)
+	}
+	return mds, nil
 }

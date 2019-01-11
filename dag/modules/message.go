@@ -532,6 +532,13 @@ type DataPayload struct {
 	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
 }
+type MainDataInfo struct {
+	UnitHash    common.Hash   `json:"unit_hash"`
+	UintHeight  uint64        `json:"unit_index"`
+	ParentsHash []common.Hash   `json:"parents_hash"`
+	Txid        common.Hash   `json:"txid"`
+	Timestamp   int64 `json:"timestamp"`
+}
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
 	return &PaymentPayload{
@@ -736,7 +743,7 @@ func (a *ContractInstallRequestPayload) Equal(b *ContractInstallRequestPayload) 
 	if b == nil {
 		return false
 	}
-	if !strings.EqualFold(a.TplName, b.TplName) ||!strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
+	if !strings.EqualFold(a.TplName, b.TplName) || !strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
 		return false
 	}
 	return true
@@ -746,7 +753,7 @@ func (a *ContractDeployRequestPayload) Equal(b *ContractDeployRequestPayload) bo
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.TplId, b.TplId) ||!strings.EqualFold(a.TxId, b.TxId) || a.Timeout != b.Timeout {
+	if !bytes.Equal(a.TplId, b.TplId) || !strings.EqualFold(a.TxId, b.TxId) || a.Timeout != b.Timeout {
 		return false
 	}
 	if len(a.Args) == len(b.Args) {
@@ -765,7 +772,7 @@ func (a *ContractInvokeRequestPayload) Equal(b *ContractInvokeRequestPayload) bo
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.ContractId, b.ContractId) ||!strings.EqualFold(a.FunctionName, b.FunctionName) || a.Timeout != b.Timeout {
+	if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.FunctionName, b.FunctionName) || a.Timeout != b.Timeout {
 		return false
 	}
 	if len(a.Args) == len(b.Args) {
@@ -784,7 +791,7 @@ func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.ContractId, b.ContractId) ||!strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
+	if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
 		return false
 	}
 	return true
