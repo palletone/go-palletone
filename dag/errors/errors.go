@@ -22,11 +22,13 @@ import (
 	"errors"
 )
 
+const LDB_NOT_FOUND = "leveldb: not found"
+
 // common error
 var (
 	ErrSetEmpty       = errors.New("dag: set is empty")
 	ErrDagNotFound    = errors.New("dag: not found")
-	ErrNotFound       = New("leveldb: not found")
+	ErrNotFound       = New(LDB_NOT_FOUND)
 	ErrNumberNotFound = New("dag: header's number not found")
 	ErrUtxoNotFound   = New("utxo: not found")
 	ErrUnitExist      = New("unit: exist")
@@ -40,4 +42,9 @@ var (
 // New returns an error that formats as the given text.
 func New(text string) error {
 	return errors.New(text)
+}
+
+//是数据库中找不到对应数据的Error
+func IsNotFoundError(err error) bool {
+	return err.Error() == LDB_NOT_FOUND
 }
