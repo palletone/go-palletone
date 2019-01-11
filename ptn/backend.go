@@ -155,7 +155,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	genesis, err := ptn.dag.GetGenesisUnit(0)
+	genesis, err := ptn.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("PalletOne New", "get genesis err:", err)
 		return nil, err

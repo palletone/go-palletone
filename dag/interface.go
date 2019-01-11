@@ -76,7 +76,7 @@ type IDag interface {
 	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
 
 	FastSyncCommitHead(common.Hash) error
-	GetGenesisUnit(index uint64) (*modules.Unit, error)
+	GetGenesisUnit() (*modules.Unit, error)
 
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)

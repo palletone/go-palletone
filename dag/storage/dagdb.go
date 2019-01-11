@@ -51,9 +51,8 @@ func NewDagDb(db ptndb.Database) *DagDb {
 }
 
 type IDagDb interface {
-
-	//GetGenesisUnit() (*modules.Unit, error)
-	//SaveUnit(unit *modules.Unit, isGenesis bool) error
+	GetGenesisUnitHash() (common.Hash, error)
+	SaveGenesisUnitHash(hash common.Hash) error
 
 	SaveHeader(uHash common.Hash, h *modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
@@ -124,6 +123,20 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 		fmt.Println("key:::::::::  ", k, string(val))
 	}
 	return result
+}
+func (dagdb *DagDb) GetGenesisUnitHash() (common.Hash, error) {
+	hash := common.Hash{}
+	hashb, err := dagdb.db.Get(constants.GenesisUnitHash)
+	if err != nil {
+		return hash, err
+	}
+	hash.SetBytes(hashb)
+	return hash, nil
+}
+func (dagdb *DagDb) SaveGenesisUnitHash(hash common.Hash) error {
+	log.Debugf("Save GenesisUnitHash:%x", hash.Bytes())
+	return dagdb.db.Put(constants.GenesisUnitHash, hash.Bytes())
+
 }
 
 // ###################### SAVE IMPL START ######################

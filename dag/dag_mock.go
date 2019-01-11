@@ -312,21 +312,6 @@ func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
 }
 
-// InsertHeaderDag mocks base method
-func (m *MockIDag) InsertHeaderDag(arg0 []*modules.Header, arg1 int) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertHeaderDag", arg0, arg1)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// InsertHeaderDag indicates an expected call of InsertHeaderDag
-func (mr *MockIDagMockRecorder) InsertHeaderDag(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertHeaderDag", reflect.TypeOf((*MockIDag)(nil).InsertHeaderDag), arg0, arg1)
-}
-
 // HasUnit mocks base method
 func (m *MockIDag) HasUnit(hash common.Hash) bool {
 	m.ctrl.T.Helper()
@@ -427,18 +412,18 @@ func (mr *MockIDagMockRecorder) FastSyncCommitHead(arg0 interface{}) *gomock.Cal
 }
 
 // GetGenesisUnit mocks base method
-func (m *MockIDag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
+func (m *MockIDag) GetGenesisUnit() (*modules.Unit, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGenesisUnit", index)
+	ret := m.ctrl.Call(m, "GetGenesisUnit")
 	ret0, _ := ret[0].(*modules.Unit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetGenesisUnit indicates an expected call of GetGenesisUnit
-func (mr *MockIDagMockRecorder) GetGenesisUnit(index interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GetGenesisUnit() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGenesisUnit", reflect.TypeOf((*MockIDag)(nil).GetGenesisUnit), index)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGenesisUnit", reflect.TypeOf((*MockIDag)(nil).GetGenesisUnit))
 }
 
 // GetConfig mocks base method

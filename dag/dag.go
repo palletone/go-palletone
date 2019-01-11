@@ -1136,8 +1136,8 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	unit.UnitSize = unit.Size()
 	return &unit, nil
 }
-func (d *Dag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
-	return d.unitRep.GetGenesisUnit(index)
+func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
+	return d.unitRep.GetGenesisUnit()
 }
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
 	return d.stateRep.GetContractTpl(templateID)
