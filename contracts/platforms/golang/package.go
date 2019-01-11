@@ -106,6 +106,11 @@ func (s Sources) Less(i, j int) bool {
 	return strings.Compare(s[i].Name, s[j].Name) < 0
 }
 
+type SourceFile struct {
+	name string
+	path string
+}
+
 func findSource(gopath, pkg string) (SourceMap, error) {
 	sources := make(SourceMap)
 	tld := filepath.Join(gopath, "src", pkg)
