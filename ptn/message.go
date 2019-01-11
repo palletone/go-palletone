@@ -526,10 +526,16 @@ func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
-	var unit modules.Unit
-	if err := msg.Decode(&unit); err != nil {
-		log.Info("===NewProducedUnitMsg===", "err:", err)
+	data := []byte{}
+	if err := msg.Decode(&data); err != nil {
+		log.Info("ProtocolManager", "NewBlockMsg msg:", msg.String())
 		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+
+	var unit modules.Unit
+	if err := json.Unmarshal(data, &unit); err != nil {
+		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err)
+		return err
 	}
 
 	pm.producer.AddToTBLSSignBuf(&unit)
@@ -596,7 +602,7 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
-	log.Info("===ContractMsg===", "event type:",event.CType)
+	log.Info("===ContractMsg===", "event type:", event.CType)
 	err := pm.contractProc.ProcessContractEvent(&event)
 	if err != nil {
 		log.Debug("ContractMsg", "error:", err)
