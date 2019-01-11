@@ -41,6 +41,7 @@ type MemDag struct {
 	dagdb             storage.IDagDb
 	statedb           storage.IStateDb
 	unitRep           dagCommon.IUnitRepository
+	propRep           dagCommon.IPropRepository
 	lastValidatedUnit map[string]*modules.Unit // the key is asset id
 	forkIndex         map[string]ForkIndex     // the key is asset id
 	mainChain         map[string]*MainData     // the key is asset id, value is fork index
@@ -51,7 +52,7 @@ type MemDag struct {
 	delhashs          chan common.Hash
 }
 
-func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitRepository) *MemDag {
+func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitRepository, propRep dagCommon.IPropRepository) *MemDag {
 	//fork_index := make(ForkIndex)
 	memdag := &MemDag{
 		lastValidatedUnit: make(map[string]*modules.Unit),
@@ -60,6 +61,7 @@ func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitR
 		memSize:           dagconfig.DefaultConfig.MemoryUnitSize,
 		dagdb:             db,
 		unitRep:           unitRep,
+		propRep:           propRep,
 		mainChain:         make(map[string]*MainData),
 		currentUnit:       make(map[string]*modules.Unit),
 		statedb:           sdb,
@@ -67,7 +69,7 @@ func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitR
 	}
 
 	// get genesis Last Irreversible Unit
-	genesisUnit, err := unitRep.GetGenesisUnit(0)
+	genesisUnit, err := unitRep.GetGenesisUnit()
 	if err != nil {
 		log.Error("NewMemDag when GetGenesisUnit", "error", err.Error())
 		return nil
@@ -117,7 +119,7 @@ func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon
 
 	unitRep.SaveUnit(unit, txpool, true, true)
 
-	genesisUnit, err := unitRep.GetGenesisUnit(0)
+	genesisUnit, err := unitRep.GetGenesisUnit()
 	if err != nil {
 		log.Error("NewMemDag when GetGenesisUnit", "error", err.Error())
 		return nil
@@ -281,8 +283,9 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 	chain.memUnit.SetHashByNumber(unit.Number(), unit.Hash())
 
 	// Check if the irreversible height has been reached
-
-	if forkIndex.IsReachedIrreversibleHeight(uint64(index), irreUnit.UnitHeader.Index()) {
+	gp, _ := chain.propRep.RetrieveGlobalProp()
+	threshold := gp.ChainThreshold()
+	if forkIndex.IsReachedIrreversibleHeight(uint64(index), irreUnit.UnitHeader.Index(), threshold) {
 		log.Info("IsReachedIrreversibleUnit  .......................................  ", "index", index, "lastIndex", irreUnit.UnitHeader.Index())
 		// set unit irreversible
 		// unitHash := forkIndex.GetReachedIrreversibleHeightUnitHash(index)

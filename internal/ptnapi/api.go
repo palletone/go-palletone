@@ -79,6 +79,16 @@ const (
 	maxProtocolVersion = 70002
 )
 
+type ContractInstallRsp struct {
+	ReqId string `json:"reqId"`
+	TplId string `json:"tplId"`
+}
+
+type ContractDeployRsp struct {
+	ReqId      string `json:"reqId"`
+	ContractId string `json:"ContractId"`
+}
+
 // PublicPalletOneAPI provides an API to access PalletOne related information.
 // It offers only methods that operate on public data that is freely available to anyone.
 type PublicPalletOneAPI struct {
@@ -580,16 +590,6 @@ func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string,
 }
 func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {
 	return s.b.EncodeTx(json)
-}
-
-type ContractInstallRsp struct {
-	ReqId string `json:"reqId"`
-	TplId string `json:"tplId"`
-}
-
-type ContractDeployRsp struct {
-	ReqId      string `json:"reqId"`
-	ContractId string `json:"ContractId"`
 }
 
 func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version string) (*ContractInstallRsp, error) {
@@ -2607,44 +2607,44 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 	return *(*string)(unsafe.Pointer(&content))
 }
 
-func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
-	items, err := s.b.GetAllTokenInfo()
-	if err != nil {
-		return "all_token_info:null", err
-	}
-
-	info := NewPublicReturnInfo("all_token_info", items)
-	result_json, _ := json.Marshal(info)
-
-	return string(result_json), nil
-}
-func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {
-	hex := hexutil.Encode([]byte(key))
-
-	if item, err := s.b.GetTokenInfo(hex); err != nil {
-		return "", err
-	} else {
-		info := NewPublicReturnInfo("token_info", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
-	}
-}
+//func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
+//	items, err := s.b.GetAllTokenInfo()
+//	if err != nil {
+//		return "all_token_info:null", err
+//	}
+//
+//	info := NewPublicReturnInfo("all_token_info", items)
+//	result_json, _ := json.Marshal(info)
+//
+//	return string(result_json), nil
+//}
+//func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {
+//	hex := hexutil.Encode([]byte(key))
+//
+//	if item, err := s.b.GetTokenInfo(hex); err != nil {
+//		return "", err
+//	} else {
+//		info := NewPublicReturnInfo("token_info", item)
+//		result_json, _ := json.Marshal(info)
+//		return string(result_json), nil
+//	}
+//}
 
 // SaveTokenInfo save a token  ,return hex key.
-func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator string) (string, error) {
-	//info to token
-	info := modules.NewTokenInfo(name, token, creator)
-
-	item, err := s.b.SaveTokenInfo(info)
-	if err != nil {
-		return "", err
-	}
-
-	this := NewPublicReturnInfo("save_token_info", item)
-	result_json, _ := json.Marshal(this)
-	return string(result_json), nil
-
-}
+//func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator string) (string, error) {
+//	//info to token
+//	info := modules.NewTokenInfo(name, token, creator)
+//
+//	item, err := s.b.SaveTokenInfo(info)
+//	if err != nil {
+//		return "", err
+//	}
+//
+//	this := NewPublicReturnInfo("save_token_info", item)
+//	result_json, _ := json.Marshal(this)
+//	return string(result_json), nil
+//
+//}
 
 func (s *PublicDagAPI) GetUnitTxsInfo(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)

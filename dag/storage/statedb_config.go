@@ -30,7 +30,7 @@ import (
 获取配置信息
 get config information
 */
-func (statedb *StateDb) GetConfig(name []byte) ([]byte, *modules.StateVersion, error) {
+func (statedb *StateDb) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 	key := append(constants.CONF_PREFIX, name...)
 	return retrieveWithVersion(statedb.db, key)
 
@@ -42,7 +42,7 @@ func (statedb *StateDb) GetConfig(name []byte) ([]byte, *modules.StateVersion, e
 func (statedb *StateDb) SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error {
 	for _, conf := range confs {
 
-		//statedb.logger.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)
+		//log.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)
 
 		key := append(constants.CONF_PREFIX, conf.Key...)
 		//key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())

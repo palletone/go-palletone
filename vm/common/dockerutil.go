@@ -21,19 +21,20 @@
 package util
 
 import (
+	"github.com/fsouza/go-dockerclient"
+	"github.com/palletone/go-palletone/common/log"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
+	"github.com/spf13/viper"
 	"runtime"
 	"strings"
-	"github.com/spf13/viper"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 //NewDockerClient creates a docker client
 func NewDockerClient() (client *docker.Client, err error) {
 	//endpoint := viper.GetString("vm.endpoint")
 	endpoint := cfg.GetConfig().VmEndpoint
-	vmLogger.Infof("NewDockerClient enter, endpoint:%s", endpoint)
+	log.Infof("NewDockerClient enter, endpoint:%s", endpoint)
 
 	tlsenabled := viper.GetBool("vm.docker.tls.enabled")
 	if tlsenabled {

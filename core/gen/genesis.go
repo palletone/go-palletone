@@ -33,7 +33,6 @@ import (
 
 	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common/crypto"
-	cm "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -165,8 +164,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		Payload: &configPayload,
 	}
 	msg2 := &modules.Message{
-		App:     modules.APP_TEXT,
-		Payload: &modules.TextPayload{TextHash: []byte(genesis.Text)},
+		App:     modules.APP_DATA,
+		Payload: &modules.DataPayload{MainData: []byte("Genesis Text"), ExtraData: []byte(genesis.Text)},
 	}
 
 	initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
@@ -230,7 +229,7 @@ func GenContractSigTransction(singer common.Address, password string, orgTx *mod
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
 	}
-	sig, err := cm.GetTxSig(tx, ks, singer)
+	sig, err := GetTxSig(tx, ks, singer)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.RequestHash().String()))
 	}
@@ -249,6 +248,16 @@ func GenContractSigTransction(singer common.Address, password string, orgTx *mod
 	log.Debug("GenContractSigTransactions", "orgTx.TxId id ok:", tx.Hash())
 
 	return tx, nil
+}
+func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Address) ([]byte, error) {
+	sign, err := ks.SigData(tx, signer)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to singure transaction:%v", err)
+		log.Error(msg)
+		return nil, errors.New(msg)
+	}
+
+	return sign, nil
 }
 
 //func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {

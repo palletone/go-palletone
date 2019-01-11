@@ -28,10 +28,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/platforms/golang"
 	"github.com/palletone/go-palletone/contracts/platforms/java"
 	"github.com/palletone/go-palletone/contracts/platforms/node"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cutil "github.com/palletone/go-palletone/vm/common"
@@ -50,7 +50,7 @@ type Platform interface {
 	GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error)
 }
 
-var logger = flogging.MustGetLogger("chaincode-platform")
+//var log = flogging.MustGetLogger("chaincode-platform")
 
 // Added for unit testing purposes
 var _Find = Find
@@ -83,7 +83,6 @@ func GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return platform.GetChainCodePayload(spec)
 }
 
@@ -134,7 +133,7 @@ func generateDockerfile(platform Platform, cds *pb.ChaincodeDeploymentSpec) ([]b
 	// Finalize it
 	// ----------------------------------------------------------------------------------------------------
 	contents := strings.Join(buf, "\n")
-	logger.Debugf("\n%s", contents)
+	log.Debugf("\n%s", contents)
 
 	return []byte(contents), nil
 }
@@ -198,7 +197,7 @@ func GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec) (io.Reader, error) {
 		tw := tar.NewWriter(gw)
 		err := _generateDockerBuild(platform, cds, inputFiles, tw)
 		if err != nil {
-			logger.Error("GenerateDockerBuild error", err)
+			log.Error("GenerateDockerBuild error", err)
 		}
 
 		tw.Close()

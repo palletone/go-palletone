@@ -26,9 +26,18 @@ type PaymentJson struct {
     Inputs        []InputJson           `json:"inputs"`
 	Outputs       []OutputJson          `json:"outputs"`
 }
-
+type ProofJson struct {
+    Inputs        []InputJson           `json:"inputs"`
+	Outputs       []OutputJson          `json:"outputs"`
+	Proof         string                `json:"proof"`
+    Extra         string                `json:"extra"`
+}
 type TxJson struct {
 	Payload []PaymentJson  `json:"payload"`
+	InvokeRequest ContractInvokeRequest `json:"invoke_request"`
+}
+type TxProofJson struct {
+	Payload []ProofJson  `json:"payload"`
 	InvokeRequest ContractInvokeRequest `json:"invoke_request"`
 }
 type ContractInvokeRequest struct {

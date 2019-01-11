@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -48,12 +47,11 @@ type IDag interface {
 	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
-	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	// GetHeaderByHash retrieves a header from the local chain.
-	GetHeaderByHash(common.Hash) *modules.Header
-	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
+	GetHeaderByHash(common.Hash) (*modules.Header, error)
 
-	GetPrefix(prefix string) map[string][]byte
+	//GetPrefix(prefix string) map[string][]byte
 
 	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader() *modules.Header
@@ -63,21 +61,21 @@ type IDag interface {
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 
 	// InsertHeaderDag inserts a batch of headers into the local chain.
-	InsertHeaderDag([]*modules.Header, int) (int, error)
+	//InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
 	UnitIsConfirmedByHash(hash common.Hash) bool
 	ParentsIsConfirmByHash(hash common.Hash) bool
 	Exists(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	//All leaf nodes for dag downloader
-	GetAllLeafNodes() ([]*modules.Header, error)
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, t time.Time) ([]modules.Unit, error)
+	//GetAllLeafNodes() ([]*modules.Header, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
 	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
 
 	FastSyncCommitHead(common.Hash) error
-	GetGenesisUnit(index uint64) (*modules.Unit, error)
+	GetGenesisUnit() (*modules.Unit, error)
 
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
@@ -115,10 +113,10 @@ type IDag interface {
 	//GetAccountMediatorVote(address common.Address) []common.Address
 
 	// get token info
-	GetTokenInfo(key string) (*modules.TokenInfo, error)
-	GetAllTokenInfo() (*modules.AllTokenInfo, error)
-	// save token info
-	SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
+	//GetTokenInfo(key string) (*modules.TokenInfo, error)
+	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	//// save token info
+	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
@@ -138,6 +136,11 @@ type IDag interface {
 	// SaveReqIdByTx
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
-	SaveReqIdByTx(tx *modules.Transaction) error
-	
+	//SaveReqIdByTx(tx *modules.Transaction) error
+}
+type ICache interface {
+	Set(key, value []byte, expireSeconds int) (err error)
+	Get(key []byte) (value []byte, err error)
+	Del(key []byte) bool
+	Clear()
 }

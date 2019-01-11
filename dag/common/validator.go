@@ -39,11 +39,12 @@ type Validate struct {
 	utxodb  storage.IUtxoDb
 	utxoRep IUtxoRepository
 	statedb storage.IStateDb
-	logger  log.ILogger
 }
 
-func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb, l log.ILogger) *Validate {
-	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb, logger: l}
+const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
+
+func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb) *Validate {
+	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb}
 }
 
 type Validator interface {
@@ -230,7 +231,12 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 			}
 
 		case modules.APP_CONFIG:
-		case modules.APP_TEXT:
+		case modules.APP_DATA:
+			payload, _ := msg.Payload.(*modules.DataPayload)
+			validateCode := validate.validateDataPayload(payload)
+			if validateCode != modules.TxValidationCode_VALID {
+				return validateCode
+			}
 		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:
 		default:
@@ -275,8 +281,8 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_CONFIG {
 			return true
 		}
-	case *modules.TextPayload:
-		if app == modules.APP_TEXT {
+	case *modules.DataPayload:
+		if app == modules.APP_DATA {
 			return true
 		}
 	case *vote.VoteInfo:
@@ -630,6 +636,17 @@ func (validate *Validate) validateContractdeploy(tplId []byte, worldTmpState *ma
 }
 
 func (validate *Validate) validateContractSignature(sinatures []modules.SignatureSet, tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+	return modules.TxValidationCode_VALID
+}
+
+//验证一个DataPayment
+func (validate *Validate) validateDataPayload(payload *modules.DataPayload) modules.TxValidationCode {
+	//验证 maindata是否存在
+	//验证 maindata extradata大小 不可过大
+	if len(payload.MainData) >= MAX_DATA_PAYLOAD_MAIN_DATA_SIZE || len(payload.MainData) == 0 {
+		return modules.TxValidationCode_INVALID_DATAPAYLOAD
+	}
+	//TODO 验证maindata其它属性
 	return modules.TxValidationCode_VALID
 }
 

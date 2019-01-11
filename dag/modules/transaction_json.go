@@ -40,7 +40,7 @@ type idxSignaturePayload struct {
 }
 type idxTextPayload struct {
 	Index int
-	*TextPayload
+	*DataPayload
 }
 type idxMediatorCreateOperation struct {
 	Index int
@@ -122,29 +122,29 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 		} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			temp.ContractInvokeRequest = append(temp.ContractInvokeRequest,
 				&idxContractInvokeRequestPayload{
-					Index:                        idx,
+					Index: idx,
 					ContractInvokeRequestPayload: msg.Payload.(*ContractInvokeRequestPayload),
 				})
 		} else if msg.App == APP_CONTRACT_TPL_REQUEST {
 			temp.ContractInstallRequest = append(temp.ContractInstallRequest,
 				&idxContractInstallRequestPayload{
-					Index:                         idx,
+					Index: idx,
 					ContractInstallRequestPayload: msg.Payload.(*ContractInstallRequestPayload),
 				})
 		} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
 			temp.ContractDeployRequest = append(temp.ContractDeployRequest,
 				&idxContractDeployRequestPayload{
-					Index:                        idx,
+					Index: idx,
 					ContractDeployRequestPayload: msg.Payload.(*ContractDeployRequestPayload),
 				})
 		} else if msg.App == APP_CONTRACT_STOP_REQUEST {
 			temp.ContractStopRequest = append(temp.ContractStopRequest,
 				&idxContractStopRequestPayload{
-					Index:                      idx,
+					Index: idx,
 					ContractStopRequestPayload: msg.Payload.(*ContractStopRequestPayload),
 				})
-		} else if msg.App == APP_TEXT {
-			temp.Text = append(temp.Text, &idxTextPayload{Index: idx, TextPayload: msg.Payload.(*TextPayload)})
+		} else if msg.App == APP_DATA {
+			temp.Text = append(temp.Text, &idxTextPayload{Index: idx, DataPayload: msg.Payload.(*DataPayload)})
 		} else if msg.App == APP_SIGNATURE {
 			temp.Signature = append(temp.Signature, &idxSignaturePayload{Index: idx, SignaturePayload: msg.Payload.(*SignaturePayload)})
 		} else if msg.App == APP_CONFIG {
@@ -202,7 +202,7 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 	}
 
 	for _, p := range temp.Text {
-		tx.TxMessages[p.Index] = NewMessage(APP_TEXT, p.TextPayload)
+		tx.TxMessages[p.Index] = NewMessage(APP_DATA, p.DataPayload)
 		processed++
 	}
 	for _, p := range temp.Signature {

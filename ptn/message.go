@@ -69,10 +69,10 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		// Retrieve the next header satisfying the query
 		var origin *modules.Header
 		if hashMode {
-			origin = pm.dag.GetHeaderByHash(query.Origin.Hash)
+			origin, _ = pm.dag.GetHeaderByHash(query.Origin.Hash)
 		} else {
 			log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number.Index)
-			origin = pm.dag.GetHeaderByNumber(query.Origin.Number)
+			origin, _ = pm.dag.GetHeaderByNumber(&query.Origin.Number)
 		}
 
 		if origin == nil {
@@ -90,7 +90,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			// Hash based traversal towards the genesis block
 			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the genesis block")
 			for i := 0; i < int(query.Skip)+1; i++ {
-				if header, err := pm.dag.GetHeader(query.Origin.Hash, number); err == nil && header != nil {
+				if header, err := pm.dag.GetHeaderByHash(query.Origin.Hash); err == nil && header != nil {
 					if number != 0 {
 						query.Origin.Hash = header.ParentsHash[0]
 					}
@@ -117,7 +117,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			} else {
 				index.Index = next
 				log.Debug("ProtocolManager", "GetBlockHeadersMsg index.Index:", index.Index)
-				if header := pm.dag.GetHeaderByNumber(index); header != nil {
+				if header, _ := pm.dag.GetHeaderByNumber(&index); header != nil {
 					if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
 						query.Origin.Hash = header.Hash()
 					} else {
@@ -403,6 +403,18 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return err
 	}
 
+	var temptxs modules.Transactions
+	for _, tx := range unit.Txs {
+		if tx.IsContractTx() {
+			if !pm.contractProc.CheckContractTxValid(tx, true) {
+				log.Debug("NewBlockMsg", "CheckContractTxValid is false")
+				return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
+			}
+		}
+		temptxs = append(temptxs, tx)
+	}
+	unit.Txs = temptxs
+
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
 	log.Debug("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
@@ -456,7 +468,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		if tx.IsContractTx() {
-			if !pm.contractProc.CheckContractTxValid(tx) {
+			if !pm.contractProc.CheckContractTxValid(tx, false) {
 				log.Debug("TxMsg", "CheckContractTxValid is false")
 				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
 			}
@@ -507,10 +519,16 @@ func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
-	var unit modules.Unit
-	if err := msg.Decode(&unit); err != nil {
-		log.Info("===NewProducedUnitMsg===", "err:", err)
+	data := []byte{}
+	if err := msg.Decode(&data); err != nil {
+		log.Info("ProtocolManager", "NewBlockMsg msg:", msg.String())
 		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+
+	var unit modules.Unit
+	if err := json.Unmarshal(data, &unit); err != nil {
+		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err)
+		return err
 	}
 
 	pm.producer.AddToTBLSSignBuf(&unit)
@@ -570,69 +588,32 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-func (pm *ProtocolManager) ContractExecMsg(msg p2p.Msg, p *peer) error {
-	var event jury.ContractExeEvent
+func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ContractEvent
 	if err := msg.Decode(&event); err != nil {
-		log.Info("===ContractExecMsg===", "err:", err)
+		log.Info("===ContractMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	pm.contractProc.ProcessContractEvent(&event)
-	return nil
-}
 
-func (pm *ProtocolManager) ContractSigMsg(msg p2p.Msg, p *peer) error {
-	var event jury.ContractSigEvent
-	if err := msg.Decode(&event); err != nil {
-		log.Info("===ContractExecMsg===", "err:", err)
-		return errResp(ErrDecode, "%v: %v", msg, err)
+	log.Info("===ContractMsg===", "event type:", event.CType)
+	err := pm.contractProc.ProcessContractEvent(&event)
+	if err != nil {
+		log.Debug("ContractMsg", "error:", err)
 	}
-	pm.contractProc.ProcessContractSigEvent(&event)
-	return nil
-}
-
-func (pm *ProtocolManager) ContractSpecialMsg(msg p2p.Msg, p *peer) error {
-	var event jury.ContractSpecialEvent
-	if err := msg.Decode(&event); err != nil {
-		log.Info("===ContractSpecialMsg===", "err:", err)
-		return errResp(ErrDecode, "%v: %v", msg, err)
-	}
-	pm.contractProc.ProcessContractSpecialEvent(&event)
 	return nil
 }
 
 //local test
-func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractExeEvent) {
+func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
-	pm.contractExecCh <- event
+	pm.contractCh <- event
 }
 
-func (pm *ProtocolManager) ContractSigLocalSend(event jury.ContractSigEvent) {
-	log.Info("ContractSigLocalSend", "event", event.Tx.Hash())
-	pm.contractSigCh <- event
-}
-
-func (pm *ProtocolManager) ContractBroadcast(event jury.ContractExeEvent) {
-	log.Debug("ContractBroadcast", "event", event.Tx.Hash())
+func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent) {
+	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
-		peer.SendContractExeTransaction(event)
-	}
-}
-
-func (pm *ProtocolManager) ContractSigBroadcast(event jury.ContractSigEvent) {
-	log.Info("ContractSigBroadcast", "event", event.Tx.Hash())
-	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
-	peers := pm.peers.GetPeers()
-	for _, peer := range peers {
-		peer.SendContractSigTransaction(event)
-	}
-}
-
-func (pm *ProtocolManager) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
-	log.Info("ContractSpecialBroadcast", "event", event.Tx.Hash())
-	peers := pm.peers.GetPeers()
-	for _, peer := range peers {
-		peer.SendContractSpecialTransaction(event)
+		peer.SendContractTransaction(event)
 	}
 }

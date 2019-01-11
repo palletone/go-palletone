@@ -38,14 +38,17 @@ type UtxoRepository struct {
 	utxodb  storage.IUtxoDb
 	idxdb   storage.IIndexDb
 	statedb storage.IStateDb
-	logger  log.ILogger
 }
 
-func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb, l log.ILogger) *UtxoRepository {
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, logger: l}
+func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb) *UtxoRepository {
+	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
 }
 
 type IUtxoRepository interface {
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
+	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) modules.Utxo
 	UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32) error
@@ -56,6 +59,28 @@ type IUtxoRepository interface {
 	WalletBalance(addr common.Address, asset modules.Asset) uint64
 	ComputeAwards(txs []*modules.TxPoolTransaction, dagdb storage.IDagDb) (*modules.Addition, error)
 	ComputeTxAward(tx *modules.Transaction, dagdb storage.IDagDb) (uint64, error)
+
+	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
+	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
+}
+
+func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return repository.utxodb.GetUtxoEntry(outpoint)
+}
+func (repository *UtxoRepository) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
+	return repository.utxodb.GetAllUtxos()
+}
+func (repository *UtxoRepository) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
+	return repository.utxodb.GetAddrOutpoints(addr)
+}
+func (repository *UtxoRepository) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
+	return repository.utxodb.GetAddrUtxos(addr)
+}
+func (repository *UtxoRepository) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
+	return repository.utxodb.SaveUtxoView(view)
+}
+func (repository *UtxoRepository) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
+	return repository.utxodb.SaveUtxoEntity(outpoint, utxo)
 }
 
 /**

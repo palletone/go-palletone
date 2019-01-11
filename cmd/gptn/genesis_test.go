@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/palletone/go-palletone/common/log"
+	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -120,13 +120,13 @@ func TestGenesisGet(t *testing.T) {
 		fmt.Println("Connect to db error.")
 		return
 	}
-	l := log.NewTestLog()
-	dagDb := storage.NewDagDb(dbconn, l)
-	idxDb := storage.NewIndexDb(dbconn, l)
-	utxoDb := storage.NewUtxoDb(dbconn, l)
-	stateDb := storage.NewStateDb(dbconn, l)
+	//l := log.NewTestLog()
+	dagDb := storage.NewDagDb(dbconn)
+	idxDb := storage.NewIndexDb(dbconn)
+	utxoDb := storage.NewUtxoDb(dbconn)
+	stateDb := storage.NewStateDb(dbconn)
 
-	unitrep := common.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, l)
+	unitrep := common.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
 	if unitrep == nil {
 		t.Error("new unit rep error.")
 	}

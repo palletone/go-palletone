@@ -42,7 +42,7 @@ func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	missedUnits--
 	log.Debug(fmt.Sprintf("the count of missed Units: %v", missedUnits))
 
-	aSize := dag.GetActiveMediatorCount()
+	aSize := dag.ActiveMediatorsCount()
 	if missedUnits < uint32(aSize) {
 		var i uint32
 		for i = 0; i < missedUnits; i++ {
@@ -88,7 +88,7 @@ func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
 }
 
 func (dag *Dag) updateLastIrreversibleUnit() {
-	aSize := dag.GetActiveMediatorCount()
+	aSize := dag.ActiveMediatorsCount()
 	lastConfirmedUnitNums := make([]int, 0, aSize)
 
 	// 1. 获取所有活跃 mediator 最后确认unit编号
@@ -131,8 +131,7 @@ func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
 
 // 活跃 mediators 更新事件
 type ActiveMediatorsUpdatedEvent struct {
-	// todo
-	//IsChanged bool // 标记活跃 mediators 是否有改变
+	IsChanged bool // 标记活跃 mediators 是否有改变
 }
 
 func (dag *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription {
@@ -151,13 +150,10 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dag.performAccountMaintenance()
 
 	// 3. 统计投票并更新活跃 mediator 列表
-	if !dag.updateActiveMediators() {
-		// todo , 如果没有变化， 只需做一些特殊处理，不需要发送事件
+	isChanged := dag.updateActiveMediators()
 
-	} else {
-		// 4. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
-		go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{})
-	}
+	// 4. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
+	go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
 
 	// 5. 计算并更新下一次维护时间
 	gp := dag.GetGlobalProp()
@@ -186,6 +182,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 		nextMaintenanceTime += (y + 1) * maintenanceInterval
 	}
 
+	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.SaveDynGlobalProp(dgp, false)
 

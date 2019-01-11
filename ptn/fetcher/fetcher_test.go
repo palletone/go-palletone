@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
-	log2 "github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	//dag2 "github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -124,8 +123,8 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//	fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 	//}
-	l := log2.NewTestLog()
-	dagDb := storage.NewDagDb(db, l)
+	//l := log2.NewTestLog()
+	dagDb := storage.NewDagDb(db)
 	// step4. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {

@@ -20,19 +20,42 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type PropRepository struct {
-	db     storage.IPropertyDb
-	logger log.ILogger
+	db storage.IPropertyDb
 }
 type IPropRepository interface {
+	StoreGlobalProp(gp *modules.GlobalProperty) error
+	RetrieveGlobalProp() (*modules.GlobalProperty, error)
+	StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error
+	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
+	StoreMediatorSchl(ms *modules.MediatorSchedule) error
+	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 }
 
-func NewPropRepository(db storage.IPropertyDb, l log.ILogger) *PropRepository {
-	return &PropRepository{db: db, logger: l}
+func NewPropRepository(db storage.IPropertyDb) *PropRepository {
+	return &PropRepository{db: db}
+}
+func (pRep *PropRepository) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
+	return pRep.db.RetrieveGlobalProp()
+}
+func (pRep *PropRepository) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
+	return pRep.db.RetrieveDynGlobalProp()
+}
+func (pRep *PropRepository) StoreGlobalProp(gp *modules.GlobalProperty) error {
+	return pRep.db.StoreGlobalProp(gp)
+}
+func (pRep *PropRepository) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
+	return pRep.db.StoreDynGlobalProp(dgp)
+}
+func (pRep *PropRepository) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
+	return pRep.db.StoreMediatorSchl(ms)
+}
+func (pRep *PropRepository) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
+	return pRep.db.RetrieveMediatorSchl()
 }
 
 /**

@@ -28,7 +28,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"strings"
@@ -36,12 +35,11 @@ import (
 
 //保存了对合约写集、Config、Asset信息
 type StateDb struct {
-	db     ptndb.Database
-	logger log.ILogger
+	db ptndb.Database
 }
 
-func NewStateDb(db ptndb.Database, l log.ILogger) *StateDb {
-	return &StateDb{db: db, logger: l}
+func NewStateDb(db ptndb.Database) *StateDb {
+	return &StateDb{db: db}
 }
 
 // ######################### SAVE IMPL START ###########################
@@ -88,11 +86,11 @@ func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
 }
 
 // author albert·gou
-func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *MediatorInfo) error {
+func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
 	return StoreMediatorInfo(statedb.db, add, mi)
 }
 
-func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*MediatorInfo, error) {
+func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return RetrieveMediatorInfo(statedb.db, address)
 }
 

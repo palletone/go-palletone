@@ -25,6 +25,7 @@ import (
 
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -253,7 +254,7 @@ type ChainIndex struct {
 }
 
 func (height ChainIndex) String() string {
-	return common.Bytes2Hex(height.Bytes())
+	return fmt.Sprintf("%s-%d", height.AssetID.ToAssetId(), height.Index)
 }
 func (height ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)
@@ -498,6 +499,7 @@ const (
 	TxValidationCode_INVALID_AMOUNT               TxValidationCode = 31
 	TxValidationCode_INVALID_ASSET                TxValidationCode = 32
 	TxValidationCode_INVALID_CONTRACT             TxValidationCode = 33
+	TxValidationCode_INVALID_DATAPAYLOAD          TxValidationCode = 34
 	TxValidationCode_NOT_VALIDATED                TxValidationCode = 254
 	TxValidationCode_NOT_COMPARE_SIZE             TxValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 256

@@ -29,14 +29,13 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
-
+	"github.com/palletone/go-palletone/common/log"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/pkg/errors"
 	"time"
 )
 
-var ccproviderLogger = flogging.MustGetLogger("ccprovider")
+//var log = flogging.MustGetLogger("ccprovider")
 
 var chaincodeInstallPath string
 
@@ -81,14 +80,14 @@ func SetChaincodesPath(path string) error {
 	if s, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(path, 0755); err != nil {
-				ccproviderLogger.Errorf("Could not create chaincodes install path: %s", err)
+				log.Errorf("Could not create chaincodes install path: %s", err)
 				return err
 			}
 		} else {
-			ccproviderLogger.Errorf("Could not stat chaincodes install path: %s", err)
+			log.Errorf("Could not stat chaincodes install path: %s", err)
 		}
 	} else if !s.IsDir() {
-		ccproviderLogger.Errorf("chaincode path exists but not a dir: %s", path)
+		log.Errorf("chaincode path exists but not a dir: %s", path)
 		return errors.New("chaincodes path is not dir")
 	}
 
@@ -99,7 +98,7 @@ func SetChaincodesPath(path string) error {
 //GetChaincodePackage returns the chaincode package from the file system
 func GetChaincodePackage(ccname string, ccversion string) ([]byte, error) {
 	path := fmt.Sprintf("%s/%s.%s", chaincodeInstallPath, ccname, ccversion)
-	ccproviderLogger.Infof("path:%s", path)
+	log.Infof("path:%s", path)
 	var ccbytes []byte
 	var err error
 	if ccbytes, err = ioutil.ReadFile(path); err != nil {
@@ -214,13 +213,13 @@ func PutChaincodeIntoFS(depSpec *pb.ChaincodeDeploymentSpec) error {
 // GetChaincodeData gets chaincode data from cache if there's one
 func GetChaincodeData(ccname string, ccversion string) (*ChaincodeData, error) {
 	if ccInfoCacheEnabled {
-		ccproviderLogger.Debugf("Getting chaincode data for <%s, %s> from cache", ccname, ccversion)
+		log.Debugf("Getting chaincode data for <%s, %s> from cache", ccname, ccversion)
 		return ccInfoCache.GetChaincodeData(ccname, ccversion)
 	}
 	if ccpack, err := ccInfoFSProvider.GetChaincode(ccname, ccversion); err != nil {
 		return nil, err
 	} else {
-		ccproviderLogger.Infof("Putting chaincode data for <%s, %s> into cache", ccname, ccversion)
+		log.Infof("Putting chaincode data for <%s, %s> into cache", ccname, ccversion)
 		return ccpack.GetChaincodeData(), nil
 	}
 }
@@ -299,7 +298,7 @@ func GetInstalledChaincodes() (*pb.ChaincodeQueryResponse, error) {
 			if err != nil {
 				// either chaincode on filesystem has been tampered with or
 				// a non-chaincode file has been found in the chaincodes directory
-				ccproviderLogger.Errorf("Unreadable chaincode file found on filesystem: %s", file.Name())
+				log.Errorf("Unreadable chaincode file found on filesystem: %s", file.Name())
 				continue
 			}
 
@@ -310,7 +309,7 @@ func GetInstalledChaincodes() (*pb.ChaincodeQueryResponse, error) {
 			if name != ccname || version != ccversion {
 				// chaincode name/version in the chaincode file name has been modified
 				// by an external entity
-				ccproviderLogger.Errorf("Chaincode file's name/version has been modified on the filesystem: %s", file.Name())
+				log.Errorf("Chaincode file's name/version has been modified on the filesystem: %s", file.Name())
 				continue
 			}
 
@@ -373,7 +372,7 @@ func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool
 	//All system chaincodes share the same version given by utils.GetSysCCVersion. Note
 	//that neither Chain Name or Version are stored in a chaincodes state on the ledger
 	if version == "" {
-		ccproviderLogger.Errorf("empty version(chain=%s,chaincode=%s,version=%s,txid=%s,syscc=%t,proposal=%p", cid, name, version, txid, syscc, prop)
+		log.Errorf("empty version(chain=%s,chaincode=%s,version=%s,txid=%s,syscc=%t,proposal=%p", cid, name, version, txid, syscc, prop)
 		return nil
 	}
 
@@ -381,7 +380,7 @@ func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool
 
 	cccid := &CCContext{contractid, cid, name, version, txid, syscc, signedProp, prop, canName, nil}
 
-	ccproviderLogger.Debugf("NewCCCC (chain[%s],chaincode[%s],version[%s],txid[%s],syscc[%t],proposal[%p],canname[%s])", cid, name, version, txid, syscc, prop, cccid.canonicalName)
+	log.Debugf("NewCCCC (chain[%s],chaincode[%s],version[%s],txid[%s],syscc[%t],proposal[%p],canname[%s])", cid, name, version, txid, syscc, prop, cccid.canonicalName)
 
 	return cccid
 }

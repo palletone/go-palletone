@@ -2,12 +2,14 @@ package jury
 
 import (
 	"time"
+	"encoding/hex"
+	"fmt"
 
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
-	"fmt"
+	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 )
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool) (reqId []byte, TplId []byte, err error) {
@@ -29,7 +31,6 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	if err != nil {
 		return nil, nil, err
 	}
-
 	tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
 	if err != nil {
 		errMsg := fmt.Sprintf("getContractTxContractInfo fail, tpl Name[%s]", tplName)
@@ -38,7 +39,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	templateId := tpl.(*modules.ContractTplPayload).TemplateId
 
 	//broadcast
-	go p.ptn.ContractSpecialBroadcast(ContractSpecialEvent{Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx})
 	return reqId, templateId, nil
 }
 
@@ -47,24 +48,26 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		log.Error("ContractDeployReq", "param is error")
 		return nil, errors.New("ContractDeployReq request param is error")
 	}
-	log.Debug("ContractDeployReq", "enter, templateId ", templateId)
-
+	randNum, err := crypto.GetRandomNonce()
+	if err != nil {
+		return nil, errors.New("GetRandomNonce error")
+	}
+	log.Debug("ContractDeployReq", "enter, templateId ", templateId, "txId", hex.EncodeToString(randNum))
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
 			TplId:   templateId,
-			TxId:    txid,
+			TxId:    hex.EncodeToString(randNum),
 			Args:    args,
 			Timeout: timeout,
 		},
 	}
-
 	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
 	if err != nil {
 		return nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx})
 	return reqId, nil
 }
 
@@ -89,7 +92,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx})
 	return reqId, nil
 }
 
@@ -113,6 +116,6 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 		return nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractExeEvent{Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx})
 	return reqId, nil
 }

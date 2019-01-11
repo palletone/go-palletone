@@ -75,7 +75,12 @@ const Wallet_JS = `
 			params: 7,
 			inputFormatter: [null,null,null,null,null,null,null]
 		}),
-		
+		new web3._extend.Method({
+			name: 'createProofTransaction',
+			call: 'wallet_createProofTransaction',
+			params: 1,
+			inputFormatter: [null]
+		}),
  	]
  });
  `

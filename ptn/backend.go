@@ -107,8 +107,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	logger := log.New()
-	dag, err := dag.NewDag(db, logger)
+	//logger := log.New()
+	dag, err := dag.NewDag(db)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -132,7 +132,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	pool := txspool.NewTxPool(config.TxPool, ptn.dag, logger)
+	pool := txspool.NewTxPool(config.TxPool, ptn.dag)
 	ptn.txPool = pool
 	// // loop txspool to delete overtime tx.
 	// go txspool.LoopTxsPool(pool)
@@ -155,7 +155,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	genesis, err := ptn.dag.GetGenesisUnit(0)
+	genesis, err := ptn.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("PalletOne New", "get genesis err:", err)
 		return nil, err
@@ -262,23 +262,12 @@ func (s *PalletOne) Dag() dag.IDag                      { return s.dag }
 func (s *PalletOne) ContractProcessor() *jury.Processor { return s.contractPorcessor }
 func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManager }
 
-func (s *PalletOne) MockContractLocalSend(event jury.ContractExeEvent) {
+func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
 }
-func (s *PalletOne) MockContractSigLocalSend(event jury.ContractSigEvent) {
-	s.protocolManager.ContractSigLocalSend(event)
-}
 
-func (s *PalletOne) ContractBroadcast(event jury.ContractExeEvent) {
+func (s *PalletOne) ContractBroadcast(event jury.ContractEvent) {
 	s.protocolManager.ContractBroadcast(event)
-
-}
-func (s *PalletOne) ContractSigBroadcast(event jury.ContractSigEvent) {
-	s.protocolManager.ContractSigBroadcast(event)
-}
-
-func (s *PalletOne) ContractSpecialBroadcast(event jury.ContractSpecialEvent) {
-	s.protocolManager.ContractSpecialBroadcast(event)
 }
 
 func (s *PalletOne) GetLocalMediators() []common.Address {

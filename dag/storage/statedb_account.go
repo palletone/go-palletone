@@ -25,6 +25,7 @@ import (
 
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -76,7 +77,7 @@ func (statedb *StateDb) RetrieveAccountInfo(address common.Address) (*modules.Ac
 
 	err := retrieve(statedb.db, accountKey(address), acc)
 	if err != nil {
-		statedb.logger.Debugf("Get account[%s] info throw an error:%s", address.String(), err.Error())
+		log.Debugf("Get account[%s] info throw an error:%s", address.String(), err.Error())
 		return nil, err
 	}
 
@@ -86,7 +87,7 @@ func (statedb *StateDb) RetrieveAccountInfo(address common.Address) (*modules.Ac
 func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.AccountInfo) error {
 	err := StoreBytes(statedb.db, accountKey(address), infoToaccount(info))
 	if err != nil {
-		statedb.logger.Debugf("Save account info throw an error:%s", err)
+		log.Debugf("Save account info throw an error:%s", err)
 	}
 
 	return err
@@ -98,11 +99,11 @@ func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmou
 	// 第一次更新时， 数据库没有该账户的相关数据
 	if err != nil {
 		info = modules.NewAccountInfo()
-		statedb.logger.Debugf("Account info for [%s] don't exist,create it first", address.String())
+		log.Debugf("Account info for [%s] don't exist,create it first", address.String())
 	}
 
 	info.PtnBalance = uint64(int64(info.PtnBalance) + addAmount)
-	statedb.logger.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
+	log.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
 
 	return statedb.StoreAccountInfo(address, info)
 }
@@ -155,7 +156,7 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		acc := newAccountInfo()
 		err := rlp.DecodeBytes(value, acc)
 		if err != nil {
-			statedb.logger.Debug(fmt.Sprintln("Error in Decoding Bytes to AccountInfo: ", err,
+			log.Debug(fmt.Sprintln("Error in Decoding Bytes to AccountInfo: ", err,
 				"\nkey: ", key, "\naddress: ", add.Str(), "\nvalue: ", value))
 			continue
 		}

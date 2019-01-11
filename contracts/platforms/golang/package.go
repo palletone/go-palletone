@@ -22,12 +22,11 @@ package golang
 import (
 	"errors"
 	"fmt"
-	"strings"
-
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
+	"github.com/palletone/go-palletone/common/log"
 	ccutil "github.com/palletone/go-palletone/contracts/platforms/util"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
@@ -41,10 +40,10 @@ var includeFileTypes = map[string]bool{
 	".json": true,
 }
 
-var logger = flogging.MustGetLogger("golang-platform")
+//var log = flogging.MustGetLogger("golang-platform")
 
 func getCodeFromFS(path string) (codegopath string, err error) {
-	logger.Debugf("getCodeFromFS %s", path)
+	log.Debugf("getCodeFromFS %s", path)
 	gopath, err := getGopath()
 	if err != nil {
 		return "", err
@@ -68,11 +67,10 @@ type CodeDescriptor struct {
 //
 //NOTE: for dev mode, user builds and runs chaincode manually. The name provided
 //by the user is equivalent to the path.
-func getCode(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
+func getCodeDescriptor(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
 	if spec == nil {
 		return nil, errors.New("Cannot collect files from nil spec")
 	}
-
 	chaincodeID := spec.ChaincodeId
 	if chaincodeID == nil || chaincodeID.Path == "" {
 		return nil, errors.New("Cannot collect files from empty chaincode path")
@@ -84,7 +82,6 @@ func getCode(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error getting code %s", err)
 	}
-
 	return &CodeDescriptor{Gopath: gopath, Pkg: chaincodeID.Path, Cleanup: nil}, nil
 }
 
@@ -109,6 +106,11 @@ func (s Sources) Less(i, j int) bool {
 	return strings.Compare(s[i].Name, s[j].Name) < 0
 }
 
+type SourceFile struct {
+	name string
+	path string
+}
+
 func findSource(gopath, pkg string) (SourceMap, error) {
 	sources := make(SourceMap)
 	tld := filepath.Join(gopath, "src", pkg)
@@ -125,12 +127,12 @@ func findSource(gopath, pkg string) (SourceMap, error) {
 			// Allow import of META-INF metadata directories into chaincode code package tar.
 			// META-INF directories contain chaincode metadata artifacts such as statedb index definitions
 			if isMetadataDir(path, tld) {
-				logger.Debug("Files in META-INF directory will be included in code package tar:", path)
+				log.Debug("Files in META-INF directory will be included in code package tar:", path)
 				return nil
 			}
 
 			// Do not import any other directories into chaincode code package
-			logger.Debugf("skipping dir: %s", path)
+			log.Debugf("skipping dir: %s", path)
 			return filepath.SkipDir
 		}
 

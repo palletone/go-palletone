@@ -27,6 +27,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+	
+	"github.com/palletone/go-palletone/common/log"
 )
 
 //runProgram non-nil Env, timeout (typically secs or millisecs), program name and args
@@ -71,7 +73,7 @@ func list(env Env, template, pkg string) ([]string, error) {
 		env = getEnv()
 	}
 
-	logger.Infof("template[%v],pkg[%s]", template, pkg)
+	log.Infof("template[%v],pkg[%s]", template, pkg)
 	lst, err := runProgram(env, 60*time.Second, "go", "list", "-f", template, pkg)
 	if err != nil {
 		return nil, err

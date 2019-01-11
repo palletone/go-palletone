@@ -22,14 +22,14 @@ package log
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/common/files"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"log"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/palletone/go-palletone/common/files"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -52,53 +52,26 @@ const (
 var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
 
 var Logger *zap.Logger
-var originFileName string
 var mux sync.RWMutex
 
-type ILogger interface {
-	Trace(msg string, ctx ...interface{})
-	Debug(msg string, ctx ...interface{})
-	Debugf(format string, ctx ...interface{})
-	Info(msg string, ctx ...interface{})
-	Infof(format string, ctx ...interface{})
-	Warn(msg string, ctx ...interface{})
-	Warnf(format string, ctx ...interface{})
-	Error(msg string, ctx ...interface{})
-	Errorf(format string, ctx ...interface{})
-	Crit(msg string, ctx ...interface{})
-}
-
-type Plogger struct {
-	logger zap.Logger
-}
-
-// New returns a new logger with the given context.
-// New is a convenient alias for Root().New
-func New(ctx ...interface{}) *Plogger {
-	if Logger == nil {
-		InitLogger()
-	}
-	pl := new(Plogger)
-	pl.logger = *Logger
-	return pl
-}
+//var originFileName string
 
 // init zap.logger
 func InitLogger() {
-	date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
+	//date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
 	for i, path := range DefaultConfig.OutputPaths {
 		if path == LogStdout {
 			continue
 		}
-		if originFileName == "" {
-			originFileName = path
-		}
-		index := strings.LastIndex(originFileName, ".")
-		if -1 == index {
-			index = len(originFileName)
-		}
+		//if originFileName == "" {
+		//	originFileName = path
+		//}
+		//index := strings.LastIndex(originFileName, ".")
+		//if -1 == index {
+		//	index = len(originFileName)
+		//}
+		// DefaultConfig.OutputPaths[i] = fmt.Sprintf("%s_%s.%s", Substr(originFileName, 0, index), date, Substr(originFileName, index+1, len(originFileName)-index))
 
-		DefaultConfig.OutputPaths[i] = fmt.Sprintf("%s_%s.%s", Substr(originFileName, 0, index), date, Substr(originFileName, index+1, len(originFileName)-index))
 		if err := files.MakeDirAndFile(DefaultConfig.OutputPaths[i]); err != nil {
 			panic(err)
 		}
@@ -106,7 +79,7 @@ func InitLogger() {
 
 	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
-	go check()
+	// go check()
 }
 
 func ConInitLogger() {
@@ -151,8 +124,44 @@ func initLogger() {
 		}
 	}
 	l.SetOpenModule(DefaultConfig.OpenModule)
-	Logger = l.WithOptions(zap.AddCallerSkip(1))
-	Logger.SetFileName(DefaultConfig.OutputPaths[1])
+	l = l.WithOptions(zap.AddCallerSkip(1))
+	if DefaultConfig.RotationMaxSize > 0 {
+		includeStdout, filePath := getOutputPath(DefaultConfig.OutputPaths)
+		rotateLogCore := func(core zapcore.Core) zapcore.Core {
+			w := zapcore.AddSync(&lumberjack.Logger{
+				Filename:   filePath,
+				MaxSize:    DefaultConfig.RotationMaxSize, // megabytes
+				MaxBackups: 3,
+				MaxAge:     DefaultConfig.RotationMaxAge, // days
+			})
+			if includeStdout {
+				stdout, _, _ := zap.Open("stdout")
+				w = zap.CombineWriteSyncers(stdout, w)
+			}
+			encoder := zapcore.NewConsoleEncoder(cfg.EncoderConfig)
+			core2 := zapcore.NewCore(
+				encoder,
+				w,
+				cfg.Level,
+			)
+			return core2
+		}
+		l = l.WithOptions(zap.WrapCore(rotateLogCore))
+	}
+	Logger = l
+}
+
+func getOutputPath(paths []string) (bool, string) {
+	includeStdout := false
+	filePath := ""
+	for _, path := range paths {
+		if strings.ToLower(path) == "stdout" {
+			includeStdout = true
+		} else {
+			filePath = path
+		}
+	}
+	return includeStdout, filePath
 }
 
 // Trace
@@ -164,7 +173,6 @@ func Trace(msg string, ctx ...interface{}) {
 	//log.Println("logger trace is  ok.")
 	fileds := ctxTOfileds(ctx...)
 	Logger.Debug(msg, fileds...)
-
 }
 
 // Debug
@@ -176,6 +184,9 @@ func Debug(msg string, ctx ...interface{}) {
 	Logger.Debug(msg, fileds...)
 }
 func Debugf(format string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
 	Logger.Debug(fmt.Sprintf(format, ctx...))
 }
 
@@ -188,6 +199,13 @@ func Info(msg string, ctx ...interface{}) {
 	Logger.Info(msg, fileds...)
 }
 
+func Infof(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
+	Logger.Info(fmt.Sprintf(msg, ctx...))
+}
+
 // Warn
 func Warn(msg string, ctx ...interface{}) {
 	if Logger == nil {
@@ -195,6 +213,12 @@ func Warn(msg string, ctx ...interface{}) {
 	}
 	fileds := ctxTOfileds(ctx...)
 	Logger.Warn(msg, fileds...)
+}
+func Warnf(msg string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
+	Logger.Warn(fmt.Sprintf(msg, ctx...))
 }
 
 // Error
@@ -208,6 +232,9 @@ func Error(msg string, ctx ...interface{}) {
 }
 
 func Errorf(format string, ctx ...interface{}) {
+	if Logger == nil {
+		InitLogger()
+	}
 	Logger.Error(fmt.Sprintf(format, ctx...))
 }
 
@@ -218,67 +245,6 @@ func Crit(msg string, ctx ...interface{}) {
 	}
 	fileds := ctxTOfileds(ctx...)
 	Logger.Error(msg, fileds...)
-}
-
-func NewTestLog() *Plogger {
-	DefaultConfig = Config{
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
-		OpenModule:       []string{"all"},
-		LoggerLvl:        "DEBUG",
-		Encoding:         "console",
-		Development:      true,
-	}
-	initLogger()
-	return &Plogger{logger: *Logger}
-}
-func (pl *Plogger) New(ctx ...interface{}) *Plogger {
-	if pl != nil {
-		return pl
-	}
-	if Logger == nil {
-		InitLogger()
-	}
-
-	pl.logger = *Logger
-	return pl
-}
-func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Debug(msg, fileds...)
-}
-
-func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Debug(msg, fileds...)
-}
-func (pl *Plogger) Debugf(format string, ctx ...interface{}) {
-	pl.logger.Debug(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Info(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Info(msg, fileds...)
-}
-func (pl *Plogger) Infof(format string, ctx ...interface{}) {
-	pl.logger.Info(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Warn(msg, fileds...)
-}
-func (pl *Plogger) Warnf(format string, ctx ...interface{}) {
-	pl.logger.Warn(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Error(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Error(msg, fileds...)
-}
-func (pl *Plogger) Errorf(format string, ctx ...interface{}) {
-	pl.logger.Error(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Error(msg, fileds...)
 }
 
 // ctx transfer to  fileds
@@ -400,6 +366,98 @@ func check() {
 			Logger = nil
 			InitLogger()
 			mux.Unlock()
+			return
 		}
 	}
 }
+
+/*
+type ILogger interface {
+	Trace(msg string, ctx ...interface{})
+	Debug(msg string, ctx ...interface{})
+	Debugf(format string, ctx ...interface{})
+	Info(msg string, ctx ...interface{})
+	Infof(format string, ctx ...interface{})
+	Warn(msg string, ctx ...interface{})
+	Warnf(format string, ctx ...interface{})
+	Error(msg string, ctx ...interface{})
+	Errorf(format string, ctx ...interface{})
+	Crit(msg string, ctx ...interface{})
+}
+
+type Plogger struct {
+	logger zap.Logger
+}
+
+// New returns a new logger with the given context.
+// New is a convenient alias for Root().New
+func New(ctx ...interface{}) *Plogger {
+	if Logger == nil {
+		InitLogger()
+	}
+	pl := new(Plogger)
+	pl.logger = *Logger
+	return pl
+}
+
+func NewTestLog() *Plogger {
+	DefaultConfig = Config{
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+		OpenModule:       []string{"all"},
+		LoggerLvl:        "DEBUG",
+		Encoding:         "console",
+		Development:      true,
+	}
+	initLogger()
+	return &Plogger{logger: *Logger}
+}
+func (pl *Plogger) New(ctx ...interface{}) *Plogger {
+	if pl != nil {
+		return pl
+	}
+	if Logger == nil {
+		InitLogger()
+	}
+
+	pl.logger = *Logger
+	return pl
+}
+func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Debug(msg, fileds...)
+}
+
+func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Debug(msg, fileds...)
+}
+func (pl *Plogger) Debugf(format string, ctx ...interface{}) {
+	pl.logger.Debug(fmt.Sprintf(format, ctx...))
+}
+func (pl *Plogger) Info(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Info(msg, fileds...)
+}
+func (pl *Plogger) Infof(format string, ctx ...interface{}) {
+	pl.logger.Info(fmt.Sprintf(format, ctx...))
+}
+func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Warn(msg, fileds...)
+}
+func (pl *Plogger) Warnf(format string, ctx ...interface{}) {
+	pl.logger.Warn(fmt.Sprintf(format, ctx...))
+}
+func (pl *Plogger) Error(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Error(msg, fileds...)
+}
+func (pl *Plogger) Errorf(format string, ctx ...interface{}) {
+	pl.logger.Error(fmt.Sprintf(format, ctx...))
+}
+func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
+	fileds := ctxTOfileds(ctx...)
+	pl.logger.Error(msg, fileds...)
+}
+*/

@@ -34,7 +34,7 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil, nil, nil, nil)
 	var (
-		genesis, _ = pm.dag.GetGenesisUnit(0)
+		genesis, _ = pm.dag.GetGenesisUnit()
 		head       = pm.dag.CurrentHeader()
 		index      = head.Number
 	)

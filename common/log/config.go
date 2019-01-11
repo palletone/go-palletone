@@ -25,6 +25,8 @@ var DefaultConfig = Config{
 	LoggerLvl:        "DEBUG",
 	Encoding:         "console",
 	Development:      true,
+	RotationMaxSize:  200,
+	RotationMaxAge:   28,
 }
 
 type Config struct {
@@ -34,4 +36,6 @@ type Config struct {
 	LoggerLvl        string   `json:"level" yaml:"level"`       // log level
 	Encoding         string   `json:"encoding" yaml:"encoding"` // encoding
 	Development      bool     `json:"development" yaml:"development"`
+	RotationMaxSize  int      `json:"rotation_max_size" yaml:"rotation_max_size"`
+	RotationMaxAge   int      `json:"rotation_max_age" yaml:"rotation_max_age"`
 }

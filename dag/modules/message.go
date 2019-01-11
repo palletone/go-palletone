@@ -20,10 +20,13 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"reflect"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
+
+	"bytes"
 )
 
 type MessageType byte
@@ -38,7 +41,7 @@ const (
 	APP_SIGNATURE
 
 	APP_CONFIG
-	APP_TEXT
+	APP_DATA
 	APP_VOTE
 	OP_MEDIATOR_CREATE
 
@@ -70,7 +73,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	switch cpyMsg.App {
 	// modified by albert·gou
 	default:
-		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_TEXT, APP_VOTE:
+		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
 		msg.Payload = cpyMsg.Payload
 	case APP_CONFIG:
 		payload, _ := cpyMsg.Payload.(*ConfigPayload)
@@ -134,6 +137,57 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	}
 
 	return msg
+}
+
+func (msg *Message) CompareMessages(inMsg *Message) bool {
+	//return true //todo del
+
+	if inMsg == nil || msg.App != inMsg.App {
+		return false
+	}
+	switch msg.App {
+	case APP_CONTRACT_TPL:
+		payA, _ := msg.Payload.(*ContractTplPayload)
+		payB, _ := inMsg.Payload.(*ContractTplPayload)
+		return payA.Equal(payB)
+	case APP_CONTRACT_DEPLOY:
+		payA, _ := msg.Payload.(*ContractDeployPayload)
+		payB, _ := inMsg.Payload.(*ContractDeployPayload)
+		return payA.Equal(payB)
+	case APP_CONTRACT_INVOKE:
+		payA, _ := msg.Payload.(*ContractInvokePayload)
+		payB, _ := inMsg.Payload.(*ContractInvokePayload)
+		return payA.Equal(payB)
+	case APP_CONTRACT_STOP:
+		payA, _ := msg.Payload.(*ContractStopPayload)
+		payB, _ := inMsg.Payload.(*ContractStopPayload)
+		return payA.Equal(payB)
+	case APP_SIGNATURE:
+		//todo
+		//payA, _ := msg.Payload.(*SignaturePayload)
+		//payB, _ := inMsg.Payload.(*SignaturePayload)
+		return true
+	case APP_CONTRACT_TPL_REQUEST:
+		payA, _ := msg.Payload.(*ContractInstallRequestPayload)
+		payB, _ := inMsg.Payload.(*ContractInstallRequestPayload)
+		return payA.Equal(payB)
+	case APP_CONTRACT_DEPLOY_REQUEST:
+		payA, _ := msg.Payload.(*ContractDeployRequestPayload)
+		payB, _ := inMsg.Payload.(*ContractDeployRequestPayload)
+		return reflect.DeepEqual(payA, payB)
+	case APP_CONTRACT_INVOKE_REQUEST:
+		payA, _ := msg.Payload.(*ContractInvokeRequestPayload)
+		payB, _ := inMsg.Payload.(*ContractInvokeRequestPayload)
+		return payA.Equal(payB)
+	case APP_CONTRACT_STOP_REQUEST:
+		payA, _ := msg.Payload.(*ContractStopRequestPayload)
+		payB, _ := inMsg.Payload.(*ContractStopRequestPayload)
+		return payA.Equal(payB)
+	default:
+		return false
+	}
+
+	return false
 }
 
 type ContractWriteSet struct {
@@ -389,51 +443,47 @@ type ContractTplPayload struct {
 
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId []byte   `json:"template_id"` // contract template id
-	ContractId []byte   `json:"contract_id"` // contract id
-	Name       string   `json:"name"`        // the name for contract
-	Args       [][]byte `json:"args"`        // contract arguments list
-	//ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
-	Jury     []common.Address   `json:"jury"`      // contract jurors list
-	ReadSet  []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
-	WriteSet []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
+	TemplateId []byte             `json:"template_id"` // contract template id
+	ContractId []byte             `json:"contract_id"` // contract id
+	Name       string             `json:"name"`        // the name for contract
+	Args       [][]byte           `json:"args"`        // contract arguments list
+	Jury       []common.Address   `json:"jury"`        // contract jurors list
+	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 // Contract invoke message
 // App: contract_invoke
 //如果是用户想修改自己的State信息，那么ContractId可以为空或者0字节
 type ContractInvokePayload struct {
-	ContractId   []byte   `json:"contract_id"` // contract id
-	FunctionName string   `json:"function_name"`
-	Args         [][]byte `json:"args"` // contract arguments list
-	//ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
-	ReadSet  []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
-	WriteSet []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
-	Payload  []byte             `json:"payload"`   // the contract execution result
+	ContractId   []byte             `json:"contract_id"` // contract id
+	FunctionName string             `json:"function_name"`
+	Args         [][]byte           `json:"args"`      // contract arguments list
+	ReadSet      []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
+	WriteSet     []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
+	Payload      []byte             `json:"payload"`   // the contract execution result
 }
 
 // App: contract_deploy
 type ContractStopPayload struct {
-	ContractId []byte `json:"contract_id"` // contract id
-	//ExecutionTime time.Duration      `json:"execution_time" rlp:"-"` // contract execution time, millisecond
-	Jury     []common.Address   `json:"jury"`      // contract jurors list
-	ReadSet  []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
-	WriteSet []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
+	ContractId []byte             `json:"contract_id"` // contract id
+	Jury       []common.Address   `json:"jury"`        // contract jurors list
+	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
 }
 
 //contract invoke result
 type ContractInvokeResult struct {
-	ContractId   []byte      `json:"contract_id"` // contract id
-	RequestId    common.Hash `json:"request_id"`
-	FunctionName string      `json:"function_name"`
-	Args         [][]byte    `json:"args"` // contract arguments list
-	//ExecutionTime time.Duration      `json:"execution_time"` // contract execution time, millisecond
-	ReadSet     []ContractReadSet  `json:"read_set"`     // the set data of read, and value could be any type
-	WriteSet    []ContractWriteSet `json:"write_set"`    // the set data of write, and value could be any type
-	Payload     []byte             `json:"payload"`      // the contract execution result
-	TokenPayOut []*TokenPayOut     `json:"token_payout"` //从合约地址付出Token
-	TokenSupply []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
-	TokenDefine *TokenDefine       `json:"token_define"` //定义新Token
+	ContractId   []byte             `json:"contract_id"` // contract id
+	RequestId    common.Hash        `json:"request_id"`
+	FunctionName string             `json:"function_name"`
+	Args         [][]byte           `json:"args"`         // contract arguments list
+	ReadSet      []ContractReadSet  `json:"read_set"`     // the set data of read, and value could be any type
+	WriteSet     []ContractWriteSet `json:"write_set"`    // the set data of write, and value could be any type
+	Payload      []byte             `json:"payload"`      // the contract execution result
+	TokenPayOut  []*TokenPayOut     `json:"token_payout"` //从合约地址付出Token
+	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
+	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 }
 
 //用户钱包发起的合约调用申请
@@ -478,8 +528,9 @@ type SignatureSet struct {
 
 // Token exchange message and verify message
 // App: text
-type TextPayload struct {
-	TextHash []byte `json:"texthash"`
+type DataPayload struct {
+	MainData  []byte `json:"main_data"`
+	ExtraData []byte `json:"extra_data"`
 }
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
@@ -532,4 +583,209 @@ func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte,
 		//TokenSupply:   tokenSupply,
 		//TokenDefine:   tokenDefine,
 	}
+}
+
+func (a *ContractReadSet) Equal(b *ContractReadSet) bool {
+	if b == nil {
+		return false
+	}
+	if !strings.EqualFold(a.Key, b.Key) || !bytes.Equal(a.Value, b.Value) {
+		return false
+	}
+	if a.Version != nil && b.Version != nil {
+		if a.Version.TxIndex != b.Version.TxIndex || a.Version.Height != b.Version.Height {
+			return false
+		}
+	} else if a.Version != b.Version {
+		return false
+	}
+
+	return true
+}
+
+func (a *ContractWriteSet) Equal(b *ContractWriteSet) bool {
+	if b == nil {
+		return false
+	}
+	if !(a.IsDelete == b.IsDelete) || !strings.EqualFold(a.Key, b.Key) || !bytes.Equal(a.Value, b.Value) {
+		return false
+	}
+	return true
+}
+
+func (a *ContractTplPayload) Equal(b *ContractTplPayload) bool {
+	if b == nil {
+		return false
+	}
+	if bytes.Equal(a.TemplateId, b.TemplateId) && strings.EqualFold(a.Name, b.Name) && strings.EqualFold(a.Path, b.Path) &&
+		strings.EqualFold(a.Version, b.Version) && a.Memory == b.Memory && bytes.Equal(a.Bytecode, b.Bytecode) {
+		return true
+	}
+	return false
+}
+
+func (a *ContractDeployPayload) Equal(b *ContractDeployPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.TemplateId, b.TemplateId) || !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Name, b.Name) {
+		return false
+	}
+	if len(a.Args) == len(b.Args) {
+		for i := 0; i < len(a.Args); i++ {
+			if !bytes.Equal(a.Args[i], b.Args[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	if len(a.Jury) == len(b.Jury) {
+		for i := 0; i < len(a.Jury); i++ {
+			if !a.Jury[i].Equal(b.Jury[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	if len(a.ReadSet) == len(b.ReadSet) {
+		for i := 0; i < len(a.ReadSet); i++ {
+			a.ReadSet[i].Equal(&b.ReadSet[i])
+		}
+	} else {
+		return false
+	}
+	if len(a.WriteSet) == len(b.WriteSet) {
+		for i := 0; i < len(a.WriteSet); i++ {
+			a.WriteSet[i].Equal(&b.WriteSet[i])
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractInvokePayload) Equal(b *ContractInvokePayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.FunctionName, b.FunctionName) || !bytes.Equal(a.Payload, b.Payload) {
+		return false
+	}
+	if len(a.Args) == len(b.Args) {
+		for i := 0; i < len(a.Args); i++ {
+			if !bytes.Equal(a.Args[i], b.Args[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	if len(a.ReadSet) == len(b.ReadSet) {
+		for i := 0; i < len(a.ReadSet); i++ {
+			a.ReadSet[i].Equal(&b.ReadSet[i])
+		}
+	} else {
+		return false
+	}
+	if len(a.WriteSet) == len(b.WriteSet) {
+		for i := 0; i < len(a.WriteSet); i++ {
+			a.WriteSet[i].Equal(&b.WriteSet[i])
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractStopPayload) Equal(b *ContractStopPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.ContractId, b.ContractId) {
+		return false
+	}
+	if len(a.Jury) == len(b.Jury) {
+		for i := 0; i < len(a.Jury); i++ {
+			if !a.Jury[i].Equal(b.Jury[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	if len(a.ReadSet) == len(b.ReadSet) {
+		for i := 0; i < len(a.ReadSet); i++ {
+			a.ReadSet[i].Equal(&b.ReadSet[i])
+		}
+	} else {
+		return false
+	}
+	if len(a.WriteSet) == len(b.WriteSet) {
+		for i := 0; i < len(a.WriteSet); i++ {
+			a.WriteSet[i].Equal(&b.WriteSet[i])
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractInstallRequestPayload) Equal(b *ContractInstallRequestPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !strings.EqualFold(a.TplName, b.TplName) ||!strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
+		return false
+	}
+	return true
+}
+
+func (a *ContractDeployRequestPayload) Equal(b *ContractDeployRequestPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.TplId, b.TplId) ||!strings.EqualFold(a.TxId, b.TxId) || a.Timeout != b.Timeout {
+		return false
+	}
+	if len(a.Args) == len(b.Args) {
+		for i := 0; i < len(a.Args); i++ {
+			if !bytes.Equal(a.Args[i], b.Args[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractInvokeRequestPayload) Equal(b *ContractInvokeRequestPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.ContractId, b.ContractId) ||!strings.EqualFold(a.FunctionName, b.FunctionName) || a.Timeout != b.Timeout {
+		return false
+	}
+	if len(a.Args) == len(b.Args) {
+		for i := 0; i < len(a.Args); i++ {
+			if !bytes.Equal(a.Args[i], b.Args[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.ContractId, b.ContractId) ||!strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
+		return false
+	}
+	return true
 }

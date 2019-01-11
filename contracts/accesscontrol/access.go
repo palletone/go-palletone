@@ -24,12 +24,12 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/flogging"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/common/log"
 	"google.golang.org/grpc"
 )
 
-var logger = flogging.MustGetLogger("accessControl")
+//var log = flogging.MustGetLogger("accessControl")
 
 // Authenticator wraps a chaincode service and authenticates
 // chaincode shims (containers)
@@ -98,14 +98,14 @@ func (ac *authenticator) authenticate(msg *pb.ChaincodeMessage, stream grpc.Serv
 	}
 
 	if msg.Type != pb.ChaincodeMessage_REGISTER {
-		logger.Warn("Got message", msg, "but expected a ChaincodeMessage_REGISTER message")
+		log.Warn("Got message", msg, "but expected a ChaincodeMessage_REGISTER message")
 		return errors.New("First message needs to be a register")
 	}
 
 	chaincodeID := &pb.ChaincodeID{}
 	err := proto.Unmarshal(msg.Payload, chaincodeID)
 	if err != nil {
-		logger.Warn("Failed unmarshaling message:", err)
+		log.Warn("Failed unmarshaling message:", err)
 		return err
 	}
 	ccName := chaincodeID.Name
@@ -113,22 +113,22 @@ func (ac *authenticator) authenticate(msg *pb.ChaincodeMessage, stream grpc.Serv
 	hash := extractCertificateHashFromContext(stream.Context())
 	if len(hash) == 0 {
 		errMsg := fmt.Sprintf("TLS is active but chaincode %s didn't send certificate", ccName)
-		logger.Warn(errMsg)
+		log.Warn(errMsg)
 		return errors.New(errMsg)
 	}
 	// Look it up in the mapper
 	registeredName := ac.mapper.lookup(certHash(hash))
 	if registeredName == "" {
 		errMsg := fmt.Sprintf("Chaincode %s with given certificate hash %v not found in registry", ccName, hash)
-		logger.Warn(errMsg)
+		log.Warn(errMsg)
 		return errors.New(errMsg)
 	}
 	if registeredName != ccName {
 		errMsg := fmt.Sprintf("Chaincode %s with given certificate hash %v belongs to a different chaincode", ccName, hash)
-		logger.Warn(errMsg)
+		log.Warn(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 
-	logger.Debug("Chaincode", ccName, "'s authentication is authorized")
+	log.Debug("Chaincode", ccName, "'s authentication is authorized")
 	return nil
 }
