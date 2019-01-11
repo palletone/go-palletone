@@ -79,7 +79,6 @@ type IUnitRepository interface {
 
 	//获得某个分区上的最新不可逆单元
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
-
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -672,12 +671,13 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, 
 	//	log.Info("SaveNumberByHash:", "error", err.Error())
 	//	return fmt.Errorf("Save unit number error, %s", err)
 	//}
-	//step12+ save chain index
+	//step12+ Special process genesis unit
 	if isGenesis {
 		if err := rep.statedb.SaveChainIndex(unit.Header().ChainIndex()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
+		rep.propdb.SetStableUnitHash(unit.Hash())
 	}
 	// step13 update state
 	rep.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
@@ -1169,12 +1169,12 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.MainDa
 	}
 	for _, hash := range hashs {
 		var md modules.MainDataInfo
-		unithash,unitindex,_,err:= unitOp.dagdb.GetTxLookupEntry(hash)
+		unithash, unitindex, _, err := unitOp.dagdb.GetTxLookupEntry(hash)
 		if err != nil {
 			return nil, err
 		}
 
-		header,err := unitOp.dagdb.GetHeader(unithash)
+		header, err := unitOp.dagdb.GetHeader(unithash)
 		if err != nil {
 			return nil, err
 		}
@@ -1184,7 +1184,7 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.MainDa
 		md.ParentsHash = header.ParentsHash[:1]
 		md.Txid = hash
 		md.Timestamp = header.Creationdate
-		mds = append(mds,md)
+		mds = append(mds, md)
 	}
 	return mds, nil
 }
