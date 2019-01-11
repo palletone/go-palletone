@@ -24,8 +24,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strconv"
-	"strings"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -71,13 +69,13 @@ type IDagDb interface {
 	PutTrieSyncProgress(count uint64) error
 	UpdateHeadByBatch(hash common.Hash, number uint64) error
 
-	GetUnit(hash common.Hash) (*modules.Unit, error)
+	//GetUnit(hash common.Hash) (*modules.Unit, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	GetHeader(hash common.Hash) (*modules.Header, error)
-	GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
+	//GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
 	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
@@ -90,7 +88,7 @@ type IDagDb interface {
 	GetHeadFastUnitHash() (common.Hash, error)
 	//GetAllLeafNodes() ([]*modules.Header, error)
 	GetTrieSyncProgress() (uint64, error)
-	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
+	//GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
 	//GetTokenInfo(key string) (*modules.TokenInfo, error)
 	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
 
@@ -570,42 +568,6 @@ func (dagdb *DagDb) GetPrefix(prefix []byte) map[string][]byte {
 
 }
 
-func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
-	// 1. get chainindex
-	//height, err := dagdb.GetNumberWithUnitHash(hash)
-	//if err != nil {
-	//	return nil, err
-	//}
-	////dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
-	//if err != nil {
-	//	log.Error("GetUnit when GetUnitNumber failed", "error:", err)
-	//	return nil, err
-	//}
-	// 2. unit header
-	uHeader, err := dagdb.GetHeader(hash)
-	if err != nil {
-		log.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
-		//log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
-		return nil, err
-	}
-	// get unit hash
-	//uHash := common.Hash{}
-	//uHash.SetBytes(hash.Bytes())
-	// get transaction list
-	txs, err := dagdb.GetUnitTransactions(hash)
-	if err != nil {
-		log.Error("GetUnit when GetUnitTransactions failed , error:", err)
-		return nil, err
-	}
-	// generate unit
-	unit := &modules.Unit{
-		UnitHeader: uHeader,
-		UnitHash:   hash,
-		Txs:        txs,
-	}
-	unit.UnitSize = unit.Size()
-	return unit, nil
-}
 func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
@@ -622,63 +584,64 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	}
 	return txs, nil
 }
-func (dagdb *DagDb) GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error) {
-	i := 0
-	if number.IsMain {
-		i = 1
-	}
-	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	hash, err := dagdb.db.Get([]byte(key))
-	if err != nil {
-		return nil, err
-	}
-	var hex string
-	rlp.DecodeBytes(hash, &hex)
-	h := common.HexToHash(hex)
 
-	return dagdb.GetUnit(h)
-}
-
-func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
-	key := fmt.Sprintf("%s_%s_1_", constants.UNIT_NUMBER_PREFIX, assetID.String())
-
-	data := dagdb.GetPrefix([]byte(key))
-	var irreKey string
-	var irreIndex []string
-	for k := range data {
-		// get the key of max index
-		if sts := strings.Split(k, key); len(sts) == 2 {
-			irreIndex = append(irreIndex, sts[1])
-		}
-	}
-	var max int64
-	for i, v := range irreIndex {
-		if index, err := strconv.ParseInt(v, 10, 64); err == nil {
-			if i == 0 {
-				max = index
-			} else {
-				if max < index {
-					max = index
-				}
-			}
-
-		}
-	}
-	irreKey = fmt.Sprintf(key+"%d", max)
-	rlpUnitHash := data[irreKey]
-	log.Info("============== GetLastIrreversibleUnit max index key is ===================== ", "irreKey", irreKey, "hash", rlpUnitHash)
-	if len(rlpUnitHash) > 0 {
-		var hex string
-		err := rlp.DecodeBytes(rlpUnitHash, &hex)
-		if err != nil {
-			log.Error("GetLastIrreversibleUnit error:" + err.Error())
-			return nil, err
-		}
-		unitHash := common.HexToHash(hex)
-		return dagdb.GetUnit(unitHash)
-	}
-	return nil, errors.New(fmt.Sprintf("the irrekey :%s ,is not found unit's hash.", irreKey))
-}
+//func (dagdb *DagDb) GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error) {
+//	i := 0
+//	if number.IsMain {
+//		i = 1
+//	}
+//	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+//	hash, err := dagdb.db.Get([]byte(key))
+//	if err != nil {
+//		return nil, err
+//	}
+//	var hex string
+//	rlp.DecodeBytes(hash, &hex)
+//	h := common.HexToHash(hex)
+//
+//	return dagdb.GetUnit(h)
+//}
+//
+//func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
+//	key := fmt.Sprintf("%s_%s_1_", constants.UNIT_NUMBER_PREFIX, assetID.String())
+//
+//	data := dagdb.GetPrefix([]byte(key))
+//	var irreKey string
+//	var irreIndex []string
+//	for k := range data {
+//		// get the key of max index
+//		if sts := strings.Split(k, key); len(sts) == 2 {
+//			irreIndex = append(irreIndex, sts[1])
+//		}
+//	}
+//	var max int64
+//	for i, v := range irreIndex {
+//		if index, err := strconv.ParseInt(v, 10, 64); err == nil {
+//			if i == 0 {
+//				max = index
+//			} else {
+//				if max < index {
+//					max = index
+//				}
+//			}
+//
+//		}
+//	}
+//	irreKey = fmt.Sprintf(key+"%d", max)
+//	rlpUnitHash := data[irreKey]
+//	log.Info("============== GetLastIrreversibleUnit max index key is ===================== ", "irreKey", irreKey, "hash", rlpUnitHash)
+//	if len(rlpUnitHash) > 0 {
+//		var hex string
+//		err := rlp.DecodeBytes(rlpUnitHash, &hex)
+//		if err != nil {
+//			log.Error("GetLastIrreversibleUnit error:" + err.Error())
+//			return nil, err
+//		}
+//		unitHash := common.HexToHash(hex)
+//		return dagdb.GetUnit(unitHash)
+//	}
+//	return nil, errors.New(fmt.Sprintf("the irrekey :%s ,is not found unit's hash.", irreKey))
+//}
 
 func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
 	key := append(constants.HEADER_PREFIX, hash.Bytes()...)

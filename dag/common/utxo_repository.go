@@ -611,9 +611,9 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				//dagdb.GetTransaction()
 				_, unitHash, _, _ := dagdb.GetTransaction(txin.PreviousOutPoint.TxHash)
 				//2.通过单元hash获取单元信息
-				unit, _ := dagdb.GetUnit(unitHash)
+				header, _ := dagdb.GetHeader(unitHash)
 				//3.通过单元获取头部信息中的时间戳
-				timestamp := unit.Header().Creationdate
+				timestamp := header.Creationdate
 				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp)
 				awards += award
 			}
