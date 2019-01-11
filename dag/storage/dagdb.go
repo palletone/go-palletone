@@ -21,7 +21,6 @@
 package storage
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -51,17 +50,16 @@ func NewDagDb(db ptndb.Database) *DagDb {
 }
 
 type IDagDb interface {
+	GetGenesisUnitHash() (common.Hash, error)
+	SaveGenesisUnitHash(hash common.Hash) error
 
-	//GetGenesisUnit() (*modules.Unit, error)
-	//SaveUnit(unit *modules.Unit, isGenesis bool) error
-
-	SaveHeader(uHash common.Hash, h *modules.Header) error
+	SaveHeader(h *modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	SaveTransactions(txs *modules.Transactions) error
-	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
-	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
+	//SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
+	//SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	SaveTxLookupEntry(unit *modules.Unit) error
 	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 	//SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
@@ -78,9 +76,9 @@ type IDagDb interface {
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
-	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
+	GetHeader(hash common.Hash) (*modules.Header, error)
 	GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
-	GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error)
+	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
@@ -125,6 +123,20 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	}
 	return result
 }
+func (dagdb *DagDb) GetGenesisUnitHash() (common.Hash, error) {
+	hash := common.Hash{}
+	hashb, err := dagdb.db.Get(constants.GenesisUnitHash)
+	if err != nil {
+		return hash, err
+	}
+	hash.SetBytes(hashb)
+	return hash, nil
+}
+func (dagdb *DagDb) SaveGenesisUnitHash(hash common.Hash) error {
+	log.Debugf("Save GenesisUnitHash:%x", hash.Bytes())
+	return dagdb.db.Put(constants.GenesisUnitHash, hash.Bytes())
+
+}
 
 // ###################### SAVE IMPL START ######################
 /**
@@ -132,57 +144,83 @@ key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 value: unit header rlp encoding bytes
 */
 // save header
-func (dagdb *DagDb) SaveHeader(uHash common.Hash, h *modules.Header) error {
-	// encNum := encodeBlockNumber(h.Number.Index)
-	// key := append(HEADER_PREFIX, encNum...)
-	// key = append(key, h.Number.Bytes()...)
-	// return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
-	key := fmt.Sprintf("%s%v_%s_%s", constants.HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.String())
-	return StoreBytes(dagdb.db, []byte(key), h)
+func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
+	uHash := h.Hash()
+	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
+	err := StoreBytes(dagdb.db, (key), h)
+	if err != nil {
+		log.Error("Save Header error", err.Error())
+		return err
+	}
+
+	return dagdb.saveHeaderHeightIndex(h)
 }
 
-//這是通過modules.ChainIndex存儲hash
-func (dagdb *DagDb) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
-	if number == (modules.ChainIndex{}) {
-		return errors.New("the saving chain_index is null.")
+//为Unit的Height建立索引
+func (dagdb *DagDb) saveHeaderHeightIndex(h *modules.Header) error {
+	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
+	uHash := h.Hash()
+	err := StoreBytes(dagdb.db, idxKey, uHash)
+	if err != nil {
+		log.Error("Save Header height index error", err.Error())
+		return err
 	}
-	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, uHash.String())
-	index := new(modules.ChainIndex)
-	index.AssetID = number.AssetID
-	index.Index = number.Index
-	index.IsMain = number.IsMain
-	if _, err := GetBytes(dagdb.db, []byte(key)); err == nil {
-		if !index.IsMain { // 若index不在主链，则不更新。
-			return nil
-		}
+	return nil
+}
+func (dagdb *DagDb) getUnitHashByHeight(cidx *modules.ChainIndex) (common.Hash, error) {
+	idxKey := append(constants.HEADER_HEIGTH_PREFIX, cidx.Bytes()...)
+	uHash := common.Hash{}
+	data, err := dagdb.db.Get(idxKey)
+	if err != nil {
+		return uHash, err
 	}
-	return StoreBytes(dagdb.db, []byte(key), index)
+	uHash.SetBytes(data)
+	return uHash, nil
 }
 
-//這是通過hash存儲modules.ChainIndex
-func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
-	i := 0
-	if number.IsMain {
-		i = 1
-	}
-	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	if m_data, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key))); err == nil {
-		// step1. 若uHash.String()==str 则无需再次存储。
-		var str string
-		err1 := rlp.DecodeBytes(m_data, &str)
-		if err1 == nil {
-			if str == uHash.String() {
-				return nil // 无需重复存储
-			}
-		}
-		// step2. 若不相等，则更新
-		// 确定前一个为主链单元，保存该number到侧链上。
-		i = 0
-	}
-	key = fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	//log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
-	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
-}
+//
+////這是通過modules.ChainIndex存儲hash
+//func (dagdb *DagDb) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
+//	if number == (modules.ChainIndex{}) {
+//		return errors.New("the saving chain_index is null.")
+//	}
+//	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, uHash.String())
+//	index := new(modules.ChainIndex)
+//	index.AssetID = number.AssetID
+//	index.Index = number.Index
+//	index.IsMain = number.IsMain
+//	if _, err := GetBytes(dagdb.db, []byte(key)); err == nil {
+//		if !index.IsMain { // 若index不在主链，则不更新。
+//			return nil
+//		}
+//	}
+//	return StoreBytes(dagdb.db, []byte(key), index)
+//}
+//
+////這是通過hash存儲modules.ChainIndex
+//func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
+//	i := 0
+//	if number.IsMain {
+//		i = 1
+//	}
+//	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+//	if m_data, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key))); err == nil {
+//		// step1. 若uHash.String()==str 则无需再次存储。
+//		var str string
+//		err1 := rlp.DecodeBytes(m_data, &str)
+//		if err1 == nil {
+//			if str == uHash.String() {
+//				return nil // 无需重复存储
+//			}
+//		}
+//		// step2. 若不相等，则更新
+//		// 确定前一个为主链单元，保存该number到侧链上。
+//		i = 0
+//	}
+//	key = fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+//	//log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
+//	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
+//}
 
 //func (dagdb *DagDb) UpdateParentChainIndexByHash(hash common.Hash, index modules.ChainIndex) error {
 //	index.IsMain = true
@@ -358,6 +396,7 @@ func (dagdb *DagDb) saveAddrTxHashByKey(key []byte, addr string, hash common.Has
 }
 
 func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
+	log.Debugf("Save tx lookup entry, tx count:%d", len(unit.Txs))
 	for i, tx := range unit.Transactions() {
 		in := &modules.TxLookupEntry{
 			UnitHash:  unit.Hash(),
@@ -365,7 +404,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 			Index:     uint64(i),
 		}
 
-		if err := StoreBytes(dagdb.db, append(constants.LookupPrefix, []byte(tx.Hash().String())...), in); err != nil {
+		if err := StoreBytes(dagdb.db, append(constants.LookupPrefix, tx.Hash().Bytes()...), in); err != nil {
 			return err
 		}
 	}
@@ -542,7 +581,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 		return nil, err
 	}
 	// 2. unit header
-	uHeader, err := dagdb.GetHeader(hash, height)
+	uHeader, err := dagdb.GetHeader(hash)
 	if err != nil {
 		log.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
 		log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
@@ -640,45 +679,24 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 	return nil, errors.New(fmt.Sprintf("the irrekey :%s ,is not found unit's hash.", irreKey))
 }
 
-func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
-	// encNum := encodeBlockNumber(index.Index)
-	// key := append(HEADER_PREFIX, encNum...)
-	// key = append(key, index.Bytes()...)
-	// header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
-	key := fmt.Sprintf("%s%v_%s_%s", constants.HEADER_PREFIX, index.Index, index.String(), hash.String())
-	//dagdb.logger.Debug("GetHeader by Key:", "header's key", key)
-	header_bytes, err := dagdb.db.Get([]byte(key))
-	// rlp  to  Header struct
+func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
+	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
+	header := new(modules.Header)
+	err := retrieve(dagdb.db, key, header)
 	if err != nil {
 		return nil, err
 	}
-	header := new(modules.Header)
-	if err := rlp.Decode(bytes.NewReader(header_bytes), header); err != nil {
-		log.Error("Invalid unit header rlp:", "error", err)
-		return nil, err
-	}
 	return header, nil
+
 }
 
 // GetHeaderByHeight ,first :get hash  , return header.
-// TODO
-func (dagdb *DagDb) GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error) {
-	encNum := encodeBlockNumber(index.Index)
-	key := append(constants.HEADER_PREFIX, encNum...)
-	key = append(key, index.Bytes()...)
-
-	data := getprefix(dagdb.db, key)
-	if data == nil || len(data) <= 0 {
-		return nil, fmt.Errorf("No such height header")
+func (dagdb *DagDb) GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error) {
+	hash, err := dagdb.getUnitHashByHeight(index)
+	if err != nil {
+		return nil, err
 	}
-	for _, v := range data {
-		header := new(modules.Header)
-		if err := rlp.Decode(bytes.NewReader(v), header); err != nil {
-			return nil, fmt.Errorf("Invalid unit header rlp: %s", err.Error())
-		}
-		return header, nil
-	}
-	return nil, fmt.Errorf("No such height header")
+	return dagdb.GetHeader(hash)
 }
 
 //func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
@@ -692,13 +710,13 @@ func (dagdb *DagDb) GetHeaderByHeight(index modules.ChainIndex) (*modules.Header
 //	return header_bytes
 //}
 
-func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Header {
-	unit, err := dagdb.GetUnitFormIndex(number)
-	if err != nil {
-		return unit.UnitHeader
-	}
-	return nil
-}
+//func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Header {
+//	unit, err := dagdb.GetUnitFormIndex(number)
+//	if err != nil {
+//		return unit.UnitHeader
+//	}
+//	return nil
+//}
 
 // GetTxLookupEntry return unit's hash ,number
 func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {

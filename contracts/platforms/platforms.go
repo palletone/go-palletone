@@ -83,7 +83,6 @@ func GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return platform.GetChainCodePayload(spec)
 }
 

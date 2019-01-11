@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 
+	"bytes"
 )
 
 type MessageType byte
@@ -139,7 +140,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 }
 
 func (msg *Message) CompareMessages(inMsg *Message) bool {
-	return true //todo del
+	//return true //todo del
 
 	if inMsg == nil || msg.App != inMsg.App {
 		return false
@@ -148,35 +149,28 @@ func (msg *Message) CompareMessages(inMsg *Message) bool {
 	case APP_CONTRACT_TPL:
 		payA, _ := msg.Payload.(*ContractTplPayload)
 		payB, _ := inMsg.Payload.(*ContractTplPayload)
-		return reflect.DeepEqual(payA, payB)
+		return payA.Equal(payB)
 	case APP_CONTRACT_DEPLOY:
 		payA, _ := msg.Payload.(*ContractDeployPayload)
 		payB, _ := inMsg.Payload.(*ContractDeployPayload)
-		//if !bytes.Equal(payA.TemplateId, payB.TemplateId) {
-		//	return false
-		//}
-		//if !bytes.Equal(payA.ContractId, payB.ContractId) {
-		//	return false
-		//}
-
-		return reflect.DeepEqual(payA, payB)
+		return payA.Equal(payB)
 	case APP_CONTRACT_INVOKE:
 		payA, _ := msg.Payload.(*ContractInvokePayload)
 		payB, _ := inMsg.Payload.(*ContractInvokePayload)
-		return reflect.DeepEqual(payA, payB)
+		return payA.Equal(payB)
 	case APP_CONTRACT_STOP:
 		payA, _ := msg.Payload.(*ContractStopPayload)
 		payB, _ := inMsg.Payload.(*ContractStopPayload)
-		return reflect.DeepEqual(payA, payB)
+		return payA.Equal(payB)
 	case APP_SIGNATURE:
-		payA, _ := msg.Payload.(*SignaturePayload)
-		payB, _ := inMsg.Payload.(*SignaturePayload)
-		return reflect.DeepEqual(payA, payB)
-
+		//todo
+		//payA, _ := msg.Payload.(*SignaturePayload)
+		//payB, _ := inMsg.Payload.(*SignaturePayload)
+		return true
 	case APP_CONTRACT_TPL_REQUEST:
 		payA, _ := msg.Payload.(*ContractInstallRequestPayload)
 		payB, _ := inMsg.Payload.(*ContractInstallRequestPayload)
-		return reflect.DeepEqual(payA, payB)
+		return payA.Equal(payB)
 	case APP_CONTRACT_DEPLOY_REQUEST:
 		payA, _ := msg.Payload.(*ContractDeployRequestPayload)
 		payB, _ := inMsg.Payload.(*ContractDeployRequestPayload)
@@ -184,11 +178,11 @@ func (msg *Message) CompareMessages(inMsg *Message) bool {
 	case APP_CONTRACT_INVOKE_REQUEST:
 		payA, _ := msg.Payload.(*ContractInvokeRequestPayload)
 		payB, _ := inMsg.Payload.(*ContractInvokeRequestPayload)
-		return payA == payB
+		return payA.Equal(payB)
 	case APP_CONTRACT_STOP_REQUEST:
 		payA, _ := msg.Payload.(*ContractStopRequestPayload)
 		payB, _ := inMsg.Payload.(*ContractStopRequestPayload)
-		return reflect.DeepEqual(payA, payB)
+		return payA.Equal(payB)
 	default:
 		return false
 	}
@@ -589,4 +583,209 @@ func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte,
 		//TokenSupply:   tokenSupply,
 		//TokenDefine:   tokenDefine,
 	}
+}
+
+func (a *ContractReadSet) Equal(b *ContractReadSet) bool {
+	if b == nil {
+		return false
+	}
+	if !strings.EqualFold(a.Key, b.Key) || !bytes.Equal(a.Value, b.Value) {
+		return false
+	}
+	if a.Version != nil && b.Version != nil {
+		if a.Version.TxIndex != b.Version.TxIndex || a.Version.Height != b.Version.Height {
+			return false
+		}
+	} else if a.Version != b.Version {
+		return false
+	}
+
+	return true
+}
+
+func (a *ContractWriteSet) Equal(b *ContractWriteSet) bool {
+	if b == nil {
+		return false
+	}
+	if !(a.IsDelete == b.IsDelete) || !strings.EqualFold(a.Key, b.Key) || !bytes.Equal(a.Value, b.Value) {
+		return false
+	}
+	return true
+}
+
+func (a *ContractTplPayload) Equal(b *ContractTplPayload) bool {
+	if b == nil {
+		return false
+	}
+	if bytes.Equal(a.TemplateId, b.TemplateId) && strings.EqualFold(a.Name, b.Name) && strings.EqualFold(a.Path, b.Path) &&
+		strings.EqualFold(a.Version, b.Version) && a.Memory == b.Memory && bytes.Equal(a.Bytecode, b.Bytecode) {
+		return true
+	}
+	return false
+}
+
+func (a *ContractDeployPayload) Equal(b *ContractDeployPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.TemplateId, b.TemplateId) || !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Name, b.Name) {
+		return false
+	}
+	if len(a.Args) == len(b.Args) {
+		for i := 0; i < len(a.Args); i++ {
+			if !bytes.Equal(a.Args[i], b.Args[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	if len(a.Jury) == len(b.Jury) {
+		for i := 0; i < len(a.Jury); i++ {
+			if !a.Jury[i].Equal(b.Jury[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	if len(a.ReadSet) == len(b.ReadSet) {
+		for i := 0; i < len(a.ReadSet); i++ {
+			a.ReadSet[i].Equal(&b.ReadSet[i])
+		}
+	} else {
+		return false
+	}
+	if len(a.WriteSet) == len(b.WriteSet) {
+		for i := 0; i < len(a.WriteSet); i++ {
+			a.WriteSet[i].Equal(&b.WriteSet[i])
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractInvokePayload) Equal(b *ContractInvokePayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.FunctionName, b.FunctionName) || !bytes.Equal(a.Payload, b.Payload) {
+		return false
+	}
+	if len(a.Args) == len(b.Args) {
+		for i := 0; i < len(a.Args); i++ {
+			if !bytes.Equal(a.Args[i], b.Args[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	if len(a.ReadSet) == len(b.ReadSet) {
+		for i := 0; i < len(a.ReadSet); i++ {
+			a.ReadSet[i].Equal(&b.ReadSet[i])
+		}
+	} else {
+		return false
+	}
+	if len(a.WriteSet) == len(b.WriteSet) {
+		for i := 0; i < len(a.WriteSet); i++ {
+			a.WriteSet[i].Equal(&b.WriteSet[i])
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractStopPayload) Equal(b *ContractStopPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.ContractId, b.ContractId) {
+		return false
+	}
+	if len(a.Jury) == len(b.Jury) {
+		for i := 0; i < len(a.Jury); i++ {
+			if !a.Jury[i].Equal(b.Jury[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	if len(a.ReadSet) == len(b.ReadSet) {
+		for i := 0; i < len(a.ReadSet); i++ {
+			a.ReadSet[i].Equal(&b.ReadSet[i])
+		}
+	} else {
+		return false
+	}
+	if len(a.WriteSet) == len(b.WriteSet) {
+		for i := 0; i < len(a.WriteSet); i++ {
+			a.WriteSet[i].Equal(&b.WriteSet[i])
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractInstallRequestPayload) Equal(b *ContractInstallRequestPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !strings.EqualFold(a.TplName, b.TplName) ||!strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
+		return false
+	}
+	return true
+}
+
+func (a *ContractDeployRequestPayload) Equal(b *ContractDeployRequestPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.TplId, b.TplId) ||!strings.EqualFold(a.TxId, b.TxId) || a.Timeout != b.Timeout {
+		return false
+	}
+	if len(a.Args) == len(b.Args) {
+		for i := 0; i < len(a.Args); i++ {
+			if !bytes.Equal(a.Args[i], b.Args[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractInvokeRequestPayload) Equal(b *ContractInvokeRequestPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.ContractId, b.ContractId) ||!strings.EqualFold(a.FunctionName, b.FunctionName) || a.Timeout != b.Timeout {
+		return false
+	}
+	if len(a.Args) == len(b.Args) {
+		for i := 0; i < len(a.Args); i++ {
+			if !bytes.Equal(a.Args[i], b.Args[i]) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+	return true
+}
+
+func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.ContractId, b.ContractId) ||!strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
+		return false
+	}
+	return true
 }

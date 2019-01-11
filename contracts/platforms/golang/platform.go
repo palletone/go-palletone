@@ -201,7 +201,6 @@ func (goPlatform *Platform) ValidateDeploymentSpec(cds *pb.ChaincodeDeploymentSp
 // For anything that needs to be vendored, we simply update its path specification.
 // Everything else, we pass through untouched.
 func vendorDependencies(pkg string, files Sources) {
-
 	exclusions := make([]string, 0)
 	elements := strings.Split(pkg, "/")
 
@@ -265,44 +264,71 @@ func vendorDependencies(pkg string, files Sources) {
 }
 
 func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
-	var err error
-
-	log.Info("enter")
-	defer log.Info("exit")
-
-	code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
+	log.Info("GetChainCodePayload enter")
+	defer log.Info("GetChainCodePayload exit")
+	codeDescriptor, err := getCodeDescriptor(spec) //获取codeDescriptor，即构造CodeDescriptor，Gopath为go环境gopath路径，Pkg为代码相对路径
 	if err != nil {
+		log.Info("getCodeDescriptor err:","error",err)
 		return nil, err
 	}
-	//log.Infof("============path[%s], pkg[%s]", code.Gopath, code.Pkg)	//============path[/home/glh/go], pkg[chaincode/example01]
-
-	fileMap, err := findSource(code.Gopath, code.Pkg) //遍历链码路径下文件
+	tld := filepath.Join(codeDescriptor.Gopath, "src", codeDescriptor.Pkg)
+	sourcefiles,err := getAllFiles(tld)
 	if err != nil {
-		return nil, err
+		log.Info("getAllFiles err:","error",err)
+		return nil,err
 	}
-
-	files := make(Sources, 0)
-	for _, file := range fileMap {
-		files = append(files, file)
-	}
-
-	vendorDependencies(code.Pkg, files)
-	sort.Sort(files)
-
 	payload := bytes.NewBuffer(nil)
 	gw := gzip.NewWriter(payload)
 	tw := tar.NewWriter(gw)
-	for _, file := range files {
-		err = cutil.WriteFileToPackage(file.Path, file.Name, tw)
+	l := len(codeDescriptor.Gopath)
+	for _, file := range sourcefiles {
+		err = cutil.WriteFileToPackage(file.path, file.name[l+1:], tw)
 		if err != nil {
-			return nil, fmt.Errorf("Error writing %s to tar: %s", file.Name, err)
+			return nil, fmt.Errorf("Error writing %s to tar: %s", file.name, err)
 		}
 	}
 	tw.Close()
 	gw.Close()
-
 	return payload.Bytes(), nil
 }
+
+//获取指定目录下的所有文件,包含子目录下的文件
+func getAllFiles(dirPth string) ([]SourceFile,error) {
+	var dirs []string
+	sourcefiles := []SourceFile{}
+	dir, err := ioutil.ReadDir(dirPth)
+	if err != nil {
+		return nil, err
+	}
+	PthSep := string(os.PathSeparator)
+	//suffix = strings.ToUpper(suffix) //忽略后缀匹配的大小写
+	for _, fi := range dir {
+		if fi.IsDir() { // 目录, 递归遍历
+			dirs = append(dirs, dirPth+PthSep+fi.Name())
+			getAllFiles(dirPth + PthSep + fi.Name())
+		} else {
+			// 过滤指定格式
+			ext := filepath.Ext(fi.Name())
+			// we only want 'fileTypes' source files at this point
+			if _, ok := includeFileTypes[ext]; ok {
+				sourceFile := SourceFile{
+					path:dirPth+PthSep+fi.Name(),
+					name:dirPth+PthSep+fi.Name(),
+				}
+				sourcefiles = append(sourcefiles,sourceFile)
+			}
+		}
+	}
+	// 读取子目录下文件
+	for _, table := range dirs {
+		temp, _ := getAllFiles(table)
+		for _, temp1 := range temp {
+			sourcefiles = append(sourcefiles,temp1)
+		}
+	}
+	return sourcefiles, nil
+}
+
 
 // Generates a deployment payload for GOLANG as a series of src/$pkg entries in .tar.gz format
 func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
@@ -314,7 +340,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// --------------------------------------------------------------------------------------
 	// retrieve a CodeDescriptor from either HTTP or the filesystem
 	// --------------------------------------------------------------------------------------
-	code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
+	code, err := getCodeDescriptor(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
 	if err != nil {
 		return nil, err
 	}

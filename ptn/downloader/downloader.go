@@ -152,7 +152,7 @@ type Downloader struct {
 // LightDag encapsulates functions required to synchronise a light chain.
 type LightDag interface {
 	HasHeader(common.Hash, uint64) bool
-	GetHeaderByHash(common.Hash) *modules.Header
+	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	CurrentHeader() *modules.Header
 	//InsertHeaderDag([]*modules.Header, int) (int, error)
 	//GetAllLeafNodes() ([]*modules.Header, error)
@@ -739,7 +739,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 					end = check
 					break
 				}
-				header := d.dag.GetHeaderByHash(headers[0].Hash()) // Independent of sync mode, header surely exists
+				header, _ := d.dag.GetHeaderByHash(headers[0].Hash()) // Independent of sync mode, header surely exists
 				if header.Number.Index != check {
 					log.Debug("Received non requested header", "number", header.Number.Index, "hash", header.Hash(), "request", check)
 					return 0, errBadPeer
@@ -1228,8 +1228,8 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				// R: Nothing to give
 				if d.mode != LightSync {
 					head := d.dag.CurrentUnit()
-
-					if !gotHeaders && index > d.dag.GetHeaderByHash(head.Hash()).Index() {
+					dbhead, _ := d.dag.GetHeaderByHash(head.Hash())
+					if !gotHeaders && index > dbhead.Index() {
 						return errStallingPeer
 					}
 				}
