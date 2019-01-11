@@ -624,15 +624,15 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	}
 	// step11. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SaveHashNumber:", "error", err.Error())
-		return fmt.Errorf("Save unit number hash error, %s", err)
-	}
-	// step12 SaveHashByNumber
-	if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SaveNumberByHash:", "error", err.Error())
-		return fmt.Errorf("Save unit number error, %s", err)
-	}
+	//if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Info("SaveHashNumber:", "error", err.Error())
+	//	return fmt.Errorf("Save unit number hash error, %s", err)
+	//}
+	//// step12 SaveHashByNumber
+	//if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Info("SaveNumberByHash:", "error", err.Error())
+	//	return fmt.Errorf("Save unit number error, %s", err)
+	//}
 	//step12+ save chain index
 	if isGenesis {
 		if err := unitOp.statedb.SaveChainIndex(unit.Header().ChainIndex()); err != nil {

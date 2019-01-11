@@ -58,8 +58,8 @@ type IDagDb interface {
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	SaveTransactions(txs *modules.Transactions) error
-	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
-	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
+	//SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
+	//SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	SaveTxLookupEntry(unit *modules.Unit) error
 	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 	//SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
@@ -178,48 +178,49 @@ func (dagdb *DagDb) getUnitHashByHeight(cidx *modules.ChainIndex) (common.Hash, 
 	return uHash, nil
 }
 
-//這是通過modules.ChainIndex存儲hash
-func (dagdb *DagDb) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
-	if number == (modules.ChainIndex{}) {
-		return errors.New("the saving chain_index is null.")
-	}
-	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, uHash.String())
-	index := new(modules.ChainIndex)
-	index.AssetID = number.AssetID
-	index.Index = number.Index
-	index.IsMain = number.IsMain
-	if _, err := GetBytes(dagdb.db, []byte(key)); err == nil {
-		if !index.IsMain { // 若index不在主链，则不更新。
-			return nil
-		}
-	}
-	return StoreBytes(dagdb.db, []byte(key), index)
-}
-
-//這是通過hash存儲modules.ChainIndex
-func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
-	i := 0
-	if number.IsMain {
-		i = 1
-	}
-	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	if m_data, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key))); err == nil {
-		// step1. 若uHash.String()==str 则无需再次存储。
-		var str string
-		err1 := rlp.DecodeBytes(m_data, &str)
-		if err1 == nil {
-			if str == uHash.String() {
-				return nil // 无需重复存储
-			}
-		}
-		// step2. 若不相等，则更新
-		// 确定前一个为主链单元，保存该number到侧链上。
-		i = 0
-	}
-	key = fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	//log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
-	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
-}
+//
+////這是通過modules.ChainIndex存儲hash
+//func (dagdb *DagDb) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
+//	if number == (modules.ChainIndex{}) {
+//		return errors.New("the saving chain_index is null.")
+//	}
+//	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, uHash.String())
+//	index := new(modules.ChainIndex)
+//	index.AssetID = number.AssetID
+//	index.Index = number.Index
+//	index.IsMain = number.IsMain
+//	if _, err := GetBytes(dagdb.db, []byte(key)); err == nil {
+//		if !index.IsMain { // 若index不在主链，则不更新。
+//			return nil
+//		}
+//	}
+//	return StoreBytes(dagdb.db, []byte(key), index)
+//}
+//
+////這是通過hash存儲modules.ChainIndex
+//func (dagdb *DagDb) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
+//	i := 0
+//	if number.IsMain {
+//		i = 1
+//	}
+//	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+//	if m_data, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key))); err == nil {
+//		// step1. 若uHash.String()==str 则无需再次存储。
+//		var str string
+//		err1 := rlp.DecodeBytes(m_data, &str)
+//		if err1 == nil {
+//			if str == uHash.String() {
+//				return nil // 无需重复存储
+//			}
+//		}
+//		// step2. 若不相等，则更新
+//		// 确定前一个为主链单元，保存该number到侧链上。
+//		i = 0
+//	}
+//	key = fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+//	//log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
+//	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
+//}
 
 //func (dagdb *DagDb) UpdateParentChainIndexByHash(hash common.Hash, index modules.ChainIndex) error {
 //	index.IsMain = true
@@ -395,6 +396,7 @@ func (dagdb *DagDb) saveAddrTxHashByKey(key []byte, addr string, hash common.Has
 }
 
 func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
+	log.Debugf("Save tx lookup entry, tx count:%d", len(unit.Txs))
 	for i, tx := range unit.Transactions() {
 		in := &modules.TxLookupEntry{
 			UnitHash:  unit.Hash(),
@@ -402,7 +404,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 			Index:     uint64(i),
 		}
 
-		if err := StoreBytes(dagdb.db, append(constants.LookupPrefix, []byte(tx.Hash().String())...), in); err != nil {
+		if err := StoreBytes(dagdb.db, append(constants.LookupPrefix, tx.Hash().Bytes()...), in); err != nil {
 			return err
 		}
 	}
