@@ -554,7 +554,7 @@ func (unitOp *UnitRepository) getRequesterAddress(tx *modules.Transaction) (comm
 save genesis unit data
 */
 func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error {
-
+	log.Debugf("Try to save a new unit :%s", unit.Hash().String())
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")

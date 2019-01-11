@@ -25,6 +25,7 @@ import (
 
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -253,7 +254,7 @@ type ChainIndex struct {
 }
 
 func (height ChainIndex) String() string {
-	return common.Bytes2Hex(height.Bytes())
+	return fmt.Sprintf("%s-%d", height.AssetID.ToAssetId(), height.Index)
 }
 func (height ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)
