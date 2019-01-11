@@ -298,7 +298,6 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 // SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
 // @author Albert·Gou
 func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
-	//p.knownBlocks.Add(newUnit.UnitHash)
 	return p2p.Send(p.rw, NewProducedUnitMsg, newUnit)
 }
 
