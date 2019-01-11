@@ -29,7 +29,8 @@ type PaymentJson struct {
 type ProofJson struct {
     Inputs        []InputJson           `json:"inputs"`
 	Outputs       []OutputJson          `json:"outputs"`
-	Record        string                `json:"record"`
+	Proof         string                `json:"proof"`
+    Extra         string                `json:"extra"`
 }
 type TxJson struct {
 	Payload []PaymentJson  `json:"payload"`

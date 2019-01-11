@@ -127,8 +127,8 @@ func GetUsrCCList() {
 //install but not into db
 func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
 	log.Infof("==========install enter=======")
+	defer log.Infof("==========install exit=======")
 	log.Infof("name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
-	defer log.Infof("-----------install exit--------")
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
@@ -140,13 +140,11 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	if err != nil {
 		return nil, err
 	}
-
 	var buffer bytes.Buffer
 	buffer.Write([]byte(ccName))
 	buffer.Write([]byte(ccPath))
 	buffer.Write([]byte(ccVersion))
 	tpid := cp.Keccak256Hash(buffer.Bytes())
-
 	payloadUnit := &md.ContractTplPayload{
 		TemplateId: []byte(tpid[:]),
 		Name:       ccName,
@@ -154,12 +152,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Version:    ccVersion,
 		Bytecode:   paylod,
 	}
-
-	//test
-	tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
-	listAdd(tcc)
-	log.Infof("template id [%v]", tcc.templateId)
-
+	log.Infof("user contract template id [%v]", payloadUnit.TemplateId)
 	return payloadUnit, nil
 }
 
@@ -211,7 +204,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 	}
 
 	//err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
-	err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
+	err = ucc.DeployUserCC(nil,spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.New("Deploy fail")
 	}
@@ -234,12 +227,11 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 
 func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Infof("==========Deploy enter=======")
-	defer log.Infof("-----------Deploy exit--------")
+	defer log.Infof("==========Deploy exit=======")
 	log.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txId)
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
-
 	if chainID != "" {
 		setChainId = chainID
 	}
@@ -253,36 +245,16 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		},
 		ChaincodeId: &pb.ChaincodeID{},
 	}
-	templateCC, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
+	templateCC,chaincodeData, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 	if err != nil {
 		log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, err)
 		return nil, nil, err
-	}
-
-	//test!!!!!!
-	//todo del
-	if txId == "" || templateCC.Name == "" || templateCC.Path == "" {
-		log.Errorf("cc param is null")
-		//test tmp
-		tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}
-		listAdd(tcc)
-		tmpcc, err := listGet(templateId)
-		if err == nil {
-			templateCC.Name = tmpcc.name
-			templateCC.Path = tmpcc.path
-			templateCC.Version = tmpcc.vers
-		} else {
-			errMsg := fmt.Sprintf("Deploy not find tplId[%s] in list", hex.EncodeToString(templateId))
-			log.Error(errMsg)
-			return nil, nil, errors.New(errMsg)
-		}
 	}
 	txsim, err := mksupt.GetTxSimulator(idag, chainID, txId)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
-
-	usrccName := templateCC.Name + "-" + txId 
+	usrccName := templateCC.Name + "-" + txId
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -290,14 +262,13 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		InitArgs: args,
 		Enabled:  true,
 	}
-
 	chaincodeID := &pb.ChaincodeID{
 		Name:    usrcc.Name,
 		Path:    usrcc.Path,
 		Version: usrcc.Version,
 	}
 	spec.ChaincodeId = chaincodeID
-	err = ucc.DeployUserCC(spec, setChainId, usrcc, txId, txsim, setTimeOut)
+	err = ucc.DeployUserCC(chaincodeData,spec, setChainId, usrcc, txId, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}

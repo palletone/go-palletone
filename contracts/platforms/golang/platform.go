@@ -265,30 +265,22 @@ func vendorDependencies(pkg string, files Sources) {
 }
 
 func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
-	var err error
-
-	log.Info("enter")
-	defer log.Info("exit")
-
-	code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
+	log.Info("GetChainCodePayload enter")
+	defer log.Info("GetChainCodePayload exit")
+	codeDescriptor, err := getCodeDescriptor(spec) //获取codeDescriptor，即构造CodeDescriptor，Gopath为go环境gopath路径，Pkg为代码相对路径
 	if err != nil {
 		return nil, err
 	}
-	//log.Infof("============path[%s], pkg[%s]", code.Gopath, code.Pkg)	//============path[/home/glh/go], pkg[chaincode/example01]
-
-	fileMap, err := findSource(code.Gopath, code.Pkg) //遍历链码路径下文件
+	fileMap, err := findSource(codeDescriptor.Gopath, codeDescriptor.Pkg) //遍历链码路径下文件
 	if err != nil {
 		return nil, err
 	}
-
 	files := make(Sources, 0)
 	for _, file := range fileMap {
 		files = append(files, file)
 	}
-
-	vendorDependencies(code.Pkg, files)
-	sort.Sort(files)
-
+	//vendorDependencies(code.Pkg, files)
+	//sort.Sort(files)
 	payload := bytes.NewBuffer(nil)
 	gw := gzip.NewWriter(payload)
 	tw := tar.NewWriter(gw)
@@ -300,7 +292,6 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 	}
 	tw.Close()
 	gw.Close()
-
 	return payload.Bytes(), nil
 }
 
@@ -314,7 +305,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// --------------------------------------------------------------------------------------
 	// retrieve a CodeDescriptor from either HTTP or the filesystem
 	// --------------------------------------------------------------------------------------
-	code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
+	code, err := getCodeDescriptor(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径
 	if err != nil {
 		return nil, err
 	}
