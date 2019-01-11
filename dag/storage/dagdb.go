@@ -152,7 +152,7 @@ func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
 		log.Error("Save Header error", err.Error())
 		return err
 	}
-
+	log.Debugf("Save header for unit: %x", uHash.Bytes())
 	return dagdb.saveHeaderHeightIndex(h)
 }
 
@@ -165,6 +165,7 @@ func (dagdb *DagDb) saveHeaderHeightIndex(h *modules.Header) error {
 		log.Error("Save Header height index error", err.Error())
 		return err
 	}
+	log.Debugf("Save header number %s for unit: %x", h.Number.String(), uHash.Bytes())
 	return nil
 }
 func (dagdb *DagDb) getUnitHashByHeight(cidx *modules.ChainIndex) (common.Hash, error) {
@@ -571,27 +572,27 @@ func (dagdb *DagDb) GetPrefix(prefix []byte) map[string][]byte {
 
 func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	// 1. get chainindex
-	height, err := dagdb.GetNumberWithUnitHash(hash)
-	if err != nil {
-		return nil, err
-	}
-	//dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
-	if err != nil {
-		log.Error("GetUnit when GetUnitNumber failed", "error:", err)
-		return nil, err
-	}
+	//height, err := dagdb.GetNumberWithUnitHash(hash)
+	//if err != nil {
+	//	return nil, err
+	//}
+	////dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
+	//if err != nil {
+	//	log.Error("GetUnit when GetUnitNumber failed", "error:", err)
+	//	return nil, err
+	//}
 	// 2. unit header
 	uHeader, err := dagdb.GetHeader(hash)
 	if err != nil {
 		log.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
-		log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
+		//log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}
 	// get unit hash
-	uHash := common.Hash{}
-	uHash.SetBytes(hash.Bytes())
+	//uHash := common.Hash{}
+	//uHash.SetBytes(hash.Bytes())
 	// get transaction list
-	txs, err := dagdb.GetUnitTransactions(uHash)
+	txs, err := dagdb.GetUnitTransactions(hash)
 	if err != nil {
 		log.Error("GetUnit when GetUnitTransactions failed , error:", err)
 		return nil, err
@@ -599,7 +600,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	// generate unit
 	unit := &modules.Unit{
 		UnitHeader: uHeader,
-		UnitHash:   uHash,
+		UnitHash:   hash,
 		Txs:        txs,
 	}
 	unit.UnitSize = unit.Size()
@@ -720,7 +721,7 @@ func (dagdb *DagDb) GetHeaderByHeight(index *modules.ChainIndex) (*modules.Heade
 
 // GetTxLookupEntry return unit's hash ,number
 func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
-	data, err0 := dagdb.db.Get(append(constants.LookupPrefix, []byte(hash.String())...))
+	data, err0 := dagdb.db.Get(append(constants.LookupPrefix, hash.Bytes()...))
 	if len(data) == 0 {
 		return common.Hash{}, 0, 0, errors.New("not found legal data.")
 	}
