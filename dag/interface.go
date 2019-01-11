@@ -47,10 +47,9 @@ type IDag interface {
 	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
-	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	// GetHeaderByHash retrieves a header from the local chain.
-	GetHeaderByHash(common.Hash) *modules.Header
-	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
+	GetHeaderByHash(common.Hash) (*modules.Header, error)
 
 	//GetPrefix(prefix string) map[string][]byte
 
@@ -76,7 +75,7 @@ type IDag interface {
 	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
 
 	FastSyncCommitHead(common.Hash) error
-	GetGenesisUnit(index uint64) (*modules.Unit, error)
+	GetGenesisUnit() (*modules.Unit, error)
 
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)

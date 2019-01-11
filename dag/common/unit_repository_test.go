@@ -115,7 +115,7 @@ func TestSaveUnit(t *testing.T) {
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
-		Height:  rep.GenesisHeight(),
+		Height:  modules.ChainIndex{},
 		TxIndex: 0,
 	}})
 	writeSet := []modules.ContractWriteSet{
@@ -329,7 +329,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 }
 
 func TestContractTplPayloadTransactionRLP(t *testing.T) {
-	rep := mockUnitRepository()
+	//rep := mockUnitRepository()
 	// TODO test ContractTplPayload
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: []byte("contract_template0000"),
@@ -339,7 +339,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 	}
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
-		Height:  rep.GenesisHeight(),
+		Height:  modules.ChainIndex{},
 		TxIndex: 0,
 	}})
 	tx1 := modules.Transaction{
@@ -386,11 +386,11 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 }
 
 func TestContractDeployPayloadTransactionRLP(t *testing.T) {
-	rep := mockUnitRepository()
+	//rep := mockUnitRepository()
 	// TODO test ContractTplPayload
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
-		Height:  rep.GenesisHeight(),
+		Height:  modules.ChainIndex{},
 		TxIndex: 0,
 	}})
 	writeSet := []modules.ContractWriteSet{

@@ -10,6 +10,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 )
 
 func localIsMinSignature(tx *modules.Transaction) bool {
@@ -303,18 +304,11 @@ func getTxSigNum(tx *modules.Transaction) int {
 }
 
 func checkTxValid(tx *modules.Transaction) bool {
-
 	if tx == nil {
 		return false
 	}
 	var sigs []modules.SignatureSet
 	tmpTx := &modules.Transaction{}
-
-	//tmpTx.TxId = tx.TxId
-	//if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()){
-	//log.Info("ValidateTxSig", "transaction hash :", tx.Hash().Bytes())
-	//	return false
-	//}
 	//todo 检查msg的有效性
 
 	for _, msg := range tx.TxMessages {
@@ -327,11 +321,13 @@ func checkTxValid(tx *modules.Transaction) bool {
 	//printTxInfo(tmpTx)
 	if len(sigs) > 0 {
 		for i := 0; i < len(sigs); i++ {
-			fmt.Printf("ValidateTxSig sig[%v]-pubkey[%v]\n", sigs[i].Signature, sigs[i].PubKey)
-			//if keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) != true {
-			//	log.Error("ValidateTxSig", "VerifyTXWithPK sig fail", tmpTx.RequestHash().String())
-			//	return false
-			//}
+
+			if !keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) {
+				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
+				//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
+				//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
+				return false
+			}
 		}
 	}
 

@@ -510,7 +510,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	//mtx.TxHash = mtx.Hash()
 	// sign mtx
-	for index, input := range inputjson {
+	/*for index, input := range inputjson {
 		hashforsign, err := tokenengine.CalcSignatureHash(mtx, int(input.MessageIndex), int(input.OutIndex), nil)
 		if err != nil {
 			return "", err
@@ -528,9 +528,15 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	bytetxproofjson, err := json.Marshal(txproofjson)
 	if err != nil {
 		return "", err
+	}*/
+    mtxbt, err := rlp.EncodeToBytes(mtx)
+	if err != nil {
+		return "", err
 	}
-
-	return string(bytetxproofjson), nil
+	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
+	mtxHex := hex.EncodeToString(mtxbt)
+	return mtxHex, nil
+	//return string(bytetxproofjson), nil
 }
 
 func (s *PublicWalletAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {

@@ -89,9 +89,9 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 		return nil
 	}
 	// step2. get unit height
-	height, err := d.GetUnitNumber(hash)
+	//height, err := d.GetUnitNumber(hash)
 	// get unit header
-	uHeader, err := d.unitRep.GetHeader(hash, height)
+	uHeader, err := d.unitRep.GetHeader(hash)
 	if err != nil {
 		log.Error("Current unit when get unit header", "error", err.Error())
 		return nil
@@ -185,36 +185,36 @@ func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) 
 	return d.unitRep.GetUnit(hash)
 }
 
-func (d *Dag) GetHeaderByHash(hash common.Hash) *modules.Header {
-	height, err := d.GetUnitNumber(hash)
-	if err != nil {
-		log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
-		return nil
-	}
+func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
+	//height, err := d.GetUnitNumber(hash)
+	//if err != nil {
+	//	log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
+	//	return nil
+	//}
 	// get unit header
-	uHeader, err := d.unitRep.GetHeader(hash, height)
+	uHeader, err := d.unitRep.GetHeader(hash)
 	if err != nil {
 		log.Debug("Current unit when get unit header", "error", err.Error())
-		return nil
+		return nil, err
 	}
-	return uHeader
+	return uHeader, nil
 }
 
-func (d *Dag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
+func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	//log.Debug("Dag", "GetHeaderByNumber ChainIndex:", number)
-	hash, err := d.unitRep.GetHashByNumber(number)
-	if err != nil {
-		log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
-		return nil
-	}
+	//hash, err := d.unitRep.GetHashByNumber(number)
+	//if err != nil {
+	//	log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
+	//	return nil
+	//}
 
-	uHeader, err1 := d.unitRep.GetHeader(hash, &number)
+	uHeader, err1 := d.unitRep.GetHeaderByHeight(number)
 	if err1 != nil {
-		log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", hash.String())
+		log.Error("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
-		return nil
+		return nil, err1
 	}
-	return uHeader
+	return uHeader, nil
 }
 
 //func (d *Dag) GetPrefix(prefix string) map[string][]byte {
@@ -297,8 +297,8 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given
 // hash, fetching towards the genesis block.
 func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
-	header := d.GetHeaderByHash(hash)
-	if header == nil {
+	header, err := d.GetHeaderByHash(hash)
+	if err != nil {
 		return nil
 	}
 	// Iterate the headers until enough is collected or the genesis reached
@@ -308,7 +308,7 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 			break
 		}
 		next := header.ParentsHash[0]
-		h, err := d.GetHeader(next, header.Index()-1)
+		h, err := d.unitRep.GetHeader(next)
 		if err != nil {
 			break
 		}
@@ -320,7 +320,8 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 
 // need add:   assetId modules.IDType16, onMain bool
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
-	return d.GetHeaderByHash(hash) != nil
+	h, _ := d.GetHeaderByHash(hash)
+	return h != nil
 }
 func (d *Dag) Exists(hash common.Hash) bool {
 	if unit, err := d.unitRep.GetUnit(hash); err == nil && unit != nil {
@@ -588,23 +589,6 @@ func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
 	return d.stateRep.GetContract(id)
 }
 
-// Get Header
-func (d *Dag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-	index, err := d.GetUnitNumber(hash)
-	if err != nil {
-		return nil, err
-	}
-	//TODO compare index with number
-	if index.Index == number {
-		head, err := d.unitRep.GetHeader(hash, index)
-		if err != nil {
-			log.Info("get unit header faled,", "error", err)
-		}
-		return head, err
-	}
-	return nil, err
-}
-
 // Get UnitNumber
 func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 	return d.unitRep.GetNumberWithUnitHash(hash)
@@ -671,15 +655,6 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				//msgIdx := uint32(i)
-				//preout.MessageIndex = msgIdx
-				//for j := range msg.Output {
-				//	txoutIdx := uint32(j)
-				//	preout.OutIndex = txoutIdx
-				//	neededSet[preout] = struct{}{}
-				//}
-				// if tx is Not CoinBase
-				// add txIn previousoutpoint
 				if isnot_coinbase {
 					for _, in := range msg.Inputs {
 						neededSet[*in.PreviousOutPoint] = struct{}{}
@@ -1136,8 +1111,8 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	unit.UnitSize = unit.Size()
 	return &unit, nil
 }
-func (d *Dag) GetGenesisUnit(index uint64) (*modules.Unit, error) {
-	return d.unitRep.GetGenesisUnit(index)
+func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
+	return d.unitRep.GetGenesisUnit()
 }
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
 	return d.stateRep.GetContractTpl(templateID)

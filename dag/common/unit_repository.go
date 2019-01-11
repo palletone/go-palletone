@@ -44,13 +44,14 @@ import (
 )
 
 type IUnitRepository interface {
-	GetGenesisUnit(index uint64) (*modules.Unit, error)
-	GenesisHeight() modules.ChainIndex
+	GetGenesisUnit() (*modules.Unit, error)
+	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
+	GetHeader(hash common.Hash) (*modules.Header, error)
+	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnit(hash common.Hash) (*modules.Unit, error)
 	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
@@ -102,10 +103,12 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 
-func (rep *UnitRepository) GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
-	return rep.dagdb.GetHeader(hash, index)
+func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
+	return rep.dagdb.GetHeader(hash)
 }
-
+func (rep *UnitRepository) GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error) {
+	return rep.dagdb.GetHeaderByHeight(index)
+}
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	return rep.dagdb.GetUnit(hash)
 }
@@ -367,7 +370,13 @@ func (unitOp *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*m
 从leveldb中查询GenesisUnit信息
 To get genesis unit info from leveldb
 */
-func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error) {
+func (unitOp *UnitRepository) GetGenesisUnit() (*modules.Unit, error) {
+	ghash, err := unitOp.dagdb.GetGenesisUnitHash()
+	if err != nil {
+		log.Debug("unitOp: getgenesis by number , current error.", "error", err)
+		return nil, err
+	}
+	return unitOp.dagdb.GetUnit(ghash)
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	//key := fmt.Sprintf("%s%v_", constants.HEADER_PREFIX, index)
 
@@ -400,39 +409,39 @@ func (unitOp *UnitRepository) GetGenesisUnit(index uint64) (*modules.Unit, error
 	// 	//}
 	// }
 	// return nil, nil
-	number := modules.ChainIndex{}
-	number.Index = index
-	number.IsMain = true
-
-	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
-	//asset := modules.NewPTNAsset()
-	number.AssetID = modules.CoreAsset.AssetId
-	hash, err := unitOp.dagdb.GetHashByNumber(number)
-	if err != nil {
-		log.Debug("unitOp: getgenesis by number , current error.", "error", err)
-		return nil, err
-	}
-	log.Debug("unitOp: get genesis(hash):", "geneseis_hash", hash)
-	return unitOp.dagdb.GetUnit(hash)
+	//number := modules.ChainIndex{}
+	//number.Index = index
+	//number.IsMain = true
+	//
+	////number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	////asset := modules.NewPTNAsset()
+	//number.AssetID = modules.CoreAsset.AssetId
+	//hash, err := unitOp.dagdb.GetHashByNumber(number)
+	//if err != nil {
+	//	log.Debug("unitOp: getgenesis by number , current error.", "error", err)
+	//	return nil, err
+	//}
+	//log.Debug("unitOp: get genesis(hash):", "geneseis_hash", hash)
+	//return unitOp.dagdb.GetUnit(hash)
 }
 
 /**
 获取创世单元的高度
 To get genesis unit height
 */
-func (unitRep *UnitRepository) GenesisHeight() modules.ChainIndex {
-	unit, err := unitRep.GetGenesisUnit(0)
-	if unit == nil || err != nil {
-		return modules.ChainIndex{}
-	}
-	return unit.UnitHeader.Number
-}
+//func (unitRep *UnitRepository) GenesisHeight() modules.ChainIndex {
+//	unit, err := unitRep.GetGenesisUnit()
+//	if unit == nil || err != nil {
+//		return modules.ChainIndex{}
+//	}
+//	return unit.UnitHeader.Number
+//}
 func (unitRep *UnitRepository) IsGenesis(hash common.Hash) bool {
-	unit, err := unitRep.GetGenesisUnit(0)
-	if unit == nil || err != nil {
+	unit, err := unitRep.dagdb.GetGenesisUnitHash()
+	if err != nil {
 		return false
 	}
-	return hash == unit.Hash()
+	return hash == unit
 }
 
 func (unitOp *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
@@ -545,7 +554,7 @@ func (unitOp *UnitRepository) getRequesterAddress(tx *modules.Transaction) (comm
 save genesis unit data
 */
 func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error {
-
+	log.Debugf("Try to save a new unit :%s", unit.Hash().String())
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
@@ -609,26 +618,27 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 
 	// step10. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := unitOp.dagdb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+	if err := unitOp.dagdb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
 	// step11. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SaveHashNumber:", "error", err.Error())
-		return fmt.Errorf("Save unit number hash error, %s", err)
-	}
-	// step12 SaveHashByNumber
-	if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SaveNumberByHash:", "error", err.Error())
-		return fmt.Errorf("Save unit number error, %s", err)
-	}
+	//if err := unitOp.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Info("SaveHashNumber:", "error", err.Error())
+	//	return fmt.Errorf("Save unit number hash error, %s", err)
+	//}
+	//// step12 SaveHashByNumber
+	//if err := unitOp.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Info("SaveNumberByHash:", "error", err.Error())
+	//	return fmt.Errorf("Save unit number error, %s", err)
+	//}
 	//step12+ save chain index
 	if isGenesis {
 		if err := unitOp.statedb.SaveChainIndex(unit.Header().ChainIndex()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
+		unitOp.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
 	// step13 update state
 	unitOp.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
