@@ -498,6 +498,7 @@ const (
 	TxValidationCode_INVALID_AMOUNT               TxValidationCode = 31
 	TxValidationCode_INVALID_ASSET                TxValidationCode = 32
 	TxValidationCode_INVALID_CONTRACT             TxValidationCode = 33
+	TxValidationCode_INVALID_DATAPAYLOAD          TxValidationCode = 34
 	TxValidationCode_NOT_VALIDATED                TxValidationCode = 254
 	TxValidationCode_NOT_COMPARE_SIZE             TxValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 256
