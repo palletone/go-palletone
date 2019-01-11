@@ -741,17 +741,17 @@ func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
 	return outpoints
 }
 
-func getFileHash(tx *modules.Transaction) []byte {
-	var filehash []byte
+func getMaindata(tx *modules.Transaction) []byte {
+	var maindata []byte
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			filehash = pay.MainData
+			maindata = pay.MainData
 
 		}
 	}
 
-	return filehash
+	return maindata
 }
 
 /**
