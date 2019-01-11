@@ -195,11 +195,12 @@ func (mr *MockIDagMockRecorder) HasHeader(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // GetHeaderByNumber mocks base method
-func (m *MockIDag) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
+func (m *MockIDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeaderByNumber", number)
 	ret0, _ := ret[0].(*modules.Header)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetHeaderByNumber indicates an expected call of GetHeaderByNumber
@@ -209,32 +210,18 @@ func (mr *MockIDagMockRecorder) GetHeaderByNumber(number interface{}) *gomock.Ca
 }
 
 // GetHeaderByHash mocks base method
-func (m *MockIDag) GetHeaderByHash(arg0 common.Hash) *modules.Header {
+func (m *MockIDag) GetHeaderByHash(arg0 common.Hash) (*modules.Header, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeaderByHash", arg0)
 	ret0, _ := ret[0].(*modules.Header)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetHeaderByHash indicates an expected call of GetHeaderByHash
 func (mr *MockIDagMockRecorder) GetHeaderByHash(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetHeaderByHash), arg0)
-}
-
-// GetHeader mocks base method
-func (m *MockIDag) GetHeader(hash common.Hash, number uint64) (*modules.Header, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeader", hash, number)
-	ret0, _ := ret[0].(*modules.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeader indicates an expected call of GetHeader
-func (mr *MockIDagMockRecorder) GetHeader(hash, number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeader", reflect.TypeOf((*MockIDag)(nil).GetHeader), hash, number)
 }
 
 // CurrentHeader mocks base method

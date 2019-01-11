@@ -248,8 +248,8 @@ func (b *PtnApiBackend) QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson {
 }
 
 // Get Header
-func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Header, error) {
-	return b.ptn.dag.GetHeader(hash, index)
+func (b *PtnApiBackend) GetHeader(hash common.Hash) (*modules.Header, error) {
+	return b.ptn.dag.GetHeaderByHash(hash)
 }
 
 // Get Unit
@@ -354,11 +354,11 @@ func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJs
 // 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 // }
 
-func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) *modules.Header {
+func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return b.ptn.dag.GetHeaderByHash(hash)
 }
 
-func (b *PtnApiBackend) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
+func (b *PtnApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	return b.ptn.dag.GetHeaderByNumber(number)
 }
 

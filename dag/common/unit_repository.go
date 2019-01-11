@@ -50,7 +50,8 @@ type IUnitRepository interface {
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
+	GetHeader(hash common.Hash) (*modules.Header, error)
+	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnit(hash common.Hash) (*modules.Unit, error)
 	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
@@ -102,10 +103,12 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep}
 }
 
-func (rep *UnitRepository) GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
-	return rep.dagdb.GetHeader(hash, index)
+func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
+	return rep.dagdb.GetHeader(hash)
 }
-
+func (rep *UnitRepository) GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error) {
+	return rep.dagdb.GetHeaderByHeight(index)
+}
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	return rep.dagdb.GetUnit(hash)
 }
@@ -615,7 +618,7 @@ func (unitOp *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPoo
 
 	// step10. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := unitOp.dagdb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+	if err := unitOp.dagdb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}

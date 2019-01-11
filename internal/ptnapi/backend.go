@@ -89,8 +89,8 @@ type Backend interface {
 	//get level db
 	GetUnitByHash(hash common.Hash) *modules.Unit
 	GetUnitByNumber(number modules.ChainIndex) *modules.Unit
-	GetHeaderByHash(hash common.Hash) *modules.Header
-	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
+	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	// get state
 	GetHeadUnitHash() (common.Hash, error)
 	GetHeadHeaderHash() (common.Hash, error)

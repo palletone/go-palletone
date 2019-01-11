@@ -21,7 +21,6 @@
 package storage
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -54,7 +53,7 @@ type IDagDb interface {
 	GetGenesisUnitHash() (common.Hash, error)
 	SaveGenesisUnitHash(hash common.Hash) error
 
-	SaveHeader(uHash common.Hash, h *modules.Header) error
+	SaveHeader(h *modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
@@ -77,9 +76,9 @@ type IDagDb interface {
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
-	GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error)
+	GetHeader(hash common.Hash) (*modules.Header, error)
 	GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
-	GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error)
+	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
@@ -145,13 +144,38 @@ key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 value: unit header rlp encoding bytes
 */
 // save header
-func (dagdb *DagDb) SaveHeader(uHash common.Hash, h *modules.Header) error {
-	// encNum := encodeBlockNumber(h.Number.Index)
-	// key := append(HEADER_PREFIX, encNum...)
-	// key = append(key, h.Number.Bytes()...)
-	// return StoreBytes(dagdb.db, append(key, uHash.Bytes()...), h)
-	key := fmt.Sprintf("%s%v_%s_%s", constants.HEADER_PREFIX, h.Number.Index, h.Number.String(), uHash.String())
-	return StoreBytes(dagdb.db, []byte(key), h)
+func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
+	uHash := h.Hash()
+	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
+	err := StoreBytes(dagdb.db, (key), h)
+	if err != nil {
+		log.Error("Save Header error", err.Error())
+		return err
+	}
+
+	return dagdb.saveHeaderHeightIndex(h)
+}
+
+//为Unit的Height建立索引
+func (dagdb *DagDb) saveHeaderHeightIndex(h *modules.Header) error {
+	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
+	uHash := h.Hash()
+	err := StoreBytes(dagdb.db, idxKey, uHash)
+	if err != nil {
+		log.Error("Save Header height index error", err.Error())
+		return err
+	}
+	return nil
+}
+func (dagdb *DagDb) getUnitHashByHeight(cidx *modules.ChainIndex) (common.Hash, error) {
+	idxKey := append(constants.HEADER_HEIGTH_PREFIX, cidx.Bytes()...)
+	uHash := common.Hash{}
+	data, err := dagdb.db.Get(idxKey)
+	if err != nil {
+		return uHash, err
+	}
+	uHash.SetBytes(data)
+	return uHash, nil
 }
 
 //這是通過modules.ChainIndex存儲hash
@@ -555,7 +579,7 @@ func (dagdb *DagDb) GetUnit(hash common.Hash) (*modules.Unit, error) {
 		return nil, err
 	}
 	// 2. unit header
-	uHeader, err := dagdb.GetHeader(hash, height)
+	uHeader, err := dagdb.GetHeader(hash)
 	if err != nil {
 		log.Error("GetUnit when GetHeader failed , error:", err, "hash", hash.String())
 		log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
@@ -653,45 +677,24 @@ func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.
 	return nil, errors.New(fmt.Sprintf("the irrekey :%s ,is not found unit's hash.", irreKey))
 }
 
-func (dagdb *DagDb) GetHeader(hash common.Hash, index *modules.ChainIndex) (*modules.Header, error) {
-	// encNum := encodeBlockNumber(index.Index)
-	// key := append(HEADER_PREFIX, encNum...)
-	// key = append(key, index.Bytes()...)
-	// header_bytes, err := dagdb.db.Get(append(key, hash.Bytes()...))
-	key := fmt.Sprintf("%s%v_%s_%s", constants.HEADER_PREFIX, index.Index, index.String(), hash.String())
-	//dagdb.logger.Debug("GetHeader by Key:", "header's key", key)
-	header_bytes, err := dagdb.db.Get([]byte(key))
-	// rlp  to  Header struct
+func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
+	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
+	header := new(modules.Header)
+	err := retrieve(dagdb.db, key, header)
 	if err != nil {
 		return nil, err
 	}
-	header := new(modules.Header)
-	if err := rlp.Decode(bytes.NewReader(header_bytes), header); err != nil {
-		log.Error("Invalid unit header rlp:", "error", err)
-		return nil, err
-	}
 	return header, nil
+
 }
 
 // GetHeaderByHeight ,first :get hash  , return header.
-// TODO
-func (dagdb *DagDb) GetHeaderByHeight(index modules.ChainIndex) (*modules.Header, error) {
-	encNum := encodeBlockNumber(index.Index)
-	key := append(constants.HEADER_PREFIX, encNum...)
-	key = append(key, index.Bytes()...)
-
-	data := getprefix(dagdb.db, key)
-	if data == nil || len(data) <= 0 {
-		return nil, fmt.Errorf("No such height header")
+func (dagdb *DagDb) GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error) {
+	hash, err := dagdb.getUnitHashByHeight(index)
+	if err != nil {
+		return nil, err
 	}
-	for _, v := range data {
-		header := new(modules.Header)
-		if err := rlp.Decode(bytes.NewReader(v), header); err != nil {
-			return nil, fmt.Errorf("Invalid unit header rlp: %s", err.Error())
-		}
-		return header, nil
-	}
-	return nil, fmt.Errorf("No such height header")
+	return dagdb.GetHeader(hash)
 }
 
 //func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
@@ -705,13 +708,13 @@ func (dagdb *DagDb) GetHeaderByHeight(index modules.ChainIndex) (*modules.Header
 //	return header_bytes
 //}
 
-func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Header {
-	unit, err := dagdb.GetUnitFormIndex(number)
-	if err != nil {
-		return unit.UnitHeader
-	}
-	return nil
-}
+//func (dagdb *DagDb) GetHeaderFormIndex(number modules.ChainIndex) *modules.Header {
+//	unit, err := dagdb.GetUnitFormIndex(number)
+//	if err != nil {
+//		return unit.UnitHeader
+//	}
+//	return nil
+//}
 
 // GetTxLookupEntry return unit's hash ,number
 func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
