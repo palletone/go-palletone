@@ -19,3 +19,15 @@ Value 仍然是 OutPoint这个对象的RLP编码
 
 SaveUtxoEntity存储一个UTXO，同时也会存储一个对应Address对应的索引
 删除Utxo的时候软删除Utxo，但是会物理删除对应的索引
+
+
+
+## DAG DB的设计
+
+一个Unit分为Header，Body和Txs三部分存储。
+
+* Header在存储时，使用UnitHash作为key，但是为了能够通过Number也就是Height（ChainIndex）快速的检索到Header，所以需要存储ChainIndex到UnitHash的索引。
+* Body存储的是TxId的数组，仍然是以UnitHash为Key。为了能够通过TxId快速反查出所在的Unit和位置，所以存储了TxLookup，SaveTxLookupEntry会将每个TxId作为Key，TxLookupEntry作为Value。
+* Transaction是实际的交易对象，以TxId为Key，Value是编码后的Tx。Tx存储时包含以下索引：
+    * 为了能够通过RequestId也查到该Tx，所以会建立RequestId到TxId的映射索引。
+    * 为了快速知道每个Tx是哪个地址发起的（Msg0的Input对应的OutPoint的锁定脚本对应的地址），所以会建立FromAddress到Tx的映射索引。

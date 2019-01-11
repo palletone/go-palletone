@@ -69,7 +69,7 @@ func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitR
 	}
 
 	// get genesis Last Irreversible Unit
-	genesisUnit, err := unitRep.GetGenesisUnit(0)
+	genesisUnit, err := unitRep.GetGenesisUnit()
 	if err != nil {
 		log.Error("NewMemDag when GetGenesisUnit", "error", err.Error())
 		return nil
@@ -119,7 +119,7 @@ func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon
 
 	unitRep.SaveUnit(unit, txpool, true, true)
 
-	genesisUnit, err := unitRep.GetGenesisUnit(0)
+	genesisUnit, err := unitRep.GetGenesisUnit()
 	if err != nil {
 		log.Error("NewMemDag when GetGenesisUnit", "error", err.Error())
 		return nil

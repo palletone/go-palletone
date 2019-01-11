@@ -39,7 +39,7 @@ func TestCreateUnit(t *testing.T) {
 		return
 	}
 	// log.Info("Save unit success")
-	genesis, err0 := test_dag.GetGenesisUnit(0)
+	genesis, err0 := test_dag.GetGenesisUnit()
 	log.Info("get genesiss info", "error", err0, "info", genesis)
 }
 func createUnit() (*modules.Unit, error) {
