@@ -230,6 +230,11 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 
 		case modules.APP_CONFIG:
 		case modules.APP_DATA:
+			payload, _ := msg.Payload.(*modules.DataPayload)
+			validateCode := validate.validateDataPayload(payload)
+			if validateCode != modules.TxValidationCode_VALID {
+				return validateCode
+			}
 		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:
 		default:
@@ -629,6 +634,17 @@ func (validate *Validate) validateContractdeploy(tplId []byte, worldTmpState *ma
 }
 
 func (validate *Validate) validateContractSignature(sinatures []modules.SignatureSet, tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+	return modules.TxValidationCode_VALID
+}
+
+//验证一个DataPayment
+func (validate *Validate) validateDataPayload(payload *modules.DataPayload) modules.TxValidationCode {
+	//验证 maindata是否存在
+	//验证 maindata extradata大小 不可过大
+	//if len(payload.MainData) >= 128 || len(payload.ExtraData) >= 128 || len(payload.MainData) == 0{
+	//	return modules.TxValidationCode_INVALID_DATAPAYLOAD
+	//}
+	//TODO 验证maindata其它属性
 	return modules.TxValidationCode_VALID
 }
 

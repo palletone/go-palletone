@@ -69,9 +69,9 @@ type IUnitRepository interface {
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetCanonicalHash(number uint64) (common.Hash, error)
 
-	SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
-	SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
-	UpdateHeadByBatch(hash common.Hash, number uint64) error
+	//SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
+	//SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
+	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error)
@@ -150,15 +150,16 @@ func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.Cha
 func (rep *UnitRepository) GetCanonicalHash(number uint64) (common.Hash, error) {
 	return rep.dagdb.GetCanonicalHash(number)
 }
-func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
-	return rep.dagdb.SaveNumberByHash(uHash, number)
-}
-func (rep *UnitRepository) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
-	return rep.dagdb.SaveHashByNumber(uHash, number)
-}
-func (rep *UnitRepository) UpdateHeadByBatch(hash common.Hash, number uint64) error {
-	return rep.dagdb.UpdateHeadByBatch(hash, number)
-}
+
+//func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
+//	return rep.dagdb.SaveNumberByHash(uHash, number)
+//}
+//func (rep *UnitRepository) SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error {
+//	return rep.dagdb.SaveHashByNumber(uHash, number)
+//}
+//func (rep *UnitRepository) UpdateHeadByBatch(hash common.Hash, number uint64) error {
+//	return rep.dagdb.UpdateHeadByBatch(hash, number)
+//}
 
 //func (rep *UnitRepository) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
 //	return rep.dagdb.GetHeaderRlp(hash, index)
@@ -741,17 +742,17 @@ func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
 	return outpoints
 }
 
-func getFileHash(tx *modules.Transaction) []byte {
-	var filehash []byte
+func getMaindata(tx *modules.Transaction) []byte {
+	var maindata []byte
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			filehash = pay.MainData
+			maindata = pay.MainData
 
 		}
 	}
 
-	return filehash
+	return maindata
 }
 
 /**

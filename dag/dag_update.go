@@ -42,7 +42,7 @@ func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	missedUnits--
 	log.Debug(fmt.Sprintf("the count of missed Units: %v", missedUnits))
 
-	aSize := dag.GetActiveMediatorCount()
+	aSize := dag.ActiveMediatorsCount()
 	if missedUnits < uint32(aSize) {
 		var i uint32
 		for i = 0; i < missedUnits; i++ {
@@ -88,7 +88,7 @@ func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
 }
 
 func (dag *Dag) updateLastIrreversibleUnit() {
-	aSize := dag.GetActiveMediatorCount()
+	aSize := dag.ActiveMediatorsCount()
 	lastConfirmedUnitNums := make([]int, 0, aSize)
 
 	// 1. 获取所有活跃 mediator 最后确认unit编号
