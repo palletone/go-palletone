@@ -138,6 +138,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	//将合约代码文件打包成 tar 文件
 	paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
 	if err != nil {
+		log.Info("getUserCCPayload err:","error",err)
 		return nil, err
 	}
 	var buffer bytes.Buffer
