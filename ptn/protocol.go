@@ -135,6 +135,7 @@ type txPool interface {
 	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
 	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
 	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
+	GetTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
 	GetNonce(hash common.Hash) uint64
 	Stats() (int, int)
 	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)

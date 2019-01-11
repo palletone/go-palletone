@@ -687,15 +687,6 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				//msgIdx := uint32(i)
-				//preout.MessageIndex = msgIdx
-				//for j := range msg.Output {
-				//	txoutIdx := uint32(j)
-				//	preout.OutIndex = txoutIdx
-				//	neededSet[preout] = struct{}{}
-				//}
-				// if tx is Not CoinBase
-				// add txIn previousoutpoint
 				if isnot_coinbase {
 					for _, in := range msg.Inputs {
 						neededSet[*in.PreviousOutPoint] = struct{}{}
@@ -1397,4 +1388,3 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 	return d.dagdb.GetReqIdByTxHash(hash)
 }
-
