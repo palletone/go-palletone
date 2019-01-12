@@ -809,7 +809,7 @@ func getExtradata(tx *modules.Transaction) []byte {
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			extradata = pay.MainData
+			extradata = pay.ExtraData
 
 		}
 	}
