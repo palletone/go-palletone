@@ -532,12 +532,14 @@ type DataPayload struct {
 	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
 }
-type MainDataInfo struct {
+type FileInfo struct {
 	UnitHash    common.Hash   `json:"unit_hash"`
 	UintHeight  uint64        `json:"unit_index"`
 	ParentsHash []common.Hash   `json:"parents_hash"`
 	Txid        common.Hash   `json:"txid"`
 	Timestamp   int64 `json:"timestamp"`
+	MainData  []byte `json:"main_data"`
+	ExtraData []byte `json:"extra_data"`
 }
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {

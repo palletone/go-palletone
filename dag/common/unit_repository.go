@@ -75,7 +75,7 @@ type IUnitRepository interface {
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetTxByFileHash(filehash []byte) ([]modules.MainDataInfo, error)
+	GetTxByFileHash(filehash []byte) ([]modules.FileInfo, error)
 
 	//获得某个分区上的最新不可逆单元
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
@@ -745,7 +745,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 
 		case modules.APP_DATA:
 			if ok := rep.saveDataPayload(txHash, msg); ok != true {
-				return fmt.Errorf("Save textment payload error.")
+				return fmt.Errorf("Save datapayload error.")
 			}
 		default:
 			return fmt.Errorf("Message type is not supported now: %v", msg.App)
@@ -804,6 +804,18 @@ func getMaindata(tx *modules.Transaction) []byte {
 	return maindata
 }
 
+func getExtradata(tx *modules.Transaction) []byte {
+	var extradata []byte
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_DATA {
+			pay := msg.Payload.(*modules.DataPayload)
+			extradata = pay.MainData
+
+		}
+	}
+
+	return extradata
+}
 /**
 保存PaymentPayload
 save PaymentPayload data
@@ -1160,15 +1172,15 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 	return alltxs, err1
 }
 
-//get a map  key:filehash value:tx or txs
-func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.MainDataInfo, error) {
-	var mds []modules.MainDataInfo
+//get
+func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.FileInfo, error) {
+	var mds []modules.FileInfo
 	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
 	if err != nil {
 		return nil, err
 	}
 	for _, hash := range hashs {
-		var md modules.MainDataInfo
+		var md modules.FileInfo
 		unithash, unitindex, _, err := unitOp.dagdb.GetTxLookupEntry(hash)
 		if err != nil {
 			return nil, err
@@ -1178,7 +1190,9 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.MainDa
 		if err != nil {
 			return nil, err
 		}
-
+		tx,_,_,_ := unitOp.dagdb.GetTransaction(hash)
+		md.MainData = getMaindata(tx)
+		md.ExtraData = getExtradata(tx)
 		md.UnitHash = unithash
 		md.UintHeight = unitindex
 		md.ParentsHash = header.ParentsHash[:1]
