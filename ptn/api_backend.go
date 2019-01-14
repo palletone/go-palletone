@@ -349,6 +349,11 @@ func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJs
 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 }
 
+func (b *PtnApiBackend) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+	tx, err := b.ptn.txPool.GetPoolTxsByAddr(addr)
+	return tx, err
+}
+
 // func (b *PtnApiBackend) GetTxsPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 // 	tx, unit_hash := b.ptn.txPool.Get(hash)
 // 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil

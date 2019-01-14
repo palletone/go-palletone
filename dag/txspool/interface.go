@@ -49,7 +49,7 @@ type ITxPool interface {
 	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
 	GetNonce(hash common.Hash) uint64
 	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
-	GetTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
+	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
 	Stats() (int, int)
 	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
 	GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
