@@ -2573,7 +2573,7 @@ func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) stri
 func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) string {
 	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
 
-	number := modules.ChainIndex{}
+	number := &modules.ChainIndex{}
 	//if err := json.Unmarshal(*(*[]byte)(unsafe.Pointer(&condition)), &number); err != nil {
 	//	log.Info("PublicBlockChainAPI", "GetUnitByNumber Unmarshal err:", err, "condition:", condition)
 	//	return "Unmarshal err"

@@ -297,7 +297,7 @@ func (b *PtnApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 	}
 	return unit
 }
-func (b *PtnApiBackend) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
+func (b *PtnApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Unit {
 	unit, err := b.ptn.dag.GetUnitByNumber(number)
 	if err != nil {
 		return nil
