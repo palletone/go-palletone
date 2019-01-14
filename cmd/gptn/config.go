@@ -27,8 +27,6 @@ import (
 	"unicode"
 
 	"github.com/naoina/toml"
-	"gopkg.in/urfave/cli.v1"
-
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
@@ -43,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
+	"gopkg.in/urfave/cli.v1"
 )
 
 const defaultConfigPath = "./ptn-config.toml"

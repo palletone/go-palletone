@@ -41,7 +41,7 @@ func TestGetContractState(t *testing.T) {
 	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code")}
 	err := statedb.SaveContract(contract)
 	assert.Nil(t, err, "save contract to statedb fail")
-	version := &modules.StateVersion{Height: modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
 	err = statedb.SaveContractState(id, "name", "TestName1", version)
 	assert.Nil(t, err, "Save contract state fail")
 	version2, value := statedb.GetContractState(id, "name")
@@ -76,7 +76,7 @@ func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 	mediatorList := []*modules.MediatorRegisterInfo{mediator1, mediator2}
 	mediatorListBytes, err := json.Marshal(mediatorList)
 	assert.Nil(t, err, "json marshal error: ")
-	version := &modules.StateVersion{Height: modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
 	err = statedb.SaveContractState(contractId, "MediatorList", mediatorListBytes, version)
 	assert.Nil(t, err, "save mediatorlist error: ")
 	list, err := statedb.GetApprovedMediatorList()

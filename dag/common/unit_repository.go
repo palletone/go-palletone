@@ -200,7 +200,11 @@ func (rep *UnitRepository) GetHeadFastUnitHash() (common.Hash, error) {
 	return rep.dagdb.GetHeadFastUnitHash()
 }
 func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
-	return rep.dagdb.GetNumberWithUnitHash(hash)
+	header, err := rep.dagdb.GetHeader(hash)
+	if err != nil {
+		return nil, err
+	}
+	return header.Number, nil
 }
 func (rep *UnitRepository) GetCanonicalHash(number uint64) (common.Hash, error) {
 	return rep.dagdb.GetCanonicalHash(number)
@@ -239,7 +243,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) 
 	gUnit := modules.Unit{}
 
 	// genesis unit height
-	chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: 0}
+	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: 0}
 
 	// transactions merkle root
 	root := core.DeriveSha(txs)
@@ -338,7 +342,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	// step3. generate genesis unit header
 	header := modules.Header{
 		AssetIDs: []modules.IDType16{},
-		Number:   *chainIndex,
+		Number:   chainIndex,
 		//TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
 	}
@@ -881,7 +885,7 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 保存配置交易
 save config payload
 */
-func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Message, height modules.ChainIndex, txIndex uint32) bool {
+func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Message, height *modules.ChainIndex, txIndex uint32) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ConfigPayload)
@@ -904,7 +908,7 @@ func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Me
 保存合约调用状态
 To save contract invoke state
 */
-func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
@@ -945,7 +949,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 保存合约初始化状态
 To save contract init state
 */
-func (rep *UnitRepository) saveContractInitPayload(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractDeployPayload)
@@ -981,7 +985,7 @@ func (rep *UnitRepository) saveContractInitPayload(height modules.ChainIndex, tx
 保存合约模板代码
 To save contract template code
 */
-func (rep *UnitRepository) saveContractTpl(height modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractTplPayload)

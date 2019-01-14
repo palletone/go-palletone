@@ -156,7 +156,7 @@ type txPool interface {
 type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
-	Index           modules.ChainIndex
+	Index           *modules.ChainIndex
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
 	//Mediator        bool
@@ -164,8 +164,8 @@ type statusData struct {
 
 // newBlockHashesData is the network packet for the block announcements.
 type newBlockHashesData []struct {
-	Hash   common.Hash        // Hash of one particular block being announced
-	Number modules.ChainIndex /*uint64*/ // Number of one particular block being announced
+	Hash   common.Hash         // Hash of one particular block being announced
+	Number *modules.ChainIndex /*uint64*/ // Number of one particular block being announced
 }
 
 // getBlockHeadersData represents a block header query.
@@ -179,7 +179,7 @@ type getBlockHeadersData struct {
 // hashOrNumber is a combined field for specifying an origin block.
 type hashOrNumber struct {
 	Hash   common.Hash // Block hash from which to retrieve headers (excludes Number)
-	Number modules.ChainIndex
+	Number *modules.ChainIndex
 }
 
 /*

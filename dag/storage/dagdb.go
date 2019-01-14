@@ -78,7 +78,7 @@ type IDagDb interface {
 	IsHeaderExist(uHash common.Hash) (bool, error)
 	//GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
 	//GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
-	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
+	//GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
@@ -499,23 +499,24 @@ func (dagdb *DagDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) 
 	err0 := rlp.DecodeBytes(data, &str)
 	return str, err0
 }
-func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
-	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, hash.String())
 
-	data, err := dagdb.db.Get([]byte(key))
-	if err != nil {
-		return nil, err
-	}
-	if len(data) <= 0 {
-		return nil, fmt.Errorf("chainIndex is null. hash(%s)", hash.String())
-	}
-	number := new(modules.ChainIndex)
-	if err := rlp.DecodeBytes(data, number); err != nil {
-		return nil, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
-	}
-
-	return number, nil
-}
+//func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
+//	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, hash.String())
+//
+//	data, err := dagdb.db.Get([]byte(key))
+//	if err != nil {
+//		return nil, err
+//	}
+//	if len(data) <= 0 {
+//		return nil, fmt.Errorf("chainIndex is null. hash(%s)", hash.String())
+//	}
+//	number := new(modules.ChainIndex)
+//	if err := rlp.DecodeBytes(data, number); err != nil {
+//		return nil, fmt.Errorf("Get unit number when rlp decode error:%s", err.Error())
+//	}
+//
+//	return number, nil
+//}
 
 //  GetCanonicalHash get
 

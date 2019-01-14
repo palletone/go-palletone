@@ -155,7 +155,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Bytecode:   paylod,
 	}
 	//test
-	if cfg.GetConfig().DebugTest {
+	if cfg.DebugTest {
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
 	}
@@ -253,7 +253,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	}
 
 	//test
-	if cfg.GetConfig().DebugTest {
+	if cfg.DebugTest {
 		if txId == "" || templateCC.Name == "" || templateCC.Path == "" {
 			log.Errorf("cc param is null")
 			tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}

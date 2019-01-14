@@ -52,7 +52,7 @@ func mockerDeployUserCC() error {
 
 func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	//todo ,for test
-	if cfg.GetConfig().DebugTest {
+	if cfg.DebugTest {
 		return mockerDeployUserCC()
 	}
 
@@ -110,7 +110,7 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 
 func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId []byte) (*UserChaincode, []byte, error) {
 	//todo, for test
-	if cfg.GetConfig().DebugTest {
+	if cfg.DebugTest {
 		usrCC1 := &UserChaincode{}
 		return usrCC1, nil, nil
 	}

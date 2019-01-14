@@ -210,7 +210,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 
 	uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
 	if err1 != nil {
-		log.Error("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
+		log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
@@ -1067,7 +1067,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 		return nil, fmt.Errorf("CreateUnitForTest ERROR: genesis unit is null")
 	}
 	// compute height
-	height := modules.ChainIndex{
+	height := &modules.ChainIndex{
 		AssetID: currentUnit.UnitHeader.Number.AssetID,
 		IsMain:  currentUnit.UnitHeader.Number.IsMain,
 		Index:   currentUnit.UnitHeader.Number.Index + 1,
