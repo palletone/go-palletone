@@ -117,7 +117,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			} else {
 				index.Index = next
 				log.Debug("ProtocolManager", "GetBlockHeadersMsg index.Index:", index.Index)
-				if header, _ := pm.dag.GetHeaderByNumber(&index); header != nil {
+				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
 					if pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
 						query.Origin.Hash = header.Hash()
 					} else {

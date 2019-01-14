@@ -63,7 +63,7 @@ type PeerInfo struct {
 
 type peerMsg struct {
 	head   common.Hash
-	number modules.ChainIndex
+	number *modules.ChainIndex
 }
 
 type peer struct {
@@ -128,7 +128,7 @@ func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
 //only retain the max index header.will in other mediator,not in ptn mediator.
-func (p *peer) Head(assetID modules.IDType16) (hash common.Hash, number modules.ChainIndex) {
+func (p *peer) Head(assetID modules.IDType16) (hash common.Hash, number *modules.ChainIndex) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -142,7 +142,7 @@ func (p *peer) Head(assetID modules.IDType16) (hash common.Hash, number modules.
 
 // SetHead updates the head hash and total difficulty of the peer.
 //only retain the max index header
-func (p *peer) SetHead(hash common.Hash, number modules.ChainIndex) {
+func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -311,7 +311,7 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, index modules.ChainIndex, genesis common.Hash,
+func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash,
 	/*mediator bool,*/ headHash common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)

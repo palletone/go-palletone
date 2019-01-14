@@ -58,12 +58,12 @@ const (
 	SigShareMsg        = 0x0c
 	GroupSigMsg        = 0x0d
 
-	ContractMsg        = 0x10
+	ContractMsg = 0x10
 
-	GetNodeDataMsg     = 0x20
-	NodeDataMsg        = 0x21
-	GetReceiptsMsg     = 0x22
-	ReceiptsMsg        = 0x23
+	GetNodeDataMsg = 0x20
+	NodeDataMsg    = 0x21
+	GetReceiptsMsg = 0x22
+	ReceiptsMsg    = 0x23
 )
 
 type errCode int
@@ -156,7 +156,7 @@ type txPool interface {
 type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
-	Index           modules.ChainIndex
+	Index           *modules.ChainIndex
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
 	//Mediator        bool

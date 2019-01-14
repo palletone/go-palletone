@@ -575,7 +575,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	}
 
 	// check header's number
-	if header.Number == (modules.ChainIndex{}) {
+	if header.Number == nil {
 		return modules.UNIT_STATE_INVALID_HEADER
 	}
 	if len(header.AssetIDs) == 0 {

@@ -115,7 +115,7 @@ func TestSaveUnit(t *testing.T) {
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
-		Height:  modules.ChainIndex{},
+		Height:  &modules.ChainIndex{},
 		TxIndex: 0,
 	}})
 	writeSet := []modules.ContractWriteSet{
@@ -339,7 +339,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 	}
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
-		Height:  modules.ChainIndex{},
+		Height:  &modules.ChainIndex{},
 		TxIndex: 0,
 	}})
 	tx1 := modules.Transaction{
@@ -390,7 +390,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	// TODO test ContractTplPayload
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
-		Height:  modules.ChainIndex{},
+		Height:  &modules.ChainIndex{},
 		TxIndex: 0,
 	}})
 	writeSet := []modules.ContractWriteSet{

@@ -64,7 +64,7 @@ type Header struct {
 	GroupSign    []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
 	GroupPubKey  []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
 	TxRoot       common.Hash   `json:"root"`
-	Number       ChainIndex    `json:"index"`
+	Number       *ChainIndex   `json:"index"`
 	Extra        []byte        `json:"extra"`
 	Creationdate int64         `json:"creation_time"` // unit create time
 }
@@ -107,7 +107,7 @@ func (h *Header) Index() uint64 {
 	return h.Number.Index
 }
 func (h *Header) ChainIndex() *ChainIndex {
-	return &h.Number
+	return h.Number
 }
 
 func (h *Header) Hash() common.Hash {
@@ -353,7 +353,7 @@ func (u *Unit) Size() common.StorageSize {
 }
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
-func (u *Unit) Number() ChainIndex {
+func (u *Unit) Number() *ChainIndex {
 	return u.UnitHeader.Number
 }
 
