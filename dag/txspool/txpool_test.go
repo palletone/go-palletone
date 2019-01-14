@@ -49,6 +49,7 @@ type UnitDag4Test struct {
 	GenesisUnit   *modules.Unit
 	gasLimit      uint64
 	chainHeadFeed *event.Feed
+	outpoints     map[string]map[modules.OutPoint]*modules.Utxo
 }
 
 // NewTxPool4Test return TxPool structure for testing.
@@ -65,7 +66,10 @@ func NewUnitDag4Test() *UnitDag4Test {
 
 	idagdb.PutHeadUnitHash(common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729"))
 	mutex := new(sync.RWMutex)
-	return &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
+
+	ud := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
+	ud.outpoints = make(map[string]map[modules.OutPoint]*modules.Utxo)
+	return ud
 }
 func (ud *UnitDag4Test) CurrentUnit() *modules.Unit {
 	return modules.NewUnit(&modules.Header{
@@ -79,6 +83,20 @@ func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 
 func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
+}
+
+func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	if ud.outpoints == nil {
+		return nil, fmt.Errorf("outpoints is nil ")
+	}
+	for _, utxos := range ud.outpoints {
+		if utxos != nil {
+			if u, has := utxos[*outpoint]; has {
+				return u, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("not found!")
 }
 
 func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
@@ -131,7 +149,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	//l := log.NewTestLog()
 	utxodb := storage.NewUtxoDb(db)
 	mutex := new(sync.RWMutex)
-	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
+	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
 	var pending_cache, queue_cache, all, origin int

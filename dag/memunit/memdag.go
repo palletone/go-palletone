@@ -79,7 +79,7 @@ func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitR
 		return nil
 	}
 	assetid := genesisUnit.UnitHeader.Number.AssetID
-	lastIrreUnit, _ := db.GetLastIrreversibleUnit(assetid)
+	lastIrreUnit, _ := unitRep.GetLastIrreversibleUnit(assetid)
 	if lastIrreUnit != nil {
 		memdag.lastValidatedUnit[assetid.String()] = lastIrreUnit
 	}
@@ -129,7 +129,7 @@ func NewMemDagForTest(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon
 		return nil
 	}
 	assetid := genesisUnit.UnitHeader.Number.AssetID
-	lastIrreUnit, _ := db.GetLastIrreversibleUnit(assetid)
+	lastIrreUnit, _ := unitRep.GetLastIrreversibleUnit(assetid)
 	if lastIrreUnit != nil {
 		memdag.lastValidatedUnit[assetid.String()] = lastIrreUnit
 	}
@@ -239,7 +239,7 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 	// get asset chain's las irreversible unit
 	irreUnit, ok := chain.lastValidatedUnit[assetId]
 	if !ok {
-		lastIrreUnit, _ := chain.dagdb.GetLastIrreversibleUnit(unit.UnitHeader.Number.AssetID)
+		lastIrreUnit, _ := chain.unitRep.GetLastIrreversibleUnit(unit.UnitHeader.Number.AssetID)
 		if lastIrreUnit != nil {
 			irreUnit = lastIrreUnit
 			chain.lastValidatedUnit[assetId] = irreUnit
@@ -485,7 +485,7 @@ func (chain *MemDag) Prune(assetId string, delhashs []common.Hash) error {
 			fork_index.RemoveStableIndex(unit.UnitHeader.Index())
 			chain.forkIndex[unit.UnitHeader.ChainIndex().AssetID.String()] = fork_index
 			// 2. memUnit chainIndex
-			go chain.memUnit.DelHashByNumber(*unit.UnitHeader.ChainIndex())
+			go chain.memUnit.DelHashByNumber(unit.UnitHeader.ChainIndex())
 		}
 	}
 

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"sort"
 	"sync"
 	"time"
 
@@ -177,8 +178,9 @@ type TxPool struct {
 
 	outpoints     map[modules.OutPoint]*modules.TxPoolTransaction                 // utxo标记池
 	orphans       map[common.Hash]*modules.TxPoolTransaction                      // 孤儿交易缓存池
-	orphansByPrev map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction // 缓存的 orphanTx input's utxo
-	addrTxs       map[string][]*modules.TxPoolTransaction
+	orphansByPrev map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction // 缓存 orphanTx input's utxo
+	addrTxs       map[string][]*modules.TxPoolTransaction                         // 缓存 地址对应的交易列表
+	outputs       map[modules.OutPoint]common.Hash                                // 缓存 交易的outputs
 	//addrOutpoints map[string][]*modules.OutPoint
 
 	mu             *sync.RWMutex
@@ -573,6 +575,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	}
 	// 交易费太低的交易，不能通过验证。
 	if pool.txfee.Cmp(tx.GetTxFee()) > 0 {
+		log.Debug(fmt.Sprintf("txfee is too low, pool's fee: (%d) , tx's fee: (%d)", pool.txfee.Int64(), tx.GetTxFee().Int64()))
 		return ErrTxFeeTooLow
 	}
 
@@ -1113,14 +1116,14 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 }
 
 // GetAddrTxs returns all tx by addr.
-func (pool *TxPool) GetTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
-	return pool.getTxsByAddr(addr)
+	return pool.getPoolTxsByAddr(addr)
 }
 
-func (pool *TxPool) getTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
 	txs, has := pool.addrTxs[addr]
 	if has {
 		return txs, nil
@@ -1619,12 +1622,13 @@ func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
 }
 
 /******  end utxoSet  *****/
-//  这个接口后期需要调整， 需要先将all 进行排序， 然后按序从前到后一次取出足够多tx。
+// GetSortedTxs returns 根据优先级返回list
 func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
+	unit_size := common.StorageSize(dagconfig.DefaultConfig.UnitTxSize)
 	for {
 		tx := pool.priority_priced.Get()
 		if tx == nil {
@@ -1635,7 +1639,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			log.Debug("Txspool get  priority_pricedtx success.", "tx_info", tx)
 			if !tx.Pending && !tx.Confirmed {
 				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
-				if total += tx.Tx.Size(); total <= common.StorageSize(dagconfig.DefaultConfig.UnitTxSize) {
+				if total += tx.Tx.Size(); total <= unit_size {
 					list = append(list, tx)
 					// add  pending
 					pool.promoteTx(hash, tx)
@@ -1646,7 +1650,47 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			}
 		}
 	}
+	//添加孤儿交易
+	for {
+		//  验证孤儿交易
+		or_list := make(orList, 0)
+		for _, tx := range pool.orphans {
+			or_list = append(or_list, tx)
+		}
+		// 按入池时间排序
+		if len(or_list) > 1 {
+			sort.Sort(or_list)
+		}
+		for _, tx := range or_list {
+			ok, err := pool.validateOrphanTx(tx)
+			if !ok && err == nil {
+				//  更改孤儿交易的状态
+				tx.Pending = true
+				pool.orphans[tx.Tx.Hash()] = tx
+				list = append(list, tx)
+				total += tx.Tx.Size()
+				if total > unit_size {
+					break
+				}
+			}
+		}
+		break
+
+	}
+
 	return list, total
+}
+
+type orList []*modules.TxPoolTransaction
+
+func (ol orList) Len() int {
+	return len(ol)
+}
+func (ol orList) Swap(i, j int) {
+	ol[i], ol[j] = ol[j], ol[i]
+}
+func (ol orList) Less(i, j int) bool {
+	return ol[i].CreationDate.Unix() < ol[j].CreationDate.Unix()
 }
 
 // SubscribeTxPreEvent registers a subscription of TxPreEvent and
@@ -1667,6 +1711,10 @@ func (pool *TxPool) limitNumberOrphans() error {
 			if now.After(tx.Expiration) {
 				// remove
 				pool.removeOrphan(tx, true)
+			}
+			ok, err := pool.validateOrphanTx(tx)
+			if !ok && err == nil {
+				pool.add(tx, !pool.config.NoLocals)
 			}
 		}
 		// set next expireScan
@@ -1836,6 +1884,10 @@ func (pool *TxPool) IsOrphanInPool(hash common.Hash) bool {
 // validate tx is an orphanTx or not.
 func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error) {
 	// 交易的校验，inputs校验 ,先验证该交易的所有输入utxo是否有效。
+	if len(tx.Tx.Messages()) <= 0 {
+		return false, errors.New("this tx's message is null.")
+	}
+
 	for _, msg := range tx.Tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
@@ -1863,6 +1915,5 @@ func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error
 			}
 		}
 	}
-
 	return false, nil
 }

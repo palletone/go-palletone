@@ -58,16 +58,16 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 		}
 
 	} else {
-		pendingUnit.UnitHeader.Number = *current_index
+		pendingUnit.UnitHeader.Number = current_index
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
 		parent, _ := dag.GetHeadUnitHash()
 		pendingUnit.UnitHeader.ParentsHash =
 			append(pendingUnit.UnitHeader.ParentsHash, parent) //dag.HeadUnitHash()
 	}
 
-	if pendingUnit.UnitHeader.Number == (modules.ChainIndex{}) {
+	if pendingUnit.UnitHeader.Number == nil {
 		current_index.Index += 1
-		pendingUnit.UnitHeader.Number = *current_index
+		pendingUnit.UnitHeader.Number = current_index
 	} else {
 		log.Debug("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index,
 			"hex", pendingUnit.UnitHeader.Number.AssetID.String())

@@ -18,9 +18,9 @@ package modules
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
-	"reflect"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -234,8 +234,8 @@ func NewTxOut(value uint64, pkScript []byte, asset *Asset) *Output {
 }
 
 type StateVersion struct {
-	Height  ChainIndex `json:"height"`
-	TxIndex uint32     `json:"tx_index"`
+	Height  *ChainIndex `json:"height"`
+	TxIndex uint32      `json:"tx_index"`
 }
 type ContractStateValue struct {
 	Value   []byte        `json:"value"`
@@ -291,7 +291,7 @@ func (version *StateVersion) SetBytes(b []byte) {
 	heightIdx := littleEndian.Uint64(b[16:24])
 	isMain := b[24]
 	txIdx := littleEndian.Uint32(b[25:])
-	cidx := ChainIndex{AssetID: asset, Index: heightIdx, IsMain: isMain == byte(1)}
+	cidx := &ChainIndex{AssetID: asset, Index: heightIdx, IsMain: isMain == byte(1)}
 	version.Height = cidx
 	version.TxIndex = txIdx
 }
@@ -532,6 +532,15 @@ type DataPayload struct {
 	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
 }
+type FileInfo struct {
+	UnitHash    common.Hash   `json:"unit_hash"`
+	UintHeight  uint64        `json:"unit_index"`
+	ParentsHash []common.Hash `json:"parents_hash"`
+	Txid        common.Hash   `json:"txid"`
+	Timestamp   int64         `json:"timestamp"`
+	MainData    []byte        `json:"main_data"`
+	ExtraData   []byte        `json:"extra_data"`
+}
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
 	return &PaymentPayload{
@@ -736,7 +745,7 @@ func (a *ContractInstallRequestPayload) Equal(b *ContractInstallRequestPayload) 
 	if b == nil {
 		return false
 	}
-	if !strings.EqualFold(a.TplName, b.TplName) ||!strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
+	if !strings.EqualFold(a.TplName, b.TplName) || !strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
 		return false
 	}
 	return true
@@ -746,7 +755,7 @@ func (a *ContractDeployRequestPayload) Equal(b *ContractDeployRequestPayload) bo
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.TplId, b.TplId) ||!strings.EqualFold(a.TxId, b.TxId) || a.Timeout != b.Timeout {
+	if !bytes.Equal(a.TplId, b.TplId) || !strings.EqualFold(a.TxId, b.TxId) || a.Timeout != b.Timeout {
 		return false
 	}
 	if len(a.Args) == len(b.Args) {
@@ -765,7 +774,7 @@ func (a *ContractInvokeRequestPayload) Equal(b *ContractInvokeRequestPayload) bo
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.ContractId, b.ContractId) ||!strings.EqualFold(a.FunctionName, b.FunctionName) || a.Timeout != b.Timeout {
+	if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.FunctionName, b.FunctionName) || a.Timeout != b.Timeout {
 		return false
 	}
 	if len(a.Args) == len(b.Args) {
@@ -784,7 +793,7 @@ func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.ContractId, b.ContractId) ||!strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
+	if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
 		return false
 	}
 	return true

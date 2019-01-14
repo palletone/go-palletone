@@ -43,7 +43,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	return reqId, templateId, nil
 }
 
-func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil {
 		log.Error("ContractDeployReq", "param is error")
 		return nil, errors.New("ContractDeployReq request param is error")
@@ -96,18 +96,22 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	return reqId, nil
 }
 
-func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error) {
+func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) ([]byte, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) {
 		log.Error("ContractStopReq", "param is error")
 		return nil, errors.New("ContractStopReq request param is error")
 	}
 
-	log.Debug("ContractStopReq", "enter, contractId ", contractId)
+	randNum, err := crypto.GetRandomNonce()
+	if err != nil {
+		return nil, errors.New("GetRandomNonce error")
+	}
+	log.Debug("ContractStopReq", "enter, contractId ", contractId,"txId", hex.EncodeToString(randNum))
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
 		Payload: &modules.ContractStopRequestPayload{
 			ContractId:  contractId[:],
-			Txid:        txid,
+			Txid:        hex.EncodeToString(randNum),
 			DeleteImage: deleteImage,
 		},
 	}

@@ -67,7 +67,7 @@ func TestProtocolCompatibility(t *testing.T) {
 */
 // Tests that block headers can be retrieved from a remote chain based on user queries.
 //func TestGetBlockHeaders1(t *testing.T) { testGetBlockHeaders(t, 1) }
-func getUnitHashbyNumber(pm *ProtocolManager, index0 modules.ChainIndex) common.Hash {
+func getUnitHashbyNumber(pm *ProtocolManager, index0 *modules.ChainIndex) common.Hash {
 	u, _ := pm.dag.GetUnitByNumber(index0)
 	return u.Hash()
 }
@@ -82,99 +82,100 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 	}
 	// Create a batch of tests for various scenarios
 	limit := uint64(downloader.MaxHeaderFetch)
-	index := modules.ChainIndex{
+	index := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		0,
 	}
-	index0 := modules.ChainIndex{
+	index0 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit / 2,
 	}
-	index1 := modules.ChainIndex{
+	index1 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit/2 + 1,
 	}
-	index2 := modules.ChainIndex{
+	index2 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit/2 + 2,
 	}
-	index21 := modules.ChainIndex{
+	index21 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit/2 - 1,
 	}
-	index22 := modules.ChainIndex{
+	index22 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit/2 - 2,
 	}
-	index4 := modules.ChainIndex{
+	index4 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit/2 + 4,
 	}
-	index8 := modules.ChainIndex{
+	index8 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit/2 + 8,
 	}
-	index24 := modules.ChainIndex{
+	index24 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit/2 - 4,
 	}
-	index28 := modules.ChainIndex{
+	index28 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		limit/2 - 8,
 	}
-	index44 := modules.ChainIndex{
+	index44 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		4,
 	}
 	i := pm.dag.CurrentUnit().Number()
-	jia1 := modules.ChainIndex{
+	jia1 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		i.Index + 1,
 	}
-	in1 := modules.ChainIndex{
+	in1 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		i.Index - 1,
 	}
-	in4 := modules.ChainIndex{
+	in4 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		i.Index - 4,
 	}
-	i1 := modules.ChainIndex{
+	i1 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		1,
 	}
-	i2 := modules.ChainIndex{
+	i2 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		2,
 	}
-	i3 := modules.ChainIndex{
+	i3 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		3,
 	}
+	head, _ := pm.dag.GetHeaderByNumber(index0)
 	tests := []struct {
 		query  *getBlockHeadersData // The query to execute for header retrieval
 		expect []common.Hash        // The hashes of the block whose headers are expected
 	}{
 		// A single random block should be retrievable by hash and number too
 		{
-			&getBlockHeadersData{Origin: hashOrNumber{Hash: pm.dag.GetHeaderByNumber(index0).Hash()}, Amount: 1},
+			&getBlockHeadersData{Origin: hashOrNumber{Hash: head.Hash()}, Amount: 1},
 			[]common.Hash{getUnitHashbyNumber(pm, index0)},
 		}, {
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index0}, Amount: 1},
@@ -305,7 +306,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		// If the test used number origins, repeat with hashes as the too
 		if tt.query.Origin.Hash == (common.Hash{}) {
 			if origin, _ := pm.dag.GetUnitByNumber(tt.query.Origin.Number); origin != nil {
-				index := modules.ChainIndex{
+				index := &modules.ChainIndex{
 					AssetID: modules.PTNCOIN,
 					IsMain:  true,
 					Index:   uint64(0),

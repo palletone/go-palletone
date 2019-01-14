@@ -174,7 +174,7 @@ func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
 	return unit, err
 }
 
-func (d *Dag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
+func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
 	//return d.unitRep.GetUnitFormIndex(number)
 	hash, err := d.unitRep.GetHashByNumber(number)
 	if err != nil {
@@ -208,9 +208,9 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//	return nil
 	//}
 
-	uHeader, err1 := d.unitRep.GetHeaderByHeight(number)
+	uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
 	if err1 != nil {
-		log.Error("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
+		log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
@@ -324,11 +324,13 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	return h != nil
 }
 func (d *Dag) Exists(hash common.Hash) bool {
-	if unit, err := d.unitRep.GetUnit(hash); err == nil && unit != nil {
-		log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
-		return true
-	}
-	return false
+	//if unit, err := d.unitRep.GetUnit(hash); err == nil && unit != nil {
+	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
+	//	return true
+	//}
+	//return false
+	exist, _ := d.unitRep.IsHeaderExist(hash)
+	return exist
 }
 func (d *Dag) CurrentHeader() *modules.Header {
 	unit := d.CurrentUnit()
@@ -340,9 +342,9 @@ func (d *Dag) CurrentHeader() *modules.Header {
 
 // GetBodyRLP retrieves a block body in RLP encoding from the database by hash,
 // caching it if found.
-func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
-	return d.getBodyRLP(hash)
-}
+//func (d *Dag) GetBodyRLP(hash common.Hash) rlp.RawValue {
+//	return d.getBodyRLP(hash)
+//}
 
 // GetUnitTransactions is return unit's body, all transactions of unit.
 func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
@@ -371,23 +373,23 @@ func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	}, err
 }
 
-func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
-	txs := modules.Transactions{}
-	// get hash list
-	txs, err := d.unitRep.GetUnitTransactions(hash)
-	if err != nil {
-		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
-		return nil
-	}
-
-	data, err := rlp.EncodeToBytes(txs)
-	if err != nil {
-		log.Error("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
-		return nil
-	}
-	// get hash data
-	return data
-}
+//func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
+//	txs := modules.Transactions{}
+//	// get hash list
+//	txs, err := d.unitRep.GetUnitTransactions(hash)
+//	if err != nil {
+//		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
+//		return nil
+//	}
+//
+//	data, err := rlp.EncodeToBytes(txs)
+//	if err != nil {
+//		log.Error("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
+//		return nil
+//	}
+//	// get hash data
+//	return data
+//}
 
 //func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
 //	number, err := d.unitRep.GetNumberWithUnitHash(hash)
@@ -508,7 +510,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	propDb := storage.NewPropertyDb(db)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
@@ -538,7 +540,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	propDb := storage.NewPropertyDb(db)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 
@@ -565,9 +567,9 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	utxoDb := storage.NewUtxoDb(db)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
-
+	propDb := storage.NewPropertyDb(db)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 
 	dag := &Dag{
@@ -1062,7 +1064,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 		return nil, fmt.Errorf("CreateUnitForTest ERROR: genesis unit is null")
 	}
 	// compute height
-	height := modules.ChainIndex{
+	height := &modules.ChainIndex{
 		AssetID: currentUnit.UnitHeader.Number.AssetID,
 		IsMain:  currentUnit.UnitHeader.Number.IsMain,
 		Index:   currentUnit.UnitHeader.Number.Index + 1,
@@ -1360,6 +1362,6 @@ func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 }
 
 // GetTxByFileHash
-func (d *Dag) GetTxByFileHash(filehash []byte) (map[string]modules.Transactions, error) {
+func (d *Dag) GetTxByFileHash(filehash []byte) ([]modules.FileInfo, error) {
 	return d.unitRep.GetTxByFileHash(filehash)
 }

@@ -87,7 +87,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 		pro = new(mediatorplugin.MediatorPlugin)
 	}
 	//producer := new(mediatorplugin.MediatorPlugin)
-	index0 := modules.ChainIndex{
+	index0 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		0,
@@ -182,7 +182,7 @@ func (p *testTxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.H
 	return nil, (common.Hash{})
 }
 
-func (p *testTxPool) GetTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
 	return nil, nil
 }
 
@@ -303,7 +303,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 
 // handshake simulates a trivial handshake that expects the same state from the
 // remote side as we are simulating locally.
-func (p *testPeer) handshake(t *testing.T, index modules.ChainIndex, head common.Hash, genesis common.Hash) {
+func (p *testPeer) handshake(t *testing.T, index *modules.ChainIndex, head common.Hash, genesis common.Hash) {
 	msg := &statusData{
 		ProtocolVersion: uint32(p.version),
 		NetworkId:       DefaultConfig.NetworkId,
@@ -476,20 +476,20 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//dagDb := storage.NewDagDb(db, l)
 	dagDb := storage.NewDagDb(db)
 
-	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+	if err := dagDb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Println("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Println("SaveHashNumber:", "error", err.Error())
-		return fmt.Errorf("Save unit hash and number error")
-	}
-	if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Println("SaveNumberByHash:", "error", err.Error())
-		return fmt.Errorf("Save unit hash and number error")
-	}
+	//if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Println("SaveHashNumber:", "error", err.Error())
+	//	return fmt.Errorf("Save unit hash and number error")
+	//}
+	//if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Println("SaveNumberByHash:", "error", err.Error())
+	//	return fmt.Errorf("Save unit hash and number error")
+	//}
 
 	// step6. traverse transactions and save them
 	txHashSet := []common.Hash{}

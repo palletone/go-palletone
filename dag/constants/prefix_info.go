@@ -21,12 +21,12 @@ package constants
 
 // prefix info
 var (
-	UNIT_PREFIX                 = []byte("ut")  // unit_prefix + mci + hash
-	HEADER_PREFIX               = []byte("uh")  // prefix + hash
-	HEADER_HEIGTH_PREFIX        = []byte("uht") // prefix + height:hash
-	HeaderCanon_Prefix          = []byte("ch")  // Canon Header Prefix
-	UNIT_HASH_NUMBER_Prefix     = []byte("hn")
-	UNIT_NUMBER_PREFIX          = []byte("nh") // number 和unit hash 的对应关系
+	UNIT_PREFIX             = []byte("ut")  // unit_prefix + mci + hash
+	HEADER_PREFIX           = []byte("uh")  // prefix + hash
+	HEADER_HEIGTH_PREFIX    = []byte("uht") // prefix + height:hash
+	HeaderCanon_Prefix      = []byte("ch")  // Canon Header Prefix
+	UNIT_HASH_NUMBER_Prefix = []byte("hn")
+	//UNIT_NUMBER_PREFIX          = []byte("nh") // number 和unit hash 的对应关系
 	BODY_PREFIX                 = []byte("ub")
 	TRANSACTION_PREFIX          = []byte("tx")
 	Transaction_Index           = []byte("ti")
