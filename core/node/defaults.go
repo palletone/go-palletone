@@ -17,6 +17,7 @@
 package node
 
 import (
+	"github.com/palletone/go-palletone/dag/modules"
 	"os"
 	"os/user"
 )
@@ -38,6 +39,7 @@ var DefaultConfig = Config{
 	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
 	WSModules:        []string{"net", "web3", "dag"},
+	GasToken:         modules.PTNCOIN,
 	//	P2P: p2p.Config{
 	//		ListenAddr: ":30303",
 	//		MaxPeers:   25,

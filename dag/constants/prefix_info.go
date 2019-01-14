@@ -54,12 +54,13 @@ var (
 	// lookup
 	LookupPrefix = []byte("l")
 
-	StableUnitHash  = []byte("StableUnitHash")
-	HeadUnitHash    = []byte("HeadUnitHash")
-	HeadHeaderKey   = []byte("LastHeader")
-	HeadFastKey     = []byte("LastFast")
-	TrieSyncKey     = []byte("TrieSync")
-	GenesisUnitHash = []byte("GenesisUnitHash")
+	LastStableUnitHash   = []byte("stbu")
+	LastUnstableUnitHash = []byte("ustbu")
+	HeadUnitHash         = []byte("HeadUnitHash")
+	HeadHeaderKey        = []byte("LastHeader")
+	HeadFastKey          = []byte("LastFast")
+	TrieSyncKey          = []byte("TrieSync")
+	GenesisUnitHash      = []byte("GenesisUnitHash")
 	// contract
 	CONTRACT_PREFIX = []byte("cs")
 

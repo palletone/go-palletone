@@ -269,22 +269,22 @@ func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
 }
 
 // GetCanonicalHash
-func (b *PtnApiBackend) GetCanonicalHash(number uint64) (common.Hash, error) {
-	return b.ptn.dag.GetCanonicalHash(number)
-}
+//func (b *PtnApiBackend) GetCanonicalHash(number uint64) (common.Hash, error) {
+//	return b.ptn.dag.GetCanonicalHash(number)
+//}
 
 // Get state
-func (b *PtnApiBackend) GetHeadHeaderHash() (common.Hash, error) {
-	return b.ptn.dag.GetHeadHeaderHash()
-}
-
-func (b *PtnApiBackend) GetHeadUnitHash() (common.Hash, error) {
-	return b.ptn.dag.GetHeadUnitHash()
-}
-
-func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
-	return b.ptn.dag.GetHeadFastUnitHash()
-}
+//func (b *PtnApiBackend) GetHeadHeaderHash() (common.Hash, error) {
+//	return b.ptn.dag.GetHeadHeaderHash()
+//}
+//
+//func (b *PtnApiBackend) GetHeadUnitHash() (common.Hash, error) {
+//	return b.ptn.dag.GetHeadUnitHash()
+//}
+//
+//func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
+//	return b.ptn.dag.GetHeadFastUnitHash()
+//}
 
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()

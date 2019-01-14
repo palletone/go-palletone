@@ -178,9 +178,9 @@ func (dag *Dag) HeadUnitNum() uint64 {
 	return dag.GetDynGlobalProp().HeadUnitNum
 }
 
-func (dag *Dag) HeadUnitHash() common.Hash {
-	return dag.GetDynGlobalProp().HeadUnitHash
-}
+//func (dag *Dag) HeadUnitHash() common.Hash {
+//	return dag.GetDynGlobalProp().HeadUnitHash
+//}
 
 func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.stateRep.GetMediators()

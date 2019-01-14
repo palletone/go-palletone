@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -82,37 +83,60 @@ func (d *Dag) IsEmpty() bool {
 }
 
 func (d *Dag) CurrentUnit() *modules.Unit {
-	// step1. get current unit hash
-	hash, err := d.GetHeadUnitHash()
+
+	hash, _, err := d.propRep.GetLastUnstableUnit(node.DefaultConfig.GasToken)
 	if err != nil {
-		log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
+		log.Error("Can not get last unstable unit by gas token"+node.DefaultConfig.GasToken.ToAssetId(), "error", err.Error())
 		return nil
 	}
-	// step2. get unit height
-	//height, err := d.GetUnitNumber(hash)
-	// get unit header
-	uHeader, err := d.unitRep.GetHeader(hash)
+	unit, err := d.Memdag.GetUnit(hash)
+	if err == nil {
+		log.Debugf("Get last unstable unit from memdag by hash:%s", hash.String())
+		return unit
+	}
+	log.Infof("Cannot get unstable unit from memdag by hash:%s, try stable unit...", hash.String())
+	hash, _, err = d.propRep.GetLastStableUnit(node.DefaultConfig.GasToken)
 	if err != nil {
-		log.Error("Current unit when get unit header", "error", err.Error())
+		log.Error("Can not get last stable unit by gas token"+node.DefaultConfig.GasToken.ToAssetId(), "error", err.Error())
 		return nil
 	}
-	// get unit hash
-	uHash := common.Hash{}
-	uHash.SetBytes(hash.Bytes())
-	// get transaction list
-	txs, err := d.unitRep.GetUnitTransactions(uHash)
+	unit, err = d.unitRep.GetUnit(hash)
 	if err != nil {
-		log.Error("Current unit when get transactions", "error", err.Error())
+		log.Error("Cannot get last stable unit from ldb", "error", err.Error())
 		return nil
 	}
-	// generate unit
-	unit := modules.Unit{
-		UnitHeader: uHeader,
-		UnitHash:   uHash,
-		Txs:        txs,
-	}
-	unit.UnitSize = unit.Size()
-	return &unit
+	return unit
+	//// step1. get current unit hash
+	//hash, err := d.GetHeadUnitHash()
+	//if err != nil {
+	//	log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
+	//	return nil
+	//}
+	//// step2. get unit height
+	////height, err := d.GetUnitNumber(hash)
+	//// get unit header
+	//uHeader, err := d.unitRep.GetHeader(hash)
+	//if err != nil {
+	//	log.Error("Current unit when get unit header", "error", err.Error())
+	//	return nil
+	//}
+	//// get unit hash
+	//uHash := common.Hash{}
+	//uHash.SetBytes(hash.Bytes())
+	//// get transaction list
+	//txs, err := d.unitRep.GetUnitTransactions(uHash)
+	//if err != nil {
+	//	log.Error("Current unit when get transactions", "error", err.Error())
+	//	return nil
+	//}
+	//// generate unit
+	//unit := modules.Unit{
+	//	UnitHeader: uHeader,
+	//	UnitHash:   uHash,
+	//	Txs:        txs,
+	//}
+	//unit.UnitSize = unit.Size()
+	//return &unit
 }
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
@@ -596,40 +620,41 @@ func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 	return d.unitRep.GetNumberWithUnitHash(hash)
 }
 
-// GetCanonicalHash
-func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
-	return d.unitRep.GetCanonicalHash(number)
-}
-
-// Get state
-func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
-	return d.unitRep.GetHeadHeaderHash()
-}
-
-func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
-	unit := new(modules.Unit)
-	var err0 error
-	var mem_hash common.Hash
-	if d.Memdag != nil {
-		unit, err0 = d.Memdag.GetCurrentUnit(modules.NewPTNIdType(), 0)
-		if err0 != nil {
-			log.Debug("get mem current unit info", "error", err0, "hash", unit.Hash().String())
-		}
-		mem_hash = unit.Hash()
-	}
-	head_hash, err := d.unitRep.GetHeadUnitHash()
-	head_unit, _ := d.GetUnitByHash(head_hash)
-	if head_unit != nil {
-		if unit.NumberU64() > head_unit.NumberU64() {
-			return mem_hash, err
-		}
-	}
-	return head_hash, err
-}
-
-func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
-	return d.unitRep.GetHeadFastUnitHash()
-}
+//
+//// GetCanonicalHash
+//func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
+//	return d.unitRep.GetCanonicalHash(number)
+//}
+//
+//// Get state
+//func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
+//	return d.unitRep.GetHeadHeaderHash()
+//}
+//
+//func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
+//	unit := new(modules.Unit)
+//	var err0 error
+//	var mem_hash common.Hash
+//	if d.Memdag != nil {
+//		unit, err0 = d.Memdag.GetCurrentUnit(modules.NewPTNIdType(), 0)
+//		if err0 != nil {
+//			log.Debug("get mem current unit info", "error", err0, "hash", unit.Hash().String())
+//		}
+//		mem_hash = unit.Hash()
+//	}
+//	head_hash, err := d.unitRep.GetHeadUnitHash()
+//	head_unit, _ := d.GetUnitByHash(head_hash)
+//	if head_unit != nil {
+//		if unit.NumberU64() > head_unit.NumberU64() {
+//			return mem_hash, err
+//		}
+//	}
+//	return head_hash, err
+//}
+//
+//func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
+//	return d.unitRep.GetHeadFastUnitHash()
+//}
 
 func (d *Dag) GetTrieSyncProgress() (uint64, error) {
 	return d.unitRep.GetTrieSyncProgress()
