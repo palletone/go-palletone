@@ -339,15 +339,15 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
-	// append by Albert·Gou
 	pm.newProducedUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
 	pm.activeMediatorsUpdatedSub.Unsubscribe()
-
+	pm.contractSub.Unsubscribe()
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
+	pm.ceSub.Unsubscribe()
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.

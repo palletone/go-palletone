@@ -747,7 +747,7 @@ func (mr *MockIDagMockRecorder) GetContract(id interface{}) *gomock.Call {
 }
 
 // GetUnitByNumber mocks base method
-func (m *MockIDag) GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error) {
+func (m *MockIDag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnitByNumber", number)
 	ret0, _ := ret[0].(*modules.Unit)
