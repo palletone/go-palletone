@@ -623,7 +623,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 		count = limit
 	}
 	log.Debug("Downloader", "findAncestor RequestHeadersByNumber false from:", from, "count:", count)
-	index := modules.ChainIndex{
+	index := &modules.ChainIndex{
 		AssetID: assetId,
 		IsMain:  true,
 		Index:   uint64(from),
@@ -798,7 +798,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 		ttl = d.requestTTL()
 		timeout.Reset(ttl)
 
-		index := modules.ChainIndex{
+		index := &modules.ChainIndex{
 			AssetID: assetId,
 			IsMain:  true,
 		}

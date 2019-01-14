@@ -485,7 +485,7 @@ func (chain *MemDag) Prune(assetId string, delhashs []common.Hash) error {
 			fork_index.RemoveStableIndex(unit.UnitHeader.Index())
 			chain.forkIndex[unit.UnitHeader.ChainIndex().AssetID.String()] = fork_index
 			// 2. memUnit chainIndex
-			go chain.memUnit.DelHashByNumber(*unit.UnitHeader.ChainIndex())
+			go chain.memUnit.DelHashByNumber(unit.UnitHeader.ChainIndex())
 		}
 	}
 

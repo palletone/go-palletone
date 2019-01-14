@@ -103,7 +103,7 @@ func TestCopyHeader(t *testing.T) {
 		GroupSign:   w,
 		GroupPubKey: w,
 		TxRoot:      common.Hash{},
-		Number:      ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
+		Number:      &ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
 	}
 
 	newH := CopyHeader(&h)
@@ -132,6 +132,7 @@ func TestUnitSize(t *testing.T) {
 
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
+	h.Number = &ChainIndex{}
 	h.Number.AssetID = PTNCOIN
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)

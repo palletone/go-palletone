@@ -18,9 +18,9 @@ package modules
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
-	"reflect"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -234,8 +234,8 @@ func NewTxOut(value uint64, pkScript []byte, asset *Asset) *Output {
 }
 
 type StateVersion struct {
-	Height  ChainIndex `json:"height"`
-	TxIndex uint32     `json:"tx_index"`
+	Height  *ChainIndex `json:"height"`
+	TxIndex uint32      `json:"tx_index"`
 }
 type ContractStateValue struct {
 	Value   []byte        `json:"value"`
@@ -291,7 +291,7 @@ func (version *StateVersion) SetBytes(b []byte) {
 	heightIdx := littleEndian.Uint64(b[16:24])
 	isMain := b[24]
 	txIdx := littleEndian.Uint32(b[25:])
-	cidx := ChainIndex{AssetID: asset, Index: heightIdx, IsMain: isMain == byte(1)}
+	cidx := &ChainIndex{AssetID: asset, Index: heightIdx, IsMain: isMain == byte(1)}
 	version.Height = cidx
 	version.TxIndex = txIdx
 }
@@ -535,11 +535,11 @@ type DataPayload struct {
 type FileInfo struct {
 	UnitHash    common.Hash   `json:"unit_hash"`
 	UintHeight  uint64        `json:"unit_index"`
-	ParentsHash []common.Hash   `json:"parents_hash"`
+	ParentsHash []common.Hash `json:"parents_hash"`
 	Txid        common.Hash   `json:"txid"`
-	Timestamp   int64 `json:"timestamp"`
-	MainData  []byte `json:"main_data"`
-	ExtraData []byte `json:"extra_data"`
+	Timestamp   int64         `json:"timestamp"`
+	MainData    []byte        `json:"main_data"`
+	ExtraData   []byte        `json:"extra_data"`
 }
 
 func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {

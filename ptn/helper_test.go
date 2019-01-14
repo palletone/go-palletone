@@ -87,7 +87,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 		pro = new(mediatorplugin.MediatorPlugin)
 	}
 	//producer := new(mediatorplugin.MediatorPlugin)
-	index0 := modules.ChainIndex{
+	index0 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		0,
@@ -182,7 +182,7 @@ func (p *testTxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.H
 	return nil, (common.Hash{})
 }
 
-func (p *testTxPool) GetTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
 	return nil, nil
 }
 
@@ -303,7 +303,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 
 // handshake simulates a trivial handshake that expects the same state from the
 // remote side as we are simulating locally.
-func (p *testPeer) handshake(t *testing.T, index modules.ChainIndex, head common.Hash, genesis common.Hash) {
+func (p *testPeer) handshake(t *testing.T, index *modules.ChainIndex, head common.Hash, genesis common.Hash) {
 	msg := &statusData{
 		ProtocolVersion: uint32(p.version),
 		NetworkId:       DefaultConfig.NetworkId,

@@ -2,25 +2,26 @@ package manger
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"time"
 	"bytes"
 	"container/list"
 	"encoding/hex"
-	
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
+
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
-	cp "github.com/palletone/go-palletone/common/crypto"
-	db "github.com/palletone/go-palletone/contracts/comm"
-	cclist "github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
-	"github.com/pkg/errors"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cp "github.com/palletone/go-palletone/common/crypto"
+	db "github.com/palletone/go-palletone/contracts/comm"
+	cclist "github.com/palletone/go-palletone/contracts/list"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 var debugX bool = true
@@ -138,7 +139,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	//将合约代码文件打包成 tar 文件
 	paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
 	if err != nil {
-		log.Info("getUserCCPayload err:","error",err)
+		log.Info("getUserCCPayload err:", "error", err)
 		return nil, err
 	}
 	var buffer bytes.Buffer
@@ -154,9 +155,11 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Bytecode:   paylod,
 	}
 	//test
-	//tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
-	//listAdd(tcc)
-	
+	if cfg.DebugTest {
+		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
+		listAdd(tcc)
+	}
+
 	log.Infof("user contract template id [%v]", payloadUnit.TemplateId)
 	return payloadUnit, nil
 }
@@ -184,11 +187,6 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 	if err != nil {
 		return nil, nil, errors.New("GetTxSimulator error")
 	}
-	//randNum, err := crypto.GetRandomNonce()
-	//if err != nil {
-	//	return nil, nil, errors.New("crypto.GetRandomNonce error")
-	//}
-
 	usrcc := &ucc.UserChaincode{
 		Name:     ccName,
 		Path:     ccPath,
@@ -207,9 +205,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 			Version: ccVersion,
 		},
 	}
-
-	//err = ucc.DeployUserCC(spec, setChainId, usrcc, txid, txsim, setTimeOut)
-	err = ucc.DeployUserCC(nil,spec, setChainId, usrcc, txid, txsim, setTimeOut)
+	err = ucc.DeployUserCC(nil, spec, setChainId, usrcc, txid, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.New("Deploy fail")
 	}
@@ -250,30 +246,31 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		},
 		ChaincodeId: &pb.ChaincodeID{},
 	}
-	templateCC,chaincodeData, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
+	templateCC, chaincodeData, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 	if err != nil {
 		log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, err)
 		return nil, nil, err
 	}
 
-	//test!!!!!!
-	//todo del
-	//if txId == "" || templateCC.Name == "" || templateCC.Path == "" {
-	//	log.Errorf("cc param is null")
-	//	//test tmp
-	//	tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}
-	//	listAdd(tcc)
-	//	tmpcc, err := listGet(templateId)
-	//	if err == nil {
-	//		templateCC.Name = tmpcc.name
-	//		templateCC.Path = tmpcc.path
-	//		templateCC.Version = tmpcc.vers
-	//	} else {
-	//		errMsg := fmt.Sprintf("Deploy not find tplId[%s] in list", hex.EncodeToString(templateId))
-	//		log.Error(errMsg)
-	//		return nil, nil, errors.New(errMsg)
-	//	}
-	//}
+	//test
+	if cfg.DebugTest {
+		if txId == "" || templateCC.Name == "" || templateCC.Path == "" {
+			log.Errorf("cc param is null")
+			tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}
+			listAdd(tcc)
+			tmpcc, err := listGet(templateId)
+			if err == nil {
+				templateCC.Name = tmpcc.name
+				templateCC.Path = tmpcc.path
+				templateCC.Version = tmpcc.vers
+			} else {
+				errMsg := fmt.Sprintf("Deploy not find tplId[%s] in list", hex.EncodeToString(templateId))
+				log.Error(errMsg)
+				return nil, nil, errors.New(errMsg)
+			}
+		}
+	}
+
 	txsim, err := mksupt.GetTxSimulator(idag, chainID, txId)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
@@ -292,13 +289,11 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		Version: usrcc.Version,
 	}
 	spec.ChaincodeId = chaincodeID
-	err = ucc.DeployUserCC(chaincodeData,spec, setChainId, usrcc, txId, txsim, setTimeOut)
+	err = ucc.DeployUserCC(chaincodeData, spec, setChainId, usrcc, txId, txsim, setTimeOut)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	btxId, err := hex.DecodeString(txId)
-	//log.Debug("Deploy----------------+", "txid", btxId, "len", len(btxId), "cap", cap(btxId), "ctxId cap", cap(ctxId))
-
 	cc := &cclist.CCInfo{
 		Id:      btxId,
 		Name:    usrccName,
@@ -419,14 +414,3 @@ func Stop(contractid []byte, chainID string, deployId []byte, txid string, delet
 
 	return err
 }
-
-//func peerContractMockConfigInit() {
-//	viper.Set("peer.fileSystemPath", "./chaincodes")
-//	viper.Set("peer.address", "127.0.0.1:12345")
-//	viper.Set("chaincode.executetimeout", 20*time.Second)
-//
-//	viper.Set("vm.endpoint", "unix:///var/run/docker.sock")
-//	viper.Set("chaincode.builder", "palletimg")
-//
-//	viper.Set("chaincode.system", map[string]string{"sample_syscc": "true"})
-//}
