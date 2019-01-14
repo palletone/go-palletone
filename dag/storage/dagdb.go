@@ -75,6 +75,7 @@ type IDagDb interface {
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	GetHeader(hash common.Hash) (*modules.Header, error)
+	IsHeaderExist(uHash common.Hash) (bool, error)
 	//GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
 	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
@@ -100,6 +101,11 @@ type IDagDb interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
+}
+
+func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {
+	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
+	return dagdb.db.Has(key)
 }
 
 /* ----- common geter ----- */

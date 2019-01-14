@@ -51,6 +51,7 @@ type IUnitRepository interface {
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetHeader(hash common.Hash) (*modules.Header, error)
+	IsHeaderExist(uHash common.Hash) (bool, error)
 	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnit(hash common.Hash) (*modules.Unit, error)
@@ -114,6 +115,10 @@ func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) 
 func (rep *UnitRepository) GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error) {
 	return rep.dagdb.GetHeaderByHeight(index)
 }
+func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
+	return rep.dagdb.IsHeaderExist(uHash)
+}
+
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	// 1. get chainindex
 	//height, err := dagdb.GetNumberWithUnitHash(hash)
@@ -816,6 +821,7 @@ func getExtradata(tx *modules.Transaction) []byte {
 
 	return extradata
 }
+
 /**
 保存PaymentPayload
 save PaymentPayload data
@@ -1190,7 +1196,7 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.FileIn
 		if err != nil {
 			return nil, err
 		}
-		tx,_,_,_ := unitOp.dagdb.GetTransaction(hash)
+		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
 		md.MainData = getMaindata(tx)
 		md.ExtraData = getExtradata(tx)
 		md.UnitHash = unithash

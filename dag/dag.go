@@ -324,11 +324,13 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	return h != nil
 }
 func (d *Dag) Exists(hash common.Hash) bool {
-	if unit, err := d.unitRep.GetUnit(hash); err == nil && unit != nil {
-		log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
-		return true
-	}
-	return false
+	//if unit, err := d.unitRep.GetUnit(hash); err == nil && unit != nil {
+	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
+	//	return true
+	//}
+	//return false
+	exist, _ := d.unitRep.IsHeaderExist(hash)
+	return exist
 }
 func (d *Dag) CurrentHeader() *modules.Header {
 	unit := d.CurrentUnit()
