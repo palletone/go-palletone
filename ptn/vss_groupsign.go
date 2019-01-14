@@ -304,7 +304,7 @@ func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
 		return err
 	}
 
-	p.knownBlocks.Add(newUnit.UnitHash)
+	//p.knownBlocks.Add(newUnit.UnitHash)
 	return p2p.Send(p.rw, NewProducedUnitMsg, data)
 }
 
