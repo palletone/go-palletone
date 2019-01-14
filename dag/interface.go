@@ -139,6 +139,8 @@ type IDag interface {
 	//SaveReqIdByTx(tx *modules.Transaction) error
 
 	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
+
+	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
 }
 type ICache interface {
 	Set(key, value []byte, expireSeconds int) (err error)

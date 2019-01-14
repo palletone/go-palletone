@@ -78,7 +78,7 @@ type IUnitRepository interface {
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetTxByFileHash(filehash []byte) ([]modules.FileInfo, error)
+	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
 
 	//获得某个分区上的最新不可逆单元
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
@@ -1192,14 +1192,14 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 }
 
 //get
-func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.FileInfo, error) {
-	var mds []modules.FileInfo
+func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error) {
+	var mds []*modules.FileInfo
 	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
 	if err != nil {
 		return nil, err
 	}
 	for _, hash := range hashs {
-		var md modules.FileInfo
+		var md *modules.FileInfo
 		unithash, unitindex, _, err := unitOp.dagdb.GetTxLookupEntry(hash)
 		if err != nil {
 			return nil, err
