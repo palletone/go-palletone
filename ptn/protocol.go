@@ -156,7 +156,7 @@ type txPool interface {
 type statusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint64
-	Index           modules.ChainIndex
+	Index           *modules.ChainIndex
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
 	//Mediator        bool

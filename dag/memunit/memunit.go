@@ -38,13 +38,13 @@ type MemUnit struct {
 	memUnitInfo *sync.Map
 	memLock     sync.RWMutex
 
-	numberToHash     map[modules.ChainIndex]common.Hash
+	numberToHash     map[*modules.ChainIndex]common.Hash
 	numberToHashLock sync.RWMutex
 }
 
 func InitMemUnit() *MemUnit {
 	memUnitInfo := new(sync.Map)
-	numberToHash := map[modules.ChainIndex]common.Hash{}
+	numberToHash := map[*modules.ChainIndex]common.Hash{}
 	memUnit := MemUnit{
 		memUnitInfo:  memUnitInfo,
 		numberToHash: numberToHash,
@@ -54,7 +54,7 @@ func InitMemUnit() *MemUnit {
 
 //set the mapping relationship
 //key:number  value:unit hash
-func (mu *MemUnit) SetHashByNumber(chainIndex modules.ChainIndex, hash common.Hash) {
+func (mu *MemUnit) SetHashByNumber(chainIndex *modules.ChainIndex, hash common.Hash) {
 	mu.numberToHashLock.Lock()
 	defer mu.numberToHashLock.Unlock()
 	if _, ok := mu.numberToHash[chainIndex]; ok {
@@ -66,7 +66,7 @@ func (mu *MemUnit) SetHashByNumber(chainIndex modules.ChainIndex, hash common.Ha
 
 //get the mapping relationship
 //key:number  result:unit hash
-func (mu *MemUnit) GetHashByNumber(chainIndex modules.ChainIndex) (common.Hash, error) {
+func (mu *MemUnit) GetHashByNumber(chainIndex *modules.ChainIndex) (common.Hash, error) {
 	mu.numberToHashLock.RLock()
 	defer mu.numberToHashLock.RUnlock()
 	if hash, ok := mu.numberToHash[chainIndex]; ok {
@@ -75,7 +75,7 @@ func (mu *MemUnit) GetHashByNumber(chainIndex modules.ChainIndex) (common.Hash, 
 	return common.Hash{}, errors.New("have not key")
 }
 
-func (mu *MemUnit) DelHashByNumber(chainIndex modules.ChainIndex) error {
+func (mu *MemUnit) DelHashByNumber(chainIndex *modules.ChainIndex) error {
 	mu.numberToHashLock.Lock()
 	defer mu.numberToHashLock.Unlock()
 	if _, ok := mu.numberToHash[chainIndex]; !ok {
