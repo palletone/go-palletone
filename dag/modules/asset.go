@@ -100,7 +100,7 @@ func (asset *Asset) SetString(str string) error {
 	}
 	if !strings.Contains(str, "-") {
 		//ERC20, AssetID only
-		a, err := string2AssetId(str)
+		a, err := String2AssetId(str)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func (asset *Asset) SetString(str string) error {
 	} else {
 		//ERC721
 		strArray := strings.Split(str, "-")
-		a, err := string2AssetId(strArray[0])
+		a, err := String2AssetId(strArray[0])
 		if err != nil {
 			return err
 		}

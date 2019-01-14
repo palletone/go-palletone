@@ -84,9 +84,11 @@ func (d *Dag) IsEmpty() bool {
 
 func (d *Dag) CurrentUnit() *modules.Unit {
 
-	hash, _, err := d.propRep.GetLastUnstableUnit(node.DefaultConfig.GasToken)
+	nconfig := &node.DefaultConfig
+	gasToken := nconfig.GetGasToken()
+	hash, _, err := d.propRep.GetLastUnstableUnit(gasToken)
 	if err != nil {
-		log.Error("Can not get last unstable unit by gas token"+node.DefaultConfig.GasToken.ToAssetId(), "error", err.Error())
+		log.Error("Can not get last unstable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
 		return nil
 	}
 	unit, err := d.Memdag.GetUnit(hash)
@@ -95,9 +97,9 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 		return unit
 	}
 	log.Infof("Cannot get unstable unit from memdag by hash:%s, try stable unit...", hash.String())
-	hash, _, err = d.propRep.GetLastStableUnit(node.DefaultConfig.GasToken)
+	hash, _, err = d.propRep.GetLastStableUnit(gasToken)
 	if err != nil {
-		log.Error("Can not get last stable unit by gas token"+node.DefaultConfig.GasToken.ToAssetId(), "error", err.Error())
+		log.Error("Can not get last stable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
 		return nil
 	}
 	unit, err = d.unitRep.GetUnit(hash)

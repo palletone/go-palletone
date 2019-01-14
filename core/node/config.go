@@ -149,7 +149,8 @@ type Config struct {
 	// Logger is a custom logger to use with the p2p.Server.
 	//Logger log.ILogger `toml:",omitempty"`
 	//当前节点选择的平台币，燃料币,必须为Asset全名
-	GasToken modules.IDType16
+	GasToken string
+	gasToken modules.IDType16 `toml:"-"`
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into
@@ -204,6 +205,18 @@ func (c *Config) HTTPEndpoint() string {
 		return ""
 	}
 	return fmt.Sprintf("%s:%d", c.HTTPHost, c.HTTPPort)
+}
+
+func (c *Config) GetGasToken() modules.IDType16 {
+	if c.gasToken == modules.ZeroIdType16() {
+		token, err := modules.String2AssetId(c.GasToken)
+		if err != nil {
+			log.Warn("Cannot parse node.GasToken to a correct asset, token str:" + c.GasToken)
+			return modules.PTNCOIN
+		}
+		c.gasToken = token
+	}
+	return c.gasToken
 }
 
 // DefaultHTTPEndpoint returns the HTTP endpoint used by default.
