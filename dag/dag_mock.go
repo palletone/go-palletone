@@ -993,6 +993,21 @@ func (mr *MockIDagMockRecorder) GetTxHashByReqId(reqid interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxHashByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxHashByReqId), reqid)
 }
 
+// GetTxFromAddress mocks base method
+func (m *MockIDag) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxFromAddress", tx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxFromAddress indicates an expected call of GetTxFromAddress
+func (mr *MockIDagMockRecorder) GetTxFromAddress(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFromAddress", reflect.TypeOf((*MockIDag)(nil).GetTxFromAddress), tx)
+}
+
 // MockICache is a mock of ICache interface
 type MockICache struct {
 	ctrl     *gomock.Controller

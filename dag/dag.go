@@ -783,6 +783,9 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
 	return d.utxoRep.ComputeTxFee(pay)
 }
+func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+	return d.unitRep.GetTxFromAddress(tx)
+}
 
 func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
 	return d.unitRep.GetAddrOutput(addr)

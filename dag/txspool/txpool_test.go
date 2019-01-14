@@ -136,6 +136,11 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees,
 	return &modules.InvokeFees{}, nil
 }
 
+func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+
+	return nil, nil
+}
+
 // Tests that if the transaction count belonging to multiple accounts go above
 // some hard threshold, if they are under the minimum guaranteed slot count then
 // the transactions are still kept.

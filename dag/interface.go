@@ -137,6 +137,8 @@ type IDag interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
+
+	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }
 type ICache interface {
 	Set(key, value []byte, expireSeconds int) (err error)

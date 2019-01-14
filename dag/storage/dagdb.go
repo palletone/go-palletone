@@ -101,6 +101,7 @@ type IDagDb interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
+	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }
 
 func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {

@@ -82,6 +82,8 @@ type IUnitRepository interface {
 
 	//获得某个分区上的最新不可逆单元
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
+
+	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -1218,4 +1220,8 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.FileIn
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
 	hash := rep.propdb.GetStableUnitHash() //TODO Devin, use assetId to get
 	return rep.GetUnit(hash)
+}
+
+func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+	return rep.dagdb.GetTxFromAddress(tx)
 }
