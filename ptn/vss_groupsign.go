@@ -55,7 +55,7 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
 
 		err := peer.SendNewProducedUnit(newUnit)
 		if err != nil {
-			log.Error(err.Error())
+			log.Debug(err.Error())
 		}
 	}
 }
@@ -85,13 +85,13 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 	if self {
 		//size, reader, err := rlp.EncodeToReader(sigShare)
 		//if err != nil {
-		//	log.Error(err.Error())
+		//	log.Debug(err.Error())
 		//}
 		//
 		//var s mp.SigShareEvent
 		//stream := rlp.NewStream(reader, uint64(size))
 		//if err := stream.Decode(&s); err != nil {
-		//	log.Error(err.Error())
+		//	log.Debug(err.Error())
 		//}
 		//pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 
@@ -105,7 +105,7 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 
 	err := peer.SendSigShare(sigShare)
 	if err != nil {
-		log.Error(err.Error())
+		log.Debug(err.Error())
 	}
 }
 
@@ -153,13 +153,13 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 	if self {
 		//size, reader, err := rlp.EncodeToReader(deal)
 		//if err != nil {
-		//	log.Error(err.Error())
+		//	log.Debug(err.Error())
 		//}
 		//
 		//var d mp.VSSDealEvent
 		//s := rlp.NewStream(reader, uint64(size))
 		//if err := s.Decode(&d); err != nil {
-		//	log.Error(err.Error())
+		//	log.Debug(err.Error())
 		//}
 		//pm.producer.ProcessVSSDeal(&d)
 
@@ -186,7 +186,7 @@ func (pm *ProtocolManager) TransmitVSSDeal(node *discover.Node, deal *mp.VSSDeal
 
 	err := peer.SendVSSDeal(deal)
 	if err != nil {
-		log.Error(err.Error())
+		log.Debug(err.Error())
 	}
 }
 
@@ -211,7 +211,7 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 	//dstId := node.ID.TerminalString()
 	//peer := pm.peers.Peer(dstId)
 	//if peer == nil {
-	//	log.Error(fmt.Sprintf("peer not exist: %v", node.String()))
+	//	log.Debug(fmt.Sprintf("peer not exist: %v", node.String()))
 	//}
 
 	// comment by Albert·Gou
@@ -226,13 +226,13 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 		if peer == nil {
 			//size, reader, err := rlp.EncodeToReader(resp)
 			//if err != nil {
-			//	log.Error(err.Error())
+			//	log.Debug(err.Error())
 			//}
 			//
 			//var r mp.VSSResponseEvent
 			//s := rlp.NewStream(reader, uint64(size))
 			//if err := s.Decode(&r); err != nil {
-			//	log.Error(err.Error())
+			//	log.Debug(err.Error())
 			//}
 			//go pm.producer.AddToResponseBuf(&r)
 
@@ -304,6 +304,7 @@ func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
 		return err
 	}
 
+	//p.knownBlocks.Add(newUnit.UnitHash)
 	return p2p.Send(p.rw, NewProducedUnitMsg, data)
 }
 

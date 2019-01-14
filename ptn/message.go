@@ -521,13 +521,13 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
 	data := []byte{}
 	if err := msg.Decode(&data); err != nil {
-		log.Info("ProtocolManager", "NewBlockMsg msg:", msg.String())
+		log.Debug("ProtocolManager", "NewBlockMsg msg:", msg.String())
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
 	var unit modules.Unit
 	if err := json.Unmarshal(data, &unit); err != nil {
-		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err)
+		log.Debug("ProtocolManager", "NewBlockMsg json ummarshal err:", err)
 		return err
 	}
 
