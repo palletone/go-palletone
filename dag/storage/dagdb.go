@@ -75,10 +75,11 @@ type IDagDb interface {
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	GetHeader(hash common.Hash) (*modules.Header, error)
+	IsHeaderExist(uHash common.Hash) (bool, error)
 	//GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
-	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
+	//GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
-	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
+	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
@@ -100,6 +101,11 @@ type IDagDb interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
+}
+
+func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {
+	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
+	return dagdb.db.Has(key)
 }
 
 /* ----- common geter ----- */
@@ -154,7 +160,7 @@ func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
 	return dagdb.saveHeaderHeightIndex(h)
 }
 
-//为Unit的Height建立索引
+//为Unit的Height建立索引,这个索引是必须的，所以在dagdb中实现，而不是在indexdb实现。
 func (dagdb *DagDb) saveHeaderHeightIndex(h *modules.Header) error {
 	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
 	uHash := h.Hash()
@@ -166,8 +172,8 @@ func (dagdb *DagDb) saveHeaderHeightIndex(h *modules.Header) error {
 	log.Debugf("Save header number %s for unit: %x", h.Number.String(), uHash.Bytes())
 	return nil
 }
-func (dagdb *DagDb) getUnitHashByHeight(cidx *modules.ChainIndex) (common.Hash, error) {
-	idxKey := append(constants.HEADER_HEIGTH_PREFIX, cidx.Bytes()...)
+func (dagdb *DagDb) GetHashByNumber(number *modules.ChainIndex) (common.Hash, error) {
+	idxKey := append(constants.HEADER_HEIGTH_PREFIX, number.Bytes()...)
 	uHash := common.Hash{}
 	data, err := dagdb.db.Get(idxKey)
 	if err != nil {
@@ -234,38 +240,37 @@ func (dagdb *DagDb) getUnitHashByHeight(cidx *modules.ChainIndex) (common.Hash, 
 //	return nil
 //}
 
-func (dagdb *DagDb) GetHashByNumber(number modules.ChainIndex) (common.Hash, error) {
-	i := 0
-	if number.IsMain {
-		i = 1
-	}
-	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
-	ha, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)))
-	log.Debug("DagDB GetHashByNumber info.", "error", err, "GetHashByNumber_key", string(key), "hash:", fmt.Sprintf("%x", ha))
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	strhash := ""
-	err1 := rlp.DecodeBytes(ha, &strhash)
-	if err1 != nil {
-		log.Debug("GetHashByNumber", "DecodeBytes_err", err1)
-		return common.Hash{}, err1
-	}
-	hash := common.Hash{}
-	if err := hash.SetHexString(strhash); err != nil {
-		log.Debug("GetHashByNumber", "SetHexString err:", err)
-		return common.Hash{}, err
-	}
-
-	return hash, nil
-}
-
-// height and assetid can get a unit key.
-func (dagdb *DagDb) SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
-	key := fmt.Sprintf("%s_%s_%d", constants.UNIT_NUMBER_PREFIX, cIndex.AssetID.String(), cIndex.Index)
-	return Store(dagdb.db, key, uHash.Hex())
-}
+//	i := 0
+//	if number.IsMain {
+//		i = 1
+//	}
+//	key := fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
+//	ha, err := GetBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)))
+//	log.Debug("DagDB GetHashByNumber info.", "error", err, "GetHashByNumber_key", string(key), "hash:", fmt.Sprintf("%x", ha))
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//
+//	strhash := ""
+//	err1 := rlp.DecodeBytes(ha, &strhash)
+//	if err1 != nil {
+//		log.Debug("GetHashByNumber", "DecodeBytes_err", err1)
+//		return common.Hash{}, err1
+//	}
+//	hash := common.Hash{}
+//	if err := hash.SetHexString(strhash); err != nil {
+//		log.Debug("GetHashByNumber", "SetHexString err:", err)
+//		return common.Hash{}, err
+//	}
+//
+//	return hash, nil
+//}
+//
+//// height and assetid can get a unit key.
+//func (dagdb *DagDb) SaveUHashIndex(cIndex modules.ChainIndex, uHash common.Hash) error {
+//	key := fmt.Sprintf("%s_%s_%d", constants.UNIT_NUMBER_PREFIX, cIndex.AssetID.String(), cIndex.Index)
+//	return Store(dagdb.db, key, uHash.Hex())
+//}
 
 /**
 key: [BODY_PREFIX][unit hash]
@@ -654,14 +659,14 @@ func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
 
 }
 
-// GetHeaderByHeight ,first :get hash  , return header.
-func (dagdb *DagDb) GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error) {
-	hash, err := dagdb.getUnitHashByHeight(index)
-	if err != nil {
-		return nil, err
-	}
-	return dagdb.GetHeader(hash)
-}
+// GetHeaderByNumber ,first :get hash  , return header.
+//func (dagdb *DagDb) GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error) {
+//	hash, err := dagdb.GetHashByNumber(index)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return dagdb.GetHeader(hash)
+//}
 
 //func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {
 //	encNum := encodeBlockNumber(index)

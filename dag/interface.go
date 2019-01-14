@@ -100,7 +100,7 @@ type IDag interface {
 	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
-	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
+	GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 
 	//Mediator

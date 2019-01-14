@@ -51,10 +51,13 @@ type IUnitRepository interface {
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetHeader(hash common.Hash) (*modules.Header, error)
-	GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error)
+	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
+	IsHeaderExist(uHash common.Hash) (bool, error)
+	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
+
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnit(hash common.Hash) (*modules.Unit, error)
-	GetHashByNumber(number modules.ChainIndex) (common.Hash, error)
+
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
@@ -111,9 +114,17 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
 	return rep.dagdb.GetHeader(hash)
 }
-func (rep *UnitRepository) GetHeaderByHeight(index *modules.ChainIndex) (*modules.Header, error) {
-	return rep.dagdb.GetHeaderByHeight(index)
+func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error) {
+	hash, err := rep.dagdb.GetHashByNumber(index)
+	if err != nil {
+		return nil, err
+	}
+	return rep.dagdb.GetHeader(hash)
 }
+func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
+	return rep.dagdb.IsHeaderExist(uHash)
+}
+
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	// 1. get chainindex
 	//height, err := dagdb.GetNumberWithUnitHash(hash)
@@ -150,7 +161,8 @@ func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	unit.UnitSize = unit.Size()
 	return unit, nil
 }
-func (rep *UnitRepository) GetHashByNumber(number modules.ChainIndex) (common.Hash, error) {
+
+func (rep *UnitRepository) GetHashByNumber(number *modules.ChainIndex) (common.Hash, error) {
 	return rep.dagdb.GetHashByNumber(number)
 }
 func (rep *UnitRepository) GetBody(unitHash common.Hash) ([]common.Hash, error) {
@@ -816,6 +828,7 @@ func getExtradata(tx *modules.Transaction) []byte {
 
 	return extradata
 }
+
 /**
 保存PaymentPayload
 save PaymentPayload data
@@ -1190,7 +1203,7 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.FileIn
 		if err != nil {
 			return nil, err
 		}
-		tx,_,_,_ := unitOp.dagdb.GetTransaction(hash)
+		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
 		md.MainData = getMaindata(tx)
 		md.ExtraData = getExtradata(tx)
 		md.UnitHash = unithash
