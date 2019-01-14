@@ -27,8 +27,6 @@ import (
 	"unicode"
 
 	"github.com/naoina/toml"
-	"gopkg.in/urfave/cli.v1"
-
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
@@ -42,6 +40,8 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/statistics/dashboard"
+	"gopkg.in/urfave/cli.v1"
 )
 
 const defaultConfigPath = "./ptn-config.toml"
@@ -121,10 +121,10 @@ type ptnstatsConfig struct {
 }
 
 type FullConfig struct {
-	Ptn      ptn.Config
-	Node     node.Config
-	Ptnstats ptnstatsConfig
-	//Dashboard      dashboard.Config
+	Ptn            ptn.Config
+	Node           node.Config
+	Ptnstats       ptnstatsConfig
+	Dashboard      dashboard.Config
 	Jury           jury.Config
 	MediatorPlugin mp.Config
 	Log            *log.Config
@@ -239,7 +239,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
-	//utils.SetDashboardConfig(ctx, &cfg.Dashboard)
+	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
 	mp.SetMediatorPluginConfig(ctx, &cfg.MediatorPlugin)
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 
@@ -269,7 +269,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	utils.RegisterPtnService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
 		//注册dashboard仪表盘服务，Dashboard会开启端口监听
-		//utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
+		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
 	}
 
 	// Add the PalletOne Stats daemon if requested.
@@ -353,9 +353,9 @@ func dumpJson(ctx *cli.Context) error {
 func makeDefaultConfig() FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
 	return FullConfig{
-		Ptn:  ptn.DefaultConfig,
-		Node: defaultNodeConfig(),
-		//Dashboard:      dashboard.DefaultConfig,
+		Ptn:            ptn.DefaultConfig,
+		Node:           defaultNodeConfig(),
+		Dashboard:      dashboard.DefaultConfig,
 		P2P:            p2p.DefaultConfig,
 		Jury:           jury.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
