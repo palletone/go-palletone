@@ -659,10 +659,10 @@ func (dlp *downloadTesterPeer) waitDelay() {
 //}
 // Head constructs a function to retrieve a peer's current head hash and total difficulty.
 //头构造一个函数来检索对等点的当前头哈希值和总难度。
-func (dlp *downloadTesterPeer) Head(assetId modules.IDType16) (common.Hash, modules.ChainIndex) {
+func (dlp *downloadTesterPeer) Head(assetId modules.IDType16) (common.Hash, *modules.ChainIndex) {
 	dlp.dl.lock.RLock()
 	defer dlp.dl.lock.RUnlock()
-	index := modules.ChainIndex{
+	index := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		0,
@@ -687,7 +687,7 @@ func (dlp *downloadTesterPeer) RequestHeadersByHash(origin common.Hash, amount i
 		}
 	}
 	dlp.dl.lock.RUnlock()
-	chainIndex := modules.ChainIndex{
+	chainIndex := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		number,
@@ -700,7 +700,7 @@ func (dlp *downloadTesterPeer) RequestHeadersByHash(origin common.Hash, amount i
 // origin; associated with a particular peer in the download tester. The returned
 // function can be used to retrieve batches of headers from the particular peer.
 //RequestHeadersByNumber基于编号的原点构造GetBlockHeaders函数；与下载测试器中的特定对等点相关联。返回的函数可以用来从特定的对等体中检索批次的报头。
-func (dlp *downloadTesterPeer) RequestHeadersByNumber(chainIndex modules.ChainIndex, amount int, skip int, reverse bool) error {
+func (dlp *downloadTesterPeer) RequestHeadersByNumber(chainIndex *modules.ChainIndex, amount int, skip int, reverse bool) error {
 	dlp.waitDelay()
 
 	dlp.dl.lock.RLock()
@@ -1923,7 +1923,7 @@ type floodingTestPeer struct {
 	pend   sync.WaitGroup
 }
 
-func (ftp *floodingTestPeer) Head(assetId modules.IDType16) (common.Hash, modules.ChainIndex) {
+func (ftp *floodingTestPeer) Head(assetId modules.IDType16) (common.Hash, *modules.ChainIndex) {
 	return ftp.peer.Head(assetId)
 }
 func (ftp *floodingTestPeer) RequestHeadersByHash(hash common.Hash, count int, skip int, reverse bool) error {
@@ -1945,7 +1945,7 @@ func (ftp *floodingTestPeer) RequestDagHeadersByHash(origin common.Hash, amount 
 func (ftp *floodingTestPeer) RequestLeafNodes() error {
 	return ftp.peer.RequestLeafNodes()
 }
-func (ftp *floodingTestPeer) RequestHeadersByNumber(index modules.ChainIndex, count, skip int, reverse bool) error {
+func (ftp *floodingTestPeer) RequestHeadersByNumber(index *modules.ChainIndex, count, skip int, reverse bool) error {
 	deliveriesDone := make(chan struct{}, 500)
 	for i := 0; i < cap(deliveriesDone); i++ {
 		peer := fmt.Sprintf("fake-peer%d", i)

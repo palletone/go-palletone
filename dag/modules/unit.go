@@ -91,7 +91,8 @@ func NewHeader(parents []common.Hash, asset []IDType16, used uint64, extra []byt
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
-	return &Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...)}
+	number := &ChainIndex{}
+	return &Header{ParentsHash: hashs, AssetIDs: asset, Number: number, Extra: append(b, extra...)}
 }
 
 func HeaderEqual(oldh, newh *Header) bool {
@@ -253,10 +254,10 @@ type ChainIndex struct {
 	Index   uint64   `json:"index"`
 }
 
-func (height ChainIndex) String() string {
+func (height *ChainIndex) String() string {
 	return fmt.Sprintf("%s-%d", height.AssetID.ToAssetId(), height.Index)
 }
-func (height ChainIndex) Bytes() []byte {
+func (height *ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)
 	if err != nil {
 		return nil

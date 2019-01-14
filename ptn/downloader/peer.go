@@ -80,7 +80,7 @@ type LightPeer interface {
 	//Head() (common.Hash, *big.Int)
 	Head(modules.IDType16) (common.Hash, *modules.ChainIndex)
 	RequestHeadersByHash(common.Hash, int, int, bool) error
-	RequestHeadersByNumber(modules.ChainIndex, int, int, bool) error
+	RequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error
 	RequestDagHeadersByHash(common.Hash, int, int, bool) error
 	RequestLeafNodes() error
 }
@@ -104,7 +104,7 @@ func (w *lightPeerWrapper) Head(coin modules.IDType16) (common.Hash, *modules.Ch
 func (w *lightPeerWrapper) RequestHeadersByHash(h common.Hash, amount int, skip int, reverse bool) error {
 	return w.peer.RequestHeadersByHash(h, amount, skip, reverse)
 }
-func (w *lightPeerWrapper) RequestHeadersByNumber(index modules.ChainIndex, amount int, skip int, reverse bool) error {
+func (w *lightPeerWrapper) RequestHeadersByNumber(index *modules.ChainIndex, amount int, skip int, reverse bool) error {
 	return w.peer.RequestHeadersByNumber(index, amount, skip, reverse)
 }
 func (w *lightPeerWrapper) RequestBodies([]common.Hash) error {
@@ -168,7 +168,7 @@ func (p *peerConnection) FetchHeaders(from uint64, count int, assetId modules.ID
 	}
 	p.headerStarted = time.Now()
 
-	index := modules.ChainIndex{
+	index := &modules.ChainIndex{
 		AssetID: assetId,
 		IsMain:  true,
 		Index:   from,

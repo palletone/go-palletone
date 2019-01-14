@@ -39,6 +39,7 @@ var (
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
@@ -401,7 +402,7 @@ func testSequentialAnnouncements(t *testing.T, protocol int) {
 	tester.fetcher.importedHook = func(block *modules.Unit) { imported <- block }
 
 	for i := len(hashes) - 2; i >= 0; i-- {
-		chain := modules.ChainIndex{
+		chain := &modules.ChainIndex{
 			AssetID: modules.PTNCOIN,
 			IsMain:  true,
 			Index:   uint64(len(hashes) - i - 1),
@@ -438,7 +439,7 @@ func testConcurrentAnnouncements(t *testing.T, protocol int) {
 	imported := make(chan *modules.Unit)
 	tester.fetcher.importedHook = func(block *modules.Unit) { imported <- block }
 	for i := len(hashes) - 2; i >= 0; i-- {
-		chain := modules.ChainIndex{
+		chain := &modules.ChainIndex{
 			AssetID: modules.PTNCOIN,
 			IsMain:  true,
 			Index:   uint64(len(hashes) - i - 1),
@@ -473,7 +474,7 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 
 	for i := len(hashes) - 1; i >= 0; i-- {
 		if i != skip {
-			chain := modules.ChainIndex{
+			chain := &modules.ChainIndex{
 				AssetID: modules.PTNCOIN,
 				IsMain:  true,
 				Index:   uint64(len(hashes) - i - 1),
@@ -483,7 +484,7 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 		}
 	}
 	// Finally announce the skipped entry and check full import
-	chainskip := modules.ChainIndex{
+	chainskip := &modules.ChainIndex{
 		AssetID: modules.PTNCOIN,
 		IsMain:  true,
 		Index:   uint64(len(hashes) - skip - 1),
@@ -511,7 +512,7 @@ func testQueueGapFill(t *testing.T, protocol int) {
 
 	for i := len(hashes) - 1; i >= 0; i-- {
 		if i != skip {
-			chain := modules.ChainIndex{
+			chain := &modules.ChainIndex{
 				AssetID: modules.PTNCOIN,
 				IsMain:  true,
 				Index:   uint64(len(hashes) - i - 1),
@@ -549,7 +550,7 @@ func testImportDeduplication(t *testing.T, protocol int) {
 	tester.fetcher.importedHook = func(block *modules.Unit) { imported <- block }
 
 	// Announce the duplicating block, wait for retrieval, and also propagate directly
-	chain := modules.ChainIndex{
+	chain := &modules.ChainIndex{
 		AssetID: modules.PTNCOIN,
 		IsMain:  true,
 		Index:   1,
@@ -593,7 +594,7 @@ func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 
 	// Iteratively announce blocks until all are imported
 	for i := len(hashes) - 2; i >= 0; i-- {
-		chain := modules.ChainIndex{
+		chain := &modules.ChainIndex{
 			AssetID: modules.PTNCOIN,
 			IsMain:  true,
 			Index:   uint64(len(hashes) - i - 1),
