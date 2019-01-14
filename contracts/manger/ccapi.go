@@ -153,6 +153,10 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Version:    ccVersion,
 		Bytecode:   paylod,
 	}
+	//test
+	//tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
+	//listAdd(tcc)
+	
 	log.Infof("user contract template id [%v]", payloadUnit.TemplateId)
 	return payloadUnit, nil
 }
@@ -251,6 +255,25 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, err)
 		return nil, nil, err
 	}
+
+	//test!!!!!!
+	//todo del
+	//if txId == "" || templateCC.Name == "" || templateCC.Path == "" {
+	//	log.Errorf("cc param is null")
+	//	//test tmp
+	//	tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}
+	//	listAdd(tcc)
+	//	tmpcc, err := listGet(templateId)
+	//	if err == nil {
+	//		templateCC.Name = tmpcc.name
+	//		templateCC.Path = tmpcc.path
+	//		templateCC.Version = tmpcc.vers
+	//	} else {
+	//		errMsg := fmt.Sprintf("Deploy not find tplId[%s] in list", hex.EncodeToString(templateId))
+	//		log.Error(errMsg)
+	//		return nil, nil, errors.New(errMsg)
+	//	}
+	//}
 	txsim, err := mksupt.GetTxSimulator(idag, chainID, txId)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
@@ -274,13 +297,10 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	btxId, err := hex.DecodeString(txId)
-	ctxId := make([]byte, 24, 24)
-	copy(ctxId, btxId[:24])
-
 	//log.Debug("Deploy----------------+", "txid", btxId, "len", len(btxId), "cap", cap(btxId), "ctxId cap", cap(ctxId))
 
 	cc := &cclist.CCInfo{
-		Id:      ctxId,
+		Id:      btxId,
 		Name:    usrccName,
 		Path:    templateCC.Path,
 		Version: templateCC.Version,

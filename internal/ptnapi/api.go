@@ -620,7 +620,7 @@ func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmou
 
 	return rsp, err
 }
-func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount, daoFee, tplId, txid string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount, daoFee, tplId string, param []string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
@@ -632,14 +632,13 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	log.Info("-----Ccdeploytx:", "amount", amount)
 	log.Info("-----Ccdeploytx:", "fee", fee)
 	log.Info("-----Ccdeploytx:", "tplId", templateId)
-	log.Info("-----Ccdeploytx:", "txid", txid)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, txid, args, 0)
+	rsp, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
 	log.Info("-----Ccdeploytx:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }
@@ -728,7 +727,7 @@ func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoA
 	return hex.EncodeToString(rsp), err
 }
 
-func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, txid, deleteImage string) (string, error) {
+func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, deleteImage string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
@@ -744,10 +743,9 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	log.Info("-----Ccstoptx:", "amount", amount)
 	log.Info("-----Ccstoptx:", "fee", fee)
 	log.Info("-----Ccstoptx:", "contractId", cid)
-	log.Info("-----Ccstoptx:", "txid", txid)
 	log.Info("-----Ccstoptx:", "delImg", delImg)
 
-	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, cid, txid, delImg)
+	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, cid, delImg)
 	log.Info("-----Ccstoptx:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }
