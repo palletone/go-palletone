@@ -351,7 +351,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 		return err
 	}
 
-	// 当buf不存在时，说明已经recover出群签名，忽略该签名分片
+	// 当buf不存在时，说明已经recover出群签名, 或者已经过了unit确认时间，忽略该签名分片
 	sigShareSet, ok := medSigShareBuf[newUnitHash]
 	if !ok {
 		err = fmt.Errorf("the unit already has recovered the group signature: %v", newUnitHash.TerminalString())

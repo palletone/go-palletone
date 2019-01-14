@@ -235,4 +235,15 @@ func (mp *MediatorPlugin) initTBLSRecoverBuf(localMed common.Address, newUnitHas
 	}
 
 	mp.toTBLSRecoverBuf[localMed][newUnitHash] = newSigShareSet(aSize)
+
+	// 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
+	expiration := mp.dag.UnitIrreversibleTime()
+	deleteBUf := time.NewTimer(time.Duration(expiration))
+
+	select {
+	case <-mp.quit:
+		return
+	case <-deleteBUf.C:
+		delete(mp.toTBLSRecoverBuf[localMed], newUnitHash)
+	}
 }
