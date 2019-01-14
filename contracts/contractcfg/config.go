@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-var debugX bool = true
+var DebugTest bool = false
 
 var DefaultConfig = Config{
 	//LogLevel:               logging.DEBUG,
@@ -15,7 +15,6 @@ var DefaultConfig = Config{
 	VmEndpoint:             "unix:///var/run/docker.sock",
 	ContractBuilder:        "palletone/palletimg",
 	SysContract:            map[string]string{"deposit_syscc": "true", "sample_syscc": "true", "createToken_sycc": "true"},
-	DebugTest:              false,
 }
 
 type Config struct {
@@ -27,7 +26,6 @@ type Config struct {
 	VmEndpoint             string
 	ContractBuilder        string
 	SysContract            map[string]string
-	DebugTest              bool
 	//vm.docker.attachStdout
 }
 
