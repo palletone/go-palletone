@@ -64,6 +64,7 @@ type Backend interface {
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
 	GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error)
+	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
 
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (pending int, queued int)
