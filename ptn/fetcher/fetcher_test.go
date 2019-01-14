@@ -152,10 +152,10 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 		return err
 	}
 	// update state
-	dagDb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
-	dagDb.PutHeadHeaderHash(unit.UnitHash)
-	dagDb.PutHeadUnitHash(unit.UnitHash)
-	dagDb.PutHeadFastUnitHash(unit.UnitHash)
+	//dagDb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
+	//dagDb.PutHeadHeaderHash(unit.UnitHash)
+	//dagDb.PutHeadUnitHash(unit.UnitHash)
+	//dagDb.PutHeadFastUnitHash(unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }

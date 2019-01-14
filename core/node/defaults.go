@@ -38,6 +38,7 @@ var DefaultConfig = Config{
 	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
 	WSModules:        []string{"net", "web3", "dag"},
+	GasToken:         "PTN",
 	//	P2P: p2p.Config{
 	//		ListenAddr: ":30303",
 	//		MaxPeers:   25,

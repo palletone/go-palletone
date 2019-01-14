@@ -44,7 +44,7 @@ type IStateRepository interface {
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 
-	GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
+	//GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
 }
 
 type StateRepository struct {
@@ -96,7 +96,4 @@ func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountI
 }
 func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return rep.statedb.RetrieveMediatorInfo(address)
-}
-func (rep *StateRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
-	return rep.statedb.GetCurrentChainIndex(assetId)
 }

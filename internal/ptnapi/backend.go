@@ -93,10 +93,10 @@ type Backend interface {
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	// get state
-	GetHeadUnitHash() (common.Hash, error)
-	GetHeadHeaderHash() (common.Hash, error)
-	GetHeadFastUnitHash() (common.Hash, error)
-	GetCanonicalHash(number uint64) (common.Hash, error)
+	//GetHeadUnitHash() (common.Hash, error)
+	//GetHeadHeaderHash() (common.Hash, error)
+	//GetHeadFastUnitHash() (common.Hash, error)
+	//GetCanonicalHash(number uint64) (common.Hash, error)
 
 	// get transaction interface
 	GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error)
@@ -145,6 +145,8 @@ type Backend interface {
 
 	// get tx hash by req id
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+
+	GetTxByFileHash(filehash []byte)([]*modules.FileInfo,error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

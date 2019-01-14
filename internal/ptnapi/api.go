@@ -2759,28 +2759,28 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 }
 
 // GetHeadUnitHash returns the head unit's hash
-func (s *PublicDagAPI) GetHeadUnitHash(ctx context.Context) (string, error) {
-	hash, err := s.b.GetHeadUnitHash()
-	if hash != (common.Hash{}) {
-		return hash.String(), err
-	}
-	return "is not exist!", err
-}
-
-// GetHeadHeaderHash returns the head header's hash
-func (s *PublicDagAPI) GetHeadHeaderHash(ctx context.Context) (string, error) {
-	hash, err := s.b.GetHeadHeaderHash()
-	if hash != (common.Hash{}) {
-		return hash.String(), err
-	}
-	return "is not exist!", err
-}
-
-// GetHeadFastUnitHash returns the fast unit's hash
-func (s *PublicDagAPI) GetHeadFastUnitHash(ctx context.Context) (string, error) {
-	hash, err := s.b.GetHeadFastUnitHash()
-	if hash != (common.Hash{}) {
-		return hash.String(), err
-	}
-	return "is not exist!", err
-}
+//func (s *PublicDagAPI) GetHeadUnitHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadUnitHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}
+//
+//// GetHeadHeaderHash returns the head header's hash
+//func (s *PublicDagAPI) GetHeadHeaderHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadHeaderHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}
+//
+//// GetHeadFastUnitHash returns the fast unit's hash
+//func (s *PublicDagAPI) GetHeadFastUnitHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadFastUnitHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}

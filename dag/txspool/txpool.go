@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -83,7 +84,7 @@ var (
 type dags interface {
 	CurrentUnit() *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
-	//GetStoredUnitTxs(hashs chan<- common.Hash) error
+	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
@@ -1124,11 +1125,35 @@ func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 }
 
 func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
-	txs, has := pool.addrTxs[addr]
-	if has {
-		return txs, nil
+	txs := make(map[string][]*modules.TxPoolTransaction)
+	// 将交易按地址分类
+	for _, tx := range pool.all {
+		if !tx.Confirmed {
+			for _, msg := range tx.Tx.Messages() {
+				if msg.App == modules.APP_PAYMENT {
+					payment, ok := msg.Payload.(*modules.PaymentPayload)
+					if ok {
+						if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
+							for _, addr1 := range addrs {
+								txs[addr1] = append(txs[addr1], tx)
+							}
+						}
+						for _, out := range payment.Outputs {
+							address, err1 := tokenengine.GetAddressFromScript(out.PkScript[:])
+							if err1 == nil {
+								txs[address.String()] = append(txs[address.String()], tx)
+							}
+						}
+					}
+				}
+			}
+		}
 	}
-	return txs, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
+
+	if re, has := txs[addr]; has {
+		return re, nil
+	}
+	return nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
 }
 
 // Get returns a transaction if it is contained in the pool

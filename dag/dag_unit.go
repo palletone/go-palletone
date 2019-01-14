@@ -32,7 +32,7 @@ import (
 )
 
 func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
-	current_index, _ := dag.stateRep.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
+	phash, current_index, _ := dag.propRep.GetLastUnstableUnit(pendingUnit.UnitHeader.ChainIndex().AssetID)
 	//current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
@@ -60,9 +60,9 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 	} else {
 		pendingUnit.UnitHeader.Number = current_index
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
-		parent, _ := dag.GetHeadUnitHash()
+
 		pendingUnit.UnitHeader.ParentsHash =
-			append(pendingUnit.UnitHeader.ParentsHash, parent) //dag.HeadUnitHash()
+			append(pendingUnit.UnitHeader.ParentsHash, phash) //dag.HeadUnitHash()
 	}
 
 	if pendingUnit.UnitHeader.Number == nil {
@@ -99,7 +99,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	dag.setUnitHeader(pendingUnit)
 
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
-	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
+	//pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
 	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
 	pendingUnit.Hash()
@@ -146,7 +146,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 1. 下一个 unit 和本地 unit 连续性的判断
 	parentHash := nextUnit.ParentHash()[0]
-	headUnitHash := dag.HeadUnitHash()
+	headUnitHash, _, _ := dag.propRep.GetLastUnstableUnit(nextUnit.UnitHeader.Number.AssetID)
 	if parentHash != headUnitHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
 		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
