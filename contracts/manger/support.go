@@ -20,18 +20,18 @@
 package manger
 
 import (
+	"time"
+	"golang.org/x/net/context"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/contracts/scc"
-	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"golang.org/x/net/context"
-	"time"
-
+	"github.com/palletone/go-palletone/contracts/scc"
+	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
+	md "github.com/palletone/go-palletone/dag/modules"
 	chaincode "github.com/palletone/go-palletone/contracts/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	md "github.com/palletone/go-palletone/dag/modules"
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
@@ -96,9 +96,6 @@ func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
 
 func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	log.Debug("enter")
-	//invokeData := ut.ContractInvokePayload{}
-	//invokeData.ContractId = []byte(txid)
-
 	rd, wt, err := tx.GetRwData(nm)
 	if err != nil {
 		return nil, err
@@ -111,10 +108,8 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	tokenSupply, _ := tx.GetTokenSupplyData(nm)
 	log.Infof("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
 	invoke := &md.ContractInvokeResult{
-		//FunctionName:  string(args[0]),
 		ContractId: deployId,
 		Args:       args,
-		//ExecutionTime: timeout,
 		ReadSet:     make([]md.ContractReadSet, 0),
 		WriteSet:    make([]md.ContractWriteSet, 0),
 		TokenPayOut: tokenPay,
@@ -151,14 +146,14 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 	if err != nil {
 		return nil, err
 	}
-	log.Infof(" nm=%s, rd=%v, wt=%v",  nm, rd, wt)
+	log.Infof(" nm=%s, rd=%v, wt=%v", nm, rd, wt)
 	deploy := &md.ContractDeployPayload{
 		TemplateId: templateId,
 		ContractId: deployId,
 		Name:       nm,
 		Args:       args,
-		ReadSet:  make([]md.ContractReadSet, 0),
-		WriteSet: make([]md.ContractWriteSet, 0),
+		ReadSet:    make([]md.ContractReadSet, 0),
+		WriteSet:   make([]md.ContractWriteSet, 0),
 	}
 
 	for idx, val := range rd {

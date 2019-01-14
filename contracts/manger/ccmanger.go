@@ -22,9 +22,9 @@ import (
 	"time"
 	"net"
 	"os"
-	"crypto/md5"
 	"io"
 	"fmt"
+	"crypto/md5"
 	"encoding/hex"
 	"google.golang.org/grpc"
 	"github.com/golang/protobuf/proto"
@@ -35,8 +35,8 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
