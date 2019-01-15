@@ -142,9 +142,3 @@ type IDag interface {
 
 	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
 }
-type ICache interface {
-	Set(key, value []byte, expireSeconds int) (err error)
-	Get(key []byte) (value []byte, err error)
-	Del(key []byte) bool
-	Clear()
-}

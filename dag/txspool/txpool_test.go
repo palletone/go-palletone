@@ -67,7 +67,9 @@ func NewUnitDag4Test() *UnitDag4Test {
 	propdb := storage.NewPropertyDb(db)
 	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	idx := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
-	propdb.SetNewestUnit(hash, idx)
+	h := modules.NewHeader([]common.Hash{hash}, []modules.IDType16{modules.PTNCOIN}, uint64(1), []byte("hello"))
+	h.Number = idx
+	propdb.SetNewestUnit(h)
 	//idagdb.PutHeadUnitHash()
 	mutex := new(sync.RWMutex)
 

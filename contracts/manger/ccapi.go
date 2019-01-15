@@ -14,14 +14,13 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
-	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
-	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	md "github.com/palletone/go-palletone/dag/modules"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cp "github.com/palletone/go-palletone/common/crypto"
 	db "github.com/palletone/go-palletone/contracts/comm"
 	cclist "github.com/palletone/go-palletone/contracts/list"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 )
 
 var debugX bool = true
@@ -52,7 +51,6 @@ func listDel(templateId []byte) {
 }
 
 func listGet(templateId []byte) (*TempCC, error) {
-	log.Infof("listGet [%v]", templateId)
 	for e := listCC.Front(); e != nil; e = e.Next() {
 		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
 			cc := &TempCC{
@@ -127,9 +125,9 @@ func GetUsrCCList() {
 
 //install but not into db
 func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
-	log.Infof("==========install enter=======")
-	defer log.Infof("==========install exit=======")
-	log.Infof("name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
+	log.Infof("enter ccapi.go Install")
+	defer log.Infof("exit ccapi.go Install")
+	log.Infof("chainID[%s]-name[%s]-path[%s]-version[%s]", chainID,ccName, ccPath, ccVersion)
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
@@ -149,87 +147,35 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	}
 	//test
 	if cfg.DebugTest {
+		log.Info("enter contract debug test")
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
 	}else{
 		//将合约代码文件打包成 tar 文件
 		paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
 		if err != nil {
-			log.Info("getUserCCPayload err:", "error", err)
+			log.Error("getUserCCPayload err:", "error", err)
 			return nil, err
 		}
 		payloadUnit.Bytecode = paylod
 	}
-	log.Infof("user contract template id [%v]", payloadUnit.TemplateId)
+	log.Infof("user contract template id [%v]", hex.EncodeToString(payloadUnit.TemplateId))
+	//type ContractTplPayload struct {
+	//	TemplateId []byte `json:"template_id"` // contract template id
+	//	Name       string `json:"name"`        // contract template name
+	//	Path       string `json:"path"`        // contract template execute path
+	//	Version    string `json:"version"`     // contract template version
+	//	Memory     uint16 `json:"memory"`      // contract template bytecode memory size(Byte), use to compute transaction fee
+	//	Bytecode   []byte `json:"bytecode"`    // contract bytecode
+	//}
+	fmt.Println("Install result:==========================================================",payloadUnit)
 	return payloadUnit, nil
 }
 
-func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *peer.ContractDeployPayload, e error) {
-	var mksupt Support = &SupportImpl{}
-	setChainId := "palletone"
-	setTimeOut := time.Duration(30) * time.Second
-
-	if chainID != "" {
-		setChainId = chainID
-	}
-	if timeout > 0 {
-		setTimeOut = timeout
-	}
-	if txid == "" || ccName == "" || ccPath == "" {
-		return nil, nil, errors.New("input param is nil")
-	}
-	randNum, err := crypto.GetRandomNonce()
-	if err != nil {
-		return nil, nil, errors.New("crypto.GetRandomNonce error")
-	}
-
-	txsim, err := mksupt.GetTxSimulator(idag, chainID, txid)
-	if err != nil {
-		return nil, nil, errors.New("GetTxSimulator error")
-	}
-	usrcc := &ucc.UserChaincode{
-		Name:     ccName,
-		Path:     ccPath,
-		Version:  ccVersion,
-		InitArgs: args,
-		Enabled:  true,
-	}
-	spec := &pb.ChaincodeSpec{
-		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
-		Input: &pb.ChaincodeInput{
-			Args: args,
-		},
-		ChaincodeId: &pb.ChaincodeID{
-			Name:    ccName,
-			Path:    ccPath,
-			Version: ccVersion,
-		},
-	}
-	err = ucc.DeployUserCC(nil, spec, setChainId, usrcc, txid, txsim, setTimeOut)
-	if err != nil {
-		return nil, nil, errors.New("Deploy fail")
-	}
-
-	cc := &cclist.CCInfo{
-		Id:      randNum,
-		Name:    ccName,
-		Path:    ccPath,
-		Version: ccVersion,
-		SysCC:   false,
-		Enable:  true,
-	}
-	err = cclist.SetChaincode(setChainId, 0, cc)
-	if err != nil {
-		log.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
-	}
-
-	return cc.Id, nil, err
-}
-
 func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
-	log.Infof("==========Deploy enter=======")
-	defer log.Infof("==========Deploy exit=======")
-	log.Infof("chainid[%s]templateId[%s]txid[%s]", chainID, hex.EncodeToString(templateId), txId)
+	log.Infof("enter ccapi.go Deploy")
+	defer log.Infof("exit ccapi.go Deploy")
+	log.Infof("chainid[%s]-templateId[%s]-txid[%s]", chainID, hex.EncodeToString(templateId), txId)
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -246,18 +192,12 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		},
 		ChaincodeId: &pb.ChaincodeID{},
 	}
-	templateCC, chaincodeData, err := ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
-	if err != nil {
-		log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, err)
-		return nil, nil, err
-	}
-
+	templateCC := &ucc.UserChaincode{}
+	var err error
+	var chaincodeData []byte
 	//test
 	if cfg.DebugTest {
-		if txId == "" || templateCC.Name == "" || templateCC.Path == "" {
-			log.Errorf("cc param is null")
-			//tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}
-			//listAdd(tcc)
+		log.Info("enter contract debug test")
 			tmpcc, err := listGet(templateId)
 			if err == nil {
 				templateCC.Name = tmpcc.name
@@ -268,11 +208,16 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 				log.Error(errMsg)
 				return nil, nil, errors.New(errMsg)
 			}
+	}else{
+		templateCC, chaincodeData, err = ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
+		if err != nil {
+			log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId,"error", err)
+			return nil, nil, err
 		}
 	}
-
 	txsim, err := mksupt.GetTxSimulator(idag, chainID, txId)
 	if err != nil {
+		log.Error("getTxSimulator err:","error",err)
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
 	usrccName := templateCC.Name + "-" + txId
@@ -291,6 +236,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	spec.ChaincodeId = chaincodeID
 	err = ucc.DeployUserCC(chaincodeData, spec, setChainId, usrcc, txId, txsim, setTimeOut)
 	if err != nil {
+		log.Error("deployUserCC err:","error",err)
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	btxId, err := hex.DecodeString(txId)
@@ -312,6 +258,16 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
+	//type ContractDeployPayload struct {
+	//	TemplateId []byte             `json:"template_id"` // contract template id
+	//	ContractId []byte             `json:"contract_id"` // contract id
+	//	Name       string             `json:"name"`        // the name for contract
+	//	Args       [][]byte           `json:"args"`        // contract arguments list
+	//	Jury       []common.Address   `json:"jury"`        // contract jurors list
+	//	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
+	//	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
+	//}
+	fmt.Println("Deploy result:==========================================================",unit)
 	return cc.Id, unit, err
 }
 
@@ -319,9 +275,9 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
-	log.Infof("==========Invoke enter=======")
-	log.Infof("deployId[%s] txid[%s]", hex.EncodeToString(deployId), txid)
-	defer log.Infof("-----------Invoke exit--------")
+	log.Infof("enter ccapi.go Invoke")
+	defer log.Infof("exit ccapi.go Invoke")
+	log.Infof("chainID[%s]-deployId[%s]-txid[%s]",chainID, hex.EncodeToString(deployId), txid)
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
@@ -371,31 +327,26 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 		return nil, err
 	}
 	log.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
-
+	//type ContractInvokeResult struct {
+	//	ContractId   []byte             `json:"contract_id"` // contract id
+	//	RequestId    common.Hash        `json:"request_id"`
+	//	FunctionName string             `json:"function_name"`
+	//	Args         [][]byte           `json:"args"`         // contract arguments list
+	//	ReadSet      []ContractReadSet  `json:"read_set"`     // the set data of read, and value could be any type
+	//	WriteSet     []ContractWriteSet `json:"write_set"`    // the set data of write, and value could be any type
+	//	Payload      []byte             `json:"payload"`      // the contract execution result
+	//	TokenPayOut  []*TokenPayOut     `json:"token_payout"` //从合约地址付出Token
+	//	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
+	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
+	//}
+	fmt.Println("Invoke result:==========================================================",unit)
 	return unit, nil
-}
-
-func StopByName(contractid []byte, chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
-	usrcc := &ucc.UserChaincode{
-		Name:    ccName,
-		Path:    ccPath,
-		Version: ccVersion,
-		Enabled: true,
-	}
-	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage)
-	if err != nil {
-		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, ccName, err)
-		return errors.New(errMsg)
-	}
-
-	return nil
 }
 
 func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) error {
 	log.Infof("==========Stop enter=======")
 	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	defer log.Infof("-----------Stop exit--------")
-
 	setChainId := "palletone"
 	if chainID != "" {
 		setChainId = chainID
@@ -411,6 +362,78 @@ func Stop(contractid []byte, chainID string, deployId []byte, txid string, delet
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}
-
 	return err
+}
+
+func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *md.ContractDeployPayload, e error) {
+	var mksupt Support = &SupportImpl{}
+	setChainId := "palletone"
+	setTimeOut := time.Duration(30) * time.Second
+	if chainID != "" {
+		setChainId = chainID
+	}
+	if timeout > 0 {
+		setTimeOut = timeout
+	}
+	if txid == "" || ccName == "" || ccPath == "" {
+		return nil, nil, errors.New("input param is nil")
+	}
+	randNum, err := crypto.GetRandomNonce()
+	if err != nil {
+		return nil, nil, errors.New("crypto.GetRandomNonce error")
+	}
+	txsim, err := mksupt.GetTxSimulator(idag, chainID, txid)
+	if err != nil {
+		return nil, nil, errors.New("GetTxSimulator error")
+	}
+	usrcc := &ucc.UserChaincode{
+		Name:     ccName,
+		Path:     ccPath,
+		Version:  ccVersion,
+		InitArgs: args,
+		Enabled:  true,
+	}
+	spec := &pb.ChaincodeSpec{
+		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
+		Input: &pb.ChaincodeInput{
+			Args: args,
+		},
+		ChaincodeId: &pb.ChaincodeID{
+			Name:    ccName,
+			Path:    ccPath,
+			Version: ccVersion,
+		},
+	}
+	err = ucc.DeployUserCC(nil, spec, setChainId, usrcc, txid, txsim, setTimeOut)
+	if err != nil {
+		return nil, nil, errors.New("Deploy fail")
+	}
+	cc := &cclist.CCInfo{
+		Id:      randNum,
+		Name:    ccName,
+		Path:    ccPath,
+		Version: ccVersion,
+		SysCC:   false,
+		Enable:  true,
+	}
+	err = cclist.SetChaincode(setChainId, 0, cc)
+	if err != nil {
+		log.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
+	}
+	return cc.Id, nil, err
+}
+
+func StopByName(contractid []byte, chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
+	usrcc := &ucc.UserChaincode{
+		Name:    ccName,
+		Path:    ccPath,
+		Version: ccVersion,
+		Enabled: true,
+	}
+	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage)
+	if err != nil {
+		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, ccName, err)
+		return errors.New(errMsg)
+	}
+	return nil
 }
