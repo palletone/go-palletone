@@ -233,18 +233,8 @@ func main() {
 // gptn is the main entry point into the system if no special subcommand is ran.
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
-// 默认情况下，如果不带子命令参数，那么app.Action = gptn，也就会调用gptn()函数 来启动PalletOne
 func gptn(ctx *cli.Context) error {
-	// 根据参数来新建一个全节点和相关的服务
 	node := makeFullNode(ctx)
-
-	// 创建协程启动节点，然后进入等待状态(阻塞模式)。
-	// 启动 serviceFuncs 列表中的所有匿名服务，在Node.Start()中执行，函数调用路径为：
-	/*
-		1. startNode(ctx, node);
-		2. utils.StartNode(stack);
-		3. stack.Start() ;
-	*/
 	startNode(ctx, node)
 	node.Wait()
 	return nil
@@ -322,25 +312,9 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if ctx.GlobalBool(utils.LightModeFlag.Name) || ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
 			utils.Fatalf("Light clients do not support mining")
 		}
-		var ethereum *ptn.PalletOne
-		if err := stack.Service(&ethereum); err != nil {
+		var palletone *ptn.PalletOne
+		if err := stack.Service(&palletone); err != nil {
 			utils.Fatalf("PalletOne service not running: %v", err)
 		}
-
-		// Use a reduced number of threads if requested
-		if threads := ctx.GlobalInt(utils.MinerThreadsFlag.Name); threads > 0 {
-			type threaded interface {
-				SetThreads(threads int)
-			}
-			//if th, ok := ethereum.Engine().(threaded); ok {
-			//	th.SetThreads(threads)
-			//}
-		}
-		// Set the gas price to the limits from the CLI
-		//ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
-		//开启挖矿，创建协程到后台处理
-		//if err := ethereum.StartMining(true); err != nil {
-		//	utils.Fatalf("Failed to start mining: %v", err)
-		//}
 	}
 }
