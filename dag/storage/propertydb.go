@@ -46,8 +46,8 @@ type IPropertyDb interface {
 	//设置稳定单元的Hash
 	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
-	SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error
-	GetLastUnstableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
+	SetNewestUnit(header *modules.Header) error
+	GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, int64, error)
 }
 
 // modified by Yiran
@@ -80,14 +80,17 @@ func NewPropertyDb(db ptndb.Database) *PropertyDb {
 }
 
 func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
+	log.Debug("Save mediator schedule to db.")
 	return StoreMediatorSchl(propdb.db, ms)
 }
 
 func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
+	log.Debug("Save dynamic global property to db.")
 	return StoreDynGlobalProp(propdb.db, dgp)
 }
 
 func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
+	log.Debug("Save global property to db.")
 	return StoreGlobalProp(propdb.db, gp)
 }
 
@@ -103,39 +106,37 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 	return RetrieveMediatorSchl(propdb.db)
 }
 
-type hashChainIndex struct {
-	Hash  common.Hash
-	Index *modules.ChainIndex
-}
-
 func (db *PropertyDb) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
-	data := &hashChainIndex{hash, index}
+	data := &modules.UnitProperty{hash, index, 0}
 	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
 	log.Debugf("Save last stable unit %s,index:%s", hash.String(), index.String())
 	return StoreBytes(db.db, key, data)
 }
 func (db *PropertyDb) GetLastStableUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
 	key := append(constants.LastStableUnitHash, asset.Bytes()...)
-	data := &hashChainIndex{}
+	data := &modules.UnitProperty{}
 	err := retrieve(db.db, key, data)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
 	return data.Hash, data.Index, nil
 }
-func (db *PropertyDb) SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error {
-	data := &hashChainIndex{hash, index}
+func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
+	hash := header.Hash()
+	index := header.Number
+	timestamp := header.Creationdate
+	data := &modules.UnitProperty{hash, index, timestamp}
 	key := append(constants.LastUnstableUnitHash, index.AssetID.Bytes()...)
 	log.Debugf("Save last unstable unit %s,index:%s", hash.String(), index.String())
 
 	return StoreBytes(db.db, key, data)
 }
-func (db *PropertyDb) GetLastUnstableUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+func (db *PropertyDb) GetNewestUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, int64, error) {
 	key := append(constants.LastUnstableUnitHash, asset.Bytes()...)
-	data := &hashChainIndex{}
+	data := &modules.UnitProperty{}
 	err := retrieve(db.db, key, data)
 	if err != nil {
-		return common.Hash{}, nil, err
+		return common.Hash{}, nil, 0, err
 	}
-	return data.Hash, data.Index, nil
+	return data.Hash, data.Index, data.Timestamp, nil
 }

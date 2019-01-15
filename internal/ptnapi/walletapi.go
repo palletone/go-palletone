@@ -955,7 +955,7 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	return submitTransaction(ctx, s.b, tx)
 }
 
-func (s *PublicWalletAPI) GetTxByFileHash(ctx context.Context, filehash []byte) (string, error) {
+func (s *PublicWalletAPI) GetTxByFileHash(ctx context.Context, filehash string) (string, error) {
 	//get fileinfos
 	files, err := s.b.GetTxByFileHash(filehash)
 	if err != nil {

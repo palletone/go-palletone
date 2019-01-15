@@ -29,8 +29,6 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	//"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/consensus"
 
 	//"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/common/event"
@@ -80,7 +78,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHash-------%#v\n", uu.UnitHash)
 	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
 	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
-	engine := new(consensus.DPOSEngine)
+	//engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
 	//producer mediatorplugin.MediatorPlugin
 	if pro == nil {
@@ -94,7 +92,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
 
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, idag, typemux, pro, genesisUint, nil)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, "ptn", &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil)
 	if err != nil {
 		return nil, nil, err
 	}
