@@ -100,9 +100,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	//pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
-	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	//pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
-	pendingUnit.Hash()
+	//pendingUnit.Hash()
 
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err1 != nil {
@@ -137,8 +137,8 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	//	log.Debug("unit_production", "PushUnit err:", err)
 	//	return false
 	//}
-	dag.SaveUnit(newUnit, txpool, false)
-
+	//dag.SaveUnit(newUnit, txpool, false)
+	dag.Memdag.Save(newUnit, txpool)
 	return true
 }
 
@@ -166,7 +166,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 
 	// 4. 更新全局动态属性值
 	dag.updateDynGlobalProp(nextUnit, missed)
-
+	dag.propRep.SetLastUnstableUnit(nextUnit.Hash(), nextUnit.Number())
 	// 5. 更新 mediator 的相关数据
 	dag.updateSigningMediator(nextUnit)
 

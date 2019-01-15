@@ -210,6 +210,7 @@ func (chain *MemDag) validateMemory() bool {
 }
 
 func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
+	log.Debugf("Try to save new unit to mem dag, unit hash: %s", unit.Hash().String())
 	if unit == nil {
 		return fmt.Errorf("Save mem unit: unit is null")
 	}
