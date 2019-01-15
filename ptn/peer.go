@@ -199,9 +199,9 @@ func (p *peer) SendContractTransaction(event jury.ContractEvent) error {
 }
 
 //SendConsensus sends consensus msg to the peer
-func (p *peer) SendConsensus(msgs string) error {
-	return p2p.Send(p.rw, ConsensusMsg, msgs)
-}
+//func (p *peer) SendConsensus(msgs string) error {
+//	return p2p.Send(p.rw, ConsensusMsg, msgs)
+//}
 
 // SendNewBlockHashes announces the availability of a number of blocks through
 // a hash notification.
