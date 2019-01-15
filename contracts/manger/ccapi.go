@@ -136,12 +136,6 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Version: ccVersion,
 		Enabled: true,
 	}
-	//将合约代码文件打包成 tar 文件
-	paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
-	if err != nil {
-		log.Info("getUserCCPayload err:", "error", err)
-		return nil, err
-	}
 	var buffer bytes.Buffer
 	buffer.Write([]byte(ccName))
 	buffer.Write([]byte(ccPath))
@@ -152,14 +146,20 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Name:       ccName,
 		Path:       ccPath,
 		Version:    ccVersion,
-		Bytecode:   paylod,
 	}
 	//test
 	if cfg.DebugTest {
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
+	}else{
+		//将合约代码文件打包成 tar 文件
+		paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
+		if err != nil {
+			log.Info("getUserCCPayload err:", "error", err)
+			return nil, err
+		}
+		payloadUnit.Bytecode = paylod
 	}
-
 	log.Infof("user contract template id [%v]", payloadUnit.TemplateId)
 	return payloadUnit, nil
 }
@@ -256,8 +256,8 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	if cfg.DebugTest {
 		if txId == "" || templateCC.Name == "" || templateCC.Path == "" {
 			log.Errorf("cc param is null")
-			tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}
-			listAdd(tcc)
+			//tcc := &TempCC{templateId: templateId, name: "testPtnContract", path: "chaincode/testPtnContractTemplate", vers: "ptn1.6"}
+			//listAdd(tcc)
 			tmpcc, err := listGet(templateId)
 			if err == nil {
 				templateCC.Name = tmpcc.name
