@@ -178,6 +178,10 @@ func (dag *Dag) HeadUnitNum() uint64 {
 	return dag.GetDynGlobalProp().HeadUnitNum
 }
 
+func (dag *Dag) LastMaintenanceTime() int64 {
+	return dag.GetDynGlobalProp().LastMaintenanceTime
+}
+
 //func (dag *Dag) HeadUnitHash() common.Hash {
 //	return dag.GetDynGlobalProp().HeadUnitHash
 //}

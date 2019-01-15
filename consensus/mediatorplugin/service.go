@@ -94,6 +94,7 @@ type iDag interface {
 	PrecedingThreshold() int
 	PrecedingMediatorsCount() int
 	UnitIrreversibleTime() uint
+	LastMaintenanceTime() int64
 }
 
 type MediatorPlugin struct {

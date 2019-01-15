@@ -286,29 +286,38 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 }
 
 func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.Hash) {
-
-}
-
-func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
-	dkgr, err := mp.getLocalActiveDKG(localMed)
-	if err != nil {
-		log.Debug(err.Error())
-		return
-	}
-
-	dks, err := dkgr.DistKeyShare()
-	if err != nil {
-		log.Debug(err.Error())
-		return
-	}
-
 	dag := mp.dag
-	newUnitBuf := mp.toTBLSSignBuf[localMed]
-	log.Debugf("the mediator(%v) run the loop of TBLS sign", localMed.Str())
 
-	signTBLS := func(newUnit *modules.Unit) (sigShare []byte, success bool) {
+	var (
+		dkgr    *dkg.DistKeyGenerator
+		newUnit *modules.Unit
+		ok      bool
+	)
+	// 1. 获取群签名所需数据
+	{
+		newUnit, ok = mp.toTBLSSignBuf[localMed][unitHash]
+		if !ok {
+			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS", localMed.Str(), unitHash.TerminalString())
+			return
+		}
+
+		// 判断是否是换届前的单元
+		if newUnit.Timestamp() <= dag.LastMaintenanceTime() {
+			dkgr, ok = mp.precedingDKGs[localMed]
+		} else {
+			dkgr, ok = mp.activeDKGs[localMed]
+		}
+
+		if !ok {
+			log.Debug("the following mediator`s dkg is not existed: %v", localMed.Str())
+			return
+		}
+	}
+
+	// 2. 判断群签名的相关条件
+	{
 		// 1.如果单元没有群公钥， 则跳过群签名
-		_, err = newUnit.GroupPubKey()
+		_, err := newUnit.GroupPubKey()
 		if err != nil {
 			log.Debug(err.Error())
 			return
@@ -327,34 +336,25 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 				newUnit.UnitHash.TerminalString(), parentHash.TerminalString())
 			return
 		}
+	}
 
-		var err error
-		hash := newUnit.Hash()
-
-		sigShare, err = tbls.Sign(mp.suite, dks.PriShare(), hash[:])
-		if err != nil {
-			log.Debug(err.Error())
-			return
-		}
-
-		success = true
-		log.Debugf("the mediator(%v) group-signed the unit(%v)", localMed.Str(),
-			newUnit.UnitHash.TerminalString())
+	// 3. 群签名
+	dks, err := dkgr.DistKeyShare()
+	if err != nil {
+		log.Debug(err.Error())
 		return
 	}
 
-	// todo 换届后，如果该mediator不是活跃的话，则到达一定时刻强制关闭循环
-	for {
-		select {
-		case <-mp.quit:
-			return
-		case newUnit := <-newUnitBuf:
-			sigShare, success := signTBLS(newUnit)
-			if success {
-				go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
-			}
-		}
+	sigShare, err := tbls.Sign(mp.suite, dks.PriShare(), unitHash[:])
+	if err != nil {
+		log.Debug(err.Error())
+		return
 	}
+
+	// 4. 广播群签名
+	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
+		newUnit.UnitHash.TerminalString())
+	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
 }
 
 // 收集签名分片
@@ -369,7 +369,6 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 		return err
 	}
 
-	//newUnitHash := newUnit.UnitHash
 	localMed := newUnit.Author()
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
@@ -399,9 +398,10 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 }
 
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
+	// 1. 获取所有的签名分片
 	sigShareSet, ok := mp.toTBLSRecoverBuf[localMed][unitHash]
 	if !ok {
-		log.Debugf(fmt.Sprintf("the following mediator has no sign shares yet: %v", localMed.Str()))
+		log.Debugf("the following mediator has no sign shares yet: %v", localMed.Str())
 		return
 	}
 
@@ -413,34 +413,41 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	dag := mp.dag
-	unit, err := dag.GetUnitByHash(unitHash)
-	if unit == nil || err != nil {
-		err = fmt.Errorf("fail to get unit by hash in dag: %v", unitHash.TerminalString())
-		log.Debug(err.Error())
-		return
+	// 2. 获取阈值、mediator数量、DKG
+	var (
+		mSize, threshold int
+		dkgr             *dkg.DistKeyGenerator
+	)
+	{
+		dag := mp.dag
+		unit, err := dag.GetUnitByHash(unitHash)
+		if unit == nil || err != nil {
+			err = fmt.Errorf("fail to get unit by hash in dag: %v", unitHash.TerminalString())
+			log.Debug(err.Error())
+			return
+		}
+
+		// 判断是否是换届前的单元
+		if unit.Timestamp() <= dag.LastMaintenanceTime() {
+			mSize = dag.PrecedingMediatorsCount()
+			threshold = dag.PrecedingThreshold()
+			dkgr, ok = mp.precedingDKGs[localMed]
+		} else {
+			mSize = dag.ActiveMediatorsCount()
+			threshold = dag.ChainThreshold()
+			dkgr, ok = mp.activeDKGs[localMed]
+		}
+
+		if !ok {
+			log.Debug("the following mediator`s dkg is not existed: %v", localMed.Str())
+			return
+		}
 	}
 
-	var mSize, threshold int
-	// 判断是否是换届前的单元
-	if unit.Timestamp() <= dag.GetDynGlobalProp().LastMaintenanceTime {
-		mSize = dag.PrecedingMediatorsCount()
-		threshold = dag.PrecedingThreshold()
-	} else {
-		mSize = dag.ActiveMediatorsCount()
-		threshold = dag.ChainThreshold()
-	}
-
+	// 3. 判断是否达到群签名的各种条件
 	if sigShareSet.len() < threshold {
 		log.Debugf("the count of sign shares of the unit(%v) does not reach the threshold(%v)",
 			unitHash.TerminalString(), threshold)
-		return
-	}
-
-	// todo 应当区分处理
-	dkgr, err := mp.getLocalActiveDKG(localMed)
-	if err != nil {
-		log.Debug(err.Error())
 		return
 	}
 
@@ -450,6 +457,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
+	// 4. recover群签名
 	suite := mp.suite
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
 	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), threshold, mSize)
@@ -461,6 +469,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	log.Debugf("Recovered the Unit(%v)'s the group signature: ",
 		unitHash.TerminalString(), hexutil.Encode(groupSig))
 
+	// 5. recover后的相关处理
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	mp.dag.SetUnitGroupSign(unitHash, groupSig, mp.ptn.TxPool())

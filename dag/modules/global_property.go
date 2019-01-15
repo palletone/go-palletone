@@ -117,7 +117,7 @@ func calcThreshold(aSize int) int {
 }
 
 func (gp *GlobalProperty) IsActiveJury(add common.Address) bool {
-	return true  //todo for test
+	return true //todo for test
 
 	//return gp.ActiveJuries[add]
 }
