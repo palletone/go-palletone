@@ -1226,9 +1226,9 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				// L: Request new headers up from 11 (R's TD was higher, it must have something)
 				// R: Nothing to give
 				if d.mode != LightSync {
-					head := d.dag.CurrentUnit()
-					dbhead, _ := d.dag.GetHeaderByHash(head.Hash())
-					if !gotHeaders && index > dbhead.Index() {
+					unit := d.dag.CurrentUnit()
+					//dbhead, _ := d.dag.GetHeaderByHash(head.Hash())
+					if !gotHeaders && index > unit.Number().Index {
 						return errStallingPeer
 					}
 				}
