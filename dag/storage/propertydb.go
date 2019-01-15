@@ -127,7 +127,7 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	timestamp := header.Creationdate
 	data := &modules.UnitProperty{hash, index, timestamp}
 	key := append(constants.LastUnstableUnitHash, index.AssetID.Bytes()...)
-	log.Debugf("Save last unstable unit %s,index:%s", hash.String(), index.String())
+	log.Debugf("Save newest unit %s,index:%s", hash.String(), index.String())
 
 	return StoreBytes(db.db, key, data)
 }

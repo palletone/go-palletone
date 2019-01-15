@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -69,8 +70,7 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 		current_index.Index += 1
 		pendingUnit.UnitHeader.Number = current_index
 	} else {
-		log.Debug("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index,
-			"hex", pendingUnit.UnitHeader.Number.AssetID.String())
+		log.Debug("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.String())
 	}
 }
 
@@ -81,8 +81,17 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	defer func(start time.Time) {
 		log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
 	}(time.Now())
+	gasToken := node.DefaultConfig.GetGasToken()
+
 	// 1. 判断是否满足生产的若干条件
 
+	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
+	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
+	if !dag.Memdag.Exists(hash) {
+		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.", hash.String())
+		newestUnit, _ := dag.Memdag.GetNewestUnit(gasToken)
+		dag.propRep.SetNewestUnit(newestUnit.Header())
+	}
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	newUnits, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {

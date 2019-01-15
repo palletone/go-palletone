@@ -535,11 +535,13 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
-	cache := freecache.NewCache(100 * 1024 * 1024)
+
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
-	propRep := dagcommon.NewPropCacheRepository(propDb, cache)
+	//cache := freecache.NewCache(100 * 1024 * 1024)
+	//propRep := dagcommon.NewPropCacheRepository(propDb, cache)
+	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
