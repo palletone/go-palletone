@@ -49,7 +49,7 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			pm.producer.AddToTBLSSignBuf(newUnit)
+			pm.producer.AddToTBLSSignBufs(newUnit)
 			continue
 		}
 

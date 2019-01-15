@@ -531,7 +531,7 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 		return err
 	}
 
-	pm.producer.AddToTBLSSignBuf(&unit)
+	pm.producer.AddToTBLSSignBufs(&unit)
 	return nil
 }
 
