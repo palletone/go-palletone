@@ -948,6 +948,23 @@ func (mr *MockIDagMockRecorder) GetTxFromAddress(tx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFromAddress", reflect.TypeOf((*MockIDag)(nil).GetTxFromAddress), tx)
 }
 
+// GetTxByFileHash
+
+// GetTxByFileHash mocks base method
+func (m *MockIDag) GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxByFileHash", filehash)
+	ret0, _ := ret[0].([]*modules.FileInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxByFileHash indicates an expected call of GetTxByFileHash
+func (mr *MockIDagMockRecorder) GetTxByFileHash(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxByFileHash", reflect.TypeOf((*MockIDag)(nil).GetTxByFileHash), hash)
+}
+
 // MockICache is a mock of ICache interface
 type MockICache struct {
 	ctrl     *gomock.Controller

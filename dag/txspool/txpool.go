@@ -756,7 +756,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
 	pool.all[hash] = tx
-	for _, msgcopy := range tx.Tx.TxMessages {
+	for i, msgcopy := range tx.Tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, txin := range msg.Inputs {
@@ -764,6 +764,15 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 						pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
 					}
 					pool.outpoints[*txin.PreviousOutPoint] = tx
+				}
+
+				for j, _ := range msg.Outputs {
+					if pool.outputs == nil {
+						pool.outputs = make(map[modules.OutPoint]common.Hash)
+					}
+					preout.MessageIndex = uint32(i)
+					preout.OutIndex = uint32(j)
+					pool.outputs[preout] = hash
 				}
 			}
 		}
@@ -1142,6 +1151,8 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 							address, err1 := tokenengine.GetAddressFromScript(out.PkScript[:])
 							if err1 == nil {
 								txs[address.String()] = append(txs[address.String()], tx)
+							} else {
+								log.Error("PKSCript to address failed.", "error", err1)
 							}
 						}
 					}
@@ -1676,6 +1687,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		}
 	}
 	//添加孤儿交易
+	validated_txs := make([]*modules.TxPoolTransaction, 0)
 	for {
 		//  验证孤儿交易
 		or_list := make(orList, 0)
@@ -1697,11 +1709,20 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 				if total > unit_size {
 					break
 				}
+				validated_txs = append(validated_txs, tx)
 			}
 		}
 		break
 
 	}
+
+	go func(txs []*modules.TxPoolTransaction) {
+		// rm orphanTx
+		for _, tx := range txs {
+			pool.removeOrphan(tx, false)
+		}
+
+	}(validated_txs)
 
 	return list, total
 }
@@ -1835,6 +1856,9 @@ func (pool *TxPool) removeOrphan(tx *modules.TxPoolTransaction, reRedeemers bool
 							delete(pool.orphansByPrev, *in.PreviousOutPoint)
 						}
 					}
+					if _, has := pool.outputs[*in.PreviousOutPoint]; has {
+						delete(pool.outputs, *in.PreviousOutPoint)
+					}
 				}
 			}
 		}
@@ -1927,18 +1951,25 @@ func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error
 						if _, has := pool.orphansByPrev[*in.PreviousOutPoint]; !has {
 							return true, nil
 						}
-						return false, nil
+
 					}
 					if utxo != nil {
 						if utxo.IsModified() || utxo.IsSpent() {
-							str := fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalid。",
+							str := fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalide。",
 								tx.Tx.Hash().String(), in.PreviousOutPoint.String())
 							return false, errors.New(str)
 						}
+					} else {
+						return false, err
 					}
+					// 若该笔交易的输入在交易池的outputs里，说明该交易是有效的，非孤儿交易。
+					if _, has := pool.outputs[*in.PreviousOutPoint]; has {
+						return false, nil
+					}
+					return true, nil
 				}
 			}
 		}
 	}
-	return false, nil
+	return false, errors.New(fmt.Sprintf("the tx: (%s) is invalide。", tx.Tx.Hash().String()))
 }
