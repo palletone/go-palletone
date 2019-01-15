@@ -26,6 +26,7 @@ const (
 	DefaultHTTPPort = 8545        // Default TCP port for the HTTP RPC server
 	DefaultWSHost   = "localhost" // Default host interface for the websocket RPC server
 	DefaultWSPort   = 8546        // Default TCP port for the websocket RPC server
+	DefaultToken    = "PTN"
 )
 
 // DefaultConfig contains reasonable default settings.
@@ -38,12 +39,7 @@ var DefaultConfig = Config{
 	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
 	WSModules:        []string{"net", "web3", "dag"},
-	GasToken:         "PTN",
-	//	P2P: p2p.Config{
-	//		ListenAddr: ":30303",
-	//		MaxPeers:   25,
-	//		NAT:        nat.Any(),
-	//	},
+	GasToken:         DefaultToken,
 }
 
 // DefaultDataDir is the default data directory to use for the databases and other

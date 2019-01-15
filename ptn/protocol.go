@@ -30,7 +30,7 @@ const (
 )
 
 // Official short name of the protocol used during capability negotiation.
-var ProtocolName = "ptn"
+//var ProtocolName = "ptn"
 
 // Supported versions of the ptn protocol (first is primary).
 var ProtocolVersions = []uint{ptn1}
@@ -51,7 +51,7 @@ const (
 	GetBlockBodiesMsg  = 0x05
 	BlockBodiesMsg     = 0x06
 	NewBlockMsg        = 0x07
-	ConsensusMsg       = 0x08
+	//ConsensusMsg       = 0x08
 	NewProducedUnitMsg = 0x09
 	VSSDealMsg         = 0x0a
 	VSSResponseMsg     = 0x0b

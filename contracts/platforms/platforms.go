@@ -129,6 +129,7 @@ func generateDockerfile(platform Platform, cds *pb.ChaincodeDeploymentSpec) ([]b
 	//append version so chaincode build version can be compared against peer build version
 	buf = append(buf, fmt.Sprintf("ENV CORE_CHAINCODE_BUILDLEVEL=%s", metadata.Version))
 
+	buf = append(buf,fmt.Sprint("CMD [\"/bin/sh\", \"-c\", \"cd / && tar -xvf binpackage.tar -C /usr/local/bin && cd /usr/local/bin && ./chaincode\"]"))
 	// ----------------------------------------------------------------------------------------------------
 	// Finalize it
 	// ----------------------------------------------------------------------------------------------------
