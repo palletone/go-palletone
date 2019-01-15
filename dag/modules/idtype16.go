@@ -48,6 +48,7 @@ func ZeroIdType16() IDType16 {
 func (it *IDType16) String() string {
 	return it.Str()
 }
+
 func (it *IDType16) ToAssetId() string {
 	//if *it == PTNCOIN {
 	//	return "PTN"
@@ -58,7 +59,10 @@ func (it *IDType16) ToAssetId() string {
 	//copy(b12[1:], txHash)
 	return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + strconv.Itoa(int(assetType)) + base36.EncodeBytes(txHash)
 }
-func string2AssetId(str string) (IDType16, error) {
+func String2AssetId(str string) (IDType16, error) {
+	if str == "PTN" {
+		return PTNCOIN, nil
+	}
 	strArray := strings.Split(str, "+")
 	if len(strArray) < 2 {
 		return IDType16{}, errors.New("Asset string invalid")

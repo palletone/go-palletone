@@ -318,10 +318,10 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 			// 更新memUnit
 			chain.lastValidatedUnit[assetId] = stable_unit
 			chain.memUnit.Refresh(stable_hash)
-			current_index, _ := chain.statedb.GetCurrentChainIndex(stable_unit.UnitHeader.ChainIndex().AssetID)
+			_, current_index, _ := chain.propRep.GetLastUnstableUnit(stable_unit.UnitHeader.ChainIndex().AssetID)
 			chain_index := unit.UnitHeader.ChainIndex()
 			if chain_index.Index > current_index.Index {
-				chain.statedb.SaveChainIndex(chain_index)
+				chain.propRep.SetLastUnstableUnit(unit.Hash(), chain_index)
 			}
 			log.Info("+++++++++++++++++++++++ save_memDag_success +++++++++++++++++++++++", "save_memDag_Unit_hash", unit.Hash().String(), "index", index)
 		}
@@ -380,14 +380,15 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit, txpool txspool.ITxPool) er
 	// 当前最新区块高度是否小于此unit高度。
 	// get currentUnit
 
-	curChainIndex, err := chain.statedb.GetCurrentChainIndex(unit.UnitHeader.ChainIndex().AssetID)
+	_, curChainIndex, err := chain.propRep.GetLastUnstableUnit(unit.UnitHeader.ChainIndex().AssetID)
 	if err == nil {
 		if curChainIndex.Index < unit.UnitHeader.Index() {
 			// update state
-			chain.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
-			chain.dagdb.PutHeadHeaderHash(unit.UnitHash)
-			chain.dagdb.PutHeadUnitHash(unit.UnitHash)
-			chain.dagdb.PutHeadFastUnitHash(unit.UnitHash)
+			//chain.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
+			//chain.dagdb.PutHeadHeaderHash(unit.UnitHash)
+			//chain.dagdb.PutHeadUnitHash(unit.UnitHash)
+			//chain.dagdb.PutHeadFastUnitHash(unit.UnitHash)
+			chain.propRep.SetLastUnstableUnit(unit.Hash(), unit.UnitHeader.Number)
 		}
 	}
 	// 分支修剪

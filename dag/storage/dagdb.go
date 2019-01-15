@@ -62,12 +62,12 @@ type IDagDb interface {
 	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 	//SaveAllTokenInfo(token_itmes *modules.AllTokenInfo) error
 
-	PutCanonicalHash(hash common.Hash, number uint64) error
-	PutHeadHeaderHash(hash common.Hash) error
-	PutHeadUnitHash(hash common.Hash) error
-	PutHeadFastUnitHash(hash common.Hash) error
+	//PutCanonicalHash(hash common.Hash, number uint64) error
+	//PutHeadHeaderHash(hash common.Hash) error
+	//PutHeadUnitHash(hash common.Hash) error
+	//PutHeadFastUnitHash(hash common.Hash) error
 	PutTrieSyncProgress(count uint64) error
-	UpdateHeadByBatch(hash common.Hash, number uint64) error
+	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetUnit(hash common.Hash) (*modules.Unit, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
@@ -81,12 +81,12 @@ type IDagDb interface {
 	//GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetCanonicalHash(number uint64) (common.Hash, error)
+	//GetCanonicalHash(number uint64) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 
-	GetHeadHeaderHash() (common.Hash, error)
-	GetHeadUnitHash() (common.Hash, error)
-	GetHeadFastUnitHash() (common.Hash, error)
+	//GetHeadHeaderHash() (common.Hash, error)
+	//GetHeadUnitHash() (common.Hash, error)
+	//GetHeadFastUnitHash() (common.Hash, error)
 	//GetAllLeafNodes() ([]*modules.Header, error)
 	GetTrieSyncProgress() (uint64, error)
 	//GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
@@ -101,6 +101,7 @@ type IDagDb interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	SaveReqIdByTx(tx *modules.Transaction) error
+	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }
 
 func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {
@@ -518,46 +519,46 @@ func (dagdb *DagDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) 
 //}
 
 //  GetCanonicalHash get
-
-func (dagdb *DagDb) GetCanonicalHash(number uint64) (common.Hash, error) {
-	key := append(constants.HEADER_PREFIX, encodeBlockNumber(number)...)
-	data, err := dagdb.db.Get(append(key, constants.NumberSuffix...))
-	if err != nil {
-		return common.Hash{}, err
-	}
-	if len(data) == 0 {
-		return common.Hash{}, err
-	}
-	return common.BytesToHash(data), nil
-}
-func (dagdb *DagDb) GetHeadHeaderHash() (common.Hash, error) {
-	data, err := dagdb.db.Get(constants.HeadHeaderKey)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	if len(data) != 8 {
-		return common.Hash{}, errors.New("data's len is error.")
-	}
-	return common.BytesToHash(data), nil
-}
-
-// GetHeadUnitHash stores the head unit's hash.
-func (dagdb *DagDb) GetHeadUnitHash() (common.Hash, error) {
-	data, err := dagdb.db.Get(constants.HeadUnitHash)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return common.BytesToHash(data), nil
-}
-
-// GetHeadFastUnitHash stores the fast head unit's hash.
-func (dagdb *DagDb) GetHeadFastUnitHash() (common.Hash, error) {
-	data, err := dagdb.db.Get(constants.HeadFastKey)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return common.BytesToHash(data), nil
-}
+//
+//func (dagdb *DagDb) GetCanonicalHash(number uint64) (common.Hash, error) {
+//	key := append(constants.HEADER_PREFIX, encodeBlockNumber(number)...)
+//	data, err := dagdb.db.Get(append(key, constants.NumberSuffix...))
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//	if len(data) == 0 {
+//		return common.Hash{}, err
+//	}
+//	return common.BytesToHash(data), nil
+//}
+//func (dagdb *DagDb) GetHeadHeaderHash() (common.Hash, error) {
+//	data, err := dagdb.db.Get(constants.HeadHeaderKey)
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//	if len(data) != 8 {
+//		return common.Hash{}, errors.New("data's len is error.")
+//	}
+//	return common.BytesToHash(data), nil
+//}
+//
+//// GetHeadUnitHash stores the head unit's hash.
+//func (dagdb *DagDb) GetHeadUnitHash() (common.Hash, error) {
+//	data, err := dagdb.db.Get(constants.HeadUnitHash)
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//	return common.BytesToHash(data), nil
+//}
+//
+//// GetHeadFastUnitHash stores the fast head unit's hash.
+//func (dagdb *DagDb) GetHeadFastUnitHash() (common.Hash, error) {
+//	data, err := dagdb.db.Get(constants.HeadFastKey)
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//	return common.BytesToHash(data), nil
+//}
 
 // GetTrieSyncProgress stores the fast sync trie process counter to support
 // retrieving it across restarts.
@@ -904,50 +905,50 @@ func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*mod
 }
 
 //batch put HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
-func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
-	batch := dagdb.db.NewBatch()
-	errorList := &[]error{}
+//func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
+//	batch := dagdb.db.NewBatch()
+//	errorList := &[]error{}
+//
+//	key := append(constants.HeaderCanon_Prefix, encodeBlockNumber(number)...)
+//	BatchErrorHandler(batch.Put(append(key, constants.NumberSuffix...), hash.Bytes()), errorList) //PutCanonicalHash
+//	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
+//	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                 //PutHeadUnitHash
+//	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
+//	if len(*errorList) == 0 {                                                                     //each function call succeed.
+//		return batch.Write()
+//	}
+//	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")
+//}
 
-	key := append(constants.HeaderCanon_Prefix, encodeBlockNumber(number)...)
-	BatchErrorHandler(batch.Put(append(key, constants.NumberSuffix...), hash.Bytes()), errorList) //PutCanonicalHash
-	BatchErrorHandler(batch.Put(constants.HeadHeaderKey, hash.Bytes()), errorList)                //PutHeadHeaderHash
-	BatchErrorHandler(batch.Put(constants.HeadUnitHash, hash.Bytes()), errorList)                 //PutHeadUnitHash
-	BatchErrorHandler(batch.Put(constants.HeadFastKey, hash.Bytes()), errorList)                  //PutHeadFastUnitHash
-	if len(*errorList) == 0 {                                                                     //each function call succeed.
-		return batch.Write()
-	}
-	return fmt.Errorf("UpdateHeadByBatch, at least one sub function call failed.")
-}
-
-func (dagdb *DagDb) PutCanonicalHash(hash common.Hash, number uint64) error {
-	key := append(constants.HeaderCanon_Prefix, encodeBlockNumber(number)...)
-	if err := dagdb.db.Put(append(key, constants.NumberSuffix...), hash.Bytes()); err != nil {
-		return err
-	}
-	return nil
-}
-func (dagdb *DagDb) PutHeadHeaderHash(hash common.Hash) error {
-	if err := dagdb.db.Put(constants.HeadHeaderKey, hash.Bytes()); err != nil {
-		return err
-	}
-	return nil
-}
-
-// PutHeadUnitHash stores the head unit's hash.
-func (dagdb *DagDb) PutHeadUnitHash(hash common.Hash) error {
-	if err := dagdb.db.Put(constants.HeadUnitHash, hash.Bytes()); err != nil {
-		return err
-	}
-	return nil
-}
-
-// PutHeadFastUnitHash stores the fast head unit's hash.
-func (dagdb *DagDb) PutHeadFastUnitHash(hash common.Hash) error {
-	if err := dagdb.db.Put(constants.HeadFastKey, hash.Bytes()); err != nil {
-		return err
-	}
-	return nil
-}
+//func (dagdb *DagDb) PutCanonicalHash(hash common.Hash, number uint64) error {
+//	key := append(constants.HeaderCanon_Prefix, encodeBlockNumber(number)...)
+//	if err := dagdb.db.Put(append(key, constants.NumberSuffix...), hash.Bytes()); err != nil {
+//		return err
+//	}
+//	return nil
+//}
+//func (dagdb *DagDb) PutHeadHeaderHash(hash common.Hash) error {
+//	if err := dagdb.db.Put(constants.HeadHeaderKey, hash.Bytes()); err != nil {
+//		return err
+//	}
+//	return nil
+//}
+//
+//// PutHeadUnitHash stores the head unit's hash.
+//func (dagdb *DagDb) PutHeadUnitHash(hash common.Hash) error {
+//	if err := dagdb.db.Put(constants.HeadUnitHash, hash.Bytes()); err != nil {
+//		return err
+//	}
+//	return nil
+//}
+//
+//// PutHeadFastUnitHash stores the fast head unit's hash.
+//func (dagdb *DagDb) PutHeadFastUnitHash(hash common.Hash) error {
+//	if err := dagdb.db.Put(constants.HeadFastKey, hash.Bytes()); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 // PutTrieSyncProgress stores the fast sync trie process counter to support
 // retrieving it across restarts.

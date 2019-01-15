@@ -954,3 +954,30 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	//4.
 	return submitTransaction(ctx, s.b, tx)
 }
+
+func (s *PublicWalletAPI) GetTxByFileHash(ctx context.Context, filehash []byte) (string, error) {
+	//get fileinfos
+	files, err := s.b.GetTxByFileHash(filehash)
+	if err != nil {
+		return "null", err
+	}
+
+	gets := []walletjson.GetFileInfos{}
+	for _, file := range files {
+		get := walletjson.GetFileInfos{}
+		for _, ph := range file.ParentsHash {
+			get.ParentsHash = ph.String()
+		}
+		get.MainData = string(file.MainData)
+		get.ExtraData = string(file.ExtraData)
+		get.Timestamp = file.Timestamp
+		get.Txid = file.Txid.String()
+		get.UintHeight = file.UintHeight
+		get.UnitHash = file.UnitHash.String()
+		gets = append(gets, get)
+	}
+
+	result := walletjson.ConvertGetFileInfos2Json(gets)
+
+	return result, nil
+}

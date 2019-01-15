@@ -594,11 +594,11 @@ func (ec *Client) GetUnitNumber(ctx context.Context, hash common.Hash) (uint64, 
 }
 
 // GetCanonicalHash
-func (ec *Client) GetCanonicalHash(ctx context.Context, number uint64) (common.Hash, error) {
-	var result common.Hash
-	err := ec.c.CallContext(ctx, &result, "dag_getCanonicalHash", number)
-	return result, err
-}
+//func (ec *Client) GetCanonicalHash(ctx context.Context, number uint64) (common.Hash, error) {
+//	var result common.Hash
+//	err := ec.c.CallContext(ctx, &result, "dag_getCanonicalHash", number)
+//	return result, err
+//}
 
 // Get state
 func (ec *Client) GetHeadHeaderHash(ctx context.Context) (common.Hash, error) {

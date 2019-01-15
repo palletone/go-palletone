@@ -20,6 +20,7 @@
 package common
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -34,6 +35,11 @@ type IPropRepository interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
+
+	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
+	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
+	SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error
+	GetLastUnstableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
 }
 
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
@@ -56,6 +62,18 @@ func (pRep *PropRepository) StoreMediatorSchl(ms *modules.MediatorSchedule) erro
 }
 func (pRep *PropRepository) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	return pRep.db.RetrieveMediatorSchl()
+}
+func (pRep *PropRepository) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
+	return pRep.db.SetLastStableUnit(hash, index)
+}
+func (pRep *PropRepository) GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+	return pRep.db.GetLastStableUnit(token)
+}
+func (pRep *PropRepository) SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error {
+	return pRep.db.SetLastUnstableUnit(hash, index)
+}
+func (pRep *PropRepository) GetLastUnstableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+	return pRep.db.GetLastUnstableUnit(token)
 }
 
 /**

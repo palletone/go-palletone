@@ -271,12 +271,112 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 		log.Info("getCodeDescriptor err:","error",err)
 		return nil, err
 	}
+	//获取链码vendor的所有文件夹
+	PthSep := string(os.PathSeparator)
 	tld := filepath.Join(codeDescriptor.Gopath, "src", codeDescriptor.Pkg)
+	chaincodeVendorDir :=tld+PthSep+"vendor"
+	cl := len(chaincodeVendorDir)
+	chaincodeVendorDirs,err := getAllDirs(chaincodeVendorDir)
+	//获取项目vendor的所有文件夹
+	ploDir := filepath.Join(codeDescriptor.Gopath,"src","github.com/palletone/go-palletone/vendor")
+	pl := len(ploDir)
+	pVendorDirs,err := getAllDirs(ploDir)
+	newFiles := []string{}
+	for _,cDir := range chaincodeVendorDirs {
+		pIsHave := false
+		for _,pDir := range pVendorDirs {
+			//fmt.Println(cDir[cl+1:]+"============"+pDir[pl+1:])
+			if strings.Compare(cDir[cl+1:],pDir[pl+1:]) == 0 {
+				pIsHave = true
+			}
+		}
+		if !pIsHave {
+			newFiles = append(newFiles,cDir)
+		}
+	}
+	//判断是否包含项目引用
+	endFiles := []string{}
+	for _,file := range newFiles {
+		if !strings.Contains(file,"github.com/palletone") {
+			endFiles =  append(endFiles,file)
+		}
+	}
+	//获取链码源码（不包含依赖包）
 	sourcefiles,err := getAllFiles(tld)
 	if err != nil {
 		log.Info("getAllFiles err:","error",err)
 		return nil,err
 	}
+	if len(endFiles) > 0 {
+		//获取vendor文件
+		for _,d := range endFiles {
+			vendorFiles, err := getAllFiles(d)
+			if err != nil {
+				log.Info("getAllFiles err:", "error", err)
+				return nil, err
+			}
+			sourcefiles = append(sourcefiles, vendorFiles...)
+		}
+	}
+//
+//	//获取链码 vendor 的所有文件
+//	sTpl := tld+PthSep+"vendor"
+//	sl := len(sTpl)
+//	sourceVendorFiles,err := getAllFiles(sTpl,true)
+//	if err != nil {
+//		log.Info("getAllFiles err:","error",err)
+//		return nil,err
+//	}
+//	//获取palletOne项目vendor的所有文件
+//	ploDir := filepath.Join(codeDescriptor.Gopath,"src","github.com/palletone/go-palletone/vendor")
+//	pl := len(ploDir)
+//	palletOneVendorFiles,err := getAllFiles(ploDir,true)
+//
+//	files := make(Sources, 0)
+//	for _,sPath := range sourceVendorFiles {
+//		isNotHave := true
+//		for _,pPath := range palletOneVendorFiles {
+//fmt.Println(sPath.path[sl+1:]+"============"+pPath.path[pl+1:])
+//			if strings.Compare(sPath.path[sl+1:],pPath.path[pl+1:]) == 0 {
+//				fmt.Println("==============================")
+//				isNotHave = false
+//				break
+//			}
+//		}
+//		if isNotHave {
+//			source := SourceDescriptor{}
+//			source.Name = sPath.name
+//			source.Path = sPath.path
+//			files = append(files,source)
+//		}
+//	}
+	//fmt.Println("lalala1111111")
+	//for _,s := range files {
+	//	fmt.Println("lslsl",s.Path)
+	//}
+	//fmt.Println("lalala22222222")
+
+
+	//过滤
+	//env, err := getGoEnv()
+	//if err != nil {
+	//	return nil,err
+	//}
+	//gopaths := splitEnvPaths(env["GOPATH"])
+	//goroots := splitEnvPaths(env["GOROOT"])
+	//gopaths[codeDescriptor.Pkg] = true
+	//env["GOPATH"] = flattenEnvPaths(gopaths)
+	//Retrieve the list of first-order imports referenced by the chaincode
+
+	//for _,file := range sourcefiles {
+	//	source := SourceDescriptor{}
+	//	source.Name = file.name
+	//	source.Path = file.path
+	//	files = append(files,source)
+	//}
+	//
+	//
+	//
 	payload := bytes.NewBuffer(nil)
 	gw := gzip.NewWriter(payload)
 	tw := tar.NewWriter(gw)
@@ -289,7 +389,38 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 	}
 	tw.Close()
 	gw.Close()
+	//gopath,_ := getGopath()
+	//ioutil.WriteFile(gopath+"/lala.tar.gz",payload.Bytes(),0644)
 	return payload.Bytes(), nil
+	//return nil,nil
+}
+
+//获取目录
+func getAllDirs(rootDir string) (map[string]string,error) {
+	dirs := make(map[string]string)
+	dir, err := ioutil.ReadDir(rootDir)
+	if err != nil {
+		return nil,err
+	}
+	PthSep := string(os.PathSeparator)
+	for _,fi := range dir {
+		if fi.IsDir() {
+			//dirs = append(dirs,rootDir+PthSep+fi.Name())
+			d := rootDir+PthSep+fi.Name()
+			dirs[d] = d
+			getAllDirs(rootDir+PthSep+fi.Name())
+		}else {
+			continue
+		}
+	}
+	// 读取子目录下文件
+	for _, table := range dirs {
+		temp, _ := getAllDirs(table)
+		for _, temp1 := range temp {
+			dirs[temp1] = temp1
+		}
+	}
+	return dirs,nil
 }
 
 //获取指定目录下的所有文件,包含子目录下的文件
@@ -303,7 +434,10 @@ func getAllFiles(dirPth string) ([]SourceFile,error) {
 	PthSep := string(os.PathSeparator)
 	//suffix = strings.ToUpper(suffix) //忽略后缀匹配的大小写
 	for _, fi := range dir {
-		if fi.IsDir() { // 目录, 递归遍历
+		if fi.IsDir(){ // 目录, 递归遍历
+			if strings.Contains(fi.Name(),"vendor") {
+				continue
+			}
 			dirs = append(dirs, dirPth+PthSep+fi.Name())
 			getAllFiles(dirPth + PthSep + fi.Name())
 		} else {
