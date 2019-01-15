@@ -93,7 +93,7 @@ type iDag interface {
 
 	PrecedingThreshold() int
 	PrecedingMediatorsCount() int
-	UnitIrreversibleTime() uint
+	UnitIrreversibleTime() time.Duration
 	LastMaintenanceTime() int64
 }
 

@@ -153,19 +153,19 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 	}
 
 	// 3. 设置定时器延迟 断开连接
-	discconnectFn := func() {
+	disconnectFn := func() {
 		for _, peer := range delayDiscNodes {
 			pm.srvr.RemoveTrustedPeer(peer)
 		}
 	}
 
 	expiration := pm.dag.UnitIrreversibleTime()
-	delayDisc := time.NewTimer(time.Duration(expiration))
+	delayDisc := time.NewTimer(expiration)
 
 	select {
 	case <-pm.quitSync:
 		return
 	case <-delayDisc.C:
-		discconnectFn()
+		disconnectFn()
 	}
 }

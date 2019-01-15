@@ -134,9 +134,10 @@ func (d *Dag) PrecedingThreshold() int {
 	return d.GetGlobalProp().PrecedingThreshold()
 }
 
-func (d *Dag) UnitIrreversibleTime() uint {
+func (d *Dag) UnitIrreversibleTime() time.Duration {
 	gp := d.GetGlobalProp()
-	return uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
+	it := uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
+	return time.Duration(it) * time.Second
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {

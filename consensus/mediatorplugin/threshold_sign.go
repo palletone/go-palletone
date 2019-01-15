@@ -241,7 +241,7 @@ func (mp *MediatorPlugin) signUnitsTBLS(localMed common.Address) {
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Debugf("the mediator(%v) has no signature shares to recover group sign yet: %v", localMed.Str())
+		log.Debugf("the mediator(%v) has no signature shares to recover group sign yet", localMed.Str())
 		return
 	}
 
@@ -256,7 +256,7 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
 	for _, localMed := range lams {
 		log.Debugf("the mediator(%v) received a unit to be grouped sign: %v",
 			localMed.Str(), newUnit.UnitHash.TerminalString())
-		mp.addToTBLSSignBuf(localMed, newUnit)
+		go mp.addToTBLSSignBuf(localMed, newUnit)
 	}
 }
 
@@ -270,12 +270,12 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *mod
 
 	// 过了 unit 确认时间后，及时删除待群签名的 unit，防止内存溢出
 	expiration := mp.dag.UnitIrreversibleTime()
-	deleteBUf := time.NewTimer(time.Duration(expiration))
+	deleteBuf := time.NewTimer(expiration)
 
 	select {
 	case <-mp.quit:
 		return
-	case <-deleteBUf.C:
+	case <-deleteBuf.C:
 		delete(mp.toTBLSSignBuf[localMed], newUnit.UnitHash)
 	}
 }
@@ -386,8 +386,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	// 当buf不存在时，说明已经recover出群签名, 或者已经过了unit确认时间，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		err = fmt.Errorf("the unit already has recovered the group signature: %v", newUnitHash.TerminalString())
-		log.Debugf(err.Error())
+		err = fmt.Errorf("the unit(%v) has already recovered the group signature", newUnitHash.TerminalString())
+		log.Debug(err.Error())
 		return err
 	}
 
@@ -412,7 +412,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	sigShareSet, ok := sigSharesBuf[unitHash]
 	if !ok {
-		log.Debugf("the mediator(%v) has no sign shares about unit(%v) yet",
+		log.Debugf("the mediator(%v) has no sign shares corresponding unit(%v) yet",
 			localMed.Str(), unitHash.TerminalString())
 		return
 	}
@@ -478,7 +478,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	log.Debugf("Recovered the Unit(%v)'s the group signature: ",
+	log.Debugf("Recovered the Unit(%v)'s the group signature: %v",
 		unitHash.TerminalString(), hexutil.Encode(groupSig))
 
 	// 5. recover后的相关处理
