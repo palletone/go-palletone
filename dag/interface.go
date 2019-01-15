@@ -81,10 +81,10 @@ type IDag interface {
 	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
-	GetCanonicalHash(number uint64) (common.Hash, error)
-	GetHeadHeaderHash() (common.Hash, error)
-	GetHeadUnitHash() (common.Hash, error)
-	GetHeadFastUnitHash() (common.Hash, error)
+	//GetCanonicalHash(number uint64) (common.Hash, error)
+	//GetHeadHeaderHash() (common.Hash, error)
+	//GetHeadUnitHash() (common.Hash, error)
+	//GetHeadFastUnitHash() (common.Hash, error)
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	GetTrieSyncProgress() (uint64, error)
@@ -137,6 +137,10 @@ type IDag interface {
 	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
+
+	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
+
+	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
 }
 type ICache interface {
 	Set(key, value []byte, expireSeconds int) (err error)

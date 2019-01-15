@@ -474,66 +474,6 @@ func (mr *MockIDagMockRecorder) GetUnitNumber(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitNumber", reflect.TypeOf((*MockIDag)(nil).GetUnitNumber), hash)
 }
 
-// GetCanonicalHash mocks base method
-func (m *MockIDag) GetCanonicalHash(number uint64) (common.Hash, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCanonicalHash", number)
-	ret0, _ := ret[0].(common.Hash)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCanonicalHash indicates an expected call of GetCanonicalHash
-func (mr *MockIDagMockRecorder) GetCanonicalHash(number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCanonicalHash", reflect.TypeOf((*MockIDag)(nil).GetCanonicalHash), number)
-}
-
-// GetHeadHeaderHash mocks base method
-func (m *MockIDag) GetHeadHeaderHash() (common.Hash, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeadHeaderHash")
-	ret0, _ := ret[0].(common.Hash)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeadHeaderHash indicates an expected call of GetHeadHeaderHash
-func (mr *MockIDagMockRecorder) GetHeadHeaderHash() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeadHeaderHash", reflect.TypeOf((*MockIDag)(nil).GetHeadHeaderHash))
-}
-
-// GetHeadUnitHash mocks base method
-func (m *MockIDag) GetHeadUnitHash() (common.Hash, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeadUnitHash")
-	ret0, _ := ret[0].(common.Hash)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeadUnitHash indicates an expected call of GetHeadUnitHash
-func (mr *MockIDagMockRecorder) GetHeadUnitHash() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeadUnitHash", reflect.TypeOf((*MockIDag)(nil).GetHeadUnitHash))
-}
-
-// GetHeadFastUnitHash mocks base method
-func (m *MockIDag) GetHeadFastUnitHash() (common.Hash, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeadFastUnitHash")
-	ret0, _ := ret[0].(common.Hash)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeadFastUnitHash indicates an expected call of GetHeadFastUnitHash
-func (mr *MockIDagMockRecorder) GetHeadFastUnitHash() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeadFastUnitHash", reflect.TypeOf((*MockIDag)(nil).GetHeadFastUnitHash))
-}
-
 // GetUtxoView mocks base method
 func (m *MockIDag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	m.ctrl.T.Helper()
@@ -991,6 +931,21 @@ func (m *MockIDag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (mr *MockIDagMockRecorder) GetTxHashByReqId(reqid interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxHashByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxHashByReqId), reqid)
+}
+
+// GetTxFromAddress mocks base method
+func (m *MockIDag) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxFromAddress", tx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxFromAddress indicates an expected call of GetTxFromAddress
+func (mr *MockIDagMockRecorder) GetTxFromAddress(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFromAddress", reflect.TypeOf((*MockIDag)(nil).GetTxFromAddress), tx)
 }
 
 // MockICache is a mock of ICache interface

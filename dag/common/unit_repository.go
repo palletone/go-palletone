@@ -67,21 +67,23 @@ type IUnitRepository interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetTrieSyncProgress() (uint64, error)
-	GetHeadHeaderHash() (common.Hash, error)
-	GetHeadUnitHash() (common.Hash, error)
-	GetHeadFastUnitHash() (common.Hash, error)
+	//GetHeadHeaderHash() (common.Hash, error)
+	//GetHeadUnitHash() (common.Hash, error)
+	//GetHeadFastUnitHash() (common.Hash, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
-	GetCanonicalHash(number uint64) (common.Hash, error)
+	//GetCanonicalHash(number uint64) (common.Hash, error)
 
 	//SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	//SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetTxByFileHash(filehash []byte) ([]modules.FileInfo, error)
+	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
 
 	//获得某个分区上的最新不可逆单元
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
+
+	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -190,13 +192,14 @@ func (rep *UnitRepository) GetAddrOutput(addr string) ([]modules.Output, error) 
 func (rep *UnitRepository) GetTrieSyncProgress() (uint64, error) {
 	return rep.dagdb.GetTrieSyncProgress()
 }
-func (rep *UnitRepository) GetHeadHeaderHash() (common.Hash, error) {
-	return rep.dagdb.GetHeadHeaderHash()
-}
-func (rep *UnitRepository) GetHeadUnitHash() (common.Hash, error) { return rep.dagdb.GetHeadUnitHash() }
-func (rep *UnitRepository) GetHeadFastUnitHash() (common.Hash, error) {
-	return rep.dagdb.GetHeadFastUnitHash()
-}
+
+//func (rep *UnitRepository) GetHeadHeaderHash() (common.Hash, error) {
+//	return rep.dagdb.GetHeadHeaderHash()
+//}
+//func (rep *UnitRepository) GetHeadUnitHash() (common.Hash, error) { return rep.dagdb.GetHeadUnitHash() }
+//func (rep *UnitRepository) GetHeadFastUnitHash() (common.Hash, error) {
+//	return rep.dagdb.GetHeadFastUnitHash()
+//}
 func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
 	header, err := rep.dagdb.GetHeader(hash)
 	if err != nil {
@@ -204,9 +207,10 @@ func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.Cha
 	}
 	return header.Number, nil
 }
-func (rep *UnitRepository) GetCanonicalHash(number uint64) (common.Hash, error) {
-	return rep.dagdb.GetCanonicalHash(number)
-}
+
+//func (rep *UnitRepository) GetCanonicalHash(number uint64) (common.Hash, error) {
+//	return rep.dagdb.GetCanonicalHash(number)
+//}
 
 //func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
 //	return rep.dagdb.SaveNumberByHash(uHash, number)
@@ -330,7 +334,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	index := uint64(1)
 	isMain := true
 	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
-	chainIndex, err := rep.statedb.GetCurrentChainIndex(asset.AssetId)
+	phash, chainIndex, err := rep.propdb.GetLastUnstableUnit(asset.AssetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index + 1}
 		log.Error("GetCurrentChainIndex is failed.", "error", err)
@@ -339,12 +343,14 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	// step3. generate genesis unit header
 	header := modules.Header{
-		AssetIDs: []modules.IDType16{},
-		Number:   chainIndex,
+		AssetIDs:    []modules.IDType16{},
+		Number:      chainIndex,
+		ParentsHash: []common.Hash{},
 		//TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
 	}
 	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
+	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
 
 	// step4. get transactions from txspool
@@ -417,7 +423,11 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 }
 
 func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
-	return rep.statedb.GetCurrentChainIndex(assetId)
+	_, idx, err := rep.propdb.GetLastUnstableUnit(assetId)
+	if err != nil {
+		return nil, err
+	}
+	return idx, nil
 }
 
 /**
@@ -608,7 +618,9 @@ func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.
 save genesis unit data
 */
 func (rep *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error {
-	log.Debugf("Try to save a new unit :%s", unit.Hash().String())
+
+	uHash := unit.Hash()
+	log.Debugf("Try to save a new unit :%s", uHash.String())
 	if unit.UnitSize == 0 || unit.Size() == 0 {
 		log.Error("Unit is null")
 		return fmt.Errorf("Unit is null")
@@ -659,7 +671,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, 
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
-	if err := rep.dagdb.SaveBody(unit.UnitHash, txHashSet); err != nil {
+	if err := rep.dagdb.SaveBody(uHash, txHashSet); err != nil {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
@@ -676,6 +688,11 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, 
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
+	//Save StableUnit
+	if err := rep.propdb.SetLastStableUnit(uHash, unit.UnitHeader.Number); err != nil {
+		log.Info("SetLastStableUnit:", "error", err.Error())
+		return modules.ErrUnit(-3)
+	}
 	// step11. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
 	//if err := rep.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
@@ -689,17 +706,16 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, 
 	//}
 	//step12+ Special process genesis unit
 	if isGenesis {
-		if err := rep.statedb.SaveChainIndex(unit.Header().ChainIndex()); err != nil {
+		if err := rep.propdb.SetLastUnstableUnit(uHash, unit.Header().ChainIndex()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
-		rep.propdb.SetStableUnitHash(unit.Hash())
 	}
 	// step13 update state
-	rep.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
-	rep.dagdb.PutHeadHeaderHash(unit.UnitHash)
-	rep.dagdb.PutHeadUnitHash(unit.UnitHash)
-	rep.dagdb.PutHeadFastUnitHash(unit.UnitHash)
+	//rep.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
+	//rep.dagdb.PutHeadHeaderHash(unit.UnitHash)
+	//rep.dagdb.PutHeadUnitHash(unit.UnitHash)
+	//rep.dagdb.PutHeadFastUnitHash(unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }
@@ -1190,14 +1206,14 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 }
 
 //get
-func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.FileInfo, error) {
-	var mds []modules.FileInfo
+func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error) {
+	var mds []*modules.FileInfo
 	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
 	if err != nil {
 		return nil, err
 	}
 	for _, hash := range hashs {
-		var md modules.FileInfo
+		var md *modules.FileInfo
 		unithash, unitindex, _, err := unitOp.dagdb.GetTxLookupEntry(hash)
 		if err != nil {
 			return nil, err
@@ -1220,6 +1236,13 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]modules.FileIn
 	return mds, nil
 }
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
-	hash := rep.propdb.GetStableUnitHash() //TODO Devin, use assetId to get
+	hash, _, err := rep.propdb.GetLastStableUnit(assetID)
+	if err != nil {
+		return nil, err
+	}
 	return rep.GetUnit(hash)
+}
+
+func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+	return rep.dagdb.GetTxFromAddress(tx)
 }

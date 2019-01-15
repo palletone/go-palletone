@@ -130,12 +130,7 @@ web3._extend({
             params: 3,
             //inputFormatter: [null]
         }),
-        new web3._extend.Method({
-            name: 'getCanonicalHash',
-            call: 'dag_getCanonicalHash',
-            params: 1,
-            // inputFormatter: [null]
-        }),
+       
         new web3._extend.Method({
             name: 'getHeadHeaderHash',
             call: 'dag_getHeadHeaderHash',

@@ -43,8 +43,10 @@ type IPropertyDb interface {
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 
 	//设置稳定单元的Hash
-	SetStableUnitHash(hash common.Hash)
-	GetStableUnitHash() common.Hash
+	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
+	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
+	SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error
+	GetLastUnstableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
 }
 
 // modified by Yiran
@@ -100,12 +102,36 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 	return RetrieveMediatorSchl(propdb.db)
 }
 
-func (db *PropertyDb) SetStableUnitHash(hash common.Hash) {
-	StoreBytes(db.db, constants.StableUnitHash, hash.Bytes())
+type hashChainIndex struct {
+	Hash  common.Hash
+	Index *modules.ChainIndex
 }
-func (db *PropertyDb) GetStableUnitHash() common.Hash {
-	data, _ := GetBytes(db.db, constants.StableUnitHash)
-	hash := common.Hash{}
-	hash.SetBytes(data)
-	return hash
+
+func (db *PropertyDb) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
+	data := &hashChainIndex{hash, index}
+	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
+	return StoreBytes(db.db, key, data)
+}
+func (db *PropertyDb) GetLastStableUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+	key := append(constants.LastStableUnitHash, asset.Bytes()...)
+	data := &hashChainIndex{}
+	err := retrieve(db.db, key, data)
+	if err != nil {
+		return common.Hash{}, nil, err
+	}
+	return data.Hash, data.Index, nil
+}
+func (db *PropertyDb) SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error {
+	data := &hashChainIndex{hash, index}
+	key := append(constants.LastUnstableUnitHash, index.AssetID.Bytes()...)
+	return StoreBytes(db.db, key, data)
+}
+func (db *PropertyDb) GetLastUnstableUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+	key := append(constants.LastUnstableUnitHash, asset.Bytes()...)
+	data := &hashChainIndex{}
+	err := retrieve(db.db, key, data)
+	if err != nil {
+		return common.Hash{}, nil, err
+	}
+	return data.Hash, data.Index, nil
 }
