@@ -33,8 +33,8 @@ type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
-	// AddToTBLSSignBuf is to TBLS sign the unit
-	AddToTBLSSignBuf(newUnit *modules.Unit)
+	// AddToTBLSSignBufs is to TBLS sign the unit
+	AddToTBLSSignBufs(newUnit *modules.Unit)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
 	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error
@@ -153,19 +153,19 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 	}
 
 	// 3. 设置定时器延迟 断开连接
-	discconnectFn := func() {
+	disconnectFn := func() {
 		for _, peer := range delayDiscNodes {
 			pm.srvr.RemoveTrustedPeer(peer)
 		}
 	}
 
 	expiration := pm.dag.UnitIrreversibleTime()
-	delayDisc := time.NewTimer(time.Duration(expiration))
+	delayDisc := time.NewTimer(expiration)
 
 	select {
 	case <-pm.quitSync:
 		return
 	case <-delayDisc.C:
-		discconnectFn()
+		disconnectFn()
 	}
 }

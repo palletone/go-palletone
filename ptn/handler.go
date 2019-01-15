@@ -472,6 +472,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// append by Albert·Gou
 	case msg.Code == NewProducedUnitMsg:
 		// Retrieve and decode the propagated new produced unit
+		//pm.NewProducedUnitMsg(msg, p)
+		//return pm.NewBlockMsg(msg, p)
 		return pm.NewProducedUnitMsg(msg, p)
 
 	// append by Albert·Gou

@@ -180,6 +180,10 @@ func (dag *Dag) HeadUnitNum() uint64 {
 	return idx.Index
 }
 
+func (dag *Dag) LastMaintenanceTime() int64 {
+	return dag.GetDynGlobalProp().LastMaintenanceTime
+}
+
 func (dag *Dag) HeadUnitHash() common.Hash {
 	hash, _, _ := dag.propRep.GetNewestUnit(modules.PTNCOIN)
 	return hash
