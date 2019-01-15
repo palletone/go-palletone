@@ -126,7 +126,7 @@ type IDag interface {
 	IsSynced() bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
-	UnitIrreversibleTime() uint
+	UnitIrreversibleTime() time.Duration
 	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 
@@ -141,10 +141,4 @@ type IDag interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 
 	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
-}
-type ICache interface {
-	Set(key, value []byte, expireSeconds int) (err error)
-	Get(key []byte) (value []byte, err error)
-	Del(key []byte) bool
-	Clear()
 }

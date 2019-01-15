@@ -539,7 +539,16 @@ func (chain *MemDag) QueryIndex(assetId string, maturedUnitHash common.Hash) (ui
 	}
 	return 0, -1
 }
+func (chain *MemDag) GetNewestUnit(assetid modules.IDType16) (*modules.Unit, error) {
+	sAssetID := assetid.String()
 
+	lastValidatedUnit, has := chain.lastValidatedUnit[sAssetID]
+	if !has {
+		log.Debug("memdag's lastValidated Unit is null.")
+		return nil, fmt.Errorf("MemDag.GetCurrentUnit memdag's lastValidated Unit is null,asset(%s).", assetid.String())
+	}
+	return lastValidatedUnit, nil
+}
 func (chain *MemDag) GetCurrentUnit(assetid modules.IDType16, index uint64) (*modules.Unit, error) {
 	sAssetID := assetid.String()
 	// chain.chainLock.RLock()

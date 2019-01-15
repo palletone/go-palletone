@@ -47,7 +47,7 @@ type IPropertyDb interface {
 	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
-	GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
+	GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, int64, error)
 }
 
 // modified by Yiran
@@ -80,14 +80,17 @@ func NewPropertyDb(db ptndb.Database) *PropertyDb {
 }
 
 func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
+	log.Debug("Save mediator schedule to db.")
 	return StoreMediatorSchl(propdb.db, ms)
 }
 
 func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
+	log.Debug("Save dynamic global property to db.")
 	return StoreDynGlobalProp(propdb.db, dgp)
 }
 
 func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
+	log.Debug("Save global property to db.")
 	return StoreGlobalProp(propdb.db, gp)
 }
 
@@ -124,16 +127,16 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	timestamp := header.Creationdate
 	data := &modules.UnitProperty{hash, index, timestamp}
 	key := append(constants.LastUnstableUnitHash, index.AssetID.Bytes()...)
-	log.Debugf("Save last unstable unit %s,index:%s", hash.String(), index.String())
+	log.Debugf("Save newest unit %s,index:%s", hash.String(), index.String())
 
 	return StoreBytes(db.db, key, data)
 }
-func (db *PropertyDb) GetNewestUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+func (db *PropertyDb) GetNewestUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, int64, error) {
 	key := append(constants.LastUnstableUnitHash, asset.Bytes()...)
 	data := &modules.UnitProperty{}
 	err := retrieve(db.db, key, data)
 	if err != nil {
-		return common.Hash{}, nil, err
+		return common.Hash{}, nil, 0, err
 	}
-	return data.Hash, data.Index, nil
+	return data.Hash, data.Index, data.Timestamp, nil
 }

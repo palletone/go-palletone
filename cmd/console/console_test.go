@@ -161,7 +161,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 	dag.SaveUnit4GenesisInit(unit, nil)
 
-	err = dag.InitPropertyDB(ptnConf.Genesis, unit.UnitHash)
+	err = dag.InitPropertyDB(ptnConf.Genesis, unit)
 	if err != nil {
 		fmt.Printf("Failed to InitPropertyDB: %v \n", err)
 		return nil

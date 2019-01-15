@@ -159,11 +159,11 @@ func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
 }
 
 func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
-	return modules.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), when)
+	return dag.propRep.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), when)
 }
 
 func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
-	return modules.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
+	return dag.propRep.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
 }
 
 func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
@@ -171,16 +171,23 @@ func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
 }
 
 func (dag *Dag) HeadUnitTime() int64 {
-	return dag.GetDynGlobalProp().HeadUnitTime
+	t, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
+	return t
 }
 
 func (dag *Dag) HeadUnitNum() uint64 {
-	return dag.GetDynGlobalProp().HeadUnitNum
+	_, idx, _ := dag.propRep.GetNewestUnit(modules.PTNCOIN)
+	return idx.Index
 }
 
-//func (dag *Dag) HeadUnitHash() common.Hash {
-//	return dag.GetDynGlobalProp().HeadUnitHash
-//}
+func (dag *Dag) LastMaintenanceTime() int64 {
+	return dag.GetDynGlobalProp().LastMaintenanceTime
+}
+
+func (dag *Dag) HeadUnitHash() common.Hash {
+	hash, _, _ := dag.propRep.GetNewestUnit(modules.PTNCOIN)
+	return hash
+}
 
 func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.stateRep.GetMediators()

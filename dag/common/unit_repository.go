@@ -334,7 +334,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	index := uint64(1)
 	isMain := true
 	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
-	phash, chainIndex, err := rep.propdb.GetNewestUnit(asset.AssetId)
+	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(asset.AssetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index + 1}
 		log.Error("GetCurrentChainIndex is failed.", "error", err)
@@ -423,7 +423,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 }
 
 func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
-	_, idx, err := rep.propdb.GetNewestUnit(assetId)
+	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
 		return nil, err
 	}

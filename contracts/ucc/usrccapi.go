@@ -73,7 +73,7 @@ func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, 
 	if err != nil {
 		log.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
 	}
-	log.Debugf("user chaincode [%s]-[%s]-[%s]-[%s] deployed", usrcc.Name, usrcc.Path, usrcc.Version, chainID)
+	log.Debugf("user chaincode chainID[%s]-name[%s]-path[%s]-version[%s] deployed",chainID, usrcc.Name, usrcc.Path, usrcc.Version)
 	return nil
 }
 
@@ -108,6 +108,7 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: usrcc.InitArgs}}
 	chaincodeData, err := platforms.GetChainCodePayload(spec)
 	if err != nil {
+		log.Error("getChainCodePayload err:","error",err)
 		return nil, errors.New("GetChainCodePayload fail")
 	}
 	return chaincodeData, nil

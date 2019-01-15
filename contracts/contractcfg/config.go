@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-var DebugTest bool = false
+var DebugTest bool = true
 
 var DefaultConfig = Config{
 	//LogLevel:               logging.DEBUG,
