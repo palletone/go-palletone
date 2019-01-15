@@ -237,6 +237,10 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		txfee:          new(big.Int).SetUint64(config.FeeLimit),
 		outpoints:      make(map[modules.OutPoint]*modules.TxPoolTransaction),
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
+		orphans:        make(map[common.Hash]*modules.TxPoolTransaction),
+		orphansByPrev:  make(map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction),
+		addrTxs:        make(map[string][]*modules.TxPoolTransaction),
+		outputs:        make(map[modules.OutPoint]common.Hash),
 	}
 	pool.mu = new(sync.RWMutex)
 	pool.locals = newUtxoSet()
