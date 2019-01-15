@@ -40,8 +40,8 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 		log.Warnf("invalidated unit's height number!, last height:%d, next unit height:%d", idx.Index, nextUnit.Number().Index)
 		return false
 	}
-
-	if dag.HeadUnitTime() >= nextUnit.Timestamp() {
+	ts, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
+	if ts >= nextUnit.Timestamp() {
 		log.Debug("invalidated unit's timestamp!")
 		return false
 	}
@@ -84,7 +84,7 @@ func (d *Dag) IsPrecedingMediator(add common.Address) bool {
 	return d.GetGlobalProp().IsPrecedingMediator(add)
 }
 
-func (dag *Dag) InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Hash) error {
+func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error {
 	//  全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
@@ -94,7 +94,7 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, genesisUnitHash common.Has
 
 	//  动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
-	dgp := modules.InitDynGlobalProp(genesis, genesisUnitHash)
+	dgp := modules.InitDynGlobalProp(unit)
 	if err := dag.propRep.StoreDynGlobalProp(dgp); err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (dag *Dag) IsSynced() bool {
 	//nowFine := time.Now()
 	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 	now := time.Now()
-	nextSlotTime := modules.GetSlotTime(gp, dgp, 1)
+	nextSlotTime := dag.propRep.GetSlotTime(gp, dgp, 1)
 
 	if nextSlotTime.Before(now) {
 		return false
@@ -142,8 +142,9 @@ func (d *Dag) UnitIrreversibleTime() uint {
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
 	unit, err := d.GetUnitByHash(hash)
 	if unit != nil && err == nil {
-		lin := d.GetDynGlobalProp().LastIrreversibleUnitNum
-		if unit.NumberU64() <= uint64(lin) {
+		_, idx, _ := d.propRep.GetLastStableUnit(unit.UnitHeader.Number.AssetID)
+
+		if unit.NumberU64() <= idx.Index {
 			return true
 		}
 	}

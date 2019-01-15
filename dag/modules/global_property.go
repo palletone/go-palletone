@@ -58,9 +58,9 @@ func NewGlobalProp() *GlobalProperty {
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	HeadUnitNum  uint64      // 最近的单元编号(数量)
-	HeadUnitHash common.Hash // 最近的单元hash
-	HeadUnitTime int64       // 最近的单元时间
+	//HeadUnitNum  uint64      // 最近的单元编号(数量)
+	//HeadUnitHash common.Hash // 最近的单元hash
+	//HeadUnitTime int64       // 最近的单元时间
 
 	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
 
@@ -77,7 +77,9 @@ type DynamicGlobalProperty struct {
 	*/
 	// RecentSlotsFilled float32
 
-	LastIrreversibleUnitNum uint32
+	//LastIrreversibleUnitNum uint32
+	//NewestUnit     map[IDType16]*UnitProperty
+	//LastStableUnit map[IDType16]*UnitProperty
 }
 type UnitProperty struct {
 	Hash      common.Hash // 最近的单元hash
@@ -87,14 +89,23 @@ type UnitProperty struct {
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
-		HeadUnitNum:             0,
-		HeadUnitHash:            common.Hash{},
-		NextMaintenanceTime:     0,
-		LastMaintenanceTime:     0,
-		CurrentASlot:            0,
-		LastIrreversibleUnitNum: 0,
+		//HeadUnitNum:             0,
+		//HeadUnitHash:            common.Hash{},
+		NextMaintenanceTime: 0,
+		LastMaintenanceTime: 0,
+		CurrentASlot:        0,
+		//LastIrreversibleUnitNum: 0,
+		//NewestUnit:     map[IDType16]*UnitProperty{},
+		//LastStableUnit: map[IDType16]*UnitProperty{},
 	}
 }
+
+//func (gdp *DynamicGlobalProperty) SetNewestUnit(header *Header) {
+//	gdp.NewestUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Creationdate}
+//}
+//func (gdp *DynamicGlobalProperty) SetLastStableUnit(header *Header) {
+//	gdp.LastStableUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Creationdate}
+//}
 
 const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000
 
@@ -201,13 +212,14 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	return gp
 }
 
-func InitDynGlobalProp(genesis *core.Genesis, genesisUnitHash common.Hash) *DynamicGlobalProperty {
+func InitDynGlobalProp(genesis *Unit) *DynamicGlobalProperty {
 	log.Debug("initialize dynamic global property...")
 
 	// Create dynamic global properties
 	dgp := NewDynGlobalProp()
-	dgp.HeadUnitTime = genesis.InitialTimestamp
-	dgp.HeadUnitHash = genesisUnitHash
-
+	//dgp.HeadUnitTime = genesis.InitialTimestamp
+	//dgp.HeadUnitHash = genesisUnitHash
+	//dgp.SetNewestUnit(genesis.Header())
+	//dgp.SetLastStableUnit(genesis.Header())
 	return dgp
 }

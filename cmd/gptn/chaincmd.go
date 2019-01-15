@@ -193,7 +193,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	//3. initial globalproperty
 	//modified by Yiran
-	err = dag.InitPropertyDB(genesis, genesisUnitHash)
+	err = dag.InitPropertyDB(genesis, unit)
 	if err != nil {
 		utils.Fatalf("Failed toInitPropertyDB: %v", err)
 		return err

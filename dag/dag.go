@@ -39,13 +39,14 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type Dag struct {
-	Cache       ICache
+	Cache       palletcache.ICache
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
@@ -534,11 +535,11 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
-
+	cache := freecache.NewCache(100 * 1024 * 1024)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
-	propRep := dagcommon.NewPropRepository(propDb)
+	propRep := dagcommon.NewPropCacheRepository(propDb, cache)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
