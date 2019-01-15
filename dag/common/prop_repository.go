@@ -38,8 +38,8 @@ type IPropRepository interface {
 
 	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
-	SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error
-	GetLastUnstableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
+	SetNewestUnit(header *modules.Header) error
+	GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
 }
 
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
@@ -69,11 +69,11 @@ func (pRep *PropRepository) SetLastStableUnit(hash common.Hash, index *modules.C
 func (pRep *PropRepository) GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
 	return pRep.db.GetLastStableUnit(token)
 }
-func (pRep *PropRepository) SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error {
-	return pRep.db.SetLastUnstableUnit(hash, index)
+func (pRep *PropRepository) SetNewestUnit(header *modules.Header) error {
+	return pRep.db.SetNewestUnit(header)
 }
-func (pRep *PropRepository) GetLastUnstableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
-	return pRep.db.GetLastUnstableUnit(token)
+func (pRep *PropRepository) GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+	return pRep.db.GetNewestUnit(token)
 }
 
 /**

@@ -79,6 +79,11 @@ type DynamicGlobalProperty struct {
 
 	LastIrreversibleUnitNum uint32
 }
+type UnitProperty struct {
+	Hash      common.Hash // 最近的单元hash
+	Index     *ChainIndex // 最近的单元编号(数量)
+	Timestamp int64       // 最近的单元时间
+}
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{

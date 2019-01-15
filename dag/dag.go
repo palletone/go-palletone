@@ -86,7 +86,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 
 	nconfig := &node.DefaultConfig
 	gasToken := nconfig.GetGasToken()
-	hash, _, err := d.propRep.GetLastUnstableUnit(gasToken)
+	hash, _, err := d.propRep.GetNewestUnit(gasToken)
 	if err != nil {
 		log.Error("Can not get last unstable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
 		return nil

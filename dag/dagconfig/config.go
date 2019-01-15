@@ -31,13 +31,10 @@ var (
 	SConfig Sconfig
 )
 
-var DbPath string = DefaultDataDir()
+//var DbPath string = DefaultDataDir()
 
 var DefaultConfig = Config{
-	//DbPath: DefaultDataDir(),
-	//DbPath: "./db/leveldb",
-	// DbPath: "../../cmd/gptn/leveldb",
-
+	DbPath: DefaultDataDir(),
 	// txpool
 	UnitTxSize: 1024 * 1024,
 
@@ -67,7 +64,7 @@ func init() {
 
 // global configuration of dag modules
 type Config struct {
-	//DbPath    string
+	DbPath    string `toml:"-"`
 	DbCache   int
 	DbHandles int
 
