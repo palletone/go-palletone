@@ -134,8 +134,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	pool := txspool.NewTxPool(config.TxPool, ptn.dag)
 	ptn.txPool = pool
-	// // loop txspool to delete overtime tx.
-	// go txspool.LoopTxsPool(pool)
+
 	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
 	if err != nil {
 		log.Error("Contract Initialize err:", "error", err)
@@ -161,7 +160,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, ptn.txPool, ptn.engine,
+	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, config.TokenSubProtocol, ptn.txPool,
 		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
@@ -177,7 +176,8 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (palletdb.D
 	path := ctx.DatabasePath(name)
 
 	//fit dag DefaultConfig
-	dagconfig.DbPath = path
+	dagconfig.DefaultConfig.DbPath = path
+
 	log.Debug("Open leveldb path:", "path", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {

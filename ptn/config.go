@@ -30,13 +30,13 @@ import (
 	"github.com/palletone/go-palletone/configure"
 
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
@@ -114,7 +114,7 @@ type Config struct {
 	Log log.Config `toml:"-"`
 
 	//jury Account
-	Jury jury.Config`toml:"-"`
+	Jury jury.Config `toml:"-"`
 
 	//Contract config
 	Contract contractcfg.Config `toml:"-"`
@@ -124,6 +124,9 @@ type Config struct {
 
 	// append by Albert·Gou
 	MediatorPlugin mediatorplugin.Config `toml:"-"`
+
+	//must be equal to the node.GasToken
+	TokenSubProtocol string `toml:"-"`
 }
 
 type configMarshaling struct {
