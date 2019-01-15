@@ -141,7 +141,7 @@ func initGenesis(ctx *cli.Context) error {
 		return errors.New("leveldb init failed")
 	}
 	filepath := node.ResolvePath("leveldb")
-	dagconfig.DbPath = filepath
+	dagconfig.DefaultConfig.DbPath = filepath
 	dag, _ := dag.NewDag4GenesisInit(Dbconn)
 	ks := node.GetKeyStore()
 	// modify by Albert·Gou
