@@ -318,65 +318,6 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 			sourcefiles = append(sourcefiles, vendorFiles...)
 		}
 	}
-//
-//	//获取链码 vendor 的所有文件
-//	sTpl := tld+PthSep+"vendor"
-//	sl := len(sTpl)
-//	sourceVendorFiles,err := getAllFiles(sTpl,true)
-//	if err != nil {
-//		log.Info("getAllFiles err:","error",err)
-//		return nil,err
-//	}
-//	//获取palletOne项目vendor的所有文件
-//	ploDir := filepath.Join(codeDescriptor.Gopath,"src","github.com/palletone/go-palletone/vendor")
-//	pl := len(ploDir)
-//	palletOneVendorFiles,err := getAllFiles(ploDir,true)
-//
-//	files := make(Sources, 0)
-//	for _,sPath := range sourceVendorFiles {
-//		isNotHave := true
-//		for _,pPath := range palletOneVendorFiles {
-//fmt.Println(sPath.path[sl+1:]+"============"+pPath.path[pl+1:])
-//			if strings.Compare(sPath.path[sl+1:],pPath.path[pl+1:]) == 0 {
-//				fmt.Println("==============================")
-//				isNotHave = false
-//				break
-//			}
-//		}
-//		if isNotHave {
-//			source := SourceDescriptor{}
-//			source.Name = sPath.name
-//			source.Path = sPath.path
-//			files = append(files,source)
-//		}
-//	}
-	//fmt.Println("lalala1111111")
-	//for _,s := range files {
-	//	fmt.Println("lslsl",s.Path)
-	//}
-	//fmt.Println("lalala22222222")
-
-
-	//过滤
-	//env, err := getGoEnv()
-	//if err != nil {
-	//	return nil,err
-	//}
-	//gopaths := splitEnvPaths(env["GOPATH"])
-	//goroots := splitEnvPaths(env["GOROOT"])
-	//gopaths[codeDescriptor.Pkg] = true
-	//env["GOPATH"] = flattenEnvPaths(gopaths)
-	//Retrieve the list of first-order imports referenced by the chaincode
-
-	//for _,file := range sourcefiles {
-	//	source := SourceDescriptor{}
-	//	source.Name = file.name
-	//	source.Path = file.path
-	//	files = append(files,source)
-	//}
-	//
-	//
-	//
 	payload := bytes.NewBuffer(nil)
 	gw := gzip.NewWriter(payload)
 	tw := tar.NewWriter(gw)
@@ -392,7 +333,6 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 	//gopath,_ := getGopath()
 	//ioutil.WriteFile(gopath+"/lala.tar.gz",payload.Bytes(),0644)
 	return payload.Bytes(), nil
-	//return nil,nil
 }
 
 //获取目录
@@ -703,7 +643,7 @@ func (goPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) 
 	//glh
 	//buf = append(buf, "FROM "+"palletimg")
 	buf = append(buf, "FROM "+cfg.GetConfig().ContractBuilder)
-	buf = append(buf, "ADD binpackage.tar /usr/local/bin")
+	//buf = append(buf, "ADD binpackage.tar /usr/local/bin")
 
 	dockerFileContents := strings.Join(buf, "\n")
 
