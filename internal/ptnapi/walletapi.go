@@ -241,7 +241,7 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	return submitTransaction(ctx, s.b, mtx)
 }
 
-func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string,password string) (common.Hash, error) {
+func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
 
 	var proofTransactionGenParams ptnjson.ProofTransactionGenParams
 	err := json.Unmarshal([]byte(params), &proofTransactionGenParams)
@@ -301,7 +301,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	if len(inputs) == 0 {
 		return common.Hash{}, nil
 	}
-	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime, proofTransactionGenParams.Proof,proofTransactionGenParams.Extra)
+	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime, proofTransactionGenParams.Proof, proofTransactionGenParams.Extra)
 	result, _ := WalletCreateProofTransaction(arg)
 	//fmt.Println(result)
 	fmt.Println(result)
@@ -367,10 +367,10 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	var d time.Duration
 	//var duration 
 	//if duration == nil {
-		d = 300 * time.Second
+	d = 300 * time.Second
 	//} else if *duration > max {
-		
-		//return common.Hash{}, err
+
+	//return common.Hash{}, err
 	//} else {
 	//	d = time.Duration(*duration) * time.Second
 	//}
@@ -428,7 +428,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		}
 	}
 	textPayload := new(modules.DataPayload)
-	textPayload.MainData  = []byte(c.Proof)
+	textPayload.MainData = []byte(c.Proof)
 	textPayload.ExtraData = []byte(c.Extra)
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
@@ -529,7 +529,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	if err != nil {
 		return "", err
 	}*/
-    mtxbt, err := rlp.EncodeToBytes(mtx)
+	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
@@ -879,23 +879,23 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	for _, json := range utxoJsons {
 		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
-				MessageIndex:   json.MessageIndex,
-				OutIndex:       json.OutIndex,
-				Amount:         json.Amount,
-				Asset:          json.Asset,
-				PkScriptHex:    json.PkScriptHex,
+				MessageIndex: json.MessageIndex,
+				OutIndex: json.OutIndex,
+				Amount: json.Amount,
+				Asset: json.Asset,
+				PkScriptHex: json.PkScriptHex,
 				PkScriptString: json.PkScriptString,
-				LockTime:       json.LockTime})
+				LockTime: json.LockTime})
 		} else {
 			if json.Asset == asset {
 				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
-					MessageIndex:   json.MessageIndex,
-					OutIndex:       json.OutIndex,
-					Amount:         json.Amount,
-					Asset:          json.Asset,
-					PkScriptHex:    json.PkScriptHex,
+					MessageIndex: json.MessageIndex,
+					OutIndex: json.OutIndex,
+					Amount: json.Amount,
+					Asset: json.Asset,
+					PkScriptHex: json.PkScriptHex,
 					PkScriptString: json.PkScriptString,
-					LockTime:       json.LockTime})
+					LockTime: json.LockTime})
 			}
 		}
 	}
@@ -968,9 +968,9 @@ func (s *PublicWalletAPI) GetTxByFileHash(ctx context.Context, filehash []byte) 
 		for _, ph := range file.ParentsHash {
 			get.ParentsHash = ph.String()
 		}
-		get.MainData = string(file.MainData)
+		get.FileData = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
-		get.Timestamp = file.Timestamp
+		get.Timestamp = time.Duration(file.Timestamp)
 		get.Txid = file.Txid.String()
 		get.UintHeight = file.UintHeight
 		get.UnitHash = file.UnitHash.String()
