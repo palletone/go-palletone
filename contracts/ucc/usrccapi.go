@@ -52,19 +52,24 @@ func mockerDeployUserCC() error {
 
 func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	//todo ,for test
+	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
+	var err error
 	if cfg.DebugTest {
-		return mockerDeployUserCC()
+		cdDeploymentSpec,err = getDeploymentSpec(nil,spec)
+		if err != nil {
+			return err
+		}
+	}else {
+		cdDeploymentSpec.ChaincodeSpec = spec
+		cdDeploymentSpec.CodePackage = chaincodeData
 	}
-
 	ccprov := ccprovider.GetChaincodeProvider()
 	ctxt := context.Background()
 	if txsim != nil {
 		ctxt = context.WithValue(ctxt, core.TXSimulatorKey, txsim)
 	}
-
-	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: chaincodeData}
 	cccid := ccprov.GetCCContext(nil, chainID, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
-	_, _, err := ccprov.ExecuteWithErrorFilter(ctxt, cccid, cdDeploymentSpec, timeout)
+	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, cdDeploymentSpec, timeout)
 	if err != nil {
 		log.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
 	}

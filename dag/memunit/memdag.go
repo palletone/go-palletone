@@ -210,6 +210,7 @@ func (chain *MemDag) validateMemory() bool {
 }
 
 func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
+	log.Debugf("Try to save new unit to mem dag, unit hash: %s", unit.Hash().String())
 	if unit == nil {
 		return fmt.Errorf("Save mem unit: unit is null")
 	}
@@ -318,10 +319,10 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 			// 更新memUnit
 			chain.lastValidatedUnit[assetId] = stable_unit
 			chain.memUnit.Refresh(stable_hash)
-			_, current_index, _ := chain.propRep.GetLastUnstableUnit(stable_unit.UnitHeader.ChainIndex().AssetID)
+			_, current_index, _ := chain.propRep.GetNewestUnit(stable_unit.UnitHeader.ChainIndex().AssetID)
 			chain_index := unit.UnitHeader.ChainIndex()
 			if chain_index.Index > current_index.Index {
-				chain.propRep.SetLastUnstableUnit(unit.Hash(), chain_index)
+				chain.propRep.SetNewestUnit(unit.Header())
 			}
 			log.Info("+++++++++++++++++++++++ save_memDag_success +++++++++++++++++++++++", "save_memDag_Unit_hash", unit.Hash().String(), "index", index)
 		}
@@ -380,7 +381,7 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit, txpool txspool.ITxPool) er
 	// 当前最新区块高度是否小于此unit高度。
 	// get currentUnit
 
-	_, curChainIndex, err := chain.propRep.GetLastUnstableUnit(unit.UnitHeader.ChainIndex().AssetID)
+	_, curChainIndex, err := chain.propRep.GetNewestUnit(unit.UnitHeader.ChainIndex().AssetID)
 	if err == nil {
 		if curChainIndex.Index < unit.UnitHeader.Index() {
 			// update state
@@ -388,7 +389,7 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit, txpool txspool.ITxPool) er
 			//chain.dagdb.PutHeadHeaderHash(unit.UnitHash)
 			//chain.dagdb.PutHeadUnitHash(unit.UnitHash)
 			//chain.dagdb.PutHeadFastUnitHash(unit.UnitHash)
-			chain.propRep.SetLastUnstableUnit(unit.Hash(), unit.UnitHeader.Number)
+			chain.propRep.SetNewestUnit(unit.Header())
 		}
 	}
 	// 分支修剪

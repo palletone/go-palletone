@@ -31,13 +31,13 @@ import (
 )
 
 func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
-	phash, idx, _ := dag.propRep.GetLastUnstableUnit(nextUnit.UnitHeader.Number.AssetID)
+	phash, idx, _ := dag.propRep.GetNewestUnit(nextUnit.UnitHeader.Number.AssetID)
 	if phash != nextUnit.ParentHash()[0] {
 		log.Debug("invalidated unit's parent hash!")
 		return false
 	}
 	if idx.Index+1 != nextUnit.UnitHeader.Number.Index {
-		log.Debug("invalidated unit's height number!")
+		log.Warnf("invalidated unit's height number!, last height:%d, next unit height:%d", idx.Index, nextUnit.Number().Index)
 		return false
 	}
 

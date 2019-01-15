@@ -32,7 +32,7 @@ import (
 )
 
 func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
-	phash, current_index, _ := dag.propRep.GetLastUnstableUnit(pendingUnit.UnitHeader.ChainIndex().AssetID)
+	phash, current_index, _ := dag.propRep.GetNewestUnit(pendingUnit.UnitHeader.ChainIndex().AssetID)
 	//current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
@@ -100,9 +100,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
 	//pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
-	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	//pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
-	pendingUnit.Hash()
+	//pendingUnit.Hash()
 
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err1 != nil {
@@ -137,8 +137,8 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	//	log.Debug("unit_production", "PushUnit err:", err)
 	//	return false
 	//}
-	dag.SaveUnit(newUnit, txpool, false)
-
+	//dag.SaveUnit(newUnit, txpool, false)
+	dag.Memdag.Save(newUnit, txpool)
 	return true
 }
 
@@ -146,7 +146,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 1. 下一个 unit 和本地 unit 连续性的判断
 	parentHash := nextUnit.ParentHash()[0]
-	headUnitHash, _, _ := dag.propRep.GetLastUnstableUnit(nextUnit.UnitHeader.Number.AssetID)
+	headUnitHash, _, _ := dag.propRep.GetNewestUnit(nextUnit.UnitHeader.Number.AssetID)
 	if parentHash != headUnitHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
 		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
@@ -166,7 +166,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 
 	// 4. 更新全局动态属性值
 	dag.updateDynGlobalProp(nextUnit, missed)
-
+	dag.propRep.SetNewestUnit(nextUnit.Header())
 	// 5. 更新 mediator 的相关数据
 	dag.updateSigningMediator(nextUnit)
 
