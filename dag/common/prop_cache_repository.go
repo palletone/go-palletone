@@ -131,3 +131,6 @@ func (pRep *PropCacheRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *mo
 func (pRep *PropCacheRepository) GetSlotAtTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, when time.Time) uint32 {
 	return pRep.dbRep.GetSlotAtTime(gp, dgp, when)
 }
+func (pRep *PropCacheRepository) GetScheduledMediator(slotNum uint32) common.Address {
+	return pRep.dbRep.GetScheduledMediator(slotNum)
+}

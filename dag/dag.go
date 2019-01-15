@@ -213,6 +213,13 @@ func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
+	if d.Memdag.Exists(hash) {
+		unit, err := d.Memdag.GetUnit(hash)
+		if err != nil {
+			return nil, err
+		}
+		return unit.UnitHeader, nil
+	}
 	//height, err := d.GetUnitNumber(hash)
 	//if err != nil {
 	//	log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
