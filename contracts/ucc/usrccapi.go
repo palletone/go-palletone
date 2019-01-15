@@ -120,9 +120,8 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 		log.Error("getCcDagHand err:", "error", err)
 		return nil, nil, err
 	}
-	v, chaincodeData, name, path, tplVer := dag.GetContractTpl(templateId)
+	_, chaincodeData, name, path, tplVer := dag.GetContractTpl(templateId)
 	if chaincodeData == nil || name == "" || path == "" || tplVer == "" {
-		log.Error("getContractTpl err:", "error", v)
 		return nil, nil, errors.New("GetContractTpl contract template err")
 	}
 	usrCC := &UserChaincode{
