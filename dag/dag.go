@@ -237,7 +237,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 
 	uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
 	if err1 != nil {
-		log.Info("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
+		log.Debug("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
