@@ -23,6 +23,7 @@ package walletjson
 import (
 	"encoding/json"
 	"unsafe"
+	"time"
 )
 
 type GetFileInfos struct {
@@ -30,8 +31,8 @@ type GetFileInfos struct {
 	UintHeight  uint64 `json:"unit_index"`
 	ParentsHash string `json:"parents_hash"`
 	Txid        string `json:"txid"`
-	Timestamp   int64  `json:"timestamp"`
-	MainData    string `json:"main_data"`
+	Timestamp   time.Duration  `json:"timestamp"`
+	FileData    string `json:"file_data"`
 	ExtraData   string `json:"extra_data"`
 }
 

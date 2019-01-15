@@ -22,6 +22,7 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -110,6 +111,7 @@ type hashChainIndex struct {
 func (db *PropertyDb) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
 	data := &hashChainIndex{hash, index}
 	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
+	log.Debugf("Save last stable unit %s,index:%s", hash.String(), index.String())
 	return StoreBytes(db.db, key, data)
 }
 func (db *PropertyDb) GetLastStableUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
@@ -124,6 +126,8 @@ func (db *PropertyDb) GetLastStableUnit(asset modules.IDType16) (common.Hash, *m
 func (db *PropertyDb) SetLastUnstableUnit(hash common.Hash, index *modules.ChainIndex) error {
 	data := &hashChainIndex{hash, index}
 	key := append(constants.LastUnstableUnitHash, index.AssetID.Bytes()...)
+	log.Debugf("Save last unstable unit %s,index:%s", hash.String(), index.String())
+
 	return StoreBytes(db.db, key, data)
 }
 func (db *PropertyDb) GetLastUnstableUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, error) {

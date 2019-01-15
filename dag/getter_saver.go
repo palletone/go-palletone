@@ -211,10 +211,10 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	unit, err := dag.unitRep.GetUnit(hash)
-
+	//先判断Unit是否在Memdag中，如果在则直接返还，不在才去Leveldb查询
+	unit, err := dag.Memdag.GetUnit(hash)
 	if err != nil && dag.Memdag != nil {
-		unit, err = dag.Memdag.GetUnit(hash)
+		unit, err = dag.unitRep.GetUnit(hash)
 	}
 
 	if err != nil {

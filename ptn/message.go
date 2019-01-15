@@ -217,11 +217,6 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			continue
 		}
 
-		//data, err := rlp.EncodeToBytes(txs)
-		//if err != nil {
-		//	log.Debug("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
-		//	return errResp(ErrDecode, "msg %v: %v", msg, err)
-		//}
 		data, err := json.Marshal(txs)
 		if err != nil {
 			log.Debug("Get body Marshal encode", "error", err.Error(), "unit hash", hash.String())
@@ -231,11 +226,6 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("Get body Marshal", "data:", string(data))
 		bytes += len(data)
 		bodies = append(bodies, data)
-
-		//log.Debug("GetBlockBodiesMsg", "hash", hash, "txs size:", len(txs))
-
-		//body := blockBody{Transactions: txs}
-		//bodies = append(bodies, body)
 	}
 	log.Debug("GetBlockBodiesMsg", "len(bodies):", len(bodies), "bytes:", bytes)
 	//return p.SendBlockBodies(bodies)
@@ -264,19 +254,9 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("have body Unmarshal encode", "error", err.Error(), "body", string(body))
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		var temptxs modules.Transactions
-		for _, tx := range txs {
-			//msgs, err1 := storage.ConvertMsg(tx)
-			//if err1 != nil {
-			//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-			//	break
-			//}
-			//tx.TxMessages = msgs
-			temptxs = append(temptxs, tx)
-		}
 
-		transactions[i] = temptxs
-		log.Debug("BlockBodiesMsg", "i", i, "txs size:", len(temptxs))
+		transactions[i] = txs
+		log.Debug("BlockBodiesMsg", "i", i, "txs size:", len(txs))
 	}
 	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
@@ -292,33 +272,6 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("Failed to deliver bodies", "err", err.Error())
 		}
 	}
-	/*
-		var request blockBodiesData
-		if err := msg.Decode(&request); err != nil {
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		// Deliver them all to the downloader for queuing
-		transactions := make([][]*modules.Transaction, len(request))
-		for i, body := range request {
-			transactions[i] = body.Transactions
-			log.Info("BlockBodiesMsg", "i", i, "txs size:", len(body.Transactions))
-		}
-
-		log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
-		// Filter out any explicitly requested bodies, deliver the rest to the downloader
-		filter := len(transactions) > 0
-		if filter {
-			log.Debug("===BlockBodiesMsg->FilterBodies===")
-			transactions = pm.fetcher.FilterBodies(p.id, transactions, time.Now())
-		}
-		if len(transactions) > 0 || !filter {
-			log.Debug("===BlockBodiesMsg->DeliverBodies===")
-			err := pm.downloader.DeliverBodies(p.id, transactions)
-			if err != nil {
-				log.Debug("Failed to deliver bodies", "err", err.Error())
-			}
-		}
-	*/
 	return nil
 }
 

@@ -37,7 +37,7 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 		return false
 	}
 	if idx.Index+1 != nextUnit.UnitHeader.Number.Index {
-		log.Debug("invalidated unit's height number!")
+		log.Warnf("invalidated unit's height number!, last height:%d, next unit height:%d", idx.Index, nextUnit.Number().Index)
 		return false
 	}
 
