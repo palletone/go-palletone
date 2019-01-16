@@ -823,29 +823,27 @@ func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
 	return outpoints
 }
 
-func getMaindata(tx *modules.Transaction) []byte {
-	var maindata []byte
+func getMaindata(tx *modules.Transaction) string {
+	var maindata string
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			maindata = pay.MainData
+			maindata = string(pay.MainData)
 
 		}
 	}
-
 	return maindata
 }
 
-func getExtradata(tx *modules.Transaction) []byte {
-	var extradata []byte
+func getExtradata(tx *modules.Transaction) string {
+	var extradata string
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			extradata = pay.ExtraData
+			extradata = string(pay.ExtraData)
 
 		}
 	}
-
 	return extradata
 }
 
@@ -1212,8 +1210,9 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]*modules.FileI
 	if err != nil {
 		return nil, err
 	}
+
 	for _, hash := range hashs {
-		var md *modules.FileInfo
+		var md modules.FileInfo
 		unithash, unitindex, _, err := unitOp.dagdb.GetTxLookupEntry(hash)
 		if err != nil {
 			return nil, err
@@ -1223,18 +1222,24 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]*modules.FileI
 		if err != nil {
 			return nil, err
 		}
+		for k, v := range header.ParentsHash {
+			if k == 0 {
+				md.ParentsHash = v
+			}
+
+		}
 		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
 		md.MainData = getMaindata(tx)
 		md.ExtraData = getExtradata(tx)
 		md.UnitHash = unithash
 		md.UintHeight = unitindex
-		md.ParentsHash = header.ParentsHash[:1]
-		md.Txid = hash
+		md.Txid = tx.Hash()
 		md.Timestamp = header.Creationdate
-		mds = append(mds, md)
+		mds = append(mds, &md)
 	}
 	return mds, nil
 }
+
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
 	hash, _, err := rep.propdb.GetLastStableUnit(assetID)
 	if err != nil {

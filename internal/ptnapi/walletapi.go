@@ -966,7 +966,7 @@ func (s *PublicWalletAPI) GetTxByFileHash(ctx context.Context, filehash string) 
 	for _, file := range files {
 		get := walletjson.GetFileInfos{}
 		for _, ph := range file.ParentsHash {
-			get.ParentsHash = ph.String()
+			get.ParentsHash = string(ph)
 		}
 		get.FileData = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
