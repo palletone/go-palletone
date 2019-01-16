@@ -214,8 +214,8 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if unit == nil {
 		return fmt.Errorf("Save mem unit: unit is null")
 	}
-	// chain.chainLock.Lock()
-	// defer chain.chainLock.Unlock()
+	chain.chainLock.Lock()
+	defer chain.chainLock.Unlock()
 	if chain.memUnit.Exists(unit.Hash()) {
 		return fmt.Errorf("Save mem unit: unit is already exists in memory")
 	}
@@ -443,8 +443,8 @@ func (chain *MemDag) Prune(assetId string, delhashs []common.Hash) error {
 	// get fork index
 	maturedUnitHash := delhashs[0]
 
-	chain.chainLock.Lock()
-	defer chain.chainLock.Unlock()
+	//chain.chainLock.Lock()
+	//defer chain.chainLock.Unlock()
 
 	index, subindex := chain.QueryIndex(assetId, maturedUnitHash)
 	if index < 0 {
