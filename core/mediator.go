@@ -68,13 +68,14 @@ func NewMediator() *Mediator {
 	}
 }
 
-func StrToMedNode(medNode string) *discover.Node {
+func StrToMedNode(medNode string) (*discover.Node, error) {
 	node, err := discover.ParseNode(medNode)
 	if err != nil {
-		log.Error(fmt.Sprintf("Invalid mediator node \"%v\" : %v", medNode, err))
+		err = fmt.Errorf("invalid mediator node \"%v\" : %v", medNode, err)
+		return nil, err
 	}
 
-	return node
+	return node, nil
 }
 
 func StrToMedAdd(addStr string) common.Address {
@@ -108,6 +109,7 @@ func StrToPoint(pubStr string) (kyber.Point, error) {
 
 	err := pub.UnmarshalBinary(pubB)
 	if err != nil {
+		err = fmt.Errorf("invalid init mediator public key \"%v\" : %v", pubStr, err)
 		return nil, err
 	}
 

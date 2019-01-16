@@ -61,12 +61,12 @@ func (args *MediatorCreateArgs) check() error {
 
 	_, err = core.StrToPoint(args.InitPubKey)
 	if err != nil {
-		return fmt.Errorf("invalid init public key: %s", args.InitPubKey)
+		return err
 	}
 
-	_, err = discover.ParseNode(args.Node)
+	_, err = core.StrToPoint(args.Node)
 	if err != nil {
-		return fmt.Errorf("invalid node ID: %s", args.Node)
+		return err
 	}
 
 	return nil

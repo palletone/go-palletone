@@ -150,7 +150,8 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 		} else if msg.App == APP_CONFIG {
 			temp.Config = append(temp.Config, &idxConfigPayload{Index: idx, ConfigPayload: msg.Payload.(*ConfigPayload)})
 		} else if msg.App == OP_MEDIATOR_CREATE {
-			temp.MediatorCreateOperation = append(temp.MediatorCreateOperation, &idxMediatorCreateOperation{Index: idx, MediatorCreateOperation: msg.Payload.(*MediatorCreateOperation)})
+			temp.MediatorCreateOperation = append(temp.MediatorCreateOperation,
+				&idxMediatorCreateOperation{Index: idx, MediatorCreateOperation: msg.Payload.(*MediatorCreateOperation)})
 		} else {
 			return nil, errors.New("Unsupport APP" + strconv.Itoa(int(msg.App)) + " please edit transaction_json.go")
 		}
