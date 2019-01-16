@@ -968,10 +968,10 @@ func (s *PublicWalletAPI) GetTxByFileHash(ctx context.Context, filehash string) 
 		for _, ph := range file.ParentsHash {
 			get.ParentsHash = string(ph)
 		}
-		get.FileData = string(file.MainData)
+		get.FileHash = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
 		get.Timestamp = time.Duration(file.Timestamp)
-		get.Txid = file.Txid.String()
+		get.TransactionHash = file.Txid.String()
 		get.UintHeight = file.UintHeight
 		get.UnitHash = file.UnitHash.String()
 		gets = append(gets, get)
