@@ -26,8 +26,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error {
@@ -36,12 +36,15 @@ func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte,
 	key = append(key, []byte(modules.FIELD_TPL_BYTECODE)...)
 	key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, version...)
+
+	//todo test
 	if v, _, _, _, _ := statedb.GetContractTpl(templateId); v != nil {
 		return errors.New("the contractTlp is exist.")
 	}
 	if err := StoreBytes(statedb.db, key, bytecode); err != nil {
 		return err
 	}
+
 	return nil
 }
 

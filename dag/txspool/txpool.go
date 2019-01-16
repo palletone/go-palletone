@@ -1840,7 +1840,7 @@ func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
 					}
 					pool.orphansByPrev[*in.PreviousOutPoint][otx.Tx.Hash()] = otx
 				}
-				log.Debug(fmt.Sprintf("Stored orphan tx's hash  %s (total: %d)", otx.Tx.Hash(), len(pool.orphans)))
+				log.Debug(fmt.Sprintf("Stored orphan tx's hash  %s (total: %d)", otx.Tx.Hash().String(), len(pool.orphans)))
 			}
 		}
 	}
