@@ -51,7 +51,7 @@ func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) (*dkg.DistKeyGen
 
 	dkg, ok := mp.activeDKGs[add]
 	if !ok || dkg == nil {
-		return nil, fmt.Errorf("the mediator(%v)`s dkg is not existed", add.String())
+		return nil, fmt.Errorf("the mediator(%v)'s dkg is not existed", add.String())
 	}
 
 	return dkg, nil
@@ -102,7 +102,8 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 	}
 
 	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
-	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)", localMed.Str(), vrfrMed.Str())
+	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
 	go mp.processResponseLoop(localMed, vrfrMed)
 
 	if resp.Response.Status != vss.StatusApproval {
@@ -115,7 +116,8 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 		Resp: resp,
 	}
 	go mp.vssResponseFeed.Send(respEvent)
-	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)", localMed.Str(), vrfrMed.Str())
+	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
 
 	return nil
 }
@@ -276,6 +278,8 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *mod
 	case <-mp.quit:
 		return
 	case <-deleteBuf.C:
+		log.Debugf("the unit(%v) has expired confirmation time, no longer need to sign-group",
+			localMed.Str())
 		delete(mp.toTBLSSignBuf[localMed], newUnit.UnitHash)
 	}
 }
@@ -313,7 +317,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		}
 
 		if !ok {
-			log.Debug("the mediator(%v)`s dkg is not existed", localMed.Str())
+			log.Debugf("the mediator(%v)'s dkg is not existed", localMed.Str())
 			return
 		}
 	}
@@ -386,7 +390,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	// 当buf不存在时，说明已经recover出群签名, 或者已经过了unit确认时间，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		err = fmt.Errorf("the unit(%v) has already recovered the group signature", newUnitHash.TerminalString())
+		err = fmt.Errorf("the unit(%v) has already recovered the group signature",
+			newUnitHash.TerminalString())
 		log.Debug(err.Error())
 		return err
 	}
@@ -451,7 +456,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		}
 
 		if !ok {
-			log.Debug("the mediator(%v)`s dkg is not existed", localMed.Str())
+			log.Debugf("the mediator(%v)'s dkg is not existed", localMed.Str())
 			return
 		}
 	}

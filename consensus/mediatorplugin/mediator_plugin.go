@@ -232,7 +232,7 @@ func (mp *MediatorPlugin) broadcastAndGroupSignUnit(localMed common.Address, new
 	}
 	mp.toTBLSRecoverBuf[localMed][newUnit.UnitHash] = newSigShareSet(aSize)
 
-	// 3. 异步向区块链网络广播验证单元
+	// 2. 异步向区块链网络广播验证单元
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
 
 	// 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
@@ -243,6 +243,8 @@ func (mp *MediatorPlugin) broadcastAndGroupSignUnit(localMed common.Address, new
 	case <-mp.quit:
 		return
 	case <-deleteBuf.C:
+		log.Debugf("the unit(%v) has expired confirmation time, no longer need to recover group-sign",
+			localMed.Str())
 		delete(mp.toTBLSRecoverBuf[localMed], newUnit.UnitHash)
 	}
 }
