@@ -214,12 +214,12 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if unit == nil {
 		return fmt.Errorf("Save mem unit: unit is null")
 	}
-	chain.chainLock.Lock()
-	defer chain.chainLock.Unlock()
+	// chain.chainLock.Lock()
+	// defer chain.chainLock.Unlock()
 	if chain.memUnit.Exists(unit.Hash()) {
 		return fmt.Errorf("Save mem unit: unit is already exists in memory")
 	}
-
+	log.Debug("Start save to forkindex")
 	//TODO must recover
 	//if !chain.validateMemory() {
 	//	return fmt.Errorf("Save mem unit: size is out of limit")
