@@ -605,6 +605,9 @@ func (pool *TxPool) isTransactionInPool(hash *common.Hash) bool {
 	if _, exist := pool.all[*hash]; exist {
 		return true
 	}
+	if _, exist := pool.orphans[*hash]; exist {
+		return true
+	}
 	return false
 }
 
