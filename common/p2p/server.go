@@ -479,7 +479,7 @@ func (srv *Server) Start() (err error) {
 		realaddr = conn.LocalAddr().(*net.UDPAddr)
 		if srv.NAT != nil {
 			if !realaddr.IP.IsLoopback() {
-				go nat.Map(srv.NAT, srv.quit, "udp", realaddr.Port, realaddr.Port, "ethereum discovery")
+				go nat.Map(srv.NAT, srv.quit, "udp", realaddr.Port, realaddr.Port, "palletone discovery")
 			}
 			// TODO: react to external IP changes over time.
 			if ext, err := srv.NAT.ExternalIP(); err == nil {
@@ -720,7 +720,7 @@ running:
 					inboundCount++
 				}
 			} else {
-				//log.Info("p2p addpeer protoHandshakeChecks err:", err.Error())
+				log.Info("P2P Server run", "p2p addpeer protoHandshakeChecks err:", err.Error())
 			}
 			// The dialer logic relies on the assumption that
 			// dial tasks complete after the peer has been added or

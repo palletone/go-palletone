@@ -38,6 +38,7 @@ func (statedb *StateDb) SaveContractTemplate(templateId []byte, bytecode []byte,
 	if err := StoreBytes(statedb.db, key, bytecode); err != nil {
 		return err
 	}
+
 	return nil
 }
 
