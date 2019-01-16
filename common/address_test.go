@@ -87,3 +87,24 @@ func TestBytesListToAddressList(t *testing.T) {
 		t.Logf("Address:%s", addr.String())
 	}
 }
+
+func TestAddrValidate(t *testing.T) {
+	str := "P124gB1bXHDTXmox58g4hd4u13HV3e5vKie"
+	raddr := Address{11, 170, 18, 195, 221, 27, 230, 17, 56, 224, 218, 89, 219, 205, 180, 106, 197, 32, 95, 232, 0}
+	addr, err := StringToAddress(str)
+	if err != nil {
+		t.Fail()
+	}
+
+	if raddr != addr {
+		t.Fail()
+	}
+
+	if !addr.Equal(raddr) {
+		t.Fail()
+	}
+
+	if addr.Less(raddr) {
+		t.Fail()
+	}
+}

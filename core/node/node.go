@@ -713,10 +713,10 @@ func (n *Node) GetKeyStore() *keystore.KeyStore {
 	return n.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 }
 
-func (n *Node) SetDbPath(path string) {
-	n.dbpath = path
-}
-
-func (n *Node) GetDbPath() string {
-	return n.dbpath
-}
+//func (n *Node) SetDbPath(path string) {
+//	n.dbpath = path
+//}
+//
+//func (n *Node) GetDbPath() string {
+//	return n.dbpath
+//}

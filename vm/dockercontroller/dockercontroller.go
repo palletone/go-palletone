@@ -256,7 +256,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	//stop,force remove if necessary
 	log.Debugf("Cleanup container %s", containerID)
 	//停止容器
-	vm.stopInternal(ctxt, client, containerID, 0, false, false)
+	//vm.stopInternal(ctxt, client, containerID, 0, false, false)
 	//创建容器
 	log.Debugf("Start container %s", containerID)
 	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
@@ -557,7 +557,7 @@ func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
 	vmName := ccid.ChaincodeSpec.Type
 	switch vmName {
 	case 1:
-		return "palletone/palletimg", nil
+		return "palletone/palletimg:1.0", nil
 	case 2:
 		return "node", nil
 	case 3:

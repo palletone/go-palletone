@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -46,8 +45,6 @@ const (
 	// txChanSize is the size of channel listening to TxPreEvent.
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
-	//needBroadcastMediator = 0
-	//noBroadcastMediator   = 1
 )
 
 var (
@@ -92,11 +89,6 @@ type ProtocolManager struct {
 	quitSync    chan struct{}
 	noMorePeers chan struct{}
 
-	//consensus to p2p
-	consEngine core.ConsensusEngine
-	ceCh       chan core.ConsensusEvent
-	ceSub      event.Subscription
-
 	// append by Albert·Gou
 	producer           producer
 	newProducedUnitCh  chan mp.NewProducedUnitEvent
@@ -129,28 +121,22 @@ type ProtocolManager struct {
 
 	genesis *modules.Unit
 
-	//peersTransition  *peerSet
-	//transCycleConnCh chan int
-
-	//For Test
-	//isTest bool
-
 	activeMediatorsUpdatedCh  chan dag.ActiveMediatorsUpdatedEvent
 	activeMediatorsUpdatedSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPool,
-	engine core.ConsensusEngine, dag dag.IDag, mux *event.TypeMux, producer producer,
-	genesis *modules.Unit, contractProc contractInf) (*ProtocolManager, error) {
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName string, txpool txPool,
+	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
+	contractProc contractInf) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:   networkId,
-		dag:         dag,
-		txpool:      txpool,
-		eventMux:    mux,
-		consEngine:  engine,
+		networkId: networkId,
+		dag:       dag,
+		txpool:    txpool,
+		eventMux:  mux,
+		//consEngine:  engine,
 		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
 		noMorePeers: make(chan struct{}),
@@ -186,7 +172,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, txpool txPoo
 		// Compatible; initialise the sub-protocol
 		version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
-			Name:    ProtocolName,
+			Name:    protocolName,
 			Version: version,
 			Length:  ProtocolLengths[i],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
@@ -272,9 +258,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 
 	//go pm.mediatorConnect()
 
-	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
-	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
-	go pm.ceBroadcastLoop()
+	//pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
+	//pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
+	//go pm.ceBroadcastLoop()
 	// start sync handlers
 	//定时与相邻个体进行全链的强制同步,syncer()首先启动fetcher成员，然后进入一个无限循环，
 	//每次循环中都会向相邻peer列表中“最优”的那个peer作一次区块全链同步
@@ -339,15 +325,15 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping PalletOne protocol")
 
-	// append by Albert·Gou
 	pm.newProducedUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.groupSigSub.Unsubscribe()
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
 	pm.activeMediatorsUpdatedSub.Unsubscribe()
-
+	pm.contractSub.Unsubscribe()
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
+	//pm.ceSub.Unsubscribe()
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
@@ -433,8 +419,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
-	//TODO judge msg.Code must vss code when peer In the vss processing stage.
-	//Otherwise, immediatly return errResp.On the basis of ps.mediators
 
 	defer msg.Discard()
 
@@ -480,14 +464,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		return pm.TxMsg(msg, p)
 
-	case msg.Code == ConsensusMsg:
-		return pm.ConsensusMsg(msg, p)
+	//case msg.Code == ConsensusMsg:
+	//	return pm.ConsensusMsg(msg, p)
 
 	// append by Albert·Gou
 	case msg.Code == NewProducedUnitMsg:
 		// Retrieve and decode the propagated new produced unit
-		pm.NewProducedUnitMsg(msg, p)
-		return pm.NewBlockMsg(msg, p)
+		//pm.NewProducedUnitMsg(msg, p)
+		//return pm.NewBlockMsg(msg, p)
+		return pm.NewProducedUnitMsg(msg, p)
 
 	// append by Albert·Gou
 	case msg.Code == SigShareMsg:
@@ -568,25 +553,25 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 
-func (self *ProtocolManager) ceBroadcastLoop() {
-	for {
-		select {
-		case event := <-self.ceCh:
-			self.BroadcastCe(event.Ce)
+//func (self *ProtocolManager) ceBroadcastLoop() {
+//	for {
+//		select {
+//		case event := <-self.ceCh:
+//			self.BroadcastCe(event.Ce)
+//
+//		// Err() channel will be closed when unsubscribing.
+//		case <-self.ceSub.Err():
+//			return
+//		}
+//	}
+//}
 
-		// Err() channel will be closed when unsubscribing.
-		case <-self.ceSub.Err():
-			return
-		}
-	}
-}
-
-func (pm *ProtocolManager) BroadcastCe(ce string) {
-	peers := pm.peers.GetPeers()
-	for _, peer := range peers {
-		peer.SendConsensus(ce)
-	}
-}
+//func (pm *ProtocolManager) BroadcastCe(ce string) {
+//	peers := pm.peers.GetPeers()
+//	for _, peer := range peers {
+//		peer.SendConsensus(ce)
+//	}
+//}
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.

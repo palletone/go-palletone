@@ -18,29 +18,28 @@
  *
  */
 
-package storage
+package walletjson
 
 import (
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/stretchr/testify/assert"
-	"testing"
+	"encoding/json"
+	"time"
+	"unsafe"
 )
 
-func TestGetUnit(t *testing.T) {
-	//log.Println("dbconn is nil , renew db  start ...")
-
-	db, _ := ptndb.NewMemDatabase()
-	//l := log.NewTestLog()
-	dagdb := NewDagDb(db)
-	u, err := dagdb.GetHeader(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
-	assert.Nil(t, u, "empty db, must return nil Unit")
-	assert.NotNil(t, err)
+type GetFileInfos struct {
+	UnitHash        string        `json:"unit_hash"`
+	UintHeight      uint64        `json:"unit_index"`
+	ParentsHash     string        `json:"parents_hash"`
+	TransactionHash string        `json:"transaction_hash"`
+	Timestamp       time.Duration `json:"timestamp"`
+	FileHash        string        `json:"file_hash"`
+	ExtraData       string        `json:"extra_data"`
 }
-func TestPrintHashList(t *testing.T) {
-	hash1 := common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347")
-	hash2 := common.HexToHash("0xddff4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d493ee")
-	txsHash := []common.Hash{hash1, hash2}
-	t.Logf("%x", txsHash)
 
+func ConvertGetFileInfos2Json(gets []GetFileInfos) string {
+	data, err := json.Marshal(gets)
+	if err != nil {
+		return ""
+	}
+	return *(*string)(unsafe.Pointer(&data))
 }

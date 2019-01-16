@@ -30,11 +30,11 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 )
 
 type PeerType = int
@@ -312,46 +312,9 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		return false
 	}
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
-
-	//reqId := tx.RequestHash()
-	//log.Debug("CheckContractTxValid", "tx req id ", reqId)
-	//
-	//ctx, ok := p.mtx[reqId]
-	//if ctx != nil && ctx.valid == false {
-	//	log.Debug("CheckContractTxValid ctx != nil && (ctx.valid == false || ctx.executable == false)")
-	//	return false
-	//}
-	//if ok && ctx.rstTx != nil {
-	//	log.Debug("CheckContractTxValid ok && ctx.rstTx != nil") // todo del
-	//	return msgsCompare(ctx.rstTx.TxMessages, tx.TxMessages, modules.APP_CONTRACT_INVOKE)//系统合约invoke
-	//} else {
-	//	log.Debug("CheckContractTxValid  ctx.rstTx == nil") //todo del
-	//	p.locker.Lock()
-	//	p.mtx[reqId] = &contractTx{
-	//		reqTx: tx,
-	//		tm:    time.Now(),
-	//		valid: true,
-	//	}
-	//	p.locker.Unlock()
-	//
-	//	_, msgs, err := runContractCmd(p.dag, p.contract, tx) // long time ...
-	//	if err != nil {
-	//		log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
-	//		return false
-	//	}
-	//	rstTx, err := gen.GenContractTransction(tx, msgs)
-	//
-	//	p.locker.Lock()
-	//	p.mtx[reqId].rstTx = rstTx
-	//	p.mtx[reqId].valid = false
-	//	p.locker.Unlock()
-	//
-	//	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
-	//}
-	return false
 }
 
-func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
+func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
@@ -392,38 +355,6 @@ func (p *Processor) contractEventExecutable(event ContractEventType, accounts ma
 			return true
 		}
 	}
-
-	return false
-}
-
-func (p *Processor) nodeContractExecutable(accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
-	if tx == nil {
-		return false
-	}
-
-	//nodes, err := p.getLocalNodesInfo()
-	//if err != nil || len(nodes) < 1 {
-	//	return errors.New("contractSigEvent getLocalNodesInfo fail")
-	//}
-
-	sysContract := isSystemContract(tx)
-	if sysContract { //system contract
-		for addr, _ := range accounts {
-			if p.ptn.IsLocalActiveMediator(addr) {
-				log.Debug("nodeContractExecutable", "Mediator, true:tx requestId", tx.RequestHash())
-				return true
-			}
-		}
-	} else { //usr contract
-		log.Debug("User contract, call docker to run contract.")
-		for addr, _ := range accounts {
-			if true == p.isLocalActiveJury(addr) { //todo
-				log.Debug("nodeContractExecutable", "Jury, true:tx requestId", tx.RequestHash())
-				return true
-			}
-		}
-	}
-	log.Debug("nodeContractExecutable", "false:tx requestId", tx.RequestHash())
 
 	return false
 }

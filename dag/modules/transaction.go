@@ -101,6 +101,8 @@ type TxPoolTransaction struct {
 	TxFee        *InvokeFees `json:"tx_fee"`
 	Index        int         `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
+	Tag          uint64
+	Expiration   time.Time
 }
 
 //// EncodeRLP implements rlp.Encoder

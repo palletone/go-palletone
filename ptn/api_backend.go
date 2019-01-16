@@ -248,8 +248,8 @@ func (b *PtnApiBackend) QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson {
 }
 
 // Get Header
-func (b *PtnApiBackend) GetHeader(hash common.Hash, index uint64) (*modules.Header, error) {
-	return b.ptn.dag.GetHeader(hash, index)
+func (b *PtnApiBackend) GetHeader(hash common.Hash) (*modules.Header, error) {
+	return b.ptn.dag.GetHeaderByHash(hash)
 }
 
 // Get Unit
@@ -269,22 +269,22 @@ func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
 }
 
 // GetCanonicalHash
-func (b *PtnApiBackend) GetCanonicalHash(number uint64) (common.Hash, error) {
-	return b.ptn.dag.GetCanonicalHash(number)
-}
+//func (b *PtnApiBackend) GetCanonicalHash(number uint64) (common.Hash, error) {
+//	return b.ptn.dag.GetCanonicalHash(number)
+//}
 
 // Get state
-func (b *PtnApiBackend) GetHeadHeaderHash() (common.Hash, error) {
-	return b.ptn.dag.GetHeadHeaderHash()
-}
-
-func (b *PtnApiBackend) GetHeadUnitHash() (common.Hash, error) {
-	return b.ptn.dag.GetHeadUnitHash()
-}
-
-func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
-	return b.ptn.dag.GetHeadFastUnitHash()
-}
+//func (b *PtnApiBackend) GetHeadHeaderHash() (common.Hash, error) {
+//	return b.ptn.dag.GetHeadHeaderHash()
+//}
+//
+//func (b *PtnApiBackend) GetHeadUnitHash() (common.Hash, error) {
+//	return b.ptn.dag.GetHeadUnitHash()
+//}
+//
+//func (b *PtnApiBackend) GetHeadFastUnitHash() (common.Hash, error) {
+//	return b.ptn.dag.GetHeadFastUnitHash()
+//}
 
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
@@ -297,7 +297,7 @@ func (b *PtnApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 	}
 	return unit
 }
-func (b *PtnApiBackend) GetUnitByNumber(number modules.ChainIndex) *modules.Unit {
+func (b *PtnApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Unit {
 	unit, err := b.ptn.dag.GetUnitByNumber(number)
 	if err != nil {
 		return nil
@@ -349,16 +349,21 @@ func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJs
 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 }
 
+func (b *PtnApiBackend) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+	tx, err := b.ptn.txPool.GetPoolTxsByAddr(addr)
+	return tx, err
+}
+
 // func (b *PtnApiBackend) GetTxsPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 // 	tx, unit_hash := b.ptn.txPool.Get(hash)
 // 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 // }
 
-func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) *modules.Header {
+func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return b.ptn.dag.GetHeaderByHash(hash)
 }
 
-func (b *PtnApiBackend) GetHeaderByNumber(number modules.ChainIndex) *modules.Header {
+func (b *PtnApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	return b.ptn.dag.GetHeaderByNumber(number)
 }
 
@@ -515,14 +520,14 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId []byte, tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true)
 }
-func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
-	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, txid, args, timeout)
+func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
+	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
 }
 func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
 }
-func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, txid string, deleteImage bool) ([]byte, error) {
-	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, txid, deleteImage)
+func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) ([]byte, error) {
+	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, deleteImage)
 }
 
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
@@ -560,4 +565,8 @@ func (b *PtnApiBackend) EncodeTx(jsonStr string) (string, error) {
 
 func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 	return b.ptn.dag.GetTxHashByReqId(reqid)
+}
+
+func (b *PtnApiBackend) GetTxByFileHash(filehash string) ([]*modules.FileInfo, error) {
+	return b.ptn.dag.GetTxByFileHash([]byte(filehash))
 }

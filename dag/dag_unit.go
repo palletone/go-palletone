@@ -26,13 +26,14 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
-	current_index, _ := dag.stateRep.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
+	phash, current_index, _ := dag.propRep.GetNewestUnit(pendingUnit.UnitHeader.ChainIndex().AssetID)
 	//current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
 	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
@@ -58,19 +59,18 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 		}
 
 	} else {
-		pendingUnit.UnitHeader.Number = *current_index
+		pendingUnit.UnitHeader.Number = current_index
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
-		parent, _ := dag.GetHeadUnitHash()
+
 		pendingUnit.UnitHeader.ParentsHash =
-			append(pendingUnit.UnitHeader.ParentsHash, parent) //dag.HeadUnitHash()
+			append(pendingUnit.UnitHeader.ParentsHash, phash) //dag.HeadUnitHash()
 	}
 
-	if pendingUnit.UnitHeader.Number == (modules.ChainIndex{}) {
+	if pendingUnit.UnitHeader.Number == nil {
 		current_index.Index += 1
-		pendingUnit.UnitHeader.Number = *current_index
+		pendingUnit.UnitHeader.Number = current_index
 	} else {
-		log.Debug("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.Index,
-			"hex", pendingUnit.UnitHeader.Number.AssetID.String())
+		log.Debug("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.String())
 	}
 }
 
@@ -78,11 +78,20 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
-	defer func(start time.Time) {
-		log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
-	}(time.Now())
+	//defer func(start time.Time) {
+	//	log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
+	//}(time.Now())
+	gasToken := node.DefaultConfig.GetGasToken()
+
 	// 1. 判断是否满足生产的若干条件
 
+	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
+	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
+	if !dag.Memdag.Exists(hash) {
+		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.", hash.String())
+		newestUnit, _ := dag.Memdag.GetNewestUnit(gasToken)
+		dag.propRep.SetNewestUnit(newestUnit.Header())
+	}
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	newUnits, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
@@ -99,10 +108,10 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	dag.setUnitHeader(pendingUnit)
 
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
-	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
-	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	//pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
+	//pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
-	pendingUnit.Hash()
+	//pendingUnit.Hash()
 
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err1 != nil {
@@ -137,8 +146,8 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	//	log.Debug("unit_production", "PushUnit err:", err)
 	//	return false
 	//}
-	dag.SaveUnit(newUnit, txpool, false)
-
+	//dag.SaveUnit(newUnit, txpool, false)
+	dag.Memdag.Save(newUnit, txpool)
 	return true
 }
 
@@ -146,7 +155,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 1. 下一个 unit 和本地 unit 连续性的判断
 	parentHash := nextUnit.ParentHash()[0]
-	headUnitHash := dag.HeadUnitHash()
+	headUnitHash, _, _ := dag.propRep.GetNewestUnit(nextUnit.UnitHeader.Number.AssetID)
 	if parentHash != headUnitHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
 		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
@@ -166,7 +175,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 
 	// 4. 更新全局动态属性值
 	dag.updateDynGlobalProp(nextUnit, missed)
-
+	dag.propRep.SetNewestUnit(nextUnit.Header())
 	// 5. 更新 mediator 的相关数据
 	dag.updateSigningMediator(nextUnit)
 

@@ -14,22 +14,15 @@
  * /
  *
  *  * @author PalletOne core developer <dev@pallet.one>
- *  * @date 2018
+ *  * @date 2018-2019
  *
  */
 
-package obj
+package palletcache
 
-import (
-	"bytes"
-	"encoding/gob"
-)
-
-//Deep copy an object to a new object
-func DeepCopy(dst, src interface{}) error {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
-		return err
-	}
-	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
+type ICache interface {
+	Set(key, value []byte, expireSeconds int) (err error)
+	Get(key []byte) (value []byte, err error)
+	Del(key []byte) bool
+	Clear()
 }

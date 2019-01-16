@@ -620,7 +620,7 @@ func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmou
 
 	return rsp, err
 }
-func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount, daoFee, tplId, txid string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount, daoFee, tplId string, param []string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
@@ -632,14 +632,13 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	log.Info("-----Ccdeploytx:", "amount", amount)
 	log.Info("-----Ccdeploytx:", "fee", fee)
 	log.Info("-----Ccdeploytx:", "tplId", templateId)
-	log.Info("-----Ccdeploytx:", "txid", txid)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, txid, args, 0)
+	rsp, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
 	log.Info("-----Ccdeploytx:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }
@@ -728,7 +727,7 @@ func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoA
 	return hex.EncodeToString(rsp), err
 }
 
-func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, txid, deleteImage string) (string, error) {
+func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, deleteImage string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
@@ -744,10 +743,9 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	log.Info("-----Ccstoptx:", "amount", amount)
 	log.Info("-----Ccstoptx:", "fee", fee)
 	log.Info("-----Ccstoptx:", "contractId", cid)
-	log.Info("-----Ccstoptx:", "txid", txid)
 	log.Info("-----Ccstoptx:", "delImg", delImg)
 
-	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, cid, txid, delImg)
+	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, cid, delImg)
 	log.Info("-----Ccstoptx:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }
@@ -1586,14 +1584,66 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	if err != nil {
 		return "", err
 	}
+
 	utxos := core.Utxos{}
+	dagOutpoint := []modules.OutPoint{}
 	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+			dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
 		}
 	}
+	inputsOutpoint := []modules.OutPoint{}
+	outputsOutpoint := []modules.OutPoint{}
+	merge_Outpoint := []modules.OutPoint{}
+	op := modules.OutPoint{}
+	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+	if err == nil {
+		var addr common.Address
+		for _, tx := range poolTxs {
+			for msgindex, msg := range tx.Tx.TxMessages {
+				if msg.App == modules.APP_PAYMENT {
+					pay := msg.Payload.(*modules.PaymentPayload)
+					for _, input := range pay.Inputs {
+						//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
+						//utxoinputs = append(utxoinputs, iutxo)
+						inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+						//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
+						//result[*input.PreviousOutPoint] = lockScript
+						fmt.Printf("-------inputsOutpoint---%+v\n", inputsOutpoint)
+					}
+					for outIndex, output := range pay.Outputs {
+						op.TxHash = tx.Tx.Hash()
+						op.MessageIndex = uint32(msgindex)
+						op.OutIndex = uint32(outIndex)
+						addr, err = tokenengine.GetAddressFromScript(output.PkScript)
+						if err != nil {
+							return "", err
+						}
+						if addr.String() == from {
+							outputsOutpoint = append(outputsOutpoint, op)
+						}
+						//outxo := s.b.GetUtxoEntry(op)
+						//utxooutputs = append(utxooutputs, outxo)
+						fmt.Printf("-----inputsOutpoint----%+v\n", outputsOutpoint)
+					}
+				}
+			}
+		}
+	}
+	dagOutpoint = append(dagOutpoint, outputsOutpoint...)
+
+	for _, dagpoint := range dagOutpoint {
+		for _, inputpoint := range inputsOutpoint {
+			if dagpoint.TxHash == inputpoint.TxHash && dagpoint.MessageIndex == inputpoint.MessageIndex && dagpoint.OutIndex == inputpoint.OutIndex {
+				continue
+			}
+		}
+		merge_Outpoint = append(merge_Outpoint, dagpoint)
+	}
+
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is ZERO ")
 	}
@@ -2575,7 +2625,7 @@ func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) stri
 func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) string {
 	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
 
-	number := modules.ChainIndex{}
+	number := &modules.ChainIndex{}
 	//if err := json.Unmarshal(*(*[]byte)(unsafe.Pointer(&condition)), &number); err != nil {
 	//	log.Info("PublicBlockChainAPI", "GetUnitByNumber Unmarshal err:", err, "condition:", condition)
 	//	return "Unmarshal err"
@@ -2761,28 +2811,28 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 }
 
 // GetHeadUnitHash returns the head unit's hash
-func (s *PublicDagAPI) GetHeadUnitHash(ctx context.Context) (string, error) {
-	hash, err := s.b.GetHeadUnitHash()
-	if hash != (common.Hash{}) {
-		return hash.String(), err
-	}
-	return "is not exist!", err
-}
-
-// GetHeadHeaderHash returns the head header's hash
-func (s *PublicDagAPI) GetHeadHeaderHash(ctx context.Context) (string, error) {
-	hash, err := s.b.GetHeadHeaderHash()
-	if hash != (common.Hash{}) {
-		return hash.String(), err
-	}
-	return "is not exist!", err
-}
-
-// GetHeadFastUnitHash returns the fast unit's hash
-func (s *PublicDagAPI) GetHeadFastUnitHash(ctx context.Context) (string, error) {
-	hash, err := s.b.GetHeadFastUnitHash()
-	if hash != (common.Hash{}) {
-		return hash.String(), err
-	}
-	return "is not exist!", err
-}
+//func (s *PublicDagAPI) GetHeadUnitHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadUnitHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}
+//
+//// GetHeadHeaderHash returns the head header's hash
+//func (s *PublicDagAPI) GetHeadHeaderHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadHeaderHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}
+//
+//// GetHeadFastUnitHash returns the fast unit's hash
+//func (s *PublicDagAPI) GetHeadFastUnitHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadFastUnitHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}

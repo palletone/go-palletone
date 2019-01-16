@@ -209,7 +209,7 @@ func (c *Console) init(preload []string) error {
 			}
 			obj.Set("transferToken", bridge.TransferToken)
 		}
-                wallet, perr := c.jsre.Get("wallet")
+		wallet, perr := c.jsre.Get("wallet")
 		if perr != nil {
 			return perr
 		}

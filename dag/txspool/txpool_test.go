@@ -49,6 +49,7 @@ type UnitDag4Test struct {
 	GenesisUnit   *modules.Unit
 	gasLimit      uint64
 	chainHeadFeed *event.Feed
+	outpoints     map[string]map[modules.OutPoint]*modules.Utxo
 }
 
 // NewTxPool4Test return TxPool structure for testing.
@@ -61,11 +62,20 @@ func NewTxPool4Test() *TxPool {
 func NewUnitDag4Test() *UnitDag4Test {
 	db, _ := palletdb.NewMemDatabase()
 	utxodb := storage.NewUtxoDb(db)
-	idagdb := storage.NewDagDb(db)
+	//idagdb := storage.NewDagDb(db)
 
-	idagdb.PutHeadUnitHash(common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729"))
+	propdb := storage.NewPropertyDb(db)
+	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
+	idx := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
+	h := modules.NewHeader([]common.Hash{hash}, []modules.IDType16{modules.PTNCOIN}, uint64(1), []byte("hello"))
+	h.Number = idx
+	propdb.SetNewestUnit(h)
+	//idagdb.PutHeadUnitHash()
 	mutex := new(sync.RWMutex)
-	return &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
+
+	ud := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
+	ud.outpoints = make(map[string]map[modules.OutPoint]*modules.Utxo)
+	return ud
 }
 func (ud *UnitDag4Test) CurrentUnit() *modules.Unit {
 	return modules.NewUnit(&modules.Header{
@@ -79,6 +89,20 @@ func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 
 func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
+}
+
+func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	if ud.outpoints == nil {
+		return nil, fmt.Errorf("outpoints is nil ")
+	}
+	for _, utxos := range ud.outpoints {
+		if utxos != nil {
+			if u, has := utxos[*outpoint]; has {
+				return u, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("not found!")
 }
 
 func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
@@ -118,6 +142,11 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees,
 	return &modules.InvokeFees{}, nil
 }
 
+func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+
+	return nil, nil
+}
+
 // Tests that if the transaction count belonging to multiple accounts go above
 // some hard threshold, if they are under the minimum guaranteed slot count then
 // the transactions are still kept.
@@ -131,7 +160,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	//l := log.NewTestLog()
 	utxodb := storage.NewUtxoDb(db)
 	mutex := new(sync.RWMutex)
-	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed)}
+	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
 	var pending_cache, queue_cache, all, origin int

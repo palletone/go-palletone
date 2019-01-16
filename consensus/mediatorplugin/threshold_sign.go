@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 func (mp *MediatorPlugin) startVSSProtocol() {
@@ -45,12 +46,12 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 
 func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) (*dkg.DistKeyGenerator, error) {
 	if !mp.IsLocalActiveMediator(add) {
-		return nil, fmt.Errorf("the following mediator is not local active mediator: %v", add.String())
+		return nil, fmt.Errorf("the mediator(%v) is not local active mediator", add.String())
 	}
 
 	dkg, ok := mp.activeDKGs[add]
 	if !ok || dkg == nil {
-		return nil, fmt.Errorf("the following mediator`s dkg is not existed: %v", add.String())
+		return nil, fmt.Errorf("the mediator(%v)'s dkg is not existed", add.String())
 	}
 
 	return dkg, nil
@@ -64,6 +65,9 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 			continue
 		}
 
+		go mp.processResponseLoop(localMed, localMed)
+		log.Debugf("the mediator(%v) broadcast vss deals", localMed.Str())
+
 		for index, deal := range deals {
 			event := VSSDealEvent{
 				DstIndex: index,
@@ -72,8 +76,6 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 
 			go mp.vssDealFeed.Send(event)
 		}
-
-		go mp.processResponseLoop(localMed, localMed)
 	}
 }
 
@@ -100,6 +102,8 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 	}
 
 	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
+	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
 	go mp.processResponseLoop(localMed, vrfrMed)
 
 	if resp.Response.Status != vss.StatusApproval {
@@ -112,6 +116,8 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 		Resp: resp,
 	}
 	go mp.vssResponseFeed.Send(respEvent)
+	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
 
 	return nil
 }
@@ -130,6 +136,13 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 		}
 
 		vrfrMed := dag.GetActiveMediatorAddr(int(resp.Index))
+		log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
+			localMed.Str(), srcMed.Str(), vrfrMed.Str())
+
+		if _, ok := mp.respBuf[localMed][vrfrMed]; !ok {
+			log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
+				localMed.Str(), vrfrMed.Str())
+		}
 		mp.respBuf[localMed][vrfrMed] <- resp
 	}
 }
@@ -145,7 +158,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		return
 	}
 
-	aSize := mp.dag.GetActiveMediatorCount()
+	aSize := mp.dag.ActiveMediatorsCount()
 	respCount := 0
 	// localMed 对 vrfrMed 的 response 在 ProcessDeal 生成 response 时 自动处理了
 	if vrfrMed != localMed {
@@ -160,7 +173,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		}
 
 		if jstf != nil {
-			log.Debug(fmt.Sprintf("DKG: wrong Process Response: %v", localMed.String()))
+			log.Debugf("DKG: wrong Process Response: %v", localMed.String())
 			return false
 		}
 
@@ -174,7 +187,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 			finished = true
 
 			if dkgr.Certified() {
-				log.Debug(fmt.Sprintf("%v's DKG verification passed!", localMed.Str()))
+				log.Debugf("the mediator(%v)'s DKG verification passed!", localMed.Str())
 
 				certified = true
 			}
@@ -183,7 +196,15 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		return
 	}
 
+	if _, ok := mp.respBuf[localMed][vrfrMed]; !ok {
+		log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
+			localMed.Str(), vrfrMed.Str())
+	}
+
+	log.Debugf("the mediator(%v) run the loop to process response regarding the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
 	respCh := mp.respBuf[localMed][vrfrMed]
+
 	for {
 		select {
 		case <-mp.quit:
@@ -195,7 +216,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 				delete(mp.respBuf[localMed], vrfrMed)
 
 				if certified {
-					go mp.signTBLSLoop(localMed)
+					go mp.signUnitsTBLS(localMed)
 					go mp.recoverUnitsTBLS(localMed)
 
 					delete(mp.respBuf, localMed)
@@ -207,30 +228,62 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 	}
 }
 
-func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
-	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
+func (mp *MediatorPlugin) signUnitsTBLS(localMed common.Address) {
+	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
 	if !ok {
-		log.Debug(fmt.Sprintf("the following mediator has no signature shares yet: %v", localMed.Str()))
+		log.Debugf("the mediator(%v) has no units to sign TBLS yet", localMed.Str())
 		return
 	}
 
-	for newUnitHash := range medSigShareBuf {
-		go mp.recoverUnitTBLS(localMed, newUnitHash)
+	for newUnitHash := range medUnitsBuf {
+		go mp.signUnitTBLS(localMed, newUnitHash)
 	}
 }
 
-func (mp *MediatorPlugin) AddToTBLSSignBuf(newUnit *modules.Unit) {
+func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
+	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
+	if !ok {
+		log.Debugf("the mediator(%v) has no signature shares to recover group sign yet", localMed.Str())
+		return
+	}
+
+	for unitHash := range sigSharesBuf {
+		go mp.recoverUnitTBLS(localMed, unitHash)
+	}
+}
+
+func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
 	lams := mp.GetLocalActiveMediators()
-	curThrshd := mp.dag.ChainThreshold()
 
 	for _, localMed := range lams {
 		log.Debugf("the mediator(%v) received a unit to be grouped sign: %v",
 			localMed.Str(), newUnit.UnitHash.TerminalString())
-		if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
-			mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
-		}
+		go mp.addToTBLSSignBuf(localMed, newUnit)
+	}
+}
 
-		mp.toTBLSSignBuf[localMed] <- newUnit
+func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *modules.Unit) {
+	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
+		mp.toTBLSSignBuf[localMed] = make(map[common.Hash]*modules.Unit)
+	}
+
+	unitHash := newUnit.UnitHash
+	mp.toTBLSSignBuf[localMed][unitHash] = newUnit
+	go mp.signUnitTBLS(localMed, unitHash)
+
+	// 过了 unit 确认时间后，及时删除待群签名的 unit，防止内存溢出
+	expiration := mp.dag.UnitIrreversibleTime()
+	deleteBuf := time.NewTimer(expiration)
+
+	select {
+	case <-mp.quit:
+		return
+	case <-deleteBuf.C:
+		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
+			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
+				" to sign-group", unitHash.TerminalString(), localMed.Str())
+			delete(mp.toTBLSSignBuf[localMed], unitHash)
+		}
 	}
 }
 
@@ -238,30 +291,44 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 	return mp.sigShareScope.Track(mp.sigShareFeed.Subscribe(ch))
 }
 
-func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
-	dkgr, err := mp.getLocalActiveDKG(localMed)
-	if err != nil {
-		log.Debug(err.Error())
-		return
-	}
-
-	dks, err := dkgr.DistKeyShare()
-	if err != nil {
-		log.Debug(err.Error())
+func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.Hash) {
+	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
+	if !ok {
+		log.Debugf("the mediator(%v) has no units to sign TBLS yet", localMed.Str())
 		return
 	}
 
 	dag := mp.dag
-	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
-		mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, dag.ChainThreshold())
+	var (
+		dkgr    *dkg.DistKeyGenerator
+		newUnit *modules.Unit
+	)
+	// 1. 获取群签名所需数据
+	{
+		newUnit, ok = medUnitsBuf[unitHash]
+		if !ok {
+			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS",
+				localMed.Str(), unitHash.TerminalString())
+			return
+		}
+
+		// 判断是否是换届前的单元
+		if newUnit.Timestamp() <= dag.LastMaintenanceTime() {
+			dkgr, ok = mp.precedingDKGs[localMed]
+		} else {
+			dkgr, ok = mp.activeDKGs[localMed]
+		}
+
+		if !ok {
+			log.Debugf("the mediator(%v)'s dkg is not existed", localMed.Str())
+			return
+		}
 	}
 
-	newUnitBuf := mp.toTBLSSignBuf[localMed]
-	log.Debugf("the mediator(%v) run the loop of TBLS sign", localMed.Str())
-
-	signTBLS := func(newUnit *modules.Unit) (sigShare []byte, success bool) {
+	// 2. 判断群签名的相关条件
+	{
 		// 1.如果单元没有群公钥， 则跳过群签名
-		_, err = newUnit.GroupPubKey()
+		_, err := newUnit.GroupPubKey()
 		if err != nil {
 			log.Debug(err.Error())
 			return
@@ -280,33 +347,26 @@ func (mp *MediatorPlugin) signTBLSLoop(localMed common.Address) {
 				newUnit.UnitHash.TerminalString(), parentHash.TerminalString())
 			return
 		}
+	}
 
-		var err error
-		hash := newUnit.Hash()
-
-		sigShare, err = tbls.Sign(mp.suite, dks.PriShare(), hash[:])
-		if err != nil {
-			log.Debug(err.Error())
-			return
-		}
-
-		success = true
-		log.Debugf("the mediator(%v) group-signed the unit(%v)", localMed.Str(),
-			newUnit.UnitHash.TerminalString())
+	// 3. 群签名
+	dks, err := dkgr.DistKeyShare()
+	if err != nil {
+		log.Debug(err.Error())
 		return
 	}
 
-	for {
-		select {
-		case <-mp.quit:
-			return
-		case newUnit := <-newUnitBuf:
-			sigShare, success := signTBLS(newUnit)
-			if success {
-				go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
-			}
-		}
+	sigShare, err := tbls.Sign(mp.suite, dks.PriShare(), unitHash[:])
+	if err != nil {
+		log.Debug(err.Error())
+		return
 	}
+
+	// 4. 群签名成功后的处理
+	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
+		newUnit.UnitHash.TerminalString())
+	delete(mp.toTBLSSignBuf[localMed], unitHash)
+	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
 }
 
 // 收集签名分片
@@ -321,21 +381,21 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 		return err
 	}
 
-	//newUnitHash := newUnit.UnitHash
 	localMed := newUnit.Author()
 
-	medSigShareBuf, ok := mp.toTBLSRecoverBuf[localMed]
+	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		err = fmt.Errorf("the following mediator's toTBLSRecoverBuf has not initialized yet: %v", localMed.Str())
+		err = fmt.Errorf("the mediator(%v)'s toTBLSRecoverBuf has not initialized yet", localMed.Str())
 		log.Debug(err.Error())
 		return err
 	}
 
-	// 当buf不存在时，说明已经recover出群签名，忽略该签名分片
-	sigShareSet, ok := medSigShareBuf[newUnitHash]
+	// 当buf不存在时，说明已经recover出群签名, 或者已经过了unit确认时间，忽略该签名分片
+	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		err = fmt.Errorf("the unit already has recovered the group signature: %v", newUnitHash.TerminalString())
-		log.Debugf(err.Error())
+		err = fmt.Errorf("the unit(%v) has already recovered the group signature",
+			newUnitHash.TerminalString())
+		log.Debug(err.Error())
 		return err
 	}
 
@@ -351,9 +411,17 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 }
 
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
-	sigShareSet, ok := mp.toTBLSRecoverBuf[localMed][unitHash]
+	// 1. 获取所有的签名分片
+	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Debugf(fmt.Sprintf("the following mediator also has no sign shares: %v", localMed.Str()))
+		log.Debugf("the mediator((%v) has no signature shares to recover group sign yet", localMed.Str())
+		return
+	}
+
+	sigShareSet, ok := sigSharesBuf[unitHash]
+	if !ok {
+		log.Debugf("the mediator(%v) has no sign shares corresponding unit(%v) yet",
+			localMed.Str(), unitHash.TerminalString())
 		return
 	}
 
@@ -365,19 +433,41 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	dag := mp.dag
-	aSize := dag.GetActiveMediatorCount()
-	curThreshold := dag.ChainThreshold()
+	// 2. 获取阈值、mediator数量、DKG
+	var (
+		mSize, threshold int
+		dkgr             *dkg.DistKeyGenerator
+	)
+	{
+		dag := mp.dag
+		unit, err := dag.GetUnitByHash(unitHash)
+		if unit == nil || err != nil {
+			err = fmt.Errorf("fail to get unit by hash in dag: %v", unitHash.TerminalString())
+			log.Debug(err.Error())
+			return
+		}
 
-	if sigShareSet.len() < curThreshold {
-		log.Debugf("the count of sign shares of the unit(%v) does not reach the threshold(%v)",
-			unitHash.TerminalString(), curThreshold)
-		return
+		// 判断是否是换届前的单元
+		if unit.Timestamp() <= dag.LastMaintenanceTime() {
+			mSize = dag.PrecedingMediatorsCount()
+			threshold = dag.PrecedingThreshold()
+			dkgr, ok = mp.precedingDKGs[localMed]
+		} else {
+			mSize = dag.ActiveMediatorsCount()
+			threshold = dag.ChainThreshold()
+			dkgr, ok = mp.activeDKGs[localMed]
+		}
+
+		if !ok {
+			log.Debugf("the mediator(%v)'s dkg is not existed", localMed.Str())
+			return
+		}
 	}
 
-	dkgr, err := mp.getLocalActiveDKG(localMed)
-	if err != nil {
-		log.Debug(err.Error())
+	// 3. 判断是否达到群签名的各种条件
+	if sigShareSet.len() < threshold {
+		log.Debugf("the count of sign shares of the unit(%v) does not reach the threshold(%v)",
+			unitHash.TerminalString(), threshold)
 		return
 	}
 
@@ -387,17 +477,19 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
+	// 4. recover群签名
 	suite := mp.suite
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
-	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), curThreshold, aSize)
+	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), threshold, mSize)
 	if err != nil {
 		log.Debug(err.Error())
 		return
 	}
 
-	log.Debug("Recovered the Unit that hash: " + unitHash.TerminalString() +
-		" the group signature: " + hexutil.Encode(groupSig))
+	log.Debugf("Recovered the Unit(%v)'s the Group-sign: %v",
+		unitHash.TerminalString(), hexutil.Encode(groupSig))
 
+	// 5. recover后的相关处理
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	mp.dag.SetUnitGroupSign(unitHash, groupSig, mp.ptn.TxPool())

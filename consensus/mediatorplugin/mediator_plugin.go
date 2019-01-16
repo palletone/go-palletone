@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -104,11 +105,11 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 		log.Info("Not producing Unit because production is disabled " +
 			"until we receive a recent Unit (see: --enable-stale-production)")
 	case NotTimeYet:
-		//log.Debug("Not producing Unit because next slot time is " + detail["NextTime"] +
-		//	" , but now is " + detail["Now"])
+		log.Debug("Not producing Unit because next slot time is " + detail["NextTime"] +
+			" , but now is " + detail["Now"])
 	case NotMyTurn:
-		//log.Debug("Not producing Unit because current scheduled mediator is " +
-		//	detail["ScheduledMediator"])
+		log.Debug("Not producing Unit because current scheduled mediator is " +
+			detail["ScheduledMediator"])
 	case Lag:
 		log.Info("Not producing Unit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
@@ -128,12 +129,11 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
-	defer func(start time.Time) {
-		log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
-	}(time.Now())
-	//	println("\n尝试生产验证单元...")
-	detail := map[string]string{}
+	//defer func(start time.Time) {
+	//	log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
+	//}(time.Now())
 
+	detail := map[string]string{}
 	dag := mp.dag
 
 	// 整秒调整，四舍五入
@@ -218,21 +218,36 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Mediator"] = scheduledMediator.Str()
 	detail["Hash"] = unitHash.TerminalString()
 
-	// 3. 初始化签名unit相关的签名分片的buf
-	mp.initTBLSRecoverBuf(scheduledMediator, unitHash)
-
-	// 4. 异步向区块链网络广播验证单元
-	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
+	// 3. 对 unit 进行群签名和广播
+	go mp.broadcastAndGroupSignUnit(scheduledMediator, newUnit)
 
 	return Produced, detail
 }
 
-func (mp *MediatorPlugin) initTBLSRecoverBuf(localMed common.Address, newUnitHash common.Hash) {
-	aSize := mp.dag.GetActiveMediatorCount()
-	curThrshd := mp.dag.ChainThreshold()
+func (mp *MediatorPlugin) broadcastAndGroupSignUnit(localMed common.Address, newUnit *modules.Unit) {
+	// 1. 初始化签名unit相关的签名分片的buf
+	aSize := mp.dag.ActiveMediatorsCount()
 	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
-		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
+		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
 	}
+	unitHash := newUnit.UnitHash
+	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
 
-	mp.toTBLSRecoverBuf[localMed][newUnitHash] = newSigShareSet(aSize)
+	// 2. 异步向区块链网络广播验证单元
+	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
+
+	// 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
+	expiration := mp.dag.UnitIrreversibleTime()
+	deleteBuf := time.NewTimer(expiration)
+
+	select {
+	case <-mp.quit:
+		return
+	case <-deleteBuf.C:
+		if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
+			log.Debugf("the unit(%v) has expired confirmation time, "+"no longer need the mediator(%v) "+
+				"to recover group-sign", unitHash.TerminalString(), localMed.Str())
+			delete(mp.toTBLSRecoverBuf[localMed], unitHash)
+		}
+	}
 }

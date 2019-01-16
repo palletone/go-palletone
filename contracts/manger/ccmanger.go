@@ -19,25 +19,25 @@
 package manger
 
 import (
-	"time"
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc"
+	"io"
 	"net"
 	"os"
-	"crypto/md5"
-	"io"
-	"fmt"
-	"encoding/hex"
-	"google.golang.org/grpc"
-	"github.com/golang/protobuf/proto"
+	"time"
 
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
-	"github.com/palletone/go-palletone/contracts/scc"
-	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/contracts/scc"
+	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
+	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
 )
 
 func marshalOrPanic(pb proto.Message) []byte {

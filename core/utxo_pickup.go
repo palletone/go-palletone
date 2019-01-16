@@ -54,6 +54,11 @@ func find_min(utxos []UtxoInterface) UtxoInterface {
 	}
 	return min_utxo
 }
+
+func Merge_Utxos(utxos Utxos, poolutxos Utxos) (Utxos, error) {
+	return nil, nil
+}
+
 func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 	var greaters Utxos
 	var lessers Utxos

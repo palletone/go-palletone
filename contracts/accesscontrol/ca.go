@@ -17,7 +17,6 @@
  * @date 2018
  */
 
-
 package accesscontrol
 
 // CertKeyPair denotes a TLS certificate and corresponding key,

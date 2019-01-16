@@ -81,6 +81,12 @@ const Wallet_JS = `
 			params: 1,
 			inputFormatter: [null]
 		}),
+        new web3._extend.Method({
+			name: 'getTxByFileHash',
+			call: 'wallet_getTxByFileHash',
+			params: 1,
+			inputFormatter: [null]
+		}),
  	]
  });
  `

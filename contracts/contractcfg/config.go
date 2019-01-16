@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+var DebugTest bool = true
+
 var DefaultConfig = Config{
 	//LogLevel:               logging.DEBUG,
 	ContractFileSystemPath: "./chaincodes",
@@ -24,7 +26,6 @@ type Config struct {
 	VmEndpoint             string
 	ContractBuilder        string
 	SysContract            map[string]string
-
 	//vm.docker.attachStdout
 }
 

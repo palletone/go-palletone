@@ -25,9 +25,9 @@ import (
 	"golang.org/x/net/context"
 	"time"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/common/log"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	putils "github.com/palletone/go-palletone/core/vmContractPub/protos/utils"
 	"github.com/palletone/go-palletone/dag"

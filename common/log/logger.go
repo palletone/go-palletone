@@ -52,8 +52,9 @@ const (
 var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
 
 var Logger *zap.Logger
-var originFileName string
 var mux sync.RWMutex
+
+//var originFileName string
 
 // init zap.logger
 func InitLogger() {
@@ -62,15 +63,15 @@ func InitLogger() {
 		if path == LogStdout {
 			continue
 		}
-		if originFileName == "" {
-			originFileName = path
-		}
-		index := strings.LastIndex(originFileName, ".")
-		if -1 == index {
-			index = len(originFileName)
-		}
-
+		//if originFileName == "" {
+		//	originFileName = path
+		//}
+		//index := strings.LastIndex(originFileName, ".")
+		//if -1 == index {
+		//	index = len(originFileName)
+		//}
 		// DefaultConfig.OutputPaths[i] = fmt.Sprintf("%s_%s.%s", Substr(originFileName, 0, index), date, Substr(originFileName, index+1, len(originFileName)-index))
+
 		if err := files.MakeDirAndFile(DefaultConfig.OutputPaths[i]); err != nil {
 			panic(err)
 		}

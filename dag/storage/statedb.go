@@ -99,30 +99,30 @@ func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator
 	return RetrieveMediator(statedb.db, address)
 }
 
-func (statedb *StateDb) SaveChainIndex(index *modules.ChainIndex) error {
-	bytes, err := rlp.EncodeToBytes(index)
-	if err != nil {
-		return err
-	}
-	key := constants.CURRENTCHAININDEX_PREFIX + index.AssetID.String()
-	if err := statedb.db.Put([]byte(key), bytes); err != nil {
-		return err
-	}
-	return nil
-}
-func (statedb *StateDb) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
-	// get current chainIndex
-	key := constants.CURRENTCHAININDEX_PREFIX + assetId.String()
-	bytes, err := statedb.db.Get([]byte(key))
-	if err != nil {
-		return nil, err
-	}
-	chainIndex := new(modules.ChainIndex)
-	if err := rlp.DecodeBytes(bytes, &chainIndex); err != nil {
-		return nil, err
-	}
-	return chainIndex, nil
-}
+//func (statedb *StateDb) SaveChainIndex(index *modules.ChainIndex) error {
+//	bytes, err := rlp.EncodeToBytes(index)
+//	if err != nil {
+//		return err
+//	}
+//	key := constants.CURRENTCHAININDEX_PREFIX + index.AssetID.String()
+//	if err := statedb.db.Put([]byte(key), bytes); err != nil {
+//		return err
+//	}
+//	return nil
+//}
+//func (statedb *StateDb) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+//	// get current chainIndex
+//	key := constants.CURRENTCHAININDEX_PREFIX + assetId.String()
+//	bytes, err := statedb.db.Get([]byte(key))
+//	if err != nil {
+//		return nil, err
+//	}
+//	chainIndex := new(modules.ChainIndex)
+//	if err := rlp.DecodeBytes(bytes, &chainIndex); err != nil {
+//		return nil, err
+//	}
+//	return chainIndex, nil
+//}
 
 // author albert·gou
 func (statedb *StateDb) GetMediatorCount() int {

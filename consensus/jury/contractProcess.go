@@ -19,10 +19,10 @@
 package jury
 
 import (
-	"time"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
+	"time"
 )
 
 type ContractResp struct {
@@ -63,7 +63,7 @@ type ContractInvokeReq struct {
 	deployId []byte
 	txid     string //common.Hash
 	args     [][]byte
-	timeout time.Duration
+	timeout  time.Duration
 }
 
 func (req ContractInvokeReq) do(v contracts.ContractInf) (interface{}, error) {

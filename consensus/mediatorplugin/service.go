@@ -57,7 +57,7 @@ type iDag interface {
 	HeadUnitTime() int64
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetActiveMediatorInitPubs() []kyber.Point
-	GetActiveMediatorCount() int
+	ActiveMediatorsCount() int
 	GetActiveMediatorAddr(index int) common.Address
 	HeadUnitNum() uint64
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
@@ -90,6 +90,11 @@ type iDag interface {
 	GetVotedMediator(addr common.Address) map[common.Address]bool
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
+
+	PrecedingThreshold() int
+	PrecedingMediatorsCount() int
+	UnitIrreversibleTime() time.Duration
+	LastMaintenanceTime() int64
 }
 
 type MediatorPlugin struct {
@@ -125,9 +130,7 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	// todo 重定义数据类型, 及时清除不需要群签名的单元， 防止程序阻塞或者内存溢出
-	toTBLSSignBuf map[common.Address]chan *modules.Unit
-	// todo 及时清除不需要恢复群签名的单元记忆相关数据，防止内存溢出
+	toTBLSSignBuf    map[common.Address]map[common.Hash]*modules.Unit
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 
 	// unit 签名分片的事件订阅
@@ -217,7 +220,7 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 }
 
 func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
-	aSize := mp.dag.GetActiveMediatorCount()
+	aSize := mp.dag.ActiveMediatorsCount()
 	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
 
 	for i := 0; i < aSize; i++ {
@@ -334,20 +337,8 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 
 // initTBLSBuf, 初始化与TBLS签名相关的buf
 func (mp *MediatorPlugin) initTBLSBuf() {
-	//lams := mp.GetLocalActiveMediators()
-	//lamc := len(mp.mediators)
-	//
-	//mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lamc)
-	//mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
-	//
-	//curThrshd := mp.dag.ChainThreshold()
-	//for _, localMed := range lams {
-	//	mp.toTBLSSignBuf[localMed] = make(chan *modules.Unit, curThrshd)
-	//	mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet, curThrshd)
-	//}
-
 	lmc := len(mp.mediators)
 
-	mp.toTBLSSignBuf = make(map[common.Address]chan *modules.Unit, lmc)
+	mp.toTBLSSignBuf = make(map[common.Address]map[common.Hash]*modules.Unit, lmc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
 }

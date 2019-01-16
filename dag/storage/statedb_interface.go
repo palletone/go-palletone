@@ -59,8 +59,9 @@ type IStateDb interface {
 	AppendVotedMediator(voter, mediator common.Address) error
 
 	// world state chainIndex
-	GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
-	SaveChainIndex(index *modules.ChainIndex) error
+	//GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
+	//保存当前最新单元的高度，即使是未稳定的单元，也会更新
+	//SaveChainIndex(index *modules.ChainIndex) error
 	//GetCurrentUnit(assetId modules.IDType16) *modules.Unit
 
 	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error

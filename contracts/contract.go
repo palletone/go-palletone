@@ -20,7 +20,6 @@ package contracts
 
 import (
 	"errors"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	cc "github.com/palletone/go-palletone/contracts/manger"
@@ -50,10 +49,10 @@ type ContractInf interface {
 	Stop(chainID string, deployId []byte, txid string, deleteImage bool) error
 }
 
-var (
-	//保证金合约地址（0x1号合约）
-	DepositeContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000011C")
-)
+//var (
+//	//保证金合约地址（0x1号合约）
+//	DepositeContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000011C")
+//)
 
 // Initialize 初始化合约管理模块以及加载系统合约，
 // 由上层应用指定dag以及初始合约配置信息
@@ -103,8 +102,11 @@ func (c *Contract) Close() error {
 // and forming a contract template unit together with the contract name and version
 // Chain code ID for multiple chains
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
+	log.Info("===========================enter contract.go Install==============================")
+	defer log.Info("===========================exit contract.go Install==============================")
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
+		log.Error("initFlag == 0")
 		return nil, errors.New("Contract not initialized")
 	}
 	return cc.Install(c.dag, chainID, ccName, ccPath, ccVersion)
@@ -119,8 +121,11 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 // The interface returns the contract deployment ID (there is a different return ID for each deployment)
 // and the deployment unit
 func (c *Contract) Deploy(chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+	log.Info("===========================enter contract.go Deploy==============================")
+	defer log.Info("===========================exit contract.go Deploy==============================")
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
+		log.Error("initFlag == 0")
 		return nil, nil, errors.New("Contract not initialized")
 	}
 	return cc.Deploy(c.dag, chainID, templateId, txId, args, timeout)
@@ -130,8 +135,11 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txId string, args [
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
 func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+	log.Info("===========================enter contract.go Invoke==============================")
+	defer log.Info("===========================exit contract.go Invoke==============================")
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
+		log.Error("initFlag == 0")
 		return nil, errors.New("Contract not initialized")
 	}
 	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
