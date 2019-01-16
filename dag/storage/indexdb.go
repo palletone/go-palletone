@@ -140,25 +140,19 @@ func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
 //save filehash key:IDX_FileHash_Txid   value:Txid
 func (db *IndexDb) SaveFileHash(filehash []byte,txid common.Hash) error {
 	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
-	count := getCountByPrefix(db.db,key)
-	if count > 0 {
-		//There may be duplicate operations
-		log.Info("Filehash already exists!",filehash)
-		return db.db.Put(key,txid[:])
-	}
+	key = append(key,[]byte(txid.String())...)
+
 	return db.db.Put(key,txid[:])
 }
 
 func (db *IndexDb) GetTxByFileHash(filehash []byte)([]common.Hash,error) {
 	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
-	bytes,err := db.db.Get(key[:])
-	if err != nil {
-		log.Error("err",err)
-		return nil,err
+	data := getprefix(db.db,key)
+	var result []common.Hash
+	for _, v := range data {
+		hash := common.Hash{}
+		hash.SetBytes(v)
+		result = append(result, hash)
 	}
-	txid := make([]common.Hash,0)
-	if err := rlp.DecodeBytes(bytes, &txid); err != nil {
-		return nil,err
-	}
-	return txid,err
+	return result, nil
 }
