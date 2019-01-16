@@ -242,6 +242,16 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//	return nil
 	//}
 
+	//Query memdag first
+	hash, err := d.Memdag.GetHashByNumber(number)
+	if err == nil { //Exist
+		unit, err := d.Memdag.GetUnit(hash)
+		if err != nil {
+			log.Errorf("Number[%s] is exist in memdag, but cannot query unit by hash: %s", number.String(), hash.String())
+			return nil, err
+		}
+		return unit.UnitHeader, nil
+	}
 	uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
 	if err1 != nil {
 		log.Debug("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())

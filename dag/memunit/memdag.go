@@ -615,3 +615,6 @@ func (chain *MemDag) GetCurrentUnitChainIndex(assetid modules.IDType16, index ui
 func (chain *MemDag) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	return chain.memUnit.Get(hash)
 }
+func (chain *MemDag) GetHashByNumber(chainIndex *modules.ChainIndex) (common.Hash, error) {
+	return chain.memUnit.GetHashByNumber(chainIndex)
+}

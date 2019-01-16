@@ -29,6 +29,7 @@ import (
 type IMemDag interface {
 	Save(unit *modules.Unit, txpool txspool.ITxPool) error
 	GetUnit(hash common.Hash) (*modules.Unit, error)
+	GetHashByNumber(chainIndex *modules.ChainIndex) (common.Hash, error)
 	UpdateMemDag(hash common.Hash, sign []byte, txpool txspool.ITxPool) error
 	Exists(uHash common.Hash) bool
 	Prune(assetId string, hashs []common.Hash) error
