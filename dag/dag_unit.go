@@ -78,9 +78,9 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
-	defer func(start time.Time) {
-		log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
-	}(time.Now())
+	//defer func(start time.Time) {
+	//	log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
+	//}(time.Now())
 	gasToken := node.DefaultConfig.GetGasToken()
 
 	// 1. 判断是否满足生产的若干条件

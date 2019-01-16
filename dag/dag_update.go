@@ -41,7 +41,7 @@ func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	}
 
 	missedUnits--
-	log.Debug(fmt.Sprintf("the count of missed Units: %v", missedUnits))
+	log.Debug(fmt.Sprintf("the count of missed units: %v", missedUnits))
 
 	aSize := dag.ActiveMediatorsCount()
 	if missedUnits < uint32(aSize) {
