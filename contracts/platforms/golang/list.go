@@ -27,7 +27,7 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-	
+
 	"github.com/palletone/go-palletone/common/log"
 )
 

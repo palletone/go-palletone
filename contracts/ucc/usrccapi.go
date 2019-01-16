@@ -5,15 +5,15 @@ import (
 	"golang.org/x/net/context"
 	"time"
 
-	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 type UserChaincode struct {
@@ -51,15 +51,14 @@ func mockerDeployUserCC() error {
 }
 
 func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
-	//todo ,for test
 	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
 	var err error
 	if cfg.DebugTest {
-		cdDeploymentSpec,err = getDeploymentSpec(nil,spec)
+		cdDeploymentSpec, err = getDeploymentSpec(nil, spec)
 		if err != nil {
 			return err
 		}
-	}else {
+	} else {
 		cdDeploymentSpec.ChaincodeSpec = spec
 		cdDeploymentSpec.CodePackage = chaincodeData
 	}
@@ -73,7 +72,7 @@ func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, 
 	if err != nil {
 		log.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
 	}
-	log.Debugf("user chaincode chainID[%s]-name[%s]-path[%s]-version[%s] deployed",chainID, usrcc.Name, usrcc.Path, usrcc.Version)
+	log.Debugf("user chaincode chainID[%s]-name[%s]-path[%s]-version[%s] deployed", chainID, usrcc.Name, usrcc.Path, usrcc.Version)
 	return nil
 }
 
@@ -108,7 +107,7 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: usrcc.InitArgs}}
 	chaincodeData, err := platforms.GetChainCodePayload(spec)
 	if err != nil {
-		log.Error("getChainCodePayload err:","error",err)
+		log.Error("getChainCodePayload err:", "error", err)
 		return nil, errors.New("GetChainCodePayload fail")
 	}
 	return chaincodeData, nil

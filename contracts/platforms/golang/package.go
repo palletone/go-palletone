@@ -38,7 +38,7 @@ var includeFileTypes = map[string]bool{
 	".go":   true,
 	".yaml": true,
 	".json": true,
-	".md":true,
+	".md":   true,
 }
 
 //var log = flogging.MustGetLogger("golang-platform")

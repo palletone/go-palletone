@@ -179,9 +179,9 @@ func (tt *TestCmd) ExpectExitEmpty() {
 	os.RemoveAll("./data1")
 	os.RemoveAll("./gptn")
 	os.RemoveAll("./log")
-	isdebug := strings.Contains(string(output),"debug")
-	isinfo := strings.Contains(string(output),"info")
-	if len(output) > 0 &&!isdebug && !isinfo{
+	isdebug := strings.Contains(string(output), "debug")
+	isinfo := strings.Contains(string(output), "info")
+	if len(output) > 0 && !isdebug && !isinfo {
 		tt.Errorf("Unmatched stdout text:\n%s", output)
 	}
 
@@ -221,12 +221,12 @@ func (tt *TestCmd) ExpectExitIPCAttachWelcome() {
 
 	//open :=`IPC endpoint opened	{"url": "./data1/gptn.ipc"}`
 	//close := `IPC endpoint closed	{"endpoint": "./data1/gptn.ipc"}`
-	welcome:="Welcome to the Gpan JavaScript console!"
+	welcome := "Welcome to the Gpan JavaScript console!"
 	if len(output) > 0 {
 		//isopen := strings.Contains(string(output),open)
 		//isclose := strings.Contains(string(output),close)
-		iswelcome :=strings.Contains(string(output),welcome)
-		if !iswelcome{
+		iswelcome := strings.Contains(string(output), welcome)
+		if !iswelcome {
 			tt.Errorf("Unmatched stdout text:\n%s", output)
 		}
 	}
@@ -245,8 +245,8 @@ func (tt *TestCmd) ExpectExitConsoleWelcome() {
 	os.RemoveAll("./gptn")
 	os.RemoveAll("./log")
 	if len(output) > 0 {
-		isconsole := strings.Contains(string(output),"Welcome to the Gptn JavaScript console!")
-		if !isconsole{
+		isconsole := strings.Contains(string(output), "Welcome to the Gptn JavaScript console!")
+		if !isconsole {
 			tt.Errorf("Unmatched stdout text:\n%s", output)
 		}
 	}

@@ -24,13 +24,11 @@ import (
 	"testing"
 )
 
-
-
 func TestAccountModel(t *testing.T) {
 	addr := common.StringToAddressGodBlessMe("P1GqZ72gaeq7LiS34KLJoMmCnMnaopkcEPn")
 	token := uint64(1)
 	//1. generate user model
-	u :=GenerateUser(addr)
+	u := GenerateUser(addr)
 
 	//2. add different type of tokens to wallet
 	u.AddNewTokenCard("wil")
@@ -40,11 +38,10 @@ func TestAccountModel(t *testing.T) {
 	u.SetCurrentTokenCard("wil")
 
 	//4. system call
-	result, ok := u.Call("Tranfer", addr,  []uint64{token}) //strict match
+	result, ok := u.Call("Tranfer", addr, []uint64{token}) //strict match
 	if !ok {
 		//check
 	}
 	fmt.Println(result)
-
 
 }

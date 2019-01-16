@@ -50,8 +50,8 @@ type IIndexDb interface {
 	GetFromAddressTxIds(addr string) ([]common.Hash, error)
 	GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
 
-	SaveFileHash(filehash []byte,txid common.Hash) error
-	GetTxByFileHash(filehash []byte)([]common.Hash,error)
+	SaveFileHash(filehash []byte, txid common.Hash) error
+	GetTxByFileHash(filehash []byte) ([]common.Hash, error)
 }
 
 // ###################### SAVE IMPL START ######################

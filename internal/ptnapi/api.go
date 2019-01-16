@@ -1644,23 +1644,6 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		merge_Outpoint = append(merge_Outpoint, dagpoint)
 	}
 
-	//poolutxoJsons ,err := core.Get_Utxos_fromtx(poolTxs)
-	//if err != nil {
-	//	return "", err
-	//}
-
-	/*poolutxos := core.Utxos{}
-		for _, pjson := range poolutxoJsons {
-			//utxos = append(utxos, &json)
-			if json.Asset == ptn {
-				poolutxos = append(poolutxos, &ptnjson.UtxoJson{TxHash: pjson.TxHash, MessageIndex: pjson.MessageIndex, OutIndex: pjson.OutIndex, Amount: pjson.Amount, Asset: pjson.Asset, PkScriptHex: pjson.PkScriptHex, PkScriptString: pjson.PkScriptString, LockTime: pjson.LockTime})
-			}
-		}
-	    utxos ,err := core.Merge_Utxos(utxos,poolutxos)
-	    if err != nil {
-			return "", err
-		}*/
-
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is ZERO ")
 	}

@@ -100,12 +100,11 @@ func (bv *BaseVoteModel) AddToBox(score uint64, candidates interface{}) {
 	switch reflect.ValueOf(candidates).Kind() {
 	case reflect.Slice:
 
-			for _, c := range ToInterfaceSlice(candidates) {
-				if bv.ExistCandidate(c) {
-					bv.candidatesStatus[c] += score
-				}
+		for _, c := range ToInterfaceSlice(candidates) {
+			if bv.ExistCandidate(c) {
+				bv.candidatesStatus[c] += score
 			}
-
+		}
 
 	default:
 		if bv.ExistCandidate(candidates) {

@@ -13,5 +13,3 @@ type ContractDeployPayload struct {
 	ReadSet    map[string]interface{} `json:"read_set"`    // the set data of read, and value could be any type
 	WriteSet   map[string]interface{} `json:"write_set"`   // the set data of write, and value could be any type
 }
-
-

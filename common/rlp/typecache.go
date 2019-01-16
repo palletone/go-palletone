@@ -100,11 +100,11 @@ func mapFields(typ reflect.Type) (fields []field, err error) {
 	vt := typ.Elem()
 	var kts, vts tags
 	keyInfo, err := cachedTypeInfo1(kt, kts)
-	if err!=nil {
+	if err != nil {
 		return nil, err
 	}
 	valueInfo, err := cachedTypeInfo1(vt, vts)
-	if err!=nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -200,5 +200,5 @@ func isUint(k reflect.Kind) bool {
 }
 
 func isInt(k reflect.Kind) bool {
-	return k >= reflect.Int && k<= reflect.Int64
+	return k >= reflect.Int && k <= reflect.Int64
 }

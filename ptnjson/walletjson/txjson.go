@@ -23,21 +23,21 @@ package walletjson
 import ()
 
 type PaymentJson struct {
-    Inputs        []InputJson           `json:"inputs"`
-	Outputs       []OutputJson          `json:"outputs"`
+	Inputs  []InputJson  `json:"inputs"`
+	Outputs []OutputJson `json:"outputs"`
 }
 type ProofJson struct {
-    Inputs        []InputJson           `json:"inputs"`
-	Outputs       []OutputJson          `json:"outputs"`
-	Proof         string                `json:"proof"`
-    Extra         string                `json:"extra"`
+	Inputs  []InputJson  `json:"inputs"`
+	Outputs []OutputJson `json:"outputs"`
+	Proof   string       `json:"proof"`
+	Extra   string       `json:"extra"`
 }
 type TxJson struct {
-	Payload []PaymentJson  `json:"payload"`
+	Payload       []PaymentJson         `json:"payload"`
 	InvokeRequest ContractInvokeRequest `json:"invoke_request"`
 }
 type TxProofJson struct {
-	Payload []ProofJson  `json:"payload"`
+	Payload       []ProofJson           `json:"payload"`
 	InvokeRequest ContractInvokeRequest `json:"invoke_request"`
 }
 type ContractInvokeRequest struct {
@@ -54,8 +54,8 @@ type InputJson struct {
 }
 
 type OutputJson struct {
-	Amount uint64 `json:"amount"`
-	Asset  string `json:"asset"`
+	Amount    uint64 `json:"amount"`
+	Asset     string `json:"asset"`
 	ToAddress string `json:"to_address"`
 }
 type RawTxjsonGenParams struct {
@@ -67,11 +67,12 @@ type RawTxjsonGenParams struct {
 		Signature    string `json:"signature"`
 	} `json:"inputs"`
 	Outputs []struct {
-		Address string          `json:"address"`
+		Address string `json:"address"`
 		Amount  uint64 `json:"amount"`
-		Asset  string `json:"asset"`
+		Asset   string `json:"asset"`
 	} `json:"outputs"`
 }
+
 //
 //func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
 //	json := PaymentJson{}

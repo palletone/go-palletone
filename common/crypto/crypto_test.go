@@ -278,14 +278,14 @@ func TestNewContractIdAddress(t *testing.T) {
 }
 
 func TestToWIFAndFromWIF(t *testing.T) {
-	prvKey,_:=GenerateKey()
-	wif:= ToWIF(FromECDSA(prvKey))
-	assert.True(t,wif[0]=='K'|| wif[0]=='L',"Invalid WIF format")
+	prvKey, _ := GenerateKey()
+	wif := ToWIF(FromECDSA(prvKey))
+	assert.True(t, wif[0] == 'K' || wif[0] == 'L', "Invalid WIF format")
 
-	pk,err:= FromWIF(wif)
-	if err!=nil{
-		t.Errorf("FromWIF error:%s",err)
+	pk, err := FromWIF(wif)
+	if err != nil {
+		t.Errorf("FromWIF error:%s", err)
 	}
 
-	assert.True(t,bytes.Equal(FromECDSA(pk),FromECDSA(prvKey)),"Export private key not equal import key")
+	assert.True(t, bytes.Equal(FromECDSA(pk), FromECDSA(prvKey)), "Export private key not equal import key")
 }

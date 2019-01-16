@@ -22,8 +22,8 @@ package walletjson
 
 import (
 	"encoding/json"
-	"unsafe"
 	"time"
+	"unsafe"
 )
 
 type GetFileInfos struct {

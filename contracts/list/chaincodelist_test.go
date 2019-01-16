@@ -11,7 +11,7 @@ func TestChainCodeList(t *testing.T) {
 		SysCC:   false,
 	}
 	cc2 := &CCInfo{
-		Id:[]byte("cc2test"),
+		Id:      []byte("cc2test"),
 		Name:    "cc2",
 		Path:    "/root",
 		Version: "v2",

@@ -30,8 +30,8 @@ import (
 	"path/filepath"
 
 	"github.com/fsouza/go-dockerclient"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/common/log"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
 )

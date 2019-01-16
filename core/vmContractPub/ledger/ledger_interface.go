@@ -17,29 +17,26 @@
  * @date 2018
  */
 
-
 package ledger
 
-import (
-
-)
+import ()
 
 // Ledger captures the methods that are common across the 'PeerLedger', 'OrdererLedger', and 'ValidatedLedger'
 type Ledger interface {
 	//glh
-/*
-	// GetBlockchainInfo returns basic info about blockchain
-	GetBlockchainInfo() (*common.BlockchainInfo, error)
-	// GetBlockByNumber returns block at a given height
-	// blockNumber of  math.MaxUint64 will return last block
-	GetBlockByNumber(blockNumber uint64) (*common.Block, error)
-	// GetBlocksIterator returns an iterator that starts from `startBlockNumber`(inclusive).
-	// The iterator is a blocking iterator i.e., it blocks till the next block gets available in the ledger
-	// ResultsIterator contains type BlockHolder
-	GetBlocksIterator(startBlockNumber uint64) (ResultsIterator, error)
-	// Close closes the ledger
-	Close()
-*/
+	/*
+		// GetBlockchainInfo returns basic info about blockchain
+		GetBlockchainInfo() (*common.BlockchainInfo, error)
+		// GetBlockByNumber returns block at a given height
+		// blockNumber of  math.MaxUint64 will return last block
+		GetBlockByNumber(blockNumber uint64) (*common.Block, error)
+		// GetBlocksIterator returns an iterator that starts from `startBlockNumber`(inclusive).
+		// The iterator is a blocking iterator i.e., it blocks till the next block gets available in the ledger
+		// ResultsIterator contains type BlockHolder
+		GetBlocksIterator(startBlockNumber uint64) (ResultsIterator, error)
+		// Close closes the ledger
+		Close()
+	*/
 }
 
 // ResultsIterator - an iterator for query result set
