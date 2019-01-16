@@ -145,6 +145,11 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Path:       ccPath,
 		Version:    ccVersion,
 	}
+	//查询一下是否已经安装过
+	if v, _, _, _, _ := dag.GetContractTpl(tpid[:]); v != nil {
+		log.Error("getContractTpl err:","error","the contractTlp is exist")
+		return nil,errors.New("the contractTlp is exist.")
+	}
 	//test
 	if cfg.DebugTest {
 		log.Info("enter contract debug test")
