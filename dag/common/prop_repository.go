@@ -135,7 +135,7 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
 			ms.CurrentShuffledMediators[j], ms.CurrentShuffledMediators[i]
 	}
-	pRep.StoreMediatorSchl(ms)
+	//pRep.StoreMediatorSchl(ms)
 	return true
 }
 

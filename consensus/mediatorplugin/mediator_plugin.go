@@ -105,11 +105,11 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 		log.Info("Not producing Unit because production is disabled " +
 			"until we receive a recent Unit (see: --enable-stale-production)")
 	case NotTimeYet:
-		//log.Debug("Not producing Unit because next slot time is " + detail["NextTime"] +
-		//	" , but now is " + detail["Now"])
+		log.Debug("Not producing Unit because next slot time is " + detail["NextTime"] +
+			" , but now is " + detail["Now"])
 	case NotMyTurn:
-		//log.Debug("Not producing Unit because current scheduled mediator is " +
-		//	detail["ScheduledMediator"])
+		log.Debug("Not producing Unit because current scheduled mediator is " +
+			detail["ScheduledMediator"])
 	case Lag:
 		log.Info("Not producing Unit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
