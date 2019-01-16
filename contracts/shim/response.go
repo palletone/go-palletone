@@ -17,7 +17,6 @@
  * @date 2018
  */
 
-
 package shim
 
 import (

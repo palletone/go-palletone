@@ -51,7 +51,7 @@ type AddressAmt struct {
 type CreateProofTransactionCmd struct {
 	Inputs   []TransactionInput
 	Amounts  []AddressAmt `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
-	Proof   string
+	Proof    string
 	Extra    string
 	LockTime *int64
 }
@@ -80,12 +80,12 @@ func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts []AddressAmt,
 }
 
 func NewCreateProofTransactionCmd(inputs []TransactionInput, amounts []AddressAmt,
-	lockTime *int64,proof string,extra string) *CreateProofTransactionCmd {
+	lockTime *int64, proof string, extra string) *CreateProofTransactionCmd {
 
 	return &CreateProofTransactionCmd{
 		Inputs:   inputs,
 		Amounts:  amounts,
-		Proof :  proof,
+		Proof:    proof,
 		LockTime: lockTime,
 	}
 }
@@ -123,15 +123,15 @@ type RawTransactionGenParams struct {
 	Locktime int64 `json:"locktime"`
 }
 type ProofTransactionGenParams struct {
-	From string  `json:"from"`
+	From    string `json:"from"`
 	Outputs []struct {
 		Address string          `json:"address"`
 		Amount  decimal.Decimal `json:"amount"`
 	} `json:"outputs"`
-	Proof string  `json:"proof"`
-	Extra string  `json:"extra"` 
-	Fee decimal.Decimal `json:"fee"`
-	Locktime int64 `json:"locktime"`
+	Proof    string          `json:"proof"`
+	Extra    string          `json:"extra"`
+	Fee      decimal.Decimal `json:"fee"`
+	Locktime int64           `json:"locktime"`
 }
 
 type VoteTransactionGenParams struct {

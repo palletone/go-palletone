@@ -23,8 +23,8 @@ package core
 import (
 	"fmt"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/golang/protobuf/proto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"

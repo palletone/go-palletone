@@ -20,18 +20,18 @@
 package manger
 
 import (
-	"time"
 	"golang.org/x/net/context"
+	"time"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/rwset"
+	"github.com/palletone/go-palletone/common/log"
+	chaincode "github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	md "github.com/palletone/go-palletone/dag/modules"
-	chaincode "github.com/palletone/go-palletone/contracts/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag"
+	md "github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 // SupportImpl provides an implementation of the endorser.Support interface
@@ -108,8 +108,8 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	tokenSupply, _ := tx.GetTokenSupplyData(nm)
 	log.Infof("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
 	invoke := &md.ContractInvokeResult{
-		ContractId: deployId,
-		Args:       args,
+		ContractId:  deployId,
+		Args:        args,
 		ReadSet:     make([]md.ContractReadSet, 0),
 		WriteSet:    make([]md.ContractWriteSet, 0),
 		TokenPayOut: tokenPay,

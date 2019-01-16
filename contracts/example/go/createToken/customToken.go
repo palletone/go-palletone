@@ -29,7 +29,6 @@ import (
 )
 
 type ICustomToken interface {
-
 }
 
 type Token struct {
@@ -40,6 +39,7 @@ type Token struct {
 	CreatedTime []byte
 	Extra       []byte
 }
+
 //注意大小写
 type CustomToken struct {
 	CustomTokenName   string
@@ -86,7 +86,6 @@ func (ct *CustomToken) ChangeOwner(caller common.Address, des common.Address) bo
 	ct.Owner = des
 	return true
 }
-
 
 //OwnerOf(const):AnyOne
 func (ct *CustomToken) OwnerOf(caller common.Address, TokenID uint64) common.Address {

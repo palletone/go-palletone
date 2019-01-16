@@ -1,15 +1,15 @@
 package jury
 
 import (
-	"time"
 	"encoding/hex"
 	"fmt"
+	"time"
 
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool) (reqId []byte, TplId []byte, err error) {
@@ -106,7 +106,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	if err != nil {
 		return nil, errors.New("GetRandomNonce error")
 	}
-	log.Debug("ContractStopReq", "enter, contractId ", contractId,"txId", hex.EncodeToString(randNum))
+	log.Debug("ContractStopReq", "enter, contractId ", contractId, "txId", hex.EncodeToString(randNum))
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
 		Payload: &modules.ContractStopRequestPayload{

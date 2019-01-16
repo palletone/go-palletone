@@ -17,7 +17,6 @@
  * @date 2018
  */
 
-
 package accesscontrol
 
 import (
@@ -32,7 +31,7 @@ import (
 	"math/big"
 	"net"
 	"time"
-	
+
 	"github.com/palletone/go-palletone/common/log"
 )
 

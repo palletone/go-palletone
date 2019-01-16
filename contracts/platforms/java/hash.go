@@ -28,8 +28,8 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	ccutil "github.com/palletone/go-palletone/contracts/platforms/util"
 	"github.com/palletone/go-palletone/common/log"
+	ccutil "github.com/palletone/go-palletone/contracts/platforms/util"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 )

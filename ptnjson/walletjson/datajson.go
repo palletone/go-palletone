@@ -22,18 +22,18 @@ package walletjson
 
 import (
 	"encoding/json"
-	"unsafe"
 	"time"
+	"unsafe"
 )
 
 type GetFileInfos struct {
-	UnitHash    string `json:"unit_hash"`
-	UintHeight  uint64 `json:"unit_index"`
-	ParentsHash string `json:"parents_hash"`
-	Txid        string `json:"txid"`
-	Timestamp   time.Duration  `json:"timestamp"`
-	FileData    string `json:"file_data"`
-	ExtraData   string `json:"extra_data"`
+	UnitHash        string        `json:"unit_hash"`
+	UintHeight      uint64        `json:"unit_index"`
+	ParentsHash     string        `json:"parents_hash"`
+	TransactionHash string        `json:"transaction_hash"`
+	Timestamp       time.Duration `json:"timestamp"`
+	FileHash        string        `json:"file_hash"`
+	ExtraData       string        `json:"extra_data"`
 }
 
 func ConvertGetFileInfos2Json(gets []GetFileInfos) string {

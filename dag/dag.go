@@ -89,15 +89,15 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	gasToken := nconfig.GetGasToken()
 	hash, _, err := d.propRep.GetNewestUnit(gasToken)
 	if err != nil {
-		log.Error("Can not get last unstable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
+		log.Error("Can not get newest unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
 		return nil
 	}
 	unit, err := d.Memdag.GetUnit(hash)
 	if err == nil {
-		log.Debugf("Get last unstable unit from memdag by hash:%s", hash.String())
+		log.Debugf("Get newest unit from memdag by hash:%s", hash.String())
 		return unit
 	}
-	log.Infof("Cannot get unstable unit from memdag by hash:%s, try stable unit...", hash.String())
+	log.Infof("Cannot get newest unit from memdag by hash:%s, try stable unit from db...", hash.String())
 	hash, _, err = d.propRep.GetLastStableUnit(gasToken)
 	if err != nil {
 		log.Error("Can not get last stable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
@@ -242,6 +242,16 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//	return nil
 	//}
 
+	//Query memdag first
+	hash, err := d.Memdag.GetHashByNumber(number)
+	if err == nil { //Exist
+		unit, err := d.Memdag.GetUnit(hash)
+		if err != nil {
+			log.Errorf("Number[%s] is exist in memdag, but cannot query unit by hash: %s", number.String(), hash.String())
+			return nil, err
+		}
+		return unit.UnitHeader, nil
+	}
 	uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
 	if err1 != nil {
 		log.Debug("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
