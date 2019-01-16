@@ -70,7 +70,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 			}
 	************/
 	return shim.Success(nil)
-//	return shim.Error("example init error !!!")
+	//	return shim.Error("example init error !!!")
 }
 
 func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string) pb.Response {

@@ -31,7 +31,7 @@ func (pp *processPlugin) SetCurrentVoter(voter interface{}) {
 func (pp *processPlugin) SetProcess(tosi interface{}) {
 	var NilInterfaceSlice interface{}
 	// if tosi is nil ,delete process.
-	if tosi == NilInterfaceSlice{
+	if tosi == NilInterfaceSlice {
 		delete(pp.processMap, pp.currentVoter)
 		return
 	}

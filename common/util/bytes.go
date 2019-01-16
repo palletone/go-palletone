@@ -161,8 +161,6 @@ func BytesEqual(a, b []byte) bool {
 	return true
 }
 
-
-
 //YiRan
 // this function connect multiple []byte to single []byte.
 func KeyConnector(keys ...[]byte) []byte {
@@ -172,4 +170,3 @@ func KeyConnector(keys ...[]byte) []byte {
 	}
 	return res
 }
-

@@ -26,10 +26,10 @@ import (
 
 	"github.com/docker/docker/pkg/reexec"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/node"
 )
 
 // Node represents a node in a simulation network which is created by a

@@ -1,26 +1,26 @@
 package manger
 
 import (
-	"fmt"
-	"time"
 	"bytes"
 	"container/list"
 	"encoding/hex"
+	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"time"
 
-	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
+	cp "github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
+	db "github.com/palletone/go-palletone/contracts/comm"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	cclist "github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
-	md "github.com/palletone/go-palletone/dag/modules"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	cp "github.com/palletone/go-palletone/common/crypto"
-	db "github.com/palletone/go-palletone/contracts/comm"
-	cclist "github.com/palletone/go-palletone/contracts/list"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag"
+	md "github.com/palletone/go-palletone/dag/modules"
 )
 
 var debugX bool = true
@@ -127,7 +127,7 @@ func GetUsrCCList() {
 func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
 	log.Infof("enter ccapi.go Install")
 	defer log.Infof("exit ccapi.go Install")
-	log.Infof("chainID[%s]-name[%s]-path[%s]-version[%s]", chainID,ccName, ccPath, ccVersion)
+	log.Infof("chainID[%s]-name[%s]-path[%s]-version[%s]", chainID, ccName, ccPath, ccVersion)
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
@@ -150,7 +150,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		log.Info("enter contract debug test")
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
-	}else{
+	} else {
 		//将合约代码文件打包成 tar 文件
 		paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
 		if err != nil {
@@ -168,7 +168,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	//	Memory     uint16 `json:"memory"`      // contract template bytecode memory size(Byte), use to compute transaction fee
 	//	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 	//}
-	fmt.Println("Install result:==========================================================",payloadUnit)
+	fmt.Println("Install result:==========================================================", payloadUnit)
 	return payloadUnit, nil
 }
 
@@ -198,26 +198,26 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	//test
 	if cfg.DebugTest {
 		log.Info("enter contract debug test")
-			tmpcc, err := listGet(templateId)
-			if err == nil {
-				templateCC.Name = tmpcc.name
-				templateCC.Path = tmpcc.path
-				templateCC.Version = tmpcc.vers
-			} else {
-				errMsg := fmt.Sprintf("Deploy not find tplId[%s] in list", hex.EncodeToString(templateId))
-				log.Error(errMsg)
-				return nil, nil, errors.New(errMsg)
-			}
-	}else{
+		tmpcc, err := listGet(templateId)
+		if err == nil {
+			templateCC.Name = tmpcc.name
+			templateCC.Path = tmpcc.path
+			templateCC.Version = tmpcc.vers
+		} else {
+			errMsg := fmt.Sprintf("Deploy not find tplId[%s] in list", hex.EncodeToString(templateId))
+			log.Error(errMsg)
+			return nil, nil, errors.New(errMsg)
+		}
+	} else {
 		templateCC, chaincodeData, err = ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 		if err != nil {
-			log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId,"error", err)
+			log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, "error", err)
 			return nil, nil, err
 		}
 	}
 	txsim, err := mksupt.GetTxSimulator(idag, chainID, txId)
 	if err != nil {
-		log.Error("getTxSimulator err:","error",err)
+		log.Error("getTxSimulator err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
 	usrccName := templateCC.Name + "-" + txId
@@ -236,7 +236,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	spec.ChaincodeId = chaincodeID
 	err = ucc.DeployUserCC(chaincodeData, spec, setChainId, usrcc, txId, txsim, setTimeOut)
 	if err != nil {
-		log.Error("deployUserCC err:","error",err)
+		log.Error("deployUserCC err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	btxId, err := hex.DecodeString(txId)
@@ -267,7 +267,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	//	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
 	//	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
 	//}
-	fmt.Println("Deploy result:==========================================================",unit)
+	fmt.Println("Deploy result:==========================================================", unit)
 	return cc.Id, unit, err
 }
 
@@ -277,7 +277,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	log.Infof("enter ccapi.go Invoke")
 	defer log.Infof("exit ccapi.go Invoke")
-	log.Infof("chainID[%s]-deployId[%s]-txid[%s]",chainID, hex.EncodeToString(deployId), txid)
+	log.Infof("chainID[%s]-deployId[%s]-txid[%s]", chainID, hex.EncodeToString(deployId), txid)
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
@@ -339,7 +339,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
 	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 	//}
-	fmt.Println("Invoke result:==========================================================",unit)
+	fmt.Println("Invoke result:==========================================================", unit)
 	return unit, nil
 }
 

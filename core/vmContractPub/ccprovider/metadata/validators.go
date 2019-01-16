@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-	
+
 	"github.com/palletone/go-palletone/common/log"
 )
 

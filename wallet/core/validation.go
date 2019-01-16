@@ -17,10 +17,10 @@
 package core
 
 import (
-	"fmt"
 	"bytes"
-	"math/big"
 	"errors"
+	"fmt"
+	"math/big"
 
 	"github.com/palletone/go-palletone/common"
 )
@@ -39,6 +39,7 @@ func (vs *ValidationMessages) warn(msg string) {
 func (vs *ValidationMessages) info(msg string) {
 	vs.Messages = append(vs.Messages, ValidationInfo{"Info", msg})
 }
+
 //////stub
 type AbiDb struct {
 	db           map[string]string
@@ -59,6 +60,7 @@ func (v *Validator) ValidateTransaction(txArgs *SendTxArgs, methodSelector *stri
 	msgs := &ValidationMessages{}
 	return msgs, v.validate(msgs, txArgs, methodSelector)
 }
+
 /*
 type Validator struct {
 	db *AbiDb
@@ -140,4 +142,3 @@ func (v *Validator) validate(msgs *ValidationMessages, txargs *SendTxArgs, metho
 	}
 	return nil
 }
-

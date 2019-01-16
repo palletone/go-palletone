@@ -19,7 +19,6 @@
 
 package sysccprovider
 
-
 // SystemChaincodeProvider provides an abstraction layer that is
 // used for different packages to interact with code in the
 // system chaincode package without importing it; more methods

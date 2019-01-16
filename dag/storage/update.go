@@ -23,14 +23,14 @@ import (
 )
 
 // update
-func Update(db ptndb.Database,key, value []byte) error {
-	if err := Delete(db,key); err != nil {
+func Update(db ptndb.Database, key, value []byte) error {
+	if err := Delete(db, key); err != nil {
 		return err
 	}
 	return db.Put(key, value)
 }
 
 // delete
-func Delete(db ptndb.Database,key []byte) error {
+func Delete(db ptndb.Database, key []byte) error {
 	return db.Delete(key)
 }

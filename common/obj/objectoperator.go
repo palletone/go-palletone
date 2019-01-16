@@ -24,6 +24,7 @@ import (
 	"bytes"
 	"encoding/gob"
 )
+
 //Deep copy an object to a new object
 func DeepCopy(dst, src interface{}) error {
 	var buf bytes.Buffer

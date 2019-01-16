@@ -17,7 +17,6 @@
  * @date 2018
  */
 
-
 package ccprovider
 
 import (
@@ -25,8 +24,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/golang/protobuf/proto"
 	"bytes"
+	"github.com/golang/protobuf/proto"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 )
@@ -136,29 +135,29 @@ func (ccpack *CDSPackage) getCDSData(cds *pb.ChaincodeDeploymentSpec) ([]byte, [
 
 	//glh
 	/*
-	if err = factory.InitFactories(nil); err != nil {
-		return nil, nil, nil, fmt.Errorf("Internal error, BCCSP could not be initialized : %s", err)
-	}
+		if err = factory.InitFactories(nil); err != nil {
+			return nil, nil, nil, fmt.Errorf("Internal error, BCCSP could not be initialized : %s", err)
+		}
 
-	//compute hashes now
-	hash, err := factory.GetDefault().GetHash(&bccsp.SHAOpts{})
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	cdsdata := &CDSData{}
+		//compute hashes now
+		hash, err := factory.GetDefault().GetHash(&bccsp.SHAOpts{})
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		cdsdata := &CDSData{}
 
-	//code hash
-	hash.Write(cds.CodePackage)
-	cdsdata.CodeHash = hash.Sum(nil)
+		//code hash
+		hash.Write(cds.CodePackage)
+		cdsdata.CodeHash = hash.Sum(nil)
 
-	hash.Reset()
+		hash.Reset()
 
-	//metadata hash
-	hash.Write([]byte(cds.ChaincodeSpec.ChaincodeId.Name))
-	hash.Write([]byte(cds.ChaincodeSpec.ChaincodeId.Version))
+		//metadata hash
+		hash.Write([]byte(cds.ChaincodeSpec.ChaincodeId.Name))
+		hash.Write([]byte(cds.ChaincodeSpec.ChaincodeId.Version))
 
-	cdsdata.MetaDataHash = hash.Sum(nil)
-*/
+		cdsdata.MetaDataHash = hash.Sum(nil)
+	*/
 	cdsdata := &CDSData{}
 
 	cdsdata.CodeHash = util.ComputeSHA256(cds.CodePackage)

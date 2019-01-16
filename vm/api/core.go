@@ -20,9 +20,9 @@
 package api
 
 import (
-	"io"
-	"golang.org/x/net/context"
 	"github.com/palletone/go-palletone/vm/ccintf"
+	"golang.org/x/net/context"
+	"io"
 )
 
 type BuildSpecFactory func() (io.Reader, error)

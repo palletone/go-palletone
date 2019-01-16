@@ -103,7 +103,7 @@ func (c *Contract) Close() error {
 // Chain code ID for multiple chains
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
 	log.Info("===========================enter contract.go Install==============================")
-	defer 	log.Info("===========================exit contract.go Install==============================")
+	defer log.Info("===========================exit contract.go Install==============================")
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
@@ -122,7 +122,7 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 // and the deployment unit
 func (c *Contract) Deploy(chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("===========================enter contract.go Deploy==============================")
-	defer 	log.Info("===========================exit contract.go Deploy==============================")
+	defer log.Info("===========================exit contract.go Deploy==============================")
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
@@ -136,7 +136,7 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txId string, args [
 // and the function returns the contract call unit.
 func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	log.Info("===========================enter contract.go Invoke==============================")
-	defer 	log.Info("===========================exit contract.go Invoke==============================")
+	defer log.Info("===========================exit contract.go Invoke==============================")
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
