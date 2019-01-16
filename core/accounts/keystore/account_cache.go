@@ -27,9 +27,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core/accounts"
 	"gopkg.in/fatih/set.v0"
 )
 

@@ -15,6 +15,7 @@
 // along with go-ethereum. If not, see <http://www.gnu.org/licenses/>.
 
 package rules
+
 /*would recover
 import (
 	"encoding/json"

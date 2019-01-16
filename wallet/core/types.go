@@ -20,9 +20,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 

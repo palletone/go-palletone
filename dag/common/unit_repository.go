@@ -1203,14 +1203,23 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 	return alltxs, err1
 }
 
-//get
 func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error) {
-	var mds []*modules.FileInfo
 	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
 	if err != nil {
 		return nil, err
 	}
+	mds0, err := unitOp.GetFileInfoByHash(hashs)
+	if hashs == nil {
+		hash := common.HexToHash(string(filehash))
+		hashs = append(hashs, hash)
+		mds1, err := unitOp.GetFileInfoByHash(hashs)
+		return mds1, err
+	}
+	return mds0, err
+}
 
+func (unitOp *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.FileInfo, error) {
+	var mds []*modules.FileInfo
 	for _, hash := range hashs {
 		var md modules.FileInfo
 		unithash, unitindex, _, err := unitOp.dagdb.GetTxLookupEntry(hash)
@@ -1239,6 +1248,7 @@ func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]*modules.FileI
 	}
 	return mds, nil
 }
+
 
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
 	hash, _, err := rep.propdb.GetLastStableUnit(assetID)

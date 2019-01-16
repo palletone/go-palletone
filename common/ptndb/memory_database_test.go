@@ -21,46 +21,45 @@
 package ptndb
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestMemDatabase_NewIteratorWithPrefix(t *testing.T) {
 
-	db,_:=NewMemDatabase()
-	db.Put([]byte("a"),[]byte("aaa"))
-	db.Put([]byte("ab"),[]byte("aaabbb"))
-	db.Put([]byte("b"),[]byte("bbb"))
-	db.Put([]byte("c"),[]byte("ccc"))
-	db.Put([]byte("ba"),[]byte("bbbaaa"))
-	db.Put([]byte("abc"),[]byte("abcabc"))
-	it:=db.NewIteratorWithPrefix([]byte("a"))
-	itCount:=0
-	for it.Next(){
-		t.Logf("{%d} Key[%s], Value[%s]",itCount,it.Key(),it.Value())
+	db, _ := NewMemDatabase()
+	db.Put([]byte("a"), []byte("aaa"))
+	db.Put([]byte("ab"), []byte("aaabbb"))
+	db.Put([]byte("b"), []byte("bbb"))
+	db.Put([]byte("c"), []byte("ccc"))
+	db.Put([]byte("ba"), []byte("bbbaaa"))
+	db.Put([]byte("abc"), []byte("abcabc"))
+	it := db.NewIteratorWithPrefix([]byte("a"))
+	itCount := 0
+	for it.Next() {
+		t.Logf("{%d} Key[%s], Value[%s]", itCount, it.Key(), it.Value())
 		itCount++
 	}
-	assert.True(t,itCount==3,"Result count not match")
+	assert.True(t, itCount == 3, "Result count not match")
 
-	it2:=db.NewIteratorWithPrefix([]byte("x"))
-	assert.False(t,it2.Next())
+	it2 := db.NewIteratorWithPrefix([]byte("x"))
+	assert.False(t, it2.Next())
 
 }
 func TestMemDatabase_NewIterator(t *testing.T) {
-	db,_:=NewMemDatabase()
-	db.Put([]byte("a"),[]byte("aaa"))
-	db.Put([]byte("ab"),[]byte("aaabbb"))
-	db.Put([]byte("b"),[]byte("bbb"))
-	db.Put([]byte("c"),[]byte("ccc"))
-	db.Put([]byte("ba"),[]byte("bbbaaa"))
-	db.Put([]byte("abc"),[]byte("abcabc"))
-	it:=db.NewIterator()
-	itCount:=0
-	for it.Next(){
-		t.Logf("{%d} Key[%s], Value[%s]",itCount,it.Key(),it.Value())
+	db, _ := NewMemDatabase()
+	db.Put([]byte("a"), []byte("aaa"))
+	db.Put([]byte("ab"), []byte("aaabbb"))
+	db.Put([]byte("b"), []byte("bbb"))
+	db.Put([]byte("c"), []byte("ccc"))
+	db.Put([]byte("ba"), []byte("bbbaaa"))
+	db.Put([]byte("abc"), []byte("abcabc"))
+	it := db.NewIterator()
+	itCount := 0
+	for it.Next() {
+		t.Logf("{%d} Key[%s], Value[%s]", itCount, it.Key(), it.Value())
 		itCount++
 	}
-	assert.True(t,itCount==6,"Result count not match")
-
+	assert.True(t, itCount == 6, "Result count not match")
 
 }

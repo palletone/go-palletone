@@ -179,7 +179,7 @@ func TestGetBlockHeadersDataEncodeDecode(t *testing.T) {
 		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash, Number: modules.ChainIndex{modules.IDType16{}, true, 2}}}},
 
 		// Providing arbitrary query field should also work
-		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number:modules.ChainIndex{modules.IDType16{}, true, 3}}, Amount: 314, Skip: 1, Reverse: true}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{}, true, 3}}, Amount: 314, Skip: 1, Reverse: true}},
 		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash, Number: modules.ChainIndex{modules.IDType16{}, true, 4}}, Amount: 314, Skip: 1, Reverse: true}},
 	}
 	// Iterate over each of the tests and try to encode and then decode

@@ -268,48 +268,48 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 	defer log.Info("GetChainCodePayload exit")
 	codeDescriptor, err := getCodeDescriptor(spec) //获取codeDescriptor，即构造CodeDescriptor，Gopath为go环境gopath路径，Pkg为代码相对路径
 	if err != nil {
-		log.Info("getCodeDescriptor err:","error",err)
+		log.Info("getCodeDescriptor err:", "error", err)
 		return nil, err
 	}
 	//获取链码vendor的所有文件夹
 	PthSep := string(os.PathSeparator)
 	tld := filepath.Join(codeDescriptor.Gopath, "src", codeDescriptor.Pkg)
-	chaincodeVendorDir :=tld+PthSep+"vendor"
+	chaincodeVendorDir := tld + PthSep + "vendor"
 	cl := len(chaincodeVendorDir)
-	chaincodeVendorDirs,err := getAllDirs(chaincodeVendorDir)
+	chaincodeVendorDirs, err := getAllDirs(chaincodeVendorDir)
 	//获取项目vendor的所有文件夹
-	ploDir := filepath.Join(codeDescriptor.Gopath,"src","github.com/palletone/go-palletone/vendor")
+	ploDir := filepath.Join(codeDescriptor.Gopath, "src", "github.com/palletone/go-palletone/vendor")
 	pl := len(ploDir)
-	pVendorDirs,err := getAllDirs(ploDir)
+	pVendorDirs, err := getAllDirs(ploDir)
 	newFiles := []string{}
-	for _,cDir := range chaincodeVendorDirs {
+	for _, cDir := range chaincodeVendorDirs {
 		pIsHave := false
-		for _,pDir := range pVendorDirs {
+		for _, pDir := range pVendorDirs {
 			//fmt.Println(cDir[cl+1:]+"============"+pDir[pl+1:])
-			if strings.Compare(cDir[cl+1:],pDir[pl+1:]) == 0 {
+			if strings.Compare(cDir[cl+1:], pDir[pl+1:]) == 0 {
 				pIsHave = true
 			}
 		}
 		if !pIsHave {
-			newFiles = append(newFiles,cDir)
+			newFiles = append(newFiles, cDir)
 		}
 	}
 	//判断是否包含项目引用
 	endFiles := []string{}
-	for _,file := range newFiles {
-		if !strings.Contains(file,"github.com/palletone") {
-			endFiles =  append(endFiles,file)
+	for _, file := range newFiles {
+		if !strings.Contains(file, "github.com/palletone") {
+			endFiles = append(endFiles, file)
 		}
 	}
 	//获取链码源码（不包含依赖包）
-	sourcefiles,err := getAllFiles(tld)
+	sourcefiles, err := getAllFiles(tld)
 	if err != nil {
-		log.Info("getAllFiles err:","error",err)
-		return nil,err
+		log.Info("getAllFiles err:", "error", err)
+		return nil, err
 	}
 	if len(endFiles) > 0 {
 		//获取vendor文件
-		for _,d := range endFiles {
+		for _, d := range endFiles {
 			vendorFiles, err := getAllFiles(d)
 			if err != nil {
 				log.Info("getAllFiles err:", "error", err)
@@ -336,20 +336,20 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 }
 
 //获取目录
-func getAllDirs(rootDir string) (map[string]string,error) {
+func getAllDirs(rootDir string) (map[string]string, error) {
 	dirs := make(map[string]string)
 	dir, err := ioutil.ReadDir(rootDir)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	PthSep := string(os.PathSeparator)
-	for _,fi := range dir {
+	for _, fi := range dir {
 		if fi.IsDir() {
 			//dirs = append(dirs,rootDir+PthSep+fi.Name())
-			d := rootDir+PthSep+fi.Name()
+			d := rootDir + PthSep + fi.Name()
 			dirs[d] = d
-			getAllDirs(rootDir+PthSep+fi.Name())
-		}else {
+			getAllDirs(rootDir + PthSep + fi.Name())
+		} else {
 			continue
 		}
 	}
@@ -360,11 +360,11 @@ func getAllDirs(rootDir string) (map[string]string,error) {
 			dirs[temp1] = temp1
 		}
 	}
-	return dirs,nil
+	return dirs, nil
 }
 
 //获取指定目录下的所有文件,包含子目录下的文件
-func getAllFiles(dirPth string) ([]SourceFile,error) {
+func getAllFiles(dirPth string) ([]SourceFile, error) {
 	var dirs []string
 	sourcefiles := []SourceFile{}
 	dir, err := ioutil.ReadDir(dirPth)
@@ -374,8 +374,8 @@ func getAllFiles(dirPth string) ([]SourceFile,error) {
 	PthSep := string(os.PathSeparator)
 	//suffix = strings.ToUpper(suffix) //忽略后缀匹配的大小写
 	for _, fi := range dir {
-		if fi.IsDir(){ // 目录, 递归遍历
-			if strings.Contains(fi.Name(),"vendor") {
+		if fi.IsDir() { // 目录, 递归遍历
+			if strings.Contains(fi.Name(), "vendor") {
 				continue
 			}
 			dirs = append(dirs, dirPth+PthSep+fi.Name())
@@ -386,10 +386,10 @@ func getAllFiles(dirPth string) ([]SourceFile,error) {
 			// we only want 'fileTypes' source files at this point
 			if _, ok := includeFileTypes[ext]; ok {
 				sourceFile := SourceFile{
-					path:dirPth+PthSep+fi.Name(),
-					name:dirPth+PthSep+fi.Name(),
+					path: dirPth + PthSep + fi.Name(),
+					name: dirPth + PthSep + fi.Name(),
 				}
-				sourcefiles = append(sourcefiles,sourceFile)
+				sourcefiles = append(sourcefiles, sourceFile)
 			}
 		}
 	}
@@ -397,12 +397,11 @@ func getAllFiles(dirPth string) ([]SourceFile,error) {
 	for _, table := range dirs {
 		temp, _ := getAllFiles(table)
 		for _, temp1 := range temp {
-			sourcefiles = append(sourcefiles,temp1)
+			sourcefiles = append(sourcefiles, temp1)
 		}
 	}
 	return sourcefiles, nil
 }
-
 
 // Generates a deployment payload for GOLANG as a series of src/$pkg entries in .tar.gz format
 func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
@@ -450,8 +449,8 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// Remove any imports that are provided by the ccenv or system
 	// --------------------------------------------------------------------------------------
 	var provided = map[string]bool{ //如下两个包为ccenv已自带，可删除
-	//"github.com/palletone/go-palletone/contracts/shim":                  true,
-	//"github.com/palletone/go-palletone/core/vmContractPub/protos/peer":  true,
+		//"github.com/palletone/go-palletone/contracts/shim":                  true,
+		//"github.com/palletone/go-palletone/core/vmContractPub/protos/peer":  true,
 	}
 
 	// Golang "pseudo-packages" - packages which don't actually exist

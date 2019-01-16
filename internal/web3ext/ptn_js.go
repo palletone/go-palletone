@@ -150,8 +150,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'signRawTransaction',
 			call: 'ptn_signRawTransaction',
-			params: 1,
-			inputFormatter: [null]
+			params: 3,
+			inputFormatter: [null,null, null]
 		}),
 		new web3._extend.Method({
 			name: 'sendRawTransaction',

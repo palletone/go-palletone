@@ -31,8 +31,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/palletone/go-palletone/contracts/platforms/util"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/platforms/util"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cutil "github.com/palletone/go-palletone/vm/common"
 )
