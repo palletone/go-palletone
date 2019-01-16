@@ -56,32 +56,6 @@ func NewMediatorSchl() *MediatorSchedule {
 	}
 }
 
-/**
-@brief 获取指定的未来slotNum对应的调度mediator来生产见证单元.
-Get the mediator scheduled for uint verification in a slot.
-
-slotNum总是对应于未来的时间。
-slotNum always corresponds to a time in the future.
-
-如果slotNum == 1，则返回下一个调度Mediator。
-If slotNum == 1, return the next scheduled mediator.
-
-如果slotNum == 2，则返回下下一个调度Mediator。
-If slotNum == 2, return the next scheduled mediator after 1 uint gap.
-*/
-func (ms *MediatorSchedule) GetScheduledMediator(dgp *DynamicGlobalProperty, slotNum uint32) common.Address {
-	currentASlot := dgp.CurrentASlot + uint64(slotNum)
-	csmLen := len(ms.CurrentShuffledMediators)
-	if csmLen == 0 {
-		log.Error("The current number of shuffled mediators is 0!")
-		return common.Address{}
-	}
-
-	// 由于创世单元不是有mediator生产，所以这里需要减1
-	index := (currentASlot - 1) % uint64(csmLen)
-	return ms.CurrentShuffledMediators[index]
-}
-
 // UpdateDynGlobalProp, update global dynamic data
 // @author Albert·Gou
 func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits uint64) {

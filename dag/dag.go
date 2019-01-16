@@ -89,15 +89,15 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	gasToken := nconfig.GetGasToken()
 	hash, _, err := d.propRep.GetNewestUnit(gasToken)
 	if err != nil {
-		log.Error("Can not get last unstable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
+		log.Error("Can not get newest unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
 		return nil
 	}
 	unit, err := d.Memdag.GetUnit(hash)
 	if err == nil {
-		log.Debugf("Get last unstable unit from memdag by hash:%s", hash.String())
+		log.Debugf("Get newest unit from memdag by hash:%s", hash.String())
 		return unit
 	}
-	log.Infof("Cannot get unstable unit from memdag by hash:%s, try stable unit...", hash.String())
+	log.Infof("Cannot get newest unit from memdag by hash:%s, try stable unit from db...", hash.String())
 	hash, _, err = d.propRep.GetLastStableUnit(gasToken)
 	if err != nil {
 		log.Error("Can not get last stable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
@@ -213,6 +213,13 @@ func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
+	if d.Memdag.Exists(hash) {
+		unit, err := d.Memdag.GetUnit(hash)
+		if err != nil {
+			return nil, err
+		}
+		return unit.UnitHeader, nil
+	}
 	//height, err := d.GetUnitNumber(hash)
 	//if err != nil {
 	//	log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
@@ -535,11 +542,13 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
-	cache := freecache.NewCache(100 * 1024 * 1024)
+
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
-	propRep := dagcommon.NewPropCacheRepository(propDb, cache)
+	//cache := freecache.NewCache(100 * 1024 * 1024)
+	//propRep := dagcommon.NewPropCacheRepository(propDb, cache)
+	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),

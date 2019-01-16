@@ -734,9 +734,9 @@ func (mr *MockIDagMockRecorder) GetPrecedingMediatorNodes() *gomock.Call {
 }
 
 // UnitIrreversibleTime mocks base method
-func (m *MockIDag) UnitIrreversibleTime() uint {
+func (m *MockIDag) UnitIrreversibleTime() time.Duration {
 	ret := m.ctrl.Call(m, "UnitIrreversibleTime")
-	ret0, _ := ret[0].(uint)
+	ret0, _ := ret[0].(time.Duration)
 	return ret0
 }
 

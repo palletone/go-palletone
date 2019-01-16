@@ -419,8 +419,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
-	//TODO judge msg.Code must vss code when peer In the vss processing stage.
-	//Otherwise, immediatly return errResp.On the basis of ps.mediators
 
 	defer msg.Discard()
 

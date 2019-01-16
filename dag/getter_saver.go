@@ -167,7 +167,7 @@ func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
 }
 
 func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
-	return dag.GetMediatorSchl().GetScheduledMediator(dag.GetDynGlobalProp(), slotNum)
+	return dag.propRep.GetScheduledMediator(slotNum)
 }
 
 func (dag *Dag) HeadUnitTime() int64 {

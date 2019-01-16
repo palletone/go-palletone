@@ -72,7 +72,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			origin, _ = pm.dag.GetHeaderByHash(query.Origin.Hash)
 		} else {
 			log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number.Index)
-			origin, _ = pm.dag.GetHeaderByNumber(query.Origin.Number)
+			origin, _ = pm.dag.GetHeaderByNumber(&query.Origin.Number)
 		}
 
 		if origin == nil {
@@ -336,7 +336,7 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 	}
 	log.Debug("===NewBlockHashesMsg===", "len(unknown):", len(unknown))
 	for _, block := range unknown {
-		pm.fetcher.Notify(p.id, block.Hash, block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
+		pm.fetcher.Notify(p.id, block.Hash, &block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
 	}
 	return nil
 }

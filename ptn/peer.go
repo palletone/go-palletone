@@ -212,7 +212,7 @@ func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []*modules.ChainI
 	request := make(newBlockHashesData, len(hashes))
 	for i := 0; i < len(hashes); i++ {
 		request[i].Hash = hashes[i]
-		request[i].Number = numbers[i]
+		request[i].Number = *numbers[i]
 	}
 	return p2p.Send(p.rw, NewBlockHashesMsg, request)
 }
@@ -268,6 +268,17 @@ func (p *peer) RequestOneHeader(hash common.Hash) error {
 // specified header query, based on the hash of an origin block.
 func (p *peer) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
+	//headerData := getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse}
+	//data, err := rlp.EncodeToBytes(headerData)
+	//if err != nil {
+	//	log.Error("RequestHeadersByHash", "rlp.EncodeToBytes err:", err.Error())
+	//}
+	//
+	//var query getBlockHeadersData
+	//if err := rlp.DecodeBytes(data, &query); err != nil {
+	//	log.Error("RequestHeadersByHash", "rlp.DecodeBytes err:", err.Error())
+	//}
+
 	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
@@ -286,7 +297,7 @@ func (p *peer) RequestLeafNodes() error {
 // specified header query, based on the number of an origin block.
 func (p *peer) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "index", origin.Index, "skip", skip, "reverse", reverse)
-	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes

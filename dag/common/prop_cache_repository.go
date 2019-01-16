@@ -21,8 +21,8 @@
 package common
 
 import (
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -46,7 +46,7 @@ func NewPropCacheRepository(db storage.IPropertyDb, cache palletcache.ICache) *P
 	return &PropCacheRepository{dbRep: dbRep, cache: cache}
 }
 func (pRep *PropCacheRepository) storeToCache(key []byte, value interface{}) {
-	data, _ := json.Marshal(value)
+	data, _ := rlp.EncodeToBytes(value)
 	pRep.cache.Set(key, data, 0)
 }
 func (pRep *PropCacheRepository) retrieveFromCache(key []byte, value interface{}) bool {
@@ -54,7 +54,8 @@ func (pRep *PropCacheRepository) retrieveFromCache(key []byte, value interface{}
 	if err != nil {
 		return false
 	}
-	if err = json.Unmarshal(data, value); err != nil {
+
+	if err = rlp.DecodeBytes(data, value); err != nil {
 		return false
 	}
 	return true
@@ -81,13 +82,14 @@ func (pRep *PropCacheRepository) StoreDynGlobalProp(dgp *modules.DynamicGlobalPr
 }
 func (pRep *PropCacheRepository) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	gp := &modules.DynamicGlobalProperty{}
-	if !pRep.retrieveFromCache(DynamicGlobalProperty, gp) {
-		gp, err := pRep.dbRep.RetrieveDynGlobalProp()
-		if err != nil {
-			return nil, err
-		}
-		pRep.storeToCache(DynamicGlobalProperty, gp)
-	}
+	pRep.retrieveFromCache(DynamicGlobalProperty, gp)
+	//if !pRep.retrieveFromCache(DynamicGlobalProperty, gp) {
+	//	gp, err := pRep.dbRep.RetrieveDynGlobalProp()
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	pRep.storeToCache(DynamicGlobalProperty, gp)
+	//}
 	return gp, nil
 }
 func (pRep *PropCacheRepository) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
@@ -128,4 +130,7 @@ func (pRep *PropCacheRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *mo
 }
 func (pRep *PropCacheRepository) GetSlotAtTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, when time.Time) uint32 {
 	return pRep.dbRep.GetSlotAtTime(gp, dgp, when)
+}
+func (pRep *PropCacheRepository) GetScheduledMediator(slotNum uint32) common.Address {
+	return pRep.dbRep.GetScheduledMediator(slotNum)
 }

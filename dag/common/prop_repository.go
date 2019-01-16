@@ -44,7 +44,7 @@ type IPropRepository interface {
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
 	GetNewestUnitTimestamp(token modules.IDType16) (int64, error)
-
+	GetScheduledMediator(slotNum uint32) common.Address
 	UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty) bool
 	GetSlotTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, slotNum uint32) time.Time
 	GetSlotAtTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, when time.Time) uint32
@@ -214,6 +214,34 @@ func (pRep *PropRepository) GetSlotAtTime(gp *modules.GlobalProperty, dgp *modul
 		return 0
 	}
 	return uint32(diffSecs/interval) + 1
+}
+
+/**
+@brief 获取指定的未来slotNum对应的调度mediator来生产见证单元.
+Get the mediator scheduled for uint verification in a slot.
+
+slotNum总是对应于未来的时间。
+slotNum always corresponds to a time in the future.
+
+如果slotNum == 1，则返回下一个调度Mediator。
+If slotNum == 1, return the next scheduled mediator.
+
+如果slotNum == 2，则返回下下一个调度Mediator。
+If slotNum == 2, return the next scheduled mediator after 1 uint gap.
+*/
+func (pRep *PropRepository) GetScheduledMediator(slotNum uint32) common.Address {
+	ms, _ := pRep.RetrieveMediatorSchl()
+	dgp, _ := pRep.RetrieveDynGlobalProp()
+	currentASlot := dgp.CurrentASlot + uint64(slotNum)
+	csmLen := len(ms.CurrentShuffledMediators)
+	if csmLen == 0 {
+		log.Error("The current number of shuffled mediators is 0!")
+		return common.Address{}
+	}
+
+	// 由于创世单元不是有mediator生产，所以这里需要减1
+	index := (currentASlot - 1) % uint64(csmLen)
+	return ms.CurrentShuffledMediators[index]
 }
 
 /**

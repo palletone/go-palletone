@@ -35,6 +35,7 @@ type IMemDag interface {
 	SwitchMainChain() error
 	QueryIndex(assetId string, maturedUnitHash common.Hash) (uint64, int)
 	GetCurrentUnit(assetid modules.IDType16, index uint64) (*modules.Unit, error)
+	GetNewestUnit(assetid modules.IDType16) (*modules.Unit, error)
 	GetDelhashs() chan common.Hash
 	PushDelHashs(hashs []common.Hash)
 }
