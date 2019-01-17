@@ -44,7 +44,7 @@ var DefaultConfig = Config{
 	// memory unit, unit number
 	MemoryUnitSize: 1280,
 	// Irreversible Height
-	IrreversibleHeight:           16,
+	IrreversibleHeight:           1, // 单节点memdag正常缓存区块，需要将该值设置为1
 	WhetherValidateUnitSignature: false,
 	GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
 	PtnAssetHex:                  modules.CoreAsset.AssetId.String(),

@@ -63,7 +63,7 @@ type IUnitRepository interface {
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
-	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
+	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	GetAddrOutput(addr string) ([]modules.Output, error)
 	GetTrieSyncProgress() (uint64, error)
@@ -78,7 +78,7 @@ type IUnitRepository interface {
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
+	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 
 	//获得某个分区上的最新不可逆单元
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
@@ -180,9 +180,10 @@ func (rep *UnitRepository) GetCommon(key []byte) ([]byte, error) { return rep.da
 func (rep *UnitRepository) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return rep.dagdb.GetCommonByPrefix(prefix)
 }
-func (rep *UnitRepository) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-	return rep.dagdb.GetReqIdByTxHash(hash)
-}
+
+//func (rep *UnitRepository) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
+//	return rep.dagdb.GetReqIdByTxHash(hash)
+//}
 func (rep *UnitRepository) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 	return rep.dagdb.GetTxHashByReqId(reqid)
 }
@@ -1203,7 +1204,7 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 	return alltxs, err1
 }
 
-func (unitOp *UnitRepository) GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error) {
+func (unitOp *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
 	if err != nil {
 		return nil, err
@@ -1231,11 +1232,8 @@ func (unitOp *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules
 		if err != nil {
 			return nil, err
 		}
-		for k, v := range header.ParentsHash {
-			if k == 0 {
-				md.ParentsHash = v
-			}
-
+		for _, v := range header.ParentsHash {
+			md.ParentsHash = v
 		}
 		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
 		md.MainData = getMaindata(tx)
@@ -1248,7 +1246,6 @@ func (unitOp *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules
 	}
 	return mds, nil
 }
-
 
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
 	hash, _, err := rep.propdb.GetLastStableUnit(assetID)
