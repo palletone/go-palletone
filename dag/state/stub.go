@@ -17,8 +17,8 @@
 package state
 
 import (
-	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/trie"
 )
 
 //

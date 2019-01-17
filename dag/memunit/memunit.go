@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -45,11 +46,11 @@ type MemUnit struct {
 func InitMemUnit() *MemUnit {
 	memUnitInfo := new(sync.Map)
 	numberToHash := map[*modules.ChainIndex]common.Hash{}
-	memUnit := MemUnit{
+	memUnit := &MemUnit{
 		memUnitInfo:  memUnitInfo,
 		numberToHash: numberToHash,
 	}
-	return &memUnit
+	return memUnit
 }
 
 //set the mapping relationship
@@ -99,7 +100,7 @@ func (mu *MemUnit) Add(u *modules.Unit) error {
 	if !ok {
 		mu.memUnitInfo.Store(u.Hash(), u)
 	}
-	log.Info("insert memUnit success.", "hashHex", u.Hash().String())
+	log.Info("insert memUnit success.", "hashHex", u.Hash().String(), "index", u.NumberU64())
 	return nil
 }
 
@@ -323,6 +324,7 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 	}
 	// 判断够不够最小规模mediator数，不够则返回，否则返回高度最小且最老的hash值。
 	if len(countMediators) <= dagconfig.DefaultConfig.IrreversibleHeight {
+		log.Debug("countMediators< IrreversibleHeight", "count", countMediators, "IrreversibleHeight", dagconfig.DefaultConfig.IrreversibleHeight)
 		return nil
 	}
 
@@ -330,7 +332,8 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 		sort.Sort(all_index)
 		min_index = all_index[0]
 	}
-
+	// update all_index
+	all_index = all_index[1:]
 	s_index := uint64(index - int64(dagconfig.DefaultConfig.IrreversibleHeight-1))
 	if min_index > 0 {
 		s_index = min_index
@@ -339,9 +342,11 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 	hashs, has := (*forkIndex)[s_index]
 
 	if !has {
+		log.Debug("forkIndex is not exist the s_index.", "s_index", s_index)
 		return nil
 	}
 	if len(hashs) <= 0 {
+		log.Debug("forkIndex  is exist the s_index", "s_index", s_index)
 		return nil
 	}
 	//hash := (hashs)[0]
@@ -351,7 +356,9 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 			delHashs = append(delHashs, hashs[i].hash)
 		}
 	}
+
 	// forkIndex.RemoveStableIndex(s_index)
+	log.Debug("get stable hash success.")
 	return delHashs
 }
 func (forkIndex *ForkIndex) RemoveStableIndex(index uint64) {

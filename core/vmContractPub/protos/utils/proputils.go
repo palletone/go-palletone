@@ -22,13 +22,13 @@ import (
 	"errors"
 	"fmt"
 
+	"encoding/hex"
 	"github.com/golang/protobuf/proto"
-	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	"github.com/palletone/go-palletone/contracts/platforms"
+	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"encoding/hex"
+	"github.com/palletone/go-palletone/core/vmContractPub/util"
 )
 
 // GetChaincodeInvocationSpec get the ChaincodeInvocationSpec from the proposal
@@ -345,6 +345,7 @@ func CreateProposalFromCISAndTxid(txid string, typ common.HeaderType, chainID st
 func CreateChaincodeProposal(typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, creator []byte) (*peer.Proposal, string, error) {
 	return CreateChaincodeProposalWithTransient(typ, chainID, cis, creator, nil)
 }
+
 // CreateChaincodeProposalWithTransient creates a proposal from given input
 // It returns the proposal and the transaction id associated to the proposal
 func CreateChaincodeProposalWithTransient(typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
@@ -362,6 +363,7 @@ func CreateChaincodeProposalWithTransient(typ common.HeaderType, chainID string,
 
 	return CreateChaincodeProposalWithTxIDNonceAndTransient(txid, typ, chainID, cis, nonce, creator, transientMap)
 }
+
 // ComputeProposalTxID computes TxID as the Hash computed
 // over the concatenation of nonce and creator.
 func ComputeProposalTxID(nonce, creator []byte) (string, error) {

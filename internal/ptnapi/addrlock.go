@@ -19,10 +19,10 @@ package ptnapi
 import (
 	"encoding/hex"
 	"fmt"
-	"math"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptnjson"
+	"math"
 	"sync"
 )
 
@@ -109,6 +109,7 @@ var (
 	// avoid the need to create a new instance every time a check is needed.
 	//block91880Hash ,err = common.NewHashFromStr("00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")
 )
+
 type (
 	// DeserializationError describes a failed deserializaion due to bad
 	// user input.  It corresponds to btcjson.ErrRPCDeserialization.
@@ -140,8 +141,6 @@ type SignTransactionParams struct {
 	Flags    string   `jsonrpcdefault:"\"ALL\""`
 }
 
-
-
 // isNullOutpoint determines whether or not a previous transaction output point
 // is set.
 func isNullOutpoint(outpoint *modules.OutPoint) bool {
@@ -150,6 +149,7 @@ func isNullOutpoint(outpoint *modules.OutPoint) bool {
 	}
 	return false
 }
+
 //type SignTransactionResult struct {
 //        TransactionHex string `json:"transactionhex"`
 //        Complete       bool   `json:"complete"`

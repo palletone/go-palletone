@@ -22,8 +22,8 @@ package rwset
 import (
 	"errors"
 
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag"
 )
 
 type RwSetTxMgr struct {

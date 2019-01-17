@@ -17,20 +17,19 @@
  * @date 2018
  */
 
-
 package util
 
 import (
 	"crypto/rand"
 	"fmt"
+	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
+	"hash"
 	"io"
 	"math/big"
 	"reflect"
 	"strings"
 	"time"
-	"hash"
-	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
-	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"crypto/sha256"
 )
@@ -45,7 +44,7 @@ var availableIDgenAlgs = map[string]alg{
 	defaultAlg: {GenerateIDfromTxSHAHash},
 }
 
-func computerHash(data []byte) (hsh []byte, err error){
+func computerHash(data []byte) (hsh []byte, err error) {
 	var hh hash.Hash
 	hh = sha256.New()
 	hh.Write(data)

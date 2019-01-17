@@ -365,7 +365,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
-	//var duration 
+	//var duration
 	//if duration == nil {
 	d = 300 * time.Second
 	//} else if *duration > max {
@@ -879,23 +879,23 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	for _, json := range utxoJsons {
 		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
-				MessageIndex: json.MessageIndex,
-				OutIndex: json.OutIndex,
-				Amount: json.Amount,
-				Asset: json.Asset,
-				PkScriptHex: json.PkScriptHex,
+				MessageIndex:   json.MessageIndex,
+				OutIndex:       json.OutIndex,
+				Amount:         json.Amount,
+				Asset:          json.Asset,
+				PkScriptHex:    json.PkScriptHex,
 				PkScriptString: json.PkScriptString,
-				LockTime: json.LockTime})
+				LockTime:       json.LockTime})
 		} else {
 			if json.Asset == asset {
 				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
-					MessageIndex: json.MessageIndex,
-					OutIndex: json.OutIndex,
-					Amount: json.Amount,
-					Asset: json.Asset,
-					PkScriptHex: json.PkScriptHex,
+					MessageIndex:   json.MessageIndex,
+					OutIndex:       json.OutIndex,
+					Amount:         json.Amount,
+					Asset:          json.Asset,
+					PkScriptHex:    json.PkScriptHex,
 					PkScriptString: json.PkScriptString,
-					LockTime: json.LockTime})
+					LockTime:       json.LockTime})
 			}
 		}
 	}
@@ -966,12 +966,12 @@ func (s *PublicWalletAPI) GetTxByFileHash(ctx context.Context, filehash string) 
 	for _, file := range files {
 		get := walletjson.GetFileInfos{}
 		for _, ph := range file.ParentsHash {
-			get.ParentsHash = ph.String()
+			get.ParentsHash = string(ph)
 		}
-		get.FileData = string(file.MainData)
+		get.FileHash = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
 		get.Timestamp = time.Duration(file.Timestamp)
-		get.Txid = file.Txid.String()
+		get.TransactionHash = file.Txid.String()
 		get.UintHeight = file.UintHeight
 		get.UnitHash = file.UnitHash.String()
 		gets = append(gets, get)

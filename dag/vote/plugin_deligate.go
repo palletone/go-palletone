@@ -28,7 +28,7 @@ func (dp *deligateVotePlugin) SetAgent(voter interface{}, agent interface{}) boo
 
 	//if agent is nil, delete agent.
 	if agent == nilInterface {
-		delete(dp.agentMap,voter)
+		delete(dp.agentMap, voter)
 		return true
 	}
 

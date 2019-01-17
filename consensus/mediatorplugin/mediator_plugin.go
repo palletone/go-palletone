@@ -105,11 +105,11 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 		log.Info("Not producing Unit because production is disabled " +
 			"until we receive a recent Unit (see: --enable-stale-production)")
 	case NotTimeYet:
-		//log.Debug("Not producing Unit because next slot time is " + detail["NextTime"] +
-		//	" , but now is " + detail["Now"])
+		log.Debug("Not producing Unit because next slot time is " + detail["NextTime"] +
+			" , but now is " + detail["Now"])
 	case NotMyTurn:
-		//log.Debug("Not producing Unit because current scheduled mediator is " +
-		//	detail["ScheduledMediator"])
+		log.Debug("Not producing Unit because current scheduled mediator is " +
+			detail["ScheduledMediator"])
 	case Lag:
 		log.Info("Not producing Unit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
@@ -129,9 +129,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
-	defer func(start time.Time) {
-		log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
-	}(time.Now())
+	//defer func(start time.Time) {
+	//	log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
+	//}(time.Now())
 
 	detail := map[string]string{}
 	dag := mp.dag
@@ -230,7 +230,8 @@ func (mp *MediatorPlugin) broadcastAndGroupSignUnit(localMed common.Address, new
 	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
 	}
-	mp.toTBLSRecoverBuf[localMed][newUnit.UnitHash] = newSigShareSet(aSize)
+	unitHash := newUnit.UnitHash
+	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
 
 	// 2. 异步向区块链网络广播验证单元
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
@@ -243,8 +244,10 @@ func (mp *MediatorPlugin) broadcastAndGroupSignUnit(localMed common.Address, new
 	case <-mp.quit:
 		return
 	case <-deleteBuf.C:
-		log.Debugf("the unit(%v) has expired confirmation time, no longer need to recover group-sign",
-			localMed.Str())
-		delete(mp.toTBLSRecoverBuf[localMed], newUnit.UnitHash)
+		if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
+			log.Debugf("the unit(%v) has expired confirmation time, "+"no longer need the mediator(%v) "+
+				"to recover group-sign", unitHash.TerminalString(), localMed.Str())
+			delete(mp.toTBLSRecoverBuf[localMed], unitHash)
+		}
 	}
 }

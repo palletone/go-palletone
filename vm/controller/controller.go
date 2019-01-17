@@ -25,11 +25,11 @@ import (
 	"sync"
 
 	"github.com/palletone/go-palletone/common/log"
-	"golang.org/x/net/context"
 	"github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	"github.com/palletone/go-palletone/vm/dockercontroller"
 	"github.com/palletone/go-palletone/vm/inproccontroller"
+	"golang.org/x/net/context"
 )
 
 type refCountedLock struct {

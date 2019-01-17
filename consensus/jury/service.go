@@ -30,11 +30,11 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 )
 
 type PeerType = int
@@ -314,7 +314,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 
-func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
+func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}

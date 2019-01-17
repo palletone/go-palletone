@@ -267,8 +267,9 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *mod
 		mp.toTBLSSignBuf[localMed] = make(map[common.Hash]*modules.Unit)
 	}
 
-	mp.toTBLSSignBuf[localMed][newUnit.UnitHash] = newUnit
-	go mp.signUnitTBLS(localMed, newUnit.UnitHash)
+	unitHash := newUnit.UnitHash
+	mp.toTBLSSignBuf[localMed][unitHash] = newUnit
+	go mp.signUnitTBLS(localMed, unitHash)
 
 	// 过了 unit 确认时间后，及时删除待群签名的 unit，防止内存溢出
 	expiration := mp.dag.UnitIrreversibleTime()
@@ -278,9 +279,11 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *mod
 	case <-mp.quit:
 		return
 	case <-deleteBuf.C:
-		log.Debugf("the unit(%v) has expired confirmation time, no longer need to sign-group",
-			localMed.Str())
-		delete(mp.toTBLSSignBuf[localMed], newUnit.UnitHash)
+		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
+			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
+				" to sign-group", unitHash.TerminalString(), localMed.Str())
+			delete(mp.toTBLSSignBuf[localMed], unitHash)
+		}
 	}
 }
 
@@ -483,7 +486,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		return
 	}
 
-	log.Debugf("Recovered the Unit(%v)'s the group signature: %v",
+	log.Debugf("Recovered the Unit(%v)'s the Group-sign: %v",
 		unitHash.TerminalString(), hexutil.Encode(groupSig))
 
 	// 5. recover后的相关处理

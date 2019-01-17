@@ -3,9 +3,9 @@ package jury
 import (
 	"time"
 
-	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 

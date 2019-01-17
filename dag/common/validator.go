@@ -303,7 +303,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 
 	default:
-		log.Debug("The payload of message type is not expect. ", "payload_type", t, "app type", app)
+		log.Debug("The payload of message type is unexpected. ", "payload_type", t, "app type", app)
 		return false
 	}
 	return false

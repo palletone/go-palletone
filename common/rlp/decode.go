@@ -128,6 +128,7 @@ func DecodeBytes(b []byte, val interface{}) error {
 	//}
 	return nil
 }
+
 //func GetDecodedFromBytes(b []byte, dataType interface{}) (interface{},error) {
 //	err := DecodeBytes(b,dataType)
 //	if err != nil {

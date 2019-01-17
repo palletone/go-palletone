@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -308,12 +309,12 @@ func (pool *TxPool) loop() {
 
 				pool.mu.Unlock()
 			}
-		// Be unsubscribed due to system stopped
-		//would recover
+			// Be unsubscribed due to system stopped
+			//would recover
 		case <-pool.chainHeadSub.Err():
 			return
 
-		// Handle stats reporting ticks
+			// Handle stats reporting ticks
 		case <-report.C:
 			pool.mu.RLock()
 			pending, queued := pool.stats()
@@ -325,10 +326,10 @@ func (pool *TxPool) loop() {
 				prevPending, prevQueued, prevStales = pending, queued, stales
 			}
 
-		// Handle inactive account transaction eviction
+			// Handle inactive account transaction eviction
 		case <-evict.C:
 
-		// Handle local transaction journal rotation ----- once a honr -----
+			// Handle local transaction journal rotation ----- once a honr -----
 		case <-journal.C:
 			if pool.journal != nil {
 				pool.mu.Lock()
@@ -341,7 +342,7 @@ func (pool *TxPool) loop() {
 		case <-deleteTxTimer.C:
 			go pool.DeleteTx()
 
-		// quit
+			// quit
 		case <-orphanExpireScan.C:
 			go pool.limitNumberOrphans()
 
@@ -553,6 +554,7 @@ func (pool *TxPool) local() map[common.Hash]*modules.TxPoolTransaction {
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error {
 	// Don't accept the transaction if it already in the pool .
+	isContractTplTx := false
 	hash := tx.Tx.Hash()
 	if pool.isTransactionInPool(&hash) {
 		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
@@ -573,10 +575,20 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 				}
 			}
 		}
+		if msg.App ==  modules.APP_CONTRACT_TPL_REQUEST {
+			isContractTplTx = true
+		}
 	}
 	// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
-	if tx.Tx.Size() > 32*1024 {
-		return ErrOversizedData
+	//TODO xiaozhi contract template tx will be big than other tx
+	if isContractTplTx {
+		if tx.Tx.Size() > 128*1024 {
+			return ErrOversizedData
+		}
+	}else {
+		if tx.Tx.Size() > 32*1024 {
+			return ErrOversizedData
+		}
 	}
 	// 交易费太低的交易，不能通过验证。
 	if pool.txfee.Cmp(tx.GetTxFee()) > 0 {
@@ -1179,21 +1191,26 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
 	// pool.mu.RLock()
 	// defer pool.mu.RUnlock()
-
-	tx := pool.all[hash]
-	log.Debug("get tx info by hash in txpool... ", "info", tx)
 	var u_hash common.Hash
-	pending, err := pool.Pending()
-	if err == nil {
-		for unit_hash, txs := range pending {
-			for _, p_tx := range txs {
-				if p_tx.Tx.Hash() == hash {
-					log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", unit_hash, "p_tx", p_tx)
-					return p_tx, unit_hash
+	tx, has := pool.all[hash]
+	if has {
+		log.Debug("get tx info by hash in txpool... ", "info", tx)
+		pending, err := pool.Pending()
+		if err == nil {
+			for unit_hash, txs := range pending {
+				for _, p_tx := range txs {
+					if p_tx.Tx.Hash() == hash {
+						log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", unit_hash, "p_tx", p_tx)
+						return p_tx, unit_hash
+					}
 				}
 			}
 		}
+	} else {
+		log.Debug("get tx info by hash in orphan txpool... ", "info", tx)
+		tx = pool.orphans[hash]
 	}
+
 	return tx, u_hash
 }
 
@@ -1837,7 +1854,7 @@ func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
 					}
 					pool.orphansByPrev[*in.PreviousOutPoint][otx.Tx.Hash()] = otx
 				}
-				log.Debug(fmt.Sprintf("Stored orphan tx's hash  %s (total: %d)", otx.Tx.Hash(), len(pool.orphans)))
+				log.Debug(fmt.Sprintf("Stored orphan tx's hash  %s (total: %d)", otx.Tx.Hash().String(), len(pool.orphans)))
 			}
 		}
 	}
@@ -1944,11 +1961,11 @@ func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error
 		return false, errors.New("this tx's message is null.")
 	}
 
-	for _, msg := range tx.Tx.Messages() {
+	for i, msg := range tx.Tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
-				for _, in := range payment.Inputs {
+				for j, in := range payment.Inputs {
 					utxo, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
 					if err != nil && err == errors.ErrUtxoNotFound {
 						// validate utxo in pool
@@ -1969,11 +1986,15 @@ func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error
 					} else {
 						return false, err
 					}
-					// 若该笔交易的输入在交易池的outputs里，说明该交易是有效的，非孤儿交易。
-					if _, has := pool.outputs[*in.PreviousOutPoint]; has {
+					// 验证outputs缓存的utxo
+					hash := tx.Tx.Hash()
+					preout := modules.NewOutPoint(&hash, uint32(i), uint32(j))
+					if _, has := pool.outputs[*preout]; !has {
+						log.Debug("valide outputs success 33333333333333333333333333")
 						return false, nil
 					}
-					return true, nil
+					log.Debug("valide outputs failed 33333333333333333333333333")
+					return true, errors.New("validate outputs failed.")
 				}
 			}
 		}

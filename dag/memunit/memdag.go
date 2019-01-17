@@ -90,12 +90,12 @@ func NewMemDag(db storage.IDagDb, sdb storage.IStateDb, unitRep dagCommon.IUnitR
 	main_data.Number = lastIrreUnit.UnitHeader.Index()
 	memdag.mainChain[assetid.String()] = main_data
 
-	data0 := make(ForkData, 0)
-	if err := data0.Add(lastIrreUnit.UnitHash, lastIrreUnit.UnitHeader.Authors.Address.String()); err == nil {
-		fork_index := make(ForkIndex)
-		fork_index[uint64(0)] = data0
-		memdag.forkIndex[assetid.String()] = fork_index
-	}
+	//data0 := make(ForkData, 0)
+	//if err := data0.Add(lastIrreUnit.UnitHash, lastIrreUnit.UnitHeader.Authors.Address.String()); err == nil {
+	//	fork_index := make(ForkIndex)
+	//	fork_index[uint64(0)] = data0
+	//	memdag.forkIndex[assetid.String()] = fork_index
+	//}
 
 	return memdag
 }
@@ -304,12 +304,13 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 			chain.PushDelHashs(hashs[:])
 		}
 		if stable_hash == (common.Hash{}) {
-			log.Error("stable_hash is nil ..............")
+			log.Error("stable_hash is nil ..............", "index", index)
 			return errors.New("stable_hash is nil ..............")
 		}
 
 		stable_unit, err := chain.memUnit.Get(stable_hash)
 		if err != nil {
+			log.Debug("this is err.", "error", err)
 			return err
 		}
 		if err := chain.unitRep.SaveUnit(stable_unit, txpool, false, true); err != nil {
