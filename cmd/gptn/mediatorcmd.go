@@ -135,6 +135,15 @@ func getNodeInfo(ctx *cli.Context) (string, error) {
 		uint16(realaddr.Port))
 
 	return node.String(), nil
+
+	//_, cfg := makeConfigNode(ctx)
+	//privateKey := cfg.Node.NodeKey()
+	//listenAddr := cfg.P2P.ListenAddr
+	//
+	//nodeID := discover.PubkeyID(&privateKey.PublicKey)
+	//nodeInfo := "pnode://" + nodeID.String() + "@" + listenAddr
+	//
+	//return nodeInfo, nil
 }
 
 // author Albert·Gou
