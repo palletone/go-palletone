@@ -1407,11 +1407,11 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 }
 
 // GetReqIdByTxHash
-func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-	return d.unitRep.GetReqIdByTxHash(hash)
-}
+//func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
+//	return d.unitRep.GetReqIdByTxHash(hash)
+//}
 
-// GetTxByFileHash
-func (d *Dag) GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error) {
-	return d.unitRep.GetTxByFileHash(filehash)
+// GetFileInfo
+func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+	return d.unitRep.GetFileInfo(filehash)
 }

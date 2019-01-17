@@ -319,7 +319,7 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 		} else {
 			// 更新memUnit
 			chain.lastValidatedUnit[assetId] = stable_unit
-			chain.memUnit.Refresh(stable_hash)
+			go chain.memUnit.Refresh(stable_hash)
 			_, current_index, _ := chain.propRep.GetNewestUnit(stable_unit.UnitHeader.ChainIndex().AssetID)
 			chain_index := unit.UnitHeader.ChainIndex()
 			if chain_index.Index > current_index.Index {
@@ -345,8 +345,8 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 	chain.forkIndex[assetId] = forkIndex
 
 	for key, val := range forkIndex {
-		log.Debug("forkIndex Info ---->>>  ", "key", key)
-		log.Debug("forkIndex Info ---->>>  ", "key", val)
+		log.Debug("forkIndex Info ---->>>  ", "key", key, "value", val)
+		// log.Debug("forkIndex Info ---->>>  ", "key", val)
 	}
 	return nil
 }
