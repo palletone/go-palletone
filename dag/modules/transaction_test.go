@@ -118,6 +118,7 @@ func newTestTx() *Transaction {
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
 	input := NewTxIn(NewOutPoint(&hash, 0, 1), []byte{})
 	pay1s.AddTxIn(input)
+	pay1s.AddTxIn(NewTxIn(nil, []byte("Coinbase")))
 	msg := &Message{
 		App:     APP_PAYMENT,
 		Payload: pay1s,
@@ -277,3 +278,13 @@ func TestRlpdecodeValue(t *testing.T) {
 //1. rlp.decode
 //
 //2. rlp.decode
+func TestPaymentpayloadInputRlp(t *testing.T) {
+	i := NewTxIn(nil, []byte("a"))
+	b, err := rlp.EncodeToBytes(i)
+	assert.Nil(t, err)
+	t.Logf("rlp:%x", b)
+	i2 := &Input{}
+	err = rlp.DecodeBytes(b, i2)
+	assert.Nil(t, err)
+	assert.Equal(t, i2.SignatureScript, []byte("a"))
+}

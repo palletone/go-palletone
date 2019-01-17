@@ -90,7 +90,7 @@ type IDag interface {
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
-	GetAddrOutput(addr string) ([]modules.Output, error)
+	//GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
@@ -134,11 +134,11 @@ type IDag interface {
 	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
 
 	// SaveReqIdByTx
-	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
+	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
 
-	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
+	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
-	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
+	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 }

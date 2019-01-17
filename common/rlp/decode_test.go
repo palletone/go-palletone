@@ -978,3 +978,24 @@ func TestDecodeInt(t *testing.T) {
 		fmt.Println("Decode int data:", ni)
 	}
 }
+
+//func TestEncodeDecodeStructPoint(t *testing.T) {
+//	type A struct {
+//		A1 int64
+//		A2 string
+//	}
+//	type B struct {
+//		APoint *A
+//		B1     string
+//	}
+//	//a := &A{}
+//	b := &B{APoint: nil, B1: "b"}
+//	by, err := EncodeToBytes(b)
+//	assert.Nil(t, err)
+//	t.Logf("B:%x", by)
+//	b2 := &B{}
+//	err = DecodeBytes(by, b2)
+//	assert.Nil(t, err)
+//	assert.Equal(t, b2.B1, b.B1)
+//	//assert.Nil(t, b2.APoint)
+//}

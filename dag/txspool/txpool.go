@@ -85,7 +85,7 @@ var (
 type dags interface {
 	CurrentUnit() *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
-	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
+	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
@@ -554,6 +554,7 @@ func (pool *TxPool) local() map[common.Hash]*modules.TxPoolTransaction {
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error {
 	// Don't accept the transaction if it already in the pool .
+	isContractTplTx := false
 	hash := tx.Tx.Hash()
 	if pool.isTransactionInPool(&hash) {
 		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
@@ -574,10 +575,20 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 				}
 			}
 		}
+		if msg.App == modules.APP_CONTRACT_TPL_REQUEST {
+			isContractTplTx = true
+		}
 	}
 	// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
-	if tx.Tx.Size() > 32*1024 {
-		return ErrOversizedData
+	//TODO xiaozhi contract template tx will be big than other tx
+	if isContractTplTx {
+		if tx.Tx.Size() > 128*1024 {
+			return ErrOversizedData
+		}
+	} else {
+		if tx.Tx.Size() > 32*1024 {
+			return ErrOversizedData
+		}
 	}
 	// 交易费太低的交易，不能通过验证。
 	if pool.txfee.Cmp(tx.GetTxFee()) > 0 {
@@ -1148,7 +1159,8 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
 						if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
-							for _, addr1 := range addrs {
+							for _, addr := range addrs {
+								addr1 := addr.String()
 								txs[addr1] = append(txs[addr1], tx)
 							}
 						}

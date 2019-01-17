@@ -32,6 +32,16 @@ SaveUtxoEntity存储一个UTXO，同时也会存储一个对应Address对应的�
     * 为了能够通过RequestId也查到该Tx，所以会建立RequestId到TxId的映射索引。
     * 为了快速知道每个Tx是哪个地址发起的（Msg0的Input对应的OutPoint的锁定脚本对应的地址），所以会建立FromAddress到Tx的映射索引。
 
+## State DB的设计
+
+StateDB是一个带有Version的数据库，里面记录了最新版本的状态数据。Version在Value中最前面。
+StateDB保存了以下信息：
+
+* 配置信息
+* 合约模板（源码，bin等）
+* 合约状态数据
+* 账户信息
+* 投票信息
 
 ## 基于Token的共识分区
 每个分区有自己的唯一的GasToken，每个分区的创世单元为该GasToken创建时的单元。每个分区只记录自己GasToken相关的Unit全账本，PTN分区除了记录PTN全账本外，会同步所有其他分区的Unit Header。

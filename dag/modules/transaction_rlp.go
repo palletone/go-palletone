@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/rlp"
 	vote2 "github.com/palletone/go-palletone/dag/vote"
 )
@@ -144,4 +145,43 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 	}
 	return nil
 
+}
+
+//RLP编码有Bug，在struct引用了空指针后，Decode会报错。所以将Input扁平化，房子NULLOutPoint导致的错误。
+
+type inputTemp struct {
+	TxHash          common.Hash // reference Utxo struct key field
+	MessageIndex    uint32      // message index in transaction
+	OutIndex        uint32
+	SignatureScript []byte
+	Extra           []byte
+	NullOutPoint    bool
+}
+
+func (input *Input) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+	temp := &inputTemp{}
+	err = rlp.DecodeBytes(raw, temp)
+	if err != nil {
+		return err
+	}
+	input.SignatureScript = temp.SignatureScript
+	input.Extra = temp.Extra
+	if !temp.NullOutPoint {
+		input.PreviousOutPoint = &OutPoint{TxHash: temp.TxHash, MessageIndex: temp.MessageIndex, OutIndex: temp.OutIndex}
+	}
+	return nil
+}
+func (input *Input) EncodeRLP(w io.Writer) error {
+	temp := inputTemp{NullOutPoint: input.PreviousOutPoint == nil, SignatureScript: input.SignatureScript, Extra: input.Extra}
+	if input.PreviousOutPoint != nil {
+		temp.TxHash = input.PreviousOutPoint.TxHash
+		temp.MessageIndex = input.PreviousOutPoint.MessageIndex
+		temp.OutIndex = input.PreviousOutPoint.OutIndex
+	}
+
+	return rlp.Encode(w, temp)
 }

@@ -1586,61 +1586,63 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	}
 
 	utxos := core.Utxos{}
+	dagOutpoint := []modules.OutPoint{}
 	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+			dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
 		}
 	}
 	inputsOutpoint := []modules.OutPoint{}
 	outputsOutpoint := []modules.OutPoint{}
+	merge_Outpoint := []modules.OutPoint{}
 	op := modules.OutPoint{}
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
-	if err != nil {
-		return "", err
-	}
-	for _, tx := range poolTxs {
-		for msgindex, msg := range tx.Tx.TxMessages {
-			if msg.App == modules.APP_PAYMENT {
-				pay := msg.Payload.(*modules.PaymentPayload)
-				for _, input := range pay.Inputs {
-					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
-					//utxoinputs = append(utxoinputs, iutxo)
-					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
-					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
-					//result[*input.PreviousOutPoint] = lockScript
-					fmt.Printf("-------inputsOutpoint---%+v\n", inputsOutpoint)
-				}
-				for outIndex, _ := range pay.Outputs {
-					op.TxHash = tx.Tx.Hash()
-					op.MessageIndex = uint32(msgindex)
-					op.OutIndex = uint32(outIndex)
-					outputsOutpoint = append(outputsOutpoint, op)
-					//outxo := s.b.GetUtxoEntry(op)
-					//utxooutputs = append(utxooutputs, outxo)
-					fmt.Printf("-----inputsOutpoint----%+v\n", outputsOutpoint)
+	if err == nil {
+		var addr common.Address
+		for _, tx := range poolTxs {
+			for msgindex, msg := range tx.Tx.TxMessages {
+				if msg.App == modules.APP_PAYMENT {
+					pay := msg.Payload.(*modules.PaymentPayload)
+					for _, input := range pay.Inputs {
+						//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
+						//utxoinputs = append(utxoinputs, iutxo)
+						inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+						//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
+						//result[*input.PreviousOutPoint] = lockScript
+						fmt.Printf("-------inputsOutpoint---%+v\n", inputsOutpoint)
+					}
+					for outIndex, output := range pay.Outputs {
+						op.TxHash = tx.Tx.Hash()
+						op.MessageIndex = uint32(msgindex)
+						op.OutIndex = uint32(outIndex)
+						addr, err = tokenengine.GetAddressFromScript(output.PkScript)
+						if err != nil {
+							return "", err
+						}
+						if addr.String() == from {
+							outputsOutpoint = append(outputsOutpoint, op)
+						}
+						//outxo := s.b.GetUtxoEntry(op)
+						//utxooutputs = append(utxooutputs, outxo)
+						fmt.Printf("-----inputsOutpoint----%+v\n", outputsOutpoint)
+					}
 				}
 			}
 		}
 	}
+	dagOutpoint = append(dagOutpoint, outputsOutpoint...)
 
-	//poolutxoJsons ,err := core.Get_Utxos_fromtx(poolTxs)
-	//if err != nil {
-	//	return "", err
-	//}
-
-	/*poolutxos := core.Utxos{}
-		for _, pjson := range poolutxoJsons {
-			//utxos = append(utxos, &json)
-			if json.Asset == ptn {
-				poolutxos = append(poolutxos, &ptnjson.UtxoJson{TxHash: pjson.TxHash, MessageIndex: pjson.MessageIndex, OutIndex: pjson.OutIndex, Amount: pjson.Amount, Asset: pjson.Asset, PkScriptHex: pjson.PkScriptHex, PkScriptString: pjson.PkScriptString, LockTime: pjson.LockTime})
+	for _, dagpoint := range dagOutpoint {
+		for _, inputpoint := range inputsOutpoint {
+			if dagpoint.TxHash == inputpoint.TxHash && dagpoint.MessageIndex == inputpoint.MessageIndex && dagpoint.OutIndex == inputpoint.OutIndex {
+				continue
 			}
 		}
-	    utxos ,err := core.Merge_Utxos(utxos,poolutxos)
-	    if err != nil {
-			return "", err
-		}*/
+		merge_Outpoint = append(merge_Outpoint, dagpoint)
+	}
 
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is ZERO ")

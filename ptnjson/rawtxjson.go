@@ -86,6 +86,7 @@ func NewCreateProofTransactionCmd(inputs []TransactionInput, amounts []AddressAm
 		Inputs:   inputs,
 		Amounts:  amounts,
 		Proof:    proof,
+                Extra:    extra,
 		LockTime: lockTime,
 	}
 }

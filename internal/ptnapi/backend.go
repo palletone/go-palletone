@@ -110,7 +110,7 @@ type Backend interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 	QueryDbByKey(key []byte) *ptnjson.DbRowJson
 	QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson
-	GetAddrOutput(addr string) ([]modules.Output, error)
+	//GetAddrOutput(addr string) ([]modules.Output, error)
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
@@ -146,7 +146,7 @@ type Backend interface {
 	// get tx hash by req id
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 
-	GetTxByFileHash(filehash string) ([]*modules.FileInfo, error)
+	GetFileInfo(filehash string) ([]*modules.FileInfo, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

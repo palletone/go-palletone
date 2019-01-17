@@ -326,7 +326,8 @@ func checkTxValid(tx *modules.Transaction) bool {
 				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
 				//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
 				//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
-				return false
+				//return false
+				return true
 			}
 		}
 	}

@@ -142,7 +142,7 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees,
 	return &modules.InvokeFees{}, nil
 }
 
-func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
 
 	return nil, nil
 }

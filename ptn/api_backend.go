@@ -381,9 +381,9 @@ func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJ
 	return ujson, nil
 }
 
-func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
-	return b.ptn.dag.GetAddrOutput(addr)
-}
+//func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
+//	return b.ptn.dag.GetAddrOutput(addr)
+//}
 
 func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	address, err := common.StringToAddress(addr)
@@ -567,6 +567,6 @@ func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	return b.ptn.dag.GetTxHashByReqId(reqid)
 }
 
-func (b *PtnApiBackend) GetTxByFileHash(filehash string) ([]*modules.FileInfo, error) {
-	return b.ptn.dag.GetTxByFileHash([]byte(filehash))
+func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
+	return b.ptn.dag.GetFileInfo([]byte(filehash))
 }
