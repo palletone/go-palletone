@@ -323,6 +323,18 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	}
 	return batch.Write()
 }
+func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
+	key := append(constants.LookupPrefix, hash.Bytes()...)
+
+	entry := &modules.TxLookupEntry{}
+	err := retrieve(dagdb.db, key, entry)
+	if err != nil {
+		log.Info("get entry structure failed ===================", "error", err, "tx_entry", entry)
+		return common.Hash{}, 0, 0, err
+	}
+
+	return entry.UnitHash, entry.UnitIndex, entry.Index, nil
+}
 
 //func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
 //	if token_info == nil {
@@ -547,18 +559,6 @@ func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
 //}
 
 // GetTxLookupEntry return unit's hash ,number
-func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
-	key := append(constants.LookupPrefix, hash.Bytes()...)
-
-	var entry *modules.TxLookupEntry
-	err := retrieve(dagdb.db, key, entry)
-	if err != nil {
-		log.Info("get entry structure failed ===================", "error", err, "tx_entry", entry)
-		return common.Hash{}, 0, 0, err
-	}
-
-	return entry.UnitHash, entry.UnitIndex, entry.Index, nil
-}
 
 //func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 //	if tx == nil {
