@@ -762,8 +762,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("Save vote payload error.")
 			}
 		case modules.OP_MEDIATOR_CREATE:
-			if ok := rep.ApplyOperation(msg, true); ok == false {
-				return fmt.Errorf("Apply Mediator Creating Operation error.")
+			if ok := rep.MediatorCreateApply(msg); !ok {
+				return fmt.Errorf("apply Mediator Creating Operation error")
 			}
 
 		case modules.APP_CONTRACT_TPL_REQUEST:
