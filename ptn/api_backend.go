@@ -381,9 +381,9 @@ func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJ
 	return ujson, nil
 }
 
-func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
-	return b.ptn.dag.GetAddrOutput(addr)
-}
+//func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
+//	return b.ptn.dag.GetAddrOutput(addr)
+//}
 
 func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	address, err := common.StringToAddress(addr)

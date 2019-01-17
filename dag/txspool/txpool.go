@@ -85,7 +85,7 @@ var (
 type dags interface {
 	CurrentUnit() *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
-	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
+	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
@@ -575,7 +575,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 				}
 			}
 		}
-		if msg.App ==  modules.APP_CONTRACT_TPL_REQUEST {
+		if msg.App == modules.APP_CONTRACT_TPL_REQUEST {
 			isContractTplTx = true
 		}
 	}
@@ -585,7 +585,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 		if tx.Tx.Size() > 128*1024 {
 			return ErrOversizedData
 		}
-	}else {
+	} else {
 		if tx.Tx.Size() > 32*1024 {
 			return ErrOversizedData
 		}
@@ -1159,7 +1159,8 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
 						if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
-							for _, addr1 := range addrs {
+							for _, addr := range addrs {
+								addr1 := addr.String()
 								txs[addr1] = append(txs[addr1], tx)
 							}
 						}

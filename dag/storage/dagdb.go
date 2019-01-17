@@ -79,7 +79,7 @@ type IDagDb interface {
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	//GetCanonicalHash(number uint64) (common.Hash, error)
-	GetAddrOutput(addr string) ([]modules.Output, error)
+	//GetAddrOutput(addr string) ([]modules.Output, error)
 
 	//GetHeadHeaderHash() (common.Hash, error)
 	//GetHeadUnitHash() (common.Hash, error)
@@ -98,7 +98,7 @@ type IDagDb interface {
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
-	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
+	//GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }
 
 func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {
@@ -155,11 +155,11 @@ func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
 		return err
 	}
 	log.Debugf("Save header for unit: %x", uHash.Bytes())
-	return dagdb.saveHeaderHeightIndex(h)
+	return dagdb.saveHeaderChainIndex(h)
 }
 
 //为Unit的Height建立索引,这个索引是必须的，所以在dagdb中实现，而不是在indexdb实现。
-func (dagdb *DagDb) saveHeaderHeightIndex(h *modules.Header) error {
+func (dagdb *DagDb) saveHeaderChainIndex(h *modules.Header) error {
 	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
 	uHash := h.Hash()
 	err := StoreBytes(dagdb.db, idxKey, uHash)

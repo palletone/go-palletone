@@ -65,7 +65,7 @@ type IUnitRepository interface {
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
-	GetAddrOutput(addr string) ([]modules.Output, error)
+	//GetAddrOutput(addr string) ([]modules.Output, error)
 	GetTrieSyncProgress() (uint64, error)
 	//GetHeadHeaderHash() (common.Hash, error)
 	//GetHeadUnitHash() (common.Hash, error)
@@ -83,7 +83,7 @@ type IUnitRepository interface {
 	//获得某个分区上的最新不可逆单元
 	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
 
-	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
+	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -187,9 +187,10 @@ func (rep *UnitRepository) GetCommonByPrefix(prefix []byte) map[string][]byte {
 func (rep *UnitRepository) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 	return rep.dagdb.GetTxHashByReqId(reqid)
 }
-func (rep *UnitRepository) GetAddrOutput(addr string) ([]modules.Output, error) {
-	return rep.dagdb.GetAddrOutput(addr)
-}
+
+//func (rep *UnitRepository) GetAddrOutput(addr string) ([]modules.Output, error) {
+//	return rep.dagdb.GetAddrOutput(addr)
+//}
 func (rep *UnitRepository) GetTrieSyncProgress() (uint64, error) {
 	return rep.dagdb.GetTrieSyncProgress()
 }
@@ -1255,6 +1256,22 @@ func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.IDType16) (*m
 	return rep.GetUnit(hash)
 }
 
-func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
-	return rep.dagdb.GetTxFromAddress(tx)
+func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
+	result := []common.Address{}
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			pay := msg.Payload.(*modules.PaymentPayload)
+			for _, input := range pay.Inputs {
+				if input.PreviousOutPoint != nil {
+					utxo, err := rep.uxtodb.GetUtxoEntry(input.PreviousOutPoint)
+					if err != nil {
+						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
+					}
+					addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+					result = append(result, addr)
+				}
+			}
+		}
+	}
+	return result, nil
 }
