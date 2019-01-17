@@ -567,6 +567,6 @@ func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	return b.ptn.dag.GetTxHashByReqId(reqid)
 }
 
-func (b *PtnApiBackend) GetTxByFileHash(filehash string) ([]*modules.FileInfo, error) {
-	return b.ptn.dag.GetTxByFileHash([]byte(filehash))
+func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
+	return b.ptn.dag.GetFileInfo([]byte(filehash))
 }
