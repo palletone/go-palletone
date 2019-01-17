@@ -135,14 +135,16 @@ func (mu *MemUnit) Refresh(hash common.Hash) error {
 		log.Debug(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
 	}
 
-	mu.memLock.Lock()
+	mu.numberToHashLock.RLock()
 	for index, h := range mu.numberToHash {
 		if h == hash {
+			mu.numberToHashLock.Lock()
 			delete(mu.numberToHash, index)
+			mu.numberToHashLock.Unlock()
 			break
 		}
 	}
-	mu.memLock.Unlock()
+	mu.numberToHashLock.RUnlock()
 	return nil
 	//return errors.New(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
 }
