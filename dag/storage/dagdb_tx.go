@@ -36,11 +36,13 @@ value: transaction struct rlp encoding bytes
 */
 func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	// save transaction
+	txHash := tx.Hash()
+	log.Debugf("Try to save tx[%s]", txHash.String())
 	//bytes, err := json.Marshal(tx)
 	//if err != nil {
 	//	return err
 	//}
-	txHash := tx.Hash()
+
 	//str := *(*string)(unsafe.Pointer(&bytes))
 	//Save tx to db
 	key := append(constants.TRANSACTION_PREFIX, txHash.Bytes()...)
