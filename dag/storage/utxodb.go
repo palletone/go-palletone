@@ -194,18 +194,19 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey()
 	log.Debugf("Query utxo by outpoint:%s", outpoint.String())
-	data, err := utxodb.db.Get(key)
+	err := retrieve(utxodb.db, key, utxo)
+	//data, err := utxodb.db.Get(key)
 	if err != nil {
 		log.Error("get utxo entry failed", "error", err, "Query utxo by outpoint:%s", outpoint.String())
-		if err.Error() == errors.ErrNotFound.Error() {
+		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}
 		return nil, err
 	}
-
-	if err := rlp.DecodeBytes(data, &utxo); err != nil {
-		return nil, err
-	}
+	//
+	//if err := rlp.DecodeBytes(data, &utxo); err != nil {
+	//	return nil, err
+	//}
 	return utxo, nil
 }
 
@@ -222,9 +223,9 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 //	return hexutil.Encode(utxo.PkScript), nil
 //}
 
-func (utxodb *UtxoDb) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
-	return utxodb.db.Get(indexKey)
-}
+//func (utxodb *UtxoDb) GetUtxoByIndex(indexKey []byte) ([]byte, error) {
+//	return utxodb.db.Get(indexKey)
+//}
 
 //func (db *UtxoDb) GetAddrOutput(addr string) ([]modules.Output, error) {
 //

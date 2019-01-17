@@ -27,10 +27,11 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+	//"github.com/palletone/go-palletone/common/rlp"
 	// "github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/errors"
+	//"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -52,7 +53,7 @@ type IDagDb interface {
 	SaveTransaction(tx *modules.Transaction) error
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
-	SaveTransactions(txs *modules.Transactions) error
+	//SaveTransactions(txs *modules.Transactions) error
 	//SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	//SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	SaveTxLookupEntry(unit *modules.Unit) error
@@ -277,42 +278,50 @@ value: all transactions hash set's rlp encoding bytes
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
 	log.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
-	return StoreBytes(dagdb.db, append(constants.BODY_PREFIX, unitHash.Bytes()...), txsHash)
+	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
+	return StoreBytes(dagdb.db, key, txsHash)
 }
 
 func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	log.Debug("get unit body info", "unitHash", unitHash.String())
-	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, unitHash.Bytes()...))
-	if err != nil {
-		return nil, err
-	}
-
+	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
 	var txHashs []common.Hash
-	if err := rlp.DecodeBytes(data, &txHashs); err != nil {
+	err := retrieve(dagdb.db, key, &txHashs)
+
+	if err != nil {
 		return nil, err
 	}
 	return txHashs, nil
 }
 
-func (dagdb *DagDb) SaveTransactions(txs *modules.Transactions) error {
-	key := fmt.Sprintf("%s%s", constants.TRANSACTIONS_PREFIX, txs.Hash())
-	return Store(dagdb.db, key, *txs)
-}
+//func (dagdb *DagDb) SaveTransactions(txs *modules.Transactions) error {
+//	key := fmt.Sprintf("%s%s", constants.TRANSACTIONS_PREFIX, txs.Hash())
+//	return Store(dagdb.db, key, *txs)
+//}
 
 func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
-	log.Debugf("Save tx lookup entry, tx count:%d", len(unit.Txs))
+	if len(unit.Txs) == 0 {
+		log.Debugf("No tx in unit[%s] need to save lookup", unit.Hash().String())
+		return nil
+	}
+	log.Debugf("Batch save tx lookup entry, tx count:%d", len(unit.Txs))
+
+	batch := dagdb.db.NewBatch()
+
 	for i, tx := range unit.Transactions() {
 		in := &modules.TxLookupEntry{
 			UnitHash:  unit.Hash(),
 			UnitIndex: unit.NumberU64(),
 			Index:     uint64(i),
 		}
+		key := append(constants.LookupPrefix, tx.Hash().Bytes()...)
+		val, _ := rlp.EncodeToBytes(in)
 
-		if err := StoreBytes(dagdb.db, append(constants.LookupPrefix, tx.Hash().Bytes()...), in); err != nil {
+		if err := batch.Put(key, val); err != nil {
 			return err
 		}
 	}
-	return nil
+	return batch.Write()
 }
 
 //func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
@@ -431,10 +440,11 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, _, _, _ := dagdb.GetTransaction(txHash)
-		if tx != nil {
-			txs = append(txs, tx)
+		tx, err := dagdb.gettrasaction(txHash)
+		if err != nil {
+			return nil, err
 		}
+		txs = append(txs, tx)
 	}
 	return txs, nil
 }
@@ -538,19 +548,16 @@ func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
 
 // GetTxLookupEntry return unit's hash ,number
 func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
-	data, err0 := dagdb.db.Get(append(constants.LookupPrefix, hash.Bytes()...))
-	if len(data) == 0 {
-		return common.Hash{}, 0, 0, errors.New("not found legal data.")
-	}
-	if err0 != nil {
-		return common.Hash{}, 0, 0, err0
-	}
+	key := append(constants.LookupPrefix, hash.Bytes()...)
+
 	var entry *modules.TxLookupEntry
-	if err := rlp.DecodeBytes(data, &entry); err != nil {
+	err := retrieve(dagdb.db, key, entry)
+	if err != nil {
 		log.Info("get entry structure failed ===================", "error", err, "tx_entry", entry)
+		return common.Hash{}, 0, 0, err
 	}
 
-	return entry.UnitHash, entry.UnitIndex, entry.Index, err0
+	return entry.UnitHash, entry.UnitIndex, entry.Index, nil
 }
 
 //func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
@@ -677,23 +684,23 @@ func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uin
 //	return msgs, nil
 //}
 
-func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, error) {
-	if common.EmptyHash(id) {
-		return nil, errors.New("the filed not defined")
-	}
-	con_bytes, err := dagdb.db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
-	if err != nil {
-		log.Error(fmt.Sprintf("getContract error: %s", err.Error()))
-		return nil, err
-	}
-	contract := new(modules.Contract)
-	err = rlp.DecodeBytes(con_bytes, contract)
-	if err != nil {
-		log.Error("getContract failed,decode error:" + err.Error())
-		return nil, err
-	}
-	return contract, nil
-}
+//func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, error) {
+//	if common.EmptyHash(id) {
+//		return nil, errors.New("the filed not defined")
+//	}
+//	con_bytes, err := dagdb.db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
+//	if err != nil {
+//		log.Error(fmt.Sprintf("getContract error: %s", err.Error()))
+//		return nil, err
+//	}
+//	contract := new(modules.Contract)
+//	err = rlp.DecodeBytes(con_bytes, contract)
+//	if err != nil {
+//		log.Error("getContract failed,decode error:" + err.Error())
+//		return nil, err
+//	}
+//	return contract, nil
+//}
 
 //batch put HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
 //func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
