@@ -1567,63 +1567,63 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	return taken_utxo, change
 //}
 
-func  SelectUtxoFromDagAndPool(b Backend,poolTxs []*modules.TxPoolTransaction ,dagOutpoint []modules.OutPoint,from string)(core.Utxos,error){
-    var addr common.Address
-    // store tx input utxo outpoint 
+func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string) (core.Utxos, error) {
+	var addr common.Address
+	// store tx input utxo outpoint
 	inputsOutpoint := []modules.OutPoint{}
-	// store tx output utxo outpoint 
+	// store tx output utxo outpoint
 	outputsOutpoint := []modules.OutPoint{}
 	// store dag and pool  all utxo outpoint
-	dagpoolOutpoint:= []modules.OutPoint{}
+	dagpoolOutpoint := []modules.OutPoint{}
 	// store dag and pool  vaild utxo outpoint
 	merge_Outpoint := []modules.OutPoint{}
-    vaildutxos := core.Utxos{}
+	vaildutxos := core.Utxos{}
 	op := modules.OutPoint{}
-	payout:= new(modules.Output)
-	var err error 
-	var PkScript string 
-		for _, tx := range poolTxs {
-			for msgindex, msg := range tx.Tx.TxMessages {
-				if msg.App == modules.APP_PAYMENT {
-					pay := msg.Payload.(*modules.PaymentPayload)
-					for _, input := range pay.Inputs {
-						//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
-						//utxoinputs = append(utxoinputs, iutxo)
-						inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
-						//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
-						//result[*input.PreviousOutPoint] = lockScript
-						//5,6,8,9
-						fmt.Printf("-------inputsOutpoint---%+v\n", inputsOutpoint)
+	payout := new(modules.Output)
+	var err error
+	var PkScript string
+	for _, tx := range poolTxs {
+		for msgindex, msg := range tx.Tx.TxMessages {
+			if msg.App == modules.APP_PAYMENT {
+				pay := msg.Payload.(*modules.PaymentPayload)
+				for _, input := range pay.Inputs {
+					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
+					//utxoinputs = append(utxoinputs, iutxo)
+					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
+					//result[*input.PreviousOutPoint] = lockScript
+					//5,6,8,9
+					fmt.Printf("-------inputsOutpoint---%+v\n", inputsOutpoint)
+				}
+				for outIndex, output := range pay.Outputs {
+					op.TxHash = tx.Tx.Hash()
+					op.MessageIndex = uint32(msgindex)
+					op.OutIndex = uint32(outIndex)
+					addr, err = tokenengine.GetAddressFromScript(output.PkScript)
+					if err != nil {
+						return nil, err
 					}
-					for outIndex, output := range pay.Outputs {
-						op.TxHash = tx.Tx.Hash()
-						op.MessageIndex = uint32(msgindex)
-						op.OutIndex = uint32(outIndex)
-						addr, err = tokenengine.GetAddressFromScript(output.PkScript)
-						if err != nil {
-							return nil, err
-						}
-						if addr.String() == from {
-							outputsOutpoint = append(outputsOutpoint, op)
-						}
-					    //outxo := s.b.GetUtxoEntry(op)
-						//utxooutputs = append(utxooutputs, outxo)
-						fmt.Printf("-----inputsOutpoint----%+v\n", outputsOutpoint)
+					if addr.String() == from {
+						outputsOutpoint = append(outputsOutpoint, op)
 					}
+					//outxo := s.b.GetUtxoEntry(op)
+					//utxooutputs = append(utxooutputs, outxo)
+					fmt.Printf("-----inputsOutpoint----%+v\n", outputsOutpoint)
 				}
 			}
 		}
+	}
 	//5,6,8,9,16
 	dagpoolOutpoint = append(dagOutpoint, outputsOutpoint...)
 	for _, dppoint := range dagpoolOutpoint {
-		//find if 5,6,8,9,in  2,3,5,6,8,9,16 
-		//if in it ,continue ,find vaild outpoint 
+		//find if 5,6,8,9,in  2,3,5,6,8,9,16
+		//if in it ,continue ,find vaild outpoint
 		for _, inputpoint := range inputsOutpoint {
 			if dppoint.TxHash == inputpoint.TxHash && dppoint.MessageIndex == inputpoint.MessageIndex && dppoint.OutIndex == inputpoint.OutIndex {
 				continue
 			}
 		}
-		//2,3,16 
+		//2,3,16
 		merge_Outpoint = append(merge_Outpoint, dppoint)
 	}
 	for _, mpoint := range merge_Outpoint {
@@ -1634,31 +1634,31 @@ func  SelectUtxoFromDagAndPool(b Backend,poolTxs []*modules.TxPoolTransaction ,d
 				op.MessageIndex = mpoint.MessageIndex
 				op.OutIndex = mpoint.OutIndex
 				dutxo, _ := b.GetUtxoEntry(&op)
-                vaildutxos = append(vaildutxos,dutxo)
+				vaildutxos = append(vaildutxos, dutxo)
 			}
 		}
-        // if utxo in txpool, build utxo 
+		// if utxo in txpool, build utxo
 		for _, opoint := range outputsOutpoint {
 			if opoint.TxHash == mpoint.TxHash && opoint.MessageIndex == mpoint.MessageIndex && opoint.OutIndex == mpoint.OutIndex {
 				op.TxHash = mpoint.TxHash
 				op.MessageIndex = mpoint.MessageIndex
 				op.OutIndex = mpoint.MessageIndex
-                for _, tx := range poolTxs {
-			        for msgindex, msg := range tx.Tx.TxMessages {
-			           if opoint.TxHash == tx.Tx.Hash() && uint32(msgindex) == mpoint.MessageIndex {
-			           	payout = msg.Payload.(*modules.PaymentPayload).Outputs[mpoint.OutIndex]
-			            PkScript ,err = tokenengine.DisasmString(payout.PkScript)
-			            if err != nil {
-							return nil, fmt.Errorf("Get PkScript err")
+				for _, tx := range poolTxs {
+					for msgindex, msg := range tx.Tx.TxMessages {
+						if opoint.TxHash == tx.Tx.Hash() && uint32(msgindex) == mpoint.MessageIndex {
+							payout = msg.Payload.(*modules.PaymentPayload).Outputs[mpoint.OutIndex]
+							PkScript, err = tokenengine.DisasmString(payout.PkScript)
+							if err != nil {
+								return nil, fmt.Errorf("Get PkScript err")
+							}
+							vaildutxos = append(vaildutxos, &ptnjson.UtxoJson{TxHash: mpoint.TxHash.Str(), MessageIndex: mpoint.MessageIndex, OutIndex: mpoint.OutIndex, Amount: payout.Value, Asset: payout.Asset.String(), PkScriptHex: PkScript, LockTime: msg.Payload.(*modules.PaymentPayload).LockTime})
 						}
-                        vaildutxos = append(vaildutxos, &ptnjson.UtxoJson{TxHash: mpoint.TxHash.Str(), MessageIndex: mpoint.MessageIndex, OutIndex: mpoint.OutIndex, Amount: payout.Value, Asset: payout.Asset.String(), PkScriptHex: PkScript, LockTime: msg.Payload.(*modules.PaymentPayload).LockTime}) 
-			           }
-			        }
-			    }
+					}
+				}
 			}
 		}
 	}
-	return vaildutxos,nil 
+	return vaildutxos, nil
 }
 func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
@@ -1680,7 +1680,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 
 	utxos := core.Utxos{}
 	vutxos := core.Utxos{}
-	// store dag input utxo outpoint 
+	// store dag input utxo outpoint
 	dagOutpoint := []modules.OutPoint{}
 	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
@@ -1690,14 +1690,14 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 			dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
 		}
 	}
-	
+
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
 	if err == nil {
-		vutxos ,err = SelectUtxoFromDagAndPool(s.b,poolTxs,dagOutpoint,from)
-						if err != nil {
-		    return "", fmt.Errorf("Select utxo err")
-			}
-    } // end of pooltx is not nil 
+		vutxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from)
+		if err != nil {
+			return "", fmt.Errorf("Select utxo err")
+		}
+	} // end of pooltx is not nil
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is ZERO ")
 	}
