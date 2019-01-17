@@ -879,23 +879,23 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	for _, json := range utxoJsons {
 		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
-				MessageIndex:   json.MessageIndex,
-				OutIndex:       json.OutIndex,
-				Amount:         json.Amount,
-				Asset:          json.Asset,
-				PkScriptHex:    json.PkScriptHex,
+				MessageIndex: json.MessageIndex,
+				OutIndex: json.OutIndex,
+				Amount: json.Amount,
+				Asset: json.Asset,
+				PkScriptHex: json.PkScriptHex,
 				PkScriptString: json.PkScriptString,
-				LockTime:       json.LockTime})
+				LockTime: json.LockTime})
 		} else {
 			if json.Asset == asset {
 				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
-					MessageIndex:   json.MessageIndex,
-					OutIndex:       json.OutIndex,
-					Amount:         json.Amount,
-					Asset:          json.Asset,
-					PkScriptHex:    json.PkScriptHex,
+					MessageIndex: json.MessageIndex,
+					OutIndex: json.OutIndex,
+					Amount: json.Amount,
+					Asset: json.Asset,
+					PkScriptHex: json.PkScriptHex,
 					PkScriptString: json.PkScriptString,
-					LockTime:       json.LockTime})
+					LockTime: json.LockTime})
 			}
 		}
 	}
@@ -955,22 +955,22 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	return submitTransaction(ctx, s.b, tx)
 }
 
-func (s *PublicWalletAPI) GetTxByFileHash(ctx context.Context, filehash string) (string, error) {
+func (s *PublicWalletAPI) GetFileInfo(ctx context.Context, filehash string) (string, error) {
 	//get fileinfos
-	files, err := s.b.GetTxByFileHash(filehash)
+	files, err := s.b.GetFileInfo(filehash)
 	if err != nil {
 		return "null", err
 	}
-
+	var timestamp int64
 	gets := []walletjson.GetFileInfos{}
 	for _, file := range files {
 		get := walletjson.GetFileInfos{}
-		for _, ph := range file.ParentsHash {
-			get.ParentsHash = string(ph)
-		}
+		get.ParentsHash = file.ParentsHash.String()
 		get.FileHash = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
-		get.Timestamp = time.Duration(file.Timestamp)
+		timestamp = file.Timestamp
+		tm:= time.Unix(timestamp,0)
+		get.Timestamp=tm.Format("2006-01-02 15:04:05")
 		get.TransactionHash = file.Txid.String()
 		get.UintHeight = file.UintHeight
 		get.UnitHash = file.UnitHash.String()
