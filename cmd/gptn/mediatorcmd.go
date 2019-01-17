@@ -20,7 +20,6 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -117,33 +116,33 @@ func createInitDKS(ctx *cli.Context) error {
 
 // author Albert·Gou
 func getNodeInfo(ctx *cli.Context) (string, error) {
-	stack := makeFullNode(ctx)
-	privateKey := stack.Config().NodeKey()
-	listenAddr := stack.ListenAddr()
-
-	listener, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		return "", err
-		utils.Fatalf("Invalid listen address : %v", err)
-	}
-	realaddr := listener.Addr().(*net.TCPAddr)
-
-	node := discover.NewNode(
-		discover.PubkeyID(&privateKey.PublicKey),
-		realaddr.IP,
-		uint16(realaddr.Port),
-		uint16(realaddr.Port))
-
-	return node.String(), nil
-
-	//_, cfg := makeConfigNode(ctx)
-	//privateKey := cfg.Node.NodeKey()
-	//listenAddr := cfg.P2P.ListenAddr
+	//stack := makeFullNode(ctx)
+	//privateKey := stack.Config().NodeKey()
+	//listenAddr := stack.ListenAddr()
 	//
-	//nodeID := discover.PubkeyID(&privateKey.PublicKey)
-	//nodeInfo := "pnode://" + nodeID.String() + "@" + listenAddr
+	//listener, err := net.Listen("tcp", listenAddr)
+	//if err != nil {
+	//	return "", err
+	//	utils.Fatalf("Invalid listen address : %v", err)
+	//}
+	//realaddr := listener.Addr().(*net.TCPAddr)
 	//
-	//return nodeInfo, nil
+	//node := discover.NewNode(
+	//	discover.PubkeyID(&privateKey.PublicKey),
+	//	realaddr.IP,
+	//	uint16(realaddr.Port),
+	//	uint16(realaddr.Port))
+	//
+	//return node.String(), nil
+
+	_, cfg := makeConfigNode(ctx)
+	privateKey := cfg.Node.NodeKey()
+	listenAddr := cfg.P2P.ListenAddr
+
+	nodeID := discover.PubkeyID(&privateKey.PublicKey)
+	nodeInfo := "pnode://" + nodeID.String() + "@" + listenAddr
+
+	return nodeInfo, nil
 }
 
 // author Albert·Gou
