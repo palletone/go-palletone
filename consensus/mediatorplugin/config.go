@@ -73,7 +73,10 @@ type MediatorConf struct {
 
 func (medConf *MediatorConf) configToAccount() *MediatorAccount {
 	// 1. 解析 mediator 账户地址
-	addr := core.StrToMedAdd(medConf.Address)
+	addr, err := core.StrToMedAdd(medConf.Address)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	// 2. 解析 mediator 的 DKS 初始公私钥
 	sec, _ := core.StrToScalar(medConf.InitPrivKey)

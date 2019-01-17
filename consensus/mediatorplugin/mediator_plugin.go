@@ -166,7 +166,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	// which would result in allowing a later block to have a timestamp
 	// less than or equal to the previous Unit
 	if !(now.Unix() > dag.HeadUnitTime()) {
-		panic("\n The later Unit have a timestamp less than or equal to the previous!")
+		panic("The later Unit have a timestamp less than or equal to the previous!")
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slot)

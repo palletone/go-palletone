@@ -19,12 +19,11 @@
 package core
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common/log"
-	"strconv"
 )
 
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
@@ -98,7 +97,7 @@ func NewInitialMediator() *InitialMediator {
 func ScalarToStr(sec kyber.Scalar) string {
 	secB, err := sec.MarshalBinary()
 	if err != nil {
-		log.Error(fmt.Sprintln(err))
+		log.Error(err.Error())
 	}
 
 	return base58.Encode(secB)
@@ -108,7 +107,7 @@ func ScalarToStr(sec kyber.Scalar) string {
 func PointToStr(pub kyber.Point) string {
 	pubB, err := pub.MarshalBinary()
 	if err != nil {
-		log.Error(fmt.Sprintln(err))
+		log.Error(err.Error())
 	}
 
 	return base58.Encode(pubB)
