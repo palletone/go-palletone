@@ -345,8 +345,8 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 	chain.forkIndex[assetId] = forkIndex
 
 	for key, val := range forkIndex {
-		log.Debug("forkIndex Info ---->>>  ", "key", key)
-		log.Debug("forkIndex Info ---->>>  ", "key", val)
+		log.Debug("forkIndex Info ---->>>  ", "key", key, "value", val)
+		// log.Debug("forkIndex Info ---->>>  ", "key", val)
 	}
 	return nil
 }

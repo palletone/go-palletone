@@ -134,7 +134,7 @@ type IDag interface {
 	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
 
 	// SaveReqIdByTx
-	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
+	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
 
