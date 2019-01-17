@@ -40,15 +40,16 @@ type MemUnit struct {
 	memLock     sync.RWMutex
 
 	numberToHash     map[*modules.ChainIndex]common.Hash
-	numberToHashLock sync.RWMutex
+	numberToHashLock *sync.RWMutex
 }
 
 func InitMemUnit() *MemUnit {
 	memUnitInfo := new(sync.Map)
 	numberToHash := map[*modules.ChainIndex]common.Hash{}
 	memUnit := &MemUnit{
-		memUnitInfo:  memUnitInfo,
-		numberToHash: numberToHash,
+		memUnitInfo:      memUnitInfo,
+		numberToHash:     numberToHash,
+		numberToHashLock: new(sync.RWMutex),
 	}
 	return memUnit
 }
@@ -89,13 +90,6 @@ func (mu *MemUnit) Add(u *modules.Unit) error {
 	if mu == nil {
 		mu = InitMemUnit()
 	}
-	// _, ok := mu.memUnitInfo.Load(u.Hash())
-	// //_, ok := (*mu.memUnitInfo)[u.UnitHash]
-	// if !ok {
-	// 	mu.memUnitInfo.Store(u.Hash(), u)
-	// 	// (*mu.memUnitInfo)[u.UnitHash] = u
-	// }
-
 	_, ok := mu.memUnitInfo.LoadOrStore(u.Hash(), u)
 	if !ok {
 		mu.memUnitInfo.Store(u.Hash(), u)
@@ -111,10 +105,6 @@ func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
 	if !ok {
 		return nil, fmt.Errorf("Get mem unit: unit does not be found.")
 	}
-	// unit, ok := (*mu.memUnitInfo)[hash]
-	// if !ok || unit == nil {
-	// 	return nil, fmt.Errorf("Get mem unit: unit does not be found.")
-	// }
 	unit := data.(*modules.Unit)
 	return unit, nil
 }
@@ -135,16 +125,17 @@ func (mu *MemUnit) Refresh(hash common.Hash) error {
 		log.Debug(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
 	}
 
-	mu.memLock.Lock()
+	mu.numberToHashLock.RLock()
 	for index, h := range mu.numberToHash {
 		if h == hash {
+			//mu.numberToHashLock.Lock()
 			delete(mu.numberToHash, index)
+			//mu.numberToHashLock.Unlock()
 			break
 		}
 	}
-	mu.memLock.Unlock()
+	mu.numberToHashLock.RUnlock()
 	return nil
-	//return errors.New(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
 }
 
 func (mu *MemUnit) Lenth() uint64 {

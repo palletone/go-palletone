@@ -140,5 +140,5 @@ type IDag interface {
 
 	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 
-	GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error)
+	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 }

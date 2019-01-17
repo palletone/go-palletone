@@ -82,8 +82,8 @@ const Wallet_JS = `
 			inputFormatter: [null]
 		}),
         new web3._extend.Method({
-			name: 'getTxByFileHash',
-			call: 'wallet_getTxByFileHash',
+			name: 'getFileInfo',
+			call: 'wallet_getFileInfo',
 			params: 1,
 			inputFormatter: [null]
 		}),
