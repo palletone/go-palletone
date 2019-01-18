@@ -120,7 +120,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
 					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
 					log.Debug("ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs), "header.index:", header.Number.Index, "header.hash:", header.Hash().String(), "query.Skip+1", query.Skip+1)
-					if len(hashs) > 0 && (hashs[query.Skip] == query.Origin.Hash) {
+					if len(hashs) > int(query.Skip) && (hashs[query.Skip] == query.Origin.Hash) {
 						query.Origin.Hash = header.Hash()
 					} else {
 						log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetUnitHashesFromHash not equal origin hash.", "")
