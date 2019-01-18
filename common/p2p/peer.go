@@ -298,6 +298,9 @@ func countMatchingProtocols(protocols []Protocol, caps []Cap) int {
 	n := 0
 	for _, cap := range caps {
 		for _, proto := range protocols {
+			if len(proto.Name) < 4 || len(cap.Name) < 4 {
+				continue
+			}
 			if (proto.Name == cap.Name && proto.Version == cap.Version) ||
 				(proto.Name[:3] == cap.Name[:3] && cap.Name[:3] == "ptn" &&
 					proto.Version == cap.Version && (proto.Name[4:] == "ptn" || cap.Name[4:] == "ptn")) {
@@ -317,6 +320,9 @@ func matchProtocols(protocols []Protocol, caps []Cap, rw MsgReadWriter) map[stri
 outer:
 	for _, cap := range caps {
 		for _, proto := range protocols {
+			if len(proto.Name) < 4 || len(cap.Name) < 4 {
+				continue outer
+			}
 			if (proto.Name == cap.Name && proto.Version == cap.Version) ||
 				(proto.Name[:3] == cap.Name[:3] && cap.Name[:3] == "ptn" &&
 					proto.Version == cap.Version && (proto.Name[4:] == "ptn" || cap.Name[4:] == "ptn")) {
