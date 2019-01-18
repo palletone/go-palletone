@@ -36,11 +36,13 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 		log.Debug("invalidated unit's parent hash!")
 		return false
 	}
+
 	if idx.Index+1 != nextUnit.NumberU64() {
-		log.Warnf("invalidated unit's height number!, last height:%d, next unit height:%d",
+		log.Debugf("invalidated unit's height number!, last height:%d, next unit height:%d",
 			idx.Index, nextUnit.Number().Index)
 		return false
 	}
+
 	ts, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
 	if ts >= nextUnit.Timestamp() {
 		log.Debug("invalidated unit's timestamp!")
