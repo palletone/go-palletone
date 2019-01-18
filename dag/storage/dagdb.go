@@ -31,7 +31,6 @@ import (
 	// "github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -315,9 +314,8 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 			Index:     uint64(i),
 		}
 		key := append(constants.LookupPrefix, tx.Hash().Bytes()...)
-		val, _ := rlp.EncodeToBytes(in)
 
-		if err := batch.Put(key, val); err != nil {
+		if err := BatchStore(batch, key, in); err != nil {
 			return err
 		}
 	}

@@ -22,6 +22,7 @@ package common
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -52,6 +53,10 @@ type IPropRepository interface {
 
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
 	return &PropRepository{db: db}
+}
+func NewPropRepository4Db(db ptndb.Database) *PropRepository {
+	pdb := storage.NewPropertyDb(db)
+	return &PropRepository{db: pdb}
 }
 func (pRep *PropRepository) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 	return pRep.db.RetrieveGlobalProp()

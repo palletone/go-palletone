@@ -1,30 +1,41 @@
 package memunit
 
 import (
-	"sync"
-	"reflect"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
-	"strings"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"reflect"
+	"strings"
+	"sync"
 
-	"github.com/syndtr/goleveldb/leveldb/util"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 type Tempdb struct {
-	kv map[string][]byte //Key value
-	deleted map[string]bool //Deleted Keys
-	db ptndb.Database
-	lock sync.RWMutex
-}
-func NewTempdb(db ptndb.Database) (*Tempdb,error){
-	tempdb:=&Tempdb{kv:make(map[string][]byte),deleted:make(map[string]bool), db:db}
-	return tempdb,nil
+	kv      map[string][]byte //Key value
+	deleted map[string]bool   //Deleted Keys
+	db      ptndb.Database
+	lock    sync.RWMutex
 }
 
-type KeyValue struct{
-	Key,Value []byte
+func NewTempdb(db ptndb.Database) (*Tempdb, error) {
+	tempdb := &Tempdb{kv: make(map[string][]byte), deleted: make(map[string]bool), db: db}
+	return tempdb, nil
+}
+func (db *Tempdb) Clear() {
+	db.lock.Lock()
+	defer db.lock.Unlock()
+	for k := range db.kv {
+		delete(db.kv, k)
+	}
+	for k := range db.deleted {
+		delete(db.deleted, k)
+	}
+}
+
+type KeyValue struct {
+	Key, Value []byte
 }
 
 type TempdbIterator struct {
@@ -103,25 +114,26 @@ func (db *Tempdb) NewIterator() iterator.Iterator {
 // NewIteratorWithPrefix returns a iterator to iterate over subset of database content with a particular prefix.
 //这个最复杂，需要先去db数据库查询出map，然后把temp的列举出来，同样key的会被替换成新值，如果出现在del里面就删除，然后map转KeyValue数组
 func (db *Tempdb) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
-	result := getprefix(db.db,prefix)
+	result := getprefix(db.db, prefix)
 	//Replace by tempdb newest value
 	for key := range db.kv {
 		if strings.HasPrefix(key, string(prefix)) {
-			result[string(key)] =db.kv[key]
+			result[string(key)] = db.kv[key]
 		}
 	}
 	//Delete some keys
-	for key:=range db.deleted{
+	for key := range db.deleted {
 		if strings.HasPrefix(key, string(prefix)) {
-			delete(result,key)
+			delete(result, key)
 		}
 	}
-	kv:=[]KeyValue{}
-	for k,v:=range result{
-		kv=append(kv,KeyValue{[]byte(k), v})
+	kv := []KeyValue{}
+	for k, v := range result {
+		kv = append(kv, KeyValue{[]byte(k), v})
 	}
 	return &TempdbIterator{result: kv, idx: -1}
 }
+
 // get prefix
 func getprefix(db ptndb.Database, prefix []byte) map[string][]byte {
 	iter := db.NewIteratorWithPrefix(prefix)
@@ -138,7 +150,7 @@ func getprefix(db ptndb.Database, prefix []byte) map[string][]byte {
 func (db *Tempdb) Put(key []byte, value []byte) error {
 	db.lock.Lock()
 	defer db.lock.Unlock()
-	delete(db.deleted,string(key))
+	delete(db.deleted, string(key))
 	db.kv[string(key)] = common.CopyBytes(value)
 	return nil
 }
@@ -146,13 +158,13 @@ func (db *Tempdb) Put(key []byte, value []byte) error {
 func (db *Tempdb) Has(key []byte) (bool, error) {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
-	_,del:=db.deleted[string(key)]
-	if del{
-		return false,nil
+	_, del := db.deleted[string(key)]
+	if del {
+		return false, nil
 	}
 	_, ok := db.kv[string(key)]
-	if ok{
-		return true,nil
+	if ok {
+		return true, nil
 	}
 	return db.db.Has(key)
 }
@@ -160,9 +172,9 @@ func (db *Tempdb) Has(key []byte) (bool, error) {
 func (db *Tempdb) Get(key []byte) ([]byte, error) {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
-	_,del:=db.deleted[string(key)]
-	if del{
-		return nil,errors.ErrNotFound
+	_, del := db.deleted[string(key)]
+	if del {
+		return nil, errors.ErrNotFound
 	}
 	if entry, ok := db.kv[string(key)]; ok {
 		return common.CopyBytes(entry), nil
@@ -170,11 +182,10 @@ func (db *Tempdb) Get(key []byte) ([]byte, error) {
 	return db.db.Get(key)
 }
 
-
 func (db *Tempdb) Delete(key []byte) error {
 	db.lock.Lock()
 	defer db.lock.Unlock()
-	db.deleted[string(key)]=true
+	db.deleted[string(key)] = true
 	delete(db.kv, string(key))
 	return nil
 }
@@ -203,7 +214,6 @@ func (b *tempBatch) Put(key, value []byte) error {
 
 	b.size += len(value)
 	return nil
-
 
 }
 

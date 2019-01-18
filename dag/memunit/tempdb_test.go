@@ -19,3 +19,40 @@
  */
 
 package memunit
+
+import (
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+func TestTempdb_Get(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	tmpdb, _ := NewTempdb(db)
+	db.Put([]byte("A"), []byte("1"))
+	db.Put([]byte("AB"), []byte("1"))
+	a, _ := tmpdb.Get([]byte("A"))
+	assert.Equal(t, a, []byte("1"))
+	tmpdb.Put([]byte("A"), []byte("2"))
+	a, _ = tmpdb.Get([]byte("A"))
+	assert.Equal(t, a, []byte("2"))
+	a, _ = db.Get([]byte("A"))
+	assert.Equal(t, a, []byte("1"))
+
+	hasB, _ := tmpdb.Has([]byte("AB"))
+	assert.True(t, hasB)
+	tmpdb.Delete([]byte("AB"))
+	hasB, _ = tmpdb.Has([]byte("AB"))
+	assert.False(t, hasB)
+
+	tmpdb.Put([]byte("AC"), []byte("11"))
+	it := tmpdb.NewIteratorWithPrefix([]byte("A"))
+	for it.Next() {
+		t.Logf("Key:%s,Value:%s", it.Key(), it.Value())
+	}
+	tmpdb.Put([]byte("AB"), []byte("3"))
+	it = tmpdb.NewIteratorWithPrefix([]byte("A"))
+	for it.Next() {
+		t.Logf("Key:%s,Value:%s", it.Key(), it.Value())
+	}
+}

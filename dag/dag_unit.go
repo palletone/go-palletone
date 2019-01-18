@@ -89,7 +89,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
 	if !dag.Memdag.Exists(hash) {
 		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.", hash.String())
-		newestUnit, _ := dag.Memdag.GetNewestUnit(gasToken)
+		newestUnit := dag.Memdag.GetLastMainchainUnit()
 		dag.propRep.SetNewestUnit(newestUnit.Header())
 	}
 	// 2. 生产验证单元，添加交易集、时间戳、签名
@@ -147,7 +147,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	//	return false
 	//}
 	//dag.SaveUnit(newUnit, txpool, false)
-	dag.Memdag.Save(newUnit, txpool)
+	dag.Memdag.AddUnit(newUnit, txpool)
 	return true
 }
 

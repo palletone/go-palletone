@@ -40,3 +40,11 @@ type IMemDag interface {
 	GetDelhashs() chan common.Hash
 	PushDelHashs(hashs []common.Hash)
 }
+type IMemDag2 interface {
+	SetStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool)
+	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error
+	GetUnit(hash common.Hash) (*modules.Unit, error)
+	Exists(uHash common.Hash) bool
+	GetLastMainchainUnit() *modules.Unit
+	GetChainUnits() map[common.Hash]*modules.Unit
+}
