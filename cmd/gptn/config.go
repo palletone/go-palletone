@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -191,10 +192,10 @@ func maybeLoadConfig(ctx *cli.Context) (*FullConfig, error) {
 	if !common.FileExist(configPath) {
 		defaultConfig := newDefaultConfig()
 
-		//listenAddr := defaultConfig.P2P.ListenAddr
-		//if strings.HasPrefix(listenAddr, ":") {
-		//	defaultConfig.P2P.ListenAddr = "127.0.0.1" + listenAddr
-		//}
+		listenAddr := defaultConfig.P2P.ListenAddr
+		if strings.HasPrefix(listenAddr, ":") {
+			defaultConfig.P2P.ListenAddr = "127.0.0.1" + listenAddr
+		}
 
 		err := makeConfigFile(defaultConfig, configPath)
 		if err != nil {
