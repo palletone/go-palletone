@@ -955,7 +955,7 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	return submitTransaction(ctx, s.b, tx)
 }
 
-func (s *PublicWalletAPI) GetFileInfo(ctx context.Context, filehash string) (string, error) {
+func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 	//get fileinfos
 	files, err := s.b.GetFileInfo(filehash)
 	if err != nil {
@@ -969,8 +969,8 @@ func (s *PublicWalletAPI) GetFileInfo(ctx context.Context, filehash string) (str
 		get.FileHash = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
 		timestamp = file.Timestamp
-		tm:= time.Unix(timestamp,0)
-		get.Timestamp=tm.Format("2006-01-02 15:04:05")
+		tm := time.Unix(timestamp, 0)
+		get.Timestamp = tm.Format("2006-01-02 15:04:05")
 		get.TransactionHash = file.Txid.String()
 		get.UintHeight = file.UintHeight
 		get.UnitHash = file.UnitHash.String()
@@ -980,4 +980,18 @@ func (s *PublicWalletAPI) GetFileInfo(ctx context.Context, filehash string) (str
 	result := walletjson.ConvertGetFileInfos2Json(gets)
 
 	return result, nil
+}
+
+func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid string) (string, error) {
+	if len(txid)==66 {
+		result, err := s.getFileInfo(txid)
+		return result, err
+	}
+	err := errors.New("Parameter input error")
+	return "", err
+}
+
+func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash string) (string, error) {
+	result, err := s.getFileInfo(filehash)
+	return result, err
 }

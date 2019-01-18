@@ -30,6 +30,7 @@ import (
 type TransactionJson struct {
 	TxHash     string       `json:"txhash"`
 	UnitHash   string       `json:"unithash"`
+	TxSize     float64      `json:"tx_size"`
 	Payment    *PaymentJson `json:"payment"`
 	TxMessages string       `json:"txmessages"`
 }
@@ -47,6 +48,7 @@ func ConvertTx02Json(tx *modules.Transaction, hash common.Hash) *TransactionJson
 	return &TransactionJson{
 		TxHash:     tx.Hash().String(),
 		UnitHash:   hexHash,
+		TxSize:     float64(tx.Size()),
 		Payment:    &payment,
 		TxMessages: ConvertMegs2Json(tx.TxMessages),
 	}
