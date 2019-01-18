@@ -617,6 +617,9 @@ func (pool *TxPool) isTransactionInPool(hash *common.Hash) bool {
 	if _, exist := pool.all[*hash]; exist {
 		return true
 	}
+	if _, exist := pool.orphans[*hash]; exist {
+		return true
+	}
 	return false
 }
 
@@ -1141,7 +1144,7 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 	return status
 }
 
-// GetAddrTxs returns all tx by addr.
+// GetPoolTxsByAddr returns all tx by addr.
 func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
@@ -1177,9 +1180,25 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 			}
 		}
 	}
-
+	result := make([]*modules.TxPoolTransaction, 0)
 	if re, has := txs[addr]; has {
-		return re, nil
+		for i, tx := range re {
+			if i == 0 {
+				result = append(result, tx)
+			} else {
+				var exist bool
+				for _, old := range result {
+					if old.Tx.Hash() == tx.Tx.Hash() {
+						exist = true
+						break
+					}
+				}
+				if !exist {
+					result = append(result, tx)
+				}
+			}
+		}
+		return result, nil
 	}
 	return nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
 }

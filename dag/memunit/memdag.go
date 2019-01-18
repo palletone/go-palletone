@@ -288,9 +288,6 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 	threshold := gp.ChainThreshold()
 	if forkIndex.IsReachedIrreversibleHeight(uint64(index), irreUnit.UnitHeader.Index(), threshold) {
 		log.Info("IsReachedIrreversibleUnit  .......................................  ", "index", index, "lastIndex", irreUnit.UnitHeader.Index())
-		// set unit irreversible
-		// unitHash := forkIndex.GetReachedIrreversibleHeightUnitHash(index)
-		// prune fork if the irreversible height has been reached
 
 		// save the matured unit into leveldb
 		// @jay
@@ -401,12 +398,10 @@ func (chain *MemDag) updateMemdag(unit *modules.Unit, txpool txspool.ITxPool) er
 		for _, h := range list {
 			if chain.Exists(h) {
 				// 签名验证不过，saveUnit 传入不需要群签名的参数。
-				//chain.UpdateMemDag(h, unit.UnitHeader.GroupSign[:], txpool)
 				chain.UpdateMemDag(h, nil, txpool)
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -443,9 +438,6 @@ func (chain *MemDag) Prune(assetId string, delhashs []common.Hash) error {
 	}
 	// get fork index
 	maturedUnitHash := delhashs[0]
-
-	//chain.chainLock.Lock()
-	//defer chain.chainLock.Unlock()
 
 	index, subindex := chain.QueryIndex(assetId, maturedUnitHash)
 	if index < 0 {
