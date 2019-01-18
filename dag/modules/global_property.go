@@ -206,7 +206,11 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	// Set active mediators
 	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
 		initMed := genesis.InitialMediatorCandidates[i]
-		gp.ActiveMediators[core.StrToMedAdd(initMed.AddStr)] = true
+		addr, err := core.StrToMedAdd(initMed.AddStr)
+		if err != nil {
+			panic(err.Error())
+		}
+		gp.ActiveMediators[addr] = true
 	}
 
 	return gp

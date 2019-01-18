@@ -81,7 +81,7 @@ func (n *Node) Incomplete() bool {
 }
 
 // checks whether n is a valid complete node.
-func (n *Node) validateComplete() error {
+func (n *Node) ValidateComplete() error {
 	if n.Incomplete() {
 		return errors.New("incomplete node")
 	}

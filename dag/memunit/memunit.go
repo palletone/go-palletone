@@ -314,7 +314,7 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 		all_index = append(all_index, index)
 	}
 	// 判断够不够最小规模mediator数，不够则返回，否则返回高度最小且最老的hash值。
-	if len(countMediators) <= dagconfig.DefaultConfig.IrreversibleHeight {
+	if len(countMediators) < dagconfig.DefaultConfig.IrreversibleHeight {
 		log.Debug("countMediators< IrreversibleHeight", "count", countMediators, "IrreversibleHeight", dagconfig.DefaultConfig.IrreversibleHeight)
 		return nil
 	}
