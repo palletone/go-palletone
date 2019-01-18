@@ -42,7 +42,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
-	"strings"
 )
 
 const defaultConfigPath = "./ptn-config.toml"
