@@ -68,7 +68,7 @@ type StopRequestJson struct {
 }
 
 func ConvertTx2Json(tx *modules.Transaction) TxJson {
-	json := TxJson{TxHash: tx.Hash().String(), TxSize: float32(tx.Size())}
+	json := TxJson{TxHash: tx.Hash().String(), TxSize: float64(tx.Size())}
 	for _, m := range tx.TxMessages {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
