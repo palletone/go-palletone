@@ -77,18 +77,31 @@ func (chain *UnstableChain) SetStableUnit(hash common.Hash, height uint64, txpoo
 }
 func (chain *UnstableChain) checkStableCondition(needAddrCount int, txpool txspool.ITxPool) bool {
 	unstableCount := int(chain.lastMainchainUnit.NumberU64() - chain.stableUnitHeight)
+	//每个单元被多少个地址确认过(包括自己)
 	unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
+	childrenCofirmAddrs := make(map[common.Address]bool)
 	ustbHash := chain.lastMainchainUnit.Hash()
+	childrenCofirmAddrs[chain.lastMainchainUnit.Author()] = true
 	for i := 0; i < unstableCount; i++ {
 		u := chain.chainUnits[ustbHash]
 		hs := unstableCofirmAddrs[ustbHash]
+		if hs == nil {
+			hs = make(map[common.Address]bool)
+			unstableCofirmAddrs[ustbHash] = hs
+		}
 		hs[u.Author()] = true
+		for addr := range childrenCofirmAddrs {
+			hs[addr] = true
+		}
+		childrenCofirmAddrs[u.Author()] = true
 		if len(hs) >= needAddrCount {
 			log.Debugf("Unit[%s] has enough confirm address, make it to stable.", ustbHash.String())
 			chain.SetStableUnit(ustbHash, u.NumberU64(), txpool)
 
 			return true
 		}
+		log.Debugf("Unstable unit[%s] has confirm address count:%d", ustbHash.String(), len(hs))
+
 		ustbHash = u.ParentHash()[0]
 	}
 	return false
@@ -97,6 +110,7 @@ func (chain *UnstableChain) rebuildTempdb() {
 	log.Debugf("Clear tempdb and reubild data")
 	chain.tempdb.Clear()
 	unstableCount := int(chain.lastMainchainUnit.NumberU64() - chain.stableUnitHeight)
+	log.Debugf("Unstable unit count:%d", unstableCount)
 	unstableUnits := make([]*modules.Unit, unstableCount)
 	ustbHash := chain.lastMainchainUnit.Hash()
 	for i := 0; i < unstableCount; i++ {
@@ -126,23 +140,27 @@ func (chain *UnstableChain) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) 
 	uHash := unit.Hash()
 	log.Debugf("Try to add unit[%s] to unstable chain", uHash.String())
 
-	if _, ok := chain.chainUnits[parentHash]; ok {
+	if _, ok := chain.chainUnits[parentHash]; ok || parentHash == chain.stableUnitHash {
 		//add unit to chain
 		chain.chainUnits[uHash] = unit
 		//Switch main chain?
 		if parentHash == chain.lastMainchainUnit.Hash() {
+			log.Debug("This is a new main chain unit")
 			//Add a new unit to main chain
 			chain.lastMainchainUnit = unit
 			if !chain.checkStableCondition(2, txpool) {
 				chain.tempdbunitRep.SaveUnit(unit, nil, false, true)
 			}
 		} else { //Fork unit
+			log.Debug("This is a fork unit")
 			if unit.NumberU64() > chain.lastMainchainUnit.NumberU64() { //Need switch main chain
 				//switch main chain, build db
 				chain.lastMainchainUnit = unit
 				if !chain.checkStableCondition(2, txpool) {
 					chain.rebuildTempdb()
 				}
+			} else {
+				log.Infof("This unit is too old! Ignore it")
 			}
 		}
 		//orphan unit can add below this unit?

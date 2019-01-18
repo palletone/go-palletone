@@ -191,12 +191,12 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	scheduledTime := dag.GetSlotTime(slot)
-	diff := scheduledTime.Sub(now)
-	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
-		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
-		detail["Now"] = now.Format("2006-01-02 15:04:05")
-		return Lag, detail
-	}
+	// diff := scheduledTime.Sub(now)
+	// if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
+	// 	detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
+	// 	detail["Now"] = now.Format("2006-01-02 15:04:05")
+	// 	return Lag, detail
+	// }
 
 	// 2. 生产验证单元
 	//execute contract

@@ -287,7 +287,7 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	if len(v) != 1 {
 		return unit, errors.New("error.")
 	}
-
+	log.Debugf("Unit[%s] signed by address:%s", unit.Hash().String(), signer.String())
 	unit.UnitHeader.Authors = modules.Authentifier{
 		Address: signer,
 		R:       r,
