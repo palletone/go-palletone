@@ -172,7 +172,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		// Compatible; initialise the sub-protocol
 		version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
-			Name:    fmt.Sprintf("%s-%s", ProtocolName, protocolName),
+			Name:    protocolName,
 			Version: version,
 			Length:  ProtocolLengths[i],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
