@@ -299,7 +299,8 @@ func countMatchingProtocols(protocols []Protocol, caps []Cap) int {
 	for _, cap := range caps {
 		for _, proto := range protocols {
 			if (proto.Name == cap.Name && proto.Version == cap.Version) ||
-				(proto.Version == cap.Version && (proto.Name == "ptn" || cap.Name == "ptn")) {
+				(proto.Name[:3] == cap.Name[:3] && cap.Name[:3] == "ptn" &&
+					proto.Version == cap.Version && (proto.Name[4:] == "ptn" || cap.Name[4:] == "ptn")) {
 				n++
 			}
 		}
@@ -317,7 +318,8 @@ outer:
 	for _, cap := range caps {
 		for _, proto := range protocols {
 			if (proto.Name == cap.Name && proto.Version == cap.Version) ||
-				(proto.Version == cap.Version && (proto.Name == "ptn" || cap.Name == "ptn")) {
+				(proto.Name[:3] == cap.Name[:3] && cap.Name[:3] == "ptn" &&
+					proto.Version == cap.Version && (proto.Name[4:] == "ptn" || cap.Name[4:] == "ptn")) {
 				// If an old protocol version matched, revert it
 				if old := result[cap.Name]; old != nil {
 					offset -= old.Length

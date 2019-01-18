@@ -30,7 +30,7 @@ const (
 )
 
 // Official short name of the protocol used during capability negotiation.
-//var ProtocolName = "ptn"
+var ProtocolName = "ptn"
 
 // Supported versions of the ptn protocol (first is primary).
 var ProtocolVersions = []uint{ptn1}
