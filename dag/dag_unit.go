@@ -105,13 +105,13 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	pendingUnit := &newUnits[0]
-	dag.setUnitHeader(pendingUnit)
+	// dag.setUnitHeader(pendingUnit)
 
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
-	//pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
-	//pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
+	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
-	//pendingUnit.Hash()
+	pendingUnit.Hash()
 
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err1 != nil {

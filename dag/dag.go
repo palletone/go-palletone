@@ -235,13 +235,6 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 }
 
 func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	//log.Debug("Dag", "GetHeaderByNumber ChainIndex:", number)
-	//hash, err := d.unitRep.GetHashByNumber(number)
-	//if err != nil {
-	//	log.Debug("Dag", "GetHeaderByNumber dagdb.GetHashByNumber err:", err)
-	//	return nil
-	//}
-
 	//Query memdag first
 	hash, err := d.Memdag.GetHashByNumber(number)
 	if err == nil { //Exist
@@ -252,13 +245,24 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 		}
 		return unit.UnitHeader, nil
 	}
-	uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
-	if err1 != nil {
-		log.Debug("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
-		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
-		return nil, err1
+	if hash1, err := d.unitRep.GetHashByNumber(number); err != nil {
+		log.Debug("GetHashByNumber when GetHash failed ", "error:", err, "hash", number.String())
+		return nil, err
+	} else {
+		header, err0 := d.unitRep.GetHeader(hash1)
+		if err0 != nil {
+			log.Debug("GetHashByNumber when GetHeader failed ", "error:", err0, "hash", hash1.String())
+			return nil, err0
+		}
+		return header, nil
 	}
-	return uHeader, nil
+	//uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
+	//if err1 != nil {
+	//	log.Debug("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
+	//	//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
+	//	return nil, err1
+	//}
+	//return uHeader, nil
 }
 
 //func (d *Dag) GetPrefix(prefix string) map[string][]byte {
