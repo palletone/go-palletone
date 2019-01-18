@@ -34,7 +34,26 @@ func (mco *MediatorCreateOperation) FeePayer() common.Address {
 	return addr
 }
 
-func (mco *MediatorCreateOperation) Validate() bool {
-	// todo 判断是否已经申请缴纳保证金
-	return true
+func (mco *MediatorCreateOperation) Validate() error {
+	_, err := core.StrToMedAdd(mco.AddStr)
+	if err != nil {
+		return err
+	}
+
+	_, err = core.StrToPoint(mco.InitPubKey)
+	if err != nil {
+		return err
+	}
+
+	node, err := core.StrToMedNode(mco.Node)
+	if err != nil {
+		return err
+	}
+
+	err = node.ValidateComplete()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

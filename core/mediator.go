@@ -26,7 +26,6 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 )
 
@@ -78,17 +77,17 @@ func StrToMedNode(medNode string) (*discover.Node, error) {
 	return node, nil
 }
 
-func StrToMedAdd(addStr string) common.Address {
+func StrToMedAdd(addStr string) (common.Address, error) {
 	address := strings.TrimSpace(addStr)
 	address = strings.Trim(address, "\"")
 
 	addr, err := common.StringToAddress(address)
-	// addrType, err := addr.Validate()
 	if err != nil || addr.GetType() != common.PublicKeyHash {
-		log.Error(fmt.Sprintf("Invalid mediator account address \"%v\" : %v", address, err))
+		err = fmt.Errorf("invalid mediator account address \"%v\" : %v", address, err)
+		return addr, err
 	}
 
-	return addr
+	return addr, nil
 }
 
 func StrToScalar(secStr string) (kyber.Scalar, error) {
@@ -97,6 +96,7 @@ func StrToScalar(secStr string) (kyber.Scalar, error) {
 
 	err := sec.UnmarshalBinary(secB)
 	if err != nil {
+		err = fmt.Errorf("invalid init mediator private key \"%v\" : %v", secStr, err)
 		return nil, err
 	}
 

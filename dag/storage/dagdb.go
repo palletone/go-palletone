@@ -21,20 +21,18 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
-	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+	//"github.com/palletone/go-palletone/common/rlp"
 	// "github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/errors"
+	//"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 )
 
 //对DAG对象的操作，包括：Unit，Tx等
@@ -55,7 +53,7 @@ type IDagDb interface {
 	SaveTransaction(tx *modules.Transaction) error
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
-	SaveTransactions(txs *modules.Transactions) error
+	//SaveTransactions(txs *modules.Transactions) error
 	//SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	//SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	SaveTxLookupEntry(unit *modules.Unit) error
@@ -82,7 +80,7 @@ type IDagDb interface {
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
 	//GetCanonicalHash(number uint64) (common.Hash, error)
-	GetAddrOutput(addr string) ([]modules.Output, error)
+	//GetAddrOutput(addr string) ([]modules.Output, error)
 
 	//GetHeadHeaderHash() (common.Hash, error)
 	//GetHeadUnitHash() (common.Hash, error)
@@ -98,10 +96,10 @@ type IDagDb interface {
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 
 	// get txhash  and save index
-	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
+	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
-	SaveReqIdByTx(tx *modules.Transaction) error
-	GetTxFromAddress(tx *modules.Transaction) ([]string, error)
+	//SaveReqIdByTx(tx *modules.Transaction) error
+	//GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }
 
 func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {
@@ -158,11 +156,11 @@ func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
 		return err
 	}
 	log.Debugf("Save header for unit: %x", uHash.Bytes())
-	return dagdb.saveHeaderHeightIndex(h)
+	return dagdb.saveHeaderChainIndex(h)
 }
 
 //为Unit的Height建立索引,这个索引是必须的，所以在dagdb中实现，而不是在indexdb实现。
-func (dagdb *DagDb) saveHeaderHeightIndex(h *modules.Header) error {
+func (dagdb *DagDb) saveHeaderChainIndex(h *modules.Header) error {
 	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
 	uHash := h.Hash()
 	err := StoreBytes(dagdb.db, idxKey, uHash)
@@ -280,140 +278,62 @@ value: all transactions hash set's rlp encoding bytes
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
 	log.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
-	return StoreBytes(dagdb.db, append(constants.BODY_PREFIX, unitHash.Bytes()...), txsHash)
+	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
+	return StoreBytes(dagdb.db, key, txsHash)
 }
 
 func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	log.Debug("get unit body info", "unitHash", unitHash.String())
-	data, err := dagdb.db.Get(append(constants.BODY_PREFIX, unitHash.Bytes()...))
-	if err != nil {
-		return nil, err
-	}
-
+	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
 	var txHashs []common.Hash
-	if err := rlp.DecodeBytes(data, &txHashs); err != nil {
+	err := retrieve(dagdb.db, key, &txHashs)
+
+	if err != nil {
 		return nil, err
 	}
 	return txHashs, nil
 }
 
-func (dagdb *DagDb) SaveTransactions(txs *modules.Transactions) error {
-	key := fmt.Sprintf("%s%s", constants.TRANSACTIONS_PREFIX, txs.Hash())
-	return Store(dagdb.db, key, *txs)
-}
-
-/**
-key: [TRANSACTION_PREFIX][tx hash]
-value: transaction struct rlp encoding bytes
-*/
-func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
-	// save transaction
-	bytes, err := json.Marshal(tx)
-	if err != nil {
-		return err
-	}
-	txHash := tx.Hash()
-	str := *(*string)(unsafe.Pointer(&bytes))
-	key0 := string(constants.TRANSACTION_PREFIX) + txHash.String()
-	if err := StoreString(dagdb.db, key0, str); err != nil {
-		return err
-	}
-	key1 := string(constants.Transaction_Index) + txHash.String()
-	if err := StoreString(dagdb.db, key1, str); err != nil {
-		return err
-	}
-	dagdb.updateAddrTransactions(tx, txHash)
-	// store output by addr
-	for i, msg := range tx.TxMessages {
-		if msg.App >= modules.APP_CONTRACT_TPL_REQUEST && msg.App <= modules.APP_CONTRACT_STOP_REQUEST {
-			if err := dagdb.SaveReqIdByTx(tx); err != nil {
-				log.Error("SaveReqIdByTx is failed,", "error", err)
-			}
-			continue
-		}
-		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok {
-			for _, output := range payload.Outputs {
-				//  pkscript to addr
-				addr, err := tokenengine.GetAddressFromScript(output.PkScript[:])
-				if err != nil {
-					log.Error("GetAddressFromScript is failed,", "error", err)
-				}
-				dagdb.saveOutputByAddr(addr.String(), txHash, i, output)
-			}
-		}
-	}
-	return nil
-}
-
-func (dagdb *DagDb) saveOutputByAddr(addr string, hash common.Hash, msgindex int, output *modules.Output) error {
-	if hash == (common.Hash{}) {
-		return errors.New("empty tx hash.")
-	}
-	key := append(constants.AddrOutput_Prefix, []byte(addr)...)
-	key = append(key, []byte(hash.String())...)
-	err := StoreBytes(dagdb.db, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output)
-	return err
-}
-
-func (dagdb *DagDb) updateAddrTransactions(tx *modules.Transaction, hash common.Hash) error {
-
-	if hash == (common.Hash{}) {
-		return errors.New("empty tx hash.")
-	}
-	froms, err := dagdb.GetTxFromAddress(tx)
-	if err != nil {
-		return err
-	}
-	// 1. save from_address
-	for _, addr := range froms {
-		go dagdb.saveAddrTxHashByKey(constants.AddrTx_From_Prefix, addr, hash)
-	}
-	// 2. to_address 已经在上层接口处理了。
-	// for _, addr := range tos { // constants.AddrTx_To_Prefix
-	// 	go dagdb.saveAddrTxHashByKey(constants.AddrTx_To_Prefix, addr, hash)
-	// }
-	return nil
-}
-func (dagdb *DagDb) saveAddrTxHashByKey(key []byte, addr string, hash common.Hash) error {
-
-	hashs := make([]common.Hash, 0)
-	data, err := dagdb.db.Get(append(key, []byte(addr)...))
-	if err != nil {
-		if err.Error() != "leveldb: not found" {
-			return err
-		} else { // first store the addr
-			hashs = append(hashs, hash)
-			if err := StoreBytes(dagdb.db, append(key, []byte(addr)...), hashs); err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-	if err := rlp.DecodeBytes(data, &hashs); err != nil {
-		return err
-	}
-	hashs = append(hashs, hash)
-	if err := StoreBytes(dagdb.db, append(key, []byte(addr)...), hashs); err != nil {
-		return err
-	}
-	return nil
-}
+//func (dagdb *DagDb) SaveTransactions(txs *modules.Transactions) error {
+//	key := fmt.Sprintf("%s%s", constants.TRANSACTIONS_PREFIX, txs.Hash())
+//	return Store(dagdb.db, key, *txs)
+//}
 
 func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
-	log.Debugf("Save tx lookup entry, tx count:%d", len(unit.Txs))
+	if len(unit.Txs) == 0 {
+		log.Debugf("No tx in unit[%s] need to save lookup", unit.Hash().String())
+		return nil
+	}
+	log.Debugf("Batch save tx lookup entry, tx count:%d", len(unit.Txs))
+
+	batch := dagdb.db.NewBatch()
+
 	for i, tx := range unit.Transactions() {
 		in := &modules.TxLookupEntry{
 			UnitHash:  unit.Hash(),
 			UnitIndex: unit.NumberU64(),
 			Index:     uint64(i),
 		}
+		key := append(constants.LookupPrefix, tx.Hash().Bytes()...)
+		val, _ := rlp.EncodeToBytes(in)
 
-		if err := StoreBytes(dagdb.db, append(constants.LookupPrefix, tx.Hash().Bytes()...), in); err != nil {
+		if err := batch.Put(key, val); err != nil {
 			return err
 		}
 	}
-	return nil
+	return batch.Write()
+}
+func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
+	key := append(constants.LookupPrefix, hash.Bytes()...)
+
+	entry := &modules.TxLookupEntry{}
+	err := retrieve(dagdb.db, key, entry)
+	if err != nil {
+		log.Info("get entry structure failed ===================", "error", err, "tx_entry", entry)
+		return common.Hash{}, 0, 0, err
+	}
+
+	return entry.UnitHash, entry.UnitIndex, entry.Index, nil
 }
 
 //func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {
@@ -447,58 +367,6 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 
 // ###################### SAVE IMPL END ######################
 // ###################### GET IMPL START ######################
-
-// Get income transactions
-func (dagdb *DagDb) GetAddrOutput(addr string) ([]modules.Output, error) {
-
-	data := dagdb.GetPrefix(append(constants.AddrOutput_Prefix, []byte(addr)...))
-	outputs := make([]modules.Output, 0)
-	var err error
-	for _, b := range data {
-		out := new(modules.Output)
-		if err := rlp.DecodeBytes(b, out); err == nil {
-			outputs = append(outputs, *out)
-		} else {
-			err = err
-		}
-	}
-	return outputs, err
-}
-
-func (dagdb *DagDb) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
-
-	froms := make([]string, 0)
-	if tx == nil {
-		return froms, errors.New("tx is nil, not exist address.")
-	}
-	outpoints, _ := tx.GetAddressInfo()
-	for _, op := range outpoints {
-		addr, err := dagdb.getOutpointAddr(op)
-		if err == nil {
-			froms = append(froms, addr)
-		} else {
-			log.Info("get out address is failed.", "error", err)
-		}
-	}
-
-	return froms, nil
-}
-func (dagdb *DagDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
-	if outpoint == nil {
-		return "", fmt.Errorf("outpoint_key is nil ")
-	}
-	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
-	data, err := dagdb.db.Get(out_key[:])
-	if len(data) <= 0 {
-		return "", fmt.Errorf("address is null. outpoint_key(%s)", outpoint.ToKey())
-	}
-	if err != nil {
-		return "", err
-	}
-	var str string
-	err0 := rlp.DecodeBytes(data, &str)
-	return str, err0
-}
 
 //func (dagdb *DagDb) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
 //	key := fmt.Sprintf("%s%s", constants.UNIT_HASH_NUMBER_Prefix, hash.String())
@@ -584,10 +452,11 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, _, _, _ := dagdb.GetTransaction(txHash)
-		if tx != nil {
-			txs = append(txs, tx)
+		tx, err := dagdb.gettrasaction(txHash)
+		if err != nil {
+			return nil, err
 		}
+		txs = append(txs, tx)
 	}
 	return txs, nil
 }
@@ -690,77 +559,6 @@ func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
 //}
 
 // GetTxLookupEntry return unit's hash ,number
-func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
-	data, err0 := dagdb.db.Get(append(constants.LookupPrefix, hash.Bytes()...))
-	if len(data) == 0 {
-		return common.Hash{}, 0, 0, errors.New("not found legal data.")
-	}
-	if err0 != nil {
-		return common.Hash{}, 0, 0, err0
-	}
-	var entry *modules.TxLookupEntry
-	if err := rlp.DecodeBytes(data, &entry); err != nil {
-		log.Info("get entry structure failed ===================", "error", err, "tx_entry", entry)
-	}
-
-	return entry.UnitHash, entry.UnitIndex, entry.Index, err0
-}
-
-// GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
-// p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
-func (dagdb *DagDb) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
-	unitHash, unitNumber, txIndex, err1 := dagdb.GetTxLookupEntry(hash)
-	if err1 != nil {
-		log.Error("dag db GetTransaction", "GetTxLookupEntry err:", err1, "hash:", hash)
-		return nil, unitHash, unitNumber, txIndex
-	}
-	// if unitHash != (common.Hash{}) {
-	// 	body, _ := dagdb.GetBody(unitHash)
-	// 	if body == nil || len(body) <= int(txIndex) {
-	// 		return nil, common.Hash{}, 0, 0
-	// 	}
-	// 	tx, err := dagdb.gettrasaction(body[txIndex])
-	// 	if err == nil {
-	// 		return tx, unitHash, unitNumber, txIndex
-	// 	}
-	// }
-	tx, err := dagdb.gettrasaction(hash)
-	if err != nil {
-		fmt.Println("gettrasaction error:", err.Error())
-		return nil, unitHash, unitNumber, txIndex
-	}
-
-	return tx, unitHash, unitNumber, txIndex
-}
-
-// gettrasaction can get a transaction by hash.
-func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error) {
-	if hash == (common.Hash{}) {
-		return nil, errors.New("hash is not exist.")
-	}
-	key := string(constants.TRANSACTION_PREFIX) + hash.String()
-
-	data, err := getString(dagdb.db, []byte(key))
-	if err != nil {
-		log.Error("get transaction failed......", "error", err)
-		return nil, err
-	}
-	tx := new(modules.Transaction)
-	if err := json.Unmarshal([]byte(data), &tx); err != nil {
-		log.Error("tx Unmarshal failed......", "error", err, "data:", data)
-		return nil, err
-	}
-	// TODO ---- 将不同msg‘s app 反序列化后赋值给payload interface{}.
-	//log.Debug("================== transaction_info======================", "error", err, "transaction_info", tx)
-	//msgs, err1 := ConvertMsg(tx)
-	//if err1 != nil {
-	//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-	//	return nil, err1
-	//}
-	//
-	//tx.TxMessages = msgs
-	return tx, err
-}
 
 //func ConvertMsg(tx *modules.Transaction) ([]*modules.Message, error) {
 //	if tx == nil {
@@ -886,23 +684,23 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 //	return msgs, nil
 //}
 
-func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, error) {
-	if common.EmptyHash(id) {
-		return nil, errors.New("the filed not defined")
-	}
-	con_bytes, err := dagdb.db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
-	if err != nil {
-		log.Error(fmt.Sprintf("getContract error: %s", err.Error()))
-		return nil, err
-	}
-	contract := new(modules.Contract)
-	err = rlp.DecodeBytes(con_bytes, contract)
-	if err != nil {
-		log.Error("getContract failed,decode error:" + err.Error())
-		return nil, err
-	}
-	return contract, nil
-}
+//func (dagdb *DagDb) GetContractNoReader(db ptndb.Database, id common.Hash) (*modules.Contract, error) {
+//	if common.EmptyHash(id) {
+//		return nil, errors.New("the filed not defined")
+//	}
+//	con_bytes, err := dagdb.db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
+//	if err != nil {
+//		log.Error(fmt.Sprintf("getContract error: %s", err.Error()))
+//		return nil, err
+//	}
+//	contract := new(modules.Contract)
+//	err = rlp.DecodeBytes(con_bytes, contract)
+//	if err != nil {
+//		log.Error("getContract failed,decode error:" + err.Error())
+//		return nil, err
+//	}
+//	return contract, nil
+//}
 
 //batch put HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
 //func (dagdb *DagDb) UpdateHeadByBatch(hash common.Hash, number uint64) error {
@@ -1015,27 +813,3 @@ func (dagdb *DagDb) PutTrieSyncProgress(count uint64) error {
 //}
 
 // ###################### GET IMPL END ######################
-
-func (dagdb *DagDb) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-	key := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), hash.String())
-	str, err := GetString(dagdb.db, key)
-	return common.HexToHash(str), err
-}
-
-func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
-	key := fmt.Sprintf("%s_%s", string(constants.ReqIdPrefix), reqid.String())
-	str, err := GetString(dagdb.db, key)
-	return common.HexToHash(str), err
-}
-func (dagdb *DagDb) SaveReqIdByTx(tx *modules.Transaction) error {
-	txhash := tx.Hash()
-	reqid := tx.RequestHash()
-	key1 := fmt.Sprintf("%s_%s", string(constants.ReqIdPrefix), reqid.String())
-	key2 := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), txhash.String())
-	err1 := StoreString(dagdb.db, key1, txhash.String())
-	err2 := StoreString(dagdb.db, key2, reqid.String())
-	if err1 != nil {
-		return err1
-	}
-	return err2
-}

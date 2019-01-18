@@ -223,7 +223,7 @@ func (tab *Table) Close() {
 // are no known nodes in the database.
 func (tab *Table) setFallbackNodes(nodes []*Node) error {
 	for _, n := range nodes {
-		if err := n.validateComplete(); err != nil {
+		if err := n.ValidateComplete(); err != nil {
 			return fmt.Errorf("bad bootstrap/fallback node %q (%v)", n, err)
 		}
 	}

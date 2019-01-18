@@ -58,7 +58,7 @@ bin/
 /cmd/gptn/log
 **/leveldb/
 *.rlp
-**/palletone.toml
+**/ptn-config.toml
 dag/common/unit.go.orig
 cmd/test/
 

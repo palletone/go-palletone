@@ -159,7 +159,7 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
-func adaptorConfig(config FullConfig) FullConfig {
+func adaptorConfig(config *FullConfig) *FullConfig {
 	config.Node.P2P = config.P2P
 	config.Ptn.Dag = *config.Dag
 	config.Ptn.Log = *config.Log
@@ -184,39 +184,41 @@ func getConfigPath(ctx *cli.Context) string {
 
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
-func maybeLoadConfig(ctx *cli.Context, cfg *FullConfig) error {
+func maybeLoadConfig(ctx *cli.Context) (*FullConfig, error) {
 	configPath := getConfigPath(ctx)
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.FileExist(configPath) {
-		defaultConfig := makeDefaultConfig()
-		err := makeConfigFile(&defaultConfig, configPath)
+		defaultConfig := newDefaultConfig()
+
+		err := makeConfigFile(defaultConfig, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
-			return err
+			return nil, err
 		}
 
 		fmt.Println("Writing new config file at: ", configPath)
-		return nil
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
+	cfg := &FullConfig{Node: defaultNodeConfig()}
 	if err := loadConfig(configPath, cfg); err != nil {
 		utils.Fatalf("%v", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return cfg, nil
 }
 
-func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
+func makeConfigNode(ctx *cli.Context) (*node.Node, *FullConfig) {
 	// Load defaults.
 	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
-	cfg := makeDefaultConfig()
+	cfg := newDefaultConfig()
 
 	// Load config file.
+	var err error
 	// 2. 获取配置文件中的配置信息，并覆盖cfg中对应的配置
-	if err := maybeLoadConfig(ctx, &cfg); err != nil {
+	if cfg, err = maybeLoadConfig(ctx); err != nil {
 		utils.Fatalf("%v", err)
 	}
 
@@ -273,14 +275,14 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
-	cfg := makeDefaultConfig()
+	cfg := newDefaultConfig()
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
 	if len(configPath) == 0 {
 		configPath = defaultConfigPath
 	}
 
-	err := makeConfigFile(&cfg, configPath)
+	err := makeConfigFile(cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
@@ -330,11 +332,11 @@ func dumpJson(ctx *cli.Context) error {
 	return nil
 }
 
-// makeDefaultConfig, create a default config
+// newDefaultConfig, create a default config
 // @author Albert·Gou
-func makeDefaultConfig() FullConfig {
+func newDefaultConfig() *FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
-	return FullConfig{
+	return &FullConfig{
 		Ptn:            ptn.DefaultConfig,
 		Node:           defaultNodeConfig(),
 		Dashboard:      dashboard.DefaultConfig,

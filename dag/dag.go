@@ -830,13 +830,13 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
 	return d.utxoRep.ComputeTxFee(pay)
 }
-func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]string, error) {
+func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
 	return d.unitRep.GetTxFromAddress(tx)
 }
 
-func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
-	return d.unitRep.GetAddrOutput(addr)
-}
+//func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
+//	return d.unitRep.GetAddrOutput(addr)
+//}
 
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	//TODO only get one token's UTXO
@@ -1407,11 +1407,11 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 }
 
 // GetReqIdByTxHash
-func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-	return d.unitRep.GetReqIdByTxHash(hash)
-}
+//func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
+//	return d.unitRep.GetReqIdByTxHash(hash)
+//}
 
-// GetTxByFileHash
-func (d *Dag) GetTxByFileHash(filehash []byte) ([]*modules.FileInfo, error) {
-	return d.unitRep.GetTxByFileHash(filehash)
+// GetFileInfo
+func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+	return d.unitRep.GetFileInfo(filehash)
 }

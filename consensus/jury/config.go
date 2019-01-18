@@ -31,7 +31,7 @@ type Config struct {
 }
 
 func (aConf *AccountConf) configToAccount() *JuryAccount {
-	addr := core.StrToMedAdd(aConf.Address)
+	addr, _ := common.StringToAddress(aConf.Address)
 
 	medAcc := &JuryAccount{
 		addr,
