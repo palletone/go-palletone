@@ -24,7 +24,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -191,11 +190,6 @@ func maybeLoadConfig(ctx *cli.Context) (*FullConfig, error) {
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.FileExist(configPath) {
 		defaultConfig := newDefaultConfig()
-
-		listenAddr := defaultConfig.P2P.ListenAddr
-		if strings.HasPrefix(listenAddr, ":") {
-			defaultConfig.P2P.ListenAddr = "127.0.0.1" + listenAddr
-		}
 
 		err := makeConfigFile(defaultConfig, configPath)
 		if err != nil {
