@@ -1608,7 +1608,7 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 					}
 					//outxo := s.b.GetUtxoEntry(op)
 					//utxooutputs = append(utxooutputs, outxo)
-					fmt.Printf("-----inputsOutpoint----%+v\n", outputsOutpoint)
+					fmt.Printf("------------outputsOutpoint----%+v\n", outputsOutpoint)
 				}
 			}
 		}
@@ -1679,7 +1679,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	}
 
 	utxos := core.Utxos{}
-	vutxos := core.Utxos{}
+	//vutxos := core.Utxos{}
 	// store dag input utxo outpoint
 	dagOutpoint := []modules.OutPoint{}
 	ptn := modules.CoreAsset.String()
@@ -1693,7 +1693,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
 	if err == nil {
-		vutxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from)
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from)
 		if err != nil {
 			return "", fmt.Errorf("Select utxo err")
 		}
@@ -1702,7 +1702,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		return "", fmt.Errorf("fee is ZERO ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
-	taken_utxo, change, err := core.Select_utxo_Greedy(vutxos, daoAmount)
+	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
