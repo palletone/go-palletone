@@ -123,7 +123,7 @@ echo "account: "$account
 echo "publickey: "$publickey
 echo "nodeinfo: "$nodeinfo
 
-ModifyJson  $account $publickey $nodeinfo
+ModifyJson  $account $publickey $nodeinfo $1
 }
 
 
