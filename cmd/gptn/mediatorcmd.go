@@ -140,7 +140,7 @@ func getNodeInfo(ctx *cli.Context) (string, error) {
 	listenAddr := cfg.P2P.ListenAddr
 
 	nodeID := discover.PubkeyID(&privateKey.PublicKey)
-	nodeInfo := "pnode://" + nodeID.String() + "@" + listenAddr
+	nodeInfo := "pnode://" + nodeID.String() + "@127.0.0.1" + listenAddr
 
 	return nodeInfo, nil
 }
