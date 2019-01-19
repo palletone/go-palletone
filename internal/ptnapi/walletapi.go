@@ -267,13 +267,22 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, err
 	}
 	utxos := core.Utxos{}
+       dagOutpoint := []modules.OutPoint{}
 	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+                       dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
 		}
 	}
+        poolTxs, err := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
+	if err == nil {
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, proofTransactionGenParams.From)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("Select utxo err")
+		}
+	} // end of pooltx is not nil
 	fee := proofTransactionGenParams.Fee
 	if !fee.IsPositive() {
 		return common.Hash{}, fmt.Errorf("fee is ZERO ")
@@ -337,13 +346,16 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 
 	var addr common.Address
 	var keys []string
+        from , _:= common.StringToAddress(proofTransactionGenParams.From)
+	PkScript := tokenengine.GenerateLockScript(from)
+	PkScriptHex :=hexutil.Encode(PkScript)
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok == false {
 			continue
 		}
 		for _, txin := range payload.Inputs {
-			inpoint := modules.OutPoint{
+			/*inpoint := modules.OutPoint{
 				TxHash:       txin.PreviousOutPoint.TxHash,
 				OutIndex:     txin.PreviousOutPoint.OutIndex,
 				MessageIndex: txin.PreviousOutPoint.MessageIndex,
@@ -351,12 +363,13 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
 			if eerr != nil {
 				return common.Hash{}, err
-			}
-			TxHash := trimx(uvu.TxHash)
-			PkScriptHex := trimx(uvu.PkScriptHex)
-			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			}*/
+                        TxHash := txin.PreviousOutPoint.TxHash.String()
+			OutIndex := txin.PreviousOutPoint.OutIndex
+			MessageIndex := txin.PreviousOutPoint.MessageIndex
+			input := ptnjson.RawTxInput{TxHash, OutIndex, MessageIndex, PkScriptHex, ""}
 			srawinputs = append(srawinputs, input)
-			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(PkScriptHex))
 			if err != nil {
 				return common.Hash{}, err
 				//fmt.Println("get addr by outpoint is err")
