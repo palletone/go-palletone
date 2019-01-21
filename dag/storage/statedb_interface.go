@@ -36,6 +36,8 @@ type IStateDb interface {
 	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
+	SaveContractDeploy(deloypayload *modules.ContractDeployPayload) error
+
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
 	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
@@ -44,7 +46,7 @@ type IStateDb interface {
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)
-
+	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
 	/* Account_Info */
 	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
