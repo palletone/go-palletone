@@ -164,10 +164,16 @@ func (input *Input) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 	temp := &inputTemp{}
+
+	var tp []byte
 	err = rlp.DecodeBytes(raw, temp)
 	if err != nil {
 		return err
 	}
+	if len(temp.Extra) == 0 {
+		temp.Extra = tp
+	}
+
 	input.SignatureScript = temp.SignatureScript
 	input.Extra = temp.Extra
 	if !temp.NullOutPoint {
