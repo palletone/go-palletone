@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-var DebugTest bool = false
+var DebugTest bool = true
 
 var DefaultConfig = Config{
 	//LogLevel:               logging.DEBUG,
@@ -13,7 +13,7 @@ var DefaultConfig = Config{
 	ContractExecutetimeout: time.Duration(20) * time.Second,
 	ContractDeploytimeout:  time.Duration(40) * time.Second,
 	VmEndpoint:             "unix:///var/run/docker.sock",
-	ContractBuilder:        "palletone/palletimg",
+	ContractBuilder:        "palletone/palletimg:0.6",
 	SysContract:            map[string]string{"deposit_syscc": "true", "sample_syscc": "true", "createToken_sycc": "true"},
 }
 
