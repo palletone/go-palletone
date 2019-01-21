@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -26,6 +27,7 @@ import (
 	"time"
 	"unsafe"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 )
@@ -156,5 +158,28 @@ func TestOutPointToKey(t *testing.T) {
 	result := KeyToOutpoint(key)
 	if !reflect.DeepEqual(testPoint, *result) {
 		t.Fatal("test failed.", result.TxHash.String(), result.MessageIndex, result.OutIndex)
+	}
+}
+func TestHeaderPointer(t *testing.T) {
+	h := new(Header)
+	h.AssetIDs = []IDType16{PTNCOIN}
+	h.Creationdate = time.Now().Unix()
+	h.Extra = []byte("jay")
+	index := new(ChainIndex)
+	index.AssetID = PTNCOIN
+	index.Index = 1
+	index.IsMain = true
+
+	h.Number = index
+
+	h1 := CopyHeader(h)
+	h1.TxRoot = h.Hash()
+	h1.Number.Index = 100
+
+	fmt.Println(h.Number, h1.Number)
+	if h.Number.Index == h1.Number.Index {
+		fmt.Println("equal:", h.Number.Index)
+	} else {
+		fmt.Println("success copy!")
 	}
 }
