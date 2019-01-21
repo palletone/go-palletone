@@ -640,6 +640,9 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
 	return d.stateRep.GetContract(id)
 }
+func (d *Dag) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
+	return d.stateRep.GetContractDeploy(tempId, contractId, name)
+}
 
 // Get UnitNumber
 func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {

@@ -29,7 +29,7 @@ import (
 
 type TxJson struct {
 	TxHash  string       `json:"tx_hash"`
-	TxSize  float32      `json:"tx_size"`
+	TxSize  float64      `json:"tx_size"`
 	Payment *PaymentJson `json:"payment"`
 	Vote    *VoteJson    `json:"vote"`
 

@@ -33,6 +33,7 @@ type IStateRepository interface {
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContract(id []byte) (*modules.Contract, error)
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
+	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
 
 	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
@@ -96,4 +97,8 @@ func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountI
 }
 func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return rep.statedb.RetrieveMediatorInfo(address)
+}
+
+func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
+	return rep.GetContractDeploy(tempId[:], contractId[:], name)
 }

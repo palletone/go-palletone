@@ -223,3 +223,25 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	}
 	return contract, nil
 }
+func (statedb *StateDb) SaveContractDeploy(deploy *modules.ContractDeployPayload) error {
+	// key  tempid +  contract id  + name
+	key := append(constants.CONTRACT_DEPLOY, deploy.TemplateId[:]...)
+	key = append(key, deploy.ContractId[:]...)
+	key = append(key, []byte(deploy.Name)...)
+	return StoreBytes(statedb.db, key, deploy)
+}
+
+func (statedb *StateDb) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
+	key := append(constants.CONTRACT_DEPLOY, tempId[:]...)
+	key = append(key, contractId[:]...)
+	key = append(key, []byte(name)...)
+	data, err := statedb.db.Get(key)
+	if err != nil {
+		return nil, err
+	}
+	deploy := new(modules.ContractDeployPayload)
+	if err := rlp.DecodeBytes(data, &deploy); err != nil {
+		return nil, err
+	}
+	return deploy, nil
+}
