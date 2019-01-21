@@ -218,7 +218,7 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 		if err != nil {
 			return nil, err
 		}
-		return unit.UnitHeader, nil
+		return unit.Header(), nil
 	}
 	//height, err := d.GetUnitNumber(hash)
 	//if err != nil {
@@ -639,6 +639,9 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 // Get Contract Api
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
 	return d.stateRep.GetContract(id)
+}
+func (d *Dag) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
+	return d.stateRep.GetContractDeploy(tempId, contractId, name)
 }
 
 // Get UnitNumber

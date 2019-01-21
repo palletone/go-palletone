@@ -768,8 +768,10 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			//todo
+
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			//todo
+			rep.saveContractDeployReq(msg)
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			//todo
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
@@ -1004,7 +1006,7 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractTplPayload)
 	if ok == false {
-		log.Error("saveContractTpl", "error", "payload is not ContractTplPayload")
+		log.Error("saveContractTpl", "error", "payload is not ContractTplPayload type")
 		return false
 	}
 
@@ -1033,6 +1035,28 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 	}
 	if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Version, payload.Version, version); err != nil {
 		log.Error("SaveContractTemplateState when save version", "error", err.Error())
+		return false
+	}
+	return true
+}
+
+/*
+保存合约请求的方法
+*/
+// saveContractTplRequest
+func (rep *UnitRepository) saveContractDeployReq(msg *modules.Message) bool {
+	var pl interface{}
+	pl = msg.Payload
+	payload, ok := pl.(*modules.ContractDeployPayload)
+	if ok == false {
+		log.Error("saveContractDeployReq", "error", "payload is not ContractDeployReq type.")
+		return false
+	}
+	log.Debug("DeployReq payload", "info", payload)
+	// 模板id , 合约id , name
+	err := rep.statedb.SaveContractDeploy(payload)
+	if err != nil {
+		log.Info("save contract deploy payload failed,", "error", err)
 		return false
 	}
 	return true

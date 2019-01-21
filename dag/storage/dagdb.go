@@ -150,7 +150,7 @@ value: unit header rlp encoding bytes
 func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
 	uHash := h.Hash()
 	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
-	err := StoreBytes(dagdb.db, (key), h)
+	err := StoreBytes(dagdb.db, key[:], h)
 	if err != nil {
 		log.Error("Save Header error", err.Error())
 		return err

@@ -1986,14 +1986,14 @@ func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error
 					utxo, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
 					if err != nil && err == errors.ErrUtxoNotFound {
 						// validate utxo in pool
-						if _, has := pool.outpoints[*in.PreviousOutPoint]; !has {
-							return true, nil
+						if _, has := pool.outpoints[*in.PreviousOutPoint]; has {
+							return false, nil
 						}
-						if _, has := pool.orphansByPrev[*in.PreviousOutPoint]; !has {
-							return true, nil
+						if _, has := pool.orphansByPrev[*in.PreviousOutPoint]; has {
+							return false, nil
 						}
-
 					}
+
 					if utxo != nil {
 						if utxo.IsModified() || utxo.IsSpent() {
 							str := fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalide。",
@@ -2007,10 +2007,10 @@ func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error
 					hash := tx.Tx.Hash()
 					preout := modules.NewOutPoint(&hash, uint32(i), uint32(j))
 					if _, has := pool.outputs[*preout]; !has {
-						log.Debug("valide outputs success 33333333333333333333333333")
+						//log.Debug("valide outputs success.")
 						return false, nil
 					}
-					log.Debug("valide outputs failed 33333333333333333333333333")
+					//log.Debug("valide outputs failed.")
 					return true, errors.New("validate outputs failed.")
 				}
 			}
