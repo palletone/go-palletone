@@ -20,6 +20,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -138,6 +139,9 @@ func getNodeInfo(ctx *cli.Context) (string, error) {
 	_, cfg := makeConfigNode(ctx)
 	privateKey := cfg.Node.NodeKey()
 	listenAddr := cfg.P2P.ListenAddr
+	if strings.HasPrefix(listenAddr, ":") {
+		listenAddr = "127.0.0.1" + listenAddr
+	}
 
 	nodeID := discover.PubkeyID(&privateKey.PublicKey)
 	nodeInfo := "pnode://" + nodeID.String() + "@" + listenAddr
