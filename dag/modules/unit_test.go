@@ -169,17 +169,22 @@ func TestHeaderPointer(t *testing.T) {
 	index.AssetID = PTNCOIN
 	index.Index = 1
 	index.IsMain = true
-
 	h.Number = index
 
 	h1 := CopyHeader(h)
 	h1.TxRoot = h.Hash()
+	h2 := new(Header)
+	h2.Number = h1.Number
+	fmt.Println("h:=1", h.Number.Index, "h1:=1", h1.Number.Index, "h2:=1", h2.Number.Index)
 	h1.Number.Index = 100
 
-	fmt.Println(h.Number, h1.Number)
 	if h.Number.Index == h1.Number.Index {
-		fmt.Println("equal:", h.Number.Index)
+		fmt.Println("failed copy:", h.Number.Index)
 	} else {
 		fmt.Println("success copy!")
 	}
+	fmt.Println("h:1", h.Number.Index, "h1:=100", h1.Number.Index, "h2:=100", h2.Number.Index)
+	h.Number.Index = 666
+	h1.Number.Index = 888
+	fmt.Println("h:=666", h.Number.Index, "h1:=888", h1.Number.Index, "h2:=888", h2.Number.Index)
 }
