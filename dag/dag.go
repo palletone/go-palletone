@@ -218,7 +218,7 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 		if err != nil {
 			return nil, err
 		}
-		return unit.UnitHeader, nil
+		return unit.Header(), nil
 	}
 	//height, err := d.GetUnitNumber(hash)
 	//if err != nil {
