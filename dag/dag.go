@@ -93,7 +93,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 		log.Error("Can not get newest unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
 		return nil
 	}
-	unit, err := d.Memdag.GetUnit(hash)
+	unit, err := d.unitRep.GetUnit(hash)
 	if err == nil {
 		log.Debugf("Get newest unit from memdag by hash:%s", hash.String())
 		return unit
@@ -196,11 +196,11 @@ func (d *Dag) ParentsIsConfirmByHash(hash common.Hash) bool {
 }
 
 // GetMemUnitbyHash: get unit from memdag
-func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
-
-	unit, err := d.Memdag.GetUnit(hash)
-	return unit, err
-}
+//func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
+//
+//	unit, err := d.Memdag.GetUnit(hash)
+//	return unit, err
+//}
 
 func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
 	//return d.unitRep.GetUnitFormIndex(number)
@@ -209,13 +209,13 @@ func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 		log.Debug("GetUnitByNumber dagdb.GetHashByNumber err:", "error", err)
 		return nil, err
 	}
-	//log.Debug("Dag", "GetUnitByNumber GetUnit(hash):", hash)
+	//log.Debug("Dag", "GetUnitByNumber getChainUnit(hash):", hash)
 	return d.unitRep.GetUnit(hash)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	//if d.Memdag.Exists(hash) {
-	//	unit, err := d.Memdag.GetUnit(hash)
+	//	unit, err := d.Memdag.getChainUnit(hash)
 	//	if err != nil {
 	//		return nil, err
 	//	}
@@ -246,7 +246,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//Query memdag first
 	//hash, err := d.Memdag.GetHashByNumber(number)
 	//if err == nil { //Exist
-	//	unit, err := d.Memdag.GetUnit(hash)
+	//	unit, err := d.Memdag.getChainUnit(hash)
 	//	if err != nil {
 	//		log.Errorf("Number[%s] is exist in memdag, but cannot query unit by hash: %s", number.String(), hash.String())
 	//		return nil, err
@@ -255,7 +255,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//}
 	uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
 	if err1 != nil {
-		log.Debug("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
+		log.Debug("getChainUnit when GetHeader failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
@@ -369,7 +369,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	return h != nil
 }
 func (d *Dag) Exists(hash common.Hash) bool {
-	//if unit, err := d.unitRep.GetUnit(hash); err == nil && unit != nil {
+	//if unit, err := d.unitRep.getChainUnit(hash); err == nil && unit != nil {
 	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 	//	return true
 	//}
@@ -553,26 +553,27 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
-	tempdb, _ := memunit.NewTempdb(db)
-	tunitRep := dagcommon.NewUnitRepository4Db(tempdb)
-	tutxoRep := dagcommon.NewUtxoRepository4Db(tempdb)
-	tstateRep := dagcommon.NewStateRepository4Db(tempdb)
-	tpropRep := dagcommon.NewPropRepository4Db(tempdb)
+	//tempdb, _ := memunit.NewTempdb(db)
+	//tunitRep := dagcommon.NewUnitRepository4Db(tempdb)
+	//tutxoRep := dagcommon.NewUtxoRepository4Db(tempdb)
+	//tstateRep := dagcommon.NewStateRepository4Db(tempdb)
+	//tpropRep := dagcommon.NewPropRepository4Db(tempdb)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
-
 	hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
-	unstableChain := memunit.NewUnstableChain(db, tempdb, hash, idx.Index)
+	unstableChain := memunit.NewUnstableChain(db, unitRep, hash, idx.Index)
+	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
+
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
 		Db:            db,
 		unitRep:       tunitRep,
 		utxoRep:       tutxoRep,
-		propRep:       tpropRep,
+		propRep:       propRep,
 		stateRep:      tstateRep,
 		stbunitRep:    unitRep,
 		stbutxoRep:    utxoRep,
@@ -966,7 +967,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	//log.Debug("start save dag", "index", unit.UnitHeader.Index(), "hash", unit.Hash())
 
 	if !isGenesis {
-		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
+		if d.Exists(unit.Hash()) {
 			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
@@ -1352,8 +1353,9 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
-	log.Debug("TODO Update unit group sign")
-	//TODO
+	d.Memdag.SetUnitGroupSign(unitHash, nil, groupSign, txpool)
+	log.Debugf("Update unit[%s] group sign", unitHash.String())
+	//TODO Group pub key????
 	// 将缓存池utxo更新到utxodb中
 	//go d.UpdateUtxosByUnit(unitHash)
 	//// 更新utxo缓存池

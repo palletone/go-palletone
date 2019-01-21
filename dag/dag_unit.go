@@ -87,7 +87,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
 	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
-	if !dag.Memdag.Exists(hash) {
+	if !dag.Exists(hash) {
 		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.", hash.String())
 		newestUnit := dag.Memdag.GetLastMainchainUnit()
 		dag.propRep.SetNewestUnit(newestUnit.Header())

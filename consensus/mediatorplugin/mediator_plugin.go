@@ -99,7 +99,7 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		log.Info("Generated unit " + detail["Hash"] + " #" + detail["Num"] + " @" + detail["Timestamp"] +
+		log.Info("Generated unit " + detail["Hash"] + " #" + detail["Num"] + " Parent[" + detail["ParentHash"] + "] @" + detail["Timestamp"] +
 			" signed by " + detail["Mediator"])
 	case NotSynced:
 		log.Info("Not producing Unit because production is disabled " +
@@ -217,7 +217,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
 	detail["Mediator"] = scheduledMediator.Str()
 	detail["Hash"] = unitHash.TerminalString()
-
+	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
 	// 3. 对 unit 进行群签名和广播
 	go mp.broadcastAndGroupSignUnit(scheduledMediator, newUnit)
 

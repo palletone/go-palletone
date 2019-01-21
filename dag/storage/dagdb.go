@@ -66,7 +66,7 @@ type IDagDb interface {
 	PutTrieSyncProgress(count uint64) error
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
-	//GetUnit(hash common.Hash) (*modules.Unit, error)
+	//getChainUnit(hash common.Hash) (*modules.Unit, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
@@ -473,7 +473,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 //	rlp.DecodeBytes(hash, &hex)
 //	h := common.HexToHash(hex)
 //
-//	return dagdb.GetUnit(h)
+//	return dagdb.getChainUnit(h)
 //}
 //
 //func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
@@ -512,7 +512,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 //			return nil, err
 //		}
 //		unitHash := common.HexToHash(hex)
-//		return dagdb.GetUnit(unitHash)
+//		return dagdb.getChainUnit(unitHash)
 //	}
 //	return nil, errors.New(fmt.Sprintf("the irrekey :%s ,is not found unit's hash.", irreKey))
 //}

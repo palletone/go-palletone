@@ -17,17 +17,24 @@ type UnstableChain struct {
 	chainUnits        map[common.Hash]*modules.Unit
 	lastMainchainUnit *modules.Unit
 	tempdbunitRep     common2.IUnitRepository
+	tempUtxoRep       common2.IUtxoRepository
+	tempStateRep      common2.IStateRepository
 	ldbunitRep        common2.IUnitRepository
 	tempdb            *Tempdb
 }
 
-func NewUnstableChain(db ptndb.Database, tempdb *Tempdb, stablehash common.Hash, stableHeight uint64) *UnstableChain {
-	ldbRep := common2.NewUnitRepository4Db(db)
-	stableUnit, _ := ldbRep.GetUnit(stablehash)
+func NewUnstableChain(db ptndb.Database, stableUnitRep common2.IUnitRepository, stablehash common.Hash, stableHeight uint64) *UnstableChain {
+	//ldbRep := common2.NewUnitRepository4Db(db)
+	stableUnit, _ := stableUnitRep.GetUnit(stablehash)
+	tempdb, _ := NewTempdb(db)
 	trep := common2.NewUnitRepository4Db(tempdb)
+	tutxoRep := common2.NewUtxoRepository4Db(tempdb)
+	tstateRep := common2.NewStateRepository4Db(tempdb)
 	return &UnstableChain{
-		ldbunitRep:        ldbRep,
+		ldbunitRep:        stableUnitRep,
 		tempdbunitRep:     trep,
+		tempUtxoRep:       tutxoRep,
+		tempStateRep:      tstateRep,
 		tempdb:            tempdb,
 		orphanUnits:       make(map[common.Hash]*modules.Unit),
 		chainUnits:        make(map[common.Hash]*modules.Unit),
@@ -49,6 +56,24 @@ func (chain *UnstableChain) Init(stablehash common.Hash, stableHeight uint64) {
 		delete(chain.chainUnits, k)
 	}
 }
+func (chain *UnstableChain) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository) {
+	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep
+}
+func (chain *UnstableChain) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error {
+
+	//1. Set this unit as stable
+	unit, err := chain.getChainUnit(uHash)
+	if err != nil {
+		return err
+	}
+	chain.SetStableUnit(uHash, unit.NumberU64(), txpool)
+	//2. Update unit.groupSign
+	header := unit.Header()
+	header.GroupPubKey = groupPubKey
+	header.GroupSign = groupSign
+	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
+	return chain.ldbunitRep.SaveHeader(header)
+}
 func (chain *UnstableChain) SetStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool) {
 	//oldStableHash := chain.stableUnitHash
 	log.Debugf("Set stable unit to %s,height:%d", hash.String(), height)
@@ -60,21 +85,37 @@ func (chain *UnstableChain) SetStableUnit(hash common.Hash, height uint64, txpoo
 		newStableUnits[stableCount-i-1] = u
 		stbHash = u.ParentHash()[0]
 	}
+	//Save stable unit and it's parent
 	for _, unit := range newStableUnits {
-		chain.ldbunitRep.SaveUnit(unit, txpool, false, true)
+		chain.setNextStableUnit(unit, txpool)
 	}
 
 	chain.stableUnitHash = hash
 	chain.stableUnitHeight = height
-	//remove fork units
-	for _, unit := range chain.chainUnits {
-		if unit.NumberU64() <= height {
-			chain.removeUnitAndChildren(unit.Hash())
-		}
-	}
+
 	// Rebuild temp db
 	chain.rebuildTempdb()
 }
+
+//设置当前稳定单元的子单元为稳定单元
+func (chain *UnstableChain) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPool) {
+	hash := unit.Hash()
+	height := unit.NumberU64()
+	//remove fork units
+	for _, funit := range chain.chainUnits {
+		if funit.NumberU64() <= height && funit.Hash() != hash {
+			chain.removeUnitAndChildren(funit.Hash())
+		}
+	}
+	//Save stable unit to ldb
+	chain.ldbunitRep.SaveUnit(unit, txpool, false, true)
+	//remove new stable unit
+	delete(chain.chainUnits, hash)
+	//Set stable unit
+	chain.stableUnitHash = hash
+	chain.stableUnitHeight = height
+}
+
 func (chain *UnstableChain) checkStableCondition(needAddrCount int, txpool txspool.ITxPool) bool {
 	unstableCount := int(chain.lastMainchainUnit.NumberU64() - chain.stableUnitHeight)
 	//每个单元被多少个地址确认过(包括自己)
@@ -116,6 +157,7 @@ func (chain *UnstableChain) rebuildTempdb() {
 	for i := 0; i < unstableCount; i++ {
 		u := chain.chainUnits[ustbHash]
 		unstableUnits[unstableCount-i-1] = u
+		//log.Debugf("Unstable unit:%#v, Hash:%s", u, ustbHash.String())
 		ustbHash = u.ParentHash()[0]
 	}
 	for _, unit := range unstableUnits {
@@ -124,6 +166,7 @@ func (chain *UnstableChain) rebuildTempdb() {
 }
 
 func (chain *UnstableChain) removeUnitAndChildren(hash common.Hash) {
+	log.Debugf("Remove unit[%s] and it's children from chain unit", hash.String())
 	for h, unit := range chain.chainUnits {
 		if h == hash {
 			delete(chain.chainUnits, h)
@@ -182,17 +225,17 @@ func (chain *UnstableChain) processOrphan(unitHash common.Hash, txpool txspool.I
 		}
 	}
 }
-func (chain *UnstableChain) GetUnit(hash common.Hash) (*modules.Unit, error) {
+func (chain *UnstableChain) getChainUnit(hash common.Hash) (*modules.Unit, error) {
 	if unit, ok := chain.chainUnits[hash]; ok {
 		return unit, nil
 	}
 	return nil, errors.ErrNotFound
 }
 
-func (chain *UnstableChain) Exists(uHash common.Hash) bool {
-	_, ok := chain.chainUnits[uHash]
-	return ok
-}
+//func (chain *UnstableChain) Exists(uHash common.Hash) bool {
+//	_, ok := chain.chainUnits[uHash]
+//	return ok
+//}
 func (chain *UnstableChain) GetLastMainchainUnit() *modules.Unit {
 	return chain.lastMainchainUnit
 }
