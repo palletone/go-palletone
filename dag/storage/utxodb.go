@@ -197,16 +197,12 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	err := retrieve(utxodb.db, key, utxo)
 	//data, err := utxodb.db.Get(key)
 	if err != nil {
-		log.Error("get utxo entry failed", "error", err, "Query utxo by outpoint:%s", outpoint.String())
+		log.Warn("get utxo entry failed", "error", err, "Query utxo by outpoint:%s", outpoint.String())
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}
 		return nil, err
 	}
-	//
-	//if err := rlp.DecodeBytes(data, &utxo); err != nil {
-	//	return nil, err
-	//}
 	return utxo, nil
 }
 
