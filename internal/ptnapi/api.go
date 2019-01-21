@@ -1651,7 +1651,7 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 							if err != nil {
 								return nil, fmt.Errorf("Get PkScript err")
 							}
-							vaildutxos = append(vaildutxos, &ptnjson.UtxoJson{TxHash: mpoint.TxHash.Str(), MessageIndex: mpoint.MessageIndex, OutIndex: mpoint.OutIndex, Amount: payout.Value, Asset: payout.Asset.String(), PkScriptHex: PkScript, LockTime: msg.Payload.(*modules.PaymentPayload).LockTime})
+							vaildutxos = append(vaildutxos, &ptnjson.UtxoJson{TxHash: mpoint.TxHash.String(), MessageIndex: mpoint.MessageIndex, OutIndex: mpoint.OutIndex, Amount: payout.Value, Asset: payout.Asset.String(), PkScriptHex: PkScript, LockTime: msg.Payload.(*modules.PaymentPayload).LockTime})
 						}
 					}
 				}
@@ -2046,7 +2046,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 		if err != nil {
 			return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 		}
-		script, err := decodeHexStr(rti.ScriptPubKey)
+		script, err := decodeHexStr(trimx(rti.ScriptPubKey))
 		if err != nil {
 			return ptnjson.SignRawTransactionResult{}, err
 		}

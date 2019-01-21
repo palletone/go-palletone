@@ -372,7 +372,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
-	log.Debug("===NewBlockMsg===", "unit:", *unit, "index:", unit.Number().Index, "peer id:", p.id)
+	log.Debug("===NewBlockMsg===", "peer id:", p.id, "index:", unit.Number().Index, "unit:", *unit)
 
 	// Mark the peer as owning the block and schedule it for import
 	p.MarkUnit(unit.UnitHash)

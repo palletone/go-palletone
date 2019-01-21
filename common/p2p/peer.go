@@ -456,7 +456,8 @@ func (p *Peer) Info() *PeerInfo {
 				protoInfo = "handshake"
 			}
 		}
-		info.Protocols[proto.Name] = protoInfo
+		//info.Protocols[proto.Name] = protoInfo
+		info.Protocols[caps[0]] = protoInfo
 	}
 	return info
 }
