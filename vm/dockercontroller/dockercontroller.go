@@ -557,7 +557,7 @@ func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
 	vmName := ccid.ChaincodeSpec.Type
 	switch vmName {
 	case 1:
-		return "palletone/palletimg:1.0", nil
+		return "palletone/palletimg:0.6", nil
 	case 2:
 		return "node", nil
 	case 3:
