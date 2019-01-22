@@ -193,7 +193,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
 	log.Debugf("Try to add unit[%s] to unstable chain", uHash.String())
-
+	threshold, _ := chain.ldbPropRep.GetChainThreshold()
 	if _, ok := chain.chainUnits[parentHash]; ok || parentHash == chain.stableUnitHash {
 		//add unit to chain
 		chain.chainUnits[uHash] = unit
@@ -202,7 +202,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			log.Debug("This is a new main chain unit")
 			//Add a new unit to main chain
 			chain.setLastMainchainUnit(unit)
-			if !chain.checkStableCondition(2, txpool) {
+			if !chain.checkStableCondition(threshold, txpool) {
 				chain.tempdbunitRep.SaveUnit(unit, nil, false, true)
 			}
 		} else { //Fork unit
@@ -210,7 +210,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			if unit.NumberU64() > chain.lastMainchainUnit.NumberU64() { //Need switch main chain
 				//switch main chain, build db
 				chain.setLastMainchainUnit(unit)
-				if !chain.checkStableCondition(2, txpool) {
+				if !chain.checkStableCondition(threshold, txpool) {
 					chain.rebuildTempdb()
 				}
 			} else {

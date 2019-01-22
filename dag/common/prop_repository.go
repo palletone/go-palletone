@@ -39,7 +39,7 @@ type IPropRepository interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
-
+	GetChainThreshold() (int, error)
 	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
@@ -60,6 +60,13 @@ func NewPropRepository4Db(db ptndb.Database) *PropRepository {
 }
 func (pRep *PropRepository) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 	return pRep.db.RetrieveGlobalProp()
+}
+func (pRep *PropRepository) GetChainThreshold() (int, error) {
+	gp, err := pRep.RetrieveGlobalProp()
+	if err != nil {
+		return 0, err
+	}
+	return gp.ChainThreshold(), nil
 }
 func (pRep *PropRepository) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	return pRep.db.RetrieveDynGlobalProp()

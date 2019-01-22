@@ -958,7 +958,7 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.T
 
 //modified by Albert·Gou
 func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
-	return d.unstableUnitRep.SaveUnit(unit, txpool, true, false)
+	return d.stableUnitRep.SaveUnit(unit, txpool, true, true)
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
