@@ -120,7 +120,16 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		// todo
 		log.Error("GetCurrent header failed ", "error", err)
 	}
-	pendingUnit.UnitHeader.Number.Index = header.Number.Index + 1
+	if header == nil {
+		index, err := dag.GetIrreversibleUnit(gasToken)
+		if err != nil {
+			// todo
+			log.Error("GetCurrent header failed ", "error", err)
+		}
+		pendingUnit.UnitHeader.Number.Index = index.Index + 1
+	} else {
+		pendingUnit.UnitHeader.Number.Index = header.Number.Index + 1
+	}
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
 	pendingUnit.Hash()
 

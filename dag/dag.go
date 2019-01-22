@@ -243,7 +243,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 			log.Errorf("Number[%s] is exist in memdag, but cannot query unit by hash: %s", number.String(), hash.String())
 			return nil, err
 		}
-		return unit.UnitHeader, nil
+		return unit.Header(), nil
 	}
 	if hash1, err := d.unitRep.GetHashByNumber(number); err != nil {
 		log.Debug("GetHashByNumber when GetHash failed ", "error:", err, "hash", number.String())
@@ -335,6 +335,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
+		d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
 		log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
 	}
@@ -982,6 +983,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			log.Debug("Dag", "SaveDag, save error when save unit to db err:", err)
 			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
 		}
+		d.updateLastIrreversibleUnitNum(unit.Hash(), uint64(unit.NumberU64()))
 		// step3.2. if pass and with group signature, prune fork data
 		// if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.Hash()); err != nil {
 		// 	return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
@@ -992,6 +994,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
 			log.Debug("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+			//d.updateLastIrreversibleUnitNum(unit.Hash(), uint64(unit.NumberU64()))
 		}
 	}
 
