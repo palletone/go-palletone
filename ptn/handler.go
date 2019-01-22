@@ -422,6 +422,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	defer msg.Discard()
 
+	//SubProtocols compare
+	partition := pm.SubProtocols[0].Name == p.Caps()[0].Name
+	if !partition && (msg.Code != GetBlockHeadersMsg || msg.Code != BlockHeadersMsg) {
+		log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
+		return nil
+	}
+
 	// Handle the message depending on its contents
 	switch {
 	case msg.Code == StatusMsg:
@@ -464,14 +471,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		return pm.TxMsg(msg, p)
 
-	//case msg.Code == ConsensusMsg:
-	//	return pm.ConsensusMsg(msg, p)
-
 	// append by Albert·Gou
 	case msg.Code == NewProducedUnitMsg:
 		// Retrieve and decode the propagated new produced unit
-		//pm.NewProducedUnitMsg(msg, p)
-		//return pm.NewBlockMsg(msg, p)
 		return pm.NewProducedUnitMsg(msg, p)
 
 	// append by Albert·Gou
