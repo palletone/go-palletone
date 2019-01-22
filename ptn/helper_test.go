@@ -226,8 +226,8 @@ func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan boo
 func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
 	return nil
 }
-func (p *testTxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
-	return &modules.InvokeFees{}, nil
+func (p *testTxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
+	return &modules.AmountAsset{}, nil
 }
 func (p *testTxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 	return false, nil

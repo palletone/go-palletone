@@ -138,8 +138,8 @@ func (ud *UnitDag4Test) addUtxoview(view *UtxoViewpoint, tx *modules.Transaction
 func (ud *UnitDag4Test) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return ud.chainHeadFeed.Subscribe(ch)
 }
-func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
-	return &modules.InvokeFees{}, nil
+func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+	return &modules.AmountAsset{}, nil
 }
 
 func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {

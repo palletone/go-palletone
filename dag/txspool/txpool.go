@@ -91,7 +91,7 @@ type dags interface {
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
-	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -1788,7 +1788,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }
 
-func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
+func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
 	return pool.unit.GetTxFee(tx)
 }
 
