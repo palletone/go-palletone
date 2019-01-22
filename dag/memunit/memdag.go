@@ -299,6 +299,8 @@ func (chain *MemDag) Save(unit *modules.Unit, txpool txspool.ITxPool) error {
 		if len(hashs) > 1 {
 			hashs = hashs[1:]
 			chain.PushDelHashs(hashs[:])
+		} else {
+			hashs = make([]common.Hash, 0)
 		}
 		if stable_hash == (common.Hash{}) {
 			log.Error("stable_hash is nil ..............", "index", index)

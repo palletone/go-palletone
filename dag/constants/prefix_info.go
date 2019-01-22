@@ -38,6 +38,11 @@ var (
 	OutPointAddr_Prefix         = []byte("pa")  // outpoint addr
 	CONTRACT_STATE_PREFIX       = []byte("cs")
 	CONTRACT_TPL                = []byte("ct")
+	CONTRACT_TPL_REQ            = []byte("ctq")
+	CONTRACT_DEPLOY             = []byte("cdq")
+	CONTRACT_STOP_REQ           = []byte("csq")
+	CONTRACT_INVOKE_REQ         = []byte("ciq")
+	CONTRACT_SIgNATURE          = []byte("csn")
 
 	MESSAGES_PREFIX               = []byte("me")
 	POLL_PREFIX                   = []byte("po")

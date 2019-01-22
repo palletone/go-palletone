@@ -580,8 +580,8 @@ func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, para
 func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("Ccstop:" + deployId + ":" + txid + "_")
-
-	err := s.b.ContractStop(depId, txid, true)
+	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
+	err := s.b.ContractStop(depId, txid, false)
 	return err
 }
 
@@ -733,7 +733,7 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
 	fee, _ := strconv.ParseUint(daoFee, 10, 64)
 	cid := common.HexToAddress(contractId)
-
+	//TODO delImg 为 true 时，目前是会删除基础镜像的
 	delImg := true
 	if del, _ := strconv.Atoi(deleteImage); del <= 0 {
 		delImg = false

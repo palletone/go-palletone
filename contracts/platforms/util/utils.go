@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 //var log = flogging.MustGetLogger("util")
@@ -152,9 +153,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	}
 	if opts.Image == "" {
 		//通用的本地编译环境
-		//TODO xiaozhi
-		//opts.Image = cfg.GetConfig().ContractBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
-		opts.Image =  "palletone/palletimg:1.0" //cutil.GetDockerfileFromConfig("chaincode.builder")
+		opts.Image = contractcfg.GetConfig().ContractBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
 		if opts.Image == "" {
 			return fmt.Errorf("No image provided and \"chaincode.builder\" default does not exist")
 		}

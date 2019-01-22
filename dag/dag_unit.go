@@ -108,8 +108,14 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// dag.setUnitHeader(pendingUnit)
 
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
-	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
-	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()
+	pendingUnit.UnitHeader.ParentsHash[0] = currentHash
+	header, err := dag.GetHeaderByHash(currentHash)
+	if err != nil {
+		// todo
+		log.Error("GetCurrent header failed ", "error", err)
+	}
+	pendingUnit.UnitHeader.Number.Index = header.Number.Index + 1
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
 	pendingUnit.Hash()
 
