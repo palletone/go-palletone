@@ -770,8 +770,9 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			//todo
 
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
-			//todo
-			rep.saveContractDeployReq(msg)
+			if ok := rep.saveContractDeployReq(msg); !ok {
+				return fmt.Errorf("save contract deployReq failed.")
+			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			//todo
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
