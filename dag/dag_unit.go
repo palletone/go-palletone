@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -36,30 +37,35 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 	phash, current_index, _ := dag.propRep.GetNewestUnit(pendingUnit.UnitHeader.ChainIndex().AssetID)
 	//current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
-	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
-
-		curMemUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0], current_index.Index)
-		curUnit := dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
-
-		if curMemUnit != nil {
-
-			if curMemUnit.UnitHeader.Index() > curUnit.UnitHeader.Index() {
-				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curMemUnit.UnitHash)
-				pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
-				pendingUnit.UnitHeader.Number.Index += 1
-			} else {
-				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
-				pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
-				pendingUnit.UnitHeader.Number.Index += 1
-			}
-		} else {
-			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
-			pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
-			pendingUnit.UnitHeader.Number.Index += 1
-		}
-
-	} else {
-		pendingUnit.UnitHeader.Number = current_index
+	//if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
+	//
+	//	curMemUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0], current_index.Index)
+	//	curUnit := dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
+	//
+	//	if curMemUnit != nil {
+	//
+	//		if curMemUnit.UnitHeader.Index() > curUnit.UnitHeader.Index() {
+	//			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curMemUnit.UnitHash)
+	//			//pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
+	//			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curMemUnit.UnitHeader.Number)
+	//			pendingUnit.UnitHeader.Number.Index += 1
+	//		} else {
+	//			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
+	//			//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+	//			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
+	//			pendingUnit.UnitHeader.Number.Index += 1
+	//		}
+	//	} else {
+	//		pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
+	//		//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+	//		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
+	//		pendingUnit.UnitHeader.Number.Index += 1
+	//	}
+	//
+	//} else
+	{
+		//pendingUnit.UnitHeader.Number = current_index
+		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(current_index)
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
 
 		pendingUnit.UnitHeader.ParentsHash =
@@ -67,8 +73,8 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 	}
 
 	if pendingUnit.UnitHeader.Number == nil {
-		current_index.Index += 1
-		pendingUnit.UnitHeader.Number = current_index
+		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(current_index)
+		pendingUnit.UnitHeader.Number.Index += 1
 	} else {
 		log.Debug("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.String())
 	}
@@ -86,11 +92,13 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// 1. 判断是否满足生产的若干条件
 
 	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
-	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
-	if !dag.Memdag.Exists(hash) {
-		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.", hash.String())
-		newestUnit, _ := dag.Memdag.GetNewestUnit(gasToken)
-		dag.propRep.SetNewestUnit(newestUnit.Header())
+	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
+	if !dag.Exists(hash) {
+		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
+		newestUnit := dag.Memdag.GetLastMainchainUnit()
+		if nil != newestUnit {
+			dag.propRep.SetNewestUnit(newestUnit.Header())
+		}
 	}
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	newUnits, err := dag.CreateUnit(&producer, txpool, when)
@@ -108,8 +116,19 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// dag.setUnitHeader(pendingUnit)
 
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
-	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash() //dag.GetHeadUnitHash()
-	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()
+	pendingUnit.UnitHeader.ParentsHash[0] = currentHash
+	header, err := dag.GetHeaderByHash(currentHash)
+	if header == nil {
+		index, err := dag.GetIrreversibleUnit(gasToken)
+		if err != nil {
+			// todo
+			log.Error("GetCurrent header failed ", "error", err)
+		}
+		pendingUnit.UnitHeader.Number.Index = index.Index + 1
+	} else {
+		pendingUnit.UnitHeader.Number.Index = header.Number.Index + 1
+	}
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
 	pendingUnit.Hash()
 
@@ -147,7 +166,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	//	return false
 	//}
 	//dag.SaveUnit(newUnit, txpool, false)
-	dag.Memdag.Save(newUnit, txpool)
+	dag.Memdag.AddUnit(newUnit, txpool)
 	return true
 }
 

@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	award2 "github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -43,6 +44,17 @@ type UtxoRepository struct {
 func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb) *UtxoRepository {
 	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
 }
+func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
+	//dagdb := storage.NewDagDb(db)
+	utxodb := storage.NewUtxoDb(db)
+	statedb := storage.NewStateDb(db)
+	idxdb := storage.NewIndexDb(db)
+	//propdb := storage.NewPropertyDb(db)
+	//utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+	//val := NewValidate(dagdb, utxodb, utxoRep, statedb)
+
+	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
+}
 
 type IUtxoRepository interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
@@ -53,7 +65,7 @@ type IUtxoRepository interface {
 	GetUxto(txin modules.Input) modules.Utxo
 	UpdateUtxo(txHash common.Hash, msg *modules.Message, msgIndex uint32) error
 	ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error)
-	ComputeTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
+	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(addr common.Address, asset modules.Asset) uint64
@@ -624,7 +636,7 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 }
 
 //计算一笔Tx中包含多少手续费
-func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
+func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
 
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -661,7 +673,7 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*module
 			return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
 		}
 		fees := inAmount - outAmount
-		return &modules.InvokeFees{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
+		return &modules.AmountAsset{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
 
 	}
 	return nil, fmt.Errorf("Compute fees: no payment payload")

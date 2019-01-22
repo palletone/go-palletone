@@ -22,6 +22,7 @@ package common
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -38,7 +39,7 @@ type IPropRepository interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
-
+	GetChainThreshold() (int, error)
 	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
@@ -53,8 +54,19 @@ type IPropRepository interface {
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
 	return &PropRepository{db: db}
 }
+func NewPropRepository4Db(db ptndb.Database) *PropRepository {
+	pdb := storage.NewPropertyDb(db)
+	return &PropRepository{db: pdb}
+}
 func (pRep *PropRepository) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 	return pRep.db.RetrieveGlobalProp()
+}
+func (pRep *PropRepository) GetChainThreshold() (int, error) {
+	gp, err := pRep.RetrieveGlobalProp()
+	if err != nil {
+		return 0, err
+	}
+	return gp.ChainThreshold(), nil
 }
 func (pRep *PropRepository) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	return pRep.db.RetrieveDynGlobalProp()

@@ -60,7 +60,7 @@ type PalletOne interface {
 }
 
 type iDag interface {
-	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetActiveMediators() []common.Address
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)

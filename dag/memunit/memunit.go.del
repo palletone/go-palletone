@@ -39,13 +39,13 @@ type MemUnit struct {
 	memUnitInfo *sync.Map
 	memLock     sync.RWMutex
 
-	numberToHash     map[*modules.ChainIndex]common.Hash
+	numberToHash     map[modules.ChainIndex]common.Hash
 	numberToHashLock *sync.RWMutex
 }
 
 func InitMemUnit() *MemUnit {
 	memUnitInfo := new(sync.Map)
-	numberToHash := map[*modules.ChainIndex]common.Hash{}
+	numberToHash := map[modules.ChainIndex]common.Hash{}
 	memUnit := &MemUnit{
 		memUnitInfo:      memUnitInfo,
 		numberToHash:     numberToHash,
@@ -59,10 +59,10 @@ func InitMemUnit() *MemUnit {
 func (mu *MemUnit) SetHashByNumber(chainIndex *modules.ChainIndex, hash common.Hash) {
 	mu.numberToHashLock.Lock()
 	defer mu.numberToHashLock.Unlock()
-	if _, ok := mu.numberToHash[chainIndex]; ok {
+	if _, ok := mu.numberToHash[*chainIndex]; ok {
 		return
 	}
-	mu.numberToHash[chainIndex] = hash
+	mu.numberToHash[*chainIndex] = hash
 	return
 }
 
@@ -71,7 +71,7 @@ func (mu *MemUnit) SetHashByNumber(chainIndex *modules.ChainIndex, hash common.H
 func (mu *MemUnit) GetHashByNumber(chainIndex *modules.ChainIndex) (common.Hash, error) {
 	mu.numberToHashLock.RLock()
 	defer mu.numberToHashLock.RUnlock()
-	if hash, ok := mu.numberToHash[chainIndex]; ok {
+	if hash, ok := mu.numberToHash[*chainIndex]; ok {
 		return hash, nil
 	}
 	return common.Hash{}, errors.New("have not key")
@@ -80,10 +80,10 @@ func (mu *MemUnit) GetHashByNumber(chainIndex *modules.ChainIndex) (common.Hash,
 func (mu *MemUnit) DelHashByNumber(chainIndex *modules.ChainIndex) error {
 	mu.numberToHashLock.Lock()
 	defer mu.numberToHashLock.Unlock()
-	if _, ok := mu.numberToHash[chainIndex]; !ok {
+	if _, ok := mu.numberToHash[*chainIndex]; !ok {
 		return errors.New("the hash is not exist")
 	}
-	delete(mu.numberToHash, chainIndex)
+	delete(mu.numberToHash, *chainIndex)
 	return nil
 }
 func (mu *MemUnit) Add(u *modules.Unit) error {

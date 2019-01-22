@@ -578,37 +578,36 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	if header.Number == nil {
 		return modules.UNIT_STATE_INVALID_HEADER
 	}
-	if len(header.AssetIDs) == 0 {
-		return modules.UNIT_STATE_INVALID_HEADER
-	}
+	//if len(header.AssetIDs) == 0 {
+	//	return modules.UNIT_STATE_INVALID_HEADER
+	//}
 
-	if isGenesis {
-		if len(header.AssetIDs) != 1 {
-			return modules.UNIT_STATE_INVALID_HEADER
-		}
-		//ptnAssetID, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-		asset := modules.NewPTNAsset()
-		ptnAssetID := asset.AssetId
-		if header.AssetIDs[0] != ptnAssetID || !header.Number.IsMain || header.Number.Index != 0 {
-			fmt.Println(6)
-			fmt.Println(header.AssetIDs[0].String())
-			fmt.Println(ptnAssetID.String())
-			return modules.UNIT_STATE_INVALID_HEADER
-		}
-
-		// 	return modules.UNIT_STATE_CHECK_HEADER_PASSED
-	}
-	var isValidAssetId bool
-	for _, asset := range header.AssetIDs {
-		if asset == header.Number.AssetID {
-			isValidAssetId = true
-			break
-		}
-	}
-	if !isValidAssetId {
-		fmt.Println(7)
-		return modules.UNIT_STATE_INVALID_HEADER
-	}
+	//if isGenesis {
+	//	if len(header.AssetIDs) != 1 {
+	//		return modules.UNIT_STATE_INVALID_HEADER
+	//	}
+	//	//ptnAssetID, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
+	//	asset := modules.NewPTNAsset()
+	//	ptnAssetID := asset.AssetId
+	//	if header.AssetIDs[0] != ptnAssetID || !header.Number.IsMain || header.Number.Index != 0 {
+	//		fmt.Println(6)
+	//		fmt.Println(header.AssetIDs[0].String())
+	//		fmt.Println(ptnAssetID.String())
+	//		return modules.UNIT_STATE_INVALID_HEADER
+	//	}
+	//	// 	return modules.UNIT_STATE_CHECK_HEADER_PASSED
+	//}
+	//var isValidAssetId bool
+	//for _, asset := range header.AssetIDs {
+	//	if asset == header.Number.AssetID {
+	//		isValidAssetId = true
+	//		break
+	//	}
+	//}
+	//if !isValidAssetId {
+	//	fmt.Println(7)
+	//	return modules.UNIT_STATE_INVALID_HEADER
+	//}
 
 	// check authors
 	//TODO must recover

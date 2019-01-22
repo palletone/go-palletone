@@ -31,7 +31,6 @@ import (
 	// "github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -50,6 +49,7 @@ type IDagDb interface {
 	SaveGenesisUnitHash(hash common.Hash) error
 
 	SaveHeader(h *modules.Header) error
+	SaveHeaders(headers []*modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
@@ -67,7 +67,7 @@ type IDagDb interface {
 	PutTrieSyncProgress(count uint64) error
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
-	//GetUnit(hash common.Hash) (*modules.Unit, error)
+	//getChainUnit(hash common.Hash) (*modules.Unit, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
@@ -148,22 +148,44 @@ value: unit header rlp encoding bytes
 */
 // save header
 func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
+
+	err := dagdb.saveHeader(dagdb.db, h)
+	if err != nil {
+		return err
+	}
+	return dagdb.saveHeaderChainIndex(dagdb.db, h)
+}
+func (dagdb *DagDb) SaveHeaders(headers []*modules.Header) error {
+	batch := dagdb.db.NewBatch()
+	for _, h := range headers {
+		err := dagdb.saveHeader(batch, h)
+		if err != nil {
+			return err
+		}
+		err = dagdb.saveHeaderChainIndex(batch, h)
+		if err != nil {
+			return err
+		}
+	}
+	return batch.Write()
+}
+func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 	uHash := h.Hash()
 	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
-	err := StoreBytes(dagdb.db, key[:], h)
+	err := StoreBytes(putter, key[:], h)
 	if err != nil {
 		log.Error("Save Header error", err.Error())
 		return err
 	}
 	log.Debugf("Save header for unit: %x", uHash.Bytes())
-	return dagdb.saveHeaderChainIndex(h)
+	return nil
 }
 
 //为Unit的Height建立索引,这个索引是必须的，所以在dagdb中实现，而不是在indexdb实现。
-func (dagdb *DagDb) saveHeaderChainIndex(h *modules.Header) error {
+func (dagdb *DagDb) saveHeaderChainIndex(putter ptndb.Putter, h *modules.Header) error {
 	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
 	uHash := h.Hash()
-	err := StoreBytes(dagdb.db, idxKey, uHash)
+	err := StoreBytes(putter, idxKey, uHash)
 	if err != nil {
 		log.Error("Save Header height index error", err.Error())
 		return err
@@ -315,9 +337,8 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 			Index:     uint64(i),
 		}
 		key := append(constants.LookupPrefix, tx.Hash().Bytes()...)
-		val, _ := rlp.EncodeToBytes(in)
 
-		if err := batch.Put(key, val); err != nil {
+		if err := StoreBytes(batch, key, in); err != nil {
 			return err
 		}
 	}
@@ -475,7 +496,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 //	rlp.DecodeBytes(hash, &hex)
 //	h := common.HexToHash(hex)
 //
-//	return dagdb.GetUnit(h)
+//	return dagdb.getChainUnit(h)
 //}
 //
 //func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
@@ -514,7 +535,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 //			return nil, err
 //		}
 //		unitHash := common.HexToHash(hex)
-//		return dagdb.GetUnit(unitHash)
+//		return dagdb.getChainUnit(unitHash)
 //	}
 //	return nil, errors.New(fmt.Sprintf("the irrekey :%s ,is not found unit's hash.", irreKey))
 //}
