@@ -67,7 +67,7 @@ func NewUnitDag4Test() *UnitDag4Test {
 	propdb := storage.NewPropertyDb(db)
 	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	idx := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
-	h := modules.NewHeader([]common.Hash{hash}, []modules.IDType16{modules.PTNCOIN}, uint64(1), []byte("hello"))
+	h := modules.NewHeader([]common.Hash{hash}, uint64(1), []byte("hello"))
 	h.Number = idx
 	propdb.SetNewestUnit(h)
 	//idagdb.PutHeadUnitHash()
@@ -138,8 +138,8 @@ func (ud *UnitDag4Test) addUtxoview(view *UtxoViewpoint, tx *modules.Transaction
 func (ud *UnitDag4Test) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
 	return ud.chainHeadFeed.Subscribe(ch)
 }
-func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
-	return &modules.InvokeFees{}, nil
+func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+	return &modules.AmountAsset{}, nil
 }
 
 func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {

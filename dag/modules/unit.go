@@ -58,15 +58,15 @@ const (
 )
 
 type Header struct {
-	ParentsHash  []common.Hash `json:"parents_hash"`
-	AssetIDs     []IDType16    `json:"assets"`
-	Authors      Authentifier  `json:"mediator"`    // the unit creation authors
-	GroupSign    []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
-	GroupPubKey  []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
-	TxRoot       common.Hash   `json:"root"`
-	Number       *ChainIndex   `json:"index"`
-	Extra        []byte        `json:"extra"`
-	Creationdate int64         `json:"creation_time"` // unit create time
+	ParentsHash []common.Hash `json:"parents_hash"`
+	//AssetIDs     []IDType16    `json:"assets"`
+	Authors      Authentifier `json:"mediator"`    // the unit creation authors
+	GroupSign    []byte       `json:"groupSign"`   // 群签名, 用于加快单元确认速度
+	GroupPubKey  []byte       `json:"groupPubKey"` // 群公钥, 用于验证群签名
+	TxRoot       common.Hash  `json:"root"`
+	Number       *ChainIndex  `json:"index"`
+	Extra        []byte       `json:"extra"`
+	Creationdate int64        `json:"creation_time"` // unit create time
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
@@ -77,22 +77,14 @@ func (cpy *Header) CopyHeader(h *Header) {
 			cpy.ParentsHash[i] = h.ParentsHash[i]
 		}
 	}
-
-	if len(h.AssetIDs) > 0 {
-		cpy.AssetIDs = make([]IDType16, len(h.AssetIDs))
-		for i := 0; i < len(h.AssetIDs); i++ {
-			cpy.AssetIDs[i] = h.AssetIDs[i]
-		}
-	}
-
 }
 
-func NewHeader(parents []common.Hash, asset []IDType16, used uint64, extra []byte) *Header {
+func NewHeader(parents []common.Hash, used uint64, extra []byte) *Header {
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
 	number := &ChainIndex{}
-	return &Header{ParentsHash: hashs, AssetIDs: asset, Number: number, Extra: append(b, extra...)}
+	return &Header{ParentsHash: hashs, Number: number, Extra: append(b, extra...)}
 }
 
 func HeaderEqual(oldh, newh *Header) bool {
@@ -168,10 +160,6 @@ func CopyHeader(h *Header) *Header {
 		for i := 0; i < len(h.ParentsHash); i++ {
 			cpy.ParentsHash[i].Set(h.ParentsHash[i])
 		}
-	}
-
-	if len(h.AssetIDs) > 0 {
-		copy(cpy.AssetIDs, h.AssetIDs)
 	}
 
 	if len(h.GroupSign) > 0 {

@@ -97,9 +97,9 @@ type TxPoolTransaction struct {
 	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
-	RemStatus    bool        // will remove txspool
-	TxFee        *InvokeFees `json:"tx_fee"`
-	Index        int         `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
+	RemStatus    bool         // will remove txspool
+	TxFee        *AmountAsset `json:"tx_fee"`
+	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time
@@ -175,7 +175,7 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 		fee = tx.TxFee.Amount
 	} else {
 		fee = 20 // 20dao
-		tx.TxFee = &InvokeFees{Amount: 20, Asset: tx.Tx.Asset()}
+		tx.TxFee = &AmountAsset{Amount: 20, Asset: tx.Tx.Asset()}
 	}
 	return big.NewInt(int64(fee))
 }

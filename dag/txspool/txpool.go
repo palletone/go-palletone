@@ -91,7 +91,7 @@ type dags interface {
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
-	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -650,6 +650,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
 	// 如果是孤兒交易，則先不計算交易的優先級。
 	if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
+
 		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 		txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
 	}
@@ -715,6 +716,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	if err := pool.checkPoolDoubleSpend(tx); err != nil {
 		return false, err
 	}
+
 	// 计算交易费和优先级
 	tx.TxFee, _ = pool.GetTxFee(tx.Tx)
 	tx.Priority_lvl = tx.GetPriorityLvl()
@@ -1791,7 +1793,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }
 
-func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
+func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
 	return pool.unit.GetTxFee(tx)
 }
 
@@ -1997,6 +1999,8 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 						if _, has := pool.orphansByPrev[*in.PreviousOutPoint]; has {
 							return false, nil
 						}
+					} else if err != nil && err != errors.ErrUtxoNotFound {
+						return false, err
 					}
 
 					if utxo != nil {
@@ -2005,14 +2009,12 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 								tx.Hash().String(), in.PreviousOutPoint.String())
 							return false, errors.New(str)
 						}
-					} else {
-						return false, err
 					}
+
 					// 验证outputs缓存的utxo
 					hash := tx.Hash()
 					preout := modules.NewOutPoint(&hash, uint32(i), uint32(j))
 					if _, has := pool.outputs[*preout]; !has {
-						//log.Debug("valide outputs success.")
 						return false, nil
 					}
 					//log.Debug("valide outputs failed.")
