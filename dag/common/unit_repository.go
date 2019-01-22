@@ -89,9 +89,9 @@ type IUnitRepository interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 }
 type UnitRepository struct {
-	dagdb          storage.IDagDb
-	idxdb          storage.IIndexDb
-	uxtodb         storage.IUtxoDb
+	dagdb storage.IDagDb
+	idxdb storage.IIndexDb
+	//uxtodb         storage.IUtxoDb
 	statedb        storage.IStateDb
 	propdb         storage.IPropertyDb
 	validate       Validator
@@ -102,7 +102,7 @@ type UnitRepository struct {
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
 	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
-	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep, propdb: propdb}
+	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, validate: val, utxoRepository: utxoRep, propdb: propdb}
 }
 
 func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
@@ -113,7 +113,7 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	propdb := storage.NewPropertyDb(db)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
 	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
-	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, propdb: propdb, validate: val, utxoRepository: utxoRep}
+	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, validate: val, utxoRepository: utxoRep}
 }
 
 func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
@@ -629,7 +629,7 @@ func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.
 		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
-	utxo, err := rep.uxtodb.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
+	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -1310,7 +1310,7 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range pay.Inputs {
 				if input.PreviousOutPoint != nil {
-					utxo, err := rep.uxtodb.GetUtxoEntry(input.PreviousOutPoint)
+					utxo, err := rep.utxoRepository.GetUtxoEntry(input.PreviousOutPoint)
 					if err != nil {
 						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
 					}

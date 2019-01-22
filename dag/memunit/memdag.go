@@ -232,6 +232,9 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash) {
 }
 
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
+	if unit == nil {
+		return errors.ErrNullPoint
+	}
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
 	log.Debugf("Try to add unit[%s] to unstable chain", uHash.String())
