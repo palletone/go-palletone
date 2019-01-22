@@ -156,6 +156,11 @@ func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
 	return false
 }
 
+func (d *Dag) GetIrreversibleUnit(id modules.IDType16) (*modules.ChainIndex, error) {
+	_, idx, err := d.propRep.GetLastStableUnit(id)
+	return idx, err
+}
+
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	unit, err := d.GetUnitByHash(unitHash)
 	if err != nil {

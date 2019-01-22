@@ -21,8 +21,6 @@ package dag
 
 import (
 	"fmt"
-	"reflect"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -34,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/node"
+
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -50,21 +48,24 @@ type Dag struct {
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
-	unitRep dagcommon.IUnitRepository
-	//dagdb   storage.IDagDb
-	//propdb   storage.IPropertyDb
-	utxoRep  dagcommon.IUtxoRepository
-	propRep  dagcommon.IPropRepository
-	stateRep dagcommon.IStateRepository
+	unstableUnitRep  dagcommon.IUnitRepository
+	unstableUtxoRep  dagcommon.IUtxoRepository
+	unstableStateRep dagcommon.IStateRepository
 
+	stableUnitRep  dagcommon.IUnitRepository
+	stableUtxoRep  dagcommon.IUtxoRepository
+	stableStateRep dagcommon.IStateRepository
+
+	propRep       dagcommon.IPropRepository
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
-	Mutex  sync.RWMutex
-	Memdag memunit.IMemDag // memory unit
+	Mutex           sync.RWMutex
+	Memdag          memunit.IMemDag                      // memory unit
+	PartitionMemDag map[modules.IDType16]memunit.IMemDag //其他分区的MemDag
 	// memutxo
 	// 按unit单元划分存储Utxo
-	utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
+	//utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
 	// utxos_cache1 sync.Map
 
 	// append by albert·gou 用于活跃mediator更新时的事件订阅
@@ -76,7 +77,7 @@ type Dag struct {
 	totalVotingStake  uint64
 }
 
-type MemUtxos map[modules.OutPoint]*modules.Utxo
+//type MemUtxos map[modules.OutPoint]*modules.Utxo
 
 func (d *Dag) IsEmpty() bool {
 	it := d.Db.NewIterator()
@@ -85,30 +86,32 @@ func (d *Dag) IsEmpty() bool {
 
 func (d *Dag) CurrentUnit() *modules.Unit {
 
-	nconfig := &node.DefaultConfig
-	gasToken := nconfig.GetGasToken()
-	hash, _, err := d.propRep.GetNewestUnit(gasToken)
-	if err != nil {
-		log.Error("Can not get newest unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
-		return nil
-	}
-	unit, err := d.Memdag.GetUnit(hash)
-	if err == nil {
-		log.Debugf("Get newest unit from memdag by hash:%s", hash.String())
-		return unit
-	}
-	log.Infof("Cannot get newest unit from memdag by hash:%s, try stable unit from db...", hash.String())
-	hash, _, err = d.propRep.GetLastStableUnit(gasToken)
-	if err != nil {
-		log.Error("Can not get last stable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
-		return nil
-	}
-	unit, err = d.unitRep.GetUnit(hash)
-	if err != nil {
-		log.Error("Cannot get last stable unit from ldb", "error", err.Error())
-		return nil
-	}
-	return unit
+	//nconfig := &node.DefaultConfig
+	//gasToken := nconfig.GetGasToken()
+	return d.Memdag.GetLastMainchainUnit()
+
+	//hash, _, err := d.propRep.GetNewestUnit(gasToken)
+	//if err != nil {
+	//	log.Error("Can not get newest unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
+	//	return nil
+	//}
+	//unit, err := d.unstableUnitRep.GetUnit(hash)
+	//if err == nil {
+	//	log.Debugf("Get newest unit from memdag by hash:%s", hash.String())
+	//	return unit
+	//}
+	//log.Infof("Cannot get newest unit from memdag by hash:%s, try stable unit from db...", hash.String())
+	//hash, _, err = d.propRep.GetLastStableUnit(gasToken)
+	//if err != nil {
+	//	log.Error("Can not get last stable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
+	//	return nil
+	//}
+	//unit, err = d.unstableUnitRep.GetUnit(hash)
+	//if err != nil {
+	//	log.Error("Cannot get last stable unit from ldb", "error", err.Error())
+	//	return nil
+	//}
+	//return unit
 	//// step1. get current unit hash
 	//hash, err := d.GetHeadUnitHash()
 	//if err != nil {
@@ -118,7 +121,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	//// step2. get unit height
 	////height, err := d.GetUnitNumber(hash)
 	//// get unit header
-	//uHeader, err := d.unitRep.GetHeader(hash)
+	//uHeader, err := d.unstableUnitRep.GetHeader(hash)
 	//if err != nil {
 	//	log.Error("Current unit when get unit header", "error", err.Error())
 	//	return nil
@@ -127,7 +130,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	//uHash := common.Hash{}
 	//uHash.SetBytes(hash.Bytes())
 	//// get transaction list
-	//txs, err := d.unitRep.GetUnitTransactions(uHash)
+	//txs, err := d.unstableUnitRep.GetUnitTransactions(uHash)
 	//if err != nil {
 	//	log.Error("Current unit when get transactions", "error", err.Error())
 	//	return nil
@@ -156,16 +159,16 @@ func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
-	curUnit, err := d.Memdag.GetCurrentUnit(assetId, index)
-	if err != nil {
-		log.Info("GetCurrentMemUnit", "error", err.Error())
-		return nil
-	}
+	curUnit := d.Memdag.GetLastMainchainUnit()
+	//if err != nil {
+	//	log.Info("GetCurrentMemUnit", "error", err.Error())
+	//	return nil
+	//}
 	return curUnit
 }
 
 func (d *Dag) HasUnit(hash common.Hash) bool {
-	u, err := d.unitRep.GetUnit(hash)
+	u, err := d.unstableUnitRep.GetUnit(hash)
 	if err != nil {
 		return false
 	}
@@ -195,38 +198,38 @@ func (d *Dag) ParentsIsConfirmByHash(hash common.Hash) bool {
 }
 
 // GetMemUnitbyHash: get unit from memdag
-func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
-
-	unit, err := d.Memdag.GetUnit(hash)
-	return unit, err
-}
+//func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
+//
+//	unit, err := d.Memdag.GetUnit(hash)
+//	return unit, err
+//}
 
 func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
-	//return d.unitRep.GetUnitFormIndex(number)
-	hash, err := d.unitRep.GetHashByNumber(number)
+	//return d.unstableUnitRep.GetUnitFormIndex(number)
+	hash, err := d.unstableUnitRep.GetHashByNumber(number)
 	if err != nil {
 		log.Debug("GetUnitByNumber dagdb.GetHashByNumber err:", "error", err)
 		return nil, err
 	}
-	//log.Debug("Dag", "GetUnitByNumber GetUnit(hash):", hash)
-	return d.unitRep.GetUnit(hash)
+	//log.Debug("Dag", "GetUnitByNumber getChainUnit(hash):", hash)
+	return d.unstableUnitRep.GetUnit(hash)
 }
 
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
-	if d.Memdag.Exists(hash) {
-		unit, err := d.Memdag.GetUnit(hash)
-		if err != nil {
-			return nil, err
-		}
-		return unit.Header(), nil
-	}
+	//if d.Memdag.Exists(hash) {
+	//	unit, err := d.Memdag.getChainUnit(hash)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	return unit.UnitHeader, nil
+	//}
 	//height, err := d.GetUnitNumber(hash)
 	//if err != nil {
 	//	log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
 	//	return nil
 	//}
 	// get unit header
-	uHeader, err := d.unitRep.GetHeader(hash)
+	uHeader, err := d.unstableUnitRep.GetHeader(hash)
 	if err != nil {
 		log.Debug("Current unit when get unit header", "error", err.Error())
 		return nil, err
@@ -236,37 +239,32 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 
 func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	//Query memdag first
-	hash, err := d.Memdag.GetHashByNumber(number)
-	if err == nil { //Exist
-		unit, err := d.Memdag.GetUnit(hash)
-		if err != nil {
-			log.Errorf("Number[%s] is exist in memdag, but cannot query unit by hash: %s", number.String(), hash.String())
-			return nil, err
-		}
-		return unit.UnitHeader, nil
+	//hash, err := d.Memdag.GetHashByNumber(number)
+	//if err == nil { //Exist
+	//	unit, err := d.Memdag.getChainUnit(hash)
+	//	if err != nil {
+	//		log.Errorf("Number[%s] is exist in memdag, but cannot query unit by hash: %s", number.String(), hash.String())
+	//		return nil, err
+	//	}
+	//	return unit.UnitHeader, nil
+	//}
+	uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
+	if err1 != nil {
+		log.Debug("getChainUnit when GetHeader failed ", "error:", err1, "hash", number.String())
+		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
+		return nil, err1
 	}
-	if hash1, err := d.unitRep.GetHashByNumber(number); err != nil {
-		log.Debug("GetHashByNumber when GetHash failed ", "error:", err, "hash", number.String())
-		return nil, err
-	} else {
-		header, err0 := d.unitRep.GetHeader(hash1)
-		if err0 != nil {
-			log.Debug("GetHashByNumber when GetHeader failed ", "error:", err0, "hash", hash1.String())
-			return nil, err0
-		}
-		return header, nil
-	}
-	//uHeader, err1 := d.unitRep.GetHeaderByNumber(number)
+	//uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
 	//if err1 != nil {
 	//	log.Debug("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
 	//	//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 	//	return nil, err1
 	//}
-	//return uHeader, nil
+	return uHeader, nil
 }
 
 //func (d *Dag) GetPrefix(prefix string) map[string][]byte {
-//	return d.unitRep.GetPrefix(*(*[]byte)(unsafe.Pointer(&prefix)))
+//	return d.unstableUnitRep.GetPrefix(*(*[]byte)(unsafe.Pointer(&prefix)))
 //}
 
 func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
@@ -330,11 +328,12 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		// modified by albert·gou
-		//if err := d.unitRep.SaveUnit(u, false); err != nil {
+		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
 		if err := d.SaveUnit(u, txpool, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
+		d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
 		log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
 	}
@@ -356,7 +355,7 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 			break
 		}
 		next := header.ParentsHash[0]
-		h, err := d.unitRep.GetHeader(next)
+		h, err := d.unstableUnitRep.GetHeader(next)
 		if err != nil {
 			break
 		}
@@ -372,12 +371,12 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	return h != nil
 }
 func (d *Dag) Exists(hash common.Hash) bool {
-	//if unit, err := d.unitRep.GetUnit(hash); err == nil && unit != nil {
+	//if unit, err := d.unstableUnitRep.getChainUnit(hash); err == nil && unit != nil {
 	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 	//	return true
 	//}
 	//return false
-	exist, _ := d.unitRep.IsHeaderExist(hash)
+	exist, _ := d.unstableUnitRep.IsHeaderExist(hash)
 	return exist
 }
 func (d *Dag) CurrentHeader() *modules.Header {
@@ -396,24 +395,24 @@ func (d *Dag) CurrentHeader() *modules.Header {
 
 // GetUnitTransactions is return unit's body, all transactions of unit.
 func (d *Dag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-	return d.unitRep.GetUnitTransactions(hash)
+	return d.unstableUnitRep.GetUnitTransactions(hash)
 }
 
 // GetUnitTxsHash is return the unit's txs hash list.
 func (d *Dag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
-	return d.unitRep.GetBody(hash)
+	return d.unstableUnitRep.GetBody(hash)
 }
 
 // GetTransactionByHash is return the tx by tx's hash
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
-	tx, uhash, _, _ := d.unitRep.GetTransaction(hash)
+	tx, uhash, _, _ := d.unstableUnitRep.GetTransaction(hash)
 	if tx == nil {
 		return nil, uhash, errors.New("get transaction by hash is failed,none the transaction.")
 	}
 	return tx, uhash, nil
 }
 func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
-	unitHash, unitNumber, txIndex, err := d.unitRep.GetTxLookupEntry(hash)
+	unitHash, unitNumber, txIndex, err := d.unstableUnitRep.GetTxLookupEntry(hash)
 	return &modules.TxLookupEntry{
 		UnitHash:  unitHash,
 		UnitIndex: unitNumber,
@@ -424,7 +423,7 @@ func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 //func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
 //	txs := modules.Transactions{}
 //	// get hash list
-//	txs, err := d.unitRep.GetUnitTransactions(hash)
+//	txs, err := d.unstableUnitRep.GetUnitTransactions(hash)
 //	if err != nil {
 //		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
 //		return nil
@@ -440,12 +439,12 @@ func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 //}
 
 //func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
-//	number, err := d.unitRep.GetNumberWithUnitHash(hash)
+//	number, err := d.unstableUnitRep.GetNumberWithUnitHash(hash)
 //	if err != nil {
 //		log.Error("Get header rlp ", "error", err.Error())
 //		return nil
 //	}
-//	return d.unitRep.GetHeaderRlp(hash, number.Index)
+//	return d.unstableUnitRep.GetHeaderRlp(hash, number.Index)
 //}
 
 // InsertHeaderDag attempts to insert the given header chain in to the local
@@ -463,16 +462,16 @@ func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 //		index := header.Number.Index
 //
 //		// ###save unit hash and chain index relation
-//		err := d.unitRep.SaveNumberByHash(hash, number)
+//		err := d.unstableUnitRep.SaveNumberByHash(hash, number)
 //		if err != nil {
 //			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveNumberByHash Error", i)
 //		}
-//		err = d.unitRep.SaveHashByNumber(hash, number)
+//		err = d.unstableUnitRep.SaveHashByNumber(hash, number)
 //		if err != nil {
 //			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
 //		}
 //		// ###save HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
-//		err = d.unitRep.UpdateHeadByBatch(hash, index)
+//		err = d.unstableUnitRep.UpdateHeadByBatch(hash, index)
 //		if err != nil {
 //			return i, err
 //		}
@@ -502,7 +501,7 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 //All leaf nodes for dag downloader.
 //MUST have Priority.
 //func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
-//	return d.unitRep.GetAllLeafNodes()
+//	return d.unstableUnitRep.GetAllLeafNodes()
 //}
 
 /**
@@ -510,7 +509,7 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 To get account token list and tokens's information
 */
 func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
-	return d.utxoRep.GetAccountTokens(addr)
+	return d.unstableUtxoRep.GetAccountTokens(addr)
 }
 
 func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
@@ -535,18 +534,18 @@ func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []b
 		UniqueId: newUnitqueid,
 	}
 
-	return d.utxoRep.WalletBalance(address, asset), nil
+	return d.unstableUtxoRep.WalletBalance(address, asset), nil
 }
 
 // Utxos : return mem utxos
-func (d *Dag) Utxos() map[common.Hash]map[modules.OutPoint]*modules.Utxo {
-	// result := d.utxos_cache1
-	// utxos := make(Utxos, 0)
-	// d.utxos_cache1.Range(func(key, v interface{}) bool {
-	// 	utxos[key] = v
-	// })
-	return d.utxos_cache
-}
+//func (d *Dag) Utxos() map[common.Hash]map[modules.OutPoint]*modules.Utxo {
+//	// result := d.utxos_cache1
+//	// utxos := make(Utxos, 0)
+//	// d.utxos_cache1.Range(func(key, v interface{}) bool {
+//	// 	utxos[key] = v
+//	// })
+//	return d.utxos_cache
+//}
 
 func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
@@ -556,26 +555,36 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
+	//tempdb, _ := memunit.NewTempdb(db)
+	//tunitRep := dagcommon.NewUnitRepository4Db(tempdb)
+	//tutxoRep := dagcommon.NewUtxoRepository4Db(tempdb)
+	//tstateRep := dagcommon.NewStateRepository4Db(tempdb)
+	//tpropRep := dagcommon.NewPropRepository4Db(tempdb)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
-	//cache := freecache.NewCache(100 * 1024 * 1024)
-	//propRep := dagcommon.NewPropCacheRepository(propDb, cache)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
+	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
+	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
+
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		unitRep:       unitRep,
-		utxoRep:       utxoRep,
-		propRep:       propRep,
-		stateRep:      stateRep,
-		validate:      validate,
-		ChainHeadFeed: new(event.Feed),
-		Mutex:         *mutex,
-		Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep, propRep),
-		utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
+		Cache:            freecache.NewCache(200 * 1024 * 1024),
+		Db:               db,
+		unstableUnitRep:  tunitRep,
+		unstableUtxoRep:  tutxoRep,
+		propRep:          propRep,
+		unstableStateRep: tstateRep,
+		stableUnitRep:    unitRep,
+		stableUtxoRep:    utxoRep,
+		stableStateRep:   stateRep,
+		validate:         validate,
+		ChainHeadFeed:    new(event.Feed),
+		Mutex:            *mutex,
+		Memdag:           unstableChain,
+		//utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil
 }
@@ -597,14 +606,14 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	dag := &Dag{
 		Cache:         freecache.NewCache(200 * 1024 * 1024),
 		Db:            db,
-		unitRep:       unitRep,
-		utxoRep:       utxoRep,
+		stableUnitRep: unitRep,
+		stableUtxoRep: utxoRep,
 		propRep:       propRep,
 		validate:      validate,
 		ChainHeadFeed: new(event.Feed),
 		Mutex:         *mutex,
-		//Memdag:        memunit.NewMemDag(dagDb, stateDb, unitRep),
-		utxos_cache: make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
+		//Memdag:        memunit.NewMemDag(dagDb, stateDb, unstableUnitRep),
+		//utxos_cache: make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 
 	return dag, nil
@@ -618,46 +627,51 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
+	propRep := dagcommon.NewPropRepository(propDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
-
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
+	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		unitRep:       unitRep,
-		utxoRep:       utxoRep,
-		validate:      validate,
-		ChainHeadFeed: new(event.Feed),
-		Mutex:         *mutex,
-		Memdag:        memunit.NewMemDagForTest(dagDb, stateDb, unitRep, txpool),
-		utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
+		Cache:            freecache.NewCache(200 * 1024 * 1024),
+		Db:               db,
+		stableUnitRep:    unitRep,
+		stableUtxoRep:    utxoRep,
+		validate:         validate,
+		ChainHeadFeed:    new(event.Feed),
+		Mutex:            *mutex,
+		Memdag:           unstableChain,
+		unstableUnitRep:  tunitRep,
+		unstableUtxoRep:  tutxoRep,
+		unstableStateRep: tstateRep,
+		//utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil
 }
 
 // Get Contract Api
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
-	return d.stateRep.GetContract(id)
+	return d.unstableStateRep.GetContract(id)
 }
 func (d *Dag) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
-	return d.stateRep.GetContractDeploy(tempId, contractId, name)
+	return d.unstableStateRep.GetContractDeploy(tempId, contractId, name)
 }
 
 // Get UnitNumber
 func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
-	return d.unitRep.GetNumberWithUnitHash(hash)
+	return d.unstableUnitRep.GetNumberWithUnitHash(hash)
 }
 
 //
 //// GetCanonicalHash
 //func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
-//	return d.unitRep.GetCanonicalHash(number)
+//	return d.unstableUnitRep.GetCanonicalHash(number)
 //}
 //
 //// Get state
 //func (d *Dag) GetHeadHeaderHash() (common.Hash, error) {
-//	return d.unitRep.GetHeadHeaderHash()
+//	return d.unstableUnitRep.GetHeadHeaderHash()
 //}
 //
 //func (d *Dag) GetHeadUnitHash() (common.Hash, error) {
@@ -671,7 +685,7 @@ func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 //		}
 //		mem_hash = unit.Hash()
 //	}
-//	head_hash, err := d.unitRep.GetHeadUnitHash()
+//	head_hash, err := d.unstableUnitRep.GetHeadUnitHash()
 //	head_unit, _ := d.GetUnitByHash(head_hash)
 //	if head_unit != nil {
 //		if unit.NumberU64() > head_unit.NumberU64() {
@@ -682,17 +696,17 @@ func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 //}
 //
 //func (d *Dag) GetHeadFastUnitHash() (common.Hash, error) {
-//	return d.unitRep.GetHeadFastUnitHash()
+//	return d.unstableUnitRep.GetHeadFastUnitHash()
 //}
 
 func (d *Dag) GetTrieSyncProgress() (uint64, error) {
-	return d.unitRep.GetTrieSyncProgress()
+	return d.unstableUnitRep.GetTrieSyncProgress()
 }
 
 func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	d.Mutex.RLock()
 	defer d.Mutex.RUnlock()
-	return d.utxoRep.GetUtxoEntry(outpoint)
+	return d.unstableUtxoRep.GetUtxoEntry(outpoint)
 }
 
 //func (d *Dag) GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error) {
@@ -722,18 +736,18 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
-	err := view.FetchUtxos(d.utxoRep, neededSet)
+	err := view.FetchUtxos(d.unstableUtxoRep, neededSet)
 	// get current hash
 	// assetId 暂时默认为ptn的assetId
-	unit := d.GetCurrentUnit(modules.PTNCOIN)
+	//unit := d.GetCurrentUnit(modules.PTNCOIN)
 
-	if utxos, has := d.utxos_cache[unit.Hash()]; has {
-		if utxos != nil {
-			for out, utxo := range utxos {
-				view.AddUtxo(out, utxo)
-			}
-		}
-	}
+	//if utxos, has := d.utxos_cache[unit.Hash()]; has {
+	//	if utxos != nil {
+	//		for out, utxo := range utxos {
+	//			view.AddUtxo(out, utxo)
+	//		}
+	//	}
+	//}
 
 	d.Mutex.RUnlock()
 
@@ -759,7 +773,7 @@ func (d *Dag) GetUtxosOutViewbyUnit(unit *modules.Unit) *txspool.UtxoViewpoint {
 // GetAllUtxos is return all utxo.
 func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	d.Mutex.RLock()
-	items, err := d.utxoRep.GetAllUtxos()
+	items, err := d.unstableUtxoRep.GetAllUtxos()
 	// TODO---> merge dag.cache
 	// if d.utxos_cache != nil {
 	// 	for key, utxo := range d.utxos_cache {
@@ -772,21 +786,21 @@ func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	// 		items[key] = utxo
 	// 	}
 	// }
-	if d.utxos_cache != nil {
-		for _, utxos := range d.utxos_cache {
-			if utxos != nil {
-				for key, utxo := range utxos {
-					if old, has := items[key]; has {
-						// merge
-						if old.IsSpent() {
-							delete(items, key)
-						}
-					}
-					items[key] = utxo
-				}
-			}
-		}
-	}
+	//if d.utxos_cache != nil {
+	//	for _, utxos := range d.utxos_cache {
+	//		if utxos != nil {
+	//			for key, utxo := range utxos {
+	//				if old, has := items[key]; has {
+	//					// merge
+	//					if old.IsSpent() {
+	//						delete(items, key)
+	//					}
+	//				}
+	//				items[key] = utxo
+	//			}
+	//		}
+	//	}
+	//}
 	d.Mutex.RUnlock()
 
 	return items, err
@@ -795,39 +809,39 @@ func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 func (d *Dag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
 	// TODO
 	// merge dag.cache
-	all, err := d.utxoRep.GetAddrOutpoints(addr)
-	if d.utxos_cache != nil {
-		for hash, utxos := range d.utxos_cache {
-			for key, utxo := range utxos {
-				if utxo == nil {
-					delete(utxos, key)
-					continue
-				} else {
-					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-					if err == nil {
-						if address.Equal(addr) {
-							var exist bool
-							for _, old := range all {
-								if reflect.DeepEqual(key.ToKey(), old.ToKey()) {
-									exist = true
-									break
-								}
-							}
-							if !exist {
-								all = append(all, key)
-							}
-						}
-					}
-				}
-			}
-			d.utxos_cache[hash] = utxos
-		}
-	}
+	all, err := d.unstableUtxoRep.GetAddrOutpoints(addr)
+	//if d.utxos_cache != nil {
+	//	for hash, utxos := range d.utxos_cache {
+	//		for key, utxo := range utxos {
+	//			if utxo == nil {
+	//				delete(utxos, key)
+	//				continue
+	//			} else {
+	//				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+	//				if err == nil {
+	//					if address.Equal(addr) {
+	//						var exist bool
+	//						for _, old := range all {
+	//							if reflect.DeepEqual(key.ToKey(), old.ToKey()) {
+	//								exist = true
+	//								break
+	//							}
+	//						}
+	//						if !exist {
+	//							all = append(all, key)
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+	//		d.utxos_cache[hash] = utxos
+	//	}
+	//}
 	return all, err
 }
 
 func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
-	utxo, err := d.utxoRep.GetUtxoEntry(outPoint)
+	utxo, err := d.unstableUtxoRep.GetUtxoEntry(outPoint)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -835,49 +849,49 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 }
 
 func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
-	return d.utxoRep.ComputeTxFee(pay)
+	return d.unstableUtxoRep.ComputeTxFee(pay)
 }
 func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	return d.unitRep.GetTxFromAddress(tx)
+	return d.unstableUnitRep.GetTxFromAddress(tx)
 }
 
 //func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
-//	return d.unitRep.GetAddrOutput(addr)
+//	return d.unstableUnitRep.GetAddrOutput(addr)
 //}
 
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	//TODO only get one token's UTXO
-	all, err := d.utxoRep.GetAddrUtxos(addr)
-	if d.utxos_cache != nil {
-		assetStr := asset.String()
-		for hash, utxos := range d.utxos_cache {
-			for key, utxo := range utxos {
-				if utxo == nil {
-					log.Info("------------------the utxo is nil  ----------------", "utxokey", key.String())
-					delete(utxos, key)
-					continue
-				} else {
-					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-					if err == nil {
-						if address.Equal(addr) {
-							if strings.Compare(utxo.Asset.String(), assetStr) == 0 {
-								if old, has := all[key]; has {
-									// merge
-									if old.IsSpent() {
-										log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
-										// delete(all, key)
-									}
-								}
-								log.Info("new utxo amount :", "amount", utxo.Amount)
-								all[key] = utxo
-							}
-						}
-					}
-				}
-			}
-			d.utxos_cache[hash] = utxos
-		}
-	}
+	all, err := d.unstableUtxoRep.GetAddrUtxos(addr)
+	//if d.utxos_cache != nil {
+	//	assetStr := asset.String()
+	//	for hash, utxos := range d.utxos_cache {
+	//		for key, utxo := range utxos {
+	//			if utxo == nil {
+	//				log.Info("------------------the utxo is nil  ----------------", "utxokey", key.String())
+	//				delete(utxos, key)
+	//				continue
+	//			} else {
+	//				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+	//				if err == nil {
+	//					if address.Equal(addr) {
+	//						if strings.Compare(utxo.Asset.String(), assetStr) == 0 {
+	//							if old, has := all[key]; has {
+	//								// merge
+	//								if old.IsSpent() {
+	//									log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
+	//									// delete(all, key)
+	//								}
+	//							}
+	//							log.Info("new utxo amount :", "amount", utxo.Amount)
+	//							all[key] = utxo
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+	//		d.utxos_cache[hash] = utxos
+	//	}
+	//}
 	return all, err
 	//return map[modules.OutPoint]*modules.Utxo{}, nil
 }
@@ -885,84 +899,84 @@ func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map
 func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// TODO
 	// merge dag.cache
-	all, err := d.utxoRep.GetAddrUtxos(addr)
-	if d.utxos_cache != nil {
-		for hash, utxos := range d.utxos_cache {
-			for key, utxo := range utxos {
-				if utxo == nil {
-					log.Info("------------------the utxo is nil  ----------------", "utxokey", key.String())
-					delete(utxos, key)
-					continue
-				} else {
-					address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-					if err == nil {
-						if address.Equal(addr) {
-							if old, has := all[key]; has {
-								// merge
-								if old.IsSpent() {
-									log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
-									// delete(all, key)
-								}
-							}
-							log.Info("new utxo amount :", "amount", utxo.Amount)
-							all[key] = utxo
-						}
-					}
-				}
-			}
-			d.utxos_cache[hash] = utxos
-		}
-	}
+	all, err := d.unstableUtxoRep.GetAddrUtxos(addr)
+	//if d.utxos_cache != nil {
+	//	for hash, utxos := range d.utxos_cache {
+	//		for key, utxo := range utxos {
+	//			if utxo == nil {
+	//				log.Info("------------------the utxo is nil  ----------------", "utxokey", key.String())
+	//				delete(utxos, key)
+	//				continue
+	//			} else {
+	//				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+	//				if err == nil {
+	//					if address.Equal(addr) {
+	//						if old, has := all[key]; has {
+	//							// merge
+	//							if old.IsSpent() {
+	//								log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
+	//								// delete(all, key)
+	//							}
+	//						}
+	//						log.Info("new utxo amount :", "amount", utxo.Amount)
+	//						all[key] = utxo
+	//					}
+	//				}
+	//			}
+	//		}
+	//		d.utxos_cache[hash] = utxos
+	//	}
+	//}
 	return all, err
 }
 
 func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
 
-	return d.utxoRep.SaveUtxoView(view.Entries())
+	return d.unstableUtxoRep.SaveUtxoView(view.Entries())
 }
 
 func (d *Dag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
-	return d.unitRep.GetAddrTransactions(addr)
+	return d.unstableUnitRep.GetAddrTransactions(addr)
 }
 
 // get contract state
 func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
-	return d.stateRep.GetContractState(id, field)
+	return d.unstableStateRep.GetContractState(id, field)
 	//return d.statedb.GetContractState(common.HexToAddress(id), field)
 }
 
 func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	return d.stateRep.GetConfig(name)
+	return d.unstableStateRep.GetConfig(name)
 }
 
 //get contract all state
 func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
-	return d.stateRep.GetContractStatesById(id)
+	return d.unstableStateRep.GetContractStatesById(id)
 }
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
-	return d.unitRep.CreateUnit(mAddr, txpool, t)
+	return d.unstableUnitRep.CreateUnit(mAddr, txpool, t)
 }
 
 //modified by Albert·Gou
 func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
-	return d.unitRep.SaveUnit(unit, txpool, true, false)
+	return d.stableUnitRep.SaveUnit(unit, txpool, true, true)
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
-	var parent_hash common.Hash
-	if !isGenesis {
-		parent_hash = unit.ParentHash()[0]
-	} else {
-		parent_hash = unit.Hash()
-	}
+	//var parent_hash common.Hash
+	//if !isGenesis {
+	//	parent_hash = unit.ParentHash()[0]
+	//} else {
+	//	parent_hash = unit.Hash()
+	//}
 
 	//log.Debug("start save dag", "index", unit.UnitHeader.Index(), "hash", unit.Hash())
 
 	if !isGenesis {
-		if d.Memdag.Exists(unit.Hash()) || d.Exists(unit.Hash()) {
+		if d.Exists(unit.Hash()) {
 			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
@@ -976,115 +990,121 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	}
 
 	if unitState == modules.UNIT_STATE_VALIDATED {
-		// step3.1. pass and with group signature, put into leveldb
-		// todo 应当先判断是否切换，再保存，并更新状态
-		if err := d.unitRep.SaveUnit(unit, txpool, false, false); err != nil {
-			log.Debug("Dag", "SaveDag, save error when save unit to db err:", err)
-			return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
-		}
-		// step3.2. if pass and with group signature, prune fork data
-		// if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.Hash()); err != nil {
-		// 	return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
-		// }
-	} else {
+		//	// step3.1. pass and with group signature, put into leveldb
+		//	// todo 应当先判断是否切换，再保存，并更新状态
+		//	if err := d.unstableUnitRep.SaveUnit(unit, txpool, false, false); err != nil {
+		//		log.Debug("Dag", "SaveDag, save error when save unit to db err:", err)
+		//		return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
+		//	}
+		//	// step3.2. if pass and with group signature, prune fork data
+		//	// if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.Hash()); err != nil {
+		//	// 	return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
+		//	// }
+		//} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
-		if err := d.Memdag.Save(unit, txpool); err != nil {
+		if isGenesis {
+			d.stableUnitRep.SaveUnit(unit, txpool, true, true)
+			return nil
+		}
+
+		if err := d.Memdag.AddUnit(unit, txpool); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
 			log.Debug("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+			//d.updateLastIrreversibleUnitNum(unit.Hash(), uint64(unit.NumberU64()))
 		}
 	}
 
-	// todo 应当先判断是否切换，再保存，并更新状态
-	// step5. check if it is need to switch
-	// if err := d.Memdag.SwitchMainChain(); err != nil {
-	// 	return fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
-	// }
-	// TODO
-	// update  utxo
-	go func(unit *modules.Unit) {
-		view := txspool.NewUtxoViewpoint()
-		if unitState == modules.UNIT_STATE_VALIDATED {
-			view.FetchUnitUtxos(d.utxoRep, unit)
-			// update leveldb
-			if view != nil {
-				needSet := make(map[modules.OutPoint]struct{})
-				for key := range view.Entries() {
-					needSet[key] = struct{}{}
-				}
-
-				if err := view.SpentUtxo(d.utxoRep, needSet); err != nil {
-					log.Error("update utxo failed", "error", err)
-					// TODO
-					// 回滚 view utxo  ，回滚world_state
-				}
-			}
-			// fetch output utxo, and save
-			//view.FetchOutputUtxos(db, unit)
-			view2 := d.GetUtxosOutViewbyUnit(unit)
-			for key, utxo := range view2.Entries() {
-				if err := d.utxoRep.SaveUtxoEntity(&key, utxo); err != nil {
-					log.Error("update output utxo failed", "error", err)
-					// TODO
-					// add  d.cache
-				}
-			}
-
-		} else {
-			// get input utxos
-			view.FetchUnitUtxos(d.utxoRep, unit)
-			// update  cache
-			utxos := make(map[modules.OutPoint]*modules.Utxo)
-			var exist bool
-			if view != nil {
-				if utxos, exist = d.utxos_cache[parent_hash]; exist {
-					for key, utxo := range view.Entries() {
-						if d.utxos_cache != nil {
-
-							if old, has := utxos[key]; has {
-								old.Spend()
-								utxos[key] = old
-								//delete(utxos, key)
-							} else {
-								utxo.Spend()
-								utxos[key] = utxo
-							}
-						}
-					}
-					d.utxos_cache[parent_hash] = utxos
-				} else {
-					// 获取当前最新区块的utxo列表
-					// TODO
-					curUnit, _ := d.Memdag.GetCurrentUnit(unit.UnitHeader.Number.AssetID, unit.UnitHeader.Index()-1)
-					utxos, _ = d.utxos_cache[curUnit.Hash()]
-					for key, utxo := range view.Entries() {
-						if old, has := utxos[key]; has {
-							old.Spend()
-							utxos[key] = old
-							//delete(utxos, key)
-						} else {
-							utxo.Spend()
-							utxos[key] = utxo
-						}
-						d.utxos_cache[curUnit.Hash()] = utxos
-					}
-				}
-			}
-			// get output utxos
-			view2 := d.GetUtxosOutViewbyUnit(unit)
-			// add d.utxo_cache
-
-			for key, utxo := range view2.Entries() {
-				if utxos == nil {
-					fmt.Println("init utxos:")
-					utxos = make(map[modules.OutPoint]*modules.Utxo)
-				}
-				utxos[key] = utxo
-			}
-			d.utxos_cache[unit.Hash()] = utxos
-			//log.Info("=================saved Memdag and dag's utxo cache:  key-value ===============", "keyinfo", outpoint.String(), "utxoinfo", d.utxos_cache[unit.Hash()][outpoint])
-		}
-	}(unit)
+	//// todo 应当先判断是否切换，再保存，并更新状态
+	//// step5. check if it is need to switch
+	//// if err := d.Memdag.SwitchMainChain(); err != nil {
+	//// 	return fmt.Errorf("SaveDag, save error when switch chain: %s", err.Error())
+	//// }
+	//// TODO
+	//// update  utxo
+	//go func(unit *modules.Unit) {
+	//	view := txspool.NewUtxoViewpoint()
+	//	if unitState == modules.UNIT_STATE_VALIDATED {
+	//		view.FetchUnitUtxos(d.unstableUtxoRep, unit)
+	//		// update leveldb
+	//		if view != nil {
+	//			needSet := make(map[modules.OutPoint]struct{})
+	//			for key := range view.Entries() {
+	//				needSet[key] = struct{}{}
+	//			}
+	//
+	//			if err := view.SpentUtxo(d.unstableUtxoRep, needSet); err != nil {
+	//				log.Error("update utxo failed", "error", err)
+	//				// TODO
+	//				// 回滚 view utxo  ，回滚world_state
+	//			}
+	//		}
+	//		// fetch output utxo, and save
+	//		//view.FetchOutputUtxos(db, unit)
+	//		view2 := d.GetUtxosOutViewbyUnit(unit)
+	//		for key, utxo := range view2.Entries() {
+	//			if err := d.unstableUtxoRep.SaveUtxoEntity(&key, utxo); err != nil {
+	//				log.Error("update output utxo failed", "error", err)
+	//				// TODO
+	//				// add  d.cache
+	//			}
+	//		}
+	//
+	//	} else {
+	//		// get input utxos
+	//		view.FetchUnitUtxos(d.unstableUtxoRep, unit)
+	//		// update  cache
+	//		utxos := make(map[modules.OutPoint]*modules.Utxo)
+	//		var exist bool
+	//		if view != nil {
+	//			if utxos, exist = d.utxos_cache[parent_hash]; exist {
+	//				for key, utxo := range view.Entries() {
+	//					if d.utxos_cache != nil {
+	//
+	//						if old, has := utxos[key]; has {
+	//							old.Spend()
+	//							utxos[key] = old
+	//							//delete(utxos, key)
+	//						} else {
+	//							utxo.Spend()
+	//							utxos[key] = utxo
+	//						}
+	//					}
+	//				}
+	//				d.utxos_cache[parent_hash] = utxos
+	//			} else {
+	//				// 获取当前最新区块的utxo列表
+	//				// TODO
+	//				curUnit, _ := d.Memdag.GetCurrentUnit(unit.UnitHeader.Number.AssetID, unit.UnitHeader.Index()-1)
+	//				utxos, _ = d.utxos_cache[curUnit.Hash()]
+	//				for key, utxo := range view.Entries() {
+	//					if old, has := utxos[key]; has {
+	//						old.Spend()
+	//						utxos[key] = old
+	//						//delete(utxos, key)
+	//					} else {
+	//						utxo.Spend()
+	//						utxos[key] = utxo
+	//					}
+	//					d.utxos_cache[curUnit.Hash()] = utxos
+	//				}
+	//			}
+	//		}
+	//		// get output utxos
+	//		view2 := d.GetUtxosOutViewbyUnit(unit)
+	//		// add d.utxo_cache
+	//
+	//		for key, utxo := range view2.Entries() {
+	//			if utxos == nil {
+	//				fmt.Println("init utxos:")
+	//				utxos = make(map[modules.OutPoint]*modules.Utxo)
+	//			}
+	//			utxos[key] = utxo
+	//		}
+	//		//d.utxos_cache[unit.Hash()] = utxos
+	//		//log.Info("=================saved Memdag and dag's utxo cache:  key-value ===============", "keyinfo", outpoint.String(), "utxoinfo", d.utxos_cache[unit.Hash()][outpoint])
+	//	}
+	//}(unit)
 
 	return nil
 }
@@ -1097,7 +1117,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 //	}
 //
 //	//unitState := d.validate.ValidateUnitExceptGroupSig(unit, dagcommon.IsGenesis(hash))
-//	unitState := d.validate.ValidateUnitExceptGroupSig(unit, d.unitRep.IsGenesis(hash))
+//	unitState := d.validate.ValidateUnitExceptGroupSig(unit, d.unstableUnitRep.IsGenesis(hash))
 //	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
 //		return false, fmt.Errorf("validate unit's groupSig failed, statecode:%d", unitState)
 //	}
@@ -1142,7 +1162,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err != nil {
 
 	}
-	bAsset, _, _ := d.stateRep.GetConfig("GenesisAsset")
+	bAsset, _, _ := d.unstableStateRep.GetConfig("GenesisAsset")
 	if len(bAsset) <= 0 {
 		return nil, fmt.Errorf("Create unit error: query asset info empty")
 	}
@@ -1171,26 +1191,26 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	return &unit, nil
 }
 func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
-	return d.unitRep.GetGenesisUnit()
+	return d.stableUnitRep.GetGenesisUnit()
 }
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
-	return d.stateRep.GetContractTpl(templateID)
+	return d.unstableStateRep.GetContractTpl(templateID)
 }
 
 //
 //// save token info
 //func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
-//	return d.unitRep.SaveTokenInfo(token_info)
+//	return d.unstableUnitRep.SaveTokenInfo(token_info)
 //}
 //
 //// Get token info
 //func (d *Dag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
-//	return d.unitRep.GetTokenInfo(key)
+//	return d.unstableUnitRep.GetTokenInfo(key)
 //}
 //
 //// Get all token info
 //func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-//	return d.unitRep.GetAllTokenInfo()
+//	return d.unstableUnitRep.GetAllTokenInfo()
 //}
 
 //@Yiran
@@ -1316,21 +1336,21 @@ func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType
 
 // dag's common geter
 func (d *Dag) GetCommon(key []byte) ([]byte, error) {
-	return d.unitRep.GetCommon(key)
+	return d.unstableUnitRep.GetCommon(key)
 }
 
 // GetCommonByPrefix  return the prefix's all key && value.
 func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
-	return d.unitRep.GetCommonByPrefix(prefix)
+	return d.unstableUnitRep.GetCommonByPrefix(prefix)
 }
 
 //func (d *Dag) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
-//	return d.stateRep.GetCurrentChainIndex(assetId)
+//	return d.unstableStateRep.GetCurrentChainIndex(assetId)
 //}
 
 //
 //func (d *Dag) SaveChainIndex(index *modules.ChainIndex) error {
-//	return d.stateRep.SaveChainIndex(index)
+//	return d.unstableStateRep.SaveChainIndex(index)
 //}
 
 func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
@@ -1347,12 +1367,14 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
-	go d.Memdag.UpdateMemDag(unitHash, groupSign[:], txpool)
-
+	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
+	d.Memdag.SetUnitGroupSign(unitHash, nil, groupSign, txpool)
+	log.Debugf("Update unit[%s] group sign", unitHash.String())
+	//TODO Group pub key????
 	// 将缓存池utxo更新到utxodb中
-	go d.UpdateUtxosByUnit(unitHash)
-	// 更新utxo缓存池
-	go d.RefreshCacheUtxos()
+	//go d.UpdateUtxosByUnit(unitHash)
+	//// 更新utxo缓存池
+	//go d.RefreshCacheUtxos()
 
 	// 状态更新
 	go d.updateGlobalPropDependGroupSign(unitHash)
@@ -1360,34 +1382,34 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	return nil
 }
 
-func (d *Dag) RefreshCacheUtxos() error {
-	timeout := time.NewTimer(time.Microsecond * 500)
-	var err error
-	for {
-		select {
-		case hash := <-d.Memdag.GetDelhashs():
-			// delete hash
-			log.Debug("want to delete hash :", "hash", hash.String())
-			delete(d.utxos_cache, hash)
-
-		case <-timeout.C:
-			err = errors.New("read hash time out.")
-			goto ENDLINE
-		}
-	}
-ENDLINE:
-	return err
-}
-
-func (d *Dag) UpdateUtxosByUnit(hash common.Hash) error {
-	d.Mutex.Lock()
-	defer d.Mutex.Unlock()
-	utxos, has := d.utxos_cache[hash]
-	if !has {
-		return errors.New("the hash is not exist in utxoscache.")
-	}
-	return d.utxoRep.SaveUtxoView(utxos)
-}
+//func (d *Dag) RefreshCacheUtxos() error {
+//	timeout := time.NewTimer(time.Microsecond * 500)
+//	var err error
+//	for {
+//		select {
+//		case hash := <-d.Memdag.GetDelhashs():
+//			// delete hash
+//			log.Debug("want to delete hash :", "hash", hash.String())
+//			delete(d.utxos_cache, hash)
+//
+//		case <-timeout.C:
+//			err = errors.New("read hash time out.")
+//			goto ENDLINE
+//		}
+//	}
+//ENDLINE:
+//	return err
+//}
+//
+//func (d *Dag) UpdateUtxosByUnit(hash common.Hash) error {
+//	d.Mutex.Lock()
+//	defer d.Mutex.Unlock()
+//	utxos, has := d.utxos_cache[hash]
+//	if !has {
+//		return errors.New("the hash is not exist in utxoscache.")
+//	}
+//	return d.unstableUtxoRep.SaveUtxoView(utxos)
+//}
 func (d *Dag) QueryDbByKey(key []byte) ([]byte, error) {
 	return d.Db.Get(key)
 }
@@ -1405,20 +1427,20 @@ func (d *Dag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
 
 // SaveReqIdByTx
 //func (d *Dag) SaveReqIdByTx(tx *modules.Transaction) error {
-//	return d.unitRep.SaveReqIdByTx(tx)
+//	return d.unstableUnitRep.SaveReqIdByTx(tx)
 //}
 
 // GetTxHashByReqId
 func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
-	return d.unitRep.GetTxHashByReqId(reqid)
+	return d.unstableUnitRep.GetTxHashByReqId(reqid)
 }
 
 // GetReqIdByTxHash
 //func (d *Dag) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-//	return d.unitRep.GetReqIdByTxHash(hash)
+//	return d.unstableUnitRep.GetReqIdByTxHash(hash)
 //}
 
 // GetFileInfo
 func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
-	return d.unitRep.GetFileInfo(filehash)
+	return d.unstableUnitRep.GetFileInfo(filehash)
 }

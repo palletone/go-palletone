@@ -151,9 +151,14 @@ func CopyChainIndex(index *ChainIndex) *ChainIndex {
 	return cop
 }
 func CopyHeader(h *Header) *Header {
+	if h == nil {
+		return nil
+	}
 	cpy := Header{}
 	//	cpy.Number = h.Number
-	cpy.Number = CopyChainIndex(h.Number)
+	if h.Number != nil {
+		cpy.Number = CopyChainIndex(h.Number)
+	}
 	cpy.Extra = h.Extra[:]
 	cpy.Creationdate = h.Creationdate
 	cpy.Authors = h.Authors

@@ -395,9 +395,12 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
 		return err
 	}
+
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	pm.syncTransactions(p)
+	if pm.SubProtocols[0].Name == p.Caps()[0].Name {
+		pm.syncTransactions(p)
+	}
 
 	// main loop. handle incoming messages.
 	for {
@@ -421,6 +424,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	}
 
 	defer msg.Discard()
+
+	//SubProtocols compare
+	partition := pm.SubProtocols[0].Name == p.Caps()[0].Name
+	if !partition && (msg.Code != GetBlockHeadersMsg || msg.Code != BlockHeadersMsg) {
+		log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
+		return nil
+	}
 
 	// Handle the message depending on its contents
 	switch {
@@ -464,14 +474,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		return pm.TxMsg(msg, p)
 
-	//case msg.Code == ConsensusMsg:
-	//	return pm.ConsensusMsg(msg, p)
-
 	// append by Albert·Gou
 	case msg.Code == NewProducedUnitMsg:
 		// Retrieve and decode the propagated new produced unit
-		//pm.NewProducedUnitMsg(msg, p)
-		//return pm.NewBlockMsg(msg, p)
 		return pm.NewProducedUnitMsg(msg, p)
 
 	// append by Albert·Gou
