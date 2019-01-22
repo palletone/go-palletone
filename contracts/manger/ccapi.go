@@ -349,9 +349,9 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 }
 
 func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) error {
-	log.Infof("==========Stop enter=======")
+	log.Infof("enter ccapi.go Stop")
+	defer log.Infof("exit ccapi.go Stop")
 	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	defer log.Infof("-----------Stop exit--------")
 	setChainId := "palletone"
 	if chainID != "" {
 		setChainId = chainID
