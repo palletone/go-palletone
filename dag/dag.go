@@ -1010,7 +1010,6 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	//
 	unitHeader := modules.Header{
 		ParentsHash: []common.Hash{currentUnit.UnitHash},
-		AssetIDs:    []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
 		//Authors:      nil,
 		GroupSign:    make([]byte, 0),
 		GroupPubKey:  make([]byte, 0),
