@@ -26,7 +26,7 @@ else
 fi
 !
 
-add=`cat $filename | jq ".initialMediatorCandidates[\"$4\"-1] |= . + {\"account\": \"$1\", \"initPubKey\": \"$2\", \"node\": \"$3\"}"`
+add=`cat $filename | jq ".initialMediatorCandidates[$4-1] |= . + {\"account\": \"$1\", \"initPubKey\": \"$2\", \"node\": \"$3\"}"`
 
     rm $filename
     echo $add >> temp.json
