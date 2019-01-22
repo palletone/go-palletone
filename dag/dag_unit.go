@@ -37,32 +37,33 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 	phash, current_index, _ := dag.propRep.GetNewestUnit(pendingUnit.UnitHeader.ChainIndex().AssetID)
 	//current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
-	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
-
-		curMemUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0], current_index.Index)
-		curUnit := dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
-
-		if curMemUnit != nil {
-
-			if curMemUnit.UnitHeader.Index() > curUnit.UnitHeader.Index() {
-				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curMemUnit.UnitHash)
-				//pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
-				pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curMemUnit.UnitHeader.Number)
-				pendingUnit.UnitHeader.Number.Index += 1
-			} else {
-				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
-				//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
-				pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
-				pendingUnit.UnitHeader.Number.Index += 1
-			}
-		} else {
-			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
-			//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
-			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
-			pendingUnit.UnitHeader.Number.Index += 1
-		}
-
-	} else {
+	//if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
+	//
+	//	curMemUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0], current_index.Index)
+	//	curUnit := dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
+	//
+	//	if curMemUnit != nil {
+	//
+	//		if curMemUnit.UnitHeader.Index() > curUnit.UnitHeader.Index() {
+	//			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curMemUnit.UnitHash)
+	//			//pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
+	//			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curMemUnit.UnitHeader.Number)
+	//			pendingUnit.UnitHeader.Number.Index += 1
+	//		} else {
+	//			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
+	//			//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+	//			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
+	//			pendingUnit.UnitHeader.Number.Index += 1
+	//		}
+	//	} else {
+	//		pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
+	//		//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+	//		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
+	//		pendingUnit.UnitHeader.Number.Index += 1
+	//	}
+	//
+	//} else
+	{
 		//pendingUnit.UnitHeader.Number = current_index
 		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(current_index)
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
@@ -91,11 +92,13 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// 1. 判断是否满足生产的若干条件
 
 	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
-	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
+	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
 	if !dag.Exists(hash) {
-		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.", hash.String())
+		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
 		newestUnit := dag.Memdag.GetLastMainchainUnit()
-		dag.propRep.SetNewestUnit(newestUnit.Header())
+		if nil != newestUnit {
+			dag.propRep.SetNewestUnit(newestUnit.Header())
+		}
 	}
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	newUnits, err := dag.CreateUnit(&producer, txpool, when)
@@ -116,10 +119,6 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()
 	pendingUnit.UnitHeader.ParentsHash[0] = currentHash
 	header, err := dag.GetHeaderByHash(currentHash)
-	if err != nil {
-		// todo
-		log.Error("GetCurrent header failed ", "error", err)
-	}
 	if header == nil {
 		index, err := dag.GetIrreversibleUnit(gasToken)
 		if err != nil {

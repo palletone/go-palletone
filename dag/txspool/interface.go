@@ -52,7 +52,7 @@ type ITxPool interface {
 	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
 	Stats() (int, int)
 	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
-	GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
+	GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
 	ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
