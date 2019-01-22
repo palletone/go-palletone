@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/core/node"
+
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -48,15 +48,14 @@ type Dag struct {
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
-	unstableUnitRep dagcommon.IUnitRepository
-	unstableUtxoRep dagcommon.IUtxoRepository
-
+	unstableUnitRep  dagcommon.IUnitRepository
+	unstableUtxoRep  dagcommon.IUtxoRepository
 	unstableStateRep dagcommon.IStateRepository
 
-	stbunitRep dagcommon.IUnitRepository
-	stbutxoRep dagcommon.IUtxoRepository
-	//stbpropRep  dagcommon.IPropRepository
-	stbstateRep   dagcommon.IStateRepository
+	stableUnitRep  dagcommon.IUnitRepository
+	stableUtxoRep  dagcommon.IUtxoRepository
+	stableStateRep dagcommon.IStateRepository
+
 	propRep       dagcommon.IPropRepository
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
@@ -86,30 +85,32 @@ func (d *Dag) IsEmpty() bool {
 
 func (d *Dag) CurrentUnit() *modules.Unit {
 
-	nconfig := &node.DefaultConfig
-	gasToken := nconfig.GetGasToken()
-	hash, _, err := d.propRep.GetNewestUnit(gasToken)
-	if err != nil {
-		log.Error("Can not get newest unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
-		return nil
-	}
-	unit, err := d.unstableUnitRep.GetUnit(hash)
-	if err == nil {
-		log.Debugf("Get newest unit from memdag by hash:%s", hash.String())
-		return unit
-	}
-	log.Infof("Cannot get newest unit from memdag by hash:%s, try stable unit from db...", hash.String())
-	hash, _, err = d.propRep.GetLastStableUnit(gasToken)
-	if err != nil {
-		log.Error("Can not get last stable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
-		return nil
-	}
-	unit, err = d.unstableUnitRep.GetUnit(hash)
-	if err != nil {
-		log.Error("Cannot get last stable unit from ldb", "error", err.Error())
-		return nil
-	}
-	return unit
+	//nconfig := &node.DefaultConfig
+	//gasToken := nconfig.GetGasToken()
+	return d.Memdag.GetLastMainchainUnit()
+
+	//hash, _, err := d.propRep.GetNewestUnit(gasToken)
+	//if err != nil {
+	//	log.Error("Can not get newest unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
+	//	return nil
+	//}
+	//unit, err := d.unstableUnitRep.GetUnit(hash)
+	//if err == nil {
+	//	log.Debugf("Get newest unit from memdag by hash:%s", hash.String())
+	//	return unit
+	//}
+	//log.Infof("Cannot get newest unit from memdag by hash:%s, try stable unit from db...", hash.String())
+	//hash, _, err = d.propRep.GetLastStableUnit(gasToken)
+	//if err != nil {
+	//	log.Error("Can not get last stable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
+	//	return nil
+	//}
+	//unit, err = d.unstableUnitRep.GetUnit(hash)
+	//if err != nil {
+	//	log.Error("Cannot get last stable unit from ldb", "error", err.Error())
+	//	return nil
+	//}
+	//return unit
 	//// step1. get current unit hash
 	//hash, err := d.GetHeadUnitHash()
 	//if err != nil {
@@ -575,9 +576,9 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		unstableUtxoRep:  tutxoRep,
 		propRep:          propRep,
 		unstableStateRep: tstateRep,
-		stbunitRep:       unitRep,
-		stbutxoRep:       utxoRep,
-		stbstateRep:      stateRep,
+		stableUnitRep:    unitRep,
+		stableUtxoRep:    utxoRep,
+		stableStateRep:   stateRep,
 		validate:         validate,
 		ChainHeadFeed:    new(event.Feed),
 		Mutex:            *mutex,
@@ -602,14 +603,14 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 
 	dag := &Dag{
-		Cache:           freecache.NewCache(200 * 1024 * 1024),
-		Db:              db,
-		unstableUnitRep: unitRep,
-		unstableUtxoRep: utxoRep,
-		propRep:         propRep,
-		validate:        validate,
-		ChainHeadFeed:   new(event.Feed),
-		Mutex:           *mutex,
+		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		Db:            db,
+		stableUnitRep: unitRep,
+		stableUtxoRep: utxoRep,
+		propRep:       propRep,
+		validate:      validate,
+		ChainHeadFeed: new(event.Feed),
+		Mutex:         *mutex,
 		//Memdag:        memunit.NewMemDag(dagDb, stateDb, unstableUnitRep),
 		//utxos_cache: make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
@@ -628,16 +629,20 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
-
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, db, unitRep)
+	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{
-		Cache:           freecache.NewCache(200 * 1024 * 1024),
-		Db:              db,
-		unstableUnitRep: unitRep,
-		unstableUtxoRep: utxoRep,
-		validate:        validate,
-		ChainHeadFeed:   new(event.Feed),
-		Mutex:           *mutex,
-		//Memdag:        memunit.NewMemDagForTest(dagDb, stateDb, unstableUnitRep, txpool),
+		Cache:            freecache.NewCache(200 * 1024 * 1024),
+		Db:               db,
+		stableUnitRep:    unitRep,
+		stableUtxoRep:    utxoRep,
+		validate:         validate,
+		ChainHeadFeed:    new(event.Feed),
+		Mutex:            *mutex,
+		Memdag:           unstableChain,
+		unstableUnitRep:  tunitRep,
+		unstableUtxoRep:  tutxoRep,
+		unstableStateRep: tstateRep,
 		//utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil
@@ -995,6 +1000,11 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		//	// }
 		//} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
+		if isGenesis {
+			d.stableUnitRep.SaveUnit(unit, txpool, true, true)
+			return nil
+		}
+
 		if err := d.Memdag.AddUnit(unit, txpool); err != nil {
 			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 		} else {
@@ -1179,7 +1189,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	return &unit, nil
 }
 func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
-	return d.unstableUnitRep.GetGenesisUnit()
+	return d.stableUnitRep.GetGenesisUnit()
 }
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
 	return d.unstableStateRep.GetContractTpl(templateID)
