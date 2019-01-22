@@ -51,6 +51,9 @@ type IUnitRepository interface {
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetHeader(hash common.Hash) (*modules.Header, error)
+	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
+	SaveHeader(header *modules.Header) error
+	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
@@ -116,6 +119,28 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
 	return rep.dagdb.GetHeader(hash)
 }
+func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error) {
+	result := []*modules.Header{}
+	uhash := hash
+	for i := 0; i < parentCount; i++ {
+		h, err := rep.GetHeader(uhash)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, h)
+		if len(h.ParentsHash) == 0 { //Genesis unit
+			break
+		}
+		uhash = h.ParentsHash[0]
+	}
+	return result, nil
+}
+func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
+	return rep.dagdb.SaveHeader(header)
+}
+func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
+	return rep.dagdb.SaveHeaders(headers)
+}
 func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error) {
 	hash, err := rep.dagdb.GetHashByNumber(index)
 	if err != nil {
@@ -135,13 +160,13 @@ func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	//}
 	////dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 	//if err != nil {
-	//	log.Error("GetUnit when GetUnitNumber failed", "error:", err)
+	//	log.Error("getChainUnit when GetUnitNumber failed", "error:", err)
 	//	return nil, err
 	//}
 	// 2. unit header
 	uHeader, err := rep.dagdb.GetHeader(hash)
 	if err != nil {
-		log.Info("GetUnit when GetHeader failed ", "error", err, "hash", hash.String())
+		log.Info("getChainUnit when GetHeader failed ", "error", err, "hash", hash.String())
 		//log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}
@@ -151,7 +176,7 @@ func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	// get transaction list
 	txs, err := rep.dagdb.GetUnitTransactions(hash)
 	if err != nil {
-		log.Error("GetUnit when GetUnitTransactions failed , error:", err)
+		log.Error("getChainUnit when GetUnitTransactions failed , error:", err)
 		return nil, err
 	}
 	// generate unit
@@ -287,7 +312,7 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	if len(v) != 1 {
 		return unit, errors.New("error.")
 	}
-
+	log.Debugf("Unit[%s] signed by address:%s", unit.Hash().String(), signer.String())
 	unit.UnitHeader.Authors = modules.Authentifier{
 		Address: signer,
 		R:       r,
@@ -488,7 +513,7 @@ func (rep *UnitRepository) GetGenesisUnit() (*modules.Unit, error) {
 	//	return nil, err
 	//}
 	//log.Debug("rep: get genesis(hash):", "geneseis_hash", hash)
-	//return rep.dagdb.GetUnit(hash)
+	//return rep.dagdb.getChainUnit(hash)
 }
 
 /**

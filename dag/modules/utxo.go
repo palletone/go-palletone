@@ -159,26 +159,31 @@ func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 }
 
 func (utxoIndex *UtxoIndex) ToKey() []byte {
-	key := fmt.Sprintf("%s%s||%s||%s",
-		constants.UTXO_INDEX_PREFIX,
-		utxoIndex.AccountAddr.String(),
-		utxoIndex.Asset.String(),
-		utxoIndex.OutPoint.String())
-	return []byte(key)
+	key := append(constants.UTXO_INDEX_PREFIX, utxoIndex.AccountAddr.Bytes()...)
+	key = append(key, utxoIndex.Asset.Bytes()...)
+	key = append(key, utxoIndex.OutPoint.Bytes()...)
+	return key[:]
+	//	key := fmt.Sprintf("%s%s||%s||%s",
+	//	constants.UTXO_INDEX_PREFIX,
+	//	utxoIndex.AccountAddr.String(),
+	//	utxoIndex.Asset.String(),
+	//	utxoIndex.OutPoint.String())
+	//return []byte(key)
 }
 
 func (outpoint *OutPoint) ToKey() []byte {
 	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
-	key := append(constants.UTXO_PREFIX, outpoint.TxHash.Bytes()...)
-	key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
-	key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
+	key := append(constants.UTXO_PREFIX, outpoint.Bytes()...)
+	//key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
+	//key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
 	return key[:]
 
 }
-func (outpoint *OutPoint) ToKeyStr() string {
-	b := outpoint.ToKey()
-	return string(b)
-}
+
+//func (outpoint *OutPoint) ToKeyStr() string {
+//	b := outpoint.ToKey()
+//	return string(b)
+//}
 
 func (outpoint *OutPoint) SetString(data string) error {
 	rs := []rune(data)
@@ -190,10 +195,13 @@ func (outpoint *OutPoint) SetString(data string) error {
 }
 
 func (outpoint *OutPoint) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(outpoint)
-	if err != nil {
-		return nil
-	}
+
+	data := append(outpoint.TxHash.Bytes(), common.EncodeNumberUint32(outpoint.MessageIndex)...)
+	data = append(data, common.EncodeNumberUint32(outpoint.OutIndex)...)
+	//data, err := rlp.EncodeToBytes(outpoint)
+	//if err != nil {
+	//	return nil
+	//}
 	return data
 }
 func (outpoint *OutPoint) Hash() common.Hash {
