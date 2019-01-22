@@ -22,6 +22,7 @@ package common
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -54,6 +55,10 @@ type StateRepository struct {
 }
 
 func NewStateRepository(statedb storage.IStateDb) *StateRepository {
+	return &StateRepository{statedb: statedb}
+}
+func NewStateRepository4Db(db ptndb.Database) *StateRepository {
+	statedb := storage.NewStateDb(db)
 	return &StateRepository{statedb: statedb}
 }
 func (rep *StateRepository) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {

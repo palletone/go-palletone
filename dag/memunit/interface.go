@@ -22,6 +22,7 @@ package memunit
 
 import (
 	"github.com/palletone/go-palletone/common"
+	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -39,4 +40,13 @@ type IMemDag interface {
 	GetNewestUnit(assetid modules.IDType16) (*modules.Unit, error)
 	GetDelhashs() chan common.Hash
 	PushDelHashs(hashs []common.Hash)
+}
+type IMemDag2 interface {
+	SetStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool)
+	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error
+	Init(stablehash common.Hash, stableHeight uint64)
+	GetLastMainchainUnit() *modules.Unit
+	GetChainUnits() map[common.Hash]*modules.Unit
+	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository)
+	SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error
 }
