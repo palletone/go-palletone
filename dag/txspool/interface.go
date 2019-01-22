@@ -54,4 +54,5 @@ type ITxPool interface {
 	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
 	GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
 	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
+	ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }

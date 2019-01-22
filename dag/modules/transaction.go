@@ -175,6 +175,7 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 		fee = tx.TxFee.Amount
 	} else {
 		fee = 20 // 20dao
+		tx.TxFee = &InvokeFees{Amount: 20, Asset: tx.Tx.Asset()}
 	}
 	return big.NewInt(int64(fee))
 }
@@ -258,7 +259,24 @@ func (tx *Transaction) GetAddressInfo() ([]*OutPoint, [][]byte) {
 	}
 	return froms, tos
 }
-
+func (tx *Transaction) Asset() *Asset {
+	if tx == nil {
+		return nil
+	}
+	asset := new(Asset)
+	msg := tx.Messages()[0]
+	if msg.App == APP_PAYMENT {
+		pay := msg.Payload.(*PaymentPayload)
+		for _, out := range pay.Outputs {
+			if out.Asset != nil {
+				asset.AssetId = out.Asset.AssetId
+				asset.UniqueId = out.Asset.UniqueId
+				break
+			}
+		}
+	}
+	return asset
+}
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
 
 	obj.DeepCopy(&tx, cpy)

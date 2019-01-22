@@ -229,6 +229,9 @@ func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
 func (p *testTxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
 	return &modules.InvokeFees{}, nil
 }
+func (p *testTxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
+	return false, nil
+}
 
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {

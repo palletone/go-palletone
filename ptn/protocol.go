@@ -150,6 +150,7 @@ type txPool interface {
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
 	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
+	ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
 
 // statusData is the network packet for the status message.
