@@ -648,9 +648,9 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
-	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 	// 如果是孤兒交易，則先不計算交易的優先級。
 	if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
+		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 		txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
 	}
 	return txpool_tx
@@ -715,6 +715,9 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	if err := pool.checkPoolDoubleSpend(tx); err != nil {
 		return false, err
 	}
+	// 计算交易费和优先级
+	tx.TxFee, _ = pool.GetTxFee(tx.Tx)
+	tx.Priority_lvl = tx.GetPriorityLvl()
 
 	utxoview, err := pool.FetchInputUtxos(tx.Tx)
 	if err != nil {

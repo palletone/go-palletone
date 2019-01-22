@@ -578,9 +578,9 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	if header.Number == nil {
 		return modules.UNIT_STATE_INVALID_HEADER
 	}
-	if len(header.AssetIDs) == 0 {
-		return modules.UNIT_STATE_INVALID_HEADER
-	}
+	//if len(header.AssetIDs) == 0 {
+	//	return modules.UNIT_STATE_INVALID_HEADER
+	//}
 
 	if isGenesis {
 		if len(header.AssetIDs) != 1 {
@@ -598,17 +598,17 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 
 		// 	return modules.UNIT_STATE_CHECK_HEADER_PASSED
 	}
-	var isValidAssetId bool
-	for _, asset := range header.AssetIDs {
-		if asset == header.Number.AssetID {
-			isValidAssetId = true
-			break
-		}
-	}
-	if !isValidAssetId {
-		fmt.Println(7)
-		return modules.UNIT_STATE_INVALID_HEADER
-	}
+	//var isValidAssetId bool
+	//for _, asset := range header.AssetIDs {
+	//	if asset == header.Number.AssetID {
+	//		isValidAssetId = true
+	//		break
+	//	}
+	//}
+	//if !isValidAssetId {
+	//	fmt.Println(7)
+	//	return modules.UNIT_STATE_INVALID_HEADER
+	//}
 
 	// check authors
 	//TODO must recover
