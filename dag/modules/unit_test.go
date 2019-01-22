@@ -100,7 +100,7 @@ func TestCopyHeader(t *testing.T) {
 	assetID.SetBytes([]byte("0000000011111111"))
 	h := Header{
 		ParentsHash: []common.Hash{u1, u2},
-		AssetIDs:    []IDType16{assetID},
+		//AssetIDs:    []IDType16{assetID},
 		Authors:     auth,
 		GroupSign:   w,
 		GroupPubKey: w,
@@ -121,7 +121,7 @@ func TestUnitSize(t *testing.T) {
 	key := new(ecdsa.PrivateKey)
 	key, _ = crypto.GenerateKey()
 	h := new(Header)
-	h.AssetIDs = append(h.AssetIDs, PTNCOIN)
+	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := Authentifier{}
 	address := crypto.PubkeyToAddress(&key.PublicKey)
 	log.Println("address:", address)
@@ -162,7 +162,7 @@ func TestOutPointToKey(t *testing.T) {
 }
 func TestHeaderPointer(t *testing.T) {
 	h := new(Header)
-	h.AssetIDs = []IDType16{PTNCOIN}
+	//h.AssetIDs = []IDType16{PTNCOIN}
 	h.Creationdate = time.Now().Unix()
 	h.Extra = []byte("jay")
 	index := new(ChainIndex)
