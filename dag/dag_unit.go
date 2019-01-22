@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -45,21 +46,25 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 
 			if curMemUnit.UnitHeader.Index() > curUnit.UnitHeader.Index() {
 				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curMemUnit.UnitHash)
-				pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
+				//pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
+				pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curMemUnit.UnitHeader.Number)
 				pendingUnit.UnitHeader.Number.Index += 1
 			} else {
 				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
-				pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+				//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+				pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
 				pendingUnit.UnitHeader.Number.Index += 1
 			}
 		} else {
 			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
-			pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+			//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
 			pendingUnit.UnitHeader.Number.Index += 1
 		}
 
 	} else {
-		pendingUnit.UnitHeader.Number = current_index
+		//pendingUnit.UnitHeader.Number = current_index
+		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(current_index)
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
 
 		pendingUnit.UnitHeader.ParentsHash =
@@ -67,8 +72,8 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 	}
 
 	if pendingUnit.UnitHeader.Number == nil {
-		current_index.Index += 1
-		pendingUnit.UnitHeader.Number = current_index
+		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(current_index)
+		pendingUnit.UnitHeader.Number.Index += 1
 	} else {
 		log.Debug("the pending unit header number index info. ", "index", pendingUnit.UnitHeader.Number.String())
 	}
