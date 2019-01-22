@@ -68,11 +68,12 @@ func (utxodb *UtxoDb) saveUtxoOutpoint(address common.Address, outpoint *modules
 func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Address, outpoint *modules.OutPoint) error {
 	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
-	val, err := rlp.EncodeToBytes(outpoint)
-	if err != nil {
-		return err
-	}
-	return batch.Put(key, val)
+	return StoreBytes(batch, key, outpoint)
+	//val, err := rlp.EncodeToBytes(outpoint)
+	//if err != nil {
+	//	return err
+	//}
+	//return batch.Put(key, val)
 }
 func (utxodb *UtxoDb) deleteUtxoOutpoint(address common.Address, outpoint *modules.OutPoint) error {
 	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
@@ -113,11 +114,12 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 			continue
 		} else {
 			key := outpoint.ToKey()
-			val, err := rlp.EncodeToBytes(utxo)
+			err := StoreBytes(batch, key, utxo)
+			//val, err := rlp.EncodeToBytes(utxo)
 			if err != nil {
 				return err
 			}
-			batch.Put(key, val)
+			//batch.Put(key, val)
 			address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 			// save utxoindex and  addr and key
 			utxodb.batchSaveUtxoOutpoint(batch, address, &outpoint)

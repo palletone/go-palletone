@@ -51,7 +51,9 @@ type IUnitRepository interface {
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetHeader(hash common.Hash) (*modules.Header, error)
+	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
+	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
@@ -117,8 +119,27 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
 	return rep.dagdb.GetHeader(hash)
 }
+func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error) {
+	result := []*modules.Header{}
+	uhash := hash
+	for i := 0; i < parentCount; i++ {
+		h, err := rep.GetHeader(uhash)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, h)
+		if len(h.ParentsHash) == 0 { //Genesis unit
+			break
+		}
+		uhash = h.ParentsHash[0]
+	}
+	return result, nil
+}
 func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
 	return rep.dagdb.SaveHeader(header)
+}
+func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
+	return rep.dagdb.SaveHeaders(headers)
 }
 func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error) {
 	hash, err := rep.dagdb.GetHashByNumber(index)

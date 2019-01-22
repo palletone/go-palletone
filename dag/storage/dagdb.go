@@ -49,6 +49,7 @@ type IDagDb interface {
 	SaveGenesisUnitHash(hash common.Hash) error
 
 	SaveHeader(h *modules.Header) error
+	SaveHeaders(headers []*modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
@@ -147,22 +148,44 @@ value: unit header rlp encoding bytes
 */
 // save header
 func (dagdb *DagDb) SaveHeader(h *modules.Header) error {
+
+	err := dagdb.saveHeader(dagdb.db, h)
+	if err != nil {
+		return err
+	}
+	return dagdb.saveHeaderChainIndex(dagdb.db, h)
+}
+func (dagdb *DagDb) SaveHeaders(headers []*modules.Header) error {
+	batch := dagdb.db.NewBatch()
+	for _, h := range headers {
+		err := dagdb.saveHeader(batch, h)
+		if err != nil {
+			return err
+		}
+		err = dagdb.saveHeaderChainIndex(batch, h)
+		if err != nil {
+			return err
+		}
+	}
+	return batch.Write()
+}
+func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 	uHash := h.Hash()
 	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
-	err := StoreBytes(dagdb.db, (key), h)
+	err := StoreBytes(putter, key, h)
 	if err != nil {
 		log.Error("Save Header error", err.Error())
 		return err
 	}
 	log.Debugf("Save header for unit: %x", uHash.Bytes())
-	return dagdb.saveHeaderChainIndex(h)
+	return nil
 }
 
 //为Unit的Height建立索引,这个索引是必须的，所以在dagdb中实现，而不是在indexdb实现。
-func (dagdb *DagDb) saveHeaderChainIndex(h *modules.Header) error {
+func (dagdb *DagDb) saveHeaderChainIndex(putter ptndb.Putter, h *modules.Header) error {
 	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
 	uHash := h.Hash()
-	err := StoreBytes(dagdb.db, idxKey, uHash)
+	err := StoreBytes(putter, idxKey, uHash)
 	if err != nil {
 		log.Error("Save Header height index error", err.Error())
 		return err
@@ -315,7 +338,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 		}
 		key := append(constants.LookupPrefix, tx.Hash().Bytes()...)
 
-		if err := BatchStore(batch, key, in); err != nil {
+		if err := StoreBytes(batch, key, in); err != nil {
 			return err
 		}
 	}

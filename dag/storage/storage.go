@@ -32,18 +32,19 @@ import (
 func Store(db ptndb.Database, key string, value interface{}) error {
 	return StoreBytes(db, []byte(key), value)
 }
-func BatchStore(batch ptndb.Batch, key []byte, value interface{}) error {
-	val, err := rlp.EncodeToBytes(value)
-	if err != nil {
-		return err
-	}
-	err = batch.Put(key, val)
-	if err != nil {
-		log.Error("batch put error", "key:", string(key), "err:", err)
-	}
-	return err
-}
-func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
+
+//func BatchStore(batch ptndb.Batch, key []byte, value interface{}) error {
+//	val, err := rlp.EncodeToBytes(value)
+//	if err != nil {
+//		return err
+//	}
+//	err = batch.Put(key, val)
+//	if err != nil {
+//		log.Error("batch put error", "key:", string(key), "err:", err)
+//	}
+//	return err
+//}
+func StoreBytes(db ptndb.Putter, key []byte, value interface{}) error {
 	val, err := rlp.EncodeToBytes(value)
 	if err != nil {
 		return err

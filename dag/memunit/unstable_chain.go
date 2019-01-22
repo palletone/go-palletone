@@ -11,6 +11,7 @@ import (
 )
 
 type UnstableChain struct {
+	token             modules.IDType16
 	stableUnitHash    common.Hash
 	stableUnitHeight  uint64
 	orphanUnits       map[common.Hash]*modules.Unit
@@ -20,18 +21,28 @@ type UnstableChain struct {
 	tempUtxoRep       common2.IUtxoRepository
 	tempStateRep      common2.IStateRepository
 	ldbunitRep        common2.IUnitRepository
+	ldbPropRep        common2.IPropRepository
 	tempdb            *Tempdb
 }
 
-func NewUnstableChain(db ptndb.Database, stableUnitRep common2.IUnitRepository, stablehash common.Hash, stableHeight uint64) *UnstableChain {
-	//ldbRep := common2.NewUnitRepository4Db(db)
-	stableUnit, _ := stableUnitRep.GetUnit(stablehash)
+func NewUnstableChain(token modules.IDType16, db ptndb.Database, stableUnitRep common2.IUnitRepository) *UnstableChain {
+	propRep := common2.NewPropRepository4Db(db)
+
 	tempdb, _ := NewTempdb(db)
 	trep := common2.NewUnitRepository4Db(tempdb)
 	tutxoRep := common2.NewUtxoRepository4Db(tempdb)
 	tstateRep := common2.NewStateRepository4Db(tempdb)
+
+	stablehash, stbIndex, err := propRep.GetLastStableUnit(token)
+	if err != nil {
+		log.Errorf("Cannot retrieve last stable unit from db for token:%s", token.String())
+		return nil
+	}
+	stableUnit, _ := stableUnitRep.GetUnit(stablehash)
 	return &UnstableChain{
+		token:             token,
 		ldbunitRep:        stableUnitRep,
+		ldbPropRep:        propRep,
 		tempdbunitRep:     trep,
 		tempUtxoRep:       tutxoRep,
 		tempStateRep:      tstateRep,
@@ -39,7 +50,7 @@ func NewUnstableChain(db ptndb.Database, stableUnitRep common2.IUnitRepository, 
 		orphanUnits:       make(map[common.Hash]*modules.Unit),
 		chainUnits:        make(map[common.Hash]*modules.Unit),
 		stableUnitHash:    stablehash,
-		stableUnitHeight:  stableHeight,
+		stableUnitHeight:  stbIndex.Index,
 		lastMainchainUnit: stableUnit,
 	}
 }
@@ -190,7 +201,7 @@ func (chain *UnstableChain) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) 
 		if parentHash == chain.lastMainchainUnit.Hash() {
 			log.Debug("This is a new main chain unit")
 			//Add a new unit to main chain
-			chain.lastMainchainUnit = unit
+			chain.setLastMainchainUnit(unit)
 			if !chain.checkStableCondition(2, txpool) {
 				chain.tempdbunitRep.SaveUnit(unit, nil, false, true)
 			}
@@ -198,7 +209,7 @@ func (chain *UnstableChain) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) 
 			log.Debug("This is a fork unit")
 			if unit.NumberU64() > chain.lastMainchainUnit.NumberU64() { //Need switch main chain
 				//switch main chain, build db
-				chain.lastMainchainUnit = unit
+				chain.setLastMainchainUnit(unit)
 				if !chain.checkStableCondition(2, txpool) {
 					chain.rebuildTempdb()
 				}
@@ -238,6 +249,10 @@ func (chain *UnstableChain) getChainUnit(hash common.Hash) (*modules.Unit, error
 //}
 func (chain *UnstableChain) GetLastMainchainUnit() *modules.Unit {
 	return chain.lastMainchainUnit
+}
+func (chain *UnstableChain) setLastMainchainUnit(unit *modules.Unit) {
+	chain.lastMainchainUnit = unit
+	chain.ldbPropRep.SetNewestUnit(unit.Header())
 }
 func (chain *UnstableChain) GetChainUnits() map[common.Hash]*modules.Unit {
 	return chain.chainUnits

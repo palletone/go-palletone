@@ -564,8 +564,8 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
-	hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
-	unstableChain := memunit.NewUnstableChain(db, unitRep, hash, idx.Index)
+	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
+	unstableChain := memunit.NewUnstableChain(modules.PTNCOIN, db, unitRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
