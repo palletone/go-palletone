@@ -143,8 +143,25 @@ func (h *Header) Size() common.StorageSize {
 
 // CopyHeader creates a deep copy of a block header to prevent side effects from
 // modifying a header variable.
+func CopyChainIndex(index *ChainIndex) *ChainIndex {
+	cop := new(ChainIndex)
+	cop.AssetID = index.AssetID
+	cop.IsMain = index.IsMain
+	cop.Index = index.Index
+	return cop
+}
 func CopyHeader(h *Header) *Header {
-	cpy := *h
+	if h == nil {
+		return nil
+	}
+	cpy := Header{}
+	//	cpy.Number = h.Number
+	if h.Number != nil {
+		cpy.Number = CopyChainIndex(h.Number)
+	}
+	cpy.Extra = h.Extra[:]
+	cpy.Creationdate = h.Creationdate
+	cpy.Authors = h.Authors
 
 	if len(h.ParentsHash) > 0 {
 		cpy.ParentsHash = make([]common.Hash, len(h.ParentsHash))
