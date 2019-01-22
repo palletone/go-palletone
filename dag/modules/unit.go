@@ -25,6 +25,7 @@ import (
 
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -63,7 +64,7 @@ type Header struct {
 	GroupSign    []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
 	GroupPubKey  []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
 	TxRoot       common.Hash   `json:"root"`
-	Number       ChainIndex    `json:"index"`
+	Number       *ChainIndex   `json:"index"`
 	Extra        []byte        `json:"extra"`
 	Creationdate int64         `json:"creation_time"` // unit create time
 }
@@ -90,7 +91,8 @@ func NewHeader(parents []common.Hash, asset []IDType16, used uint64, extra []byt
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
-	return &Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...)}
+	number := &ChainIndex{}
+	return &Header{ParentsHash: hashs, AssetIDs: asset, Number: number, Extra: append(b, extra...)}
 }
 
 func HeaderEqual(oldh, newh *Header) bool {
@@ -106,7 +108,7 @@ func (h *Header) Index() uint64 {
 	return h.Number.Index
 }
 func (h *Header) ChainIndex() *ChainIndex {
-	return &h.Number
+	return h.Number
 }
 
 func (h *Header) Hash() common.Hash {
@@ -141,8 +143,25 @@ func (h *Header) Size() common.StorageSize {
 
 // CopyHeader creates a deep copy of a block header to prevent side effects from
 // modifying a header variable.
+func CopyChainIndex(index *ChainIndex) *ChainIndex {
+	cop := new(ChainIndex)
+	cop.AssetID = index.AssetID
+	cop.IsMain = index.IsMain
+	cop.Index = index.Index
+	return cop
+}
 func CopyHeader(h *Header) *Header {
-	cpy := *h
+	if h == nil {
+		return nil
+	}
+	cpy := Header{}
+	//	cpy.Number = h.Number
+	if h.Number != nil {
+		cpy.Number = CopyChainIndex(h.Number)
+	}
+	cpy.Extra = h.Extra[:]
+	cpy.Creationdate = h.Creationdate
+	cpy.Authors = h.Authors
 
 	if len(h.ParentsHash) > 0 {
 		cpy.ParentsHash = make([]common.Hash, len(h.ParentsHash))
@@ -252,10 +271,10 @@ type ChainIndex struct {
 	Index   uint64   `json:"index"`
 }
 
-func (height ChainIndex) String() string {
-	return common.Bytes2Hex(height.Bytes())
+func (height *ChainIndex) String() string {
+	return fmt.Sprintf("%s-%d", height.AssetID.ToAssetId(), height.Index)
 }
-func (height ChainIndex) Bytes() []byte {
+func (height *ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)
 	if err != nil {
 		return nil
@@ -352,7 +371,7 @@ func (u *Unit) Size() common.StorageSize {
 }
 
 //func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
-func (u *Unit) Number() ChainIndex {
+func (u *Unit) Number() *ChainIndex {
 	return u.UnitHeader.Number
 }
 
@@ -498,6 +517,7 @@ const (
 	TxValidationCode_INVALID_AMOUNT               TxValidationCode = 31
 	TxValidationCode_INVALID_ASSET                TxValidationCode = 32
 	TxValidationCode_INVALID_CONTRACT             TxValidationCode = 33
+	TxValidationCode_INVALID_DATAPAYLOAD          TxValidationCode = 34
 	TxValidationCode_NOT_VALIDATED                TxValidationCode = 254
 	TxValidationCode_NOT_COMPARE_SIZE             TxValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 256

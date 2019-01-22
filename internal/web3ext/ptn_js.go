@@ -97,8 +97,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccdeploytx',
         	call: 'ptn_ccdeploytx',
-        	params: 7, //from, to , daoAmount, daoFee , templateId , txid , args  
-			inputFormatter: [null, null, null,null, null, null, null]
+        	params: 6, //from, to , daoAmount, daoFee , templateId , args  
+			inputFormatter: [null, null, null,null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvoketx',
@@ -115,8 +115,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccstoptx',
         	call: 'ptn_ccstoptx',
-        	params: 7, //from, to, daoAmount, daoFee, contractId, txid, deleteImage
-			inputFormatter: [null, null, null, null, null, null, null]
+        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
+			inputFormatter: [null, null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'depositContractInvoke',
@@ -150,8 +150,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'signRawTransaction',
 			call: 'ptn_signRawTransaction',
-			params: 1,
-			inputFormatter: [null]
+			params: 3,
+			inputFormatter: [null,null, null]
 		}),
 		new web3._extend.Method({
 			name: 'sendRawTransaction',

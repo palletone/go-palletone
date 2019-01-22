@@ -90,7 +90,7 @@ func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
-	aSize := d.GetActiveMediatorCount()
+	aSize := d.ActiveMediatorsCount()
 	pubs := make([]kyber.Point, aSize, aSize)
 
 	meds := d.GetActiveMediators()
@@ -104,8 +104,12 @@ func (d *Dag) GetActiveMediatorInitPubs() []kyber.Point {
 }
 
 // author Albert·Gou
-func (d *Dag) GetActiveMediatorCount() int {
-	return d.GetGlobalProp().GetActiveMediatorCount()
+func (d *Dag) ActiveMediatorsCount() int {
+	return d.GetGlobalProp().ActiveMediatorsCount()
+}
+
+func (d *Dag) PrecedingMediatorsCount() int {
+	return d.GetGlobalProp().PrecedingMediatorsCount()
 }
 
 // author Albert·Gou
@@ -155,27 +159,34 @@ func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
 }
 
 func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
-	return modules.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), when)
+	return dag.propRep.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), when)
 }
 
 func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
-	return modules.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
+	return dag.propRep.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
 }
 
 func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
-	return dag.GetMediatorSchl().GetScheduledMediator(dag.GetDynGlobalProp(), slotNum)
+	return dag.propRep.GetScheduledMediator(slotNum)
 }
 
 func (dag *Dag) HeadUnitTime() int64 {
-	return dag.GetDynGlobalProp().HeadUnitTime
+	t, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
+	return t
 }
 
 func (dag *Dag) HeadUnitNum() uint64 {
-	return dag.GetDynGlobalProp().HeadUnitNum
+	_, idx, _ := dag.propRep.GetNewestUnit(modules.PTNCOIN)
+	return idx.Index
+}
+
+func (dag *Dag) LastMaintenanceTime() int64 {
+	return dag.GetDynGlobalProp().LastMaintenanceTime
 }
 
 func (dag *Dag) HeadUnitHash() common.Hash {
-	return dag.GetDynGlobalProp().HeadUnitHash
+	hash, _, _ := dag.propRep.GetNewestUnit(modules.PTNCOIN)
+	return hash
 }
 
 func (dag *Dag) GetMediators() map[common.Address]bool {
@@ -203,10 +214,10 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	unit, err := dag.unitRep.GetUnit(hash)
-
+	//先判断Unit是否在Memdag中，如果在则直接返还，不在才去Leveldb查询
+	unit, err := dag.Memdag.GetUnit(hash)
 	if err != nil && dag.Memdag != nil {
-		unit, err = dag.Memdag.GetUnit(hash)
+		unit, err = dag.unitRep.GetUnit(hash)
 	}
 
 	if err != nil {

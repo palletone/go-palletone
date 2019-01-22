@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -39,67 +40,61 @@ type MemUnit struct {
 	memLock     sync.RWMutex
 
 	numberToHash     map[modules.ChainIndex]common.Hash
-	numberToHashLock sync.RWMutex
+	numberToHashLock *sync.RWMutex
 }
 
 func InitMemUnit() *MemUnit {
 	memUnitInfo := new(sync.Map)
 	numberToHash := map[modules.ChainIndex]common.Hash{}
-	memUnit := MemUnit{
-		memUnitInfo:  memUnitInfo,
-		numberToHash: numberToHash,
+	memUnit := &MemUnit{
+		memUnitInfo:      memUnitInfo,
+		numberToHash:     numberToHash,
+		numberToHashLock: new(sync.RWMutex),
 	}
-	return &memUnit
+	return memUnit
 }
 
 //set the mapping relationship
 //key:number  value:unit hash
-func (mu *MemUnit) SetHashByNumber(chainIndex modules.ChainIndex, hash common.Hash) {
+func (mu *MemUnit) SetHashByNumber(chainIndex *modules.ChainIndex, hash common.Hash) {
 	mu.numberToHashLock.Lock()
 	defer mu.numberToHashLock.Unlock()
-	if _, ok := mu.numberToHash[chainIndex]; ok {
+	if _, ok := mu.numberToHash[*chainIndex]; ok {
 		return
 	}
-	mu.numberToHash[chainIndex] = hash
+	mu.numberToHash[*chainIndex] = hash
 	return
 }
 
 //get the mapping relationship
 //key:number  result:unit hash
-func (mu *MemUnit) GetHashByNumber(chainIndex modules.ChainIndex) (common.Hash, error) {
+func (mu *MemUnit) GetHashByNumber(chainIndex *modules.ChainIndex) (common.Hash, error) {
 	mu.numberToHashLock.RLock()
 	defer mu.numberToHashLock.RUnlock()
-	if hash, ok := mu.numberToHash[chainIndex]; ok {
+	if hash, ok := mu.numberToHash[*chainIndex]; ok {
 		return hash, nil
 	}
 	return common.Hash{}, errors.New("have not key")
 }
 
-func (mu *MemUnit) DelHashByNumber(chainIndex modules.ChainIndex) error {
+func (mu *MemUnit) DelHashByNumber(chainIndex *modules.ChainIndex) error {
 	mu.numberToHashLock.Lock()
 	defer mu.numberToHashLock.Unlock()
-	if _, ok := mu.numberToHash[chainIndex]; !ok {
+	if _, ok := mu.numberToHash[*chainIndex]; !ok {
 		return errors.New("the hash is not exist")
 	}
-	delete(mu.numberToHash, chainIndex)
+	delete(mu.numberToHash, *chainIndex)
 	return nil
 }
 func (mu *MemUnit) Add(u *modules.Unit) error {
 	if mu == nil {
 		mu = InitMemUnit()
 	}
-	// _, ok := mu.memUnitInfo.Load(u.Hash())
-	// //_, ok := (*mu.memUnitInfo)[u.UnitHash]
-	// if !ok {
-	// 	mu.memUnitInfo.Store(u.Hash(), u)
-	// 	// (*mu.memUnitInfo)[u.UnitHash] = u
-	// }
-
 	_, ok := mu.memUnitInfo.LoadOrStore(u.Hash(), u)
 	if !ok {
 		mu.memUnitInfo.Store(u.Hash(), u)
 	}
-	log.Info("insert memUnit success.", "hashHex", u.Hash().String())
+	log.Info("insert memUnit success.", "hashHex", u.Hash().String(), "index", u.NumberU64())
 	return nil
 }
 
@@ -110,10 +105,6 @@ func (mu *MemUnit) Get(hash common.Hash) (*modules.Unit, error) {
 	if !ok {
 		return nil, fmt.Errorf("Get mem unit: unit does not be found.")
 	}
-	// unit, ok := (*mu.memUnitInfo)[hash]
-	// if !ok || unit == nil {
-	// 	return nil, fmt.Errorf("Get mem unit: unit does not be found.")
-	// }
 	unit := data.(*modules.Unit)
 	return unit, nil
 }
@@ -134,16 +125,17 @@ func (mu *MemUnit) Refresh(hash common.Hash) error {
 		log.Debug(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
 	}
 
-	mu.memLock.Lock()
+	mu.numberToHashLock.RLock()
 	for index, h := range mu.numberToHash {
 		if h == hash {
+			//mu.numberToHashLock.Lock()
 			delete(mu.numberToHash, index)
+			//mu.numberToHashLock.Unlock()
 			break
 		}
 	}
-	mu.memLock.Unlock()
+	mu.numberToHashLock.RUnlock()
 	return nil
-	//return errors.New(fmt.Sprintf("the hash(%s) is not exist", hash.String()))
 }
 
 func (mu *MemUnit) Lenth() uint64 {
@@ -322,7 +314,8 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 		all_index = append(all_index, index)
 	}
 	// 判断够不够最小规模mediator数，不够则返回，否则返回高度最小且最老的hash值。
-	if len(countMediators) <= dagconfig.DefaultConfig.IrreversibleHeight {
+	if len(countMediators) < dagconfig.DefaultConfig.IrreversibleHeight {
+		log.Debug("countMediators< IrreversibleHeight", "count", countMediators, "IrreversibleHeight", dagconfig.DefaultConfig.IrreversibleHeight)
 		return nil
 	}
 
@@ -330,7 +323,8 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 		sort.Sort(all_index)
 		min_index = all_index[0]
 	}
-
+	// update all_index
+	all_index = all_index[1:]
 	s_index := uint64(index - int64(dagconfig.DefaultConfig.IrreversibleHeight-1))
 	if min_index > 0 {
 		s_index = min_index
@@ -339,9 +333,11 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 	hashs, has := (*forkIndex)[s_index]
 
 	if !has {
+		log.Debug("forkIndex is not exist the s_index.", "s_index", s_index)
 		return nil
 	}
 	if len(hashs) <= 0 {
+		log.Debug("forkIndex  is exist the s_index", "s_index", s_index)
 		return nil
 	}
 	//hash := (hashs)[0]
@@ -351,7 +347,9 @@ func (forkIndex *ForkIndex) GetStableUnitHash(index int64) []common.Hash {
 			delHashs = append(delHashs, hashs[i].hash)
 		}
 	}
+
 	// forkIndex.RemoveStableIndex(s_index)
+	log.Debug("get stable hash success.")
 	return delHashs
 }
 func (forkIndex *ForkIndex) RemoveStableIndex(index uint64) {

@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -40,9 +41,9 @@ func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	}
 
 	missedUnits--
-	log.Debug(fmt.Sprintf("the count of missed Units: %v", missedUnits))
+	log.Debug(fmt.Sprintf("the count of missed units: %v", missedUnits))
 
-	aSize := dag.GetActiveMediatorCount()
+	aSize := dag.ActiveMediatorsCount()
 	if missedUnits < uint32(aSize) {
 		var i uint32
 		for i = 0; i < missedUnits; i++ {
@@ -71,7 +72,7 @@ func (dag *Dag) updateMediatorSchedule() {
 	dgp := dag.GetDynGlobalProp()
 	ms := dag.GetMediatorSchl()
 
-	if ms.UpdateMediatorSchedule(gp, dgp) {
+	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
 		dag.SaveMediatorSchl(ms, false)
 	}
 
@@ -88,7 +89,7 @@ func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
 }
 
 func (dag *Dag) updateLastIrreversibleUnit() {
-	aSize := dag.GetActiveMediatorCount()
+	aSize := dag.ActiveMediatorsCount()
 	lastConfirmedUnitNums := make([]int, 0, aSize)
 
 	// 1. 获取所有活跃 mediator 最后确认unit编号
@@ -103,18 +104,21 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	sort.Ints(lastConfirmedUnitNums)
 
 	// 3. 获取倒数第 > 2/3 个确认unit编号
-	offset := aSize - dag.ChainThreshold()
-	var newLastIrreversibleUnitNum = uint32(lastConfirmedUnitNums[offset])
-
+	//offset := aSize - dag.ChainThreshold()
+	//var newLastIrreversibleUnitNum = uint64(lastConfirmedUnitNums[offset])
+	//TODO Devin where is unit hash?
 	// 4. 更新
-	dag.updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum)
+	//dag.updateLastIrreversibleUnitNum( newLastIrreversibleUnitNum)
 }
 
-func (dag *Dag) updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum uint32) {
-	dgp := dag.GetDynGlobalProp()
-	if newLastIrreversibleUnitNum > dgp.LastIrreversibleUnitNum {
-		dgp.LastIrreversibleUnitNum = newLastIrreversibleUnitNum
-		dag.SaveDynGlobalProp(dgp, false)
+func (dag *Dag) updateLastIrreversibleUnitNum(hash common.Hash, newLastIrreversibleUnitNum uint64) {
+	//dgp := dag.GetDynGlobalProp()
+	token := node.DefaultConfig.GetGasToken()
+	_, index, _ := dag.propRep.GetLastStableUnit(token)
+	if newLastIrreversibleUnitNum > index.Index {
+		dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
+		//dgp.s = newLastIrreversibleUnitNum
+		//dag.SaveDynGlobalProp(dgp, false)
 	}
 }
 
@@ -126,7 +130,7 @@ func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
 	}
 
 	// 1. 根据群签名更新不可逆unit高度
-	dag.updateLastIrreversibleUnitNum(uint32(unit.NumberU64()))
+	dag.updateLastIrreversibleUnitNum(unitHash, uint64(unit.NumberU64()))
 }
 
 // 活跃 mediators 更新事件

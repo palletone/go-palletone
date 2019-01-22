@@ -21,12 +21,12 @@ package java
 
 import (
 	"archive/tar"
+	"errors"
 	"fmt"
 	"strings"
-	"errors"
 
-	cutil "github.com/palletone/go-palletone/vm/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cutil "github.com/palletone/go-palletone/vm/common"
 )
 
 //tw is expected to have the chaincode in it from GenerateHashcode.

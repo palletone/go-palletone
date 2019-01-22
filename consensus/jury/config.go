@@ -17,20 +17,21 @@ var (
 		Usage: "The About information account address,password,public and private key and on ",
 	}
 )
+
 type AccountConf struct {
 	Address,
 	Password string
 }
 type JuryAccount struct {
-	Address     common.Address
-	Password    string
+	Address  common.Address
+	Password string
 }
 type Config struct {
 	Accounts []*AccountConf // the set of the mediator info
 }
 
 func (aConf *AccountConf) configToAccount() *JuryAccount {
-	addr := core.StrToMedAdd(aConf.Address)
+	addr, _ := common.StringToAddress(aConf.Address)
 
 	medAcc := &JuryAccount{
 		addr,
@@ -41,7 +42,7 @@ func (aConf *AccountConf) configToAccount() *JuryAccount {
 
 var DefaultConfig = Config{
 	Accounts: []*AccountConf{
-		&AccountConf{core.DefaultJuryAddr, DefaultPassword	},
+		&AccountConf{core.DefaultJuryAddr, DefaultPassword},
 	},
 }
 

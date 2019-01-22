@@ -33,7 +33,7 @@ func TestGetUnit(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	//l := log.NewTestLog()
 	dagdb := NewDagDb(db)
-	u, err := dagdb.GetUnit(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
+	u, err := dagdb.GetHeader(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 	assert.Nil(t, u, "empty db, must return nil Unit")
 	assert.NotNil(t, err)
 }

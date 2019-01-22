@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"

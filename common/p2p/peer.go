@@ -298,7 +298,8 @@ func countMatchingProtocols(protocols []Protocol, caps []Cap) int {
 	n := 0
 	for _, cap := range caps {
 		for _, proto := range protocols {
-			if proto.Name == cap.Name && proto.Version == cap.Version {
+			if (proto.Name == cap.Name && proto.Version == cap.Version) ||
+				(proto.Version == cap.Version && (proto.Name == "ptn" || cap.Name == "ptn")) {
 				n++
 			}
 		}
@@ -315,7 +316,8 @@ func matchProtocols(protocols []Protocol, caps []Cap, rw MsgReadWriter) map[stri
 outer:
 	for _, cap := range caps {
 		for _, proto := range protocols {
-			if proto.Name == cap.Name && proto.Version == cap.Version {
+			if (proto.Name == cap.Name && proto.Version == cap.Version) ||
+				(proto.Version == cap.Version && (proto.Name == "ptn" || cap.Name == "ptn")) {
 				// If an old protocol version matched, revert it
 				if old := result[cap.Name]; old != nil {
 					offset -= old.Length
@@ -454,7 +456,8 @@ func (p *Peer) Info() *PeerInfo {
 				protoInfo = "handshake"
 			}
 		}
-		info.Protocols[proto.Name] = protoInfo
+		//info.Protocols[proto.Name] = protoInfo
+		info.Protocols[caps[0]] = protoInfo
 	}
 	return info
 }

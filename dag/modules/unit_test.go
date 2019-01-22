@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -26,6 +27,7 @@ import (
 	"time"
 	"unsafe"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 )
@@ -103,7 +105,7 @@ func TestCopyHeader(t *testing.T) {
 		GroupSign:   w,
 		GroupPubKey: w,
 		TxRoot:      common.Hash{},
-		Number:      ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
+		Number:      &ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
 	}
 
 	newH := CopyHeader(&h)
@@ -132,6 +134,7 @@ func TestUnitSize(t *testing.T) {
 
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
+	h.Number = &ChainIndex{}
 	h.Number.AssetID = PTNCOIN
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)
@@ -156,4 +159,32 @@ func TestOutPointToKey(t *testing.T) {
 	if !reflect.DeepEqual(testPoint, *result) {
 		t.Fatal("test failed.", result.TxHash.String(), result.MessageIndex, result.OutIndex)
 	}
+}
+func TestHeaderPointer(t *testing.T) {
+	h := new(Header)
+	h.AssetIDs = []IDType16{PTNCOIN}
+	h.Creationdate = time.Now().Unix()
+	h.Extra = []byte("jay")
+	index := new(ChainIndex)
+	index.AssetID = PTNCOIN
+	index.Index = 1
+	index.IsMain = true
+	h.Number = index
+
+	h1 := CopyHeader(h)
+	h1.TxRoot = h.Hash()
+	h2 := new(Header)
+	h2.Number = h1.Number
+	fmt.Println("h:=1", h.Number.Index, "h1:=1", h1.Number.Index, "h2:=1", h2.Number.Index)
+	h1.Number.Index = 100
+
+	if h.Number.Index == h1.Number.Index {
+		fmt.Println("failed copy:", h.Number.Index)
+	} else {
+		fmt.Println("success copy!")
+	}
+	fmt.Println("h:1", h.Number.Index, "h1:=100", h1.Number.Index, "h2:=100", h2.Number.Index)
+	h.Number.Index = 666
+	h1.Number.Index = 888
+	fmt.Println("h:=666", h.Number.Index, "h1:=888", h1.Number.Index, "h2:=888", h2.Number.Index)
 }

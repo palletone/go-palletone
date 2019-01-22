@@ -48,7 +48,7 @@ func (ovm *openVoteModel) SetCurrentVoter(voter interface{}) {
 
 func (ovm *openVoteModel) AddToBox(tos interface{}) {
 	ovm.processPlugin.SetProcess(tos)
-	ovm.deligateVotePlugin.SetAgent(ovm.currentVoter,nil)
+	ovm.deligateVotePlugin.SetAgent(ovm.currentVoter, nil)
 
 }
 
@@ -77,8 +77,8 @@ func (ovm *openVoteModel) SetWeight(weight uint64) {
 func (ovm *openVoteModel) CountVote() {
 	//backup weight map
 	BackUpWeightMap := make(map[interface{}]uint64, 0)
-	for k,v := range ovm.privilegedVotePlugin.weightMap{
-		BackUpWeightMap[k]=v
+	for k, v := range ovm.privilegedVotePlugin.weightMap {
+		BackUpWeightMap[k] = v
 	}
 
 	for from, to := range ovm.deligateVotePlugin.agentMap {
@@ -95,5 +95,3 @@ func (ovm *openVoteModel) GetResult(number uint8, val interface{}) bool {
 	ovm.CountVote()
 	return ovm.BaseVoteModel.GetResult(number, val)
 }
-
-

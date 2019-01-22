@@ -47,9 +47,9 @@ func MediatorToInfo(md *core.Mediator) *MediatorInfo {
 
 func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 	md := core.NewMediator()
-	md.Address = core.StrToMedAdd(mi.AddStr)
+	md.Address, _ = core.StrToMedAdd(mi.AddStr)
 	md.InitPubKey, _ = core.StrToPoint(mi.InitPubKey)
-	md.Node = core.StrToMedNode(mi.Node)
+	md.Node, _ = core.StrToMedNode(mi.Node)
 	md.MediatorInfoExpand = mi.MediatorInfoExpand
 
 	return md

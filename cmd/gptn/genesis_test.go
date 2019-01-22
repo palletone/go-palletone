@@ -23,7 +23,6 @@ import (
 	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/dag/storage"
 )
 
 var customGenesisTests = []struct {
@@ -121,17 +120,12 @@ func TestGenesisGet(t *testing.T) {
 		return
 	}
 	//l := log.NewTestLog()
-	dagDb := storage.NewDagDb(dbconn)
-	idxDb := storage.NewIndexDb(dbconn)
-	utxoDb := storage.NewUtxoDb(dbconn)
-	stateDb := storage.NewStateDb(dbconn)
-
-	unitrep := common.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb)
+	unitrep := common.NewUnitRepository4Db(dbconn)
 	if unitrep == nil {
 		t.Error("new unit rep error.")
 	}
 	// get genesis unit by index
-	unit, err := unitrep.GetGenesisUnit(0)
+	unit, err := unitrep.GetGenesisUnit()
 	fmt.Println("error", err, "Genesis unit:", unit)
 	// get account balance
 	// get all global configures

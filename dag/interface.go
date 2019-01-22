@@ -47,10 +47,9 @@ type IDag interface {
 	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
-	GetHeaderByNumber(number modules.ChainIndex) *modules.Header
+	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	// GetHeaderByHash retrieves a header from the local chain.
-	GetHeaderByHash(common.Hash) *modules.Header
-	GetHeader(hash common.Hash, number uint64) (*modules.Header, error)
+	GetHeaderByHash(common.Hash) (*modules.Header, error)
 
 	//GetPrefix(prefix string) map[string][]byte
 
@@ -62,7 +61,7 @@ type IDag interface {
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 
 	// InsertHeaderDag inserts a batch of headers into the local chain.
-	InsertHeaderDag([]*modules.Header, int) (int, error)
+	//InsertHeaderDag([]*modules.Header, int) (int, error)
 	HasUnit(hash common.Hash) bool
 	UnitIsConfirmedByHash(hash common.Hash) bool
 	ParentsIsConfirmByHash(hash common.Hash) bool
@@ -76,22 +75,22 @@ type IDag interface {
 	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
 
 	FastSyncCommitHead(common.Hash) error
-	GetGenesisUnit(index uint64) (*modules.Unit, error)
+	GetGenesisUnit() (*modules.Unit, error)
 
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
-	GetCanonicalHash(number uint64) (common.Hash, error)
-	GetHeadHeaderHash() (common.Hash, error)
-	GetHeadUnitHash() (common.Hash, error)
-	GetHeadFastUnitHash() (common.Hash, error)
+	//GetCanonicalHash(number uint64) (common.Hash, error)
+	//GetHeadHeaderHash() (common.Hash, error)
+	//GetHeadUnitHash() (common.Hash, error)
+	//GetHeadFastUnitHash() (common.Hash, error)
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
-	GetAddrOutput(addr string) ([]modules.Output, error)
+	//GetAddrOutput(addr string) ([]modules.Output, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
@@ -101,7 +100,7 @@ type IDag interface {
 	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
-	GetUnitByNumber(number modules.ChainIndex) (*modules.Unit, error)
+	GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 
 	//Mediator
@@ -127,7 +126,7 @@ type IDag interface {
 	IsSynced() bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
-	UnitIrreversibleTime() uint
+	UnitIrreversibleTime() time.Duration
 	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 
@@ -135,13 +134,11 @@ type IDag interface {
 	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
 
 	// SaveReqIdByTx
-	GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
+	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
-}
-type ICache interface {
-	Set(key, value []byte, expireSeconds int) (err error)
-	Get(key []byte) (value []byte, err error)
-	Del(key []byte) bool
-	Clear()
+
+	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+
+	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 }

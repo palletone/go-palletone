@@ -29,8 +29,6 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	//"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/consensus"
 
 	//"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/common/event"
@@ -80,21 +78,21 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHash-------%#v\n", uu.UnitHash)
 	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.ParentsHash-----%#v\n", uu.UnitHeader.ParentsHash)
 	//log.Printf("--------newTestProtocolManager--index=0--unit.UnitHeader.Number.Index-----%#v\n", uu.UnitHeader.Number.Index)
-	engine := new(consensus.DPOSEngine)
+	//engine := new(consensus.DPOSEngine)
 	typemux := new(event.TypeMux)
 	//producer mediatorplugin.MediatorPlugin
 	if pro == nil {
 		pro = new(mediatorplugin.MediatorPlugin)
 	}
 	//producer := new(mediatorplugin.MediatorPlugin)
-	index0 := modules.ChainIndex{
+	index0 := &modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
 		0,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
 
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, &testTxPool{added: newtx}, engine, idag, typemux, pro, genesisUint, nil)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, "ptn", &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -180,6 +178,10 @@ func (p *testTxPool) Content() (map[common.Hash]*modules.Transaction, map[common
 
 func (p *testTxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
 	return nil, (common.Hash{})
+}
+
+func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+	return nil, nil
 }
 
 func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
@@ -299,7 +301,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 
 // handshake simulates a trivial handshake that expects the same state from the
 // remote side as we are simulating locally.
-func (p *testPeer) handshake(t *testing.T, index modules.ChainIndex, head common.Hash, genesis common.Hash) {
+func (p *testPeer) handshake(t *testing.T, index *modules.ChainIndex, head common.Hash, genesis common.Hash) {
 	msg := &statusData{
 		ProtocolVersion: uint32(p.version),
 		NetworkId:       DefaultConfig.NetworkId,
@@ -472,20 +474,20 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//dagDb := storage.NewDagDb(db, l)
 	dagDb := storage.NewDagDb(db)
 
-	if err := dagDb.SaveHeader(unit.UnitHash, unit.UnitHeader); err != nil {
+	if err := dagDb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Println("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Println("SaveHashNumber:", "error", err.Error())
-		return fmt.Errorf("Save unit hash and number error")
-	}
-	if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-		log.Println("SaveNumberByHash:", "error", err.Error())
-		return fmt.Errorf("Save unit hash and number error")
-	}
+	//if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Println("SaveHashNumber:", "error", err.Error())
+	//	return fmt.Errorf("Save unit hash and number error")
+	//}
+	//if err := dagDb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
+	//	log.Println("SaveNumberByHash:", "error", err.Error())
+	//	return fmt.Errorf("Save unit hash and number error")
+	//}
 
 	// step6. traverse transactions and save them
 	txHashSet := []common.Hash{}
@@ -516,10 +518,10 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 		return err
 	}
 	// update state
-	dagDb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
-	dagDb.PutHeadHeaderHash(unit.UnitHash)
-	dagDb.PutHeadUnitHash(unit.UnitHash)
-	dagDb.PutHeadFastUnitHash(unit.UnitHash)
+	//dagDb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
+	//dagDb.PutHeadHeaderHash(unit.UnitHash)
+	//dagDb.PutHeadUnitHash(unit.UnitHash)
+	//dagDb.PutHeadFastUnitHash(unit.UnitHash)
 	// todo send message to transaction pool to delete unit's transactions
 	return nil
 }

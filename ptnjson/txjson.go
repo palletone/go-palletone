@@ -29,6 +29,7 @@ import (
 
 type TxJson struct {
 	TxHash  string       `json:"tx_hash"`
+	TxSize  float64      `json:"tx_size"`
 	Payment *PaymentJson `json:"payment"`
 	Vote    *VoteJson    `json:"vote"`
 
@@ -67,7 +68,7 @@ type StopRequestJson struct {
 }
 
 func ConvertTx2Json(tx *modules.Transaction) TxJson {
-	json := TxJson{TxHash: tx.Hash().String()}
+	json := TxJson{TxHash: tx.Hash().String(), TxSize: float64(tx.Size())}
 	for _, m := range tx.TxMessages {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
@@ -124,7 +125,7 @@ func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *Ins
 
 func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *DeployRequestJson {
 	reqJson := &DeployRequestJson{}
-	reqJson.TplId  =  string(req.TplId)
+	reqJson.TplId = string(req.TplId)
 	reqJson.TxId = req.TxId
 	reqJson.Args = []string{}
 	for _, arg := range req.Args {

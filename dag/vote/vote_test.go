@@ -80,15 +80,15 @@ func TestOpenVoteModel(t *testing.T) {
 	//1投给2
 	ovm.SetCurrentVoter(addr1)
 	ovm.SetWeight(100)
-	ovm.AddToBox( addr2)
+	ovm.AddToBox(addr2)
 	//2投给3
 	ovm.SetCurrentVoter(addr2)
 	ovm.SetWeight(200)
-	ovm.AddToBox( addr3)
+	ovm.AddToBox(addr3)
 	//3投给4
 	ovm.SetCurrentVoter(addr3)
 	ovm.SetWeight(300)
-	ovm.AddToBox( addr4)
+	ovm.AddToBox(addr4)
 	//4先投给了5，后来选择跟3号投
 	ovm.SetCurrentVoter(addr4)
 	ovm.SetWeight(400)
@@ -98,7 +98,7 @@ func TestOpenVoteModel(t *testing.T) {
 	ovm.SetCurrentVoter(addr5)
 	ovm.SetWeight(500)
 	ovm.SetAgent(addr2)
-	ovm.AddToBox( addr1)
+	ovm.AddToBox(addr1)
 
 	// [test1] test voting to invalid candidates
 	addr6 := common.StringToAddressGodBlessMe("P1PjSaHLTxFm52fECLxVFErd3ch8Fif7CEN")
@@ -141,14 +141,14 @@ func TestOpenVoteModelMDeepLevelDeligate(t *testing.T) {
 	//1投给2
 	ovm.SetCurrentVoter(addr1)
 	ovm.SetWeight(100)
-	ovm.AddToBox( addr2)
+	ovm.AddToBox(addr2)
 	//2跟1投
 	ovm.SetCurrentVoter(addr2)
 	ovm.SetWeight(200)
 	ovm.SetAgent(addr1)
 	//3跟2投
 	ovm.SetCurrentVoter(addr3)
-	ovm.SetWeight( 300)
+	ovm.SetWeight(300)
 	ovm.SetAgent(addr2)
 	//4跟5投
 	ovm.SetCurrentVoter(addr4)

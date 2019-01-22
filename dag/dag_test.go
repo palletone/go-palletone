@@ -39,7 +39,7 @@ func TestCreateUnit(t *testing.T) {
 		return
 	}
 	// log.Info("Save unit success")
-	genesis, err0 := test_dag.GetGenesisUnit(0)
+	genesis, err0 := test_dag.GetGenesisUnit()
 	log.Info("get genesiss info", "error", err0, "info", genesis)
 }
 func createUnit() (*modules.Unit, error) {
@@ -134,6 +134,7 @@ func newHeader() *modules.Header {
 
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
+	h.Number = &modules.ChainIndex{}
 	h.Number.AssetID = modules.PTNCOIN
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)

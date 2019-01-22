@@ -241,7 +241,7 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	return submitTransaction(ctx, s.b, mtx)
 }
 
-func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string,password string) (common.Hash, error) {
+func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
 
 	var proofTransactionGenParams ptnjson.ProofTransactionGenParams
 	err := json.Unmarshal([]byte(params), &proofTransactionGenParams)
@@ -267,13 +267,22 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, err
 	}
 	utxos := core.Utxos{}
+       dagOutpoint := []modules.OutPoint{}
 	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+                       dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
 		}
 	}
+        poolTxs, err := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
+	if err == nil {
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, proofTransactionGenParams.From)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("Select utxo err")
+		}
+	} // end of pooltx is not nil
 	fee := proofTransactionGenParams.Fee
 	if !fee.IsPositive() {
 		return common.Hash{}, fmt.Errorf("fee is ZERO ")
@@ -301,7 +310,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	if len(inputs) == 0 {
 		return common.Hash{}, nil
 	}
-	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime, proofTransactionGenParams.Proof)
+	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime, proofTransactionGenParams.Proof, proofTransactionGenParams.Extra)
 	result, _ := WalletCreateProofTransaction(arg)
 	//fmt.Println(result)
 	fmt.Println(result)
@@ -337,13 +346,16 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 
 	var addr common.Address
 	var keys []string
+        from , _:= common.StringToAddress(proofTransactionGenParams.From)
+	PkScript := tokenengine.GenerateLockScript(from)
+	PkScriptHex :=hexutil.Encode(PkScript)
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok == false {
 			continue
 		}
 		for _, txin := range payload.Inputs {
-			inpoint := modules.OutPoint{
+			/*inpoint := modules.OutPoint{
 				TxHash:       txin.PreviousOutPoint.TxHash,
 				OutIndex:     txin.PreviousOutPoint.OutIndex,
 				MessageIndex: txin.PreviousOutPoint.MessageIndex,
@@ -351,12 +363,13 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
 			if eerr != nil {
 				return common.Hash{}, err
-			}
-			TxHash := trimx(uvu.TxHash)
-			PkScriptHex := trimx(uvu.PkScriptHex)
-			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			}*/
+                        TxHash := txin.PreviousOutPoint.TxHash.String()
+			OutIndex := txin.PreviousOutPoint.OutIndex
+			MessageIndex := txin.PreviousOutPoint.MessageIndex
+			input := ptnjson.RawTxInput{TxHash, OutIndex, MessageIndex, PkScriptHex, ""}
 			srawinputs = append(srawinputs, input)
-			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(PkScriptHex))
 			if err != nil {
 				return common.Hash{}, err
 				//fmt.Println("get addr by outpoint is err")
@@ -365,12 +378,12 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
-	//var duration 
+	//var duration
 	//if duration == nil {
-		d = 300 * time.Second
+	d = 300 * time.Second
 	//} else if *duration > max {
-		
-		//return common.Hash{}, err
+
+	//return common.Hash{}, err
 	//} else {
 	//	d = time.Duration(*duration) * time.Second
 	//}
@@ -428,7 +441,8 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		}
 	}
 	textPayload := new(modules.DataPayload)
-	textPayload.MainData = []byte(c.Record)
+	textPayload.MainData = []byte(c.Proof)
+	textPayload.ExtraData = []byte(c.Extra)
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
 	//先构造PaymentPayload结构，再组装成Transaction结构
@@ -509,7 +523,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	//mtx.TxHash = mtx.Hash()
 	// sign mtx
-	for index, input := range inputjson {
+	/*for index, input := range inputjson {
 		hashforsign, err := tokenengine.CalcSignatureHash(mtx, int(input.MessageIndex), int(input.OutIndex), nil)
 		if err != nil {
 			return "", err
@@ -520,15 +534,22 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	ProofJson := walletjson.ProofJson{}
 	ProofJson.Inputs = inputjson
 	ProofJson.Outputs = OutputJson
-	ProofJson.Record = string(textPayload.MainData)
+	ProofJson.Proof = string(textPayload.MainData)
+	ProofJson.Extra = string(textPayload.ExtraData)
 	txproofjson := walletjson.TxProofJson{}
-	txproofjson.Payload = append(txproofjson.Payload, ProofJson)
+	txproofjson.Payload = append(txproofjson.Payload,ProofJson)
 	bytetxproofjson, err := json.Marshal(txproofjson)
 	if err != nil {
 		return "", err
+	}*/
+	mtxbt, err := rlp.EncodeToBytes(mtx)
+	if err != nil {
+		return "", err
 	}
-
-	return string(bytetxproofjson), nil
+	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
+	mtxHex := hex.EncodeToString(mtxbt)
+	return mtxHex, nil
+	//return string(bytetxproofjson), nil
 }
 
 func (s *PublicWalletAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
@@ -871,23 +892,23 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	for _, json := range utxoJsons {
 		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
-				MessageIndex:   json.MessageIndex,
-				OutIndex:       json.OutIndex,
-				Amount:         json.Amount,
-				Asset:          json.Asset,
-				PkScriptHex:    json.PkScriptHex,
+				MessageIndex: json.MessageIndex,
+				OutIndex: json.OutIndex,
+				Amount: json.Amount,
+				Asset: json.Asset,
+				PkScriptHex: json.PkScriptHex,
 				PkScriptString: json.PkScriptString,
-				LockTime:       json.LockTime})
+				LockTime: json.LockTime})
 		} else {
 			if json.Asset == asset {
 				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
-					MessageIndex:   json.MessageIndex,
-					OutIndex:       json.OutIndex,
-					Amount:         json.Amount,
-					Asset:          json.Asset,
-					PkScriptHex:    json.PkScriptHex,
+					MessageIndex: json.MessageIndex,
+					OutIndex: json.OutIndex,
+					Amount: json.Amount,
+					Asset: json.Asset,
+					PkScriptHex: json.PkScriptHex,
 					PkScriptString: json.PkScriptString,
-					LockTime:       json.LockTime})
+					LockTime: json.LockTime})
 			}
 		}
 	}
@@ -945,4 +966,45 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	}
 	//4.
 	return submitTransaction(ctx, s.b, tx)
+}
+
+func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
+	//get fileinfos
+	files, err := s.b.GetFileInfo(filehash)
+	if err != nil {
+		return "null", err
+	}
+	var timestamp int64
+	gets := []walletjson.GetFileInfos{}
+	for _, file := range files {
+		get := walletjson.GetFileInfos{}
+		get.ParentsHash = file.ParentsHash.String()
+		get.FileHash = string(file.MainData)
+		get.ExtraData = string(file.ExtraData)
+		timestamp = file.Timestamp
+		tm := time.Unix(timestamp, 0)
+		get.Timestamp = tm.Format("2006-01-02 15:04:05")
+		get.TransactionHash = file.Txid.String()
+		get.UintHeight = file.UintHeight
+		get.UnitHash = file.UnitHash.String()
+		gets = append(gets, get)
+	}
+
+	result := walletjson.ConvertGetFileInfos2Json(gets)
+
+	return result, nil
+}
+
+func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid string) (string, error) {
+	if len(txid)==66 {
+		result, err := s.getFileInfo(txid)
+		return result, err
+	}
+	err := errors.New("Parameter input error")
+	return "", err
+}
+
+func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash string) (string, error) {
+	result, err := s.getFileInfo(filehash)
+	return result, err
 }

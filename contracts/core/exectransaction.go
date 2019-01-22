@@ -23,8 +23,8 @@ package core
 import (
 	"fmt"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/golang/protobuf/proto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -55,7 +55,6 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	}
 
 	cMsg.Decorations = cccid.ProposalDecorations
-	log.Infof("txid[%s]", cccid.TxID)
 	var ccMsg *pb.ChaincodeMessage
 	ccMsg, err = createCCMessage(cccid.ContractId, cctyp, cccid.ChainID, cccid.TxID, cMsg)
 	if err != nil {

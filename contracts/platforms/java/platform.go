@@ -28,8 +28,8 @@ import (
 	"net/url"
 	"strings"
 
-	cutil "github.com/palletone/go-palletone/vm/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cutil "github.com/palletone/go-palletone/vm/common"
 )
 
 // Platform for java chaincodes in java
@@ -152,7 +152,6 @@ func (javaPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec
 func (javaPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error {
 	return cutil.WriteBytesToPackage("codepackage.tgz", cds.CodePackage, tw)
 }
-
 
 func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
 	return "", errors.New("undo")

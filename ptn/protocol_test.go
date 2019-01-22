@@ -17,6 +17,7 @@
 package ptn
 
 import (
+	bytes2 "bytes"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -34,7 +35,7 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil, nil, nil, nil)
 	var (
-		genesis, _ = pm.dag.GetGenesisUnit(0)
+		genesis, _ = pm.dag.GetGenesisUnit()
 		head       = pm.dag.CurrentHeader()
 		index      = head.Number
 	)
@@ -174,16 +175,17 @@ func TestGetBlockHeadersDataEncodeDecode(t *testing.T) {
 		fail   bool
 	}{
 		//Providing the origin as either a hash or a number should both work
-		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{}, true, 0}}}},
-		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{}, true, 1}}}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash, Number: modules.ChainIndex{modules.IDType16{}, true, 2}}}},
 
 		// Providing arbitrary query field should also work
-		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{}, true, 0}}, Amount: 314, Skip: 1, Reverse: true}},
-		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash}, Amount: 314, Skip: 1, Reverse: true}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Number: modules.ChainIndex{modules.IDType16{}, true, 3}}, Amount: 314, Skip: 1, Reverse: true}},
+		{fail: false, packet: &getBlockHeadersData{Origin: hashOrNumber{Hash: hash, Number: modules.ChainIndex{modules.IDType16{}, true, 4}}, Amount: 314, Skip: 1, Reverse: true}},
 	}
 	// Iterate over each of the tests and try to encode and then decode
 	for i, tt := range tests {
 		bytes, err := rlp.EncodeToBytes(tt.packet)
+		t.Logf("%d rlp data: %x", i, bytes)
 		if err != nil && !tt.fail {
 			t.Fatalf("test %d: failed to encode packet: %v", i, err)
 		} else if err == nil && tt.fail {
@@ -194,8 +196,11 @@ func TestGetBlockHeadersDataEncodeDecode(t *testing.T) {
 			if err := rlp.DecodeBytes(bytes, packet); err != nil {
 				t.Fatalf("test %d: failed to decode packet: %v", i, err)
 			}
-			if packet.Origin.Hash != tt.packet.Origin.Hash || packet.Origin.Number != tt.packet.Origin.Number || packet.Amount != tt.packet.Amount ||
-				packet.Skip != tt.packet.Skip || packet.Reverse != tt.packet.Reverse {
+			if packet.Origin.Hash != tt.packet.Origin.Hash ||
+				!bytes2.Equal(packet.Origin.Number.Bytes(), tt.packet.Origin.Number.Bytes()) ||
+				packet.Amount != tt.packet.Amount ||
+				packet.Skip != tt.packet.Skip ||
+				packet.Reverse != tt.packet.Reverse {
 				t.Fatalf("test %d: encode decode mismatch: have %+v, want %+v", i, packet, tt.packet)
 			}
 		}

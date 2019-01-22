@@ -41,6 +41,8 @@ type Validate struct {
 	statedb storage.IStateDb
 }
 
+const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
+
 func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb) *Validate {
 	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb}
 }
@@ -230,6 +232,11 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool, w
 
 		case modules.APP_CONFIG:
 		case modules.APP_DATA:
+			payload, _ := msg.Payload.(*modules.DataPayload)
+			validateCode := validate.validateDataPayload(payload)
+			if validateCode != modules.TxValidationCode_VALID {
+				return validateCode
+			}
 		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:
 		default:
@@ -296,7 +303,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 
 	default:
-		log.Debug("The payload of message type is not expect. ", "payload_type", t, "app type", app)
+		log.Debug("The payload of message type is unexpected. ", "payload_type", t, "app type", app)
 		return false
 	}
 	return false
@@ -568,7 +575,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	}
 
 	// check header's number
-	if header.Number == (modules.ChainIndex{}) {
+	if header.Number == nil {
 		return modules.UNIT_STATE_INVALID_HEADER
 	}
 	if len(header.AssetIDs) == 0 {
@@ -629,6 +636,17 @@ func (validate *Validate) validateContractdeploy(tplId []byte, worldTmpState *ma
 }
 
 func (validate *Validate) validateContractSignature(sinatures []modules.SignatureSet, tx *modules.Transaction, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode {
+	return modules.TxValidationCode_VALID
+}
+
+//验证一个DataPayment
+func (validate *Validate) validateDataPayload(payload *modules.DataPayload) modules.TxValidationCode {
+	//验证 maindata是否存在
+	//验证 maindata extradata大小 不可过大
+	if len(payload.MainData) >= MAX_DATA_PAYLOAD_MAIN_DATA_SIZE || len(payload.MainData) == 0 {
+		return modules.TxValidationCode_INVALID_DATAPAYLOAD
+	}
+	//TODO 验证maindata其它属性
 	return modules.TxValidationCode_VALID
 }
 

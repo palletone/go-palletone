@@ -28,11 +28,11 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/simulations/adapters"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/node"
 )
 
 // testService implements the node.Service interface and provides protocols

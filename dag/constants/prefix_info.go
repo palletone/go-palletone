@@ -21,11 +21,12 @@ package constants
 
 // prefix info
 var (
-	UNIT_PREFIX                 = []byte("ut") // unit_prefix + mci + hash
-	HEADER_PREFIX               = []byte("uh") // prefix + hash
-	HeaderCanon_Prefix          = []byte("ch") // Canon Header Prefix
-	UNIT_HASH_NUMBER_Prefix     = []byte("hn")
-	UNIT_NUMBER_PREFIX          = []byte("nh") // number 和unit hash 的对应关系
+	UNIT_PREFIX             = []byte("ut")  // unit_prefix + mci + hash
+	HEADER_PREFIX           = []byte("uh")  // prefix + hash
+	HEADER_HEIGTH_PREFIX    = []byte("uht") // prefix + height:hash
+	HeaderCanon_Prefix      = []byte("ch")  // Canon Header Prefix
+	UNIT_HASH_NUMBER_Prefix = []byte("hn")
+	//UNIT_NUMBER_PREFIX          = []byte("nh") // number 和unit hash 的对应关系
 	BODY_PREFIX                 = []byte("ub")
 	TRANSACTION_PREFIX          = []byte("tx")
 	Transaction_Index           = []byte("ti")
@@ -37,6 +38,11 @@ var (
 	OutPointAddr_Prefix         = []byte("pa")  // outpoint addr
 	CONTRACT_STATE_PREFIX       = []byte("cs")
 	CONTRACT_TPL                = []byte("ct")
+	CONTRACT_TPL_REQ            = []byte("ctq")
+	CONTRACT_DEPLOY             = []byte("cdq")
+	CONTRACT_STOP_REQ           = []byte("csq")
+	CONTRACT_INVOKE_REQ         = []byte("ciq")
+	CONTRACT_SIgNATURE          = []byte("csn")
 
 	MESSAGES_PREFIX               = []byte("me")
 	POLL_PREFIX                   = []byte("po")
@@ -53,12 +59,13 @@ var (
 	// lookup
 	LookupPrefix = []byte("l")
 
-	StableUnitHash = []byte("StableUnitHash")
-	HeadUnitHash   = []byte("HeadUnitHash")
-	HeadHeaderKey  = []byte("LastHeader")
-	HeadFastKey    = []byte("LastFast")
-	TrieSyncKey    = []byte("TrieSync")
-
+	LastStableUnitHash   = []byte("stbu")
+	LastUnstableUnitHash = []byte("ustbu")
+	HeadUnitHash         = []byte("HeadUnitHash")
+	HeadHeaderKey        = []byte("LastHeader")
+	HeadFastKey          = []byte("LastFast")
+	TrieSyncKey          = []byte("TrieSync")
+	GenesisUnitHash      = []byte("GenesisUnitHash")
 	// contract
 	CONTRACT_PREFIX = []byte("cs")
 

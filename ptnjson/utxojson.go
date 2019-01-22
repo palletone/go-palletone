@@ -35,7 +35,7 @@ type UtxoJson struct {
 	PkScriptHex    string `json:"pk_script_hex"`    // 要执行的代码段
 	PkScriptString string `json:"pk_script_string"` // 要执行的代码段
 	LockTime       uint32 `json:"lock_time"`        //
-	FlagStatus     string `json:"falg_status"`      // utxo状态
+	FlagStatus     string `json:"flag_status"`      // utxo状态
 }
 
 func (utxo *UtxoJson) GetAmount() uint64 {

@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
+	dagcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -53,26 +54,6 @@ type MediatorCreateArgs struct {
 }
 
 // 相关参数检查
-func (args *MediatorCreateArgs) check() error {
-	_, err := common.StringToAddress(args.AddStr)
-	if err != nil {
-		return fmt.Errorf("invalid account address: %s", args.AddStr)
-	}
-
-	_, err = core.StrToPoint(args.InitPubKey)
-	if err != nil {
-		return fmt.Errorf("invalid init public key: %s", args.InitPubKey)
-	}
-
-	_, err = discover.ParseNode(args.Node)
-	if err != nil {
-		return fmt.Errorf("invalid node ID: %s", args.Node)
-	}
-
-	return nil
-}
-
-// 相关参数检查
 func (args *MediatorCreateArgs) setDefaults(node *discover.Node) (initPrivKey string) {
 	if args.InitPubKey == "" {
 		initPrivKey, args.InitPubKey = core.CreateInitDKS()
@@ -90,7 +71,7 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	initPrivKey := args.setDefaults(a.srvr.Self())
 
 	// 参数验证
-	err := args.check()
+	err := args.Validate()
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +89,7 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	}
 
 	// 判断是否申请通过
-	if !args.Validate() {
+	if !dagcom.MediatorCreateEvaluate(args.MediatorCreateOperation) {
 		return nil, fmt.Errorf("has not successfully paid the deposit")
 	}
 

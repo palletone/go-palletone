@@ -42,7 +42,7 @@ var (
 		ClientTimeout:     time.Duration(20) * time.Second, // 20 sec - gRPC default
 		ServerInterval:    time.Duration(2) * time.Hour,    // 2 hours - gRPC default
 		ServerTimeout:     time.Duration(20) * time.Second, // 20 sec - gRPC default
-		ServerMinInterval: time.Duration(10) * time.Minute,  //1 match ClientInterval
+		ServerMinInterval: time.Duration(10) * time.Minute, //1 match ClientInterval
 	}
 	// strong TLS cipher suites
 	tlsCipherSuites = []uint16{
@@ -184,7 +184,7 @@ func ServerKeepaliveOptions(ka *KeepaliveOptions) []grpc.ServerOption {
 	kep := keepalive.EnforcementPolicy{
 		MinTime: ka.ServerMinInterval,
 		// allow keepalive w/o rpc
-		PermitWithoutStream: true,//true,
+		PermitWithoutStream: true, //true,
 	}
 	serverOpts = append(serverOpts, grpc.KeepaliveEnforcementPolicy(kep))
 	return serverOpts
@@ -202,7 +202,7 @@ func ClientKeepaliveOptions(ka *KeepaliveOptions) []grpc.DialOption {
 	kap := keepalive.ClientParameters{
 		Time:                ka.ClientInterval,
 		Timeout:             ka.ClientTimeout,
-		PermitWithoutStream: true,//true,
+		PermitWithoutStream: true, //true,
 	}
 	dialOpts = append(dialOpts, grpc.WithKeepaliveParams(kap))
 	return dialOpts

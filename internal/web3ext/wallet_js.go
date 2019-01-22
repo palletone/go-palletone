@@ -81,6 +81,18 @@ const Wallet_JS = `
 			params: 1,
 			inputFormatter: [null]
 		}),
+        new web3._extend.Method({
+			name: 'getFileInfoByTxid',
+			call: 'wallet_getFileInfoByTxid',
+			params: 1,
+			inputFormatter: [null]
+		}),
+        new web3._extend.Method({
+			name: 'getFileInfoByFileHash',
+			call: 'wallet_getFileInfoByFileHash',
+			params: 1,
+			inputFormatter: [null]
+		}),
  	]
  });
  `
