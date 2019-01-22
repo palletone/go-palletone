@@ -279,7 +279,6 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) 
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs:     []modules.IDType16{asset.AssetId},
 		Number:       chainIndex,
 		TxRoot:       root,
 		Creationdate: time,
@@ -370,13 +369,11 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	// step3. generate genesis unit header
 	header := modules.Header{
-		AssetIDs:    []modules.IDType16{},
 		Number:      chainIndex,
 		ParentsHash: []common.Hash{},
 		//TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
 	}
-	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
 
