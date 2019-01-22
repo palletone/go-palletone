@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	award2 "github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -41,6 +42,17 @@ type UtxoRepository struct {
 }
 
 func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb) *UtxoRepository {
+	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
+}
+func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
+	//dagdb := storage.NewDagDb(db)
+	utxodb := storage.NewUtxoDb(db)
+	statedb := storage.NewStateDb(db)
+	idxdb := storage.NewIndexDb(db)
+	//propdb := storage.NewPropertyDb(db)
+	//utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+	//val := NewValidate(dagdb, utxodb, utxoRep, statedb)
+
 	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
 }
 
