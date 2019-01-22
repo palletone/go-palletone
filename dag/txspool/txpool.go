@@ -715,6 +715,9 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	if err := pool.checkPoolDoubleSpend(tx); err != nil {
 		return false, err
 	}
+	// 计算交易费和优先级
+	tx.TxFee, _ = pool.GetTxFee(tx.Tx)
+	tx.Priority_lvl = tx.GetPriorityLvl()
 
 	utxoview, err := pool.FetchInputUtxos(tx.Tx)
 	if err != nil {
