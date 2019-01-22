@@ -60,8 +60,9 @@ type Dag struct {
 	validate      dagcommon.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
-	Mutex  sync.RWMutex
-	Memdag memunit.IMemDag // memory unit
+	Mutex           sync.RWMutex
+	Memdag          memunit.IMemDag                      // memory unit
+	PartitionMemDag map[modules.IDType16]memunit.IMemDag //其他分区的MemDag
 	// memutxo
 	// 按unit单元划分存储Utxo
 	//utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
@@ -566,7 +567,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
-	unstableChain := memunit.NewMemDag(modules.PTNCOIN, db, unitRep)
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
@@ -626,10 +627,11 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
+	propRep := dagcommon.NewPropRepository(propDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
-	unstableChain := memunit.NewMemDag(modules.PTNCOIN, db, unitRep)
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{
 		Cache:            freecache.NewCache(200 * 1024 * 1024),

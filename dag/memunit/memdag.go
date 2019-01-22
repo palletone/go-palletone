@@ -1,3 +1,23 @@
+/*
+ *
+ *    This file is part of go-palletone.
+ *    go-palletone is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    go-palletone is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+ * /
+ *
+ *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @date 2018-2019
+ *
+ */
+
 package memunit
 
 import (
@@ -23,11 +43,10 @@ type MemDag struct {
 	ldbunitRep        common2.IUnitRepository
 	ldbPropRep        common2.IPropRepository
 	tempdb            *Tempdb
+	saveHeaderOnly    bool
 }
 
-func NewMemDag(token modules.IDType16, db ptndb.Database, stableUnitRep common2.IUnitRepository) *MemDag {
-	propRep := common2.NewPropRepository4Db(db)
-
+func NewMemDag(token modules.IDType16, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository) *MemDag {
 	tempdb, _ := NewTempdb(db)
 	trep := common2.NewUnitRepository4Db(tempdb)
 	tutxoRep := common2.NewUtxoRepository4Db(tempdb)
@@ -52,21 +71,23 @@ func NewMemDag(token modules.IDType16, db ptndb.Database, stableUnitRep common2.
 		stableUnitHash:    stablehash,
 		stableUnitHeight:  stbIndex.Index,
 		lastMainchainUnit: stableUnit,
+		saveHeaderOnly:    saveHeaderOnly,
 	}
 }
-func (chain *MemDag) Init(stablehash common.Hash, stableHeight uint64) {
-	chain.stableUnitHash = stablehash
-	chain.stableUnitHeight = stableHeight
-	chain.tempdb.Clear()
-	chain.lastMainchainUnit, _ = chain.ldbunitRep.GetUnit(stablehash)
 
-	for k := range chain.orphanUnits {
-		delete(chain.orphanUnits, k)
-	}
-	for k := range chain.chainUnits {
-		delete(chain.chainUnits, k)
-	}
-}
+//func (chain *MemDag) Init(stablehash common.Hash, stableHeight uint64) {
+//	chain.stableUnitHash = stablehash
+//	chain.stableUnitHeight = stableHeight
+//	chain.tempdb.Clear()
+//	chain.lastMainchainUnit, _ = chain.ldbunitRep.GetUnit(stablehash)
+//
+//	for k := range chain.orphanUnits {
+//		delete(chain.orphanUnits, k)
+//	}
+//	for k := range chain.chainUnits {
+//		delete(chain.chainUnits, k)
+//	}
+//}
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository) {
 	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep
 }
@@ -85,6 +106,9 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, gro
 	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
 	return chain.ldbunitRep.SaveHeader(header)
 }
+
+//设置某个单元和高度为稳定单元。设置后会更新当前的稳定单元，并将所有稳定单元写入到StableDB中，并且将ChainUnit中的稳定单元删除。
+//然后基于最新的稳定单元，重建Tempdb数据库
 func (chain *MemDag) SetStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool) {
 	//oldStableHash := chain.stableUnitHash
 	log.Debugf("Set stable unit to %s,height:%d", hash.String(), height)
@@ -118,8 +142,12 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 			chain.removeUnitAndChildren(funit.Hash())
 		}
 	}
-	//Save stable unit to ldb
-	chain.ldbunitRep.SaveUnit(unit, txpool, false, true)
+	if chain.saveHeaderOnly {
+		chain.ldbunitRep.SaveHeader(unit.Header())
+	} else {
+		//Save stable unit to ldb
+		chain.ldbunitRep.SaveUnit(unit, txpool, false, true)
+	}
 	//remove new stable unit
 	delete(chain.chainUnits, hash)
 	//Set stable unit
@@ -127,6 +155,8 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	chain.stableUnitHeight = height
 }
 
+//判断当前主链上的单元是否有满足稳定单元的确认数，如果有，则更新稳定单元，并重建Temp数据库，返回True
+// 如果没有，则不进行任何操作，返回False
 func (chain *MemDag) checkStableCondition(needAddrCount int, txpool txspool.ITxPool) bool {
 	unstableCount := int(chain.lastMainchainUnit.NumberU64() - chain.stableUnitHeight)
 	//每个单元被多少个地址确认过(包括自己)
@@ -158,6 +188,8 @@ func (chain *MemDag) checkStableCondition(needAddrCount int, txpool txspool.ITxP
 	}
 	return false
 }
+
+//清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
 func (chain *MemDag) rebuildTempdb() {
 	log.Debugf("Clear tempdb and reubild data")
 	chain.tempdb.Clear()
@@ -172,10 +204,20 @@ func (chain *MemDag) rebuildTempdb() {
 		ustbHash = u.ParentHash()[0]
 	}
 	for _, unit := range unstableUnits {
+		chain.saveUnit2TempDb(unit)
+	}
+}
+
+//判断当前设置是保存Header还是Unit，将对应的对象保存到Tempdb数据库
+func (chain *MemDag) saveUnit2TempDb(unit *modules.Unit) {
+	if chain.saveHeaderOnly {
+		chain.tempdbunitRep.SaveHeader(unit.Header())
+	} else {
 		chain.tempdbunitRep.SaveUnit(unit, nil, false, true)
 	}
 }
 
+//从ChainUnits集合中删除一个单元以及其所有子孙单元
 func (chain *MemDag) removeUnitAndChildren(hash common.Hash) {
 	log.Debugf("Remove unit[%s] and it's children from chain unit", hash.String())
 	for h, unit := range chain.chainUnits {
@@ -203,7 +245,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			//Add a new unit to main chain
 			chain.setLastMainchainUnit(unit)
 			if !chain.checkStableCondition(threshold, txpool) {
-				chain.tempdbunitRep.SaveUnit(unit, nil, false, true)
+				chain.saveUnit2TempDb(unit)
 			}
 		} else { //Fork unit
 			log.Debug("This is a fork unit")
@@ -226,12 +268,15 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	}
 	return nil
 }
+
+//枚举每一个孤儿单元，如果发现有单元的ParentHash是指定Hash，那么这说明这不再是一个孤儿单元，
+//将其从孤儿单元列表中删除，并添加到ChainUnits中。
 func (chain *MemDag) processOrphan(unitHash common.Hash, txpool txspool.ITxPool) {
 	for hash, unit := range chain.orphanUnits {
 		if unit.ParentHash()[0] == unitHash {
 			log.Debugf("Orphan unit[%s] can add to chain now.", unit.Hash().String())
 			delete(chain.orphanUnits, hash)
-			chain.AddUnit(unit, txpool)
+			chain.AddUnit(unit, txpool) //这个方法里面又会处理剩下的孤儿单元，从而形成递归
 			break
 		}
 	}
@@ -250,10 +295,14 @@ func (chain *MemDag) getChainUnit(hash common.Hash) (*modules.Unit, error) {
 func (chain *MemDag) GetLastMainchainUnit() *modules.Unit {
 	return chain.lastMainchainUnit
 }
+
+//设置最新的主链单元，并更新PropDB
 func (chain *MemDag) setLastMainchainUnit(unit *modules.Unit) {
 	chain.lastMainchainUnit = unit
 	chain.ldbPropRep.SetNewestUnit(unit.Header())
 }
+
+//查询所有不稳定单元（不包括孤儿单元）
 func (chain *MemDag) GetChainUnits() map[common.Hash]*modules.Unit {
 	return chain.chainUnits
 }
