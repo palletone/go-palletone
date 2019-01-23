@@ -1187,6 +1187,32 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 			}
 		}
 	}
+	for or_hash, tx := range pool.orphans {
+		if _, has := pool.all[or_hash]; has {
+			continue
+		}
+		for _, msg := range tx.Tx.Messages() {
+			if msg.App == modules.APP_PAYMENT {
+				payment, ok := msg.Payload.(*modules.PaymentPayload)
+				if ok {
+					if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
+						for _, addr := range addrs {
+							addr1 := addr.String()
+							txs[addr1] = append(txs[addr1], tx)
+						}
+					}
+					for _, out := range payment.Outputs {
+						address, err1 := tokenengine.GetAddressFromScript(out.PkScript[:])
+						if err1 == nil {
+							txs[address.String()] = append(txs[address.String()], tx)
+						} else {
+							log.Error("PKSCript to address failed.", "error", err1)
+						}
+					}
+				}
+			}
+		}
+	}
 	result := make([]*modules.TxPoolTransaction, 0)
 	if re, has := txs[addr]; has {
 		for i, tx := range re {
