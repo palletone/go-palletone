@@ -59,7 +59,7 @@ func TestGenesisUnit(t *testing.T) {
 
 	log.Println("Genesis unit struct:")
 	log.Println("parent units:", gUnit.UnitHeader.ParentsHash)
-	log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
+	//log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
 	log.Println("group_sign:", gUnit.UnitHeader.GroupSign)
 	log.Println("Root:", gUnit.UnitHeader.TxRoot)
 	log.Println("Number:", gUnit.UnitHeader.Number.String())
@@ -96,7 +96,7 @@ func TestSaveUnit(t *testing.T) {
 	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
 	header := new(modules.Header)
 	header.ParentsHash = append(header.ParentsHash, p)
-	header.AssetIDs = []modules.IDType16{aid}
+	//header.AssetIDs = []modules.IDType16{aid}
 	key, _ := crypto.GenerateKey()
 	addr0 := crypto.PubkeyToAddress(&key.PublicKey)
 

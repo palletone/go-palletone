@@ -35,8 +35,8 @@ type UnitJson struct {
 
 }
 type HeaderJson struct {
-	ParentsHash   []common.Hash  `json:"parents_hash"`
-	AssetIDs      []string       `json:"assets"`
+	ParentsHash []common.Hash `json:"parents_hash"`
+	//AssetIDs      []string       `json:"assets"`
 	AuthorAddress string         `json:"mediator_address"`
 	AuthorSign    string         `json:"mediator_sign"` // the unit creation authors
 	GroupSign     string         `json:"groupSign"`     // 群签名, 用于加快单元确认速度
@@ -76,10 +76,6 @@ func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 		TxRoot:        header.TxRoot,
 		Extra:         hex.EncodeToString(header.Extra),
 		CreationTime:  time.Now(), // TODO: header.Creationdate
-	}
-	json.AssetIDs = []string{}
-	for _, asset := range header.AssetIDs {
-		json.AssetIDs = append(json.AssetIDs, asset.ToAssetId())
 	}
 	json.Number = ChainIndexJson{
 		AssetID: header.Number.AssetID.ToAssetId(),

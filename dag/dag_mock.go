@@ -758,10 +758,10 @@ func (mr *MockIDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.
 }
 
 // GetTxFee mocks base method
-func (m *MockIDag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
+func (m *MockIDag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxFee", pay)
-	ret0, _ := ret[0].(*modules.InvokeFees)
+	ret0, _ := ret[0].(*modules.AmountAsset)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -381,18 +381,13 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	requestNumber := unit.UnitHeader.Number
 	hash, number := p.Head(unit.Number().AssetID)
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
-		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", unit.UnitHeader.ChainIndex().Index,
-			"local peer index:", number.Index)
-		trueHead := unit.Hash()
-		p.SetHead(trueHead, requestNumber)
-		requestIndex := requestNumber.Index
-		currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
+		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", requestNumber.Index, "local peer index:", number.Index)
+		p.SetHead(unit.Hash(), requestNumber)
 
-		if requestIndex > currentUnitIndex {
-			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", unit.UnitHeader.ChainIndex().Index,
-				"current unit index:", currentUnitIndex)
+		currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
+		if requestNumber.Index > currentUnitIndex+1 {
+			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", requestNumber.Index, "current unit index+1:", currentUnitIndex+1)
 			go func() {
-				time.Sleep(100 * time.Millisecond)
 				pm.synchronise(p, unit.Number().AssetID)
 			}()
 		}

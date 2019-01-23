@@ -41,12 +41,10 @@ func TestSaveJoint(t *testing.T) {
 	}
 
 	log.Println(strconv.FormatInt(time.Now().Unix(), 10))
-	var ty []modules.IDType16
 	var p []common.Hash
-	ty = append(ty, modules.PTNCOIN, modules.BTCCOIN)
-	log.Println("assets:", ty[0].String(), ty[1].String())
+	//log.Println("assets:", ty[0].String(), ty[1].String())
 	p = append(p, common.HexToHash("123"), common.HexToHash("456"))
-	h := modules.NewHeader(p, ty, uint64(111), []byte("hello"))
+	h := modules.NewHeader(p, uint64(111), []byte("hello"))
 	txs := make(modules.Transactions, 0)
 	u := modules.NewUnit(h, txs)
 	err := SaveJoint(Dbconn, &modules.Joint{Unit: u},

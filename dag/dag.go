@@ -333,7 +333,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
-		d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
+		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
 		log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
 	}
@@ -419,33 +419,6 @@ func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 		Index:     txIndex,
 	}, err
 }
-
-//func (d *Dag) getBodyRLP(hash common.Hash) rlp.RawValue {
-//	txs := modules.Transactions{}
-//	// get hash list
-//	txs, err := d.unstableUnitRep.GetUnitTransactions(hash)
-//	if err != nil {
-//		log.Error("Get body rlp", "unit hash", hash.String(), "error", err.Error())
-//		return nil
-//	}
-//
-//	data, err := rlp.EncodeToBytes(txs)
-//	if err != nil {
-//		log.Error("Get body rlp when rlp encode", "unit hash", hash.String(), "error", err.Error())
-//		return nil
-//	}
-//	// get hash data
-//	return data
-//}
-
-//func (d *Dag) GetHeaderRLP(db storage.DatabaseReader, hash common.Hash) rlp.RawValue {
-//	number, err := d.unstableUnitRep.GetNumberWithUnitHash(hash)
-//	if err != nil {
-//		log.Error("Get header rlp ", "error", err.Error())
-//		return nil
-//	}
-//	return d.unstableUnitRep.GetHeaderRlp(hash, number.Index)
-//}
 
 // InsertHeaderDag attempts to insert the given header chain in to the local
 // chain, possibly creating a reorg. If an error is returned, it will return the
@@ -774,69 +747,15 @@ func (d *Dag) GetUtxosOutViewbyUnit(unit *modules.Unit) *txspool.UtxoViewpoint {
 func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	d.Mutex.RLock()
 	items, err := d.unstableUtxoRep.GetAllUtxos()
-	// TODO---> merge dag.cache
-	// if d.utxos_cache != nil {
-	// 	for key, utxo := range d.utxos_cache {
-	// 		if old, has := items[key]; has {
-	// 			// merge
-	// 			if old.IsSpent() {
-	// 				delete(items, key)
-	// 			}
-	// 		}
-	// 		items[key] = utxo
-	// 	}
-	// }
-	//if d.utxos_cache != nil {
-	//	for _, utxos := range d.utxos_cache {
-	//		if utxos != nil {
-	//			for key, utxo := range utxos {
-	//				if old, has := items[key]; has {
-	//					// merge
-	//					if old.IsSpent() {
-	//						delete(items, key)
-	//					}
-	//				}
-	//				items[key] = utxo
-	//			}
-	//		}
-	//	}
-	//}
 	d.Mutex.RUnlock()
 
 	return items, err
 }
 
 func (d *Dag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
-	// TODO
-	// merge dag.cache
+
 	all, err := d.unstableUtxoRep.GetAddrOutpoints(addr)
-	//if d.utxos_cache != nil {
-	//	for hash, utxos := range d.utxos_cache {
-	//		for key, utxo := range utxos {
-	//			if utxo == nil {
-	//				delete(utxos, key)
-	//				continue
-	//			} else {
-	//				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-	//				if err == nil {
-	//					if address.Equal(addr) {
-	//						var exist bool
-	//						for _, old := range all {
-	//							if reflect.DeepEqual(key.ToKey(), old.ToKey()) {
-	//								exist = true
-	//								break
-	//							}
-	//						}
-	//						if !exist {
-	//							all = append(all, key)
-	//						}
-	//					}
-	//				}
-	//			}
-	//		}
-	//		d.utxos_cache[hash] = utxos
-	//	}
-	//}
+
 	return all, err
 }
 
@@ -848,7 +767,8 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 	return tokenengine.GetAddressFromScript(utxo.PkScript)
 }
 
-func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error) {
+func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+	//TODO maybe utxo is in txpool
 	return d.unstableUtxoRep.ComputeTxFee(pay)
 }
 func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
@@ -860,80 +780,21 @@ func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error
 //}
 
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
-	//TODO only get one token's UTXO
 	all, err := d.unstableUtxoRep.GetAddrUtxos(addr)
-	//if d.utxos_cache != nil {
-	//	assetStr := asset.String()
-	//	for hash, utxos := range d.utxos_cache {
-	//		for key, utxo := range utxos {
-	//			if utxo == nil {
-	//				log.Info("------------------the utxo is nil  ----------------", "utxokey", key.String())
-	//				delete(utxos, key)
-	//				continue
-	//			} else {
-	//				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-	//				if err == nil {
-	//					if address.Equal(addr) {
-	//						if strings.Compare(utxo.Asset.String(), assetStr) == 0 {
-	//							if old, has := all[key]; has {
-	//								// merge
-	//								if old.IsSpent() {
-	//									log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
-	//									// delete(all, key)
-	//								}
-	//							}
-	//							log.Info("new utxo amount :", "amount", utxo.Amount)
-	//							all[key] = utxo
-	//						}
-	//					}
-	//				}
-	//			}
-	//		}
-	//		d.utxos_cache[hash] = utxos
-	//	}
-	//}
 	return all, err
-	//return map[modules.OutPoint]*modules.Utxo{}, nil
 }
 
 func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
-	// TODO
-	// merge dag.cache
+
 	all, err := d.unstableUtxoRep.GetAddrUtxos(addr)
-	//if d.utxos_cache != nil {
-	//	for hash, utxos := range d.utxos_cache {
-	//		for key, utxo := range utxos {
-	//			if utxo == nil {
-	//				log.Info("------------------the utxo is nil  ----------------", "utxokey", key.String())
-	//				delete(utxos, key)
-	//				continue
-	//			} else {
-	//				address, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-	//				if err == nil {
-	//					if address.Equal(addr) {
-	//						if old, has := all[key]; has {
-	//							// merge
-	//							if old.IsSpent() {
-	//								log.Warn("It is delete the spent utxo that I found the old utxo amount: ", "amount", old.Amount)
-	//								// delete(all, key)
-	//							}
-	//						}
-	//						log.Info("new utxo amount :", "amount", utxo.Amount)
-	//						all[key] = utxo
-	//					}
-	//				}
-	//			}
-	//		}
-	//		d.utxos_cache[hash] = utxos
-	//	}
-	//}
+
 	return all, err
 }
 
-func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
-
-	return d.unstableUtxoRep.SaveUtxoView(view.Entries())
-}
+//func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
+//
+//	return d.unstableUtxoRep.SaveUtxoView(view.Entries())
+//}
 
 func (d *Dag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
 	return d.unstableUnitRep.GetAddrTransactions(addr)
@@ -1149,7 +1010,6 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	//
 	unitHeader := modules.Header{
 		ParentsHash: []common.Hash{currentUnit.UnitHash},
-		AssetIDs:    []modules.IDType16{currentUnit.UnitHeader.Number.AssetID},
 		//Authors:      nil,
 		GroupSign:    make([]byte, 0),
 		GroupPubKey:  make([]byte, 0),
@@ -1196,22 +1056,6 @@ func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
 func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
 	return d.unstableStateRep.GetContractTpl(templateID)
 }
-
-//
-//// save token info
-//func (d *Dag) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) { // return key's hex
-//	return d.unstableUnitRep.SaveTokenInfo(token_info)
-//}
-//
-//// Get token info
-//func (d *Dag) GetTokenInfo(key string) (*modules.TokenInfo, error) {
-//	return d.unstableUnitRep.GetTokenInfo(key)
-//}
-//
-//// Get all token info
-//func (d *Dag) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-//	return d.unstableUnitRep.GetAllTokenInfo()
-//}
 
 //@Yiran
 func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
@@ -1262,15 +1106,15 @@ func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
 //	return &AddressVoteBox.Candidates, nil
 //}
 
-func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType16) []*modules.Utxo {
-	res := make([]*modules.Utxo, 0)
-	for _, utxo := range utxos {
-		if utxo.Asset.AssetId == assetId {
-			res = append(res, utxo)
-		}
-	}
-	return res
-}
+//func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType16) []*modules.Utxo {
+//	res := make([]*modules.Utxo, 0)
+//	for _, utxo := range utxos {
+//		if utxo.Asset.AssetId == assetId {
+//			res = append(res, utxo)
+//		}
+//	}
+//	return res
+//}
 
 ////@Yiran
 //func (d *Dag) UpdateActiveMediators() error {
@@ -1377,7 +1221,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	//go d.RefreshCacheUtxos()
 
 	// 状态更新
-	go d.updateGlobalPropDependGroupSign(unitHash)
+	//go d.updateGlobalPropDependGroupSign(unitHash)
 
 	return nil
 }

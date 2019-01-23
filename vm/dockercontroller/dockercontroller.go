@@ -268,7 +268,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 		if err == docker.ErrNoSuchImage {
 			log.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
 				"attempt to recreate image", imageID, containerID, err)
-			return fmt.Errorf("no such image with image name is %s, should pull this image from docker hub.", imageID)
+			return fmt.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
 			//if builder != nil {
 			//	log.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
 			//		"attempt to recreate image", imageID, containerID, err)
@@ -557,7 +557,7 @@ func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
 	vmName := ccid.ChaincodeSpec.Type
 	switch vmName {
 	case 1:
-		return "palletone/palletimg:0.6", nil
+		return "palletone/goimg", nil
 	case 2:
 		return "node", nil
 	case 3:

@@ -91,7 +91,7 @@ type dags interface {
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
-	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -648,9 +648,12 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
-	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
-	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
+	// 如果是孤兒交易，則先不計算交易的優先級。
+	if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
 
+		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
+		txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
+	}
 	return txpool_tx
 }
 
@@ -693,7 +696,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		return false, fmt.Errorf("know orphanTx: %x", hash)
 	}
 
-	if ok, err := pool.validateOrphanTx(tx); err != nil {
+	if ok, err := pool.ValidateOrphanTx(tx.Tx); err != nil {
 		log.Debug(err.Error())
 		return false, err
 	} else {
@@ -713,6 +716,10 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	if err := pool.checkPoolDoubleSpend(tx); err != nil {
 		return false, err
 	}
+
+	// 计算交易费和优先级
+	tx.TxFee, _ = pool.GetTxFee(tx.Tx)
+	tx.Priority_lvl = tx.GetPriorityLvl()
 
 	utxoview, err := pool.FetchInputUtxos(tx.Tx)
 	if err != nil {
@@ -1740,7 +1747,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			sort.Sort(or_list)
 		}
 		for _, tx := range or_list {
-			ok, err := pool.validateOrphanTx(tx)
+			ok, err := pool.ValidateOrphanTx(tx.Tx)
 			if !ok && err == nil {
 				//  更改孤儿交易的状态
 				tx.Pending = true
@@ -1786,7 +1793,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }
 
-func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
+func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
 	return pool.unit.GetTxFee(tx)
 }
 
@@ -1799,7 +1806,7 @@ func (pool *TxPool) limitNumberOrphans() error {
 				// remove
 				pool.removeOrphan(tx, true)
 			}
-			ok, err := pool.validateOrphanTx(tx)
+			ok, err := pool.ValidateOrphanTx(tx.Tx)
 			if !ok && err == nil {
 				pool.add(tx, !pool.config.NoLocals)
 			}
@@ -1972,13 +1979,13 @@ func (pool *TxPool) IsOrphanInPool(hash common.Hash) bool {
 }
 
 // validate tx is an orphanTx or not.
-func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error) {
+func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 	// 交易的校验，inputs校验 ,先验证该交易的所有输入utxo是否有效。
-	if len(tx.Tx.Messages()) <= 0 {
+	if len(tx.Messages()) <= 0 {
 		return false, errors.New("this tx's message is null.")
 	}
 
-	for i, msg := range tx.Tx.Messages() {
+	for i, msg := range tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
@@ -1992,29 +1999,30 @@ func (pool *TxPool) validateOrphanTx(tx *modules.TxPoolTransaction) (bool, error
 						if _, has := pool.orphansByPrev[*in.PreviousOutPoint]; has {
 							return false, nil
 						}
+					} else if err != nil && err != errors.ErrUtxoNotFound {
+						return false, err
 					}
 
 					if utxo != nil {
 						if utxo.IsModified() || utxo.IsSpent() {
 							str := fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalide。",
-								tx.Tx.Hash().String(), in.PreviousOutPoint.String())
+								tx.Hash().String(), in.PreviousOutPoint.String())
 							return false, errors.New(str)
 						}
-					} else {
-						return false, err
 					}
+
 					// 验证outputs缓存的utxo
-					hash := tx.Tx.Hash()
+					hash := tx.Hash()
 					preout := modules.NewOutPoint(&hash, uint32(i), uint32(j))
 					if _, has := pool.outputs[*preout]; !has {
-						//log.Debug("valide outputs success.")
-						return false, nil
+						return true, nil
 					}
 					//log.Debug("valide outputs failed.")
-					return true, errors.New("validate outputs failed.")
+					//return true, errors.New("validate outputs failed.")
+					return true, nil
 				}
 			}
 		}
 	}
-	return false, errors.New(fmt.Sprintf("the tx: (%s) is invalide。", tx.Tx.Hash().String()))
+	return false, errors.New(fmt.Sprintf("the tx: (%s) is invalide。", tx.Hash().String()))
 }

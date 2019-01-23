@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 
 	"bytes"
+	"github.com/shopspring/decimal"
 )
 
 type MessageType byte
@@ -335,7 +336,7 @@ type ContractReadSet struct {
 type InvokeInfo struct {
 	InvokeAddress string        `json:"invoke_address"` //请求地址
 	InvokeTokens  *InvokeTokens `json:"invoke_tokens"`  //请求数量
-	InvokeFees    *InvokeFees   `json:"invoke_fees"`    //请求交易费
+	InvokeFees    *AmountAsset  `json:"invoke_fees"`    //请求交易费
 }
 
 //请求的数量
@@ -372,10 +373,25 @@ type Forfeiture struct {
 //	Forfeitures []*Forfeiture `json:"forfeitures"`
 //}
 
-//请求合约利息
-type InvokeFees struct {
+//金额和资产
+type AmountAsset struct {
 	Amount uint64 `json:"amount"`
 	Asset  *Asset `json:"asset"`
+}
+
+func (aa *AmountAsset) String() string {
+
+	number := assetAmt2DecimalAmt(aa.Asset, aa.Amount)
+	return number.String() + aa.Asset.String()
+}
+func assetAmt2DecimalAmt(asset *Asset, amount uint64) decimal.Decimal {
+	dec := asset.GetDecimal()
+	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))
+	for i := 0; i < int(dec); i++ {
+		d = d.Div(decimal.New(10, 0))
+	}
+
+	return d
 }
 
 //申请成为Mediator

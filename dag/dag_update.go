@@ -24,10 +24,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/node"
+
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -111,27 +110,28 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	//dag.updateLastIrreversibleUnitNum( newLastIrreversibleUnitNum)
 }
 
-func (dag *Dag) updateLastIrreversibleUnitNum(hash common.Hash, newLastIrreversibleUnitNum uint64) {
-	//dgp := dag.GetDynGlobalProp()
-	token := node.DefaultConfig.GetGasToken()
-	_, index, _ := dag.propRep.GetLastStableUnit(token)
-	if newLastIrreversibleUnitNum > index.Index {
-		dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
-		//dgp.s = newLastIrreversibleUnitNum
-		//dag.SaveDynGlobalProp(dgp, false)
-	}
-}
+//func (dag *Dag) updateLastIrreversibleUnitNum(hash common.Hash, newLastIrreversibleUnitNum uint64) {
+//	//dgp := dag.GetDynGlobalProp()
+//	token := node.DefaultConfig.GetGasToken()
+//	_, index, _ := dag.propRep.GetLastStableUnit(token)
+//	if newLastIrreversibleUnitNum > index.Index {
+//		dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
+//		//dgp.s = newLastIrreversibleUnitNum
+//		//dag.SaveDynGlobalProp(dgp, false)
+//	}
+//}
 
-func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
-	unit, err := dag.GetUnitByHash(unitHash)
-	if err != nil {
-		log.Debug(err.Error())
-		return
-	}
-
-	// 1. 根据群签名更新不可逆unit高度
-	dag.updateLastIrreversibleUnitNum(unitHash, uint64(unit.NumberU64()))
-}
+//func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
+//	unit, err := dag.GetUnitByHash(unitHash)
+//	if err != nil {
+//		log.Debug(err.Error())
+//
+// 	return
+//	}
+//
+//	// 1. 根据群签名更新不可逆unit高度
+//	//dag.updateLastIrreversibleUnitNum(unitHash, uint64(unit.NumberU64()))
+//}
 
 // 活跃 mediators 更新事件
 type ActiveMediatorsUpdatedEvent struct {
