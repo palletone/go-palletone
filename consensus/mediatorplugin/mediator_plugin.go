@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -84,7 +83,7 @@ const (
 	NotSynced
 	NotMyTurn
 	NotTimeYet
-	NoPrivateKey
+	//NoPrivateKey
 	// LowParticipation
 	Lag
 	// Consecutive
@@ -113,9 +112,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	case Lag:
 		log.Info("Not producing Unit because node didn't wake up within 500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
-	case NoPrivateKey:
-		log.Info("Not producing Unit because I don't have the private key for " +
-			detail["ScheduledKey"])
+	//case NoPrivateKey:
+	//	log.Info("Not producing Unit because I don't have the private key for " +
+	//		detail["ScheduledKey"])
 	case ExceptionProducing:
 		log.Info("Exception producing unit")
 	case UnknownCondition:
@@ -129,9 +128,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
-	//defer func(start time.Time) {
-	//	log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
-	//}(time.Now())
+	defer func(start time.Time) {
+		log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
+	}(time.Now())
 
 	detail := map[string]string{}
 	dag := mp.dag
@@ -176,7 +175,8 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	// we must control the Mediator scheduled to produce the next Unit.
-	med, ok := mp.mediators[scheduledMediator]
+	//med, ok := mp.mediators[scheduledMediator]
+	_, ok := mp.mediators[scheduledMediator]
 	if !ok {
 		detail["ScheduledMediator"] = scheduledMediator.Str()
 		return NotMyTurn, detail
@@ -184,11 +184,11 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.GetKeyStore()
-	err := ks.Unlock(accounts.Account{Address: scheduledMediator}, med.Password)
-	if err != nil {
-		detail["ScheduledKey"] = scheduledMediator.Str()
-		return NoPrivateKey, detail
-	}
+	//err := ks.Unlock(accounts.Account{Address: scheduledMediator}, med.Password)
+	//if err != nil {
+	//	detail["ScheduledKey"] = scheduledMediator.Str()
+	//	return NoPrivateKey, detail
+	//}
 
 	scheduledTime := dag.GetSlotTime(slot)
 	// diff := scheduledTime.Sub(now)

@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -233,14 +234,25 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
 	mp.srvr = server
 
-	// 1. 开启循环生产计划
+	// 1. 解锁本地控制的mediator账户
+	mp.unlockLocalMediators()
+
+	// 2. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	// 2. 开始完成 vss 协议
+	// 3. 开始完成 vss 协议
 	go mp.startVSSProtocol()
 
 	log.Debug("mediator plugin startup end")
 	return nil
+}
+
+func (mp *MediatorPlugin) unlockLocalMediators() {
+	ks := mp.ptn.GetKeyStore()
+
+	for _, medAcc := range mp.mediators {
+		ks.Unlock(accounts.Account{Address: medAcc.Address}, medAcc.Password)
+	}
 }
 
 func (mp *MediatorPlugin) UpdateMediatorsDKG() {
