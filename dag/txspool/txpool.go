@@ -556,7 +556,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	// Don't accept the transaction if it already in the pool .
 	isContractTplTx := false
 	hash := tx.Tx.Hash()
-	if pool.isTransactionInPool(&hash) {
+	if pool.isTransactionInPool(hash) {
 		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
 	}
 	// 交易的校验， 包括inputs校验
@@ -613,18 +613,18 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 }
 
 // This function MUST be called with the txpool lock held (for reads).
-func (pool *TxPool) isTransactionInPool(hash *common.Hash) bool {
-	if _, exist := pool.all[*hash]; exist {
+func (pool *TxPool) isTransactionInPool(hash common.Hash) bool {
+	if _, exist := pool.all[hash]; exist {
 		return true
 	}
-	if _, exist := pool.orphans[*hash]; exist {
+	if _, exist := pool.orphans[hash]; exist {
 		return true
 	}
 	return false
 }
 
 // IsTransactionInPool returns whether or not the passed transaction already exists in the main pool.
-func (pool *TxPool) IsTransactionInPool(hash *common.Hash) bool {
+func (pool *TxPool) IsTransactionInPool(hash common.Hash) bool {
 	pool.mu.RLock()
 	inpool := pool.isTransactionInPool(hash)
 	pool.mu.RUnlock()
@@ -771,7 +771,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 				if txHash.String() == list.Tx.Hash().String() {
 					if list.Priority_lvl < tx.Priority_lvl {
 						//delete(pool.all, txHash)
-						tx.RemStatus = true
+						tx.Discarded = true
 						pool.priority_priced.Removed(txHash)
 					}
 					return true, nil
@@ -876,7 +876,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 				old := this
 				if old.Pending || old.Confirmed {
 					// An older transaction was better, discard this
-					old.RemStatus = true
+					old.Discarded = true
 					pool.all[hash] = old
 					pool.priority_priced.Removed(hash)
 					return
@@ -1015,7 +1015,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	// applies to orphan transactions as well when the reject duplicate
 	// orphans flag is set.  This check is intended to be a quick check to
 	// weed out duplicates.
-	if pool.isTransactionInPool(&txHash) {
+	if pool.isTransactionInPool(txHash) {
 		str := fmt.Sprintf("already have transaction %v", txHash)
 		//str = str
 		log.Info("txpool", "", str)
@@ -1268,6 +1268,11 @@ func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Ha
 func (pool *TxPool) DeleteTx() error {
 	pool.mu.Lock()
 	for hash, tx := range pool.all {
+		if tx.Discarded {
+			// delete Discarded tx
+			log.Debug("delete the status of Discarded tx.", "tx_hash", hash.String())
+			pool.DeleteTxByHash(hash)
+		}
 		if !tx.Confirmed {
 			if tx.CreationDate.Add(DefaultTxPoolConfig.Lifetime).Before(time.Now()) {
 				continue
@@ -1282,6 +1287,7 @@ func (pool *TxPool) DeleteTx() error {
 			log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
 			pool.DeleteTxByHash(hash)
 		}
+
 	}
 	pool.mu.Unlock()
 	return nil
@@ -1728,6 +1734,41 @@ func (as *utxoSet) add(addr modules.OutPoint) {
 
 func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
 	pool.RemoveTxs(hashs)
+	return nil
+}
+
+// 打包后的没有被最终确认的交易，废弃处理
+func (pool *TxPool) DiscardTxs(hashs []common.Hash) error {
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
+	for _, hash := range hashs {
+		err := pool.discardTx(hash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (pool *TxPool) DiscardTx(hash common.Hash) error {
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
+	return pool.discardTx(hash)
+}
+func (pool *TxPool) discardTx(hash common.Hash) error {
+	if pool.isTransactionInPool(hash) {
+		// in orphan pool
+		if pool.isOrphanInPool(hash) {
+			tx, _ := pool.orphans[hash]
+			tx.Discarded = true
+			pool.orphans[hash] = tx
+		}
+		// in all pool
+		tx, _ := pool.all[hash]
+		tx.Discarded = true
+		pool.all[hash] = tx
+	}
+	// not in pool
+
 	return nil
 }
 

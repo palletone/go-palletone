@@ -97,7 +97,7 @@ type TxPoolTransaction struct {
 	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
-	RemStatus    bool         // will remove txspool
+	Discarded    bool         // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
 	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte

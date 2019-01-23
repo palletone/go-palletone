@@ -42,6 +42,8 @@ type ITxPool interface {
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
 	SendStoredTxs(hashs []common.Hash) error
+	DiscardTxs(hashs []common.Hash) error
+	//DiscardTx(hash common.Hash) error
 
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
