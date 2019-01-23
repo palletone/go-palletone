@@ -37,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
@@ -299,11 +300,16 @@ func dumpConfig(ctx *cli.Context) error {
 
 // dumpConfig is the dumpconfig command.
 func dumpJson(ctx *cli.Context) error {
-	account := ""
-	mediators := []*mp.MediatorConf{}
-	nodeStr := ""
+	//account := ""
+	//mediators := []*mp.MediatorConf{}
+	//nodeStr := ""
+	//mediator := &mp.MediatorConf{}
 
-	mediator := &mp.MediatorConf{}
+	account := core.DefaultTokenHolder
+	mediators := make([]*mp.MediatorConf, 0)
+	nodeStr := core.DefaultNodeInfo
+	mediator := mp.DefaultMediatorConf()
+
 	mediators = append(mediators, mediator)
 
 	genesis := createExampleGenesis(account, mediators, nodeStr)

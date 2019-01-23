@@ -170,11 +170,11 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	return true
 }
 
-// ApplyUnit, 利用下一个 unit 更新整个区块链状态
+// ApplyUnit, 运用下一个 unit 更新整个区块链状态
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 1. 下一个 unit 和本地 unit 连续性的判断
 	parentHash := nextUnit.ParentHash()[0]
-	headUnitHash, _, _ := dag.propRep.GetNewestUnit(nextUnit.UnitHeader.Number.AssetID)
+	headUnitHash, _, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
 	if parentHash != headUnitHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
 		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
@@ -187,7 +187,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 		return
 	}
 
-	// 5. 更新Unit中交易的状态
+	// todo 5. 运用Unit中的交易
 
 	// 3. 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
 	missed := dag.updateMediatorMissedUnits(nextUnit)
@@ -195,6 +195,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 4. 更新全局动态属性值
 	dag.updateDynGlobalProp(nextUnit, missed)
 	dag.propRep.SetNewestUnit(nextUnit.Header())
+
 	// 5. 更新 mediator 的相关数据
 	dag.updateSigningMediator(nextUnit)
 

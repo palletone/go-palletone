@@ -14,7 +14,16 @@ function ExecInit()
     cd node$count
     cp ../init.sh .
     gptninit=`./init.sh`
-    `echo $gptninit`
+
+    initinfo=`echo $gptninit | sed -n '$p'`
+    initinfotemp=`echo $initinfo | awk '{print $NF}'`
+    initinfotemp=${initinfotemp:0:3}
+       if [ $initinfotemp != "db." ] ; then
+               echo "====================init err=================="
+               echo $initinfo
+               return
+       fi
+
     path=`pwd`
     fullpath=${path}"/palletone/gptn/leveldb"
     echo "leveldb path:"$fullpath
