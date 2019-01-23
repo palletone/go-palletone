@@ -99,6 +99,12 @@ const Wallet_JS = `
 			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
 			inputFormatter: [null,null]
 		}),
+		new web3._extend.Method({
+			name: 'ccstoptx',
+        	call: 'wallet_ccstoptx',
+        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
+			inputFormatter: [null, null, null, null, null, null]
+		}),
  	]
  });
  `
