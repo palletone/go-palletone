@@ -333,7 +333,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
-		d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
+		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
 		log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
 	}
@@ -1221,7 +1221,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	//go d.RefreshCacheUtxos()
 
 	// 状态更新
-	go d.updateGlobalPropDependGroupSign(unitHash)
+	//go d.updateGlobalPropDependGroupSign(unitHash)
 
 	return nil
 }

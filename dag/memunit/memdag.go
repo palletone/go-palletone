@@ -58,6 +58,7 @@ func NewMemDag(token modules.IDType16, saveHeaderOnly bool, db ptndb.Database, s
 		return nil
 	}
 	stableUnit, _ := stableUnitRep.GetUnit(stablehash)
+	log.Debugf("Init MemDag, get last stable unit[%s] to set lastMainchainUnit", stablehash.String())
 	return &MemDag{
 		token:             token,
 		ldbunitRep:        stableUnitRep,
@@ -125,9 +126,6 @@ func (chain *MemDag) SetStableUnit(hash common.Hash, height uint64, txpool txspo
 		chain.setNextStableUnit(unit, txpool)
 	}
 
-	chain.stableUnitHash = hash
-	chain.stableUnitHeight = height
-
 	// Rebuild temp db
 	chain.rebuildTempdb()
 }
@@ -151,8 +149,7 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	//remove new stable unit
 	delete(chain.chainUnits, hash)
 	//Set stable unit
-	chain.stableUnitHash = hash
-	chain.stableUnitHeight = height
+	chain.setStableUnit(unit)
 }
 
 //判断当前主链上的单元是否有满足稳定单元的确认数，如果有，则更新稳定单元，并重建Temp数据库，返回True
@@ -303,6 +300,13 @@ func (chain *MemDag) GetLastMainchainUnit() *modules.Unit {
 func (chain *MemDag) setLastMainchainUnit(unit *modules.Unit) {
 	chain.lastMainchainUnit = unit
 	chain.ldbPropRep.SetNewestUnit(unit.Header())
+}
+
+//设置最新的稳定单元，并更新PropDB
+func (chain *MemDag) setStableUnit(unit *modules.Unit) {
+	chain.stableUnitHash = unit.Hash()
+	chain.stableUnitHeight = unit.NumberU64()
+	chain.ldbPropRep.SetLastStableUnit(chain.stableUnitHash, &modules.ChainIndex{AssetID: chain.token, Index: chain.stableUnitHeight})
 }
 
 //查询所有不稳定单元（不包括孤儿单元）
