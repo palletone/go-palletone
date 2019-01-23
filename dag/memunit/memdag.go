@@ -302,7 +302,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	//基于新主链，更新TxPool的状态
 	newUnstableUnits := chain.getMainChainUnits()
 	for _, unit := range newUnstableUnits {
-		txpool.ResetPendingTxs(unit.Txs)
+		txpool.SetPendingTxs(unit.Hash(), unit.Txs)
 	}
 	//基于新主链的单元和稳定单元，重新构建Tempdb
 	chain.rebuildTempdb()
