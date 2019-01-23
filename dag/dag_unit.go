@@ -135,6 +135,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err1 != nil {
 		log.Debug(fmt.Sprintf("GetUnitWithSig error: %v", err))
+		return nil
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()

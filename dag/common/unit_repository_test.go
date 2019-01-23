@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -96,6 +97,7 @@ func TestSaveUnit(t *testing.T) {
 	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
 	header := new(modules.Header)
 	header.ParentsHash = append(header.ParentsHash, p)
+	header.Number = &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
 	//header.AssetIDs = []modules.IDType16{aid}
 	key, _ := crypto.GenerateKey()
 	addr0 := crypto.PubkeyToAddress(&key.PublicKey)
@@ -189,7 +191,7 @@ func TestSaveUnit(t *testing.T) {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	if err := rep.SaveUnit(unit, nil, true, true); err != nil {
+	if err := rep.SaveUnit(unit, true); err != nil {
 		log.Println(err)
 	}
 }
