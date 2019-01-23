@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -36,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
@@ -191,10 +193,10 @@ func maybeLoadConfig(ctx *cli.Context) (*FullConfig, error) {
 	if !common.FileExist(configPath) {
 		defaultConfig := newDefaultConfig()
 
-		//listenAddr := defaultConfig.P2P.ListenAddr
-		//if strings.HasPrefix(listenAddr, ":") {
-		//	defaultConfig.P2P.ListenAddr = "127.0.0.1" + listenAddr
-		//}
+		listenAddr := defaultConfig.P2P.ListenAddr
+		if strings.HasPrefix(listenAddr, ":") {
+			defaultConfig.P2P.ListenAddr = "127.0.0.1" + listenAddr
+		}
 
 		err := makeConfigFile(defaultConfig, configPath)
 		if err != nil {
@@ -298,11 +300,16 @@ func dumpConfig(ctx *cli.Context) error {
 
 // dumpConfig is the dumpconfig command.
 func dumpJson(ctx *cli.Context) error {
-	account := ""
-	mediators := []*mp.MediatorConf{}
-	nodeStr := ""
+	//account := ""
+	//mediators := []*mp.MediatorConf{}
+	//nodeStr := ""
+	//mediator := &mp.MediatorConf{}
 
-	mediator := &mp.MediatorConf{}
+	account := core.DefaultTokenHolder
+	mediators := make([]*mp.MediatorConf, 0)
+	nodeStr := core.DefaultNodeInfo
+	mediator := mp.DefaultMediatorConf()
+
 	mediators = append(mediators, mediator)
 
 	genesis := createExampleGenesis(account, mediators, nodeStr)
