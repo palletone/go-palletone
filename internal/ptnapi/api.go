@@ -1678,6 +1678,9 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	}
 
 	amounts = append(amounts, ptnjson.AddressAmt{to, amount})
+	if len(amounts) == 0 || !amount.IsPositive() {
+		return "", fmt.Errorf("amounts is empty")
+	}
 
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
@@ -1698,6 +1701,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	}
 
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+
 	if err == nil {
 		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from)
 		if err != nil {
