@@ -469,34 +469,34 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 获取account address下面的token信息
 To get account token list and tokens's information
 */
-func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
-	return d.unstableUtxoRep.GetAccountTokens(addr)
-}
-
-func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
-	newAssetid := modules.IDType16{}
-	newUnitqueid := modules.IDType16{}
-
-	if len(assetid) != cap(newAssetid) {
-		return 0, fmt.Errorf("Assetid lenth is wrong")
-	}
-	if len(uniqueid) != cap(newUnitqueid) {
-		return 0, fmt.Errorf("Uniqueid lenth is wrong")
-	}
-	if chainid == 0 {
-		return 0, fmt.Errorf("Chainid is invalid")
-	}
-
-	newAssetid.SetBytes(assetid)
-	newUnitqueid.SetBytes(uniqueid)
-
-	asset := modules.Asset{
-		AssetId:  newAssetid,
-		UniqueId: newUnitqueid,
-	}
-
-	return d.unstableUtxoRep.WalletBalance(address, asset), nil
-}
+//func (d *Dag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
+//	return d.unstableUtxoRep.GetAccountTokens(addr)
+//}
+//
+//func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+//	newAssetid := modules.IDType16{}
+//	newUnitqueid := modules.IDType16{}
+//
+//	if len(assetid) != cap(newAssetid) {
+//		return 0, fmt.Errorf("Assetid lenth is wrong")
+//	}
+//	if len(uniqueid) != cap(newUnitqueid) {
+//		return 0, fmt.Errorf("Uniqueid lenth is wrong")
+//	}
+//	if chainid == 0 {
+//		return 0, fmt.Errorf("Chainid is invalid")
+//	}
+//
+//	newAssetid.SetBytes(assetid)
+//	newUnitqueid.SetBytes(uniqueid)
+//
+//	asset := modules.Asset{
+//		AssetId:  newAssetid,
+//		UniqueId: newUnitqueid,
+//	}
+//
+//	return d.unstableUtxoRep.WalletBalance(address, asset), nil
+//}
 
 // Utxos : return mem utxos
 //func (d *Dag) Utxos() map[common.Hash]map[modules.OutPoint]*modules.Utxo {

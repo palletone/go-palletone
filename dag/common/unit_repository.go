@@ -760,7 +760,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		// handle different messages
 		switch msg.App {
 		case modules.APP_PAYMENT:
-			if ok := rep.savePaymentPayload(txHash, msg, uint32(msgIndex)); ok != true {
+			if ok := rep.savePaymentPayload(txHash, msg.Payload.(*modules.PaymentPayload), uint32(msgIndex)); ok != true {
 				return fmt.Errorf("Save payment payload error.")
 			}
 		case modules.APP_CONTRACT_TPL:
@@ -878,7 +878,7 @@ func getExtradata(tx *modules.Transaction) string {
 保存PaymentPayload
 save PaymentPayload data
 */
-func (rep *UnitRepository) savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
+func (rep *UnitRepository) savePaymentPayload(txHash common.Hash, msg *modules.PaymentPayload, msgIndex uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes

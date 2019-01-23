@@ -22,14 +22,13 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+
 	"github.com/palletone/go-palletone/dag/modules"
 
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/constants"
 	"strings"
 )
 
@@ -44,10 +43,10 @@ func NewStateDb(db ptndb.Database) *StateDb {
 
 // ######################### SAVE IMPL START ###########################
 
-func (statedb *StateDb) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-	key := assetInfo.Tokey()
-	return StoreBytes(statedb.db, key, assetInfo)
-}
+//func (statedb *StateDb) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
+//	key := assetInfo.Tokey()
+//	return StoreBytes(statedb.db, key, assetInfo)
+//}
 
 func (statedb *StateDb) DeleteState(key []byte) error {
 	return statedb.db.Delete(key)
@@ -57,21 +56,21 @@ func (statedb *StateDb) DeleteState(key []byte) error {
 
 // ######################### GET IMPL START ###########################
 
-func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
-	key := append(constants.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
-	data, err := statedb.db.Get(key)
-	if err != nil {
-		return nil, err
-	}
-
-	var assetInfo modules.AssetInfo
-	err = rlp.DecodeBytes(data, &assetInfo)
-
-	if err != nil {
-		return nil, err
-	}
-	return &assetInfo, nil
-}
+//func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
+//	key := append(constants.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
+//	data, err := statedb.db.Get(key)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	var assetInfo modules.AssetInfo
+//	err = rlp.DecodeBytes(data, &assetInfo)
+//
+//	if err != nil {
+//		return nil, err
+//	}
+//	return &assetInfo, nil
+//}
 
 // get prefix: return maps
 func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {

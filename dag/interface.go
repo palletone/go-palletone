@@ -97,8 +97,8 @@ type IDag interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
-	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
-	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
+	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
+	//WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
 	GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash

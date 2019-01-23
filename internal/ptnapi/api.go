@@ -289,23 +289,23 @@ func (s *PublicBlockChainAPI) GetAddrTransactions(ctx context.Context, addr stri
 	return string(result_json), err
 }
 
-func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
-	result, err := s.b.WalletTokens(address)
-	if err != nil {
-		log.Error("WalletTokens:", "error", err.Error())
-	}
-	//fmt.Println("result len=", len(result))
-	b, err := json.Marshal(result)
-
-	if err != nil {
-		log.Error("WalletTokens 2222:", "error", err.Error())
-	}
-	return string(b), nil
-}
-
-func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
-	return s.b.WalletBalance(address, assetid, uniqueid, chainid)
-}
+//func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
+//	result, err := s.b.WalletTokens(address)
+//	if err != nil {
+//		log.Error("WalletTokens:", "error", err.Error())
+//	}
+//	//fmt.Println("result len=", len(result))
+//	b, err := json.Marshal(result)
+//
+//	if err != nil {
+//		log.Error("WalletTokens 2222:", "error", err.Error())
+//	}
+//	return string(b), nil
+//}
+//
+//func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+//	return s.b.WalletBalance(address, assetid, uniqueid, chainid)
+//}
 
 /*
 // GetBlockByNumber returns the requested block. When blockNr is -1 the chain head is returned. When fullTx is true all

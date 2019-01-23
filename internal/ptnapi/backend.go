@@ -78,8 +78,8 @@ type Backend interface {
 	SendConsensus(ctx context.Context) error
 
 	// wallet api
-	WalletTokens(address string) (map[string]*modules.AccountToken, error)
-	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
+	//WalletTokens(address string) (map[string]*modules.AccountToken, error)
+	//WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
 	// dag's get common
 	GetCommon(key []byte) ([]byte, error)

@@ -299,6 +299,21 @@ func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
 }
 
+// InsertHeaderDag mocks base method
+func (m *MockIDag) InsertHeaderDag(arg0 []*modules.Header) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertHeaderDag", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertHeaderDag indicates an expected call of InsertHeaderDag
+func (mr *MockIDagMockRecorder) InsertHeaderDag(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertHeaderDag", reflect.TypeOf((*MockIDag)(nil).InsertHeaderDag), arg0)
+}
+
 // HasUnit mocks base method
 func (m *MockIDag) HasUnit(hash common.Hash) bool {
 	m.ctrl.T.Helper()
@@ -624,36 +639,6 @@ func (m *MockIDag) GetContractTpl(templateID []byte) (*modules.StateVersion, []b
 func (mr *MockIDagMockRecorder) GetContractTpl(templateID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractTpl", reflect.TypeOf((*MockIDag)(nil).GetContractTpl), templateID)
-}
-
-// WalletTokens mocks base method
-func (m *MockIDag) WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WalletTokens", addr)
-	ret0, _ := ret[0].(map[string]*modules.AccountToken)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// WalletTokens indicates an expected call of WalletTokens
-func (mr *MockIDagMockRecorder) WalletTokens(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalletTokens", reflect.TypeOf((*MockIDag)(nil).WalletTokens), addr)
-}
-
-// WalletBalance mocks base method
-func (m *MockIDag) WalletBalance(address common.Address, assetid, uniqueid []byte, chainid uint64) (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WalletBalance", address, assetid, uniqueid, chainid)
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// WalletBalance indicates an expected call of WalletBalance
-func (mr *MockIDagMockRecorder) WalletBalance(address, assetid, uniqueid, chainid interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalletBalance", reflect.TypeOf((*MockIDag)(nil).WalletBalance), address, assetid, uniqueid, chainid)
 }
 
 // GetContract mocks base method
