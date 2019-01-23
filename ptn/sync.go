@@ -152,11 +152,13 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
+			//TODO if GasToken==PTN assetid=modules.PTNCOIN
 			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
 			log.Debug("start force Sync")
+			//TODO if GasToken==PTN assetid=modules.PTNCOIN
 			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 
 		case <-pm.noMorePeers:
