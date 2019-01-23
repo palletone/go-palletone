@@ -25,7 +25,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -38,14 +37,13 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type Dag struct {
-	Cache       palletcache.ICache
+	//Cache       palletcache.ICache
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
@@ -532,7 +530,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	}
 
 	dag := &Dag{
-		Cache:            freecache.NewCache(200 * 1024 * 1024),
+		//Cache:            freecache.NewCache(200 * 1024 * 1024),
 		Db:               db,
 		unstableUnitRep:  tunitRep,
 		unstableUtxoRep:  tutxoRep,
@@ -565,7 +563,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 
 	dag := &Dag{
-		Cache:         freecache.NewCache(200 * 1024 * 1024),
+		//Cache:         freecache.NewCache(200 * 1024 * 1024),
 		Db:            db,
 		stableUnitRep: unitRep,
 		stableUtxoRep: utxoRep,
@@ -595,7 +593,7 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{
-		Cache:            freecache.NewCache(200 * 1024 * 1024),
+		//Cache:            freecache.NewCache(200 * 1024 * 1024),
 		Db:               db,
 		stableUnitRep:    unitRep,
 		stableUtxoRep:    utxoRep,
@@ -808,9 +806,9 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.T
 }
 
 //modified by Albert·Gou
-func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
-	return d.stableUnitRep.SaveUnit(unit, txpool, true, true)
-}
+//func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
+//	return d.stableUnitRep.SaveUnit(unit, true)
+//}
 
 func (d *Dag) saveHeader(header *modules.Header) error {
 	unit := &modules.Unit{UnitHeader: header}
@@ -869,7 +867,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		//} else {
 		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
 		if isGenesis {
-			d.stableUnitRep.SaveUnit(unit, txpool, true, true)
+			d.stableUnitRep.SaveUnit(unit, true)
 			return nil
 		}
 
