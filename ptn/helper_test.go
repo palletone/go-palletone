@@ -235,6 +235,12 @@ func (p *testTxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 func (p *testTxPool) DiscardTxs(hashs []common.Hash) error {
 	return nil
 }
+func (p *testTxPool) ResetPendingTxs(txs []*modules.Transaction) error {
+	return nil
+}
+func (p *testTxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
+	return nil
+}
 
 //func (p *testTxPool) DiscardTx(hash common.Hash) error {
 //	return nil

@@ -187,18 +187,18 @@ func getConfigPath(ctx *cli.Context) string {
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
 func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
+	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
 	configPath := getConfigPath(ctx)
+	cfg := newDefaultConfig()
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.FileExist(configPath) {
-		defaultConfig := newDefaultConfig()
-
-		listenAddr := defaultConfig.P2P.ListenAddr
+		listenAddr := cfg.P2P.ListenAddr
 		if strings.HasPrefix(listenAddr, ":") {
-			defaultConfig.P2P.ListenAddr = "127.0.0.1" + listenAddr
+			cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
 		}
 
-		err := makeConfigFile(&defaultConfig, configPath)
+		err := makeConfigFile(&cfg, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
 			return FullConfig{}, err
@@ -208,7 +208,6 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
-	cfg := newDefaultConfig()
 	if err := loadConfig(configPath, &cfg); err != nil {
 		utils.Fatalf("%v", err)
 		return FullConfig{}, err

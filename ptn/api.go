@@ -22,6 +22,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/shopspring/decimal"
 )
 
@@ -37,13 +38,15 @@ func NewPublicPalletOneAPI(p *PalletOne) *PublicPalletOneAPI {
 }
 
 // Etherbase is the address that mining rewards will be send to
-func (api *PublicPalletOneAPI) Etherbase() (common.Address, error) {
-	return api.p.Etherbase()
-}
+//func (api *PublicPalletOneAPI) Etherbase() (common.Address, error) {
+//	return api.p.Etherbase()
+//}
 
 // Coinbase is the address that mining rewards will be send to (alias for Etherbase)
 func (api *PublicPalletOneAPI) Coinbase() (common.Address, error) {
-	return api.Etherbase()
+	//return api.Etherbase()
+	err := errors.New("TODO read mediator address from toml config")
+	return common.Address{}, err
 }
 
 // Hashrate returns the POW hashrate

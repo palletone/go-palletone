@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"math/rand"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -267,16 +268,16 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, err
 	}
 	utxos := core.Utxos{}
-       dagOutpoint := []modules.OutPoint{}
+    dagOutpoint := []modules.OutPoint{}
 	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
-                       dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
+            dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
 		}
 	}
-        poolTxs, err := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
+    poolTxs, err := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
 	if err == nil {
 		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, proofTransactionGenParams.From)
 		if err != nil {
@@ -1007,4 +1008,35 @@ func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid string) (s
 func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash string) (string, error) {
 	result, err := s.getFileInfo(filehash)
 	return result, err
+}
+
+func (s *PublicWalletAPI) Ccquery(ctx context.Context, deployId string, param []string) (string, error) {
+	contractId, _ := common.StringToAddress(deployId)
+	log.Info("-----Ccquery:", "contractId", contractId.String())
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d],value[%s]\n", i, arg)
+	}
+	//参数前面加入msg0,这里为空
+	var fullArgs [][]byte
+	msgArg := []byte("query has no msg0")
+	fullArgs = append(fullArgs, msgArg)
+	fullArgs = append(fullArgs, args...)
+
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+
+	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
+	if err != nil {
+		return "", err
+	}
+	return string(rsp), nil
+}
+
+func (s *PublicWalletAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
+	depId, _ := hex.DecodeString(deployId)
+	log.Info("Ccstop:" + deployId + ":" + txid + "_")
+	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
+	err := s.b.ContractStop(depId, txid, false)
+	return err
 }
