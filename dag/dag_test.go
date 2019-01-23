@@ -116,7 +116,7 @@ func TestTxCountAndUnitSize(t *testing.T) {
 		txs := modules.Transactions{}
 		for j := 0; j < i; j++ {
 			tx := modules.NewTransaction([]*modules.Message{})
-			tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(&common.Hash{}, 0, 0), unlockScript)},
+			tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0), unlockScript)},
 				[]*modules.Output{modules.NewTxOut(1, lockScript, a)})))
 			txs = append(txs, tx)
 		}
