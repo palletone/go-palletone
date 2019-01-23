@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"math/rand"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -1007,4 +1008,35 @@ func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid string) (s
 func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash string) (string, error) {
 	result, err := s.getFileInfo(filehash)
 	return result, err
+}
+
+func (s *PublicWalletAPI) Ccquery(ctx context.Context, deployId string, param []string) (string, error) {
+	contractId, _ := common.StringToAddress(deployId)
+	log.Info("-----Ccquery:", "contractId", contractId.String())
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d],value[%s]\n", i, arg)
+	}
+	//参数前面加入msg0,这里为空
+	var fullArgs [][]byte
+	msgArg := []byte("query has no msg0")
+	fullArgs = append(fullArgs, msgArg)
+	fullArgs = append(fullArgs, args...)
+
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+
+	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
+	if err != nil {
+		return "", err
+	}
+	return string(rsp), nil
+}
+
+func (s *PublicWalletAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
+	depId, _ := hex.DecodeString(deployId)
+	log.Info("Ccstop:" + deployId + ":" + txid + "_")
+	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
+	err := s.b.ContractStop(depId, txid, false)
+	return err
 }

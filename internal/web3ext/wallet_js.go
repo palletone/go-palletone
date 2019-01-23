@@ -93,6 +93,12 @@ const Wallet_JS = `
 			params: 1,
 			inputFormatter: [null]
 		}),
+		new web3._extend.Method({
+			name: 'ccquery',
+			call: 'wallet_ccquery',
+			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
+			inputFormatter: [null,null]
+		}),
  	]
  });
  `
