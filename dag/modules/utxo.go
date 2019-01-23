@@ -266,37 +266,37 @@ type SpendProof struct {
 保存Asset属性信息结构体
 structure for saving asset property infomation
 */
-type AssetInfo struct {
-	Alias          string         `json:"alias"`           // asset name
-	AssetID        *Asset         `json:"asset_id"`        // asset id
-	InitialTotal   uint64         `json:"initial_total"`   // total circulation
-	Decimal        uint32         `json:"deciaml"`         // asset accuracy
-	DecimalUnit    string         `json:"unit"`            // asset unit
-	OriginalHolder common.Address `json:"original_holder"` // holder address when creating the asset
-}
+//type AssetInfo struct {
+//	Alias          string         `json:"alias"`           // asset name
+//	AssetID        *Asset         `json:"asset_id"`        // asset id
+//	InitialTotal   uint64         `json:"initial_total"`   // total circulation
+//	Decimal        uint32         `json:"deciaml"`         // asset accuracy
+//	DecimalUnit    string         `json:"unit"`            // asset unit
+//	OriginalHolder common.Address `json:"original_holder"` // holder address when creating the asset
+//}
+//
+//func (assetInfo *AssetInfo) Tokey() []byte {
+//	key := fmt.Sprintf("%s%s",
+//		constants.ASSET_INFO_PREFIX,
+//		assetInfo.AssetID.AssetId.String())
+//	return []byte(key)
+//}
+//
+//func (assetInfo *AssetInfo) Print() {
+//	fmt.Println("Asset alias", assetInfo.Alias)
+//	fmt.Println("Asset Assetid", assetInfo.AssetID.AssetId)
+//	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
+//	//fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
+//	fmt.Println("Asset Decimal", assetInfo.Decimal)
+//	fmt.Println("Asset DecimalUnit", assetInfo.DecimalUnit)
+//	fmt.Println("Asset OriginalHolder", assetInfo.OriginalHolder.String())
+//}
 
-func (assetInfo *AssetInfo) Tokey() []byte {
-	key := fmt.Sprintf("%s%s",
-		constants.ASSET_INFO_PREFIX,
-		assetInfo.AssetID.AssetId.String())
-	return []byte(key)
-}
-
-func (assetInfo *AssetInfo) Print() {
-	fmt.Println("Asset alias", assetInfo.Alias)
-	fmt.Println("Asset Assetid", assetInfo.AssetID.AssetId)
-	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
-	//fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
-	fmt.Println("Asset Decimal", assetInfo.Decimal)
-	fmt.Println("Asset DecimalUnit", assetInfo.DecimalUnit)
-	fmt.Println("Asset OriginalHolder", assetInfo.OriginalHolder.String())
-}
-
-type AccountToken struct {
-	Alias   string `json:"alias"`
-	AssetID *Asset `json:"asset_id"`
-	Balance uint64 `json:"balance"`
-}
+//type AccountToken struct {
+//	Alias   string `json:"alias"`
+//	AssetID *Asset `json:"asset_id"`
+//	Balance uint64 `json:"balance"`
+//}
 
 func UtxoFlags2String(flag txoFlags) string {
 	var str string

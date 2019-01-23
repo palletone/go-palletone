@@ -204,22 +204,22 @@ func (b *PtnApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 	}
 }
 
-func (b *PtnApiBackend) WalletTokens(address string) (map[string]*modules.AccountToken, error) {
-	//comAddr, err := common.StringToAddress("P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B")
-	comAddr, err := common.StringToAddress(address)
-	if err != nil {
-		return nil, err
-	}
-	return b.ptn.dag.WalletTokens(comAddr)
-}
-
-func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
-	comAddr, err := common.StringToAddress(address)
-	if err != nil {
-		return 0, err
-	}
-	return b.ptn.dag.WalletBalance(comAddr, assetid, uniqueid, chainid)
-}
+//func (b *PtnApiBackend) WalletTokens(address string) (map[string]*modules.AccountToken, error) {
+//	//comAddr, err := common.StringToAddress("P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B")
+//	comAddr, err := common.StringToAddress(address)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return b.ptn.dag.WalletTokens(comAddr)
+//}
+//
+//func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+//	comAddr, err := common.StringToAddress(address)
+//	if err != nil {
+//		return 0, err
+//	}
+//	return b.ptn.dag.WalletBalance(comAddr, assetid, uniqueid, chainid)
+//}
 
 // GetContract
 func (b *PtnApiBackend) GetContract(id string) (*modules.Contract, error) {
