@@ -186,7 +186,7 @@ func getConfigPath(ctx *cli.Context) string {
 
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
-func maybeLoadConfig(ctx *cli.Context) (*FullConfig, error) {
+func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 	configPath := getConfigPath(ctx)
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
@@ -198,31 +198,32 @@ func maybeLoadConfig(ctx *cli.Context) (*FullConfig, error) {
 			defaultConfig.P2P.ListenAddr = "127.0.0.1" + listenAddr
 		}
 
-		err := makeConfigFile(defaultConfig, configPath)
+		err := makeConfigFile(&defaultConfig, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
-			return nil, err
+			return FullConfig{}, err
 		}
 
 		fmt.Println("Writing new config file at: ", configPath)
 	}
 
 	// 加载配置文件中的配置信息到 cfg中
-	cfg := &FullConfig{Node: defaultNodeConfig()}
-	if err := loadConfig(configPath, cfg); err != nil {
+	cfg := newDefaultConfig()
+	if err := loadConfig(configPath, &cfg); err != nil {
 		utils.Fatalf("%v", err)
-		return nil, err
+		return FullConfig{}, err
 	}
 
 	return cfg, nil
 }
 
-func makeConfigNode(ctx *cli.Context) (*node.Node, *FullConfig) {
+func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// Load defaults.
 	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
-	cfg := newDefaultConfig()
+	//cfg := newDefaultConfig()
 
 	// Load config file.
+	var cfg FullConfig
 	var err error
 	// 2. 获取配置文件中的配置信息，并覆盖cfg中对应的配置
 	if cfg, err = maybeLoadConfig(ctx); err != nil {
@@ -233,7 +234,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, *FullConfig) {
 	// 3. 将命令行中的配置参数覆盖cfg中对应的配置,
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
-	cfg = adaptorConfig(cfg)
+	adaptorConfig(&cfg)
 	utils.SetNodeConfig(ctx, &cfg.Node)
 
 	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
@@ -289,7 +290,7 @@ func dumpConfig(ctx *cli.Context) error {
 		configPath = defaultConfigPath
 	}
 
-	err := makeConfigFile(cfg, configPath)
+	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
@@ -346,9 +347,9 @@ func dumpJson(ctx *cli.Context) error {
 
 // newDefaultConfig, create a default config
 // @author Albert·Gou
-func newDefaultConfig() *FullConfig {
+func newDefaultConfig() FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
-	return &FullConfig{
+	return FullConfig{
 		Ptn:            ptn.DefaultConfig,
 		Node:           defaultNodeConfig(),
 		Dashboard:      dashboard.DefaultConfig,
