@@ -654,6 +654,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 		txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
 	}
+	txpool_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
 	return txpool_tx
 }
 
@@ -792,7 +793,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 					pool.outpoints[*txin.PreviousOutPoint] = tx
 				}
 
-				for j, _ := range msg.Outputs {
+				for j := range msg.Outputs {
 					if pool.outputs == nil {
 						pool.outputs = make(map[modules.OutPoint]common.Hash)
 					}
@@ -1326,6 +1327,12 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 							for _, input := range payment.Inputs {
 								delete(pool.outpoints, *input.PreviousOutPoint)
 							}
+							preout := modules.OutPoint{TxHash: hash}
+							for j := range payment.Outputs {
+								preout.MessageIndex = uint32(i)
+								preout.OutIndex = uint32(j)
+								delete(pool.outputs, preout)
+							}
 						}
 					}
 				}
@@ -1571,7 +1578,6 @@ func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 // future queue to the set of pending transactions. During this process, all
 // invalidated transactions (low nonce, low balance) are deleted.
 func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
-
 	// If the pending limit is overflown, start equalizing allowances
 	pending := 0
 	for _, list := range pool.pending {
@@ -1739,8 +1745,8 @@ func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
 
 // 打包后的没有被最终确认的交易，废弃处理
 func (pool *TxPool) DiscardTxs(hashs []common.Hash) error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	for _, hash := range hashs {
 		err := pool.discardTx(hash)
 		if err != nil {
@@ -1750,8 +1756,8 @@ func (pool *TxPool) DiscardTxs(hashs []common.Hash) error {
 	return nil
 }
 func (pool *TxPool) DiscardTx(hash common.Hash) error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	return pool.discardTx(hash)
 }
 func (pool *TxPool) discardTx(hash common.Hash) error {
@@ -1769,6 +1775,67 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 	}
 	// not in pool
 
+	return nil
+}
+func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+	for _, tx := range txs {
+		err := pool.resetPendingTx(tx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
+	hash := tx.Hash()
+	err := pool.DeleteTxByHash(hash)
+	if err == nil {
+		pool.add(TxtoTxpoolTx(pool, tx), !pool.config.NoLocals)
+		return nil
+	}
+	pool.priority_priced.Removed(hash)
+	delete(pool.all, hash)
+	// delete pending
+	for unit_hash, list := range pool.pending {
+		for i, tx := range list {
+			if tx.Tx.Hash().String() == hash.String() {
+				newList := make([]*modules.TxPoolTransaction, 0)
+				if i > 0 {
+					newList = append(newList, list[:i]...)
+				}
+				if len(list) > i+1 {
+					newList = append(newList, list[i+1:]...)
+				}
+				pool.pending[unit_hash] = newList
+				if len(tx.From) > 0 {
+					for _, from := range tx.From {
+						delete(pool.beats, *from)
+					}
+				}
+				// delete outpoints  and outputs
+				for i, msg := range tx.Tx.Messages() {
+					if msg.App == modules.APP_PAYMENT {
+						payment, ok := msg.Payload.(*modules.PaymentPayload)
+						if ok {
+							for _, input := range payment.Inputs {
+								delete(pool.outpoints, *input.PreviousOutPoint)
+							}
+							preout := modules.OutPoint{TxHash: hash}
+							for j := range payment.Outputs {
+								preout.MessageIndex = uint32(i)
+								preout.OutIndex = uint32(j)
+								delete(pool.outputs, preout)
+							}
+						}
+					}
+				}
+				break
+			}
+		}
+	}
+	pool.add(TxtoTxpoolTx(pool, tx), !pool.config.NoLocals)
 	return nil
 }
 
@@ -1985,7 +2052,7 @@ func (pool *TxPool) removeOrphan(tx *modules.TxPoolTransaction, reRedeemers bool
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
-					for j, _ := range payment.Outputs {
+					for j := range payment.Outputs {
 						prevOut.MessageIndex = uint32(i)
 						prevOut.OutIndex = uint32(j)
 
@@ -2080,8 +2147,8 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 
 					// 验证outputs缓存的utxo
 					hash := tx.Hash()
-					preout := modules.NewOutPoint(&hash, uint32(i), uint32(j))
-					if _, has := pool.outputs[*preout]; !has {
+					preout := modules.OutPoint{hash, uint32(i), uint32(j)}
+					if _, has := pool.outputs[preout]; !has {
 						return false, nil
 					}
 					//log.Debug("valide outputs failed.")
@@ -2091,5 +2158,6 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 			}
 		}
 	}
-	return false, errors.New(fmt.Sprintf("the tx: (%s) is invalide。", tx.Hash().String()))
+	return false, nil
+	//	return false, errors.New(fmt.Sprintf("the tx: (%s) is invalide。", tx.Hash().String()))
 }
