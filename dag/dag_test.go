@@ -128,7 +128,7 @@ func newHeader() *modules.Header {
 	key := new(ecdsa.PrivateKey)
 	key, _ = crypto.GenerateKey()
 	h := new(modules.Header)
-	h.AssetIDs = append(h.AssetIDs, modules.PTNCOIN)
+	//h.AssetIDs = append(h.AssetIDs, modules.PTNCOIN)
 	au := modules.Authentifier{}
 	//address := crypto.PubkeyToAddress(&key.PublicKey)
 

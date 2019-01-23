@@ -226,8 +226,11 @@ func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan boo
 func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
 	return nil
 }
-func (p *testTxPool) GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error) {
-	return &modules.InvokeFees{}, nil
+func (p *testTxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
+	return &modules.AmountAsset{}, nil
+}
+func (p *testTxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
+	return false, nil
 }
 
 // newTestTransaction create a new dummy transaction.
@@ -330,7 +333,7 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	return dag, nil
 }
 func unitForTest(index int) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = uint64(index)
@@ -346,7 +349,7 @@ func unitForTest(index int) *modules.Unit {
 }
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
@@ -369,7 +372,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, []modules.IDType16{modules.PTNCOIN}, 1, []byte{})
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{})
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
@@ -539,7 +542,8 @@ func NewHeader(parents []common.Hash, asset []modules.IDType16, extra []byte) *m
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
-	return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...), Creationdate: time.Now().Unix()}
+	//return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...), Creationdate: time.Now().Unix()}
+	return &modules.Header{ParentsHash: hashs, Extra: append(b, extra...), Creationdate: time.Now().Unix()}
 }
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}

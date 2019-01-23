@@ -398,7 +398,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	if pm.SubProtocols[0].Name == p.Caps()[0].Name {
+	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name == p.Caps()[0].Name) {
 		pm.syncTransactions(p)
 	}
 
@@ -426,10 +426,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	defer msg.Discard()
 
 	//SubProtocols compare
-	partition := pm.SubProtocols[0].Name == p.Caps()[0].Name
-	if !partition && (msg.Code != GetBlockHeadersMsg || msg.Code != BlockHeadersMsg) {
-		log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
-		return nil
+	if len(p.Caps()) > 0 {
+		partition := pm.SubProtocols[0].Name == p.Caps()[0].Name
+		//if !partition && (msg.Code != GetBlockHeadersMsg || msg.Code != BlockHeadersMsg) {
+		if !partition && msg.Code != GetBlockHeadersMsg {
+			log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
+			return nil
+		}
+		if !partition && msg.Code != BlockHeadersMsg {
+			log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
+			return nil
+		}
 	}
 
 	// Handle the message depending on its contents
