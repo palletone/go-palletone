@@ -232,6 +232,13 @@ func (p *testTxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, er
 func (p *testTxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 	return false, nil
 }
+func (p *testTxPool) DiscardTxs(hashs []common.Hash) error {
+	return nil
+}
+
+//func (p *testTxPool) DiscardTx(hash common.Hash) error {
+//	return nil
+//}
 
 // newTestTransaction create a new dummy transaction.
 func newTestTransaction(from *ecdsa.PrivateKey, nonce uint64, datasize int) *modules.Transaction {
