@@ -147,7 +147,9 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 		chain.ldbunitRep.SaveHeader(unit.Header())
 	} else {
 		//Save stable unit to ldb
-		chain.ldbunitRep.SaveUnit(unit, txpool, false, true)
+		chain.ldbunitRep.SaveUnit(unit, false)
+		//txpool flag tx as packaged
+		txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
 	//remove new stable unit
 	delete(chain.chainUnits, hash)
@@ -195,6 +197,14 @@ func (chain *MemDag) checkStableCondition(needAddrCount int, txpool txspool.ITxP
 func (chain *MemDag) rebuildTempdb() {
 	log.Debugf("Clear tempdb and reubild data")
 	chain.tempdb.Clear()
+	unstableUnits := chain.getMainChainUnits()
+	for _, unit := range unstableUnits {
+		chain.saveUnit2TempDb(unit)
+	}
+}
+
+//获得从稳定单元到最新单元的主链上的单元列表，从久到新排列
+func (chain *MemDag) getMainChainUnits() []*modules.Unit {
 	unstableCount := int(chain.lastMainchainUnit.NumberU64() - chain.stableUnitHeight)
 	log.Debugf("Unstable unit count:%d", unstableCount)
 	unstableUnits := make([]*modules.Unit, unstableCount)
@@ -205,9 +215,7 @@ func (chain *MemDag) rebuildTempdb() {
 		//log.Debugf("Unstable unit:%#v, Hash:%s", u, ustbHash.String())
 		ustbHash = u.ParentHash()[0]
 	}
-	for _, unit := range unstableUnits {
-		chain.saveUnit2TempDb(unit)
-	}
+	return unstableUnits
 }
 
 //判断当前设置是保存Header还是Unit，将对应的对象保存到Tempdb数据库
@@ -215,7 +223,7 @@ func (chain *MemDag) saveUnit2TempDb(unit *modules.Unit) {
 	if chain.saveHeaderOnly {
 		chain.tempdbunitRep.SaveHeader(unit.Header())
 	} else {
-		chain.tempdbunitRep.SaveUnit(unit, nil, false, true)
+		chain.tempdbunitRep.SaveUnit(unit, false)
 	}
 }
 
@@ -237,6 +245,10 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if unit == nil {
 		return errors.ErrNullPoint
 	}
+	if unit.NumberU64() <= chain.lastMainchainUnit.NumberU64() {
+		log.Infof("This unit is too old! Ignore it")
+		return nil
+	}
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	return chain.addUnit(unit, txpool)
@@ -249,26 +261,24 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if _, ok := chain.chainUnits[parentHash]; ok || parentHash == chain.stableUnitHash {
 		//add unit to chain
 		chain.chainUnits[uHash] = unit
-		//Switch main chain?
+		//add at the end of main chain unit
 		if parentHash == chain.lastMainchainUnit.Hash() {
 			log.Debug("This is a new main chain unit")
 			//Add a new unit to main chain
 			chain.setLastMainchainUnit(unit)
+			//增加了单元后检查是否满足稳定单元的条件
 			if !chain.checkStableCondition(threshold, txpool) {
 				chain.saveUnit2TempDb(unit)
+				//这个单元不是稳定单元，需要加入Tempdb
 			}
 		} else { //Fork unit
 			log.Debug("This is a fork unit")
 			if unit.NumberU64() > chain.lastMainchainUnit.NumberU64() { //Need switch main chain
 				//switch main chain, build db
-				chain.setLastMainchainUnit(unit)
-				if !chain.checkStableCondition(threshold, txpool) {
-					chain.rebuildTempdb()
-				}
-			} else {
-				log.Infof("This unit is too old! Ignore it")
+				chain.switchMainChain(unit, txpool)
 			}
 		}
+
 		//orphan unit can add below this unit?
 		chain.processOrphan(uHash, txpool)
 	} else {
@@ -277,6 +287,25 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		chain.orphanUnits[uHash] = unit
 	}
 	return nil
+}
+
+func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPool) {
+	oldLastMainchainUnit := chain.lastMainchainUnit
+	log.Debugf("Switch main chain unit from %s to %s", oldLastMainchainUnit.Hash().String(), newUnit.Hash().String())
+
+	//reverse txpool tx status
+	unstableUnits := chain.getMainChainUnits()
+	for _, unit := range unstableUnits {
+		txpool.ResetPendingTxs(unit.Txs)
+	}
+	chain.setLastMainchainUnit(newUnit)
+	//基于新主链，更新TxPool的状态
+	newUnstableUnits := chain.getMainChainUnits()
+	for _, unit := range newUnstableUnits {
+		txpool.ResetPendingTxs(unit.Txs)
+	}
+	//基于新主链的单元和稳定单元，重新构建Tempdb
+	chain.rebuildTempdb()
 }
 
 //枚举每一个孤儿单元，如果发现有单元的ParentHash是指定Hash，那么这说明这不再是一个孤儿单元，

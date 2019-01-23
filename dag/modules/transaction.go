@@ -394,6 +394,15 @@ type TxLookupEntry struct {
 	Index     uint64      `json:"index"`
 }
 type Transactions []*Transaction
+
+func (txs Transactions) GetTxIds() []common.Hash {
+	ids := make([]common.Hash, len(txs))
+	for i, tx := range txs {
+		ids[i] = tx.Hash()
+	}
+	return ids
+}
+
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
 }
