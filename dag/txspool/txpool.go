@@ -2015,7 +2015,7 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 					hash := tx.Hash()
 					preout := modules.NewOutPoint(&hash, uint32(i), uint32(j))
 					if _, has := pool.outputs[*preout]; !has {
-						return true, nil
+						return false, nil
 					}
 					//log.Debug("valide outputs failed.")
 					//return true, errors.New("validate outputs failed.")
