@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
 
+	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
@@ -428,30 +429,17 @@ func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 // should be done or not. The reason behind the optional check is because some
 // of the header retrieval mechanisms already need to verify nonces, as well as
 // because nonces can be verified sparsely, not needing to check each.
-//func (d *Dag) InsertHeaderDag(headers []*modules.Header, checkFreq int) (int, error) {
-//	for i, header := range headers {
-//		hash := header.Hash()
-//		number := header.Number
-//		index := header.Number.Index
-//
-//		// ###save unit hash and chain index relation
-//		err := d.unstableUnitRep.SaveNumberByHash(hash, number)
-//		if err != nil {
-//			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveNumberByHash Error", i)
-//		}
-//		err = d.unstableUnitRep.SaveHashByNumber(hash, number)
-//		if err != nil {
-//			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at SaveHashByNumber Error", i)
-//		}
-//		// ###save HeaderCanon & HeaderKey & HeadUnitHash & HeadFastKey
-//		err = d.unstableUnitRep.UpdateHeadByBatch(hash, index)
-//		if err != nil {
-//			return i, err
-//		}
-//
-//	}
-//	return checkFreq, nil
-//}
+func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
+	for i, header := range headers {
+		err := d.saveHeader(header)
+
+		if err != nil {
+			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at saveHeader Error:%s", i, err.Error())
+		}
+
+	}
+	return len(headers), nil
+}
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go
@@ -528,11 +516,6 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
-	//tempdb, _ := memunit.NewTempdb(db)
-	//tunitRep := dagcommon.NewUnitRepository4Db(tempdb)
-	//tutxoRep := dagcommon.NewUtxoRepository4Db(tempdb)
-	//tstateRep := dagcommon.NewStateRepository4Db(tempdb)
-	//tpropRep := dagcommon.NewPropRepository4Db(tempdb)
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
@@ -542,6 +525,11 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
+
+	partitionMemdag := make(map[modules.IDType16]memunit.IMemDag)
+	for _, ptoken := range node.DefaultConfig.GeSyncPartitionTokens() {
+		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)
+	}
 
 	dag := &Dag{
 		Cache:            freecache.NewCache(200 * 1024 * 1024),
@@ -557,7 +545,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		ChainHeadFeed:    new(event.Feed),
 		Mutex:            *mutex,
 		Memdag:           unstableChain,
-		//utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
+		PartitionMemDag:  partitionMemdag,
 	}
 	return dag, nil
 }
@@ -822,6 +810,23 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.T
 //modified by Albert·Gou
 func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	return d.stableUnitRep.SaveUnit(unit, txpool, true, true)
+}
+
+func (d *Dag) saveHeader(header *modules.Header) error {
+	unit := &modules.Unit{UnitHeader: header}
+	asset := header.Number.AssetID
+	var memdag memunit.IMemDag
+	if asset == modules.PTNCOIN {
+		memdag = d.Memdag
+	} else {
+		memdag = d.PartitionMemDag[asset]
+	}
+	if err := memdag.AddUnit(unit, nil); err != nil {
+		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
+	} else {
+		log.Debug("=============    save_memdag_unit header     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+	}
+	return nil
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {

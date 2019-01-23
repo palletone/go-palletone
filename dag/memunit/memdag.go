@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"sync"
 )
 
 type MemDag struct {
@@ -44,6 +45,7 @@ type MemDag struct {
 	ldbPropRep        common2.IPropRepository
 	tempdb            *Tempdb
 	saveHeaderOnly    bool
+	lock              sync.RWMutex
 }
 
 func NewMemDag(token modules.IDType16, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository) *MemDag {
@@ -93,7 +95,8 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep
 }
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error {
-
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
 	//1. Set this unit as stable
 	unit, err := chain.getChainUnit(uHash)
 	if err != nil {
@@ -150,6 +153,8 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	delete(chain.chainUnits, hash)
 	//Set stable unit
 	chain.setStableUnit(unit)
+	//remove too low orphan unit
+	chain.removeLowOrphanUnit(unit.NumberU64())
 }
 
 //判断当前主链上的单元是否有满足稳定单元的确认数，如果有，则更新稳定单元，并重建Temp数据库，返回True
@@ -174,12 +179,12 @@ func (chain *MemDag) checkStableCondition(needAddrCount int, txpool txspool.ITxP
 		}
 		childrenCofirmAddrs[u.Author()] = true
 		if len(hs) >= needAddrCount {
-			log.Debugf("Unit[%s] has enough confirm address, make it to stable.", ustbHash.String())
+			log.Debugf("Unit[%s] has enough confirm address count=%d, make it to stable.", ustbHash.String(), len(hs))
 			chain.SetStableUnit(ustbHash, u.NumberU64(), txpool)
 
 			return true
 		}
-		log.Debugf("Unstable unit[%s] has confirm address count:%d", ustbHash.String(), len(hs))
+		log.Debugf("Unstable unit[%s] has confirm address count:%d / %d", ustbHash.String(), len(hs), needAddrCount)
 
 		ustbHash = u.ParentHash()[0]
 	}
@@ -232,6 +237,11 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if unit == nil {
 		return errors.ErrNullPoint
 	}
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
+	return chain.addUnit(unit, txpool)
+}
+func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
 	log.Debugf("Try to add unit[%s] to unstable chain", uHash.String())
@@ -276,8 +286,16 @@ func (chain *MemDag) processOrphan(unitHash common.Hash, txpool txspool.ITxPool)
 		if unit.ParentHash()[0] == unitHash {
 			log.Debugf("Orphan unit[%s] can add to chain now.", unit.Hash().String())
 			delete(chain.orphanUnits, hash)
-			chain.AddUnit(unit, txpool) //这个方法里面又会处理剩下的孤儿单元，从而形成递归
+			chain.addUnit(unit, txpool) //这个方法里面又会处理剩下的孤儿单元，从而形成递归
 			break
+		}
+	}
+}
+func (chain *MemDag) removeLowOrphanUnit(lessThan uint64) {
+	for hash, unit := range chain.orphanUnits {
+		if unit.NumberU64() <= lessThan {
+			log.Debugf("Orphan unit[%s] height[%d] is too low, remove it.", unit.Hash().String(), unit.NumberU64())
+			delete(chain.orphanUnits, hash)
 		}
 	}
 }

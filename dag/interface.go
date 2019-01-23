@@ -61,7 +61,7 @@ type IDag interface {
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 
 	// InsertHeaderDag inserts a batch of headers into the local chain.
-	//InsertHeaderDag([]*modules.Header, int) (int, error)
+	InsertHeaderDag([]*modules.Header) (int, error)
 	HasUnit(hash common.Hash) bool
 	UnitIsConfirmedByHash(hash common.Hash) bool
 	ParentsIsConfirmByHash(hash common.Hash) bool
