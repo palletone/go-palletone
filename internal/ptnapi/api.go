@@ -1614,17 +1614,23 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 		}
 	}
 	//5,6,8,9,16
+	merge_flag := false
 	dagpoolOutpoint = append(dagOutpoint, outputsOutpoint...)
 	for _, dppoint := range dagpoolOutpoint {
 		//find if 5,6,8,9,in  2,3,5,6,8,9,16
 		//if in it ,continue ,find vaild outpoint
+		merge_flag = false
 		for _, inputpoint := range inputsOutpoint {
 			if dppoint.TxHash == inputpoint.TxHash && dppoint.MessageIndex == inputpoint.MessageIndex && dppoint.OutIndex == inputpoint.OutIndex {
-				continue
+
+				merge_flag = true
 			}
 		}
 		//2,3,16
-		merge_Outpoint = append(merge_Outpoint, dppoint)
+		if merge_flag == false {
+
+			merge_Outpoint = append(merge_Outpoint, dppoint)
+		}
 	}
 	for _, mpoint := range merge_Outpoint {
 		// if utxo in dag, build utxo
