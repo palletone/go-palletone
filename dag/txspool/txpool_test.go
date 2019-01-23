@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -253,8 +254,16 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	origin = len(txs)
 	txpool_txs := make([]*modules.TxPoolTransaction, 0)
-	for _, tx := range txs {
-		txpool_txs = append(txpool_txs, TxtoTxpoolTx(pool, tx))
+	pool_tx := new(modules.TxPoolTransaction)
+
+	for i, tx := range txs {
+		p_tx := TxtoTxpoolTx(pool, tx)
+		p_tx.GetTxFee()
+		p_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
+		txpool_txs = append(txpool_txs, p_tx)
+		if i == len(txs)-1 {
+			pool_tx = p_tx
+		}
 	}
 
 	t1 := time.Now()
@@ -274,7 +283,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	//  test GetSortedTxs{}
 	unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	defer func(p *TxPool) {
-		if txs, total := pool.GetSortedTxs(unit_hash); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
+		if txs, total := p.GetSortedTxs(unit_hash); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
 			all = len(txs)
 			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
 			t.Error(msg)
@@ -288,10 +297,27 @@ func TestTransactionAddingTxs(t *testing.T) {
 				}
 			}
 			all = len(txs)
-			for _, list := range pool.pending {
+			for _, list := range p.pending {
 				pending_cache += len(list)
 			}
-			queue_cache = len(pool.queue)
+			queue_cache = len(p.queue)
+		}
+
+		//  add tx : failed , and discared the tx.
+		err := p.addTx(pool_tx, !pool.config.NoLocals)
+		if err == nil {
+			log.Error("test added tx failed.")
+			return
+		}
+		err1 := p.resetPendingTx(pool_tx.Tx)
+		if err1 != nil {
+			log.Debug("resetPendingTx failed ", "error", err1)
+		}
+		err2 := p.addTx(pool_tx, !pool.config.NoLocals)
+		if err2 != nil {
+			log.Debug("addtx again info success", "error", err2)
+		} else {
+			log.Error("test added tx failed.")
 		}
 		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
