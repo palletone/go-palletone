@@ -33,10 +33,8 @@ add=`cat $filename | jq ".initialMediatorCandidates[$index] |= . + {\"account\":
 if [ $index -eq 0 ] ; then
 
     createaccount=`./createaccount.sh`
-    tempinfo=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
-    accountlength=35
-    accounttemp=${tempinfo:0:$accountlength}
-    account=`echo ${accounttemp//^M/}`
+    account=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
+    account=${account:0:35}
 
     add=`echo $add |
        jq "to_entries |
