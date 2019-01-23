@@ -21,6 +21,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/dedis/kyber"
@@ -131,7 +132,8 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]map[common.Hash]*modules.Unit
+	toTBLSSignBuf map[common.Address]*sync.Map
+	//toTBLSSignBuf    map[common.Address]map[common.Hash]*modules.Unit
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 
 	// unit 签名分片的事件订阅
@@ -351,6 +353,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 func (mp *MediatorPlugin) initTBLSBuf() {
 	lmc := len(mp.mediators)
 
-	mp.toTBLSSignBuf = make(map[common.Address]map[common.Hash]*modules.Unit, lmc)
+	//mp.toTBLSSignBuf = make(map[common.Address]map[common.Hash]*modules.Unit, lmc)
+	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lmc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
 }
