@@ -107,10 +107,8 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 	pload := new(modules.PaymentPayload)
 	var inputjson []walletjson.InputJson
 	for _, input := range c.Inputs {
-		txHash, err := common.NewHashFromStr(input.Txid)
-		if err != nil {
-			return "", rpcDecodeHexError(input.Txid)
-		}
+		txHash := common.HexToHash(input.Txid)
+
 		inputjson = append(inputjson, walletjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout, HashForSign: "", Signature: ""})
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
@@ -211,7 +209,7 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	//fmt.Printf("---------------------------RawTxjsonGenParams----------%+v\n",RawTxjsonGenParams)
 	pload := new(modules.PaymentPayload)
 	for _, input := range RawTxjsonGenParams.Payload[0].Inputs {
-		txHash, err := common.NewHashFromStr(input.TxHash)
+		txHash := common.HexToHash(input.TxHash)
 		if err != nil {
 			return common.Hash{}, rpcDecodeHexError(input.TxHash)
 		}
@@ -450,10 +448,8 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	pload := new(modules.PaymentPayload)
 	var inputjson []walletjson.InputJson
 	for _, input := range c.Inputs {
-		txHash, err := common.NewHashFromStr(input.Txid)
-		if err != nil {
-			return "", rpcDecodeHexError(input.Txid)
-		}
+		txHash := common.HexToHash(input.Txid)
+
 		inputjson = append(inputjson, walletjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout, HashForSign: "", Signature: ""})
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})

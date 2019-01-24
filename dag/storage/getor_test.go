@@ -109,7 +109,7 @@ func TestRLPTxDecode(t *testing.T) {
 	output := modules.NewTxOut(1, []byte{0xee, 0xbb}, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-	input := modules.NewTxIn(modules.NewOutPoint(&hash, 0, 1), []byte{})
+	input := modules.NewTxIn(modules.NewOutPoint(hash, 0, 1), []byte{})
 	pay1s.AddTxIn(input)
 	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,

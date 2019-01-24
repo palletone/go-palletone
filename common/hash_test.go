@@ -24,7 +24,7 @@ import "testing"
 
 func TestNewHashFromStr(t *testing.T) {
 	str := "e01c4bae7b396bc3c9bcb9275cef479560141c2010b6537abd78795bc935a2dd"
-	hash, _ := NewHashFromStr(str)
+	hash:= HexToHash(str)
 	t.Logf("Hash:%s", hash.String())
 	hash2 := &Hash{}
 	err := hash2.SetHexString(str)

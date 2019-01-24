@@ -325,8 +325,8 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	t0 := time.Now()
 	duration := t0.Sub(start)
 	//unit.ExecutionTime = duration
-	requstId, err := common.NewHashFromStr(txid)
-	unit.RequestId = *requstId
+	requstId := common.HexToHash(txid)
+	unit.RequestId = requstId
 	if err != nil {
 		log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
 		return nil, err

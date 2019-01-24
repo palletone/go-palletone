@@ -1396,10 +1396,8 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 	//先构造PaymentPayload结构，再组装成Transaction结构
 	pload := new(modules.PaymentPayload)
 	for _, input := range c.Inputs {
-		txHash, err := common.NewHashFromStr(input.Txid)
-		if err != nil {
-			return "", rpcDecodeHexError(input.Txid)
-		}
+		txHash := common.HexToHash(input.Txid)
+
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		pload.AddTxIn(txInput)
@@ -1755,7 +1753,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	//ptn inputs
 	for _, u := range utxosPTNTaken {
 		utxo := u.(*ptnjson.UtxoJson)
-		txHash, _ := common.NewHashFromStr(utxo.TxHash)
+		txHash:= common.HexToHash(utxo.TxHash)
 		prevOut := modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		payPTN.AddTxIn(txInput)
@@ -1773,7 +1771,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	//ptn inputs
 	for _, u := range utxosTkTaken {
 		utxo := u.(*ptnjson.UtxoJson)
-		txHash, _ := common.NewHashFromStr(utxo.TxHash)
+		txHash := common.HexToHash(utxo.TxHash)
 		prevOut := modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		payToken.AddTxIn(txInput)
@@ -1815,10 +1813,8 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 	inputPoints := make(map[modules.OutPoint][]byte)
 	var redeem []byte
 	for _, rti := range cmdInputs {
-		inputHash, err := common.NewHashFromStr(rti.Txid)
-		if err != nil {
-			return err
-		}
+		inputHash:= common.HexToHash(rti.Txid)
+
 		script, err := decodeHexStr(rti.ScriptPubKey)
 		if err != nil {
 			return err
@@ -1832,7 +1828,7 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 			redeem = redeemScript
 		}
 		inputPoints[modules.OutPoint{
-			TxHash:       *inputHash,
+			TxHash:       inputHash,
 			OutIndex:     rti.Vout,
 			MessageIndex: rti.MessageIndex,
 		}] = script
@@ -2052,7 +2048,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	}
 	var redeem []byte
 	for _, rti := range cmdInputs {
-		inputHash, err := common.NewHashFromStr(rti.Txid)
+		inputHash := common.HexToHash(rti.Txid)
 		if err != nil {
 			return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 		}
@@ -2081,7 +2077,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 			redeem = redeemScript
 		}
 		inputpoints[modules.OutPoint{
-			TxHash:       *inputHash,
+			TxHash:       inputHash,
 			OutIndex:     rti.Vout,
 			MessageIndex: rti.MessageIndex,
 		}] = script
@@ -2174,7 +2170,7 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 
 //转为压力测试准备数据用
 func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, fromAddress, toAddress string, amount int, count int, password string) ([]string, error) {
-	txHash, _ := common.NewHashFromStr(txid)
+	txHash:= common.HexToHash(txid)
 	toAddr, _ := common.StringToAddress(toAddress)
 	fromAddr, _ := common.StringToAddress(fromAddress)
 	utxoScript := tokenengine.GenerateLockScript(fromAddr)
