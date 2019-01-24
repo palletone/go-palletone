@@ -886,7 +886,7 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 		return false
 	}
 
-	if !dagconfig.DefaultConfig.TextFileHashIndex {
+	if dagconfig.DefaultConfig.TextFileHashIndex {
 
 		err := rep.idxdb.SaveFileHash(payload.MainData, txHash)
 		if err != nil {
