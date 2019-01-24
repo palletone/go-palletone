@@ -268,7 +268,25 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 		if err == docker.ErrNoSuchImage {
 			log.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
 				"attempt to recreate image", imageID, containerID, err)
-			return fmt.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
+			log.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
+			//-----------------------------------------------------------------------------------
+			// Ensure the image exists locally, or pull it from a registry if it doesn't
+			//确认镜像是否存在或从远程拉取
+			//-----------------------------------------------------------------------------------
+			client1, err := com.NewDockerClient()
+			_, err = client1.InspectImage(imageID)
+			if err != nil {
+				log.Debugf("Image %s does not exist locally, attempt pull", imageID)
+
+				err = client1.PullImage(docker.PullImageOptions{Repository: imageID}, docker.AuthConfiguration{})
+				if err != nil {
+					return fmt.Errorf("Failed to pull %s: %s", imageID, err)
+				}
+			}
+			err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
+			if err != nil {
+				return fmt.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
+			}
 			//if builder != nil {
 			//	log.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
 			//		"attempt to recreate image", imageID, containerID, err)
