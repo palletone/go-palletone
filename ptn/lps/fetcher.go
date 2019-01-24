@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -31,7 +33,19 @@ const (
 	retryQueue         = time.Millisecond * 100
 	softRequestTimeout = time.Millisecond * 500
 	hardRequestTimeout = time.Second * 10
+
+	arriveTimeout = 500 * time.Millisecond // Time allowance before an announced block is explicitly requested
+	gatherSlack   = 100 * time.Millisecond // Interval used to collate almost-expired announces with fetches
+	fetchTimeout  = 5 * time.Second        // Maximum allotted time to return an explicitly requested block
+	maxUncleDist  = 14                     /*7*/ // Maximum allowed backward distance from the chain head
+	maxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
+	hashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
+	blockLimit    = 64                     // Maximum number of unique blocks a peer may have delivered
+
 )
+
+// blockRetrievalFn is a callback type for retrieving a block from the local chain.
+type headerRetrievalFn func(common.Hash) (*modules.Header, error)
 
 // headerRequesterFn is a callback type for sending a header retrieval request.
 type headerRequesterFn func(common.Hash) error
@@ -40,13 +54,13 @@ type headerRequesterFn func(common.Hash) error
 type headerVerifierFn func(header *modules.Header) error
 
 // blockBroadcasterFn is a callback type for broadcasting a block to connected peers.
-type headerBroadcasterFn func(block *modules.Unit, propagate bool)
+type headerBroadcasterFn func(block *modules.Header, propagate bool)
 
 // chainHeightFn is a callback type to retrieve the current chain height.
-//type chainHeightFn func(assetId modules.IDType16) uint64
+type lightChainHeightFn func(assetId modules.IDType16) uint64
 
 // chainInsertFn is a callback type to insert a batch of blocks into the local chain.
-type headerInsertFn func(modules.Units) (int, error)
+type headerInsertFn func(header modules.Header) (int, error)
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.
 type peerDropFn func(id string)
@@ -82,6 +96,7 @@ type announce struct {
 // and scheduling them for retrieval.
 type lightFetcher struct {
 	// Various event channels
+	notify chan *announce
 	inject chan *inject
 
 	//blockFilter  chan chan []*modules.Unit
@@ -103,10 +118,333 @@ type lightFetcher struct {
 	queued map[common.Hash]*inject // Set of already queued blocks (to dedupe imports)
 
 	// Callbacks
-	verifyHeader    headerVerifierFn    // Checks if a block's headers have a valid proof of work
-	broadcastHeader headerBroadcasterFn // Broadcasts a block to connected peers
-	insertHeader    headerInsertFn      // Injects a batch of blocks into the chain
-	dropPeer        peerDropFn          // Drops a peer for misbehaving
-	//getBlock       blockRetrievalFn   // Retrieves a block from the local chain
-	//chainHeight     chainHeightFn       // Retrieves the current chain's height
+	verifyHeader     headerVerifierFn    // Checks if a block's headers have a valid proof of work
+	broadcastHeader  headerBroadcasterFn // Broadcasts a block to connected peers
+	insertHeader     headerInsertFn      // Injects a batch of blocks into the chain
+	dropPeer         peerDropFn          // Drops a peer for misbehaving
+	getHeader        headerRetrievalFn   // Retrieves a block from the local chain
+	lightChainHeight lightChainHeightFn  // Retrieves the current chain's height
+}
+
+// New creates a block fetcher to retrieve blocks based on hash announcements.
+func New(getHeader headerRetrievalFn, lightChainHeight lightChainHeightFn, verifyHeader headerVerifierFn, broadcastHeader headerBroadcasterFn, insertHeader headerInsertFn, dropPeer peerDropFn) *lightFetcher {
+	return &lightFetcher{
+		notify:           make(chan *announce),
+		inject:           make(chan *inject),
+		headerFilter:     make(chan chan *headerFilterTask),
+		done:             make(chan common.Hash),
+		quit:             make(chan struct{}),
+		announces:        make(map[string]int),
+		announced:        make(map[common.Hash][]*announce),
+		fetching:         make(map[common.Hash]*announce),
+		fetched:          make(map[common.Hash][]*announce),
+		completing:       make(map[common.Hash]*announce),
+		queue:            prque.New(),
+		queues:           make(map[string]int),
+		queued:           make(map[common.Hash]*inject),
+		verifyHeader:     verifyHeader,
+		broadcastHeader:  broadcastHeader,
+		insertHeader:     insertHeader,
+		lightChainHeight: lightChainHeight,
+		getHeader:        getHeader,
+		dropPeer:         dropPeer,
+	}
+}
+
+// Start boots up the announcement based synchroniser, accepting and processing
+// hash notifications and block fetches until termination requested.
+func (f *lightFetcher) Start() {
+	go f.loop()
+}
+
+// Stop terminates the announcement based synchroniser, canceling all pending
+// operations.
+func (f *lightFetcher) Stop() {
+	close(f.quit)
+}
+
+// Loop is the main fetcher loop, checking and processing various notification
+// events.
+func (f *lightFetcher) loop() {
+	// Iterate the block fetching until a quit is requested
+	//fetchTimer := time.NewTimer(0)
+	//completeTimer := time.NewTimer(0)
+
+	for {
+		// Clean up any expired block fetches
+		for hash, announce := range f.fetching {
+			if time.Since(announce.time) > fetchTimeout {
+				f.forgetHash(hash)
+			}
+		}
+		// Import any queued blocks that could potentially fit
+		var height uint64
+		for !f.queue.Empty() {
+			op := f.queue.PopItem().(*inject)
+
+			// If too high up the chain or phase, continue later
+			height = f.lightChainHeight(op.header.Number.AssetID)
+			number := op.header.Index()
+			if number > height+1 {
+				//f.queue.Push(op, -float32(op.unit.NumberU64()))
+				f.queue.Push(op, -float32(op.header.Index()))
+				break
+			}
+			// Otherwise if fresh and still unknown, try and import
+			hash := op.header.Hash()
+			block, _ := f.getHeader(hash)
+			if number+maxUncleDist < height || block != nil {
+				f.forgetBlock(hash)
+				continue
+			}
+			f.insert(op.origin, op.header)
+		}
+		// Wait for an outside event to occur
+		select {
+		case <-f.quit:
+			// Fetcher terminating, abort all operations
+			return
+			/*
+				case notification := <-f.notify:
+					// A block was announced, make sure the peer isn't DOSing us
+					count := f.announces[notification.origin] + 1
+					if count > hashLimit {
+						log.Debug("Peer exceeded outstanding announces", "peer", notification.origin, "limit", hashLimit)
+						break
+					}
+					// If we have a valid block number, check that it's potentially useful
+					if notification.number.Index > 0 {
+						if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
+							log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
+							break
+						}
+					}
+
+					// All is well, schedule the announce if block's not yet downloading
+					if _, ok := f.fetching[notification.hash]; ok {
+						break
+					}
+					if _, ok := f.completing[notification.hash]; ok {
+						break
+					}
+					f.announces[notification.origin] = count
+					f.announced[notification.hash] = append(f.announced[notification.hash], notification)
+
+					if len(f.announced) == 1 {
+						f.rescheduleFetch(fetchTimer)
+					}
+
+				case op := <-f.inject:
+					// A direct block insertion was requested, try and fill any pending gaps
+					f.enqueue(op.origin, op.unit)
+
+				case hash := <-f.done:
+					// A pending import finished, remove all traces of the notification
+					f.forgetHash(hash)
+					f.forgetBlock(hash)
+
+				case <-fetchTimer.C:
+					// At least one block's timer ran out, check for needing retrieval
+					request := make(map[string][]common.Hash)
+
+					for hash, announces := range f.announced {
+						if time.Since(announces[0].time) > arriveTimeout-gatherSlack {
+							// Pick a random peer to retrieve from, reset all others
+							announce := announces[rand.Intn(len(announces))]
+							f.forgetHash(hash)
+
+							// If the block still didn't arrive, queue for fetching
+							block, _ := f.getBlock(hash)
+							if block == nil {
+								request[announce.origin] = append(request[announce.origin], hash)
+								f.fetching[hash] = announce
+							}
+						}
+					}
+					log.Debug("===fetcher <-fetchTimer.C===", "len(request):", len(request))
+					// Send out all block header requests
+					for peer, hashes := range request {
+						log.Trace("Fetching scheduled headers", "peer", peer, "list", hashes)
+						// Create a closure of the fetch and schedule in on a new thread
+						fetchHeader, hashes := f.fetching[hashes[0]].fetchHeader, hashes
+						go func(fetchHeader headerRequesterFn, hashes []common.Hash) {
+							for _, hash := range hashes {
+								fetchHeader(hash) // Suboptimal, but protocol doesn't allow batch header retrievals
+							}
+						}(fetchHeader, hashes)
+					}
+					// Schedule the next fetch if blocks are still pending
+					f.rescheduleFetch(fetchTimer)
+
+				case <-completeTimer.C:
+					// At least one header's timer ran out, retrieve everything
+					request := make(map[string][]common.Hash)
+
+					for hash, announces := range f.fetched {
+						// Pick a random peer to retrieve from, reset all others
+						announce := announces[rand.Intn(len(announces))]
+						f.forgetHash(hash)
+
+						// If the block still didn't arrive, queue for completion
+						block, _ := f.getBlock(hash)
+						if block == nil {
+							request[announce.origin] = append(request[announce.origin], hash)
+							f.completing[hash] = announce
+						}
+					}
+					// Send out all block body requests
+					for peer, hashes := range request {
+						log.Trace("Fetching scheduled bodies", "peer", peer, "list", hashes)
+
+						// Create a closure of the fetch and schedule in on a new thread
+						go f.completing[hashes[0]].fetchBodies(hashes)
+					}
+					// Schedule the next fetch if blocks are still pending
+					f.rescheduleComplete(completeTimer)
+
+				case filter := <-f.headerFilter:
+					// Headers arrived from a remote peer. Extract those that were explicitly
+					// requested by the fetcher, and return everything else so it's delivered
+					// to other parts of the system.
+					var task *headerFilterTask
+					select {
+					case task = <-filter:
+					case <-f.quit:
+						return
+					}
+
+					// Split the batch of headers into unknown ones (to return to the caller),
+					// known incomplete ones (requiring body retrievals) and completed blocks.
+					unknown, incomplete, complete := []*modules.Header{}, []*announce{}, []*modules.Unit{}
+					for _, header := range task.headers {
+						hash := header.Hash()
+
+						// Filter fetcher-requested headers from other synchronisation algorithms
+						if announce := f.fetching[hash]; announce != nil && announce.origin == task.peer && f.fetched[hash] == nil && f.completing[hash] == nil && f.queued[hash] == nil {
+							// If the delivered header does not match the promised number, drop the announcer
+							if header.Number.Index != announce.number.Index &&
+								header.Number.AssetID == announce.number.AssetID {
+								log.Trace("Invalid block number fetched", "peer", announce.origin, "hash", header.Hash(), "announced", announce.number, "provided", header.Number)
+								f.dropPeer(announce.origin)
+								f.forgetHash(hash)
+								continue
+							}
+							// Only keep if not imported by other means
+							blk, _ := f.getBlock(hash)
+							if blk == nil {
+								announce.header = header
+								announce.time = task.time
+
+								// If the block is empty (header only), short circuit into the final import queue
+								//TODO modify
+								if header.TxRoot == core.DeriveSha(modules.Transactions{}) {
+									log.Trace("Block empty, skipping body retrieval", "peer", announce.origin, "number", header.Number, "hash", header.Hash())
+
+									block := modules.NewUnitWithHeader(header)
+									block.ReceivedAt = task.time
+
+									complete = append(complete, block)
+									f.completing[hash] = announce
+									continue
+								}
+								// Otherwise add to the list of blocks needing completion
+								incomplete = append(incomplete, announce)
+							} else {
+								log.Trace("Block already imported, discarding header", "peer", announce.origin, "number", header.Number, "hash", header.Hash())
+								f.forgetHash(hash)
+							}
+						} else {
+							// Fetcher doesn't know about it, add to the return list
+							unknown = append(unknown, header)
+						}
+					}
+					select {
+					case filter <- &headerFilterTask{headers: unknown, time: task.time}:
+					case <-f.quit:
+						return
+					}
+					// Schedule the retrieved headers for body completion
+					for _, announce := range incomplete {
+						hash := announce.header.Hash()
+						if _, ok := f.completing[hash]; ok {
+							continue
+						}
+						f.fetched[hash] = append(f.fetched[hash], announce)
+						if len(f.fetched) == 1 {
+							f.rescheduleComplete(completeTimer)
+						}
+					}
+					// Schedule the header-only blocks for import
+					for _, block := range complete {
+						if announce := f.completing[block.Hash()]; announce != nil {
+							f.enqueue(announce.origin, block)
+						}
+					}
+			*/
+		}
+	}
+}
+
+func (f *lightFetcher) forgetHash(hash common.Hash) {
+
+}
+
+// forgetBlock removes all traces of a queued block from the fetcher's internal
+// state.
+func (f *lightFetcher) forgetBlock(hash common.Hash) {
+	if insert := f.queued[hash]; insert != nil {
+		f.queues[insert.origin]--
+		if f.queues[insert.origin] == 0 {
+			delete(f.queues, insert.origin)
+		}
+		delete(f.queued, hash)
+	}
+}
+
+// insert spawns a new goroutine to run a block insertion into the chain. If the
+// block's number is at the same height as the current import phase, it updates
+// the phase states accordingly.
+func (f *lightFetcher) insert(peer string, header *modules.Header) {
+	hash := header.Hash()
+
+	// Run the import on a new thread
+	log.Debug("Importing propagated block insert DAG", "peer", peer, "number", header.Index(), "hash", hash)
+	go func() {
+		defer func() { f.done <- hash }()
+
+		// If the parent's unknown, abort insertion
+		//parent := f.getBlock(block.ParentHash())
+		parentsHash := header.ParentsHash
+		for _, parentHash := range parentsHash {
+			had, _ := f.getHeader(parentHash)
+			if had == nil {
+				log.Debug("Unknown parent of propagated block", "peer", peer, "number", header.Number.Index, "hash", hash, "parent", parentHash)
+				return
+			}
+		}
+
+		// Quickly validate the header and propagate the block if it passes
+		switch err := f.verifyHeader(header); err {
+		case nil:
+			// All ok, quickly propagate to our peers
+			go f.broadcastHeader(header, true)
+
+		case dagerrors.ErrFutureBlock:
+			// Weird future block, don't fail, but neither propagate
+
+		default:
+			// Something went very wrong, drop the peer
+			log.Debug("Propagated block verification failed", "peer", peer, "number", header.Index(), "hash", hash, "err", err)
+			f.dropPeer(peer)
+			return
+		}
+		// Run the actual import and log any issues
+		if _, err := f.insertHeader(*header); err != nil {
+			log.Debug("Propagated block import failed", "peer", peer, "number", header.Index(), "hash", hash, "err", err)
+			return
+		}
+		// If import succeeded, broadcast the block
+		go f.broadcastHeader(header, false)
+
+	}()
 }
