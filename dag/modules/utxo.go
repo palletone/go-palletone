@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 var DAO uint64 = 100000000
@@ -205,7 +206,7 @@ func (outpoint *OutPoint) Bytes() []byte {
 	return data
 }
 func (outpoint *OutPoint) Hash() common.Hash {
-	v := rlp.RlpHash(outpoint)
+	v := util.RlpHash(outpoint)
 	return v
 }
 

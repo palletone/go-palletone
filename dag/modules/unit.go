@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 // validate unit state
@@ -109,7 +110,7 @@ func (h *Header) Hash() common.Hash {
 	emptyHeader.Authors = Authentifier{}
 	emptyHeader.GroupSign = nil
 	emptyHeader.GroupPubKey = nil
-	return rlp.RlpHash(emptyHeader)
+	return  util.RlpHash(emptyHeader)
 }
 
 // HashWithOutTxRoot return  header's hash without txs root.
@@ -125,7 +126,7 @@ func (h *Header) HashWithOutTxRoot() common.Hash {
 		log.Error("json marshal error", "error", err)
 		return common.Hash{}
 	}
-	return rlp.RlpHash(b[:])
+	return util.RlpHash(b[:])
 
 }
 
