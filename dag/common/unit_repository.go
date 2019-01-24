@@ -1049,14 +1049,14 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 func (rep *UnitRepository) saveContractDeployReq(msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
-	payload, ok := pl.(*modules.ContractDeployPayload)
+	payload, ok := pl.(*modules.ContractDeployRequestPayload)
 	if ok == false {
 		log.Error("saveContractDeployReq", "error", "payload is not ContractDeployReq type.")
 		return false
 	}
 	log.Debug("DeployReq payload", "info", payload)
 	// 模板id , 合约id , name
-	err := rep.statedb.SaveContractDeploy(payload)
+	err := rep.statedb.SaveContractDeployReq(payload)
 	if err != nil {
 		log.Info("save contract deploy payload failed,", "error", err)
 		return false

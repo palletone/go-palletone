@@ -86,6 +86,7 @@ type dags interface {
 	CurrentUnit() *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
@@ -182,7 +183,7 @@ type TxPool struct {
 	orphans       map[common.Hash]*modules.TxPoolTransaction                      // 孤儿交易缓存池
 	orphansByPrev map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction // 缓存 orphanTx input's utxo
 	addrTxs       map[string][]*modules.TxPoolTransaction                         // 缓存 地址对应的交易列表
-	outputs       map[modules.OutPoint]common.Hash                                // 缓存 交易的outputs
+	outputs       map[modules.OutPoint]*modules.Utxo                              // 缓存 交易的outputs
 	//addrOutpoints map[string][]*modules.OutPoint
 
 	mu             *sync.RWMutex
@@ -241,7 +242,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		orphans:        make(map[common.Hash]*modules.TxPoolTransaction),
 		orphansByPrev:  make(map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction),
 		addrTxs:        make(map[string][]*modules.TxPoolTransaction),
-		outputs:        make(map[modules.OutPoint]common.Hash),
+		outputs:        make(map[modules.OutPoint]*modules.Utxo),
 	}
 	pool.mu = new(sync.RWMutex)
 	pool.locals = newUtxoSet()
@@ -640,7 +641,9 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, script := range msg.Inputs {
-					txpool_tx.From = append(txpool_tx.From, script.PreviousOutPoint)
+					if script.PreviousOutPoint != nil {
+						txpool_tx.From = append(txpool_tx.From, script.PreviousOutPoint)
+					}
 				}
 			}
 		}
@@ -648,12 +651,13 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
-	// 如果是孤兒交易，則先不計算交易的優先級。
-	if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
+	// 孤兒交易和非孤兒的交易費分开计算。
+	//if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
+	//	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
+	//}
+	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 
-		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
-		txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
-	}
+	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
 	txpool_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
 	return txpool_tx
 }
@@ -783,27 +787,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
 	pool.all[hash] = tx
-	for i, msgcopy := range tx.Tx.TxMessages {
-		if msgcopy.App == modules.APP_PAYMENT {
-			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for _, txin := range msg.Inputs {
-					if pool.outpoints == nil {
-						pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
-					}
-					pool.outpoints[*txin.PreviousOutPoint] = tx
-				}
-
-				for j := range msg.Outputs {
-					if pool.outputs == nil {
-						pool.outputs = make(map[modules.OutPoint]common.Hash)
-					}
-					preout.MessageIndex = uint32(i)
-					preout.OutIndex = uint32(j)
-					pool.outputs[preout] = hash
-				}
-			}
-		}
-	}
+	pool.addCache(tx)
 	pool.priority_priced.Put(tx)
 	pool.journalTx(tx)
 
@@ -920,7 +904,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 		}
 	}
 
-	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
+	//go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
 }
 
 // AddLocal enqueues a single transaction into the pool if it is valid, marking
@@ -1317,6 +1301,7 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 							for _, input := range payment.Inputs {
 								delete(pool.outpoints, *input.PreviousOutPoint)
 							}
+							// delete outputs's utxo
 							preout := modules.OutPoint{TxHash: hash}
 							for j := range payment.Outputs {
 								preout.MessageIndex = uint32(i)
@@ -1341,14 +1326,8 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	if !ok {
 		return
 	}
-	if tx.Tx.Hash() != hash {
-		tx.Confirmed = true
-		pool.all[tx.Tx.Hash()] = tx
-		//delete(pool.all, tx.Tx.Hash())
-	}
 	// Remove it from the list of known transactions
 	//delete(pool.all, hash)
-
 	pool.priority_priced.Removed(hash)
 	tx.Confirmed = true
 	pool.all[hash] = tx
@@ -1374,20 +1353,26 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 		}
 	}
 
-	// if removed, invalids := pending.Remove(tx); removed {
-	// 	// If no more pending transactions are left, remove the list
-	// 	if pending.Empty() {
-	// 		delete(pool.pending, hash)
-	// 		from := modules.MsgstoAddress(tx.TxMessages)
-	// 		delete(pool.beats, from)
-	// 	}
-	// 	// Postpone any invalidated transactions
-	// 	for _, tx := range invalids {
-	// 		pool.enqueueTx(tx.TxHash, tx)
-	// 	}
-	// 	return
-	// }
-
+	for i, msg := range tx.Tx.Messages() {
+		if msg.App == modules.APP_PAYMENT {
+			payment, ok := msg.Payload.(*modules.PaymentPayload)
+			if ok {
+				for _, input := range payment.Inputs {
+					// 排除手续费的输入为nil
+					if input.PreviousOutPoint != nil {
+						delete(pool.outpoints, *input.PreviousOutPoint)
+					}
+				}
+				// delete outputs's utxo
+				preout := modules.OutPoint{TxHash: hash}
+				for j := range payment.Outputs {
+					preout.MessageIndex = uint32(i)
+					preout.OutIndex = uint32(j)
+					delete(pool.outputs, preout)
+				}
+			}
+		}
+	}
 }
 func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
 	pool.mu.Lock()
@@ -1762,9 +1747,9 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 		tx, _ := pool.all[hash]
 		tx.Discarded = true
 		pool.all[hash] = tx
+
 	}
 	// not in pool
-
 	return nil
 }
 func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
@@ -1820,10 +1805,41 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction)
 	p_tx := TxtoTxpoolTx(pool, tx)
 	pool.all[hash] = p_tx
 	// TODO 将该交易的输入输出缓存到交易池
+	pool.addCache(p_tx)
 	pool.promoteTx(unit_hash, p_tx)
 	return nil
 }
-
+func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
+	if tx == nil {
+		return
+	}
+	for i, msgcopy := range tx.Tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
+				for _, txin := range msg.Inputs {
+					if pool.outpoints == nil {
+						pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
+					}
+					if txin.PreviousOutPoint != nil {
+						pool.outpoints[*txin.PreviousOutPoint] = tx
+					}
+				}
+				// add utxo in outputs
+				preout := modules.OutPoint{TxHash: tx.Tx.Hash()}
+				for j, out := range msg.Outputs {
+					if pool.outputs == nil {
+						pool.outputs = make(map[modules.OutPoint]*modules.Utxo)
+					}
+					preout.MessageIndex = uint32(i)
+					preout.OutIndex = uint32(j)
+					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{out.Asset.AssetId, out.Asset.UniqueId},
+						PkScript: out.PkScript[:]}
+					pool.outputs[preout] = utxo
+				}
+			}
+		}
+	}
+}
 func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
@@ -1975,6 +1991,58 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 }
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
+	hash := tx.Hash()
+
+	// if the tx is not confired ,do this
+	if pool.isTransactionInPool(hash) {
+		// in txpool
+		if ptx, has := pool.all[hash]; has {
+			if !ptx.Pending {
+				// 直接在交易池计算交易费。
+				for _, msg := range tx.Messages() {
+					if msg.App == modules.APP_PAYMENT {
+						payment, ok := msg.Payload.(*modules.PaymentPayload)
+						if ok {
+							inAmount := uint64(0)
+							outAmount := uint64(0)
+							for _, txin := range payment.Inputs {
+								if utxo, has := pool.outputs[*txin.PreviousOutPoint]; has {
+									inAmount += utxo.Amount
+								}
+							}
+							for _, txout := range payment.Outputs {
+								outAmount += txout.Value
+							}
+							// check overflow
+							if inAmount > (1<<64 - 1) {
+								return nil, errors.New("Compute fees: txin total overflow")
+							}
+							if outAmount > (1<<64 - 1) {
+								return nil, errors.New("Compute fees: txout total overflow")
+							}
+							fees := inAmount - outAmount
+							if fees < 0 {
+								return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ",
+									hash.String(), inAmount, outAmount)
+							}
+							return &modules.AmountAsset{Amount: fees, Asset: payment.Outputs[0].Asset}, nil
+						}
+					}
+				}
+			}
+		} else { // in orphanTx pool
+			if ptx, has := pool.orphans[hash]; has {
+				if !ptx.Pending {
+					// 没打包的孤儿交易不需要计算交易费
+
+				}
+			}
+		}
+	}
+	if _, _, err := pool.unit.GetTransactionByHash(hash); err != nil {
+		// 既不在交易池，也没确认的交易（无效交易）
+		return nil, errors.New(fmt.Sprintf("%s (hash: %s)", err.Error(), hash.String()))
+	}
 	return pool.unit.GetTxFee(tx)
 }
 
