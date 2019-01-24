@@ -309,10 +309,10 @@ func (c *Console) Welcome() {
 	fmt.Fprintf(c.printer, "Welcome to the Gptn JavaScript console!\n\n")
 	c.jsre.Run(`
 		console.log("instance: " + web3.version.node);
-		console.log("coinbase: " + ptn.coinbase);
 		console.log("at block: " + ptn.blockNumber + " (" + new Date(1000 * ptn.getBlock(ptn.blockNumber).timestamp) + ")");
 		console.log(" datadir: " + admin.datadir);
 	`)
+	//console.log("coinbase: " + ptn.coinbase);
 	// List all the supported modules for the user to call
 	if apis, err := c.client.SupportedModules(); err == nil {
 		modules := make([]string, 0, len(apis))
