@@ -289,7 +289,14 @@ func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
-
+func (b *PtnApiBackend) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
+	units := b.ptn.dag.GetUnstableUnits()
+	result := make([]*ptnjson.UnitSummaryJson, len(units))
+	for i, unit := range units {
+		result[i] = ptnjson.ConvertUnit2SummaryJson(unit)
+	}
+	return result
+}
 func (b *PtnApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 	unit, err := b.ptn.dag.GetUnitByHash(hash)
 	if err != nil {

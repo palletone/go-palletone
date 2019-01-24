@@ -283,7 +283,14 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			log.Debug("This is a fork unit")
 			if unit.NumberU64() > chain.lastMainchainUnit.NumberU64() { //Need switch main chain
 				//switch main chain, build db
-				chain.switchMainChain(unit, txpool)
+				//如果分支上的确认数大于等于当前主链，则切换主链
+				oldMainchainAddrCount := chain.getChainAddressCount(chain.lastMainchainUnit)
+				forkChainAddrCount := chain.getChainAddressCount(unit)
+				if forkChainAddrCount >= oldMainchainAddrCount {
+					chain.switchMainChain(unit, txpool)
+				} else {
+					log.Infof("Unit[%s] is in fork chain, and address count=%d, less than main chain address count=%d", unit.Hash().String(), forkChainAddrCount, oldMainchainAddrCount)
+				}
 			}
 		}
 
@@ -295,6 +302,18 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		chain.orphanUnits[uHash] = unit
 	}
 	return nil
+}
+
+//计算一个单元到稳定单元之间有多少个确认地址数
+func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
+	addrs := map[common.Address]bool{}
+	unitHash := lastUnit.Hash()
+	for unitHash != chain.stableUnitHash {
+		unit := chain.chainUnits[unitHash]
+		addrs[unit.Author()] = true
+		unitHash = unit.ParentHash()[0]
+	}
+	return len(addrs)
 }
 
 func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPool) {

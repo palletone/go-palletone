@@ -213,7 +213,16 @@ func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	//log.Debug("Dag", "GetUnitByNumber getChainUnit(hash):", hash)
 	return d.unstableUnitRep.GetUnit(hash)
 }
-
+func (d *Dag) GetUnstableUnits() []*modules.Unit {
+	units := d.Memdag.GetChainUnits()
+	result := make([]*modules.Unit, len(units))
+	i := 0
+	for _, u := range units {
+		result[i] = u
+		i++
+	}
+	return result
+}
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	//if d.Memdag.Exists(hash) {
 	//	unit, err := d.Memdag.getChainUnit(hash)
