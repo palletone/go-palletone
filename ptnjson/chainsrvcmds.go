@@ -345,6 +345,7 @@ func NewSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput, privKey
 
 type SignRawTransactionResult struct {
 	Hex      string                    `json:"hex"`
+	Txid     string                    `json:"txid"`
 	Complete bool                      `json:"complete"`
 	Errors   []SignRawTransactionError `json:"errors,omitempty"`
 }

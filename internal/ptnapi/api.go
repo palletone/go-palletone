@@ -2114,6 +2114,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
 	return ptnjson.SignRawTransactionResult{
 		Hex:      signedHex,
+		Txid:     tx.Hash().String(),
 		Complete: len(signErrors) == 0,
 		Errors:   signErrors,
 	}, nil
