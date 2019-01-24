@@ -193,7 +193,7 @@ func (tx *Transaction) Hash() common.Hash {
 	//}
 	//func (tx *Transaction) Hash_old() common.Hash {
 
-	v := rlp.RlpHash(tx)
+	v := rlp.(tx)
 	return v
 }
 
