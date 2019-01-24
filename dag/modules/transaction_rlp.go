@@ -24,7 +24,7 @@ import (
 	"io"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	vote2 "github.com/palletone/go-palletone/dag/vote"
 )
 
