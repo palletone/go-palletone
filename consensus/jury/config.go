@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	DefaultPassword    = "password"
-	DefaultInitPartSec = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
+	DefaultContractSigNum = 3
+	DefaultPassword       = "password"
+	DefaultInitPartSec    = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
 )
 
 var (
@@ -27,7 +28,8 @@ type JuryAccount struct {
 	Password string
 }
 type Config struct {
-	Accounts []*AccountConf // the set of the mediator info
+	ContractSigNum int
+	Accounts       []*AccountConf // the set of the mediator info
 }
 
 func (aConf *AccountConf) configToAccount() *JuryAccount {
@@ -41,6 +43,7 @@ func (aConf *AccountConf) configToAccount() *JuryAccount {
 }
 
 var DefaultConfig = Config{
+	ContractSigNum: 3,
 	Accounts: []*AccountConf{
 		&AccountConf{core.DefaultJuryAddr, DefaultPassword},
 	},

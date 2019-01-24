@@ -92,7 +92,6 @@ type contractTx struct {
 	rcvTx []*modules.Transaction //todo 本地没有没有接收过请求合约，缓存已经签名合约
 	tm    time.Time              //create time
 	valid bool                   //contract request valid identification
-	//executable bool                   //contract executable,sys on mediator, user on jury
 }
 
 type Processor struct {
@@ -105,6 +104,7 @@ type Processor struct {
 	quit     chan struct{}
 	mtx      map[common.Hash]*contractTx //all contract buffer
 
+	contractSigNum    int
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
 	contractSigFeed   event.Feed
@@ -123,14 +123,15 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	}
 
 	p := &Processor{
-		name:     "conractProcessor",
-		ptn:      ptn,
-		dag:      dag,
-		contract: contract,
-		local:    accounts,
-		locker:   new(sync.Mutex),
-		quit:     make(chan struct{}),
-		mtx:      make(map[common.Hash]*contractTx),
+		name:           "conractProcessor",
+		ptn:            ptn,
+		dag:            dag,
+		contract:       contract,
+		local:          accounts,
+		locker:         new(sync.Mutex),
+		quit:           make(chan struct{}),
+		mtx:            make(map[common.Hash]*contractTx),
+		contractSigNum: cfg.ContractSigNum,
 	}
 
 	log.Info("NewContractProcessor ok", "local address:", p.local)
@@ -314,7 +315,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 
-func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
+func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
