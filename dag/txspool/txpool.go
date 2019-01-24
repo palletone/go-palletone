@@ -2166,11 +2166,11 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 		return false, errors.New("this tx's message is null.")
 	}
 
-	for i, msg := range tx.Messages() {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
-				for j, in := range payment.Inputs {
+				for _, in := range payment.Inputs {
 					utxo, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
 					if err != nil && err == errors.ErrUtxoNotFound {
 						// validate utxo in pool
@@ -2193,11 +2193,11 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 					}
 
 					// 验证outputs缓存的utxo
-					hash := tx.Hash()
+					/*hash := tx.Hash()
 					preout := modules.OutPoint{hash, uint32(i), uint32(j)}
 					if _, has := pool.outputs[preout]; !has {
 						return false, nil
-					}
+					}*/
 					//log.Debug("valide outputs failed.")
 					//return true, errors.New("validate outputs failed.")
 					return true, nil
