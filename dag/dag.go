@@ -754,7 +754,6 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 }
 
 func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
-	//TODO maybe utxo is in txpool
 	return d.unstableUtxoRep.ComputeTxFee(pay)
 }
 func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
