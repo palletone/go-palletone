@@ -394,6 +394,15 @@ type TxLookupEntry struct {
 	Index     uint64      `json:"index"`
 }
 type Transactions []*Transaction
+
+func (txs Transactions) GetTxIds() []common.Hash {
+	ids := make([]common.Hash, len(txs))
+	for i, tx := range txs {
+		ids[i] = tx.Hash()
+	}
+	return ids
+}
+
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
 }
@@ -415,9 +424,9 @@ func (outpoint *OutPoint) String() string {
 	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]", outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
 }
 
-func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
+func NewOutPoint(hash common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 	return &OutPoint{
-		TxHash:       *hash,
+		TxHash:       hash,
 		MessageIndex: messageindex,
 		OutIndex:     outindex,
 	}

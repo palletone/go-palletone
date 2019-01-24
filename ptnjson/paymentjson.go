@@ -89,7 +89,7 @@ func ConvertJson2Payment(json *PaymentJson) modules.PaymentPayload {
 	payment := modules.PaymentPayload{}
 	payment.LockTime = json.LockTime
 	for _, in := range json.Inputs {
-		hash, _ := common.NewHashFromStr(in.TxHash)
+		hash:= common.HexToHash(in.TxHash)
 		outPoint := modules.NewOutPoint(hash, in.MessageIndex, in.OutIndex)
 		input := modules.NewTxIn(outPoint, []byte{})
 		payment.AddTxIn(input)

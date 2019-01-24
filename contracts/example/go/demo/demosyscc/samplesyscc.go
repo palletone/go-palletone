@@ -1064,8 +1064,8 @@ func calSigETH(args *[]string, stub *shim.ChaincodeStubInterface) pb.Response {
 }
 
 func main() {
-	err := shim.Start(new(SampleSysCC))
-	if err != nil {
-		fmt.Printf("Error starting Simple chaincode: %s", err)
-	}
+	//err := shim.Start(new(SampleSysCC))
+	//if err != nil {
+	//	fmt.Printf("Error starting Simple chaincode: %s", err)
+	//}
 }

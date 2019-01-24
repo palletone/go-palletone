@@ -878,8 +878,8 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 				if old.Pending || old.Confirmed {
 					// An older transaction was better, discard this
 					old.Discarded = true
-					pool.all[hash] = old
-					pool.priority_priced.Removed(hash)
+					pool.all[tx_hash] = old
+					pool.priority_priced.Removed(tx_hash)
 					return
 				}
 			}
@@ -891,38 +891,28 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 		pool.priority_priced.Removed(old.Tx.Hash())
 	}
 	// Failsafe to work around direct pending inserts (tests)
-	if pool.all[tx_hash] == nil {
-		tx.Pending = true
-		pool.all[tx_hash] = tx
-		list := pool.pending[hash]
-		if list == nil {
-			list = make([]*modules.TxPoolTransaction, 0)
-		}
+	tx.Pending = true
+	tx.Discarded = false
+	tx.Confirmed = false
+	list := pool.pending[hash]
+	if list == nil {
+		list = make([]*modules.TxPoolTransaction, 0)
 		list = append(list, tx)
-		pool.pending[hash] = list
-
 	} else {
-		tx.Pending = true
-		list := pool.pending[hash]
-		if list == nil {
-			list = make([]*modules.TxPoolTransaction, 0)
-			list = append(list, tx)
-		} else {
-			var exist bool
-			for i, this := range list {
-				if this.Tx.Hash().String() == tx.Tx.Hash().String() {
-					list[i] = tx
-					exist = true
-					break
-				}
-			}
-			if !exist {
-				list = append(list, tx)
+		var exist bool
+		for i, this := range list {
+			if this.Tx.Hash().String() == tx.Tx.Hash().String() {
+				list[i] = tx
+				exist = true
+				break
 			}
 		}
-		pool.pending[hash] = list
-		pool.all[hash] = old
+		if !exist {
+			list = append(list, tx)
+		}
 	}
+	pool.pending[hash] = list
+	pool.all[tx_hash] = tx
 	// Set the potentially new pending nonce and notify any subsystems of the new tx
 	if len(tx.From) > 0 {
 		for _, from := range tx.From {
@@ -1777,6 +1767,63 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 
 	return nil
 }
+func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+	for _, tx := range txs {
+		err := pool.setPendingTx(unit_hash, tx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction) error {
+	hash := tx.Hash()
+	if pool.isTransactionInPool(hash) {
+		// in orphan pool
+		if pool.isOrphanInPool(hash) {
+			tx, _ := pool.orphans[hash]
+			tx.Pending = true
+			tx.Confirmed = false
+			tx.Discarded = false
+			pool.orphans[hash] = tx
+		}
+		// in all pool
+		tx, _ := pool.all[hash]
+		tx.Pending = true
+		tx.Confirmed = false
+		tx.Discarded = false
+		pool.all[hash] = tx
+		//  pending
+		list := pool.pending[unit_hash]
+		if list == nil {
+			list = make([]*modules.TxPoolTransaction, 0)
+			list = append(list, tx)
+		} else {
+			var exist bool
+			for i, this := range list {
+				if this.Tx.Hash().String() == tx.Tx.Hash().String() {
+					list[i] = tx
+					exist = true
+					break
+				}
+			}
+			if !exist {
+				list = append(list, tx)
+			}
+		}
+		pool.pending[hash] = list
+		return nil
+	}
+	// add in pool
+	p_tx := TxtoTxpoolTx(pool, tx)
+	pool.all[hash] = p_tx
+	// TODO 将该交易的输入输出缓存到交易池
+	pool.promoteTx(unit_hash, p_tx)
+	return nil
+}
+
 func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
@@ -2119,11 +2166,11 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 		return false, errors.New("this tx's message is null.")
 	}
 
-	for i, msg := range tx.Messages() {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
-				for j, in := range payment.Inputs {
+				for _, in := range payment.Inputs {
 					utxo, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
 					if err != nil && err == errors.ErrUtxoNotFound {
 						// validate utxo in pool
@@ -2146,11 +2193,11 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 					}
 
 					// 验证outputs缓存的utxo
-					hash := tx.Hash()
+					/*hash := tx.Hash()
 					preout := modules.OutPoint{hash, uint32(i), uint32(j)}
 					if _, has := pool.outputs[preout]; !has {
 						return false, nil
-					}
+					}*/
 					//log.Debug("valide outputs failed.")
 					//return true, errors.New("validate outputs failed.")
 					return true, nil

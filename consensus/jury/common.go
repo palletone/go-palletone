@@ -7,7 +7,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
+	//"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -307,30 +307,31 @@ func checkTxValid(tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
-	var sigs []modules.SignatureSet
-	tmpTx := &modules.Transaction{}
-	//todo 检查msg的有效性
-
-	for _, msg := range tx.TxMessages {
-		if msg.App == modules.APP_SIGNATURE {
-			sigs = msg.Payload.(*modules.SignaturePayload).Signatures
-		} else {
-			tmpTx.TxMessages = append(tmpTx.TxMessages, msg)
-		}
-	}
+	//var sigs []modules.SignatureSet
+	//tmpTx := &modules.Transaction{}
+	////todo 检查msg的有效性
+	//
+	//for _, msg := range tx.TxMessages {
+	//	if msg.App == modules.APP_SIGNATURE {
+	//		sigs = msg.Payload.(*modules.SignaturePayload).Signatures
+	//	} else {
+	//		tmpTx.TxMessages = append(tmpTx.TxMessages, msg)
+	//	}
+	//}
 	//printTxInfo(tmpTx)
-	if len(sigs) > 0 {
-		for i := 0; i < len(sigs); i++ {
-
-			if !keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) {
-				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
-				//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
-				//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
-				//return false
-				return true
-			}
-		}
-	}
+	//TODO VerifyTXWithPK has a bug, fix it soon...
+	//if len(sigs) > 0 {
+	//	for i := 0; i < len(sigs); i++ {
+	//
+	//		if !keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) {
+	//			log.Error("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
+	//			//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
+	//			//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
+	//			//return false
+	//			return true
+	//		}
+	//	}
+	//}
 
 	return true
 }

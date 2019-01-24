@@ -27,7 +27,7 @@ func TestTransactionJson(t *testing.T) {
 	output := NewTxOut(99999999999999999, []byte{0xee, 0xbb}, NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-	input := NewTxIn(NewOutPoint(&hash, 0, 1), []byte{})
+	input := NewTxIn(NewOutPoint(hash, 0, 1), []byte{})
 	pay1s.AddTxIn(input)
 	msg := &Message{
 		App:     APP_PAYMENT,
@@ -116,7 +116,7 @@ func newTestTx() *Transaction {
 	output := NewTxOut(1, []byte{0xee, 0xbb}, NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-	input := NewTxIn(NewOutPoint(&hash, 0, 1), []byte{})
+	input := NewTxIn(NewOutPoint(hash, 0, 1), []byte{})
 	pay1s.AddTxIn(input)
 	pay1s.AddTxIn(NewTxIn(nil, []byte("Coinbase")))
 	msg := &Message{
