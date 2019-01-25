@@ -241,10 +241,6 @@ func (f *lightFetcher) loop() {
 						f.rescheduleFetch(fetchTimer)
 					}
 
-				case op := <-f.inject:
-					// A direct block insertion was requested, try and fill any pending gaps
-					f.enqueue(op.origin, op.unit)
-
 				case hash := <-f.done:
 					// A pending import finished, remove all traces of the notification
 					f.forgetHash(hash)
