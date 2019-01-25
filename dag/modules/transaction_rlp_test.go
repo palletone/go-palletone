@@ -2,31 +2,92 @@ package modules
 
 import (
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/google/go-cmp/cmp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestInput_RLP(t *testing.T) {
-	input:=NewTxIn(NewOutPoint(common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"),123,9999),[]byte{1,2,3})
-	bytes,err:= rlp.EncodeToBytes(input)
-	assert.Nil(t,err)
-	t.Logf("Rlp data:%x",bytes)
-	input2:=&Input{}
-	err=rlp.DecodeBytes(bytes,input2)
-	assert.Nil(t,err)
+
+type TestA struct {
+	A        uint64
+	B        string
+	Parent   *TestA
+	Children []*TestA
 }
 
+type TestInput struct {
+	SignatureScript  []byte    `json:"signature_script"`
+	Extra            []byte    `json:"extra"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
+
+}
+
+type TestOutput struct {
+	TxHash       common.Hash `json:"txhash"`        // reference Utxo struct key field
+	MessageIndex uint32      `json:"message_index"` // message index in transaction
+	OutIndex     uint32      `json:"out_index"`
+}
+func TestCompare(t *testing.T) {
+	//a1 := &TestA{A: 1, B: "A1"}
+	//a2 := &TestA{A: 2, B: "A2"}
+	//a3 := &TestA{A: 3, B: "A3", Parent: a1}
+	//a11 := &TestA{A: 1, B: "A1"}
+	//a22 := &TestA{A: 2, B: "A2", Parent: &TestA{}}
+
+	//b1 := &TestB{A: 2, B: "A2",Parent:nil}
+	//b1 := NewTestB(nil,[]byte("aaa"))
+	//b2 := &TestB{A: 3, B: "A3", Parent: b1}
+	//
+	input:= &Input{}
+	input.Extra=[]byte("aaa")
+	t.Logf("data",input.PreviousOutPoint)
+	t.Logf("data",input)
+	bytes,err:= rlp.EncodeToBytes(input)
+	assert.Nil(t,err)
+	t.Logf("Rlp data:%x",bytes)
+	input1:=&Input{}
+	err=rlp.DecodeBytes(bytes,input1)
+	t.Logf("data",input1)
+	assert.Nil(t,err)
+
+	//assert.True(t, cmp.Equal(a1, a11))
+	//assert.False(t, cmp.Equal(a2, a22))
+	//assert.True(t, cmp.Equal(a3.Parent, a11))
+}
+
+func NewTestTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
+	return &Input{
+		PreviousOutPoint: prevOut,
+		SignatureScript:  signatureScript,
+	}
+}
+
+//func TestInput_RLP(t *testing.T) {
+//	input:=NewTxIn(NewOutPoint(common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"),123,9999),[]byte{1,2,3})
+//	bytes,err:= rlp.EncodeToBytes(input)
+//	assert.Nil(t,err)
+//	t.Logf("Rlp data:%x",bytes)
+//	input2:=&Input{}
+//	err=rlp.DecodeBytes(bytes,input2)
+//	assert.Nil(t,err)
+//}
+
 func TestCoinbaseInput_RLP(t *testing.T) {
-	input:=NewTxIn(nil,nil)
-	input.Extra=[]byte{0xff,0xee}
+	input:=NewTxIn(nil,[]byte(""))
+	input.Extra=[]byte{1,2,3}
+	//ptr := *(*byte)(unsafe.Pointer(&input))
+	t.Logf("data",input)
+	t.Logf("data",input.PreviousOutPoint)
+	t.Logf("data",len(input.SignatureScript))
 	bytes,err:= rlp.EncodeToBytes(input)
 	assert.Nil(t,err)
 	t.Logf("Rlp data:%x",bytes)
 	input2:=&Input{}
 	err=rlp.DecodeBytes(bytes,input2)
-	assert.Nil(t,err)
+	t.Logf("data",input2)
+	t.Logf("data",len(input2.SignatureScript))
+	//assert.Nil(t,err)
+	assert.Equal(t,input,input2)
 }
 func TestHash_Rlp(t *testing.T){
 	type A struct{
@@ -194,21 +255,4 @@ func TestHash_Rlp(t *testing.T){
 
 }
 
-type TestA struct {
-	A        int
-	B        string
-	Parent   *TestA
-	Children []*TestA
-}
-
-func TestCompare(t *testing.T) {
-	a1 := &TestA{A: 1, B: "A1"}
-	a2 := &TestA{A: 2, B: "A2"}
-	a3 := &TestA{A: 3, B: "A3", Parent: a1}
-	a11 := &TestA{A: 1, B: "A1"}
-	a22 := &TestA{A: 2, B: "A2", Parent: &TestA{}}
-	assert.True(t, cmp.Equal(a1, a11))
-	assert.False(t, cmp.Equal(a2, a22))
-	assert.True(t, cmp.Equal(a3.Parent, a11))
-}
 

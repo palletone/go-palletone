@@ -244,9 +244,9 @@ type Output struct {
 }
 
 type Input struct {
-	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
 	SignatureScript  []byte    `json:"signature_script"`
 	Extra            []byte    `json:"extra"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
 }
 
 // NewTxIn returns a new ptn transaction input with the provided
