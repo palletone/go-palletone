@@ -49,7 +49,7 @@ type PalletOne interface {
 	TxPool() txspool.ITxPool
 
 	MockContractLocalSend(event ContractEvent)
-	ContractBroadcast(event ContractEvent)
+	ContractBroadcast(event ContractEvent, local bool)
 	ElectionBroadcast(event ElectionEvent)
 
 	GetLocalMediators() []common.Address
@@ -226,12 +226,12 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 
 		if getTxSigNum(req.sigTx) >= p.contractSigNum  {
 			if localIsMinSignature(req.sigTx) {
-				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: req.sigTx})
+				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: req.sigTx}, true)
 				return nil
 			}
 		}
 		//广播
-		go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_SIG, Tx: sigTx})
+		go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_SIG, Tx: sigTx}, false)
 	}
 	return nil
 }
@@ -393,7 +393,7 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 		valid: true,
 	}
 	p.locker.Unlock()
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, false)
 
 	return req[:], nil
 }

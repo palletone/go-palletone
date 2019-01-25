@@ -63,7 +63,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction) error {
 		CType: CONTRACT_EVENT_EXEC,
 		Tx:    tx,
 	}
-	go p.ptn.ContractBroadcast(*event)
+	go p.ptn.ContractBroadcast(*event, false)
 
 	return nil
 }
@@ -90,7 +90,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction) error {
 	if ok, err := checkAndAddTxData(ctx.sigTx, tx); err == nil && ok {
 		if getTxSigNum(ctx.sigTx) >= p.contractSigNum {
 			if localIsMinSignature(ctx.sigTx) {
-				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: ctx.sigTx})
+				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: ctx.sigTx}, true)
 			}
 		}
 	} else if err != nil {

@@ -265,10 +265,10 @@ func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManag
 func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
 }
-func (s *PalletOne) ContractBroadcast(event jury.ContractEvent) {
-	s.protocolManager.ContractBroadcast(event)
+func (s *PalletOne) ContractBroadcast(event jury.ContractEvent, local bool) {
+	s.protocolManager.ContractBroadcast(event, local)
 }
-func (s *PalletOne)ElectionBroadcast(event jury.ElectionEvent){
+func (s *PalletOne) ElectionBroadcast(event jury.ElectionEvent) {
 	s.protocolManager.ElectionBroadcast(event)
 }
 func (s *PalletOne) GetLocalMediators() []common.Address {
