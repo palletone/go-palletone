@@ -23,8 +23,8 @@ import (
 	"errors"
 	"math/big"
 	"github.com/palletone/go-palletone/consensus/jury/vrf/edwards25519"
-	//"golang.org/x/crypto/ed25519"
-	ed25519 "github.com/dedis/kyber/group/edwards25519"
+	"golang.org/x/crypto/ed25519"
+	//ed25519 "github.com/dedis/kyber/group/edwards25519"
 )
 
 const (
