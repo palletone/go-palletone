@@ -972,11 +972,7 @@ func IsCoinBase(tx *modules.Transaction) bool {
 	if !ok {
 		return false
 	}
-	prevOut := msg.Inputs[0].PreviousOutPoint
-	if prevOut.TxHash != (common.Hash{}) {
-		return false
-	}
-	return true
+	return msg.IsCoinbase()
 }
 
 // maybeAcceptTransaction is the internal function which implements the public
