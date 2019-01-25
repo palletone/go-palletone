@@ -406,6 +406,52 @@ func (txs Transactions) GetTxIds() []common.Hash {
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
 }
+type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
+
+func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*PaymentPayload)
+		if ok == false {
+			continue
+		}
+		if payload.IsCoinbase() {
+			continue
+		}
+		inAmount := uint64(0)
+		outAmount := uint64(0)
+		for _, txin := range payload.Inputs {
+			utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
+			if utxo == nil {
+				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+					txin.PreviousOutPoint.TxHash.String(),
+					txin.PreviousOutPoint.MessageIndex,
+					txin.PreviousOutPoint.OutIndex)
+			}
+			// check overflow
+			if inAmount+utxo.Amount > (1<<64 - 1) {
+				return nil, fmt.Errorf("Compute fees: txin total overflow")
+			}
+			inAmount += utxo.Amount
+		}
+
+		for _, txout := range payload.Outputs {
+			// check overflow
+			if outAmount+txout.Value > (1<<64 - 1) {
+				return nil, fmt.Errorf("Compute fees: txout total overflow")
+			}
+			log.Debug("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
+			outAmount += txout.Value
+		}
+		if inAmount < outAmount {
+
+			return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+		}
+		fees := inAmount - outAmount
+		return &AmountAsset{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
+
+	}
+	return nil, fmt.Errorf("Compute fees: no payment payload")
+}
 
 //增发的利息
 type Addition struct {

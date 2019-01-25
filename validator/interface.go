@@ -37,11 +37,12 @@ type Validator interface {
 	ValidateUnitGroupSign(h *modules.Header) error
 }
 type IUtxoQuery interface {
-	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 }
 type IStateQuery interface {
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
+	//获得系统配置的最低手续费要求
+	GetMinFee() (*modules.AmountAsset, error)
 }
 type IDagQuery interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)

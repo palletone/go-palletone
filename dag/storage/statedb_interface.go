@@ -65,7 +65,7 @@ type IStateDb interface {
 	UpdateAccountInfoBalance(addr common.Address, addAmount int64) error
 	//AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
 	//GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
-
+	GetMinFee() (*modules.AmountAsset, error)
 	//GetSortedMediatorVote(returnNumber int) (map[string]uint64, error)
 	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
