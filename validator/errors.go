@@ -122,6 +122,8 @@ var validationCode_name = map[int32]string{
 }
 
 func NewValidateError(code ValidationCode) error {
-
+	if code == TxValidationCode_VALID {
+		return nil
+	}
 	return errors.New(validationCode_name[int32(code)])
 }

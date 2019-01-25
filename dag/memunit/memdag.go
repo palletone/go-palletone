@@ -56,7 +56,7 @@ func NewMemDag(token modules.IDType16, saveHeaderOnly bool, db ptndb.Database, s
 
 	stablehash, stbIndex, err := propRep.GetLastStableUnit(token)
 	if err != nil {
-		log.Errorf("Cannot retrieve last stable unit from db for token:%s", token.String())
+		log.Errorf("Cannot retrieve last stable unit from db for token:%s, you forget 'gptn init'??", token.String())
 		return nil
 	}
 	stableUnit, _ := stableUnitRep.GetUnit(stablehash)
