@@ -22,9 +22,9 @@ package validator
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
 )
