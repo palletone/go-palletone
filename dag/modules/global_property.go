@@ -58,11 +58,13 @@ func NewGlobalProp() *GlobalProperty {
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	//HeadUnitNum  uint64      // 最近的单元编号(数量)
-	//HeadUnitHash common.Hash // 最近的单元hash
-	//HeadUnitTime int64       // 最近的单元时间
+	//HeadUnitNum  uint64      // 最新单元的编号(数量)
+	//HeadUnitHash common.Hash // 最新单元的 hash
+	//HeadUnitTime int64       // 最新单元的时间
 
-	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
+	// 防止同一个mediator连续生产单元导致分叉
+	LastMediator       common.Address // 最新单元的生产 mediator
+	IsShuffledSchedule bool           // 标记 mediator 的调度顺序是否刚被打乱
 
 	NextMaintenanceTime int64 // 下一次系统维护时间
 	LastMaintenanceTime int64 // 上一次系统维护时间
@@ -91,9 +93,14 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
 		//HeadUnitNum:             0,
 		//HeadUnitHash:            common.Hash{},
+
+		LastMediator:       common.Address{},
+		IsShuffledSchedule: false,
+
 		NextMaintenanceTime: 0,
 		LastMaintenanceTime: 0,
 		CurrentASlot:        0,
+
 		//LastIrreversibleUnitNum: 0,
 		//NewestUnit:     map[IDType16]*UnitProperty{},
 		//LastStableUnit: map[IDType16]*UnitProperty{},
@@ -226,4 +233,18 @@ func InitDynGlobalProp(genesis *Unit) *DynamicGlobalProperty {
 	//dgp.SetNewestUnit(genesis.Header())
 	//dgp.SetLastStableUnit(genesis.Header())
 	return dgp
+}
+
+// UpdateDynGlobalProp, update global dynamic data
+// @author Albert·Gou
+func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits uint64) {
+	//dgp.HeadUnitNum = unit.NumberU64()
+	//dgp.HeadUnitHash = unit.Hash()
+	//dgp.HeadUnitTime = unit.Timestamp()
+	//dgp.SetNewestUnit(unit.Header())
+
+	dgp.LastMediator = unit.Author()
+	dgp.IsShuffledSchedule = false
+
+	dgp.CurrentASlot += missedUnits + 1
 }

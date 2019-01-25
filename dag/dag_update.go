@@ -73,6 +73,9 @@ func (dag *Dag) updateMediatorSchedule() {
 
 	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
 		dag.SaveMediatorSchl(ms, false)
+
+		dgp.IsShuffledSchedule = true
+		dag.SaveDynGlobalProp(dgp, false)
 	}
 
 	return

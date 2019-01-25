@@ -55,13 +55,3 @@ func NewMediatorSchl() *MediatorSchedule {
 		CurrentShuffledMediators: []common.Address{},
 	}
 }
-
-// UpdateDynGlobalProp, update global dynamic data
-// @author Albert·Gou
-func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits uint64) {
-	//dgp.HeadUnitNum = unit.NumberU64()
-	//dgp.HeadUnitHash = unit.Hash()
-	//dgp.HeadUnitTime = unit.Timestamp()
-	//dgp.SetNewestUnit(unit.Header())
-	dgp.CurrentASlot += missedUnits + 1
-}
