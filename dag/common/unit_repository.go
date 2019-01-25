@@ -102,7 +102,7 @@ type UnitRepository struct {
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
+	val := NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, validate: val, utxoRepository: utxoRep, propdb: propdb}
 }
 
@@ -113,7 +113,7 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
+	val := NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, validate: val, utxoRepository: utxoRep}
 }
 
