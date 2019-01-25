@@ -21,8 +21,8 @@ package algorithm
 import (
 	"math/big"
 	"sync"
-	"github.com/palletone/go-palletone/common"
 	"context"
+	"github.com/palletone/go-palletone/common"
 )
 
 //subUsers return the selected amount of sub-users determined from the mathematics protocol.
