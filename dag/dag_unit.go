@@ -158,7 +158,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 1. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	// 2. 更新状态
-	dag.ApplyUnit(newUnit)
+	go dag.ApplyUnit(newUnit)
 
 	// 3. 将验证单元添加到本地DB
 	//err := dag.SaveUnit(newUnit, false)

@@ -32,7 +32,7 @@ const (
 
 var (
 	StaleProductionFlag = cli.BoolFlag{
-		Name:  "enable-stale-production",
+		Name:  "staleProduce",
 		Usage: "Enable Unit production, even if the chain is stale.",
 	}
 )
@@ -57,10 +57,11 @@ var DefaultConfig = Config{
 	},
 }
 
-func SetMediatorPluginConfig(ctx *cli.Context, cfg *Config) {
+func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 	switch {
 	case ctx.GlobalIsSet(StaleProductionFlag.Name):
-		cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
+		//cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
+		cfg.EnableStaleProduction = true
 	}
 }
 
