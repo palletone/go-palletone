@@ -771,7 +771,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			//todo
 
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
-			if ok := rep.saveContractDeployReq(msg); !ok {
+			if ok := rep.saveContractDeployReq(tx.RequestHash().Bytes(), msg); !ok {
 				return fmt.Errorf("save contract deployReq failed.")
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
@@ -1046,7 +1046,7 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 保存合约请求的方法
 */
 // saveContractTplRequest
-func (rep *UnitRepository) saveContractDeployReq(msg *modules.Message) bool {
+func (rep *UnitRepository) saveContractDeployReq(reqid []byte, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractDeployRequestPayload)
@@ -1056,7 +1056,7 @@ func (rep *UnitRepository) saveContractDeployReq(msg *modules.Message) bool {
 	}
 	log.Debug("DeployReq payload", "info", payload)
 	// 模板id , 合约id , name
-	err := rep.statedb.SaveContractDeployReq(payload)
+	err := rep.statedb.SaveContractDeployReq(reqid[:], payload)
 	if err != nil {
 		log.Info("save contract deploy payload failed,", "error", err)
 		return false

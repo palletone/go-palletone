@@ -385,15 +385,16 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 		// Check for duplicate transaction inputs.
 		existingTxOut := make(map[modules.OutPoint]struct{})
 		for _, txIn := range payload.Inputs {
-			if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
-				return &ptnjson.RPCError{
-					Code:    ptnjson.ErrDuplicateTxInputs,
-					Message: "transaction " + "contains duplicate inputs",
+			if txIn.PreviousOutPoint != nil {
+				if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
+					return &ptnjson.RPCError{
+						Code:    ptnjson.ErrDuplicateTxInputs,
+						Message: "transaction " + "contains duplicate inputs",
+					}
 				}
+				existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
 			}
-			existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
 		}
-
 	}
 	//check whether input valid need find former script and than
 	// call

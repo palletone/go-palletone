@@ -194,22 +194,11 @@ func (statedb *StateDb) GetContractState(id []byte, field string) (*modules.Stat
 
 		return nil, nil
 	}
-	//for k, v := range data {
-	//	var version modules.StateVersion
-	//	if !version.ParseStringKey(k) {
-	//		return nil, nil
-	//	}
-	//	return &version, v
-	//}
-
 	return version, data
 }
 
 // GetContract can get a Contract by the contract hash
 func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
-	//if common.EmptyHash(id) {
-	//	return nil, errors.New("the filed not defined")
-	//}
 	con_bytes, err := statedb.db.Get(append(constants.CONTRACT_PREFIX, id...))
 	if err != nil {
 		log.Errorf("err:", err)
@@ -223,18 +212,34 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	}
 	return contract, nil
 }
-func (statedb *StateDb) SaveContractDeployReq(deploy *modules.ContractDeployRequestPayload) error {
-	// key  tempid +  contract id  + name
-	key := append(constants.CONTRACT_DEPLOY, deploy.TplId[:]...)
-	key = append(key, deploy.TxId[:]...)
-	//key = append(key, []byte(deploy.Name)...)
+
+func (statedb *StateDb) SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error {
+	// key  requestId
+	key := append(constants.CONTRACT_DEPLOY, reqid...)
 	return StoreBytes(statedb.db, key, deploy)
 }
 
-func (statedb *StateDb) GetContractDeployReq(tempId, txId []byte) (*modules.ContractDeployRequestPayload, error) {
-	key := append(constants.CONTRACT_DEPLOY, tempId...)
-	key = append(key, txId...)
-	//key = append(key, []byte(name)...)
+func (statedb *StateDb) GetContractDeploy(reqId []byte) (*modules.ContractDeployPayload, error) {
+	key := append(constants.CONTRACT_DEPLOY, reqId...)
+	data, err := statedb.db.Get(key)
+	if err != nil {
+		return nil, err
+	}
+	deploy := new(modules.ContractDeployPayload)
+	if err := rlp.DecodeBytes(data, &deploy); err != nil {
+		return nil, err
+	}
+	return deploy, nil
+}
+
+func (statedb *StateDb) SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error {
+	// key  requestId
+	key := append(constants.CONTRACT_DEPLOY_REQ, reqid...)
+	return StoreBytes(statedb.db, key, deploy)
+}
+
+func (statedb *StateDb) GetContractDeployReq(reqId []byte) (*modules.ContractDeployRequestPayload, error) {
+	key := append(constants.CONTRACT_DEPLOY_REQ, reqId...)
 	data, err := statedb.db.Get(key)
 	if err != nil {
 		return nil, err
@@ -246,16 +251,14 @@ func (statedb *StateDb) GetContractDeployReq(tempId, txId []byte) (*modules.Cont
 	return deploy, nil
 }
 
-func (statedb *StateDb) SaveContractInvokeReq(invoke *modules.ContractInvokeRequestPayload) error {
+func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
 	// key   contractId  + funcName
-	key := append(constants.CONTRACT_DEPLOY, invoke.ContractId...)
-	key = append(key, []byte(invoke.FunctionName)...)
+	key := append(constants.CONTRACT_INVOKE_REQ, reqid...)
 	return StoreBytes(statedb.db, key, invoke)
 }
 
-func (statedb *StateDb) GetContractInvokeReq(contractId []byte, funcName string) (*modules.ContractInvokeRequestPayload, error) {
-	key := append(constants.CONTRACT_DEPLOY, contractId...)
-	key = append(key, []byte(funcName)...)
+func (statedb *StateDb) GetContractInvokeReq(reqId []byte) (*modules.ContractInvokeRequestPayload, error) {
+	key := append(constants.CONTRACT_INVOKE_REQ, reqId...)
 	data, err := statedb.db.Get(key)
 	if err != nil {
 		return nil, err

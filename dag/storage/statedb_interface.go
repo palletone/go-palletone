@@ -36,8 +36,8 @@ type IStateDb interface {
 	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
-	SaveContractDeployReq(deploy *modules.ContractDeployRequestPayload) error
-	SaveContractInvokeReq(invoke *modules.ContractInvokeRequestPayload) error
+	SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error
+	SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error
 
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
@@ -47,8 +47,8 @@ type IStateDb interface {
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)
-	GetContractDeployReq(tempId, txId []byte) (*modules.ContractDeployRequestPayload, error)
-	GetContractInvokeReq(contractId []byte, funcName string) (*modules.ContractInvokeRequestPayload, error)
+	GetContractDeployReq(reqid []byte) (*modules.ContractDeployRequestPayload, error)
+	GetContractInvokeReq(reqid []byte) (*modules.ContractInvokeRequestPayload, error)
 	/* Account_Info */
 	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
