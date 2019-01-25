@@ -453,9 +453,9 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 //Ethereum ethash engine.go
 func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	// step1. check unit signature, should be compare to mediator list
-	unitState := d.validate.ValidateUnitSignature(header, false)
-	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-		return fmt.Errorf("Validate unit signature error, errno=%d", unitState)
+	unitState := d.validate.ValidateHeader(header)
+	if unitState != nil {
+		return fmt.Errorf("Validate unit signature error, errno=%s", unitState.Error())
 	}
 
 	// step2. check extra data
@@ -856,36 +856,34 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	}
 	// step2. validate unit
 
-	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
+	err := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
 
-	if unitState != modules.UNIT_STATE_VALIDATED && unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && unitState != modules.UNIT_STATE_CHECK_HEADER_PASSED {
-		return fmt.Errorf("SaveDag, validate unit error, err_no=%d", unitState)
+	if err != nil {
+		return fmt.Errorf("SaveDag, validate unit error, err=%s", err.Error())
 	}
 
-	if unitState == modules.UNIT_STATE_VALIDATED {
-		//	// step3.1. pass and with group signature, put into leveldb
-		//	// todo 应当先判断是否切换，再保存，并更新状态
-		//	if err := d.unstableUnitRep.SaveUnit(unit, txpool, false, false); err != nil {
-		//		log.Debug("Dag", "SaveDag, save error when save unit to db err:", err)
-		//		return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
-		//	}
-		//	// step3.2. if pass and with group signature, prune fork data
-		//	// if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.Hash()); err != nil {
-		//	// 	return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
-		//	// }
-		//} else {
-		// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
-		if isGenesis {
-			d.stableUnitRep.SaveUnit(unit, true)
-			return nil
-		}
+	//	// step3.1. pass and with group signature, put into leveldb
+	//	// todo 应当先判断是否切换，再保存，并更新状态
+	//	if err := d.unstableUnitRep.SaveUnit(unit, txpool, false, false); err != nil {
+	//		log.Debug("Dag", "SaveDag, save error when save unit to db err:", err)
+	//		return fmt.Errorf("SaveDag, save error when save unit to db: %s", err.Error())
+	//	}
+	//	// step3.2. if pass and with group signature, prune fork data
+	//	// if err := d.Memdag.Prune(unit.UnitHeader.Number.AssetID.String(), unit.Hash()); err != nil {
+	//	// 	return fmt.Errorf("SaveDag, save error when prune: %s", err.Error())
+	//	// }
+	//} else {
+	// step4. pass but without group signature, put into memory( if the main fork longer than 15, should call prune)
+	if isGenesis {
+		d.stableUnitRep.SaveUnit(unit, true)
+		return nil
+	}
 
-		if err := d.Memdag.AddUnit(unit, txpool); err != nil {
-			return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
-		} else {
-			log.Debug("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
-			//d.updateLastIrreversibleUnitNum(unit.Hash(), uint64(unit.NumberU64()))
-		}
+	if err := d.Memdag.AddUnit(unit, txpool); err != nil {
+		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
+	} else {
+		log.Debug("=============    save_memdag_unit     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
+		//d.updateLastIrreversibleUnitNum(unit.Hash(), uint64(unit.NumberU64()))
 	}
 
 	//// todo 应当先判断是否切换，再保存，并更新状态
@@ -1309,5 +1307,9 @@ func (d *Dag) GetLightChainHeight(assetId modules.IDType16) uint64 {
 	return uint64(0)
 }
 func (d *Dag) InsertLightHeader(headers []modules.Header) (int, error) {
+	log.Debug("===InsertLightHeader===", "numbers:", len(headers))
+	for _, header := range headers {
+		log.Debug("===InsertLightHeader===", "header index:", header.Index())
+	}
 	return 0, nil
 }
