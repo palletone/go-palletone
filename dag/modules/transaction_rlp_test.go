@@ -48,6 +48,13 @@ func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 	hash2 := util.RlpHash(b)
 	assert.Equal(t, hash1, hash2)
 }
+
+//func assertRlpTxEqual(t assert.TestingT, a, b interface{}) {
+//	tx1 := test
+//	tx2 := Transaction{}
+//	assert.Equal(t, hash1, hash2)
+//}
+
 func TestCompare(t *testing.T) {
 	//a1 := &TestA{A: 1, B: "A1"}
 	//a2 := &TestA{A: 2, B: "A2"}
