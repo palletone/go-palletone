@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/common/rlp"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -50,31 +49,31 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
-			data, err := json.Marshal(newUnit)
-			if err != nil {
-				log.Debug(err.Error())
-				return
-			}
+			//data, err := json.Marshal(newUnit)
+			//if err != nil {
+			//	log.Debug(err.Error())
+			//	return
+			//}
+			//
+			//size, reader, err := rlp.EncodeToReader(data)
+			//if err != nil {
+			//	return
+			//}
+			//
+			//data = make([]byte, 0)
+			//stream := rlp.NewStream(reader, uint64(size))
+			//if err := stream.Decode(&data); err != nil {
+			//	log.Debug(err.Error())
+			//}
+			//
+			//var unit modules.Unit
+			//if err := json.Unmarshal(data, &unit); err != nil {
+			//	log.Debug(err.Error())
+			//	return
+			//}
+			//pm.producer.AddToTBLSSignBufs(&unit)
 
-			size, reader, err := rlp.EncodeToReader(data)
-			if err != nil {
-				return
-			}
-
-			data = make([]byte, 0)
-			stream := rlp.NewStream(reader, uint64(size))
-			if err := stream.Decode(&data); err != nil {
-				log.Debug(err.Error())
-			}
-
-			var unit modules.Unit
-			if err := json.Unmarshal(data, &unit); err != nil {
-				log.Debug(err.Error())
-				return
-			}
-			pm.producer.AddToTBLSSignBufs(&unit)
-
-			//pm.producer.AddToTBLSSignBufs(newUnit)
+			pm.producer.AddToTBLSSignBufs(newUnit)
 			continue
 		}
 

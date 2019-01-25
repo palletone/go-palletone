@@ -249,7 +249,8 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-	mp.SetMediatorPluginConfig(ctx, &cfg.MediatorPlugin)
+	//mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
+	mp.SetMediatorConfig(ctx, &cfg.Ptn.MediatorPlugin)
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 
 	return stack, cfg
