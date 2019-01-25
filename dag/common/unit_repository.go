@@ -735,6 +735,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		}
 	}
 	txHash := tx.Hash()
+	reqId := tx.RequestHash().Bytes()
 	// traverse messages
 	for msgIndex, msg := range tx.TxMessages {
 		// handle different messages
@@ -755,6 +756,10 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			if ok := rep.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
 				return fmt.Errorf("Save contract invode payload error.")
 			}
+		case modules.APP_CONTRACT_STOP:
+			if ok := rep.saveContractStop(reqId, msg); !ok {
+				return fmt.Errorf("save contract stop payload failed.")
+			}
 		case modules.APP_CONFIG:
 			if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 				return fmt.Errorf("Save contract invode payload error.")
@@ -769,22 +774,26 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			}
 
 		case modules.APP_CONTRACT_TPL_REQUEST:
-			//todo
-
+			// todo
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
-			if ok := rep.saveContractDeployReq(tx.RequestHash().Bytes(), msg); !ok {
-				return fmt.Errorf("save contract deployReq failed.")
+			if ok := rep.saveContractDeployReq(reqId, msg); !ok {
+				return fmt.Errorf("save contract of deploy request failed.")
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
-			//todo
+			if ok := rep.saveContractStopReq(reqId, msg); !ok {
+				return fmt.Errorf("save contract of stop request failed.")
+			}
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
-			//todo
+			if ok := rep.saveContractInvokeReq(reqId, msg); !ok {
+				return fmt.Errorf("save contract of invoke request failed.")
+			}
 		case modules.APP_SIGNATURE:
-			//todo
-
+			if ok := rep.saveSignature(reqId, msg); !ok {
+				return fmt.Errorf("save contract of signature failed.")
+			}
 		case modules.APP_DATA:
 			if ok := rep.saveDataPayload(txHash, msg); ok != true {
-				return fmt.Errorf("Save datapayload error.")
+				return fmt.Errorf("save data payload faild.")
 			}
 		default:
 			return fmt.Errorf("Message type is not supported now: %v", msg.App)
@@ -1046,20 +1055,92 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 /*
 保存合约请求的方法
 */
-// saveContractTplRequest
+
+// saveContractdeployReq
 func (rep *UnitRepository) saveContractDeployReq(reqid []byte, msg *modules.Message) bool {
-	var pl interface{}
-	pl = msg.Payload
-	payload, ok := pl.(*modules.ContractDeployRequestPayload)
-	if ok == false {
+	payload, ok := msg.Payload.(*modules.ContractDeployRequestPayload)
+	if !ok {
 		log.Error("saveContractDeployReq", "error", "payload is not ContractDeployReq type.")
 		return false
 	}
-	log.Debug("DeployReq payload", "info", payload)
-	// 模板id , 合约id , name
 	err := rep.statedb.SaveContractDeployReq(reqid[:], payload)
 	if err != nil {
-		log.Info("save contract deploy payload failed,", "error", err)
+		log.Info("save contract deploy req payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveContractInvoke
+func (rep *UnitRepository) saveContractInvoke(reqid []byte, msg *modules.Message) bool {
+	invoke, ok := msg.Payload.(*modules.ContractInvokePayload)
+	if !ok {
+		log.Error("saveContractInvoke", "error", "payload is not the ContractInvoke type.")
+		return false
+	}
+	err := rep.statedb.SaveContractInvoke(reqid[:], invoke)
+	if err != nil {
+		log.Info("save contract invoke payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveContractInvokeReq
+func (rep *UnitRepository) saveContractInvokeReq(reqid []byte, msg *modules.Message) bool {
+	invoke, ok := msg.Payload.(*modules.ContractInvokeRequestPayload)
+	if !ok {
+		log.Error("saveContractInvokeReq", "error", "payload is not the ContractInvokeReq type.")
+		return false
+	}
+	err := rep.statedb.SaveContractInvokeReq(reqid[:], invoke)
+	if err != nil {
+		log.Info("save contract invoke req payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveContractStop
+func (rep *UnitRepository) saveContractStop(reqid []byte, msg *modules.Message) bool {
+	stop, ok := msg.Payload.(*modules.ContractStopPayload)
+	if !ok {
+		log.Error("saveContractStop", "error", "payload is not the ContractStop type.")
+		return false
+	}
+	err := rep.statedb.SaveContractStop(reqid[:], stop)
+	if err != nil {
+		log.Info("save contract stop payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveContractStopReq
+func (rep *UnitRepository) saveContractStopReq(reqid []byte, msg *modules.Message) bool {
+	stop, ok := msg.Payload.(*modules.ContractStopRequestPayload)
+	if !ok {
+		log.Error("saveContractStopReq", "error", "payload is not the ContractStopReq type.")
+		return false
+	}
+	err := rep.statedb.SaveContractStopReq(reqid[:], stop)
+	if err != nil {
+		log.Info("save contract stopReq payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveSignature
+func (rep *UnitRepository) saveSignature(reqid []byte, msg *modules.Message) bool {
+	sig, ok := msg.Payload.(*modules.SignaturePayload)
+	if !ok {
+		log.Error("save contract signature", "error", "payload is not the signature type.")
+		return false
+	}
+	err := rep.statedb.SaveContractSignature(reqid[:], sig)
+	if err != nil {
+		log.Info("save contract signature payload failed,", "error", err)
 		return false
 	}
 	return true

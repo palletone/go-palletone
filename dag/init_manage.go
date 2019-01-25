@@ -71,8 +71,7 @@ func (d *Dag) Close() {
 // @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED &&
-		unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+	if unitState != nil {
 		return false
 	}
 	return true

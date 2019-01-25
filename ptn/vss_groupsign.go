@@ -49,6 +49,30 @@ func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
 	peers := pm.GetActiveMediatorPeers()
 	for _, peer := range peers {
 		if peer == nil {
+			//data, err := json.Marshal(newUnit)
+			//if err != nil {
+			//	log.Debug(err.Error())
+			//	return
+			//}
+			//
+			//size, reader, err := rlp.EncodeToReader(data)
+			//if err != nil {
+			//	return
+			//}
+			//
+			//data = make([]byte, 0)
+			//stream := rlp.NewStream(reader, uint64(size))
+			//if err := stream.Decode(&data); err != nil {
+			//	log.Debug(err.Error())
+			//}
+			//
+			//var unit modules.Unit
+			//if err := json.Unmarshal(data, &unit); err != nil {
+			//	log.Debug(err.Error())
+			//	return
+			//}
+			//pm.producer.AddToTBLSSignBufs(&unit)
+
 			pm.producer.AddToTBLSSignBufs(newUnit)
 			continue
 		}
@@ -93,7 +117,7 @@ func (pm *ProtocolManager) TransmitSigShare(node *discover.Node, sigShare *mp.Si
 		//if err := stream.Decode(&s); err != nil {
 		//	log.Debug(err.Error())
 		//}
-		//pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
+		//pm.producer.AddToTBLSRecoverBuf(s.UnitHash, s.SigShare)
 
 		pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 		return

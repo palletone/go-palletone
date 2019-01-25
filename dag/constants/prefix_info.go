@@ -41,9 +41,11 @@ var (
 	CONTRACT_TPL_REQ            = []byte("ctq")
 	CONTRACT_DEPLOY             = []byte("cdy")
 	CONTRACT_DEPLOY_REQ         = []byte("cdr")
-	CONTRACT_STOP_REQ           = []byte("csq")
+	CONTRACT_STOP               = []byte("csp")
+	CONTRACT_STOP_REQ           = []byte("csr")
+	CONTRACT_INVOKE             = []byte("civ")
 	CONTRACT_INVOKE_REQ         = []byte("ciq")
-	CONTRACT_SIgNATURE          = []byte("csn")
+	CONTRACT_SIGNATURE          = []byte("csn")
 
 	MESSAGES_PREFIX               = []byte("me")
 	POLL_PREFIX                   = []byte("po")
