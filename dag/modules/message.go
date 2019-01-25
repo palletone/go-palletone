@@ -520,7 +520,7 @@ type ContractInvokeRequestPayload struct {
 	ContractId   []byte        `json:"contract_id"` // contract id
 	FunctionName string        `json:"function_name"`
 	Args         [][]byte      `json:"args"` // contract arguments list
-	Timeout      time.Duration `json:"timeout"`
+	Timeout      uint32        `json:"timeout"`
 }
 
 type ContractStopRequestPayload struct {

@@ -119,7 +119,7 @@ func newTestTransaction() *Transaction {
 		Payload: &DataPayload{},
 	}
 	msg3 := &Message{
-		App: APP_CONTRACT_INVOKE_REQUEST,
+		App:     APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &TestContractInvokeRequestPayload{},
 	}
 	tx := newTransaction(
@@ -136,12 +136,11 @@ func newTestTx() *Transaction {
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
 	input := Input{}
 	input.PreviousOutPoint = NewOutPoint(hash, 0, 1)
-	input.SignatureScript = []byte("")
+	input.SignatureScript = []byte{}
 	input.Extra = []byte("Coinbase")
 	fmt.Println(input)
 	fmt.Println(input.PreviousOutPoint)
 	pay1s.AddTxIn(&input)
-
 
 	msg := &Message{
 		App:     APP_PAYMENT,
@@ -149,24 +148,24 @@ func newTestTx() *Transaction {
 	}
 	msg2 := &Message{
 		App:     APP_DATA,
-		Payload: &DataPayload{MainData: []byte("Hello PalletOne"),ExtraData:[]byte("Hi PalletOne")},
+		Payload: &DataPayload{MainData: []byte("Hello PalletOne"), ExtraData: []byte("Hi PalletOne")},
 	}
 	//txmsg2 := NewTransaction(
 	//	[]*Message{msg, msg},
 	//)
-	//req := &TestContractInvokeRequestPayload{ContractId: []byte{0xcc}, FunctionName: "TestFun", Args: [][]byte{{0x11}, {0x22}},Timeout:300}
-	//msg3 := &Message{App: APP_CONTRACT_INVOKE_REQUEST, Payload: req}
+	req := &ContractInvokeRequestPayload{ContractId: []byte{123}, FunctionName: "TestFun", Args: [][]byte{{0x11}, {0x22}},Timeout:300}
+	msg3 := &Message{App: APP_CONTRACT_INVOKE_REQUEST, Payload: req}
 	tx := newTransaction(
-		[]*Message{msg, msg2},
+		[]*Message{msg, msg2,msg3},
 	)
-
+    fmt.Println("paoload：",msg.Payload, msg2.Payload,msg3.Payload)
 	return tx
 }
 
 func TestTransactionEncode(t *testing.T) {
 
 	txmsg3 := newTestTx()
-    t.Logf("data",txmsg3)
+	t.Logf("data", txmsg3)
 	//emptyTx.SetHash(common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87"))
 	//rightvrsTx.SetHash(common.HexToHash("b94f5374fce5edbc8e2a8697c15331677e6ebf0b"))
 	txb, err := rlp.EncodeToBytes(txmsg3)
@@ -181,15 +180,15 @@ func TestTransactionEncode(t *testing.T) {
 	//*rlp_hash = rlp.RlpHash(txmsg3)
 	//rightvrsTx.SetHash(*rlp_hash)
 	// storage test
-    t.Logf("rlp ",txb)
+	t.Logf("rlp ", txb)
 
 	//tx := &TestTransaction{}
-    tx := &Transaction{}
+	tx := &Transaction{}
 	err = rlp.DecodeBytes(txb, tx)
 	if err != nil {
 		t.Error(err)
 	}
-	t.Logf("data",tx)
+	t.Logf("data", tx)
 	assert.Equal(t, txmsg3, tx)
 	//if tx.Locktime != 12345 {
 	//	log.Error("decode RLP mismatch", "error", txb)
@@ -204,7 +203,7 @@ func TestTransactionEncode(t *testing.T) {
 			}
 		}
 	}
-	if len(tx.TxMessages) != 2 {
+	if len(tx.TxMessages) != 3 {
 		t.Error("Rlp decode message count error")
 	}
 	msg0 := tx.TxMessages[0]
@@ -222,13 +221,42 @@ func TestTransactionEncode(t *testing.T) {
 		t.Error("payment input decode error.")
 	}
 
-	
 	fmt.Printf("PaymentData:%+v", payment)
 	//tx.SetHash(rlp.RlpHash(tx))
 	//if tx.TxHash != rightvrsTx.TxHash {
 	//	log.Error("tx hash mismatch ", "right_hash", rightvrsTx.TxHash, "tx_hash", tx.TxHash)
 	//}
+	msg2 := tx.TxMessages[1]
+	if msg2.App != APP_DATA {
+		t.Error("Data decode error")
+	}
+	data := msg2.Payload.(*DataPayload)
+	if len(data.MainData) == 0 {
+		t.Error("DataPayload MainData decode error.")
+	}
+	if len(data.ExtraData) == 0 {
+		t.Error("DataPayload ExtraData decode error.")
+	}
+	t.Logf("DataPayload:", data)
 
+	msg3 := tx.TxMessages[2]
+	if msg3.App != APP_CONTRACT_INVOKE_REQUEST {
+		t.Error("Data decode error")
+	}
+	result := msg3.Payload.(*ContractInvokeRequestPayload)
+	if result.Timeout == 0 {
+		t.Error("ContractInvokeRequestPayload Timeout decode error.")
+	}
+	if len(result.Args) == 0 {
+		t.Error("ContractInvokeRequestPayload Args decode error.")
+	}
+	if result.FunctionName == "" {
+		t.Error("ContractInvokeRequestPayload FunctionName decode error.")
+	}
+	if len(result.ContractId) == 0 {
+		t.Error("ContractInvokeRequestPayload ContractId decode error.")
+	}
+	t.Logf("ContractInvokeRequestPayload:", result)
 }
 func TestIDType16Hex(t *testing.T) {
 	PTNCOIN := IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
@@ -304,4 +332,3 @@ func TestRlpdecodeValue(t *testing.T) {
 	//fmt.Println(string(val))
 	//rlp.
 }
-
