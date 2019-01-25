@@ -105,7 +105,15 @@ func (h *Header) ChainIndex() *ChainIndex {
 
 func (h *Header) Hash() common.Hash {
 	emptyHeader := CopyHeader(h)
-	// 计算header’hash时 剔除签名和群签
+	// 计算header’hash时 剔除群签
+	//emptyHeader.Authors = Authentifier{} Hash必须包含Mediator签名
+	emptyHeader.GroupSign = nil
+	emptyHeader.GroupPubKey = nil
+	return rlp.RlpHash(emptyHeader)
+}
+func (h *Header) HashWithoutAuthor() common.Hash {
+	emptyHeader := CopyHeader(h)
+	// 计算header’hash时 剔除群签
 	emptyHeader.Authors = Authentifier{}
 	emptyHeader.GroupSign = nil
 	emptyHeader.GroupPubKey = nil
