@@ -381,8 +381,13 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
-
 	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
+
+	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) &&
+		(pm.SubProtocols[0].Name == ProtocolName) {
+		return pm.PartitionHandle(p)
+	}
+
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
@@ -415,9 +420,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name == p.Caps()[0].Name) {
-		pm.syncTransactions(p)
-	}
+	pm.syncTransactions(p)
 
 	// main loop. handle incoming messages.
 	for {
