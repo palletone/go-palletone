@@ -91,7 +91,6 @@ func TestValidator(t *testing.T) {
 	//dbconn := storage.ReNewDbConn(dagconfig.DbPath)
 	db, _ := ptndb.NewMemDatabase()
 
-	worldTmpState := map[string]map[string]interface{}{}
 	dagDb := storage.NewDagDb(db)
 	idxDb := storage.NewIndexDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -99,7 +98,7 @@ func TestValidator(t *testing.T) {
 	stateDb := storage.NewStateDb(db)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	validate := NewValidate(dagDb, utxoRep, stateDb)
-	code := validate.ValidateTx(tx, false, &worldTmpState)
+	code := validate.ValidateTx(tx, false)
 	log.Debug("validator ", "code:", code)
 
 }
