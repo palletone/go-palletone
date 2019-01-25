@@ -1,4 +1,24 @@
 /*
+ *
+ *    This file is part of go-palletone.
+ *    go-palletone is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    go-palletone is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+ * /
+ *
+ *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @date 2018-2019
+ *
+ */
+
+/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,7 +36,7 @@
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
  */
-package common
+package validator
 
 import (
 	"fmt"
@@ -30,7 +50,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
+
 	"github.com/palletone/go-palletone/dag/vote"
 )
 
@@ -39,29 +59,11 @@ type Validate struct {
 	statequery IStateQuery
 	dagquery   IDagQuery
 }
-type IUtxoQuery interface {
-	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-}
-type IStateQuery interface {
-	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
-}
-type IDagQuery interface {
-	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
-}
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
-func NewValidate(dagdb storage.IDagDb, utxoRep IUtxoRepository, statedb storage.IStateDb) *Validate {
+func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery) *Validate {
 	return &Validate{dagquery: dagdb, utxoquery: utxoRep, statequery: statedb}
-}
-
-type Validator interface {
-	ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error)
-	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) byte
-	ValidateTx(tx *modules.Transaction, isCoinbase bool, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode
-	ValidateUnitSignature(h *modules.Header, isGenesis bool) byte
-	//ValidateUnitGroupSign(h *modules.Header, isGenesis bool) byte
 }
 
 /**
@@ -134,6 +136,13 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		}
 	}
 	return txFlags, isSuccess, nil
+}
+func ComputeRewards() uint64 {
+	var rewards uint64
+	if dagconfig.DefaultConfig.IsRewardCoin {
+		rewards = uint64(modules.DAO)
+	}
+	return rewards
 }
 
 /**
