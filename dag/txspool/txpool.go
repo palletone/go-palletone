@@ -944,20 +944,17 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 type Tag uint64
 
 func (pool *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
-	//log.Trace("Processing transaction %v", tx.Hash())
-
 	// Protect concurrent access.
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
 	// Potentially accept the transaction to the memory pool.
-	missingParents, txD, err := pool.maybeAcceptTransaction(tx, true, rateLimit, false)
+	missingParents, _, err := pool.maybeAcceptTransaction(tx, true, rateLimit, false)
 	if err != nil {
 		log.Info("txpool", "accept transaction err:", err)
 		return nil, err
 	}
 	missingParents = missingParents
-	txD = txD
 
 	// Potentially add the orphan transaction to the orphan pool.
 	//err = mp.maybeAddOrphan(tx, tag)
@@ -972,11 +969,7 @@ func IsCoinBase(tx *modules.Transaction) bool {
 	if !ok {
 		return false
 	}
-	prevOut := msg.Inputs[0].PreviousOutPoint
-	if prevOut.TxHash != (common.Hash{}) {
-		return false
-	}
-	return true
+	return msg.IsCoinbase()
 }
 
 // maybeAcceptTransaction is the internal function which implements the public
@@ -991,10 +984,9 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	// orphans flag is set.  This check is intended to be a quick check to
 	// weed out duplicates.
 	if pool.isTransactionInPool(txHash) {
-		str := fmt.Sprintf("already have transaction %v", txHash)
-		//str = str
-		log.Info("txpool", "", str)
-		return nil, nil, nil //txRuleError(RejectDuplicate, str)
+		str := fmt.Sprintf("already have transaction %s", txHash.String())
+		log.Info("txpool", "info", str)
+		return nil, nil, nil
 	}
 
 	// Perform preliminary sanity checks on the transaction.  This makes
@@ -1002,17 +994,16 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	// transactions are allowed into blocks.
 	err := CheckTransactionSanity(tx)
 	if err != nil {
-		log.Info("txpool", "Check Transaction Sanity err:", err)
+		log.Info("Check Transaction Sanity err:", "error", err)
 		return nil, nil, err
 	}
 
 	// A standalone transaction must not be a coinbase transaction.
 	if IsCoinBase(tx) {
-		str := fmt.Sprintf("transaction %v is an individual coinbase",
-			txHash)
-		//str = str
-		log.Info("txpool", "", str)
-		return nil, nil, nil //txRuleError(RejectInvalid, str)
+		str := fmt.Sprintf("transaction %s is an individual coinbase",
+			txHash.String())
+		log.Info("txpool check coinbase tx.", "info", str)
+		return nil, nil, nil
 	}
 
 	// The transaction may not use any of the same outputs as other
@@ -1023,19 +1014,16 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	// at this point.  There is a more in-depth check that happens later
 	// after fetching the referenced transaction inputs from the main chain
 	// which examines the actual spend data and prevents double spends.
-	txpooltx := TxtoTxpoolTx(pool, tx)
-	err = pool.checkPoolDoubleSpend(txpooltx)
+	p_tx := TxtoTxpoolTx(pool, tx)
+	err = pool.checkPoolDoubleSpend(p_tx)
 	if err != nil {
 		log.Info("txpool", "check PoolD oubleSpend err:", err)
 		return nil, nil, err
 	}
-
+	_, err1 := pool.add(p_tx, !pool.config.NoLocals)
+	log.Debug("accepted tx and add pool.", "info", err1)
 	// NOTE: if you modify this code to accept non-standard transactions,
-
-	//log.Debugf("Accepted transaction %v (pool size: %v)", txHash,
-	//	len(mp.pool))
-
-	return nil, nil, nil
+	return nil, nil, err
 }
 
 // addTx enqueues a single transaction into the pool if it is valid.

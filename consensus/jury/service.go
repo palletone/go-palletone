@@ -40,8 +40,6 @@ import (
 type PeerType = int
 
 const (
-	CONTRACT_SIG_NUM = 3
-
 	TJury     = 2
 	TMediator = 4
 )
@@ -225,7 +223,7 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 			req.rcvTx = nil
 		}
 
-		if getTxSigNum(req.sigTx) >= CONTRACT_SIG_NUM {
+		if getTxSigNum(req.sigTx) >= p.contractSigNum  {
 			if localIsMinSignature(req.sigTx) {
 				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: req.sigTx})
 				return nil

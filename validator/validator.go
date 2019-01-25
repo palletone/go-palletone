@@ -1,4 +1,24 @@
 /*
+ *
+ *    This file is part of go-palletone.
+ *    go-palletone is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    go-palletone is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+ * /
+ *
+ *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @date 2018-2019
+ *
+ */
+
+/*
    This file is part of go-palletone.
    go-palletone is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,7 +36,7 @@
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
  */
-package common
+package validator
 
 import (
 	"fmt"
@@ -30,29 +50,20 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
+
 	"github.com/palletone/go-palletone/dag/vote"
 )
 
 type Validate struct {
-	dagdb   storage.IDagDb
-	utxodb  storage.IUtxoDb
-	utxoRep IUtxoRepository
-	statedb storage.IStateDb
+	utxoquery  IUtxoQuery
+	statequery IStateQuery
+	dagquery   IDagQuery
 }
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
-func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb) *Validate {
-	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb}
-}
-
-type Validator interface {
-	ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error)
-	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) byte
-	ValidateTx(tx *modules.Transaction, isCoinbase bool, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode
-	ValidateUnitSignature(h *modules.Header, isGenesis bool) byte
-	//ValidateUnitGroupSign(h *modules.Header, isGenesis bool) byte
+func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery) *Validate {
+	return &Validate{dagquery: dagdb, utxoquery: utxoRep, statequery: statedb}
 }
 
 /**
@@ -96,7 +107,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		}
 		// validate fee
 		if isGenesis == false && txIndex != 0 {
-			txFee, err := validate.utxoRep.ComputeTxFee(tx)
+			txFee, err := validate.utxoquery.ComputeTxFee(tx)
 			if err != nil {
 				log.Info("ValidateTx", "txhash", txHash, "error validate code", modules.TxValidationCode_INVALID_FEE)
 				return nil, false, err
@@ -125,6 +136,13 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		}
 	}
 	return txFlags, isSuccess, nil
+}
+func ComputeRewards() uint64 {
+	var rewards uint64
+	if dagconfig.DefaultConfig.IsRewardCoin {
+		rewards = uint64(modules.DAO)
+	}
+	return rewards
 }
 
 /**
@@ -436,7 +454,7 @@ To validate contract template payload
 */
 func (validate *Validate) validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
-	stateVersion, bytecode, name, path, tplV := validate.statedb.GetContractTpl(contractTplPayload.TemplateId)
+	stateVersion, bytecode, name, path, tplV := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" && tplV == "" {
 		return modules.TxValidationCode_VALID
 	}
@@ -465,7 +483,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
 			// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
-			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
+			if utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
 				return modules.TxValidationCode_INVALID_OUTPOINT
 			}
 			// check SignatureScript
@@ -652,7 +670,7 @@ func (validate *Validate) validateDataPayload(payload *modules.DataPayload) modu
 func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	if len(tx.TxMessages) > 2 {
 		reqId := tx.RequestHash()
-		if txHash, err := validate.dagdb.GetTxHashByReqId(reqId); err == nil && txHash != (common.Hash{}) {
+		if txHash, err := validate.dagquery.GetTxHashByReqId(reqId); err == nil && txHash != (common.Hash{}) {
 			log.Debug("checkTxIsExist", "transactions exist in dag, reqId:", reqId.String())
 			return true
 		}

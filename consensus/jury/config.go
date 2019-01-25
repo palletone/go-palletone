@@ -43,7 +43,7 @@ func (aConf *AccountConf) configToAccount() *JuryAccount {
 }
 
 var DefaultConfig = Config{
-	ContractSigNum: 3,
+	ContractSigNum: DefaultContractSigNum,
 	Accounts: []*AccountConf{
 		&AccountConf{core.DefaultJuryAddr, DefaultPassword},
 	},

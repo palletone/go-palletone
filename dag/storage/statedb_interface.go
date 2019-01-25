@@ -36,8 +36,13 @@ type IStateDb interface {
 	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
-	SaveContractDeployReq(deploy *modules.ContractDeployRequestPayload) error
-	SaveContractInvokeReq(invoke *modules.ContractInvokeRequestPayload) error
+	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
+	SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error
+	SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error
+	SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error
+	SaveContractStop(reqid []byte, stop *modules.ContractStopPayload) error
+	SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error
+	SaveContractSignature(reqid []byte, sig *modules.SignaturePayload) error
 
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
@@ -47,8 +52,13 @@ type IStateDb interface {
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)
-	GetContractDeployReq(tempId, txId []byte) (*modules.ContractDeployRequestPayload, error)
-	GetContractInvokeReq(contractId []byte, funcName string) (*modules.ContractInvokeRequestPayload, error)
+	GetContractDeploy(reqId []byte) (*modules.ContractDeployPayload, error)
+	GetContractDeployReq(reqid []byte) (*modules.ContractDeployRequestPayload, error)
+	GetContractInvoke(reqId []byte) (*modules.ContractInvokePayload, error)
+	GetContractInvokeReq(reqid []byte) (*modules.ContractInvokeRequestPayload, error)
+	GetContractStop(reqId []byte) (*modules.ContractStopPayload, error)
+	GetContractStopReq(reqId []byte) (*modules.ContractStopRequestPayload, error)
+	GetContractSignature(reqId []byte) (*modules.SignaturePayload, error)
 	/* Account_Info */
 	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
