@@ -88,7 +88,6 @@ func (mr *MockIDagMockRecorder) IsEmpty() *gomock.Call {
 
 // GetUnstableUnits mocks base method
 func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnstableUnits")
 	ret0, _ := ret[0].([]*modules.Unit)
 	return ret0
@@ -96,7 +95,6 @@ func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
 
 // IsEmpty indicates an expected call of IsEmpty
 func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnstableUnits", reflect.TypeOf((*MockIDag)(nil).GetUnstableUnits))
 }
 
@@ -210,18 +208,6 @@ func (m *MockIDag) GetHeaderByHash(arg0 common.Hash) (*modules.Header, error) {
 // GetHeaderByHash indicates an expected call of GetHeaderByHash
 func (mr *MockIDagMockRecorder) GetHeaderByHash(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetHeaderByHash), arg0)
-}
-
-// GetUnstableUnits mocks base method
-func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
-	ret := m.ctrl.Call(m, "GetUnstableUnits")
-	ret0, _ := ret[0].([]*modules.Unit)
-	return ret0
-}
-
-// GetUnstableUnits indicates an expected call of GetUnstableUnits
-func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnstableUnits", reflect.TypeOf((*MockIDag)(nil).GetUnstableUnits))
 }
 
 // CurrentHeader mocks base method
