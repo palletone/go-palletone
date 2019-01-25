@@ -90,11 +90,11 @@ type MsgReadWriter interface {
 // Send writes an RLP-encoded message with the given code.
 // data should encode as an RLP list.
 func Send(w MsgWriter, msgcode uint64, data interface{}) error {
-	size, r, err := rlp.EncodeToReader(data)
+	size, reader, err := rlp.EncodeToReader(data)
 	if err != nil {
 		return err
 	}
-	return w.WriteMsg(Msg{Code: msgcode, Size: uint32(size), Payload: r})
+	return w.WriteMsg(Msg{Code: msgcode, Size: uint32(size), Payload: reader})
 }
 
 // SendItems writes an RLP with the given code and data elements.
