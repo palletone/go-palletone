@@ -28,9 +28,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -68,7 +69,7 @@ func SaveContractState(statedb *StateDb, prefix []byte, id []byte, field string,
 
 func SaveContract(db ptndb.Database, contract *modules.Contract) error {
 	if common.EmptyHash(contract.CodeHash) {
-		contract.CodeHash = rlp.RlpHash(contract.Code)
+		contract.CodeHash = util.RlpHash(contract.Code)
 	}
 	// key = cs+ rlphash(contract)
 	//if common.EmptyHash(contract.Id) {
