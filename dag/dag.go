@@ -686,15 +686,15 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	//preout := modules.OutPoint{TxHash: tx.Hash()}
-	var isnot_coinbase bool
-	if !dagcommon.IsCoinBase(tx) {
-		isnot_coinbase = true
-	}
+	//var isnot_coinbase bool
+	//if !dagcommon.IsCoinBase(tx) {
+	//	isnot_coinbase = true
+	//}
 
 	for _, msgcopy := range tx.TxMessages {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				if isnot_coinbase {
+				if !msg.IsCoinbase() {
 					for _, in := range msg.Inputs {
 						neededSet[*in.PreviousOutPoint] = struct{}{}
 					}
@@ -705,6 +705,7 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 
 	view := txspool.NewUtxoViewpoint()
 	d.Mutex.RLock()
+	defer d.Mutex.RUnlock()
 	err := view.FetchUtxos(d.unstableUtxoRep, neededSet)
 	// get current hash
 	// assetId 暂时默认为ptn的assetId
@@ -717,8 +718,6 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 	//		}
 	//	}
 	//}
-
-	d.Mutex.RUnlock()
 
 	return view, err
 }

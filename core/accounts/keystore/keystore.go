@@ -547,8 +547,8 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 
 func (ks *KeyStore) SigUnit(unitHeader *modules.Header, address common.Address) ([]byte, error) {
 	emptyHeader := modules.CopyHeader(unitHeader)
-	//emptyHeader.Authors = nil
-	emptyHeader.GroupSign = make([]byte, 0)
+	emptyHeader.Authors = modules.Authentifier{} //Clear exist sign
+	emptyHeader.GroupSign = make([]byte, 0)      //Clear group sign
 	return ks.SigData(emptyHeader, address)
 }
 

@@ -556,6 +556,31 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ElectionEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===ElectionMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	log.Info("===ElectionMsg===", "event ", event)
+
+	if event.EType == jury.RequestEvent {
+		result, err := pm.contractProc.ProcessElectionRequestEvent(&event)
+		if err != nil {
+			log.Debug("ElectionMsg", "ProcessElectionRequestEvent error:", err)
+		}
+		//result := jury.ElectionEvent{EType: jury.ResultEvent}
+		p.SendElectionResultEvent(*result)
+	} else if event.EType == jury.ResultEvent {
+		err := pm.contractProc.ProcessElectionResultEvent(&event)
+		if err != nil {
+			log.Debug("ElectionMsg", "ProcessElectionResultEvent error:", err)
+		}
+	}
+
+	return nil
+}
+
 //local test
 func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
@@ -568,5 +593,16 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent) {
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendContractTransaction(event)
+	}
+
+	//go pm.contractProc.ProcessContractEvent(&event)
+}
+
+func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
+	log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent).Num, "data", event.Event.(jury.ElectionRequestEvent).Data)
+
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendElectionEvent(event)
 	}
 }
