@@ -20,6 +20,7 @@ package ptn
 import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func (pm *ProtocolManager) PartitionHandle(p *peer) error {
@@ -49,7 +50,7 @@ func (pm *ProtocolManager) PartitionHandle(p *peer) error {
 
 	// main loop. handle incoming messages.
 	for {
-		if err := pm.handleMsg(p); err != nil {
+		if err := pm.partionHandleMsg(p); err != nil {
 			log.Debug("PalletOne message handling failed", "err", err)
 			return err
 		}
@@ -58,19 +59,52 @@ func (pm *ProtocolManager) PartitionHandle(p *peer) error {
 
 func (pm *ProtocolManager) removeLightPeer(id string) {
 	// Short circuit if the peer was already removed
-	peer := pm.peers.Peer(id)
+	peer := pm.lightPeers.Peer(id)
 	if peer == nil {
 		return
 	}
 	log.Debug("Removing PalletOne peer", "peer", id)
 
-	// Unregister the peer from the downloader and PalletOne peer set
-	pm.downloader.UnregisterPeer(id)
-	if err := pm.peers.Unregister(id); err != nil {
+	if err := pm.lightPeers.Unregister(id); err != nil {
 		log.Error("Peer removal failed", "peer", id, "err", err)
 	}
 	// Hard disconnect at the networking layer
 	if peer != nil {
 		peer.Peer.Disconnect(p2p.DiscUselessPeer)
 	}
+}
+
+// handleMsg is invoked whenever an inbound message is received from a remote
+// peer. The remote connection is torn down upon returning any error.
+func (pm *ProtocolManager) partionHandleMsg(p *peer) error {
+	// Read the next message from the remote peer, and ensure it's fully consumed
+	msg, err := p.rw.ReadMsg()
+	if err != nil {
+		return err
+	}
+	if msg.Size > ProtocolMaxMsgSize {
+		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
+	}
+
+	defer msg.Discard()
+
+	// Handle the message depending on its contents
+	switch {
+	case msg.Code == NewBlockHeaderMsg:
+		return pm.NewBlockHeaderMsg(msg, p)
+	default:
+		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
+	}
+	return nil
+}
+
+func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
+	var header *modules.Header
+	if err := msg.Decode(header); err != nil {
+		log.Info("msg.Decode", "err:", err)
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+	pm.lightFetcher.Enqueue(p.id, header)
+	//TODO if local peer index < request peer index,should sync with the same protocal peers
+	return nil
 }
