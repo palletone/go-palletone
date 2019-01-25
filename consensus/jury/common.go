@@ -321,7 +321,7 @@ func checkTxValid(tx *modules.Transaction) bool {
 	if len(sigs) > 0 {
 		for i := 0; i < len(sigs); i++ {
 			if !keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) {
-				log.Error("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
+				log.Debug("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
 				//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
 				//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
 				//return false
