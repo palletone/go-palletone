@@ -122,6 +122,7 @@ func ComputeRewards() uint64 {
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool) error {
 	code := validate.validateTx(tx, isCoinbase)
 	if code == TxValidationCode_VALID {
+		log.Debugf("Tx[%s] validate pass!",tx.Hash().String())
 		return nil
 	}
 	return NewValidateError(code)

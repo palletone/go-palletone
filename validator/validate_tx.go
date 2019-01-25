@@ -56,7 +56,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 	//	return TxValidationCode_NIL_TXACTION
 	//}
 
-	for _, msg := range tx.TxMessages {
+	for msgIdx, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
 			return TxValidationCode_UNKNOWN_TX_TYPE
@@ -78,7 +78,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD
 			}
-			validateCode := validate.validatePaymentPayload(payment, isCoinbase)
+			validateCode := validate.validatePaymentPayload(tx,msgIdx, payment, isCoinbase)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode
 			}

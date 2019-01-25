@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
+	"github.com/palletone/go-palletone/validator"
 )
 
 const (
@@ -168,7 +169,7 @@ type TxPool struct {
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
-
+	txValidator validator.Validator
 	locals  *utxoSet   // Set of local transaction to exempt from eviction rules
 	journal *txJournal // Journal of local transaction to back up to disk
 
@@ -263,14 +264,19 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	}
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
-
+	pool.txValidator=validator.NewValidate(nil,pool,nil)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
 
 	return pool
 }
-
+func(pool *TxPool)GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error){
+	if utxo,ok:=	pool.outputs[*outpoint];ok{
+		return utxo,nil
+	}
+	return pool.unit.GetUtxoEntry(outpoint)
+}
 // loop is the transaction pool's main event loop, waiting for and reacting to
 // outside blockchain events as well as for various reporting and transaction
 // eviction events.
@@ -555,62 +561,65 @@ func (pool *TxPool) local() map[common.Hash]*modules.TxPoolTransaction {
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error {
 	// Don't accept the transaction if it already in the pool .
-	isContractTplTx := false
+	//isContractTplTx := false
 	hash := tx.Tx.Hash()
 	if pool.isTransactionInPool(hash) {
 		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
 	}
-	// 交易的校验， 包括inputs校验
-	for _, msg := range tx.Tx.Messages() {
-		if msg.App == modules.APP_PAYMENT {
-			payment, ok := msg.Payload.(*modules.PaymentPayload)
-			if ok {
-				for _, in := range payment.Inputs {
-					utxo, _ := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
-					if utxo != nil {
-						if utxo.IsModified() || utxo.IsSpent() {
-							return errors.New(fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalid。",
-								tx.Tx.Hash().String(), in.PreviousOutPoint.String()))
-						}
-					}
-				}
-			}
-		}
-		if msg.App == modules.APP_CONTRACT_TPL_REQUEST {
-			isContractTplTx = true
-		}
-	}
-	// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
-	//TODO xiaozhi contract template tx will be big than other tx
-	if isContractTplTx {
-		if tx.Tx.Size() > 128*1024 {
-			return ErrOversizedData
-		}
-	} else {
-		if tx.Tx.Size() > 32*1024 {
-			return ErrOversizedData
-		}
-	}
-	// 交易费太低的交易，不能通过验证。
-	if pool.txfee.Cmp(tx.GetTxFee()) > 0 {
-		log.Debug(fmt.Sprintf("txfee is too low, pool's fee: (%d) , tx's fee: (%d)", pool.txfee.Int64(), tx.GetTxFee().Int64()))
-		return ErrTxFeeTooLow
-	}
 
-	if len(tx.From) > 0 {
-		for _, from := range tx.From {
-			local = local || pool.locals.contains(*from) // tx maybe local even if the transaction arrived from the network
-			if !local && pool.txfee.Cmp(tx.GetTxFee()) > 0 {
-				return ErrTxFeeTooLow
-			}
-		}
-	}
-
-	// Make sure the transaction is signed properly
-	// Verify crypto signatures for each input and reject the transaction if any don't verify.
-	// todo 验证签名
-
-	return nil
+	err:=pool.txValidator.ValidateTx(tx.Tx,false)
+	return err
+	//// 交易的校验， 包括inputs校验
+	//for _, msg := range tx.Tx.Messages() {
+	//	if msg.App == modules.APP_PAYMENT {
+	//		payment, ok := msg.Payload.(*modules.PaymentPayload)
+	//		if ok {
+	//			for _, in := range payment.Inputs {
+	//				utxo, _ := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
+	//				if utxo != nil {
+	//					if utxo.IsModified() || utxo.IsSpent() {
+	//						return errors.New(fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalid。",
+	//							tx.Tx.Hash().String(), in.PreviousOutPoint.String()))
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//	if msg.App == modules.APP_CONTRACT_TPL_REQUEST {
+	//		isContractTplTx = true
+	//	}
+	//}
+	//// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
+	////TODO xiaozhi contract template tx will be big than other tx
+	//if isContractTplTx {
+	//	if tx.Tx.Size() > 128*1024 {
+	//		return ErrOversizedData
+	//	}
+	//} else {
+	//	if tx.Tx.Size() > 32*1024 {
+	//		return ErrOversizedData
+	//	}
+	//}
+	//// 交易费太低的交易，不能通过验证。
+	//if pool.txfee.Cmp(tx.GetTxFee()) > 0 {
+	//	log.Debug(fmt.Sprintf("txfee is too low, pool's fee: (%d) , tx's fee: (%d)", pool.txfee.Int64(), tx.GetTxFee().Int64()))
+	//	return ErrTxFeeTooLow
+	//}
+	//
+	//if len(tx.From) > 0 {
+	//	for _, from := range tx.From {
+	//		local = local || pool.locals.contains(*from) // tx maybe local even if the transaction arrived from the network
+	//		if !local && pool.txfee.Cmp(tx.GetTxFee()) > 0 {
+	//			return ErrTxFeeTooLow
+	//		}
+	//	}
+	//}
+	//
+	//// Make sure the transaction is signed properly
+	//// Verify crypto signatures for each input and reject the transaction if any don't verify.
+	//// todo 验证签名
+	//
+	//return nil
 }
 
 // This function MUST be called with the txpool lock held (for reads).
@@ -714,7 +723,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	// If the transaction fails basic validation, discard it
 	if err := pool.validateTx(tx, local); err != nil {
-		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err.Error())
 		return false, err
 	}
 
@@ -2027,10 +2036,11 @@ func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, err
 			}
 		}
 	}
-	if _, _, err := pool.unit.GetTransactionByHash(hash); err != nil {
-		// 既不在交易池，也没确认的交易（无效交易）
-		return nil, errors.New(fmt.Sprintf("%s (hash: %s)", err.Error(), hash.String()))
-	}
+	//TODO 新交易当然不在DAG中，为什么要这么查？
+	//if _, _, err := pool.unit.GetTransactionByHash(hash); err != nil {
+	//	// 既不在交易池，也没确认的交易（无效交易）
+	//	return nil, errors.New(fmt.Sprintf("%s (hash: %s)", err.Error(), hash.String()))
+	//}
 	return pool.unit.GetTxFee(tx)
 }
 

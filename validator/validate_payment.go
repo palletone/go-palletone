@@ -23,42 +23,79 @@ package validator
 import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
 )
+
+//Coinbase可以没有输入，就算有输入也没有Preoutpoint
+func (validate *Validate) validateCoinbase(payment *modules.PaymentPayload) ValidationCode{
+return TxValidationCode_VALID
+}
+
 
 //验证一个Payment
 //Validate a payment message
 //1. Amount correct
 //2. Asset must be equal
 //3. Unlock correct
-func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload, isCoinbase bool) ValidationCode {
-	// check locktime
+func (validate *Validate) validatePaymentPayload(tx *modules.Transaction,msgIdx int, payment *modules.PaymentPayload, isCoinbase bool) ValidationCode {
 
-	// TODO coinbase 交易的inputs是null.
-	// if len(payment.Inputs) <= 0 {
-	// 	log.Error("payment input is null.", "payment.input", payment.Inputs)
-	// 	return TxValidationCode_INVALID_PAYMMENT_INPUT
-	// }
+if isCoinbase{
+	return validate.validateCoinbase(payment)
+}
+if payment.LockTime>0 {
+	// TODO check locktime
+}
 
-	if !isCoinbase {
-		for _, in := range payment.Inputs {
+		if len(payment.Inputs)==0{
+			return TxValidationCode_INVALID_PAYMMENT_INPUT
+		}
+		invokeReqMsgIdx:=tx.GetContractInvokeReqMsgIdx()
+		txForSign:=tx
+		if msgIdx<invokeReqMsgIdx{
+			txForSign=tx.GetRequestTx()
+		}
+		totalInput:=uint64(0)
+		utxos:=[]*modules.Utxo{}
+		var asset *modules.Asset
+		for inputIdx, in := range payment.Inputs {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
 				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
 			// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
-			if utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
+			utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
+			if  utxo == nil || err != nil {
 				return TxValidationCode_INVALID_OUTPOINT
 			}
+			utxos=append(utxos,utxo)
+			if asset==nil{
+				asset=utxo.Asset
+			}else{
+				//input asset must be same
+				if !asset.IsSimilar(utxo.Asset){
+					return TxValidationCode_INVALID_ASSET
+				}
+			}
+			totalInput+=utxo.Amount
 			// check SignatureScript
+			err=tokenengine.ScriptValidate(utxo.PkScript,nil,txForSign,msgIdx,inputIdx)
+			if err!=nil{
+				log.Infof("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
+					tx.Hash().String(),msgIdx,inputIdx,in.SignatureScript,utxo.PkScript)
+				return TxValidationCode_INVALID_PAYMMENT_INPUT
+			}else{
+				log.Debugf("Unlock script validated! tx[%s],%d,%d",tx.Hash().String(),msgIdx,inputIdx)
+			}
 		}
-	}
 
-	if len(payment.Outputs) <= 0 {
+
+	if len(payment.Outputs) == 0 {
 		log.Error("payment output is null.", "payment.output", payment.Outputs)
 		return TxValidationCode_INVALID_PAYMMENT_OUTPUT
 	}
-	//Check coinbase payment
+	totalOutput:=uint64(0)
+	//Check payment
 	//rule:
 	//	1. all outputs have same asset
 	asset0 := payment.Outputs[0].Asset
@@ -66,28 +103,17 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 		if !asset0.IsSimilar(out.Asset) {
 			return TxValidationCode_INVALID_ASSET
 		}
+	 totalOutput+=out.Value
+	 if totalOutput<out.Value ||out.Value==0{//big number overflow
+	 	return TxValidationCode_INVALID_AMOUNT
+	 }
 	}
-
-	for _, out := range payment.Outputs {
-		// // checkout output
-		// if i < 1 {
-		// 	if !out.Asset.IsSimilar(modules.NewPTNAsset()) {
-		// 		return TxValidationCode_INVALID_ASSET
-		// 	}
-		// 	// log.Debug("validation succeed！")
-		// 	continue // asset = out.Asset
-		// } else {
-		// 	if out.Asset == nil {
-		// 		return TxValidationCode_INVALID_ASSET
-		// 	}
-		// 	if !out.Asset.IsSimilar(payment.Outputs[i-1].Asset) {
-		// 		return TxValidationCode_INVALID_ASSET
-		// 	}
-		// }
-		if out.Value <= 0 || out.Value > 100000000000000000 {
-			log.Debug("The OutPut value is :", "amount", out.Value)
-			return TxValidationCode_INVALID_AMOUNT
-		}
+	//Input Output asset mustbe same
+	if !asset.IsSimilar(asset0){
+		return TxValidationCode_INVALID_ASSET
+	}
+	if totalOutput>totalInput{ //相当于手续费为负数
+		return TxValidationCode_INVALID_AMOUNT
 	}
 	return TxValidationCode_VALID
 }
