@@ -392,8 +392,8 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 						Message: "transaction " + "contains duplicate inputs",
 					}
 				}
+				existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
 			}
-			existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
 		}
 	}
 	//check whether input valid need find former script and than
