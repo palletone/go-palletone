@@ -587,7 +587,7 @@ func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 	pm.contractCh <- event
 }
 
-func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent) {
+func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
 	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
@@ -595,7 +595,9 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent) {
 		peer.SendContractTransaction(event)
 	}
 
-	//go pm.contractProc.ProcessContractEvent(&event)
+	if local {
+		go pm.contractProc.ProcessContractEvent(&event)
+	}
 }
 
 func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {

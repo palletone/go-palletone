@@ -145,17 +145,17 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Path:       ccPath,
 		Version:    ccVersion,
 	}
-	//查询一下是否已经安装过
-	if v, _, _, _, _ := dag.GetContractTpl(tpid[:]); v != nil {
-		log.Error("getContractTpl err:","error","the contractTlp is exist")
-		return nil,errors.New("the contractTlp is exist.")
-	}
-	//test
+
 	if cfg.DebugTest {
 		log.Info("enter contract debug test")
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
 	} else {
+		//查询一下是否已经安装过
+		if v, _, _, _, _ := dag.GetContractTpl(tpid[:]); v != nil {
+			log.Error("getContractTpl err:", "error", "the contractTlp is exist")
+			return nil, errors.New("the contractTlp is exist.")
+		}
 		//将合约代码文件打包成 tar 文件
 		paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
 		if err != nil {
@@ -245,7 +245,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	btxId, err := hex.DecodeString(txId)
-	depId :=common.NewAddress(btxId[:20], common.ContractHash)
+	depId := common.NewAddress(btxId[:20], common.ContractHash)
 	cc := &cclist.CCInfo{
 		Id:      depId[:],
 		Name:    usrccName,

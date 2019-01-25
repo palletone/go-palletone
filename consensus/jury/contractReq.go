@@ -39,7 +39,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	templateId := tpl.(*modules.ContractTplPayload).TemplateId
 
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, true)
 	return reqId, templateId, nil
 }
 
@@ -68,7 +68,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		return nil, nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, txId, err
 }
 
@@ -93,7 +93,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
 }
 
@@ -121,6 +121,6 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 		return nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx})
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
 }
