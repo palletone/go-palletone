@@ -50,6 +50,7 @@ type PalletOne interface {
 
 	MockContractLocalSend(event ContractEvent)
 	ContractBroadcast(event ContractEvent)
+	ElectionBroadcast(event ElectionEvent)
 
 	GetLocalMediators() []common.Address
 	IsLocalActiveMediator(add common.Address) bool

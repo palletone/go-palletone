@@ -241,20 +241,6 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	return fetcher.New(pm.dag.GetUnitByHash, validator, pm.BroadcastUnit, heighter, inserter, pm.removePeer)
 }
 
-func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
-	headerVerifierFn := func(header *modules.Header) error {
-		return nil
-	}
-	headerBroadcaster := func(header *modules.Header, propagate bool) {
-
-	}
-	peerDrop := func(id string) {
-
-	}
-	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
-		headerBroadcaster, pm.dag.InsertLightHeader, peerDrop)
-}
-
 func (pm *ProtocolManager) removePeer(id string) {
 	// Short circuit if the peer was already removed
 	peer := pm.peers.Peer(id)
@@ -383,8 +369,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
 	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
 
-	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) &&
-		(pm.SubProtocols[0].Name == ProtocolName) {
+	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
 		return pm.PartitionHandle(p)
 	}
 
@@ -523,8 +508,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.GroupSigMsg(msg, p)
 
 	case msg.Code == ContractMsg:
-		log.Debug("===============ContractMsg")
 		return pm.ContractMsg(msg, p)
+
+	case msg.Code == ElectionMsg:
+		return pm.ElectionMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
@@ -584,19 +571,6 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	}
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
-
-//func (self *ProtocolManager) ceBroadcastLoop() {
-//	for {
-//		select {
-//		case event := <-self.ceCh:
-//			self.BroadcastCe(event.Ce)
-//
-//		// Err() channel will be closed when unsubscribing.
-//		case <-self.ceSub.Err():
-//			return
-//		}
-//	}
-//}
 
 //func (pm *ProtocolManager) BroadcastCe(ce string) {
 //	peers := pm.peers.GetPeers()

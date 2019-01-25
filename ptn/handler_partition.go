@@ -21,7 +21,22 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptn/lps"
 )
+
+func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
+	headerVerifierFn := func(header *modules.Header) error {
+		return nil
+	}
+	headerBroadcaster := func(header *modules.Header, propagate bool) {
+
+	}
+	peerDrop := func(id string) {
+
+	}
+	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
+		headerBroadcaster, pm.dag.InsertLightHeader, peerDrop)
+}
 
 func (pm *ProtocolManager) PartitionHandle(p *peer) error {
 	if pm.lightPeers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
@@ -104,7 +119,25 @@ func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
 		log.Info("msg.Decode", "err:", err)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	pm.lightFetcher.Enqueue(p.id, header)
+	log.Debug("ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
+	defer log.Debug("ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
+	//pm.lightFetcher.Enqueue(p.id, header)
 	//TODO if local peer index < request peer index,should sync with the same protocal peers
 	return nil
+}
+
+//subprotocal equal ptn or not equal ptn
+func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header, propagate bool) {
+	if propagate {
+		//TODO broadcast other token header in self(ptn) peers
+		return
+	} else {
+		//broacast self token(not ptn token) to ptn peers
+		hash := header.Hash()
+		peers := pm.lightPeers.GetPeers()
+		for _, peer := range peers {
+			peer.SendLightHeader(header)
+		}
+		log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
+	}
 }
