@@ -35,16 +35,25 @@ import (
 )
 
 type Validate struct {
-	dagdb   storage.IDagDb
-	utxodb  storage.IUtxoDb
-	utxoRep IUtxoRepository
-	statedb storage.IStateDb
+	utxoquery  IUtxoQuery
+	statequery IStateQuery
+	dagquery   IDagQuery
+}
+type IUtxoQuery interface {
+	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+}
+type IStateQuery interface {
+	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
+}
+type IDagQuery interface {
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 }
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
-func NewValidate(dagdb storage.IDagDb, utxodb storage.IUtxoDb, utxoRep IUtxoRepository, statedb storage.IStateDb) *Validate {
-	return &Validate{dagdb: dagdb, utxodb: utxodb, utxoRep: utxoRep, statedb: statedb}
+func NewValidate(dagdb storage.IDagDb, utxoRep IUtxoRepository, statedb storage.IStateDb) *Validate {
+	return &Validate{dagquery: dagdb, utxoquery: utxoRep, statequery: statedb}
 }
 
 type Validator interface {
@@ -96,7 +105,7 @@ func (validate *Validate) ValidateTransactions(txs *modules.Transactions, isGene
 		}
 		// validate fee
 		if isGenesis == false && txIndex != 0 {
-			txFee, err := validate.utxoRep.ComputeTxFee(tx)
+			txFee, err := validate.utxoquery.ComputeTxFee(tx)
 			if err != nil {
 				log.Info("ValidateTx", "txhash", txHash, "error validate code", modules.TxValidationCode_INVALID_FEE)
 				return nil, false, err
@@ -436,7 +445,7 @@ To validate contract template payload
 */
 func (validate *Validate) validateContractTplPayload(contractTplPayload *modules.ContractTplPayload) modules.TxValidationCode {
 	// to check template whether existing or not
-	stateVersion, bytecode, name, path, tplV := validate.statedb.GetContractTpl(contractTplPayload.TemplateId)
+	stateVersion, bytecode, name, path, tplV := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
 	if stateVersion == nil && bytecode == nil && name == "" && path == "" && tplV == "" {
 		return modules.TxValidationCode_VALID
 	}
@@ -465,7 +474,7 @@ func (validate *Validate) validatePaymentPayload(payment *modules.PaymentPayload
 				return modules.TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
 			// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
-			if utxo, err := validate.utxodb.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
+			if utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint); utxo == nil || err != nil {
 				return modules.TxValidationCode_INVALID_OUTPOINT
 			}
 			// check SignatureScript
@@ -652,7 +661,7 @@ func (validate *Validate) validateDataPayload(payload *modules.DataPayload) modu
 func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	if len(tx.TxMessages) > 2 {
 		reqId := tx.RequestHash()
-		if txHash, err := validate.dagdb.GetTxHashByReqId(reqId); err == nil && txHash != (common.Hash{}) {
+		if txHash, err := validate.dagquery.GetTxHashByReqId(reqId); err == nil && txHash != (common.Hash{}) {
 			log.Debug("checkTxIsExist", "transactions exist in dag, reqId:", reqId.String())
 			return true
 		}

@@ -526,7 +526,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
+	validate := dagcommon.NewValidate(dagDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
@@ -568,7 +568,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
+	validate := dagcommon.NewValidate(dagDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 
 	dag := &Dag{
@@ -598,7 +598,7 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := dagcommon.NewValidate(dagDb, utxoDb, utxoRep, stateDb)
+	validate := dagcommon.NewValidate(dagDb, utxoRep, stateDb)
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{
@@ -1298,4 +1298,15 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 // GetFileInfo
 func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 	return d.unstableUnitRep.GetFileInfo(filehash)
+}
+
+//Light Palletone Subprotocal
+func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error) {
+	return nil, nil
+}
+func (d *Dag) GetLightChainHeight(assetId modules.IDType16) uint64 {
+	return uint64(0)
+}
+func (d *Dag) InsertLightHeader(headers []modules.Header) (int, error) {
+	return 0, nil
 }
