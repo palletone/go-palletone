@@ -1299,3 +1299,14 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 	return d.unstableUnitRep.GetFileInfo(filehash)
 }
+
+//Light Palletone Subprotocal
+func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error) {
+	return nil, nil
+}
+func (d *Dag) GetLightChainHeight(assetId modules.IDType16) uint64 {
+	return uint64(0)
+}
+func (d *Dag) InsertLightHeader(headers []modules.Header) (int, error) {
+	return 0, nil
+}
