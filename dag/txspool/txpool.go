@@ -904,7 +904,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 		}
 	}
 
-	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
+	//go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
 }
 
 // AddLocal enqueues a single transaction into the pool if it is valid, marking

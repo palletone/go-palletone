@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
+	"sort"
 )
 
 type Dag struct {
@@ -213,7 +214,15 @@ func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	//log.Debug("Dag", "GetUnitByNumber getChainUnit(hash):", hash)
 	return d.unstableUnitRep.GetUnit(hash)
 }
-
+func (d *Dag) GetUnstableUnits() []*modules.Unit {
+	units := d.Memdag.GetChainUnits()
+	result := modules.Units{}
+	for _, u := range units {
+		result = append(result, u)
+	}
+	sort.Sort(result)
+	return result
+}
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	//if d.Memdag.Exists(hash) {
 	//	unit, err := d.Memdag.getChainUnit(hash)

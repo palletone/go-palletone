@@ -1753,7 +1753,7 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	//ptn inputs
 	for _, u := range utxosPTNTaken {
 		utxo := u.(*ptnjson.UtxoJson)
-		txHash:= common.HexToHash(utxo.TxHash)
+		txHash := common.HexToHash(utxo.TxHash)
 		prevOut := modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		payPTN.AddTxIn(txInput)
@@ -1813,7 +1813,7 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 	inputPoints := make(map[modules.OutPoint][]byte)
 	var redeem []byte
 	for _, rti := range cmdInputs {
-		inputHash:= common.HexToHash(rti.Txid)
+		inputHash := common.HexToHash(rti.Txid)
 
 		script, err := decodeHexStr(rti.ScriptPubKey)
 		if err != nil {
@@ -2114,6 +2114,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
 	return ptnjson.SignRawTransactionResult{
 		Hex:      signedHex,
+		Txid:     tx.Hash().String(),
 		Complete: len(signErrors) == 0,
 		Errors:   signErrors,
 	}, nil
@@ -2170,7 +2171,7 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 
 //转为压力测试准备数据用
 func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, fromAddress, toAddress string, amount int, count int, password string) ([]string, error) {
-	txHash:= common.HexToHash(txid)
+	txHash := common.HexToHash(txid)
 	toAddr, _ := common.StringToAddress(toAddress)
 	fromAddr, _ := common.StringToAddress(fromAddress)
 	utxoScript := tokenengine.GenerateLockScript(fromAddr)
@@ -2755,7 +2756,9 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 //	return string(result_json), nil
 //
 //}
-
+func (s *PublicDagAPI) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
+	return s.b.GetUnstableUnits()
+}
 func (s *PublicDagAPI) GetUnitTxsInfo(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)
 	if item, err := s.b.GetUnitTxsInfo(hash); err != nil {

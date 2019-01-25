@@ -199,6 +199,18 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 //wangjiyou add for ptn/fetcher.go
 type Units []*Unit
 
+func (s Units) Len() int {
+	return len(s)
+}
+
+func (s Units) Less(i, j int) bool {
+	return s[i].NumberU64() < s[j].NumberU64()
+}
+
+func (s Units) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
 // key: unit.UnitHash(unit)
 type Unit struct {
 	UnitHeader *Header            `json:"unit_header"`  // unit header

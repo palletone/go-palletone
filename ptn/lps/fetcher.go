@@ -14,10 +14,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package les implements the Light Ethereum Subprotocol.
+// Package les implements the Light Palletone Subprotocol.
 package lps
 
 import (
+	"errors"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -41,7 +42,10 @@ const (
 	maxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
 	hashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
 	blockLimit    = 64                     // Maximum number of unique blocks a peer may have delivered
+)
 
+var (
+	errTerminated = errors.New("terminated")
 )
 
 // blockRetrievalFn is a callback type for retrieving a block from the local chain.
@@ -186,7 +190,6 @@ func (f *lightFetcher) loop() {
 			height = f.lightChainHeight(op.header.Number.AssetID)
 			number := op.header.Index()
 			if number > height+1 {
-				//f.queue.Push(op, -float32(op.unit.NumberU64()))
 				f.queue.Push(op, -float32(op.header.Index()))
 				break
 			}
@@ -204,6 +207,10 @@ func (f *lightFetcher) loop() {
 		case <-f.quit:
 			// Fetcher terminating, abort all operations
 			return
+
+		case op := <-f.inject:
+			// A direct block insertion was requested, try and fill any pending gaps
+			f.enqueue(op.origin, op.header)
 			/*
 				case notification := <-f.notify:
 					// A block was announced, make sure the peer isn't DOSing us
@@ -447,4 +454,49 @@ func (f *lightFetcher) insert(peer string, header *modules.Header) {
 		go f.broadcastHeader(header, false)
 
 	}()
+}
+
+// enqueue schedules a new future import operation, if the block to be imported
+// has not yet been seen.
+func (f *lightFetcher) enqueue(peer string, header *modules.Header) {
+	hash := header.Hash()
+	// Ensure the peer isn't DOSing us
+	count := f.queues[peer] + 1
+	if count > blockLimit {
+		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", header.Index(), "hash", hash, "limit", blockLimit)
+		f.forgetHash(hash)
+		return
+	}
+	// Discard any past or too distant blocks
+	heightChain := int64(f.lightChainHeight(header.Number.AssetID))
+	if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
+		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", header.Index(), "heightChain", heightChain, "distance", dist)
+		f.forgetHash(hash)
+		return
+	}
+	// Schedule the block for future importing
+	if _, ok := f.queued[hash]; !ok {
+		op := &inject{
+			origin: peer,
+			header: header,
+		}
+		f.queues[peer] = count
+		f.queued[hash] = op
+		f.queue.Push(op, -float32(header.Index()))
+		log.Debug("Queued propagated block", "peer", peer, "number", header.Index(), "hash", hash, "queued", f.queue.Size())
+	}
+}
+
+// Enqueue tries to fill gaps the the fetcher's future import queue.
+func (f *lightFetcher) Enqueue(peer string, header *modules.Header) error {
+	op := &inject{
+		origin: peer,
+		header: header,
+	}
+	select {
+	case f.inject <- op:
+		return nil
+	case <-f.quit:
+		return errTerminated
+	}
 }
