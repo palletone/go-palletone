@@ -523,8 +523,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.GroupSigMsg(msg, p)
 
 	case msg.Code == ContractMsg:
-		log.Debug("===============ContractMsg")
 		return pm.ContractMsg(msg, p)
+
+	case msg.Code == ElectionMsg:
+		return pm.ElectionMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)

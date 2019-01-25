@@ -317,7 +317,6 @@ func checkTxValid(tx *modules.Transaction) bool {
 		}
 	}
 	printTxInfo(tmpTx)
-	//TODO VerifyTXWithPK has a bug, fix it soon...
 	if len(sigs) > 0 {
 		for i := 0; i < len(sigs); i++ {
 			if !keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) {
@@ -325,7 +324,6 @@ func checkTxValid(tx *modules.Transaction) bool {
 				//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
 				//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
 				//return false
-				return true
 			}
 		}
 	}

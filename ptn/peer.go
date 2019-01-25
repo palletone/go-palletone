@@ -198,6 +198,10 @@ func (p *peer) SendContractTransaction(event jury.ContractEvent) error {
 	return p2p.Send(p.rw, ContractMsg, event)
 }
 
+func (p *peer) SendElectionEvent(event jury.ElectionEvent) error {
+	return p2p.Send(p.rw, ElectionMsg, event)
+}
+
 //SendConsensus sends consensus msg to the peer
 //func (p *peer) SendConsensus(msgs string) error {
 //	return p2p.Send(p.rw, ConsensusMsg, msgs)
@@ -255,6 +259,10 @@ func (p *peer) SendNodeData(data [][]byte) error {
 // ones requested from an already RLP encoded format.
 func (p *peer) SendReceiptsRLP(receipts []rlp.RawValue) error {
 	return p2p.Send(p.rw, ReceiptsMsg, receipts)
+}
+
+func (p *peer) SendElectionResultEvent(event jury.ElectionEvent) error {
+	return p2p.Send(p.rw, ElectionMsg, event)
 }
 
 // RequestOneHeader is a wrapper around the header query functions to fetch a

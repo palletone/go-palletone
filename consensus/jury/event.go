@@ -20,9 +20,11 @@ package jury
 
 import (
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
 )
 
 type ContractEventType int
+type EventType int
 
 const (
 	CONTRACT_EVENT_EXEC   ContractEventType = 1 //合约执行，系统合约由Mediator完成，用户合约由Jury完成
@@ -30,7 +32,29 @@ const (
 	CONTRACT_EVENT_COMMIT                   = 4 //提交给Mediator进行验证确认并写到交易池
 )
 
+const (
+	RequestEvent EventType = 1
+	ResultEvent            = 2
+)
+
 type ContractEvent struct {
+	Addrs []common.Address //user contract jury addr
+
 	CType ContractEventType
 	Tx    *modules.Transaction
+}
+
+type ElectionRequestEvent struct {
+	Num  int
+	Data []byte
+}
+type ElectionResultEvent struct {
+}
+
+type ElectionEvent struct {
+	Num  int    //del
+	Data []byte //del
+
+	EType EventType
+	Event interface{}
 }

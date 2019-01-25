@@ -57,8 +57,8 @@ const (
 	VSSResponseMsg     = 0x0b
 	SigShareMsg        = 0x0c
 	GroupSigMsg        = 0x0d
-
-	ContractMsg = 0x10
+	ContractMsg        = 0x10
+	ElectionMsg        = 0x11
 
 	GetNodeDataMsg = 0x20
 	NodeDataMsg    = 0x21
