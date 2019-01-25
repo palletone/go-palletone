@@ -14,24 +14,44 @@
  * /
  *
  *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @date 2018-2019
+ *
+ */
+
+/*
+ *
+ *    This file is part of go-palletone.
+ *    go-palletone is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    go-palletone is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+ * /
+ *
+ *  * @author PalletOne core developer <dev@pallet.one>
  *  * @date 2018
  *
  */
 
-package common
+package validator
 
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 
-	"math/big"
-	"testing"
-	"time"
-
 	"github.com/palletone/go-palletone/common/ptndb"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
+	"math/big"
+	"testing"
+	"time"
 )
 
 func TestValidator(t *testing.T) {
@@ -77,7 +97,7 @@ func TestValidator(t *testing.T) {
 	utxoDb := storage.NewUtxoDb(db)
 
 	stateDb := storage.NewStateDb(db)
-	utxoRep := NewUtxoRepository(utxoDb, idxDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	validate := NewValidate(dagDb, utxoRep, stateDb)
 	code := validate.ValidateTx(tx, false, &worldTmpState)
 	log.Debug("validator ", "code:", code)

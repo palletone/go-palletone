@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/validator"
 	"sort"
 )
 
@@ -57,7 +58,7 @@ type Dag struct {
 	stableStateRep dagcommon.IStateRepository
 
 	propRep       dagcommon.IPropRepository
-	validate      dagcommon.Validator
+	validate      validator.Validator
 	ChainHeadFeed *event.Feed
 	// GenesisUnit   *Unit  // comment by Albert·Gou
 	Mutex           sync.RWMutex
@@ -526,7 +527,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := dagcommon.NewValidate(dagDb, utxoRep, stateDb)
+	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
@@ -568,7 +569,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := dagcommon.NewValidate(dagDb, utxoRep, stateDb)
+	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 
 	dag := &Dag{
@@ -598,7 +599,7 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := dagcommon.NewValidate(dagDb, utxoRep, stateDb)
+	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{

@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/validator"
 )
 
 type IUnitRepository interface {
@@ -95,14 +96,14 @@ type UnitRepository struct {
 	//uxtodb         storage.IUtxoDb
 	statedb        storage.IStateDb
 	propdb         storage.IPropertyDb
-	validate       Validator
+	validate       validator.Validator
 	utxoRepository IUtxoRepository
 	//logger         log.ILogger
 }
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	val := NewValidate(dagdb, utxoRep, statedb)
+	val := validator.NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, validate: val, utxoRepository: utxoRep, propdb: propdb}
 }
 
@@ -113,7 +114,7 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	val := NewValidate(dagdb, utxoRep, statedb)
+	val := validator.NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, validate: val, utxoRepository: utxoRep}
 }
 
