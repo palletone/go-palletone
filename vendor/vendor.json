@@ -405,12 +405,6 @@
 			"revisionTime": "2018-06-27T14:45:07Z"
 		},
 		{
-			"checksumSHA1": "eLXBfOX3wO3NghA3t5K832kTalY=",
-			"path": "github.com/google/go-cmp/cmp",
-			"revision": "2248b49eaa8e1c8c0963ee77b40841adbc19d4ca",
-			"revisionTime": "2018-11-15T01:20:43Z"
-		},
-		{
 			"checksumSHA1": "M6/zJtjFuaVs16Zv85o47fk4kZw=",
 			"path": "github.com/google/go-cmp/cmp/internal/diff",
 			"revision": "2248b49eaa8e1c8c0963ee77b40841adbc19d4ca",

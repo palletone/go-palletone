@@ -24,10 +24,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var DAO uint64 = 100000000
@@ -245,7 +245,7 @@ type Output struct {
 
 type Input struct {
 	SignatureScript  []byte    `json:"signature_script"`
-	Extra            []byte    `json:"extra"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	Extra            []byte    `json:"extra" rlp:"nil"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
 	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
 }
 
