@@ -1308,5 +1308,9 @@ func (d *Dag) GetLightChainHeight(assetId modules.IDType16) uint64 {
 	return uint64(0)
 }
 func (d *Dag) InsertLightHeader(headers []modules.Header) (int, error) {
+	log.Debug("===InsertLightHeader===", "numbers:", len(headers))
+	for _, header := range headers {
+		log.Debug("===InsertLightHeader===", "header index:", header.Index())
+	}
 	return 0, nil
 }
