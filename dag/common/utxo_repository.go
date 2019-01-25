@@ -62,7 +62,7 @@ type IUtxoRepository interface {
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
-	GetUxto(txin modules.Input) modules.Utxo
+	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
 	ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error)
 	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
@@ -190,13 +190,15 @@ func (repository *UtxoRepository) readUtxosFrAll(addr common.Address, asset modu
 获取某个input对应的utxo信息
 To get utxo struct according to it's input information
 */
-func (repository *UtxoRepository) GetUxto(txin modules.Input) modules.Utxo {
-
+func (repository *UtxoRepository) GetUxto(txin modules.Input) *modules.Utxo {
+	if txin.PreviousOutPoint == nil {
+		return nil
+	}
 	data, err := repository.utxodb.GetUtxoEntry(txin.PreviousOutPoint)
 	if err != nil {
-		return modules.Utxo{}
+		return nil
 	}
-	return *data
+	return data
 }
 
 // GetUtosOutPoint
@@ -434,7 +436,7 @@ func (repository *UtxoRepository) GetUxtoSetByInputs(txins []modules.Input) (map
 		if unsafe.Sizeof(utxo) == 0 {
 			continue
 		}
-		utxos[*in.PreviousOutPoint] = &utxo
+		utxos[*in.PreviousOutPoint] = utxo
 		total += utxo.Amount
 	}
 	return utxos, total
@@ -638,11 +640,14 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*module
 		if ok == false {
 			continue
 		}
+		if payload.IsCoinbase() {
+			continue
+		}
 		inAmount := uint64(0)
 		outAmount := uint64(0)
 		for _, txin := range payload.Inputs {
 			utxo := repository.GetUxto(*txin)
-			if utxo.IsEmpty() {
+			if utxo == nil {
 				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
 					txin.PreviousOutPoint.TxHash.String(),
 					txin.PreviousOutPoint.MessageIndex,
@@ -686,17 +691,17 @@ func ComputeRewards() uint64 {
 	return rewards
 }
 
-func IsCoinBase(tx *modules.Transaction) bool {
-	if len(tx.TxMessages) != 1 {
-		return false
-	}
-	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	if !ok {
-		return false
-	}
-	prevOut := msg.Inputs[0].PreviousOutPoint
-	if prevOut.TxHash != (common.Hash{}) {
-		return false
-	}
-	return true
-}
+//func IsCoinBase(tx *modules.Transaction) bool {
+//	if len(tx.TxMessages) != 1 {
+//		return false
+//	}
+//	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+//	if !ok {
+//		return false
+//	}
+//	prevOut := msg.Inputs[0].PreviousOutPoint
+//	if prevOut.TxHash != (common.Hash{}) {
+//		return false
+//	}
+//	return true
+//}
