@@ -185,3 +185,13 @@ func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error 
 
 	return nil
 }
+
+func (dag *Dag) IsConsecutiveMediator(nextMediator common.Address) bool {
+	dgp := dag.GetDynGlobalProp()
+
+	if !dgp.IsShuffledSchedule && nextMediator.Equal(dgp.LastMediator) {
+		return true
+	}
+
+	return false
+}

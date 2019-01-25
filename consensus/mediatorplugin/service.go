@@ -97,6 +97,8 @@ type iDag interface {
 	PrecedingMediatorsCount() int
 	UnitIrreversibleTime() time.Duration
 	LastMaintenanceTime() int64
+
+	IsConsecutiveMediator(nextMediator common.Address) bool
 }
 
 type MediatorPlugin struct {
