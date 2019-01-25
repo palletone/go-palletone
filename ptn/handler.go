@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -36,6 +35,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
+	"github.com/palletone/go-palletone/ptn/lps"
+	"sync/atomic"
 )
 
 const (
@@ -71,9 +72,10 @@ type ProtocolManager struct {
 	txpool   txPool
 	maxPeers int
 
-	downloader *downloader.Downloader
-	fetcher    *fetcher.Fetcher
-	peers      *peerSet
+	downloader   *downloader.Downloader
+	fetcher      *fetcher.Fetcher
+	lightFetcher *lps.LightFetcher
+	peers        *peerSet
 
 	SubProtocols []p2p.Protocol
 
@@ -230,7 +232,22 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		return manager.dag.InsertDag(blocks, manager.txpool)
 	}
 	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
+	manager.lightFetcher = manager.newLightFetcher()
 	return manager, nil
+}
+
+func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
+	headerVerifierFn := func(header *modules.Header) error {
+		return nil
+	}
+	headerBroadcaster := func(header *modules.Header, propagate bool) {
+
+	}
+	peerDrop := func(id string) {
+
+	}
+	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
+		headerBroadcaster, pm.dag.InsertLightHeader, peerDrop)
 }
 
 func (pm *ProtocolManager) removePeer(id string) {
@@ -256,11 +273,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
-	//go pm.mediatorConnect()
-
-	//pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
-	//pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
-	//go pm.ceBroadcastLoop()
 	// start sync handlers
 	//定时与相邻个体进行全链的强制同步,syncer()首先启动fetcher成员，然后进入一个无限循环，
 	//每次循环中都会向相邻peer列表中“最优”的那个peer作一次区块全链同步

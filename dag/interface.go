@@ -141,4 +141,9 @@ type IDag interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
+
+	//Light Palletone Subprotocal
+	GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error)
+	GetLightChainHeight(assetId modules.IDType16) uint64
+	InsertLightHeader(headers []modules.Header) (int, error)
 }
