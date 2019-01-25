@@ -149,7 +149,10 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 		//Save stable unit to ldb
 		chain.ldbunitRep.SaveUnit(unit, false)
 		//txpool flag tx as packaged
-		txpool.SendStoredTxs(unit.Txs.GetTxIds())
+		if len(unit.Txs) > 0 {
+			log.Debugf("Set tx[%x] status to confirm", unit.Txs.GetTxIds())
+			txpool.SendStoredTxs(unit.Txs.GetTxIds())
+		}
 	}
 	//remove new stable unit
 	delete(chain.chainUnits, hash)
@@ -266,6 +269,11 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			log.Debug("This is a new main chain unit")
 			//Add a new unit to main chain
 			chain.setLastMainchainUnit(unit)
+			//update txpool's tx status to pending
+			if len(unit.Txs) > 0 {
+				log.Debugf("Update tx[%x] status to pending in txpool", unit.Txs.GetTxIds())
+				txpool.SetPendingTxs(unit.Hash(), unit.Txs)
+			}
 			//增加了单元后检查是否满足稳定单元的条件
 			if !chain.checkStableCondition(threshold, txpool) {
 				chain.saveUnit2TempDb(unit)
@@ -275,7 +283,14 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			log.Debug("This is a fork unit")
 			if unit.NumberU64() > chain.lastMainchainUnit.NumberU64() { //Need switch main chain
 				//switch main chain, build db
-				chain.switchMainChain(unit, txpool)
+				//如果分支上的确认数大于等于当前主链，则切换主链
+				oldMainchainAddrCount := chain.getChainAddressCount(chain.lastMainchainUnit)
+				forkChainAddrCount := chain.getChainAddressCount(unit)
+				if forkChainAddrCount >= oldMainchainAddrCount {
+					chain.switchMainChain(unit, txpool)
+				} else {
+					log.Infof("Unit[%s] is in fork chain, and address count=%d, less than main chain address count=%d", unit.Hash().String(), forkChainAddrCount, oldMainchainAddrCount)
+				}
 			}
 		}
 
@@ -289,6 +304,18 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	return nil
 }
 
+//计算一个单元到稳定单元之间有多少个确认地址数
+func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
+	addrs := map[common.Address]bool{}
+	unitHash := lastUnit.Hash()
+	for unitHash != chain.stableUnitHash {
+		unit := chain.chainUnits[unitHash]
+		addrs[unit.Author()] = true
+		unitHash = unit.ParentHash()[0]
+	}
+	return len(addrs)
+}
+
 func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPool) {
 	oldLastMainchainUnit := chain.lastMainchainUnit
 	log.Debugf("Switch main chain unit from %s to %s", oldLastMainchainUnit.Hash().String(), newUnit.Hash().String())
@@ -296,13 +323,19 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	//reverse txpool tx status
 	unstableUnits := chain.getMainChainUnits()
 	for _, unit := range unstableUnits {
-		txpool.ResetPendingTxs(unit.Txs)
+		if len(unit.Txs) > 0 {
+			log.Debugf("Reset tx[%x] status to not pending", unit.Txs.GetTxIds())
+			txpool.ResetPendingTxs(unit.Txs)
+		}
 	}
 	chain.setLastMainchainUnit(newUnit)
 	//基于新主链，更新TxPool的状态
 	newUnstableUnits := chain.getMainChainUnits()
 	for _, unit := range newUnstableUnits {
-		txpool.SetPendingTxs(unit.Hash(), unit.Txs)
+		if len(unit.Txs) > 0 {
+			log.Debugf("Update tx[%x] status to pending in txpool", unit.Txs.GetTxIds())
+			txpool.SetPendingTxs(unit.Hash(), unit.Txs)
+		}
 	}
 	//基于新主链的单元和稳定单元，重新构建Tempdb
 	chain.rebuildTempdb()

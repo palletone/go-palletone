@@ -84,3 +84,26 @@ func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	}
 	return json
 }
+
+type UnitSummaryJson struct {
+	UnitHeader *HeaderJson        `json:"unit_header"`  // unit header
+	Txs        []common.Hash      `json:"transactions"` // transaction list
+	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
+	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
+
+}
+
+func ConvertUnit2SummaryJson(unit *modules.Unit) *UnitSummaryJson {
+	json := &UnitSummaryJson{
+		UnitHash:   unit.Hash(),
+		UnitSize:   unit.Size(),
+		UnitHeader: convertUnitHeader2Json(unit.UnitHeader),
+		Txs:        []common.Hash{},
+	}
+
+	for _, tx := range unit.Txs {
+
+		json.Txs = append(json.Txs, tx.Hash())
+	}
+	return json
+}

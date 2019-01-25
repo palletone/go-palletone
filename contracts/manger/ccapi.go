@@ -245,8 +245,9 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	btxId, err := hex.DecodeString(txId)
+	depId :=common.NewAddress(btxId[:20], common.ContractHash)
 	cc := &cclist.CCInfo{
-		Id:      btxId,
+		Id:      depId[:],
 		Name:    usrccName,
 		Path:    templateCC.Path,
 		Version: templateCC.Version,
@@ -263,16 +264,6 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
-	//type ContractDeployPayload struct {
-	//	TemplateId []byte             `json:"template_id"` // contract template id
-	//	ContractId []byte             `json:"contract_id"` // contract id
-	//	Name       string             `json:"name"`        // the name for contract
-	//	Args       [][]byte           `json:"args"`        // contract arguments list
-	//	Jury       []common.Address   `json:"jury"`        // contract jurors list
-	//	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
-	//	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
-	//}
-	fmt.Println("Deploy result:==========================================================", unit)
 	return cc.Id, unit, err
 }
 

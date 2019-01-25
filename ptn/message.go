@@ -430,6 +430,9 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 				continue
 			}
 			for inputIndex, txin := range payload.Inputs {
+				if txin.PreviousOutPoint == nil {
+					continue
+				}
 				st, err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
 				if st == nil || err != nil {
 					return err

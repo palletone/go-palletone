@@ -223,23 +223,44 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	}
 	return contract, nil
 }
-func (statedb *StateDb) SaveContractDeploy(deploy *modules.ContractDeployPayload) error {
+func (statedb *StateDb) SaveContractDeployReq(deploy *modules.ContractDeployRequestPayload) error {
 	// key  tempid +  contract id  + name
-	key := append(constants.CONTRACT_DEPLOY, deploy.TemplateId[:]...)
-	key = append(key, deploy.ContractId[:]...)
-	key = append(key, []byte(deploy.Name)...)
+	key := append(constants.CONTRACT_DEPLOY, deploy.TplId[:]...)
+	key = append(key, deploy.TxId[:]...)
+	//key = append(key, []byte(deploy.Name)...)
 	return StoreBytes(statedb.db, key, deploy)
 }
 
-func (statedb *StateDb) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
-	key := append(constants.CONTRACT_DEPLOY, tempId[:]...)
-	key = append(key, contractId[:]...)
-	key = append(key, []byte(name)...)
+func (statedb *StateDb) GetContractDeployReq(tempId, txId []byte) (*modules.ContractDeployRequestPayload, error) {
+	key := append(constants.CONTRACT_DEPLOY, tempId...)
+	key = append(key, txId...)
+	//key = append(key, []byte(name)...)
 	data, err := statedb.db.Get(key)
 	if err != nil {
 		return nil, err
 	}
-	deploy := new(modules.ContractDeployPayload)
+	deploy := new(modules.ContractDeployRequestPayload)
+	if err := rlp.DecodeBytes(data, &deploy); err != nil {
+		return nil, err
+	}
+	return deploy, nil
+}
+
+func (statedb *StateDb) SaveContractInvokeReq(invoke *modules.ContractInvokeRequestPayload) error {
+	// key   contractId  + funcName
+	key := append(constants.CONTRACT_DEPLOY, invoke.ContractId...)
+	key = append(key, []byte(invoke.FunctionName)...)
+	return StoreBytes(statedb.db, key, invoke)
+}
+
+func (statedb *StateDb) GetContractInvokeReq(contractId []byte, funcName string) (*modules.ContractInvokeRequestPayload, error) {
+	key := append(constants.CONTRACT_DEPLOY, contractId...)
+	key = append(key, []byte(funcName)...)
+	data, err := statedb.db.Get(key)
+	if err != nil {
+		return nil, err
+	}
+	deploy := new(modules.ContractInvokeRequestPayload)
 	if err := rlp.DecodeBytes(data, &deploy); err != nil {
 		return nil, err
 	}

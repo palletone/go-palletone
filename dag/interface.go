@@ -50,7 +50,7 @@ type IDag interface {
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	// GetHeaderByHash retrieves a header from the local chain.
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-
+	GetUnstableUnits() []*modules.Unit
 	//GetPrefix(prefix string) map[string][]byte
 
 	// CurrentHeader retrieves the head header from the local chain.
