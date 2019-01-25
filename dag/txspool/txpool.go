@@ -949,13 +949,12 @@ func (pool *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool
 	defer pool.mu.Unlock()
 
 	// Potentially accept the transaction to the memory pool.
-	missingParents, txD, err := pool.maybeAcceptTransaction(tx, true, rateLimit, false)
+	missingParents, _, err := pool.maybeAcceptTransaction(tx, true, rateLimit, false)
 	if err != nil {
 		log.Info("txpool", "accept transaction err:", err)
 		return nil, err
 	}
 	missingParents = missingParents
-	txD = txD
 
 	// Potentially add the orphan transaction to the orphan pool.
 	//err = mp.maybeAddOrphan(tx, tag)
