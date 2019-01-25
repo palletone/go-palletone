@@ -5,15 +5,15 @@
 package dag
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	core "github.com/palletone/go-palletone/core"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"reflect"
+	"time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -92,6 +92,20 @@ func (m *MockIDag) IsEmpty() bool {
 func (mr *MockIDagMockRecorder) IsEmpty() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockIDag)(nil).IsEmpty))
+}
+
+// GetUnstableUnits mocks base method
+func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnstableUnits")
+	ret0, _ := ret[0].([]*modules.Unit)
+	return ret0
+}
+
+// IsEmpty indicates an expected call of IsEmpty
+func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnstableUnits", reflect.TypeOf((*MockIDag)(nil).GetUnstableUnits))
 }
 
 // CurrentUnit mocks base method
