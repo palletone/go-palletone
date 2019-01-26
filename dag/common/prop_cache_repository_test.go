@@ -28,6 +28,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"github.com/palletone/go-palletone/common"
 )
 
 func BenchmarkPropCacheRepository_RetrieveDynGlobalProp(b *testing.B) {
@@ -39,7 +40,7 @@ func BenchmarkPropCacheRepository_RetrieveDynGlobalProp(b *testing.B) {
 	propdb := storage.NewPropertyDb(db)
 	cache := freecache.NewCache(10 * 1024 * 1024)
 	rep := NewPropCacheRepository(propdb, cache)
-	data := &modules.DynamicGlobalProperty{1, 2, 3}
+	data := &modules.DynamicGlobalProperty{common.Address{},true, 2, 3,4}
 	rep.StoreDynGlobalProp(data)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
