@@ -202,10 +202,10 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	//	return Lag, detail
 	//}
 
-	if dag.IsConsecutiveMediator(scheduledMediator) {
-		detail["Mediator"] = scheduledMediator.Str()
-		return Consecutive, detail
-	}
+	//if dag.IsConsecutiveMediator(scheduledMediator) {
+	//	detail["Mediator"] = scheduledMediator.Str()
+	//	return Consecutive, detail
+	//}
 
 	// 2. 生产验证单元
 	//execute contract
