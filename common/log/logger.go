@@ -29,7 +29,6 @@ import (
 	"log"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -54,23 +53,12 @@ var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, R
 var Logger *zap.Logger
 var mux sync.RWMutex
 
-//var originFileName string
-
 // init zap.logger
 func InitLogger() {
-	//date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
 	for i, path := range DefaultConfig.OutputPaths {
 		if path == LogStdout {
 			continue
 		}
-		//if originFileName == "" {
-		//	originFileName = path
-		//}
-		//index := strings.LastIndex(originFileName, ".")
-		//if -1 == index {
-		//	index = len(originFileName)
-		//}
-		// DefaultConfig.OutputPaths[i] = fmt.Sprintf("%s_%s.%s", Substr(originFileName, 0, index), date, Substr(originFileName, index+1, len(originFileName)-index))
 
 		if err := files.MakeDirAndFile(DefaultConfig.OutputPaths[i]); err != nil {
 			panic(err)
@@ -79,7 +67,6 @@ func InitLogger() {
 
 	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
-	// go check()
 }
 
 func ConInitLogger() {
@@ -323,141 +310,3 @@ func (c Ctx) toArray() []interface{} {
 
 	return arr
 }
-
-func Substr(str string, start, length int) string {
-	rs := []rune(str)
-	rl := len(rs)
-	end := 0
-
-	if start < 0 {
-		start = rl - 1 + start
-	}
-	end = start + length
-
-	if start > end {
-		start, end = end, start
-	}
-
-	if start < 0 {
-		start = 0
-	}
-	if start > rl {
-		start = rl
-	}
-	if end < 0 {
-		end = 0
-	}
-	if end > rl {
-		end = rl
-	}
-
-	return string(rs[start:end])
-}
-
-func check() {
-	for {
-		time.Sleep(time.Duration(5) * time.Second)
-		date := fmt.Sprintf("%d-%d-%d", time.Now().Year(), time.Now().Month(), time.Now().Day())
-		mux.RLock()
-		filename := Logger.GetFileName()
-		mux.RUnlock()
-		if strings.Index(filename, date) == -1 {
-			mux.Lock()
-			Logger = nil
-			InitLogger()
-			mux.Unlock()
-			return
-		}
-	}
-}
-
-/*
-type ILogger interface {
-	Trace(msg string, ctx ...interface{})
-	Debug(msg string, ctx ...interface{})
-	Debugf(format string, ctx ...interface{})
-	Info(msg string, ctx ...interface{})
-	Infof(format string, ctx ...interface{})
-	Warn(msg string, ctx ...interface{})
-	Warnf(format string, ctx ...interface{})
-	Error(msg string, ctx ...interface{})
-	Errorf(format string, ctx ...interface{})
-	Crit(msg string, ctx ...interface{})
-}
-
-type Plogger struct {
-	logger zap.Logger
-}
-
-// New returns a new logger with the given context.
-// New is a convenient alias for Root().New
-func New(ctx ...interface{}) *Plogger {
-	if Logger == nil {
-		InitLogger()
-	}
-	pl := new(Plogger)
-	pl.logger = *Logger
-	return pl
-}
-
-func NewTestLog() *Plogger {
-	DefaultConfig = Config{
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
-		OpenModule:       []string{"all"},
-		LoggerLvl:        "DEBUG",
-		Encoding:         "console",
-		Development:      true,
-	}
-	initLogger()
-	return &Plogger{logger: *Logger}
-}
-func (pl *Plogger) New(ctx ...interface{}) *Plogger {
-	if pl != nil {
-		return pl
-	}
-	if Logger == nil {
-		InitLogger()
-	}
-
-	pl.logger = *Logger
-	return pl
-}
-func (pl *Plogger) Trace(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Debug(msg, fileds...)
-}
-
-func (pl *Plogger) Debug(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Debug(msg, fileds...)
-}
-func (pl *Plogger) Debugf(format string, ctx ...interface{}) {
-	pl.logger.Debug(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Info(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Info(msg, fileds...)
-}
-func (pl *Plogger) Infof(format string, ctx ...interface{}) {
-	pl.logger.Info(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Warn(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Warn(msg, fileds...)
-}
-func (pl *Plogger) Warnf(format string, ctx ...interface{}) {
-	pl.logger.Warn(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Error(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Error(msg, fileds...)
-}
-func (pl *Plogger) Errorf(format string, ctx ...interface{}) {
-	pl.logger.Error(fmt.Sprintf(format, ctx...))
-}
-func (pl *Plogger) Crit(msg string, ctx ...interface{}) {
-	fileds := ctxTOfileds(ctx...)
-	pl.logger.Error(msg, fileds...)
-}
-*/
