@@ -34,8 +34,8 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 	"github.com/palletone/go-palletone/validator"
+	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
 const (
@@ -43,6 +43,8 @@ const (
 	chainHeadChanSize = 10
 	// rmTxChanSize is the size of channel listening to RemovedTransactionEvent.
 	rmTxChanSize = 10
+	DaoPerPtn    = 1e8
+	MaxDao       = 10e8 * DaoPerPtn
 )
 
 var (
@@ -161,17 +163,16 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 }
 
 type TxPool struct {
-	config TxPoolConfig
-	//logger       log.ILogger
+	config       TxPoolConfig
 	unit         dags
 	txfee        *big.Int
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
-	txValidator validator.Validator
-	locals  *utxoSet   // Set of local transaction to exempt from eviction rules
-	journal *txJournal // Journal of local transaction to back up to disk
+	txValidator  validator.Validator
+	locals       *utxoSet   // Set of local transaction to exempt from eviction rules
+	journal      *txJournal // Journal of local transaction to back up to disk
 
 	beats map[modules.OutPoint]time.Time
 	queue map[common.Hash]*modules.TxPoolTransaction
@@ -264,19 +265,20 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	}
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
-	pool.txValidator=validator.NewValidate(nil,pool,nil)
+	pool.txValidator = validator.NewValidate(nil, pool, nil)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
 
 	return pool
 }
-func(pool *TxPool)GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error){
-	if utxo,ok:=	pool.outputs[*outpoint];ok{
-		return utxo,nil
+func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	if utxo, ok := pool.outputs[*outpoint]; ok {
+		return utxo, nil
 	}
 	return pool.unit.GetUtxoEntry(outpoint)
 }
+
 // loop is the transaction pool's main event loop, waiting for and reacting to
 // outside blockchain events as well as for various reporting and transaction
 // eviction events.
@@ -567,7 +569,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
 	}
 
-	err:=pool.txValidator.ValidateTx(tx.Tx,false)
+	err := pool.txValidator.ValidateTx(tx.Tx, false)
 	return err
 	//// 交易的校验， 包括inputs校验
 	//for _, msg := range tx.Tx.Messages() {
@@ -1989,58 +1991,25 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
 	hash := tx.Hash()
-
 	// if the tx is not confired ,do this
 	if pool.isTransactionInPool(hash) {
 		// in txpool
 		if ptx, has := pool.all[hash]; has {
 			if !ptx.Pending {
 				// 直接在交易池计算交易费。
-				for _, msg := range tx.Messages() {
-					if msg.App == modules.APP_PAYMENT {
-						payment, ok := msg.Payload.(*modules.PaymentPayload)
-						if ok {
-							inAmount := uint64(0)
-							outAmount := uint64(0)
-							for _, txin := range payment.Inputs {
-								if utxo, has := pool.outputs[*txin.PreviousOutPoint]; has {
-									inAmount += utxo.Amount
-								}
-							}
-							for _, txout := range payment.Outputs {
-								outAmount += txout.Value
-							}
-							// check overflow
-							if inAmount > (1<<64 - 1) {
-								return nil, errors.New("Compute fees: txin total overflow")
-							}
-							if outAmount > (1<<64 - 1) {
-								return nil, errors.New("Compute fees: txout total overflow")
-							}
-							fees := inAmount - outAmount
-							if fees < 0 {
-								return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ",
-									hash.String(), inAmount, outAmount)
-							}
-							return &modules.AmountAsset{Amount: fees, Asset: payment.Outputs[0].Asset}, nil
-						}
-					}
-				}
+				return ptx.Tx.GetTxFee(pool.GetUtxoEntry)
 			}
 		} else { // in orphanTx pool
 			if ptx, has := pool.orphans[hash]; has {
-				if !ptx.Pending {
-					// 没打包的孤儿交易不需要计算交易费
-					// todo
-				}
+				return ptx.Tx.GetTxFee(pool.GetUtxoEntry)
 			}
 		}
 	}
-	//TODO 新交易当然不在DAG中，为什么要这么查？
-	//if _, _, err := pool.unit.GetTransactionByHash(hash); err != nil {
-	//	// 既不在交易池，也没确认的交易（无效交易）
-	//	return nil, errors.New(fmt.Sprintf("%s (hash: %s)", err.Error(), hash.String()))
-	//}
+	// 交易池已经打包的交易、memdag同步过来的未稳定单元的交易（reSetPendingTxs）调下面接口，计算交易费。
+	if _, _, err := pool.unit.GetTransactionByHash(hash); err != nil {
+		// 既不在交易池，也没确认的交易（无效交易）
+		return nil, errors.New(fmt.Sprintf("%s (hash: %s)", err.Error(), hash.String()))
+	}
 	return pool.unit.GetTxFee(tx)
 }
 
