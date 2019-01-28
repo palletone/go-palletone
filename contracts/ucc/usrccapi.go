@@ -54,6 +54,7 @@ func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, 
 	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
 	var err error
 	if cfg.DebugTest {
+		//return mockerDeployUserCC()
 		cdDeploymentSpec, err = getDeploymentSpec(nil, spec)
 		if err != nil {
 			return err

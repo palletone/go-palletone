@@ -20,11 +20,12 @@ package algorithm
 
 import (
 	"crypto"
-	"crypto/rand"
 	"fmt"
-	"github.com/tinychain/algorand/common"
-	"github.com/tinychain/algorand/vrf"
+	"crypto/rand"
 	"golang.org/x/crypto/ed25519"
+	//ed25519 "github.com/dedis/kyber/group/edwards25519"
+	"github.com/palletone/go-palletone/consensus/jury/vrf"
+	"github.com/palletone/go-palletone/common"
 )
 
 type PublicKey struct {

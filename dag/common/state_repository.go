@@ -45,7 +45,7 @@ type IStateRepository interface {
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
-
+	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
 }
 
@@ -105,5 +105,8 @@ func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modul
 }
 
 func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
-	return rep.GetContractDeploy(tempId[:], contractId[:], name)
+	return rep.statedb.GetContractDeploy(tempId[:])
+}
+func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
+	return rep.statedb.GetMinFee()
 }

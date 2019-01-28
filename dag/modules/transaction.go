@@ -406,6 +406,65 @@ func (txs Transactions) GetTxIds() []common.Hash {
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
 }
+type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
+//计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
+func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*PaymentPayload)
+		if ok == false {
+			continue
+		}
+		if payload.IsCoinbase() {
+			continue
+		}
+		inAmount := uint64(0)
+		outAmount := uint64(0)
+		for _, txin := range payload.Inputs {
+			utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
+			if utxo == nil {
+				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+					txin.PreviousOutPoint.TxHash.String(),
+					txin.PreviousOutPoint.MessageIndex,
+					txin.PreviousOutPoint.OutIndex)
+			}
+			// check overflow
+			if inAmount+utxo.Amount > (1<<64 - 1) {
+				return nil, fmt.Errorf("Compute fees: txin total overflow")
+			}
+			inAmount += utxo.Amount
+		}
+
+		for _, txout := range payload.Outputs {
+			// check overflow
+			if outAmount+txout.Value > (1<<64 - 1) {
+				return nil, fmt.Errorf("Compute fees: txout total overflow")
+			}
+			log.Debug("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
+			outAmount += txout.Value
+		}
+		if inAmount < outAmount {
+
+			return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+		}
+		fees := inAmount - outAmount
+		return &AmountAsset{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
+
+	}
+	return nil, fmt.Errorf("Compute fees: no payment payload")
+}
+//如果是合约调用交易，Copy其中的Msg0到ContractInvokeRequest的部分，如果不是请求，那么返回完整Tx
+func(tx *Transaction) GetRequestTx() *Transaction{
+	request:=&Transaction{}
+	for _,msg:=range tx.TxMessages{
+		cpMsg:=&Message{}
+		obj.DeepCopy(cpMsg,msg)
+		request.AddMessage(cpMsg)
+		if msg.App== APP_CONTRACT_INVOKE_REQUEST{
+			break
+		}
+	}
+	return request
+}
 
 //增发的利息
 type Addition struct {
@@ -491,10 +550,10 @@ func (tx *Transaction) Clone() Transaction {
 //func (msg *PaymentPayload) AddTxIn(ti *Input) {
 //	msg.Input = append(msg.Input, ti)
 //}
-const HashSize = 32
+//const HashSize = 32
 const defaultTxInOutAlloc = 15
 
-type Hash [HashSize]byte
+//type Hash [HashSize]byte
 
 // DoubleHashH calculates hash(hash(b)) and returns the resulting bytes as a
 // Hash.
@@ -551,6 +610,15 @@ func (tx *Transaction) IsNewContractInvokeRequest() bool {
 	lastMsg := tx.TxMessages[len(tx.TxMessages)-1]
 	return lastMsg.App >= 100
 
+}
+//获得合约请求Msg的Index
+func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
+	for idx,msg:=range tx.TxMessages{
+		if msg.App==APP_CONTRACT_INVOKE_REQUEST{
+			return idx
+		}
+	}
+	return -1
 }
 
 //判断一个交易是否是完整交易，如果是普通转账交易就是完整交易，
