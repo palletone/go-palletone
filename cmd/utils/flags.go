@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 
 	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -948,6 +949,18 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	//	}
 }
+
+func SetContract(ctx *cli.Context, cfg *contractcfg.Config) {
+	switch {
+	case ctx.GlobalIsSet(DataDirFlag.Name):
+		dataDir := ctx.GlobalString(DataDirFlag.Name)
+		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
+
+		cfg.ContractFileSystemPath = strings.Replace(path, "palletone/", "", 1)
+		fmt.Printf("=============SetContract ContractFileSystemPath:%s============================", cfg.ContractFileSystemPath)
+	}
+}
+
 func SetLog(ctx *cli.Context, cfg *log.Config) {
 	if ctx.GlobalIsSet(LogValue1Flag.Name) {
 		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
