@@ -70,6 +70,7 @@ type iDag interface {
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 }
 
 type Juror struct {

@@ -323,47 +323,47 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 	// restrictions.  All amounts in a transaction are in a unit value known
 	// as a satoshi.  One bitcoin is a quantity of satoshi as defined by the
 	// SatoshiPerBitcoin constant.
-	var totalSatoshi uint64
+	// var totalSatoshi uint64
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok == false {
 			continue
 		}
-		for _, txOut := range payload.Outputs {
-			satoshi := txOut.Value
-			if satoshi < 0 {
-				str := fmt.Sprintf("transaction output has negative "+
-					"value of %v", satoshi)
-				return errors.New(str)
-
-			}
-			if satoshi > MaxDao {
-				str := fmt.Sprintf("transaction output value of %v is "+
-					"higher than max allowed value of %v", satoshi,
-					MaxDao)
-				return errors.New(str)
-			}
-
-			// Two's complement int64 overflow guarantees that any overflow
-			// is detected and reported.  This is impossible for Bitcoin, but
-			// perhaps possible if an alt increases the total money supply.
-			totalSatoshi += satoshi
-			if totalSatoshi < 0 {
-				str := fmt.Sprintf("total value of all transaction "+
-					"outputs exceeds max allowed value of %v",
-					MaxDao)
-				return errors.New(str)
-			}
-			if totalSatoshi > MaxDao {
-				str := fmt.Sprintf("total value of all transaction "+
-					"outputs is %v which is higher than max "+
-					"allowed value of %v", totalSatoshi,
-					MaxDao)
-				return errors.New(str)
-			}
-			//todo find all txin amout by input hash
-			// if total inamout small than out value ,err
-		}
+		//for _, txOut := range payload.Outputs {
+		//	satoshi := txOut.Value
+		//	if satoshi < 0 {
+		//		str := fmt.Sprintf("transaction output has negative "+
+		//			"value of %v", satoshi)
+		//		return errors.New(str)
+		//
+		//	}
+		//	if satoshi > MaxDao {
+		//		str := fmt.Sprintf("transaction output value of %v is "+
+		//			"higher than max allowed value of %v", satoshi,
+		//			MaxDao)
+		//		return errors.New(str)
+		//	}
+		//
+		//	// Two's complement int64 overflow guarantees that any overflow
+		//	// is detected and reported.  This is impossible for Bitcoin, but
+		//	// perhaps possible if an alt increases the total money supply.
+		//	totalSatoshi += satoshi
+		//	if totalSatoshi < 0 {
+		//		str := fmt.Sprintf("total value of all transaction "+
+		//			"outputs exceeds max allowed value of %v",
+		//			MaxDao)
+		//		return errors.New(str)
+		//	}
+		//	if totalSatoshi > MaxDao+Raised {
+		//		str := fmt.Sprintf("total value of all transaction "+
+		//			"outputs is %v which is higher than max "+
+		//			"allowed value of %v", totalSatoshi,
+		//			MaxDao)
+		//		return errors.New(str)
+		//	}
+		//	//todo find all txin amout by input hash
+		//	// if total inamout small than out value ,err
+		//}
 
 		// Check for duplicate transaction inputs.
 		existingTxOut := make(map[modules.OutPoint]struct{})
