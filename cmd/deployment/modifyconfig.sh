@@ -49,6 +49,9 @@ echo $dumpjson
 newEnableStaleProduction="EnableStaleProduction=true"
 sed -i '/^EnableStaleProduction/c'$newEnableStaleProduction'' ptn-config.toml
 
+newEnableConsecutiveProduction="EnableConsecutiveProduction=true"
+sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-config.toml
+
 fi
 
 

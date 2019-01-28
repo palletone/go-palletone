@@ -288,3 +288,10 @@ func TestPaymentpayloadInputRlp(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, i2.SignatureScript, []byte("a"))
 }
+
+//func TestTransaction_GetRequestTx(t *testing.T) {
+//	tx := newTestTx()
+//	req := tx.GetRequestTx()
+//	//t.Logf("%+v", req)
+//	//assert.Equal(t, tx, req)
+//}
