@@ -70,7 +70,7 @@ func (d *Dag) Close() {
 
 // @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
-	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
+	unitState := d.validate.ValidateUnitExceptGroupSig(unit)
 	if unitState != nil {
 		return false
 	}
