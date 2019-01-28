@@ -957,7 +957,6 @@ func SetContract(ctx *cli.Context, cfg *contractcfg.Config) {
 		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
 
 		cfg.ContractFileSystemPath = strings.Replace(path, "palletone/", "", 1)
-		fmt.Printf("=============SetContract ContractFileSystemPath:%s============================", cfg.ContractFileSystemPath)
 	}
 }
 
