@@ -96,6 +96,7 @@ type dags interface {
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -265,7 +266,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	}
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
-	pool.txValidator = validator.NewValidate(nil, pool, nil)
+	pool.txValidator = validator.NewValidate(unit, pool, nil)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()

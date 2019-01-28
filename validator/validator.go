@@ -122,7 +122,7 @@ func ComputeRewards() uint64 {
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool) error {
 	code := validate.validateTx(tx, isCoinbase)
 	if code == TxValidationCode_VALID {
-		log.Debugf("Tx[%s] validate pass!",tx.Hash().String())
+		log.Debugf("Tx[%s] validate pass!", tx.Hash().String())
 		return nil
 	}
 	return NewValidateError(code)
@@ -172,6 +172,10 @@ func (validate *Validate) validateDataPayload(payload *modules.DataPayload) Vali
 func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	if len(tx.TxMessages) > 2 {
 		reqId := tx.RequestHash()
+		if validate.dagquery == nil {
+			log.Warnf("Validate DagQuery doesn't set, cannot check tx[%s] is exist or not", tx.Hash().String())
+			return false
+		}
 		if txHash, err := validate.dagquery.GetTxHashByReqId(reqId); err == nil && txHash != (common.Hash{}) {
 			log.Debug("checkTxIsExist", "transactions exist in dag, reqId:", reqId.String())
 			return true
