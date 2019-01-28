@@ -136,22 +136,19 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 	contractProc contractInf) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId: networkId,
-		dag:       dag,
-		txpool:    txpool,
-		eventMux:  mux,
-		//consEngine:  engine,
-		peers:       newPeerSet(),
-		newPeerCh:   make(chan *peer),
-		noMorePeers: make(chan struct{}),
-		txsyncCh:    make(chan *txsync),
-		quitSync:    make(chan struct{}),
-		//transCycleConnCh: make(chan int, 1),
+		networkId:    networkId,
+		dag:          dag,
+		txpool:       txpool,
+		eventMux:     mux,
+		peers:        newPeerSet(),
+		lightPeers:   newPeerSet(),
+		newPeerCh:    make(chan *peer),
+		noMorePeers:  make(chan struct{}),
+		txsyncCh:     make(chan *txsync),
+		quitSync:     make(chan struct{}),
 		genesis:      genesis,
 		producer:     producer,
 		contractProc: contractProc,
-		//peersTransition:  newPeerSet(),
-		//isTest:           false,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -352,6 +349,7 @@ func (pm *ProtocolManager) Stop() {
 	// sessions which are already established but not added to pm.peers yet
 	// will exit when they try to register.
 	pm.peers.Close()
+	pm.lightPeers.Close()
 
 	// Wait for all peer handler goroutines and the loops to come down.
 	pm.wg.Wait()
