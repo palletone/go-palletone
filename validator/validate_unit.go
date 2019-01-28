@@ -59,7 +59,7 @@ func (validate *Validate) validateUnitSignature(h *modules.Header, isGenesis boo
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	//  pubKey to pubKey_bytes
-	pubKey_bytes := crypto.FromECDSAPub(pubKey)
+	pubKey_bytes := crypto.CompressPubkey(pubKey)
 
 	if !crypto.VerifySignature(pubKey_bytes, hash.Bytes(), sig[:64]) {
 		log.Debug("Verify unit signature error.")
