@@ -98,7 +98,6 @@ type UnitRepository struct {
 	propdb         storage.IPropertyDb
 	validate       validator.Validator
 	utxoRepository IUtxoRepository
-	//logger         log.ILogger
 }
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {

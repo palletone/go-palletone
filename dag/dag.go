@@ -420,6 +420,9 @@ func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, comm
 	}
 	return tx, uhash, nil
 }
+func (d *Dag) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+	return d.unstableUnitRep.GetTransaction(hash)
+}
 func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
 	unitHash, unitNumber, txIndex, err := d.unstableUnitRep.GetTxLookupEntry(hash)
 	return &modules.TxLookupEntry{

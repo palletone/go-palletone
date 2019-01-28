@@ -98,6 +98,7 @@ type IDagDb interface {
 	// get txhash  and save index
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
 	//GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }

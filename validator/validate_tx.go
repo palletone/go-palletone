@@ -51,11 +51,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 		return TxValidationCode_INVALID_FEE
 	}
 
-	// validate transaction hash
-	//if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
-	//	return TxValidationCode_NIL_TXACTION
-	//}
-
 	for msgIdx, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
@@ -78,7 +73,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD
 			}
-			validateCode := validate.validatePaymentPayload(tx,msgIdx, payment, isCoinbase)
+			validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode
 			}
