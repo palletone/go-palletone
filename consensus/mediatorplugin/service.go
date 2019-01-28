@@ -108,8 +108,11 @@ type MediatorPlugin struct {
 	srvr *p2p.Server
 
 	// Enable Unit production, even if the chain is stale.
-	// 新开启一条链时，第一个节点必须设为true，其他节点必须设为false
+	// 新开启一条链时，第一个运行的节点必须设为true，否则整个链无法启动
+	// 其他节点必须设为false，否则容易导致分叉
 	productionEnabled bool
+	// 允许本节点的mediator可以连续生产unit
+	consecutiveProduceEnabled bool
 	// Mediator`s info controlled by this node, 本节点配置的mediator信息
 	mediators map[common.Address]*MediatorAccount
 
@@ -335,8 +338,9 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		quit: make(chan struct{}),
 		dag:  dag,
 
-		productionEnabled: cfg.EnableStaleProduction,
-		mediators:         msm,
+		productionEnabled:         cfg.EnableStaleProduction,
+		consecutiveProduceEnabled: cfg.EnableConsecutiveProduction,
+		mediators:                 msm,
 
 		suite:         core.Suite,
 		activeDKGs:    make(map[common.Address]*dkg.DistKeyGenerator),

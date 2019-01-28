@@ -459,12 +459,32 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 func (tx *Transaction) GetRequestTx() *Transaction {
 	request := &Transaction{}
 	for _, msg := range tx.TxMessages {
-		cpMsg := &Message{}
-		obj.DeepCopy(cpMsg, msg)
-		request.AddMessage(cpMsg)
-		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
-			break
+		switch msg.App {
+		case APP_PAYMENT:
+			{
+				pay := &PaymentPayload{}
+				obj.DeepCopy(pay, msg.Payload)
+				request.AddMessage(NewMessage(APP_PAYMENT, pay))
+			}
+		case APP_DATA:
+			{
+				data := &DataPayload{}
+				obj.DeepCopy(data, msg.Payload)
+				request.AddMessage(NewMessage(APP_DATA, data))
+			}
+		case APP_CONTRACT_INVOKE_REQUEST:
+			{
+				req := &ContractInvokeRequestPayload{}
+				obj.DeepCopy(req, msg.Payload)
+				request.AddMessage(NewMessage(APP_CONTRACT_INVOKE_REQUEST, req))
+				break
+			}
+		default:
+			{
+				log.Errorf("GetRequestTx don't support appcode:" + strconv.Itoa(int(msg.App)))
+			}
 		}
+
 	}
 	return request
 }
