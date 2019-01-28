@@ -2022,7 +2022,7 @@ func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, err
 			if ptx, has := pool.orphans[hash]; has {
 				if !ptx.Pending {
 					// 没打包的孤儿交易不需要计算交易费
-
+					// todo
 				}
 			}
 		}
@@ -2261,6 +2261,5 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 			}
 		}
 	}
-	return false, nil
-	//	return false, errors.New(fmt.Sprintf("the tx: (%s) is invalide。", tx.Hash().String()))
+	return false, errors.New(fmt.Sprintf("the tx: (%s) is invalide, there is not payment payload.", tx.Hash().String()))
 }
