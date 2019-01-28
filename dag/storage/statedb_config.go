@@ -54,3 +54,6 @@ func (statedb *StateDb) SaveConfig(confs []modules.ContractWriteSet, stateVersio
 	}
 	return nil
 }
+func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
+	return &modules.AmountAsset{0, modules.NewPTNAsset()}, nil
+}

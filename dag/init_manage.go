@@ -71,8 +71,7 @@ func (d *Dag) Close() {
 // @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED &&
-		unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+	if unitState != nil {
 		return false
 	}
 	return true
@@ -185,4 +184,14 @@ func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error 
 	}
 
 	return nil
+}
+
+func (dag *Dag) IsConsecutiveMediator(nextMediator common.Address) bool {
+	dgp := dag.GetDynGlobalProp()
+
+	if !dgp.IsShuffledSchedule && nextMediator.Equal(dgp.LastMediator) {
+		return true
+	}
+
+	return false
 }

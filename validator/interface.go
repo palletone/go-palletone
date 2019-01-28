@@ -26,18 +26,23 @@ import (
 )
 
 type Validator interface {
-	ValidateTransactions(txs *modules.Transactions, isGenesis bool) (map[common.Hash]modules.TxValidationCode, bool, error)
-	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) byte
-	ValidateTx(tx *modules.Transaction, isCoinbase bool, worldTmpState *map[string]map[string]interface{}) modules.TxValidationCode
-	ValidateUnitSignature(h *modules.Header, isGenesis bool) byte
-	//ValidateUnitGroupSign(h *modules.Header, isGenesis bool) byte
+	//验证一个交易是否是合法交易
+	ValidateTx(tx *modules.Transaction, isCoinbase bool) error
+	//验证一个Unit中的所有交易是否是合法交易
+	ValidateTransactions(txs *modules.Transactions, isGenesis bool) error
+	//除了群签名外，验证Unit是否是合法Unit,包括其中的所有交易都会逐一验证
+	ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) error
+	//验证一个Header是否合法（Mediator签名有效）
+	ValidateHeader(h *modules.Header) error
+	ValidateUnitGroupSign(h *modules.Header) error
 }
 type IUtxoQuery interface {
-	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 }
 type IStateQuery interface {
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
+	//获得系统配置的最低手续费要求
+	GetMinFee() (*modules.AmountAsset, error)
 }
 type IDagQuery interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)

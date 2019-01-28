@@ -102,16 +102,18 @@ func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.IDType16) (int6
 }
 
 // 洗牌算法，更新mediator的调度顺序
-func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty) bool {
+func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty,
+	dgp *modules.DynamicGlobalProperty) bool {
 	token := node.DefaultConfig.GetGasToken()
 	_, idx, timestamp, err := pRep.db.GetNewestUnit(token)
 	if err != nil {
-		log.Error("GetNewestUnit error:" + err.Error())
+		log.Debug("GetNewestUnit error:" + err.Error())
 		return false
 	}
+
 	aSize := uint64(len(gp.ActiveMediators))
 	if aSize == 0 {
-		log.Error("The current number of active mediators is 0!")
+		log.Debug("The current number of active mediators is 0!")
 		return false
 	}
 
@@ -147,7 +149,7 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
 			ms.CurrentShuffledMediators[j], ms.CurrentShuffledMediators[i]
 	}
-	//pRep.StoreMediatorSchl(ms)
+
 	return true
 }
 
@@ -247,7 +249,7 @@ func (pRep *PropRepository) GetScheduledMediator(slotNum uint32) common.Address 
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	csmLen := len(ms.CurrentShuffledMediators)
 	if csmLen == 0 {
-		log.Error("The current number of shuffled mediators is 0!")
+		log.Debug("The current number of shuffled mediators is 0!")
 		return common.Address{}
 	}
 
