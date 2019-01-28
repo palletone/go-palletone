@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/validator"
 )
 
 type PeerType = int
@@ -60,6 +61,7 @@ type PalletOne interface {
 
 type iDag interface {
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetActiveMediators() []common.Address
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
@@ -94,14 +96,15 @@ type contractTx struct {
 }
 
 type Processor struct {
-	name     string //no user
-	ptn      PalletOne
-	dag      iDag
-	local    map[common.Address]*JuryAccount //[]common.Address //local account addr
-	contract *contracts.Contract
-	locker   *sync.Mutex
-	quit     chan struct{}
-	mtx      map[common.Hash]*contractTx //all contract buffer
+	name      string //no user
+	ptn       PalletOne
+	dag       iDag
+	validator validator.Validator
+	local     map[common.Address]*JuryAccount //[]common.Address //local account addr
+	contract  *contracts.Contract
+	locker    *sync.Mutex
+	quit      chan struct{}
+	mtx       map[common.Hash]*contractTx //all contract buffer
 
 	contractSigNum    int
 	contractExecFeed  event.Feed
@@ -120,7 +123,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		addr := account.Address
 		accounts[addr] = account
 	}
-
+	validator := validator.NewValidate(dag, dag, nil)
 	p := &Processor{
 		name:           "conractProcessor",
 		ptn:            ptn,
@@ -131,6 +134,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		quit:           make(chan struct{}),
 		mtx:            make(map[common.Hash]*contractTx),
 		contractSigNum: cfg.ContractSigNum,
+		validator:      validator,
 	}
 
 	log.Info("NewContractProcessor ok", "local address:", p.local)
@@ -224,7 +228,7 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 			req.rcvTx = nil
 		}
 
-		if getTxSigNum(req.sigTx) >= p.contractSigNum  {
+		if getTxSigNum(req.sigTx) >= p.contractSigNum {
 			if localIsMinSignature(req.sigTx) {
 				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: req.sigTx}, true)
 				return nil
@@ -254,7 +258,7 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			continue
 		}
 
-		if false == checkTxValid(ctx.rstTx) {
+		if !p.checkTxValid(ctx.rstTx) {
 			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 			continue
 		}
@@ -268,10 +272,10 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
 			continue
 		}
-		if false == checkTxValid(ctx.rstTx) {
-			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
-			continue
-		}
+		//if false == checkTxValid(ctx.rstTx) {
+		//	log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
+		//	continue
+		//}
 
 		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil {
 			log.Error("AddContractLoop", "error", err.Error())
@@ -288,7 +292,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		return false
 	}
 	log.Debug("CheckContractTxValid", "reqId:", tx.RequestHash().String(), "exec:", execute)
-	if false == checkTxValid(tx) {
+	if !p.checkTxValid(tx) {
 		log.Error("CheckContractTxValid", "checkTxValid fail")
 		return false
 	}
@@ -314,7 +318,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 
-func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
+func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
