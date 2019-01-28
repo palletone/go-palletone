@@ -24,8 +24,8 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -306,21 +306,15 @@ const (
 func CheckTransactionSanity(tx *modules.Transaction) error {
 	// A transaction must have at least one input.
 	if len(tx.TxMessages) == 0 {
-		return &ptnjson.RPCError{
-			Code:    ptnjson.ErrRPCRawTxString,
-			Message: "transaction has no inputs",
-		}
+		return errors.New(fmt.Sprintf("transaction has no inputs,hash: %s", tx.Hash().String()))
 	}
 	// A transaction must not exceed the maximum allowed block payload when
 	// serialized.
 	serializedTxSize := tx.SerializeSizeStripped()
-	if serializedTxSize > ptnjson.MaxBlockBaseSize {
+	if serializedTxSize > modules.TX_BASESIZE {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, ptnjson.MaxBlockBaseSize)
-		return &ptnjson.RPCError{
-			Code:    ptnjson.ErrRPCRawTxString,
-			Message: str,
-		}
+			"%d, max %d", serializedTxSize, modules.TX_BASESIZE)
+		return errors.New(str)
 	}
 
 	// Ensure the transaction amounts are in range.  Each transaction
@@ -340,19 +334,14 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 			if satoshi < 0 {
 				str := fmt.Sprintf("transaction output has negative "+
 					"value of %v", satoshi)
-				return &ptnjson.RPCError{
-					Code:    ptnjson.ErrBadTxOutValue,
-					Message: str,
-				}
+				return errors.New(str)
+
 			}
-			if satoshi > ptnjson.MaxDao {
+			if satoshi > MaxDao {
 				str := fmt.Sprintf("transaction output value of %v is "+
 					"higher than max allowed value of %v", satoshi,
-					ptnjson.MaxDao)
-				return &ptnjson.RPCError{
-					Code:    ptnjson.ErrBadTxOutValue,
-					Message: str,
-				}
+					MaxDao)
+				return errors.New(str)
 			}
 
 			// Two's complement int64 overflow guarantees that any overflow
@@ -362,21 +351,15 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 			if totalSatoshi < 0 {
 				str := fmt.Sprintf("total value of all transaction "+
 					"outputs exceeds max allowed value of %v",
-					ptnjson.MaxDao)
-				return &ptnjson.RPCError{
-					Code:    ptnjson.ErrBadTxOutValue,
-					Message: str,
-				}
+					MaxDao)
+				return errors.New(str)
 			}
-			if totalSatoshi > ptnjson.MaxDao {
+			if totalSatoshi > MaxDao {
 				str := fmt.Sprintf("total value of all transaction "+
 					"outputs is %v which is higher than max "+
 					"allowed value of %v", totalSatoshi,
-					ptnjson.MaxDao)
-				return &ptnjson.RPCError{
-					Code:    ptnjson.ErrBadTxOutValue,
-					Message: str,
-				}
+					MaxDao)
+				return errors.New(str)
 			}
 			//todo find all txin amout by input hash
 			// if total inamout small than out value ,err
@@ -387,10 +370,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 		for _, txIn := range payload.Inputs {
 			if txIn.PreviousOutPoint != nil {
 				if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
-					return &ptnjson.RPCError{
-						Code:    ptnjson.ErrDuplicateTxInputs,
-						Message: "transaction " + "contains duplicate inputs",
-					}
+					return errors.New("transaction " + "contains duplicate inputs")
 				}
 				existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
 			}

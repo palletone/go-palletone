@@ -37,8 +37,9 @@ import (
 )
 
 var (
-	TXFEE      = big.NewInt(100000000) // transaction fee =1ptn
-	TX_MAXSIZE = uint32(256 * 1024)
+	TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
+	TX_MAXSIZE  = (256 * 1024)
+	TX_BASESIZE = (100 * 1024) //100kb
 )
 
 // TxOut defines a bitcoin transaction output.
@@ -407,6 +408,7 @@ type Transaction struct {
 	TxMessages []*Message `json:"messages"`
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
+
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
 	for _, msg := range tx.TxMessages {
@@ -452,14 +454,15 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	}
 	return nil, fmt.Errorf("Compute fees: no payment payload")
 }
+
 //如果是合约调用交易，Copy其中的Msg0到ContractInvokeRequest的部分，如果不是请求，那么返回完整Tx
-func(tx *Transaction) GetRequestTx() *Transaction{
-	request:=&Transaction{}
-	for _,msg:=range tx.TxMessages{
-		cpMsg:=&Message{}
-		obj.DeepCopy(cpMsg,msg)
+func (tx *Transaction) GetRequestTx() *Transaction {
+	request := &Transaction{}
+	for _, msg := range tx.TxMessages {
+		cpMsg := &Message{}
+		obj.DeepCopy(cpMsg, msg)
 		request.AddMessage(cpMsg)
-		if msg.App== APP_CONTRACT_INVOKE_REQUEST{
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			break
 		}
 	}
@@ -611,10 +614,11 @@ func (tx *Transaction) IsNewContractInvokeRequest() bool {
 	return lastMsg.App >= 100
 
 }
+
 //获得合约请求Msg的Index
 func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
-	for idx,msg:=range tx.TxMessages{
-		if msg.App==APP_CONTRACT_INVOKE_REQUEST{
+	for idx, msg := range tx.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			return idx
 		}
 	}
