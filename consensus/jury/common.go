@@ -7,11 +7,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
-	//"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 )
 
 func localIsMinSignature(tx *modules.Transaction) bool {
@@ -301,34 +299,39 @@ func getTxSigNum(tx *modules.Transaction) int {
 	return 0
 }
 
-func checkTxValid(tx *modules.Transaction) bool {
-	if tx == nil {
-		return false
+func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
+	err := p.validator.ValidateTx(tx, false)
+	if err != nil {
+		log.Errorf("Validate tx[%s] throw an error:%s", tx.Hash().String(), err.Error())
 	}
-	var sigs []modules.SignatureSet
-	tmpTx := &modules.Transaction{}
-	//todo 检查msg的有效性
-
-	for _, msg := range tx.TxMessages {
-		if msg.App == modules.APP_SIGNATURE {
-			sigs = msg.Payload.(*modules.SignaturePayload).Signatures
-		} else {
-			tmpTx.TxMessages = append(tmpTx.TxMessages, msg)
-		}
-	}
-	printTxInfo(tmpTx)
-	if len(sigs) > 0 {
-		for i := 0; i < len(sigs); i++ {
-			if !keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) {
-				log.Debug("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
-				//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
-				//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
-				//return false
-			}
-		}
-	}
-
-	return true
+	return err == nil
+	//if tx == nil {
+	//	return false
+	//}
+	//var sigs []modules.SignatureSet
+	//tmpTx := &modules.Transaction{}
+	////todo 检查msg的有效性
+	//
+	//for _, msg := range tx.TxMessages {
+	//	if msg.App == modules.APP_SIGNATURE {
+	//		sigs = msg.Payload.(*modules.SignaturePayload).Signatures
+	//	} else {
+	//		tmpTx.TxMessages = append(tmpTx.TxMessages, msg)
+	//	}
+	//}
+	//printTxInfo(tmpTx)
+	//if len(sigs) > 0 {
+	//	for i := 0; i < len(sigs); i++ {
+	//		if !keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) {
+	//			log.Debug("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
+	//			//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
+	//			//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
+	//			//return false
+	//		}
+	//	}
+	//}
+	//
+	//return true
 }
 
 func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType modules.MessageType) bool {

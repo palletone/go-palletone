@@ -17,7 +17,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	if event == nil || len(event.Tx.TxMessages) < 1 {
 		return errors.New("ProcessContractEvent param is nil")
 	}
-	if false == checkTxValid(event.Tx) {
+	if !p.checkTxValid(event.Tx) {
 		return errors.New("ProcessContractEvent event Tx is invalid")
 	}
 	if !p.contractEventExecutable(event.CType, p.local, event.Tx) {
