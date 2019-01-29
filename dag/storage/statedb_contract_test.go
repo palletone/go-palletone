@@ -38,7 +38,7 @@ func TestGetContractState(t *testing.T) {
 	//l := log.NewTestLog()
 	statedb := NewStateDb(db)
 	id := []byte("TestContract")
-	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code")}
+	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code"),NeedApprovalCount:10}
 	err := statedb.SaveContract(contract)
 	assert.Nil(t, err, "save contract to statedb fail")
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
