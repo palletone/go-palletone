@@ -25,7 +25,11 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"crypto/ecdsa"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/dag/modules"
 )
+
 
 func TestGetUnit(t *testing.T) {
 	//log.Println("dbconn is nil , renew db  start ...")
@@ -37,10 +41,56 @@ func TestGetUnit(t *testing.T) {
 	assert.Nil(t, u, "empty db, must return nil Unit")
 	assert.NotNil(t, err)
 }
+
 func TestPrintHashList(t *testing.T) {
 	hash1 := common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347")
 	hash2 := common.HexToHash("0xddff4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d493ee")
 	txsHash := []common.Hash{hash1, hash2}
 	t.Logf("%x", txsHash)
 
+}
+
+func TestGetHeader(t *testing.T) {
+	key := new(ecdsa.PrivateKey)
+	key, _ = crypto.GenerateKey()
+	h := new(modules.Header)
+	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
+	au := modules.Authentifier{}
+	address := crypto.PubkeyToAddress(&key.PublicKey)
+	t.Log("address:", address)
+
+	//author := &Author{
+	//	Address:        address,
+	//	Pubkey:         []byte("1234567890123456789"),
+	//	TxAuthentifier: *au,
+	//}
+
+	h.GroupSign = []byte("group_sign")
+	h.GroupPubKey = []byte("group_pubKey")
+	h.Number = &modules.ChainIndex{}
+	h.Number.AssetID = modules.PTNCOIN
+	h.Number.Index = uint64(333333)
+	h.Extra = make([]byte, 20)
+	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
+	//tr := common.Hash{}
+	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
+	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
+	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	au.R = sig[:32]
+	au.S = sig[32:64]
+	au.V = sig[64:]
+	h.Authors = au
+	h.Creationdate = 123
+
+	t.Logf("%#v", h)
+
+	db, _ := ptndb.NewMemDatabase()
+	dagdb := NewDagDb(db)
+
+	err := dagdb.SaveHeader(h)
+	assert.Nil(t, err)
+	dbHeader, err := dagdb.GetHeader(h.Hash())
+	assert.Nil(t, err)
+	t.Logf("%#v", dbHeader)
+	assertRlpHashEqual(t, h, dbHeader)
 }

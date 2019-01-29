@@ -30,6 +30,8 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewUnit(t *testing.T) {
@@ -187,4 +189,46 @@ func TestHeaderPointer(t *testing.T) {
 	h.Number.Index = 666
 	h1.Number.Index = 888
 	fmt.Println("h:=666", h.Number.Index, "h1:=888", h1.Number.Index, "h2:=888", h2.Number.Index)
+}
+
+func TestHeaderRLP(t *testing.T) {
+	key := new(ecdsa.PrivateKey)
+	key, _ = crypto.GenerateKey()
+	h := new(headerTemp)
+	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
+	au := Authentifier{}
+	address := crypto.PubkeyToAddress(&key.PublicKey)
+	log.Println("address:", address)
+
+	//author := &Author{
+	//	Address:        address,
+	//	Pubkey:         []byte("1234567890123456789"),
+	//	TxAuthentifier: *au,
+	//}
+
+	h.GroupSign = []byte("group_sign")
+	h.GroupPubKey = []byte("group_pubKey")
+	h.Number = &ChainIndex{}
+	h.Number.AssetID = PTNCOIN
+	h.Number.Index = uint64(333333)
+	h.Extra = make([]byte, 20)
+	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
+	//tr := common.Hash{}
+	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
+	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
+	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	au.R = sig[:32]
+	au.S = sig[32:64]
+	au.V = sig[64:]
+	h.Authors = au
+	h.Creationdate = 123
+
+	t.Log("data",h)
+	bytes, err := rlp.EncodeToBytes(h)
+	assert.Nil(t, err)
+	t.Logf("Rlp data:%x", bytes)
+	h2 := &headerTemp{}
+	err = rlp.DecodeBytes(bytes, h2)
+	t.Log("data",h2)
+	assert.Equal(t, h, h2)
 }
