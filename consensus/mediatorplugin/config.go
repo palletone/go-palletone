@@ -75,11 +75,12 @@ var DefaultConfig = Config{
 }
 
 func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
-	switch {
-	case ctx.GlobalIsSet(StaleProductionFlag.Name):
+	if ctx.GlobalIsSet(StaleProductionFlag.Name) {
 		//cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
 		cfg.EnableStaleProduction = true
-	case ctx.GlobalIsSet(ConsecutiveProductionFlag.Name):
+	}
+
+	if ctx.GlobalIsSet(ConsecutiveProductionFlag.Name) {
 		cfg.EnableConsecutiveProduction = true
 	}
 }

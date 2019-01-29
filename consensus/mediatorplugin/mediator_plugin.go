@@ -102,7 +102,7 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 			"] @" + detail["Timestamp"] + " signed by " + detail["Mediator"])
 	case NotSynced:
 		log.Info("Not producing unit because production is disabled until we receive a recent unit." +
-			"\nDisable this check with --staleProduce option.")
+			" Disable this check with --staleProduce option.")
 	case NotTimeYet:
 		log.Debug("Not producing unit because next slot time is " + detail["NextTime"] +
 			" , but now is " + detail["Now"])
@@ -118,8 +118,8 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	case Consecutive:
 		log.Info("Not producing unit because the last unit was generated " +
 			"by the same mediator(" + detail["Mediator"] + ")." +
-			"\nThis node is probably disconnected from the network so unit production has been disabled." +
-			"\nDisable this check with --allowConsecutive option.")
+			" This node is probably disconnected from the network so unit production has been disabled." +
+			" Disable this check with --allowConsecutive option.")
 	case ExceptionProducing:
 		log.Info("Exception producing unit")
 	case UnknownCondition:
