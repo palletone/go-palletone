@@ -60,7 +60,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			TplId:   templateId,
 			TxId:    hex.EncodeToString(txId),
 			Args:    args,
-			Timeout: timeout,
+			Timeout: uint32(timeout),
 		},
 	}
 	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)

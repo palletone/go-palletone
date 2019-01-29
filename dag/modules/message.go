@@ -515,10 +515,10 @@ type ContractTplRequestPayload struct {
 }
 
 type ContractDeployRequestPayload struct {
-	TplId   []byte        `json:"tpl_name"`
-	TxId    string        `json:"transaction_id"` //todo
-	Args    [][]byte      `json:"args"`
-	Timeout time.Duration `json:"timeout"`
+	TplId   []byte   `json:"tpl_name"`
+	TxId    string   `json:"transaction_id"` //todo
+	Args    [][]byte `json:"args"`
+	Timeout uint32   `json:"timeout"`
 }
 
 type ContractInvokeRequestPayload struct {

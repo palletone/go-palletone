@@ -20,41 +20,42 @@
 
 package modules
 
-import (
-	"github.com/ethereum/go-ethereum/rlp"
-	"io"
-	"time"
-)
-
-type ContractDeployRequestPayloadRlp struct {
-	TplId   []byte   `json:"tpl_name"`
-	TxId    string   `json:"transaction_id"`
-	Args    [][]byte `json:"args"`
-	Timeout uint32   `json:"timeout"`
-}
-
-func (input *ContractDeployRequestPayload) DecodeRLP(s *rlp.Stream) error {
-	raw, err := s.Raw()
-	if err != nil {
-		return err
-	}
-	temp := &ContractDeployRequestPayloadRlp{}
-	err = rlp.DecodeBytes(raw, temp)
-	if err != nil {
-		return err
-	}
-
-	input.TplId = temp.TplId
-	input.TxId = temp.TxId
-	input.Args = temp.Args
-	input.Timeout = time.Duration(temp.Timeout)
-	return nil
-}
-func (input *ContractDeployRequestPayload) EncodeRLP(w io.Writer) error {
-	temp := &ContractDeployRequestPayloadRlp{}
-	temp.TplId = input.TplId
-	temp.TxId = input.TxId
-	temp.Args = input.Args
-	temp.Timeout = uint32(input.Timeout)
-	return rlp.Encode(w, temp)
-}
+//
+//import (
+//	"github.com/ethereum/go-ethereum/rlp"
+//	"io"
+//	"time"
+//)
+//
+//type ContractDeployRequestPayloadRlp struct {
+//	TplId   []byte   `json:"tpl_name"`
+//	TxId    string   `json:"transaction_id"`
+//	Args    [][]byte `json:"args"`
+//	Timeout uint32   `json:"timeout"`
+//}
+//
+//func (input *ContractDeployRequestPayload) DecodeRLP(s *rlp.Stream) error {
+//	raw, err := s.Raw()
+//	if err != nil {
+//		return err
+//	}
+//	temp := &ContractDeployRequestPayloadRlp{}
+//	err = rlp.DecodeBytes(raw, temp)
+//	if err != nil {
+//		return err
+//	}
+//
+//	input.TplId = temp.TplId
+//	input.TxId = temp.TxId
+//	input.Args = temp.Args
+//	input.Timeout = time.Duration(temp.Timeout)
+//	return nil
+//}
+//func (input *ContractDeployRequestPayload) EncodeRLP(w io.Writer) error {
+//	temp := &ContractDeployRequestPayloadRlp{}
+//	temp.TplId = input.TplId
+//	temp.TxId = input.TxId
+//	temp.Args = input.Args
+//	temp.Timeout = uint32(input.Timeout)
+//	return rlp.Encode(w, temp)
+//}
