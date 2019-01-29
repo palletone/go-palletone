@@ -362,7 +362,7 @@ func (u *Unit) Size() common.StorageSize {
 	if u.UnitSize > 0 {
 		return u.UnitSize
 	}
-	emptyUnit := Unit{}
+	emptyUnit := &Unit{}
 	emptyUnit.UnitHeader = CopyHeader(u.UnitHeader)
 	//emptyUnit.UnitHeader.Authors = nil
 	emptyUnit.UnitHeader.GroupSign = make([]byte, 0)
