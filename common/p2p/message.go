@@ -27,7 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // Msg defines the structure of a p2p message.

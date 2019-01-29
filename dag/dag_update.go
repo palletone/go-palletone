@@ -149,7 +149,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dgp := dag.GetDynGlobalProp()
 
 	// 1. 判断是否进入维护周期. Are we at the maintenance interval?
-	if dgp.NextMaintenanceTime > nextUnit.Timestamp() {
+	if dgp.NextMaintenanceTime > uint32(nextUnit.Timestamp()) {
 		return
 	}
 
@@ -167,7 +167,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
 	if nextUnit.NumberU64() == 1 {
-		nextMaintenanceTime = (nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval
+		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
 	} else {
 		// We want to find the smallest k such that nextMaintenanceTime + k * maintenanceInterval > HeadUnitTime()
 		//  This implies k > ( HeadUnitTime() - nextMaintenanceTime ) / maintenanceInterval
@@ -185,8 +185,8 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 		// So this k suffices.
 		//
 
-		y := (dag.HeadUnitTime() - nextMaintenanceTime) / maintenanceInterval
-		nextMaintenanceTime += (y + 1) * maintenanceInterval
+		y := (dag.HeadUnitTime() - int64(nextMaintenanceTime)) / maintenanceInterval
+		nextMaintenanceTime += uint32((y + 1) * maintenanceInterval)
 	}
 
 	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime

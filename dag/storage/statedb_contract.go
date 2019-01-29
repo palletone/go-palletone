@@ -28,9 +28,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -41,7 +42,9 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	if count > 0 {
 		return errors.New("Contract[" + common.Bytes2Hex(contract.Id) + "]'s state existed!")
 	}
-	return StoreBytes(statedb.db, prefix, contract)
+	contractTemp := &modules.ContractTemp{}
+	contractTemp = modules.ContractToTemp(contract)
+	return StoreBytes(statedb.db, prefix, contractTemp)
 }
 func (statedb *StateDb) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
 	return SaveContractState(statedb, constants.CONTRACT_STATE_PREFIX, id, name, value, version)
@@ -68,7 +71,7 @@ func SaveContractState(statedb *StateDb, prefix []byte, id []byte, field string,
 
 func SaveContract(db ptndb.Database, contract *modules.Contract) error {
 	if common.EmptyHash(contract.CodeHash) {
-		contract.CodeHash = rlp.RlpHash(contract.Code)
+		contract.CodeHash = util.RlpHash(contract.Code)
 	}
 	// key = cs+ rlphash(contract)
 	//if common.EmptyHash(contract.Id) {
@@ -204,12 +207,13 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 		log.Errorf("err:", err)
 		return nil, err
 	}
-	contract := new(modules.Contract)
-	err = rlp.DecodeBytes(con_bytes, contract)
+	contractTemp := new(modules.ContractTemp)
+	err = rlp.DecodeBytes(con_bytes, contractTemp)
 	if err != nil {
 		log.Error("err:", err)
 		return nil, err
 	}
+	contract := modules.ContractTempToContract(contractTemp)
 	return contract, nil
 }
 

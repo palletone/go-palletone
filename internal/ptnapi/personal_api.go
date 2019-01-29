@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"

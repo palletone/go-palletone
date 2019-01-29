@@ -37,7 +37,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const SizeLimit = 300 // maximum encoded size of a node record in bytes

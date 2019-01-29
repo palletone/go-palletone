@@ -35,7 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto/ecies"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 func TestSharedSecret(t *testing.T) {

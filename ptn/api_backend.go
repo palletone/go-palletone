@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -530,7 +530,7 @@ func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount,
 func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId []byte, depId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (rspPayload []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) ([]byte, error) {
