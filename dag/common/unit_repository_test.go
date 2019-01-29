@@ -312,9 +312,9 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	}
 	//tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
-	t.Logf("data",tx2)
+	t.Log("data",tx2)
 	b, _ := rlp.EncodeToBytes(&tx2)
-	t.Logf("rlp",b)
+	t.Log("rlp",b)
 	var tx modules.Transaction
 	//if err := rlp.DecodeBytes(b, &tx); err != nil {
 	//	fmt.Println("TestPaymentTransactionRLP error:", err.Error())
@@ -340,13 +340,13 @@ func TestPaymentTransactionRLP(t *testing.T) {
 				fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
 			} else {
 				fmt.Println("Payment payload:", pl)
-				t.Logf("11111111")
+				t.Log("11111111")
 				assert.Equal(t, payment,pl)
 			}
 		}
 
 	}
-	t.Logf("data",tx)
+	t.Log("data",tx)
 	assert.Equal(t, tx2,tx)
 
 }

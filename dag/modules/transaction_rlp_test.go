@@ -10,12 +10,12 @@ import (
 
 var hash = common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac")
 
-//type TestA struct {
-//	A        uint64
-//	B        string
-//	Parent   *TestA
-//	Children []*TestA
-//}
+type TestA struct {
+	A        uint64
+	B        string
+	Parent   *TestA
+	Children []*TestA
+}
 
 type TestInput struct {
 	SignatureScript  []byte
@@ -55,33 +55,17 @@ func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 //	assert.Equal(t, hash1, hash2)
 //}
 
-func TestCompare(t *testing.T) {
-	//a1 := &TestA{A: 1, B: "A1"}
-	//a2 := &TestA{A: 2, B: "A2"}
-	//a3 := &TestA{A: 3, B: "A3", Parent: a1}
-	//a11 := &TestA{A: 1, B: "A1"}
-	//a22 := &TestA{A: 2, B: "A2", Parent: &TestA{}}
-
-	//b1 := &TestB{A: 2, B: "A2",Parent:nil}
-	//b1 := NewTestB(nil,[]byte("aaa"))
-	//b2 := &TestB{A: 3, B: "A3", Parent: b1}
-	//
-	input := &Input{}
-	input.Extra = []byte("aaa")
-	t.Logf("data", input.PreviousOutPoint)
-	t.Logf("data", input)
-	bytes, err := rlp.EncodeToBytes(input)
-	assert.Nil(t, err)
-	t.Logf("Rlp data:%x", bytes)
-	input1 := &Input{}
-	err = rlp.DecodeBytes(bytes, input1)
-	t.Logf("data", input1)
-	assert.Nil(t, err)
-
-	//assert.True(t, cmp.Equal(a1, a11))
-	//assert.False(t, cmp.Equal(a2, a22))
-	//assert.True(t, cmp.Equal(a3.Parent, a11))
-}
+//func TestCompare(t *testing.T) {
+//	a1 := &TestA{A: 1, B: "A1"}
+//	a2 := &TestA{A: 2, B: "A2"}
+//	a3 := &TestA{A: 3, B: "A3", Parent: a1}
+//	a11 := &TestA{A: 1, B: "A1"}
+//	a22 := &TestA{A: 2, B: "A2", Parent: &TestA{}}
+//
+//	assert.True(t, cmp.Equal(a1, a11))
+//	assert.False(t, cmp.Equal(a2, a22))
+//	assert.True(t, cmp.Equal(a3.Parent, a11))
+//}
 
 func TestInput_RLP(t *testing.T) {
 	input := newTestInput(common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), 123, 9999, []byte{1, 2, 3}, nil)
@@ -102,16 +86,16 @@ func TestCoinbaseInput_RLP(t *testing.T) {
 	input := newCoinbaseInput([]byte("unlock"), []byte("extra"))
 	input.Extra = []byte{1, 2, 3}
 	//ptr := *(*byte)(unsafe.Pointer(&input))
-	t.Logf("data", input)
-	t.Logf("data", input.PreviousTxHash)
-	t.Logf("data:%x", input.SignatureScript == nil)
+	t.Log("data", input)
+	t.Log("data", input.PreviousTxHash)
+	t.Log("data:", input.SignatureScript == nil)
 	bytes, err := rlp.EncodeToBytes(input)
 	assert.Nil(t, err)
 	t.Logf("Rlp data:%x", bytes)
 	input2 := &TestInput{}
 	err = rlp.DecodeBytes(bytes, input2)
-	t.Logf("data", input2)
-	t.Logf("data:%x", input2.SignatureScript == nil)
+	t.Log("data", input2)
+	t.Log("data:", input2.SignatureScript == nil)
 	assert.Nil(t, err)
 	assert.Equal(t, input, input2)
 }

@@ -165,7 +165,7 @@ func newTestTx() *Transaction {
 func TestTransactionEncode(t *testing.T) {
 
 	txmsg3 := newTestTx()
-	t.Logf("data", txmsg3)
+	t.Log("data", txmsg3)
 	//emptyTx.SetHash(common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87"))
 	//rightvrsTx.SetHash(common.HexToHash("b94f5374fce5edbc8e2a8697c15331677e6ebf0b"))
 	txb, err := rlp.EncodeToBytes(txmsg3)
@@ -180,7 +180,7 @@ func TestTransactionEncode(t *testing.T) {
 	//*rlp_hash = rlp.RlpHash(txmsg3)
 	//rightvrsTx.SetHash(*rlp_hash)
 	// storage test
-	t.Logf("rlp ", txb)
+	t.Log("rlp ", txb)
 
 	//tx := &TestTransaction{}
 	tx := &Transaction{}
@@ -188,7 +188,7 @@ func TestTransactionEncode(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Logf("data", tx)
+	t.Log("data", tx)
 	assert.Equal(t, txmsg3, tx)
 	//if tx.Locktime != 12345 {
 	//	log.Error("decode RLP mismatch", "error", txb)
@@ -237,7 +237,7 @@ func TestTransactionEncode(t *testing.T) {
 	if len(data.ExtraData) == 0 {
 		t.Error("DataPayload ExtraData decode error.")
 	}
-	t.Logf("DataPayload:", data)
+	t.Log("DataPayload:", data)
 
 	msg3 := tx.TxMessages[2]
 	if msg3.App != APP_CONTRACT_INVOKE_REQUEST {
@@ -256,7 +256,7 @@ func TestTransactionEncode(t *testing.T) {
 	if len(result.ContractId) == 0 {
 		t.Error("ContractInvokeRequestPayload ContractId decode error.")
 	}
-	t.Logf("ContractInvokeRequestPayload:", result)
+	t.Log("ContractInvokeRequestPayload:", result)
 }
 func TestIDType16Hex(t *testing.T) {
 	PTNCOIN := IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
