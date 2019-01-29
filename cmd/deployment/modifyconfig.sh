@@ -59,7 +59,6 @@ createaccount=`./createaccount.sh`
 tempinfo=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
 accountlength=35
 accounttemp=${tempinfo:0:$accountlength}
-#account=`echo ${accounttemp//^M/}`
 account=`echo ${accounttemp///}`
 
 
@@ -107,7 +106,7 @@ info=`./gptn nodeInfo`
 tempinfo=`echo $info | sed -n '$p'| awk '{print $NF}'`
 length=`echo ${#tempinfo}`
 nodeinfotemp=${tempinfo:0:$length}
-nodeinfo=`echo ${nodeinfotemp//^M/}`
+nodeinfo=`echo ${nodeinfotemp///}`
 length=`echo ${#nodeinfo}`
 b=140
 if [ "$length" -lt "$b" ]
