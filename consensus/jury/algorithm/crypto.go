@@ -48,9 +48,9 @@ func (pub *PublicKey) VerifySign(m, sign []byte) error {
 	return nil
 }
 
-func (pub *PublicKey) VerifyVRF(proof, m []byte) error {
-	vrf.ECVRF_verify(pub.pk, proof, m)
-	return nil
+//验证vrf
+func (pub *PublicKey) VerifyVRF(proof, m []byte) (bool, error) {
+	return vrf.ECVRF_verify(pub.pk, proof, m)
 }
 
 type PrivateKey struct {
@@ -70,6 +70,7 @@ func (priv *PrivateKey) Sign(m []byte) ([]byte, error) {
 	return append(pubkey, sign...), nil
 }
 
+//产生vrf证明
 func (priv *PrivateKey) Evaluate(m []byte) (value, proof []byte, err error) {
 	proof, err = vrf.ECVRF_prove(priv.PublicKey().pk, priv.sk, m)
 	if err != nil {

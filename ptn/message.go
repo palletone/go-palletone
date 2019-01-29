@@ -417,12 +417,12 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
 
-		if tx.IsContractTx() {
-			if !pm.contractProc.CheckContractTxValid(tx, false) {
-				log.Debug("TxMsg", "CheckContractTxValid is false")
-				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
-			}
-		}
+		//if tx.IsContractTx() {
+		//	if !pm.contractProc.CheckContractTxValid(tx, false) {
+		//		log.Debug("TxMsg", "CheckContractTxValid is false")
+		//		return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+		//	}
+		//}
 
 		for msgIndex, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -564,14 +564,14 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 	}
 	log.Info("===ElectionMsg===", "event ", event)
 
-	if event.EType == jury.RequestEvent {
+	if event.EType == jury.ELECTION_EVENT_REQUEST {
 		result, err := pm.contractProc.ProcessElectionRequestEvent(&event)
 		if err != nil {
 			log.Debug("ElectionMsg", "ProcessElectionRequestEvent error:", err)
 		}
 		//result := jury.ElectionEvent{EType: jury.ResultEvent}
 		p.SendElectionResultEvent(*result)
-	} else if event.EType == jury.ResultEvent {
+	} else if event.EType == jury.ELECTION_EVENT_RESULT {
 		err := pm.contractProc.ProcessElectionResultEvent(&event)
 		if err != nil {
 			log.Debug("ElectionMsg", "ProcessElectionResultEvent error:", err)
@@ -601,7 +601,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 }
 
 func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
-	log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent).Num, "data", event.Event.(jury.ElectionRequestEvent).Data)
+	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent).Num, "data", event.Event.(jury.ElectionRequestEvent).Data)
 
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {

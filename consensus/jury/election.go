@@ -19,11 +19,70 @@
 package jury
 
 import (
+	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common"
 )
 
-func GetContractJurors(num int, data []byte) ([]common.Address, error) {
-	return nil, nil
+type elector struct {
+	num    int
+	weight uint64
+	total  uint64
+
+	privkey *alg.PrivateKey
+	pubkey  *alg.PublicKey
+}
+
+func (p *Processor) ElectionRequest(reqId common.Hash, seed []byte) error {
+	if reqId == (common.Hash{}) || seed == nil {
+		return errors.New("ElectionRequest param is nil")
+	}
+	reqEvent := ElectionRequestEvent{
+		reqHash: reqId,
+		num:     4, //todo
+		data:    seed,
+	}
+	//l:=list.New()
+	//l.Init()
+	//l.PushBack(reqEvent)
+	//l.Remove()
+	//todo 根据reqId建立缓存记录，等待接收其他选中jury节点的响应
+
+	go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_REQUEST, Event: reqEvent})
+
+	return nil
+}
+
+func (e *elector) checkElected(data []byte) (proof []byte, err error) {
+	if e.num < 0 || e.weight < 10 || data == nil {
+		return nil, errors.New("CheckElected param error")
+	}
+	proofHash, proof, err := e.privkey.Evaluate(data)
+	if err != nil {
+		return nil, err
+	}
+	selected := alg.Selected(e.num, e.weight, uint64(e.total), proofHash)
+	if selected > 0 {
+		return proof, nil
+	} else {
+		return nil, nil
+	}
+}
+
+func (e *elector) verifyVRF(proofHash, proof, data []byte) (bool, error) {
+	ok, err := e.pubkey.VerifyVRF(proof, data)
+	if err != nil {
+		return false, err
+	}
+	if ok {
+		selected := alg.Selected(e.num, e.weight, e.total, proofHash)
+		if selected > 0 {
+			return true, nil
+		} else {
+			return false, nil
+		}
+	}
+	return false, nil
 }
 
 func (p *Processor) ProcessElectionRequestEvent(event *ElectionEvent) (result *ElectionEvent, err error) {
