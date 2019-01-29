@@ -22,6 +22,8 @@ import (
 	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common"
+	"crypto/rand"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 type elector struct {
@@ -33,23 +35,30 @@ type elector struct {
 	pubkey  *alg.PublicKey
 }
 
-func (p *Processor) ElectionRequest(reqId common.Hash, seed []byte) error {
-	if reqId == (common.Hash{}) || seed == nil {
+func (p *Processor) ElectionRequest(reqId common.Hash) error {
+	return nil //todo
+
+	if reqId == (common.Hash{}) {
 		return errors.New("ElectionRequest param is nil")
 	}
+	//seedData= reqId + rand
+	rd := make([]byte, 20)
+	_, err := rand.Read(rd)
+	if err != nil {
+		return errors.New("ElectionRequest rand fail")
+	}
+	seedData := make([]byte, len(reqId)+len(rd))
+	copy(seedData, reqId[:])
+	copy(seedData[len(reqId):], rd)
+
 	reqEvent := ElectionRequestEvent{
 		reqHash: reqId,
 		num:     4, //todo
-		data:    seed,
+		data:    seedData,
 	}
-	//l:=list.New()
-	//l.Init()
-	//l.PushBack(reqEvent)
-	//l.Remove()
-	//todo 根据reqId建立缓存记录，等待接收其他选中jury节点的响应
+	log.Debug("ElectionRequest", "reqId", reqId.String(), "seedData", seedData)
 
 	go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_REQUEST, Event: reqEvent})
-
 	return nil
 }
 

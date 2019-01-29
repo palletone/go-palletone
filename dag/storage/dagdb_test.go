@@ -29,8 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/modules"
 )
-
-
+var hash = common.HexToHash("0xfa4329fbb03fdd5d538a9a01a9af3b6f13e31d476ef9731adbee8bc4df688144")
 func TestGetUnit(t *testing.T) {
 	//log.Println("dbconn is nil , renew db  start ...")
 
@@ -93,4 +92,43 @@ func TestGetHeader(t *testing.T) {
 	assert.Nil(t, err)
 	t.Logf("%#v", dbHeader)
 	assertRlpHashEqual(t, h, dbHeader)
+}
+
+func TestGetTransaction(t *testing.T) {
+	pay1s := &modules.PaymentPayload{
+		LockTime: 12345,
+	}
+	output := modules.NewTxOut(1, []byte{0xee, 0xbb}, modules.NewPTNAsset())
+	pay1s.AddTxOut(output)
+	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
+	input := modules.Input{}
+	input.PreviousOutPoint = modules.NewOutPoint(hash, 0, 1)
+	input.SignatureScript = []byte{}
+	input.Extra = []byte("Coinbase")
+	pay1s.AddTxIn(&input)
+
+	msg := &modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: pay1s,
+	}
+	msg2 := &modules.Message{
+		App:     modules.APP_DATA,
+		Payload: &modules.DataPayload{MainData: []byte("Hello PalletOne"), ExtraData: []byte("Hi PalletOne")},
+	}
+	req := &modules.ContractInvokeRequestPayload{ContractId: []byte{123}, FunctionName: "TestFun", Args: [][]byte{{0x11}, {0x22}}, Timeout: 300}
+	msg3 := &modules.Message{App: modules.APP_CONTRACT_INVOKE_REQUEST, Payload: req}
+	tx := modules.NewTransaction(
+		[]*modules.Message{msg, msg2, msg3},
+	)
+    t.Logf("%#v",tx)
+	db, _ := ptndb.NewMemDatabase()
+	dagdb := NewDagDb(db)
+
+	err := dagdb.SaveTransaction(tx)
+	assert.Nil(t, err)
+	t.Log("tx ",tx)
+	tx2, err:= dagdb.gettrasaction(tx.Hash())
+	assert.Nil(t, err)
+	t.Logf("%#v", tx2)
+	assertRlpHashEqual(t, tx, tx2)
 }

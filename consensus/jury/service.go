@@ -422,6 +422,11 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 	}
 	p.locker.Unlock()
 	ctx := p.mtx[reqId]
+
+	if !isSystemContract(tx) {
+		p.ElectionRequest(reqId) //todo
+	}
+
 	if isLocalInstall {
 		if err = p.runContractReq(reqId); err != nil {
 			return nil, nil, err
