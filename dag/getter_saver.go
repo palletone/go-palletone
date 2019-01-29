@@ -181,7 +181,7 @@ func (dag *Dag) HeadUnitNum() uint64 {
 }
 
 func (dag *Dag) LastMaintenanceTime() int64 {
-	return dag.GetDynGlobalProp().LastMaintenanceTime
+	return int64(dag.GetDynGlobalProp().LastMaintenanceTime)
 }
 
 func (dag *Dag) HeadUnitHash() common.Hash {
