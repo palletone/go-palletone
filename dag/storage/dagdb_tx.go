@@ -271,7 +271,7 @@ func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 func (dagdb *DagDb) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
 	unitHash, _, _, err := dagdb.GetTxLookupEntry(hash)
 	if err != nil {
-		log.Error("dag db GetTransaction,GetTxLookupEntry failed.", "error", err, "tx_hash:", hash)
+		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err, "tx_hash:", hash)
 		return nil, unitHash, err
 	}
 
