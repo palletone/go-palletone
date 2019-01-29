@@ -29,10 +29,10 @@ func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
 		return nil
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
-
+		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
 	}
 	peerDrop := func(id string) {
-
+		log.Info("ProtocolManager peerDrop", "pid:", id)
 	}
 	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
 		headerBroadcaster, pm.dag.InsertLightHeader, peerDrop)
@@ -121,7 +121,7 @@ func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
 	}
 	log.Debug("Enter ProtocolManager NewBlockHeaderMsg", "p.id", p.id)
 	defer log.Debug("End ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
-	//pm.lightFetcher.Enqueue(p.id, header)
+	pm.lightFetcher.Enqueue(p.id, header)
 	//TODO if local peer index < request peer index,should sync with the same protocal peers
 	return nil
 }

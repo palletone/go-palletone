@@ -145,5 +145,5 @@ type IDag interface {
 	//Light Palletone Subprotocal
 	GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error)
 	GetLightChainHeight(assetId modules.IDType16) uint64
-	InsertLightHeader(headers []modules.Header) (int, error)
+	InsertLightHeader(headers []*modules.Header) (int, error)
 }
