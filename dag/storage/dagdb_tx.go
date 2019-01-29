@@ -210,12 +210,12 @@ func (dagdb *DagDb) saveReqIdByTx(tx *modules.Transaction) error {
 func (dagdb *DagDb) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
 	unitHash, unitNumber, txIndex, err1 := dagdb.GetTxLookupEntry(hash)
 	if err1 != nil {
-		log.Error("dag db GetTransaction,GetTxLookupEntry failed.", "error", err1, "tx_hash:", hash)
+		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err1, "tx_hash:", hash)
 		return nil, unitHash, unitNumber, txIndex
 	}
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
-		log.Error("gettrasaction error:", err.Error())
+		log.Info("gettrasaction error:", err.Error())
 		return nil, unitHash, unitNumber, txIndex
 	}
 	return tx, unitHash, unitNumber, txIndex

@@ -347,14 +347,12 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 }
 func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
 	key := append(constants.LookupPrefix, hash.Bytes()...)
-
 	entry := &modules.TxLookupEntry{}
 	err := retrieve(dagdb.db, key, entry)
 	if err != nil {
 		log.Info("get entry structure failed ===================", "error", err, "tx_entry", entry)
 		return common.Hash{}, 0, 0, err
 	}
-
 	return entry.UnitHash, entry.UnitIndex, entry.Index, nil
 }
 
