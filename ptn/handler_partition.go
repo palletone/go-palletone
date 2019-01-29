@@ -29,10 +29,10 @@ func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
 		return nil
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
-
+		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
 	}
 	peerDrop := func(id string) {
-
+		log.Info("ProtocolManager peerDrop", "pid:", id)
 	}
 	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
 		headerBroadcaster, pm.dag.InsertLightHeader, peerDrop)
@@ -115,13 +115,13 @@ func (pm *ProtocolManager) partionHandleMsg(p *peer) error {
 
 func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
 	var header *modules.Header
-	if err := msg.Decode(header); err != nil {
+	if err := msg.Decode(&header); err != nil {
 		log.Info("msg.Decode", "err:", err)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	log.Debug("ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
-	defer log.Debug("ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
-	//pm.lightFetcher.Enqueue(p.id, header)
+	log.Debug("Enter ProtocolManager NewBlockHeaderMsg", "p.id", p.id)
+	defer log.Debug("End ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
+	pm.lightFetcher.Enqueue(p.id, header)
 	//TODO if local peer index < request peer index,should sync with the same protocal peers
 	return nil
 }
@@ -129,18 +129,26 @@ func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
 //subprotocal equal ptn or not equal ptn
 func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header, subProtocolName string) {
 	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "protocal name:", subProtocolName)
-	if subProtocolName == ProtocolName && header.Number.AssetID != modules.PTNCOIN {
-		//TODO broadcast other token header in self(ptn) peers
-		log.Info("===broadcast other token header in self(ptn) peers===")
-		return
+	hash := header.Hash()
+	peers := pm.lightPeers.GetPeers()
+	for _, peer := range peers {
+		peer.SendLightHeader(header)
 	}
-	if subProtocolName != ProtocolName {
-		//broacast self token(not ptn token) to ptn peers
-		hash := header.Hash()
-		peers := pm.lightPeers.GetPeers()
-		for _, peer := range peers {
-			peer.SendLightHeader(header)
-		}
-		log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
-	}
+	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
+	return
+
+	//if subProtocolName == ProtocolName && header.Number.AssetID != modules.PTNCOIN {
+	//	//TODO broadcast other token header in self(ptn) peers
+	//	log.Info("===broadcast other token header in self(ptn) peers===")
+	//	return
+	//}
+	//if subProtocolName != ProtocolName {
+	//	//broacast self token(not ptn token) to ptn peers
+	//	hash := header.Hash()
+	//	peers := pm.lightPeers.GetPeers()
+	//	for _, peer := range peers {
+	//		peer.SendLightHeader(header)
+	//	}
+	//	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
+	//}
 }

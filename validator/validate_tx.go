@@ -50,12 +50,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 	if !validate.validateTxFee(tx) {
 		return TxValidationCode_INVALID_FEE
 	}
-
-	// validate transaction hash
-	//if !bytes.Equal(tx.TxHash.Bytes(), tx.Hash().Bytes()) {
-	//	return TxValidationCode_NIL_TXACTION
-	//}
-
+	hasRequestMsg := false
 	for msgIdx, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
@@ -78,7 +73,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD
 			}
-			validateCode := validate.validatePaymentPayload(tx,msgIdx, payment, isCoinbase)
+			validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode
 			}
@@ -101,6 +96,10 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 				return validateCode
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
+			if hasRequestMsg { //一个Tx只有一个Request
+				return TxValidationCode_INVALID_MSG
+			}
+			hasRequestMsg = true
 			payload, _ := msg.Payload.(*modules.ContractInstallRequestPayload)
 			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
 				return TxValidationCode_INVALID_CONTRACT
@@ -108,6 +107,10 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			return TxValidationCode_VALID
 
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			if hasRequestMsg { //一个Tx只有一个Request
+				return TxValidationCode_INVALID_MSG
+			}
+			hasRequestMsg = true
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
 			if len(payload.TplId) == 0 || payload.TxId == "" || payload.Timeout < 0 {
@@ -118,7 +121,10 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			return validateCode
 
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
-
+			if hasRequestMsg { //一个Tx只有一个Request
+				return TxValidationCode_INVALID_MSG
+			}
+			hasRequestMsg = true
 			payload, _ := msg.Payload.(*modules.ContractInvokeRequestPayload)
 			if len(payload.ContractId) == 0 {
 				return TxValidationCode_INVALID_CONTRACT
@@ -127,7 +133,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			if len(payload.ContractId) <= 0 {
 				return TxValidationCode_INVALID_CONTRACT
 			}
-			return TxValidationCode_VALID
 
 		case modules.APP_SIGNATURE:
 			// 签名验证
@@ -160,7 +165,7 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) bool {
 	}
 	fee, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 	if err != nil {
-		log.Error("compute tx fee error", err.Error())
+		log.Warn("compute tx fee error", err.Error())
 		return false
 	}
 	minFee := &modules.AmountAsset{0, modules.NewPTNAsset()}

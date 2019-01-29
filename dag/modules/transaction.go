@@ -455,15 +455,26 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	return nil, fmt.Errorf("Compute fees: no payment payload")
 }
 
-//如果是合约调用交易，Copy其中的Msg0到ContractInvokeRequest的部分，如果不是请求，那么返回完整Tx
+//如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
 	request := &Transaction{}
 	for _, msg := range tx.TxMessages {
-		cpMsg := &Message{}
-		obj.DeepCopy(cpMsg, msg)
-		request.AddMessage(cpMsg)
-		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+		switch {
+		case msg.App < APP_CONTRACT_TPL_REQUEST:
+			req := &ContractInvokeRequestPayload{}
+			obj.DeepCopy(req, msg.Payload)
+			request.AddMessage(NewMessage(msg.App, req))
+
+		case msg.App >= APP_CONTRACT_TPL_REQUEST, msg.App <= APP_CONTRACT_STOP_REQUEST:
+			req := &ContractInvokeRequestPayload{}
+			obj.DeepCopy(req, msg.Payload)
+			request.AddMessage(NewMessage(msg.App, req))
 			break
+
+		default:
+			{
+				log.Debug(fmt.Sprintf("GetRequestTx don't support appcode:%d", int(msg.App)))
+			}
 		}
 	}
 	return request

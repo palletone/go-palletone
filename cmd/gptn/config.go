@@ -234,6 +234,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 	adaptorConfig(&cfg)
+	utils.SetLog(ctx, &cfg.Ptn.Log)
 	utils.SetNodeConfig(ctx, &cfg.Node)
 
 	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
@@ -249,7 +250,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-	//mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
+	utils.SetContract(ctx, &cfg.Ptn.Contract)
 	mp.SetMediatorConfig(ctx, &cfg.Ptn.MediatorPlugin)
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 

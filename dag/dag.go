@@ -420,6 +420,9 @@ func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, comm
 	}
 	return tx, uhash, nil
 }
+func (d *Dag) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+	return d.unstableUnitRep.GetTransaction(hash)
+}
 func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
 	unitHash, unitNumber, txIndex, err := d.unstableUnitRep.GetTxLookupEntry(hash)
 	return &modules.TxLookupEntry{
@@ -852,13 +855,11 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
-	}
-	// step2. validate unit
-
-	err := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-
-	if err != nil {
-		return fmt.Errorf("SaveDag, validate unit error, err=%s", err.Error())
+		// step2. validate unit
+		err := d.validate.ValidateUnitExceptGroupSig(unit)
+		if err != nil {
+			return fmt.Errorf("SaveDag, validate unit error, err=%s", err.Error())
+		}
 	}
 
 	//	// step3.1. pass and with group signature, put into leveldb
@@ -1305,10 +1306,10 @@ func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, err
 func (d *Dag) GetLightChainHeight(assetId modules.IDType16) uint64 {
 	return uint64(0)
 }
-func (d *Dag) InsertLightHeader(headers []modules.Header) (int, error) {
+func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 	log.Debug("===InsertLightHeader===", "numbers:", len(headers))
 	for _, header := range headers {
 		log.Debug("===InsertLightHeader===", "header index:", header.Index())
 	}
-	return 0, nil
+	return d.InsertHeaderDag(headers)
 }

@@ -45,6 +45,7 @@ const (
 	rmTxChanSize = 10
 	DaoPerPtn    = 1e8
 	MaxDao       = 10e8 * DaoPerPtn
+	Raised       = 1e8
 )
 
 var (
@@ -89,6 +90,7 @@ type dags interface {
 	CurrentUnit() *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+	//GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
 	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
@@ -96,7 +98,7 @@ type dags interface {
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	//GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
