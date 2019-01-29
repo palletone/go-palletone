@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )

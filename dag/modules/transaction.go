@@ -29,10 +29,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/vote"
 )
@@ -192,8 +193,7 @@ func (tx *Transaction) Hash() common.Hash {
 	//	return v
 	//}
 	//func (tx *Transaction) Hash_old() common.Hash {
-
-	v := rlp.RlpHash(tx)
+	v := util.RlpHash(tx)
 	return v
 }
 
@@ -210,7 +210,7 @@ func (tx *Transaction) RequestHash() common.Hash {
 	//	log.Error("json marshal error", "error", err)
 	//	return common.Hash{}
 	//}
-	return rlp.RlpHash(req)
+	return util.RlpHash(req)
 }
 
 func (tx *Transaction) Messages() []*Message {
@@ -301,7 +301,7 @@ func (s Transactions) Hash() common.Hash {
 		return common.Hash{}
 	}
 
-	v := rlp.RlpHash(b[:])
+	v := util.RlpHash(b[:])
 	return v
 }
 

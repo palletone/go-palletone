@@ -27,7 +27,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
