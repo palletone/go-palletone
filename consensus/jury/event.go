@@ -21,6 +21,7 @@ package jury
 import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
+	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
 )
 
 type ContractEventType int
@@ -33,10 +34,11 @@ const (
 )
 
 const (
-	RequestEvent EventType = 1
-	ResultEvent            = 2
+	ELECTION_EVENT_REQUEST EventType = 1
+	ELECTION_EVENT_RESULT            = 2
 )
 
+//contract
 type ContractEvent struct {
 	Addrs []common.Address //user contract jury addr
 
@@ -44,17 +46,22 @@ type ContractEvent struct {
 	Tx    *modules.Transaction
 }
 
+//Election
 type ElectionRequestEvent struct {
-	Num  int
-	Data []byte
+	reqHash common.Hash
+
+	num  int
+	data []byte
 }
 type ElectionResultEvent struct {
+	reqHash common.Hash
+
+	addrHash  common.Hash //common.Address将地址hash后，返回给请求节点
+	proof     []byte
+	publicKey alg.PublicKey
 }
 
 type ElectionEvent struct {
-	Num  int    //del
-	Data []byte //del
-
 	EType EventType
 	Event interface{}
 }

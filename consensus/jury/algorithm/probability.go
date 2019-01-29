@@ -28,9 +28,9 @@ import (
 //subUsers return the selected amount of sub-users determined from the mathematics protocol.
 //expectedNum 期望数量
 //weight 设置固定数值,即返回概率值*weight,返回值落在0  --   expectedNum/Total*weight之间的数值
-func Selected(expectedNum int, weight uint64, vrf []byte) int {
-	Total := 100
-	binomial := NewBinomial(int64(weight), int64(expectedNum), int64(Total)) //weight=TokenPerUser; TotalTokenAmount = UserAmount * TokenPerUser
+func Selected(expectedNum int, weight, total uint64, vrf []byte) int {
+	//Total := 100
+	binomial := NewBinomial(int64(weight), int64(expectedNum), int64(total)) //weight=TokenPerUser; TotalTokenAmount = UserAmount * TokenPerUser
 	//binomial := NewApproxBinomial(int64(expectedNum), weight)
 	//binomial := &distuv.Binomial{
 	//	N: float64(weight),

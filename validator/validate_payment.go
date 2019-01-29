@@ -45,46 +45,51 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		// TODO check locktime
 	}
 
-	if len(payment.Inputs) == 0 {
-		return TxValidationCode_INVALID_PAYMMENT_INPUT
-	}
-	invokeReqMsgIdx := tx.GetContractInvokeReqMsgIdx()
-	txForSign := tx
-	if msgIdx < invokeReqMsgIdx {
-		txForSign = tx.GetRequestTx()
-	}
-	totalInput := uint64(0)
-	utxos := []*modules.Utxo{}
 	var asset *modules.Asset
-	for inputIdx, in := range payment.Inputs {
-		// checkout input
-		if in == nil || in.PreviousOutPoint == nil {
-			log.Error("payment input is null.", "payment.input", payment.Inputs)
+	totalInput := uint64(0)
+	isInputnil := false
+	if len(payment.Inputs) == 0 {
+		if payment.Outputs[0].Asset.AssetId == modules.PTNCOIN {
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
 		}
-		// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
-		utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
-		if utxo == nil || err != nil {
-			return TxValidationCode_INVALID_OUTPOINT
+		isInputnil = true
+	} else {
+		invokeReqMsgIdx := tx.GetContractInvokeReqMsgIdx()
+		txForSign := tx
+		if msgIdx < invokeReqMsgIdx {
+			txForSign = tx.GetRequestTx()
 		}
-		utxos = append(utxos, utxo)
-		if asset == nil {
-			asset = utxo.Asset
-		} else {
-			//input asset must be same
-			if !asset.IsSimilar(utxo.Asset) {
-				return TxValidationCode_INVALID_ASSET
+		utxos := []*modules.Utxo{}
+		for inputIdx, in := range payment.Inputs {
+			// checkout input
+			if in == nil || in.PreviousOutPoint == nil {
+				log.Error("payment input is null.", "payment.input", payment.Inputs)
+				return TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
-		}
-		totalInput += utxo.Amount
-		// check SignatureScript
-		err = tokenengine.ScriptValidate(utxo.PkScript, nil, txForSign, msgIdx, inputIdx)
-		if err != nil {
-			log.Infof("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
-				tx.Hash().String(), msgIdx, inputIdx, in.SignatureScript, utxo.PkScript)
-			return TxValidationCode_INVALID_PAYMMENT_INPUT
-		} else {
-			log.Debugf("Unlock script validated! tx[%s],%d,%d", tx.Hash().String(), msgIdx, inputIdx)
+			// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
+			utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
+			if utxo == nil || err != nil {
+				return TxValidationCode_INVALID_OUTPOINT
+			}
+			utxos = append(utxos, utxo)
+			if asset == nil {
+				asset = utxo.Asset
+			} else {
+				//input asset must be same
+				if !asset.IsSimilar(utxo.Asset) {
+					return TxValidationCode_INVALID_ASSET
+				}
+			}
+			totalInput += utxo.Amount
+			// check SignatureScript
+			err = tokenengine.ScriptValidate(utxo.PkScript, nil, txForSign, msgIdx, inputIdx)
+			if err != nil {
+				log.Infof("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
+					tx.Hash().String(), msgIdx, inputIdx, in.SignatureScript, utxo.PkScript)
+				return TxValidationCode_INVALID_PAYMMENT_INPUT
+			} else {
+				log.Debugf("Unlock script validated! tx[%s],%d,%d", tx.Hash().String(), msgIdx, inputIdx)
+			}
 		}
 	}
 
@@ -106,12 +111,14 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			return TxValidationCode_INVALID_AMOUNT
 		}
 	}
-	//Input Output asset mustbe same
-	if !asset.IsSimilar(asset0) {
-		return TxValidationCode_INVALID_ASSET
-	}
-	if totalOutput > totalInput { //相当于手续费为负数
-		return TxValidationCode_INVALID_AMOUNT
+	if !isInputnil {
+		//Input Output asset mustbe same
+		if !asset.IsSimilar(asset0) {
+			return TxValidationCode_INVALID_ASSET
+		}
+		if totalOutput > totalInput { //相当于手续费为负数
+			return TxValidationCode_INVALID_AMOUNT
+		}
 	}
 	return TxValidationCode_VALID
 }

@@ -66,8 +66,8 @@ type DynamicGlobalProperty struct {
 	LastMediator       common.Address // 最新单元的生产 mediator
 	IsShuffledSchedule bool           // 标记 mediator 的调度顺序是否刚被打乱
 
-	NextMaintenanceTime int64 // 下一次系统维护时间
-	LastMaintenanceTime int64 // 上一次系统维护时间
+	NextMaintenanceTime uint32 // 下一次系统维护时间
+	LastMaintenanceTime uint32 // 上一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentASlot uint64
@@ -86,7 +86,7 @@ type DynamicGlobalProperty struct {
 type UnitProperty struct {
 	Hash      common.Hash // 最近的单元hash
 	Index     *ChainIndex // 最近的单元编号(数量)
-	Timestamp int64       // 最近的单元时间
+	Timestamp uint32      // 最近的单元时间
 }
 
 func NewDynGlobalProp() *DynamicGlobalProperty {

@@ -165,6 +165,7 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("Failed to generate genesis unit: %v", err)
 		return err
 	}
+	log.Debugf("Save unit:%#v", unit)
 	//将Unit存入数据库中
 	err = dag.SaveUnit(unit, nil, true)
 	if err != nil {

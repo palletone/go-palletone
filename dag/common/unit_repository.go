@@ -646,10 +646,10 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	uHash := unit.Hash()
 	log.Debugf("Try to save a new unit to db:%s", uHash.String())
-	if unit.UnitSize == 0 || unit.Size() == 0 {
-		log.Error("Unit is null")
-		return fmt.Errorf("Unit is null")
-	}
+	// if unit.UnitSize == 0 || unit.Size() == 0 {
+	// 	log.Error("Unit is null")
+	// 	return fmt.Errorf("Unit is null")
+	// } //Validator will check unit
 
 	// step10. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
