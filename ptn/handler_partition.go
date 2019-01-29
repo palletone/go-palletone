@@ -29,10 +29,10 @@ func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
 		return nil
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
-
+		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
 	}
 	peerDrop := func(id string) {
-
+		log.Info("ProtocolManager peerDrop", "pid:", id)
 	}
 	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
 		headerBroadcaster, pm.dag.InsertLightHeader, peerDrop)
@@ -114,14 +114,14 @@ func (pm *ProtocolManager) partionHandleMsg(p *peer) error {
 }
 
 func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
-	var headers []*modules.Header
-	if err := msg.Decode(&headers); err != nil {
+	var header *modules.Header
+	if err := msg.Decode(&header); err != nil {
 		log.Info("msg.Decode", "err:", err)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	log.Debug("ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *headers[0])
-	defer log.Debug("ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *headers[0])
-	//pm.lightFetcher.Enqueue(p.id, header)
+	log.Debug("Enter ProtocolManager NewBlockHeaderMsg", "p.id", p.id)
+	defer log.Debug("End ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
+	pm.lightFetcher.Enqueue(p.id, header)
 	//TODO if local peer index < request peer index,should sync with the same protocal peers
 	return nil
 }
@@ -132,7 +132,7 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header, subProto
 	hash := header.Hash()
 	peers := pm.lightPeers.GetPeers()
 	for _, peer := range peers {
-		peer.SendLightHeader([]*modules.Header{header})
+		peer.SendLightHeader(header)
 	}
 	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
 	return

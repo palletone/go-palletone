@@ -5,15 +5,15 @@
 package dag
 
 import (
-	"github.com/golang/mock/gomock"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"reflect"
-	"time"
+	gomock "github.com/golang/mock/gomock"
+	common "github.com/palletone/go-palletone/common"
+	event "github.com/palletone/go-palletone/common/event"
+	discover "github.com/palletone/go-palletone/common/p2p/discover"
+	core "github.com/palletone/go-palletone/core"
+	modules "github.com/palletone/go-palletone/dag/modules"
+	txspool "github.com/palletone/go-palletone/dag/txspool"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -84,18 +84,6 @@ func (m *MockIDag) IsEmpty() bool {
 // IsEmpty indicates an expected call of IsEmpty
 func (mr *MockIDagMockRecorder) IsEmpty() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockIDag)(nil).IsEmpty))
-}
-
-// GetUnstableUnits mocks base method
-func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
-	ret := m.ctrl.Call(m, "GetUnstableUnits")
-	ret0, _ := ret[0].([]*modules.Unit)
-	return ret0
-}
-
-// IsEmpty indicates an expected call of IsEmpty
-func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnstableUnits", reflect.TypeOf((*MockIDag)(nil).GetUnstableUnits))
 }
 
 // CurrentUnit mocks base method
@@ -208,6 +196,18 @@ func (m *MockIDag) GetHeaderByHash(arg0 common.Hash) (*modules.Header, error) {
 // GetHeaderByHash indicates an expected call of GetHeaderByHash
 func (mr *MockIDagMockRecorder) GetHeaderByHash(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetHeaderByHash), arg0)
+}
+
+// GetUnstableUnits mocks base method
+func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
+	ret := m.ctrl.Call(m, "GetUnstableUnits")
+	ret0, _ := ret[0].([]*modules.Unit)
+	return ret0
+}
+
+// GetUnstableUnits indicates an expected call of GetUnstableUnits
+func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnstableUnits", reflect.TypeOf((*MockIDag)(nil).GetUnstableUnits))
 }
 
 // CurrentHeader mocks base method
@@ -836,7 +836,7 @@ func (mr *MockIDagMockRecorder) GetLightChainHeight(assetId interface{}) *gomock
 }
 
 // InsertLightHeader mocks base method
-func (m *MockIDag) InsertLightHeader(headers []modules.Header) (int, error) {
+func (m *MockIDag) InsertLightHeader(headers []*modules.Header) (int, error) {
 	ret := m.ctrl.Call(m, "InsertLightHeader", headers)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)

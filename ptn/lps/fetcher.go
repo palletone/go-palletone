@@ -64,7 +64,7 @@ type headerBroadcasterFn func(header *modules.Header, propagate bool)
 type lightChainHeightFn func(assetId modules.IDType16) uint64
 
 // chainInsertFn is a callback type to insert a batch of blocks into the local chain.
-type headerInsertFn func(headers []modules.Header) (int, error)
+type headerInsertFn func(headers []*modules.Header) (int, error)
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.
 type peerDropFn func(id string)
@@ -82,25 +82,11 @@ type inject struct {
 	header *modules.Header
 }
 
-// announce is the hash notification of the availability of a new block in the
-// network.
-type announce struct {
-	hash   common.Hash         // Hash of the block being announced
-	number *modules.ChainIndex /*uint64*/ // Number of the block being announced (0 = unknown | old protocol)
-	header *modules.Header     // Header of the block partially reassembled (new protocol)
-	time   time.Time           // Timestamp of the announcement
-
-	origin string // Identifier of the peer originating the notification
-
-	fetchHeader headerRequesterFn // Fetcher function to retrieve the header of an announced block
-	//fetchBodies bodyRequesterFn   // Fetcher function to retrieve the body of an announced block
-}
-
 // Fetcher is responsible for accumulating block announcements from various peers
 // and scheduling them for retrieval.
 type LightFetcher struct {
 	// Various event channels
-	notify chan *announce
+	//notify chan *announce
 	inject chan *inject
 
 	//blockFilter  chan chan []*modules.Unit
@@ -110,11 +96,11 @@ type LightFetcher struct {
 	quit chan struct{}
 
 	// Announce states
-	announces  map[string]int              // Per peer announce counts to prevent memory exhaustion
-	announced  map[common.Hash][]*announce // Announced blocks, scheduled for fetching
-	fetching   map[common.Hash]*announce   // Announced blocks, currently fetching
-	fetched    map[common.Hash][]*announce // Blocks with headers fetched, scheduled for body retrieval
-	completing map[common.Hash]*announce   // Blocks with headers, currently body-completing
+	//announces  map[string]int              // Per peer announce counts to prevent memory exhaustion
+	//announced  map[common.Hash][]*announce // Announced blocks, scheduled for fetching
+	//fetching   map[common.Hash]*announce   // Announced blocks, currently fetching
+	//fetched    map[common.Hash][]*announce // Blocks with headers fetched, scheduled for body retrieval
+	//completing map[common.Hash]*announce   // Blocks with headers, currently body-completing
 
 	// Block cache
 	queue  *prque.Prque            // Queue containing the import operations (block number sorted)
@@ -134,16 +120,16 @@ type LightFetcher struct {
 func New(getHeaderByHash headerRetrievalFn, lightChainHeight lightChainHeightFn, verifyHeader headerVerifierFn,
 	broadcastHeader headerBroadcasterFn, insertHeader headerInsertFn, dropPeer peerDropFn) *LightFetcher {
 	return &LightFetcher{
-		notify:           make(chan *announce),
-		inject:           make(chan *inject),
-		headerFilter:     make(chan chan *headerFilterTask),
-		done:             make(chan common.Hash),
-		quit:             make(chan struct{}),
-		announces:        make(map[string]int),
-		announced:        make(map[common.Hash][]*announce),
-		fetching:         make(map[common.Hash]*announce),
-		fetched:          make(map[common.Hash][]*announce),
-		completing:       make(map[common.Hash]*announce),
+		//notify:           make(chan *announce),
+		inject:       make(chan *inject),
+		headerFilter: make(chan chan *headerFilterTask),
+		done:         make(chan common.Hash),
+		quit:         make(chan struct{}),
+		//announces:        make(map[string]int),
+		//announced:        make(map[common.Hash][]*announce),
+		//fetching:         make(map[common.Hash]*announce),
+		//fetched:          make(map[common.Hash][]*announce),
+		//completing:       make(map[common.Hash]*announce),
 		queue:            prque.New(),
 		queues:           make(map[string]int),
 		queued:           make(map[common.Hash]*inject),
@@ -176,31 +162,27 @@ func (f *LightFetcher) loop() {
 	//completeTimer := time.NewTimer(0)
 
 	for {
-		// Clean up any expired block fetches
-		for hash, announce := range f.fetching {
-			if time.Since(announce.time) > fetchTimeout {
-				f.forgetHash(hash)
-			}
-		}
+		//TODO Clean up any expired block fetches
 		// Import any queued blocks that could potentially fit
-		var height uint64
+		//var height uint64
 		for !f.queue.Empty() {
 			op := f.queue.PopItem().(*inject)
 
-			// If too high up the chain or phase, continue later
-			height = f.lightChainHeight(op.header.Number.AssetID)
-			number := op.header.Index()
-			if number > height+1 {
-				f.queue.Push(op, -float32(op.header.Index()))
-				break
-			}
-			// Otherwise if fresh and still unknown, try and import
-			hash := op.header.Hash()
-			block, _ := f.getHeaderByHash(hash)
-			if number+maxUncleDist < height || block != nil {
-				f.forgetBlock(hash)
-				continue
-			}
+			//TODO must recover the check
+			//// If too high up the chain or phase, continue later
+			//height = f.lightChainHeight(op.header.Number.AssetID)
+			//number := op.header.Index()
+			//if number > height+1 {
+			//	f.queue.Push(op, -float32(op.header.Index()))
+			//	break
+			//}
+			//// Otherwise if fresh and still unknown, try and import
+			//hash := op.header.Hash()
+			//header, _ := f.getHeaderByHash(hash)
+			//if number+maxUncleDist < height || header != nil {
+			//	f.forgetBlock(hash)
+			//	continue
+			//}
 			f.insert(op.origin, op.header)
 		}
 		// Wait for an outside event to occur
@@ -212,6 +194,11 @@ func (f *LightFetcher) loop() {
 		case op := <-f.inject:
 			// A direct block insertion was requested, try and fill any pending gaps
 			f.enqueue(op.origin, op.header)
+
+		case hash := <-f.done:
+			// A pending import finished, remove all traces of the notification
+			f.forgetBlock(hash)
+
 			/*
 				case notification := <-f.notify:
 					// A block was announced, make sure the peer isn't DOSing us
@@ -241,11 +228,6 @@ func (f *LightFetcher) loop() {
 					if len(f.announced) == 1 {
 						f.rescheduleFetch(fetchTimer)
 					}
-
-				case hash := <-f.done:
-					// A pending import finished, remove all traces of the notification
-					f.forgetHash(hash)
-					f.forgetBlock(hash)
 
 				case <-fetchTimer.C:
 					// At least one block's timer ran out, check for needing retrieval
@@ -389,10 +371,6 @@ func (f *LightFetcher) loop() {
 	}
 }
 
-func (f *LightFetcher) forgetHash(hash common.Hash) {
-
-}
-
 // forgetBlock removes all traces of a queued block from the fetcher's internal
 // state.
 func (f *LightFetcher) forgetBlock(hash common.Hash) {
@@ -417,15 +395,15 @@ func (f *LightFetcher) insert(peer string, header *modules.Header) {
 		defer func() { f.done <- hash }()
 
 		// If the parent's unknown, abort insertion
-		//parent := f.getBlock(block.ParentHash())
-		parentsHash := header.ParentsHash
-		for _, parentHash := range parentsHash {
-			had, _ := f.getHeaderByHash(parentHash)
-			if had == nil {
-				log.Debug("Unknown parent of propagated block", "peer", peer, "number", header.Number.Index, "hash", hash, "parent", parentHash)
-				return
-			}
-		}
+		//TODO must recover
+		//parentsHash := header.ParentsHash
+		//for _, parentHash := range parentsHash {
+		//	had, _ := f.getHeaderByHash(parentHash)
+		//	if had == nil {
+		//		log.Debug("Unknown parent of propagated block", "peer", peer, "number", header.Number.Index, "hash", hash, "parent", parentHash)
+		//		return
+		//	}
+		//}
 
 		// Quickly validate the header and propagate the block if it passes
 		switch err := f.verifyHeader(header); err {
@@ -443,7 +421,7 @@ func (f *LightFetcher) insert(peer string, header *modules.Header) {
 			return
 		}
 		// Run the actual import and log any issues
-		if _, err := f.insertHeader([]modules.Header{*header}); err != nil {
+		if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", header.Index(), "hash", hash, "err", err)
 			return
 		}
@@ -456,19 +434,19 @@ func (f *LightFetcher) insert(peer string, header *modules.Header) {
 // enqueue schedules a new future import operation, if the block to be imported
 // has not yet been seen.
 func (f *LightFetcher) enqueue(peer string, header *modules.Header) {
+	log.Debug("Enter LightFetcher enqueue", "peer id", peer, "header index:", header.Index())
+	defer log.Debug("End LightFetcher enqueue")
 	hash := header.Hash()
 	// Ensure the peer isn't DOSing us
 	count := f.queues[peer] + 1
 	if count > blockLimit {
 		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", header.Index(), "hash", hash, "limit", blockLimit)
-		f.forgetHash(hash)
 		return
 	}
 	// Discard any past or too distant blocks
 	heightChain := int64(f.lightChainHeight(header.Number.AssetID))
 	if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
 		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", header.Index(), "heightChain", heightChain, "distance", dist)
-		f.forgetHash(hash)
 		return
 	}
 	// Schedule the block for future importing

@@ -211,7 +211,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 
 func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	validator := func(header *modules.Header) error {
-		//dag.VerifyHeader(header, false)
+		return dagerrors.ErrFutureBlock
+		//TODO must recover
 		if _, err := pm.dag.GetUnitByHash(header.Hash()); err != nil {
 			return dagerrors.ErrFutureBlock
 		}

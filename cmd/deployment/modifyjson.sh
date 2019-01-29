@@ -35,6 +35,8 @@ if [ $index -eq 0 ] ; then
     createaccount=`./createaccount.sh`
     account=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
     account=${account:0:35}
+    account=`echo ${account//
+    /}`
 
     add=`echo $add |
        jq "to_entries |
