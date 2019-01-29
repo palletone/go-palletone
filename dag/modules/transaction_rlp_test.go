@@ -17,6 +17,21 @@ type TestA struct {
 	Children []*TestA
 }
 
+func TestRlpA(t *testing.T) {
+	a := &TestA{A: 123, B: "abc"}
+	b1, _ := rlp.EncodeToBytes(a)
+	a1 := &TestA{}
+	t.Logf("Rlp:%x", b1)
+	b := &TestA{}
+	a1.Parent = b
+	b2, _ := rlp.EncodeToBytes(a1)
+	t.Logf("Rlp:%x", b2)
+	err := rlp.DecodeBytes(b2, a1)
+	if err != nil {
+		t.Log(err.Error())
+	}
+}
+
 type TestInput struct {
 	SignatureScript  []byte
 	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
@@ -80,6 +95,12 @@ func TestInput_RLP(t *testing.T) {
 	hash1 := util.RlpHash(input)
 	hash2 := util.RlpHash(input2)
 	assert.Equal(t, hash1, hash2)
+
+	input3 := NewTxIn(NewOutPoint(input.PreviousTxHash, input.PreviousMsgIndex, input.PreviousOutIndex), input.SignatureScript)
+	input3.Extra = input.Extra
+	bytes3, _ := rlp.EncodeToBytes(input3)
+	assert.Equal(t, bytes, bytes3)
+	assertRlpHashEqual(t, input, input3)
 }
 
 func TestCoinbaseInput_RLP(t *testing.T) {
@@ -98,6 +119,12 @@ func TestCoinbaseInput_RLP(t *testing.T) {
 	t.Log("data:", input2.SignatureScript == nil)
 	assert.Nil(t, err)
 	assert.Equal(t, input, input2)
+
+	input3 := NewTxIn(nil, input.SignatureScript)
+	input3.Extra = input.Extra
+	bytes3, _ := rlp.EncodeToBytes(input3)
+	assert.Equal(t, bytes, bytes3)
+	assertRlpHashEqual(t, input, input3)
 }
 
 func TestOutput_Rlp(t *testing.T) {

@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
@@ -87,28 +88,39 @@ func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 	}
 }
 
-//func TestGetContract(t *testing.T) {
-//	var keys []string
-//	var results []interface{}
-//	var origin modules.Contract
-//
-//	origin.Id = common.HexToHash("123456")
-//
-//	origin.Name = "test"
-//	origin.Code = []byte(`logger.PrintLn("hello world")`)
-//	origin.Input = []byte("input")
-//
-//	db, _ := ptndb.NewMemDatabase()
-//
-//	log.Debug("store error: ", StoreBytes(db, append(CONTRACT_PREFIX, origin.Id[:]...), origin))
-//	keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
-//	results = append(results, common.HexToHash("123456"), nil, "test", []byte(`logger.PrintLn("hello world")`), nil, nil, nil)
-//	log.Debug("test data: ", keys)
-//
-//	for i, k := range keys {
-//		data, err := GetContractKeyValue(db, origin.Id, k)
-//		if !reflect.DeepEqual(data, results[i]) {
-//			t.Error("test error:", err, "the expect key is:", k, " value is :", results[i], ",but the return value is: ", data)
-//		}
-//	}
-//}
+func TestGetContract(t *testing.T) {
+	//var keys []string
+	//var results []interface{}
+	var contract modules.Contract
+
+	contract.Id = []byte("123456")
+	contract.LangCode = "go"
+	contract.Name = "test"
+	contract.Code = []byte(`logger.PrintLn("hello world")`)
+	contract.Input = []byte("input")
+
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	err := statedb.SaveContract(&contract)
+	assert.Nil(t, err)
+	dbContract, err := statedb.GetContract(contract.Id)
+	assert.Nil(t, err)
+	t.Logf("%#v", dbContract)
+	assertRlpHashEqual(t, contract, dbContract)
+	//log.Debug("store error: ", StoreBytes(db, append(CONTRACT_PREFIX, contract.Id[:]...), contract))
+	//keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
+	//results = append(results, common.HexToHash("123456"), nil, "test", []byte(`logger.PrintLn("hello world")`), nil, nil, nil)
+	//log.Debug("test data: ", keys)
+	//
+	//for i, k := range keys {
+	//	data, err := GetContractKeyValue(db, contract.Id, k)
+	//	if !reflect.DeepEqual(data, results[i]) {
+	//		t.Error("test error:", err, "the expect key is:", k, " value is :", results[i], ",but the return value is: ", data)
+	//	}
+	//}
+}
+func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
+	hash1 := util.RlpHash(a)
+	hash2 := util.RlpHash(b)
+	assert.Equal(t, hash1, hash2)
+}

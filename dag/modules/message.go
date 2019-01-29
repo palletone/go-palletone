@@ -22,9 +22,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/ethereum/go-ethereum/rlp"
 
 	"bytes"
 	"github.com/shopspring/decimal"
@@ -510,17 +510,17 @@ type ContractInstallRequestPayload struct {
 }
 
 type ContractDeployRequestPayload struct {
-	TplId   []byte        `json:"tpl_name"`
-	TxId    string        `json:"transaction_id"` //todo
-	Args    [][]byte      `json:"args"`
-	Timeout time.Duration `json:"timeout"`
+	TplId   []byte   `json:"tpl_name"`
+	TxId    string   `json:"transaction_id"` //todo
+	Args    [][]byte `json:"args"`
+	Timeout uint32   `json:"timeout"`
 }
 
 type ContractInvokeRequestPayload struct {
-	ContractId   []byte        `json:"contract_id"` // contract id
-	FunctionName string        `json:"function_name"`
-	Args         [][]byte      `json:"args"` // contract arguments list
-	Timeout      uint32        `json:"timeout"`
+	ContractId   []byte   `json:"contract_id"` // contract id
+	FunctionName string   `json:"function_name"`
+	Args         [][]byte `json:"args"` // contract arguments list
+	Timeout      uint32   `json:"timeout"`
 }
 
 type ContractStopRequestPayload struct {
