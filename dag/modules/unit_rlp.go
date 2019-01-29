@@ -15,10 +15,14 @@
 */
 package modules
 
-import "github.com/palletone/go-palletone/common"
+import (
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+	"io"
+)
 
 type headerTemp struct {
-	ParentsHash []common.Hash`json:"parents_hash"`
+	ParentsHash []common.Hash `json:"parents_hash"`
 	//AssetIDs     []IDType16    `json:"assets"`
 	Authors      Authentifier `json:"mediator"`    // the unit creation authors
 	GroupSign    []byte       `json:"groupSign"`   // 群签名, 用于加快单元确认速度
@@ -26,5 +30,39 @@ type headerTemp struct {
 	TxRoot       common.Hash  `json:"root"`
 	Number       *ChainIndex  `json:"index"`
 	Extra        []byte       `json:"extra"`
-	Creationdate uint32        `json:"creation_time"` // unit create time
+	Creationdate uint32       `json:"creation_time"` // unit create time
+}
+
+func (input *Header) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+	temp := &headerTemp{}
+	err = rlp.DecodeBytes(raw, temp)
+	if err != nil {
+		return err
+	}
+
+	input.ParentsHash = temp.ParentsHash
+	input.Authors = temp.Authors
+	input.GroupSign = temp.GroupSign
+	input.GroupPubKey = temp.GroupPubKey
+	input.TxRoot = temp.TxRoot
+	input.Number = temp.Number
+	input.Extra = temp.Extra
+	input.Creationdate = int64(temp.Creationdate)
+	return nil
+}
+func (input *Header) EncodeRLP(w io.Writer) error {
+	temp := &headerTemp{}
+	temp.ParentsHash = input.ParentsHash
+	temp.Authors = input.Authors
+	temp.GroupSign = input.GroupSign
+	temp.GroupPubKey = input.GroupPubKey
+	temp.TxRoot = input.TxRoot
+	temp.Number = input.Number
+	temp.Extra = input.Extra
+	temp.Creationdate = uint32(input.Creationdate)
+	return rlp.Encode(w, temp)
 }

@@ -38,7 +38,7 @@ type ContractTemp struct {
 	CodeAddress       common.Address
 	Input             []byte
 	JuryPubKeys       [][]byte //该合约对于的陪审员公钥列表
-	NeedApprovalCount uint32      //需要多少个陪审员同意才算共识达成
+	NeedApprovalCount uint8    //需要多少个陪审员同意才算共识达成
 	CallerAddress     common.Address
 	caller            common.Address
 	self              common.Address // 合約地址
@@ -53,50 +53,50 @@ type ContractTemp struct {
 	creation uint32 // creation  date
 }
 
-func ContractToTemp(contract *Contract) *ContractTemp  {
+func ContractToTemp(contract *Contract) *ContractTemp {
 	c := ContractTemp{}
-	c.Id=contract.Id
-	c.Name=contract.Name
-	c.ConType=contract.ConType
-	c.LangCode=contract.LangCode
-	c.Sign=contract.Sign
-	c.Code=contract.Code
-	c.CodeHash=contract.CodeHash
-	c.CodeAddress=contract.CodeAddress
-	c.Input=contract.Input
-	c.JuryPubKeys=contract.JuryPubKeys
-	c.NeedApprovalCount=uint32(contract.NeedApprovalCount)
-	c.CallerAddress=contract.CallerAddress
-	c.caller=contract.caller
-	c.self=contract.self
-	c.jumpdests=contract.jumpdests
-	c.value=contract.value
-	c.Args=contract.Args
-	c.status=uint32(contract.status)
-	c.creation =uint32(contract.creation.Unix())
+	c.Id = contract.Id
+	c.Name = contract.Name
+	c.ConType = contract.ConType
+	c.LangCode = contract.LangCode
+	c.Sign = contract.Sign
+	c.Code = contract.Code
+	c.CodeHash = contract.CodeHash
+	c.CodeAddress = contract.CodeAddress
+	c.Input = contract.Input
+	c.JuryPubKeys = contract.JuryPubKeys
+	c.NeedApprovalCount = contract.NeedApprovalCount
+	c.CallerAddress = contract.CallerAddress
+	c.caller = contract.caller
+	c.self = contract.self
+	c.jumpdests = contract.jumpdests
+	c.value = contract.value
+	c.Args = contract.Args
+	c.status = uint32(contract.status)
+	c.creation = uint32(contract.creation.Unix())
 	return &c
 }
-func ContractTempToContract(contractTemp *ContractTemp) *Contract  {
+func ContractTempToContract(contractTemp *ContractTemp) *Contract {
 	c := Contract{}
-	c.Id=contractTemp.Id
-	c.Name=contractTemp.Name
-	c.ConType=contractTemp.ConType
-	c.LangCode=contractTemp.LangCode
-	c.Sign=contractTemp.Sign
-	c.Code=contractTemp.Code
-	c.CodeHash=contractTemp.CodeHash
-	c.CodeAddress=contractTemp.CodeAddress
-	c.Input=contractTemp.Input
-	c.JuryPubKeys=contractTemp.JuryPubKeys
-	c.NeedApprovalCount=int(contractTemp.NeedApprovalCount)
-	c.CallerAddress=contractTemp.CallerAddress
-	c.caller=contractTemp.caller
-	c.self=contractTemp.self
-	c.jumpdests=contractTemp.jumpdests
-	c.value=contractTemp.value
-	c.Args=contractTemp.Args
-	c.status=int(contractTemp.status)
-	timestamp :=int64(contractTemp.creation)
-	c.creation = time.Unix(timestamp,0)
+	c.Id = contractTemp.Id
+	c.Name = contractTemp.Name
+	c.ConType = contractTemp.ConType
+	c.LangCode = contractTemp.LangCode
+	c.Sign = contractTemp.Sign
+	c.Code = contractTemp.Code
+	c.CodeHash = contractTemp.CodeHash
+	c.CodeAddress = contractTemp.CodeAddress
+	c.Input = contractTemp.Input
+	c.JuryPubKeys = contractTemp.JuryPubKeys
+	c.NeedApprovalCount = contractTemp.NeedApprovalCount
+	c.CallerAddress = contractTemp.CallerAddress
+	c.caller = contractTemp.caller
+	c.self = contractTemp.self
+	c.jumpdests = contractTemp.jumpdests
+	c.value = contractTemp.value
+	c.Args = contractTemp.Args
+	c.status = int(contractTemp.status)
+	timestamp := int64(contractTemp.creation)
+	c.creation = time.Unix(timestamp, 0)
 	return &c
 }

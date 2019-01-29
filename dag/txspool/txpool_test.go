@@ -91,6 +91,9 @@ func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
 }
+func (ud *UnitDag4Test) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
+	return nil, common.Hash{}, nil
+}
 
 func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	if ud.outpoints == nil {

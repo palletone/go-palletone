@@ -67,7 +67,7 @@ type Header struct {
 	TxRoot       common.Hash  `json:"root"`
 	Number       *ChainIndex  `json:"index"`
 	Extra        []byte       `json:"extra"`
-	Creationdate uint32        `json:"creation_time"` // unit create time
+	Creationdate int64        `json:"creation_time"` // unit create time
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
