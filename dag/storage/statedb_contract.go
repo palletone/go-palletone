@@ -42,7 +42,9 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	if count > 0 {
 		return errors.New("Contract[" + common.Bytes2Hex(contract.Id) + "]'s state existed!")
 	}
-	return StoreBytes(statedb.db, prefix, contract)
+	contractTemp := &modules.ContractTemp{}
+	contractTemp = modules.ContractToTemp(contract)
+	return StoreBytes(statedb.db, prefix, contractTemp)
 }
 func (statedb *StateDb) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
 	return SaveContractState(statedb, constants.CONTRACT_STATE_PREFIX, id, name, value, version)
@@ -216,12 +218,13 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 		log.Errorf("err:", err)
 		return nil, err
 	}
-	contract := new(modules.Contract)
-	err = rlp.DecodeBytes(con_bytes, contract)
+	contractTemp := new(modules.ContractTemp)
+	err = rlp.DecodeBytes(con_bytes, contractTemp)
 	if err != nil {
 		log.Error("err:", err)
 		return nil, err
 	}
+	contract := modules.ContractTempToContract(contractTemp)
 	return contract, nil
 }
 func (statedb *StateDb) SaveContractDeployReq(deploy *modules.ContractDeployRequestPayload) error {

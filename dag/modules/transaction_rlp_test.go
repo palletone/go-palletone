@@ -17,6 +17,12 @@ type TestA struct {
 	Children []*TestA
 }
 
+// type int and time is not RLP-serializable
+//type TestB struct {
+//	A        []byte
+//	B        int64
+//}
+
 type TestInput struct {
 	SignatureScript  []byte
 	Extra            []byte // if user creating a new asset, this field should be it's config data. Otherwise it is null.
@@ -55,7 +61,7 @@ func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 //	assert.Equal(t, hash1, hash2)
 //}
 
-//func TestCompare(t *testing.T) {
+func TestCompare(t *testing.T) {
 //	a1 := &TestA{A: 1, B: "A1"}
 //	a2 := &TestA{A: 2, B: "A2"}
 //	a3 := &TestA{A: 3, B: "A3", Parent: a1}
@@ -65,7 +71,14 @@ func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 //	assert.True(t, cmp.Equal(a1, a11))
 //	assert.False(t, cmp.Equal(a2, a22))
 //	assert.True(t, cmp.Equal(a3.Parent, a11))
-//}
+//	b1 := &TestB{A:[]byte("A1"), B:2 }
+//	bytes, err := rlp.EncodeToBytes(b1)
+//	assert.Nil(t, err)
+//	t.Logf("Rlp data:%x", bytes)
+//	b := &TestB{}
+//	err = rlp.DecodeBytes(bytes, b)
+//	assert.Equal(t, b1, b)
+}
 
 func TestInput_RLP(t *testing.T) {
 	input := newTestInput(common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), 123, 9999, []byte{1, 2, 3}, nil)
