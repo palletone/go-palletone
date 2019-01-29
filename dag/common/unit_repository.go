@@ -270,7 +270,7 @@ func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.Cha
 generate genesis unit, need genesis unit configure fields and transactions list
 */
 func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) (*modules.Unit, error) {
-	gUnit := modules.Unit{}
+	gUnit := &modules.Unit{}
 
 	// genesis unit height
 	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: 0}
@@ -292,7 +292,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) 
 	gUnit.UnitSize = gUnit.Size()
 	// set unit hash
 	gUnit.UnitHash = gUnit.Hash()
-	return &gUnit, nil
+	return gUnit, nil
 }
 
 // WithSignature, returns a new unit with the given signature.
