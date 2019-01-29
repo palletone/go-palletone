@@ -511,6 +511,8 @@ type ContractInstallRequestPayload struct {
 	Path    string `json:"install_path"`
 	Version string `json:"tpl_version"`
 }
+type ContractTplRequestPayload struct {
+}
 
 type ContractDeployRequestPayload struct {
 	TplId   []byte        `json:"tpl_name"`
