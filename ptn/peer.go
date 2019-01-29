@@ -234,8 +234,8 @@ func (p *peer) SendNewRawUnit(unit *modules.Unit, data []byte) error {
 }
 
 // SendLightHeader propagates an entire header to a remote partition peer.
-func (p *peer) SendLightHeader(headers []*modules.Header) error {
-	return p2p.Send(p.rw, NewBlockHeaderMsg, headers)
+func (p *peer) SendLightHeader(header *modules.Header) error {
+	return p2p.Send(p.rw, NewBlockHeaderMsg, header)
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
