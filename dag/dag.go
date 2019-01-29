@@ -855,13 +855,11 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
-	}
-	// step2. validate unit
-
-	err := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-
-	if err != nil {
-		return fmt.Errorf("SaveDag, validate unit error, err=%s", err.Error())
+		// step2. validate unit
+		err := d.validate.ValidateUnitExceptGroupSig(unit)
+		if err != nil {
+			return fmt.Errorf("SaveDag, validate unit error, err=%s", err.Error())
+		}
 	}
 
 	//	// step3.1. pass and with group signature, put into leveldb

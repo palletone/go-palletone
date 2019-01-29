@@ -463,12 +463,12 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 		case msg.App < APP_CONTRACT_TPL_REQUEST:
 			req := &ContractInvokeRequestPayload{}
 			obj.DeepCopy(req, msg.Payload)
-			request.AddMessage(NewMessage(APP_CONTRACT_INVOKE_REQUEST, req))
+			request.AddMessage(NewMessage(msg.App, req))
 
 		case msg.App >= APP_CONTRACT_TPL_REQUEST, msg.App <= APP_CONTRACT_STOP_REQUEST:
 			req := &ContractInvokeRequestPayload{}
 			obj.DeepCopy(req, msg.Payload)
-			request.AddMessage(NewMessage(APP_CONTRACT_INVOKE_REQUEST, req))
+			request.AddMessage(NewMessage(msg.App, req))
 			break
 
 		default:

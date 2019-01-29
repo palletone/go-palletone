@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -33,7 +34,7 @@ import (
 验证单元的签名，需要比对见证人列表
 To validate unit's signature, and mediators' signature
 */
-func (validate *Validate) validateUnitSignature(h *modules.Header, isGenesis bool) ValidationCode {
+func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCode {
 
 	// copy unit's header
 	header := modules.CopyHeader(h)
@@ -66,9 +67,9 @@ func (validate *Validate) validateUnitSignature(h *modules.Header, isGenesis boo
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	// if genesis unit just return
-	if isGenesis == true {
-		return TxValidationCode_VALID
-	}
+	//if isGenesis == true {
+	//	return TxValidationCode_VALID
+	//}
 
 	// get mediators
 	//TODO Devin
@@ -100,7 +101,7 @@ Validate unit
 */
 // modified by Albert·Gou 新生产的unit暂时还没有群签名
 //func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
-func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) error {
+func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	//  unit's size  should bigger than minimum.
 	if unit.Size() < 125 {
 		log.Debug("Validate size", "error", "size is invalid", "size", unit.Size())
@@ -110,37 +111,40 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenes
 	// step1. check header.New unit is no group signature yet
 	//TODO must recover
 
-	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader, isGenesis)
+	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
 	if sigState != modules.UNIT_STATE_VALIDATED &&
 		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && sigState != modules.UNIT_STATE_CHECK_HEADER_PASSED {
 		log.Debug("Validate unit's header failed.", "error code", sigState)
 		return NewValidateError(sigState)
 	}
 
+	//validate tx root
+	root := core.DeriveSha(unit.Txs)
+	if root != unit.UnitHeader.TxRoot {
+		return NewValidateError(UNIT_STATE_INVALID_HEADER_TXROOT)
+	}
 	// step2. check transactions in unit
-	//_, isSuccess, err := validate.ValidateTransactions(&unit.Txs, isGenesis)
-	isSuccess := true //TODO test for sync
-	var err error
-	if isSuccess != true {
+	err := validate.ValidateTransactions(&unit.Txs)
+
+	if err != nil {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 		log.Debug(msg)
 		return NewValidateError(UNIT_STATE_HAS_INVALID_TRANSACTIONS)
 	}
-	return NewValidateError(sigState)
+	return nil
 }
 
 // modified by Albert·Gou 新生产的unit暂时还没有群签名
 //func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
-func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, isGenesis bool) ValidationCode {
+func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) ValidationCode {
 	// todo yangjie 应当错误返回前，打印验错误的具体消息
 	if header == nil {
 		return UNIT_STATE_INVALID_HEADER
 	}
 
 	if len(header.ParentsHash) == 0 {
-		if !isGenesis {
-			return UNIT_STATE_INVALID_HEADER
-		}
+
+		return UNIT_STATE_INVALID_HEADER
 	}
 	//  check header's extra data
 	if uint64(len(header.Extra)) > configure.MaximumExtraDataSize {
@@ -208,7 +212,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, i
 	var thisUnitIsNotTransmitted bool
 
 	if thisUnitIsNotTransmitted {
-		sigState := validate.validateUnitSignature(header, isGenesis)
+		sigState := validate.validateUnitSignature(header)
 		return sigState
 	}
 	return TxValidationCode_VALID
