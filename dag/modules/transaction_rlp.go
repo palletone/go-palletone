@@ -161,7 +161,7 @@ func (input *Input) DecodeRLP(s *rlp.Stream) error {
 	if err != nil {
 		return err
 	}
-	temp := &inputTemp{}
+	temp := &inputTemp{TxHash:common.Hash{}}
 	err = rlp.DecodeBytes(raw, temp)
 	if err != nil {
 		return err
