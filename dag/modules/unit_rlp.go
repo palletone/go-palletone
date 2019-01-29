@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"io"
+	"time"
 )
 
 type headerTemp struct {
@@ -64,5 +65,47 @@ func (input *Header) EncodeRLP(w io.Writer) error {
 	temp.Number = input.Number
 	temp.Extra = input.Extra
 	temp.Creationdate = uint32(input.Creationdate)
+	return rlp.Encode(w, temp)
+}
+
+type unitTemp struct {
+	UnitHeader *Header      `json:"unit_header"`  // unit header
+	Txs        Transactions `json:"transactions"` // transaction list
+	UnitHash   common.Hash  `json:"unit_hash"`    // unit hash
+	UnitSize   uint32       `json:"unit_size"`    // unit size
+	// These fields are used by package ptn to track
+	// inter-peer block relay.
+	ReceivedAt   uint32
+	ReceivedFrom []byte
+}
+
+func (input *Unit) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+	temp := &unitTemp{}
+	err = rlp.DecodeBytes(raw, temp)
+	if err != nil {
+		return err
+	}
+
+	input.UnitHeader = temp.UnitHeader
+	input.Txs = temp.Txs
+	input.UnitHash = temp.UnitHash
+	input.UnitSize = common.StorageSize(temp.UnitSize)
+
+	input.ReceivedAt = time.Unix(int64(temp.ReceivedAt), 0)
+	//todo  ReceivedFrom
+	return nil
+}
+func (input *Unit) EncodeRLP(w io.Writer) error {
+	temp := &unitTemp{}
+	temp.UnitHeader = input.UnitHeader
+	temp.Txs = input.Txs
+	temp.UnitHash = input.UnitHash
+	temp.UnitSize = uint32(input.UnitSize)
+	temp.ReceivedAt = uint32(input.ReceivedAt.UTC().Unix())
+
 	return rlp.Encode(w, temp)
 }

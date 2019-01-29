@@ -222,14 +222,14 @@ func (s Units) Swap(i, j int) {
 
 // key: unit.UnitHash(unit)
 type Unit struct {
-	UnitHeader *Header            `json:"unit_header"`       // unit header
-	Txs        Transactions       `json:"transactions"`      // transaction list
-	UnitHash   common.Hash        `json:"unit_hash" rlp:"-"` // unit hash
-	UnitSize   common.StorageSize `json:"unit_size" rlp:"-"` // unit size
+	UnitHeader *Header            `json:"unit_header"`  // unit header
+	Txs        Transactions       `json:"transactions"` // transaction list
+	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
+	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
-	ReceivedAt   time.Time   `rlp:"-"`
-	ReceivedFrom interface{} `rlp:"-"`
+	ReceivedAt   time.Time
+	ReceivedFrom interface{}
 }
 
 func (unit *Unit) Author() common.Address {
