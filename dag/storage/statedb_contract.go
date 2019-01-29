@@ -66,7 +66,7 @@ To save contract
 func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, version *modules.StateVersion) error {
 	key := getContractStateKey(id, field)
 
-	log.Debug(fmt.Sprintf("Try to save contract state with version:%x", version.Bytes()))
+	log.Debug(fmt.Sprintf("Try to save contract state with key:%s, version:%x", field, version.Bytes()))
 	if err := StoreBytesWithVersion(db, key, version, value); err != nil {
 		log.Error("Save contract state error", err.Error())
 		return err
@@ -90,6 +90,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 		log.Errorf("batch write contract[%x] state error:%s", id, err)
 		return err
 	}
+
 	return nil
 }
 func SaveContract(db ptndb.Database, contract *modules.Contract) error {
