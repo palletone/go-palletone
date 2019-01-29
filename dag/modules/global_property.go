@@ -72,7 +72,9 @@ type DynamicGlobalProperty struct {
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentASlot uint64
 
-	// 用于计算mediator的参与率。used to compute mediator participation.
+	// 记录每个生产slot的unit生产情况，用于计算mediator的参与率。
+	// 每一位表示一个生产slot，mediator正常生产unit则值为1，否则为0。
+	// 最低位表示最近一个slot， 初始值全为1。
 	RecentSlotsFilled uint64
 
 	//LastIrreversibleUnitNum uint32
@@ -244,7 +246,7 @@ func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits ui
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
 
-	dgp.RecentSlotsFilled = ((dgp.RecentSlotsFilled << 1) + 1) << missedUnits
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled<<(missedUnits+1) + 1
 
 	dgp.CurrentASlot += missedUnits + 1
 }
