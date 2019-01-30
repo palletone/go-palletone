@@ -459,12 +459,13 @@ func (mr *MockIDagMockRecorder) GetConfig(name interface{}) *gomock.Call {
 }
 
 // GetContractState mocks base method
-func (m *MockIDag) GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte) {
+func (m *MockIDag) GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractState", contractid, field)
-	ret0, _ := ret[0].(*modules.StateVersion)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(*modules.StateVersion)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetContractState indicates an expected call of GetContractState

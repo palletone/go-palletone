@@ -484,10 +484,10 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(SignaturePayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONFIG {
-				payload := new(ConfigPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				//} else if msg.App == APP_CONFIG {
+				//	payload := new(ConfigPayload)
+				//	obj.DeepCopy(payload, msg.Payload)
+				//	request.AddMessage(NewMessage(msg.App, payload))
 			} else if msg.App == APP_DATA {
 				payload := new(DataPayload)
 				obj.DeepCopy(payload, msg.Payload)

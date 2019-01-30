@@ -30,10 +30,11 @@ type idxPaymentPayload struct {
 	Index int
 	*PaymentPayload
 }
-type idxConfigPayload struct {
-	Index int
-	*ConfigPayload
-}
+
+//type idxConfigPayload struct {
+//	Index int
+//	*ConfigPayload
+//}
 type idxSignaturePayload struct {
 	Index int
 	*SignaturePayload
@@ -88,9 +89,9 @@ type idxContractStopPayload struct {
 }
 
 type txJsonTemp struct {
-	MsgCount                int
-	Payment                 []*idxPaymentPayload
-	Config                  []*idxConfigPayload
+	MsgCount int
+	Payment  []*idxPaymentPayload
+	//Config                  []*idxConfigPayload
 	Text                    []*idxTextPayload
 	MediatorCreateOperation []*idxMediatorCreateOperation
 	Signature               []*idxSignaturePayload
@@ -147,8 +148,8 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 			temp.Text = append(temp.Text, &idxTextPayload{Index: idx, DataPayload: msg.Payload.(*DataPayload)})
 		} else if msg.App == APP_SIGNATURE {
 			temp.Signature = append(temp.Signature, &idxSignaturePayload{Index: idx, SignaturePayload: msg.Payload.(*SignaturePayload)})
-		} else if msg.App == APP_CONFIG {
-			temp.Config = append(temp.Config, &idxConfigPayload{Index: idx, ConfigPayload: msg.Payload.(*ConfigPayload)})
+			//} else if msg.App == APP_CONFIG {
+			//	temp.Config = append(temp.Config, &idxConfigPayload{Index: idx, ConfigPayload: msg.Payload.(*ConfigPayload)})
 		} else if msg.App == OP_MEDIATOR_CREATE {
 			temp.MediatorCreateOperation = append(temp.MediatorCreateOperation,
 				&idxMediatorCreateOperation{Index: idx, MediatorCreateOperation: msg.Payload.(*MediatorCreateOperation)})
@@ -210,10 +211,10 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 		tx.TxMessages[p.Index] = NewMessage(APP_SIGNATURE, p.SignaturePayload)
 		processed++
 	}
-	for _, p := range temp.Config {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONFIG, p.ConfigPayload)
-		processed++
-	}
+	//for _, p := range temp.Config {
+	//	tx.TxMessages[p.Index] = NewMessage(APP_CONFIG, p.ConfigPayload)
+	//	processed++
+	//}
 	for _, p := range temp.MediatorCreateOperation {
 		tx.TxMessages[p.Index] = NewMessage(OP_MEDIATOR_CREATE, p.MediatorCreateOperation)
 		processed++

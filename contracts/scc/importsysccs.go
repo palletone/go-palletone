@@ -24,12 +24,14 @@ import (
 	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/example/go/prc20"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
+	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 )
 
 var systemChaincodes = []*SystemChaincode{
 	{
-		Id:        TestRunContractAddress.Bytes(), //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
+		Id:        syscontract.TestRunContractAddress.Bytes(), //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 		Enabled:   true,
 		Name:      "sample_syscc",
 		Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",
@@ -60,7 +62,7 @@ var systemChaincodes = []*SystemChaincode{
 	//	Chaincode: &samplesyscc2.SampleSysCC2{},
 	//},
 	{
-		Id:        DepositContractAddress.Bytes(), //合约ID为20字节
+		Id:        syscontract.DepositContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "deposit_syscc",
 		Path:      "../example/go/deposit/deposit",
@@ -69,7 +71,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &deposit.DepositChaincode{},
 	},
 	{
-		Id:        CreateTokenContractAddress.Bytes(), //合约ID为20字节
+		Id:        syscontract.CreateTokenContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "createToken_sycc",
 		Path:      "../example/go/prc20/prc20",
@@ -78,7 +80,16 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &prc20.PRC20{},
 	},
 	{
-		Id:        TestContractAddress.Bytes(),
+		Id:        syscontract.SysConfigContractAddress.Bytes(),
+		Enabled:   true,
+		Name:      "sysconfig_sycc",
+		Path:      ".",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &sysconfigcc.SysConfigChainCode{},
+	},
+	{
+		Id:        syscontract.TestContractAddress.Bytes(),
 		Enabled:   true,
 		Name:      "debug_sycc",
 		Path:      ".",

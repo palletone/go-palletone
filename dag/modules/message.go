@@ -41,7 +41,7 @@ const (
 	APP_CONTRACT_STOP
 	APP_SIGNATURE
 
-	APP_CONFIG
+	//APP_CONFIG
 	APP_DATA
 	APP_VOTE
 	OP_MEDIATOR_CREATE
@@ -79,15 +79,15 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	default:
 		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
 		msg.Payload = cpyMsg.Payload
-	case APP_CONFIG:
-		payload, _ := cpyMsg.Payload.(*ConfigPayload)
-		newPayload := ConfigPayload{
-			ConfigSet: []ContractWriteSet{},
-		}
-		for _, p := range payload.ConfigSet {
-			newPayload.ConfigSet = append(newPayload.ConfigSet, ContractWriteSet{Key: p.Key, Value: p.Value})
-		}
-		msg.Payload = newPayload
+	//case APP_CONFIG:
+	//	payload, _ := cpyMsg.Payload.(*ConfigPayload)
+	//	newPayload := ConfigPayload{
+	//		ConfigSet: []ContractWriteSet{},
+	//	}
+	//	for _, p := range payload.ConfigSet {
+	//		newPayload.ConfigSet = append(newPayload.ConfigSet, ContractWriteSet{Key: p.Key, Value: p.Value})
+	//	}
+	//	msg.Payload = newPayload
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
@@ -515,10 +515,10 @@ type ContractTplRequestPayload struct {
 }
 
 type ContractDeployRequestPayload struct {
-	TplId   []byte        `json:"tpl_name"`
-	TxId    string        `json:"transaction_id"` //todo
-	Args    [][]byte      `json:"args"`
-	Timeout time.Duration `json:"timeout"`
+	TplId   []byte   `json:"tpl_name"`
+	TxId    string   `json:"transaction_id"` //todo
+	Args    [][]byte `json:"args"`
+	Timeout uint32   `json:"timeout"`
 }
 
 type ContractInvokeRequestPayload struct {
@@ -536,9 +536,9 @@ type ContractStopRequestPayload struct {
 
 // Token exchange message and verify message
 // App: config	// update global config
-type ConfigPayload struct {
-	ConfigSet []ContractWriteSet `json:"config_set"` // the array of global config
-}
+//type ConfigPayload struct {
+//	ConfigSet []ContractWriteSet `json:"config_set"` // the array of global config
+//}
 type SignaturePayload struct {
 	Signatures []SignatureSet `json:"signature_set"` // the array of signature
 }
