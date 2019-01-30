@@ -69,9 +69,9 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		return nil, err
 	}
 	//TODO Devin
-	ver, val := s.dag.GetContractState(contractid, key)
+	val, ver, err := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
-	if val == nil {
+	if err != nil {
 		log.Warnf("get value from db[%s] failed,key:%s", ns, key)
 		return nil, nil
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)

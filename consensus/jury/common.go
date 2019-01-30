@@ -10,6 +10,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"time"
 )
 
 func localIsMinSignature(tx *modules.Transaction) bool {
@@ -107,7 +108,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					templateId: reqPay.TplId,
 					txid:       reqPay.TxId,
 					args:       reqPay.Args,
-					timeout:    reqPay.Timeout,
+					timeout:    time.Duration(reqPay.Timeout),
 				}
 				deployResult, err := ContractProcess(contract, req)
 				if err != nil {

@@ -14,21 +14,27 @@
  * /
  *
  *  * @author PalletOne core developer <dev@pallet.one>
- *  * @date 2018
+ *  * @date 2018-2019
  *
  */
 
-package scc
+package syscontract
 
 import "github.com/palletone/go-palletone/common"
 
 var (
+	//保证金合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
 	DepositContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000011C")
-
+	//创币合约PRC20
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 	CreateTokenContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000021C")
+	//TODO 投票合约
+	//系统参数维护合约
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRS71ZEM
+	SysConfigContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000041C")
 
+	//测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
 	TestContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000081C")
 

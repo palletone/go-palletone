@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -555,9 +556,8 @@ func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Tr
 为创世单元生成ConfigPayload
 To generate config payload for genesis unit
 */
-func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (modules.ConfigPayload, error) {
-	var confPay modules.ConfigPayload
-	confPay.ConfigSet = []modules.ContractWriteSet{}
+func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*modules.ContractInvokePayload, error) {
+	writeSets := []modules.ContractWriteSet{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
@@ -578,9 +578,9 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 					sk = strings.Replace(sk, "Initial", "", -1)
 				}
 
-				//confPay.ConfigSet = append(confPay.ConfigSet,
+				//writeSets.ConfigSet = append(writeSets.ConfigSet,
 				//	modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
-				confPay.ConfigSet = append(confPay.ConfigSet,
+				writeSets = append(writeSets,
 					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
 			}
 		} else {
@@ -588,15 +588,18 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 			if strings.Contains(sk, "Initial") {
 				sk = strings.Replace(sk, "Initial", "", -1)
 			}
-			confPay.ConfigSet = append(confPay.ConfigSet,
+			writeSets = append(writeSets,
 				modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
 		}
 	}
 
-	confPay.ConfigSet = append(confPay.ConfigSet,
+	writeSets = append(writeSets,
 		modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
-	return confPay, nil
+	payload := &modules.ContractInvokePayload{}
+	payload.ContractId = syscontract.SysConfigContractAddress.Bytes()
+	payload.WriteSet = writeSets
+	return payload, nil
 }
 
 //Yiran
@@ -759,10 +762,10 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			if ok := rep.saveContractStop(reqId, msg); !ok {
 				return fmt.Errorf("save contract stop payload failed.")
 			}
-		case modules.APP_CONFIG:
-			if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-				return fmt.Errorf("Save contract invode payload error.")
-			}
+		//case modules.APP_CONFIG:
+		//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+		//		return fmt.Errorf("Save contract invode payload error.")
+		//	}
 		case modules.APP_VOTE:
 			if err = rep.SaveVote(msg, requester); err != nil {
 				return fmt.Errorf("Save vote payload error.")
@@ -912,24 +915,24 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 保存配置交易
 save config payload
 */
-func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Message, height *modules.ChainIndex, txIndex uint32) bool {
-	var pl interface{}
-	pl = msg.Payload
-	payload, ok := pl.(*modules.ConfigPayload)
-	if ok == false {
-		return false
-	}
-	version := modules.StateVersion{
-		Height:  height,
-		TxIndex: txIndex,
-	}
-	if err := rep.statedb.SaveConfig(payload.ConfigSet, &version); err != nil {
-		errMsg := fmt.Sprintf("To save config payload error: %s", err)
-		log.Error(errMsg)
-		return false
-	}
-	return true
-}
+//func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Message, height *modules.ChainIndex, txIndex uint32) bool {
+//	var pl interface{}
+//	pl = msg.Payload
+//	payload, ok := pl.(*modules.ConfigPayload)
+//	if ok == false {
+//		return false
+//	}
+//	version := modules.StateVersion{
+//		Height:  height,
+//		TxIndex: txIndex,
+//	}
+//	if err := rep.statedb.SaveConfig(payload.ConfigSet, &version); err != nil {
+//		errMsg := fmt.Sprintf("To save config payload error: %s", err)
+//		log.Error(errMsg)
+//		return false
+//	}
+//	return true
+//}
 
 /**
 保存合约调用状态

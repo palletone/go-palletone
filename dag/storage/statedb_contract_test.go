@@ -39,13 +39,13 @@ func TestGetContractState(t *testing.T) {
 	//l := log.NewTestLog()
 	statedb := NewStateDb(db)
 	id := []byte("TestContract")
-	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code"),NeedApprovalCount:10}
+	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code"), NeedApprovalCount: 10}
 	err := statedb.SaveContract(contract)
 	assert.Nil(t, err, "save contract to statedb fail")
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
 	err = statedb.SaveContractState(id, "name", "TestName1", version)
 	assert.Nil(t, err, "Save contract state fail")
-	version2, value := statedb.GetContractState(id, "name")
+	value, version2, _ := statedb.GetContractState(id, "name")
 	log.Debug("test debug: ", "version", version.String())
 	assert.Equal(t, version, version2, "version not same.")
 	log.Debug(fmt.Sprintf("get value from db:%s", value))

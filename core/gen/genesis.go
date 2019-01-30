@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -160,8 +160,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		return nil, nil
 	}
 	msg1 := &modules.Message{
-		App:     modules.APP_CONFIG,
-		Payload: &configPayload,
+		App:     modules.APP_CONTRACT_INVOKE,
+		Payload: configPayload,
 	}
 	msg2 := &modules.Message{
 		App:     modules.APP_DATA,
