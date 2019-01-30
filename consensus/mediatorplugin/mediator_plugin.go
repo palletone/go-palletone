@@ -238,6 +238,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Mediator"] = scheduledMediator.Str()
 	detail["Hash"] = unitHash.TerminalString()
 	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
+
 	// 3. 对 unit 进行群签名和广播
 	go mp.broadcastAndGroupSignUnit(scheduledMediator, newUnit)
 

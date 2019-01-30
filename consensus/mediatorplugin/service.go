@@ -260,8 +260,12 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 func (mp *MediatorPlugin) unlockLocalMediators() {
 	ks := mp.ptn.GetKeyStore()
 
-	for _, medAcc := range mp.mediators {
-		ks.Unlock(accounts.Account{Address: medAcc.Address}, medAcc.Password)
+	for add, medAcc := range mp.mediators {
+		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
+		if err != nil {
+			log.Infof("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
+			delete(mp.mediators, add)
+		}
 	}
 }
 

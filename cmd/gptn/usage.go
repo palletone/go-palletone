@@ -237,6 +237,7 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: []cli.Flag{
 			mp.StaleProductionFlag,
 			mp.ConsecutiveProductionFlag,
+			mp.RequiredParticipationFlag,
 		},
 	},
 	/*{
