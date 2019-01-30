@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -84,7 +85,7 @@ const (
 	NotMyTurn
 	NotTimeYet
 	//NoPrivateKey
-	//LowParticipation
+	LowParticipation
 	//Lag
 	Consecutive
 	ExceptionProducing
@@ -120,6 +121,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 			"by the same mediator(" + detail["Mediator"] + ")." +
 			" This node is probably disconnected from the network so unit production has been disabled." +
 			" Disable this check with --allowConsecutive option.")
+	case LowParticipation:
+		log.Infof("Not producing unit because node appears to be on a minority fork with only %v "+
+			"mediator participation.", detail["ParticipationRate"])
 	case ExceptionProducing:
 		log.Info("Exception producing unit")
 	case UnknownCondition:
@@ -195,6 +199,17 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	//	return NoPrivateKey, detail
 	//}
 
+	if !mp.consecutiveProduceEnabled && dag.IsConsecutiveMediator(scheduledMediator) {
+		detail["Mediator"] = scheduledMediator.Str()
+		return Consecutive, detail
+	}
+
+	pRate := dag.MediatorParticipationRate()
+	if pRate < mp.requiredParticipation {
+		detail["ParticipationRate"] = fmt.Sprint(pRate / core.PalletOne1Percent)
+		return LowParticipation, detail
+	}
+
 	scheduledTime := dag.GetSlotTime(slot)
 	//diff := scheduledTime.Sub(now)
 	//if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
@@ -202,11 +217,6 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	//	detail["Now"] = now.Format("2006-01-02 15:04:05")
 	//	return Lag, detail
 	//}
-
-	if !mp.consecutiveProduceEnabled && dag.IsConsecutiveMediator(scheduledMediator) {
-		detail["Mediator"] = scheduledMediator.Str()
-		return Consecutive, detail
-	}
 
 	// 2. 生产验证单元
 	//execute contract

@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	DefaultPassword    = "password"
-	DefaultInitPrivKey = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
+	DefaultPassword              = "password"
+	DefaultInitPrivKey           = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
+	DefaultRequiredParticipation = 33
 )
 
 var (
@@ -50,10 +51,10 @@ type Config struct {
 	// 允许本节点的mediator可以连续生产unit
 	EnableConsecutiveProduction bool
 
-	// Percent of mediators (0-99) that must be participating in order to produce
-	// RequiredParticipation float32
+	// Percent of mediators (0-99) that must be participating in order to produce uints
+	RequiredParticipation uint32
 
-	Mediators []*MediatorConf // the set of the mediator info
+	Mediators []*MediatorConf // the set of mediator accounts controlled by this node
 }
 
 func DefaultMediatorConf() *MediatorConf {
@@ -69,6 +70,7 @@ func DefaultMediatorConf() *MediatorConf {
 var DefaultConfig = Config{
 	EnableStaleProduction:       false,
 	EnableConsecutiveProduction: false,
+	RequiredParticipation:       DefaultRequiredParticipation,
 	Mediators: []*MediatorConf{
 		DefaultMediatorConf(),
 	},
