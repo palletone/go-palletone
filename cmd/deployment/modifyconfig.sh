@@ -52,10 +52,11 @@ sed -i '/^EnableStaleProduction/c'$newEnableStaleProduction'' ptn-config.toml
 newEnableConsecutiveProduction="EnableConsecutiveProduction=true"
 sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-config.toml
 
+fi
+
+
 newRequiredParticipation="RequiredParticipation=0"
 sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml
-
-fi
 
 
 createaccount=`./createaccount.sh`
