@@ -46,11 +46,14 @@ else
 dumcpjson=`./gptn dumpjson`
 echo $dumpjson
 
-newEnableStaleProduction="EnableStaleProduction=true"
+newEnableStaleProduction="EnableStaleProduction = true"
 sed -i '/^EnableStaleProduction/c'$newEnableStaleProduction'' ptn-config.toml
 
-newEnableConsecutiveProduction="EnableConsecutiveProduction=true"
+newEnableConsecutiveProduction="EnableConsecutiveProduction = true"
 sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-config.toml
+
+newRequiredParticipation="RequiredParticipation = 0"
+sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml
 
 fi
 
@@ -64,11 +67,11 @@ account=`echo ${accounttemp///}`
 
 
 
-newAddress="Address=\"$account\""
+newAddress="Address = \"$account\""
 sed -i '/^Address/c'$newAddress'' ptn-config.toml
 
 
-newPassword="Password=\"1\""
+newPassword="Password = \"1\""
 sed -i '/^Password/c'$newPassword'' ptn-config.toml
 
 
@@ -91,11 +94,11 @@ publickey=`echo ${publickeytemp///}`
 #echo $publickey
 
 
-newInitPrivKey="InitPrivKey=\"$privatekey\""
+newInitPrivKey="InitPrivKey = \"$privatekey\""
 sed -i '/^InitPrivKey/c'$newInitPrivKey'' ptn-config.toml
 
 
-newInitPubKey="InitPubKey=\"$publickey\""
+newInitPubKey="InitPubKey = \"$publickey\""
 sed -i '/^InitPubKey/c'$newInitPubKey'' ptn-config.toml
 
 
