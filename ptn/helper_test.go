@@ -161,6 +161,18 @@ func (p *testTxPool) AllHashs() []*common.Hash {
 	return hashs
 }
 
+func (p *testTxPool) AddRemote(tx *modules.Transaction) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.pool = append(p.pool, tx)
+	if p.added != nil {
+		p.added <- p.pool
+	}
+	return nil
+
+}
+
 func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
