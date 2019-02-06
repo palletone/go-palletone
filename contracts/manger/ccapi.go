@@ -164,7 +164,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		}
 		payloadUnit.Bytecode = paylod
 	}
-	log.Infof("user contract template id [%v]", hex.EncodeToString(payloadUnit.TemplateId))
+	log.Info("user contract template id", "byte:", payloadUnit.TemplateId, " string:", hex.EncodeToString(payloadUnit.TemplateId))
 	//type ContractTplPayload struct {
 	//	TemplateId []byte `json:"template_id"` // contract template id
 	//	Name       string `json:"name"`        // contract template name
@@ -216,7 +216,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	} else {
 		templateCC, chaincodeData, err = ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 		if err != nil {
-			log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, "error", err)
+			log.Error("Deploy", "chainid:", chainID, "templateId:", templateId, "RecoverChainCodeFromDb err", err)
 			return nil, nil, err
 		}
 	}

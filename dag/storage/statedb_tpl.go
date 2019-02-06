@@ -123,7 +123,7 @@ func (statedb *StateDb) GetContractTpl(templateID []byte) (*modules.StateVersion
 	nameByte := make([]byte, 0)
 	version, nameByte = statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
-		log.Debug("GetTplState err:version is nil")
+		log.Debug("GetTplState err:name is nil")
 		return version, bytecode, "", "", ""
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {

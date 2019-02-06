@@ -320,6 +320,10 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 
+func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool{
+	return isSystemContract(tx)
+}
+
 func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
 	if tx == nil {
 		return false

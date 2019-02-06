@@ -17,4 +17,5 @@ type contractInf interface {
 
 	AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error
 	CheckContractTxValid(tx *modules.Transaction, execute bool) bool
+	IsSystemContractTx(tx *modules.Transaction) bool
 }

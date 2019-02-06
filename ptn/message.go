@@ -417,12 +417,15 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
 
-		//if tx.IsContractTx() {
-		//	if !pm.contractProc.CheckContractTxValid(tx, false) {
-		//		log.Debug("TxMsg", "CheckContractTxValid is false")
-		//		return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
-		//	}
-		//}
+		if tx.IsContractTx() {
+			//if !pm.contractProc.CheckContractTxValid(tx, false) {
+			//	log.Debug("TxMsg", "CheckContractTxValid is false")
+			//	return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+			//}
+			if pm.contractProc.IsSystemContractTx(tx) {
+				continue
+			}
+		}
 
 		for msgIndex, msg := range tx.TxMessages {
 			payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -451,10 +454,10 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if err != nil {
 			return errResp(ErrDecode, "transaction %d not accepteable ", i, "err:", err)
 		}
+		pm.txpool.AddRemote(tx)
 	}
+	log.Debug("===============ProtocolManager TxMsg AddRemote====================")
 
-	log.Debug("===============ProtocolManager TxMsg AddRemotes====================")
-	pm.txpool.AddRemotes(txs)
 	return nil
 }
 
@@ -588,15 +591,16 @@ func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 }
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
-	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
+	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
+
 	for _, peer := range peers {
 		peer.SendContractTransaction(event)
 	}
 
 	if local {
-		go pm.contractProc.ProcessContractEvent(&event)
+		//go pm.contractProc.ProcessContractEvent(&event)
 	}
 }
 
