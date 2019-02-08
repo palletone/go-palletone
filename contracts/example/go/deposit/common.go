@@ -1,3 +1,17 @@
+/*
+	This file is part of go-palletone.
+	go-palletone is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	go-palletone is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package deposit
 
 import (
@@ -339,7 +353,7 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForForfeitureList(stub shim.ChaincodeStubInterface, listForForfeiture []*Forfeiture, forfeitureAddr string, applyTime int64) (newList []*Forfeiture, isOk bool) {
+func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAddr string, applyTime int64) (newList []*Forfeiture, isOk bool) {
 	for i := 0; i < len(listForForfeiture); i++ {
 		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
 			newList = append(listForForfeiture[:i], listForForfeiture[i+1:]...)

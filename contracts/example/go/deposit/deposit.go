@@ -539,7 +539,7 @@ func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInt
 		return shim.Error("Node is not exist in the forfeiture list.")
 	}
 	//从列表中移除
-	newList, isFound := moveInApplyForForfeitureList(stub, listForForfeiture, forfeiture, applyTime)
+	newList, isFound := moveInApplyForForfeitureList(listForForfeiture, forfeiture, applyTime)
 	if !isFound {
 		log.Error("Apply time is wrong.")
 		return shim.Error("Apply time is wrong.")
@@ -593,7 +593,7 @@ func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterf
 		return shim.Error("Apply time is wrong.")
 	}
 	//在列表中移除，并获取没收情况
-	newList, _ := moveInApplyForForfeitureList(stub, listForForfeiture, forfeitureAddr, applyTime)
+	newList, _ := moveInApplyForForfeitureList(listForForfeiture, forfeitureAddr, applyTime)
 	listForForfeitureByte, err := json.Marshal(newList)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
