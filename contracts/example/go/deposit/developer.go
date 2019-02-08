@@ -7,7 +7,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"strings"
 	"time"
@@ -27,14 +26,14 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(err.Error())
 	}
 	//获取账户
-	balance, err := stub.GetDepositBalance(invokeAddr)
+	balance, err :=GetDepositBalance(stub,invokeAddr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	isDeveloper := false
 	if balance == nil {
-		balance = &modules.DepositBalance{}
+		balance = &DepositBalance{}
 		if invokeTokens.Amount >= depositAmountsForDeveloper {
 			//加入列表
 			//addList("Jury", invokeAddr, stub)
@@ -110,7 +109,7 @@ func handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []st
 	}
 	//获取一下该用户下的账簿情况
 	addr := args[0]
-	balance, err := stub.GetDepositBalance(addr)
+	balance, err := GetDepositBalance(stub,addr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -149,9 +148,9 @@ func handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []st
 	return shim.Success([]byte("ok"))
 }
 
-func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64, balance *modules.DepositBalance) error {
+func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64, balance *DepositBalance) error {
 	//获取请求列表
-	listForCashback, err := stub.GetListForCashback()
+	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
 		log.Error("Stub.GetListForCashback err:", "error", err)
 		return err
@@ -166,7 +165,7 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 		return fmt.Errorf("%s", "node is not exist in the list.")
 	}
 	//获取节点信息
-	cashbackNode := &modules.Cashback{}
+	cashbackNode := &Cashback{}
 	isFound := false
 	for _, m := range listForCashback {
 		if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {
@@ -205,7 +204,7 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 }
 
 //对Developer退保证金的处理
-func handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *modules.Cashback, balance *modules.DepositBalance) error {
+func handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
 	if balance.TotalAmount >= depositAmountsForJury {
 		//已在列表中
 		err := handleDeveloperFromList(stub, cashbackAddr, cashbackValue, balance)
@@ -225,7 +224,7 @@ func handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, cashbackAd
 }
 
 //Developer已在列表中
-func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *modules.Cashback, balance *modules.DepositBalance) error {
+func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
 	//退出列表
 	var err error
 	//计算余额

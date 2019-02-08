@@ -348,33 +348,12 @@ type InvokeTokens struct {
 	Asset  *Asset `json:"asset"`  //资产
 }
 
-//申请提保证金
-type Cashback struct {
-	CashbackAddress string        `json:"cashback_address"` //请求地址
-	CashbackTokens  *InvokeTokens `json:"cashback_tokens"`  //请求数量
-	Role            string        `json:"role"`             //请求角色
-	CashbackTime    int64         `json:"cashback_time"`    //请求时间
+//申请成为Mediator
+type MediatorRegisterInfo struct {
+	Address string `json:"address"`
+	Content string `json:"content"`
+	Time    int64  `json:"time"`
 }
-
-//申请提取保证金的列表
-//type ListForCashback struct {
-//	Cashbacks []*Cashback `json:"cashbacks"`
-//}
-
-//申请没收保证金
-type Forfeiture struct {
-	ApplyAddress      string        `json:"apply_address"`      //谁发起的
-	ForfeitureAddress string        `json:"forfeiture_address"` //没收节点地址
-	ApplyTokens       *InvokeTokens `json:"apply_tokens"`       //没收数量
-	ForfeitureRole    string        `json:"forfeiture_role"`    //没收角色
-	//Extra             string        `json:"extra"`              //备注
-	ApplyTime int64 `json:"apply_time"` //请求时间
-}
-
-//申请没收保证金的列表
-//type ListForForfeiture struct {
-//	Forfeitures []*Forfeiture `json:"forfeitures"`
-//}
 
 //金额和资产
 type AmountAsset struct {
@@ -397,43 +376,8 @@ func assetAmt2DecimalAmt(asset *Asset, amount uint64) decimal.Decimal {
 	return d
 }
 
-//申请成为Mediator
-type MediatorRegisterInfo struct {
-	Address string `json:"address"`
-	Content string `json:"content"`
-	Time    int64  `json:"time"`
-}
 
-//Mediator 申请列表
-//type BecomeMediatorApplyList struct {
-//	MediatorList []*MediatorInfo `json:"mediator_list"`
-//}
 
-//同意 Mediator 列表
-//type AgreeForBecomeMediatorList struct {
-//	MediatorList []*MediatorInfo `json:"mediator_list"`
-//}
-
-//Mediator 退出列表
-//type QuitMediatorApplyList struct {
-//	MediatorList []*MediatorInfo `json:"mediator_list"`
-//}
-
-//数量及资产类型
-//type AmountAsset struct {
-//	Amount uint64 `json:"amount"`
-//	Asset  *Asset `json:"asset"`
-//}
-
-//节点状态数据库保存值
-type DepositBalance struct {
-	TotalAmount      uint64        `json:"total_amount"`      //保证金总量
-	LastModifyTime   int64         `json:"last_modify_time"`  //最后一次改变，主要来计算币龄收益
-	EnterTime        int64         `json:"enter_time"`        //这是加入列表时的时间
-	PayValues        []*PayValue   `json:"pay_values"`        //交付的历史记录
-	CashbackValues   []*Cashback   `json:"cashback_values"`   //退款的历史记录
-	ForfeitureValues []*Forfeiture `json:"forfeiture_values"` //被没收的历史记录
-}
 
 //交易的内容
 type PayValue struct {
