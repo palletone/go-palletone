@@ -125,6 +125,8 @@ var (
 		GenesisJsonPathFlag,
 		GenesisTimestampFlag,
 		mp.StaleProductionFlag,
+		mp.ConsecutiveProductionFlag,
+		mp.RequiredParticipationFlag,
 	}
 
 	rpcFlags = []cli.Flag{

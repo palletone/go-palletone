@@ -141,7 +141,7 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 }
 
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
-	med, err := d.stateRep.RetrieveMediator(add)
+	med, err := d.unstableStateRep.RetrieveMediator(add)
 	if err != nil {
 		log.Error("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
 		return nil
@@ -154,7 +154,7 @@ func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
 		// todo 更新缓存
 	}
 
-	d.stateRep.StoreMediator(med)
+	d.unstableStateRep.StoreMediator(med)
 	return
 }
 
@@ -181,7 +181,7 @@ func (dag *Dag) HeadUnitNum() uint64 {
 }
 
 func (dag *Dag) LastMaintenanceTime() int64 {
-	return dag.GetDynGlobalProp().LastMaintenanceTime
+	return int64(dag.GetDynGlobalProp().LastMaintenanceTime)
 }
 
 func (dag *Dag) HeadUnitHash() common.Hash {
@@ -190,19 +190,19 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 }
 
 func (dag *Dag) GetMediators() map[common.Address]bool {
-	return dag.stateRep.GetMediators()
+	return dag.unstableStateRep.GetMediators()
 }
 
 func (dag *Dag) GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error) {
-	return dag.stateRep.GetApprovedMediatorList()
+	return dag.unstableStateRep.GetApprovedMediatorList()
 }
 
 func (dag *Dag) IsApprovedMediator(address common.Address) bool {
-	return dag.stateRep.IsApprovedMediator(address)
+	return dag.unstableStateRep.IsApprovedMediator(address)
 }
 
 func (dag *Dag) IsMediator(address common.Address) bool {
-	return dag.stateRep.IsMediator(address)
+	return dag.unstableStateRep.IsMediator(address)
 }
 
 func (dag *Dag) ActiveMediators() map[common.Address]bool {
@@ -215,9 +215,9 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	//先判断Unit是否在Memdag中，如果在则直接返还，不在才去Leveldb查询
-	unit, err := dag.Memdag.GetUnit(hash)
+	unit, err := dag.unstableUnitRep.GetUnit(hash)
 	if err != nil && dag.Memdag != nil {
-		unit, err = dag.unitRep.GetUnit(hash)
+		unit, err = dag.unstableUnitRep.GetUnit(hash)
 	}
 
 	if err != nil {
@@ -241,7 +241,7 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 }
 
 func (d *Dag) GetVotedMediator(addr common.Address) map[common.Address]bool {
-	accountInfo, err := d.stateRep.RetrieveAccountInfo(addr)
+	accountInfo, err := d.unstableStateRep.RetrieveAccountInfo(addr)
 	if err != nil {
 		accountInfo = modules.NewAccountInfo()
 	}
@@ -250,11 +250,11 @@ func (d *Dag) GetVotedMediator(addr common.Address) map[common.Address]bool {
 }
 
 func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
-	return d.stateRep.LookupAccount()
+	return d.unstableStateRep.LookupAccount()
 }
 
 func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
-	accountInfo, err := d.stateRep.RetrieveAccountInfo(addr)
+	accountInfo, err := d.unstableStateRep.RetrieveAccountInfo(addr)
 	if err != nil {
 		accountInfo = modules.NewAccountInfo()
 	}
@@ -263,7 +263,7 @@ func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
 }
 
 func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
-	mi, _ := d.stateRep.RetrieveMediatorInfo(address)
+	mi, _ := d.unstableStateRep.RetrieveMediatorInfo(address)
 	return mi
 }
 

@@ -21,10 +21,10 @@
 package storage
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -68,11 +68,12 @@ func (utxodb *UtxoDb) saveUtxoOutpoint(address common.Address, outpoint *modules
 func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Address, outpoint *modules.OutPoint) error {
 	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
-	val, err := rlp.EncodeToBytes(outpoint)
-	if err != nil {
-		return err
-	}
-	return batch.Put(key, val)
+	return StoreBytes(batch, key, outpoint)
+	//val, err := rlp.EncodeToBytes(outpoint)
+	//if err != nil {
+	//	return err
+	//}
+	//return batch.Put(key, val)
 }
 func (utxodb *UtxoDb) deleteUtxoOutpoint(address common.Address, outpoint *modules.OutPoint) error {
 	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
@@ -94,12 +95,13 @@ func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, 
 // ###################### UTXO Entity ######################
 func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
 	key := outpoint.ToKey()
-	log.Debug("Try to save utxo by key:", "outpoint_key", outpoint.String())
+	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+	log.Debug("Try to save utxo by key:", "outpoint_key", outpoint.String(), "and index by address:", address.String())
 	err := StoreBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
 	}
-	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+
 	return utxodb.saveUtxoOutpoint(address, outpoint)
 }
 
@@ -113,11 +115,12 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 			continue
 		} else {
 			key := outpoint.ToKey()
-			val, err := rlp.EncodeToBytes(utxo)
+			err := StoreBytes(batch, key, utxo)
+			//val, err := rlp.EncodeToBytes(utxo)
 			if err != nil {
 				return err
 			}
-			batch.Put(key, val)
+			//batch.Put(key, val)
 			address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 			// save utxoindex and  addr and key
 			utxodb.batchSaveUtxoOutpoint(batch, address, &outpoint)
@@ -191,6 +194,10 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 // ###################### GET IMPL START ######################
 //  dbFetchUtxoEntry
 func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	if outpoint == nil {
+		return nil, errors.ErrNullPoint
+	}
+
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey()
 	log.Debugf("Query utxo by outpoint:%s", outpoint.String())

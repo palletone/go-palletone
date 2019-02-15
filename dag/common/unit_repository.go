@@ -38,19 +38,25 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/validator"
 )
 
 type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
-	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error
+	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetHeader(hash common.Hash) (*modules.Header, error)
+	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
+	SaveHeader(header *modules.Header) error
+	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
@@ -86,20 +92,19 @@ type IUnitRepository interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 }
 type UnitRepository struct {
-	dagdb          storage.IDagDb
-	idxdb          storage.IIndexDb
-	uxtodb         storage.IUtxoDb
+	dagdb storage.IDagDb
+	idxdb storage.IIndexDb
+	//uxtodb         storage.IUtxoDb
 	statedb        storage.IStateDb
 	propdb         storage.IPropertyDb
-	validate       Validator
+	validate       validator.Validator
 	utxoRepository IUtxoRepository
-	//logger         log.ILogger
 }
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
-	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, validate: val, utxoRepository: utxoRep, propdb: propdb}
+	val := validator.NewValidate(dagdb, utxoRep, statedb)
+	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, validate: val, utxoRepository: utxoRep, propdb: propdb}
 }
 
 func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
@@ -109,12 +114,34 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	val := NewValidate(dagdb, utxodb, utxoRep, statedb)
-	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, uxtodb: utxodb, statedb: statedb, propdb: propdb, validate: val, utxoRepository: utxoRep}
+	val := validator.NewValidate(dagdb, utxoRep, statedb)
+	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, validate: val, utxoRepository: utxoRep}
 }
 
 func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
 	return rep.dagdb.GetHeader(hash)
+}
+func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error) {
+	result := []*modules.Header{}
+	uhash := hash
+	for i := 0; i < parentCount; i++ {
+		h, err := rep.GetHeader(uhash)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, h)
+		if len(h.ParentsHash) == 0 { //Genesis unit
+			break
+		}
+		uhash = h.ParentsHash[0]
+	}
+	return result, nil
+}
+func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
+	return rep.dagdb.SaveHeader(header)
+}
+func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
+	return rep.dagdb.SaveHeaders(headers)
 }
 func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error) {
 	hash, err := rep.dagdb.GetHashByNumber(index)
@@ -135,13 +162,13 @@ func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	//}
 	////dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 	//if err != nil {
-	//	log.Error("GetUnit when GetUnitNumber failed", "error:", err)
+	//	log.Error("getChainUnit when GetUnitNumber failed", "error:", err)
 	//	return nil, err
 	//}
 	// 2. unit header
 	uHeader, err := rep.dagdb.GetHeader(hash)
 	if err != nil {
-		log.Info("GetUnit when GetHeader failed ", "error", err, "hash", hash.String())
+		log.Info("getChainUnit when GetHeader failed ", "error", err, "hash", hash.String())
 		//log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}
@@ -151,7 +178,7 @@ func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	// get transaction list
 	txs, err := rep.dagdb.GetUnitTransactions(hash)
 	if err != nil {
-		log.Error("GetUnit when GetUnitTransactions failed , error:", err)
+		log.Error("getChainUnit when GetUnitTransactions failed , error:", err)
 		return nil, err
 	}
 	// generate unit
@@ -244,7 +271,7 @@ func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.Cha
 generate genesis unit, need genesis unit configure fields and transactions list
 */
 func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) (*modules.Unit, error) {
-	gUnit := modules.Unit{}
+	gUnit := &modules.Unit{}
 
 	// genesis unit height
 	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: 0}
@@ -254,7 +281,6 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) 
 
 	// generate genesis unit header
 	header := modules.Header{
-		AssetIDs:     []modules.IDType16{asset.AssetId},
 		Number:       chainIndex,
 		TxRoot:       root,
 		Creationdate: time,
@@ -267,7 +293,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) 
 	gUnit.UnitSize = gUnit.Size()
 	// set unit hash
 	gUnit.UnitHash = gUnit.Hash()
-	return &gUnit, nil
+	return gUnit, nil
 }
 
 // WithSignature, returns a new unit with the given signature.
@@ -287,7 +313,7 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	if len(v) != 1 {
 		return unit, errors.New("error.")
 	}
-
+	log.Debugf("Unit[%s] signed by address:%s", unit.Hash().String(), signer.String())
 	unit.UnitHeader.Authors = modules.Authentifier{
 		Address: signer,
 		R:       r,
@@ -345,13 +371,11 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	// step3. generate genesis unit header
 	header := modules.Header{
-		AssetIDs:    []modules.IDType16{},
 		Number:      chainIndex,
 		ParentsHash: []common.Hash{},
 		//TxRoot:   root,
 		//		Creationdate: time.Now().Unix(),
 	}
-	header.AssetIDs = append(header.AssetIDs, asset.AssetId)
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
 
@@ -488,7 +512,7 @@ func (rep *UnitRepository) GetGenesisUnit() (*modules.Unit, error) {
 	//	return nil, err
 	//}
 	//log.Debug("rep: get genesis(hash):", "geneseis_hash", hash)
-	//return rep.dagdb.GetUnit(hash)
+	//return rep.dagdb.getChainUnit(hash)
 }
 
 /**
@@ -532,9 +556,8 @@ func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Tr
 为创世单元生成ConfigPayload
 To generate config payload for genesis unit
 */
-func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (modules.ConfigPayload, error) {
-	var confPay modules.ConfigPayload
-	confPay.ConfigSet = []modules.ContractWriteSet{}
+func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*modules.ContractInvokePayload, error) {
+	writeSets := []modules.ContractWriteSet{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
@@ -555,9 +578,9 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 					sk = strings.Replace(sk, "Initial", "", -1)
 				}
 
-				//confPay.ConfigSet = append(confPay.ConfigSet,
+				//writeSets.ConfigSet = append(writeSets.ConfigSet,
 				//	modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
-				confPay.ConfigSet = append(confPay.ConfigSet,
+				writeSets = append(writeSets,
 					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
 			}
 		} else {
@@ -565,15 +588,18 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (m
 			if strings.Contains(sk, "Initial") {
 				sk = strings.Replace(sk, "Initial", "", -1)
 			}
-			confPay.ConfigSet = append(confPay.ConfigSet,
+			writeSets = append(writeSets,
 				modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
 		}
 	}
 
-	confPay.ConfigSet = append(confPay.ConfigSet,
+	writeSets = append(writeSets,
 		modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
-	return confPay, nil
+	payload := &modules.ContractInvokePayload{}
+	payload.ContractId = syscontract.SysConfigContractAddress.Bytes()
+	payload.WriteSet = writeSets
+	return payload, nil
 }
 
 //Yiran
@@ -607,7 +633,7 @@ func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.
 		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
-	utxo, err := rep.uxtodb.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
+	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -619,44 +645,21 @@ func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.
 保存单元数据，如果单元的结构基本相同
 save genesis unit data
 */
-func (rep *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool, passed bool) error {
+func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	uHash := unit.Hash()
 	log.Debugf("Try to save a new unit to db:%s", uHash.String())
-	if unit.UnitSize == 0 || unit.Size() == 0 {
-		log.Error("Unit is null")
-		return fmt.Errorf("Unit is null")
-	}
-	// step1 验证 群签名
-	// if passed == true , don't validate group sign
-	//if !passed {
-	//	if state := rep.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); state ==
-	// 		modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
-	//		return fmt.Errorf("Validate unit's group sign failed, err number=%d", state)
-	//	}
-	//}
+	// if unit.UnitSize == 0 || unit.Size() == 0 {
+	// 	log.Error("Unit is null")
+	// 	return fmt.Errorf("Unit is null")
+	// } //Validator will check unit
 
-	// step2. check unit signature, should be compare to mediator list
-	if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
-		errno := rep.validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
-		if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-			return fmt.Errorf("Validate unit signature, errno=%d", errno)
-		}
+	// step10. save unit header
+	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
+	if err := rep.dagdb.SaveHeader(unit.UnitHeader); err != nil {
+		log.Info("SaveHeader:", "error", err.Error())
+		return modules.ErrUnit(-3)
 	}
-
-	// step3. check unit size
-	if unit.UnitSize != unit.Size() {
-		log.Info("Validate size", "error", "Size is invalid")
-		return modules.ErrUnit(-1)
-	}
-	// log.Info("===dag ValidateTransactions===")
-	// step4. check transactions in unit
-	// TODO must recover
-	_, isSuccess, err := rep.validate.ValidateTransactions(&unit.Txs, isGenesis)
-	if err != nil || !isSuccess {
-		return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	}
-
 	// step5. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
@@ -666,12 +669,6 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, 
 		}
 		txHashSet = append(txHashSet, tx.Hash())
 	}
-
-	// step7  send unitHash set to txpool, to update txpool's pending
-	if txpool != nil {
-		go txpool.SendStoredTxs(txHashSet[:])
-	}
-
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err := rep.dagdb.SaveBody(uHash, txHashSet); err != nil {
 		log.Info("SaveBody", "error", err.Error())
@@ -683,42 +680,49 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, 
 		log.Info("SaveTxLookupEntry", "error", err.Error())
 		return err
 	}
-
-	// step10. save unit header
-	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
-	if err := rep.dagdb.SaveHeader(unit.UnitHeader); err != nil {
-		log.Info("SaveHeader:", "error", err.Error())
-		return modules.ErrUnit(-3)
-	}
-	//Save StableUnit
-	if err := rep.propdb.SetLastStableUnit(uHash, unit.UnitHeader.Number); err != nil {
-		log.Info("SetLastStableUnit:", "error", err.Error())
-		return modules.ErrUnit(-3)
-	}
-	// step11. save unit hash and chain index relation
-	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
-	//if err := rep.dagdb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-	//	log.Info("SaveHashNumber:", "error", err.Error())
-	//	return fmt.Errorf("Save unit number hash error, %s", err)
-	//}
-	//// step12 SaveHashByNumber
-	//if err := rep.dagdb.SaveHashByNumber(unit.UnitHash, unit.UnitHeader.Number); err != nil {
-	//	log.Info("SaveNumberByHash:", "error", err.Error())
-	//	return fmt.Errorf("Save unit number error, %s", err)
-	//}
 	//step12+ Special process genesis unit
 	if isGenesis {
 		if err := rep.propdb.SetNewestUnit(unit.Header()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
+		//Save StableUnit
+		if err := rep.propdb.SetLastStableUnit(uHash, unit.UnitHeader.Number); err != nil {
+			log.Info("Set LastStableUnit:", "error", err.Error())
+			return modules.ErrUnit(-3)
+		}
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
-	// step13 update state
-	//rep.dagdb.PutCanonicalHash(unit.UnitHash, unit.NumberU64())
-	//rep.dagdb.PutHeadHeaderHash(unit.UnitHash)
-	//rep.dagdb.PutHeadUnitHash(unit.UnitHash)
-	//rep.dagdb.PutHeadFastUnitHash(unit.UnitHash)
-	// todo send message to transaction pool to delete unit's transactions
+
+	// step1 验证 群签名
+	// if passed == true , don't validate group sign
+	//if !passed {
+	//	if state := rep.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); state ==
+	// 		modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
+	//		return fmt.Errorf("Validate unit's group sign failed, err number=%d", state)
+	//	}
+	//}
+
+	// step2. check unit signature, should be compare to mediator list
+	//if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
+	//	errno := rep.validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
+	//	if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+	//		return fmt.Errorf("Validate unit signature, errno=%d", errno)
+	//	}
+	//}
+	//
+	//// step3. check unit size
+	//if unit.UnitSize != unit.Size() {
+	//	log.Info("Validate size", "error", "Size is invalid")
+	//	return modules.ErrUnit(-1)
+	//}
+	//// log.Info("===dag ValidateTransactions===")
+	//// step4. check transactions in unit
+	//// TODO must recover
+	//_, isSuccess, err := rep.validate.ValidateTransactions(&unit.Txs, isGenesis)
+	//if err != nil || !isSuccess {
+	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
+	//}
+
 	return nil
 }
 
@@ -733,12 +737,13 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		}
 	}
 	txHash := tx.Hash()
+	reqId := tx.RequestHash().Bytes()
 	// traverse messages
 	for msgIndex, msg := range tx.TxMessages {
 		// handle different messages
 		switch msg.App {
 		case modules.APP_PAYMENT:
-			if ok := rep.savePaymentPayload(txHash, msg, uint32(msgIndex)); ok != true {
+			if ok := rep.savePaymentPayload(txHash, msg.Payload.(*modules.PaymentPayload), uint32(msgIndex)); ok != true {
 				return fmt.Errorf("Save payment payload error.")
 			}
 		case modules.APP_CONTRACT_TPL:
@@ -753,10 +758,14 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			if ok := rep.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
 				return fmt.Errorf("Save contract invode payload error.")
 			}
-		case modules.APP_CONFIG:
-			if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-				return fmt.Errorf("Save contract invode payload error.")
+		case modules.APP_CONTRACT_STOP:
+			if ok := rep.saveContractStop(reqId, msg); !ok {
+				return fmt.Errorf("save contract stop payload failed.")
 			}
+		//case modules.APP_CONFIG:
+		//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+		//		return fmt.Errorf("Save contract invode payload error.")
+		//	}
 		case modules.APP_VOTE:
 			if err = rep.SaveVote(msg, requester); err != nil {
 				return fmt.Errorf("Save vote payload error.")
@@ -767,22 +776,26 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			}
 
 		case modules.APP_CONTRACT_TPL_REQUEST:
-			//todo
-
+			// todo
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
-			if ok := rep.saveContractDeployReq(msg); !ok {
-				return fmt.Errorf("save contract deployReq failed.")
+			if ok := rep.saveContractDeployReq(reqId, msg); !ok {
+				return fmt.Errorf("save contract of deploy request failed.")
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
-			//todo
+			if ok := rep.saveContractStopReq(reqId, msg); !ok {
+				return fmt.Errorf("save contract of stop request failed.")
+			}
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
-			//todo
+			if ok := rep.saveContractInvokeReq(reqId, msg); !ok {
+				return fmt.Errorf("save contract of invoke request failed.")
+			}
 		case modules.APP_SIGNATURE:
-			//todo
-
+			if ok := rep.saveSignature(reqId, msg); !ok {
+				return fmt.Errorf("save contract of signature failed.")
+			}
 		case modules.APP_DATA:
 			if ok := rep.saveDataPayload(txHash, msg); ok != true {
-				return fmt.Errorf("Save datapayload error.")
+				return fmt.Errorf("save data payload faild.")
 			}
 		default:
 			return fmt.Errorf("Message type is not supported now: %v", msg.App)
@@ -856,7 +869,7 @@ func getExtradata(tx *modules.Transaction) string {
 保存PaymentPayload
 save PaymentPayload data
 */
-func (rep *UnitRepository) savePaymentPayload(txHash common.Hash, msg *modules.Message, msgIndex uint32) bool {
+func (rep *UnitRepository) savePaymentPayload(txHash common.Hash, msg *modules.PaymentPayload, msgIndex uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
@@ -885,7 +898,7 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 		return false
 	}
 
-	if !dagconfig.DefaultConfig.TextFileHashIndex {
+	if dagconfig.DefaultConfig.TextFileHashIndex {
 
 		err := rep.idxdb.SaveFileHash(payload.MainData, txHash)
 		if err != nil {
@@ -902,24 +915,24 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 保存配置交易
 save config payload
 */
-func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Message, height *modules.ChainIndex, txIndex uint32) bool {
-	var pl interface{}
-	pl = msg.Payload
-	payload, ok := pl.(*modules.ConfigPayload)
-	if ok == false {
-		return false
-	}
-	version := modules.StateVersion{
-		Height:  height,
-		TxIndex: txIndex,
-	}
-	if err := rep.statedb.SaveConfig(payload.ConfigSet, &version); err != nil {
-		errMsg := fmt.Sprintf("To save config payload error: %s", err)
-		log.Error(errMsg)
-		return false
-	}
-	return true
-}
+//func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Message, height *modules.ChainIndex, txIndex uint32) bool {
+//	var pl interface{}
+//	pl = msg.Payload
+//	payload, ok := pl.(*modules.ConfigPayload)
+//	if ok == false {
+//		return false
+//	}
+//	version := modules.StateVersion{
+//		Height:  height,
+//		TxIndex: txIndex,
+//	}
+//	if err := rep.statedb.SaveConfig(payload.ConfigSet, &version); err != nil {
+//		errMsg := fmt.Sprintf("To save config payload error: %s", err)
+//		log.Error(errMsg)
+//		return false
+//	}
+//	return true
+//}
 
 /**
 保存合约调用状态
@@ -1044,20 +1057,92 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 /*
 保存合约请求的方法
 */
-// saveContractTplRequest
-func (rep *UnitRepository) saveContractDeployReq(msg *modules.Message) bool {
-	var pl interface{}
-	pl = msg.Payload
-	payload, ok := pl.(*modules.ContractDeployPayload)
-	if ok == false {
+
+// saveContractdeployReq
+func (rep *UnitRepository) saveContractDeployReq(reqid []byte, msg *modules.Message) bool {
+	payload, ok := msg.Payload.(*modules.ContractDeployRequestPayload)
+	if !ok {
 		log.Error("saveContractDeployReq", "error", "payload is not ContractDeployReq type.")
 		return false
 	}
-	log.Debug("DeployReq payload", "info", payload)
-	// 模板id , 合约id , name
-	err := rep.statedb.SaveContractDeploy(payload)
+	err := rep.statedb.SaveContractDeployReq(reqid[:], payload)
 	if err != nil {
-		log.Info("save contract deploy payload failed,", "error", err)
+		log.Info("save contract deploy req payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveContractInvoke
+func (rep *UnitRepository) saveContractInvoke(reqid []byte, msg *modules.Message) bool {
+	invoke, ok := msg.Payload.(*modules.ContractInvokePayload)
+	if !ok {
+		log.Error("saveContractInvoke", "error", "payload is not the ContractInvoke type.")
+		return false
+	}
+	err := rep.statedb.SaveContractInvoke(reqid[:], invoke)
+	if err != nil {
+		log.Info("save contract invoke payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveContractInvokeReq
+func (rep *UnitRepository) saveContractInvokeReq(reqid []byte, msg *modules.Message) bool {
+	invoke, ok := msg.Payload.(*modules.ContractInvokeRequestPayload)
+	if !ok {
+		log.Error("saveContractInvokeReq", "error", "payload is not the ContractInvokeReq type.")
+		return false
+	}
+	err := rep.statedb.SaveContractInvokeReq(reqid[:], invoke)
+	if err != nil {
+		log.Info("save contract invoke req payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveContractStop
+func (rep *UnitRepository) saveContractStop(reqid []byte, msg *modules.Message) bool {
+	stop, ok := msg.Payload.(*modules.ContractStopPayload)
+	if !ok {
+		log.Error("saveContractStop", "error", "payload is not the ContractStop type.")
+		return false
+	}
+	err := rep.statedb.SaveContractStop(reqid[:], stop)
+	if err != nil {
+		log.Info("save contract stop payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveContractStopReq
+func (rep *UnitRepository) saveContractStopReq(reqid []byte, msg *modules.Message) bool {
+	stop, ok := msg.Payload.(*modules.ContractStopRequestPayload)
+	if !ok {
+		log.Error("saveContractStopReq", "error", "payload is not the ContractStopReq type.")
+		return false
+	}
+	err := rep.statedb.SaveContractStopReq(reqid[:], stop)
+	if err != nil {
+		log.Info("save contract stopReq payload failed,", "error", err)
+		return false
+	}
+	return true
+}
+
+// saveSignature
+func (rep *UnitRepository) saveSignature(reqid []byte, msg *modules.Message) bool {
+	sig, ok := msg.Payload.(*modules.SignaturePayload)
+	if !ok {
+		log.Error("save contract signature", "error", "payload is not the signature type.")
+		return false
+	}
+	err := rep.statedb.SaveContractSignature(reqid[:], sig)
+	if err != nil {
+		log.Info("save contract signature payload failed,", "error", err)
 		return false
 	}
 	return true
@@ -1288,7 +1373,7 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range pay.Inputs {
 				if input.PreviousOutPoint != nil {
-					utxo, err := rep.uxtodb.GetUtxoEntry(input.PreviousOutPoint)
+					utxo, err := rep.utxoRepository.GetUtxoEntry(input.PreviousOutPoint)
 					if err != nil {
 						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
 					}

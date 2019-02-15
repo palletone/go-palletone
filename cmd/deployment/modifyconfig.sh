@@ -49,17 +49,21 @@ echo $dumpjson
 newEnableStaleProduction="EnableStaleProduction=true"
 sed -i '/^EnableStaleProduction/c'$newEnableStaleProduction'' ptn-config.toml
 
+newEnableConsecutiveProduction="EnableConsecutiveProduction=true"
+sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-config.toml
+
 fi
+
+
+newRequiredParticipation="RequiredParticipation=0"
+sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml
 
 
 createaccount=`./createaccount.sh`
 tempinfo=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
 accountlength=35
 accounttemp=${tempinfo:0:$accountlength}
-#account=`echo ${accounttemp//^M/}`
 account=`echo ${accounttemp///}`
-
-
 
 
 newAddress="Address=\"$account\""
@@ -68,8 +72,6 @@ sed -i '/^Address/c'$newAddress'' ptn-config.toml
 
 newPassword="Password=\"1\""
 sed -i '/^Password/c'$newPassword'' ptn-config.toml
-
-
 
 
 info=`./gptn mediator initdks`
@@ -97,14 +99,13 @@ newInitPubKey="InitPubKey=\"$publickey\""
 sed -i '/^InitPubKey/c'$newInitPubKey'' ptn-config.toml
 
 
-
 while :
 do
 info=`./gptn nodeInfo`
 tempinfo=`echo $info | sed -n '$p'| awk '{print $NF}'`
 length=`echo ${#tempinfo}`
 nodeinfotemp=${tempinfo:0:$length}
-nodeinfo=`echo ${nodeinfotemp//^M/}`
+nodeinfo=`echo ${nodeinfotemp///}`
 length=`echo ${#nodeinfo}`
 b=140
 if [ "$length" -lt "$b" ]
@@ -123,7 +124,7 @@ echo "account: "$account
 echo "publickey: "$publickey
 echo "nodeinfo: "$nodeinfo
 
-ModifyJson  $account $publickey $nodeinfo
+ModifyJson  $account $publickey $nodeinfo $1
 }
 
 

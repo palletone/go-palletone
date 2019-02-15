@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -36,6 +35,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
+	"github.com/palletone/go-palletone/ptn/lps"
+	"sync/atomic"
 )
 
 const (
@@ -74,6 +75,9 @@ type ProtocolManager struct {
 	downloader *downloader.Downloader
 	fetcher    *fetcher.Fetcher
 	peers      *peerSet
+
+	lightFetcher *lps.LightFetcher
+	lightPeers   *peerSet
 
 	SubProtocols []p2p.Protocol
 
@@ -132,22 +136,19 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 	contractProc contractInf) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId: networkId,
-		dag:       dag,
-		txpool:    txpool,
-		eventMux:  mux,
-		//consEngine:  engine,
-		peers:       newPeerSet(),
-		newPeerCh:   make(chan *peer),
-		noMorePeers: make(chan struct{}),
-		txsyncCh:    make(chan *txsync),
-		quitSync:    make(chan struct{}),
-		//transCycleConnCh: make(chan int, 1),
+		networkId:    networkId,
+		dag:          dag,
+		txpool:       txpool,
+		eventMux:     mux,
+		peers:        newPeerSet(),
+		lightPeers:   newPeerSet(),
+		newPeerCh:    make(chan *peer),
+		noMorePeers:  make(chan struct{}),
+		txsyncCh:     make(chan *txsync),
+		quitSync:     make(chan struct{}),
 		genesis:      genesis,
 		producer:     producer,
 		contractProc: contractProc,
-		//peersTransition:  newPeerSet(),
-		//isTest:           false,
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -203,16 +204,21 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 
 	// Construct the different synchronisation mechanisms
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
+	manager.fetcher = manager.newFetcher()
+	manager.lightFetcher = manager.newLightFetcher()
+	return manager, nil
+}
 
+func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	validator := func(header *modules.Header) error {
-		//dag.VerifyHeader(header, false)
-		if _, err := dag.GetUnitByHash(header.Hash()); err != nil {
+		//return dagerrors.ErrFutureBlock
+		if _, err := pm.dag.GetUnitByHash(header.Hash()); err != nil {
 			return dagerrors.ErrFutureBlock
 		}
 		return nil
 	}
 	heighter := func(assetId modules.IDType16) uint64 {
-		unit := dag.GetCurrentUnit(assetId)
+		unit := pm.dag.GetCurrentUnit(assetId)
 		if unit != nil {
 			return unit.NumberU64()
 		}
@@ -220,17 +226,16 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 	}
 	inserter := func(blocks modules.Units) (int, error) {
 		// If fast sync is running, deny importing weird blocks
-		if atomic.LoadUint32(&manager.fastSync) == 1 {
+		if atomic.LoadUint32(&pm.fastSync) == 1 {
 			log.Warn("Discarded bad propagated block", "number", blocks[0].Number().Index, "hash", blocks[0].Hash())
 			return 0, errors.New("fasting sync")
 		}
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 
-		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
-		return manager.dag.InsertDag(blocks, manager.txpool)
+		atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done on any fetcher import
+		return pm.dag.InsertDag(blocks, pm.txpool)
 	}
-	manager.fetcher = fetcher.New(dag.GetUnitByHash, validator, manager.BroadcastUnit, heighter, inserter, manager.removePeer)
-	return manager, nil
+	return fetcher.New(pm.dag.GetUnitByHash, validator, pm.BroadcastUnit, heighter, inserter, pm.removePeer)
 }
 
 func (pm *ProtocolManager) removePeer(id string) {
@@ -256,11 +261,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
-	//go pm.mediatorConnect()
-
-	//pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
-	//pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
-	//go pm.ceBroadcastLoop()
 	// start sync handlers
 	//定时与相邻个体进行全链的强制同步,syncer()首先启动fetcher成员，然后进入一个无限循环，
 	//每次循环中都会向相邻peer列表中“最优”的那个peer作一次区块全链同步
@@ -349,6 +349,7 @@ func (pm *ProtocolManager) Stop() {
 	// sessions which are already established but not added to pm.peers yet
 	// will exit when they try to register.
 	pm.peers.Close()
+	pm.lightPeers.Close()
 
 	// Wait for all peer handler goroutines and the loops to come down.
 	pm.wg.Wait()
@@ -364,8 +365,12 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
-
 	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
+
+	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
+		return pm.PartitionHandle(p)
+	}
+
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
@@ -395,6 +400,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
 		return err
 	}
+
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
 	pm.syncTransactions(p)
@@ -423,11 +429,18 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	defer msg.Discard()
 
 	//SubProtocols compare
-	partition := pm.SubProtocols[0].Name == p.Caps()[0].Name
-	if !partition && (msg.Code != GetBlockHeadersMsg || msg.Code != BlockHeadersMsg) {
-		log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
-		return nil
-	}
+	//if len(p.Caps()) > 0 {
+	//	partition := pm.SubProtocols[0].Name == p.Caps()[0].Name
+	//	//if !partition && (msg.Code != GetBlockHeadersMsg || msg.Code != BlockHeadersMsg) {
+	//	if !partition && msg.Code != GetBlockHeadersMsg {
+	//		log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
+	//		return nil
+	//	}
+	//	if !partition && msg.Code != BlockHeadersMsg {
+	//		log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
+	//		return nil
+	//	}
+	//}
 
 	// Handle the message depending on its contents
 	switch {
@@ -493,8 +506,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.GroupSigMsg(msg, p)
 
 	case msg.Code == ContractMsg:
-		log.Debug("===============ContractMsg")
 		return pm.ContractMsg(msg, p)
+
+	case msg.Code == ElectionMsg:
+		return pm.ElectionMsg(msg, p)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
@@ -554,19 +569,6 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	}
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
-
-//func (self *ProtocolManager) ceBroadcastLoop() {
-//	for {
-//		select {
-//		case event := <-self.ceCh:
-//			self.BroadcastCe(event.Ce)
-//
-//		// Err() channel will be closed when unsubscribing.
-//		case <-self.ceSub.Err():
-//			return
-//		}
-//	}
-//}
 
 //func (pm *ProtocolManager) BroadcastCe(ce string) {
 //	peers := pm.peers.GetPeers()

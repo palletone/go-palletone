@@ -30,30 +30,43 @@ type IStateDb interface {
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error
-	SaveAssetInfo(assetInfo *modules.AssetInfo) error
-	GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
+	//SaveAssetInfo(assetInfo *modules.AssetInfo) error
+	//GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
 	SaveContract(contract *modules.Contract) error
 	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
+	SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
-	SaveContractDeploy(deloypayload *modules.ContractDeployPayload) error
+	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
+	SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error
+	SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error
+	SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error
+	SaveContractStop(reqid []byte, stop *modules.ContractStopPayload) error
+	SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error
+	SaveContractSignature(reqid []byte, sig *modules.SignaturePayload) error
 
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
-	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
-	GetContractAllState() []*modules.ContractReadSet
+	//GetContractAllState() []*modules.ContractReadSet
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)
-	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
+	GetContractDeploy(reqId []byte) (*modules.ContractDeployPayload, error)
+	GetContractDeployReq(reqid []byte) (*modules.ContractDeployRequestPayload, error)
+	GetContractInvoke(reqId []byte) (*modules.ContractInvokePayload, error)
+	GetContractInvokeReq(reqid []byte) (*modules.ContractInvokeRequestPayload, error)
+	GetContractStop(reqId []byte) (*modules.ContractStopPayload, error)
+	GetContractStopReq(reqId []byte) (*modules.ContractStopRequestPayload, error)
+	GetContractSignature(reqId []byte) (*modules.SignaturePayload, error)
 	/* Account_Info */
 	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
 	UpdateAccountInfoBalance(addr common.Address, addAmount int64) error
 	//AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
 	//GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
-
+	GetMinFee() (*modules.AmountAsset, error)
 	//GetSortedMediatorVote(returnNumber int) (map[string]uint64, error)
 	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error

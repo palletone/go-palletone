@@ -21,6 +21,7 @@ package mediatorplugin
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/dedis/kyber"
@@ -33,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -95,6 +97,9 @@ type iDag interface {
 	PrecedingMediatorsCount() int
 	UnitIrreversibleTime() time.Duration
 	LastMaintenanceTime() int64
+
+	IsConsecutiveMediator(nextMediator common.Address) bool
+	MediatorParticipationRate() uint32
 }
 
 type MediatorPlugin struct {
@@ -104,8 +109,14 @@ type MediatorPlugin struct {
 	srvr *p2p.Server
 
 	// Enable Unit production, even if the chain is stale.
-	// 新开启一条链时，第一个节点必须设为true，其他节点必须设为false
+	// 新开启一条链时，第一个运行的节点必须设为true，否则整个链无法启动
+	// 其他节点必须设为false，否则容易导致分叉
 	productionEnabled bool
+	// 允许本节点的mediator可以连续生产unit
+	consecutiveProduceEnabled bool
+	// 本节点要求的mediator参与率，低于该参与率不生产unit
+	requiredParticipation uint32
+
 	// Mediator`s info controlled by this node, 本节点配置的mediator信息
 	mediators map[common.Address]*MediatorAccount
 
@@ -130,7 +141,7 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]map[common.Hash]*modules.Unit
+	toTBLSSignBuf    map[common.Address]*sync.Map
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 
 	// unit 签名分片的事件订阅
@@ -233,14 +244,29 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debug("mediator plugin startup begin")
 	mp.srvr = server
 
-	// 1. 开启循环生产计划
+	// 1. 解锁本地控制的mediator账户
+	mp.unlockLocalMediators()
+
+	// 2. 开启循环生产计划
 	go mp.ScheduleProductionLoop()
 
-	// 2. 开始完成 vss 协议
+	// 3. 开始完成 vss 协议
 	go mp.startVSSProtocol()
 
 	log.Debug("mediator plugin startup end")
 	return nil
+}
+
+func (mp *MediatorPlugin) unlockLocalMediators() {
+	ks := mp.ptn.GetKeyStore()
+
+	for add, medAcc := range mp.mediators {
+		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
+		if err != nil {
+			log.Infof("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
+			delete(mp.mediators, add)
+		}
+	}
 }
 
 func (mp *MediatorPlugin) UpdateMediatorsDKG() {
@@ -320,8 +346,11 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		quit: make(chan struct{}),
 		dag:  dag,
 
-		productionEnabled: cfg.EnableStaleProduction,
-		mediators:         msm,
+		productionEnabled:         cfg.EnableStaleProduction,
+		consecutiveProduceEnabled: cfg.EnableConsecutiveProduction,
+		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,
+
+		mediators: msm,
 
 		suite:         core.Suite,
 		activeDKGs:    make(map[common.Address]*dkg.DistKeyGenerator),
@@ -339,6 +368,6 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 func (mp *MediatorPlugin) initTBLSBuf() {
 	lmc := len(mp.mediators)
 
-	mp.toTBLSSignBuf = make(map[common.Address]map[common.Hash]*modules.Unit, lmc)
+	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lmc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
 }

@@ -39,10 +39,13 @@ var (
 	CONTRACT_STATE_PREFIX       = []byte("cs")
 	CONTRACT_TPL                = []byte("ct")
 	CONTRACT_TPL_REQ            = []byte("ctq")
-	CONTRACT_DEPLOY             = []byte("cdq")
-	CONTRACT_STOP_REQ           = []byte("csq")
+	CONTRACT_DEPLOY             = []byte("cdy")
+	CONTRACT_DEPLOY_REQ         = []byte("cdr")
+	CONTRACT_STOP               = []byte("csp")
+	CONTRACT_STOP_REQ           = []byte("csr")
+	CONTRACT_INVOKE             = []byte("civ")
 	CONTRACT_INVOKE_REQ         = []byte("ciq")
-	CONTRACT_SIgNATURE          = []byte("csn")
+	CONTRACT_SIGNATURE          = []byte("csn")
 
 	MESSAGES_PREFIX               = []byte("me")
 	POLL_PREFIX                   = []byte("po")
@@ -55,7 +58,7 @@ var (
 	DYNAMIC_GLOBALPROPERTY_PREFIX = []byte("dp")
 	MEDIATOR_SCHEME_PREFIX        = []byte("ms")
 	ACCOUNT_INFO_PREFIX           = []byte("ai")
-	CONF_PREFIX                   = []byte("cf")
+
 	// lookup
 	LookupPrefix = []byte("l")
 

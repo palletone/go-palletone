@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -381,18 +381,13 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	requestNumber := unit.UnitHeader.Number
 	hash, number := p.Head(unit.Number().AssetID)
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
-		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", unit.UnitHeader.ChainIndex().Index,
-			"local peer index:", number.Index)
-		trueHead := unit.Hash()
-		p.SetHead(trueHead, requestNumber)
-		requestIndex := requestNumber.Index
-		currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
+		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", requestNumber.Index, "local peer index:", number.Index)
+		p.SetHead(unit.Hash(), requestNumber)
 
-		if requestIndex > currentUnitIndex {
-			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", unit.UnitHeader.ChainIndex().Index,
-				"current unit index:", currentUnitIndex)
+		currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
+		if requestNumber.Index > currentUnitIndex+1 {
+			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", requestNumber.Index, "current unit index+1:", currentUnitIndex+1)
 			go func() {
-				time.Sleep(100 * time.Millisecond)
 				pm.synchronise(p, unit.Number().AssetID)
 			}()
 		}
@@ -423,9 +418,12 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		if tx.IsContractTx() {
-			if !pm.contractProc.CheckContractTxValid(tx, false) {
-				log.Debug("TxMsg", "CheckContractTxValid is false")
-				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+			//if !pm.contractProc.CheckContractTxValid(tx, false) {
+			//	log.Debug("TxMsg", "CheckContractTxValid is false")
+			//	return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+			//}
+			if pm.contractProc.IsSystemContractTx(tx) {
+				continue
 			}
 		}
 
@@ -435,6 +433,9 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 				continue
 			}
 			for inputIndex, txin := range payload.Inputs {
+				if txin.PreviousOutPoint == nil {
+					continue
+				}
 				st, err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
 				if st == nil || err != nil {
 					return err
@@ -453,10 +454,10 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if err != nil {
 			return errResp(ErrDecode, "transaction %d not accepteable ", i, "err:", err)
 		}
+		pm.txpool.AddRemote(tx)
 	}
+	log.Debug("===============ProtocolManager TxMsg AddRemote====================")
 
-	log.Debug("===============ProtocolManager TxMsg AddRemotes====================")
-	pm.txpool.AddRemotes(txs)
 	return nil
 }
 
@@ -558,17 +559,56 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
+	var event jury.ElectionEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===ElectionMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	log.Info("===ElectionMsg===", "event ", event)
+
+	if event.EType == jury.ELECTION_EVENT_REQUEST {
+		result, err := pm.contractProc.ProcessElectionRequestEvent(&event)
+		if err != nil {
+			log.Debug("ElectionMsg", "ProcessElectionRequestEvent error:", err)
+		}
+		//result := jury.ElectionEvent{EType: jury.ResultEvent}
+		p.SendElectionResultEvent(*result)
+	} else if event.EType == jury.ELECTION_EVENT_RESULT {
+		err := pm.contractProc.ProcessElectionResultEvent(&event)
+		if err != nil {
+			log.Debug("ElectionMsg", "ProcessElectionResultEvent error:", err)
+		}
+	}
+
+	return nil
+}
+
 //local test
 func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
 	pm.contractCh <- event
 }
 
-func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent) {
-	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String())
+func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
+	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
+
 	for _, peer := range peers {
 		peer.SendContractTransaction(event)
+	}
+
+	if local {
+		go pm.contractProc.ProcessContractEvent(&event)
+	}
+}
+
+func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
+	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent).Num, "data", event.Event.(jury.ElectionRequestEvent).Data)
+
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendElectionEvent(event)
 	}
 }

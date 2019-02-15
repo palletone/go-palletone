@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 
 	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -948,7 +949,18 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	//	}
 }
-func setLog(ctx *cli.Context, cfg *log.Config) {
+
+func SetContract(ctx *cli.Context, cfg *contractcfg.Config) {
+	switch {
+	case ctx.GlobalIsSet(DataDirFlag.Name):
+		dataDir := ctx.GlobalString(DataDirFlag.Name)
+		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
+
+		cfg.ContractFileSystemPath = strings.Replace(path, "palletone/", "", 1)
+	}
+}
+
+func SetLog(ctx *cli.Context, cfg *log.Config) {
 	if ctx.GlobalIsSet(LogValue1Flag.Name) {
 		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
 	}
@@ -963,6 +975,16 @@ func setLog(ctx *cli.Context, cfg *log.Config) {
 	}
 	if ctx.GlobalIsSet(LogOpenModuleFlag.Name) {
 		cfg.OpenModule = []string{ctx.GlobalString(LogOpenModuleFlag.Name)}
+	}
+
+	switch {
+	case ctx.GlobalIsSet(DataDirFlag.Name):
+		dataDir := ctx.GlobalString(DataDirFlag.Name)
+		output := filepath.Join(dataDir, cfg.OutputPaths[1])
+		erroutput := filepath.Join(dataDir, cfg.ErrorOutputPaths[1])
+
+		cfg.OutputPaths[1] = strings.Replace(output, "palletone/", "", 1)
+		cfg.ErrorOutputPaths[1] = strings.Replace(erroutput, "palletone/", "", 1)
 	}
 }
 
@@ -982,12 +1004,9 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
 	ks := stack.GetKeyStore()
-	//setEtherbase(ctx, ks, cfg)
-	// setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setDag(ctx, &cfg.Dag)
-	setLog(ctx, &cfg.Log)
-	//	setConsensus(ctx, &cfg.Consensus)
+	//setLog(ctx, &cfg.Log)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):

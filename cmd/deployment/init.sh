@@ -7,12 +7,3 @@ send "1\r"
 interact
 
 
-
-
-
-
-
-
-
-
-

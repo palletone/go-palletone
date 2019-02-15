@@ -37,32 +37,33 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 	phash, current_index, _ := dag.propRep.GetNewestUnit(pendingUnit.UnitHeader.ChainIndex().AssetID)
 	//current_index, _ := dag.GetCurrentChainIndex(pendingUnit.UnitHeader.ChainIndex().AssetID)
 
-	if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
-
-		curMemUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0], current_index.Index)
-		curUnit := dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
-
-		if curMemUnit != nil {
-
-			if curMemUnit.UnitHeader.Index() > curUnit.UnitHeader.Index() {
-				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curMemUnit.UnitHash)
-				//pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
-				pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curMemUnit.UnitHeader.Number)
-				pendingUnit.UnitHeader.Number.Index += 1
-			} else {
-				pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
-				//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
-				pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
-				pendingUnit.UnitHeader.Number.Index += 1
-			}
-		} else {
-			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
-			//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
-			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
-			pendingUnit.UnitHeader.Number.Index += 1
-		}
-
-	} else {
+	//if len(pendingUnit.UnitHeader.AssetIDs) > 0 {
+	//
+	//	curMemUnit := dag.GetCurrentMemUnit(pendingUnit.UnitHeader.AssetIDs[0], current_index.Index)
+	//	curUnit := dag.GetCurrentUnit(pendingUnit.UnitHeader.AssetIDs[0])
+	//
+	//	if curMemUnit != nil {
+	//
+	//		if curMemUnit.UnitHeader.Index() > curUnit.UnitHeader.Index() {
+	//			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curMemUnit.UnitHash)
+	//			//pendingUnit.UnitHeader.Number = curMemUnit.UnitHeader.Number
+	//			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curMemUnit.UnitHeader.Number)
+	//			pendingUnit.UnitHeader.Number.Index += 1
+	//		} else {
+	//			pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
+	//			//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+	//			pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
+	//			pendingUnit.UnitHeader.Number.Index += 1
+	//		}
+	//	} else {
+	//		pendingUnit.UnitHeader.ParentsHash = append(pendingUnit.UnitHeader.ParentsHash, curUnit.UnitHash)
+	//		//pendingUnit.UnitHeader.Number = curUnit.UnitHeader.Number
+	//		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(curUnit.UnitHeader.Number)
+	//		pendingUnit.UnitHeader.Number.Index += 1
+	//	}
+	//
+	//} else
+	{
 		//pendingUnit.UnitHeader.Number = current_index
 		pendingUnit.UnitHeader.Number = modules.CopyChainIndex(current_index)
 		pendingUnit.UnitHeader.Number.Index = current_index.Index + 1
@@ -91,11 +92,13 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// 1. 判断是否满足生产的若干条件
 
 	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
-	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
-	if !dag.Memdag.Exists(hash) {
-		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.", hash.String())
-		newestUnit, _ := dag.Memdag.GetNewestUnit(gasToken)
-		dag.propRep.SetNewestUnit(newestUnit.Header())
+	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
+	if !dag.Exists(hash) {
+		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
+		newestUnit := dag.Memdag.GetLastMainchainUnit()
+		if nil != newestUnit {
+			dag.propRep.SetNewestUnit(newestUnit.Header())
+		}
 	}
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	newUnits, err := dag.CreateUnit(&producer, txpool, when)
@@ -116,10 +119,6 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()
 	pendingUnit.UnitHeader.ParentsHash[0] = currentHash
 	header, err := dag.GetHeaderByHash(currentHash)
-	if err != nil {
-		// todo
-		log.Error("GetCurrent header failed ", "error", err)
-	}
 	if header == nil {
 		index, err := dag.GetIrreversibleUnit(gasToken)
 		if err != nil {
@@ -136,6 +135,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
 	if err1 != nil {
 		log.Debug(fmt.Sprintf("GetUnitWithSig error: %v", err))
+		return nil
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
@@ -158,7 +158,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 1. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
 
 	// 2. 更新状态
-	dag.ApplyUnit(newUnit)
+	go dag.ApplyUnit(newUnit)
 
 	// 3. 将验证单元添加到本地DB
 	//err := dag.SaveUnit(newUnit, false)
@@ -167,15 +167,15 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	//	return false
 	//}
 	//dag.SaveUnit(newUnit, txpool, false)
-	dag.Memdag.Save(newUnit, txpool)
+	dag.Memdag.AddUnit(newUnit, txpool)
 	return true
 }
 
-// ApplyUnit, 利用下一个 unit 更新整个区块链状态
+// ApplyUnit, 运用下一个 unit 更新整个区块链状态
 func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 1. 下一个 unit 和本地 unit 连续性的判断
 	parentHash := nextUnit.ParentHash()[0]
-	headUnitHash, _, _ := dag.propRep.GetNewestUnit(nextUnit.UnitHeader.Number.AssetID)
+	headUnitHash, _, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
 	if parentHash != headUnitHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
 		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
@@ -188,7 +188,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 		return
 	}
 
-	// 5. 更新Unit中交易的状态
+	// todo 5. 运用Unit中的交易
 
 	// 3. 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
 	missed := dag.updateMediatorMissedUnits(nextUnit)
@@ -196,6 +196,7 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 	// 4. 更新全局动态属性值
 	dag.updateDynGlobalProp(nextUnit, missed)
 	dag.propRep.SetNewestUnit(nextUnit.Header())
+
 	// 5. 更新 mediator 的相关数据
 	dag.updateSigningMediator(nextUnit)
 

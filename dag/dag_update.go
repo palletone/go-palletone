@@ -24,10 +24,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/node"
+
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -74,6 +73,9 @@ func (dag *Dag) updateMediatorSchedule() {
 
 	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
 		dag.SaveMediatorSchl(ms, false)
+
+		dgp.IsShuffledSchedule = true
+		dag.SaveDynGlobalProp(dgp, false)
 	}
 
 	return
@@ -111,27 +113,28 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	//dag.updateLastIrreversibleUnitNum( newLastIrreversibleUnitNum)
 }
 
-func (dag *Dag) updateLastIrreversibleUnitNum(hash common.Hash, newLastIrreversibleUnitNum uint64) {
-	//dgp := dag.GetDynGlobalProp()
-	token := node.DefaultConfig.GetGasToken()
-	_, index, _ := dag.propRep.GetLastStableUnit(token)
-	if newLastIrreversibleUnitNum > index.Index {
-		dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
-		//dgp.s = newLastIrreversibleUnitNum
-		//dag.SaveDynGlobalProp(dgp, false)
-	}
-}
+//func (dag *Dag) updateLastIrreversibleUnitNum(hash common.Hash, newLastIrreversibleUnitNum uint64) {
+//	//dgp := dag.GetDynGlobalProp()
+//	token := node.DefaultConfig.GetGasToken()
+//	_, index, _ := dag.propRep.GetLastStableUnit(token)
+//	if newLastIrreversibleUnitNum > index.Index {
+//		dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
+//		//dgp.s = newLastIrreversibleUnitNum
+//		//dag.SaveDynGlobalProp(dgp, false)
+//	}
+//}
 
-func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
-	unit, err := dag.GetUnitByHash(unitHash)
-	if err != nil {
-		log.Debug(err.Error())
-		return
-	}
-
-	// 1. 根据群签名更新不可逆unit高度
-	dag.updateLastIrreversibleUnitNum(unitHash, uint64(unit.NumberU64()))
-}
+//func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
+//	unit, err := dag.GetUnitByHash(unitHash)
+//	if err != nil {
+//		log.Debug(err.Error())
+//
+// 	return
+//	}
+//
+//	// 1. 根据群签名更新不可逆unit高度
+//	//dag.updateLastIrreversibleUnitNum(unitHash, uint64(unit.NumberU64()))
+//}
 
 // 活跃 mediators 更新事件
 type ActiveMediatorsUpdatedEvent struct {
@@ -146,7 +149,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dgp := dag.GetDynGlobalProp()
 
 	// 1. 判断是否进入维护周期. Are we at the maintenance interval?
-	if dgp.NextMaintenanceTime > nextUnit.Timestamp() {
+	if dgp.NextMaintenanceTime > uint32(nextUnit.Timestamp()) {
 		return
 	}
 
@@ -164,7 +167,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
 	if nextUnit.NumberU64() == 1 {
-		nextMaintenanceTime = (nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval
+		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
 	} else {
 		// We want to find the smallest k such that nextMaintenanceTime + k * maintenanceInterval > HeadUnitTime()
 		//  This implies k > ( HeadUnitTime() - nextMaintenanceTime ) / maintenanceInterval
@@ -182,8 +185,8 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 		// So this k suffices.
 		//
 
-		y := (dag.HeadUnitTime() - nextMaintenanceTime) / maintenanceInterval
-		nextMaintenanceTime += (y + 1) * maintenanceInterval
+		y := (dag.HeadUnitTime() - int64(nextMaintenanceTime)) / maintenanceInterval
+		nextMaintenanceTime += uint32((y + 1) * maintenanceInterval)
 	}
 
 	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime

@@ -38,8 +38,6 @@ const (
 	maxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
 	hashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
 	blockLimit    = 64                     // Maximum number of unique blocks a peer may have delivered
-	//needBroadcastMediator = 0
-	//noBroadcastMediator   = 1
 )
 
 var (

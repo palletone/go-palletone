@@ -29,16 +29,19 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/vote"
 )
 
 var (
-	TXFEE      = big.NewInt(100000000) // transaction fee =1ptn
-	TX_MAXSIZE = uint32(256 * 1024)
+	TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
+	TX_MAXSIZE  = (256 * 1024)
+	TX_BASESIZE = (100 * 1024) //100kb
 )
 
 // TxOut defines a bitcoin transaction output.
@@ -68,8 +71,6 @@ func newTransaction(msg []*Message) *Transaction {
 	for _, m := range msg {
 		tx.TxMessages = append(tx.TxMessages, m)
 	}
-	//tx.TxHash = tx.Hash()
-
 	return tx
 }
 
@@ -97,9 +98,9 @@ type TxPoolTransaction struct {
 	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
-	RemStatus    bool        // will remove txspool
-	TxFee        *InvokeFees `json:"tx_fee"`
-	Index        int         `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
+	Discarded    bool         // will remove
+	TxFee        *AmountAsset `json:"tx_fee"`
+	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time
@@ -175,6 +176,7 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 		fee = tx.TxFee.Amount
 	} else {
 		fee = 20 // 20dao
+		tx.TxFee = &AmountAsset{Amount: 20, Asset: tx.Tx.Asset()}
 	}
 	return big.NewInt(int64(fee))
 }
@@ -191,8 +193,7 @@ func (tx *Transaction) Hash() common.Hash {
 	//	return v
 	//}
 	//func (tx *Transaction) Hash_old() common.Hash {
-
-	v := rlp.RlpHash(tx)
+	v := util.RlpHash(tx)
 	return v
 }
 
@@ -209,7 +210,7 @@ func (tx *Transaction) RequestHash() common.Hash {
 	//	log.Error("json marshal error", "error", err)
 	//	return common.Hash{}
 	//}
-	return rlp.RlpHash(req)
+	return util.RlpHash(req)
 }
 
 func (tx *Transaction) Messages() []*Message {
@@ -258,7 +259,24 @@ func (tx *Transaction) GetAddressInfo() ([]*OutPoint, [][]byte) {
 	}
 	return froms, tos
 }
-
+func (tx *Transaction) Asset() *Asset {
+	if tx == nil {
+		return nil
+	}
+	asset := new(Asset)
+	msg := tx.Messages()[0]
+	if msg.App == APP_PAYMENT {
+		pay := msg.Payload.(*PaymentPayload)
+		for _, out := range pay.Outputs {
+			if out.Asset != nil {
+				asset.AssetId = out.Asset.AssetId
+				asset.UniqueId = out.Asset.UniqueId
+				break
+			}
+		}
+	}
+	return asset
+}
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
 
 	obj.DeepCopy(&tx, cpy)
@@ -283,7 +301,7 @@ func (s Transactions) Hash() common.Hash {
 		return common.Hash{}
 	}
 
-	v := rlp.RlpHash(b[:])
+	v := util.RlpHash(b[:])
 	return v
 }
 
@@ -376,8 +394,146 @@ type TxLookupEntry struct {
 	Index     uint64      `json:"index"`
 }
 type Transactions []*Transaction
+
+func (txs Transactions) GetTxIds() []common.Hash {
+	ids := make([]common.Hash, len(txs))
+	for i, tx := range txs {
+		ids[i] = tx.Hash()
+	}
+	return ids
+}
+
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
+}
+type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
+
+//计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
+func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*PaymentPayload)
+		if ok == false {
+			continue
+		}
+		if payload.IsCoinbase() {
+			continue
+		}
+		inAmount := uint64(0)
+		outAmount := uint64(0)
+		for _, txin := range payload.Inputs {
+			utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
+			if utxo == nil {
+				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+					txin.PreviousOutPoint.TxHash.String(),
+					txin.PreviousOutPoint.MessageIndex,
+					txin.PreviousOutPoint.OutIndex)
+			}
+			// check overflow
+			if inAmount+utxo.Amount > (1<<64 - 1) {
+				return nil, fmt.Errorf("Compute fees: txin total overflow")
+			}
+			inAmount += utxo.Amount
+		}
+
+		for _, txout := range payload.Outputs {
+			// check overflow
+			if outAmount+txout.Value > (1<<64 - 1) {
+				return nil, fmt.Errorf("Compute fees: txout total overflow")
+			}
+			log.Debug("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
+			outAmount += txout.Value
+		}
+		if inAmount < outAmount {
+
+			return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+		}
+		fees := inAmount - outAmount
+		return &AmountAsset{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
+
+	}
+	return nil, fmt.Errorf("Compute fees: no payment payload")
+}
+
+//如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
+func (tx *Transaction) GetRequestTx() *Transaction {
+	request := &Transaction{}
+	for _, msg := range tx.TxMessages {
+		switch {
+		case msg.App < APP_CONTRACT_TPL_REQUEST:
+			if msg.App == APP_PAYMENT {
+				payload := new(PaymentPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_CONTRACT_TPL {
+				payload := new(ContractTplPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_CONTRACT_DEPLOY {
+				payload := new(ContractDeployPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_CONTRACT_INVOKE {
+				payload := new(ContractInvokePayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_CONTRACT_STOP {
+				payload := new(ContractStopPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_SIGNATURE {
+				payload := new(SignaturePayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+				//} else if msg.App == APP_CONFIG {
+				//	payload := new(ConfigPayload)
+				//	obj.DeepCopy(payload, msg.Payload)
+				//	request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_DATA {
+				payload := new(DataPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_VOTE {
+				payload := new(vote.VoteInfo)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == OP_MEDIATOR_CREATE {
+				payload := new(MediatorCreateOperation)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			}
+
+		case msg.App >= APP_CONTRACT_TPL_REQUEST, msg.App <= APP_CONTRACT_STOP_REQUEST:
+			if msg.App == APP_CONTRACT_TPL_REQUEST {
+				payload := new(ContractTplRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+				goto LOOP
+			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
+				payload := new(ContractDeployRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+				//break
+				goto LOOP
+			} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+				payload := new(ContractInvokeRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+				goto LOOP
+			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
+				payload := new(ContractStopRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+				goto LOOP
+			}
+		default:
+			{
+				log.Debug(fmt.Sprintf("GetRequestTx don't support appcode:%d", int(msg.App)))
+			}
+		}
+	}
+LOOP:
+	fmt.Println("goto loop.")
+	return request
 }
 
 //增发的利息
@@ -397,9 +553,9 @@ func (outpoint *OutPoint) String() string {
 	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]", outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
 }
 
-func NewOutPoint(hash *common.Hash, messageindex uint32, outindex uint32) *OutPoint {
+func NewOutPoint(hash common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 	return &OutPoint{
-		TxHash:       *hash,
+		TxHash:       hash,
 		MessageIndex: messageindex,
 		OutIndex:     outindex,
 	}
@@ -464,10 +620,10 @@ func (tx *Transaction) Clone() Transaction {
 //func (msg *PaymentPayload) AddTxIn(ti *Input) {
 //	msg.Input = append(msg.Input, ti)
 //}
-const HashSize = 32
+//const HashSize = 32
 const defaultTxInOutAlloc = 15
 
-type Hash [HashSize]byte
+//type Hash [HashSize]byte
 
 // DoubleHashH calculates hash(hash(b)) and returns the resulting bytes as a
 // Hash.
@@ -524,6 +680,16 @@ func (tx *Transaction) IsNewContractInvokeRequest() bool {
 	lastMsg := tx.TxMessages[len(tx.TxMessages)-1]
 	return lastMsg.App >= 100
 
+}
+
+//获得合约请求Msg的Index
+func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
+	for idx, msg := range tx.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+			return idx
+		}
+	}
+	return -1
 }
 
 //判断一个交易是否是完整交易，如果是普通转账交易就是完整交易，

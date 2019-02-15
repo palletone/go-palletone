@@ -72,6 +72,7 @@ const (
 
 	DefaultMediatorCreateFee        = 5000
 	DefaultVoteMediatorFee          = 20
+	DefaultSetDesiredMediatorNumFee = 20
 	DefaultTransferPtnBaseFee       = 20
 	DefaultTransferPtnPricePerKByte = 20
 )

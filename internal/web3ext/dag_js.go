@@ -30,6 +30,11 @@ web3._extend({
         	params: 1,
         	inputFormatter: [null]
 		}),
+ 		new web3._extend.Method({
+            name: 'getUnstableUnits',
+            call: 'dag_getUnstableUnits',
+            params: 0,
+        }),
 		new web3._extend.Method({
 			name: 'getUnitByHash',
        		call: 'dag_getUnitByHash',

@@ -148,16 +148,6 @@ func (h *UnprefixedHash) UnmarshalText(input []byte) error {
 func (h UnprefixedHash) MarshalText() ([]byte, error) {
 	return []byte(hex.EncodeToString(h[:])), nil
 }
-func NewHashFromStr(hash string) (*Hash, error) {
-	ret := new(Hash)
-	err := ret.SetHexString(hash)
-	return ret, err
-	//err := Decode(ret, hash)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//return ret, nil
-}
 
 // Decode decodes the byte-reversed hexadecimal string encoding of a Hash to a
 // destination.

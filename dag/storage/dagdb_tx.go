@@ -210,25 +210,14 @@ func (dagdb *DagDb) saveReqIdByTx(tx *modules.Transaction) error {
 func (dagdb *DagDb) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
 	unitHash, unitNumber, txIndex, err1 := dagdb.GetTxLookupEntry(hash)
 	if err1 != nil {
-		log.Error("dag db GetTransaction", "GetTxLookupEntry err:", err1, "hash:", hash)
+		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err1, "tx_hash:", hash)
 		return nil, unitHash, unitNumber, txIndex
 	}
-	// if unitHash != (common.Hash{}) {
-	// 	body, _ := dagdb.GetBody(unitHash)
-	// 	if body == nil || len(body) <= int(txIndex) {
-	// 		return nil, common.Hash{}, 0, 0
-	// 	}
-	// 	tx, err := dagdb.gettrasaction(body[txIndex])
-	// 	if err == nil {
-	// 		return tx, unitHash, unitNumber, txIndex
-	// 	}
-	// }
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
-		log.Error("gettrasaction error:", err.Error())
+		log.Info("gettrasaction error:", err.Error())
 		return nil, unitHash, unitNumber, txIndex
 	}
-
 	return tx, unitHash, unitNumber, txIndex
 }
 
@@ -278,4 +267,14 @@ func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 	txid.SetBytes(val)
 
 	return txid, err
+}
+func (dagdb *DagDb) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
+	unitHash, _, _, err := dagdb.GetTxLookupEntry(hash)
+	if err != nil {
+		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err, "tx_hash:", hash)
+		return nil, unitHash, err
+	}
+
+	tx, err1 := dagdb.gettrasaction(hash)
+	return tx, unitHash, err1
 }

@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -113,12 +113,12 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		return nil, nil
 	}
 
-	assetInfo := modules.AssetInfo{
-		Alias:          genesis.Alias,
-		InitialTotal:   genesis.GetTokenAmount(),
-		Decimal:        genesis.TokenDecimal,
-		DecimalUnit:    genesis.DecimalUnit,
-		OriginalHolder: holder,
+	assetInfo := modules.FungibleToken{
+		Name:        genesis.Alias,
+		TotalSupply: genesis.GetTokenAmount(),
+		Decimals:    byte(genesis.TokenDecimal),
+		Symbol:      genesis.DecimalUnit,
+		//SupplyAddress: holder,
 	}
 	// get new asset id
 	asset := modules.NewPTNAsset()
@@ -126,7 +126,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	//asset := &modules.Asset{
 	//	AssetId: assetId,
 	//}
-	assetInfo.AssetID = asset
+	//assetInfo.AssetID = asset
 	extra, err := rlp.EncodeToBytes(assetInfo)
 	if err != nil {
 		log.Error("Get genesis assetinfo bytes error.")
@@ -160,8 +160,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		return nil, nil
 	}
 	msg1 := &modules.Message{
-		App:     modules.APP_CONFIG,
-		Payload: &configPayload,
+		App:     modules.APP_CONTRACT_INVOKE,
+		Payload: configPayload,
 	}
 	msg2 := &modules.Message{
 		App:     modules.APP_DATA,

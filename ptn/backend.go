@@ -265,11 +265,12 @@ func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManag
 func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
 }
-
-func (s *PalletOne) ContractBroadcast(event jury.ContractEvent) {
-	s.protocolManager.ContractBroadcast(event)
+func (s *PalletOne) ContractBroadcast(event jury.ContractEvent, local bool) {
+	s.protocolManager.ContractBroadcast(event, local)
 }
-
+func (s *PalletOne) ElectionBroadcast(event jury.ElectionEvent) {
+	s.protocolManager.ElectionBroadcast(event)
+}
 func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
 }
@@ -325,36 +326,6 @@ func (s *PalletOne) Stop() error {
 	s.dag.Close()
 
 	return nil
-}
-
-// set in js console via admin interface or wrapper from cli flags
-func (self *PalletOne) SetEtherbase(etherbase common.Address) {
-	//	self.lock.Lock()
-	//	self.etherbase = etherbase
-	//	self.lock.Unlock()
-}
-func (s *PalletOne) Etherbase() (eb common.Address, err error) {
-	/*
-		s.lock.RLock()
-		etherbase := s.etherbase
-		s.lock.RUnlock()
-
-		if etherbase != (common.Address{}) {
-			return etherbase, nil
-		}
-		if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
-			if accounts := wallets[0].Accounts(); len(accounts) > 0 {
-				etherbase := accounts[0].Address
-
-				s.lock.Lock()
-				s.etherbase = etherbase
-				s.lock.Unlock()
-
-				log.Debug("Etherbase automatically configured", "address", etherbase)
-				return etherbase, nil
-			}
-		}*/
-	return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
 }
 
 // @author Albert·Gou

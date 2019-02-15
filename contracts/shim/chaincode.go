@@ -389,118 +389,6 @@ func (stub *ChaincodeStub) GetState(key string) ([]byte, error) {
 	return stub.handler.handleGetState(collection, key, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) GetCandidateListForMediator() ([]*modules.MediatorRegisterInfo, error) {
-	return stub.GetList("MediatorList")
-}
-func (stub *ChaincodeStub) GetBecomeMediatorApplyList() ([]*modules.MediatorRegisterInfo, error) {
-	return stub.GetList("ListForApplyBecomeMediator")
-}
-func (stub *ChaincodeStub) GetQuitMediatorApplyList() ([]*modules.MediatorRegisterInfo, error) {
-	return stub.GetList("ListForApplyQuitMediator")
-}
-
-func (stub *ChaincodeStub) GetAgreeForBecomeMediatorList() ([]*modules.MediatorRegisterInfo, error) {
-	return stub.GetList("ListForAgreeBecomeMediator")
-
-}
-
-func (stub *ChaincodeStub) GetList(typeList string) ([]*modules.MediatorRegisterInfo, error) {
-	listByte, err := stub.handler.handleGetState("", typeList, stub.ContractId, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	if listByte == nil {
-		return nil, nil
-	}
-	var list []*modules.MediatorRegisterInfo
-	err = json.Unmarshal(listByte, &list)
-	if err != nil {
-		return nil, err
-	}
-	//if len(list) == 0 {
-	//	return nil, nil
-	//}
-	return list, nil
-}
-
-func (stub *ChaincodeStub) GetListForForfeiture() ([]*modules.Forfeiture, error) {
-	listByte, err := stub.handler.handleGetState("", "ListForForfeiture", stub.ContractId, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	if listByte == nil {
-		return nil, nil
-	}
-	var list []*modules.Forfeiture
-	err = json.Unmarshal(listByte, &list)
-	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
-	}
-	//if len(list) == 0 {
-	//	return nil, nil
-	//}
-	return list, nil
-}
-
-func (stub *ChaincodeStub) GetListForCashback() ([]*modules.Cashback, error) {
-	listByte, err := stub.handler.handleGetState("", "ListForCashback", stub.ContractId, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	if listByte == nil {
-		return nil, nil
-	}
-	var list []*modules.Cashback
-	err = json.Unmarshal(listByte, &list)
-	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
-	}
-	//if len(list) == 0 {
-	//	return nil, fmt.Errorf("%s", "list is nil.")
-	//}
-	return list, nil
-}
-
-func (stub *ChaincodeStub) GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error) {
-	balanceByte, err := stub.handler.handleGetState("", nodeAddr, stub.ContractId, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	if balanceByte == nil {
-		return nil, nil
-	}
-	if string(balanceByte) == "" {
-		return nil, nil
-	}
-	balance := new(modules.DepositBalance)
-	err = json.Unmarshal(balanceByte, balance)
-	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
-	}
-	return balance, nil
-}
-
-//获取候选列表信息
-func (stub *ChaincodeStub) GetCandidateList(role string) ([]string, error) {
-	candidateListByte, err := stub.handler.handleGetState("", role, stub.ContractId, stub.ChannelId, stub.TxID)
-	if err != nil {
-		return nil, err
-	}
-	if candidateListByte == nil {
-		return nil, nil
-	}
-	var candidateList []string
-	err = json.Unmarshal(candidateListByte, &candidateList)
-	if err != nil {
-		return nil, err
-	}
-	//if len(candidateList) == 0 {
-	//	return nil, fmt.Errorf("%s", "list is nil.")
-	//}
-	return candidateList, nil
-
-}
-
 // PutState documentation can be found in interfaces.go
 func (stub *ChaincodeStub) PutState(key string, value []byte) error {
 	if key == "" {
@@ -577,7 +465,7 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 }
 
 //GetInvokeParameters documentation can be found in interfaces.go
-func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error) {
+func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error) {
 	allargs := stub.args
 	//if len(allargs) > 2 {
 	invokeInfo := &modules.InvokeInfo{}
@@ -652,7 +540,7 @@ func (stub *ChaincodeStub) GetInvokeTokens() (*modules.InvokeTokens, error) {
 func (stub *ChaincodeStub) GetContractAllState() (map[string]*modules.ContractStateValue, error) {
 	return stub.handler.handleGetContractAllState(stub.ChannelId, stub.TxID, stub.ContractId)
 }
-func (stub *ChaincodeStub) GetInvokeFees() (*modules.InvokeFees, error) {
+func (stub *ChaincodeStub) GetInvokeFees() (*modules.AmountAsset, error) {
 	_, _, invokeFees, _, _, err := stub.GetInvokeParameters()
 	return invokeFees, err
 }
