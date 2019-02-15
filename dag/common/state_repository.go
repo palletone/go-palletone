@@ -22,13 +22,14 @@ package common
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type IStateRepository interface {
-	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContract(id []byte) (*modules.Contract, error)
@@ -44,7 +45,7 @@ type IStateRepository interface {
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
-
+	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
 }
 
@@ -56,7 +57,11 @@ type StateRepository struct {
 func NewStateRepository(statedb storage.IStateDb) *StateRepository {
 	return &StateRepository{statedb: statedb}
 }
-func (rep *StateRepository) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
+func NewStateRepository4Db(db ptndb.Database) *StateRepository {
+	statedb := storage.NewStateDb(db)
+	return &StateRepository{statedb: statedb}
+}
+func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return rep.statedb.GetContractState(id, field)
 }
 func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
@@ -100,5 +105,8 @@ func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modul
 }
 
 func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
-	return rep.GetContractDeploy(tempId[:], contractId[:], name)
+	return rep.statedb.GetContractDeploy(tempId[:])
+}
+func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
+	return rep.statedb.GetMinFee()
 }

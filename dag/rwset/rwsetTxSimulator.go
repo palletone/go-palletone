@@ -29,6 +29,7 @@ import (
 )
 
 type RwSetTxSimulator struct {
+	chainIndex              *modules.ChainIndex
 	txid                    string
 	rwsetBuilder            *RWSetBuilder
 	dag                     dag.IDag
@@ -44,9 +45,10 @@ type VersionedValue struct {
 
 func NewBasedTxSimulator(idag dag.IDag, txid string) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
-
+	unit := idag.GetCurrentUnit(modules.PTNCOIN)
+	cIndex := unit.Header().Number
 	log.Debugf("constructing new tx simulator txid = [%s]", txid)
-	return &RwSetTxSimulator{txid, rwsetBuilder, idag, false, false, false}
+	return &RwSetTxSimulator{cIndex, txid, rwsetBuilder, idag, false, false, false}
 }
 
 func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
@@ -67,10 +69,10 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		return nil, err
 	}
 	//TODO Devin
-	ver, val := s.dag.GetContractState(contractid, key)
+	val, ver, err := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
-	if val == nil {
-		log.Errorf("get value from db[%s] failed", ns)
+	if err != nil {
+		log.Warnf("get value from db[%s] failed,key:%s", ns, key)
 		return nil, nil
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
@@ -81,7 +83,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	}
 	log.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, val)
 
-	//todo change.
+	//TODO change.
 	//return testValue, nil
 	return val, nil
 }

@@ -155,7 +155,7 @@ func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.Paymen
 
 	pay := modules.NewPaymentPayload([]*modules.Input{}, []*modules.Output{})
 	for _, input := range rawTxJson.Inputs {
-		preTxId := &common.Hash{}
+		preTxId := common.Hash{}
 		preTxId.SetHexString(input.Txid)
 		txin := modules.NewTxIn(modules.NewOutPoint(preTxId, input.MessageIndex, input.Vout), nil)
 		pay.AddTxIn(txin)

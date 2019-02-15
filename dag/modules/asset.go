@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"encoding/json"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var CoreAsset = NewPTNAsset()

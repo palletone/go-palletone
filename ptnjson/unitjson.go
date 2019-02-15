@@ -35,8 +35,8 @@ type UnitJson struct {
 
 }
 type HeaderJson struct {
-	ParentsHash   []common.Hash  `json:"parents_hash"`
-	AssetIDs      []string       `json:"assets"`
+	ParentsHash []common.Hash `json:"parents_hash"`
+	//AssetIDs      []string       `json:"assets"`
 	AuthorAddress string         `json:"mediator_address"`
 	AuthorSign    string         `json:"mediator_sign"` // the unit creation authors
 	GroupSign     string         `json:"groupSign"`     // 群签名, 用于加快单元确认速度
@@ -77,14 +77,33 @@ func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 		Extra:         hex.EncodeToString(header.Extra),
 		CreationTime:  time.Now(), // TODO: header.Creationdate
 	}
-	json.AssetIDs = []string{}
-	for _, asset := range header.AssetIDs {
-		json.AssetIDs = append(json.AssetIDs, asset.ToAssetId())
-	}
 	json.Number = ChainIndexJson{
 		AssetID: header.Number.AssetID.ToAssetId(),
 		IsMain:  header.Number.IsMain,
 		Index:   header.Number.Index,
+	}
+	return json
+}
+
+type UnitSummaryJson struct {
+	UnitHeader *HeaderJson        `json:"unit_header"`  // unit header
+	Txs        []common.Hash      `json:"transactions"` // transaction list
+	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
+	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
+
+}
+
+func ConvertUnit2SummaryJson(unit *modules.Unit) *UnitSummaryJson {
+	json := &UnitSummaryJson{
+		UnitHash:   unit.Hash(),
+		UnitSize:   unit.Size(),
+		UnitHeader: convertUnitHeader2Json(unit.UnitHeader),
+		Txs:        []common.Hash{},
+	}
+
+	for _, tx := range unit.Txs {
+
+		json.Txs = append(json.Txs, tx.Hash())
 	}
 	return json
 }

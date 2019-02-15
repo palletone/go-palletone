@@ -51,14 +51,14 @@ const (
 	GetBlockBodiesMsg  = 0x05
 	BlockBodiesMsg     = 0x06
 	NewBlockMsg        = 0x07
-	//ConsensusMsg       = 0x08
+	NewBlockHeaderMsg  = 0x08
 	NewProducedUnitMsg = 0x09
 	VSSDealMsg         = 0x0a
 	VSSResponseMsg     = 0x0b
 	SigShareMsg        = 0x0c
 	GroupSigMsg        = 0x0d
-
-	ContractMsg = 0x10
+	ContractMsg        = 0x10
+	ElectionMsg        = 0x11
 
 	GetNodeDataMsg = 0x20
 	NodeDataMsg    = 0x21
@@ -139,17 +139,23 @@ type txPool interface {
 	Stats() (int, int)
 	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
 	SendStoredTxs(hashs []common.Hash) error
+	DiscardTxs(hashs []common.Hash) error
+	//DiscardTx(hash common.Hash) error
 
+	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
+	SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error
+	ResetPendingTxs(txs []*modules.Transaction) error
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	GetTxFee(tx *modules.Transaction) (*modules.InvokeFees, error)
+	GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
+	ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
 
 // statusData is the network packet for the status message.

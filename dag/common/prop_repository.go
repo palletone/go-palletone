@@ -22,6 +22,7 @@ package common
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -38,7 +39,7 @@ type IPropRepository interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
-
+	GetChainThreshold() (int, error)
 	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
@@ -53,8 +54,19 @@ type IPropRepository interface {
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
 	return &PropRepository{db: db}
 }
+func NewPropRepository4Db(db ptndb.Database) *PropRepository {
+	pdb := storage.NewPropertyDb(db)
+	return &PropRepository{db: pdb}
+}
 func (pRep *PropRepository) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 	return pRep.db.RetrieveGlobalProp()
+}
+func (pRep *PropRepository) GetChainThreshold() (int, error) {
+	gp, err := pRep.RetrieveGlobalProp()
+	if err != nil {
+		return 0, err
+	}
+	return gp.ChainThreshold(), nil
 }
 func (pRep *PropRepository) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	return pRep.db.RetrieveDynGlobalProp()
@@ -90,16 +102,18 @@ func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.IDType16) (int6
 }
 
 // 洗牌算法，更新mediator的调度顺序
-func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty) bool {
+func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty,
+	dgp *modules.DynamicGlobalProperty) bool {
 	token := node.DefaultConfig.GetGasToken()
 	_, idx, timestamp, err := pRep.db.GetNewestUnit(token)
 	if err != nil {
-		log.Error("GetNewestUnit error:" + err.Error())
+		log.Debug("GetNewestUnit error:" + err.Error())
 		return false
 	}
+
 	aSize := uint64(len(gp.ActiveMediators))
 	if aSize == 0 {
-		log.Error("The current number of active mediators is 0!")
+		log.Debug("The current number of active mediators is 0!")
 		return false
 	}
 
@@ -135,18 +149,9 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
 			ms.CurrentShuffledMediators[j], ms.CurrentShuffledMediators[i]
 	}
-	//pRep.StoreMediatorSchl(ms)
+
 	return true
 }
-
-/**
-计算在过去的128个见证单元生产slots中miss的百分比，不包括当前验证单元。
-Calculate the percent of unit production slots that were missed in the past 128 units,
-not including the current unit.
-*/
-//func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
-//	return dgp.RecentSlotsFilled / 128.0
-//}
 
 /**
 @brief 获取给定的未来第slotNum个slot开始的时间。
@@ -235,7 +240,7 @@ func (pRep *PropRepository) GetScheduledMediator(slotNum uint32) common.Address 
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
 	csmLen := len(ms.CurrentShuffledMediators)
 	if csmLen == 0 {
-		log.Error("The current number of shuffled mediators is 0!")
+		log.Debug("The current number of shuffled mediators is 0!")
 		return common.Address{}
 	}
 

@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -204,22 +204,22 @@ func (b *PtnApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 	}
 }
 
-func (b *PtnApiBackend) WalletTokens(address string) (map[string]*modules.AccountToken, error) {
-	//comAddr, err := common.StringToAddress("P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B")
-	comAddr, err := common.StringToAddress(address)
-	if err != nil {
-		return nil, err
-	}
-	return b.ptn.dag.WalletTokens(comAddr)
-}
-
-func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
-	comAddr, err := common.StringToAddress(address)
-	if err != nil {
-		return 0, err
-	}
-	return b.ptn.dag.WalletBalance(comAddr, assetid, uniqueid, chainid)
-}
+//func (b *PtnApiBackend) WalletTokens(address string) (map[string]*modules.AccountToken, error) {
+//	//comAddr, err := common.StringToAddress("P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B")
+//	comAddr, err := common.StringToAddress(address)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return b.ptn.dag.WalletTokens(comAddr)
+//}
+//
+//func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+//	comAddr, err := common.StringToAddress(address)
+//	if err != nil {
+//		return 0, err
+//	}
+//	return b.ptn.dag.WalletBalance(comAddr, assetid, uniqueid, chainid)
+//}
 
 // GetContract
 func (b *PtnApiBackend) GetContract(id string) (*modules.Contract, error) {
@@ -289,7 +289,14 @@ func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
-
+func (b *PtnApiBackend) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
+	units := b.ptn.dag.GetUnstableUnits()
+	result := make([]*ptnjson.UnitSummaryJson, len(units))
+	for i, unit := range units {
+		result[i] = ptnjson.ConvertUnit2SummaryJson(unit)
+	}
+	return result
+}
 func (b *PtnApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 	unit, err := b.ptn.dag.GetUnitByHash(hash)
 	if err != nil {
@@ -520,10 +527,10 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId []byte, tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true)
 }
-func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId []byte, depId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (rspPayload []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) ([]byte, error) {

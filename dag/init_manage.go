@@ -36,11 +36,13 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 		log.Debug("invalidated unit's parent hash!")
 		return false
 	}
+
 	if idx.Index+1 != nextUnit.NumberU64() {
-		log.Warnf("invalidated unit's height number!, last height:%d, next unit height:%d",
+		log.Debugf("invalidated unit's height number!, last height:%d, next unit height:%d",
 			idx.Index, nextUnit.Number().Index)
 		return false
 	}
+
 	ts, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
 	if ts >= nextUnit.Timestamp() {
 		log.Debug("invalidated unit's timestamp!")
@@ -68,9 +70,8 @@ func (d *Dag) Close() {
 
 // @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
-	unitState := d.validate.ValidateUnitExceptGroupSig(unit, isGenesis)
-	if unitState != modules.UNIT_STATE_VALIDATED &&
-		unitState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
+	unitState := d.validate.ValidateUnitExceptGroupSig(unit)
+	if unitState != nil {
 		return false
 	}
 	return true
@@ -183,4 +184,42 @@ func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error 
 	}
 
 	return nil
+}
+
+func (dag *Dag) IsConsecutiveMediator(nextMediator common.Address) bool {
+	dgp := dag.GetDynGlobalProp()
+
+	if !dgp.IsShuffledSchedule && nextMediator.Equal(dgp.LastMediator) {
+		return true
+	}
+
+	return false
+}
+
+// 计算最近64个生产slots的mediator参与度，不包括当前unit
+// Calculate the percent of unit production slots that were missed in the
+// past 64 units, not including the current unit.
+func (dag *Dag) MediatorParticipationRate() uint32 {
+	popCount := func(x uint64) uint8 {
+		m := []uint64{
+			0x5555555555555555,
+			0x3333333333333333,
+			0x0F0F0F0F0F0F0F0F,
+			0x00FF00FF00FF00FF,
+			0x0000FFFF0000FFFF,
+			0x00000000FFFFFFFF,
+		}
+
+		var i, w uint8
+		for i, w = 0, 1; i < 6; i, w = i+1, w+w {
+			x = (x & m[i]) + ((x >> w) & m[i])
+		}
+
+		return uint8(x)
+	}
+
+	recentSlotsFilled := dag.GetDynGlobalProp().RecentSlotsFilled
+	participationRate := core.PalletOne100Percent * int(popCount(recentSlotsFilled)) / 64
+
+	return uint32(participationRate)
 }

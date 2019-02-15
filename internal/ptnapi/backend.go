@@ -57,7 +57,7 @@ type Backend interface {
 	//SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
 	//SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
 	//SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
-
+	GetUnstableUnits() []*ptnjson.UnitSummaryJson
 	// TxPool API
 	SendTx(ctx context.Context, signedTx *modules.Transaction) error
 	GetPoolTransactions() (modules.Transactions, error)
@@ -78,8 +78,8 @@ type Backend interface {
 	SendConsensus(ctx context.Context) error
 
 	// wallet api
-	WalletTokens(address string) (map[string]*modules.AccountToken, error)
-	WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
+	//WalletTokens(address string) (map[string]*modules.AccountToken, error)
+	//WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
 	// dag's get common
 	GetCommon(key []byte) ([]byte, error)
@@ -133,8 +133,8 @@ type Backend interface {
 	EncodeTx(jsonStr string) (string, error)
 
 	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId []byte, tplId []byte, err error)
-	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) ([]byte, error)
-	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
+	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId []byte, depId []byte, err error)
+	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (rspPayload []byte, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) ([]byte, error)
 
 	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)

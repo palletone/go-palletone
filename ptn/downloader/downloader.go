@@ -1151,6 +1151,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			// Make sure that we have peers available for fetching. If all peers have been tried
 			// and all failed throw an error
 			if !progressed && !throttled && !running && len(idles) == total && pending() > 0 {
+				log.Error("Downloader fetchParts", "progressed", progressed, "throttled", throttled, "running", running, "len(idles)", len(idles), "total", total, "pending()", pending())
 				return errPeersUnavailable
 			}
 		}

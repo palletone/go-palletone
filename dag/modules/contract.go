@@ -38,7 +38,7 @@ type Contract struct {
 	CodeAddress       common.Address
 	Input             []byte
 	JuryPubKeys       [][]byte //该合约对于的陪审员公钥列表
-	NeedApprovalCount int      //需要多少个陪审员同意才算共识达成
+	NeedApprovalCount uint8    //需要多少个陪审员同意才算共识达成
 	CallerAddress     common.Address
 	caller            common.Address
 	self              common.Address // 合約地址

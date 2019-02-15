@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,7 +27,7 @@ func TestTransactionJson(t *testing.T) {
 	output := NewTxOut(99999999999999999, []byte{0xee, 0xbb}, NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-	input := NewTxIn(NewOutPoint(&hash, 0, 1), []byte{})
+	input := NewTxIn(NewOutPoint(hash, 0, 1), []byte{})
 	pay1s.AddTxIn(input)
 	msg := &Message{
 		App:     APP_PAYMENT,
@@ -109,6 +109,24 @@ func TestTxHash(t *testing.T) {
 //	fmt.Println("tx_hash", tx_item.Hash_old().String()) //every different
 //	fmt.Println("tx_hashstr", tx_item.Hash().String())  //every same
 //}
+func newTestTransaction() *Transaction {
+	msg := &Message{
+		App:     APP_PAYMENT,
+		Payload: &PaymentPayload{},
+	}
+	msg2 := &Message{
+		App:     APP_DATA,
+		Payload: &DataPayload{},
+	}
+	msg3 := &Message{
+		App:     APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &TestContractInvokeRequestPayload{},
+	}
+	tx := newTransaction(
+		[]*Message{msg, msg2, msg3},
+	)
+	return tx
+}
 func newTestTx() *Transaction {
 	pay1s := &PaymentPayload{
 		LockTime: 12345,
@@ -116,32 +134,38 @@ func newTestTx() *Transaction {
 	output := NewTxOut(1, []byte{0xee, 0xbb}, NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-	input := NewTxIn(NewOutPoint(&hash, 0, 1), []byte{})
-	pay1s.AddTxIn(input)
-	pay1s.AddTxIn(NewTxIn(nil, []byte("Coinbase")))
+	input := Input{}
+	input.PreviousOutPoint = NewOutPoint(hash, 0, 1)
+	input.SignatureScript = []byte{}
+	input.Extra = []byte("Coinbase")
+	fmt.Println(input)
+	fmt.Println(input.PreviousOutPoint)
+	pay1s.AddTxIn(&input)
+
 	msg := &Message{
 		App:     APP_PAYMENT,
 		Payload: pay1s,
 	}
 	msg2 := &Message{
 		App:     APP_DATA,
-		Payload: &DataPayload{MainData: []byte("Hello PalletOne")},
+		Payload: &DataPayload{MainData: []byte("Hello PalletOne"), ExtraData: []byte("Hi PalletOne")},
 	}
 	//txmsg2 := NewTransaction(
 	//	[]*Message{msg, msg},
 	//)
-	req := &ContractInvokeRequestPayload{ContractId: []byte{0xcc}, FunctionName: "TestFun", Args: [][]byte{{0x11}, {0x22}}}
+	req := &ContractInvokeRequestPayload{ContractId: []byte{123}, FunctionName: "TestFun", Args: [][]byte{{0x11}, {0x22}}, Timeout: 300}
 	msg3 := &Message{App: APP_CONTRACT_INVOKE_REQUEST, Payload: req}
-	tx := NewTransaction(
+	tx := newTransaction(
 		[]*Message{msg, msg2, msg3},
 	)
+	fmt.Println("paoload：", msg.Payload, msg2.Payload, msg3.Payload)
 	return tx
 }
 
 func TestTransactionEncode(t *testing.T) {
 
 	txmsg3 := newTestTx()
-
+	t.Log("data", txmsg3)
 	//emptyTx.SetHash(common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87"))
 	//rightvrsTx.SetHash(common.HexToHash("b94f5374fce5edbc8e2a8697c15331677e6ebf0b"))
 	txb, err := rlp.EncodeToBytes(txmsg3)
@@ -156,12 +180,16 @@ func TestTransactionEncode(t *testing.T) {
 	//*rlp_hash = rlp.RlpHash(txmsg3)
 	//rightvrsTx.SetHash(*rlp_hash)
 	// storage test
+	t.Log("rlp ", txb)
 
-	tx := new(Transaction)
+	//tx := &TestTransaction{}
+	tx := &Transaction{}
 	err = rlp.DecodeBytes(txb, tx)
 	if err != nil {
 		t.Error(err)
 	}
+	t.Log("data", tx)
+	assert.Equal(t, txmsg3, tx)
 	//if tx.Locktime != 12345 {
 	//	log.Error("decode RLP mismatch", "error", txb)
 	//}
@@ -192,12 +220,43 @@ func TestTransactionEncode(t *testing.T) {
 	if len(payment.Inputs) == 0 {
 		t.Error("payment input decode error.")
 	}
+
 	fmt.Printf("PaymentData:%+v", payment)
 	//tx.SetHash(rlp.RlpHash(tx))
 	//if tx.TxHash != rightvrsTx.TxHash {
 	//	log.Error("tx hash mismatch ", "right_hash", rightvrsTx.TxHash, "tx_hash", tx.TxHash)
 	//}
+	msg2 := tx.TxMessages[1]
+	if msg2.App != APP_DATA {
+		t.Error("Data decode error")
+	}
+	data := msg2.Payload.(*DataPayload)
+	if len(data.MainData) == 0 {
+		t.Error("DataPayload MainData decode error.")
+	}
+	if len(data.ExtraData) == 0 {
+		t.Error("DataPayload ExtraData decode error.")
+	}
+	t.Log("DataPayload:", data)
 
+	msg3 := tx.TxMessages[2]
+	if msg3.App != APP_CONTRACT_INVOKE_REQUEST {
+		t.Error("Data decode error")
+	}
+	result := msg3.Payload.(*ContractInvokeRequestPayload)
+	if result.Timeout == 0 {
+		t.Error("ContractInvokeRequestPayload Timeout decode error.")
+	}
+	if len(result.Args) == 0 {
+		t.Error("ContractInvokeRequestPayload Args decode error.")
+	}
+	if result.FunctionName == "" {
+		t.Error("ContractInvokeRequestPayload FunctionName decode error.")
+	}
+	if len(result.ContractId) == 0 {
+		t.Error("ContractInvokeRequestPayload ContractId decode error.")
+	}
+	t.Log("ContractInvokeRequestPayload:", result)
 }
 func TestIDType16Hex(t *testing.T) {
 	PTNCOIN := IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
@@ -288,3 +347,10 @@ func TestPaymentpayloadInputRlp(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, i2.SignatureScript, []byte("a"))
 }
+
+//func TestTransaction_GetRequestTx(t *testing.T) {
+//	tx := newTestTx()
+//	req := tx.GetRequestTx()
+//	//t.Logf("%+v", req)
+//	//assert.Equal(t, tx, req)
+//}

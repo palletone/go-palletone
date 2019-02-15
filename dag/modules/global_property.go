@@ -58,24 +58,24 @@ func NewGlobalProp() *GlobalProperty {
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	//HeadUnitNum  uint64      // 最近的单元编号(数量)
-	//HeadUnitHash common.Hash // 最近的单元hash
-	//HeadUnitTime int64       // 最近的单元时间
+	//HeadUnitNum  uint64      // 最新单元的编号(数量)
+	//HeadUnitHash common.Hash // 最新单元的 hash
+	//HeadUnitTime int64       // 最新单元的时间
 
-	// CurrentMediator *common.Address // 当前生产单元的mediator, 用于判断是否连续同一个mediator生产单元
+	// 防止同一个mediator连续生产单元导致分叉
+	LastMediator       common.Address // 最新单元的生产 mediator
+	IsShuffledSchedule bool           // 标记 mediator 的调度顺序是否刚被打乱
 
-	NextMaintenanceTime int64 // 下一次系统维护时间
-	LastMaintenanceTime int64 // 上一次系统维护时间
+	NextMaintenanceTime uint32 // 下一次系统维护时间
+	LastMaintenanceTime uint32 // 上一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentASlot uint64
 
-	/**
-	在过去的128个单元生产slots中miss的数量。
-	The count of Unit production slots that were missed in the past 128 Units
-	用于计算mediator的参与率。used to compute mediator participation.
-	*/
-	// RecentSlotsFilled float32
+	// 记录每个生产slot的unit生产情况，用于计算mediator的参与率。
+	// 每一位表示一个生产slot，mediator正常生产unit则值为1，否则为0。
+	// 最低位表示最近一个slot， 初始值全为1。
+	RecentSlotsFilled uint64
 
 	//LastIrreversibleUnitNum uint32
 	//NewestUnit     map[IDType16]*UnitProperty
@@ -84,16 +84,23 @@ type DynamicGlobalProperty struct {
 type UnitProperty struct {
 	Hash      common.Hash // 最近的单元hash
 	Index     *ChainIndex // 最近的单元编号(数量)
-	Timestamp int64       // 最近的单元时间
+	Timestamp uint32      // 最近的单元时间
 }
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
 		//HeadUnitNum:             0,
 		//HeadUnitHash:            common.Hash{},
+
+		LastMediator:       common.Address{},
+		IsShuffledSchedule: false,
+
 		NextMaintenanceTime: 0,
 		LastMaintenanceTime: 0,
 		CurrentASlot:        0,
+
+		RecentSlotsFilled: ^uint64(0),
+
 		//LastIrreversibleUnitNum: 0,
 		//NewestUnit:     map[IDType16]*UnitProperty{},
 		//LastStableUnit: map[IDType16]*UnitProperty{},
@@ -226,4 +233,20 @@ func InitDynGlobalProp(genesis *Unit) *DynamicGlobalProperty {
 	//dgp.SetNewestUnit(genesis.Header())
 	//dgp.SetLastStableUnit(genesis.Header())
 	return dgp
+}
+
+// UpdateDynGlobalProp, update global dynamic data
+// @author Albert·Gou
+func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits uint64) {
+	//dgp.HeadUnitNum = unit.NumberU64()
+	//dgp.HeadUnitHash = unit.Hash()
+	//dgp.HeadUnitTime = unit.Timestamp()
+	//dgp.SetNewestUnit(unit.Header())
+
+	dgp.LastMediator = unit.Author()
+	dgp.IsShuffledSchedule = false
+
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled<<(missedUnits+1) + 1
+
+	dgp.CurrentASlot += missedUnits + 1
 }

@@ -145,17 +145,17 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		Path:       ccPath,
 		Version:    ccVersion,
 	}
-	//查询一下是否已经安装过
-	if v, _, _, _, _ := dag.GetContractTpl(tpid[:]); v != nil {
-		log.Error("getContractTpl err:","error","the contractTlp is exist")
-		return nil,errors.New("the contractTlp is exist.")
-	}
-	//test
+
 	if cfg.DebugTest {
 		log.Info("enter contract debug test")
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
 	} else {
+		//查询一下是否已经安装过
+		if v, _, _, _, _ := dag.GetContractTpl(tpid[:]); v != nil {
+			log.Error("getContractTpl err:", "error", "the contractTlp is exist")
+			return nil, errors.New("the contractTlp is exist.")
+		}
 		//将合约代码文件打包成 tar 文件
 		paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
 		if err != nil {
@@ -164,7 +164,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		}
 		payloadUnit.Bytecode = paylod
 	}
-	log.Infof("user contract template id [%v]", hex.EncodeToString(payloadUnit.TemplateId))
+	log.Info("user contract template id", "byte:", payloadUnit.TemplateId, " string:", hex.EncodeToString(payloadUnit.TemplateId))
 	//type ContractTplPayload struct {
 	//	TemplateId []byte `json:"template_id"` // contract template id
 	//	Name       string `json:"name"`        // contract template name
@@ -216,7 +216,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	} else {
 		templateCC, chaincodeData, err = ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
 		if err != nil {
-			log.Errorf("chainid[%s]-templateId[%v], RecoverChainCodeFromDb fail:%s", chainID, templateId, "error", err)
+			log.Error("Deploy", "chainid:", chainID, "templateId:", templateId, "RecoverChainCodeFromDb err", err)
 			return nil, nil, err
 		}
 	}
@@ -245,8 +245,9 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	btxId, err := hex.DecodeString(txId)
+	depId := common.NewAddress(btxId[:20], common.ContractHash)
 	cc := &cclist.CCInfo{
-		Id:      btxId,
+		Id:      depId[:],
 		Name:    usrccName,
 		Path:    templateCC.Path,
 		Version: templateCC.Version,
@@ -263,16 +264,6 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
-	//type ContractDeployPayload struct {
-	//	TemplateId []byte             `json:"template_id"` // contract template id
-	//	ContractId []byte             `json:"contract_id"` // contract id
-	//	Name       string             `json:"name"`        // the name for contract
-	//	Args       [][]byte           `json:"args"`        // contract arguments list
-	//	Jury       []common.Address   `json:"jury"`        // contract jurors list
-	//	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
-	//	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
-	//}
-	fmt.Println("Deploy result:==========================================================", unit)
 	return cc.Id, unit, err
 }
 
@@ -325,8 +316,8 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	t0 := time.Now()
 	duration := t0.Sub(start)
 	//unit.ExecutionTime = duration
-	requstId, err := common.NewHashFromStr(txid)
-	unit.RequestId = *requstId
+	requstId := common.HexToHash(txid)
+	unit.RequestId = requstId
 	if err != nil {
 		log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
 		return nil, err
@@ -349,9 +340,9 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 }
 
 func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) error {
-	log.Infof("==========Stop enter=======")
+	log.Infof("enter ccapi.go Stop")
+	defer log.Infof("exit ccapi.go Stop")
 	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	defer log.Infof("-----------Stop exit--------")
 	setChainId := "palletone"
 	if chainID != "" {
 		setChainId = chainID

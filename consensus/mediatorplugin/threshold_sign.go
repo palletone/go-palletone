@@ -20,6 +20,8 @@ package mediatorplugin
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/dedis/kyber/share"
 	"github.com/dedis/kyber/share/dkg/pedersen"
@@ -30,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 func (mp *MediatorPlugin) startVSSProtocol() {
@@ -235,9 +236,18 @@ func (mp *MediatorPlugin) signUnitsTBLS(localMed common.Address) {
 		return
 	}
 
-	for newUnitHash := range medUnitsBuf {
+	rangeFn := func(key, value interface{}) bool {
+		newUnitHash, ok := key.(common.Hash)
+		if !ok {
+			log.Debugf("key converted to Hash failed")
+			return true
+		}
 		go mp.signUnitTBLS(localMed, newUnitHash)
+
+		return true
 	}
+
+	medUnitsBuf.Range(rangeFn)
 }
 
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
@@ -264,14 +274,14 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
 
 func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *modules.Unit) {
 	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
-		mp.toTBLSSignBuf[localMed] = make(map[common.Hash]*modules.Unit)
+		mp.toTBLSSignBuf[localMed] = new(sync.Map)
 	}
 
 	unitHash := newUnit.UnitHash
-	mp.toTBLSSignBuf[localMed][unitHash] = newUnit
+	mp.toTBLSSignBuf[localMed].LoadOrStore(unitHash, newUnit)
 	go mp.signUnitTBLS(localMed, unitHash)
 
-	// 过了 unit 确认时间后，及时删除待群签名的 unit，防止内存溢出
+	// 当 unit 过了确认时间后，及时删除待群签名的 unit，防止内存溢出
 	expiration := mp.dag.UnitIrreversibleTime()
 	deleteBuf := time.NewTimer(expiration)
 
@@ -279,10 +289,10 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *mod
 	case <-mp.quit:
 		return
 	case <-deleteBuf.C:
-		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
+		if _, ok := mp.toTBLSSignBuf[localMed].Load(unitHash); ok {
 			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
 				" to sign-group", unitHash.TerminalString(), localMed.Str())
-			delete(mp.toTBLSSignBuf[localMed], unitHash)
+			mp.toTBLSSignBuf[localMed].Delete(unitHash)
 		}
 	}
 }
@@ -305,10 +315,17 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	)
 	// 1. 获取群签名所需数据
 	{
-		newUnit, ok = medUnitsBuf[unitHash]
+		//newUnit, ok = medUnitsBuf[unitHash]
+		value, ok := medUnitsBuf.Load(unitHash)
 		if !ok {
 			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS",
 				localMed.Str(), unitHash.TerminalString())
+			return
+		}
+
+		newUnit, ok = value.(*modules.Unit)
+		if !ok {
+			log.Debugf("value converted to Unit pointer failed")
 			return
 		}
 
@@ -365,7 +382,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 4. 群签名成功后的处理
 	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
 		newUnit.UnitHash.TerminalString())
-	delete(mp.toTBLSSignBuf[localMed], unitHash)
+	mp.toTBLSSignBuf[localMed].Delete(unitHash)
 	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
 }
 

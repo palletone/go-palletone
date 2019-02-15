@@ -26,13 +26,13 @@ const LDB_NOT_FOUND = "leveldb: not found"
 
 // common error
 var (
-	ErrSetEmpty       = errors.New("dag: set is empty")
-	ErrDagNotFound    = errors.New("dag: not found")
-	ErrNotFound       = New(LDB_NOT_FOUND)
-	ErrNumberNotFound = New("dag: header's number not found")
-	ErrUtxoNotFound   = New("utxo: not found")
-	ErrUnitExist      = New("unit: exist")
-
+	ErrSetEmpty        = errors.New("dag: set is empty")
+	ErrDagNotFound     = errors.New("dag: not found")
+	ErrNotFound        = New(LDB_NOT_FOUND)
+	ErrNumberNotFound  = New("dag: header's number not found")
+	ErrUtxoNotFound    = New("utxo: not found")
+	ErrUnitExist       = New("unit: exist")
+	ErrNullPoint       = New("null point")
 	ErrUnknownAncestor = errors.New("unknown ancestor")
 	ErrPrunedAncestor  = errors.New("pruned ancestor")
 	ErrFutureBlock     = errors.New("block in the future")

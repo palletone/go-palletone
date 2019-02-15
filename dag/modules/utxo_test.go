@@ -26,6 +26,6 @@ import (
 )
 
 func TestOutPoint_Bytes(t *testing.T) {
-	ot := NewOutPoint(&common.Hash{}, 1, 2)
+	ot := NewOutPoint(common.Hash{}, 1, 2)
 	t.Logf("OutPoint data:%x", ot.Bytes())
 }

@@ -83,14 +83,14 @@ func TestSignAndVerifyATx(t *testing.T) {
 		TxMessages: make([]*modules.Message, 0),
 	}
 	payment := &modules.PaymentPayload{}
-	utxoTxId, _ := common.NewHashFromStr("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	utxoTxId:= common.HexToHash("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(txIn)
 	asset0 := &modules.Asset{}
 	payment.AddTxOut(modules.NewTxOut(1, lockScript, asset0))
 	payment2 := &modules.PaymentPayload{}
-	utxoTxId2, _ := common.NewHashFromStr("1651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	utxoTxId2:= common.HexToHash("1651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint2 := modules.NewOutPoint(utxoTxId2, 1, 1)
 	txIn2 := modules.NewTxIn(outPoint2, []byte{})
 	payment2.AddTxIn(txIn2)
@@ -130,6 +130,8 @@ func TestSignAndVerifyATx(t *testing.T) {
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
+	unlockScript:=tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
+	t.Logf("UnlockScript:%x",unlockScript)
 	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	if err != nil {
 		t.Logf("validate error:%s", err)
@@ -182,7 +184,7 @@ func TestMultiSign1Step(t *testing.T) {
 	}
 	asset0 := &modules.Asset{}
 	payment := &modules.PaymentPayload{}
-	utxoTxId, _ := common.NewHashFromStr("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	utxoTxId := common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(txIn)
@@ -238,7 +240,7 @@ func TestMultiSign2Step(t *testing.T) {
 		TxMessages: make([]*modules.Message, 0),
 	}
 	payment := &modules.PaymentPayload{}
-	utxoTxId, _ := common.NewHashFromStr("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	utxoTxId := common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(txIn)
@@ -306,7 +308,7 @@ func TestContractPayout(t *testing.T) {
 	}
 	asset0 := &modules.Asset{}
 	payment := &modules.PaymentPayload{}
-	utxoTxId, _ := common.NewHashFromStr("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	utxoTxId:= common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(txIn)

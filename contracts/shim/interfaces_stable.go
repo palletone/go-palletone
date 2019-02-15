@@ -133,7 +133,7 @@ type ChaincodeStubInterface interface {
 	//获取所有的世界状态
 	GetContractAllState() (states map[string]*modules.ContractStateValue, err error)
 	//获取调用合约所支付的PTN手续费
-	GetInvokeFees() (invokeFees *modules.InvokeFees, err error)
+	GetInvokeFees() (invokeFees *modules.AmountAsset, err error)
 	//获得某地址的Token余额
 	//如果地址为空则表示当前合约
 	//如果token为空则表示查询所有Token余额
@@ -141,28 +141,12 @@ type ChaincodeStubInterface interface {
 	//将合约上锁定的某种Token支付出去
 	PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error
 	//获取invoke参数，包括invokeAddr,tokens,fee,funcName,params
-	GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.InvokeFees, funcName string, params []string, err error)
+	GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error)
 	//定义并发行一种全新的Token
 	DefineToken(tokenType byte, define []byte, creator string) error
 	//增发一种之前已经定义好的Token
 	//如果是ERC20增发，则uniqueId为空，如果是ERC721增发，则必须指定唯一的uniqueId
 	SupplyToken(assetId []byte, uniqueId []byte, amt uint64, creator string) error
-	//获取申请退保证金列表
-	GetListForCashback() ([]*modules.Cashback, error)
-	//获取申请没收保证金列表
-	GetListForForfeiture() ([]*modules.Forfeiture, error)
-	//获取保证金账户信息
-	GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error)
-	//获取候选列表
-	GetCandidateList(role string) ([]string, error)
-	//获取mediator申请加入列表
-	GetBecomeMediatorApplyList() ([]*modules.MediatorRegisterInfo, error)
-	//获取同意mediator申请加入列表
-	GetAgreeForBecomeMediatorList() ([]*modules.MediatorRegisterInfo, error)
-	//获取 mediator 申请退出列表
-	GetQuitMediatorApplyList() ([]*modules.MediatorRegisterInfo, error)
-	//获取mediator 候选列表
-	GetCandidateListForMediator() ([]*modules.MediatorRegisterInfo, error)
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).

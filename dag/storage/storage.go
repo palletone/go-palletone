@@ -20,12 +20,11 @@
 package storage
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 // value will serialize to rlp encoding bytes
@@ -33,7 +32,18 @@ func Store(db ptndb.Database, key string, value interface{}) error {
 	return StoreBytes(db, []byte(key), value)
 }
 
-func StoreBytes(db ptndb.Database, key []byte, value interface{}) error {
+//func BatchStore(batch ptndb.Batch, key []byte, value interface{}) error {
+//	val, err := rlp.EncodeToBytes(value)
+//	if err != nil {
+//		return err
+//	}
+//	err = batch.Put(key, val)
+//	if err != nil {
+//		log.Error("batch put error", "key:", string(key), "err:", err)
+//	}
+//	return err
+//}
+func StoreBytes(db ptndb.Putter, key []byte, value interface{}) error {
 	val, err := rlp.EncodeToBytes(value)
 	if err != nil {
 		return err
@@ -75,31 +85,31 @@ func GetBytes(db ptndb.Database, key []byte) ([]byte, error) {
 	return val, nil
 }
 
-func StoreBytesWithVersion(db ptndb.Database, key []byte, version *modules.StateVersion, value interface{}) error {
-	val, err := rlp.EncodeToBytes(value)
-	if err != nil {
+func StoreBytesWithVersion(db ptndb.Putter, key []byte, version *modules.StateVersion, val []byte) error {
+	//val, err := rlp.EncodeToBytes(value)
+	//if err != nil {
+	//	return err
+	//}
+	v := append(version.Bytes(), val...)
+	//
+	//_, err = db.Get(key)
+	//if err != nil {
+	//	if err.Error() == errors.ErrNotFound.Error() {
+	//		//	if err == errors.New("not found") {
+	//		if err := db.Put(key, v); err != nil {
+	//			return err
+	//		}
+	//	} else {
+	//		return err
+	//	}
+	//} else {
+	//	if err = db.Delete(key); err != nil {
+	//		return err
+	//	}
+	if err := db.Put(key, v); err != nil {
 		return err
 	}
-	v := append(version.Bytes(), val...)
-
-	_, err = db.Get(key)
-	if err != nil {
-		if err.Error() == errors.ErrNotFound.Error() {
-			//	if err == errors.New("not found") {
-			if err := db.Put(key, v); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	} else {
-		if err = db.Delete(key); err != nil {
-			return err
-		}
-		if err := db.Put(key, v); err != nil {
-			return err
-		}
-	}
+	//}
 	return nil
 }
 

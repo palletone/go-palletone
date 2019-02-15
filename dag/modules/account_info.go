@@ -29,15 +29,21 @@ import "github.com/palletone/go-palletone/common"
 //Contract account PC*
 type AccountInfoBase struct {
 	//AccountName string
+
 	//当前账户的PTN余额
 	PtnBalance uint64
+
 	//通用可改选投票的结果
 	//Votes []vote.VoteInfo
+
+	// 本账户期望的活跃mediator数量
+	DesiredMediatorNum uint8
 }
 
 func NewAccountInfoBase() *AccountInfoBase {
 	return &AccountInfoBase{
-		PtnBalance: 0,
+		PtnBalance:         0,
+		DesiredMediatorNum: 0,
 	}
 }
 

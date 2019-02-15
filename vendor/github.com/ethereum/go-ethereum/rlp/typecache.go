@@ -76,7 +76,7 @@ func cachedTypeInfo1(typ reflect.Type, tags tags) (*typeinfo, error) {
 		// another goroutine got the write lock first
 		return info, nil
 	}
-	// put a dummmy value into the cache before generating.
+	// put a dummy value into the cache before generating.
 	// if the generator tries to lookup itself, it will get
 	// the dummy value and won't call itself recursively.
 	typeCache[key] = new(typeinfo)
@@ -93,25 +93,6 @@ func cachedTypeInfo1(typ reflect.Type, tags tags) (*typeinfo, error) {
 type field struct {
 	index int
 	info  *typeinfo
-}
-
-func mapFields(typ reflect.Type) (fields []field, err error) {
-	kt := typ.Key()
-	vt := typ.Elem()
-	var kts, vts tags
-	keyInfo, err := cachedTypeInfo1(kt, kts)
-	if err != nil {
-		return nil, err
-	}
-	valueInfo, err := cachedTypeInfo1(vt, vts)
-	if err != nil {
-		return nil, err
-	}
-
-	fields = append(fields, field{0, keyInfo})
-	fields = append(fields, field{1, valueInfo})
-
-	return fields, nil
 }
 
 func structFields(typ reflect.Type) (fields []field, err error) {
@@ -159,31 +140,6 @@ func parseStructTag(typ reflect.Type, fi int) (tags, error) {
 	return ts, nil
 }
 
-func parseMapTag(typ reflect.Type, fi int) (tags, error) {
-	f := typ.Field(fi)
-	var ts tags
-	for _, t := range strings.Split(f.Tag.Get("rlp"), ",") {
-		switch t = strings.TrimSpace(t); t {
-		case "":
-		case "-":
-			ts.ignored = true
-		case "nil":
-			ts.nilOK = true
-		case "tail":
-			ts.tail = true
-			if fi != typ.NumField()-1 {
-				return ts, fmt.Errorf(`rlp: invalid struct tag "tail" for %v.%s (must be on last field)`, typ, f.Name)
-			}
-			if f.Type.Kind() != reflect.Slice {
-				return ts, fmt.Errorf(`rlp: invalid struct tag "tail" for %v.%s (field type is not slice)`, typ, f.Name)
-			}
-		default:
-			return ts, fmt.Errorf("rlp: unknown struct tag %q on %v.%s", t, typ, f.Name)
-		}
-	}
-	return ts, nil
-}
-
 func genTypeInfo(typ reflect.Type, tags tags) (info *typeinfo, err error) {
 	info = new(typeinfo)
 	if info.decoder, err = makeDecoder(typ, tags); err != nil {
@@ -197,8 +153,4 @@ func genTypeInfo(typ reflect.Type, tags tags) (info *typeinfo, err error) {
 
 func isUint(k reflect.Kind) bool {
 	return k >= reflect.Uint && k <= reflect.Uintptr
-}
-
-func isInt(k reflect.Kind) bool {
-	return k >= reflect.Int && k <= reflect.Int64
 }

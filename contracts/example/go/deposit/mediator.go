@@ -27,10 +27,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"strings"
 	"time"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //申请加入  参数： jsonString
@@ -46,13 +46,13 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(err.Error())
 	}
 	content := args[0]
-	mediatorInfo := modules.MediatorRegisterInfo{
+	mediatorInfo := MediatorRegisterInfo{
 		Address: invokeAddr,
 		Content: content,
 		Time:    time.Now().UTC().Unix() / 1800,
 	}
 	//获取同意列表，判断是否已经申请过了
-	agreeList, err := stub.GetAgreeForBecomeMediatorList()
+	agreeList, err := GetAgreeForBecomeMediatorList(stub)
 	if err != nil {
 		log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 		return shim.Error(err.Error())
@@ -65,14 +65,14 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		}
 	}
 	//获取列表
-	becomeList, err := stub.GetBecomeMediatorApplyList()
+	becomeList, err := GetBecomeMediatorApplyList(stub)
 	if err != nil {
 		log.Error("Stub.GetBecomeMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	if becomeList == nil {
 		log.Info("Stub.GetBecomeMediatorApplyList: list is nil")
-		becomeList = []*modules.MediatorRegisterInfo{&mediatorInfo}
+		becomeList = []*MediatorRegisterInfo{&mediatorInfo}
 	} else {
 		isExist := isInMediatorInfolist(mediatorInfo.Address, becomeList)
 		if isExist {
@@ -91,7 +91,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 }
 
 //查找节点是否在列表中
-func isInMediatorInfolist(addr string, list []*modules.MediatorRegisterInfo) bool {
+func isInMediatorInfolist(addr string, list []*MediatorRegisterInfo) bool {
 	for _, m := range list {
 		if strings.Compare(addr, m.Address) == 0 {
 			return true
@@ -117,7 +117,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("arg need two parameters.")
 	}
 	//获取申请列表
-	becomeList, err := stub.GetBecomeMediatorApplyList()
+	becomeList, err := GetBecomeMediatorApplyList(stub)
 	if err != nil {
 		log.Error("Stub.GetBecomeMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
@@ -133,8 +133,8 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		log.Error("Node is not exist in the become list.")
 		return shim.Error("Node is not exist in the become list.")
 	}
-	//var mediatorList []*modules.MediatorInfo
-	mediator := &modules.MediatorRegisterInfo{}
+	//var mediatorList []*MediatorInfo
+	mediator := &MediatorRegisterInfo{}
 	//不同意，移除申请列表
 	if strings.Compare(isOk, "no") == 0 {
 		log.Info("foundation is not agree with application.")
@@ -144,14 +144,14 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		//同意，移除列表，并且加入同意申请列表
 		becomeList, mediator = moveMediatorFromList(addr, becomeList)
 		//获取同意列表
-		agreeList, err := stub.GetAgreeForBecomeMediatorList()
+		agreeList, err := GetAgreeForBecomeMediatorList(stub)
 		if err != nil {
 			log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 			return shim.Error(err.Error())
 		}
 		if agreeList == nil {
 			log.Info("Stub.GetAgreeForBecomeMediatorList: list is nil")
-			agreeList = []*modules.MediatorRegisterInfo{mediator}
+			agreeList = []*MediatorRegisterInfo{mediator}
 		} else {
 			isExist := isInMediatorInfolist(mediator.Address, agreeList)
 			if isExist {
@@ -179,7 +179,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 }
 
 //序列化list for mediator
-func marshalAndPutStateForMediatorList(stub shim.ChaincodeStubInterface, key string, list []*modules.MediatorRegisterInfo) error {
+func marshalAndPutStateForMediatorList(stub shim.ChaincodeStubInterface, key string, list []*MediatorRegisterInfo) error {
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -204,7 +204,7 @@ func marshalAndPutStateForMediatorList(stub shim.ChaincodeStubInterface, key str
 //}
 
 //从列表中删除并返回该节点
-func moveMediatorFromList(address string, list []*modules.MediatorRegisterInfo) (newList []*modules.MediatorRegisterInfo, mediator *modules.MediatorRegisterInfo) {
+func moveMediatorFromList(address string, list []*MediatorRegisterInfo) (newList []*MediatorRegisterInfo, mediator *MediatorRegisterInfo) {
 	for i := 0; i < len(list); i++ {
 		if strings.Compare(list[i].Address, address) == 0 {
 			mediator = list[i]
@@ -224,7 +224,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error(err.Error())
 	}
 	//获取同意列表
-	agreeList, err := stub.GetAgreeForBecomeMediatorList()
+	agreeList, err := GetAgreeForBecomeMediatorList(stub)
 	if err != nil {
 		log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 		return shim.Error(err.Error())
@@ -239,7 +239,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("Node is not exist in the agree list.")
 	}
 	//获取候选列表
-	candidateList, err := stub.GetCandidateListForMediator()
+	candidateList, err := GetCandidateListForMediator(stub)
 	if err != nil {
 		log.Error("Stub.GetCandidateListForMediator err:", "error", err)
 		return shim.Error(err.Error())
@@ -255,7 +255,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("Node is not exist in the candidate list.")
 	}
 	//获取节点信息
-	mediator := &modules.MediatorRegisterInfo{}
+	mediator := &MediatorRegisterInfo{}
 	for _, m := range agreeList {
 		if strings.Compare(m.Address, invokeAddr) == 0 {
 			mediator = m
@@ -264,14 +264,14 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 	}
 	mediator.Time = time.Now().UTC().Unix() / 1800
 	//获取列表
-	quitList, err := stub.GetQuitMediatorApplyList()
+	quitList, err := GetQuitMediatorApplyList(stub)
 	if err != nil {
 		log.Error("Stub.GetQuitMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	if quitList == nil {
 		log.Info("Stub.GetQuitMediatorApplyList err:list is nil.")
-		quitList = []*modules.MediatorRegisterInfo{mediator}
+		quitList = []*MediatorRegisterInfo{mediator}
 	} else {
 		isExist := isInMediatorInfolist(mediator.Address, quitList)
 		if isExist {
@@ -308,7 +308,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		return shim.Error("Arg need two parameter.")
 	}
 	//获取申请列表
-	quitList, err := stub.GetQuitMediatorApplyList()
+	quitList, err := GetQuitMediatorApplyList(stub)
 	if err != nil {
 		log.Error("Stub.GetQuitMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
@@ -325,7 +325,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		log.Error("Node is not exist in the quit list.")
 		return shim.Error("Node is not exist in the quit list.")
 	}
-	//var mediatorList []*modules.MediatorInfo
+	//var mediatorList []*MediatorInfo
 	//不同意，移除申请列表
 	if strings.Compare(isOk, "no") == 0 {
 		log.Info("foundation is not agree with application.")
@@ -335,7 +335,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		//同意，移除列表，并且全款退出
 		quitList, _ = moveMediatorFromList(addr, quitList)
 		//获取该账户
-		balance, err := stub.GetDepositBalance(addr)
+		balance, err := GetDepositBalance(stub,addr)
 		if err != nil {
 			log.Error("Stub.GetDepositBalance err:", "error", err)
 			return shim.Error(err.Error())
@@ -350,7 +350,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 			return shim.Error(err.Error())
 		}
 		//从同意列表中删除
-		agreeList, err := stub.GetAgreeForBecomeMediatorList()
+		agreeList, err := GetAgreeForBecomeMediatorList(stub)
 		if err != nil {
 			log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 			return shim.Error(err.Error())
@@ -384,7 +384,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 	return shim.Success([]byte("ok"))
 }
 
-func deleteNode(stub shim.ChaincodeStubInterface, balance *modules.DepositBalance, nodeAddr string) error {
+func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeAddr string) error {
 	//计算币龄收益
 	endTime := balance.LastModifyTime * 1800
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
@@ -408,7 +408,7 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *modules.DepositBalanc
 		return err
 	}
 	//获取候选列表
-	candidateList, err := stub.GetCandidateListForMediator()
+	candidateList, err := GetCandidateListForMediator(stub)
 	if err != nil {
 		log.Error("Stub.GetCandidateListForMediator err:", "error", err)
 		return err
@@ -443,7 +443,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error(err.Error())
 	}
 	//获取同意列表
-	agreeList, err := stub.GetAgreeForBecomeMediatorList()
+	agreeList, err := GetAgreeForBecomeMediatorList(stub)
 	if err != nil {
 		log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 		return shim.Error(err.Error())
@@ -458,7 +458,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("Node is not exist in the agree list,you should apply for it.")
 	}
 	//获取节点信息
-	mediator := &modules.MediatorRegisterInfo{}
+	mediator := &MediatorRegisterInfo{}
 	isFound := false
 	for _, m := range agreeList {
 		if strings.Compare(m.Address, invokeAddr) == 0 {
@@ -472,7 +472,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("Apply time is wrong.")
 	}
 	//获取账户
-	balance, err := stub.GetDepositBalance(invokeAddr)
+	balance, err := GetDepositBalance(stub,invokeAddr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -492,7 +492,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("AddCandidateListAndPutStateForMediator err:", "error", err)
 			return shim.Error(err.Error())
 		}
-		balance = &modules.DepositBalance{}
+		balance = &DepositBalance{}
 		//处理数据
 		balance.EnterTime = time.Now().UTC().Unix() / 1800
 		updateForPayValue(balance, invokeTokens)
@@ -514,15 +514,15 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 }
 
 //加入候选列表并保存
-func addCandidateListAndPutStateForMediator(stub shim.ChaincodeStubInterface, mediator *modules.MediatorRegisterInfo) error {
-	candidateList, err := stub.GetCandidateListForMediator()
+func addCandidateListAndPutStateForMediator(stub shim.ChaincodeStubInterface, mediator *MediatorRegisterInfo) error {
+	candidateList, err := GetCandidateListForMediator(stub)
 	if err != nil {
 		log.Error("Stub.GetCandidateListForMediator err:", "error", err)
 		return err
 	}
 	if candidateList == nil {
 		log.Info("Stub.GetCandidateListForMediator:list is nil.")
-		candidateList = []*modules.MediatorRegisterInfo{mediator}
+		candidateList = []*MediatorRegisterInfo{mediator}
 	} else {
 		isExist := isInMediatorInfolist(mediator.Address, candidateList)
 		if isExist {
@@ -572,7 +572,7 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 	}
 	//获取一下该用户下的账簿情况
 	addr := args[0]
-	balance, err := stub.GetDepositBalance(addr)
+	balance, err := GetDepositBalance(stub,addr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err: ", "error", err)
 		return shim.Error(err.Error())
@@ -612,9 +612,9 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 	return shim.Success([]byte("ok"))
 }
 
-func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64, balance *modules.DepositBalance) error {
+func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64, balance *DepositBalance) error {
 	//获取提取列表
-	listForCashback, err := stub.GetListForCashback()
+	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
 		log.Error("Stub.GetListForCashback err:", "error", err)
 		return err
@@ -629,7 +629,7 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, apply
 		return fmt.Errorf("%s", "Node is not exist in the list.")
 	}
 	//获取节点信息
-	cashbackNode := &modules.Cashback{}
+	cashbackNode := &Cashback{}
 	isFound := false
 	for _, m := range listForCashback {
 		if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {

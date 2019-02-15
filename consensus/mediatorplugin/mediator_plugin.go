@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -84,10 +84,10 @@ const (
 	NotSynced
 	NotMyTurn
 	NotTimeYet
-	NoPrivateKey
-	// LowParticipation
-	Lag
-	// Consecutive
+	//NoPrivateKey
+	LowParticipation
+	//Lag
+	Consecutive
 	ExceptionProducing
 	UnknownCondition
 )
@@ -99,23 +99,31 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		log.Info("Generated unit " + detail["Hash"] + " #" + detail["Num"] + " @" + detail["Timestamp"] +
-			" signed by " + detail["Mediator"])
+		log.Info("Generated unit " + detail["Hash"] + " #" + detail["Num"] + " Parent[" + detail["ParentHash"] +
+			"] @" + detail["Timestamp"] + " signed by " + detail["Mediator"])
 	case NotSynced:
-		log.Info("Not producing Unit because production is disabled " +
-			"until we receive a recent Unit (see: --enable-stale-production)")
+		log.Info("Not producing unit because production is disabled until we receive a recent unit." +
+			" Disable this check with --staleProduce option.")
 	case NotTimeYet:
-		log.Debug("Not producing Unit because next slot time is " + detail["NextTime"] +
+		log.Debug("Not producing unit because next slot time is " + detail["NextTime"] +
 			" , but now is " + detail["Now"])
 	case NotMyTurn:
-		log.Debug("Not producing Unit because current scheduled mediator is " +
+		log.Debug("Not producing unit because current scheduled mediator is " +
 			detail["ScheduledMediator"])
-	case Lag:
-		log.Info("Not producing Unit because node didn't wake up within 500ms of the slot time." +
-			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
-	case NoPrivateKey:
-		log.Info("Not producing Unit because I don't have the private key for " +
-			detail["ScheduledKey"])
+	//case Lag:
+	//	log.Info("Not producing unit because node didn't wake up within 500ms of the slot time." +
+	//		" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
+	//case NoPrivateKey:
+	//	log.Info("Not producing unit because I don't have the private key for " +
+	//		detail["ScheduledKey"])
+	case Consecutive:
+		log.Info("Not producing unit because the last unit was generated " +
+			"by the same mediator(" + detail["Mediator"] + ")." +
+			" This node is probably disconnected from the network so unit production has been disabled." +
+			" Disable this check with --allowConsecutive option.")
+	case LowParticipation:
+		log.Infof("Not producing unit because node appears to be on a minority fork with only %v "+
+			"mediator participation.", detail["ParticipationRate"])
 	case ExceptionProducing:
 		log.Info("Exception producing unit")
 	case UnknownCondition:
@@ -129,11 +137,11 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
-	//defer func(start time.Time) {
-	//	log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
-	//}(time.Now())
+	defer func(start time.Time) {
+		log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
+	}(time.Now())
 
-	detail := map[string]string{}
+	detail := make(map[string]string)
 	dag := mp.dag
 
 	// 整秒调整，四舍五入
@@ -176,7 +184,8 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	// we must control the Mediator scheduled to produce the next Unit.
-	med, ok := mp.mediators[scheduledMediator]
+	//med, ok := mp.mediators[scheduledMediator]
+	_, ok := mp.mediators[scheduledMediator]
 	if !ok {
 		detail["ScheduledMediator"] = scheduledMediator.Str()
 		return NotMyTurn, detail
@@ -184,19 +193,30 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.GetKeyStore()
-	err := ks.Unlock(accounts.Account{Address: scheduledMediator}, med.Password)
-	if err != nil {
-		detail["ScheduledKey"] = scheduledMediator.Str()
-		return NoPrivateKey, detail
+	//err := ks.Unlock(accounts.Account{Address: scheduledMediator}, med.Password)
+	//if err != nil {
+	//	detail["ScheduledKey"] = scheduledMediator.Str()
+	//	return NoPrivateKey, detail
+	//}
+
+	if !mp.consecutiveProduceEnabled && dag.IsConsecutiveMediator(scheduledMediator) {
+		detail["Mediator"] = scheduledMediator.Str()
+		return Consecutive, detail
+	}
+
+	pRate := dag.MediatorParticipationRate()
+	if pRate < mp.requiredParticipation {
+		detail["ParticipationRate"] = fmt.Sprint(pRate / core.PalletOne1Percent)
+		return LowParticipation, detail
 	}
 
 	scheduledTime := dag.GetSlotTime(slot)
-	diff := scheduledTime.Sub(now)
-	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
-		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
-		detail["Now"] = now.Format("2006-01-02 15:04:05")
-		return Lag, detail
-	}
+	//diff := scheduledTime.Sub(now)
+	//if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
+	//	detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
+	//	detail["Now"] = now.Format("2006-01-02 15:04:05")
+	//	return Lag, detail
+	//}
 
 	// 2. 生产验证单元
 	//execute contract
@@ -217,6 +237,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")
 	detail["Mediator"] = scheduledMediator.Str()
 	detail["Hash"] = unitHash.TerminalString()
+	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
 
 	// 3. 对 unit 进行群签名和广播
 	go mp.broadcastAndGroupSignUnit(scheduledMediator, newUnit)

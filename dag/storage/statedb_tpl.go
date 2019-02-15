@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -123,7 +123,7 @@ func (statedb *StateDb) GetContractTpl(templateID []byte) (*modules.StateVersion
 	nameByte := make([]byte, 0)
 	version, nameByte = statedb.GetTplState(templateID, modules.FIELD_TPL_NAME)
 	if nameByte == nil {
-		log.Debug("GetTplState err:version is nil")
+		log.Debug("GetTplState err:name is nil")
 		return version, bytecode, "", "", ""
 	}
 	if err := rlp.DecodeBytes(nameByte, &name); err != nil {

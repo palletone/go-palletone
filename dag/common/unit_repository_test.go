@@ -27,12 +27,14 @@ import (
 	"time"
 
 	"fmt"
+
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/stretchr/testify/assert"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -59,7 +61,7 @@ func TestGenesisUnit(t *testing.T) {
 
 	log.Println("Genesis unit struct:")
 	log.Println("parent units:", gUnit.UnitHeader.ParentsHash)
-	log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
+	//log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
 	log.Println("group_sign:", gUnit.UnitHeader.GroupSign)
 	log.Println("Root:", gUnit.UnitHeader.TxRoot)
 	log.Println("Number:", gUnit.UnitHeader.Number.String())
@@ -78,7 +80,9 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 		log.Println(err)
 	}
 
-	for k, v := range payload.ConfigSet {
+	for _, w := range payload.WriteSet {
+		k := w.Key
+		v := w.Value
 		log.Println(k, v)
 	}
 }
@@ -96,7 +100,8 @@ func TestSaveUnit(t *testing.T) {
 	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
 	header := new(modules.Header)
 	header.ParentsHash = append(header.ParentsHash, p)
-	header.AssetIDs = []modules.IDType16{aid}
+	header.Number = &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
+	//header.AssetIDs = []modules.IDType16{aid}
 	key, _ := crypto.GenerateKey()
 	addr0 := crypto.PubkeyToAddress(&key.PublicKey)
 
@@ -189,7 +194,7 @@ func TestSaveUnit(t *testing.T) {
 	unit.UnitSize = unit.Size()
 	unit.UnitHash = unit.Hash()
 
-	if err := rep.SaveUnit(unit, nil, true, true); err != nil {
+	if err := rep.SaveUnit(unit, true); err != nil {
 		log.Println(err)
 	}
 }
@@ -217,6 +222,7 @@ func TestRlpDecode(t *testing.T) {
 	encodeBytes, _ := rlp.EncodeToBytes(bytes)
 	var data []TestByte
 	rlp.DecodeBytes(encodeBytes, &data)
+	assert.Equal(t, bytes, data)
 	fmt.Printf("%q", data)
 }
 
@@ -292,7 +298,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 			UniqueId: aid,
 		},
 	}
-	payment := modules.PaymentPayload{
+	payment := &modules.PaymentPayload{
 		Inputs:   []*modules.Input{&txin},
 		Outputs:  []*modules.Output{&txout},
 		LockTime: 12,
@@ -308,23 +314,42 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	}
 	//tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
-	b, _ := rlp.EncodeToBytes(tx2)
+	t.Log("data", tx2)
+	b, _ := rlp.EncodeToBytes(&tx2)
+	t.Log("rlp", b)
 	var tx modules.Transaction
-	if err := rlp.DecodeBytes(b, &tx); err != nil {
-		fmt.Println("TestPaymentTransactionRLP error:", err.Error())
-	} else {
-		for _, msg := range tx.TxMessages {
-			if msg.App == modules.APP_PAYMENT {
-				var pl *modules.PaymentPayload
-				pl, ok := msg.Payload.(*modules.PaymentPayload)
-				if !ok {
-					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
-				} else {
-					fmt.Println("Payment payload:", pl)
-				}
+	//if err := rlp.DecodeBytes(b, &tx); err != nil {
+	//	fmt.Println("TestPaymentTransactionRLP error:", err.Error())
+	//} else {
+	//	for _, msg := range tx.TxMessages {
+	//		if msg.App == modules.APP_PAYMENT {
+	//			var pl *modules.PaymentPayload
+	//			pl, ok := msg.Payload.(*modules.PaymentPayload)
+	//			if !ok {
+	//				fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+	//			} else {
+	//				fmt.Println("Payment payload:", pl)
+	//			}
+	//		}
+	//	}
+	//}
+	err := rlp.DecodeBytes(b, &tx)
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			var pl *modules.PaymentPayload
+			pl, ok := msg.Payload.(*modules.PaymentPayload)
+			if !ok {
+				fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+			} else {
+				fmt.Println("Payment payload:", pl)
+				t.Log("11111111")
+				assert.Equal(t, payment, pl)
 			}
 		}
+
 	}
+	t.Log("data", tx)
+	assert.Equal(t, tx2, tx)
 
 }
 

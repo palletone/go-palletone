@@ -11,7 +11,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	dagcomm "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -33,8 +32,8 @@ func TestCreateUnit(t *testing.T) {
 		return
 	}
 
-	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
-	if err := test_dag.SaveUnit(unit, txpool, true); err != nil {
+	//txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
+	if err := test_dag.SaveUnit(unit, nil, true); err != nil {
 		log.Error("Save unit error", "error", err.Error())
 		return
 	}
@@ -74,37 +73,38 @@ func createUnit() (*modules.Unit, error) {
 	log.Info("create unit success.", "error", err, "hash", unit.Hash().String())
 	return unit, err
 }
-func TestDagRefreshUtxos(t *testing.T) {
-	//db := storage.ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
-	db, _ := ptndb.NewMemDatabase()
-	test_dag, _ := NewDag4GenesisInit(db)
 
-	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
-	// txpool := txspool.NewTxPool4Test()
-	dag_test, err := NewDagForTest(db, txpool)
-	if err != nil {
-		t.Fatal("New dag for test is faild,error: ", err)
-	}
-	unit, err := createUnit()
-	if err != nil {
-		log.Info("create test unit is failed.", "error", err)
-		return
-	}
-	dag_test.SaveUnit(unit, txpool, true)
-	// 添加delhash
-
-	// unit := dag_test.GetCurrentUnit(modules.PTNCOIN)
-	data := make(map[modules.OutPoint]*modules.Utxo)
-	dag_test.utxos_cache[unit.Hash()] = data
-	log.Debug("this unit hash info", "hash", unit.Hash().String())
-	dag_test.Memdag.PushDelHashs([]common.Hash{unit.Hash()})
-	log.Info("start refresh cache utxos.", "cache_len", len(dag_test.utxos_cache))
-
-	dag_test.RefreshCacheUtxos()
-
-	log.Info("stop refresh cache utxos.", "cache_len", len(dag_test.utxos_cache))
-
-}
+//func TestDagRefreshUtxos(t *testing.T) {
+//	//db := storage.ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
+//	db, _ := ptndb.NewMemDatabase()
+//	test_dag, _ := NewDag4GenesisInit(db)
+//
+//	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
+//	// txpool := txspool.NewTxPool4Test()
+//	dag_test, err := NewDagForTest(db, txpool)
+//	if err != nil {
+//		t.Fatal("New dag for test is faild,error: ", err)
+//	}
+//	unit, err := createUnit()
+//	if err != nil {
+//		log.Info("create test unit is failed.", "error", err)
+//		return
+//	}
+//	dag_test.SaveUnit(unit, txpool, true)
+//	// 添加delhash
+//
+//	// unit := dag_test.GetCurrentUnit(modules.PTNCOIN)
+//	data := make(map[modules.OutPoint]*modules.Utxo)
+//	dag_test.utxos_cache[unit.Hash()] = data
+//	log.Debug("this unit hash info", "hash", unit.Hash().String())
+//	dag_test.Memdag.PushDelHashs([]common.Hash{unit.Hash()})
+//	log.Info("start refresh cache utxos.", "cache_len", len(dag_test.utxos_cache))
+//
+//	dag_test.RefreshCacheUtxos()
+//
+//	log.Info("stop refresh cache utxos.", "cache_len", len(dag_test.utxos_cache))
+//
+//}
 func TestTxCountAndUnitSize(t *testing.T) {
 	sign, _ := hex.DecodeString("2c731f854ef544796b2e86c61b1a9881a0148da0c1001f0da5bd2074d2b8360367e2e0a57de91a5cfe92b79721692741f47588036cf0101f34dab1bfda0eb030")
 	pubKey, _ := hex.DecodeString("0386df0aef707cc5bc8d115c2576f844d2734b05040ef2541e691763f802092c09")
@@ -116,7 +116,7 @@ func TestTxCountAndUnitSize(t *testing.T) {
 		txs := modules.Transactions{}
 		for j := 0; j < i; j++ {
 			tx := modules.NewTransaction([]*modules.Message{})
-			tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(&common.Hash{}, 0, 0), unlockScript)},
+			tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0), unlockScript)},
 				[]*modules.Output{modules.NewTxOut(1, lockScript, a)})))
 			txs = append(txs, tx)
 		}
@@ -128,7 +128,7 @@ func newHeader() *modules.Header {
 	key := new(ecdsa.PrivateKey)
 	key, _ = crypto.GenerateKey()
 	h := new(modules.Header)
-	h.AssetIDs = append(h.AssetIDs, modules.PTNCOIN)
+	//h.AssetIDs = append(h.AssetIDs, modules.PTNCOIN)
 	au := modules.Authentifier{}
 	//address := crypto.PubkeyToAddress(&key.PublicKey)
 

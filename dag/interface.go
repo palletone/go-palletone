@@ -50,7 +50,7 @@ type IDag interface {
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	// GetHeaderByHash retrieves a header from the local chain.
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-
+	GetUnstableUnits() []*modules.Unit
 	//GetPrefix(prefix string) map[string][]byte
 
 	// CurrentHeader retrieves the head header from the local chain.
@@ -61,7 +61,7 @@ type IDag interface {
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 
 	// InsertHeaderDag inserts a batch of headers into the local chain.
-	//InsertHeaderDag([]*modules.Header, int) (int, error)
+	InsertHeaderDag([]*modules.Header) (int, error)
 	HasUnit(hash common.Hash) bool
 	UnitIsConfirmedByHash(hash common.Hash) bool
 	ParentsIsConfirmByHash(hash common.Hash) bool
@@ -78,7 +78,7 @@ type IDag interface {
 	GetGenesisUnit() (*modules.Unit, error)
 
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
-	GetContractState(contractid []byte, field string) (*modules.StateVersion, []byte)
+	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	//GetCanonicalHash(number uint64) (common.Hash, error)
@@ -97,8 +97,8 @@ type IDag interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
-	WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
-	WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
+	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
+	//WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
 	GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
@@ -119,7 +119,7 @@ type IDag interface {
 	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetTxFee(pay *modules.Transaction) (*modules.InvokeFees, error)
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	// set groupsign
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
@@ -141,4 +141,9 @@ type IDag interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
+
+	//Light Palletone Subprotocal
+	GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error)
+	GetLightChainHeight(assetId modules.IDType16) uint64
+	InsertLightHeader(headers []*modules.Header) (int, error)
 }

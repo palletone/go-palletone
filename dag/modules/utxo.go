@@ -24,8 +24,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 )
 
@@ -159,26 +160,31 @@ func (utxoIndex *UtxoIndex) QueryFields(key []byte) error {
 }
 
 func (utxoIndex *UtxoIndex) ToKey() []byte {
-	key := fmt.Sprintf("%s%s||%s||%s",
-		constants.UTXO_INDEX_PREFIX,
-		utxoIndex.AccountAddr.String(),
-		utxoIndex.Asset.String(),
-		utxoIndex.OutPoint.String())
-	return []byte(key)
+	key := append(constants.UTXO_INDEX_PREFIX, utxoIndex.AccountAddr.Bytes()...)
+	key = append(key, utxoIndex.Asset.Bytes()...)
+	key = append(key, utxoIndex.OutPoint.Bytes()...)
+	return key[:]
+	//	key := fmt.Sprintf("%s%s||%s||%s",
+	//	constants.UTXO_INDEX_PREFIX,
+	//	utxoIndex.AccountAddr.String(),
+	//	utxoIndex.Asset.String(),
+	//	utxoIndex.OutPoint.String())
+	//return []byte(key)
 }
 
 func (outpoint *OutPoint) ToKey() []byte {
 	// key: [UTXO_PREFIX][TxHash][MessageIndex][OutIndex]
-	key := append(constants.UTXO_PREFIX, outpoint.TxHash.Bytes()...)
-	key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
-	key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
+	key := append(constants.UTXO_PREFIX, outpoint.Bytes()...)
+	//key = append(key, common.EncodeNumberUint32(outpoint.MessageIndex)...)
+	//key = append(key, common.EncodeNumberUint32(outpoint.OutIndex)...)
 	return key[:]
 
 }
-func (outpoint *OutPoint) ToKeyStr() string {
-	b := outpoint.ToKey()
-	return string(b)
-}
+
+//func (outpoint *OutPoint) ToKeyStr() string {
+//	b := outpoint.ToKey()
+//	return string(b)
+//}
 
 func (outpoint *OutPoint) SetString(data string) error {
 	rs := []rune(data)
@@ -190,14 +196,17 @@ func (outpoint *OutPoint) SetString(data string) error {
 }
 
 func (outpoint *OutPoint) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(outpoint)
-	if err != nil {
-		return nil
-	}
+
+	data := append(outpoint.TxHash.Bytes(), common.EncodeNumberUint32(outpoint.MessageIndex)...)
+	data = append(data, common.EncodeNumberUint32(outpoint.OutIndex)...)
+	//data, err := rlp.EncodeToBytes(outpoint)
+	//if err != nil {
+	//	return nil
+	//}
 	return data
 }
 func (outpoint *OutPoint) Hash() common.Hash {
-	v := rlp.RlpHash(outpoint)
+	v := util.RlpHash(outpoint)
 	return v
 }
 
@@ -235,9 +244,9 @@ type Output struct {
 }
 
 type Input struct {
-	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
 	SignatureScript  []byte    `json:"signature_script"`
-	Extra            []byte    `json:"extra"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	Extra            []byte    `json:"extra" rlp:"nil"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
 }
 
 // NewTxIn returns a new ptn transaction input with the provided
@@ -258,37 +267,37 @@ type SpendProof struct {
 保存Asset属性信息结构体
 structure for saving asset property infomation
 */
-type AssetInfo struct {
-	Alias          string         `json:"alias"`           // asset name
-	AssetID        *Asset         `json:"asset_id"`        // asset id
-	InitialTotal   uint64         `json:"initial_total"`   // total circulation
-	Decimal        uint32         `json:"deciaml"`         // asset accuracy
-	DecimalUnit    string         `json:"unit"`            // asset unit
-	OriginalHolder common.Address `json:"original_holder"` // holder address when creating the asset
-}
+//type AssetInfo struct {
+//	Alias          string         `json:"alias"`           // asset name
+//	AssetID        *Asset         `json:"asset_id"`        // asset id
+//	InitialTotal   uint64         `json:"initial_total"`   // total circulation
+//	Decimal        uint32         `json:"deciaml"`         // asset accuracy
+//	DecimalUnit    string         `json:"unit"`            // asset unit
+//	OriginalHolder common.Address `json:"original_holder"` // holder address when creating the asset
+//}
+//
+//func (assetInfo *AssetInfo) Tokey() []byte {
+//	key := fmt.Sprintf("%s%s",
+//		constants.ASSET_INFO_PREFIX,
+//		assetInfo.AssetID.AssetId.String())
+//	return []byte(key)
+//}
+//
+//func (assetInfo *AssetInfo) Print() {
+//	fmt.Println("Asset alias", assetInfo.Alias)
+//	fmt.Println("Asset Assetid", assetInfo.AssetID.AssetId)
+//	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
+//	//fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
+//	fmt.Println("Asset Decimal", assetInfo.Decimal)
+//	fmt.Println("Asset DecimalUnit", assetInfo.DecimalUnit)
+//	fmt.Println("Asset OriginalHolder", assetInfo.OriginalHolder.String())
+//}
 
-func (assetInfo *AssetInfo) Tokey() []byte {
-	key := fmt.Sprintf("%s%s",
-		constants.ASSET_INFO_PREFIX,
-		assetInfo.AssetID.AssetId.String())
-	return []byte(key)
-}
-
-func (assetInfo *AssetInfo) Print() {
-	fmt.Println("Asset alias", assetInfo.Alias)
-	fmt.Println("Asset Assetid", assetInfo.AssetID.AssetId)
-	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
-	//fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
-	fmt.Println("Asset Decimal", assetInfo.Decimal)
-	fmt.Println("Asset DecimalUnit", assetInfo.DecimalUnit)
-	fmt.Println("Asset OriginalHolder", assetInfo.OriginalHolder.String())
-}
-
-type AccountToken struct {
-	Alias   string `json:"alias"`
-	AssetID *Asset `json:"asset_id"`
-	Balance uint64 `json:"balance"`
-}
+//type AccountToken struct {
+//	Alias   string `json:"alias"`
+//	AssetID *Asset `json:"asset_id"`
+//	Balance uint64 `json:"balance"`
+//}
 
 func UtxoFlags2String(flag txoFlags) string {
 	var str string

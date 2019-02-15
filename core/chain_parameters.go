@@ -46,14 +46,16 @@ func NewChainParams() (c ChainParameters) {
 // 操作交易费计划
 type FeeSchedule struct {
 	// mediator 创建费用
-	MediatorCreateFee uint64                `json:"mediatorCreateFee"`
-	VoteMediatorFee   uint64                `json:"voteMediatorFee"`
-	TransferFee       TransferFeeParameters `json:"transferPtnFee"`
+	MediatorCreateFee        uint64                `json:"mediatorCreateFee"`
+	VoteMediatorFee          uint64                `json:"voteMediatorFee"`
+	TransferFee              TransferFeeParameters `json:"transferPtnFee"`
+	SetDesiredMediatorNumFee uint8                 `json:"setDesiredMediatorNumFee"`
 }
 
 func newFeeSchedule() (f FeeSchedule) {
 	f.MediatorCreateFee = DefaultMediatorCreateFee
 	f.VoteMediatorFee = DefaultVoteMediatorFee
+	f.SetDesiredMediatorNumFee = DefaultSetDesiredMediatorNumFee
 	f.TransferFee = newTransferFeeParameters()
 
 	return

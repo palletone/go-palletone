@@ -25,7 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/consensus/jury"
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -198,6 +198,10 @@ func (p *peer) SendContractTransaction(event jury.ContractEvent) error {
 	return p2p.Send(p.rw, ContractMsg, event)
 }
 
+func (p *peer) SendElectionEvent(event jury.ElectionEvent) error {
+	return p2p.Send(p.rw, ElectionMsg, event)
+}
+
 //SendConsensus sends consensus msg to the peer
 //func (p *peer) SendConsensus(msgs string) error {
 //	return p2p.Send(p.rw, ConsensusMsg, msgs)
@@ -229,6 +233,11 @@ func (p *peer) SendNewRawUnit(unit *modules.Unit, data []byte) error {
 	return p2p.Send(p.rw, NewBlockMsg, data)
 }
 
+// SendLightHeader propagates an entire header to a remote partition peer.
+func (p *peer) SendLightHeader(header *modules.Header) error {
+	return p2p.Send(p.rw, NewBlockHeaderMsg, header)
+}
+
 // SendBlockHeaders sends a batch of block headers to the remote peer.
 func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
 	return p2p.Send(p.rw, BlockHeadersMsg, headers)
@@ -255,6 +264,10 @@ func (p *peer) SendNodeData(data [][]byte) error {
 // ones requested from an already RLP encoded format.
 func (p *peer) SendReceiptsRLP(receipts []rlp.RawValue) error {
 	return p2p.Send(p.rw, ReceiptsMsg, receipts)
+}
+
+func (p *peer) SendElectionResultEvent(event jury.ElectionEvent) error {
+	return p2p.Send(p.rw, ElectionMsg, event)
 }
 
 // RequestOneHeader is a wrapper around the header query functions to fetch a

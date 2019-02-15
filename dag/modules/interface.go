@@ -14,23 +14,12 @@
  * /
  *
  *  * @author PalletOne core developer <dev@pallet.one>
- *  * @date 2018
+ *  * @date 2018-2019
  *
  */
 
-package scc
+package modules
 
-import "github.com/palletone/go-palletone/common"
-
-var (
-	//PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
-	DepositContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000011C")
-
-	//PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
-	CreateTokenContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000021C")
-
-	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
-	TestContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000081C")
-
-	TestRunContractAddress = common.HexToAddress("0x00000000000000000000000000000000000095271C")
-)
+type ICloneable interface {
+	Clone() interface{}
+}

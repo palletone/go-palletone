@@ -37,7 +37,7 @@ func TestRwSetTxSimulator_GetTokenBalance(t *testing.T) {
 }
 func mockUtxos() map[modules.OutPoint]*modules.Utxo {
 	result := map[modules.OutPoint]*modules.Utxo{}
-	p1 := modules.NewOutPoint(&common.Hash{}, 0, 0)
+	p1 := modules.NewOutPoint(common.Hash{}, 0, 0)
 	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
 	fmt.Printf("Mock asset1:%s\n", asset1.String())
 	utxo1 := &modules.Utxo{Asset: asset1, Amount: 100, LockTime: 0}
@@ -46,22 +46,22 @@ func mockUtxos() map[modules.OutPoint]*modules.Utxo {
 	fmt.Printf("Mock asset2:%s\n", asset2.String())
 	utxo3 := &modules.Utxo{Asset: asset2, Amount: 500, LockTime: 0}
 	result[*p1] = utxo1
-	p2 := modules.NewOutPoint(&common.Hash{}, 1, 0)
+	p2 := modules.NewOutPoint(common.Hash{}, 1, 0)
 	result[*p2] = utxo2
-	p3 := modules.NewOutPoint(&common.Hash{}, 2, 1)
+	p3 := modules.NewOutPoint(common.Hash{}, 2, 1)
 	result[*p3] = utxo3
 	return result
 }
 func mockPtnUtxos() map[modules.OutPoint]*modules.Utxo {
 	result := map[modules.OutPoint]*modules.Utxo{}
-	p1 := modules.NewOutPoint(&common.Hash{}, 0, 0)
+	p1 := modules.NewOutPoint(common.Hash{}, 0, 0)
 	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
 	fmt.Printf("Mock asset1:%s\n", asset1.String())
 	utxo1 := &modules.Utxo{Asset: asset1, Amount: 100, LockTime: 0}
 	utxo2 := &modules.Utxo{Asset: asset1, Amount: 200, LockTime: 0}
 
 	result[*p1] = utxo1
-	p2 := modules.NewOutPoint(&common.Hash{}, 1, 0)
+	p2 := modules.NewOutPoint(common.Hash{}, 1, 0)
 	result[*p2] = utxo2
 
 	return result
