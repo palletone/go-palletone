@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
@@ -642,7 +642,7 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	addDepId := common.NewAddress(depId, common.ContractHash)
 	sReqId := hex.EncodeToString(reqId)
 	sDepId := hex.EncodeToString(addDepId[:])
-	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", sDepId)
+	log.Info("-----Ccdeploytx:", "reqId", sReqId, "tplId", sDepId)
 
 	rsp := &ContractDeployRsp{
 		ReqId:      sReqId,

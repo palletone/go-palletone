@@ -28,6 +28,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"strings"
 )
@@ -145,13 +146,13 @@ func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 
 //xiaozhi
 func (statedb *StateDb) GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error) {
-	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
-	_, val := statedb.GetContractState(depositeContractAddress.Bytes(), "MediatorList")
-	if val == nil {
+	depositeContractAddress := syscontract.DepositContractAddress
+	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), "MediatorList")
+	if err != nil {
 		return nil, fmt.Errorf("mediator candidate list is nil.")
 	}
 	var candidateList []*modules.MediatorRegisterInfo
-	err := json.Unmarshal(val, &candidateList)
+	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
 	}
@@ -172,13 +173,13 @@ func (statedb *StateDb) IsApprovedMediator(address common.Address) bool {
 }
 
 func (statedb *StateDb) GetJuryCandidateList() ([]string, error) {
-	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
-	_, val := statedb.GetContractState(depositeContractAddress.Bytes(), "JuryList")
-	if val == nil {
+	depositeContractAddress := syscontract.DepositContractAddress
+	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), "JuryList")
+	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
 	var candidateList []string
-	err := json.Unmarshal(val, &candidateList)
+	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
 	}

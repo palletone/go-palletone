@@ -161,7 +161,7 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 	dgp := a.dag.GetDynGlobalProp()
-	time := time.Unix(dgp.NextMaintenanceTime, 0)
+	time := time.Unix(int64(dgp.NextMaintenanceTime), 0)
 
 	return time.Format("2006-01-02 15:04:05")
 }

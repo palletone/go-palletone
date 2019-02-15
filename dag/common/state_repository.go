@@ -29,7 +29,7 @@ import (
 )
 
 type IStateRepository interface {
-	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContract(id []byte) (*modules.Contract, error)
@@ -61,7 +61,7 @@ func NewStateRepository4Db(db ptndb.Database) *StateRepository {
 	statedb := storage.NewStateDb(db)
 	return &StateRepository{statedb: statedb}
 }
-func (rep *StateRepository) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
+func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return rep.statedb.GetContractState(id, field)
 }
 func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {

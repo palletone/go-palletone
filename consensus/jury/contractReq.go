@@ -60,7 +60,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			TplId:   templateId,
 			TxId:    hex.EncodeToString(txId),
 			Args:    args,
-			Timeout: timeout,
+			Timeout: uint32(timeout),
 		},
 	}
 	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
@@ -72,7 +72,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	return reqId, txId, err
 }
 
-func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout uint32) ([]byte, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
 		log.Error("ContractInvokeReq", "param is error")
 		return nil, errors.New("ContractInvokeReq request param is error")

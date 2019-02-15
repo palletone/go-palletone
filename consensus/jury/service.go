@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
@@ -91,7 +91,7 @@ type contractTx struct {
 	reqTx *modules.Transaction   //request contract
 	rstTx *modules.Transaction   //contract run result---system
 	sigTx *modules.Transaction   //contract sig result---user, 0:local, 1,2 other
-	rcvTx []*modules.Transaction //todo 本地没有没有接收过请求合约，缓存已经签名合约
+	rcvTx []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
 	tm    time.Time              //create time
 	valid bool                   //contract request valid identification
 }
@@ -101,11 +101,12 @@ type Processor struct {
 	ptn       PalletOne
 	dag       iDag
 	validator validator.Validator
-	local     map[common.Address]*JuryAccount //[]common.Address //local account addr
 	contract  *contracts.Contract
-	locker    *sync.Mutex
-	quit      chan struct{}
-	mtx       map[common.Hash]*contractTx //all contract buffer
+
+	local  map[common.Address]*JuryAccount //[]common.Address //local account addr
+	mtx    map[common.Hash]*contractTx     //all contract buffer
+	quit   chan struct{}
+	locker *sync.Mutex
 
 	contractSigNum    int
 	contractExecFeed  event.Feed
@@ -294,7 +295,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	}
 	log.Debug("CheckContractTxValid", "reqId:", tx.RequestHash().String(), "exec:", execute)
 	if !p.checkTxValid(tx) {
-		log.Error("CheckContractTxValid", "checkTxValid fail")
+		log.Error("CheckContractTxValid checkTxValid fail")
 		return false
 	}
 	if !execute || !isSystemContract(tx) { //不执行合约或者用户合约
@@ -319,7 +320,11 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 
-func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
+func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool{
+	return isSystemContract(tx)
+}
+
+func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
@@ -421,6 +426,11 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 	}
 	p.locker.Unlock()
 	ctx := p.mtx[reqId]
+
+	if !isSystemContract(tx) {
+		p.ElectionRequest(reqId) //todo
+	}
+
 	if isLocalInstall {
 		if err = p.runContractReq(reqId); err != nil {
 			return nil, nil, err

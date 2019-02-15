@@ -26,9 +26,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUnitNumberIndex(t *testing.T) {
@@ -109,15 +110,20 @@ func TestRLPTxDecode(t *testing.T) {
 	output := modules.NewTxOut(1, []byte{0xee, 0xbb}, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-	input := modules.NewTxIn(modules.NewOutPoint(hash, 0, 1), []byte{})
-	pay1s.AddTxIn(input)
+	input := modules.Input{}
+	input.PreviousOutPoint = modules.NewOutPoint(hash, 0, 1)
+	input.SignatureScript = []byte{}
+	input.Extra = []byte("Coinbase")
+	fmt.Println(input)
+	fmt.Println(input.PreviousOutPoint)
+	pay1s.AddTxIn(&input)
 	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: pay1s,
 	}
 	msg2 := &modules.Message{
 		App:     modules.APP_DATA,
-		Payload: &modules.DataPayload{MainData: []byte("Hello PalletOne")},
+		Payload: &modules.DataPayload{MainData: []byte("Hello PalletOne"),ExtraData:[]byte("Hi PalletOne")},
 	}
 
 	req := &modules.ContractInvokeRequestPayload{ContractId: []byte{0xcc}, FunctionName: "TestFun", Args: [][]byte{[]byte{0x11}, {0x22}}}
@@ -154,4 +160,5 @@ func TestRLPTxDecode(t *testing.T) {
 		}
 
 	}
+	assert.Equal(t, txmsg3, tx)
 }

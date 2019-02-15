@@ -66,18 +66,16 @@ type DynamicGlobalProperty struct {
 	LastMediator       common.Address // 最新单元的生产 mediator
 	IsShuffledSchedule bool           // 标记 mediator 的调度顺序是否刚被打乱
 
-	NextMaintenanceTime int64 // 下一次系统维护时间
-	LastMaintenanceTime int64 // 上一次系统维护时间
+	NextMaintenanceTime uint32 // 下一次系统维护时间
+	LastMaintenanceTime uint32 // 上一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentASlot uint64
 
-	/**
-	在过去的128个单元生产slots中miss的数量。
-	The count of Unit production slots that were missed in the past 128 Units
-	用于计算mediator的参与率。used to compute mediator participation.
-	*/
-	// RecentSlotsFilled float32
+	// 记录每个生产slot的unit生产情况，用于计算mediator的参与率。
+	// 每一位表示一个生产slot，mediator正常生产unit则值为1，否则为0。
+	// 最低位表示最近一个slot， 初始值全为1。
+	RecentSlotsFilled uint64
 
 	//LastIrreversibleUnitNum uint32
 	//NewestUnit     map[IDType16]*UnitProperty
@@ -86,7 +84,7 @@ type DynamicGlobalProperty struct {
 type UnitProperty struct {
 	Hash      common.Hash // 最近的单元hash
 	Index     *ChainIndex // 最近的单元编号(数量)
-	Timestamp int64       // 最近的单元时间
+	Timestamp uint32      // 最近的单元时间
 }
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
@@ -100,6 +98,8 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 		NextMaintenanceTime: 0,
 		LastMaintenanceTime: 0,
 		CurrentASlot:        0,
+
+		RecentSlotsFilled: ^uint64(0),
 
 		//LastIrreversibleUnitNum: 0,
 		//NewestUnit:     map[IDType16]*UnitProperty{},
@@ -245,6 +245,8 @@ func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits ui
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
+
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled<<(missedUnits+1) + 1
 
 	dgp.CurrentASlot += missedUnits + 1
 }

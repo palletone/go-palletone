@@ -36,6 +36,7 @@ type ITxPool interface {
 	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
 
 	// AddRemotes should add the given transactions to the pool.
+	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
 	// Pending should return pending transactions.

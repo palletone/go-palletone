@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -418,9 +418,12 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		if tx.IsContractTx() {
-			if !pm.contractProc.CheckContractTxValid(tx, false) {
-				log.Debug("TxMsg", "CheckContractTxValid is false")
-				return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+			//if !pm.contractProc.CheckContractTxValid(tx, false) {
+			//	log.Debug("TxMsg", "CheckContractTxValid is false")
+			//	return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
+			//}
+			if pm.contractProc.IsSystemContractTx(tx) {
+				continue
 			}
 		}
 
@@ -451,10 +454,10 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if err != nil {
 			return errResp(ErrDecode, "transaction %d not accepteable ", i, "err:", err)
 		}
+		pm.txpool.AddRemote(tx)
 	}
+	log.Debug("===============ProtocolManager TxMsg AddRemote====================")
 
-	log.Debug("===============ProtocolManager TxMsg AddRemotes====================")
-	pm.txpool.AddRemotes(txs)
 	return nil
 }
 
@@ -564,14 +567,14 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 	}
 	log.Info("===ElectionMsg===", "event ", event)
 
-	if event.EType == jury.RequestEvent {
+	if event.EType == jury.ELECTION_EVENT_REQUEST {
 		result, err := pm.contractProc.ProcessElectionRequestEvent(&event)
 		if err != nil {
 			log.Debug("ElectionMsg", "ProcessElectionRequestEvent error:", err)
 		}
 		//result := jury.ElectionEvent{EType: jury.ResultEvent}
 		p.SendElectionResultEvent(*result)
-	} else if event.EType == jury.ResultEvent {
+	} else if event.EType == jury.ELECTION_EVENT_RESULT {
 		err := pm.contractProc.ProcessElectionResultEvent(&event)
 		if err != nil {
 			log.Debug("ElectionMsg", "ProcessElectionResultEvent error:", err)
@@ -588,20 +591,21 @@ func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 }
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
-	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String())
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
 	peers := pm.peers.GetPeers()
+	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
+
 	for _, peer := range peers {
 		peer.SendContractTransaction(event)
 	}
 
 	if local {
-		go pm.contractProc.ProcessContractEvent(&event)
+		//go pm.contractProc.ProcessContractEvent(&event)
 	}
 }
 
 func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
-	log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent).Num, "data", event.Event.(jury.ElectionRequestEvent).Data)
+	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent).Num, "data", event.Event.(jury.ElectionRequestEvent).Data)
 
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {

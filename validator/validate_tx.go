@@ -44,9 +44,9 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 		return TxValidationCode_INVALID_MSG
 	}
 
-	if validate.checkTxIsExist(tx) {
-		return TxValidationCode_DUPLICATE_TXID
-	}
+	//if validate.checkTxIsExist(tx) {
+	//	return TxValidationCode_DUPLICATE_TXID
+	//}
 	if !validate.validateTxFee(tx) {
 		return TxValidationCode_INVALID_FEE
 	}
@@ -142,7 +142,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 				return validateCode
 			}
 
-		case modules.APP_CONFIG:
+		//case modules.APP_CONFIG:
 		case modules.APP_DATA:
 			payload, _ := msg.Payload.(*modules.DataPayload)
 			validateCode := validate.validateDataPayload(payload)
@@ -211,10 +211,10 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 			return true
 		}
 
-	case *modules.ConfigPayload:
-		if app == modules.APP_CONFIG {
-			return true
-		}
+	//case *modules.ConfigPayload:
+	//	if app == modules.APP_CONFIG {
+	//		return true
+	//	}
 	case *modules.DataPayload:
 		if app == modules.APP_DATA {
 			return true

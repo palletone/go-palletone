@@ -34,7 +34,7 @@ import (
 	"compress/gzip"
 	"strings"
 
-	"github.com/palletone/go-palletone/common/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/internal/debug"
 )
 

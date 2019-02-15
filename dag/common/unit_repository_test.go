@@ -28,12 +28,13 @@ import (
 
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/stretchr/testify/assert"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -79,7 +80,9 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 		log.Println(err)
 	}
 
-	for k, v := range payload.ConfigSet {
+	for _, w := range payload.WriteSet {
+		k := w.Key
+		v := w.Value
 		log.Println(k, v)
 	}
 }
@@ -219,6 +222,7 @@ func TestRlpDecode(t *testing.T) {
 	encodeBytes, _ := rlp.EncodeToBytes(bytes)
 	var data []TestByte
 	rlp.DecodeBytes(encodeBytes, &data)
+	assert.Equal(t, bytes, data)
 	fmt.Printf("%q", data)
 }
 
@@ -294,7 +298,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 			UniqueId: aid,
 		},
 	}
-	payment := modules.PaymentPayload{
+	payment := &modules.PaymentPayload{
 		Inputs:   []*modules.Input{&txin},
 		Outputs:  []*modules.Output{&txout},
 		LockTime: 12,
@@ -310,23 +314,42 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	}
 	//tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
-	b, _ := rlp.EncodeToBytes(tx2)
+	t.Log("data", tx2)
+	b, _ := rlp.EncodeToBytes(&tx2)
+	t.Log("rlp", b)
 	var tx modules.Transaction
-	if err := rlp.DecodeBytes(b, &tx); err != nil {
-		fmt.Println("TestPaymentTransactionRLP error:", err.Error())
-	} else {
-		for _, msg := range tx.TxMessages {
-			if msg.App == modules.APP_PAYMENT {
-				var pl *modules.PaymentPayload
-				pl, ok := msg.Payload.(*modules.PaymentPayload)
-				if !ok {
-					fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
-				} else {
-					fmt.Println("Payment payload:", pl)
-				}
+	//if err := rlp.DecodeBytes(b, &tx); err != nil {
+	//	fmt.Println("TestPaymentTransactionRLP error:", err.Error())
+	//} else {
+	//	for _, msg := range tx.TxMessages {
+	//		if msg.App == modules.APP_PAYMENT {
+	//			var pl *modules.PaymentPayload
+	//			pl, ok := msg.Payload.(*modules.PaymentPayload)
+	//			if !ok {
+	//				fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+	//			} else {
+	//				fmt.Println("Payment payload:", pl)
+	//			}
+	//		}
+	//	}
+	//}
+	err := rlp.DecodeBytes(b, &tx)
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			var pl *modules.PaymentPayload
+			pl, ok := msg.Payload.(*modules.PaymentPayload)
+			if !ok {
+				fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
+			} else {
+				fmt.Println("Payment payload:", pl)
+				t.Log("11111111")
+				assert.Equal(t, payment, pl)
 			}
 		}
+
 	}
+	t.Log("data", tx)
+	assert.Equal(t, tx2, tx)
 
 }
 
