@@ -1301,6 +1301,10 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 						payment, ok := msg.Payload.(*modules.PaymentPayload)
 						if ok {
 							for _, input := range payment.Inputs {
+								// ignore coinbase. @yiran
+								if input.PreviousOutPoint == nil {
+									continue
+								}
 								delete(pool.outpoints, *input.PreviousOutPoint)
 							}
 							// delete outputs's utxo
