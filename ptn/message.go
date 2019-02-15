@@ -600,7 +600,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 	}
 
 	if local {
-		//go pm.contractProc.ProcessContractEvent(&event)
+		go pm.contractProc.ProcessContractEvent(&event)
 	}
 }
 
