@@ -243,7 +243,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
-	//fmt.Println("cfg.Ptn.Log.OpenModule", cfg.Ptn.Log.OpenModule)
 
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
