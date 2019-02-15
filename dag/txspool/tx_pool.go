@@ -33,7 +33,6 @@ type dag interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 }
-
 type txPoolEntry struct {
 	tx        *modules.Transaction
 	fee       int64
@@ -67,13 +66,13 @@ func (txe *txPoolEntry) getSize() int64 {
 	return size
 }
 
-type txPoolConfig struct {
+type _txPoolConfig struct {
 	version int
 }
 
 //TxPool :
-type TxPool struct {
-	config txPoolConfig
+type _TxPool struct {
+	config _txPoolConfig
 	chain  dag
 
 	mapTx     map[common.Hash]*txPoolEntry              //tx_hash  --> txPoolEntry
@@ -85,8 +84,8 @@ type TxPool struct {
 }
 
 // NewTxPool :
-func NewTxPool(config txPoolConfig, chain dag) *TxPool {
-	return &TxPool{
+func _NewTxPool(config _txPoolConfig, chain dag) *_TxPool {
+	return &_TxPool{
 		config:    config,
 		chain:     chain,
 		mapTx:     make(map[common.Hash]*txPoolEntry, 0),
@@ -96,7 +95,7 @@ func NewTxPool(config txPoolConfig, chain dag) *TxPool {
 	}
 }
 
-func (pool *TxPool) calculateAncestorsInTxPool(txEntry *txPoolEntry, limitAncestorCount int64, limitAncestorSize int64, limitDescendantCount int64, limitDescendantSize int64) (*txHashSet, error) {
+func (pool *_TxPool) calculateAncestorsInTxPool(txEntry *txPoolEntry, limitAncestorCount int64, limitAncestorSize int64, limitDescendantCount int64, limitDescendantSize int64) (*txHashSet, error) {
 	parentHashes, full := getTxParentsTxHash(txEntry.tx, true, limitAncestorCount)
 	if full {
 		return nil, errors.New("too many unconfirmed parents")
@@ -121,7 +120,7 @@ func (pool *TxPool) calculateAncestorsInTxPool(txEntry *txPoolEntry, limitAncest
 	return setAncestors, nil
 }
 
-func (pool *TxPool) addTx(tx modules.Transaction) error {
+func (pool *_TxPool) addTx(tx modules.Transaction) error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
