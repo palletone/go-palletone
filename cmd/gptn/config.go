@@ -24,7 +24,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -193,10 +192,10 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.FileExist(configPath) {
-		listenAddr := cfg.P2P.ListenAddr
-		if strings.HasPrefix(listenAddr, ":") {
-			cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
-		}
+		//listenAddr := cfg.P2P.ListenAddr
+		//if strings.HasPrefix(listenAddr, ":") {
+		//	cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
+		//}
 
 		err := makeConfigFile(&cfg, configPath)
 		if err != nil {
@@ -244,7 +243,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
-	//fmt.Println("cfg.Ptn.Log.OpenModule", cfg.Ptn.Log.OpenModule)
 
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
