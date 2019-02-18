@@ -206,6 +206,9 @@ func (validate *Validate) validateDataPayload(payload *modules.DataPayload) Vali
 	//TODO 验证maindata其它属性
 	return TxValidationCode_VALID
 }
+func (validate *Validate) CheckTxIsExist(tx *modules.Transaction) bool {
+	return validate.checkTxIsExist(tx)
+}
 func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	if len(tx.TxMessages) > 2 {
 		txHash := tx.Hash()

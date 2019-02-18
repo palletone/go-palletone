@@ -25,7 +25,7 @@ func TestSimpleSignHash(t *testing.T) {
 	t.Log("Signature is: " + hexutil.Encode(signature))
 	pubKey := crypto.FromECDSAPub(&prvKey.PublicKey)
 	//pubKey1 := prvKey.PublicKey
-	//	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+	//pubKeyBytes := crypto.CompressPubkey(&pubKey)
 	//sign := tokenengine.GenerateP2PKHUnlockScript(signature[0:64],pubKeyBytes)
 	pass := crypto.VerifySignature(pubKey, hash.Bytes(), signature[0:64])
 	if pass {
