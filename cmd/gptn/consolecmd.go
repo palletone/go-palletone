@@ -159,19 +159,13 @@ func remoteConsole(ctx *cli.Context) error {
 			endpoint = fmt.Sprintf("%s/gptn.ipc", dataPath)
 		}
 	} else {
-		//TODO load log config
+		//support abs log path
 		cfgpath := parseCfgPath(ctx, endpoint)
-
 		err := loadConfig(cfgpath, cfg)
 		if err != nil {
 			utils.Fatalf("%v", err)
 			return err
 		}
-		//adaptorConfig(cfg)
-		//utils.SetLog(ctx, &cfg.Ptn.Log)
-
-		//fmt.Println("log cfg1:", cfg.Log)
-		//fmt.Println("log cfg2:", cfg.Ptn.Log)
 	}
 
 	log.ConsoleInitLogger(cfg.Log)
@@ -185,6 +179,10 @@ func remoteConsole(ctx *cli.Context) error {
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
+	}
+	//console history file abs path
+	if endpoint != "" {
+		config.DataDir = cfg.Node.DataDir
 	}
 
 	console, err := console.New(config)
