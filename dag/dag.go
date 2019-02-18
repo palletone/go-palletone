@@ -25,11 +25,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/configure"
 
 	"github.com/palletone/go-palletone/core/node"
@@ -798,7 +798,7 @@ func (d *Dag) GetAddrTransactions(addr string) (map[string]modules.Transactions,
 }
 
 // get contract state
-func (d *Dag) GetContractState(id []byte, field string) (*modules.StateVersion, []byte) {
+func (d *Dag) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetContractState(id, field)
 	//return d.statedb.GetContractState(common.HexToAddress(id), field)
 }

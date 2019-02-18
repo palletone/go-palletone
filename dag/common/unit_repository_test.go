@@ -28,10 +28,10 @@ import (
 
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
@@ -80,7 +80,9 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 		log.Println(err)
 	}
 
-	for k, v := range payload.ConfigSet {
+	for _, w := range payload.WriteSet {
+		k := w.Key
+		v := w.Value
 		log.Println(k, v)
 	}
 }
@@ -312,9 +314,9 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	}
 	//tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
-	t.Log("data",tx2)
+	t.Log("data", tx2)
 	b, _ := rlp.EncodeToBytes(&tx2)
-	t.Log("rlp",b)
+	t.Log("rlp", b)
 	var tx modules.Transaction
 	//if err := rlp.DecodeBytes(b, &tx); err != nil {
 	//	fmt.Println("TestPaymentTransactionRLP error:", err.Error())
@@ -331,7 +333,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	//		}
 	//	}
 	//}
-	err := rlp.DecodeBytes(b,&tx)
+	err := rlp.DecodeBytes(b, &tx)
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			var pl *modules.PaymentPayload
@@ -341,13 +343,13 @@ func TestPaymentTransactionRLP(t *testing.T) {
 			} else {
 				fmt.Println("Payment payload:", pl)
 				t.Log("11111111")
-				assert.Equal(t, payment,pl)
+				assert.Equal(t, payment, pl)
 			}
 		}
 
 	}
-	t.Log("data",tx)
-	assert.Equal(t, tx2,tx)
+	t.Log("data", tx)
+	assert.Equal(t, tx2, tx)
 
 }
 

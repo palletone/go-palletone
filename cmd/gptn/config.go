@@ -24,7 +24,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -46,7 +45,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-const defaultConfigPath = "./ptn-config.toml"
+var defaultConfigPath = "./ptn-config.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
@@ -193,10 +192,10 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.FileExist(configPath) {
-		listenAddr := cfg.P2P.ListenAddr
-		if strings.HasPrefix(listenAddr, ":") {
-			cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
-		}
+		//listenAddr := cfg.P2P.ListenAddr
+		//if strings.HasPrefix(listenAddr, ":") {
+		//	cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
+		//}
 
 		err := makeConfigFile(&cfg, configPath)
 		if err != nil {
@@ -217,20 +216,14 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 }
 
 func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
-	// Load defaults.
-	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
-	//cfg := newDefaultConfig()
-
 	// Load config file.
-	var cfg FullConfig
-	var err error
-	// 2. 获取配置文件中的配置信息，并覆盖cfg中对应的配置
-	if cfg, err = maybeLoadConfig(ctx); err != nil {
+	cfg, err := maybeLoadConfig(ctx)
+	if err != nil {
 		utils.Fatalf("%v", err)
 	}
 
 	// Apply flags.
-	// 3. 将命令行中的配置参数覆盖cfg中对应的配置,
+	// 将命令行中的配置参数覆盖cfg中对应的配置,
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 	adaptorConfig(&cfg)
@@ -238,22 +231,24 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	utils.SetNodeConfig(ctx, &cfg.Node)
 
 	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
-	// 4. 通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
+	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
-	//fmt.Println("cfg.Ptn.Log.OpenModule", cfg.Ptn.Log.OpenModule)
 
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-	utils.SetContract(ctx, &cfg.Ptn.Contract)
+	utils.SetContract(ctx, &cfg.Ptn.Contract, &cfg.Contract)
 	mp.SetMediatorConfig(ctx, &cfg.Ptn.MediatorPlugin)
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 
+	//create the cfg override the old cfg
+	cfgPath := utils.SetCfgPath(ctx, defaultConfigPath)
+	makeConfigFile(&cfg, cfgPath)
 	return stack, cfg
 }
 

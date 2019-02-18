@@ -18,41 +18,34 @@
  *
  */
 
+//SysConfig来自于系统合约SysConfigContractAddress的状态数据
+
 package storage
 
 import (
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/modules"
 )
+
+//var CONF_PREFIX = append(constants.CONTRACT_STATE_PREFIX, scc.SysConfigContractAddress.Bytes()...)
 
 /**
 获取配置信息
 get config information
 */
 func (statedb *StateDb) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	key := append(constants.CONF_PREFIX, name...)
-	return retrieveWithVersion(statedb.db, key)
-
+	id := syscontract.SysConfigContractAddress.Bytes()
+	return statedb.GetContractState(id, name)
 }
 
 /**
 存储配置信息
 */
 func (statedb *StateDb) SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error {
-	for _, conf := range confs {
-
-		//log.Debugf("Try to save config key:{%s},Value:{%#x}", conf.Key, conf.Value)
-
-		key := append(constants.CONF_PREFIX, conf.Key...)
-		//key := fmt.Sprintf("%s_%s_%s", CONF_PREFIX, conf.Key, stateVersion.String())
-		err := StoreBytesWithVersion(statedb.db, key, stateVersion, conf.Value)
-		if err != nil {
-			log.Error("Save config error.")
-			return err
-		}
-	}
-	return nil
+	id := syscontract.SysConfigContractAddress.Bytes()
+	log.Debugf("Save config into contract[%x]'s statedb", id)
+	return statedb.SaveContractStates(id, confs, stateVersion)
 }
 func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
 	return &modules.AmountAsset{0, modules.NewPTNAsset()}, nil

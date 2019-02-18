@@ -120,10 +120,10 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			var payload ContractStopPayload
 			rlp.DecodeBytes(m.Data, &payload)
 			m1.Payload = &payload
-		} else if m.App == APP_CONFIG {
-			var conf ConfigPayload
-			rlp.DecodeBytes(m.Data, &conf)
-			m1.Payload = &conf
+			//} else if m.App == APP_CONFIG {
+			//	var conf ConfigPayload
+			//	rlp.DecodeBytes(m.Data, &conf)
+			//	m1.Payload = &conf
 		} else if m.App == APP_SIGNATURE {
 			var sigPayload SignaturePayload
 			rlp.DecodeBytes(m.Data, &sigPayload)
@@ -161,7 +161,7 @@ func (input *Input) DecodeRLP(s *rlp.Stream) error {
 	if err != nil {
 		return err
 	}
-	temp := &inputTemp{TxHash:common.Hash{}}
+	temp := &inputTemp{TxHash: common.Hash{}}
 	err = rlp.DecodeBytes(raw, temp)
 	if err != nil {
 		return err

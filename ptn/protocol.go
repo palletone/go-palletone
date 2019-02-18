@@ -142,6 +142,7 @@ type txPool interface {
 	DiscardTxs(hashs []common.Hash) error
 	//DiscardTx(hash common.Hash) error
 
+	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.

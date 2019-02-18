@@ -154,15 +154,6 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 }
 
 /**
-计算在过去的128个见证单元生产slots中miss的百分比，不包括当前验证单元。
-Calculate the percent of unit production slots that were missed in the past 128 units,
-not including the current unit.
-*/
-//func MediatorParticipationRate(dgp *d.DynamicGlobalProperty) float32 {
-//	return dgp.RecentSlotsFilled / 128.0
-//}
-
-/**
 @brief 获取给定的未来第slotNum个slot开始的时间。
 Get the time at which the given slot occurs.
 

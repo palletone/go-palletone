@@ -185,6 +185,7 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 
 	cfg.MediatorPlugin.EnableStaleProduction = true
 	cfg.MediatorPlugin.EnableConsecutiveProduction = true
+	cfg.MediatorPlugin.RequiredParticipation = 0
 	cfg.MediatorPlugin.Mediators = mediators
 
 	err = makeConfigFile(cfg, configPath)

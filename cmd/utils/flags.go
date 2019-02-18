@@ -38,7 +38,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 
-	//	"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -950,14 +949,27 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 	//	}
 }
 
-func SetContract(ctx *cli.Context, cfg *contractcfg.Config) {
+func SetContract(ctx *cli.Context, cfg *contractcfg.Config, cfg2 *contractcfg.Config) {
 	switch {
 	case ctx.GlobalIsSet(DataDirFlag.Name):
 		dataDir := ctx.GlobalString(DataDirFlag.Name)
+		dataDir = strings.Replace(dataDir, "palletone", "", 1)
 		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
-
-		cfg.ContractFileSystemPath = strings.Replace(path, "palletone/", "", 1)
+		cfg.ContractFileSystemPath = GetAbsDirectory(path)
+		cfg2.ContractFileSystemPath = cfg.ContractFileSystemPath
 	}
+}
+
+func SetCfgPath(ctx *cli.Context, cfgPath string) string {
+	switch {
+	case ctx.GlobalIsSet(DataDirFlag.Name):
+		dataDir := ctx.GlobalString(DataDirFlag.Name)
+		dataDir = strings.Replace(dataDir, "palletone", "", 1)
+		path := filepath.Join(dataDir, cfgPath)
+		path = GetAbsDirectory(path)
+		return path
+	}
+	return cfgPath
 }
 
 func SetLog(ctx *cli.Context, cfg *log.Config) {
@@ -980,12 +992,25 @@ func SetLog(ctx *cli.Context, cfg *log.Config) {
 	switch {
 	case ctx.GlobalIsSet(DataDirFlag.Name):
 		dataDir := ctx.GlobalString(DataDirFlag.Name)
-		output := filepath.Join(dataDir, cfg.OutputPaths[1])
-		erroutput := filepath.Join(dataDir, cfg.ErrorOutputPaths[1])
-
-		cfg.OutputPaths[1] = strings.Replace(output, "palletone/", "", 1)
-		cfg.ErrorOutputPaths[1] = strings.Replace(erroutput, "palletone/", "", 1)
+		dataDir = strings.Replace(dataDir, "/palletone", "", 1)
+		if !filepath.IsAbs(cfg.OutputPaths[1]) {
+			path := filepath.Join(dataDir, cfg.OutputPaths[1])
+			cfg.OutputPaths[1] = GetAbsDirectory(path)
+		}
+		if !filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
+			path := filepath.Join(dataDir, cfg.ErrorOutputPaths[1])
+			cfg.ErrorOutputPaths[1] = GetAbsDirectory(path)
+		}
 	}
+}
+
+func GetAbsDirectory(path string) string {
+	dir, err := filepath.Abs(path)
+	if err != nil {
+		Fatalf("GetAbsDirectory err:", err)
+		return ""
+	}
+	return strings.Replace(dir, "\\", "/", -1)
 }
 
 // SetDagConfig applies dag related command line flags to the config.

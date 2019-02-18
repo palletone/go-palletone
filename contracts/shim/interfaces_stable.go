@@ -147,22 +147,6 @@ type ChaincodeStubInterface interface {
 	//增发一种之前已经定义好的Token
 	//如果是ERC20增发，则uniqueId为空，如果是ERC721增发，则必须指定唯一的uniqueId
 	SupplyToken(assetId []byte, uniqueId []byte, amt uint64, creator string) error
-	//获取申请退保证金列表
-	GetListForCashback() ([]*modules.Cashback, error)
-	//获取申请没收保证金列表
-	GetListForForfeiture() ([]*modules.Forfeiture, error)
-	//获取保证金账户信息
-	GetDepositBalance(nodeAddr string) (*modules.DepositBalance, error)
-	//获取候选列表
-	GetCandidateList(role string) ([]string, error)
-	//获取mediator申请加入列表
-	GetBecomeMediatorApplyList() ([]*modules.MediatorRegisterInfo, error)
-	//获取同意mediator申请加入列表
-	GetAgreeForBecomeMediatorList() ([]*modules.MediatorRegisterInfo, error)
-	//获取 mediator 申请退出列表
-	GetQuitMediatorApplyList() ([]*modules.MediatorRegisterInfo, error)
-	//获取mediator 候选列表
-	GetCandidateListForMediator() ([]*modules.MediatorRegisterInfo, error)
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).

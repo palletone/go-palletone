@@ -318,7 +318,7 @@ func (d *DepositChaincode) handleForApplyQuitMediator(stub shim.ChaincodeStubInt
 }
 
 //对结果序列化并更新数据
-func (d *DepositChaincode) marshalForBalance(stub shim.ChaincodeStubInterface, nodeAddr string, balance *modules.DepositBalance) pb.Response {
+func (d *DepositChaincode) marshalForBalance(stub shim.ChaincodeStubInterface, nodeAddr string, balance *DepositBalance) pb.Response {
 	balanceByte, err := json.Marshal(balance)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -355,7 +355,7 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 	applyTimeStr := args[1]
 	isOk := args[2]
 	//获取一下该用户下的账簿情况
-	balance, err := stub.GetDepositBalance(addr)
+	balance, err := GetDepositBalance(stub,addr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -378,7 +378,7 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("Start entering applyForForfeitureDeposit func.")
 	//没收地址 数量 角色 额外说明
-	//forfeiture string, invokeTokens modules.InvokeTokens, role, extra string
+	//forfeiture string, invokeTokens InvokeTokens, role, extra string
 	if len(args) != 3 {
 		log.Error("Arg need three parameters.")
 		return shim.Error("Arg need three parameters.")
@@ -394,7 +394,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 		return shim.Error(err.Error())
 	}
 
-	forfeiture := new(modules.Forfeiture)
+	forfeiture := new(Forfeiture)
 	forfeiture.ApplyAddress = invokeAddr
 	//判断被没收时，该节点是否在相应的候选列表当中
 	isFound := isFoundInCandidateList(stub, forfeitureRole, forfeitureAddr)
@@ -423,14 +423,14 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	forfeiture.ForfeitureRole = forfeitureRole
 	forfeiture.ApplyTime = time.Now().UTC().Unix()
 	//先获取列表，再更新列表
-	listForForfeiture, err := stub.GetListForForfeiture()
+	listForForfeiture, err := GetListForForfeiture(stub)
 	if err != nil {
 		log.Error("Stub.GetListForForfeiture err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	if listForForfeiture == nil {
 		log.Info("Stub.GetListForForfeiture:list is nil.")
-		listForForfeiture = []*modules.Forfeiture{forfeiture}
+		listForForfeiture = []*Forfeiture{forfeiture}
 	} else {
 		isExist := isInForfeiturelist(forfeiture.ForfeitureAddress, listForForfeiture)
 		if isExist {
@@ -455,7 +455,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 
 func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr string) bool {
 	if strings.Compare(role, "Mediator") == 0 {
-		candidateList, err := stub.GetCandidateListForMediator()
+		candidateList, err := GetCandidateListForMediator(stub)
 		if err != nil {
 			return false
 		}
@@ -465,7 +465,7 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 		return isInMediatorInfolist(addr, candidateList)
 
 	} else if strings.Compare(role, "Jury") == 0 {
-		candidateList, err := stub.GetCandidateList("JuryList")
+		candidateList, err := GetCandidateList(stub,"JuryList")
 		if err != nil {
 			return false
 		}
@@ -474,7 +474,7 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 		}
 		return isInCandidateList(addr, candidateList)
 	} else if strings.Compare(role, "Developer") == 0 {
-		candidateList, err := stub.GetCandidateList("DeveloperList")
+		candidateList, err := GetCandidateList(stub,"DeveloperList")
 		if err != nil {
 			return false
 		}
@@ -497,7 +497,7 @@ func isInCandidateList(addr string, list []string) bool {
 }
 
 //查找节点是否在列表中
-func isInForfeiturelist(addr string, list []*modules.Forfeiture) bool {
+func isInForfeiturelist(addr string, list []*Forfeiture) bool {
 	for _, m := range list {
 		if strings.Compare(addr, m.ForfeitureAddress) == 0 {
 			return true
@@ -507,7 +507,7 @@ func isInForfeiturelist(addr string, list []*modules.Forfeiture) bool {
 }
 
 //基金会处理没收请求
-func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, applyTime int64, balance *modules.DepositBalance, check string) pb.Response {
+func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, applyTime int64, balance *DepositBalance, check string) pb.Response {
 	//check 如果为ok，则同意此申请，如果为no，则不同意此申请
 	if strings.Compare(check, "ok") == 0 {
 		return d.agreeForApplyForfeiture(stub, foundationAddr, forfeitureAddr, applyTime, balance)
@@ -523,7 +523,7 @@ func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.Chaincod
 //不同意这样没收请求，则直接从没收列表中移除该节点
 func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInterface, forfeiture string, applyTime int64) pb.Response {
 	//获取没收列表
-	listForForfeiture, err := stub.GetListForForfeiture()
+	listForForfeiture, err := GetListForForfeiture(stub)
 	if err != nil {
 		log.Error("Stub.GetListForForfeiture err:", "error", err)
 		return shim.Error(err.Error())
@@ -539,7 +539,7 @@ func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInt
 		return shim.Error("Node is not exist in the forfeiture list.")
 	}
 	//从列表中移除
-	newList, isFound := moveInApplyForForfeitureList(stub, listForForfeiture, forfeiture, applyTime)
+	newList, isFound := moveInApplyForForfeitureList(listForForfeiture, forfeiture, applyTime)
 	if !isFound {
 		log.Error("Apply time is wrong.")
 		return shim.Error("Apply time is wrong.")
@@ -560,10 +560,10 @@ func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInt
 }
 
 //同意申请没收请求
-func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, applyTime int64, balance *modules.DepositBalance) pb.Response {
+func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, applyTime int64, balance *DepositBalance) pb.Response {
 	log.Info("Start entering agreeForApplyForfeiture func.")
 	//获取列表
-	listForForfeiture, err := stub.GetListForForfeiture()
+	listForForfeiture, err := GetListForForfeiture(stub)
 	if err != nil {
 		log.Error("Stub.GetListForForfeiture err:", "error", err)
 		return shim.Error(err.Error())
@@ -579,7 +579,7 @@ func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterf
 		return shim.Error("Node is not exist in the forfeiture list.")
 	}
 	//获取节点信息
-	forfeiture := &modules.Forfeiture{}
+	forfeiture := &Forfeiture{}
 	isFound := false
 	for _, m := range listForForfeiture {
 		if m.ForfeitureAddress == forfeitureAddr && m.ApplyTime == applyTime {
@@ -593,7 +593,7 @@ func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterf
 		return shim.Error("Apply time is wrong.")
 	}
 	//在列表中移除，并获取没收情况
-	newList, _ := moveInApplyForForfeitureList(stub, listForForfeiture, forfeitureAddr, applyTime)
+	newList, _ := moveInApplyForForfeitureList(listForForfeiture, forfeitureAddr, applyTime)
 	listForForfeitureByte, err := json.Marshal(newList)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -648,7 +648,7 @@ func (d *DepositChaincode) forfeitureAllDeposit(role string, stub shim.Chaincode
 }
 
 //处理没收Mediator保证金
-func (d *DepositChaincode) handleMediatorForfeitureDeposit(foundationAddr string, forfeiture *modules.Forfeiture, balance *modules.DepositBalance, stub shim.ChaincodeStubInterface) pb.Response {
+func (d *DepositChaincode) handleMediatorForfeitureDeposit(foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance, stub shim.ChaincodeStubInterface) pb.Response {
 	var err error
 	//计算余额
 	result := balance.TotalAmount - forfeiture.ApplyTokens.Amount
@@ -668,7 +668,7 @@ func (d *DepositChaincode) handleMediatorForfeitureDeposit(foundationAddr string
 	}
 }
 
-func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.ChaincodeStubInterface, foundationAddr string, forfeiture *modules.Forfeiture, balance *modules.DepositBalance) pb.Response {
+func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.ChaincodeStubInterface, foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance) pb.Response {
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(foundationAddr, forfeiture.ApplyTokens, 0)
 	if err != nil {
@@ -699,7 +699,7 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 }
 
 //不需要移除候选列表，但是要没收一部分保证金
-func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr string, forfeiture *modules.Forfeiture, balance *modules.DepositBalance) pb.Response {
+func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance) pb.Response {
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(foundationAddr, forfeiture.ApplyTokens, 0)
 	if err != nil {
@@ -722,7 +722,7 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 	return d.marshalForBalance(stub, forfeiture.ForfeitureAddress, balance)
 }
 
-func (d *DepositChaincode) handleJuryForfeitureDeposit(foundationAddr string, forfeiture *modules.Forfeiture, balance *modules.DepositBalance, stub shim.ChaincodeStubInterface) pb.Response {
+func (d *DepositChaincode) handleJuryForfeitureDeposit(foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance, stub shim.ChaincodeStubInterface) pb.Response {
 	var err error
 	//计算余额
 	result := balance.TotalAmount - forfeiture.ApplyTokens.Amount
@@ -745,7 +745,7 @@ func (d *DepositChaincode) handleJuryForfeitureDeposit(foundationAddr string, fo
 	}
 }
 
-func (d *DepositChaincode) handleDeveloperForfeitureDeposit(foundationAddr string, forfeiture *modules.Forfeiture, balance *modules.DepositBalance, stub shim.ChaincodeStubInterface) pb.Response {
+func (d *DepositChaincode) handleDeveloperForfeitureDeposit(foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance, stub shim.ChaincodeStubInterface) pb.Response {
 	var err error
 	//计算余额
 	result := balance.TotalAmount - forfeiture.ApplyTokens.Amount

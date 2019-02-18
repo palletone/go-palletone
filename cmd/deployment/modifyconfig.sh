@@ -55,13 +55,15 @@ sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-co
 fi
 
 
+newRequiredParticipation="RequiredParticipation=0"
+sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml
+
+
 createaccount=`./createaccount.sh`
 tempinfo=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
 accountlength=35
 accounttemp=${tempinfo:0:$accountlength}
 account=`echo ${accounttemp///}`
-
-
 
 
 newAddress="Address=\"$account\""
@@ -70,8 +72,6 @@ sed -i '/^Address/c'$newAddress'' ptn-config.toml
 
 newPassword="Password=\"1\""
 sed -i '/^Password/c'$newPassword'' ptn-config.toml
-
-
 
 
 info=`./gptn mediator initdks`
@@ -97,7 +97,6 @@ sed -i '/^InitPrivKey/c'$newInitPrivKey'' ptn-config.toml
 
 newInitPubKey="InitPubKey=\"$publickey\""
 sed -i '/^InitPubKey/c'$newInitPubKey'' ptn-config.toml
-
 
 
 while :

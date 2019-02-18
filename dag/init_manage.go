@@ -195,3 +195,31 @@ func (dag *Dag) IsConsecutiveMediator(nextMediator common.Address) bool {
 
 	return false
 }
+
+// 计算最近64个生产slots的mediator参与度，不包括当前unit
+// Calculate the percent of unit production slots that were missed in the
+// past 64 units, not including the current unit.
+func (dag *Dag) MediatorParticipationRate() uint32 {
+	popCount := func(x uint64) uint8 {
+		m := []uint64{
+			0x5555555555555555,
+			0x3333333333333333,
+			0x0F0F0F0F0F0F0F0F,
+			0x00FF00FF00FF00FF,
+			0x0000FFFF0000FFFF,
+			0x00000000FFFFFFFF,
+		}
+
+		var i, w uint8
+		for i, w = 0, 1; i < 6; i, w = i+1, w+w {
+			x = (x & m[i]) + ((x >> w) & m[i])
+		}
+
+		return uint8(x)
+	}
+
+	recentSlotsFilled := dag.GetDynGlobalProp().RecentSlotsFilled
+	participationRate := core.PalletOne100Percent * int(popCount(recentSlotsFilled)) / 64
+
+	return uint32(participationRate)
+}

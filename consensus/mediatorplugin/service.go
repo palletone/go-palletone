@@ -99,6 +99,7 @@ type iDag interface {
 	LastMaintenanceTime() int64
 
 	IsConsecutiveMediator(nextMediator common.Address) bool
+	MediatorParticipationRate() uint32
 }
 
 type MediatorPlugin struct {
@@ -113,6 +114,9 @@ type MediatorPlugin struct {
 	productionEnabled bool
 	// 允许本节点的mediator可以连续生产unit
 	consecutiveProduceEnabled bool
+	// 本节点要求的mediator参与率，低于该参与率不生产unit
+	requiredParticipation uint32
+
 	// Mediator`s info controlled by this node, 本节点配置的mediator信息
 	mediators map[common.Address]*MediatorAccount
 
@@ -256,8 +260,12 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 func (mp *MediatorPlugin) unlockLocalMediators() {
 	ks := mp.ptn.GetKeyStore()
 
-	for _, medAcc := range mp.mediators {
-		ks.Unlock(accounts.Account{Address: medAcc.Address}, medAcc.Password)
+	for add, medAcc := range mp.mediators {
+		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
+		if err != nil {
+			log.Infof("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
+			delete(mp.mediators, add)
+		}
 	}
 }
 
@@ -340,7 +348,9 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 
 		productionEnabled:         cfg.EnableStaleProduction,
 		consecutiveProduceEnabled: cfg.EnableConsecutiveProduction,
-		mediators:                 msm,
+		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,
+
+		mediators: msm,
 
 		suite:         core.Suite,
 		activeDKGs:    make(map[common.Address]*dkg.DistKeyGenerator),

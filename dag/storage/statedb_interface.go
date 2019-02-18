@@ -34,6 +34,7 @@ type IStateDb interface {
 	//GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
 	SaveContract(contract *modules.Contract) error
 	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
+	SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
@@ -46,9 +47,9 @@ type IStateDb interface {
 
 	DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
-	GetContractState(id []byte, field string) (*modules.StateVersion, []byte)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
-	GetContractAllState() []*modules.ContractReadSet
+	//GetContractAllState() []*modules.ContractReadSet
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)

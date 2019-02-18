@@ -320,6 +320,10 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 
+func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool{
+	return isSystemContract(tx)
+}
+
 func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
@@ -422,6 +426,11 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 	}
 	p.locker.Unlock()
 	ctx := p.mtx[reqId]
+
+	if !isSystemContract(tx) {
+		p.ElectionRequest(reqId) //todo
+	}
+
 	if isLocalInstall {
 		if err = p.runContractReq(reqId); err != nil {
 			return nil, nil, err
