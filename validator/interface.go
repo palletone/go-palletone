@@ -35,6 +35,7 @@ type Validator interface {
 	//验证一个Header是否合法（Mediator签名有效）
 	ValidateHeader(h *modules.Header) error
 	ValidateUnitGroupSign(h *modules.Header) error
+	CheckTxIsExist(tx *modules.Transaction) bool
 }
 type IUtxoQuery interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
