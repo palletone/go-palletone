@@ -954,9 +954,11 @@ func SetContract(ctx *cli.Context, cfg *contractcfg.Config, cfg2 *contractcfg.Co
 	case ctx.GlobalIsSet(DataDirFlag.Name):
 		dataDir := ctx.GlobalString(DataDirFlag.Name)
 		dataDir = strings.Replace(dataDir, "palletone", "", 1)
-		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
-		cfg.ContractFileSystemPath = GetAbsDirectory(path)
-		cfg2.ContractFileSystemPath = cfg.ContractFileSystemPath
+		if !filepath.IsAbs(cfg.ContractFileSystemPath) {
+			path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
+			cfg.ContractFileSystemPath = GetAbsDirectory(path)
+			cfg2.ContractFileSystemPath = cfg.ContractFileSystemPath
+		}
 	}
 }
 
@@ -965,9 +967,11 @@ func SetCfgPath(ctx *cli.Context, cfgPath string) string {
 	case ctx.GlobalIsSet(DataDirFlag.Name):
 		dataDir := ctx.GlobalString(DataDirFlag.Name)
 		dataDir = strings.Replace(dataDir, "palletone", "", 1)
-		path := filepath.Join(dataDir, cfgPath)
-		path = GetAbsDirectory(path)
-		return path
+		if !filepath.IsAbs(cfgPath) {
+			path := filepath.Join(dataDir, cfgPath)
+			path = GetAbsDirectory(path)
+			return path
+		}
 	}
 	return cfgPath
 }
