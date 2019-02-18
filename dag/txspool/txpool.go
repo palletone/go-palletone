@@ -571,7 +571,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if pool.isTransactionInPool(hash) {
 		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
 	}
-
+	// 交易池不需要验证交易存不存在。
 	err := pool.txValidator.ValidateTx(tx.Tx, false)
 	return err
 	//// 交易的校验， 包括inputs校验
