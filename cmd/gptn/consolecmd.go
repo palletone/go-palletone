@@ -261,20 +261,3 @@ func ephemeralConsole(ctx *cli.Context) error {
 
 	return nil
 }
-
-/*
-func loadLogCfg(endpoint string) error {
-	endpoint = utils.GetAbsDirectory(endpoint)
-	if endpoint == "" {
-		return errors.New("endpodint abs directory is null")
-	}
-
-	//filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
-	//	path := filepath.Join(dataDir, cfg.ErrorOutputPaths[1])
-	//	cfg.ErrorOutputPaths[1] = GetAbsDirectory(path)
-	//}
-
-	//filepath.Abs
-	return nil
-}
-*/
