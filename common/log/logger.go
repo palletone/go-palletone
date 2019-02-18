@@ -69,9 +69,10 @@ func InitLogger() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
 
-func ConInitLogger() {
-
+func ConsoleInitLogger(cfg *Config) {
 	DefaultConfig.LoggerLvl = "FATAL"
+	DefaultConfig.OutputPaths = cfg.OutputPaths
+	DefaultConfig.ErrorOutputPaths = cfg.ErrorOutputPaths
 	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }

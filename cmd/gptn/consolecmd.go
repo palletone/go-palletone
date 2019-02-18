@@ -121,8 +121,8 @@ func localConsole(ctx *cli.Context) error {
 func remoteConsole(ctx *cli.Context) error {
 	// Attach to a remotely running gptn instance and start the JavaScript console
 	endpoint := ctx.Args().First()
+	cfg := &FullConfig{Node: defaultNodeConfig()}
 	if endpoint == "" {
-		cfg := &FullConfig{Node: defaultNodeConfig()}
 		configPath := getConfigPath(ctx)
 
 		// On windows we can only use plain top-level pipes
@@ -134,7 +134,6 @@ func remoteConsole(ctx *cli.Context) error {
 			}
 
 			endpoint = cfg.Node.IPCPath
-
 			if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
 				endpoint = `\\.\pipe\` + endpoint
 			}
@@ -159,7 +158,23 @@ func remoteConsole(ctx *cli.Context) error {
 			}
 			endpoint = fmt.Sprintf("%s/gptn.ipc", dataPath)
 		}
+	} else {
+		//TODO load log config
+		cfgpath := parseCfgPath(ctx, endpoint)
+
+		err := loadConfig(cfgpath, cfg)
+		if err != nil {
+			utils.Fatalf("%v", err)
+			return err
+		}
+		//adaptorConfig(cfg)
+		//utils.SetLog(ctx, &cfg.Ptn.Log)
+
+		//fmt.Println("log cfg1:", cfg.Log)
+		//fmt.Println("log cfg2:", cfg.Ptn.Log)
 	}
+
+	log.ConsoleInitLogger(cfg.Log)
 
 	client, err := dialRPC(endpoint)
 	if err != nil {
@@ -171,7 +186,7 @@ func remoteConsole(ctx *cli.Context) error {
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
 	}
-	log.ConInitLogger()
+
 	console, err := console.New(config)
 	if err != nil {
 		utils.Fatalf("Failed to start the JavaScript console: %v", err)
@@ -248,3 +263,20 @@ func ephemeralConsole(ctx *cli.Context) error {
 
 	return nil
 }
+
+/*
+func loadLogCfg(endpoint string) error {
+	endpoint = utils.GetAbsDirectory(endpoint)
+	if endpoint == "" {
+		return errors.New("endpodint abs directory is null")
+	}
+
+	//filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
+	//	path := filepath.Join(dataDir, cfg.ErrorOutputPaths[1])
+	//	cfg.ErrorOutputPaths[1] = GetAbsDirectory(path)
+	//}
+
+	//filepath.Abs
+	return nil
+}
+*/
