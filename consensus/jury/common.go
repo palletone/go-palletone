@@ -300,11 +300,19 @@ func getTxSigNum(tx *modules.Transaction) int {
 	return 0
 }
 
-func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
+func (p *Processor) checkTxIsExist(tx *modules.Transaction) bool {
 	// check tx exist
 	if p.validator.CheckTxIsExist(tx) {
 		return false
 	}
+	return true
+}
+
+func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
+	//// check tx exist
+	//if p.validator.CheckTxIsExist(tx) {
+	//	return false
+	//}
 	err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Errorf("Validate tx[%s] throw an error:%s", tx.Hash().String(), err.Error())
