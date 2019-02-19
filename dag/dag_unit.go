@@ -91,15 +91,16 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	// 1. 判断是否满足生产的若干条件
 
-	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
-	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
-	if !dag.Exists(hash) {
-		log.Debugf("Newest unit[%s] not exist in memdag, retrieve another from memdag and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
-		newestUnit := dag.Memdag.GetLastMainchainUnit()
-		if nil != newestUnit {
-			dag.propRep.SetNewestUnit(newestUnit.Header())
-		}
-	}
+	////检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
+	//hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
+	//if !dag.Exists(hash) {
+	//	log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
+	//	newestUnit := dag.Memdag.GetLastMainchainUnit()
+	//	if nil != newestUnit {
+	//		dag.propRep.SetNewestUnit(newestUnit.Header())
+	//	}
+	//}
+
 	// 2. 生产验证单元，添加交易集、时间戳、签名
 	newUnits, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {

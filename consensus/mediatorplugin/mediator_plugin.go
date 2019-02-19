@@ -137,9 +137,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
-	defer func(start time.Time) {
-		log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
-	}(time.Now())
+	//defer func(start time.Time) {
+	//	log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
+	//}(time.Now())
 
 	detail := make(map[string]string)
 	dag := mp.dag
