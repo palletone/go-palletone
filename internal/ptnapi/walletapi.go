@@ -6,15 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
-	"math/rand"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -266,16 +266,16 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, err
 	}
 	utxos := core.Utxos{}
-    dagOutpoint := []modules.OutPoint{}
+	dagOutpoint := []modules.OutPoint{}
 	ptn := modules.CoreAsset.String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
-            dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
+			dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
 		}
 	}
-    poolTxs, err := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
+	poolTxs, err := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
 	if err == nil {
 		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, proofTransactionGenParams.From)
 		if err != nil {
@@ -311,8 +311,6 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 	arg := ptnjson.NewCreateProofTransactionCmd(inputs, amounts, &proofTransactionGenParams.Locktime, proofTransactionGenParams.Proof, proofTransactionGenParams.Extra)
 	result, _ := WalletCreateProofTransaction(arg)
-	//fmt.Println(result)
-	fmt.Println(result)
 	//transaction inputs
 	serializedTx, err := decodeHexStr(result)
 	if err != nil {
@@ -345,9 +343,9 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 
 	var addr common.Address
 	var keys []string
-        from , _:= common.StringToAddress(proofTransactionGenParams.From)
+	from, _ := common.StringToAddress(proofTransactionGenParams.From)
 	PkScript := tokenengine.GenerateLockScript(from)
-	PkScriptHex :=hexutil.Encode(PkScript)
+	PkScriptHex := hexutil.Encode(PkScript)
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok == false {
@@ -363,7 +361,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			if eerr != nil {
 				return common.Hash{}, err
 			}*/
-                        TxHash := txin.PreviousOutPoint.TxHash.String()
+			TxHash := txin.PreviousOutPoint.TxHash.String()
 			OutIndex := txin.PreviousOutPoint.OutIndex
 			MessageIndex := txin.PreviousOutPoint.MessageIndex
 			input := ptnjson.RawTxInput{TxHash, OutIndex, MessageIndex, PkScriptHex, ""}
@@ -889,23 +887,23 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	for _, json := range utxoJsons {
 		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
-				MessageIndex: json.MessageIndex,
-				OutIndex: json.OutIndex,
-				Amount: json.Amount,
-				Asset: json.Asset,
-				PkScriptHex: json.PkScriptHex,
+				MessageIndex:   json.MessageIndex,
+				OutIndex:       json.OutIndex,
+				Amount:         json.Amount,
+				Asset:          json.Asset,
+				PkScriptHex:    json.PkScriptHex,
 				PkScriptString: json.PkScriptString,
-				LockTime: json.LockTime})
+				LockTime:       json.LockTime})
 		} else {
 			if json.Asset == asset {
 				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
-					MessageIndex: json.MessageIndex,
-					OutIndex: json.OutIndex,
-					Amount: json.Amount,
-					Asset: json.Asset,
-					PkScriptHex: json.PkScriptHex,
+					MessageIndex:   json.MessageIndex,
+					OutIndex:       json.OutIndex,
+					Amount:         json.Amount,
+					Asset:          json.Asset,
+					PkScriptHex:    json.PkScriptHex,
 					PkScriptString: json.PkScriptString,
-					LockTime: json.LockTime})
+					LockTime:       json.LockTime})
 			}
 		}
 	}
@@ -993,7 +991,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 }
 
 func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid string) (string, error) {
-	if len(txid)==66 {
+	if len(txid) == 66 {
 		result, err := s.getFileInfo(txid)
 		return result, err
 	}
@@ -1005,7 +1003,14 @@ func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash st
 	result, err := s.getFileInfo(filehash)
 	return result, err
 }
+//contract command
+//install
+func (s *PublicWalletAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
+	log.Info("CcInstall:" + ccname + ":" + ccpath + "_" + ccversion)
 
+	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion)
+	return hexutil.Bytes(templateId), err
+}
 func (s *PublicWalletAPI) Ccquery(ctx context.Context, deployId string, param []string) (string, error) {
 	contractId, _ := common.StringToAddress(deployId)
 	log.Info("-----Ccquery:", "contractId", contractId.String())

@@ -43,6 +43,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
+	"strings"
 )
 
 var defaultConfigPath = "./ptn-config.toml"
@@ -181,6 +182,22 @@ func getConfigPath(ctx *cli.Context) string {
 	}
 
 	return configPath
+}
+
+//On the basis of gptn.ipc endpoint full path parse to cfg path
+func parseCfgPath(ctx *cli.Context, endpoint string) string {
+	array := strings.Split(endpoint, "/")
+	if len(array) <= 2 {
+		return ""
+	}
+	index := len(array) - 2
+	cfgpath := strings.Join(array[:index], "/")
+	cfgpath += "/ptn-config.toml"
+	cfgpath, err := filepath.Abs(cfgpath)
+	if err != nil {
+		return ""
+	}
+	return cfgpath
 }
 
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
