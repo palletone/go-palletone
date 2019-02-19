@@ -141,8 +141,9 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]*sync.Map
-	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
+	toTBLSSignBuf      map[common.Address]*sync.Map
+	toTBLSRecoverBuf   map[common.Address]map[common.Hash]*sigShareSet
+	recoverBufUnitLock *sync.RWMutex
 
 	// unit 签名分片的事件订阅
 	sigShareFeed  event.Feed
@@ -370,4 +371,5 @@ func (mp *MediatorPlugin) initTBLSBuf() {
 
 	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lmc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
+	mp.recoverBufUnitLock = new(sync.RWMutex)
 }
