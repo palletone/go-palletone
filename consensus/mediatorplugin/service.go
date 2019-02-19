@@ -108,6 +108,9 @@ type MediatorPlugin struct {
 	dag  iDag
 	srvr *p2p.Server
 
+	// 标记是否主程序启动时，就开启unit生产
+	producingEnabled bool
+
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一条链时，第一个运行的节点必须设为true，否则整个链无法启动
 	// 其他节点必须设为false，否则容易导致分叉
@@ -249,7 +252,9 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	mp.unlockLocalMediators()
 
 	// 2. 开启循环生产计划
-	go mp.ScheduleProductionLoop()
+	if mp.producingEnabled {
+		go mp.ScheduleProductionLoop()
+	}
 
 	// 3. 开始完成 vss 协议
 	go mp.startVSSProtocol()
@@ -347,6 +352,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		quit: make(chan struct{}),
 		dag:  dag,
 
+		producingEnabled:          cfg.EnabledProducing,
 		productionEnabled:         cfg.EnableStaleProduction,
 		consecutiveProduceEnabled: cfg.EnableConsecutiveProduction,
 		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,

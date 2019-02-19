@@ -32,6 +32,10 @@ const (
 )
 
 var (
+	ProducingEnabledFlag = cli.BoolFlag{
+		Name:  "produce",
+		Usage: "Enable unit producing",
+	}
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "staleProduce",
 		Usage: "Enable unit production, even if the chain is stale.",
@@ -49,6 +53,9 @@ var (
 
 // config data for mediator plugin
 type Config struct {
+	// 主程序启动时，是否立即开启unit生产
+	EnabledProducing bool
+
 	// Enable Unit production, even if the chain is stale. 运行本节点开始生产unit，即使数据不是最新的
 	EnableStaleProduction bool
 
@@ -73,6 +80,7 @@ func DefaultMediatorConf() *MediatorConf {
 
 // mediator plugin default config
 var DefaultConfig = Config{
+	EnabledProducing:            true,
 	EnableStaleProduction:       false,
 	EnableConsecutiveProduction: false,
 	RequiredParticipation:       DefaultRequiredParticipation,
@@ -82,6 +90,10 @@ var DefaultConfig = Config{
 }
 
 func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
+	if ctx.GlobalIsSet(ProducingEnabledFlag.Name) {
+		cfg.EnabledProducing = true
+	}
+
 	if ctx.GlobalIsSet(StaleProductionFlag.Name) {
 		//cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
 		cfg.EnableStaleProduction = true
