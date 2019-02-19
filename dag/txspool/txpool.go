@@ -716,7 +716,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 
 	if ok, err := pool.ValidateOrphanTx(tx.Tx); err != nil {
-		log.Debug(err.Error())
+		log.Debug("validateOrphantx occurred error.", "info", err.Error())
 		return false, err
 	} else {
 		if ok {
@@ -1234,8 +1234,8 @@ func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Ha
 			}
 		}
 	} else {
-		log.Debug("get tx info by hash in orphan txpool... ", "info", tx)
 		tx = pool.orphans[hash]
+		log.Debug("get tx info by hash in orphan txpool... ", "txhash", tx.Tx.Hash(), "info", tx)
 	}
 
 	return tx, u_hash
@@ -2221,28 +2221,27 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 						if err != nil && err == errors.ErrUtxoNotFound {
 							// validate utxo in pool
 							_, has := pool.outpoints[*in.PreviousOutPoint]
-							if _, exist := pool.orphansByPrev[*in.PreviousOutPoint]; !has || !exist {
+							if _, exist := pool.orphansByPrev[*in.PreviousOutPoint]; has || exist {
 								validated = true
 								break
 							}
 						} else if err != nil && err != errors.ErrUtxoNotFound {
 							str = err.Error()
-							log.Error(str)
+							log.Info("get utxo failed.", "error", str)
 							break
 						}
-
 						if utxo != nil {
 							if utxo.IsModified() || utxo.IsSpent() {
 								str = fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalide。",
 									hash.String(), in.PreviousOutPoint.String())
-								log.Error(str)
+								log.Info(str)
 								break
 							}
 						}
 					}
 					// 验证outputs缓存的utxo
 					preout := modules.OutPoint{hash, uint32(i), uint32(j)}
-					if _, has := pool.outputs[preout]; !has {
+					if _, has := pool.outputs[preout]; has {
 						validated = true
 						break
 					}

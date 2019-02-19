@@ -24,11 +24,11 @@ import (
 	"time"
 
 	"github.com/dedis/kyber"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
@@ -85,15 +85,24 @@ type nodeInfo struct {
 	ntype int //1:default, 2:jury, 4:mediator
 }
 
+type electionList struct {
+	eleChan  chan bool
+	eleNum   int //选举jury的数量
+	seedData []byte
+	addrHash []common.Hash //common.Address将地址hash后，返回给请求节点
+	//proof     []byte      //vrf proof
+}
+
 type contractTx struct {
-	state int                    //contract run state, 0:default, 1:running
-	list  []common.Address       //dynamic
-	reqTx *modules.Transaction   //request contract
-	rstTx *modules.Transaction   //contract run result---system
-	sigTx *modules.Transaction   //contract sig result---user, 0:local, 1,2 other
-	rcvTx []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
-	tm    time.Time              //create time
-	valid bool                   //contract request valid identification
+	state   int                    //contract run state, 0:default, 1:running
+	list    []common.Address       //dynamic
+	reqTx   *modules.Transaction   //request contract
+	rstTx   *modules.Transaction   //contract run result---system
+	sigTx   *modules.Transaction   //contract sig result---user, 0:local, 1,2 other
+	rcvTx   []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
+	tm      time.Time              //create time
+	valid   bool                   //contract request valid identification
+	eleList electionList           //vrf election jury list
 }
 
 type Processor struct {
@@ -259,7 +268,10 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 		if ctx.rstTx == nil {
 			continue
 		}
-
+		if !p.checkTxIsExist(ctx.rstTx) {
+			log.Error("AddContractLoop recv event Tx is exist,", "txid", ctx.rstTx.RequestHash().String())
+			continue
+		}
 		if !p.checkTxValid(ctx.rstTx) {
 			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 			continue
@@ -320,11 +332,11 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 
-func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool{
+func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
 	return isSystemContract(tx)
 }
 
-func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
+func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/, tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
@@ -365,7 +377,6 @@ func (p *Processor) contractEventExecutable(event ContractEventType, accounts ma
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -377,7 +388,6 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
 		log.Error("addTx2LocalTxTool sig num is", num)
 		return errors.New(fmt.Sprintf("addTx2LocalTxTool tx sig num is:%d", num))
 	}
-
 	txPool := p.ptn.TxPool()
 	log.Debug("addTx2LocalTxTool", "tx:", tx.Hash().String())
 
@@ -404,7 +414,6 @@ func (p *Processor) ContractTxBroadcast(txBytes []byte) ([]byte, error) {
 	}
 	p.locker.Unlock()
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, false)
-
 	return req[:], nil
 }
 
@@ -426,11 +435,11 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 	}
 	p.locker.Unlock()
 	ctx := p.mtx[reqId]
-
 	if !isSystemContract(tx) {
-		p.ElectionRequest(reqId) //todo
+		if err = p.ElectionRequest(reqId); err != nil { //todo
+			return nil, nil, err
+		}
 	}
-
 	if isLocalInstall {
 		if err = p.runContractReq(reqId); err != nil {
 			return nil, nil, err
@@ -447,7 +456,6 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 	} else if p.contractEventExecutable(CONTRACT_EVENT_EXEC, p.local, tx) && !isSystemContract(tx) {
 		go p.runContractReq(reqId)
 	}
-
 	return reqId[:], tx, nil
 }
 

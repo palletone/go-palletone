@@ -50,14 +50,14 @@ type ContractEvent struct {
 type ElectionRequestEvent struct {
 	reqHash common.Hash
 
-	num  int
-	data []byte
+	num  int    //about the number of elections
+	data []byte //election data, input as vrf
 }
 type ElectionResultEvent struct {
 	reqHash common.Hash
 
 	addrHash  common.Hash //common.Address将地址hash后，返回给请求节点
-	proof     []byte
+	proof     []byte      //vrf proof
 	publicKey alg.PublicKey
 }
 

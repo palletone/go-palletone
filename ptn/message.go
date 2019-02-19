@@ -572,8 +572,9 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 		if err != nil {
 			log.Debug("ElectionMsg", "ProcessElectionRequestEvent error:", err)
 		}
-		//result := jury.ElectionEvent{EType: jury.ResultEvent}
-		p.SendElectionResultEvent(*result)
+		if result != nil {
+			p.SendElectionResultEvent(*result)
+		}
 	} else if event.EType == jury.ELECTION_EVENT_RESULT {
 		err := pm.contractProc.ProcessElectionResultEvent(&event)
 		if err != nil {

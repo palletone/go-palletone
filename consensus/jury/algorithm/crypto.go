@@ -30,6 +30,7 @@ import (
 
 type PublicKey struct {
 	pk ed25519.PublicKey
+	//pk ecdsa.PublicKey
 }
 
 func (pub *PublicKey) Bytes() []byte {
@@ -55,6 +56,7 @@ func (pub *PublicKey) VerifyVRF(proof, m []byte) (bool, error) {
 
 type PrivateKey struct {
 	sk ed25519.PrivateKey
+	//sk ecdsa.PrivateKey
 }
 
 func (priv *PrivateKey) PublicKey() *PublicKey {
