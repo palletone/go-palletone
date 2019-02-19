@@ -251,8 +251,8 @@ func (mp *MediatorPlugin) signUnitsTBLS(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
-	mp.recoverBufUnitLock.RLock()
-	defer mp.recoverBufUnitLock.RUnlock()
+	mp.recoverBufLock.RLock()
+	defer mp.recoverBufLock.RUnlock()
 
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -402,8 +402,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	}
 
 	localMed := newUnit.Author()
-	mp.recoverBufUnitLock.RLock()
-	defer mp.recoverBufUnitLock.RUnlock()
+	mp.recoverBufLock.RLock()
+	defer mp.recoverBufLock.RUnlock()
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -433,8 +433,8 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 }
 
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
-	mp.recoverBufUnitLock.RLock()
-	defer mp.recoverBufUnitLock.RUnlock()
+	mp.recoverBufLock.RLock()
+	defer mp.recoverBufLock.RUnlock()
 
 	// 1. 获取所有的签名分片
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
@@ -517,11 +517,10 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// 5. recover后的相关处理
 	go func() {
 		// recover后 删除buf
-		mp.recoverBufUnitLock.Lock()
-		defer mp.recoverBufUnitLock.Unlock()
+		mp.recoverBufLock.Lock()
+		defer mp.recoverBufLock.Unlock()
 		delete(mp.toTBLSRecoverBuf[localMed], unitHash)
-
-		go mp.dag.SetUnitGroupSign(unitHash, groupSig, mp.ptn.TxPool())
-		go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
 	}()
+	go mp.dag.SetUnitGroupSign(unitHash, groupSig, mp.ptn.TxPool())
+	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
 }
