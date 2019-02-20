@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
@@ -240,27 +239,25 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
 
 	// 3. 对 unit 进行群签名和广播
-	go mp.broadcastAndGroupSignUnit(scheduledMediator, newUnit)
+	go mp.groupSignUnit(scheduledMediator, unitHash)
+
+	// 4. 异步向区块链网络广播验证单元
+	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
 
 	return Produced, detail
 }
 
-func (mp *MediatorPlugin) broadcastAndGroupSignUnit(localMed common.Address, newUnit *modules.Unit) {
-	mp.recoverBufLock.Lock()
-	defer mp.recoverBufLock.Unlock()
-
+func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common.Hash) {
 	// 1. 初始化签名unit相关的签名分片的buf
+	mp.recoverBufLock.Lock()
 	aSize := mp.dag.ActiveMediatorsCount()
 	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
 	}
-	unitHash := newUnit.UnitHash
 	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
+	mp.recoverBufLock.Unlock()
 
-	// 2. 异步向区块链网络广播验证单元
-	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
-
-	// 3. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
+	// 2. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
 	go func() {
 		expiration := mp.dag.UnitIrreversibleTime()
 		deleteBuf := time.NewTimer(expiration)

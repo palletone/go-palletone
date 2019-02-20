@@ -264,8 +264,8 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 
 	//create the cfg override the old cfg
-	cfgPath := utils.SetCfgPath(ctx, defaultConfigPath)
-	makeConfigFile(&cfg, cfgPath)
+	//cfgPath := utils.SetCfgPath(ctx, defaultConfigPath)
+	//makeConfigFile(&cfg, cfgPath)
 	return stack, cfg
 }
 

@@ -34,7 +34,7 @@ const (
 var (
 	ProducingEnabledFlag = cli.BoolFlag{
 		Name:  "produce",
-		Usage: "Enable unit producing",
+		Usage: "Enable producing unit when start up node.",
 	}
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "staleProduce",
