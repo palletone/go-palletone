@@ -36,7 +36,7 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 			// 广播给其他活跃 mediator，进行验证并群签名
 			self.BroadcastNewProducedUnit(event.Unit)
 			self.BroadcastUnit(event.Unit, true)
-			self.BroadcastLightHeader(event.Unit.Header(), self.SubProtocols[0].Name)
+			//self.CorsLightHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
 		case <-self.newProducedUnitSub.Err():
 			return
