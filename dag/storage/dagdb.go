@@ -350,7 +350,7 @@ func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uin
 	entry := &modules.TxLookupEntry{}
 	err := retrieve(dagdb.db, key, entry)
 	if err != nil {
-		log.Info("get entry structure failed ===================", "error", err, "tx_entry", entry)
+		log.Info("get entry structure info:", "error", err, "tx_entry", entry)
 		return common.Hash{}, 0, 0, err
 	}
 	return entry.UnitHash, entry.UnitIndex, entry.Index, nil

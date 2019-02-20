@@ -251,6 +251,9 @@ func (mp *MediatorPlugin) signUnitsTBLS(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
+	mp.recoverBufUnitLock.RLock()
+	defer mp.recoverBufUnitLock.RUnlock()
+
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
 		log.Debugf("the mediator(%v) has no signature shares to recover group sign yet", localMed.Str())
@@ -399,6 +402,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	}
 
 	localMed := newUnit.Author()
+	mp.recoverBufUnitLock.RLock()
+	defer mp.recoverBufUnitLock.RUnlock()
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -428,6 +433,9 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 }
 
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
+	mp.recoverBufUnitLock.RLock()
+	defer mp.recoverBufUnitLock.RUnlock()
+
 	// 1. 获取所有的签名分片
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -507,8 +515,13 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		unitHash.TerminalString(), hexutil.Encode(groupSig))
 
 	// 5. recover后的相关处理
-	// recover后 删除buf
-	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
-	mp.dag.SetUnitGroupSign(unitHash, groupSig, mp.ptn.TxPool())
-	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
+	go func() {
+		// recover后 删除buf
+		mp.recoverBufUnitLock.Lock()
+		defer mp.recoverBufUnitLock.Unlock()
+		delete(mp.toTBLSRecoverBuf[localMed], unitHash)
+
+		go mp.dag.SetUnitGroupSign(unitHash, groupSig, mp.ptn.TxPool())
+		go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
+	}()
 }

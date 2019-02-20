@@ -167,6 +167,7 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	fmt.Println("Creating example genesis state in file " + genesisOut)
 
+	// 修改本节点的一些特殊配置
 	modifyConfig(ctx, mcs)
 
 	return nil
@@ -183,6 +184,7 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 		return err
 	}
 
+	// 修改本届mediator的特殊配置
 	cfg.MediatorPlugin.EnableStaleProduction = true
 	cfg.MediatorPlugin.EnableConsecutiveProduction = true
 	cfg.MediatorPlugin.RequiredParticipation = 0
