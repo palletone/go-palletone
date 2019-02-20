@@ -1302,17 +1302,18 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 	}
 	alltxs["into"] = txs
 
-	// from tx
-	txs = make(modules.Transactions, 0)
-	from_hashs, err1 := rep.idxdb.GetFromAddressTxIds(addr)
-	if err1 == nil {
-		for _, hash := range from_hashs {
-			tx, _, _, _ := rep.dagdb.GetTransaction(hash)
-			txs = append(txs, tx)
-		}
-	}
-	alltxs["out"] = txs
-	return alltxs, err1
+	// @yangyu 20 Feb, 2019. There is no SetFromAddressTxIds in project.
+	//// from tx
+	//txs = make(modules.Transactions, 0)
+	//from_hashs, err1 := rep.idxdb.GetFromAddressTxIds(addr)
+	//if err1 == nil {
+	//	for _, hash := range from_hashs {
+	//		tx, _, _, _ := rep.dagdb.GetTransaction(hash)
+	//		txs = append(txs, tx)
+	//	}
+	//}
+	//alltxs["out"] = txs
+	return alltxs, err
 }
 
 func (unitOp *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
