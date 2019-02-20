@@ -454,6 +454,36 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	return nil, fmt.Errorf("Compute fees: no payment payload")
 }
 
+//该Tx如果保存后，会产生的新的Utxo
+func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
+	result := map[OutPoint]*Utxo{}
+	txHash := tx.Hash()
+	for msgIndex, msg := range tx.TxMessages {
+		if msg.App != APP_PAYMENT {
+			continue
+		}
+		pay := msg.Payload.(*PaymentPayload)
+		txouts := pay.Outputs
+		for outIndex, txout := range txouts {
+			utxo := &Utxo{
+				Amount:   txout.Value,
+				Asset:    txout.Asset,
+				PkScript: txout.PkScript,
+				LockTime: pay.LockTime,
+			}
+
+			// write to database
+			outpoint := OutPoint{
+				TxHash:       txHash,
+				MessageIndex: uint32(msgIndex),
+				OutIndex:     uint32(outIndex),
+			}
+			result[outpoint] = utxo
+		}
+	}
+	return result
+}
+
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
 	request := &Transaction{}

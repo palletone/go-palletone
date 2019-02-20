@@ -124,7 +124,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 		return NewValidateError(UNIT_STATE_INVALID_HEADER_TXROOT)
 	}
 	// step2. check transactions in unit
-	err := validate.ValidateTransactions(&unit.Txs)
+	err := validate.ValidateTransactions(unit.Txs)
 
 	if err != nil {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)

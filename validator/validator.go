@@ -39,12 +39,34 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery) *Vali
 	return &Validate{dagquery: dagdb, utxoquery: utxoRep, statequery: statedb}
 }
 
+type newUtxoQuery struct {
+	oldUtxoQuery IUtxoQuery
+	unitUtxo     map[modules.OutPoint]*modules.Utxo
+}
+
+func (q *newUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	if utxo, ok := q.unitUtxo[*outpoint]; ok {
+		return utxo, nil
+	}
+	return q.oldUtxoQuery.GetUtxoEntry(outpoint)
+}
+func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
+	validate.utxoquery = q
+}
+
 //逐条验证每一个Tx，并返回总手续费
-func (validate *Validate) validateTransactions(txs *modules.Transactions) ValidationCode {
+func (validate *Validate) validateTransactions(txs modules.Transactions) ValidationCode {
 	fee := uint64(0)
 	needCheckCoinbase := false
+	oldUtxoQuery := validate.utxoquery
+
+	unitUtxo := map[modules.OutPoint]*modules.Utxo{}
+	newUtxoQuery := &newUtxoQuery{oldUtxoQuery: oldUtxoQuery, unitUtxo: unitUtxo}
+	validate.utxoquery = newUtxoQuery
+	defer validate.setUtxoQuery(oldUtxoQuery)
+
 	var coinbase *modules.Transaction
-	for txIndex, tx := range *txs {
+	for txIndex, tx := range txs {
 		txHash := tx.Hash()
 		if txIndex == 0 && tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 			needCheckCoinbase = true
@@ -59,8 +81,18 @@ func (validate *Validate) validateTransactions(txs *modules.Transactions) Valida
 
 			return txCode
 		}
+		//getUtxoFromUnitAndDb := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+		//	if utxo, ok := unitUtxo[*outpoint]; ok {
+		//		return utxo, nil
+		//	}
+		//	return validate.utxoquery.GetUtxoEntry(outpoint)
+		//}
+		//txFee, _ := tx.GetTxFee(getUtxoFromUnitAndDb)
 		txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 		fee += txFee.Amount
+		for outPoint, utxo := range tx.GetNewUtxos() {
+			unitUtxo[outPoint] = utxo
+		}
 	}
 	//验证第一条交易
 	if needCheckCoinbase {
@@ -82,7 +114,7 @@ func (validate *Validate) validateTransactions(txs *modules.Transactions) Valida
 check all transactions in one unit
 return all transactions' fee
 */
-func (validate *Validate) ValidateTransactions(txs *modules.Transactions) error {
+func (validate *Validate) ValidateTransactions(txs modules.Transactions) error {
 	code := validate.validateTransactions(txs)
 	return NewValidateError(code)
 	//if txs == nil || txs.Len() < 1 {
