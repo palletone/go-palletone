@@ -160,12 +160,12 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 
 func (validate *Validate) validateTxFee(tx *modules.Transaction) bool {
 	if validate.utxoquery == nil {
-		log.Warnf("Cannot validate tx fee, your validate utxoquery not set")
+		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
 		return true
 	}
 	fee, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 	if err != nil {
-		log.Warn("compute tx fee error", err.Error())
+		log.Warn("compute tx fee error: " + err.Error())
 		return false
 	}
 	minFee := &modules.AmountAsset{0, modules.NewPTNAsset()}
