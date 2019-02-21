@@ -184,8 +184,36 @@ func getConfigPath(ctx *cli.Context) string {
 	return configPath
 }
 
+func parseLogPath(endpoint string, cfg *log.Config) error {
+	endpoint, err := filepath.Abs(endpoint)
+	if err != nil {
+		return err
+	}
+	array := strings.Split(endpoint, "/")
+	if len(array) <= 2 {
+		return nil
+		//return errors.New("log parse path < 2")
+	}
+	index := len(array) - 2
+	logpath := strings.Join(array[:index], "/")
+
+	if !filepath.IsAbs(cfg.OutputPaths[1]) {
+		path := filepath.Join(logpath, cfg.OutputPaths[1])
+		cfg.OutputPaths[1] = utils.GetAbsDirectory(path)
+	}
+	if !filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
+		path := filepath.Join(logpath, cfg.ErrorOutputPaths[1])
+		cfg.ErrorOutputPaths[1] = utils.GetAbsDirectory(path)
+	}
+	return nil
+}
+
 //On the basis of gptn.ipc endpoint full path parse to cfg path
 func parseCfgPath(ctx *cli.Context, endpoint string) string {
+	endpoint, err := filepath.Abs(endpoint)
+	if err != nil {
+		return ""
+	}
 	array := strings.Split(endpoint, "/")
 	if len(array) <= 2 {
 		return ""
@@ -193,8 +221,26 @@ func parseCfgPath(ctx *cli.Context, endpoint string) string {
 	index := len(array) - 2
 	cfgpath := strings.Join(array[:index], "/")
 	cfgpath += "/ptn-config.toml"
-	cfgpath, err := filepath.Abs(cfgpath)
+	cfgpath, err1 := filepath.Abs(cfgpath)
+	if err1 != nil {
+		return ""
+	}
+	return cfgpath
+}
+
+func parseDataPath(ctx *cli.Context, endpoint string) string {
+	endpoint, err := filepath.Abs(endpoint)
 	if err != nil {
+		return ""
+	}
+	array := strings.Split(endpoint, "/")
+	if len(array) <= 1 {
+		return ""
+	}
+	index := len(array) - 1
+	cfgpath := strings.Join(array[:index], "/")
+	cfgpath, err1 := filepath.Abs(cfgpath)
+	if err1 != nil {
 		return ""
 	}
 	return cfgpath
@@ -264,8 +310,9 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 
 	//create the cfg override the old cfg
-	cfgPath := utils.SetCfgPath(ctx, defaultConfigPath)
-	makeConfigFile(&cfg, cfgPath)
+	defaultConfigPath = utils.SetCfgPath(ctx, defaultConfigPath)
+	//fmt.Println("=========================defaultConfigPath:", defaultConfigPath)
+	//makeConfigFile(&cfg, cfgPath)
 	return stack, cfg
 }
 
