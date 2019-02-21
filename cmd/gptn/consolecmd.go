@@ -100,7 +100,7 @@ func localConsole(ctx *cli.Context) error {
 
 	console, err := console.New(config)
 	if err != nil {
-		utils.Fatalf("Failed to start the JavaScript console: %v", err)
+		utils.Fatalf("Failed to start the JavaScript console1: %v", err)
 	}
 	defer console.Stop(false)
 
@@ -122,6 +122,7 @@ func remoteConsole(ctx *cli.Context) error {
 	// Attach to a remotely running gptn instance and start the JavaScript console
 	endpoint := ctx.Args().First()
 	cfg := &FullConfig{Node: defaultNodeConfig()}
+	datadir := ""
 	if endpoint == "" {
 		configPath := getConfigPath(ctx)
 
@@ -137,6 +138,7 @@ func remoteConsole(ctx *cli.Context) error {
 			if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
 				endpoint = `\\.\pipe\` + endpoint
 			}
+			datadir = cfg.Node.DataDir
 		} else {
 			dataPath := node.DefaultDataDir()
 			if ctx.GlobalIsSet(utils.DataDirFlag.Name) {
@@ -147,7 +149,6 @@ func remoteConsole(ctx *cli.Context) error {
 					utils.Fatalf("%v", err)
 					return err
 				}
-
 				dataPath = cfg.Node.DataDir
 			}
 
@@ -166,6 +167,7 @@ func remoteConsole(ctx *cli.Context) error {
 			utils.Fatalf("%v", err, "cfgpath:", cfgpath)
 			return err
 		}
+		datadir = parseDataPath(ctx, endpoint)
 	}
 
 	if err := parseLogPath(endpoint, cfg.Log); err != nil {
@@ -178,19 +180,15 @@ func remoteConsole(ctx *cli.Context) error {
 		utils.Fatalf("Unable to attach to remote gptn: %v", err)
 	}
 	config := console.Config{
-		DataDir: utils.MakeDataDir(ctx),
+		DataDir: datadir, //utils.MakeDataDir(ctx),
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
 	}
-	//console history file abs path
-	if endpoint != "" {
-		config.DataDir = parseDataPath(ctx, endpoint) //cfg.Node.DataDir
-	}
 
 	console, err := console.New(config)
 	if err != nil {
-		utils.Fatalf("Failed to start the JavaScript console: %v", err)
+		utils.Fatalf("Failed to start the JavaScript console2: %v", err)
 	}
 	defer console.Stop(false)
 
@@ -242,7 +240,7 @@ func ephemeralConsole(ctx *cli.Context) error {
 
 	console, err := console.New(config)
 	if err != nil {
-		utils.Fatalf("Failed to start the JavaScript console: %v", err)
+		utils.Fatalf("Failed to start the JavaScript console3: %v", err)
 	}
 	defer console.Stop(false)
 
