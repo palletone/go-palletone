@@ -227,6 +227,24 @@ func parseCfgPath(ctx *cli.Context, endpoint string) string {
 	return cfgpath
 }
 
+func parseDataPath(ctx *cli.Context, endpoint string) string {
+	endpoint, err := filepath.Abs(endpoint)
+	if err != nil {
+		return ""
+	}
+	array := strings.Split(endpoint, "/")
+	if len(array) <= 1 {
+		return ""
+	}
+	index := len(array) - 1
+	cfgpath := strings.Join(array[:index], "/")
+	cfgpath, err1 := filepath.Abs(cfgpath)
+	if err1 != nil {
+		return ""
+	}
+	return cfgpath
+}
+
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
 func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {

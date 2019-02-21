@@ -185,7 +185,7 @@ func remoteConsole(ctx *cli.Context) error {
 	}
 	//console history file abs path
 	if endpoint != "" {
-		config.DataDir = cfg.Node.DataDir
+		config.DataDir = parseDataPath(ctx, endpoint) //cfg.Node.DataDir
 	}
 
 	console, err := console.New(config)
