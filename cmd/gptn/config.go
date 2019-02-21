@@ -292,7 +292,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 
 	//create the cfg override the old cfg
 	defaultConfigPath = utils.SetCfgPath(ctx, defaultConfigPath)
-	fmt.Println("=========================defaultConfigPath:", defaultConfigPath)
+	//fmt.Println("=========================defaultConfigPath:", defaultConfigPath)
 	//makeConfigFile(&cfg, cfgPath)
 	return stack, cfg
 }
