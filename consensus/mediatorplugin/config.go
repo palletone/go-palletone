@@ -99,10 +99,9 @@ var DefaultConfig = Config{
 
 func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 	if ctx.GlobalIsSet(ProducingEnabledFlag.Name) {
-		cfg.EnabledProducing = true
+		cfg.EnabledProducing = ctx.GlobalBool(ProducingEnabledFlag.Name)
 	}
 	if ctx.GlobalIsSet(StaleProductionFlag.Name) {
-		//cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
 		cfg.EnableStaleProduction = true
 	}
 	if ctx.GlobalIsSet(ConsecutiveProductionFlag.Name) {
@@ -112,7 +111,7 @@ func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 		cfg.RequiredParticipation = uint32(ctx.GlobalUint(RequiredParticipationFlag.Name))
 	}
 	if ctx.GlobalIsSet(GroupSignEnabledFlag.Name) {
-		cfg.EnableGroupSigning = true
+		cfg.EnableGroupSigning = ctx.GlobalBool(GroupSignEnabledFlag.Name)
 	}
 }
 

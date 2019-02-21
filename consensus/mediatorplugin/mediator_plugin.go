@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
-		log.Info("Generated unit " + detail["Hash"] + " #" + detail["Num"] + " Parent[" + detail["ParentHash"] +
+		log.Info("Generated unit " + detail["Hash"] + " #" + detail["Num"] + " parent[" + detail["ParentHash"] +
 			"] @" + detail["Timestamp"] + " signed by " + detail["Mediator"])
 	case NotSynced:
 		log.Info("Not producing unit because production is disabled until we receive a recent unit." +
