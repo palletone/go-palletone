@@ -18,11 +18,12 @@
 package ptn
 
 import (
+	"strings"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/lps"
-	"strings"
 )
 
 func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {

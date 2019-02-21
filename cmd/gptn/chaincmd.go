@@ -23,11 +23,8 @@ import (
 	"os"
 
 	"github.com/palletone/go-palletone/cmd/utils"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -96,26 +93,6 @@ func removeDB(ctx *cli.Context) error {
 	return nil
 }
 
-func getAccountFromConf(configPath string) (account accounts.Account, passphrase string) {
-	cfg := new(FullConfig)
-
-	// 加载配置文件中的配置信息到 cfg中
-	err := loadConfig(configPath, cfg)
-	if err != nil {
-		utils.Fatalf("%v", err)
-	}
-
-	med := cfg.MediatorPlugin.Mediators[0]
-	addr, err := common.StringToAddress(med.Address)
-	if err != nil {
-		utils.Fatalf("%v", err)
-	}
-
-	account = accounts.Account{Address: addr}
-	passphrase = med.Password
-	return
-}
-
 func initGenesis(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 
@@ -146,9 +123,6 @@ func initGenesis(ctx *cli.Context) error {
 	ks := node.GetKeyStore()
 	// modify by Albert·Gou
 	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
-	// 从配置文件中获取账户和密码
-	//configPath := getConfigPath(ctx)
-	//account, password := getAccountFromConf(configPath)
 
 	err = ks.Unlock(account, password)
 	if err != nil {
@@ -187,47 +161,13 @@ func initGenesis(ctx *cli.Context) error {
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
 
-	// 2, 重写配置文件，修改当前节点的mediator的地址和密码
-	// @author Albert·Gou
-	//configPath := getConfigPath(ctx)
-	//modifyMediatorInConf(configPath, password, account.Address)
-
-	//3. initial globalproperty
+	// 初始化属性数据库
 	//modified by Yiran
 	err = dag.InitPropertyDB(genesis, unit)
 	if err != nil {
 		utils.Fatalf("Failed to InitPropertyDB: %v", err)
 		return err
 	}
-
-	return nil
-}
-
-// 重写配置文件，修改配置的的mediator的地址和密码
-// @author Albert·Gou
-func modifyMediatorInConf(configPath, password string, address common.Address) error {
-	cfg := new(FullConfig)
-
-	// 加载配置文件中的配置信息到 cfg中
-	err := loadConfig(configPath, cfg)
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	cfg.MediatorPlugin.EnableStaleProduction = true
-	cfg.MediatorPlugin.Mediators = []*mp.MediatorConf{
-		&mp.MediatorConf{address.Str(), password,
-			mp.DefaultInitPrivKey, core.DefaultInitPubKey},
-	}
-
-	err = makeConfigFile(cfg, configPath)
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	log.Debug(fmt.Sprintf("Rewriting config file at: %v", configPath))
 
 	return nil
 }
