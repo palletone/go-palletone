@@ -666,13 +666,13 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	txpool_tx.CreationDate = time.Now()
 	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
 	// 孤兒交易和非孤兒的交易費分开计算。
-	//if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
-	//	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
-	//}
-	txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
-
+	if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
+		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
+	} else {
+		// 孤兒交易的交易费暂时设置20dao, 以便计算优先级
+		txpool_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
+	}
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
-	txpool_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
 	return txpool_tx
 }
 
@@ -2215,12 +2215,12 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
-				for j, in := range payment.Inputs {
+				for _, in := range payment.Inputs {
 					if in.PreviousOutPoint != nil {
 						utxo, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
 						if err != nil && err == errors.ErrUtxoNotFound {
 							// validate utxo in pool
-							_, has := pool.outpoints[*in.PreviousOutPoint]
+							_, has := pool.outputs[*in.PreviousOutPoint]
 							if _, exist := pool.orphansByPrev[*in.PreviousOutPoint]; has || exist {
 								validated = true
 								break
@@ -2239,9 +2239,11 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 							}
 						}
 					}
-					// 验证outputs缓存的utxo
+				}
+				// 验证outputs缓存的utxo
+				for j, _ := range payment.Outputs {
 					preout := modules.OutPoint{hash, uint32(i), uint32(j)}
-					if _, has := pool.outputs[preout]; has {
+					if _, has := pool.outpoints[preout]; has {
 						validated = true
 						break
 					}

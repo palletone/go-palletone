@@ -24,10 +24,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -362,7 +362,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	for _, tx := range unit.Txs {
 		if tx.IsContractTx() {
 			if !pm.contractProc.CheckContractTxValid(tx, true) {
-				log.Debug("NewBlockMsg", "CheckContractTxValid is false")
+				log.Debug("NewBlockMsg,CheckContractTxValid is false.", "reqHash", tx.RequestHash().String())
 				return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
 			}
 		}
