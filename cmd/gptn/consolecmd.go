@@ -163,11 +163,14 @@ func remoteConsole(ctx *cli.Context) error {
 		cfgpath := parseCfgPath(ctx, endpoint)
 		err := loadConfig(cfgpath, cfg)
 		if err != nil {
-			utils.Fatalf("%v", err)
+			utils.Fatalf("%v", err, "cfgpath:", cfgpath)
 			return err
 		}
 	}
 
+	if err := parseLogPath(endpoint, cfg.Log); err != nil {
+		return err
+	}
 	log.ConsoleInitLogger(cfg.Log)
 
 	client, err := dialRPC(endpoint)
@@ -182,7 +185,7 @@ func remoteConsole(ctx *cli.Context) error {
 	}
 	//console history file abs path
 	if endpoint != "" {
-		config.DataDir = cfg.Node.DataDir
+		config.DataDir = parseDataPath(ctx, endpoint) //cfg.Node.DataDir
 	}
 
 	console, err := console.New(config)
