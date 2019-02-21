@@ -22,6 +22,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/lps"
+	"strings"
 )
 
 func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
@@ -30,12 +31,14 @@ func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
 		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
+		pm.BroadcastLightHeader(header, pm.SubProtocols[0].Name)
 	}
-	peerDrop := func(id string) {
-		log.Info("ProtocolManager peerDrop", "pid:", id)
-	}
+	//peerDrop := func(id string) {
+	//	log.Info("ProtocolManager peerDrop", "pid:", id)
+	//	pm.removeLightPeer(id)
+	//}
 	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
-		headerBroadcaster, pm.dag.InsertLightHeader, peerDrop)
+		headerBroadcaster, pm.dag.InsertLightHeader, pm.removeLightPeer)
 }
 
 func (pm *ProtocolManager) PartitionHandle(p *peer) error {
@@ -61,6 +64,7 @@ func (pm *ProtocolManager) PartitionHandle(p *peer) error {
 		log.Error("PalletOne peer registration failed", "err", err)
 		return err
 	}
+
 	defer pm.removeLightPeer(p.id)
 
 	// main loop. handle incoming messages.
@@ -119,15 +123,31 @@ func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
 		log.Info("msg.Decode", "err:", err)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
+
 	log.Debug("Enter ProtocolManager NewBlockHeaderMsg", "p.id", p.id)
 	defer log.Debug("End ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
+	p.MarkLightHeader(header.Hash())
 	pm.lightFetcher.Enqueue(p.id, header)
 	//TODO if local peer index < request peer index,should sync with the same protocal peers
 	return nil
 }
 
-//subprotocal equal ptn or not equal ptn
 func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header, subProtocolName string) {
+	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "protocal name:", subProtocolName)
+	if strings.ToLower(subProtocolName) != ProtocolName {
+		return
+	}
+	hash := header.Hash()
+	peers := pm.peers.PeersWithoutLightHeader(hash)
+	for _, peer := range peers {
+		peer.SendLightHeader(header)
+	}
+	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
+	return
+}
+
+//subprotocal equal ptn or not equal ptn
+func (pm *ProtocolManager) CorsLightHeader(header *modules.Header, subProtocolName string) {
 	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "protocal name:", subProtocolName)
 	hash := header.Hash()
 	peers := pm.lightPeers.GetPeers()

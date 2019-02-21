@@ -119,7 +119,7 @@ func initLogger() {
 			w := zapcore.AddSync(&lumberjack.Logger{
 				Filename:   filePath,
 				MaxSize:    DefaultConfig.RotationMaxSize, // megabytes
-				MaxBackups: 3,
+				MaxBackups: 60,
 				MaxAge:     DefaultConfig.RotationMaxAge, // days
 			})
 			if includeStdout {

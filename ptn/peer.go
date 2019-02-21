@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/consensus/jury"
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -79,9 +79,10 @@ type peer struct {
 
 	lock sync.RWMutex
 
-	knownTxs      *set.Set // Set of transaction hashes known to be known by this peer
-	knownBlocks   *set.Set // Set of block hashes known to be known by this peer
-	knownGroupSig *set.Set // Set of block hashes known to be known by this peer
+	knownTxs          *set.Set // Set of transaction hashes known to be known by this peer
+	knownBlocks       *set.Set // Set of block hashes known to be known by this peer
+	knownLightHeaders *set.Set
+	knownGroupSig     *set.Set // Set of block hashes known to be known by this peer
 
 	//index modules.ChainIndex
 	//mediator bool
@@ -92,14 +93,15 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 
 	id := p.ID()
 	return &peer{
-		Peer:          p,
-		rw:            rw,
-		version:       version,
-		id:            id.TerminalString(),
-		knownTxs:      set.New(),
-		knownBlocks:   set.New(),
-		knownGroupSig: set.New(),
-		peermsg:       map[modules.IDType16]peerMsg{},
+		Peer:              p,
+		rw:                rw,
+		version:           version,
+		id:                id.TerminalString(),
+		knownTxs:          set.New(),
+		knownBlocks:       set.New(),
+		knownLightHeaders: set.New(),
+		knownGroupSig:     set.New(),
+		peermsg:           map[modules.IDType16]peerMsg{},
 		//mediator:      false,
 		//transitionCh:  make(chan int, 1),
 	}
@@ -185,6 +187,14 @@ func (p *peer) MarkTransaction(hash common.Hash) {
 	p.knownTxs.Add(hash)
 }
 
+func (p *peer) MarkLightHeader(hash common.Hash) {
+	// If we reached the memory allowance, drop a previously known transaction hash
+	for p.knownLightHeaders.Size() >= maxKnownTxs {
+		p.knownLightHeaders.Pop()
+	}
+	p.knownLightHeaders.Add(hash)
+}
+
 // SendTransactions sends transactions to the peer and includes the hashes
 // in its transaction hash set for future reference.
 func (p *peer) SendTransactions(txs modules.Transactions) error {
@@ -235,6 +245,7 @@ func (p *peer) SendNewRawUnit(unit *modules.Unit, data []byte) error {
 
 // SendLightHeader propagates an entire header to a remote partition peer.
 func (p *peer) SendLightHeader(header *modules.Header) error {
+	p.knownLightHeaders.Add(header.Hash())
 	return p2p.Send(p.rw, NewBlockHeaderMsg, header)
 }
 
@@ -531,6 +542,19 @@ func (ps *peerSet) PeersWithoutUnit(hash common.Hash) []*peer {
 	list := make([]*peer, 0, len(ps.peers))
 	for _, p := range ps.peers {
 		if !p.knownBlocks.Has(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}
+
+func (ps *peerSet) PeersWithoutLightHeader(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownLightHeaders.Has(hash) {
 			list = append(list, p)
 		}
 	}
