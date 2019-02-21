@@ -108,8 +108,9 @@ type MediatorPlugin struct {
 	dag  iDag
 	srvr *p2p.Server
 
-	// 标记是否主程序启动时，就开启unit生产
+	// 标记是否主程序启动时，就开启unit生产功能
 	producingEnabled bool
+	stopProduce      chan struct{}
 
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一条链时，第一个运行的节点必须设为true，否则整个链无法启动

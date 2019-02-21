@@ -69,6 +69,8 @@ func (mp *MediatorPlugin) scheduleProductionLoop() {
 	select {
 	case <-mp.quit:
 		return
+	case <-mp.stopProduce:
+		return
 	case <-timeout.C:
 		go mp.unitProductionLoop()
 	}
