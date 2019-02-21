@@ -196,13 +196,12 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 		_, err = pm.dag.GetUnitByHash(currentUnit.ParentHash()[0])
 	}
 
-	log.Debug("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
 	if index >= pindex && pindex > 0 && err == nil {
 		atomic.StoreUint32(&pm.acceptTxs, 1)
-		log.Debug("===synchronise peer.index < local index===", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
+		log.Debug("Do not need synchronise", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
 		return
 	}
-
+	log.Debug("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
 	// Otherwise try to sync with the downloader
 	mode := downloader.FullSync
 
