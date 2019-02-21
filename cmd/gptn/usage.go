@@ -239,6 +239,7 @@ var AppHelpFlagGroups = []flagGroup{
 			mp.StaleProductionFlag,
 			mp.ConsecutiveProductionFlag,
 			mp.RequiredParticipationFlag,
+			mp.GroupSignEnabledFlag,
 		},
 	},
 	/*{

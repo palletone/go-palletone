@@ -49,6 +49,10 @@ var (
 		Usage: "Percent of mediators (0-99) that must be participating in order to produce units.",
 		Value: DefaultRequiredParticipation,
 	}
+	GroupSignEnabledFlag = cli.BoolFlag{
+		Name:  "groupSign",
+		Usage: "Enable group-signing in this node.",
+	}
 )
 
 // config data for mediator plugin
@@ -65,6 +69,9 @@ type Config struct {
 
 	// Percent of mediators (0-99) that must be participating in order to produce uints
 	RequiredParticipation uint32
+
+	// 标记本节点是否开启群签名的功能
+	EnableGroupSigning bool
 
 	Mediators []*MediatorConf // the set of mediator accounts controlled by this node
 }
@@ -84,6 +91,7 @@ var DefaultConfig = Config{
 	EnableStaleProduction:       false,
 	EnableConsecutiveProduction: false,
 	RequiredParticipation:       DefaultRequiredParticipation,
+	EnableGroupSigning:          true,
 	Mediators: []*MediatorConf{
 		DefaultMediatorConf(),
 	},
@@ -93,17 +101,18 @@ func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 	if ctx.GlobalIsSet(ProducingEnabledFlag.Name) {
 		cfg.EnabledProducing = true
 	}
-
 	if ctx.GlobalIsSet(StaleProductionFlag.Name) {
 		//cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
 		cfg.EnableStaleProduction = true
 	}
-
 	if ctx.GlobalIsSet(ConsecutiveProductionFlag.Name) {
 		cfg.EnableConsecutiveProduction = true
 	}
 	if ctx.GlobalIsSet(RequiredParticipationFlag.Name) {
 		cfg.RequiredParticipation = uint32(ctx.GlobalUint(RequiredParticipationFlag.Name))
+	}
+	if ctx.GlobalIsSet(GroupSignEnabledFlag.Name) {
+		cfg.EnableGroupSigning = true
 	}
 }
 

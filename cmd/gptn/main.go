@@ -128,6 +128,7 @@ var (
 		mp.StaleProductionFlag,
 		mp.ConsecutiveProductionFlag,
 		mp.RequiredParticipationFlag,
+		mp.GroupSignEnabledFlag,
 	}
 
 	rpcFlags = []cli.Flag{

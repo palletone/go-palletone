@@ -85,6 +85,10 @@ func (mp *MediatorPlugin) SubscribeVSSDealEvent(ch chan<- VSSDealEvent) event.Su
 }
 
 func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
+	if !mp.groupSigningEnabled {
+		return nil
+	}
+
 	dag := mp.dag
 	localMed := dag.GetActiveMediatorAddr(dealEvent.DstIndex)
 
@@ -124,6 +128,10 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 }
 
 func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
 	resp := respEvent.Resp
 	lams := mp.GetLocalActiveMediators()
 	for _, localMed := range lams {
@@ -266,6 +274,10 @@ func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
 	lams := mp.GetLocalActiveMediators()
 
 	for _, localMed := range lams {
@@ -391,6 +403,10 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 
 // 收集签名分片
 func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error {
+	if !mp.groupSigningEnabled {
+		return nil
+	}
+
 	log.Debugf("received the sign shares of the unit: %v", newUnitHash.TerminalString())
 
 	dag := mp.dag
