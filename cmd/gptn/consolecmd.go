@@ -122,7 +122,7 @@ func remoteConsole(ctx *cli.Context) error {
 	// Attach to a remotely running gptn instance and start the JavaScript console
 	endpoint := ctx.Args().First()
 	cfg := &FullConfig{Node: defaultNodeConfig()}
-	datadir := ""
+	datadir := cfg.Node.DataDir
 	if endpoint == "" {
 		configPath := getConfigPath(ctx)
 
@@ -138,7 +138,6 @@ func remoteConsole(ctx *cli.Context) error {
 			if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
 				endpoint = `\\.\pipe\` + endpoint
 			}
-			datadir = cfg.Node.DataDir
 		} else {
 			dataPath := node.DefaultDataDir()
 			if ctx.GlobalIsSet(utils.DataDirFlag.Name) {
