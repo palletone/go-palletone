@@ -191,7 +191,8 @@ func parseLogPath(endpoint string, cfg *log.Config) error {
 	}
 	array := strings.Split(endpoint, "/")
 	if len(array) <= 2 {
-		return errors.New("log parse path < 2")
+		return nil
+		//return errors.New("log parse path < 2")
 	}
 	index := len(array) - 2
 	logpath := strings.Join(array[:index], "/")
