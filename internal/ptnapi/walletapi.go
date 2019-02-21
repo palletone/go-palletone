@@ -185,17 +185,27 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 		sh := common.BytesToHash(hashforsign)
 		inputjson[index].HashForSign = sh.String()
 	}
-	PaymentJson := walletjson.PaymentJson{}
-	PaymentJson.Inputs = inputjson
-	PaymentJson.Outputs = OutputJson
-	txjson := walletjson.TxJson{}
-	txjson.Payload = append(txjson.Payload, PaymentJson)
-	bytetxjson, err := json.Marshal(txjson)
+	//PaymentJson := walletjson.PaymentJson{}
+	//PaymentJson.Inputs = inputjson
+	//PaymentJson.Outputs = OutputJson
+	//txjson := walletjson.TxJson{}
+	//txjson.Payload = append(txjson.Payload, PaymentJson)
+	/*bytetxjson, err := json.Marshal(txjson)
+	if err != nil {
+		return "", err
+	}*/
+	bytetxjson, err := json.Marshal(mtx)
 	if err != nil {
 		return "", err
 	}
-
-	return string(bytetxjson), nil
+    mtxbt, err := rlp.EncodeToBytes(bytetxjson)
+	if err != nil {
+		return "", err
+	}
+	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
+	mtxHex := hex.EncodeToString(mtxbt)
+	return mtxHex, nil
+	//return string(bytetxjson), nil
 }
 
 // walletSendTransaction will add the signed transaction to the transaction pool.
