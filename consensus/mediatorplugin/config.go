@@ -32,6 +32,10 @@ const (
 )
 
 var (
+	ProducingEnabledFlag = cli.BoolFlag{
+		Name:  "produce",
+		Usage: "Enable producing unit when start up node.",
+	}
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "staleProduce",
 		Usage: "Enable unit production, even if the chain is stale.",
@@ -45,10 +49,17 @@ var (
 		Usage: "Percent of mediators (0-99) that must be participating in order to produce units.",
 		Value: DefaultRequiredParticipation,
 	}
+	GroupSignEnabledFlag = cli.BoolFlag{
+		Name:  "groupSign",
+		Usage: "Enable group-signing in this node.",
+	}
 )
 
 // config data for mediator plugin
 type Config struct {
+	// 主程序启动时，是否立即开启unit生产
+	EnabledProducing bool
+
 	// Enable Unit production, even if the chain is stale. 运行本节点开始生产unit，即使数据不是最新的
 	EnableStaleProduction bool
 
@@ -58,6 +69,9 @@ type Config struct {
 
 	// Percent of mediators (0-99) that must be participating in order to produce uints
 	RequiredParticipation uint32
+
+	// 标记本节点是否开启群签名的功能
+	EnableGroupSigning bool
 
 	Mediators []*MediatorConf // the set of mediator accounts controlled by this node
 }
@@ -73,25 +87,31 @@ func DefaultMediatorConf() *MediatorConf {
 
 // mediator plugin default config
 var DefaultConfig = Config{
+	EnabledProducing:            true,
 	EnableStaleProduction:       false,
 	EnableConsecutiveProduction: false,
 	RequiredParticipation:       DefaultRequiredParticipation,
+	EnableGroupSigning:          true,
 	Mediators: []*MediatorConf{
 		DefaultMediatorConf(),
 	},
 }
 
 func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
+	if ctx.GlobalIsSet(ProducingEnabledFlag.Name) {
+		cfg.EnabledProducing = ctx.GlobalBool(ProducingEnabledFlag.Name)
+	}
 	if ctx.GlobalIsSet(StaleProductionFlag.Name) {
-		//cfg.EnableStaleProduction = ctx.GlobalBool(StaleProductionFlag.Name)
 		cfg.EnableStaleProduction = true
 	}
-
 	if ctx.GlobalIsSet(ConsecutiveProductionFlag.Name) {
 		cfg.EnableConsecutiveProduction = true
 	}
 	if ctx.GlobalIsSet(RequiredParticipationFlag.Name) {
 		cfg.RequiredParticipation = uint32(ctx.GlobalUint(RequiredParticipationFlag.Name))
+	}
+	if ctx.GlobalIsSet(GroupSignEnabledFlag.Name) {
+		cfg.EnableGroupSigning = ctx.GlobalBool(GroupSignEnabledFlag.Name)
 	}
 }
 

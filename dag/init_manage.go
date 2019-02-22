@@ -100,6 +100,7 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	if err := dag.propRep.StoreDynGlobalProp(dgp); err != nil {
 		return err
 	}
+	//dag.propRep.SetNewestUnit(unit.Header())
 
 	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
