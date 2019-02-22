@@ -28,6 +28,7 @@ import (
 	md "github.com/palletone/go-palletone/dag/modules"
 	"sync/atomic"
 	"time"
+	"github.com/palletone/go-palletone/common"
 )
 
 var initFlag int32
@@ -140,9 +141,10 @@ func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
-		return nil, errors.New("Contract not initialized")
+		return nil, errors.New("contract not initialized")
 	}
-	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
+	depId := common.NewAddress(deployId[:20], common.ContractHash)
+	return cc.Invoke(c.dag, chainID, depId[:], txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
@@ -153,7 +155,7 @@ func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImag
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
-		return errors.New("Contract not initialized")
+		return errors.New("contract not initialized")
 	}
 	return cc.Stop(deployId, chainID, deployId, txid, deleteImage)
 }

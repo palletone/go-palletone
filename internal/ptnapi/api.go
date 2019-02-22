@@ -641,26 +641,27 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	reqId, depId, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
 	addDepId := common.NewAddress(depId, common.ContractHash)
 	sReqId := hex.EncodeToString(reqId)
-	sDepId := hex.EncodeToString(addDepId[:])
+	sDepId := hex.EncodeToString(addDepId[:len(addDepId)-2])
 	log.Info("-----Ccdeploytx:", "reqId", sReqId, "tplId", sDepId)
-
+	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", addDepId.String())
 	rsp := &ContractDeployRsp{
 		ReqId:      sReqId,
-		ContractId: sDepId,
+		ContractId: addDepId.String(),
 	}
 	return rsp, err
 }
 
 func (s *PublicBlockChainAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
 	log.Info("---enter DepositContractInvoke---")
-	return s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
+	rsp,err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
+	return rsp.ReqId,err
 }
 func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Info("---enter DepositContractQuery---")
 	return s.Ccquery(ctx, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string) (*ContractDeployRsp, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)
@@ -673,6 +674,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
+	log.Info("-----Ccinvoketx:","param len",len(param))
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -681,8 +683,11 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 	}
 	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
 	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
-
-	return hex.EncodeToString(rsp), err
+	rsp1 := &ContractDeployRsp{
+		ReqId:      hex.EncodeToString(rsp),
+		ContractId: deployId,
+	}
+	return rsp1, err
 }
 
 func (s *PublicBlockChainAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
@@ -740,7 +745,7 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
 	fee, _ := strconv.ParseUint(daoFee, 10, 64)
-	cid := common.HexToAddress(contractId)
+	contractAddr, _ := common.StringToAddress(contractId)
 	//TODO delImg 为 true 时，目前是会删除基础镜像的
 	delImg := true
 	if del, _ := strconv.Atoi(deleteImage); del <= 0 {
@@ -750,10 +755,10 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	log.Info("-----Ccstoptx:", "toAddr", toAddr.String())
 	log.Info("-----Ccstoptx:", "amount", amount)
 	log.Info("-----Ccstoptx:", "fee", fee)
-	log.Info("-----Ccstoptx:", "contractId", cid)
+	log.Info("-----Ccstoptx:", "contractId", contractAddr)
 	log.Info("-----Ccstoptx:", "delImg", delImg)
 
-	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, cid, delImg)
+	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
 	log.Info("-----Ccstoptx:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }

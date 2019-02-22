@@ -80,7 +80,7 @@ To get contract or contract template one field
 */
 func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVersion, []byte) {
 	//key := fmt.Sprintf("%s%s^*^%s^*^", CONTRACT_TPL, hexutil.Encode(id[:]), field)
-	key := append(constants.CONTRACT_TPL, id...)
+	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	//key = append(key, []byte(modules.FIELD_SPLIT_STR)...)
 	key = append(key, []byte(field)...)
 	data := getprefix(statedb.db, []byte(key))
@@ -92,6 +92,7 @@ func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVers
 		version.SetBytes(v[:29])
 		return &version, v[29:]
 	}
+
 	return nil, nil
 }
 
