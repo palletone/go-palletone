@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 type PeerType = uint8
@@ -271,7 +272,7 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			continue
 		}
 		ctx.valid = false
-		if isSystemContract(ctx.reqTx) && p.contractEventExecutable(CONTRACT_EVENT_EXEC, p.local, ctx.reqTx) {
+		if isSystemContract(ctx.reqTx) && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
 				if p.runContractReq(ctx.reqTx.RequestHash()) != nil {
 					continue
@@ -330,7 +331,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		}
 	}
 	//检查本阶段时候有合约执行权限
-	if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, p.local, tx) {
+	if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, nil) {
 		log.Error("CheckContractTxValid", "nodeContractExecutable false")
 		return false
 	}
@@ -346,7 +347,21 @@ func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
 	return isSystemContract(tx)
 }
 
-func (p *Processor) contractEventExecutable(event ContractEventType, accounts map[common.Address]*JuryAccount /*addrs []common.Address*/ , tx *modules.Transaction) bool {
+func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
+	if len(addrHash) <= 0 {
+		return true
+	}
+	for _, hs := range addrHash {
+		for addr, _ := range p.local {
+			if hs == util.RlpHash(addr) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules.Transaction, addrHash []common.Hash) bool {
 	if tx == nil {
 		return false
 	}
@@ -354,7 +369,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, accounts ma
 	isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
 		isM = false
 		isJ = false
-		for addr, _ := range accounts {
+		for addr, _ := range p.local {
 			if p.ptn.IsLocalActiveMediator(addr) {
 				log.Debug("contractEventExecutable", "is Mediator, addr:", addr.String())
 				isM = true
@@ -365,7 +380,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, accounts ma
 			}
 		}
 		return isM, isJ
-	}(accounts)
+	}(p.local)
 
 	switch event {
 	case CONTRACT_EVENT_EXEC:
@@ -373,13 +388,21 @@ func (p *Processor) contractEventExecutable(event ContractEventType, accounts ma
 			log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Mediator, true:tx requestId", tx.RequestHash())
 			return true
 		} else if !isSysContract && isJury {
-			log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, true:tx requestId", tx.RequestHash())
-			return true
+			if p.isInLocalAddr(addrHash) {
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, true:tx requestId", tx.RequestHash())
+				return true
+			} else {
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury,not in local addr, false:tx requestId", tx.RequestHash())
+			}
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, true:tx requestId", tx.RequestHash())
-			return true
+			if p.isInLocalAddr(addrHash) {
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, true:tx requestId", tx.RequestHash())
+				return true
+			} else {
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, not in local addr,false:tx requestId", tx.RequestHash())
+			}
 		}
 	case CONTRACT_EVENT_COMMIT:
 		if isMediator {
@@ -440,7 +463,7 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 			return nil, nil, err
 		}
 		tx = ctx.rstTx
-	} else if p.contractEventExecutable(CONTRACT_EVENT_EXEC, p.local, tx) && !isSystemContract(tx) {
+	} else if p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ctx.addrHash) && !isSystemContract(tx) {
 		go p.runContractReq(reqId)
 	}
 	return reqId[:], tx, nil

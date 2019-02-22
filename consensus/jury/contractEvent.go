@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
@@ -41,7 +42,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	if !p.checkTxValid(event.Tx) {
 		return errors.New("ProcessContractEvent event Tx is invalid")
 	}
-	if !p.contractEventExecutable(event.CType, p.local, event.Tx) {
+	if !p.contractEventExecutable(event.CType, event.Tx, event.AddrHash) {
 		log.Debug("ProcessContractEvent", "contractEventExecutable is false, reqId", event.Tx.RequestHash())
 		return nil
 	}
@@ -49,16 +50,16 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 
 	switch event.CType {
 	case CONTRACT_EVENT_EXEC:
-		return p.contractExecEvent(event.Tx)
+		return p.contractExecEvent(event.Tx, event.AddrHash)
 	case CONTRACT_EVENT_SIG:
-		return p.contractSigEvent(event.Tx)
+		return p.contractSigEvent(event.Tx, event.AddrHash)
 	case CONTRACT_EVENT_COMMIT:
 		return p.contractCommitEvent(event.Tx)
 	}
 	return nil
 }
 
-func (p *Processor) contractExecEvent(tx *modules.Transaction) error {
+func (p *Processor) contractExecEvent(tx *modules.Transaction, addrHash []common.Hash) error {
 	reqId := tx.RequestHash()
 	if _, ok := p.mtx[reqId]; ok {
 		return nil
@@ -67,10 +68,11 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction) error {
 
 	p.locker.Lock()
 	p.mtx[reqId] = &contractTx{
-		reqTx: tx,
-		rstTx: nil,
-		tm:    time.Now(),
-		valid: true,
+		reqTx:    tx,
+		rstTx:    nil,
+		addrHash: addrHash,
+		tm:       time.Now(),
+		valid:    true,
 	}
 	p.locker.Unlock()
 	log.Debug("contractExecEvent", "add tx req id", reqId)
@@ -78,26 +80,27 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction) error {
 	if !isSystemContract(tx) { //系统合约在UNIT构建前执行
 		go p.runContractReq(reqId)
 	}
-
 	//broadcast contract request transaction event
 	event := &ContractEvent{
-		CType: CONTRACT_EVENT_EXEC,
-		Tx:    tx,
+		AddrHash: addrHash,
+		CType:    CONTRACT_EVENT_EXEC,
+		Tx:       tx,
 	}
 	go p.ptn.ContractBroadcast(*event, false)
 
 	return nil
 }
 
-func (p *Processor) contractSigEvent(tx *modules.Transaction) error {
+func (p *Processor) contractSigEvent(tx *modules.Transaction, addrHash []common.Hash) error {
 	reqId := tx.RequestHash()
 	if _, ok := p.mtx[reqId]; !ok {
 		log.Debug("contractSigEvent", "local not find reqId,create it", reqId.String())
 		p.locker.Lock()
 		p.mtx[reqId] = &contractTx{
-			reqTx: tx, //todo 只截取请求部分
-			tm:    time.Now(),
-			valid: true,
+			reqTx:    tx, //todo 只截取请求部分
+			addrHash: addrHash,
+			tm:       time.Now(),
+			valid:    true,
 		}
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
 		p.locker.Unlock()
