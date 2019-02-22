@@ -242,12 +242,18 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 	defer log.Debug("End ProtocolManager light synchronise", "peer id:", peer.id)
 
 	// Make sure the peer's TD is higher than our own
-	//currentUnit := pm.dag.CurrentHeader(assetId)
+	//TODO must recover
+	//currentHeader := pm.dag.CurrentHeader(assetId)
 	currentHeader := pm.dag.CurrentHeader()
-	if currentHeader == nil {
-		log.Info("light synchronise current header is nil")
-		return
-	}
+	//if currentHeader == nil {
+	//	log.Info("light synchronise current header is nil")
+	//	return
+	//}
+	//hash, number := peer.LightHead(assetId)
+	//if common.EmptyHash(hash) || (!common.EmptyHash(hash) && currentHeader.Number.Index > number.Index) {
+	//	return
+	//}
+
 	// Otherwise try to sync with the downloader
 	mode := downloader.LightSync
 
