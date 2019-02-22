@@ -3,7 +3,7 @@
 function StartGPTN()
 {
     echo ===============$1===============
-    nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml &
+    nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml >> node$1/nohup.out &
 }
 
 

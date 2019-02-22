@@ -19,13 +19,13 @@
 package jury
 
 import (
+	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
-	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
 )
 
-type ContractEventType int
-type EventType int
+type ContractEventType uint8
+type EventType uint8
 
 const (
 	CONTRACT_EVENT_EXEC   ContractEventType = 1 //合约执行，系统合约由Mediator完成，用户合约由Jury完成
@@ -40,7 +40,7 @@ const (
 
 //contract
 type ContractEvent struct {
-	Addrs []common.Address //user contract jury addr
+	AddrHash []common.Hash //user contract jury addr hash
 
 	CType ContractEventType
 	Tx    *modules.Transaction
@@ -58,7 +58,7 @@ type ElectionResultEvent struct {
 
 	addrHash  common.Hash //common.Address将地址hash后，返回给请求节点
 	proof     []byte      //vrf proof
-	publicKey alg.PublicKey
+	publicKey ecdsa.PublicKey//alg.PublicKey
 }
 
 type ElectionEvent struct {

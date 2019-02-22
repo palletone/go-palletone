@@ -242,12 +242,18 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 	defer log.Debug("End ProtocolManager light synchronise", "peer id:", peer.id)
 
 	// Make sure the peer's TD is higher than our own
-	//currentUnit := pm.dag.CurrentHeader(assetId)
+	//TODO must recover
+	//currentHeader := pm.dag.CurrentHeader(assetId)
 	currentHeader := pm.dag.CurrentHeader()
-	if currentHeader == nil {
-		log.Info("light synchronise current header is nil")
-		return
-	}
+	//if currentHeader == nil {
+	//	log.Info("light synchronise current header is nil")
+	//	return
+	//}
+	//hash, number := peer.LightHead(assetId)
+	//if common.EmptyHash(hash) || (!common.EmptyHash(hash) && currentHeader.Number.Index > number.Index) {
+	//	return
+	//}
+
 	// Otherwise try to sync with the downloader
 	mode := downloader.LightSync
 
@@ -268,3 +274,49 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
 	}
 }
+
+func (pm *ProtocolManager) getMaxNodes(headers []*modules.Header, assetId modules.IDType16) (*modules.Header, error) {
+	size := len(headers)
+	if size == 0 {
+		return nil, nil
+	}
+	if size == 1 {
+		return headers[0], nil
+	}
+
+	maxHeader := modules.Header{}
+	for _, header := range headers {
+		if assetId == header.Number.AssetID && header.Number.Index > maxHeader.Number.Index {
+			maxHeader = *header
+		}
+	}
+	return &maxHeader, nil
+}
+
+/*TODO must save
+//fmt.Println("findAncestor===")
+//fmt.Println("local=", ceil)
+//fmt.Println("remote=", height)
+//floor, ceil := uint64(0), uint64(0)
+//TODO xiaozhi
+//headers, err := d.lightdag.GetAllLeafNodes()
+//if err != nil {
+//	log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
+//	return floor, nil
+//}
+//header, err := d.getMaxNodes(headers, assetId)
+//
+//if err != nil {
+//	log.Info("===findAncestor===", "getMaxNodes err:", err)
+//	return floor, err
+//}
+////TODO xiaozhi
+
+//if header != nil {
+//	ceil = header.Number.Index
+//	log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
+//} else {
+//	ceil = 0
+//	log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
+//}
+*/
