@@ -619,6 +619,10 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 		}
 		//判断是否是保证金合约地址
 		utxo := repository.GetUxto(*payload.Inputs[0])
+		if utxo == nil {
+			log.Infof("get utxo from db by outpoint[%s] return empty", payload.Inputs[0].PreviousOutPoint.String())
+			return 0, nil
+		}
 		addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 		if addr.String() == "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM" {
 			awards := uint64(0)

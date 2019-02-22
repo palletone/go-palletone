@@ -657,6 +657,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 				for _, script := range msg.Inputs {
 					if script.PreviousOutPoint != nil {
 						txpool_tx.From = append(txpool_tx.From, script.PreviousOutPoint)
+						txpool_tx.DependOnTxs = append(txpool_tx.DependOnTxs, script.PreviousOutPoint.TxHash)
 					}
 				}
 			}
@@ -1998,8 +1999,61 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		}
 
 	}(validated_txs)
-
+	list = SortTxsByDependence(list)
 	return list, total
+}
+
+//如果Tx之间存在依赖关系，则必须把被依赖的放在前面
+func SortTxsByDependence(txs []*modules.TxPoolTransaction) []*modules.TxPoolTransaction {
+	txIds := map[common.Hash]*modules.TxPoolTransaction{}
+	for _, tx := range txs {
+		txIds[tx.Tx.Hash()] = tx
+	}
+	dependOnOthers := []*modules.TxPoolTransaction{}
+	noDepend := []*modules.TxPoolTransaction{}
+	for _, tx := range txs {
+		depend := false
+		for _, hash := range tx.DependOnTxs {
+			if _, ok := txIds[hash]; ok {
+				dependOnOthers = append(dependOnOthers, tx)
+				depend = true
+				break
+			}
+		}
+		if !depend {
+			noDepend = append(noDepend, tx)
+		}
+	}
+	if len(dependOnOthers) == 0 {
+		return txs
+	}
+	result, _ := sortTxsByDependence(noDepend, dependOnOthers)
+	return result
+}
+
+//第一个参数是已排序部分，第二个参数是未排序部分
+func sortTxsByDependence(tx1s []*modules.TxPoolTransaction, tx2s []*modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, []*modules.TxPoolTransaction) {
+	if len(tx2s) == 0 {
+		return tx1s, tx2s
+	}
+	newTx2s := []*modules.TxPoolTransaction{}
+	for _, tx2 := range tx2s {
+		depend := false
+		for _, dependHash := range tx2.DependOnTxs {
+			for _, tx22 := range tx2s {
+				if tx22.Tx.Hash() == dependHash {
+					//还存在依赖关系，不加入tx1s
+					depend = true
+				}
+			}
+		}
+		if !depend {
+			tx1s = append(tx1s, tx2)
+		} else {
+			newTx2s = append(newTx2s, tx2)
+		}
+	}
+	return sortTxsByDependence(tx1s, newTx2s)
 }
 
 type orList []*modules.TxPoolTransaction
