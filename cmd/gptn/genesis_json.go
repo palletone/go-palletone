@@ -185,9 +185,11 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	}
 
 	// 修改本届mediator的特殊配置
+	cfg.MediatorPlugin.EnabledProducing = true
 	cfg.MediatorPlugin.EnableStaleProduction = true
 	cfg.MediatorPlugin.EnableConsecutiveProduction = true
 	cfg.MediatorPlugin.RequiredParticipation = 0
+	cfg.MediatorPlugin.EnableGroupSigning = true
 	cfg.MediatorPlugin.Mediators = mediators
 
 	err = makeConfigFile(cfg, configPath)

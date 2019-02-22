@@ -124,9 +124,11 @@ var (
 		ConfigFileFlag,
 		GenesisJsonPathFlag,
 		GenesisTimestampFlag,
+		mp.ProducingEnabledFlag,
 		mp.StaleProductionFlag,
 		mp.ConsecutiveProductionFlag,
 		mp.RequiredParticipationFlag,
+		mp.GroupSignEnabledFlag,
 	}
 
 	rpcFlags = []cli.Flag{

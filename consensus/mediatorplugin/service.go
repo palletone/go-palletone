@@ -108,14 +108,20 @@ type MediatorPlugin struct {
 	dag  iDag
 	srvr *p2p.Server
 
+	// 标记是否主程序启动时，就开启unit生产
+	producingEnabled bool
+
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一条链时，第一个运行的节点必须设为true，否则整个链无法启动
 	// 其他节点必须设为false，否则容易导致分叉
 	productionEnabled bool
+
 	// 允许本节点的mediator可以连续生产unit
 	consecutiveProduceEnabled bool
 	// 本节点要求的mediator参与率，低于该参与率不生产unit
 	requiredParticipation uint32
+	// 群签名功能开启标记
+	groupSigningEnabled bool
 
 	// Mediator`s info controlled by this node, 本节点配置的mediator信息
 	mediators map[common.Address]*MediatorAccount
@@ -141,9 +147,9 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf      map[common.Address]*sync.Map
-	toTBLSRecoverBuf   map[common.Address]map[common.Hash]*sigShareSet
-	recoverBufUnitLock *sync.RWMutex
+	toTBLSSignBuf    map[common.Address]*sync.Map
+	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
+	recoverBufLock   *sync.RWMutex
 
 	// unit 签名分片的事件订阅
 	sigShareFeed  event.Feed
@@ -249,10 +255,14 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	mp.unlockLocalMediators()
 
 	// 2. 开启循环生产计划
-	go mp.ScheduleProductionLoop()
+	if mp.producingEnabled {
+		go mp.ScheduleProductionLoop()
+	}
 
 	// 3. 开始完成 vss 协议
-	go mp.startVSSProtocol()
+	if mp.groupSigningEnabled {
+		go mp.startVSSProtocol()
+	}
 
 	log.Debug("mediator plugin startup end")
 	return nil
@@ -271,6 +281,10 @@ func (mp *MediatorPlugin) unlockLocalMediators() {
 }
 
 func (mp *MediatorPlugin) UpdateMediatorsDKG() {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
 	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
 	mp.switchMediatorsDKG()
 
@@ -347,9 +361,11 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		quit: make(chan struct{}),
 		dag:  dag,
 
+		producingEnabled:          cfg.EnabledProducing,
 		productionEnabled:         cfg.EnableStaleProduction,
 		consecutiveProduceEnabled: cfg.EnableConsecutiveProduction,
 		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,
+		groupSigningEnabled:       cfg.EnableGroupSigning,
 
 		mediators: msm,
 
@@ -358,8 +374,10 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		precedingDKGs: make(map[common.Address]*dkg.DistKeyGenerator),
 	}
 
-	mp.newActiveMediatorsDKG()
-	mp.initTBLSBuf()
+	if mp.groupSigningEnabled {
+		mp.newActiveMediatorsDKG()
+		mp.initTBLSBuf()
+	}
 
 	log.Debug("mediator plugin initialize end")
 	return &mp, nil
@@ -371,5 +389,5 @@ func (mp *MediatorPlugin) initTBLSBuf() {
 
 	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lmc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
-	mp.recoverBufUnitLock = new(sync.RWMutex)
+	mp.recoverBufLock = new(sync.RWMutex)
 }
