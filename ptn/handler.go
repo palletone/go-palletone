@@ -69,6 +69,8 @@ type ProtocolManager struct {
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
 
+	lightSync uint32 //Flag whether light sync is enabled
+
 	txpool   txPool
 	maxPeers int
 
@@ -76,8 +78,9 @@ type ProtocolManager struct {
 	fetcher    *fetcher.Fetcher
 	peers      *peerSet
 
-	lightFetcher *lps.LightFetcher
-	lightPeers   *peerSet
+	lightdownloader *downloader.Downloader
+	lightFetcher    *lps.LightFetcher
+	lightPeers      *peerSet
 
 	SubProtocols []p2p.Protocol
 
@@ -149,6 +152,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		genesis:      genesis,
 		producer:     producer,
 		contractProc: contractProc,
+		lightSync:    uint32(1),
 	}
 
 	// Figure out whether to allow fast sync or not
@@ -205,6 +209,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 	// Construct the different synchronisation mechanisms
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
 	manager.fetcher = manager.newFetcher()
+
+	manager.lightdownloader = downloader.New(downloader.LightSync, manager.eventMux, nil, nil, dag, txpool)
 	manager.lightFetcher = manager.newLightFetcher()
 	return manager, nil
 }
@@ -248,6 +254,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 
 	// Unregister the peer from the downloader and PalletOne peer set
 	pm.downloader.UnregisterPeer(id)
+	pm.lightdownloader.UnregisterPeer(id)
 	if err := pm.peers.Unregister(id); err != nil {
 		log.Error("Peer removal failed", "peer", id, "err", err)
 	}
@@ -398,6 +405,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
 	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
+		return err
+	}
+
+	if err := pm.lightdownloader.RegisterLightPeer(p.id, p.version, p); err != nil {
 		return err
 	}
 

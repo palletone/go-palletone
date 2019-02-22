@@ -381,6 +381,9 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
+	for _, tx := range poolTxs {
+		log.Debugf("try to generate unit include txs[%s]", tx.Tx.Hash().String())
+	}
 
 	// step5. compute minner income: transaction fees + interest
 	fees, err := rep.utxoRepository.ComputeFees(poolTxs)

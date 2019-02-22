@@ -104,6 +104,8 @@ type TxPoolTransaction struct {
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time
+	//该Tx依赖于哪些TxId作为先决条件
+	DependOnTxs []common.Hash
 }
 
 //// EncodeRLP implements rlp.Encoder

@@ -18,12 +18,15 @@
 package ptn
 
 import (
+	"errors"
 	"strings"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/lps"
+	"sync/atomic"
 )
 
 func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
@@ -34,12 +37,17 @@ func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
 		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
 		pm.BroadcastLightHeader(header, pm.SubProtocols[0].Name)
 	}
-	//peerDrop := func(id string) {
-	//	log.Info("ProtocolManager peerDrop", "pid:", id)
-	//	pm.removeLightPeer(id)
-	//}
+	inserter := func(headers []*modules.Header) (int, error) {
+		// If fast sync is running, deny importing weird blocks
+		if atomic.LoadUint32(&pm.lightSync) == 1 {
+			log.Warn("Discarded lighting sync propagated block", "number", headers[0].Number.Index, "hash", headers[0].Hash())
+			return 0, errors.New("fasting sync")
+		}
+		log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		return pm.dag.InsertLightHeader(headers)
+	}
 	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
-		headerBroadcaster, pm.dag.InsertLightHeader, pm.removeLightPeer)
+		headerBroadcaster, inserter, pm.removeLightPeer)
 }
 
 func (pm *ProtocolManager) PartitionHandle(p *peer) error {
@@ -129,6 +137,16 @@ func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
 	defer log.Debug("End ProtocolManager NewBlockHeaderMsg", "p.id", p.id, "header:", *header)
 	p.MarkLightHeader(header.Hash())
 	pm.lightFetcher.Enqueue(p.id, header)
+
+	hash, number := p.LightHead(header.Number.AssetID)
+	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && header.Number.Index > number.Index) {
+		p.SetLightHead(hash, number)
+		//TODO GetCurrentHeader(assetid)
+		headerIndex := 0
+		if number.Index-1 > uint64(headerIndex) {
+			//TODO active sync
+		}
+	}
 	//TODO if local peer index < request peer index,should sync with the same protocal peers
 	return nil
 }

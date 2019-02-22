@@ -119,8 +119,6 @@ func (w *lightPeerWrapper) RequestNodeData([]common.Hash) error {
 func (w *lightPeerWrapper) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	return w.peer.RequestDagHeadersByHash(origin, amount, skip, reverse)
 }
-
-//RequestLeafNodes: dag all leaf nodes
 func (w *lightPeerWrapper) RequestLeafNodes() error {
 	return w.peer.RequestLeafNodes()
 }

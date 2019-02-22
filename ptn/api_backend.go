@@ -486,10 +486,6 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	return depid, err
 }
 
-//func (b *PtnApiBackend) ContractInvoke(txBytes []byte) ([]byte, error) {
-//	return b.ptn.contractPorcessor.ContractTxBroadcast(txBytes)
-//}
-
 func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 

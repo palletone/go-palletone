@@ -597,7 +597,9 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
 
 	for _, peer := range peers {
-		peer.SendContractTransaction(event)
+		if err := peer.SendContractTransaction(event); err != nil {
+			log.Error("ProtocolManager ContractBroadcast", "SendContractTransaction err:", err.Error())
+		}
 	}
 
 	if local {

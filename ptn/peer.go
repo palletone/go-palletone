@@ -76,17 +76,15 @@ type peer struct {
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
 	peermsg map[modules.IDType16]peerMsg
+	lock    sync.RWMutex
 
-	lock sync.RWMutex
+	lightpeermsg map[modules.IDType16]peerMsg
+	lightlock    sync.RWMutex
 
 	knownTxs          *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks       *set.Set // Set of block hashes known to be known by this peer
 	knownLightHeaders *set.Set
 	knownGroupSig     *set.Set // Set of block hashes known to be known by this peer
-
-	//index modules.ChainIndex
-	//mediator bool
-	//transitionCh chan int
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -102,8 +100,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownLightHeaders: set.New(),
 		knownGroupSig:     set.New(),
 		peermsg:           map[modules.IDType16]peerMsg{},
-		//mediator:      false,
-		//transitionCh:  make(chan int, 1),
+		lightpeermsg:      map[modules.IDType16]peerMsg{},
 	}
 }
 
@@ -155,6 +152,31 @@ func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
 		msg.number = number
 	}
 	p.peermsg[number.AssetID] = msg
+}
+
+func (p *peer) LightHead(assetID modules.IDType16) (hash common.Hash, number *modules.ChainIndex) {
+	p.lightlock.RLock()
+	defer p.lightlock.RUnlock()
+
+	msg, ok := p.lightpeermsg[assetID]
+	if ok {
+		copy(hash[:], msg.head[:])
+		number = msg.number
+	}
+	return hash, number
+}
+
+func (p *peer) SetLightHead(hash common.Hash, number *modules.ChainIndex) {
+	p.lightlock.Lock()
+	defer p.lightlock.Unlock()
+
+	msg, ok := p.lightpeermsg[number.AssetID]
+
+	if (ok && number.Index > msg.number.Index) || !ok {
+		copy(msg.head[:], hash[:])
+		msg.number = number
+	}
+	p.lightpeermsg[number.AssetID] = msg
 }
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
@@ -292,17 +314,6 @@ func (p *peer) RequestOneHeader(hash common.Hash) error {
 // specified header query, based on the hash of an origin block.
 func (p *peer) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	//headerData := getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse}
-	//data, err := rlp.EncodeToBytes(headerData)
-	//if err != nil {
-	//	log.Error("RequestHeadersByHash", "rlp.EncodeToBytes err:", err.Error())
-	//}
-	//
-	//var query getBlockHeadersData
-	//if err := rlp.DecodeBytes(data, &query); err != nil {
-	//	log.Error("RequestHeadersByHash", "rlp.DecodeBytes err:", err.Error())
-	//}
-
 	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
@@ -420,10 +431,7 @@ func (p *peer) String() string {
 // peerSet represents the collection of active peers currently participating in
 // the PalletOne sub-protocol.
 type peerSet struct {
-	peers map[string]*peer
-	//knownVss     *set.Set
-	//knownVssResp *set.Set
-	//mediators    *set.Set
+	peers  map[string]*peer
 	lock   sync.RWMutex
 	closed bool
 }
@@ -432,61 +440,8 @@ type peerSet struct {
 func newPeerSet() *peerSet {
 	return &peerSet{
 		peers: make(map[string]*peer),
-		//knownVss:     set.New(),
-		//knownVssResp: set.New(),
-		//mediators:    set.New(),
 	}
 }
-
-//func (ps *peerSet) MediatorsAllConnected() int {
-//	return 0
-//}
-
-//func (ps *peerSet) MediatorsSize() int {
-//	ps.lock.Lock()
-//	defer ps.lock.Unlock()
-//	return ps.mediators.Size()
-//}
-
-//func (ps *peerSet) MediatorsReset(nodes []string) {
-//	ps.lock.Lock()
-//	defer ps.lock.Unlock()
-//	ps.mediators.Clear()
-//	for _, node := range nodes {
-//		ps.mediators.Add(node)
-//	}
-//}
-
-//func (ps *peerSet) MediatorsClean() {
-//	ps.lock.Lock()
-//	defer ps.lock.Unlock()
-//	ps.mediators.Clear()
-//}
-
-//Make sure there is plenty of connection for Mediator
-//func (ps *peerSet) noMediatorCheck(maxPeers int, mediators int) bool {
-//	ps.lock.RLock()
-//	defer ps.lock.RUnlock()
-//
-//	size := 0
-//	for _, p := range ps.peers {
-//		if !p.mediator {
-//			size++
-//		}
-//	}
-//	if size > maxPeers-mediators {
-//		return false
-//	}
-//	return true
-//}
-
-//Make sure there is plenty of connection for Mediator
-//func (ps *peerSet) MediatorCheck() bool {
-//	ps.lock.RLock()
-//	defer ps.lock.RUnlock()
-//	ps.mediators.Size()
-//	return true
-//}
 
 // Register injects a new peer into the working set, or returns an error if the
 // peer is already known.
@@ -589,46 +544,6 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 	}
 	return list
 }
-
-// PeersWithoutVss retrieves a list of peers that do not have a given transaction
-// in their set of known hashes.
-//func (ps *peerSet) PeersWithoutVss(nodeId string) bool {
-//	ps.lock.RLock()
-//	defer ps.lock.RUnlock()
-//
-//	return ps.knownVss.Has(nodeId)
-//}
-
-// MarkVss marks a block as known for the peer, ensuring that the block will
-// never be propagated to this particular peer.
-//func (ps *peerSet) MarkVss(nodeId string) {
-//	ps.lock.RLock()
-//	defer ps.lock.RUnlock()
-//	// If we reached the memory allowance, drop a previously known block hash
-//	for ps.knownVss.Size() >= maxKnownVsss {
-//		ps.knownVss.Pop()
-//	}
-//	ps.knownVss.Add(nodeId)
-//}
-
-// PeersWithoutVssResp retrieves a list of peers that do not have a given transaction
-// in their set of known hashes.
-//func (ps *peerSet) PeersWithoutVssResp(nodeId string) bool {
-//	ps.lock.RLock()
-//	defer ps.lock.RUnlock()
-//
-//	return ps.knownVssResp.Has(nodeId)
-//}
-
-// MarkVssResp marks a block as known for the peer, ensuring that the block will
-// never be propagated to this particular peer.
-//func (ps *peerSet) MarkVssResp(nodeId string) {
-//	// If we reached the memory allowance, drop a previously known block hash
-//	for ps.knownVssResp.Size() >= maxKnownVsss {
-//		ps.knownVssResp.Pop()
-//	}
-//	ps.knownVssResp.Add(nodeId)
-//}
 
 // BestPeer retrieves the known peer with the currently highest total difficulty.
 func (ps *peerSet) BestPeer(assetId modules.IDType16) *peer {
