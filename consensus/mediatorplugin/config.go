@@ -58,7 +58,7 @@ var (
 // config data for mediator plugin
 type Config struct {
 	// 主程序启动时，是否立即开启unit生产
-	EnabledProducing bool
+	EnableProducing bool
 
 	// Enable Unit production, even if the chain is stale. 运行本节点开始生产unit，即使数据不是最新的
 	EnableStaleProduction bool
@@ -87,7 +87,7 @@ func DefaultMediatorConf() *MediatorConf {
 
 // mediator plugin default config
 var DefaultConfig = Config{
-	EnabledProducing:            false,
+	EnableProducing:             false,
 	EnableStaleProduction:       false,
 	EnableConsecutiveProduction: false,
 	RequiredParticipation:       DefaultRequiredParticipation,
@@ -99,7 +99,7 @@ var DefaultConfig = Config{
 
 func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 	if ctx.GlobalIsSet(ProducingEnabledFlag.Name) {
-		cfg.EnabledProducing = ctx.GlobalBool(ProducingEnabledFlag.Name)
+		cfg.EnableProducing = ctx.GlobalBool(ProducingEnabledFlag.Name)
 	}
 	if ctx.GlobalIsSet(StaleProductionFlag.Name) {
 		cfg.EnableStaleProduction = true

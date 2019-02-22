@@ -69,6 +69,8 @@ type ProtocolManager struct {
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
 
+	lightSync uint32 //Flag whether light sync is enabled
+
 	txpool   txPool
 	maxPeers int
 
@@ -150,6 +152,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		genesis:      genesis,
 		producer:     producer,
 		contractProc: contractProc,
+		lightSync:    uint32(1),
 	}
 
 	// Figure out whether to allow fast sync or not
