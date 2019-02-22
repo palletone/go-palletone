@@ -314,17 +314,6 @@ func (p *peer) RequestOneHeader(hash common.Hash) error {
 // specified header query, based on the hash of an origin block.
 func (p *peer) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	//headerData := getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse}
-	//data, err := rlp.EncodeToBytes(headerData)
-	//if err != nil {
-	//	log.Error("RequestHeadersByHash", "rlp.EncodeToBytes err:", err.Error())
-	//}
-	//
-	//var query getBlockHeadersData
-	//if err := rlp.DecodeBytes(data, &query); err != nil {
-	//	log.Error("RequestHeadersByHash", "rlp.DecodeBytes err:", err.Error())
-	//}
-
 	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
