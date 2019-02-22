@@ -1312,7 +1312,8 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 							for j := range payment.Outputs {
 								preout.MessageIndex = uint32(i)
 								preout.OutIndex = uint32(j)
-								delete(pool.outputs, preout)
+								//delete(pool.outputs, preout)
+								pool.deleteOrphanTxOutputs(preout)
 							}
 						}
 					}
@@ -1374,7 +1375,8 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 				for j := range payment.Outputs {
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
-					delete(pool.outputs, preout)
+					//delete(pool.outputs, preout)
+					pool.deleteOrphanTxOutputs(preout)
 				}
 			}
 		}
@@ -1895,7 +1897,8 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 							for j := range payment.Outputs {
 								preout.MessageIndex = uint32(i)
 								preout.OutIndex = uint32(j)
-								delete(pool.outputs, preout)
+								//delete(pool.outputs, preout)
+								pool.deleteOrphanTxOutputs(preout)
 							}
 						}
 					}
@@ -2128,7 +2131,8 @@ func (pool *TxPool) removeOrphan(tx *modules.TxPoolTransaction, reRedeemers bool
 						}
 					}
 					if _, has := pool.outputs[*in.PreviousOutPoint]; has {
-						delete(pool.outputs, *in.PreviousOutPoint)
+						//delete(pool.outputs, *in.PreviousOutPoint)
+						pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
 					}
 				}
 			}
@@ -2256,4 +2260,9 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 		return validated == true, err
 	}
 	return validated == true, nil
+}
+
+func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
+	delete(pool.outputs, outpoint)
+	log.Debug(fmt.Sprintf("delelte the outputs (%s), the created tx_hash(%s)", outpoint.String(), outpoint.TxHash.String()))
 }
