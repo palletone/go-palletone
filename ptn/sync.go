@@ -139,10 +139,11 @@ func (pm *ProtocolManager) syncer() {
 
 	pm.fetcher.Start()
 	defer pm.fetcher.Stop()
+	defer pm.downloader.Terminate()
 
 	pm.lightFetcher.Start()
 	defer pm.lightFetcher.Stop()
-	defer pm.downloader.Terminate()
+	defer pm.lightdownloader.Terminate()
 
 	// Wait for different events to fire synchronisation operations
 	forceSync := time.NewTicker(forceSyncCycle)
