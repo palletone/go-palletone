@@ -23,11 +23,11 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	award2 "github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -564,14 +564,24 @@ To compute transactions' fees
 func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 	// current time slice mediator default income is 1 ptn
 	fees := uint64(0)
+	unitUtxo := map[modules.OutPoint]*modules.Utxo{}
 	for i, tx := range txs {
-		fee, err := repository.ComputeTxFee(tx.Tx)
+		getUtxoFromUnitAndDb := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+			if utxo, ok := unitUtxo[*outpoint]; ok {
+				return utxo, nil
+			}
+			return repository.utxodb.GetUtxoEntry(outpoint)
+		}
+		fee, err := tx.Tx.GetTxFee(getUtxoFromUnitAndDb)
 		if err != nil {
 			return 0, err
 		}
 		tx.TxFee = fee
 		txs[i] = tx
 		fees += fee.Amount
+		for outPoint, utxo := range tx.Tx.GetNewUtxos() {
+			unitUtxo[outPoint] = utxo
+		}
 	}
 	return fees, nil
 }
