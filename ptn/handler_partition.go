@@ -34,12 +34,19 @@ func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
 		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
 		pm.BroadcastLightHeader(header, pm.SubProtocols[0].Name)
 	}
-	//peerDrop := func(id string) {
-	//	log.Info("ProtocolManager peerDrop", "pid:", id)
-	//	pm.removeLightPeer(id)
-	//}
+	inserter := func(headers []*modules.Header) (int, error) {
+		// If fast sync is running, deny importing weird blocks
+		//TODO must recover
+		//if atomic.LoadUint32(&pm.fastSync) == 1 {
+		//	log.Warn("Discarded bad propagated block", "number", headers[0].Number.Index, "hash", headers[0].Hash())
+		//	return 0, errors.New("fasting sync")
+		//}
+		//log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		//atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done on any fetcher import
+		return pm.dag.InsertLightHeader(headers)
+	}
 	return lps.New(pm.dag.GetLightHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
-		headerBroadcaster, pm.dag.InsertLightHeader, pm.removeLightPeer)
+		headerBroadcaster, inserter, pm.removeLightPeer)
 }
 
 func (pm *ProtocolManager) PartitionHandle(p *peer) error {
