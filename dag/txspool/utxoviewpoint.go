@@ -29,8 +29,11 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
-type utxoBaseOp interface {
+type utxoBaseGetOp interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+}
+type utxoBaseOp interface {
+	utxoBaseGetOp
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 }
 
@@ -84,7 +87,7 @@ func (view *UtxoViewpoint) SpentUtxo(db utxoBaseOp, outpoints map[modules.OutPoi
 	}
 	return nil
 }
-func (view *UtxoViewpoint) FetchUnitUtxos(db utxoBaseOp, unit *modules.Unit) error {
+func (view *UtxoViewpoint) FetchUnitUtxos(db utxoBaseGetOp, unit *modules.Unit) error {
 	transactions := unit.Transactions()
 	if len(transactions) <= 1 {
 		return nil
@@ -150,7 +153,7 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db utxoBaseOp, unit *modules.Unit) err
 // 	}
 // 	return needSet, nil
 // }
-func (view *UtxoViewpoint) FetchUtxos(db utxoBaseOp, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) FetchUtxos(db utxoBaseGetOp, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
@@ -164,7 +167,7 @@ func (view *UtxoViewpoint) FetchUtxos(db utxoBaseOp, outpoints map[modules.OutPo
 	return view.fetchUtxosMain(db, neededSet)
 
 }
-func (view *UtxoViewpoint) fetchUtxosMain(db utxoBaseOp, outpoints map[modules.OutPoint]struct{}) error {
+func (view *UtxoViewpoint) fetchUtxosMain(db utxoBaseGetOp, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
