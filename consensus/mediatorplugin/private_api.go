@@ -48,7 +48,9 @@ func (a *PrivateMediatorAPI) StartProduce() {
 func (a *PrivateMediatorAPI) StopProduce() {
 	if a.producingEnabled {
 		a.producingEnabled = false
-		a.stopProduce <- struct{}{}
+		go func() {
+			a.stopProduce <- struct{}{}
+		}()
 	}
 }
 

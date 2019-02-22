@@ -362,7 +362,9 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		quit: make(chan struct{}),
 		dag:  dag,
 
-		producingEnabled:          cfg.EnabledProducing,
+		producingEnabled: cfg.EnabledProducing,
+		stopProduce:      make(chan struct{}),
+
 		productionEnabled:         cfg.EnableStaleProduction,
 		consecutiveProduceEnabled: cfg.EnableConsecutiveProduction,
 		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,
