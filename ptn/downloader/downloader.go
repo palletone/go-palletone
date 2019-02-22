@@ -241,7 +241,7 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 		if unit != nil {
 			current = unit.Number().Index
 		}
-		//case LightSync:
+	case LightSync:
 		//current = d.lightdag.CurrentHeader().Number.Uint64()
 	}
 
@@ -349,7 +349,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 
 	// Post a user notification of the sync (only once per session)
 	if atomic.CompareAndSwapInt32(&d.notified, 0, 1) {
-		log.Debug("Downloader synchronisation started")
+		log.Info("Downloader synchronisation started")
 	}
 	// Reset the queue, peer set and wake channels to clean any internal leftover state
 	d.queue.Reset()
@@ -422,7 +422,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p, assetId)
 	if err != nil {
-		log.Info("fetchHeight", "err:", err)
+		log.Debug("fetchHeight", "err:", err)
 		return err
 	}
 
@@ -1661,49 +1661,3 @@ func (d *Downloader) requestTTL() time.Duration {
 	}
 	return ttl
 }
-
-func (d *Downloader) getMaxNodes(headers []*modules.Header, assetId modules.IDType16) (*modules.Header, error) {
-	size := len(headers)
-	if size == 0 {
-		return nil, nil
-	}
-	if size == 1 {
-		return headers[0], nil
-	}
-
-	maxHeader := modules.Header{}
-	for _, header := range headers {
-		if assetId == header.Number.AssetID && header.Number.Index > maxHeader.Number.Index {
-			maxHeader = *header
-		}
-	}
-	return &maxHeader, nil
-}
-
-/*TODO must save
-//fmt.Println("findAncestor===")
-//fmt.Println("local=", ceil)
-//fmt.Println("remote=", height)
-//floor, ceil := uint64(0), uint64(0)
-//TODO xiaozhi
-//headers, err := d.lightdag.GetAllLeafNodes()
-//if err != nil {
-//	log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
-//	return floor, nil
-//}
-//header, err := d.getMaxNodes(headers, assetId)
-//
-//if err != nil {
-//	log.Info("===findAncestor===", "getMaxNodes err:", err)
-//	return floor, err
-//}
-////TODO xiaozhi
-
-//if header != nil {
-//	ceil = header.Number.Index
-//	log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
-//} else {
-//	ceil = 0
-//	log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
-//}
-*/
