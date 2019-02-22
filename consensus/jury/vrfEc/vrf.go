@@ -89,15 +89,16 @@ func getHash(curve elliptic.Curve) hash.Hash {
 	case 224:
 		return crypto.SHA224.New()
 	case 256:
-		if curve.Params().Name == "sm2p256v1" {
-			log.Debug("sm2p256v1 not support!!")
-			//return sm3.New()
-		} else if curve.Params().Name == "P-256" {
-			//return crypto.SHA256.New()
-			return crypto.SHA3_256.New()
-		} else {
-			return nil
-		}
+		return crypto.SHA3_256.New()	 //default
+		//if curve.Params().Name == "sm2p256v1" {
+		//	log.Debug("sm2p256v1 not support!!")
+		//	//return sm3.New()
+		//} else if curve.Params().Name == "P-256" {
+		//	//return crypto.SHA256.New()
+		//	return crypto.SHA3_256.New()
+		//} else {
+		//	return nil
+		//}
 	case 384:
 		return crypto.SHA384.New()
 	default:
