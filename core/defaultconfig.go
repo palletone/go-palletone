@@ -45,7 +45,7 @@ const (
 	DefaultJuryInitPartPub = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ" //DefaultAccountInitPartPub
 
-	DefaultMediatorCount       = 3 //21
+	DefaultMediatorCount       = 5 //21
 	DefaultMinMediatorCount    = 3 //11
 	DefaultMinMediatorInterval = 1
 

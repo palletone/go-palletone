@@ -281,13 +281,18 @@ func (mp *MediatorPlugin) unlockLocalMediators() {
 	}
 }
 
-func (mp *MediatorPlugin) UpdateMediatorsDKG() {
+func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	if !mp.groupSigningEnabled {
 		return
 	}
 
 	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
 	mp.switchMediatorsDKG()
+
+	// 判断是否重新 初始化DKG 和 VSS 协议
+	if !isRenew {
+		return
+	}
 
 	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
 	mp.newActiveMediatorsDKG()
