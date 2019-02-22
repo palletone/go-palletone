@@ -94,7 +94,7 @@ type dags interface {
 	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
+	//GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
@@ -1527,8 +1527,28 @@ func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 	pool.mu.RUnlock()
 	return tx.Tx
 }
+func (pool *TxPool) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
+	neededSet := make(map[modules.OutPoint]struct{})
+
+	for _, msgcopy := range tx.TxMessages {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
+				if !msg.IsCoinbase() {
+					for _, in := range msg.Inputs {
+						neededSet[*in.PreviousOutPoint] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+
+	view := NewUtxoViewpoint()
+	err := view.FetchUtxos(pool, neededSet)
+	return view, err
+}
+
 func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
-	utxoView, err := pool.unit.GetUtxoView(tx)
+	utxoView, err := pool.GetUtxoView(tx)
 	if err != nil {
 		fmt.Println("getUtxoView is error,", err)
 		return nil, err
@@ -1844,6 +1864,7 @@ func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
 					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{out.Asset.AssetId, out.Asset.UniqueId},
 						PkScript: out.PkScript[:]}
 					pool.outputs[preout] = utxo
+					log.Debugf("add utxo to pool.outputs,outpoint:%s", preout.String())
 				}
 			}
 		}
@@ -2212,11 +2233,11 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 	if len(tx.Messages()) <= 0 {
 		return false, errors.New("this tx's message is null.")
 	}
-	var validated bool
+	var isOrphan bool
 	var str string
 	var err error
 	hash := tx.Hash()
-	for i, msg := range tx.Messages() {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
@@ -2226,8 +2247,8 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 						if err != nil && err == errors.ErrUtxoNotFound {
 							// validate utxo in pool
 							_, has := pool.outputs[*in.PreviousOutPoint]
-							if _, exist := pool.orphansByPrev[*in.PreviousOutPoint]; has || exist {
-								validated = true
+							if !has {
+								isOrphan = true
 								break
 							}
 						} else if err != nil && err != errors.ErrUtxoNotFound {
@@ -2246,21 +2267,21 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 					}
 				}
 				// 验证outputs缓存的utxo
-				for j, _ := range payment.Outputs {
-					preout := modules.OutPoint{hash, uint32(i), uint32(j)}
-					if _, has := pool.outpoints[preout]; has {
-						validated = true
-						break
-					}
-				}
+				//for j, _ := range payment.Outputs {
+				//	preout := modules.OutPoint{hash, uint32(i), uint32(j)}
+				//	if _, has := pool.outpoints[preout]; has {
+				//		isOrphan = true
+				//		break
+				//	}
+				//}
 			}
 		}
 	}
 	if str != "" {
 		err = errors.New(str)
-		return validated == true, err
+		return isOrphan == true, err
 	}
-	return validated == true, nil
+	return isOrphan == true, nil
 }
 
 func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
