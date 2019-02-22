@@ -27,6 +27,7 @@ import (
 
 const (
 	DefaultContractSigNum = 3
+	DefaultElectionNum    = 4
 	DefaultPassword       = "password"
 	DefaultInitPartSec    = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
 )
@@ -47,7 +48,8 @@ type JuryAccount struct {
 	Password string
 }
 type Config struct {
-	ContractSigNum int
+	ContractSigNum int            //user contract jury sig number
+	ElectionNum    int            //vrf election jury number
 	Accounts       []*AccountConf // the set of the mediator info
 }
 
@@ -63,6 +65,7 @@ func (aConf *AccountConf) configToAccount() *JuryAccount {
 
 var DefaultConfig = Config{
 	ContractSigNum: DefaultContractSigNum,
+	ElectionNum:    DefaultElectionNum,
 	Accounts: []*AccountConf{
 		&AccountConf{core.DefaultJuryAddr, DefaultPassword},
 	},

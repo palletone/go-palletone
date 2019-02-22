@@ -139,10 +139,11 @@ func (pm *ProtocolManager) syncer() {
 
 	pm.fetcher.Start()
 	defer pm.fetcher.Stop()
+	defer pm.downloader.Terminate()
 
 	pm.lightFetcher.Start()
 	defer pm.lightFetcher.Stop()
-	defer pm.downloader.Terminate()
+	defer pm.lightdownloader.Terminate()
 
 	// Wait for different events to fire synchronisation operations
 	forceSync := time.NewTicker(forceSyncCycle)
@@ -155,20 +156,22 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			//TODO if GasToken==PTN assetid=modules.PTNCOIN
 			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
 			log.Debug("start force Sync")
-			//TODO if GasToken==PTN assetid=modules.PTNCOIN
 			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
 
 		case <-pm.noMorePeers:
 			return
 		}
 	}
+}
 
+func (pm *ProtocolManager) syncall() {
+	peer := pm.peers.BestPeer(modules.PTNCOIN)
+	peer.RequestLeafNodes()
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.
@@ -274,3 +277,49 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
 	}
 }
+
+func (pm *ProtocolManager) getMaxNodes(headers []*modules.Header, assetId modules.IDType16) (*modules.Header, error) {
+	size := len(headers)
+	if size == 0 {
+		return nil, nil
+	}
+	if size == 1 {
+		return headers[0], nil
+	}
+
+	maxHeader := modules.Header{}
+	for _, header := range headers {
+		if assetId == header.Number.AssetID && header.Number.Index > maxHeader.Number.Index {
+			maxHeader = *header
+		}
+	}
+	return &maxHeader, nil
+}
+
+/*TODO must save
+//fmt.Println("findAncestor===")
+//fmt.Println("local=", ceil)
+//fmt.Println("remote=", height)
+//floor, ceil := uint64(0), uint64(0)
+//TODO xiaozhi
+//headers, err := d.lightdag.GetAllLeafNodes()
+//if err != nil {
+//	log.Info("===findAncestor===", "GetAllLeafNodes err:", err)
+//	return floor, nil
+//}
+//header, err := d.getMaxNodes(headers, assetId)
+//
+//if err != nil {
+//	log.Info("===findAncestor===", "getMaxNodes err:", err)
+//	return floor, err
+//}
+////TODO xiaozhi
+
+//if header != nil {
+//	ceil = header.Number.Index
+//	log.Debug("Looking for common ancestor", "local assetid", header.Number.AssetID.String(), "local index", ceil, "remote", latest.Number.Index)
+//} else {
+//	ceil = 0
+//	log.Debug("Looking for common ancestor", "local index", ceil, "remote", latest.Number.Index)
+//}
+*/

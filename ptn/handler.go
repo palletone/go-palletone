@@ -408,7 +408,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return err
 	}
 
-	if err := pm.lightdownloader.RegisterPeer(p.id, p.version, p); err != nil {
+	if err := pm.lightdownloader.RegisterLightPeer(p.id, p.version, p); err != nil {
 		return err
 	}
 

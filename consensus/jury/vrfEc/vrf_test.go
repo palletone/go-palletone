@@ -26,7 +26,6 @@ import (
 	"crypto/elliptic"
 	"math/big"
 
-	"github.com/palletone/go-palletone/common/crypto"
 )
 
 //func testVrf(t *testing.T, kt keypair.KeyType, curve byte) {
@@ -76,8 +75,8 @@ func testVrf2(t *testing.T) { //todo  后面再继续修改为s256进行验证�
 
 	//key, err := crypto.GenerateKey()
 
-	//c := elliptic.P256() //ok
-	c := crypto.S256() //fail
+	c := elliptic.P256() //ok
+	//c := crypto.S256() //fail
 	//d, x, y, err := elliptic.GenerateKey(c, rand.Reader)
 
 	key, err := ecdsa.GenerateKey(c, rand.Reader) //fail

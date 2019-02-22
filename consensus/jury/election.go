@@ -129,7 +129,7 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 
 	ele := electionInfo{
 		eleChan:  make(chan bool, 1),
-		eleNum:   4, //todo
+		eleNum:   p.electionNum,
 		seedData: seedData,
 	}
 	p.mtx[reqId].eleInfo = ele
@@ -210,6 +210,7 @@ func (p *Processor) ProcessElectionResultEvent(event *ElectionEvent) error {
 	rstEvt := event.Event.(ElectionResultEvent)
 	log.Info("ProcessElectionResultEvent", "reqHash", rstEvt.reqHash.String(), "addrHash", rstEvt.addrHash.String())
 	ele := elector{
+		num:    p.electionNum,
 		weight: 10,   //config
 		total:  1000, //dynamic acquisition
 		vrfAct: p.vrfAct,
