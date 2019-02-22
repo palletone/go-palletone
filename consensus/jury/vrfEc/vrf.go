@@ -26,7 +26,6 @@ import (
 	"crypto/ecdsa"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/ontio/ontology-crypto/sm3"
 )
 
 var (
@@ -92,7 +91,7 @@ func getHash(curve elliptic.Curve) hash.Hash {
 	case 256:
 		if curve.Params().Name == "sm2p256v1" {
 			log.Debug("sm2p256v1 not support!!")
-			return sm3.New()
+			//return sm3.New()
 		} else if curve.Params().Name == "P-256" {
 			//return crypto.SHA256.New()
 			return crypto.SHA3_256.New()
