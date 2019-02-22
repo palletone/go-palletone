@@ -87,7 +87,7 @@ func DefaultMediatorConf() *MediatorConf {
 
 // mediator plugin default config
 var DefaultConfig = Config{
-	EnabledProducing:            true,
+	EnabledProducing:            false,
 	EnableStaleProduction:       false,
 	EnableConsecutiveProduction: false,
 	RequiredParticipation:       DefaultRequiredParticipation,

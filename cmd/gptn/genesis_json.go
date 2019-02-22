@@ -184,10 +184,10 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 		return err
 	}
 
-	// 修改本届mediator的特殊配置
+	// 修改本节点mediator的特殊配置
 	cfg.MediatorPlugin.EnabledProducing = true
 	cfg.MediatorPlugin.EnableStaleProduction = true
-	cfg.MediatorPlugin.EnableConsecutiveProduction = true
+	cfg.MediatorPlugin.EnableConsecutiveProduction = false
 	cfg.MediatorPlugin.RequiredParticipation = 0
 	cfg.MediatorPlugin.EnableGroupSigning = true
 	cfg.MediatorPlugin.Mediators = mediators
