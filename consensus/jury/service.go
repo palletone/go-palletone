@@ -95,9 +95,8 @@ type electionInfo struct {
 }
 
 type contractTx struct {
-	state    int                    //contract run state, 0:default, 1:running
-	list     []common.Address       //dynamic   //todo: to hash
-	addrHash []common.Hash          //dynamic   //todo: to hash
+	state int //contract run state, 0:default, 1:running
+	addrHash []common.Hash          //dynamic
 	reqTx    *modules.Transaction   //request contract
 	rstTx    *modules.Transaction   //contract run result---system
 	sigTx    *modules.Transaction   //contract sig result---user, 0:local, 1,2 other
@@ -119,6 +118,7 @@ type Processor struct {
 	quit      chan struct{}
 	locker    *sync.Mutex
 
+	electionNum       int
 	contractSigNum    int
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
@@ -158,8 +158,9 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		locker:         new(sync.Mutex),
 		quit:           make(chan struct{}),
 		mtx:            make(map[common.Hash]*contractTx),
+		electionNum:    cfg.ElectionNum,
 		contractSigNum: cfg.ContractSigNum,
-		validator:      validator,
+		validator: validator,
 	}
 
 	log.Info("NewContractProcessor ok", "local address:", p.local)
@@ -192,7 +193,6 @@ func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
 	if len(p.local) < 1 {
 		return nil, errors.New("getLocalNodeInfo, no local account")
 	}
-
 	nodes := make([]*nodeInfo, 0)
 	for addr, _ := range p.local {
 		nodeType := 0
