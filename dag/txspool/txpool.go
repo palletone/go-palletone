@@ -279,6 +279,7 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 	if utxo, ok := pool.outputs[*outpoint]; ok {
 		return utxo, nil
 	}
+	log.Debug("Outpoint and Utxo not in pool. query from db")
 	return pool.unit.GetUtxoEntry(outpoint)
 }
 
