@@ -32,28 +32,36 @@ sed -i '/^WSPort/c'$newWSPort'' ptn-config.toml
 newPort="Port=$[$Port+$1]"
 sed -i '/^Port/c'$newPort'' ptn-config.toml
 
-
 newListenAddr="ListenAddr=\":$[$ListenAddr+$1]\""
 sed -i '/^ListenAddr/c'$newListenAddr'' ptn-config.toml
 
 newBtcHost="BtcHost=\"localhost:$[$BtcHost+$1]\""
 sed -i '/^BtcHost/c'$newBtcHost'' ptn-config.toml
 
-
 newContractAddress="ContractAddress=\"127.0.0.1:$[$ContractAddress+$1]\""
 sed -i '/^ContractAddress/c'$newContractAddress'' ptn-config.toml
+
+newEnableProducing="EnableProducing=true"
+sed -i '/^EnableProducing/c'$newEnableProducing'' ptn-config.toml
+
 else
+
 dumcpjson=`./gptn dumpjson`
 echo $dumpjson
+
+newEnableProducing="EnableProducing=false"
+sed -i '/^EnableProducing/c'$newEnableProducing'' ptn-config.toml
 
 newEnableStaleProduction="EnableStaleProduction=true"
 sed -i '/^EnableStaleProduction/c'$newEnableStaleProduction'' ptn-config.toml
 
-newEnableConsecutiveProduction="EnableConsecutiveProduction=true"
-sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-config.toml
-
 fi
 
+newEnableConsecutiveProduction="EnableConsecutiveProduction=false"
+sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-config.toml
+
+newEnableGroupSigning="EnableGroupSigning=false"
+sed -i '/^EnableGroupSigning/c'$newEnableGroupSigning'' ptn-config.toml
 
 newRequiredParticipation="RequiredParticipation=0"
 sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml

@@ -57,6 +57,16 @@ web3._extend({
 			call: 'mediator_getInfo',
 			params: 1,
 		}),
+		new web3._extend.Method({
+			name: 'startProduce',
+			call: 'mediator_startProduce',
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'stopProduce',
+			call: 'mediator_stopProduce',
+			params: 0,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

@@ -38,6 +38,22 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 	return &PrivateMediatorAPI{mp}
 }
 
+func (a *PrivateMediatorAPI) StartProduce() {
+	if !a.producingEnabled {
+		a.producingEnabled = true
+		go a.ScheduleProductionLoop()
+	}
+}
+
+func (a *PrivateMediatorAPI) StopProduce() {
+	if a.producingEnabled {
+		a.producingEnabled = false
+		go func() {
+			a.stopProduce <- struct{}{}
+		}()
+	}
+}
+
 // 交易执行结果
 type TxExecuteResult struct {
 	TxContent string      `json:"txContent"`

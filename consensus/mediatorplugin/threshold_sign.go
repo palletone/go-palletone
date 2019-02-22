@@ -281,7 +281,7 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
 	lams := mp.GetLocalActiveMediators()
 
 	for _, localMed := range lams {
-		log.Debugf("the mediator(%v) received a unit to be grouped sign: %v",
+		log.Debugf("the mediator(%v) received a unit(%v) to be group-signed",
 			localMed.Str(), newUnit.UnitHash.TerminalString())
 		go mp.addToTBLSSignBuf(localMed, newUnit)
 	}
@@ -330,7 +330,6 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	)
 	// 1. 获取群签名所需数据
 	{
-		//newUnit, ok = medUnitsBuf[unitHash]
 		value, ok := medUnitsBuf.Load(unitHash)
 		if !ok {
 			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS",
@@ -407,7 +406,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 		return nil
 	}
 
-	log.Debugf("received the sign shares of the unit: %v", newUnitHash.TerminalString())
+	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
 
 	dag := mp.dag
 	newUnit, err := dag.GetUnitByHash(newUnitHash)

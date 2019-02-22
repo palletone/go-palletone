@@ -49,16 +49,14 @@ type producer interface {
 	LocalHavePrecedingMediator() bool
 
 	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
-	UpdateMediatorsDKG()
+	UpdateMediatorsDKG(isRenew bool)
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	for {
 		select {
 		case event := <-pm.activeMediatorsUpdatedCh:
-			if event.IsChanged {
-				go pm.switchMediatorConnect()
-			}
+			go pm.switchMediatorConnect(event.IsChanged)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.activeMediatorsUpdatedSub.Err():
@@ -67,9 +65,14 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	}
 }
 
-func (pm *ProtocolManager) switchMediatorConnect() {
+func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	// 1. 若干数据还没同步完成，则忽略本次切换，继续同步
 	if !pm.dag.IsSynced() {
+		return
+	}
+
+	if !isChanged {
+		go pm.producer.UpdateMediatorsDKG(false)
 		return
 	}
 
@@ -115,7 +118,7 @@ func (pm *ProtocolManager) checkActiveMediatorConnected() {
 
 	// 3. 调用mediator连接完成都的相关处理
 	processFn := func() {
-		go pm.producer.UpdateMediatorsDKG()
+		go pm.producer.UpdateMediatorsDKG(true)
 	}
 
 	// 1. 设置Ticker, 每隔一段时间检查一次

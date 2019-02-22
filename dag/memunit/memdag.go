@@ -189,7 +189,7 @@ func (chain *MemDag) checkStableCondition(needAddrCount int, txpool txspool.ITxP
 
 			return true
 		}
-		//log.Debugf("Unstable unit[%s] has confirm address count: %d / %d", ustbHash.String(), len(hs), needAddrCount)
+		//log.Debugf("Unstable unit[%s] has confirm address count: %d / %d", ustbHash.TerminalString(), len(hs), needAddrCount)
 
 		ustbHash = u.ParentHash()[0]
 	}

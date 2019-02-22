@@ -108,8 +108,9 @@ type MediatorPlugin struct {
 	dag  iDag
 	srvr *p2p.Server
 
-	// 标记是否主程序启动时，就开启unit生产
+	// 标记是否主程序启动时，就开启unit生产功能
 	producingEnabled bool
+	stopProduce      chan struct{}
 
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一条链时，第一个运行的节点必须设为true，否则整个链无法启动
@@ -280,13 +281,18 @@ func (mp *MediatorPlugin) unlockLocalMediators() {
 	}
 }
 
-func (mp *MediatorPlugin) UpdateMediatorsDKG() {
+func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	if !mp.groupSigningEnabled {
 		return
 	}
 
 	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
 	mp.switchMediatorsDKG()
+
+	// 判断是否重新 初始化DKG 和 VSS 协议
+	if !isRenew {
+		return
+	}
 
 	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
 	mp.newActiveMediatorsDKG()
@@ -361,7 +367,9 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		quit: make(chan struct{}),
 		dag:  dag,
 
-		producingEnabled:          cfg.EnabledProducing,
+		producingEnabled: cfg.EnableProducing,
+		stopProduce:      make(chan struct{}),
+
 		productionEnabled:         cfg.EnableStaleProduction,
 		consecutiveProduceEnabled: cfg.EnableConsecutiveProduction,
 		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,
