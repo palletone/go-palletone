@@ -189,7 +189,6 @@ type TxPool struct {
 	orphansByPrev map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction // 缓存 orphanTx input's utxo
 	addrTxs       map[string][]*modules.TxPoolTransaction                         // 缓存 地址对应的交易列表
 	outputs       map[modules.OutPoint]*modules.Utxo                              // 缓存 交易的outputs
-	//addrOutpoints map[string][]*modules.OutPoint
 
 	mu             *sync.RWMutex
 	wg             sync.WaitGroup // for shutdown sync
@@ -1833,7 +1832,7 @@ func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
 						pool.outpoints[*txin.PreviousOutPoint] = tx
 					}
 				}
-				// add utxo in outputs
+				// add  outputs
 				preout := modules.OutPoint{TxHash: tx.Tx.Hash()}
 				for j, out := range msg.Outputs {
 					if pool.outputs == nil {
@@ -2095,7 +2094,7 @@ func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
 	otx.Tag = tag
 	pool.orphans[otx.Tx.Hash()] = otx
 
-	for _, msg := range otx.Tx.Messages() {
+	for i, msg := range otx.Tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
@@ -2105,7 +2104,19 @@ func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
 					}
 					pool.orphansByPrev[*in.PreviousOutPoint][otx.Tx.Hash()] = otx
 				}
-				log.Debug(fmt.Sprintf("Stored orphan tx's hash  %s (total: %d)", otx.Tx.Hash().String(), len(pool.orphans)))
+				// add utxo in outputs
+				preout := modules.OutPoint{TxHash: otx.Tx.Hash()}
+				for j, out := range payment.Outputs {
+					if pool.outputs == nil {
+						pool.outputs = make(map[modules.OutPoint]*modules.Utxo)
+					}
+					preout.MessageIndex = uint32(i)
+					preout.OutIndex = uint32(j)
+					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{out.Asset.AssetId, out.Asset.UniqueId},
+						PkScript: out.PkScript[:]}
+					pool.outputs[preout] = utxo
+				}
+				log.Debug(fmt.Sprintf("Stored orphan tx's hash %s (total: %d)", otx.Tx.Hash().String(), len(pool.orphans)))
 			}
 		}
 	}
@@ -2216,7 +2227,7 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 	var str string
 	var err error
 	hash := tx.Hash()
-	for i, msg := range tx.Messages() {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
@@ -2226,10 +2237,11 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 						if err != nil && err == errors.ErrUtxoNotFound {
 							// validate utxo in pool
 							_, has := pool.outputs[*in.PreviousOutPoint]
-							if _, exist := pool.orphansByPrev[*in.PreviousOutPoint]; has || exist {
+							if !has {
 								validated = true
 								break
 							}
+
 						} else if err != nil && err != errors.ErrUtxoNotFound {
 							str = err.Error()
 							log.Info("get utxo failed.", "error", str)
@@ -2245,14 +2257,14 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 						}
 					}
 				}
-				// 验证outputs缓存的utxo
-				for j, _ := range payment.Outputs {
-					preout := modules.OutPoint{hash, uint32(i), uint32(j)}
-					if _, has := pool.outpoints[preout]; has {
-						validated = true
-						break
-					}
-				}
+				//// 验证outputs缓存的utxo
+				//for j, _ := range payment.Outputs {
+				//	preout := modules.OutPoint{hash, uint32(i), uint32(j)}
+				//	if _, has := pool.outpoints[preout]; has {
+				//		validated = true
+				//		break
+				//	}
+				//}
 			}
 		}
 	}
@@ -2265,5 +2277,5 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 
 func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
 	delete(pool.outputs, outpoint)
-	log.Debug(fmt.Sprintf("delelte the outputs (%s), the created tx_hash(%s)", outpoint.String(), outpoint.TxHash.String()))
+	log.Debug(fmt.Sprintf("delete the outputs (%s), the created tx_hash(%s)", outpoint.String(), outpoint.TxHash.String()))
 }
