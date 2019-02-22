@@ -530,13 +530,12 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
-
+	validate := validator.NewValidate(dagDb, tutxoRep, stateDb)
 	partitionMemdag := make(map[modules.IDType16]memunit.IMemDag)
 	for _, ptoken := range node.DefaultConfig.GeSyncPartitionTokens() {
 		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)
