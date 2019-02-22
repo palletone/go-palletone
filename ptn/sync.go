@@ -223,8 +223,6 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	if atomic.LoadUint32(&pm.fastSync) == 1 {
 		log.Debug("Fast sync complete, auto disabling")
 		atomic.StoreUint32(&pm.fastSync, 0)
-		//TODO notice mediator execute vss
-		//
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
@@ -232,5 +230,41 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	if head != nil && head.UnitHeader.Number.Index > 0 {
 		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
 	}
+}
 
+func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16) {
+	// Short circuit if no peers are available
+	if peer == nil {
+		log.Debug("ProtocolManager light synchronise peer is nil")
+		return
+	}
+	log.Debug("Enter ProtocolManager light synchronise", "peer id:", peer.id)
+	defer log.Debug("End ProtocolManager light synchronise", "peer id:", peer.id)
+
+	// Make sure the peer's TD is higher than our own
+	//currentUnit := pm.dag.CurrentHeader(assetId)
+	currentHeader := pm.dag.CurrentHeader()
+	if currentHeader == nil {
+		log.Info("light synchronise current header is nil")
+		return
+	}
+	// Otherwise try to sync with the downloader
+	mode := downloader.LightSync
+
+	// Run the sync cycle, and disable fast sync if we've went past the pivot block
+	if err := pm.lightdownloader.Synchronise(peer.id, currentHeader.Hash(), currentHeader.Number.Index, mode, assetId); err != nil {
+		log.Debug("ptn sync downloader.", "Synchronise err:", err)
+		return
+	}
+
+	if atomic.LoadUint32(&pm.fastSync) == 1 {
+		log.Debug("Fast sync complete, auto disabling")
+		atomic.StoreUint32(&pm.fastSync, 0)
+	}
+	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
+
+	head := pm.dag.CurrentUnit()
+	if head != nil && head.UnitHeader.Number.Index > 0 {
+		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
+	}
 }
