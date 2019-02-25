@@ -46,7 +46,7 @@ type ContractInf interface {
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokePayload, error)
 	Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
-	Stop(chainID string, deployId []byte, txid string, deleteImage bool) error
+	Stop(chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error)
 }
 
 //var (
@@ -148,13 +148,13 @@ func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
 //Stop the specified contract. The image file can be deleted according to requirements.
-func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImage bool) error {
+func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload,error) {
 	log.Info("===========================enter contract.go Stop==============================")
 	defer log.Info("===========================exit contract.go Stop==============================")
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
-		return errors.New("contract not initialized")
+		return nil,errors.New("contract not initialized")
 	}
 	return cc.Stop(deployId, chainID, deployId, txid, deleteImage)
 }
