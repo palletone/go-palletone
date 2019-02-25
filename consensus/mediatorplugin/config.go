@@ -32,9 +32,9 @@ const (
 )
 
 var (
-	ProducingEnabledFlag = cli.BoolFlag{
-		Name:  "produce",
-		Usage: "Enable producing unit when start up node.",
+	NoProduceUnitFlag = cli.BoolFlag{
+		Name:  "noProduce",
+		Usage: "Disable producing unit when start up node.",
 	}
 	StaleProductionFlag = cli.BoolFlag{
 		Name:  "staleProduce",
@@ -49,9 +49,9 @@ var (
 		Usage: "Percent of mediators (0-99) that must be participating in order to produce units.",
 		Value: DefaultRequiredParticipation,
 	}
-	GroupSignEnabledFlag = cli.BoolFlag{
-		Name:  "groupSign",
-		Usage: "Enable group-signing in this node.",
+	NoGroupSignFlag = cli.BoolFlag{
+		Name:  "noGroupSign",
+		Usage: "Disable group-signing in this node.",
 	}
 )
 
@@ -98,8 +98,8 @@ var DefaultConfig = Config{
 }
 
 func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
-	if ctx.GlobalIsSet(ProducingEnabledFlag.Name) {
-		cfg.EnableProducing = ctx.GlobalBool(ProducingEnabledFlag.Name)
+	if ctx.GlobalIsSet(NoProduceUnitFlag.Name) {
+		cfg.EnableProducing = false
 	}
 	if ctx.GlobalIsSet(StaleProductionFlag.Name) {
 		cfg.EnableStaleProduction = true
@@ -110,8 +110,8 @@ func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 	if ctx.GlobalIsSet(RequiredParticipationFlag.Name) {
 		cfg.RequiredParticipation = uint32(ctx.GlobalUint(RequiredParticipationFlag.Name))
 	}
-	if ctx.GlobalIsSet(GroupSignEnabledFlag.Name) {
-		cfg.EnableGroupSigning = ctx.GlobalBool(GroupSignEnabledFlag.Name)
+	if ctx.GlobalIsSet(NoGroupSignFlag.Name) {
+		cfg.EnableGroupSigning = false
 	}
 }
 

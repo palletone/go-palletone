@@ -235,11 +235,11 @@ var AppHelpFlagGroups = []flagGroup{
 	{
 		Name: "MEDIATOR PLUGIN",
 		Flags: []cli.Flag{
-			mp.ProducingEnabledFlag,
+			mp.NoProduceUnitFlag,
 			mp.StaleProductionFlag,
 			mp.ConsecutiveProductionFlag,
 			mp.RequiredParticipationFlag,
-			mp.GroupSignEnabledFlag,
+			mp.NoGroupSignFlag,
 		},
 	},
 	/*{

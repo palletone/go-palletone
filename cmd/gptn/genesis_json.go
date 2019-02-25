@@ -191,6 +191,7 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg.MediatorPlugin.RequiredParticipation = 0
 	cfg.MediatorPlugin.EnableGroupSigning = true
 	cfg.MediatorPlugin.Mediators = mediators
+
 	// 修改默认的Jury配置
 	cfg.Jury.Accounts[0].Address = mediators[0].Address
 	cfg.Jury.Accounts[0].Password = mediators[0].Password
