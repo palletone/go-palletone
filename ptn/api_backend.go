@@ -532,6 +532,9 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) ([]byte, error) {
 	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, deleteImage)
 }
+func (b *PtnApiBackend) ElectionVrf(id uint32) ([]byte, error) {
+	return b.ptn.contractPorcessor.ElectionVrfReq(id)
+}
 
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 	return b.ptn.dag.GetCommon(key)

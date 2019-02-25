@@ -763,6 +763,14 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	return hex.EncodeToString(rsp), err
 }
 
+func (s *PublicBlockChainAPI) Election(ctx context.Context, id uint32) (string, error) {
+	log.Info("-----Election:", "id", id)
+
+	rsp, err := s.b.ElectionVrf(id)
+	log.Info("-----Election:" + hex.EncodeToString(rsp))
+	return hex.EncodeToString(rsp), err
+}
+
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value
