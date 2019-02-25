@@ -414,13 +414,13 @@ func (d *Dag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
 
 // GetTransactionByHash is return the tx by tx's hash
 func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
-	tx, uhash, _, _ := d.unstableUnitRep.GetTransaction(hash)
-	if tx == nil {
+	tx, uhash, _, _, err := d.unstableUnitRep.GetTransaction(hash)
+	if err != nil {
 		return nil, uhash, errors.New("get transaction by hash is failed,none the transaction.")
 	}
 	return tx, uhash, nil
 }
-func (d *Dag) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+func (d *Dag) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
 	return d.unstableUnitRep.GetTransaction(hash)
 }
 func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
@@ -535,7 +535,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
-	validate := validator.NewValidate(dagDb, tutxoRep, stateDb)
+	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
 	partitionMemdag := make(map[modules.IDType16]memunit.IMemDag)
 	for _, ptoken := range node.DefaultConfig.GeSyncPartitionTokens() {
 		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)

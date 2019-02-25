@@ -69,7 +69,7 @@ type IDagDb interface {
 
 	//getChainUnit(hash common.Hash) (*modules.Unit, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
-	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
+	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	GetHeader(hash common.Hash) (*modules.Header, error)
@@ -98,7 +98,7 @@ type IDagDb interface {
 	// get txhash  and save index
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
-	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
+	//GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 	//SaveReqIdByTx(tx *modules.Transaction) error
 	//GetTxFromAddress(tx *modules.Transaction) ([]string, error)
 }
