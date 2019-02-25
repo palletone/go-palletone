@@ -1684,13 +1684,24 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	LockTime = 0
 
 	amounts := []ptnjson.AddressAmt{}
+	if from == "" {
+		return "", fmt.Errorf("sender address is empty")
+	}
 	if to == "" {
-		return "", fmt.Errorf("amounts is empty")
+		return "", fmt.Errorf("receiver address is empty")
+	}
+	_,ferr := common.StringToAddress(from)
+	if ferr != nil{
+		return "", fmt.Errorf("sender address is invalid")
+	}
+	_,terr := common.StringToAddress(to)
+	if terr != nil {
+		return "", fmt.Errorf("receiver address is invalid")
 	}
 
 	amounts = append(amounts, ptnjson.AddressAmt{to, amount})
 	if len(amounts) == 0 || !amount.IsPositive() {
-		return "", fmt.Errorf("amounts is empty")
+		return "", fmt.Errorf("amounts is invalid")
 	}
 
 	utxoJsons, err := s.b.GetAddrUtxos(from)
@@ -1720,7 +1731,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		}
 	} // end of pooltx is not nil
 	if !fee.IsPositive() {
-		return "", fmt.Errorf("fee is ZERO ")
+		return "", fmt.Errorf("fee is invalid")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
