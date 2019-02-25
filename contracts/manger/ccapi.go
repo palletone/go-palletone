@@ -339,7 +339,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	return unit, nil
 }
 
-func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) error {
+func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload,error) {
 	log.Infof("enter ccapi.go Stop")
 	defer log.Infof("exit ccapi.go Stop")
 	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
@@ -348,17 +348,17 @@ func Stop(contractid []byte, chainID string, deployId []byte, txid string, delet
 		setChainId = chainID
 	}
 	if txid == "" {
-		return errors.New("input param txid is nil")
+		return nil,errors.New("input param txid is nil")
 	}
 	cc, err := cclist.GetChaincode(chainID, deployId)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = StopByName(contractid, setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
+	stopResult,err := StopByName(contractid, setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}
-	return err
+	return stopResult,err
 }
 
 func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *md.ContractDeployPayload, e error) {
@@ -419,7 +419,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 	return cc.Id, nil, err
 }
 
-func StopByName(contractid []byte, chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) error {
+func StopByName(contractid []byte, chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) (*md.ContractStopPayload,error) {
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
@@ -429,7 +429,10 @@ func StopByName(contractid []byte, chainID string, txid string, ccName string, c
 	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage)
 	if err != nil {
 		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, ccName, err)
-		return errors.New(errMsg)
+		return nil,errors.New(errMsg)
 	}
-	return nil
+	stopResult := &md.ContractStopPayload{
+		ContractId:contractid,
+	}
+	return stopResult,nil
 }

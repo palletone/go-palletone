@@ -515,7 +515,7 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	log.Printf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
-	err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
+	_,err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
 	return err
 }
 
