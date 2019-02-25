@@ -90,8 +90,8 @@ type dags interface {
 	CurrentUnit() *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
-	//GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
-	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
+	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	//GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
@@ -2091,7 +2091,7 @@ func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, err
 		}
 	}
 	// 交易池已经打包的交易、memdag同步过来的未稳定单元的交易（reSetPendingTxs）调下面接口，计算交易费。
-	if _, _, err := pool.unit.GetTransactionByHash(hash); err != nil {
+	if _, _, _, _, err := pool.unit.GetTransaction(hash); err != nil {
 		// 既不在交易池，也没确认的交易（无效交易）
 		return nil, errors.New(fmt.Sprintf("%s (hash: %s)", err.Error(), hash.String()))
 	}

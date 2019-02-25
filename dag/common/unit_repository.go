@@ -43,7 +43,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/validator"
+	//"github.com/palletone/go-palletone/validator"
 )
 
 type IUnitRepository interface {
@@ -65,7 +65,7 @@ type IUnitRepository interface {
 	GetUnit(hash common.Hash) (*modules.Unit, error)
 
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
-	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64)
+	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
@@ -95,16 +95,16 @@ type UnitRepository struct {
 	dagdb storage.IDagDb
 	idxdb storage.IIndexDb
 	//uxtodb         storage.IUtxoDb
-	statedb        storage.IStateDb
-	propdb         storage.IPropertyDb
-	validate       validator.Validator
+	statedb storage.IStateDb
+	propdb  storage.IPropertyDb
+	//validate       validator.Validator
 	utxoRepository IUtxoRepository
 }
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	val := validator.NewValidate(dagdb, utxoRep, statedb)
-	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, validate: val, utxoRepository: utxoRep, propdb: propdb}
+	//val := validator.NewValidate(dagdb, utxoRep, statedb)
+	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, utxoRepository: utxoRep, propdb: propdb}
 }
 
 func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
@@ -114,8 +114,8 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	val := validator.NewValidate(dagdb, utxoRep, statedb)
-	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, validate: val, utxoRepository: utxoRep}
+	//val := validator.NewValidate(dagdb, utxoRep, statedb)
+	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, utxoRepository: utxoRep}
 }
 
 func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
@@ -197,7 +197,7 @@ func (rep *UnitRepository) GetHashByNumber(number *modules.ChainIndex) (common.H
 func (rep *UnitRepository) GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	return rep.dagdb.GetBody(unitHash)
 }
-func (rep *UnitRepository) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+func (rep *UnitRepository) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
 	return rep.dagdb.GetTransaction(hash)
 }
 func (rep *UnitRepository) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
@@ -547,10 +547,11 @@ func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Tr
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, _, _, _ := rep.dagdb.GetTransaction(txHash)
+		tx, _, _, _, err := rep.dagdb.GetTransaction(txHash)
 		if err != nil {
-			txs = append(txs, tx)
+			return nil, err
 		}
+		txs = append(txs, tx)
 	}
 	return txs, nil
 }
@@ -1300,7 +1301,10 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 	alltxs := make(map[string]modules.Transactions)
 	txs := make(modules.Transactions, 0)
 	for _, hash := range hashs {
-		tx, _, _, _ := rep.dagdb.GetTransaction(hash)
+		tx, _, _, _, err := rep.dagdb.GetTransaction(hash)
+		if err != nil {
+			return nil, err
+		}
 		txs = append(txs, tx)
 	}
 	alltxs["into"] = txs
@@ -1350,7 +1354,10 @@ func (unitOp *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules
 		for _, v := range header.ParentsHash {
 			md.ParentsHash = v
 		}
-		tx, _, _, _ := unitOp.dagdb.GetTransaction(hash)
+		tx, _, _, _, err := unitOp.dagdb.GetTransaction(hash)
+		if err != nil {
+			return nil, err
+		}
 		md.MainData = getMaindata(tx)
 		md.ExtraData = getExtradata(tx)
 		md.UnitHash = unithash

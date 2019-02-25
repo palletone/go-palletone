@@ -19,18 +19,19 @@
 package jury
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"sync"
 	"time"
-	"crypto/ecdsa"
-	"crypto/rand"
-	"crypto/elliptic"
 
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
@@ -38,7 +39,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/common/util"
 )
 
 type PeerType = uint8
@@ -73,7 +73,7 @@ type iDag interface {
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
+	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 }
 
 type Juror struct {
@@ -95,7 +95,7 @@ type electionInfo struct {
 }
 
 type contractTx struct {
-	state int //contract run state, 0:default, 1:running
+	state    int                    //contract run state, 0:default, 1:running
 	addrHash []common.Hash          //dynamic
 	reqTx    *modules.Transaction   //request contract
 	rstTx    *modules.Transaction   //contract run result---system
@@ -160,7 +160,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		mtx:            make(map[common.Hash]*contractTx),
 		electionNum:    cfg.ElectionNum,
 		contractSigNum: cfg.ContractSigNum,
-		validator: validator,
+		validator:      validator,
 	}
 
 	log.Info("NewContractProcessor ok", "local address:", p.local)

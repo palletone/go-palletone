@@ -632,7 +632,10 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				//1.通过交易hash获取单元hash
 				//txin.PreviousOutPoint.TxHash 获取txhash
 				//dagdb.GetTransaction()
-				_, unitHash, _, _ := dagdb.GetTransaction(txin.PreviousOutPoint.TxHash)
+				_, unitHash, _, _, err := dagdb.GetTransaction(txin.PreviousOutPoint.TxHash)
+				if err != nil {
+					return 0, err
+				}
 				//2.通过单元hash获取单元信息
 				header, _ := dagdb.GetHeader(unitHash)
 				//3.通过单元获取头部信息中的时间戳
