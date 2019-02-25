@@ -140,8 +140,9 @@ func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
-		return nil, errors.New("Contract not initialized")
+		return nil, errors.New("contract not initialized")
 	}
+	//depId := common.NewAddress(deployId[:20], common.ContractHash)
 	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
 }
 
@@ -153,7 +154,7 @@ func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImag
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
-		return errors.New("Contract not initialized")
+		return errors.New("contract not initialized")
 	}
 	return cc.Stop(deployId, chainID, deployId, txid, deleteImage)
 }

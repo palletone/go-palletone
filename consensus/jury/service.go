@@ -446,7 +446,7 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 	p.locker.Unlock()
 	ctx := p.mtx[reqId]
 	if !isSystemContract(tx) {
-		if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo
+		if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, nil, err
 		}
 	}

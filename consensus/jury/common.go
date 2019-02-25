@@ -196,13 +196,13 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					txid:        reqPay.Txid,
 					deleteImage: reqPay.DeleteImage,
 				}
-				_, err := ContractProcess(contract, req) //todo
+				stopResult, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_STOP_REQUEST contractId(%s) err:%s", req.deployId, err))
 				}
-				//payload := stopResult.(*modules.ContractStopPayload)
-				//msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_STOP, payload))
+				payload := stopResult.(*modules.ContractStopPayload)
+				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_STOP, payload))
 				return modules.APP_CONTRACT_STOP, msgs, nil
 			}
 		}
@@ -321,7 +321,6 @@ func getTxSigNum(tx *modules.Transaction) int {
 }
 
 func (p *Processor) checkTxIsExist(tx *modules.Transaction) bool {
-	// check tx exist
 	if p.validator.CheckTxIsExist(tx) {
 		return false
 	}
@@ -329,42 +328,11 @@ func (p *Processor) checkTxIsExist(tx *modules.Transaction) bool {
 }
 
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
-	//// check tx exist
-	//if p.validator.CheckTxIsExist(tx) {
-	//	return false
-	//}
 	err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Errorf("Validate tx[%s] throw an error:%s", tx.Hash().String(), err.Error())
 	}
 	return err == nil
-	//if tx == nil {
-	//	return false
-	//}
-	//var sigs []modules.SignatureSet
-	//tmpTx := &modules.Transaction{}
-	////todo 检查msg的有效性
-	//
-	//for _, msg := range tx.TxMessages {
-	//	if msg.App == modules.APP_SIGNATURE {
-	//		sigs = msg.Payload.(*modules.SignaturePayload).Signatures
-	//	} else {
-	//		tmpTx.TxMessages = append(tmpTx.TxMessages, msg)
-	//	}
-	//}
-	//printTxInfo(tmpTx)
-	//if len(sigs) > 0 {
-	//	for i := 0; i < len(sigs); i++ {
-	//		if !keystore.VerifyTXWithPK(sigs[i].Signature, tmpTx, sigs[i].PubKey) {
-	//			log.Debug("ValidateTxSig", "VerifyTXWithPK sig fail!!!!", tmpTx.RequestHash().String())
-	//			//log.Debug("--ValidateTxSig", "tx info:", tmpTx)
-	//			//log.Debug("--ValidateTxSig", "sigSet info:", sigs[i])
-	//			//return false
-	//		}
-	//	}
-	//}
-	//
-	//return true
 }
 
 func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType modules.MessageType) bool {

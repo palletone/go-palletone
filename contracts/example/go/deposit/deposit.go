@@ -58,9 +58,11 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
 	case "ApplyBecomeMediator":
+		log.Info("Enter DepositChaincode Contract ApplyBecomeMediator Invoke")
 		//申请成为Mediator
 		return d.applyBecomeMediator(stub, args)
 	case "HandleForApplyBecomeMediator":
+		log.Info("Enter DepositChaincode Contract HandleForApplyBecomeMediator Invoke")
 		//基金会对加入申请Mediator进行处理
 		return d.handleForApplyBecomeMediator(stub, args)
 	case "MediatorApplyQuitMediator":
@@ -168,6 +170,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(balance)
 		//获取Mediator申请加入列表
 	case "GetBecomeMediatorApplyList":
+		log.Info("Enter DepositChaincode Contract GetBecomeMediatorApplyList Invoke")
 		list, err := stub.GetState("ListForApplyBecomeMediator")
 		if err != nil {
 			return shim.Error(err.Error())
@@ -178,6 +181,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(list)
 		//获取已同意的mediator列表
 	case "GetAgreeForBecomeMediatorList":
+		log.Info("Enter DepositChaincode Contract GetAgreeForBecomeMediatorList Invoke")
 		list, err := stub.GetState("ListForAgreeBecomeMediator")
 		if err != nil {
 			return shim.Error(err.Error())

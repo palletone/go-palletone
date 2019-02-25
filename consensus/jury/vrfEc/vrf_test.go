@@ -29,7 +29,7 @@ import (
 )
 
 //func testVrf(t *testing.T, kt keypair.KeyType, curve byte) {
-func testVrf1(t *testing.T) { //todo  后面再继续修改为s256进行验证吧
+func testVrf1(t *testing.T) {
 	//pubs := (*btcec.PublicKey)(pub.(*ecdsa.PublicKey)).SerializeCompressed()
 	//t.Logf("pubs:%v", pubs)
 
@@ -72,7 +72,6 @@ func testVrf1(t *testing.T) { //todo  后面再继续修改为s256进行验证�
 
 func testVrf2(t *testing.T) { //todo  后面再继续修改为s256进行验证吧
 	//t.Logf("pubs:%v", pubs)
-
 	//key, err := crypto.GenerateKey()
 
 	c := elliptic.P256() //ok

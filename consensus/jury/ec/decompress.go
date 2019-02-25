@@ -190,7 +190,6 @@ func curveSqrt(ySquare *big.Int, curve *elliptic.CurveParams) *big.Int {
 		}
 
 		seqU, seqV = fastLucasSequence(curve.P, lucasParamP, lucasParamQ, k)
-
 		tmp6 := big.NewInt(0)
 		tmp6.Mul(seqV, seqV)
 		tmp6.Mod(tmp6, curve.P)

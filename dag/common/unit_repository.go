@@ -759,7 +759,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			}
 		case modules.APP_CONTRACT_INVOKE:
 			if ok := rep.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
-				return fmt.Errorf("Save contract invode payload error.")
+				return fmt.Errorf("save contract invode payload error")
 			}
 		case modules.APP_CONTRACT_STOP:
 			if ok := rep.saveContractStop(reqId, msg); !ok {

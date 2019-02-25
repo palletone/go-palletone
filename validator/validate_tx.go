@@ -133,7 +133,21 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			if len(payload.ContractId) <= 0 {
 				return TxValidationCode_INVALID_CONTRACT
 			}
-
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			payload, _ := msg.Payload.(*modules.ContractStopRequestPayload)
+			if len(payload.ContractId) == 0 {
+				return TxValidationCode_INVALID_CONTRACT
+			}
+			// 验证ContractId有效性
+			if len(payload.ContractId) <= 0 {
+				return TxValidationCode_INVALID_CONTRACT
+			}
+		case modules.APP_CONTRACT_STOP:
+			payload, _ := msg.Payload.(*modules.ContractStopPayload)
+			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
+			if validateCode != TxValidationCode_VALID {
+				return validateCode
+			}
 		case modules.APP_SIGNATURE:
 			// 签名验证
 			payload, _ := msg.Payload.(*modules.SignaturePayload)
@@ -149,6 +163,8 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			if validateCode != TxValidationCode_VALID {
 				return validateCode
 			}
+
+
 		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:
 		default:
@@ -233,6 +249,14 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 	case *modules.ContractInstallRequestPayload:
 		if app == modules.APP_CONTRACT_TPL_REQUEST {
+			return true
+		}
+	case *modules.ContractStopRequestPayload:
+		if app == modules.APP_CONTRACT_STOP_REQUEST {
+			return true
+		}
+	case *modules.ContractStopPayload:
+		if app == modules.APP_CONTRACT_STOP {
 			return true
 		}
 
