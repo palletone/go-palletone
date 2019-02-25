@@ -173,14 +173,14 @@ func (pRep *PropRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *modules
 	// 本条件是用来生产第一个unit
 	if idx.Index == 0 {
 		/**
-		注：第一个验证单元在genesisTime加上一个验证单元间隔
+		注：第一个unit的生产时间是在genesisTime加上一个unit生产间隔
 		n.b. first Unit is at genesisTime plus one UnitInterval
 		*/
 		genesisTime := ts
 		return time.Unix(genesisTime+int64(slotNum)*int64(interval), 0)
 	}
 
-	// 最近的验证单元的绝对slot
+	// 最近的unit的绝对slot
 	var unitAbsSlot = ts / int64(interval)
 	// 最近的时间槽起始时间
 	unitSlotTime := time.Unix(unitAbsSlot*int64(interval), 0)
@@ -189,7 +189,7 @@ func (pRep *PropRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *modules
 
 	/**
 	如果是维护周期的话，加上维护间隔时间
-	如果不是，就直接加上验证单元的slot时间
+	如果不是，就直接加上unit的slot时间
 	*/
 	// "slot 1" is UnitSlotTime,
 	// plus maintenance interval if last uint is a maintenance Unit

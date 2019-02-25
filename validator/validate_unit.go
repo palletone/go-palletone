@@ -31,7 +31,7 @@ import (
 )
 
 /**
-验证单元的签名，需要比对见证人列表
+验证unit的签名，需要比对见证人列表
 To validate unit's signature, and mediators' signature
 */
 func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCode {

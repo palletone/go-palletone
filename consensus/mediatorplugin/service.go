@@ -189,7 +189,7 @@ func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
-	// 1. 判断是否满足生产验证单元的条件，主要判断本节点是否控制至少一个mediator账户
+	// 1. 判断是否满足生产unit的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
@@ -287,7 +287,7 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	}
 
 	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
-	mp.switchMediatorsDKG()
+	mp.precedingDKGs = mp.activeDKGs
 
 	// 判断是否重新 初始化DKG 和 VSS 协议
 	if !isRenew {
@@ -299,11 +299,6 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 
 	// 3. 开始完成 vss 协议
 	go mp.startVSSProtocol()
-}
-
-func (mp *MediatorPlugin) switchMediatorsDKG() {
-	mp.precedingDKGs = mp.activeDKGs
-	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator)
 }
 
 func (mp *MediatorPlugin) Stop() error {

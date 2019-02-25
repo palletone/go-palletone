@@ -60,7 +60,7 @@ func (mp *MediatorPlugin) scheduleProductionLoop() {
 		timeToNextSecond += time.Second
 	}
 
-	// 2. 安排验证单元生产循环
+	// 2. 安排unit生产循环
 	// Start to production unit for expiration
 	timeout := time.NewTimer(timeToNextSecond)
 	defer timeout.Stop()
@@ -76,12 +76,12 @@ func (mp *MediatorPlugin) scheduleProductionLoop() {
 	}
 }
 
-//验证单元生产状态类型
+// unit生产的状态类型
 type ProductionCondition uint8
 
-//验证单元生产状态枚举
+// unit生产的状态枚举
 const (
-	Produced ProductionCondition = iota // 正常生产验证单元
+	Produced ProductionCondition = iota // 正常生产unit
 	NotSynced
 	NotMyTurn
 	NotTimeYet
@@ -93,7 +93,7 @@ const (
 )
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
-	// 1. 尝试生产验证单元
+	// 1. 尝试生产unit
 	result, detail := mp.maybeProduceUnit()
 
 	// 2. 打印尝试结果
@@ -250,7 +250,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		go mp.groupSignUnit(scheduledMediator, unitHash)
 	}
 
-	// 4. 异步向区块链网络广播验证单元
+	// 4. 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
 
 	return Produced, detail

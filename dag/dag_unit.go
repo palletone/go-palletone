@@ -102,7 +102,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		}
 	}
 
-	// 2. 生产验证单元，添加交易集、时间戳、签名
+	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnits, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
 		log.Debug("GenerateUnit", "error", err.Error())
@@ -157,12 +157,12 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
  * @return true if we switched forks as a result of this push.
  */
 func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
-	// 1. 如果当前初生产的验证单元不在最长链条上，那么就切换到最长链分叉上。
+	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
 
 	// 2. 更新状态
 	dag.ApplyUnit(newUnit)
 
-	// 3. 将验证单元添加到本地DB
+	// 3. 将unit添加到本地DB
 	//err := dag.SaveUnit(newUnit, false)
 	//if err != nil {
 	//	log.Debug("unit_production", "PushUnit err:", err)
