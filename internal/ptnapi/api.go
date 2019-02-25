@@ -570,7 +570,7 @@ func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, para
 
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
-	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
+	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
 	}

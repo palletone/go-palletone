@@ -28,7 +28,6 @@ import (
 	md "github.com/palletone/go-palletone/dag/modules"
 	"sync/atomic"
 	"time"
-	"github.com/palletone/go-palletone/common"
 )
 
 var initFlag int32
@@ -143,8 +142,8 @@ func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][
 		log.Error("initFlag == 0")
 		return nil, errors.New("contract not initialized")
 	}
-	depId := common.NewAddress(deployId[:20], common.ContractHash)
-	return cc.Invoke(c.dag, chainID, depId[:], txid, args, timeout)
+	//depId := common.NewAddress(deployId[:20], common.ContractHash)
+	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
