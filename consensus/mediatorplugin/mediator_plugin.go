@@ -90,7 +90,6 @@ const (
 	//Lag
 	Consecutive
 	ExceptionProducing
-	UnknownCondition
 )
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
@@ -126,9 +125,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 		log.Infof("Not producing unit because node appears to be on a minority fork with only %v "+
 			"mediator participation.", detail["ParticipationRate"])
 	case ExceptionProducing:
-		log.Info("Exception producing unit")
-	case UnknownCondition:
-		log.Info("Unknown condition!")
+		log.Infof("Exception producing unit: %v", detail["Msg"])
+	default:
+		log.Infof("Unknown condition while producing unit!")
 	}
 
 	// 3. 继续循环生产计划
@@ -168,20 +167,22 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		return NotTimeYet, detail
 	}
 
-	// this Conditional judgment should fail, because now <= HeadUnitTime
+	// this conditional judgment should fail, because now <= HeadUnitTime
 	// should have resulted in slot == 0.
 	//
-	// if this assert triggers, there is a serious bug in GetSlotAtTime()
-	// which would result in allowing a later block to have a timestamp
-	// less than or equal to the previous Unit
+	// if this assert triggers, there is a serious bug in dag.GetSlotAtTime()
+	// which would result in allowing a later unit to have a timestamp
+	// less than or equal to the previous unit
 	if !(now.Unix() > dag.HeadUnitTime()) {
-		panic("The later Unit have a timestamp less than or equal to the previous!")
+		//panic("The later unit have a timestamp less than or equal to the previous!")
+		detail["Msg"] = "The property database is being updated because the new unit is received synchronously."
+		return ExceptionProducing, detail
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slot)
 	if scheduledMediator.Equal(common.Address{}) {
-		log.Error("The current shuffled mediators is nil!")
-		return UnknownCondition, detail
+		detail["Msg"] = "The current shuffled mediators is nil!"
+		return ExceptionProducing, detail
 	}
 
 	// we must control the Mediator scheduled to produce the next Unit.
@@ -211,6 +212,9 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		return LowParticipation, detail
 	}
 
+	// todo 由于当前代码更新数据库没有加锁，可能如下情况：
+	// 生产单元的协程满足了前面的判断，此时新收到一个unit正在更新数据库，后面的判断有不能通过
+	// todo 调试的代码，暂时注释掉该判断，release版本的代码必须使用该判断
 	scheduledTime := dag.GetSlotTime(slot)
 	//diff := scheduledTime.Sub(now)
 	//if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
@@ -219,16 +223,17 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	//	return Lag, detail
 	//}
 
-	// 2. 生产验证单元
+	// 2. 生产单元
 	//execute contract
 	// todo 待优化
 	if err := mp.ptn.ContractProcessor().AddContractLoop(mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
-		log.Error("MaybeProduceUnit", "RunContractLoop err:", err.Error())
+		log.Debug("MaybeProduceUnit", "RunContractLoop err:", err.Error())
 	}
 
 	groupPubKey := mp.LocalMediatorPubKey(scheduledMediator)
 	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
 	if newUnit == nil || newUnit.IsEmpty() {
+		detail["Msg"] = "The newly produced unit is empty!"
 		return ExceptionProducing, detail
 	}
 

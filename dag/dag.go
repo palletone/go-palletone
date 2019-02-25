@@ -303,12 +303,12 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
 	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
-	defer func(start time.Time) {
-		if len(units) > 0 {
-			log.Debug("Dag InsertDag", "elapsed", time.Since(start), "unit index start", units[0].UnitHeader.Number.Index, "size:", len(units))
-		}
-
-	}(time.Now())
+	//defer func(start time.Time) {
+	//	if len(units) > 0 {
+	//		log.Debug("Dag InsertDag", "elapsed", time.Since(start), "unit index start", units[0].NumberU64(), "size:", len(units))
+	//	}
+	//
+	//}(time.Now())
 	count := int(0)
 	for i, u := range units {
 		// todo 此处应判断第0个unit的父unit是否已存入本节点
