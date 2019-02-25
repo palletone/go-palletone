@@ -3,7 +3,11 @@
 function StartGPTN()
 {
     echo ===============$1===============
-    nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml >> node$1/nohup.out &
+    if [ $1 -ne 1 ] ;then
+        nohup ./gptn --datadi node$1/palletone --configfile node$1/ptn-config.toml >> node$1/nohup.out &
+    else
+        nohup ./gptn --datadi node$1/palletone --configfile node$1/ptn-config.toml --noProduce --staleProduce  >> node$1/nohup.out &
+    fi
 }
 
 

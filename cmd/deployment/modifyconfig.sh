@@ -19,7 +19,10 @@ function ModifyConfig()
 dumcpconfig=`./gptn dumpconfig`
 echo $dumpconfig
 
+
 if [ $1 -ne 1 ] ;then
+
+
 newipcpath="IPCPath=\"gptn$1.ipc\""
 sed -i '/^IPCPath/c'$newipcpath'' ptn-config.toml
 
@@ -41,30 +44,31 @@ sed -i '/^BtcHost/c'$newBtcHost'' ptn-config.toml
 newContractAddress="ContractAddress=\"127.0.0.1:$[$ContractAddress+$1]\""
 sed -i '/^ContractAddress/c'$newContractAddress'' ptn-config.toml
 
-newEnableProducing="EnableProducing=true"
-sed -i '/^EnableProducing/c'$newEnableProducing'' ptn-config.toml
 
 else
+
 
 dumcpjson=`./gptn dumpjson`
 echo $dumpjson
 
-newEnableProducing="EnableProducing=false"
-sed -i '/^EnableProducing/c'$newEnableProducing'' ptn-config.toml
-
-newEnableStaleProduction="EnableStaleProduction=true"
-sed -i '/^EnableStaleProduction/c'$newEnableStaleProduction'' ptn-config.toml
 
 fi
+
+
+newEnableProducing="EnableProducing=true"
+sed -i '/^EnableProducing/c'$newEnableProducing'' ptn-config.toml
+
+newEnableStaleProduction="EnableStaleProduction=false"
+sed -i '/^EnableStaleProduction/c'$newEnableStaleProduction'' ptn-config.toml
 
 newEnableConsecutiveProduction="EnableConsecutiveProduction=false"
 sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-config.toml
 
-newEnableGroupSigning="EnableGroupSigning=false"
-sed -i '/^EnableGroupSigning/c'$newEnableGroupSigning'' ptn-config.toml
-
 newRequiredParticipation="RequiredParticipation=0"
 sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml
+
+newEnableGroupSigning="EnableGroupSigning=false"
+sed -i '/^EnableGroupSigning/c'$newEnableGroupSigning'' ptn-config.toml
 
 
 createaccount=`./createaccount.sh`
