@@ -150,6 +150,9 @@ func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Addr
 func (ud *UnitDag4Test) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
 	return nil, hash, 0, 0, nil
 }
+func (ud *UnitDag4Test) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
+	return nil, hash, nil
+}
 
 // Tests that if the transaction count belonging to multiple accounts go above
 // some hard threshold, if they are under the minimum guaranteed slot count then
@@ -272,10 +275,18 @@ func TestTransactionAddingTxs(t *testing.T) {
 	t1 := time.Now()
 	fmt.Println("addlocals start.... ", t1)
 	pool.AddLocals(txpool_txs)
-
-	log.Debugf("pending:%d", len(pool.pending))
+	pendingTxs, _ := pool.Pending()
+	pending := 0
+	p_txs := make([]*modules.TxPoolTransaction, 0)
+	for _, txs := range pendingTxs {
+		for _, tx := range txs {
+			pending++
+			p_txs = append(p_txs, tx)
+		}
+	}
+	log.Debugf("pending:%d", pending)
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
-	for hash, list := range pool.pending {
+	for hash, list := range pendingTxs {
 		if len(list) != int(config.AccountSlots) {
 			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(list), config.AccountSlots)
 		} else {
@@ -300,10 +311,13 @@ func TestTransactionAddingTxs(t *testing.T) {
 				}
 			}
 			all = len(txs)
-			for _, list := range p.pending {
-				pending_cache += len(list)
+			for _, tx := range p.all {
+				if tx.Pending {
+					pending_cache++
+				} else {
+					queue_cache++
+				}
 			}
-			queue_cache = len(p.queue)
 		}
 
 		//  add tx : failed , and discared the tx.
@@ -325,7 +339,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, len(pool.all), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
-
 }
 func transaction(msg []*modules.Message) *modules.Transaction {
 	return pricedTransaction(msg)
