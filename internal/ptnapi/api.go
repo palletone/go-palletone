@@ -570,7 +570,7 @@ func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, para
 
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
-	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid[:], fullArgs, 0)
+	rsp, err := s.b.ContractQuery(contractId.Bytes21(), txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -760,6 +760,14 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 
 	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
 	log.Info("-----Ccstoptx:" + hex.EncodeToString(rsp))
+	return hex.EncodeToString(rsp), err
+}
+
+func (s *PublicBlockChainAPI) Election(ctx context.Context, id uint32) (string, error) {
+	log.Info("-----Election:", "id", id)
+
+	rsp, err := s.b.ElectionVrf(id)
+	log.Info("-----Election:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }
 

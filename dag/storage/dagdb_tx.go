@@ -207,18 +207,18 @@ func (dagdb *DagDb) saveReqIdByTx(tx *modules.Transaction) error {
 
 // GetTransaction retrieves a specific transaction from the database , along with its added positional metadata
 // p2p 同步区块 分为同步header 和body。 GetBody可以省掉节点包装交易块的过程。
-func (dagdb *DagDb) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64) {
+func (dagdb *DagDb) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
 	unitHash, unitNumber, txIndex, err1 := dagdb.GetTxLookupEntry(hash)
 	if err1 != nil {
 		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err1, "tx_hash:", hash)
-		return nil, unitHash, unitNumber, txIndex
+		return nil, unitHash, unitNumber, txIndex, err1
 	}
 	tx, err := dagdb.gettrasaction(hash)
 	if err != nil {
 		log.Info("gettrasaction error:", err.Error())
-		return nil, unitHash, unitNumber, txIndex
+		return nil, unitHash, unitNumber, txIndex, err
 	}
-	return tx, unitHash, unitNumber, txIndex
+	return tx, unitHash, unitNumber, txIndex, nil
 }
 
 // gettrasaction can get a transaction by hash.
@@ -268,13 +268,14 @@ func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 
 	return txid, err
 }
-func (dagdb *DagDb) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
-	unitHash, _, _, err := dagdb.GetTxLookupEntry(hash)
-	if err != nil {
-		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err, "tx_hash:", hash)
-		return nil, unitHash, err
-	}
 
-	tx, err1 := dagdb.gettrasaction(hash)
-	return tx, unitHash, err1
-}
+//func (dagdb *DagDb) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
+//	unitHash, _, _, err := dagdb.GetTxLookupEntry(hash)
+//	if err != nil {
+//		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err, "tx_hash:", hash)
+//		return nil, unitHash, err
+//	}
+//
+//	tx, err1 := dagdb.gettrasaction(hash)
+//	return tx, unitHash, err1
+//}

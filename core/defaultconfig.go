@@ -31,8 +31,8 @@ const (
 	DefaultDepositAmountForJury      = "1000"
 	DefaultDepositAmountForDeveloper = "800"
 
-	DefaultFoundationAddress      = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
-	DefaultTokenHolder            = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultFoundationAddress = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
+	DefaultTokenHolder       = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 
 	DefaultMediator = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
 	DefaultNodeInfo = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
@@ -40,13 +40,12 @@ const (
 	DefaultInitPubKey = "XmMwxWh6J71HtzndJy37gNDE9zcZqnHANkbxLHfBWYQwfBJyLeWq17kNRRR4bavoe3Brf5oGpWCYBy" +
 		"MpbsWk45ymz4kmjU2AZo8Rm3mJ3MQHpdAgTo2nzWmqU3vCTW6qCfviPD1MKu3FJtmaWiLzdavLx831eCBXA1CdaiXAeU5MPcQ"
 
-	DefaultJuryAddr        = "P16bXzewsexHwhGYdt1c1qbzjBirCqDg8mN"
+	DefaultJuryAddr = "P16bXzewsexHwhGYdt1c1qbzjBirCqDg8mN"
 
 	DefaultMediatorCount       = 5 //21
 	DefaultMinMediatorCount    = 3 //11
 	DefaultMinMediatorInterval = 1
 
-	//DefaultText = "Hello PalletOne!",
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
 		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +
 		"刘百祥丨上海丨 GoC-lab发起人兼技术社群负责人,复旦大学计算机博士.\r\n" +

@@ -57,6 +57,7 @@ type IDag interface {
 	CurrentHeader() *modules.Header
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
+	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 	GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 

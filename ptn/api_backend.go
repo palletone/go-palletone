@@ -24,11 +24,11 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -128,7 +128,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	if err := hash.SetHexString(txid); err != nil {
 		return nil, err
 	}
-	tx, unitHash, err := b.ptn.dag.GetTransactionByHash(hash)
+	tx, unitHash, _, _, err := b.ptn.dag.GetTransaction(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func (b *PtnApiBackend) GetUnitTxsHashHex(hash common.Hash) ([]string, error) {
 }
 
 func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson, error) {
-	tx, hash, err := b.ptn.dag.GetTransactionByHash(hash)
+	tx, hash, _, _, err := b.ptn.dag.GetTransaction(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +515,7 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	log.Printf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
-	_,err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
+	_, err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
 	return err
 }
 
@@ -531,6 +531,9 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 }
 func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) ([]byte, error) {
 	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, deleteImage)
+}
+func (b *PtnApiBackend) ElectionVrf(id uint32) ([]byte, error) {
+	return b.ptn.contractPorcessor.ElectionVrfReq(id)
 }
 
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {

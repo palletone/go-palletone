@@ -44,12 +44,25 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	LockTime = 0
 
 	amounts := []ptnjson.AddressAmt{}
+	if from == "" {
+		return "", fmt.Errorf("sender address is empty")
+	}
 	if to == "" {
-		return "", fmt.Errorf("amounts is empty")
+		return "", fmt.Errorf("receiver address is empty")
+	}
+	_,ferr := common.StringToAddress(from)
+	if ferr != nil{
+		return "", fmt.Errorf("sender address is invalid")
+	}
+	_,terr := common.StringToAddress(to)
+	if terr != nil {
+		return "", fmt.Errorf("receiver address is invalid")
 	}
 
 	amounts = append(amounts, ptnjson.AddressAmt{to, amount})
-
+    if len(amounts) == 0 || !amount.IsPositive() {
+		return "", fmt.Errorf("amounts is invalid")
+	}
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
 		return "", err

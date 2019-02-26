@@ -160,7 +160,7 @@ func (l *txPricedList) Removed(hash common.Hash) {
 
 // Cap finds all the transactions below the given price threshold, drops them
 // from the priced list and returs them for further removal from the entire pool.
-func (l *txPricedList) Cap(threshold *big.Int, local *utxoSet) modules.TxPoolTxs {
+func (l *txPricedList) Cap(threshold *big.Int) modules.TxPoolTxs {
 	drop := make(modules.TxPoolTxs, 0, 128) // Remote underpriced transactions to drop
 	save := make(modules.TxPoolTxs, 0, 64)  // Local underpriced transactions to keep
 
@@ -176,12 +176,7 @@ func (l *txPricedList) Cap(threshold *big.Int, local *utxoSet) modules.TxPoolTxs
 			save = append(save, tx)
 			break
 		}
-		// Non stale transaction found, discard unless local
-		if local.containsTx(tx) {
-			save = append(save, tx)
-		} else {
-			drop = append(drop, tx)
-		}
+
 	}
 	for _, tx := range save {
 		heap.Push(l.items, tx)
@@ -191,11 +186,8 @@ func (l *txPricedList) Cap(threshold *big.Int, local *utxoSet) modules.TxPoolTxs
 
 // Underpriced checks whether a transaction is cheaper than (or as cheap as) the
 // lowest priced transaction currently being tracked.
-func (l *txPricedList) Underpriced(tx *modules.TxPoolTransaction, local *utxoSet) bool {
-	// Local transactions cannot be underpriced
-	if local.containsTx(tx) {
-		return false
-	}
+func (l *txPricedList) Underpriced(tx *modules.TxPoolTransaction) bool {
+
 	// Discard stale price points if found at the heap start
 	for len(*l.items) > 0 {
 		head := []*modules.TxPoolTransaction(*l.items)[0]
@@ -217,7 +209,7 @@ func (l *txPricedList) Underpriced(tx *modules.TxPoolTransaction, local *utxoSet
 
 // Discard finds a number of most underpriced transactions, removes them from the
 // priced list and returns them for further removal from the entire pool.
-func (l *txPricedList) Discard(count int, local *utxoSet) modules.TxPoolTxs {
+func (l *txPricedList) Discard(count int) modules.TxPoolTxs {
 	drop := make(modules.TxPoolTxs, 0, count) // Remote underpriced transactions to drop
 	save := make(modules.TxPoolTxs, 0, 64)    // Local underpriced transactions to keep
 
@@ -228,13 +220,7 @@ func (l *txPricedList) Discard(count int, local *utxoSet) modules.TxPoolTxs {
 			l.stales--
 			continue
 		}
-		// Non stale transaction found, discard unless local
-		if local.containsTx(tx) {
-			save = append(save, tx)
-		} else {
-			drop = append(drop, tx)
-			count--
-		}
+
 	}
 	for _, tx := range save {
 		heap.Push(l.items, tx)

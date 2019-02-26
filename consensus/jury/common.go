@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 
+	"math/rand"
 )
 
 func localIsMinSignature(tx *modules.Transaction) bool {
@@ -448,4 +449,16 @@ func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageT
 		}
 	}
 	return modules.APP_UNKNOW, errors.New("getContractTxContractInfo not find")
+}
+
+func getElectionSeedData(in common.Hash) ([]byte, error){
+	rd := make([]byte, 20)
+	_, err := rand.Read(rd)
+	if err != nil {
+		return nil, errors.New("getElectionData, rand fail")
+	}
+	seedData := make([]byte, len(in)+len(rd))
+	copy(seedData, in[:])
+	copy(seedData[len(in):], rd)
+	return seedData, nil
 }

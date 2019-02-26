@@ -21,8 +21,6 @@ package jury
 import (
 	"crypto/ecdsa"
 	"time"
-	"crypto/rand"
-
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -43,42 +41,8 @@ type elector struct {
 	vrfAct vrfAccount
 }
 
-//todo for test!
-//func (e *elector) checkElected(data []byte) (proof []byte, err error) {
-//	if e.num < 0 || e.weight < 10 || data == nil {
-//		return nil, errors.New("CheckElected param error")
-//	}
-//	proofHash, proof, err := e.privkey.Evaluate(data)
-//	if err != nil {
-//		return nil, err
-//	}
-//	selected := alg.Selected(e.num, e.weight, uint64(e.total), proofHash)
-//	if selected > 0 {
-//		return proof, nil
-//	} else {
-//		return nil, nil
-//	}
-//}
-
-//func (e *elector) verifyVRF(proof, data []byte) (bool, error) {
-//	ok, err := e.pubkey.VerifyVRF(proof, data)
-//	if err != nil {
-//		return false, err
-//	}
-//	if ok {
-//		proofHash := vrf.ECVRF_proof2hash(proof)
-//		selected := alg.Selected(e.num, e.weight, e.total, proofHash)
-//		if selected > 0 {
-//			return true, nil
-//		} else {
-//			return false, nil
-//		}
-//	}
-//	return false, nil
-//}
-
 func (e *elector) checkElected(data []byte) (proof []byte, err error) {
-	if e.num < 0 || e.weight < 10 || data == nil {
+	if e.num < 0 || e.weight < 1 || data == nil {
 		return nil, errors.New("CheckElected param error")
 	}
 
@@ -117,22 +81,18 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 	if reqId == (common.Hash{}) {
 		return errors.New("ElectionRequest param is nil")
 	}
-	//seedData= reqId + rand
-	rd := make([]byte, 20)
-	_, err := rand.Read(rd)
+	seedData, err := getElectionSeedData(reqId)
 	if err != nil {
-		return errors.New("ElectionRequest rand fail")
+		return err
 	}
-	seedData := make([]byte, len(reqId)+len(rd))
-	copy(seedData, reqId[:])
-	copy(seedData[len(reqId):], rd)
-
 	ele := electionInfo{
 		eleChan:  make(chan bool, 1),
 		eleNum:   p.electionNum,
 		seedData: seedData,
 	}
+	p.locker.Lock()
 	p.mtx[reqId].eleInfo = ele
+	p.locker.Unlock()
 	reqEvent := ElectionRequestEvent{
 		reqHash: reqId,
 		num:     ele.eleNum,
@@ -218,8 +178,10 @@ func (p *Processor) ProcessElectionResultEvent(event *ElectionEvent) error {
 	if _, ok := p.mtx[rstEvt.reqHash]; !ok {
 		return errors.New("ProcessElectionResultEvent, reqHash not find")
 	}
+	p.locker.Lock()
 	mtx := p.mtx[rstEvt.reqHash]
 	eleInfo := mtx.eleInfo
+	p.locker.Unlock()
 	if len(mtx.addrHash) > eleInfo.eleNum {
 		log.Info("ProcessElectionResultEvent addrHash num > 3")
 		return nil

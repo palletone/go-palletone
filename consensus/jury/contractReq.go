@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool) (reqId []byte, TplId []byte, err error) {
@@ -141,4 +142,17 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
+}
+
+func (p *Processor) ElectionVrfReq(id uint32) ([]byte, error) {
+	//for election test
+	reqId := util.RlpHash(id)
+
+	p.mtx[reqId] = &contractTx{
+		tm:    time.Now(),
+		valid: true,
+	}
+	p.ElectionRequest(reqId, time.Second*5)
+
+	return nil, nil
 }
