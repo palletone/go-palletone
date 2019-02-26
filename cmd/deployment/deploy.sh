@@ -136,5 +136,6 @@ ModifyBootstrapNodes $n
 
 ExecInit $n
 
-MakeTestNet $n
+num=$[$n+1]
+MakeTestNet $num
 

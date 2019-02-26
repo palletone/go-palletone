@@ -174,7 +174,6 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	// which would result in allowing a later unit to have a timestamp
 	// less than or equal to the previous unit
 	if !(now.Unix() > dag.HeadUnitTime()) {
-		//panic("The later unit have a timestamp less than or equal to the previous!")
 		detail["Msg"] = "The property database is being updated because the new unit is received synchronously."
 		return ExceptionProducing, detail
 	}

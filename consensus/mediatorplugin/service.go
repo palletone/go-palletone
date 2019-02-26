@@ -350,6 +350,10 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 
 	for _, medConf := range mss {
 		medAcc := medConf.configToAccount()
+		if medAcc == nil {
+			continue
+		}
+
 		addr := medAcc.Address
 		log.Debug(fmt.Sprintf("this node control mediator account address: %v", addr.Str()))
 

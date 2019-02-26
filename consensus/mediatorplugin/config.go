@@ -21,12 +21,13 @@ package mediatorplugin
 import (
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"gopkg.in/urfave/cli.v1"
 )
 
 const (
-	DefaultPassword              = "password"
+	DefaultPassword              = "1"
 	DefaultInitPrivKey           = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
 	DefaultRequiredParticipation = 33
 )
@@ -126,7 +127,8 @@ func (medConf *MediatorConf) configToAccount() *MediatorAccount {
 	// 1. 解析 mediator 账户地址
 	addr, err := core.StrToMedAdd(medConf.Address)
 	if err != nil {
-		panic(err.Error())
+		log.Debugf(err.Error())
+		return nil
 	}
 
 	// 2. 解析 mediator 的 DKS 初始公私钥
