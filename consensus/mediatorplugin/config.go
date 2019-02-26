@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	DefaultPassword              = "password"
+	DefaultPassword              = "1"
 	DefaultInitPrivKey           = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
 	DefaultRequiredParticipation = 33
 )
