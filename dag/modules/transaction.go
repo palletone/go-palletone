@@ -662,7 +662,17 @@ func (msg *Transaction) SerializeSize() int {
 //Deep copy transaction to a new object
 func (tx *Transaction) Clone() Transaction {
 	var newTx Transaction
-	obj.DeepCopy(&newTx, tx)
+	//modify by wzhyuan 
+    txjson, err := json.Marshal(tx)
+    if err != nil {
+        return newTx
+    }
+    err = json.Unmarshal([]byte(txjson), &newTx)
+    if err != nil {
+        return  newTx
+    }
+    // modify by wzhyuan
+	//obj.DeepCopy(&newTx, tx)
 	return newTx
 }
 
