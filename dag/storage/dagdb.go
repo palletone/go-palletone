@@ -345,8 +345,8 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	}
 	return batch.Write()
 }
-func (dagdb *DagDb) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
-	key := append(constants.LookupPrefix, hash.Bytes()...)
+func (dagdb *DagDb) GetTxLookupEntry(txHash common.Hash) (common.Hash, uint64, uint64, error) {
+	key := append(constants.LookupPrefix, txHash.Bytes()...)
 	entry := &modules.TxLookupEntry{}
 	err := retrieve(dagdb.db, key, entry)
 	if err != nil {
