@@ -132,9 +132,10 @@ LoopDeploy $n;
 json="node1/ptn-genesis.json"
 replacejson $json 
 
-
 ModifyBootstrapNodes $n
 
 ExecInit $n
 
+num=$[$n+1]
+MakeTestNet $num
 

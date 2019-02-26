@@ -26,6 +26,8 @@ import (
 	"reflect"
 	"unicode"
 
+	"strings"
+
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -36,14 +38,12 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
-	"strings"
 )
 
 var defaultConfigPath = "./ptn-config.toml"
@@ -361,19 +361,15 @@ func dumpConfig(ctx *cli.Context) error {
 
 // dumpConfig is the dumpconfig command.
 func dumpJson(ctx *cli.Context) error {
-	//account := ""
-	//mediators := []*mp.MediatorConf{}
-	//nodeStr := ""
-	//mediator := &mp.MediatorConf{}
+	genesis := createExampleGenesis()
 
-	account := core.DefaultTokenHolder
-	mediators := make([]*mp.MediatorConf, 0)
-	nodeStr := core.DefaultNodeInfo
-	mediator := mp.DefaultMediatorConf()
+	//配置测试的基金会地址及密码
+	account, _, err := createExampleAccount(ctx)
+	if err != nil {
+		return err
+	}
+	genesis.SystemConfig.FoundationAddress = account
 
-	mediators = append(mediators, mediator)
-
-	genesis := createExampleGenesis(account, mediators, nodeStr)
 	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
 	if err != nil {
 		utils.Fatalf("%v", err)

@@ -75,8 +75,8 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		becomeList = []*MediatorRegisterInfo{&mediatorInfo}
 	} else {
 		isExist := isInMediatorInfolist(mediatorInfo.Address, becomeList)
-		if isExist {
-			log.Error("Node is exist in the become list.")
+		if !isExist {
+			log.Debug("Node is exist in the become list.")
 			return shim.Error("Node is exist in the become list.")
 		}
 		becomeList = append(becomeList, &mediatorInfo)
