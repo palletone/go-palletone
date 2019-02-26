@@ -96,6 +96,7 @@ type TxPoolTransaction struct {
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl float64   `json:"priority_lvl"` // 打包的优先级
 	Nonce        uint64    // transaction'hash maybe repeat.
+	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
 	Discarded    bool         // will remove
@@ -368,6 +369,12 @@ func (s *TxByPriority) Pop() interface{} {
 	*s = old[0 : n-1]
 	return x
 }
+
+type TxByCreationDate []*TxPoolTransaction
+
+func (tc TxByCreationDate) Len() int           { return len(tc) }
+func (tc TxByCreationDate) Less(i, j int) bool { return tc[i].Priority_lvl > tc[j].Priority_lvl }
+func (tc TxByCreationDate) Swap(i, j int)      { tc[i], tc[j] = tc[j], tc[i] }
 
 // Message is a fully derived transaction and implements Message
 //
