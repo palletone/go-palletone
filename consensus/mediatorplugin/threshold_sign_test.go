@@ -56,8 +56,6 @@ func init() {
 
 		fmt.Printf("Key[%d] priv: %s, pub %s\n", i, sec.String(), pub.String())
 	}
-
-	//	dkgs = dkgGen()
 }
 
 func genPair() (kyber.Scalar, kyber.Point) {
@@ -65,21 +63,19 @@ func genPair() (kyber.Scalar, kyber.Point) {
 	return sc, suite.Point().Mul(sc, nil)
 }
 
-func dkgGen() []*dkg.DistKeyGenerator {
+func dkgGen(t *testing.T) []*dkg.DistKeyGenerator {
 	dkgs := make([]*dkg.DistKeyGenerator, nbParticipants)
 	for i := 0; i < nbParticipants; i++ {
 		//dkg, err := dkg.NewDistKeyGeneratorWithoutSecret(suite, partSec[i], partPubs, ntThreshold)
 		dkg, err := dkg.NewDistKeyGenerator(suite, partSec[i], partPubs, ntThreshold)
-		if err != nil {
-			panic(err)
-		}
+		require.Nil(t, err)
 		dkgs[i] = dkg
 	}
 	return dkgs
 }
 
 func fullExchange(t *testing.T) {
-	dkgs = dkgGen()
+	dkgs = dkgGen(t)
 
 	// full secret sharing exchange
 	// 1. broadcast deals

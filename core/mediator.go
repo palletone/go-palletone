@@ -80,6 +80,10 @@ func StrToMedNode(medNode string) (*discover.Node, error) {
 func StrToMedAdd(addStr string) (common.Address, error) {
 	address := strings.TrimSpace(addStr)
 	address = strings.Trim(address, "\"")
+	if address == "" {
+		err := fmt.Errorf("mediator account address is empty string")
+		return common.Address{}, err
+	}
 
 	addr, err := common.StringToAddress(address)
 	if err != nil || addr.GetType() != common.PublicKeyHash {
