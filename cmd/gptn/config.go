@@ -372,8 +372,14 @@ func dumpJson(ctx *cli.Context) error {
 	mediator := mp.DefaultMediatorConf()
 
 	mediators = append(mediators, mediator)
-
 	genesis := createExampleGenesis(account, mediators, nodeStr)
+	//配置测试的基金会地址及密码
+	account,password,err := createExampleAccount(ctx)
+	if err != nil {
+		return err
+	}
+	genesis.SystemConfig.FoundationAddress = account
+	genesis.SystemConfig.FoundationPassword = password
 	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
 	if err != nil {
 		utils.Fatalf("%v", err)

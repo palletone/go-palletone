@@ -136,7 +136,13 @@ func createGenesisJson(ctx *cli.Context) error {
 	}
 
 	genesisState := createExampleGenesis(account, mcs, nodeStr)
-
+	//配置测试的基金会地址及密码
+	account,password,err := createExampleAccount(ctx)
+	if err != nil {
+		return err
+	}
+	genesisState.SystemConfig.FoundationAddress = account
+	genesisState.SystemConfig.FoundationPassword = password
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(genesisState, "", "  ")
 	if err != nil {
@@ -244,7 +250,7 @@ func createExampleGenesis(tokenAccount string, mediators []*mp.MediatorConf, nod
 	SystemConfig := core.SystemConfig{
 		DepositRate:               core.DefaultDepositRate,
 		//FoundationAddress:         core.DefaultFoundationAddress,
-		FoundationAddress:         tokenAccount,
+		//FoundationAddress:         tokenAccount,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
