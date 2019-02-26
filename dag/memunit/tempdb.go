@@ -28,6 +28,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -127,8 +128,8 @@ func (i *TempdbIterator) SetReleaser(releaser util.Releaser) {
 }
 
 func (db *Tempdb) NewIterator() iterator.Iterator {
+	log.Warn("This function may be has a bug, it doesn't include temp data. --Devin")
 	return db.db.NewIterator()
-
 }
 
 // NewIteratorWithPrefix returns a iterator to iterate over subset of database content with a particular prefix.
@@ -136,6 +137,7 @@ func (db *Tempdb) NewIterator() iterator.Iterator {
 func (db *Tempdb) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
 	result := getprefix(db.db, prefix)
 	//Replace by tempdb newest value
+	db.lock.RLock()
 	for key := range db.kv {
 		if strings.HasPrefix(key, string(prefix)) {
 			result[string(key)] = db.kv[key]
@@ -147,6 +149,7 @@ func (db *Tempdb) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
 			delete(result, key)
 		}
 	}
+	db.lock.RUnlock()
 	kv := []KeyValue{}
 	for k, v := range result {
 		kv = append(kv, KeyValue{[]byte(k), v})
