@@ -33,6 +33,7 @@ type SystemConfig struct {
 	DepositRate string `json:"depositRate"`
 	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	FoundationAddress string `json:"foundationAddress"`
+	FoundationPassword string `json:"foundationPassword"`
 	//保证金的数量
 	DepositAmountForMediator  string `json:"depositAmountForMediator"`
 	DepositAmountForJury      string `json:"depositAmountForJury"`

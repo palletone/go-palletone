@@ -22,7 +22,6 @@ package txspool
 import (
 	"fmt"
 	"math"
-	"math/big"
 	"sort"
 	"sync"
 	"time"
@@ -166,29 +165,23 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 }
 
 type TxPool struct {
-	config       TxPoolConfig
-	unit         dags
-	txfee        *big.Int //00
+	config TxPoolConfig
+	unit   dags
+	//txfee        *big.Int //00
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
 	chainHeadSub event.Subscription
 	txValidator  validator.Validator
-	//locals       *utxoSet   // Set of local transaction to exempt from eviction rules //11
-	journal *txJournal // Journal of local transaction to back up to disk
+	journal      *txJournal // Journal of local transaction to back up to disk
 
-	//beats map[modules.OutPoint]time.Time             //22
-	//queue map[common.Hash]*modules.TxPoolTransaction // 33
-
-	//pending         map[common.Hash][]*modules.TxPoolTransaction // All currently processable transactions  //44
-	all             map[common.Hash]*modules.TxPoolTransaction // All transactions to allow lookups
-	priority_priced *txPricedList                              // All transactions sorted by price and priority
-
-	outpoints     map[modules.OutPoint]*modules.TxPoolTransaction                 // utxo标记池
-	orphans       map[common.Hash]*modules.TxPoolTransaction                      // 孤儿交易缓存池
-	orphansByPrev map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction // 缓存 orphanTx input's utxo
-	addrTxs       map[string][]*modules.TxPoolTransaction                         // 缓存 地址对应的交易列表
-	outputs       map[modules.OutPoint]*modules.Utxo                              // 缓存 交易的outputs
+	all             map[common.Hash]*modules.TxPoolTransaction                      // All transactions to allow lookups
+	priority_priced *txPricedList                                                   // All transactions sorted by price and priority
+	outpoints       map[modules.OutPoint]*modules.TxPoolTransaction                 // utxo标记池
+	orphans         map[common.Hash]*modules.TxPoolTransaction                      // 孤儿交易缓存池
+	orphansByPrev   map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction // 缓存 orphanTx input's utxo
+	addrTxs         map[string][]*modules.TxPoolTransaction                         // 缓存 地址对应的交易列表
+	outputs         map[modules.OutPoint]*modules.Utxo                              // 缓存 交易的outputs
 
 	mu             *sync.RWMutex
 	wg             sync.WaitGroup // for shutdown sync
@@ -199,17 +192,13 @@ type TxPool struct {
 type sTxDesc struct {
 	// Tx is the transaction associated with the entry.
 	Tx *modules.Transaction
-
 	// Added is the time when the entry was added to the source pool.
 	Added time.Time
-
 	// Height is the block height when the entry was added to the the source
 	// pool.
 	Height int32
-
 	// Fee is the total fee the transaction associated with the entry pays.
 	Fee int64
-
 	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
 	FeePerKB int64
 }
@@ -218,7 +207,6 @@ type sTxDesc struct {
 // additional metadata.
 type TxDesc struct {
 	sTxDesc
-
 	// StartingPriority is the priority of the transaction when it was added
 	// to the pool.
 	StartingPriority float64
@@ -237,9 +225,9 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		//queue:          make(map[common.Hash]*modules.TxPoolTransaction),
 		//beats:          make(map[modules.OutPoint]time.Time),
 		//pending:        make(map[common.Hash][]*modules.TxPoolTransaction),
-		all:            make(map[common.Hash]*modules.TxPoolTransaction),
-		chainHeadCh:    make(chan modules.ChainHeadEvent, chainHeadChanSize),
-		txfee:          new(big.Int).SetUint64(config.FeeLimit),
+		all:         make(map[common.Hash]*modules.TxPoolTransaction),
+		chainHeadCh: make(chan modules.ChainHeadEvent, chainHeadChanSize),
+		//txfee:          new(big.Int).SetUint64(config.FeeLimit),
 		outpoints:      make(map[modules.OutPoint]*modules.TxPoolTransaction),
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
 		orphans:        make(map[common.Hash]*modules.TxPoolTransaction),
@@ -382,7 +370,6 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 		} else {
 			// Reorg seems shallow enough to pull in all transactions into memory
 			var discarded, included modules.Transactions
-
 			var (
 				rem, _ = pool.unit.GetUnitByHash(oldHead.Hash())
 				add, _ = pool.unit.GetUnitByHash(newHead.Hash())
@@ -420,15 +407,6 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 	if newHead == nil {
 		newHead = pool.unit.CurrentUnit().Header() // Special case during testing
 	}
-
-	// statedb, err := pool.chain.StateAt(newHead.Root)
-	// if err != nil {
-	// 	log.Error("Failed to reset txpool state", "err", err)
-	// 	return
-	// }
-
-	//pool.currentState = statedb
-	//pool.pendingState = state.ManageState(statedb)
 
 	// Inject any transactions discarded due to reorgs
 	log.Debug("Reinjecting stale transactions", "count", len(reinject))
@@ -578,57 +556,6 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	// 交易池不需要验证交易存不存在。
 	err := pool.txValidator.ValidateTx(tx.Tx, false)
 	return err
-	//// 交易的校验， 包括inputs校验
-	//for _, msg := range tx.Tx.Messages() {
-	//	if msg.App == modules.APP_PAYMENT {
-	//		payment, ok := msg.Payload.(*modules.PaymentPayload)
-	//		if ok {
-	//			for _, in := range payment.Inputs {
-	//				utxo, _ := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
-	//				if utxo != nil {
-	//					if utxo.IsModified() || utxo.IsSpent() {
-	//						return errors.New(fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalid。",
-	//							tx.Tx.Hash().String(), in.PreviousOutPoint.String()))
-	//					}
-	//				}
-	//			}
-	//		}
-	//	}
-	//	if msg.App == modules.APP_CONTRACT_TPL_REQUEST {
-	//		isContractTplTx = true
-	//	}
-	//}
-	//// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
-	////TODO xiaozhi contract template tx will be big than other tx
-	//if isContractTplTx {
-	//	if tx.Tx.Size() > 128*1024 {
-	//		return ErrOversizedData
-	//	}
-	//} else {
-	//	if tx.Tx.Size() > 32*1024 {
-	//		return ErrOversizedData
-	//	}
-	//}
-	//// 交易费太低的交易，不能通过验证。
-	//if pool.txfee.Cmp(tx.GetTxFee()) > 0 {
-	//	log.Debug(fmt.Sprintf("txfee is too low, pool's fee: (%d) , tx's fee: (%d)", pool.txfee.Int64(), tx.GetTxFee().Int64()))
-	//	return ErrTxFeeTooLow
-	//}
-	//
-	//if len(tx.From) > 0 {
-	//	for _, from := range tx.From {
-	//		local = local || pool.locals.contains(*from) // tx maybe local even if the transaction arrived from the network
-	//		if !local && pool.txfee.Cmp(tx.GetTxFee()) > 0 {
-	//			return ErrTxFeeTooLow
-	//		}
-	//	}
-	//}
-	//
-	//// Make sure the transaction is signed properly
-	//// Verify crypto signatures for each input and reject the transaction if any don't verify.
-	//// todo 验证签名
-	//
-	//return nil
 }
 
 // This function MUST be called with the txpool lock held (for reads).
@@ -1384,12 +1311,6 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 					if input == nil {
 						break
 					}
-					//if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
-					//	str := fmt.Sprintf("output %v already spent by "+
-					//		"transaction %x in the memory pool",
-					//		input.PreviousOutPoint, tx.Tx.Hash())
-					//	return errors.New(str)
-					//}
 
 					if _, err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
 						return err
@@ -2088,14 +2009,6 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 						}
 					}
 				}
-				//// 验证outputs缓存的utxo
-				//for j, _ := range payment.Outputs {
-				//	preout := modules.OutPoint{hash, uint32(i), uint32(j)}
-				//	if _, has := pool.outpoints[preout]; has {
-				//		validated = true
-				//		break
-				//	}
-				//}
 			}
 		}
 	}

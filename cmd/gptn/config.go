@@ -26,6 +26,8 @@ import (
 	"reflect"
 	"unicode"
 
+	"strings"
+
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -42,7 +44,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
-	"strings"
 )
 
 var defaultConfigPath = "./ptn-config.toml"
@@ -361,6 +362,15 @@ func dumpConfig(ctx *cli.Context) error {
 // dumpConfig is the dumpconfig command.
 func dumpJson(ctx *cli.Context) error {
 	genesis := createExampleGenesis()
+
+	//配置测试的基金会地址及密码
+	account, password, err := createExampleAccount(ctx)
+	if err != nil {
+		return err
+	}
+	genesis.SystemConfig.FoundationAddress = account
+	genesis.SystemConfig.FoundationPassword = password
+
 	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
 	if err != nil {
 		utils.Fatalf("%v", err)

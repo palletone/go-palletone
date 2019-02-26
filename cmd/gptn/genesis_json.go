@@ -134,6 +134,14 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.SystemConfig.FoundationAddress = genesisState.TokenHolder
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
 
+	//配置测试的基金会地址及密码
+	account, password, err := createExampleAccount(ctx)
+	if err != nil {
+		return err
+	}
+	genesisState.SystemConfig.FoundationAddress = account
+	genesisState.SystemConfig.FoundationPassword = password
+
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(genesisState, "", "  ")
 	if err != nil {
