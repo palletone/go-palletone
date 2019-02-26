@@ -123,19 +123,16 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	// comment by Albert·Gou
-	//account, _, err := createExampleAccount(ctx)
-	//if err != nil {
-	//	return err
-	//}
-
 	mcs := createExampleMediators(ctx, core.DefaultMediatorCount)
 	nodeStr, err := getNodeInfo(ctx)
 	if err != nil {
 		return err
 	}
 
-	genesisState := createExampleGenesis(account, mcs, nodeStr)
+	genesisState := createExampleGenesis()
+	genesisState.TokenHolder = account
+	genesisState.SystemConfig.FoundationAddress = genesisState.TokenHolder
+	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
 
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(genesisState, "", "  ")
@@ -240,11 +237,10 @@ func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error
 }
 
 // createExampleGenesis, create the genesis state of new chain with the specified account
-func createExampleGenesis(tokenAccount string, mediators []*mp.MediatorConf, nodeInfo string) *core.Genesis {
+func createExampleGenesis() *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate:               core.DefaultDepositRate,
-		//FoundationAddress:         core.DefaultFoundationAddress,
-		FoundationAddress:         tokenAccount,
+		FoundationAddress:         core.DefaultFoundationAddress,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
@@ -252,6 +248,7 @@ func createExampleGenesis(tokenAccount string, mediators []*mp.MediatorConf, nod
 	}
 
 	initParams := core.NewChainParams()
+	mediators := []*mp.MediatorConf{mp.DefaultMediatorConf()}
 
 	return &core.Genesis{
 		Alias:        core.DefaultAlias,
@@ -259,7 +256,7 @@ func createExampleGenesis(tokenAccount string, mediators []*mp.MediatorConf, nod
 		TokenAmount:  core.DefaultTokenAmount,
 		TokenDecimal: core.DefaultTokenDecimal,
 		ChainID:      core.DefaultChainID,
-		TokenHolder:  tokenAccount,
+		TokenHolder:  core.DefaultTokenHolder,
 
 		Text:                      core.DefaultText,
 		SystemConfig:              SystemConfig,
@@ -267,7 +264,7 @@ func createExampleGenesis(tokenAccount string, mediators []*mp.MediatorConf, nod
 		ImmutableParameters:       core.NewImmutChainParams(),
 		InitialTimestamp:          gen.InitialTimestamp(initParams.MediatorInterval),
 		InitialActiveMediators:    core.DefaultMediatorCount,
-		InitialMediatorCandidates: initialMediatorCandidates(mediators, nodeInfo),
+		InitialMediatorCandidates: initialMediatorCandidates(mediators, core.DefaultNodeInfo),
 	}
 }
 
