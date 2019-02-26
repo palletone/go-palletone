@@ -40,6 +40,7 @@ type TokenInfo struct {
 	Symbol      string
 	CreateAddr  string
 	TotalSupply uint64
+	Decimals    uint64
 	SupplyAddr  string
 	AssetID     dm.IDType16
 }
@@ -168,8 +169,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
 		fungible.Decimals, common.Hex2Bytes(txid[2:]))
-	info := TokenInfo{Symbol: fungible.Symbol, CreateAddr: createAddr, TotalSupply: totalSupply,
-		SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
+	info := TokenInfo{fungible.Symbol, createAddr, totalSupply, decimals,
+		fungible.SupplyAddress, assetID}
 	symbols.TokenInfos[fungible.Symbol] = info
 
 	err = setSymbols(symbols, stub)
@@ -247,6 +248,7 @@ type TokenIDInfo struct {
 	Symbol      string
 	CreateAddr  string
 	TotalSupply uint64
+	Decimals    uint64
 	SupplyAddr  string
 	AssetID     string
 }
@@ -269,8 +271,8 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//token
 	asset := symbols.TokenInfos[symbol].AssetID
 	tkID := TokenIDInfo{symbol, symbols.TokenInfos[symbol].CreateAddr,
-		symbols.TokenInfos[symbol].TotalSupply, symbols.TokenInfos[symbol].SupplyAddr,
-		asset.ToAssetId()}
+		symbols.TokenInfos[symbol].TotalSupply, symbols.TokenInfos[symbol].Decimals,
+		symbols.TokenInfos[symbol].SupplyAddr, asset.ToAssetId()}
 	//return json
 	tkJson, err := json.Marshal(tkID)
 	if err != nil {
@@ -286,8 +288,8 @@ func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	for symbol := range symbols.TokenInfos {
 		asset := symbols.TokenInfos[symbol].AssetID
 		tkID := TokenIDInfo{symbol, symbols.TokenInfos[symbol].CreateAddr,
-			symbols.TokenInfos[symbol].TotalSupply, symbols.TokenInfos[symbol].SupplyAddr,
-			asset.ToAssetId()}
+			symbols.TokenInfos[symbol].TotalSupply, symbols.TokenInfos[symbol].Decimals,
+			symbols.TokenInfos[symbol].SupplyAddr, asset.ToAssetId()}
 		tkIDs = append(tkIDs, tkID)
 	}
 
