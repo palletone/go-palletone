@@ -364,12 +364,11 @@ func dumpJson(ctx *cli.Context) error {
 	genesis := createExampleGenesis()
 
 	//配置测试的基金会地址及密码
-	account, password, err := createExampleAccount(ctx)
+	account, _, err := createExampleAccount(ctx)
 	if err != nil {
 		return err
 	}
 	genesis.SystemConfig.FoundationAddress = account
-	genesis.SystemConfig.FoundationPassword = password
 
 	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
 	if err != nil {
