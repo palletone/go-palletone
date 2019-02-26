@@ -216,12 +216,13 @@ func initDepositCfg(stub shim.ChaincodeStubInterface) {
 		return
 	}
 	log.Info("Stub.GetSystemConfig with DepositPeriod:", "value", day)
-	//foundationAddress, err = stub.GetSystemConfig("FoundationAddress")
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//	return
-	//}
-	foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
+	foundationAddress, err = stub.GetSystemConfig("FoundationAddress")
+	if err != nil {
+		//fmt.Println(err.Error())
+		log.Error("Stub.GetSystemConfig with FoundationAddress err:", "error", err)
+		return
+	}
+	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
 
 	depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")

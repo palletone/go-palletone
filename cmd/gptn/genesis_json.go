@@ -243,7 +243,8 @@ func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error
 func createExampleGenesis(tokenAccount string, mediators []*mp.MediatorConf, nodeInfo string) *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate:               core.DefaultDepositRate,
-		FoundationAddress:         core.DefaultFoundationAddress,
+		//FoundationAddress:         core.DefaultFoundationAddress,
+		FoundationAddress:         tokenAccount,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
