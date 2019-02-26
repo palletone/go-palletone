@@ -359,16 +359,8 @@ func dumpConfig(ctx *cli.Context) error {
 	return nil
 }
 
-// dumpConfig is the dumpconfig command.
 func dumpJson(ctx *cli.Context) error {
 	genesis := createExampleGenesis()
-
-	//配置测试的基金会地址及密码
-	account, _, err := createExampleAccount(ctx)
-	if err != nil {
-		return err
-	}
-	genesis.SystemConfig.FoundationAddress = account
 
 	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
 	if err != nil {
