@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -21,6 +22,7 @@ package txspool
 import (
 	"container/heap"
 	"math/big"
+	"strconv"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -56,7 +58,8 @@ func (h *priceHeap) Pop() interface{} {
 }
 
 func (h *priceHeap) Update(item *modules.TxPoolTransaction, priority float64) {
-	item.Priority_lvl = priority
+	lvl := strconv.FormatFloat(priority, 'E', -1, 64)
+	item.Priority_lvl = lvl
 	heap.Fix(h, item.Index)
 }
 
@@ -93,7 +96,8 @@ func (h *priorityHeap) Pop() interface{} {
 }
 
 func (h *priorityHeap) Update(item *modules.TxPoolTransaction, priority float64) {
-	item.Priority_lvl = priority
+	lvl := strconv.FormatFloat(priority, 'E', -1, 64)
+	item.Priority_lvl = lvl
 	heap.Fix(h, item.Index)
 }
 

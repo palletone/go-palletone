@@ -165,9 +165,8 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 }
 
 type TxPool struct {
-	config TxPoolConfig
-	unit   dags
-	//txfee        *big.Int //00
+	config       TxPoolConfig
+	unit         dags
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
@@ -220,14 +219,10 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 
 	// Create the transaction pool with its initial settings
 	pool := &TxPool{
-		config: config,
-		unit:   unit,
-		//queue:          make(map[common.Hash]*modules.TxPoolTransaction),
-		//beats:          make(map[modules.OutPoint]time.Time),
-		//pending:        make(map[common.Hash][]*modules.TxPoolTransaction),
-		all:         make(map[common.Hash]*modules.TxPoolTransaction),
-		chainHeadCh: make(chan modules.ChainHeadEvent, chainHeadChanSize),
-		//txfee:          new(big.Int).SetUint64(config.FeeLimit),
+		config:         config,
+		unit:           unit,
+		all:            make(map[common.Hash]*modules.TxPoolTransaction),
+		chainHeadCh:    make(chan modules.ChainHeadEvent, chainHeadChanSize),
 		outpoints:      make(map[modules.OutPoint]*modules.TxPoolTransaction),
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
 		orphans:        make(map[common.Hash]*modules.TxPoolTransaction),
@@ -746,7 +741,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.TxPoolTransaction) (
 	if ok {
 		if !old.Pending && !old.Confirmed {
 			// An older transaction was better, discard this
-			if old.GetPriorityLvl() > tx.GetPriorityLvl() {
+			if old.GetPriorityfloat64() > tx.GetPriorityfloat64() {
 				return false, ErrReplaceUnderpriced
 			}
 			delete(pool.all, hash)
@@ -1660,8 +1655,16 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
 				if total += tx.Tx.Size(); total <= unit_size {
 					// 获取该交易的前驱交易列表
+					// add precusorTxs
+					p_txs, _ := pool.getPrecusorTxs(tx)
+					if len(p_txs) > 0 {
+						list = append(list, p_txs...)
+					}
 					list = append(list, tx)
 					// add  pending
+					for _, t := range p_txs {
+						pool.promoteTx(hash, t)
+					}
 					pool.promoteTx(hash, tx)
 				} else {
 					total = total - tx.Tx.Size()
@@ -1716,20 +1719,27 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.Tx
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
 				for _, input := range payment.Inputs {
-					_, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
-					if err != nil { //  若该utxo在db里找不到
-						queue_tx, has := pool.all[input.PreviousOutPoint.TxHash]
-						if has && !queue_tx.Pending {
-							pretxs = append(pretxs, queue_tx)
+					if input.PreviousOutPoint != nil {
+						_, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
+						if err != nil { //  若该utxo在db里找不到
+							queue_tx, has := pool.all[input.PreviousOutPoint.TxHash]
+							if !has || queue_tx == nil {
+								continue
+							}
+							list, _ := pool.getPrecusorTxs(queue_tx)
+							if len(list) > 0 {
+								pretxs = append(pretxs, list...)
+							}
+							if !queue_tx.Pending {
+								pretxs = append(pretxs, queue_tx)
+							}
 						}
 					}
 				}
 			}
 		}
 	}
-	if len(pretxs) > 0 { // 按时间排序
-		//modules.Transactions{}
-	}
+
 	return pretxs, nil
 }
 

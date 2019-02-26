@@ -60,7 +60,7 @@ func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPo
 
 		Froms:        froms,
 		CreationDate: tx.CreationDate,
-		Priority:     tx.Priority_lvl,
+		Priority:     tx.GetPriorityfloat64(),
 		Nonce:        tx.Nonce,
 		Pending:      tx.Pending,
 		Confirmed:    tx.Confirmed,
