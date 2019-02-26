@@ -225,16 +225,16 @@ function MakeTestNet()
     newarrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
     sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test/ptn-config.toml
 
-    newInitPrivKey="InitPrivKey="""
+    newInitPrivKey="InitPrivKey=\"\""
     sed -i '/^InitPrivKey/c'$newInitPrivKey'' node_test/ptn-config.toml
 
-    newInitPubKey="InitPubKey="""
+    newInitPubKey="InitPubKey=\"\""
     sed -i '/^InitPubKey/c'$newInitPubKey'' node_test/ptn-config.toml
 
-    newAddress="Address="""
+    newAddress="Address=\"\""
     sed -i '/^Address/c'$newAddress'' node_test/ptn-config.toml
 
-    newPassword="Password="""
+    newPassword="Password=\"\""
     sed -i '/^Password/c'$newPassword'' node_test/ptn-config.toml
 
     echo "===========node-test ok============="
