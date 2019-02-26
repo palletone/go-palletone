@@ -1,0 +1,8 @@
+admin.nodeInfo
+personal.listAccounts
+dag.getTxHashByReqId("5663522aa2aa97d52ee4841fbcecf3c15f27c0f399caf5fcdae609bc853d3644")
+dag.getTxHashByReqId("afef9266988198f54064a8a9d0d57067b25ade2d40727ee5c8af00f8f4f2fc41")
+admin.nodeInfo
+personal.listAccounts
+ptn.getBalance("P1MJbcoRF6n7ZkJY7o2gNJE2a4U6js8rVYc")
+exi

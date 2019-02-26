@@ -1,0 +1,16 @@
+admin.nodeInfo
+personal.listAccounts
+dag.getTxHashByReqId("5663522aa2aa97d52ee4841fbcecf3c15f27c0f399caf5fcdae609bc853d3644")
+dag.getTxHashByReqId("afef9266988198f54064a8a9d0d57067b25ade2d40727ee5c8af00f8f4f2fc41")
+ptn.getBalance("P1CTyWtw8wizj8ZWkH1iyH7DCQjC4MrvENe")
+ptn.ccinvoketx("P1CTyWtw8wizj8ZWkH1iyH7DCQjC4MrvENe","P1CTyWtw8wizj8ZWkH1iyH7DCQjC4MrvENe","1000","10","PCT1Sa9VLHAv2UfYri346CoYpNP8Ln5SMdB",["add","1","51"])
+ptn.ccinvoketx("P1CTyWtw8wizj8ZWkH1iyH7DCQjC4MrvENe","P1CTyWtw8wizj8ZWkH1iyH7DCQjC4MrvENe","1000","10","PCT1Sa9VLHAv2UfYri346CoYpNP8Ln5SMdB",["add","1","59"])
+ptn.ccinvoketx("P1CTyWtw8wizj8ZWkH1iyH7DCQjC4MrvENe","P1CTyWtw8wizj8ZWkH1iyH7DCQjC4MrvENe","10","10","PCT1Sa9VLHAv2UfYri346CoYpNP8Ln5SMdB",["add","1","59"])
+admin.nodeInfo
+personal.listAccounts
+dag.getTxHashByReqId("c53fbdfaea03f425185a982fd311846f6a061e44b02e52394a18c077aaa54da5")
+ptn.getBalance("P1CWm3761M4ZgFp6RiRKpVSRxHco1rNSLs8")
+ptn.ccdeploytx("P1CWm3761M4ZgFp6RiRKpVSRxHco1rNSLs8","P1FtNpMNmG7UoEvZxeYGH3xwQRTMGuhWx54","100","10","d17672d174249edd1b11d07a3aa6fc101da030be7674ab262294fa6c99815947")
+dag.getTxHashByReqId("961cb29a5c992e31675487651b9abb7c57a3bc91410b1f426cc71f8c02cf38fa")
+ptn.ccinvoketx("P1CWm3761M4ZgFp6RiRKpVSRxHco1rNSLs8","P1FtNpMNmG7UoEvZxeYGH3xwQRTMGuhWx54","10","10","PCP2k5cVtMThCLfmB3zpp2ghbhzRR2JVqBv",["add","1","1"])
+ptn.ccinvoketx("P1CWm3761M4ZgFp6RiRKpVSRxHco1rNSLs8","P1FtNpMNmG7UoEvZxeYGH3xwQRTMGuhWx54","1","10","PCaigQ5nm4tTq2LEHHHLdRrF5CY8oywmqwJ",["add","1","1"])
