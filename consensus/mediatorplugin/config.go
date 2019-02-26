@@ -78,10 +78,14 @@ type Config struct {
 
 func DefaultMediatorConf() *MediatorConf {
 	return &MediatorConf{
-		core.DefaultMediator,
-		DefaultPassword,
-		DefaultInitPrivKey,
-		core.DefaultInitPubKey,
+		"",
+		"",
+		"",
+		"",
+		//core.DefaultMediator,
+		//DefaultPassword,
+		//DefaultInitPrivKey,
+		//core.DefaultInitPubKey,
 	}
 }
 
