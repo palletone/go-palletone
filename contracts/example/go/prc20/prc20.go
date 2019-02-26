@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dm "github.com/palletone/go-palletone/dag/modules"
@@ -36,8 +37,11 @@ type PRC20 struct {
 }
 
 type TokenInfo struct {
-	SupplyAddr string
-	AssetID    dm.IDType16
+	Symbol      string
+	CreateAddr  string
+	TotalSupply uint64
+	SupplyAddr  string
+	AssetID     dm.IDType16
 }
 
 type Symbols struct {
@@ -164,7 +168,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
 		fungible.Decimals, common.Hex2Bytes(txid[2:]))
-	info := TokenInfo{SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
+	info := TokenInfo{Symbol: fungible.Symbol, CreateAddr: createAddr, TotalSupply: totalSupply,
+		SupplyAddr: fungible.SupplyAddress, AssetID: assetID}
 	symbols.TokenInfos[fungible.Symbol] = info
 
 	err = setSymbols(symbols, stub)
@@ -200,6 +205,10 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Success([]byte(jsonResp))
 	}
+	if math.MaxInt64-symbols.TokenInfos[symbol].TotalSupply < supplyAmount {
+		jsonResp := "{\"Error\":\"Too big, overflow\"}"
+		return shim.Success([]byte(jsonResp))
+	}
 
 	//get invoke address
 	invokeAddr, err := stub.GetInvokeAddress()
@@ -221,13 +230,25 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 		return shim.Error(jsonResp)
 	}
+
+	//add supply
+	tokenInfo := symbols.TokenInfos[symbol]
+	tokenInfo.TotalSupply += supplyAmount
+	symbols.TokenInfos[symbol] = tokenInfo
+	err = setSymbols(symbols, stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
+		return shim.Error(jsonResp)
+	}
 	return shim.Success([]byte("")) //test
 }
 
 type TokenIDInfo struct {
-	Symbol     string
-	AssetID    string
-	SupplyAddr string
+	Symbol      string
+	CreateAddr  string
+	TotalSupply uint64
+	SupplyAddr  string
+	AssetID     string
 }
 
 func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
@@ -247,7 +268,9 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//token
 	asset := symbols.TokenInfos[symbol].AssetID
-	tkID := TokenIDInfo{symbol, asset.ToAssetId(), symbols.TokenInfos[symbol].SupplyAddr}
+	tkID := TokenIDInfo{symbol, symbols.TokenInfos[symbol].CreateAddr,
+		symbols.TokenInfos[symbol].TotalSupply, symbols.TokenInfos[symbol].SupplyAddr,
+		asset.ToAssetId()}
 	//return json
 	tkJson, err := json.Marshal(tkID)
 	if err != nil {
@@ -262,7 +285,9 @@ func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	var tkIDs []TokenIDInfo
 	for symbol := range symbols.TokenInfos {
 		asset := symbols.TokenInfos[symbol].AssetID
-		tkID := TokenIDInfo{symbol, asset.ToAssetId(), symbols.TokenInfos[symbol].SupplyAddr}
+		tkID := TokenIDInfo{symbol, symbols.TokenInfos[symbol].CreateAddr,
+			symbols.TokenInfos[symbol].TotalSupply, symbols.TokenInfos[symbol].SupplyAddr,
+			asset.ToAssetId()}
 		tkIDs = append(tkIDs, tkID)
 	}
 
