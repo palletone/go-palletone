@@ -72,3 +72,18 @@ func TestSignHash(t *testing.T) {
 	}
 	fmt.Println(string(jsonTx))
 }
+
+func TestJsSign(t *testing.T) {
+	privateKey := "L3KxwagZok1yvVaNEg3dkhx2Wft8zoszxgDz8JyvvQDzH2y53ryL"
+	h := hexutil.Encode([]byte("L3KxwagZok1yvVaNEg3dkhx2Wft8zoszxgDz8JyvvQDzH2y53ryL"))
+	t.Log(h)
+	signature ,_:=  hexutil.Decode("0x11a566e95a3e38d9e0b7115c11513a9b6e4b0ea5989cd1edd549fae11e8422053683ea3e5bce5d8415476ea94d2e1dbaee7f9e4f2166ff5e17601409a7d61a491c")
+	prvKey, _ := crypto.FromWIF(privateKey)
+	pubKey := prvKey.PublicKey
+	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+	//pubKeyBytes,_ := hexutil2.Decode("072aa614647a979f360cba4e5f1f825a71779ba954e15dc50a765c40ec11807f1e0ada7de14d8cccf9f3364ca7698ce9d1ccf5f57c59b49cc37bf1925a436ed0")
+	t.Log(pubKeyBytes)
+	sign := tokenengine.GenerateP2PKHUnlockScript(signature[0:64], pubKeyBytes)
+	hs := hexutil.Encode(sign)
+	t.Log(hs)
+}
