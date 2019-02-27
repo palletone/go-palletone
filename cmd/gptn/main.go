@@ -121,7 +121,7 @@ var (
 		utils.LogValue4Flag,
 		utils.LogValue5Flag,
 		utils.LogOpenModuleFlag,
-		ConfigFileFlag,
+		ConfigFilePathFlag,
 		GenesisJsonPathFlag,
 		GenesisTimestampFlag,
 		mp.NoProduceUnitFlag,

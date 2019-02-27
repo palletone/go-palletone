@@ -18,7 +18,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -54,37 +53,17 @@ var (
 		Name:      "dumpconfig",
 		Usage:     "Dumps configuration to a specified file",
 		ArgsUsage: "<configFilePath>",
-		//		Flags:       append(append(nodeFlags, rpcFlags...)),
 		Flags: []cli.Flag{
-			ConfigFileFlag,
+			ConfigFilePathFlag,
 		},
 		Category:    "MISCELLANEOUS COMMANDS",
 		Description: `The dumpconfig command dumps configuration to a specified file.`,
 	}
 
-	ConfigFileFlag = cli.StringFlag{
+	ConfigFilePathFlag = cli.StringFlag{
 		Name:  "configfile",
 		Usage: "TOML configuration file",
 		Value: defaultConfigPath,
-	}
-
-	dumpJsonCommand = cli.Command{
-		Action:    utils.MigrateFlags(dumpJson),
-		Name:      "dumpjson",
-		Usage:     "Dumps genesis json to a specified file",
-		ArgsUsage: "<jsonFilePath>",
-		//		Flags:       append(append(nodeFlags, rpcFlags...)),
-		Flags: []cli.Flag{
-			ConfigFileFlag,
-		},
-		Category:    "MISCELLANEOUS COMMANDS",
-		Description: `The dumpjson command dumps genesis json to a specified file.`,
-	}
-
-	JsonFileFlag = cli.StringFlag{
-		Name:  "jsonfile",
-		Usage: "Genesis json file",
-		Value: defaultGenesisJsonPath,
 	}
 )
 
@@ -177,7 +156,7 @@ func adaptorConfig(config *FullConfig) *FullConfig {
 func getConfigPath(ctx *cli.Context) string {
 	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
 	configPath := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+	if temp := ctx.GlobalString(ConfigFilePathFlag.Name); temp != "" {
 		configPath = temp
 	}
 
@@ -356,40 +335,6 @@ func dumpConfig(ctx *cli.Context) error {
 		return err
 	}
 	fmt.Println("Dumping new config file at " + configPath)
-	return nil
-}
-
-func dumpJson(ctx *cli.Context) error {
-	genesis := createExampleGenesis()
-
-	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	filePath := getGenesisPath(ctx)
-
-	err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	file, err1 := os.Create(filePath)
-	defer file.Close()
-	if err1 != nil {
-		utils.Fatalf("%v", err1)
-		return err1
-	}
-
-	_, err = file.Write(genesisJson)
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	fmt.Println("Creating example genesis state in file " + filePath)
 	return nil
 }
 

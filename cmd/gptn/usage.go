@@ -69,7 +69,7 @@ var AppHelpFlagGroups = []flagGroup{
 	{
 		Name: "PALLETONE",
 		Flags: []cli.Flag{
-			ConfigFileFlag,
+			ConfigFilePathFlag,
 			utils.DataDirFlag,
 			utils.KeyStoreDirFlag,
 			utils.NetworkIdFlag,

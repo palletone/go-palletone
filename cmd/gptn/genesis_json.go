@@ -66,6 +66,18 @@ with an existing account or a newly created account.
 If a well-formed JSON file exists at the path, 
 it will be replaced with an example Genesis State.`,
 	}
+
+	dumpJsonCommand = cli.Command{
+		Action:    utils.MigrateFlags(dumpJson),
+		Name:      "dumpjson",
+		Usage:     "Dumps genesis json to a specified file",
+		ArgsUsage: "<jsonFilePath>",
+		Flags: []cli.Flag{
+			GenesisJsonPathFlag,
+		},
+		Category:    "MISCELLANEOUS COMMANDS",
+		Description: `The dumpjson command dumps genesis json to a specified file.`,
+	}
 )
 
 func getTokenAccount(ctx *cli.Context) (string, error) {
@@ -287,4 +299,38 @@ func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string) []
 	}
 
 	return initialMediators
+}
+
+func dumpJson(ctx *cli.Context) error {
+	genesis := createExampleGenesis()
+
+	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	filePath := getGenesisPath(ctx)
+
+	err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	file, err1 := os.Create(filePath)
+	defer file.Close()
+	if err1 != nil {
+		utils.Fatalf("%v", err1)
+		return err1
+	}
+
+	_, err = file.Write(genesisJson)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	fmt.Println("Creating example genesis state in file " + filePath)
+	return nil
 }
