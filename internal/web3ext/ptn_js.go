@@ -177,6 +177,11 @@ web3._extend({
 			params: 1,
 			inputFormatter: [null]
 		}),
+        new web3._extend.Method({
+			name: 'election',
+			call: 'ptn_election',
+			params: 1,			
+		}),
 	],
 
 	properties: [

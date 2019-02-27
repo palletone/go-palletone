@@ -112,7 +112,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 	return id
 }*/
 // Info gathers and returns a collection of metadata known about a peer.
-func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
+func (p *peer) Info( /*assetId modules.IDType16*/) *PeerInfo {
 	//ptnAssetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
 	//asset := modules.NewPTNAsset()
 	hash, number := p.Head(modules.CoreAsset.AssetId)
@@ -231,7 +231,11 @@ func (p *peer) SendContractTransaction(event jury.ContractEvent) error {
 }
 
 func (p *peer) SendElectionEvent(event jury.ElectionEvent) error {
-	return p2p.Send(p.rw, ElectionMsg, event)
+	evs, err := event.ToElectionEventBytes()
+	if err != nil{
+		return err
+	}
+	return p2p.Send(p.rw, ElectionMsg, *evs)
 }
 
 //SendConsensus sends consensus msg to the peer
@@ -299,10 +303,6 @@ func (p *peer) SendReceiptsRLP(receipts []rlp.RawValue) error {
 	return p2p.Send(p.rw, ReceiptsMsg, receipts)
 }
 
-func (p *peer) SendElectionResultEvent(event jury.ElectionEvent) error {
-	return p2p.Send(p.rw, ElectionMsg, event)
-}
-
 // RequestOneHeader is a wrapper around the header query functions to fetch a
 // single header. It is used solely by the fetcher.
 func (p *peer) RequestOneHeader(hash common.Hash) error {
@@ -358,7 +358,7 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
 func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash,
-	/*mediator bool,*/ headHash common.Hash) error {
+/*mediator bool,*/ headHash common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc

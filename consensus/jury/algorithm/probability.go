@@ -29,7 +29,7 @@ import (
 //subUsers return the selected amount of sub-users determined from the mathematics protocol.
 //expectedNum 期望数量
 //weight 设置固定数值,即返回概率值*weight,返回值落在0  --   expectedNum/Total*weight之间的数值
-func Selected(expectedNum int, weight, total uint64, vrf []byte) int {
+func Selected(expectedNum uint, weight, total uint64, vrf []byte) int {
 	hh := util.RlpHash(vrf)
 	h32:=hh[:common.HashLength]
 
