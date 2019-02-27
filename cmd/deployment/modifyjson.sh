@@ -16,28 +16,14 @@ if [ $index -eq 0 ] ; then
     account=${account:0:35}
     account=`echo ${account///}`
 
-    add=`echo $add |
-       jq "to_entries |
-       map(if .key == \"tokenHolder\"
-          then . + {\"value\":\"$account\"}
-          else .
-          end
-         ) |
-      from_entries"`
+    add=`echo $add | jq ".tokenHolder = \"$account\""`
 
     createaccount=`./createaccount.sh`
     account=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
     account=${account:0:35}
-    account=`echo ${account//^M/}`
+    account=`echo ${account///}`
 
-    add=`echo $add |
-       jq "to_entries |
-       map(if .key == \"foundationAddress\"
-          then . + {\"value\":\"$account\"}
-          else .
-          end
-         ) |
-      from_entries"`
+    add=`echo $add | jq ".systemConfig.foundationAddress = \"$account\""`
 
 fi
 
