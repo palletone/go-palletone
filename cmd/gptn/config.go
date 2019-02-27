@@ -23,9 +23,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"unicode"
-
 	"strings"
+	"unicode"
 
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"

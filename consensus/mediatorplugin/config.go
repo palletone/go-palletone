@@ -33,6 +33,14 @@ const (
 )
 
 var (
+	MediatorFlags = []cli.Flag{
+		NoProduceUnitFlag,
+		StaleProductionFlag,
+		ConsecutiveProductionFlag,
+		RequiredParticipationFlag,
+		NoGroupSignFlag,
+	}
+
 	NoProduceUnitFlag = cli.BoolFlag{
 		Name:  "noProduce",
 		Usage: "Disable producing unit when start up node.",

@@ -233,14 +233,8 @@ var AppHelpFlagGroups = []flagGroup{
 		}, debug.Flags...),
 	},
 	{
-		Name: "MEDIATOR PLUGIN",
-		Flags: []cli.Flag{
-			mp.NoProduceUnitFlag,
-			mp.StaleProductionFlag,
-			mp.ConsecutiveProductionFlag,
-			mp.RequiredParticipationFlag,
-			mp.NoGroupSignFlag,
-		},
+		Name:  "MEDIATOR PLUGIN",
+		Flags: mp.MediatorFlags,
 	},
 	/*{
 		Name:  "WHISPER (EXPERIMENTAL)",
