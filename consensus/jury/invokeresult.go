@@ -82,6 +82,17 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_FungibleToken, token.Decimals, result.RequestId.Bytes())
 			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 			coinbase.AddTxOut(out)
+		} else if result.TokenDefine.TokenType == 2 { //VoteToken
+			token := modules.VoteToken{}
+			err := json.Unmarshal(result.TokenDefine.TokenDefineJson, &token)
+			if err != nil {
+				log.Error("Cannot parse token define json to VoteToken", result.TokenDefine.TokenDefineJson)
+				return nil, err
+			}
+			newAsset := &modules.Asset{}
+			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_VoteToken, 0, result.RequestId.Bytes())
+			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
+			coinbase.AddTxOut(out)
 		}
 		//TODO Devin ERC721
 		coinbases = append(coinbases, coinbase)

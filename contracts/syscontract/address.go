@@ -29,7 +29,11 @@ var (
 	//创币合约PRC20
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 	CreateTokenContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000021C")
-	//TODO 投票合约
+
+	//投票合约
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRLGbeyd
+	VoteTokenContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000031C")
+
 	//系统参数维护合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRS71ZEM
 	SysConfigContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000041C")

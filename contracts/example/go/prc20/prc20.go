@@ -159,7 +159,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//set token define
-	err = stub.DefineToken(byte(0), createJson, createAddr)
+	err = stub.DefineToken(byte(dm.AssetType_FungibleToken), createJson, createAddr)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
