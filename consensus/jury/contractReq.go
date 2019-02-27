@@ -25,10 +25,10 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common/util"
 )
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool) (reqId []byte, TplId []byte, err error) {
@@ -108,6 +108,31 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		},
 	}
 	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	if err != nil {
+		return nil, err
+	}
+	//broadcast
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	return reqId, nil
+}
+
+func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, contractId common.Address, args [][]byte, timeout uint32) ([]byte, error) {
+	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
+		log.Error("ContractInvokeReqToken", "param is error")
+		return nil, errors.New("ContractInvokeReqToken request param is error")
+	}
+
+	log.Debug("ContractInvokeReqToken", "enter, contractId ", contractId)
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId:   contractId.Bytes21(),
+			FunctionName: "",
+			Args:         args,
+			Timeout:      timeout,
+		},
+	}
+	reqId, tx, err := p.createContractTxReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msgReq, false)
 	if err != nil {
 		return nil, err
 	}
