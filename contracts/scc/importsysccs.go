@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/example/go/prc20"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
+	"github.com/palletone/go-palletone/contracts/example/go/vote"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
@@ -78,6 +79,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &prc20.PRC20{},
+	},
+	{
+		Id:        syscontract.VoteTokenContractAddress.Bytes21(), //合约ID为20字节
+		Enabled:   true,
+		Name:      "voteToken_sycc",
+		Path:      "../example/go/vote/vote",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &vote.Vote{},
 	},
 	{
 		Id:        syscontract.SysConfigContractAddress.Bytes21(),

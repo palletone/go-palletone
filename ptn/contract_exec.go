@@ -12,8 +12,8 @@ import (
 type contractInf interface {
 	SubscribeContractEvent(ch chan<- jury.ContractEvent) event.Subscription
 	ProcessContractEvent(event *jury.ContractEvent) error
-	ProcessElectionRequestEvent(event *jury.ElectionEvent) (result *jury.ElectionEvent,err error)
-	ProcessElectionResultEvent(event *jury.ElectionEvent) error
+	ProcessElectionEvent(event *jury.ElectionEvent) (result *jury.ElectionEvent,err error)
+
 
 	AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error
 	CheckContractTxValid(tx *modules.Transaction, execute bool) bool

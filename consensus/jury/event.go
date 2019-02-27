@@ -19,7 +19,7 @@
 package jury
 
 import (
-	"crypto/ecdsa"
+	"encoding/json"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
 )
@@ -48,20 +48,55 @@ type ContractEvent struct {
 
 //Election
 type ElectionRequestEvent struct {
-	reqHash common.Hash
+	ReqHash common.Hash
 
-	num  int    //about the number of elections
-	data []byte //election data, input as vrf
+	Num  uint   //about the number of elections
+	Data []byte //election data, input as vrf
 }
 type ElectionResultEvent struct {
-	reqHash common.Hash
+	ReqHash common.Hash
 
-	addrHash  common.Hash //common.Address将地址hash后，返回给请求节点
-	proof     []byte      //vrf proof
-	publicKey ecdsa.PublicKey//alg.PublicKey
+	AddrHash  common.Hash //common.Address将地址hash后，返回给请求节点
+	Proof     []byte      //vrf proof
+	PublicKey []byte      //alg.PublicKey, rlp not support
 }
 
 type ElectionEvent struct {
-	EType EventType
-	Event interface{}
+	EType EventType   `json:"etype"`
+	Event interface{} `json:"event"`
+}
+
+type ElectionEventBytes struct {
+	EType EventType `json:"etype"`
+	Event []byte    `json:"event"`
+}
+
+func (es *ElectionEventBytes) ToElectionEvent() (*ElectionEvent, error){
+	event := ElectionEvent{}
+	event.EType = es.EType
+	if es.EType == ELECTION_EVENT_REQUEST {
+		var req ElectionRequestEvent
+		err := json.Unmarshal(es.Event, &req)
+		if err != nil{
+			return nil, err
+		}
+		event.Event = &req
+	}else if es.EType == ELECTION_EVENT_RESULT {
+		var rst ElectionResultEvent
+		err := json.Unmarshal(es.Event, &rst)
+		if err != nil{
+			return nil, err
+		}
+		event.Event = &rst
+	}
+	return &event, nil
+}
+
+func (ev *ElectionEvent)ToElectionEventBytes() ( *ElectionEventBytes, error){
+	es := &ElectionEventBytes{}
+
+	byteJson, err := json.Marshal(ev.Event)
+	es.EType = ev.EType
+	es.Event = byteJson
+	return es, err
 }

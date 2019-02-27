@@ -73,6 +73,8 @@ type iDag interface {
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
+		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 }
 
@@ -90,7 +92,7 @@ type nodeInfo struct {
 
 type electionInfo struct {
 	eleChan  chan bool
-	eleNum   int //选举jury的数量
+	eleNum   uint //选举jury的数量
 	seedData []byte
 }
 
@@ -165,7 +167,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 
 	log.Info("NewContractProcessor ok", "local address:", p.local)
 	log.Info("NewContractProcessor", "vrf Account publicKey", p.vrfAct.pubKey, "privateKey", p.vrfAct.priKey)
-	//log.Info("NewContractProcessor", "info:", p.local)
+	log.Info("NewContractProcessor", "electionNum:", p.electionNum)
 	return p, nil
 }
 
@@ -428,13 +430,29 @@ func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
 	return txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
 }
 
+func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
+	tx, _, err := p.dag.CreateTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, p.ptn.TxPool())
+	if err != nil {
+		return nil, nil, err
+	}
+	log.Debug("createContractTxReq", "tx:", tx)
+
+	return p.signAndExecute(from, tx, isLocalInstall)
+}
+
 func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
 	if err != nil {
 		return nil, nil, err
 	}
 	log.Debug("createContractTxReq", "tx:", tx)
-	if tx, err = p.ptn.SignGenericTransaction(from, tx); err != nil {
+
+	return p.signAndExecute(from, tx, isLocalInstall)
+}
+
+func (p *Processor) signAndExecute(from common.Address, tx *modules.Transaction, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
+	tx, err := p.ptn.SignGenericTransaction(from, tx)
+	if err != nil {
 		return nil, nil, err
 	}
 	reqId := tx.RequestHash()

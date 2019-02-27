@@ -31,12 +31,12 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
@@ -653,8 +653,8 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 
 func (s *PublicBlockChainAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
 	log.Info("---enter DepositContractInvoke---")
-	rsp,err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
-	return rsp.ReqId,err
+	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
+	return rsp.ReqId, err
 }
 func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Info("---enter DepositContractQuery---")
@@ -674,7 +674,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
-	log.Info("-----Ccinvoketx:","param len",len(param))
+	log.Info("-----Ccinvoketx:", "param len", len(param))
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -682,6 +682,39 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
 	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	rsp1 := &ContractDeployRsp{
+		ReqId:      hex.EncodeToString(rsp),
+		ContractId: deployId,
+	}
+	return rsp1, err
+}
+
+func (s *PublicBlockChainAPI) CcinvokeToken(ctx context.Context, from, to, toToken, daoAmount, daoFee, assetToken, amountToken, deployId string, param []string) (*ContractDeployRsp, error) {
+	contractAddr, _ := common.StringToAddress(deployId)
+
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	toAddrToken, _ := common.StringToAddress(toToken)
+	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
+	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	amountOfToken, _ := strconv.ParseUint(amountToken, 10, 64)
+
+	log.Info("-----CcinvokeToken:", "contractId", contractAddr.String())
+	log.Info("-----CcinvokeToken:", "fromAddr", fromAddr.String())
+	log.Info("-----CcinvokeToken:", "toAddr", toAddr.String())
+	log.Info("-----CcinvokeToken:", "amount", amount)
+	log.Info("-----CcinvokeToken:", "fee", fee)
+	log.Info("-----CcinvokeToken:", "toAddrToken", toAddrToken.String())
+	log.Info("-----CcinvokeToken:", "amountVote", amountOfToken)
+	log.Info("-----CcinvokeToken:", "param len", len(param))
+
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		fmt.Printf("index[%d], value[%s]\n", i, arg)
+	}
+	rsp, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, amount, fee, amountOfToken, assetToken, contractAddr, args, 0)
 	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 	rsp1 := &ContractDeployRsp{
 		ReqId:      hex.EncodeToString(rsp),
@@ -763,10 +796,11 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	return hex.EncodeToString(rsp), err
 }
 
-func (s *PublicBlockChainAPI) Election(ctx context.Context, id uint32) (string, error) {
-	log.Info("-----Election:", "id", id)
+func (s *PublicBlockChainAPI) Election(ctx context.Context, sid string) (string, error) {
+	log.Info("-----Election:", "id", sid)
 
-	rsp, err := s.b.ElectionVrf(id)
+	id, _ := strconv.Atoi(sid)
+	rsp, err := s.b.ElectionVrf(uint32(id))
 	log.Info("-----Election:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }
@@ -1698,11 +1732,11 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	if to == "" {
 		return "", fmt.Errorf("receiver address is empty")
 	}
-	_,ferr := common.StringToAddress(from)
-	if ferr != nil{
+	_, ferr := common.StringToAddress(from)
+	if ferr != nil {
 		return "", fmt.Errorf("sender address is invalid")
 	}
-	_,terr := common.StringToAddress(to)
+	_, terr := common.StringToAddress(to)
 	if terr != nil {
 		return "", fmt.Errorf("receiver address is invalid")
 	}
@@ -1927,23 +1961,23 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 	for _, json := range utxoJsons {
 		if json.Asset == ptn {
 			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
-				MessageIndex: json.MessageIndex,
-				OutIndex: json.OutIndex,
-				Amount: json.Amount,
-				Asset: json.Asset,
-				PkScriptHex: json.PkScriptHex,
+				MessageIndex:   json.MessageIndex,
+				OutIndex:       json.OutIndex,
+				Amount:         json.Amount,
+				Asset:          json.Asset,
+				PkScriptHex:    json.PkScriptHex,
 				PkScriptString: json.PkScriptString,
-				LockTime: json.LockTime})
+				LockTime:       json.LockTime})
 		} else {
 			if json.Asset == asset {
 				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
-					MessageIndex: json.MessageIndex,
-					OutIndex: json.OutIndex,
-					Amount: json.Amount,
-					Asset: json.Asset,
-					PkScriptHex: json.PkScriptHex,
+					MessageIndex:   json.MessageIndex,
+					OutIndex:       json.OutIndex,
+					Amount:         json.Amount,
+					Asset:          json.Asset,
+					PkScriptHex:    json.PkScriptHex,
 					PkScriptString: json.PkScriptString,
-					LockTime: json.LockTime})
+					LockTime:       json.LockTime})
 			}
 		}
 	}
@@ -2004,7 +2038,7 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/ , params string) (string, error) {
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
