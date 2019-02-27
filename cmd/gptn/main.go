@@ -182,6 +182,7 @@ func init() {
 		bugCommand,
 		licenseCommand,
 		dumpConfigCommand,        //转储配置文件命令
+		dumpUserCfgCommand,       //no mediator,no jury
 		dumpJsonCommand,          //create genesis.json
 		createGenesisJsonCommand, // 创建创世json文件命令
 		nodeInfoCommand,          // 获取本节点信息
