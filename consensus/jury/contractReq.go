@@ -145,9 +145,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 }
 
 func (p *Processor) ElectionVrfReq(id uint32) ([]byte, error) {
-	//for election test
 	reqId := util.RlpHash(id)
-
 	p.mtx[reqId] = &contractTx{
 		tm:    time.Now(),
 		valid: true,

@@ -90,7 +90,7 @@ type nodeInfo struct {
 
 type electionInfo struct {
 	eleChan  chan bool
-	eleNum   int //选举jury的数量
+	eleNum   uint //选举jury的数量
 	seedData []byte
 }
 
@@ -165,7 +165,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 
 	log.Info("NewContractProcessor ok", "local address:", p.local)
 	log.Info("NewContractProcessor", "vrf Account publicKey", p.vrfAct.pubKey, "privateKey", p.vrfAct.priKey)
-	//log.Info("NewContractProcessor", "info:", p.local)
+	log.Info("NewContractProcessor", "electionNum:", p.electionNum)
 	return p, nil
 }
 

@@ -196,7 +196,7 @@ function MakeTestNet()
     cd node_test
     cp ../gptn .
     cp ../node1/palletone/gptn/leveldb palletone/gptn/. -rf 
-    dumcpconfig=`./gptn dumpconfig`
+    dumcpconfig=`./gptn dumpuserconfig`
     echo $dumpconfig
 
     newipcpath="IPCPath=\"gptn$1.ipc\""

@@ -60,6 +60,18 @@ var (
 		Description: `The dumpconfig command dumps configuration to a specified file.`,
 	}
 
+	dumpUserCfgCommand = cli.Command{
+		Action:    utils.MigrateFlags(dumpUserCfg),
+		Name:      "dumpuserconfig",
+		Usage:     "Dumps configuration to a specified file",
+		ArgsUsage: "<configFilePath>",
+		Flags: []cli.Flag{
+			ConfigFilePathFlag,
+		},
+		Category:    "MISCELLANEOUS COMMANDS",
+		Description: `The dumpconfig command dumps configuration to a specified file.`,
+	}
+
 	ConfigFilePathFlag = cli.StringFlag{
 		Name:  "configfile",
 		Usage: "TOML configuration file",
@@ -323,6 +335,34 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
 	cfg := newDefaultConfig()
+	configPath := ctx.Args().First()
+	// If no path is specified, the default path is used
+	if len(configPath) == 0 {
+		configPath = defaultConfigPath
+	}
+
+	err := makeConfigFile(&cfg, configPath)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+	fmt.Println("Dumping new config file at " + configPath)
+	return nil
+}
+
+func dumpUserCfg(ctx *cli.Context) error {
+	cfg := FullConfig{
+		Ptn:       ptn.DefaultConfig,
+		Node:      defaultNodeConfig(),
+		Dashboard: dashboard.DefaultConfig,
+		P2P:       p2p.DefaultConfig,
+		//Jury:           jury.DefaultConfig,
+		//MediatorPlugin: mp.DefaultConfig,
+		Dag:      &dagconfig.DefaultConfig,
+		Log:      &log.DefaultConfig,
+		Ada:      adaptor.DefaultConfig,
+		Contract: contractcfg.DefaultConfig,
+	}
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
 	if len(configPath) == 0 {

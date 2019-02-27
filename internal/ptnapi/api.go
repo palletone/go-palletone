@@ -763,10 +763,11 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	return hex.EncodeToString(rsp), err
 }
 
-func (s *PublicBlockChainAPI) Election(ctx context.Context, id uint32) (string, error) {
-	log.Info("-----Election:", "id", id)
+func (s *PublicBlockChainAPI) Election(ctx context.Context, sid string) (string, error) {
+	log.Info("-----Election:", "id", sid)
 
-	rsp, err := s.b.ElectionVrf(id)
+	id, _ := strconv.Atoi(sid)
+	rsp, err := s.b.ElectionVrf(uint32(id))
 	log.Info("-----Election:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
 }
