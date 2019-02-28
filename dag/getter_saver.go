@@ -251,12 +251,7 @@ func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
 }
 
 func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
-	accountInfo, err := d.unstableStateRep.RetrieveAccountInfo(addr)
-	if err != nil {
-		accountInfo = modules.NewAccountInfo()
-	}
-
-	return accountInfo.PtnBalance
+	return d.unstableStateRep.GetAccountBalance(addr)
 }
 
 func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
