@@ -273,9 +273,10 @@ func TestTransactionAddingTxs(t *testing.T) {
 	fmt.Println("addlocals start.... ", t1)
 	pool.AddLocals(txpool_txs)
 
-	log.Debugf("pending:%d", len(pool.pending))
+	pending, _ := pool.pending()
+	log.Debugf("pending:%d", len(pending))
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
-	for hash, list := range pool.pending {
+	for hash, list := range pending {
 		if len(list) != int(config.AccountSlots) {
 			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(list), config.AccountSlots)
 		} else {
@@ -300,10 +301,11 @@ func TestTransactionAddingTxs(t *testing.T) {
 				}
 			}
 			all = len(txs)
-			for _, list := range p.pending {
-				pending_cache += len(list)
+			for _, tx := range p.all {
+				if !tx.Pending {
+					queue_cache++
+				}
 			}
-			queue_cache = len(p.queue)
 		}
 
 		//  add tx : failed , and discared the tx.

@@ -96,6 +96,7 @@ type TxPoolTransaction struct {
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
 	Nonce        uint64    // transaction'hash maybe repeat.
+	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
 	Discarded    bool         // will remove
