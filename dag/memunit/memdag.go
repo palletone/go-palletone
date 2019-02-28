@@ -248,8 +248,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if unit == nil {
 		return errors.ErrNullPoint
 	}
-	if unit.NumberU64() <= chain.lastMainchainUnit.NumberU64() {
-		log.Infof("This unit is too old! Ignore it")
+	if unit.NumberU64() <= chain.stableUnitHeight {
+		log.Infof("This unit is too old! Ignore it,Stable unit height:%d", chain.stableUnitHeight)
 		return nil
 	}
 	chain.lock.Lock()
