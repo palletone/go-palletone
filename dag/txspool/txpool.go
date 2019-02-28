@@ -471,8 +471,8 @@ func (pool *TxPool) Content() (map[common.Hash]*modules.Transaction, map[common.
 // account and sorted by priority level. The returned transaction set is a copy and can be
 // freely modified by calling code.
 func (pool *TxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, error) {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	//pool.mu.RLock()
+	//defer pool.mu.RUnlock()
 	pending := make(map[common.Hash][]*modules.TxPoolTransaction)
 	for _, tx := range pool.all {
 		if tx.Pending {
@@ -775,7 +775,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 	tx_hash := tx.Tx.Hash()
 	old := new(modules.TxPoolTransaction)
 
-	if this, has := pool.all[hash]; has {
+	if this, has := pool.all[tx_hash]; has {
 		old = this
 		if old.Pending || old.Confirmed {
 			// An older transaction was better, discard this
@@ -794,7 +794,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 	tx.Pending = true
 	tx.Discarded = false
 	tx.Confirmed = false
-
+	tx.UnitHash = hash
 	pool.all[tx_hash] = tx
 
 	//go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
@@ -1640,18 +1640,17 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	unit_size := common.StorageSize(dagconfig.DefaultConfig.UnitTxSize)
 	for {
 		tx := pool.priority_priced.Get()
 		if tx == nil {
 			log.Debug("Txspool get  priority_pricedtx failed.", "error", "tx is null")
 			break
-			//continue
 		} else {
 			log.Debug("Txspool get  priority_pricedtx success.", "tx_info", tx)
-			if !tx.Pending && !tx.Confirmed {
+			if !tx.Pending {
 				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
 				if total += tx.Tx.Size(); total <= unit_size {
 					// 获取该交易的前驱交易列表
@@ -1690,6 +1689,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			if !ok && err == nil {
 				//  更改孤儿交易的状态
 				tx.Pending = true
+				tx.UnitHash = hash
+				pool.all[tx.Tx.Hash()] = tx
 				pool.orphans[tx.Tx.Hash()] = tx
 				list = append(list, tx)
 				total += tx.Tx.Size()
@@ -1707,9 +1708,19 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		for _, tx := range txs {
 			pool.removeOrphan(tx, false)
 		}
-
 	}(validated_txs)
-
+	// 	去重
+	for i := 0; i < len(list)-1; i++ {
+		for j := i + 1; j < len(list); j++ {
+			if list[i].Tx.Hash() == list[j].Tx.Hash() {
+				fmt.Println("重复", j, list[j].Tx.Hash().String())
+				item := list[:i]
+				item = append(item, list[j:]...)
+				list = make([]*modules.TxPoolTransaction, 0)
+				list = item[:]
+			}
+		}
+	}
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, error) {
@@ -1723,8 +1734,13 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.Tx
 						_, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
 						if err != nil { //  若该utxo在db里找不到
 							queue_tx, has := pool.all[input.PreviousOutPoint.TxHash]
+							queue_otx, has1 := pool.orphans[input.PreviousOutPoint.TxHash]
 							if !has || queue_tx == nil {
-								continue
+								if has1 {
+									queue_tx = queue_otx
+								} else {
+									continue
+								}
 							}
 							list, _ := pool.getPrecusorTxs(queue_tx)
 							if len(list) > 0 {

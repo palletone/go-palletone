@@ -141,7 +141,7 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
-	coreUtxos, err := dag.getAddrCoreUtxos(from, txPool)
+	coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, assetToken, txPool)
 	if err != nil {
 		return nil, err
 	}
@@ -149,20 +149,43 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 	if len(coreUtxos) == 0 {
 		return nil, fmt.Errorf("%v 's uxto is null", from.Str())
 	}
+	if len(tokenUtxos) == 0 {
+		return nil, fmt.Errorf("%v 's  uxto of this Token is null", from.Str())
+	}
+	//2. 获取 PaymentPayload
+	ploadPTN, err := getPayload(from, to, daoAmount, daoFee, coreUtxos)
+	if err != nil {
+		return nil, err
+	}
+	ploadToken, err := getPayload(from, toToken, daoAmountToken, 0, tokenUtxos)
+	if err != nil {
+		return nil, err
+	}
+	// 3. 构建Transaction
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, ploadToken))
 
-	// 2. 利用贪心算法得到指定额度的utxo集合
+	return tx, nil
+}
+
+func getPayload(from, to common.Address, daoAmount, daoFee uint64, utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error) {
+	// 1. 利用贪心算法得到指定额度的utxo集合
 	greedyUtxos := core.Utxos{}
-	for outPoint, utxo := range coreUtxos {
+	for outPoint, utxo := range utxos {
 		tg := newTxo4Greedy(outPoint, utxo.Amount)
 		greedyUtxos = append(greedyUtxos, tg)
 	}
 
+	daoTotal := daoAmount + daoFee
 	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
 	if err != nil {
 		return nil, fmt.Errorf("select utxo err")
 	}
 
-	// 3. 构建PaymentPayload的Inputs
+	// 2. 构建PaymentPayload的Inputs
 	pload := new(modules.PaymentPayload)
 	pload.LockTime = 0
 
@@ -172,7 +195,7 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 		pload.AddTxIn(txInput)
 	}
 
-	// 4. 构建PaymentPayload的Outputs
+	// 3. 构建PaymentPayload的Outputs
 	// 为了保证顺序， 将map改为结构体数组
 	type OutAmount struct {
 		addr   common.Address
@@ -193,19 +216,21 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 		}
 	}
 
+	var asset modules.Asset
+	for _, utxo := range utxos {
+		if utxo != nil {
+			asset.AssetId = utxo.Asset.AssetId
+			asset.UniqueId = utxo.Asset.UniqueId
+			break
+		}
+	}
+
 	for _, outAmount := range outAmounts {
 		pkScript := tokenengine.GenerateLockScript(outAmount.addr)
-		txOut := modules.NewTxOut(outAmount.amount, pkScript, modules.CoreAsset)
+		txOut := modules.NewTxOut(outAmount.amount, pkScript, &asset)
 		pload.AddTxOut(txOut)
 	}
-
-	// 5. 构建Transaction
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
-
-	return tx, nil
+	return pload, nil
 }
 
 func (dag *Dag) getAddrCoreUtxos(addr common.Address, txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, error) {
@@ -235,6 +260,44 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address, txPool txspool.ITxPool) (m
 	}
 
 	return coreUtxos, nil
+}
+
+func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string, txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, map[modules.OutPoint]*modules.Utxo, error) {
+	// todo 待优化
+	allTxos, err := dag.GetAddrUtxos(addr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
+	tokenUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
+	for outPoint, utxo := range allTxos {
+		// 剔除非PTN资产
+		isPTN := true
+		if !utxo.Asset.IsSimilar(modules.CoreAsset) {
+			if utxo.Asset.String() != assetToken {
+				continue
+			}
+			isPTN = false
+		}
+
+		// 剔除已花费的TXO
+		if utxo.IsSpent() {
+			continue
+		}
+
+		if ok, _ := txPool.OutPointIsSpend(&outPoint); ok {
+			continue
+		}
+
+		if isPTN {
+			coreUtxos[outPoint] = utxo
+		} else {
+			tokenUtxos[outPoint] = utxo
+		}
+	}
+
+	return coreUtxos, tokenUtxos, nil
 }
 
 func (dag *Dag) calculateDataFee(data interface{}) uint64 {

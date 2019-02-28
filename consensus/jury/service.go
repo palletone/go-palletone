@@ -22,7 +22,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"fmt"
 	"sync"
 	"time"
 
@@ -91,6 +90,8 @@ type nodeInfo struct {
 }
 
 type electionInfo struct {
+	contractId common.Address
+
 	eleChan  chan bool
 	eleNum   uint //选举jury的数量
 	seedData []byte
@@ -115,8 +116,9 @@ type Processor struct {
 	validator validator.Validator
 	contract  *contracts.Contract
 	vrfAct    vrfAccount
-	local     map[common.Address]*JuryAccount //[]common.Address //local account addr
-	mtx       map[common.Hash]*contractTx     //all contract buffer
+	local     map[common.Address]*JuryAccount  //[]common.Address //local account addr
+	mtx       map[common.Hash]*contractTx      //all contract buffer
+	lockAddr  map[common.Address][]common.Hash //contractId/deployId ----addrHash, jury VRF
 	quit      chan struct{}
 	locker    *sync.Mutex
 
@@ -160,6 +162,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		locker:         new(sync.Mutex),
 		quit:           make(chan struct{}),
 		mtx:            make(map[common.Hash]*contractTx),
+		lockAddr:       make(map[common.Address][]common.Hash),
 		electionNum:    cfg.ElectionNum,
 		contractSigNum: cfg.ContractSigNum,
 		validator:      validator,
@@ -416,20 +419,6 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	return false
 }
 
-func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
-	if tx == nil || cnt < 4 {
-		return errors.New(fmt.Sprintf("addTx2LocalTxTool param error, node count is [%d]", cnt))
-	}
-	if num := getTxSigNum(tx); num < (cnt*2/3 + 1) {
-		log.Error("addTx2LocalTxTool sig num is", num)
-		return errors.New(fmt.Sprintf("addTx2LocalTxTool tx sig num is:%d", num))
-	}
-	txPool := p.ptn.TxPool()
-	log.Debug("addTx2LocalTxTool", "tx:", tx.Hash().String())
-
-	return txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
-}
-
 func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, p.ptn.TxPool())
 	if err != nil {
@@ -437,7 +426,7 @@ func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, d
 	}
 	log.Debug("createContractTxReq", "tx:", tx)
 
-	return p.signAndExecute(from, tx, isLocalInstall)
+	return p.signAndExecute(getContractIdFromMsg(msg), from, tx, isLocalInstall)
 }
 
 func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
@@ -447,26 +436,29 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 	}
 	log.Debug("createContractTxReq", "tx:", tx)
 
-	return p.signAndExecute(from, tx, isLocalInstall)
+	return p.signAndExecute(getContractIdFromMsg(msg), from, tx, isLocalInstall)
 }
 
-func (p *Processor) signAndExecute(from common.Address, tx *modules.Transaction, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
+func (p *Processor) signAndExecute(contractId common.Address, from common.Address, tx *modules.Transaction, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
 	tx, err := p.ptn.SignGenericTransaction(from, tx)
 	if err != nil {
 		return nil, nil, err
 	}
 	reqId := tx.RequestHash()
-	p.locker.Lock()
 	p.mtx[reqId] = &contractTx{
 		reqTx: tx,
 		tm:    time.Now(),
 		valid: true,
 	}
-	p.locker.Unlock()
 	ctx := p.mtx[reqId]
-	if !isSystemContract(tx) {
-		if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
-			return nil, nil, err
+	if !isSystemContract(tx) && contractId != (common.Address{}) {
+		//获取合约Id
+		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
+		if addrs, ok := p.lockAddr[contractId]; !ok || len(addrs) < p.electionNum {
+			p.lockAddr[contractId] = []common.Hash{} //清空
+			if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
+				return nil, nil, err
+			}
 		}
 	}
 	if isLocalInstall {

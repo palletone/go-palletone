@@ -162,7 +162,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -451,7 +451,7 @@ func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageT
 	return modules.APP_UNKNOW, errors.New("getContractTxContractInfo not find")
 }
 
-func getElectionSeedData(in common.Hash) ([]byte, error){
+func getElectionSeedData(in common.Hash) ([]byte, error) {
 	rd := make([]byte, 20)
 	_, err := rand.Read(rd)
 	if err != nil {
@@ -461,4 +461,29 @@ func getElectionSeedData(in common.Hash) ([]byte, error){
 	copy(seedData, in[:])
 	copy(seedData[len(in):], rd)
 	return seedData, nil
+}
+
+func getContractIdFromMsg(msg *modules.Message) common.Address {
+	if msg == nil{
+		return common.Address{}
+	}
+	switch msg.App {
+	case modules.APP_CONTRACT_DEPLOY_REQUEST:
+		{
+			payload := msg.Payload.(*modules.ContractDeployRequestPayload)
+			//hex.DecodeString(txId)
+			return common.HexToAddress(payload.TxId)
+		}
+	case modules.APP_CONTRACT_INVOKE_REQUEST:
+		{
+			payload := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			return common.BytesToAddress(payload.ContractId)
+		}
+	case modules.APP_CONTRACT_STOP_REQUEST:
+		{
+			payload := msg.Payload.(*modules.ContractStopRequestPayload)
+			return common.BytesToAddress(payload.ContractId)
+		}
+	}
+	return common.Address{}
 }

@@ -364,3 +364,63 @@ func TestUtxoViewPoint(t *testing.T) {
 	}
 	delete(view.entries, *outpoint)
 }
+
+func TestGetProscerTx(t *testing.T) {
+	us := make([]*user, 0)
+	var list []int
+	us = append(us, &user{append(list, 1, 2), 2, append(list, 3, 4)}, &user{append(list, 3), 1, append(list, 5)}, &user{append(list, 4), 0, append(list, 7)}, &user{append(list, 7), 4, append(list, 8)}, &user{append(list, 8), 5, append(list, 9)}, &user{append(list, 0), 6, append(list, 1, 2)})
+
+	l := getProscerTx(&user{append(list, 3), 1, append(list, 5)}, us)
+	// 去重
+	for i := 0; i < len(l)-1; i++ {
+		for j := i + 1; j < len(l); j++ {
+			if l[i] == l[j] {
+				fmt.Println("重复", j, l)
+				item := l[:i]
+				item = append(item, l[j:]...)
+				l = make([]int, 0)
+				l = item[:]
+				fmt.Println("重复", j, l)
+			}
+		}
+	}
+	if len(l) < 1 {
+		fmt.Println("failed.", l)
+	} else {
+		for _, n := range l {
+			fmt.Println("number:", n)
+		}
+	}
+}
+
+type user struct {
+	inputs  []int
+	u       int
+	outputs []int
+}
+
+func getProscerTx(this *user, us []*user) []int {
+	list := make([]int, 0)
+	if len(us) > 0 {
+		for _, num := range this.inputs {
+			for _, u := range us {
+				for _, out := range u.outputs {
+					if out == num {
+						list = append(list, u.u)
+						fmt.Println("原始的num:", u.u)
+						for _, next := range us {
+							if next.u == u.u {
+								if l := getProscerTx(next, us); len(l) > 0 {
+									list = append(list, l...)
+									fmt.Println("递归的num", l)
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return list
+}
