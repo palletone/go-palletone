@@ -94,7 +94,7 @@ type TxPoolTransaction struct {
 
 	From         []*OutPoint
 	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl float64   `json:"priority_lvl"` // 打包的优先级
+	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
 	Nonce        uint64    // transaction'hash maybe repeat.
 	Pending      bool
 	Confirmed    bool
@@ -152,10 +152,10 @@ type TxPoolTransaction struct {
 //	return nil
 //}
 
-func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
+func (tx *TxPoolTransaction) GetPriorityLvl() string {
 	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
-
-	if tx.Priority_lvl > 0 {
+	level, _ := strconv.ParseFloat(tx.Priority_lvl, 64)
+	if level > 0 {
 		return tx.Priority_lvl
 	}
 	var priority_lvl float64
@@ -166,11 +166,26 @@ func (tx *TxPoolTransaction) GetPriorityLvl() float64 {
 		}
 		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
-	tx.Priority_lvl = priority_lvl
+	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'E', -1, 64)
+	return tx.Priority_lvl
+}
+func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
+	level, _ := strconv.ParseFloat(tx.Priority_lvl, 64)
+	if level > 0 {
+		return level
+	}
+	var priority_lvl float64
+	if txfee := tx.GetTxFee(); txfee.Int64() > 0 {
+		// t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
+		if tx.CreationDate.Unix() <= 0 {
+			tx.CreationDate = time.Now()
+		}
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
+	}
 	return priority_lvl
 }
 func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
-	tx.Priority_lvl = priority
+	tx.Priority_lvl = strconv.FormatFloat(priority, 'E', -1, 64)
 }
 func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 	var fee uint64
@@ -338,11 +353,9 @@ type TxByPrice TxPoolTxs
 
 func (s TxByPrice) Len() int      { return len(s) }
 func (s TxByPrice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
 func (s *TxByPrice) Push(x interface{}) {
 	*s = append(*s, x.(*TxPoolTransaction))
 }
-
 func (s *TxByPrice) Pop() interface{} {
 	old := *s
 	n := len(old)

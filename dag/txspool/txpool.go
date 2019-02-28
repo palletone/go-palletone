@@ -22,7 +22,6 @@ package txspool
 import (
 	"fmt"
 	"math"
-	"math/big"
 	"sort"
 	"sync"
 	"time"
@@ -168,7 +167,6 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 type TxPool struct {
 	config       TxPoolConfig
 	unit         dags
-	txfee        *big.Int
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
 	chainHeadCh  chan modules.ChainHeadEvent
@@ -232,15 +230,13 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 
 	// Create the transaction pool with its initial settings
 	pool := &TxPool{
-		config: config,
-		unit:   unit,
-		//logger:         l,
+		config:         config,
+		unit:           unit,
 		queue:          make(map[common.Hash]*modules.TxPoolTransaction),
 		beats:          make(map[modules.OutPoint]time.Time),
 		pending:        make(map[common.Hash][]*modules.TxPoolTransaction),
 		all:            make(map[common.Hash]*modules.TxPoolTransaction),
 		chainHeadCh:    make(chan modules.ChainHeadEvent, chainHeadChanSize),
-		txfee:          new(big.Int).SetUint64(config.FeeLimit),
 		outpoints:      make(map[modules.OutPoint]*modules.TxPoolTransaction),
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
 		orphans:        make(map[common.Hash]*modules.TxPoolTransaction),
@@ -789,7 +785,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			if list != nil {
 				// New transaction is better, replace old one
 				if txHash.String() == list.Tx.Hash().String() {
-					if list.Priority_lvl < tx.Priority_lvl {
+					if list.GetPriorityfloat64() < tx.GetPriorityfloat64() {
 						//delete(pool.all, txHash)
 						tx.Discarded = true
 						pool.priority_priced.Removed(txHash)

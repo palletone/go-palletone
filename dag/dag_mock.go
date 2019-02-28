@@ -300,6 +300,21 @@ func (mr *MockIDagMockRecorder) GetTransaction(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransaction", reflect.TypeOf((*MockIDag)(nil).GetTransaction), hash)
 }
 
+// GetTransactionOnly mocks base method
+func (m *MockIDag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransactionOnly", hash)
+	ret0, _ := ret[0].(*modules.Transaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTransactionOnly indicates an expected call of GetTransactionOnly
+func (mr *MockIDagMockRecorder) GetTransactionOnly(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionOnly", reflect.TypeOf((*MockIDag)(nil).GetTransactionOnly), hash)
+}
+
 // GetTxSearchEntry mocks base method
 func (m *MockIDag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
 	m.ctrl.T.Helper()
