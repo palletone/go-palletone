@@ -21,15 +21,17 @@
 package storage
 
 import (
+	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"crypto/ecdsa"
-	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/dag/modules"
 )
+
 var hash = common.HexToHash("0xfa4329fbb03fdd5d538a9a01a9af3b6f13e31d476ef9731adbee8bc4df688144")
+
 func TestGetUnit(t *testing.T) {
 	//log.Println("dbconn is nil , renew db  start ...")
 
@@ -120,14 +122,14 @@ func TestGetTransaction(t *testing.T) {
 	tx := modules.NewTransaction(
 		[]*modules.Message{msg, msg2, msg3},
 	)
-    t.Logf("%#v",tx)
+	t.Logf("%#v", tx)
 	db, _ := ptndb.NewMemDatabase()
 	dagdb := NewDagDb(db)
 
 	err := dagdb.SaveTransaction(tx)
 	assert.Nil(t, err)
-	t.Log("tx ",tx)
-	tx2, err:= dagdb.gettrasaction(tx.Hash())
+	t.Log("tx ", tx)
+	tx2, err := dagdb.GetTransactionOnly(tx.Hash())
 	assert.Nil(t, err)
 	t.Logf("%#v", tx2)
 	assertRlpHashEqual(t, tx, tx2)

@@ -70,6 +70,7 @@ type IDagDb interface {
 	//getChainUnit(hash common.Hash) (*modules.Unit, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	GetHeader(hash common.Hash) (*modules.Header, error)
@@ -472,7 +473,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, err := dagdb.gettrasaction(txHash)
+		tx, err := dagdb.GetTransactionOnly(txHash)
 		if err != nil {
 			return nil, err
 		}
