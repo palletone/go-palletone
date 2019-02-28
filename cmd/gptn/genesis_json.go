@@ -181,7 +181,7 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("Creating example genesis state in file " + genesisOut)
+	fmt.Println("Creating example genesis state in file: " + genesisOut)
 
 	// 修改本节点的一些特殊配置
 	modifyConfig(ctx, mcs)
@@ -218,13 +218,12 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 		return err
 	}
 
-	fmt.Println("Rewriting config file at:", configPath)
+	fmt.Println("Rewriting config file at: ", configPath)
 
 	return nil
 }
 
 func getGenesisPath(ctx *cli.Context) string {
-	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
 
 	// If no path is specified, the default path is used
@@ -233,7 +232,7 @@ func getGenesisPath(ctx *cli.Context) string {
 		genesisOut = defaultGenesisJsonPath
 	}
 
-	return genesisOut
+	return common.GetAbsPath(genesisOut)
 }
 
 // initialAccount, create a initial account for a new account
@@ -331,6 +330,6 @@ func dumpJson(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("Creating example genesis state in file " + filePath)
+	fmt.Println("Creating example genesis state in file: " + filePath)
 	return nil
 }

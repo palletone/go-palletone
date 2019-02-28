@@ -45,7 +45,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-var defaultConfigPath = "./ptn-config.toml"
+const defaultConfigPath = "./ptn-config.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
@@ -309,10 +309,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
 
-	//create the cfg override the old cfg
-	defaultConfigPath = utils.SetCfgPath(ctx, defaultConfigPath)
-	//fmt.Println("=========================defaultConfigPath:", defaultConfigPath)
-	//makeConfigFile(&cfg, cfgPath)
 	return stack, cfg
 }
 
@@ -344,19 +340,26 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
 	cfg := newDefaultConfig()
-	configPath := ctx.Args().First()
-	// If no path is specified, the default path is used
-	if len(configPath) == 0 {
-		configPath = defaultConfigPath
-	}
+	configPath := getDumpConfigPath(ctx)
 
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
-	fmt.Println("Dumping new config file at " + configPath)
+	fmt.Println("Dumping new config file at: " + configPath)
 	return nil
+}
+
+func getDumpConfigPath(ctx *cli.Context) string {
+	configPath := ctx.Args().First()
+
+	// If no path is specified, the default path is used
+	if len(configPath) == 0 {
+		configPath = defaultConfigPath
+	}
+
+	return common.GetAbsPath(configPath)
 }
 
 func dumpUserCfg(ctx *cli.Context) error {
@@ -364,18 +367,14 @@ func dumpUserCfg(ctx *cli.Context) error {
 	cfg.MediatorPlugin = mp.MakeConfig()
 	cfg.Jury = jury.MakeConfig()
 
-	configPath := ctx.Args().First()
-	// If no path is specified, the default path is used
-	if len(configPath) == 0 {
-		configPath = defaultConfigPath
-	}
-
+	configPath := getDumpConfigPath(ctx)
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
-	fmt.Println("Dumping new config file at " + configPath)
+
+	fmt.Println("Dumping new config file at: " + configPath)
 	return nil
 }
 

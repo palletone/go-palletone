@@ -960,20 +960,6 @@ func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config) {
 	}
 }
 
-func SetCfgPath(ctx *cli.Context, cfgPath string) string {
-	switch {
-	case ctx.GlobalIsSet(DataDirFlag.Name):
-		dataDir := ctx.GlobalString(DataDirFlag.Name)
-		dataDir = strings.Replace(dataDir, "palletone", "", 1)
-		if !filepath.IsAbs(cfgPath) {
-			path := filepath.Join(dataDir, cfgPath)
-			path = GetAbsDirectory(path)
-			return path
-		}
-	}
-	return cfgPath
-}
-
 func SetLogConfig(ctx *cli.Context, cfg *log.Config) {
 	if ctx.GlobalIsSet(LogValue1Flag.Name) {
 		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
