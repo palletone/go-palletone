@@ -22,7 +22,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"fmt"
 	"sync"
 	"time"
 
@@ -418,20 +417,6 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	}
 	return false
-}
-
-func (p *Processor) addTx2LocalTxTool(tx *modules.Transaction, cnt int) error {
-	if tx == nil || cnt < 4 {
-		return errors.New(fmt.Sprintf("addTx2LocalTxTool param error, node count is [%d]", cnt))
-	}
-	if num := getTxSigNum(tx); num < (cnt*2/3 + 1) {
-		log.Error("addTx2LocalTxTool sig num is", num)
-		return errors.New(fmt.Sprintf("addTx2LocalTxTool tx sig num is:%d", num))
-	}
-	txPool := p.ptn.TxPool()
-	log.Debug("addTx2LocalTxTool", "tx:", tx.Hash().String())
-
-	return txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
 }
 
 func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
