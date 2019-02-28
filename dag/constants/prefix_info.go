@@ -58,7 +58,7 @@ var (
 	DYNAMIC_GLOBALPROPERTY_PREFIX = []byte("dp")
 	MEDIATOR_SCHEME_PREFIX        = []byte("ms")
 	ACCOUNT_INFO_PREFIX           = []byte("ai")
-
+	ACCOUNT_PTN_BALANCE_PREFIX    = []byte("ab")
 	// lookup
 	LookupPrefix = []byte("l")
 

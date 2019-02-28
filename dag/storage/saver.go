@@ -24,8 +24,8 @@ import (
 	"errors"
 	"log"
 	// "github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -61,10 +61,14 @@ func SaveJoint(db ptndb.Database, objJoint *modules.Joint, onDone func()) (err e
 }
 
 // encodeBlockNumber encodes a block number as big endian uint64
-func encodeBlockNumber(number uint64) []byte {
+func Uint64ToBytes(number uint64) []byte {
 	enc := make([]byte, 8)
 	binary.BigEndian.PutUint64(enc, number)
 	return enc
+}
+func BytesToUint64(b []byte) uint64 {
+
+	return binary.BigEndian.Uint64(b)
 }
 
 func GetUnitKeys(db ptndb.Database) []string {

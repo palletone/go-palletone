@@ -87,7 +87,7 @@ const (
 	NotTimeYet
 	//NoPrivateKey
 	LowParticipation
-	//Lag
+	Lag
 	Consecutive
 	ExceptionProducing
 )
@@ -110,9 +110,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	case NotMyTurn:
 		log.Debug("Not producing unit because current scheduled mediator is " +
 			detail["ScheduledMediator"])
-	//case Lag:
-	//	log.Info("Not producing unit because node didn't wake up within 500ms of the slot time." +
-	//		" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
+	case Lag:
+		log.Info("Not producing unit because node didn't wake up within 500ms of the slot time." +
+			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
 	//case NoPrivateKey:
 	//	log.Info("Not producing unit because I don't have the private key for " +
 	//		detail["ScheduledKey"])
@@ -215,12 +215,12 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	// 生产单元的协程满足了前面的判断，此时新收到一个unit正在更新数据库，后面的判断有不能通过
 	// todo 调试的代码，暂时注释掉该判断，release版本的代码必须使用该判断
 	scheduledTime := dag.GetSlotTime(slot)
-	//diff := scheduledTime.Sub(now)
-	//if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
-	//	detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
-	//	detail["Now"] = now.Format("2006-01-02 15:04:05")
-	//	return Lag, detail
-	//}
+	diff := scheduledTime.Sub(now)
+	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
+		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
+		detail["Now"] = now.Format("2006-01-02 15:04:05")
+		return Lag, detail
+	}
 
 	// 2. 生产单元
 	//execute contract

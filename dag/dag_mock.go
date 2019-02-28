@@ -5,15 +5,15 @@
 package dag
 
 import (
-	"github.com/golang/mock/gomock"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"reflect"
-	"time"
+	gomock "github.com/golang/mock/gomock"
+	common "github.com/palletone/go-palletone/common"
+	event "github.com/palletone/go-palletone/common/event"
+	discover "github.com/palletone/go-palletone/common/p2p/discover"
+	core "github.com/palletone/go-palletone/core"
+	modules "github.com/palletone/go-palletone/dag/modules"
+	txspool "github.com/palletone/go-palletone/dag/txspool"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -300,20 +300,19 @@ func (mr *MockIDagMockRecorder) GetTransaction(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransaction", reflect.TypeOf((*MockIDag)(nil).GetTransaction), hash)
 }
 
-// GetTransactionByHash mocks base method
-func (m *MockIDag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
+// GetTransactionOnly mocks base method
+func (m *MockIDag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTransactionByHash", hash)
+	ret := m.ctrl.Call(m, "GetTransactionOnly", hash)
 	ret0, _ := ret[0].(*modules.Transaction)
-	ret1, _ := ret[1].(common.Hash)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// GetTransactionByHash indicates an expected call of GetTransactionByHash
-func (mr *MockIDagMockRecorder) GetTransactionByHash(hash interface{}) *gomock.Call {
+// GetTransactionOnly indicates an expected call of GetTransactionOnly
+func (mr *MockIDagMockRecorder) GetTransactionOnly(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionByHash", reflect.TypeOf((*MockIDag)(nil).GetTransactionByHash), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionOnly", reflect.TypeOf((*MockIDag)(nil).GetTransactionOnly), hash)
 }
 
 // GetTxSearchEntry mocks base method

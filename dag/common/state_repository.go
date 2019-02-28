@@ -37,6 +37,7 @@ type IStateRepository interface {
 	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
 
 	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
+	GetAccountBalance(address common.Address) uint64
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
 	GetMediators() map[common.Address]bool
@@ -96,6 +97,9 @@ func (rep *StateRepository) IsMediator(address common.Address) bool {
 }
 func (rep *StateRepository) RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error) {
 	return rep.statedb.RetrieveAccountInfo(address)
+}
+func (rep *StateRepository) GetAccountBalance(address common.Address) uint64 {
+	return rep.statedb.GetAccountBalance(address)
 }
 func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return rep.statedb.LookupAccount()

@@ -213,16 +213,16 @@ func (dagdb *DagDb) GetTransaction(hash common.Hash) (*modules.Transaction, comm
 		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err1, "tx_hash:", hash)
 		return nil, unitHash, unitNumber, txIndex, err1
 	}
-	tx, err := dagdb.gettrasaction(hash)
+	tx, err := dagdb.GetTransactionOnly(hash)
 	if err != nil {
-		log.Info("gettrasaction error:", err.Error())
+		log.Info("GetTransactionOnly error:", err.Error())
 		return nil, unitHash, unitNumber, txIndex, err
 	}
 	return tx, unitHash, unitNumber, txIndex, nil
 }
 
-// gettrasaction can get a transaction by hash.
-func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error) {
+// GetTransactionOnly can get a transaction by hash.
+func (dagdb *DagDb) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	if hash == (common.Hash{}) {
 		return nil, errors.New("hash is not exist.")
 	}
@@ -235,20 +235,6 @@ func (dagdb *DagDb) gettrasaction(hash common.Hash) (*modules.Transaction, error
 		return nil, err
 	}
 	return tx, nil
-	//if err := json.Unmarshal([]byte(data), &tx); err != nil {
-	//	log.Error("tx Unmarshal failed......", "error", err, "data:", data)
-	//	return nil, err
-	//}
-	// TODO ---- 将不同msg‘s app 反序列化后赋值给payload interface{}.
-	//log.Debug("================== transaction_info======================", "error", err, "transaction_info", tx)
-	//msgs, err1 := ConvertMsg(tx)
-	//if err1 != nil {
-	//	log.Error("tx comvertmsg failed......", "err:", err1, "tx:", tx)
-	//	return nil, err1
-	//}
-	//
-	//tx.TxMessages = msgs
-	//return tx, err
 }
 
 //func (dagdb *DagDb) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
@@ -276,6 +262,6 @@ func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 //		return nil, unitHash, err
 //	}
 //
-//	tx, err1 := dagdb.gettrasaction(hash)
+//	tx, err1 := dagdb.GetTransactionOnly(hash)
 //	return tx, unitHash, err1
 //}
