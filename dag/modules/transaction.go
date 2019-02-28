@@ -652,9 +652,10 @@ func (msg *Transaction) SerializeSize() int {
 
 //Deep copy transaction to a new object
 func (tx *Transaction) Clone() Transaction {
-	var newTx Transaction
-	obj.DeepCopy(&newTx, tx)
-	return newTx
+	newTx := &Transaction{}
+	data, _ := rlp.EncodeToBytes(tx)
+	rlp.DecodeBytes(data, newTx)
+	return *newTx
 }
 
 // AddTxOut adds a transaction output to the message.
