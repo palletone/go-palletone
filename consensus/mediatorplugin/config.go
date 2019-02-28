@@ -106,6 +106,12 @@ var DefaultConfig = Config{
 	},
 }
 
+func MakeConfig() Config {
+	cfg := DefaultConfig
+	cfg.Mediators = nil
+	return cfg
+}
+
 func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 	if ctx.GlobalIsSet(NoProduceUnitFlag.Name) {
 		cfg.EnableProducing = false

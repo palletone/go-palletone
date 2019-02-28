@@ -49,11 +49,12 @@ var DefaultConfig = Config{
 	TrieTimeout:   5 * time.Minute,
 	GasPrice:      big.NewInt(0.01 * configure.PalletOne),
 
-	TxPool: txspool.DefaultTxPoolConfig,
-
+	TxPool:         txspool.DefaultTxPoolConfig,
 	Dag:            dagconfig.DefaultConfig,
 	Log:            log.DefaultConfig,
 	MediatorPlugin: mediatorplugin.DefaultConfig,
+	Jury:           jury.DefaultConfig,
+	Contract:       contractcfg.DefaultConfig,
 }
 
 func init() {
@@ -101,7 +102,7 @@ type Config struct {
 	GasPrice     *big.Int
 
 	// Transaction pool options
-	TxPool txspool.TxPoolConfig
+	TxPool txspool.TxPoolConfig `toml:"-"`
 
 	// Gas Price Oracle options
 	//GPO gasprice.Config

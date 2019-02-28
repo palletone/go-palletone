@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
@@ -114,13 +115,14 @@ type ptnstatsConfig struct {
 
 type FullConfig struct {
 	Ptn            ptn.Config
+	TxPool         txspool.TxPoolConfig
 	Node           node.Config
 	Ptnstats       ptnstatsConfig
 	Dashboard      dashboard.Config
 	Jury           jury.Config
 	MediatorPlugin mp.Config
-	Log            *log.Config
-	Dag            *dagconfig.Config
+	Log            log.Config
+	Dag            dagconfig.Config
 	P2P            p2p.Config
 	Ada            adaptor.Config
 	Contract       contractcfg.Config
@@ -143,6 +145,7 @@ func loadConfig(file string, cfg *FullConfig) error {
 
 func defaultNodeConfig() node.Config {
 	cfg := node.DefaultConfig
+	cfg.P2P = p2p.DefaultConfig
 	cfg.Name = clientIdentifier
 	cfg.Version = configure.VersionWithCommit(gitCommit)
 	cfg.HTTPModules = append(cfg.HTTPModules, "ptn" /*, "shh"*/)
@@ -152,9 +155,10 @@ func defaultNodeConfig() node.Config {
 }
 
 func adaptorConfig(config *FullConfig) *FullConfig {
+	config.Ptn.TxPool = config.TxPool
 	config.Node.P2P = config.P2P
-	config.Ptn.Dag = *config.Dag
-	config.Ptn.Log = *config.Log
+	config.Ptn.Dag = config.Dag
+	config.Ptn.Log = config.Log
 	config.Ptn.Jury = config.Jury
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
 	config.Ptn.Contract = config.Contract
@@ -279,11 +283,20 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 将命令行中的配置参数覆盖cfg中对应的配置,
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
-	adaptorConfig(&cfg)
-	utils.SetLog(ctx, &cfg.Ptn.Log)
+	utils.SetLogConfig(ctx, &cfg.Log)
 	utils.SetNodeConfig(ctx, &cfg.Node)
+	utils.SetP2PConfig(ctx, &cfg.P2P)
+	utils.SetContractConfig(ctx, &cfg.Contract)
+	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
+	utils.SetDagConfig(ctx, &cfg.Dag)
+	mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
+	jury.SetJuryConfig(ctx, &cfg.Jury)
 
-	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
+	// 为了方便用户配置，所以将各个子模块的配置提升到与ptn同级，
+	// 然而在RegisterPtnService()中，只能使用ptn下的配置
+	// 所以在此处将各个子模块的配置，复制到ptn下
+	adaptorConfig(&cfg)
+
 	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
@@ -295,9 +308,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-	utils.SetContract(ctx, &cfg.Ptn.Contract, &cfg.Contract)
-	mp.SetMediatorConfig(ctx, &cfg.Ptn.MediatorPlugin)
-	jury.SetJuryConfig(ctx, &cfg.Jury)
 
 	//create the cfg override the old cfg
 	defaultConfigPath = utils.SetCfgPath(ctx, defaultConfigPath)
@@ -350,18 +360,10 @@ func dumpConfig(ctx *cli.Context) error {
 }
 
 func dumpUserCfg(ctx *cli.Context) error {
-	cfg := FullConfig{
-		Ptn:       ptn.DefaultConfig,
-		Node:      defaultNodeConfig(),
-		Dashboard: dashboard.DefaultConfig,
-		P2P:       p2p.DefaultConfig,
-		//Jury:           jury.DefaultConfig,
-		//MediatorPlugin: mp.DefaultConfig,
-		Dag:      &dagconfig.DefaultConfig,
-		Log:      &log.DefaultConfig,
-		Ada:      adaptor.DefaultConfig,
-		Contract: contractcfg.DefaultConfig,
-	}
+	cfg := newDefaultConfig()
+	cfg.MediatorPlugin = mp.MakeConfig()
+	cfg.Jury = jury.MakeConfig()
+
 	configPath := ctx.Args().First()
 	// If no path is specified, the default path is used
 	if len(configPath) == 0 {
@@ -383,13 +385,14 @@ func newDefaultConfig() FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
 	return FullConfig{
 		Ptn:            ptn.DefaultConfig,
+		TxPool:         txspool.DefaultTxPoolConfig,
 		Node:           defaultNodeConfig(),
 		Dashboard:      dashboard.DefaultConfig,
 		P2P:            p2p.DefaultConfig,
 		Jury:           jury.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
-		Dag:            &dagconfig.DefaultConfig,
-		Log:            &log.DefaultConfig,
+		Dag:            dagconfig.DefaultConfig,
+		Log:            log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
 		Contract:       contractcfg.DefaultConfig,
 	}

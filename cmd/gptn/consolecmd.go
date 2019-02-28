@@ -169,10 +169,10 @@ func remoteConsole(ctx *cli.Context) error {
 		datadir = parseDataPath(ctx, endpoint)
 	}
 
-	if err := parseLogPath(endpoint, cfg.Log); err != nil {
+	if err := parseLogPath(endpoint, &cfg.Log); err != nil {
 		return err
 	}
-	log.ConsoleInitLogger(cfg.Log)
+	log.ConsoleInitLogger(&cfg.Log)
 
 	client, err := dialRPC(endpoint)
 	if err != nil {

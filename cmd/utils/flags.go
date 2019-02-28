@@ -820,7 +820,6 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 // SetNodeConfig applies node-related command line flags to the config.
 // 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
-	SetP2PConfig(ctx, &cfg.P2P)
 	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
@@ -856,7 +855,7 @@ func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
 	}
 }
 */
-func setTxPool(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
+func SetTxPoolConfig(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
 	if ctx.GlobalIsSet(TxPoolNoLocalsFlag.Name) {
 		cfg.NoLocals = ctx.GlobalBool(TxPoolNoLocalsFlag.Name)
 	}
@@ -940,7 +939,7 @@ func checkExclusive(ctx *cli.Context, args ...interface{}) {
 // }
 
 // SetDagConfig applies dag related command line flags to the config.
-func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
+func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config) {
 	//	if ctx.GlobalIsSet(DagValue1Flag.Name) {
 	//		cfg.DbPath = ctx.GlobalString(DagValue1Flag.Name)
 	//	}
@@ -949,7 +948,7 @@ func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
 	//	}
 }
 
-func SetContract(ctx *cli.Context, cfg *contractcfg.Config, cfg2 *contractcfg.Config) {
+func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config) {
 	switch {
 	case ctx.GlobalIsSet(DataDirFlag.Name):
 		dataDir := ctx.GlobalString(DataDirFlag.Name)
@@ -957,7 +956,6 @@ func SetContract(ctx *cli.Context, cfg *contractcfg.Config, cfg2 *contractcfg.Co
 		if !filepath.IsAbs(cfg.ContractFileSystemPath) {
 			path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
 			cfg.ContractFileSystemPath = GetAbsDirectory(path)
-			cfg2.ContractFileSystemPath = cfg.ContractFileSystemPath
 		}
 	}
 }
@@ -976,7 +974,7 @@ func SetCfgPath(ctx *cli.Context, cfgPath string) string {
 	return cfgPath
 }
 
-func SetLog(ctx *cli.Context, cfg *log.Config) {
+func SetLogConfig(ctx *cli.Context, cfg *log.Config) {
 	if ctx.GlobalIsSet(LogValue1Flag.Name) {
 		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
 	}
@@ -1033,9 +1031,6 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
 	ks := stack.GetKeyStore()
-	setTxPool(ctx, &cfg.TxPool)
-	setDag(ctx, &cfg.Dag)
-	//setLog(ctx, &cfg.Log)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):
