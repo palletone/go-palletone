@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/validator"
+	"sync"
 )
 
 type IUnitRepository interface {
@@ -100,6 +101,7 @@ type UnitRepository struct {
 	propdb  storage.IPropertyDb
 	//validate       validator.Validator
 	utxoRepository IUtxoRepository
+	lock           sync.RWMutex
 }
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {
@@ -123,6 +125,8 @@ func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) 
 	return rep.dagdb.GetHeader(hash)
 }
 func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	result := []*modules.Header{}
 	uhash := hash
 	for i := 0; i < parentCount; i++ {
@@ -145,6 +149,8 @@ func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
 	return rep.dagdb.SaveHeaders(headers)
 }
 func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	hash, err := rep.dagdb.GetHashByNumber(index)
 	if err != nil {
 		return nil, err
@@ -154,8 +160,12 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
 	return rep.dagdb.IsHeaderExist(uHash)
 }
-
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
+	return rep.getUnit(hash)
+}
+func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
 	// 1. get chainindex
 	//height, err := dagdb.GetNumberWithUnitHash(hash)
 	//if err != nil {
@@ -339,6 +349,8 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	//if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
 	//	log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
 	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
@@ -468,12 +480,14 @@ func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modu
 To get genesis unit info from leveldb
 */
 func (rep *UnitRepository) GetGenesisUnit() (*modules.Unit, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	ghash, err := rep.dagdb.GetGenesisUnitHash()
 	if err != nil {
 		log.Debug("rep: getgenesis by number , current error.", "error", err)
 		return nil, err
 	}
-	return rep.GetUnit(ghash)
+	return rep.getUnit(ghash)
 	// unit key: [HEADER_PREFIX][chain index number]_[chain index]_[unit hash]
 	//key := fmt.Sprintf("%s%v_", constants.HEADER_PREFIX, index)
 
@@ -542,6 +556,8 @@ func (unitRep *UnitRepository) IsGenesis(hash common.Hash) bool {
 }
 
 func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	txs := modules.Transactions{}
 	// get body data: transaction list.
 	// if getbody return transactions list, then don't range txHashlist.
@@ -654,7 +670,8 @@ func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.
 save genesis unit data
 */
 func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
-
+	rep.lock.Lock()
+	defer rep.lock.Unlock()
 	uHash := unit.Hash()
 	log.Debugf("Try to save a new unit to db:%s", uHash.String())
 	// if unit.UnitSize == 0 || unit.Size() == 0 {
@@ -1297,6 +1314,8 @@ func IsGenesis(hash common.Hash) bool {
 
 // GetAddrTransactions containing from && to address
 func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	address, _ := common.StringToAddress(addr)
 	hashs, err := rep.idxdb.GetAddressTxIds(address)
 	if err != nil {
@@ -1327,38 +1346,42 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 	return alltxs, err
 }
 
-func (unitOp *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
-	hashs, err := unitOp.idxdb.GetTxByFileHash(filehash)
+func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
+	hashs, err := rep.idxdb.GetTxByFileHash(filehash)
 	if err != nil {
 		return nil, err
 	}
-	mds0, err := unitOp.GetFileInfoByHash(hashs)
+	mds0, err := rep.GetFileInfoByHash(hashs)
 	if hashs == nil {
 		hash := common.HexToHash(string(filehash))
 		hashs = append(hashs, hash)
-		mds1, err := unitOp.GetFileInfoByHash(hashs)
+		mds1, err := rep.GetFileInfoByHash(hashs)
 		return mds1, err
 	}
 	return mds0, err
 }
 
-func (unitOp *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.FileInfo, error) {
+func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.FileInfo, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	var mds []*modules.FileInfo
 	for _, hash := range hashs {
 		var md modules.FileInfo
-		unithash, unitindex, _, err := unitOp.dagdb.GetTxLookupEntry(hash)
+		unithash, unitindex, _, err := rep.dagdb.GetTxLookupEntry(hash)
 		if err != nil {
 			return nil, err
 		}
 
-		header, err := unitOp.dagdb.GetHeader(unithash)
+		header, err := rep.dagdb.GetHeader(unithash)
 		if err != nil {
 			return nil, err
 		}
 		for _, v := range header.ParentsHash {
 			md.ParentsHash = v
 		}
-		tx, _, _, _, err := unitOp.dagdb.GetTransaction(hash)
+		tx, _, _, _, err := rep.dagdb.GetTransaction(hash)
 		if err != nil {
 			return nil, err
 		}
@@ -1374,14 +1397,18 @@ func (unitOp *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules
 }
 
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	hash, _, err := rep.propdb.GetLastStableUnit(assetID)
 	if err != nil {
 		return nil, err
 	}
-	return rep.GetUnit(hash)
+	return rep.getUnit(hash)
 }
 
 func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	result := []common.Address{}
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
