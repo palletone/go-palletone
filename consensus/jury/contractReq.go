@@ -77,7 +77,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
 			TplId:   templateId,
-			TxId:    hex.EncodeToString(txId),
+			TxId:    hex.EncodeToString(txId), //contractId
 			Args:    args,
 			Timeout: uint32(timeout),
 		},
@@ -87,7 +87,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		return nil, nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[common.BytesToHash(reqId)].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, txId, err
 }
 
@@ -112,7 +112,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[common.BytesToHash(reqId)].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
 }
 
@@ -137,7 +137,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 		return nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[common.BytesToHash(reqId)].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
 }
 
@@ -165,7 +165,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 		return nil, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[common.BytesToHash(reqId)].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
 }
 

@@ -223,11 +223,6 @@ func (tx *Transaction) RequestHash() common.Hash {
 			break
 		}
 	}
-	//b, err := json.Marshal(req)
-	//if err != nil {
-	//	log.Error("json marshal error", "error", err)
-	//	return common.Hash{}
-	//}
 	return util.RlpHash(req)
 }
 
