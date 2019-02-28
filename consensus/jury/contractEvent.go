@@ -87,7 +87,6 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, addrHash []common
 		Tx:       tx,
 	}
 	go p.ptn.ContractBroadcast(*event, false)
-
 	return nil
 }
 
@@ -120,17 +119,14 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, addrHash []common.
 	} else if err != nil {
 		return err
 	}
-
 	return nil
 }
 
 func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 	reqId := tx.RequestHash()
-
 	//todo
 	//合约安装，检查合约签名数据
 	//用户合约，检查签名数量及有效性
-
 	p.locker.Lock()
 	if _, ok := p.mtx[reqId]; !ok {
 		log.Debug("contractCommitEvent", "local not find reqId,create it", reqId.String())
@@ -139,6 +135,9 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 			tm:    time.Now(),
 			valid: true,
 		}
+	}else if p.mtx[reqId].rstTx != nil{
+		log.Info("contractCommitEvent", "rstTx already receive,reqId", reqId)
+		return nil //rstTx already receive
 	}
 	p.mtx[reqId].valid = true
 	p.mtx[reqId].rstTx = tx

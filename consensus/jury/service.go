@@ -116,7 +116,7 @@ type Processor struct {
 	validator validator.Validator
 	contract  *contracts.Contract
 	vrfAct    vrfAccount
-	local     map[common.Address]*JuryAccount  //[]common.Address //local account addr
+	local     map[common.Address]*JuryAccount  //[]common.Address //local jury account addr
 	mtx       map[common.Hash]*contractTx      //all contract buffer
 	lockAddr  map[common.Address][]common.Hash //contractId/deployId ----addrHash, jury VRF
 	quit      chan struct{}
