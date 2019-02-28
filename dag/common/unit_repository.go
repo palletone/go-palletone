@@ -66,6 +66,7 @@ type IUnitRepository interface {
 
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
@@ -199,6 +200,9 @@ func (rep *UnitRepository) GetBody(unitHash common.Hash) ([]common.Hash, error) 
 }
 func (rep *UnitRepository) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
 	return rep.dagdb.GetTransaction(hash)
+}
+func (rep *UnitRepository) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+	return rep.dagdb.GetTransactionOnly(hash)
 }
 func (rep *UnitRepository) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
 	return rep.dagdb.GetTxLookupEntry(hash)

@@ -413,15 +413,18 @@ func (d *Dag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
 }
 
 // GetTransactionByHash is return the tx by tx's hash
-func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
-	tx, uhash, _, _, err := d.unstableUnitRep.GetTransaction(hash)
-	if err != nil {
-		return nil, uhash, errors.New("get transaction by hash is failed,none the transaction.")
-	}
-	return tx, uhash, nil
-}
+//func (d *Dag) GetTransactionByHash(hash common.Hash) (*modules.Transaction, common.Hash, error) {
+//	tx, uhash, _, _, err := d.unstableUnitRep.GetTransaction(hash)
+//	if err != nil {
+//		return nil, uhash, errors.New("get transaction by hash is failed,none the transaction.")
+//	}
+//	return tx, uhash, nil
+//}
 func (d *Dag) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
 	return d.unstableUnitRep.GetTransaction(hash)
+}
+func (d *Dag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+	return d.unstableUnitRep.GetTransactionOnly(hash)
 }
 func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
 	unitHash, unitNumber, txIndex, err := d.unstableUnitRep.GetTxLookupEntry(hash)

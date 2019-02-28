@@ -147,8 +147,8 @@ func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Addr
 
 	return nil, nil
 }
-func (ud *UnitDag4Test) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
-	return nil, hash, 0, 0, nil
+func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+	return nil, nil
 }
 
 // Tests that if the transaction count belonging to multiple accounts go above

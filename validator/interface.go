@@ -46,5 +46,5 @@ type IStateQuery interface {
 	GetMinFee() (*modules.AmountAsset, error)
 }
 type IDagQuery interface {
-	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 }
