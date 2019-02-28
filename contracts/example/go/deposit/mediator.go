@@ -27,10 +27,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //申请加入  参数： jsonString
@@ -335,7 +335,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		//同意，移除列表，并且全款退出
 		quitList, _ = moveMediatorFromList(addr, quitList)
 		//获取该账户
-		balance, err := GetDepositBalance(stub,addr)
+		balance, err := GetDepositBalance(stub, addr)
 		if err != nil {
 			log.Error("Stub.GetDepositBalance err:", "error", err)
 			return shim.Error(err.Error())
@@ -472,7 +472,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("Apply time is wrong.")
 	}
 	//获取账户
-	balance, err := GetDepositBalance(stub,invokeAddr)
+	balance, err := GetDepositBalance(stub, invokeAddr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -481,7 +481,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	if balance == nil {
 		log.Info("Stub.GetDepositBalance: list is nil.")
 		//判断保证金是否足够(Mediator第一次交付必须足够)
-		if invokeTokens.Amount < depositAmountsForMediator {
+		if invokeTokens[0].Amount < depositAmountsForMediator {
 			//TODO 第一次交付不够的话，这里必须终止
 			log.Error("Payment amount is not enough.")
 			return shim.Error("Payment amount is not enough.")
@@ -495,14 +495,14 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		balance = &DepositBalance{}
 		//处理数据
 		balance.EnterTime = time.Now().UTC().Unix() / 1800
-		updateForPayValue(balance, invokeTokens)
+		updateForPayValue(balance, invokeTokens[0])
 	} else {
 		//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		endTime := balance.LastModifyTime * 1800
 		awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
 		balance.TotalAmount += awards
 		//处理数据
-		updateForPayValue(balance, invokeTokens)
+		updateForPayValue(balance, invokeTokens[0])
 	}
 	err = marshalAndPutStateForBalance(stub, invokeAddr, balance)
 	if err != nil {
@@ -572,7 +572,7 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 	}
 	//获取一下该用户下的账簿情况
 	addr := args[0]
-	balance, err := GetDepositBalance(stub,addr)
+	balance, err := GetDepositBalance(stub, addr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err: ", "error", err)
 		return shim.Error(err.Error())

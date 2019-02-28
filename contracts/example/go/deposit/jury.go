@@ -42,7 +42,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	//fmt.Printf("lalal %#v\n", invokeTokens)
 
 	//获取账户
-	balance, err := GetDepositBalance(stub,invokeAddr)
+	balance, err := GetDepositBalance(stub, invokeAddr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -50,7 +50,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	isJury := false
 	if balance == nil {
 		balance = &DepositBalance{}
-		if invokeTokens.Amount >= depositAmountsForJury {
+		if invokeTokens[0].Amount >= depositAmountsForJury {
 			//加入列表
 			//addList("Jury", invokeAddr, stub)
 			err = addCandaditeList(invokeAddr, stub, "JuryList")
@@ -61,7 +61,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			isJury = true
 			balance.EnterTime = time.Now().UTC().Unix() / 1800
 		}
-		updateForPayValue(balance, invokeTokens)
+		updateForPayValue(balance, invokeTokens[0])
 	} else {
 		//账户已存在，进行信息的更新操作
 		if balance.TotalAmount >= depositAmountsForJury {
@@ -74,7 +74,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 
 		}
 		//处理交付保证金数据
-		updateForPayValue(balance, invokeTokens)
+		updateForPayValue(balance, invokeTokens[0])
 	}
 	if !isJury {
 		//判断交了保证金后是否超过了jury
@@ -125,7 +125,7 @@ func handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string)
 	}
 	//获取一下该用户下的账簿情况
 	addr := args[0]
-	balance, err :=  GetDepositBalance(stub,addr)
+	balance, err := GetDepositBalance(stub, addr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -166,7 +166,7 @@ func handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string)
 
 func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64, balance *DepositBalance) error {
 	//获取请求列表
-	listForCashback, err :=  GetListForCashback(stub)
+	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
 		log.Error("Stub.GetListForCashback err:", "error", err)
 		return err

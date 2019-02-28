@@ -465,7 +465,7 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 }
 
 //GetInvokeParameters documentation can be found in interfaces.go
-func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens *modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error) {
+func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens []*modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error) {
 	allargs := stub.args
 	//if len(allargs) > 2 {
 	invokeInfo := &modules.InvokeInfo{}
@@ -533,7 +533,7 @@ func (stub *ChaincodeStub) GetInvokeAddress() (string, error) {
 	invokeAddr, _, _, _, _, err := stub.GetInvokeParameters()
 	return invokeAddr, err
 }
-func (stub *ChaincodeStub) GetInvokeTokens() (*modules.InvokeTokens, error) {
+func (stub *ChaincodeStub) GetInvokeTokens() ([]*modules.InvokeTokens, error) {
 	_, invokeTokens, _, _, _, err := stub.GetInvokeParameters()
 	return invokeTokens, err
 }

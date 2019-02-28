@@ -286,7 +286,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"GetInvokeTokens failed\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	fmt.Println("==== zxl ==== " + invokeTokens.Asset.String()) //todo
+	fmt.Println("==== zxl ==== " + invokeTokens[0].Asset.String()) //todo
 
 	//save support
 	indexHistory := make(map[uint64]uint8)
