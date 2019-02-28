@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -643,7 +643,7 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 					sigScript, _ := unparseScript(script)
 					payment.Inputs[idx].SignatureScript = sigScript
 				} else {
-					payment.Inputs[i].SignatureScript = nil
+					payment.Inputs[idx].SignatureScript = nil
 				}
 			}
 		}
