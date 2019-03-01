@@ -84,8 +84,8 @@ func (dag *Dag) performAccountMaintenance() {
 
 	// 2. 遍历所有账户
 	allAccount := dag.LookupAccount()
-	for _, info := range allAccount {
-		votingStake := info.PtnBalance
+	for addr, info := range allAccount {
+		votingStake := dag.unstableStateRep.GetAccountBalance(addr)
 
 		// 遍历该账户投票的mediator
 		for med, _ := range info.VotedMediators {
