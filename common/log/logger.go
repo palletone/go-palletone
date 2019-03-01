@@ -50,17 +50,18 @@ const (
 
 var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
 
+var config = DefaultConfig
 var Logger *zap.Logger
 var mux sync.RWMutex
 
 // init zap.logger
 func InitLogger() {
-	for i, path := range DefaultConfig.OutputPaths {
+	for i, path := range config.OutputPaths {
 		if path == LogStdout {
 			continue
 		}
 
-		if err := files.MakeDirAndFile(DefaultConfig.OutputPaths[i]); err != nil {
+		if err := files.MakeDirAndFile(config.OutputPaths[i]); err != nil {
 			panic(err)
 		}
 	}
@@ -70,15 +71,9 @@ func InitLogger() {
 }
 
 func ConsoleInitLogger(cfg *Config) {
-	DefaultConfig.LoggerLvl = "FATAL"
-	DefaultConfig.OutputPaths = cfg.OutputPaths
-	DefaultConfig.ErrorOutputPaths = cfg.ErrorOutputPaths
-	initLogger()
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
-}
-
-func FileInitLogger(logfile string) {
-	DefaultConfig.OutputPaths = []string{logfile}
+	config.LoggerLvl = "FATAL"
+	config.OutputPaths = cfg.OutputPaths
+	config.ErrorOutputPaths = cfg.ErrorOutputPaths
 	initLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
@@ -86,13 +81,13 @@ func FileInitLogger(logfile string) {
 // init logger.
 func initLogger() {
 	var cfg zap.Config
-	cfg.OutputPaths = DefaultConfig.OutputPaths
-	cfg.ErrorOutputPaths = DefaultConfig.ErrorOutputPaths
+	cfg.OutputPaths = config.OutputPaths
+	cfg.ErrorOutputPaths = config.ErrorOutputPaths
 	var lvl zap.AtomicLevel
-	lvl.UnmarshalText([]byte(DefaultConfig.LoggerLvl))
+	lvl.UnmarshalText([]byte(config.LoggerLvl))
 	cfg.Level = lvl
-	cfg.Encoding = DefaultConfig.Encoding
-	cfg.Development = DefaultConfig.Development
+	cfg.Encoding = config.Encoding
+	cfg.Development = config.Development
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	//cfg.EncoderConfig.EncodeLevel=zapcore.LowercaseColorLevelEncoder
@@ -101,26 +96,26 @@ func initLogger() {
 		log.Fatal("init logger error: ", err)
 	}
 	// add openModule
-	if strings.Contains(DefaultConfig.OpenModule[0], ",") {
-		arr := strings.Split(DefaultConfig.OpenModule[0], ",")
-		DefaultConfig.OpenModule[0] = ""
-		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, arr...)
-		DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
+	if strings.Contains(config.OpenModule[0], ",") {
+		arr := strings.Split(config.OpenModule[0], ",")
+		config.OpenModule[0] = ""
+		config.OpenModule = append(config.OpenModule, arr...)
+		config.OpenModule = append(config.OpenModule, defaultLogModule...)
 	} else {
-		if !(len(DefaultConfig.OpenModule) == 1 && DefaultConfig.OpenModule[0] == "all") {
-			DefaultConfig.OpenModule = append(DefaultConfig.OpenModule, defaultLogModule...)
+		if !(len(config.OpenModule) == 1 && config.OpenModule[0] == "all") {
+			config.OpenModule = append(config.OpenModule, defaultLogModule...)
 		}
 	}
-	l.SetOpenModule(DefaultConfig.OpenModule)
+	l.SetOpenModule(config.OpenModule)
 	l = l.WithOptions(zap.AddCallerSkip(1))
-	if DefaultConfig.RotationMaxSize > 0 {
-		includeStdout, filePath := getOutputPath(DefaultConfig.OutputPaths)
+	if config.RotationMaxSize > 0 {
+		includeStdout, filePath := getOutputPath(config.OutputPaths)
 		rotateLogCore := func(core zapcore.Core) zapcore.Core {
 			w := zapcore.AddSync(&lumberjack.Logger{
 				Filename:   filePath,
-				MaxSize:    DefaultConfig.RotationMaxSize, // megabytes
+				MaxSize:    config.RotationMaxSize, // megabytes
 				MaxBackups: 60,
-				MaxAge:     DefaultConfig.RotationMaxAge, // days
+				MaxAge:     config.RotationMaxAge, // days
 			})
 			if includeStdout {
 				stdout, _, _ := zap.Open("stdout")

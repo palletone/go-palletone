@@ -990,6 +990,8 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config) {
 			cfg.ErrorOutputPaths[1] = GetAbsDirectory(path)
 		}
 	}
+
+	log.ApplyConfig(cfg)
 }
 
 func GetAbsDirectory(path string) string {

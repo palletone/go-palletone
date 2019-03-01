@@ -121,7 +121,7 @@ type FullConfig struct {
 	Dashboard      dashboard.Config
 	Jury           jury.Config
 	MediatorPlugin mp.Config
-	Log            log.Config
+	Log            log.Config // log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就需要
 	Dag            dagconfig.Config
 	P2P            p2p.Config
 	Ada            adaptor.Config
