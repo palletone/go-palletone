@@ -75,7 +75,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		becomeList = []*MediatorRegisterInfo{&mediatorInfo}
 	} else {
 		isExist := isInMediatorInfolist(mediatorInfo.Address, becomeList)
-		if !isExist {
+		if isExist {
 			log.Debug("Node is exist in the become list.")
 			return shim.Error("Node is exist in the become list.")
 		}
@@ -437,7 +437,8 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error(err.Error())
 	}
 	//交付数量
-	invokeTokens, err := stub.GetInvokeTokens()
+	//invokeTokens, err := stub.GetInvokeTokens()
+	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
 		log.Error("Stub.GetInvokeTokens err:", "error", err)
 		return shim.Error(err.Error())
@@ -481,7 +482,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	if balance == nil {
 		log.Info("Stub.GetDepositBalance: list is nil.")
 		//判断保证金是否足够(Mediator第一次交付必须足够)
-		if invokeTokens[0].Amount < depositAmountsForMediator {
+		if invokeTokens.Amount < depositAmountsForMediator {
 			//TODO 第一次交付不够的话，这里必须终止
 			log.Error("Payment amount is not enough.")
 			return shim.Error("Payment amount is not enough.")
@@ -495,14 +496,14 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		balance = &DepositBalance{}
 		//处理数据
 		balance.EnterTime = time.Now().UTC().Unix() / 1800
-		updateForPayValue(balance, invokeTokens[0])
+		updateForPayValue(balance, invokeTokens)
 	} else {
 		//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		endTime := balance.LastModifyTime * 1800
 		awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
 		balance.TotalAmount += awards
 		//处理数据
-		updateForPayValue(balance, invokeTokens[0])
+		updateForPayValue(balance, invokeTokens)
 	}
 	err = marshalAndPutStateForBalance(stub, invokeAddr, balance)
 	if err != nil {
