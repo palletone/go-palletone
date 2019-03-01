@@ -2288,16 +2288,19 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
+	if params == "" {
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
+	}
 	serializedTx, err := decodeHexStr(params)
 	if err != nil {
-		return ptnjson.SignRawTransactionResult{}, err
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params is not correct")
 	}
 
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
-		return ptnjson.SignRawTransactionResult{}, err
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params rlp is not correct")
 	}
 
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -2340,7 +2343,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
-				fmt.Println("get addr by outpoint is err")
+				return ptnjson.SignRawTransactionResult{}, errors.New("get addr FromScript is err")
 			}
 		}
 		/*for _, txout := range payload.Outputs {
