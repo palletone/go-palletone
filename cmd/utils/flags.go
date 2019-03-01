@@ -227,11 +227,6 @@ var (
 		Usage: "Price bump percentage to replace an already existing transaction",
 		Value: ptn.DefaultConfig.TxPool.PriceBump,
 	}
-	TxPoolAccountSlotsFlag = cli.Uint64Flag{
-		Name:  "txpool.accountslots",
-		Usage: "Minimum number of executable transaction slots guaranteed per account",
-		Value: ptn.DefaultConfig.TxPool.AccountSlots,
-	}
 	TxPoolGlobalSlotsFlag = cli.Uint64Flag{
 		Name:  "txpool.globalslots",
 		Usage: "Maximum number of executable transaction slots for all accounts",
@@ -871,9 +866,6 @@ func setTxPool(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
 	//	}
 	if ctx.GlobalIsSet(TxPoolPriceBumpFlag.Name) {
 		cfg.PriceBump = ctx.GlobalUint64(TxPoolPriceBumpFlag.Name)
-	}
-	if ctx.GlobalIsSet(TxPoolAccountSlotsFlag.Name) {
-		cfg.AccountSlots = ctx.GlobalUint64(TxPoolAccountSlotsFlag.Name)
 	}
 	if ctx.GlobalIsSet(TxPoolGlobalSlotsFlag.Name) {
 		cfg.GlobalSlots = ctx.GlobalUint64(TxPoolGlobalSlotsFlag.Name)
