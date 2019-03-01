@@ -38,7 +38,7 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	// store
 	infoooo := new(modules.AccountInfo)
 	infobase := new(modules.AccountInfoBase)
-	infobase.PtnBalance = 12345
+	//infobase.PtnBalance = 12345
 	infoooo.AccountInfoBase = infobase
 	infoooo.VotedMediators = vote
 	statedb.StoreAccountInfo(addr, infoooo)
@@ -48,7 +48,7 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	if assert.Nil(t, err) {
 		t.Logf("success  error:%v", err)
 	}
-	info.PtnBalance = 12345
+	//info.PtnBalance = 12345
 	info.VotedMediators[addr] = true
 
 	//Votes: []vote.VoteInfo{{Contents: , VoteType: vote.TYPE_MEDIATOR}}
@@ -56,5 +56,16 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	// assert.Nil(t, err)
 	info2, err := statedb.RetrieveAccountInfo(addr)
 	assert.NotNil(t, info2)
-	assert.Equal(t, info.PtnBalance, info2.PtnBalance)
+	//assert.Equal(t, info.PtnBalance, info2.PtnBalance)
+}
+
+func TestStateDb_GetAccountBalance(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	//l := log.NewTestLog()
+	statedb := NewStateDb(db)
+	addr, _ := common.StringToAddress("P173mPBwP1kXmfpg4p7rzZ5XRsGN1G1WQC8")
+	err := statedb.UpdateAccountBalance(addr, 123)
+	assert.Nil(t, err)
+	balance := statedb.GetAccountBalance(addr)
+	assert.Equal(t, balance, uint64(123))
 }
