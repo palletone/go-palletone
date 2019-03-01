@@ -211,15 +211,15 @@ func (repository *UtxoRepository) GetUtxoByOutpoint(outpoint *modules.OutPoint) 
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
 func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
-
+	// update utxo
+	repository.destoryUtxo(payment.Inputs)
 	// create utxo
 	errs := repository.writeUtxo(txHash, msgIndex, payment.Outputs, payment.LockTime)
 	if len(errs) > 0 {
 		log.Error("error occurred on updated utxos, check the log file to find details.")
 		return errors.New("error occurred on updated utxos, check the log file to find details.")
 	}
-	// update utxo
-	repository.destoryUtxo(payment.Inputs)
+
 	return nil
 
 }
