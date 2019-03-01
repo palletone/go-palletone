@@ -2293,14 +2293,14 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	}
 	serializedTx, err := decodeHexStr(params)
 	if err != nil {
-		return ptnjson.SignRawTransactionResult{}, errors.New("Params is not correct")
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params is invalid")
 	}
 
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
-		return ptnjson.SignRawTransactionResult{}, errors.New("Params rlp is not correct")
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params decode is invalid")
 	}
 
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -2419,15 +2419,18 @@ type Authentifier struct {
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx string) (common.Hash, error) {
+	//transaction inputs
+	if encodedTx == "" {
+		return common.Hash{}, errors.New("Params is Empty")
+	}
 	tx := new(modules.Transaction)
-
 	serializedTx, err := decodeHexStr(encodedTx)
 	if err != nil {
-		return common.Hash{}, err
+		return common.Hash{}, errors.New("encodedTx is invalid")
 	}
 
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
-		return common.Hash{}, err
+		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 	if 0 == len(tx.TxMessages) {
 		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
