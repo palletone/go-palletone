@@ -25,6 +25,20 @@ if [ $index -eq 0 ] ; then
 
     add=`echo $add | jq ".systemConfig.foundationAddress = \"$account\""`
 
+    createaccount=`./createaccount.sh`
+    account=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
+    account=${account:0:35}
+    account=`echo ${account//^M/}`
+
+    add=`echo $add |
+       jq "to_entries |
+       map(if .key == \"foundationAddress\"
+          then . + {\"value\":\"$account\"}
+          else .
+          end
+         ) |
+      from_entries"`
+
 fi
 
     rm $filename

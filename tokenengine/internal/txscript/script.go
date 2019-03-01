@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -692,7 +692,7 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 	// The final hash is the double sha256 of both the serialized modified
 	// transaction and the hash type (encoded as a 4-byte little-endian
 	// value) appended.
-	txBytes, _ := rlp.EncodeToBytes(&txCopy)
+	txBytes, _ := rlp.EncodeToBytes(txCopy)
 
 	return crypto.Keccak256(txBytes)
 }

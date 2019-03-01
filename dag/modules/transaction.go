@@ -349,11 +349,9 @@ type TxByPrice TxPoolTxs
 
 func (s TxByPrice) Len() int      { return len(s) }
 func (s TxByPrice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
 func (s *TxByPrice) Push(x interface{}) {
 	*s = append(*s, x.(*TxPoolTransaction))
 }
-
 func (s *TxByPrice) Pop() interface{} {
 	old := *s
 	n := len(old)
@@ -656,19 +654,10 @@ func (msg *Transaction) SerializeSize() int {
 
 //Deep copy transaction to a new object
 func (tx *Transaction) Clone() Transaction {
-	var newTx Transaction
-	//modify by wzhyuan 
-    txjson, err := json.Marshal(tx)
-    if err != nil {
-        return newTx
-    }
-    err = json.Unmarshal([]byte(txjson), &newTx)
-    if err != nil {
-        return  newTx
-    }
-    // modify by wzhyuan
-	//obj.DeepCopy(&newTx, tx)
-	return newTx
+	newTx := &Transaction{}
+	data, _ := rlp.EncodeToBytes(tx)
+	rlp.DecodeBytes(data, newTx)
+	return *newTx
 }
 
 // AddTxOut adds a transaction output to the message.

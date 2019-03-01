@@ -20,9 +20,9 @@ package jury
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
-	"encoding/json"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -162,7 +162,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -215,32 +215,37 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, error) {
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}
-	if len(tx.TxMessages) > 0 {
+	lenTxMsgs := len(tx.TxMessages)
+	if lenTxMsgs > 0 {
+
 		msg0 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 		invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 		if err != nil {
 			return nil, err
 		}
-		//如果是交付保证金
-		//if string(reqArgs[0]) == "DepositWitnessPay" {
-		invokeTokens := &modules.InvokeTokens{}
-		outputs := msg0.Outputs
-		invokeTokens.Asset = outputs[0].Asset
-		for _, output := range outputs {
-			addr, err := tokenengine.GetAddressFromScript(output.PkScript)
-			if err != nil {
-				return nil, err
+
+		var invokeTokensAll []*modules.InvokeTokens
+		for i := 0; i < lenTxMsgs; i++ {
+			msg, ok := tx.TxMessages[i].Payload.(*modules.PaymentPayload)
+			if !ok {
+				continue
 			}
-			contractAddr, err := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-			if err != nil {
-				return nil, err
-			}
-			if addr.Equal(contractAddr) {
-				invokeTokens.Amount += output.Value
+			for _, output := range msg.Outputs {
+				addr, err := tokenengine.GetAddressFromScript(output.PkScript)
+				if err != nil {
+					return nil, err
+				}
+				if !addr.Equal(invokeAddr) { //note : only return not invokeAddr
+					//
+					invokeTokens := &modules.InvokeTokens{}
+					invokeTokens.Asset = output.Asset
+					invokeTokens.Amount += output.Value
+					invokeTokens.Address = addr.String()
+					invokeTokensAll = append(invokeTokensAll, invokeTokens)
+				}
 			}
 		}
-		invokeInfo.InvokeTokens = invokeTokens
-		//}
+		invokeInfo.InvokeTokens = invokeTokensAll
 		invokeFees, err := dag.GetTxFee(tx)
 		if err != nil {
 			return nil, err
@@ -254,6 +259,7 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 			return nil, err
 		}
 		txArgs = append(txArgs, invokeInfoBytes)
+
 	} else {
 		invokeInfoBytes, err := json.Marshal(invokeInfo)
 		if err != nil {
@@ -464,7 +470,7 @@ func getElectionSeedData(in common.Hash) ([]byte, error) {
 }
 
 func getContractIdFromMsg(msg *modules.Message) common.Address {
-	if msg == nil{
+	if msg == nil {
 		return common.Address{}
 	}
 	switch msg.App {

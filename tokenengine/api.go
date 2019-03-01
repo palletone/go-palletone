@@ -22,7 +22,7 @@ package tokenengine
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"sort"
 
 	"github.com/palletone/go-palletone/common"
@@ -251,10 +251,7 @@ func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScr
 		if msg.App == modules.APP_PAYMENT {
 			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
-				log.Debug(fmt.Sprintln("Get Payment payload error:"))
-
-			} else {
-				log.Debug(fmt.Sprintln("Payment payload:", pay))
+				return nil, errors.New("Invalid payment message")
 			}
 			for j, input := range pay.Inputs {
 				utxoLockScript, _ := utxoLockScripts[*input.PreviousOutPoint]

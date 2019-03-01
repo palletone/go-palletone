@@ -335,17 +335,15 @@ func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 
 func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
 	inputpoints := make(map[modules.OutPoint][]byte)
-	findPayLoad := false
 
-	for i := 0; !findPayLoad && i < len(tx.TxMessages); i++ {
+	for i := 0; i < len(tx.TxMessages); i++ {
 		// 1. 获取PaymentPayload
 		msg := tx.TxMessages[i]
 		if msg.App != modules.APP_PAYMENT {
 			continue
 		}
 
-		// 一个 tx 只有一个PaymentPayload， 简书查询次数
-		findPayLoad = true
+		//
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			log.Debug("PaymentPayload conversion error, does not match TxMessage'APP type!")

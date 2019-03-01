@@ -62,10 +62,12 @@ func Merge_Utxos(utxos Utxos, poolutxos Utxos) (Utxos, error) {
 func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 	var greaters Utxos
 	var lessers Utxos
-	var taken_utxo Utxos
+	var taken_lutxo Utxos
+	var taken_gutxo Utxos
 	var accum uint64
 	var change uint64
 	logPickedAmt := ""
+	accum = 0
 	for _, utxo := range utxos {
 		if utxo.GetAmount() >= amount {
 			greaters = append(greaters, utxo)
@@ -74,28 +76,29 @@ func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 			lessers = append(lessers, utxo)
 		}
 	}
-	var min_greater UtxoInterface
-	if len(greaters) > 0 {
-		min_greater = find_min(greaters)
-		change = min_greater.GetAmount() - amount
-		logPickedAmt += fmt.Sprintf("%d,", min_greater.GetAmount())
-		taken_utxo = append(taken_utxo, min_greater)
+	if len(lessers) > 0 {
 
-	} else if len(greaters) == 0 && len(lessers) > 0 {
 		sort.Sort(Utxos(lessers))
 		for _, utxo := range lessers {
 			accum += utxo.GetAmount()
 			logPickedAmt += fmt.Sprintf("%d,", utxo.GetAmount())
-			taken_utxo = append(taken_utxo, utxo)
+			taken_lutxo = append(taken_lutxo, utxo)
 			if accum >= amount {
 				change = accum - amount
-				break
+				log.Debugf("Pickup count[%d] utxos, each amount:%s to match wanted amount:%d", len(taken_lutxo), logPickedAmt, amount)
+				return taken_lutxo, change, nil
+			}
 			}
 		}
-		if accum < amount {
+    if accum < amount && len(greaters) == 0{
 			return nil, 0, errors.New("Amount Not Enough to pay")
 		}
-	}
-	log.Debugf("Pickup count[%d] utxos, each amount:%s to match wanted amount:%d", len(taken_utxo), logPickedAmt, amount)
-	return taken_utxo, change, nil
+	var min_greater UtxoInterface
+	min_greater = find_min(greaters)
+	change = min_greater.GetAmount() - amount
+	logPickedAmt = fmt.Sprintf("%d,", min_greater.GetAmount())
+	taken_gutxo = append(taken_gutxo, min_greater)
+
+	log.Debugf("Pickup count[%d] utxos, each amount:%s to match wanted amount:%d", len(taken_gutxo), logPickedAmt, amount)
+	return taken_gutxo, change, nil
 }

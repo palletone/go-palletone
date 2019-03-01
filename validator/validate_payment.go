@@ -21,6 +21,7 @@
 package validator
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -86,6 +87,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			if err != nil {
 				log.Infof("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
 					tx.Hash().String(), msgIdx, inputIdx, in.SignatureScript, utxo.PkScript)
+				txjson, _ := tx.MarshalJSON()
+				rlpdata, _ := rlp.EncodeToBytes(tx)
+				log.Debugf("Tx for help debug: json: %s ,rlp: %x", string(txjson), rlpdata)
 				return TxValidationCode_INVALID_PAYMMENT_INPUT
 			} else {
 				log.Debugf("Unlock script validated! tx[%s],%d,%d", tx.Hash().String(), msgIdx, inputIdx)

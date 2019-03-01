@@ -107,6 +107,12 @@ web3._extend({
 			inputFormatter: [null, null, null,null, null, null]
 		}),
 		new web3._extend.Method({
+			name: 'ccinvokeToken',
+        	call: 'ptn_ccinvokeToken',
+        	params: 9, //from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddr, args[]string------>["fun", "key", "value"]
+			inputFormatter: [null, null, null,null, null, null,null, null, null]
+		}),
+		new web3._extend.Method({
 			name: 'ccquery',
 			call: 'ptn_ccquery',
 			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]

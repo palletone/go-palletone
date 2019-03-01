@@ -21,7 +21,6 @@ package vote
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -231,7 +230,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//last put state
 	txid := stub.GetTxID()
-	assetID, _ := dm.NewAssetId(vt.Symbol, dm.AssetType_FungibleToken,
+	assetID, _ := dm.NewAssetId(vt.Symbol, dm.AssetType_VoteToken,
 		0, common.Hex2Bytes(txid[2:]))
 	info := TokenInfo{vt.Name, vt.Symbol, createAddr, vt.VoteType, totalSupply,
 		VoteEndTime, voteContentJson, vt.SupplyAddress, assetID}
@@ -286,7 +285,20 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"GetInvokeTokens failed\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	fmt.Println("==== zxl ==== " + invokeTokens.Asset.String()) //todo
+	voteNum := uint64(0)
+	for i := 0; i < len(invokeTokens); i++ {
+		if invokeTokens[i].Asset.AssetId == tokenInfo.AssetID && invokeTokens[i].Address == "P1111111111111111111114oLvT2" {
+			voteNum += invokeTokens[i].Amount
+		}
+	}
+	if voteNum == 0 { //no vote token
+		jsonResp := "{\"Error\":\"Vote token empty\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	if voteNum < uint64(len(supportRequests)) { //vote token more than request
+		jsonResp := "{\"Error\":\"Vote token more than support request\"}"
+		return shim.Success([]byte(jsonResp))
+	}
 
 	//save support
 	indexHistory := make(map[uint64]uint8)

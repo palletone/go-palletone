@@ -337,15 +337,17 @@ type ContractReadSet struct {
 
 //请求合约信息
 type InvokeInfo struct {
-	InvokeAddress string        `json:"invoke_address"` //请求地址
-	InvokeTokens  *InvokeTokens `json:"invoke_tokens"`  //请求数量
-	InvokeFees    *AmountAsset  `json:"invoke_fees"`    //请求交易费
+	InvokeAddress string          `json:"invoke_address"` //请求地址
+	InvokeTokens  []*InvokeTokens `json:"invoke_tokens"`  //请求数量
+	InvokeFees    *AmountAsset    `json:"invoke_fees"`    //请求交易费
+
 }
 
 //请求的数量
 type InvokeTokens struct {
-	Amount uint64 `json:"amount"` //数量
-	Asset  *Asset `json:"asset"`  //资产
+	Amount  uint64 `json:"amount"`  //数量
+	Asset   *Asset `json:"asset"`   //资产
+	Address string `json:"address"` //接收地址
 }
 
 //申请成为Mediator
@@ -375,9 +377,6 @@ func assetAmt2DecimalAmt(asset *Asset, amount uint64) decimal.Decimal {
 
 	return d
 }
-
-
-
 
 //交易的内容
 type PayValue struct {

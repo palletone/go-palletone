@@ -64,6 +64,7 @@ type IStateDb interface {
 	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
 	UpdateAccountInfoBalance(addr common.Address, addAmount int64) error
+	GetAccountBalance(address common.Address) uint64
 	//AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
 	//GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 	GetMinFee() (*modules.AmountAsset, error)

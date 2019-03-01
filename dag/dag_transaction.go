@@ -54,8 +54,9 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 
 	daoTotal := daoAmount + daoFee
-	if daoTotal > dag.GetPtnBalance(from) {
-		return nil, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
+	dbbalance := dag.GetPtnBalance(from)
+	if daoTotal > dbbalance {
+		return nil, fmt.Errorf("the ptn balance of the account is[%d] not enough %v", dbbalance, daoTotal)
 	}
 
 	// 1. 获取转出账户所有的PTN utxo

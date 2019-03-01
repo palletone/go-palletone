@@ -24,9 +24,9 @@ import (
 	"bytes"
 
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -94,18 +94,28 @@ func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.A
 }
 
 func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmount int64) error {
-	info := modules.NewAccountInfo()
-	err := retrieve(statedb.db, accountKey(address), info)
-	// 第一次更新时， 数据库没有该账户的相关数据
+	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
+	balance := uint64(0)
+	data, err := statedb.db.Get(key)
 	if err != nil {
-		info = modules.NewAccountInfo()
+		// 第一次更新时， 数据库没有该账户的相关数据
 		log.Debugf("Account info for [%s] don't exist,create it first", address.String())
+	} else {
+		balance = BytesToUint64(data)
 	}
-
-	info.PtnBalance = uint64(int64(info.PtnBalance) + addAmount)
 	log.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
+	balance = uint64(int64(balance) + addAmount)
+	return statedb.db.Put(key, Uint64ToBytes(balance))
+}
+func (statedb *StateDb) GetAccountBalance(address common.Address) uint64 {
+	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
+	balance := uint64(0)
+	data, err := statedb.db.Get(key)
+	if err == nil {
 
-	return statedb.StoreAccountInfo(address, info)
+		balance = BytesToUint64(data)
+	}
+	return balance
 }
 
 //func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte {
