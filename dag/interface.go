@@ -68,8 +68,6 @@ type IDag interface {
 	ParentsIsConfirmByHash(hash common.Hash) bool
 	Exists(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
-	//All leaf nodes for dag downloader
-	//GetAllLeafNodes() ([]*modules.Header, error)
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 
 	// validate group signature by hash
@@ -147,4 +145,5 @@ type IDag interface {
 	GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error)
 	GetLightChainHeight(assetId modules.IDType16) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
+	GetAllLeafNodes() ([]*modules.Header, error)
 }
