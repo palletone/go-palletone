@@ -2288,16 +2288,19 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
+	if params == "" {
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
+	}
 	serializedTx, err := decodeHexStr(params)
 	if err != nil {
-		return ptnjson.SignRawTransactionResult{}, err
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params is invalid")
 	}
 
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
-		return ptnjson.SignRawTransactionResult{}, err
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params decode is invalid")
 	}
 
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -2340,7 +2343,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
-				fmt.Println("get addr by outpoint is err")
+				return ptnjson.SignRawTransactionResult{}, errors.New("get addr FromScript is err")
 			}
 		}
 		/*for _, txout := range payload.Outputs {
@@ -2416,15 +2419,18 @@ type Authentifier struct {
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx string) (common.Hash, error) {
+	//transaction inputs
+	if encodedTx == "" {
+		return common.Hash{}, errors.New("Params is Empty")
+	}
 	tx := new(modules.Transaction)
-
 	serializedTx, err := decodeHexStr(encodedTx)
 	if err != nil {
-		return common.Hash{}, err
+		return common.Hash{}, errors.New("encodedTx is invalid")
 	}
 
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
-		return common.Hash{}, err
+		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 	if 0 == len(tx.TxMessages) {
 		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
