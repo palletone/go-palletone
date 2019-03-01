@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"strings"
 )
 
 const (
@@ -171,7 +172,20 @@ func (pm *ProtocolManager) syncer() {
 
 func (pm *ProtocolManager) syncall() {
 	peer := pm.peers.BestPeer(modules.PTNCOIN)
-	peer.RequestLeafNodes()
+	pm.synchronise(peer, modules.PTNCOIN)
+	if strings.ToLower(pm.SubProtocols[0].Name) != ProtocolName {
+		return
+	}
+	leafnodes, err := pm.downloader.FetchAllToken(peer.id)
+	if err != nil {
+		log.Info("sync get all leaf nodes", "counts leaf nodes", len(leafnodes), "err:", err)
+		return
+	}
+
+	for _, header := range leafnodes {
+		//TODO
+		pm.lightsynchronise(peer, header.ChainIndex().AssetID)
+	}
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.

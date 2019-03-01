@@ -30,8 +30,8 @@ import "github.com/palletone/go-palletone/common"
 type AccountInfoBase struct {
 	//AccountName string
 
-	//当前账户的PTN余额
-	PtnBalance uint64
+	//当前账户的PTN余额，Devin:因为操作太频繁，转移到AccountBalance上了
+	//PtnBalance uint64
 
 	//通用可改选投票的结果
 	//Votes []vote.VoteInfo
@@ -42,7 +42,7 @@ type AccountInfoBase struct {
 
 func NewAccountInfoBase() *AccountInfoBase {
 	return &AccountInfoBase{
-		PtnBalance:         0,
+		//PtnBalance:         0,
 		DesiredMediatorNum: 0,
 	}
 }

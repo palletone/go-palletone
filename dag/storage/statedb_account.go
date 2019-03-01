@@ -93,7 +93,7 @@ func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.A
 	return err
 }
 
-func (statedb *StateDb) UpdateAccountInfoBalance(address common.Address, addAmount int64) error {
+func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount int64) error {
 	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
 	balance := uint64(0)
 	data, err := statedb.db.Get(key)

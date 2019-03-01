@@ -522,6 +522,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == ElectionMsg:
 		return pm.ElectionMsg(msg, p)
 
+	case msg.Code == GetLeafNodesMsg:
+		return pm.GetLeafNodesMsg(msg, p)
+
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
@@ -555,6 +558,11 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	}
 }
 
+func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
+	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
+	pm.contractCh <- event
+}
+
 // BroadcastUnit will either propagate a unit to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
@@ -581,12 +589,29 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 
-//func (pm *ProtocolManager) BroadcastCe(ce string) {
-//	peers := pm.peers.GetPeers()
-//	for _, peer := range peers {
-//		peer.SendConsensus(ce)
-//	}
-//}
+func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
+	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent), "data", event.Event.(jury.ElectionRequestEvent).Data)
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendElectionEvent(event)
+	}
+}
+
+func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
+	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	peers := pm.peers.GetPeers()
+	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
+
+	for _, peer := range peers {
+		if err := peer.SendContractTransaction(event); err != nil {
+			log.Error("ProtocolManager ContractBroadcast", "SendContractTransaction err:", err.Error())
+		}
+	}
+
+	if local {
+		go pm.contractProc.ProcessContractEvent(&event)
+	}
+}
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.

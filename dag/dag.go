@@ -473,12 +473,6 @@ func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
 	return nil
 }
 
-//All leaf nodes for dag downloader.
-//MUST have Priority.
-//func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
-//	return d.unstableUnitRep.GetAllLeafNodes()
-//}
-
 /**
 获取account address下面的token信息
 To get account token list and tokens's information
@@ -1314,4 +1308,10 @@ func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 		log.Debug("===InsertLightHeader===", "header index:", header.Index())
 	}
 	return d.InsertHeaderDag(headers)
+}
+
+//All leaf nodes for dag downloader.
+//MUST have Priority.
+func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
+	return []*modules.Header{}, nil
 }
