@@ -221,11 +221,11 @@ var AppHelpFlagGroups = []flagGroup{
 	{
 		Name: "LOGGING AND DEBUGGING",
 		Flags: append([]cli.Flag{
-			utils.LogValue1Flag,
-			utils.LogValue2Flag,
-			utils.LogValue3Flag,
-			utils.LogValue4Flag,
-			utils.LogValue5Flag,
+			utils.LogOutputPathFlag,
+			utils.LogLevelFlag,
+			utils.LogIsDebugFlag,
+			utils.LogErrPathFlag,
+			utils.LogEncodingFlag,
 			utils.LogOpenModuleFlag,
 			utils.MetricsEnabledFlag,
 			utils.FakePoWFlag,

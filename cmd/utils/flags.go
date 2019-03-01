@@ -505,36 +505,36 @@ var (
 	//		Usage: "Dag dbname",
 	//		Value: ptn.DefaultConfig.Dag.DbName,
 	//	}
-	LogValue1Flag = cli.StringFlag{
+	LogOutputPathFlag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
-		Value: strings.Join(ptn.DefaultConfig.Log.OutputPaths, ","),
+		Value: strings.Join(log.DefaultConfig.OutputPaths, ","),
 	}
 
-	LogValue2Flag = cli.StringFlag{
+	LogLevelFlag = cli.StringFlag{
 		Name:  "log.lvl",
 		Usage: "Log lvl",
-		Value: ptn.DefaultConfig.Log.LoggerLvl,
+		Value: log.DefaultConfig.LoggerLvl,
 	}
-	LogValue3Flag = cli.BoolFlag{
+	LogIsDebugFlag = cli.BoolFlag{
 		Name:  "log.debug",
 		Usage: "Log debug",
 		//Value: ptn.DefaultConfig.Log.IsDebug,
 	}
-	LogValue4Flag = cli.StringFlag{
+	LogErrPathFlag = cli.StringFlag{
 		Name:  "log.errpath",
 		Usage: "Log errpath",
-		Value: strings.Join(ptn.DefaultConfig.Log.ErrorOutputPaths, ","),
+		Value: strings.Join(log.DefaultConfig.ErrorOutputPaths, ","),
 	}
-	LogValue5Flag = cli.StringFlag{
+	LogEncodingFlag = cli.StringFlag{
 		Name:  "log.encoding",
 		Usage: "Log encoding",
-		Value: ptn.DefaultConfig.Log.Encoding,
+		Value: log.DefaultConfig.Encoding,
 	}
 	LogOpenModuleFlag = cli.StringFlag{
 		Name:  "log.openmodule",
 		Usage: "Log openmodule",
-		Value: strings.Join(ptn.DefaultConfig.Log.OpenModule, ","),
+		Value: strings.Join(log.DefaultConfig.OpenModule, ","),
 	}
 )
 
@@ -791,7 +791,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	if lightClient {
 		ptnPeers = 0
 	}
-	log.Info("Maximum peer count", "PTN", ptnPeers, "LES", lightPeers, "total", cfg.MaxPeers)
+	log.Debug("Maximum peer count", "PTN", ptnPeers, "LES", lightPeers, "total", cfg.MaxPeers)
 
 	if ctx.GlobalIsSet(MaxPendingPeersFlag.Name) {
 		cfg.MaxPendingPeers = ctx.GlobalInt(MaxPendingPeersFlag.Name)
@@ -961,17 +961,17 @@ func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config) {
 }
 
 func SetLogConfig(ctx *cli.Context, cfg *log.Config) {
-	if ctx.GlobalIsSet(LogValue1Flag.Name) {
-		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
+	if ctx.GlobalIsSet(LogOutputPathFlag.Name) {
+		cfg.OutputPaths = []string{ctx.GlobalString(LogOutputPathFlag.Name)}
 	}
-	if ctx.GlobalIsSet(LogValue2Flag.Name) {
-		cfg.LoggerLvl = ctx.GlobalString(LogValue2Flag.Name)
+	if ctx.GlobalIsSet(LogLevelFlag.Name) {
+		cfg.LoggerLvl = ctx.GlobalString(LogLevelFlag.Name)
 	}
-	if ctx.GlobalIsSet(LogValue3Flag.Name) {
-		cfg.Development = ctx.GlobalBool(LogValue3Flag.Name)
+	if ctx.GlobalIsSet(LogIsDebugFlag.Name) {
+		cfg.Development = ctx.GlobalBool(LogIsDebugFlag.Name)
 	}
-	if ctx.GlobalIsSet(LogValue4Flag.Name) {
-		cfg.ErrorOutputPaths = []string{ctx.GlobalString(LogValue4Flag.Name)}
+	if ctx.GlobalIsSet(LogErrPathFlag.Name) {
+		cfg.ErrorOutputPaths = []string{ctx.GlobalString(LogErrPathFlag.Name)}
 	}
 	if ctx.GlobalIsSet(LogOpenModuleFlag.Name) {
 		cfg.OpenModule = []string{ctx.GlobalString(LogOpenModuleFlag.Name)}

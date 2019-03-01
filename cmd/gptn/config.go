@@ -158,7 +158,6 @@ func adaptorConfig(config *FullConfig) *FullConfig {
 	config.Ptn.TxPool = config.TxPool
 	config.Node.P2P = config.P2P
 	config.Ptn.Dag = config.Dag
-	config.Ptn.Log = config.Log
 	config.Ptn.Jury = config.Jury
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
 	config.Ptn.Contract = config.Contract
@@ -175,7 +174,7 @@ func getConfigPath(ctx *cli.Context) string {
 		configPath = temp
 	}
 
-	return configPath
+	return common.GetAbsPath(configPath)
 }
 
 func parseLogPath(endpoint string, cfg *log.Config) error {

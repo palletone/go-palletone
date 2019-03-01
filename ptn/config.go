@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
@@ -51,7 +50,6 @@ var DefaultConfig = Config{
 
 	TxPool:         txspool.DefaultTxPoolConfig,
 	Dag:            dagconfig.DefaultConfig,
-	Log:            log.DefaultConfig,
 	MediatorPlugin: mediatorplugin.DefaultConfig,
 	Jury:           jury.DefaultConfig,
 	Contract:       contractcfg.DefaultConfig,
@@ -111,8 +109,6 @@ type Config struct {
 	EnablePreimageRecording bool
 	// DAG options
 	Dag dagconfig.Config `toml:"-"`
-	//Log config
-	Log log.Config `toml:"-"`
 
 	//jury Account
 	Jury jury.Config `toml:"-"`
