@@ -278,7 +278,7 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 		//}
 		//update address account info
 		if txout.Asset.AssetId == modules.PTNCOIN {
-			repository.statedb.UpdateAccountInfoBalance(sAddr, int64(txout.Value))
+			repository.statedb.UpdateAccountBalance(sAddr, int64(txout.Value))
 		}
 	}
 	return errs
@@ -333,7 +333,7 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 		// 	continue
 		// }
 		if utxo.Asset.AssetId == modules.NewPTNIdType() { // modules.PTNCOIN
-			repository.statedb.UpdateAccountInfoBalance(sAddr, -int64(utxo.Amount))
+			repository.statedb.UpdateAccountBalance(sAddr, -int64(utxo.Amount))
 		}
 	}
 }
