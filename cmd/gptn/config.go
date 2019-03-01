@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
@@ -121,7 +122,7 @@ type FullConfig struct {
 	Dashboard      dashboard.Config
 	Jury           jury.Config
 	MediatorPlugin mp.Config
-	Log            log.Config // log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就需要
+	Log            log.Config // log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
 	Dag            dagconfig.Config
 	P2P            p2p.Config
 	Ada            adaptor.Config
@@ -171,6 +172,9 @@ func getConfigPath(ctx *cli.Context) string {
 	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
 	configPath := defaultConfigPath
 	if temp := ctx.GlobalString(ConfigFilePathFlag.Name); temp != "" {
+		if files.IsDir(temp) {
+			temp = filepath.Join(temp, defaultConfigPath)
+		}
 		configPath = temp
 	}
 
@@ -241,7 +245,7 @@ func parseDataPath(ctx *cli.Context, endpoint string) string {
 
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
-func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
+func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
 	configPath := getConfigPath(ctx)
 	cfg := newDefaultConfig()
@@ -256,7 +260,7 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 		err := makeConfigFile(&cfg, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
-			return FullConfig{}, err
+			return FullConfig{}, "", err
 		}
 
 		fmt.Println("Writing new config file at: ", configPath)
@@ -265,15 +269,15 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 	// 加载配置文件中的配置信息到 cfg中
 	if err := loadConfig(configPath, &cfg); err != nil {
 		utils.Fatalf("%v", err)
-		return FullConfig{}, err
+		return FullConfig{}, "", err
 	}
 
-	return cfg, nil
+	return cfg, filepath.Dir(configPath), nil
 }
 
 func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// Load config file.
-	cfg, err := maybeLoadConfig(ctx)
+	cfg, configDir, err := maybeLoadConfig(ctx)
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}
@@ -282,8 +286,10 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 将命令行中的配置参数覆盖cfg中对应的配置,
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
-	utils.SetLogConfig(ctx, &cfg.Log)
-	utils.SetNodeConfig(ctx, &cfg.Node)
+
+	// log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
+	utils.SetLogConfig(ctx, &cfg.Log, configDir)
+
 	utils.SetP2PConfig(ctx, &cfg.P2P)
 	utils.SetContractConfig(ctx, &cfg.Contract)
 	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
@@ -296,6 +302,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 所以在此处将各个子模块的配置，复制到ptn下
 	adaptorConfig(&cfg)
 
+	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {

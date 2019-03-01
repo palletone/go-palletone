@@ -54,3 +54,8 @@ func GetAbsPath(filename string) string {
 	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	return filepath.Join(dir, filename)
 }
+
+func GetWorkPath() string {
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	return dir
+}

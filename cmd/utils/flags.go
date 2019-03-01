@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/fdlimit"
+	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -37,7 +38,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
-
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -819,7 +819,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 
 // SetNodeConfig applies node-related command line flags to the config.
 // 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
-func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
+func SetNodeConfig(ctx *cli.Context, cfg *node.Config, path string) {
 	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
@@ -960,36 +960,60 @@ func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config) {
 	}
 }
 
-func SetLogConfig(ctx *cli.Context, cfg *log.Config) {
-	if ctx.GlobalIsSet(LogOutputPathFlag.Name) {
-		cfg.OutputPaths = []string{ctx.GlobalString(LogOutputPathFlag.Name)}
+func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
+	// 重新计算log.output的路径
+	if temp := ctx.GlobalString(LogOutputPathFlag.Name); temp != "" {
+		if !filepath.IsAbs(temp) {
+			temp = filepath.Join(common.GetWorkPath(), temp)
+		}
+		if files.IsDir(temp) {
+			temp = filepath.Join(temp, log.DefaultConfig.OutputPaths[1])
+		}
+		cfg.OutputPaths = []string{temp}
 	}
+	if len(cfg.OutputPaths) == 0 {
+		cfg.OutputPaths = log.DefaultConfig.OutputPaths
+	}
+
+	outIndex := len(cfg.OutputPaths) - 1
+	outPath := cfg.OutputPaths[outIndex]
+	if !filepath.IsAbs(outPath) {
+		outPath = filepath.Join(configDir, outPath)
+	}
+
+	cfg.OutputPaths[outIndex] = common.GetAbsPath(outPath)
+
 	if ctx.GlobalIsSet(LogLevelFlag.Name) {
 		cfg.LoggerLvl = ctx.GlobalString(LogLevelFlag.Name)
 	}
 	if ctx.GlobalIsSet(LogIsDebugFlag.Name) {
 		cfg.Development = ctx.GlobalBool(LogIsDebugFlag.Name)
 	}
-	if ctx.GlobalIsSet(LogErrPathFlag.Name) {
-		cfg.ErrorOutputPaths = []string{ctx.GlobalString(LogErrPathFlag.Name)}
-	}
 	if ctx.GlobalIsSet(LogOpenModuleFlag.Name) {
 		cfg.OpenModule = []string{ctx.GlobalString(LogOpenModuleFlag.Name)}
 	}
 
-	switch {
-	case ctx.GlobalIsSet(DataDirFlag.Name):
-		dataDir := ctx.GlobalString(DataDirFlag.Name)
-		dataDir = strings.Replace(dataDir, "/palletone", "", 1)
-		if !filepath.IsAbs(cfg.OutputPaths[1]) {
-			path := filepath.Join(dataDir, cfg.OutputPaths[1])
-			cfg.OutputPaths[1] = GetAbsDirectory(path)
+	// 重新计算log.ErrPath的路径
+	if temp := ctx.GlobalString(LogErrPathFlag.Name); temp != "" {
+		if !filepath.IsAbs(temp) {
+			temp = filepath.Join(common.GetWorkPath(), temp)
 		}
-		if !filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
-			path := filepath.Join(dataDir, cfg.ErrorOutputPaths[1])
-			cfg.ErrorOutputPaths[1] = GetAbsDirectory(path)
+		if files.IsDir(temp) {
+			temp = filepath.Join(temp, log.DefaultConfig.ErrorOutputPaths[1])
 		}
+		cfg.ErrorOutputPaths = []string{temp}
 	}
+	if len(cfg.ErrorOutputPaths) == 0 {
+		cfg.ErrorOutputPaths = log.DefaultConfig.ErrorOutputPaths
+	}
+
+	errIndex := len(cfg.ErrorOutputPaths) - 1
+	errPath := cfg.ErrorOutputPaths[errIndex]
+	if !filepath.IsAbs(errPath) {
+		errPath = filepath.Join(configDir, errPath)
+	}
+
+	cfg.ErrorOutputPaths[errIndex] = common.GetAbsPath(errPath)
 
 	log.ApplyConfig(cfg)
 }
