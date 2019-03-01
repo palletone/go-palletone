@@ -230,7 +230,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//last put state
 	txid := stub.GetTxID()
-	assetID, _ := dm.NewAssetId(vt.Symbol, dm.AssetType_FungibleToken,
+	assetID, _ := dm.NewAssetId(vt.Symbol, dm.AssetType_VoteToken,
 		0, common.Hex2Bytes(txid[2:]))
 	info := TokenInfo{vt.Name, vt.Symbol, createAddr, vt.VoteType, totalSupply,
 		VoteEndTime, voteContentJson, vt.SupplyAddress, assetID}
