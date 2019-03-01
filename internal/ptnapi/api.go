@@ -2113,6 +2113,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 		cmdInputs = *cmd.Inputs
 	}
 	var redeem []byte
+	var PkScript []byte
 	for _, rti := range cmdInputs {
 		inputHash := common.HexToHash(rti.Txid)
 		if err != nil {
@@ -2147,6 +2148,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 			OutIndex:     rti.Vout,
 			MessageIndex: rti.MessageIndex,
 		}] = script
+		PkScript = script
 	}
 
 	//var keys map[common.Address]*ecdsa.PrivateKey
@@ -2169,7 +2171,18 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
-
+    for msgidx, msg := range tx.TxMessages {
+        payload, ok := msg.Payload.(*modules.PaymentPayload)
+        if ok == false {
+            continue
+        }
+        for inputindex, _ := range payload.Inputs {
+	        err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+	        if err != nil {
+	            return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+	        }
+          }
+    }
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
 	mtxbt, err := rlp.EncodeToBytes(tx)
