@@ -77,6 +77,9 @@ func NewAddress(hash160 []byte, ty AddressType) Address {
 
 //将一个字符串格式的Address转换为Address对象
 func StringToAddress(a string) (Address, error) {
+	if len(a) <=0 {
+		return Address{}, errors.New("Address cannot be null")
+	}
 	if a[0] != byte('P') {
 		return Address{}, errors.New("PalletOne address must start with 'P'")
 	}
