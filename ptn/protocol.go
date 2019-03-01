@@ -57,6 +57,8 @@ const (
 	VSSResponseMsg     = 0x0b
 	SigShareMsg        = 0x0c
 	GroupSigMsg        = 0x0d
+	GetLeafNodesMsg    = 0x0e
+	LeafNodesMsg       = 0x0f
 	ContractMsg        = 0x10
 	ElectionMsg        = 0x11
 
@@ -69,7 +71,7 @@ const (
 type errCode int
 
 const (
-	ErrMsgTooLarge             = iota
+	ErrMsgTooLarge = iota
 	ErrDecode
 	ErrInvalidMsgCode
 	ErrProtocolVersionMismatch
@@ -184,6 +186,8 @@ type hashOrNumber struct {
 	Hash   common.Hash // Block hash from which to retrieve headers (excludes Number)
 	Number modules.ChainIndex
 }
+
+type leafNodes []*modules.Header
 
 /*
 // EncodeRLP is a specialized encoder for hashOrNumber to encode only one of the
