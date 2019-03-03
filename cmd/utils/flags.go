@@ -818,7 +818,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 
 // SetNodeConfig applies node-related command line flags to the config.
 // 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
-func SetNodeConfig(ctx *cli.Context, cfg *node.Config, path string) {
+func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) {
 	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
@@ -833,9 +833,22 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, path string) {
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "testnet")
 	}
 
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.DataDir) {
+		path := filepath.Join(configDir, cfg.DataDir)
+		cfg.DataDir = common.GetAbsPath(path)
+	}
+
 	if ctx.GlobalIsSet(KeyStoreDirFlag.Name) {
 		cfg.KeyStoreDir = ctx.GlobalString(KeyStoreDirFlag.Name)
 	}
+
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.KeyStoreDir) {
+		path := filepath.Join(configDir, cfg.KeyStoreDir)
+		cfg.KeyStoreDir = common.GetAbsPath(path)
+	}
+
 	// if ctx.GlobalIsSet(LightKDFFlag.Name) {
 	// 	cfg.UseLightweightKDF = ctx.GlobalBool(LightKDFFlag.Name)
 	// }
