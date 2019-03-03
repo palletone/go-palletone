@@ -366,6 +366,10 @@ func getDumpConfigPath(ctx *cli.Context) string {
 		configPath = defaultConfigPath
 	}
 
+	if files.IsDir(configPath) {
+		configPath = filepath.Join(configPath, defaultConfigPath)
+	}
+
 	return common.GetAbsPath(configPath)
 }
 
