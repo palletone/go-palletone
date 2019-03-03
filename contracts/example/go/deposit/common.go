@@ -40,6 +40,20 @@ func updateForPayValue(balance *DepositBalance, invokeTokens *modules.InvokeToke
 	balance.PayValues = append(balance.PayValues, payValue)
 }
 
+//判断 invokeTokens 是否包含保证金合约地址
+func isContainDepositContractAddr(stub shim.ChaincodeStubInterface) (invokeToken *modules.InvokeTokens, err error) {
+	invokeTokens, err := stub.GetInvokeTokens()
+	if err != nil {
+		return nil, err
+	}
+	for _, invokeTo := range invokeTokens {
+		if strings.Compare(invokeTo.Address, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM") == 0 {
+			return invokeTo, nil
+		}
+	}
+	return nil, fmt.Errorf("it is not a depositContract invoke")
+}
+
 //对结果序列化并更新数据
 func marshalAndPutStateForBalance(stub shim.ChaincodeStubInterface, nodeAddr string, balance *DepositBalance) error {
 	balanceByte, err := json.Marshal(balance)
@@ -128,7 +142,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		Asset:  asset,
 	}
 	//先获取数据库信息
-	balance, err := GetDepositBalance(stub,invokeAddr)
+	balance, err := GetDepositBalance(stub, invokeAddr)
 	if err != nil {
 		log.Error("stub.GetDepositBalance err:", "error", err)
 		return err
@@ -298,7 +312,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 }
 
 func addCandaditeList(invokeAddr string, stub shim.ChaincodeStubInterface, candidate string) error {
-	list, err := GetCandidateList(stub,candidate)
+	list, err := GetCandidateList(stub, candidate)
 	if err != nil {
 		log.Error("stub.GetCandidateList err:", "error", err)
 		return err
@@ -323,7 +337,7 @@ func addCandaditeList(invokeAddr string, stub shim.ChaincodeStubInterface, candi
 }
 
 func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeStubInterface) error {
-	list, err := GetCandidateList(stub,candidate)
+	list, err := GetCandidateList(stub, candidate)
 	if err != nil {
 		log.Error("stub.GetCandidateList err:", "error", err)
 		return err
@@ -376,24 +390,23 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 	return
 }
 
-
 func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
-	return GetList(stub,"MediatorList")
+	return GetList(stub, "MediatorList")
 }
 func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
-	return GetList(stub,"ListForApplyBecomeMediator")
+	return GetList(stub, "ListForApplyBecomeMediator")
 }
-func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface ) ([]*MediatorRegisterInfo, error) {
-	return GetList(stub,"ListForApplyQuitMediator")
+func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+	return GetList(stub, "ListForApplyQuitMediator")
 }
 
 func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
-	return GetList(stub,"ListForAgreeBecomeMediator")
+	return GetList(stub, "ListForAgreeBecomeMediator")
 
 }
 
-func  GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*MediatorRegisterInfo, error) {
-	listByte, err :=  stub.GetState(typeList)
+func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*MediatorRegisterInfo, error) {
+	listByte, err := stub.GetState(typeList)
 	if err != nil {
 		return nil, err
 	}
@@ -449,7 +462,7 @@ func GetListForCashback(stub shim.ChaincodeStubInterface) ([]*Cashback, error) {
 	return list, nil
 }
 
-func GetDepositBalance(stub shim.ChaincodeStubInterface,nodeAddr string) (*DepositBalance, error) {
+func GetDepositBalance(stub shim.ChaincodeStubInterface, nodeAddr string) (*DepositBalance, error) {
 	balanceByte, err := stub.GetState(nodeAddr)
 	if err != nil {
 		return nil, err
@@ -469,7 +482,7 @@ func GetDepositBalance(stub shim.ChaincodeStubInterface,nodeAddr string) (*Depos
 }
 
 //获取候选列表信息
-func GetCandidateList(stub shim.ChaincodeStubInterface,role string) ([]string, error) {
+func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]string, error) {
 	candidateListByte, err := stub.GetState(role)
 	if err != nil {
 		return nil, err
@@ -488,4 +501,3 @@ func GetCandidateList(stub shim.ChaincodeStubInterface,role string) ([]string, e
 	return candidateList, nil
 
 }
-
