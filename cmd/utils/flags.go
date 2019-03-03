@@ -860,6 +860,8 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) (dataDi
 	// if ctx.GlobalIsSet(NoUSBFlag.Name) {
 	// 	cfg.NoUSB = ctx.GlobalBool(NoUSBFlag.Name)
 	// }
+
+	return
 }
 
 /*
