@@ -294,7 +294,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	utils.SetP2PConfig(ctx, &cfg.P2P)
 	utils.SetContractConfig(ctx, &cfg.Contract, configDir)
 	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
-	utils.SetDagConfig(ctx, &cfg.Dag)
+	utils.SetDagConfig(ctx, &cfg.Dag, configDir)
 	mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 

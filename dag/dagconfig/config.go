@@ -36,7 +36,7 @@ var (
 var DagConfig = DefaultConfig
 
 var DefaultConfig = Config{
-	DbPath: DefaultDataDir(),
+	DbPath: "./leveldb",
 	// txpool
 	UnitTxSize: 1024 * 1024,
 
@@ -66,7 +66,7 @@ func init() {
 
 // global configuration of dag modules
 type Config struct {
-	DbPath    string `toml:"-"`
+	DbPath    string
 	DbCache   int
 	DbHandles int
 

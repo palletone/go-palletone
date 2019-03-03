@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
@@ -939,13 +938,19 @@ func checkExclusive(ctx *cli.Context, args ...interface{}) {
 // }
 
 // SetDagConfig applies dag related command line flags to the config.
-func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config) {
+func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, configDir string) {
 	//	if ctx.GlobalIsSet(DagValue1Flag.Name) {
 	//		cfg.DbPath = ctx.GlobalString(DagValue1Flag.Name)
 	//	}
 	//	if ctx.GlobalIsSet(DagValue2Flag.Name) {
 	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	//	}
+
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.DbPath) {
+		path := filepath.Join(configDir, cfg.DbPath)
+		cfg.DbPath = common.GetAbsPath(path)
+	}
 
 	dagconfig.DagConfig = *cfg
 }
@@ -1178,21 +1183,21 @@ func SetupNetwork(ctx *cli.Context) {
 }
 
 // MakeChainDatabase open an LevelDB using the flags passed to the client and will hard crash if it fails.
-func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
-	var (
-		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
-		handles = makeDatabaseHandles()
-	)
-	name := "chaindata"
-	if ctx.GlobalBool(LightModeFlag.Name) {
-		name = "lightchaindata"
-	}
-	chainDb, err := stack.OpenDatabase(name, cache, handles)
-	if err != nil {
-		Fatalf("Could not open database: %v", err)
-	}
-	return chainDb
-}
+//func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
+//	var (
+//		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
+//		handles = makeDatabaseHandles()
+//	)
+//	name := "chaindata"
+//	if ctx.GlobalBool(LightModeFlag.Name) {
+//		name = "lightchaindata"
+//	}
+//	chainDb, err := stack.OpenDatabase(name, cache, handles)
+//	if err != nil {
+//		Fatalf("Could not open database: %v", err)
+//	}
+//	return chainDb
+//}
 
 func MakeGenesis(ctx *cli.Context) *core.Genesis {
 	var genesis *core.Genesis
