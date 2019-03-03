@@ -429,8 +429,8 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	// 若配置增发，或者该单元包含有效交易（rewards>0），则将增发奖励和交易费全发给该mediator。
 	txs := make(modules.Transactions, 0)
-	if rewards > 0 || dagconfig.DefaultConfig.IsRewardCoin {
-		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+	if rewards > 0 || dagconfig.DagConfig.IsRewardCoin {
+		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DagConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	} else {
 		//log.Debug("======================= success  ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
@@ -831,7 +831,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		log.Info("Save transaction:", "error", err.Error())
 		return err
 	}
-	if dagconfig.DefaultConfig.AddrTxsIndex {
+	if dagconfig.DagConfig.AddrTxsIndex {
 		//Index TxId for address
 		addresses := getPayToAddresses(tx)
 		for _, addr := range addresses {
@@ -923,7 +923,7 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 		return false
 	}
 
-	if dagconfig.DefaultConfig.TextFileHashIndex {
+	if dagconfig.DagConfig.TextFileHashIndex {
 
 		err := rep.idxdb.SaveFileHash(payload.MainData, txHash)
 		if err != nil {
@@ -1308,7 +1308,7 @@ func (rep *UnitRepository) updateState(contractID []byte, key string, version *m
 }
 
 func IsGenesis(hash common.Hash) bool {
-	genHash := common.HexToHash(dagconfig.DefaultConfig.GenesisHash)
+	genHash := common.HexToHash(dagconfig.DagConfig.GenesisHash)
 	return genHash == hash
 }
 

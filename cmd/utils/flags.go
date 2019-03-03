@@ -946,6 +946,8 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config) {
 	//	if ctx.GlobalIsSet(DagValue2Flag.Name) {
 	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	//	}
+
+	dagconfig.DagConfig = *cfg
 }
 
 func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config) {

@@ -53,7 +53,7 @@ func TestReadUtxos(t *testing.T) {
 }
 
 func TestGetUxto(t *testing.T) {
-	dagconfig.DefaultConfig.DbPath = getTempDir(t)
+	dagconfig.DagConfig.DbPath = getTempDir(t)
 	log.Println(modules.Input{})
 }
 

@@ -33,6 +33,8 @@ var (
 
 //var DbPath string = DefaultDataDir()
 
+var DagConfig = DefaultConfig
+
 var DefaultConfig = Config{
 	DbPath: DefaultDataDir(),
 	// txpool
@@ -55,10 +57,10 @@ var DefaultConfig = Config{
 }
 
 func init() {
-	if DefaultConfig.PtnAssetHex != "" {
-		id, _ := modules.SetIdTypeByHex(DefaultConfig.PtnAssetHex)
-		DefaultConfig.PtnAssetId = id[:]
-		modules.PTNCOIN.SetBytes(DefaultConfig.PtnAssetId)
+	if DagConfig.PtnAssetHex != "" {
+		id, _ := modules.SetIdTypeByHex(DagConfig.PtnAssetHex)
+		DagConfig.PtnAssetId = id[:]
+		modules.PTNCOIN.SetBytes(DagConfig.PtnAssetId)
 	}
 }
 

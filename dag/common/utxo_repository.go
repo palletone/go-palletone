@@ -101,7 +101,7 @@ Return utxo struct and his total amount according to user's address, asset type
 */
 func (repository *UtxoRepository) ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
 
-	if dagconfig.DefaultConfig.UtxoIndex {
+	if dagconfig.DagConfig.UtxoIndex {
 		return repository.readUtxosByIndex(addr, asset)
 	} else {
 		return repository.readUtxosFrAll(addr, asset)
@@ -364,7 +364,7 @@ get asset infomation from leveldb by assetid ( Asset struct type )
 To get balance by wallet address and his/her chosen asset type
 */
 func (repository *UtxoRepository) WalletBalance(addr common.Address, asset modules.Asset) uint64 {
-	if dagconfig.DefaultConfig.UtxoIndex {
+	if dagconfig.DagConfig.UtxoIndex {
 		return repository.walletBalanceByIndex(addr, asset)
 	} else {
 		return repository.walletBalanceFrAll(addr, asset)
@@ -660,7 +660,7 @@ To compute mediator interest for packaging one unit
 */
 func ComputeRewards() uint64 {
 	var rewards uint64
-	if dagconfig.DefaultConfig.IsRewardCoin {
+	if dagconfig.DagConfig.IsRewardCoin {
 		rewards = uint64(modules.DAO)
 	}
 	return rewards

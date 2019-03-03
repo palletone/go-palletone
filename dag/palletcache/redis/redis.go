@@ -48,22 +48,22 @@ var PoolMaxIdle = 10
 func Init() {
 	var addr, pwd, prefix string
 
-	if dagconfig.DefaultConfig.RedisAddr == "" {
+	if dagconfig.DagConfig.RedisAddr == "" {
 		addr = "localhost"
 	} else {
-		addr = dagconfig.DefaultConfig.RedisAddr
+		addr = dagconfig.DagConfig.RedisAddr
 	}
 
-	if dagconfig.DefaultConfig.RedisPwd == "" {
+	if dagconfig.DagConfig.RedisPwd == "" {
 		pwd = ""
 	} else {
-		pwd = dagconfig.DefaultConfig.RedisPwd
+		pwd = dagconfig.DagConfig.RedisPwd
 	}
 
-	if dagconfig.DefaultConfig.RedisPrefix == "" {
+	if dagconfig.DagConfig.RedisPrefix == "" {
 		prefix = "default"
 	} else {
-		prefix = dagconfig.DefaultConfig.RedisPrefix
+		prefix = dagconfig.DagConfig.RedisPrefix
 	}
 	r := Redis{address: &addr, password: &pwd}
 	r.ParseConfig(prefix)

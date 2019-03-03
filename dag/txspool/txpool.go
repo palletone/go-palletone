@@ -1642,7 +1642,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
-	unit_size := common.StorageSize(dagconfig.DefaultConfig.UnitTxSize)
+	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
 	for {
 		tx := pool.priority_priced.Get()
 		if tx == nil {

@@ -49,7 +49,7 @@ var DefaultConfig = Config{
 	GasPrice:      big.NewInt(0.01 * configure.PalletOne),
 
 	TxPool:         txspool.DefaultTxPoolConfig,
-	Dag:            dagconfig.DefaultConfig,
+	Dag:            dagconfig.DagConfig,
 	MediatorPlugin: mediatorplugin.DefaultConfig,
 	Jury:           jury.DefaultConfig,
 	Contract:       contractcfg.DefaultConfig,
