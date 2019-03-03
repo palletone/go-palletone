@@ -182,6 +182,7 @@ func getConfigPath(ctx *cli.Context) string {
 }
 
 func parseLogPath(endpoint string, cfg *log.Config) error {
+	// todo 在windows系统下，ipc文件在\\.\pipe\ 目录下，需特殊处理
 	endpoint, err := filepath.Abs(endpoint)
 	if err != nil {
 		return err
@@ -196,11 +197,11 @@ func parseLogPath(endpoint string, cfg *log.Config) error {
 
 	if !filepath.IsAbs(cfg.OutputPaths[1]) {
 		path := filepath.Join(logpath, cfg.OutputPaths[1])
-		cfg.OutputPaths[1] = utils.GetAbsDirectory(path)
+		cfg.OutputPaths[1] = common.GetAbsPath(path)
 	}
 	if !filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
 		path := filepath.Join(logpath, cfg.ErrorOutputPaths[1])
-		cfg.ErrorOutputPaths[1] = utils.GetAbsDirectory(path)
+		cfg.ErrorOutputPaths[1] = common.GetAbsPath(path)
 	}
 	return nil
 }
@@ -291,7 +292,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	utils.SetLogConfig(ctx, &cfg.Log, configDir)
 
 	utils.SetP2PConfig(ctx, &cfg.P2P)
-	utils.SetContractConfig(ctx, &cfg.Contract)
+	utils.SetContractConfig(ctx, &cfg.Contract, configDir)
 	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
 	utils.SetDagConfig(ctx, &cfg.Dag)
 	mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)

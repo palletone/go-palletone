@@ -950,15 +950,11 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config) {
 	dagconfig.DagConfig = *cfg
 }
 
-func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config) {
-	switch {
-	case ctx.GlobalIsSet(DataDirFlag.Name):
-		dataDir := ctx.GlobalString(DataDirFlag.Name)
-		dataDir = strings.Replace(dataDir, "palletone", "", 1)
-		if !filepath.IsAbs(cfg.ContractFileSystemPath) {
-			path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
-			cfg.ContractFileSystemPath = GetAbsDirectory(path)
-		}
+func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, configDir string) {
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.ContractFileSystemPath) {
+		path := filepath.Join(configDir, cfg.ContractFileSystemPath)
+		cfg.ContractFileSystemPath = common.GetAbsPath(path)
 	}
 }
 
@@ -1020,14 +1016,14 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
 	log.ApplyConfig(cfg)
 }
 
-func GetAbsDirectory(path string) string {
-	dir, err := filepath.Abs(path)
-	if err != nil {
-		Fatalf("GetAbsDirectory err:", err)
-		return ""
-	}
-	return strings.Replace(dir, "\\", "/", -1)
-}
+//func GetAbsDirectory(path string) string {
+//	dir, err := filepath.Abs(path)
+//	if err != nil {
+//		Fatalf("GetAbsDirectory err:", err)
+//		return ""
+//	}
+//	return strings.Replace(dir, "\\", "/", -1)
+//}
 
 // SetDagConfig applies dag related command line flags to the config.
 //func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
