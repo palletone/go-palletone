@@ -155,9 +155,8 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
-func adaptorConfig(config *FullConfig) *FullConfig {
+func adaptorPtnConfig(config *FullConfig) *FullConfig {
 	config.Ptn.TxPool = config.TxPool
-	config.Node.P2P = config.P2P
 	config.Ptn.Dag = config.Dag
 	config.Ptn.Jury = config.Jury
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
@@ -291,24 +290,26 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
 	utils.SetLogConfig(ctx, &cfg.Log, configDir)
 
+	cfg.Node.P2P = cfg.P2P
+	dataDir := utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
+	stack, err := node.New(&cfg.Node)
+	if err != nil {
+		utils.Fatalf("Failed to create the protocol stack: %v", err)
+	}
+
 	utils.SetP2PConfig(ctx, &cfg.P2P)
-	utils.SetContractConfig(ctx, &cfg.Contract, configDir)
+	utils.SetContractConfig(ctx, &cfg.Contract, dataDir)
 	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
-	utils.SetDagConfig(ctx, &cfg.Dag, configDir)
+	utils.SetDagConfig(ctx, &cfg.Dag, dataDir)
 	mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 
 	// 为了方便用户配置，所以将各个子模块的配置提升到与ptn同级，
 	// 然而在RegisterPtnService()中，只能使用ptn下的配置
 	// 所以在此处将各个子模块的配置，复制到ptn下
-	adaptorConfig(&cfg)
+	adaptorPtnConfig(&cfg)
 
-	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
-	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
-	stack, err := node.New(&cfg.Node)
-	if err != nil {
-		utils.Fatalf("Failed to create the protocol stack: %v", err)
-	}
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {

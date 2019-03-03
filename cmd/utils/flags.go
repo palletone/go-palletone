@@ -818,7 +818,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 
 // SetNodeConfig applies node-related command line flags to the config.
 // 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
-func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) {
+func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) (dataDir string) {
 	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
@@ -838,9 +838,14 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) {
 		path := filepath.Join(configDir, cfg.DataDir)
 		cfg.DataDir = common.GetAbsPath(path)
 	}
+	dataDir = cfg.DataDir
 
 	if ctx.GlobalIsSet(KeyStoreDirFlag.Name) {
 		cfg.KeyStoreDir = ctx.GlobalString(KeyStoreDirFlag.Name)
+	}
+
+	if cfg.KeyStoreDir == "" {
+		cfg.KeyStoreDir = filepath.Join(dataDir, "keystore")
 	}
 
 	// 重新计算为绝对路径
@@ -951,7 +956,7 @@ func checkExclusive(ctx *cli.Context, args ...interface{}) {
 // }
 
 // SetDagConfig applies dag related command line flags to the config.
-func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, configDir string) {
+func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 	//	if ctx.GlobalIsSet(DagValue1Flag.Name) {
 	//		cfg.DbPath = ctx.GlobalString(DagValue1Flag.Name)
 	//	}
@@ -961,17 +966,17 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, configDir string) {
 
 	// 重新计算为绝对路径
 	if !filepath.IsAbs(cfg.DbPath) {
-		path := filepath.Join(configDir, cfg.DbPath)
+		path := filepath.Join(dataDir, cfg.DbPath)
 		cfg.DbPath = common.GetAbsPath(path)
 	}
 
 	dagconfig.DagConfig = *cfg
 }
 
-func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, configDir string) {
+func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string) {
 	// 重新计算为绝对路径
 	if !filepath.IsAbs(cfg.ContractFileSystemPath) {
-		path := filepath.Join(configDir, cfg.ContractFileSystemPath)
+		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
 		cfg.ContractFileSystemPath = common.GetAbsPath(path)
 	}
 }
