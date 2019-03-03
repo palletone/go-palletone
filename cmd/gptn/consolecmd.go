@@ -121,7 +121,8 @@ func localConsole(ctx *cli.Context) error {
 func remoteConsole(ctx *cli.Context) error {
 	// Attach to a remotely running gptn instance and start the JavaScript console
 	endpoint := ctx.Args().First()
-	cfg := &FullConfig{Node: defaultNodeConfig()}
+	//cfg := &FullConfig{Node: defaultNodeConfig()}
+	cfg := new(FullConfig)
 	datadir := cfg.Node.DataDir
 	if endpoint == "" {
 		configPath := getConfigPath(ctx)

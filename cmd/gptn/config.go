@@ -249,7 +249,7 @@ func parseDataPath(ctx *cli.Context, endpoint string) string {
 func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
 	configPath := getConfigPath(ctx)
-	cfg := newDefaultConfig()
+	cfg := DefaultConfig()
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.FileExist(configPath) {
@@ -346,7 +346,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
-	cfg := newDefaultConfig()
+	cfg := DefaultConfig()
 	configPath := getDumpConfigPath(ctx)
 
 	err := makeConfigFile(&cfg, configPath)
@@ -374,7 +374,7 @@ func getDumpConfigPath(ctx *cli.Context) string {
 }
 
 func dumpUserCfg(ctx *cli.Context) error {
-	cfg := newDefaultConfig()
+	cfg := DefaultConfig()
 	cfg.MediatorPlugin = mp.MakeConfig()
 	cfg.Jury = jury.MakeConfig()
 
@@ -389,9 +389,9 @@ func dumpUserCfg(ctx *cli.Context) error {
 	return nil
 }
 
-// newDefaultConfig, create a default config
+// DefaultConfig, create a default config
 // @author Albert·Gou
-func newDefaultConfig() FullConfig {
+func DefaultConfig() FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
 	return FullConfig{
 		Ptn:            ptn.DefaultConfig,
