@@ -131,7 +131,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 
 	fmt.Println("------------start open leveldb and store test genesis unit--------------")
-	db_path := "leveldb"
+	db_path := "./leveldb"
 	if err := os.MkdirAll(db_path, 0777); err != nil {
 		fmt.Println("mkdir error:", err)
 		return nil
