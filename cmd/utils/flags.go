@@ -508,7 +508,7 @@ var (
 	LogOutputPathFlag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
-		Value: strings.Join(log.DefaultConfig.OutputPaths, ","),
+		Value: "", //strings.Join(log.DefaultConfig.OutputPaths, ","),
 	}
 
 	LogLevelFlag = cli.StringFlag{
@@ -524,7 +524,7 @@ var (
 	LogErrPathFlag = cli.StringFlag{
 		Name:  "log.errpath",
 		Usage: "Log errpath",
-		Value: strings.Join(log.DefaultConfig.ErrorOutputPaths, ","),
+		Value: "", //strings.Join(log.DefaultConfig.ErrorOutputPaths, ","),
 	}
 	LogEncodingFlag = cli.StringFlag{
 		Name:  "log.encoding",
@@ -534,7 +534,7 @@ var (
 	LogOpenModuleFlag = cli.StringFlag{
 		Name:  "log.openmodule",
 		Usage: "Log openmodule",
-		Value: strings.Join(log.DefaultConfig.OpenModule, ","),
+		Value: "all", //strings.Join(log.DefaultConfig.OpenModule, ","),
 	}
 )
 
@@ -991,8 +991,8 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
 	if ctx.GlobalIsSet(LogIsDebugFlag.Name) {
 		cfg.Development = ctx.GlobalBool(LogIsDebugFlag.Name)
 	}
-	if ctx.GlobalIsSet(LogOpenModuleFlag.Name) {
-		cfg.OpenModule = []string{ctx.GlobalString(LogOpenModuleFlag.Name)}
+	if temp := ctx.GlobalString(LogOpenModuleFlag.Name); temp != "" {
+		cfg.OpenModule = strings.Split(temp, ",")
 	}
 
 	// 重新计算log.ErrPath的路径
