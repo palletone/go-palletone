@@ -55,12 +55,8 @@ var mux sync.RWMutex
 
 // init zap.logger
 func InitLogger() {
-	for i, path := range DefaultConfig.OutputPaths {
-		if path == LogStdout {
-			continue
-		}
-
-		if err := files.MakeDirAndFile(DefaultConfig.OutputPaths[i]); err != nil {
+	for _, path := range DefaultConfig.OutputPaths {
+		if err := files.MakeDirAndFile(path); err != nil {
 			panic(err)
 		}
 	}
@@ -73,7 +69,7 @@ func ConsoleInitLogger(cfg *Config) {
 	DefaultConfig.LoggerLvl = "FATAL"
 	DefaultConfig.OutputPaths = cfg.OutputPaths
 	DefaultConfig.ErrorOutputPaths = cfg.ErrorOutputPaths
-	initLogger()
+	InitLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
 
