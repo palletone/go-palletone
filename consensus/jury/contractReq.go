@@ -67,17 +67,10 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		log.Error("ContractDeployReq", "param is error")
 		return nil, nil, errors.New("ContractDeployReq request param is error")
 	}
-	randNum, err := crypto.GetRandomNonce()
-	if err != nil {
-		return nil, nil, errors.New("GetRandomNonce error")
-	}
-	txId := randNum[:20]
-	log.Debug("ContractDeployReq", "enter, templateId ", templateId, "txId", hex.EncodeToString(txId))
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
 			TplId:   templateId,
-			TxId:    hex.EncodeToString(txId), //contractId
 			Args:    args,
 			Timeout: uint32(timeout),
 		},
@@ -86,9 +79,12 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	if err != nil {
 		return nil, nil, err
 	}
+	contractId := common.BytesToAddress(reqId).Bytes()
+	log.Debug("ContractDeployReq", "enter, templateId ", templateId, "contractId", contractId)
+
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[common.BytesToHash(reqId)].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
-	return reqId, txId, err
+	return reqId, contractId, err
 }
 
 func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout uint32) ([]byte, error) {
