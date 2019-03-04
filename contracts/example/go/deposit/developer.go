@@ -34,7 +34,9 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(err.Error())
 	}
 	//交付数量
-	invokeTokens, err := stub.GetInvokeTokens()
+	//交付数量
+	//invokeTokens, err := stub.GetInvokeTokens()
+	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
 		log.Error("Stub.GetInvokeTokens err:", "error", err)
 		return shim.Error(err.Error())
@@ -48,7 +50,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 	isDeveloper := false
 	if balance == nil {
 		balance = &DepositBalance{}
-		if invokeTokens[0].Amount >= depositAmountsForDeveloper {
+		if invokeTokens.Amount >= depositAmountsForDeveloper {
 			//加入列表
 			//addList("Jury", invokeAddr, stub)
 			err = addCandaditeList(invokeAddr, stub, "DeveloperList")
@@ -59,7 +61,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 			isDeveloper = true
 			balance.EnterTime = time.Now().UTC().Unix() / 1800
 		}
-		updateForPayValue(balance, invokeTokens[0])
+		updateForPayValue(balance, invokeTokens)
 	} else {
 		//账户已存在，进行信息的更新操作
 		if balance.TotalAmount >= depositAmountsForDeveloper {
@@ -72,7 +74,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 
 		}
 		//处理交付保证金数据
-		updateForPayValue(balance, invokeTokens[0])
+		updateForPayValue(balance, invokeTokens)
 	}
 	if !isDeveloper {
 		//判断交了保证金后是否超过了jury
