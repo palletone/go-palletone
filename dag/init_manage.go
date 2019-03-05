@@ -30,11 +30,13 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
-	pHash, idx, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
-	if pHash != nextUnit.ParentHash()[0] {
-		log.Debug("invalidated unit(%v)'s parent hash(%v)!",
-			nextUnit.UnitHash.TerminalString(), pHash.TerminalString())
+func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) bool {
+	pHash := nextUnit.ParentHash()[0]
+	headHash, idx, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
+	if pHash != headHash {
+		// todo 出现分叉, 调用本方法之前未处理分叉
+		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
+			nextUnit.UnitHash.TerminalString(), pHash.TerminalString(), headHash.TerminalString())
 		return false
 	}
 
@@ -44,6 +46,10 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 		return false
 	}
 
+	return true
+}
+
+func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	ts, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
 	if ts >= nextUnit.Timestamp() {
 		log.Debug("invalidated unit's timestamp!")
