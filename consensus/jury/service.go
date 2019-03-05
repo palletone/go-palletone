@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -32,11 +33,13 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
 )
 
@@ -218,10 +221,11 @@ func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
 
 func (p *Processor) runContractReq(reqId common.Hash) error {
 	req := p.mtx[reqId]
+
 	if req == nil {
 		return errors.New("runContractReq param is nil")
 	}
-	_, msgs, err := runContractCmd(p.dag, p.contract, req.reqTx)
+	msgs, err := runContractCmd(p.dag, p.contract, req.reqTx)
 	if err != nil {
 		log.Error("runContractReq runContractCmd", "reqTx", req.reqTx.RequestHash().String(), "error", err.Error())
 		return err
@@ -241,7 +245,7 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 		if account == nil {
 			return errors.New("runContractReq no local account")
 		}
-		sigTx, err := gen.GenContractSigTransction(account.Address, account.Password, tx, p.ptn.GetKeyStore())
+		sigTx, err := p.GenContractSigTransction(account.Address, account.Password, tx, p.ptn.GetKeyStore())
 		if err != nil {
 			log.Error("runContractReq GenContractSigTransctions", "error", err.Error())
 			return errors.New("")
@@ -271,6 +275,95 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 	return nil
 }
 
+func (p *Processor) GenContractSigTransction(singer common.Address, password string, orgTx *modules.Transaction, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	if orgTx == nil || len(orgTx.TxMessages) < 3 {
+		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
+	}
+	if password != "" {
+		err := ks.Unlock(accounts.Account{Address: singer}, password)
+		if err != nil {
+			return nil, err
+		}
+	}
+	tx := orgTx
+	needSignMsg := true
+	//Find contract pay out payment messages
+	resultMsg := false
+	for msgidx, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			resultMsg = true
+			continue
+		}
+		if resultMsg {
+			if msg.App == modules.APP_PAYMENT {
+				//Contract result里面的Payment只有2种，创币或者从合约付出，
+				payment := msg.Payload.(*modules.PaymentPayload)
+				if !payment.IsCoinbase() {
+					//Contract Payout, need sign
+					needSignMsg = false
+					pubKey, _ := ks.GetPublicKey(singer)
+					redeemScript := tokenengine.GenerateRedeemScript(1, [][]byte{pubKey})
+					for inputIdx, input := range payment.Inputs {
+						utxo, err := p.dag.GetUtxoEntry(input.PreviousOutPoint)
+						if err != nil {
+							return nil, err
+						}
+
+						sign, err := tokenengine.MultiSignOnePaymentInput(tx, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil, 0)
+						if err != nil {
+							log.Errorf("Sign error:%s", err)
+						}
+						log.Debugf("Sign a contract payout payment,tx[%s],sign:%x", tx.Hash().String(), sign)
+						input.SignatureScript = sign
+					}
+				}
+			}
+		}
+	}
+	if needSignMsg {
+		//没有Contract Payout的情况下，那么需要单独附加Signature Message
+		var sigPayload *modules.SignaturePayload
+		sigs := make([]modules.SignatureSet, 0)
+		for _, v := range tx.TxMessages {
+			if v.App == modules.APP_SIGNATURE {
+				sigPayload = v.Payload.(*modules.SignaturePayload)
+				sigs = append(sigs, sigPayload.Signatures...)
+			}
+		}
+		pubKey, err := ks.GetPublicKey(singer)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
+		}
+		sig, err := GetTxSig(tx, ks, singer)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.RequestHash().String()))
+		}
+		sigSet := modules.SignatureSet{
+			PubKey:    pubKey,
+			Signature: sig,
+		}
+		sigs = append(sigs, sigSet)
+		msgSig := &modules.Message{
+			App: modules.APP_SIGNATURE,
+			Payload: &modules.SignaturePayload{
+				Signatures: sigs,
+			},
+		}
+		tx.TxMessages = append(tx.TxMessages, msgSig)
+		log.Debug("GenContractSigTransactions", "orgTx.TxId id ok:", tx.Hash())
+	}
+	return tx, nil
+}
+func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Address) ([]byte, error) {
+	sign, err := ks.SigData(tx, signer)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to singure transaction:%v", err)
+		log.Error(msg)
+		return nil, errors.New(msg)
+	}
+
+	return sign, nil
+}
 func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
 	//log.Debug("ProcessContractEvent", "enter", addr.String())
 	for _, ctx := range p.mtx {
@@ -298,7 +391,7 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Info("AddContractLoop", "transaction request Id already in dag", ctx.rstTx.RequestHash())
 			continue
 		}
-		tx, err := gen.GenContractSigTransction(addr, "", ctx.rstTx, ks)
+		tx, err := p.GenContractSigTransction(addr, "", ctx.rstTx, ks)
 		if err != nil {
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
 			continue
@@ -341,7 +434,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		log.Error("CheckContractTxValid", "nodeContractExecutable false")
 		return false
 	}
-	_, msgs, err := runContractCmd(p.dag, p.contract, tx) // long time ...
+	msgs, err := runContractCmd(p.dag, p.contract, tx) // long time ...
 	if err != nil {
 		log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
 		return false
@@ -469,7 +562,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		if account == nil {
 			return nil, nil, errors.New("createContractTxReq no local account")
 		}
-		ctx.rstTx, err = gen.GenContractSigTransction(account.Address, account.Password, ctx.rstTx, p.ptn.GetKeyStore())
+		ctx.rstTx, err = p.GenContractSigTransction(account.Address, account.Password, ctx.rstTx, p.ptn.GetKeyStore())
 		if err != nil {
 			return nil, nil, err
 		}
