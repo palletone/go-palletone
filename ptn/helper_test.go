@@ -312,7 +312,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 			//	0,
 			//}
 			//genesis = pm.dag.GetUnitByNumber(number)
-			head  = pm.dag.CurrentHeader()
+			head  = pm.dag.CurrentHeader(modules.PTNCOIN)
 			index = head.Number
 		)
 		fmt.Println("==========================================index:", index.Index)

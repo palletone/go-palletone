@@ -38,9 +38,16 @@ const (
 	ELECTION_EVENT_RESULT            = 2
 )
 
+type ElectionInf struct {
+	AddrHash  common.Hash //common.Address将地址hash后，返回给请求节点
+	Proof     []byte      //vrf proof
+	PublicKey []byte      //alg.PublicKey, rlp not support
+}
+
 //contract
 type ContractEvent struct {
 	AddrHash []common.Hash //user contract jury addr hash
+	Ele      []ElectionInf
 
 	CType ContractEventType
 	Tx    *modules.Transaction
@@ -48,17 +55,13 @@ type ContractEvent struct {
 
 //Election
 type ElectionRequestEvent struct {
-	ReqHash common.Hash
-
-	Num  uint   //about the number of elections
-	Data []byte //election data, input as vrf
+	ReqId common.Hash
+	Num     uint   //about the number of elections
+	Data    []byte //election data, input as vrf
 }
 type ElectionResultEvent struct {
-	ReqHash common.Hash
-
-	AddrHash  common.Hash //common.Address将地址hash后，返回给请求节点
-	Proof     []byte      //vrf proof
-	PublicKey []byte      //alg.PublicKey, rlp not support
+	ReqId common.Hash
+	Ele     ElectionInf
 }
 
 type ElectionEvent struct {
@@ -71,20 +74,20 @@ type ElectionEventBytes struct {
 	Event []byte    `json:"event"`
 }
 
-func (es *ElectionEventBytes) ToElectionEvent() (*ElectionEvent, error){
+func (es *ElectionEventBytes) ToElectionEvent() (*ElectionEvent, error) {
 	event := ElectionEvent{}
 	event.EType = es.EType
 	if es.EType == ELECTION_EVENT_REQUEST {
 		var req ElectionRequestEvent
 		err := json.Unmarshal(es.Event, &req)
-		if err != nil{
+		if err != nil {
 			return nil, err
 		}
 		event.Event = &req
-	}else if es.EType == ELECTION_EVENT_RESULT {
+	} else if es.EType == ELECTION_EVENT_RESULT {
 		var rst ElectionResultEvent
 		err := json.Unmarshal(es.Event, &rst)
-		if err != nil{
+		if err != nil {
 			return nil, err
 		}
 		event.Event = &rst
@@ -92,7 +95,7 @@ func (es *ElectionEventBytes) ToElectionEvent() (*ElectionEvent, error){
 	return &event, nil
 }
 
-func (ev *ElectionEvent)ToElectionEventBytes() ( *ElectionEventBytes, error){
+func (ev *ElectionEvent) ToElectionEventBytes() (*ElectionEventBytes, error) {
 	es := &ElectionEventBytes{}
 
 	byteJson, err := json.Marshal(ev.Event)

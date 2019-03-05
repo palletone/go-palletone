@@ -152,7 +152,7 @@ type Downloader struct {
 type LightDag interface {
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	CurrentHeader() *modules.Header
+	CurrentHeader(token modules.IDType16) *modules.Header
 	//InsertHeaderDag([]*modules.Header, int) (int, error)
 	//GetAllLeafNodes() ([]*modules.Header, error)
 	//Rollback([]common.Hash)
@@ -162,7 +162,7 @@ type LightDag interface {
 type BlockDag interface {
 	LightDag
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
-	CurrentUnit() *modules.Unit
+	CurrentUnit(token modules.IDType16) *modules.Unit
 	FastSyncCommitHead(common.Hash) error
 	//SaveDag(unit modules.Unit, isGenesis bool) (int, error)
 	//InsertDag(modules.Units) (int, error)
@@ -232,12 +232,12 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 	current := uint64(0)
 	switch d.mode {
 	case FullSync:
-		unit := d.dag.CurrentUnit()
+		unit := d.dag.CurrentUnit(modules.PTNCOIN)
 		if unit != nil {
 			current = unit.Number().Index
 		}
 	case FastSync:
-		unit := d.dag.CurrentUnit()
+		unit := d.dag.CurrentUnit(modules.PTNCOIN)
 		if unit != nil {
 			current = unit.Number().Index
 		}
@@ -593,8 +593,9 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 
 func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, assetId modules.IDType16) (uint64, error) {
 	height := latest.Index()
+	token := latest.Number.AssetID
 	// Figure out the valid ancestor range to prevent rewrite attacks
-	floor, ceil := int64(-1), d.lightdag.CurrentHeader().Number.Index
+	floor, ceil := int64(-1), d.lightdag.CurrentHeader(token).Number.Index
 
 	//if d.mode == FullSync {
 	//	ceil = d.dag.CurrentUnit().NumberU64()
@@ -1227,7 +1228,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				// L: Request new headers up from 11 (R's TD was higher, it must have something)
 				// R: Nothing to give
 				if d.mode != LightSync {
-					unit := d.dag.CurrentUnit()
+					unit := d.dag.CurrentUnit(assetId)
 					//dbhead, _ := d.dag.GetHeaderByHash(head.Hash())
 					if !gotHeaders && index > unit.Number().Index {
 						return errStallingPeer
