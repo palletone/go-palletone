@@ -82,7 +82,7 @@ func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string
 	}
 	Aval = Aval - X
 	Bval = Bval + X
-	ts, err2 := stub.GetTxTimestamp()
+	ts, err2 := stub.GetTxTimestamp(0)
 	if err2 != nil {
 		fmt.Printf("Error getting transaction timestamp: %s", err2)
 		return shim.Error(fmt.Sprintf("Error getting transaction timestamp: %s", err2))
