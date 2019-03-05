@@ -222,19 +222,6 @@ func (mr *MockIDagMockRecorder) GetHeaderByHash(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetHeaderByHash), arg0)
 }
 
-// GetAllLeafNodes mocks base method
-func (m *MockIDag) GetAllLeafNodes() ([]*modules.Header, error) {
-	ret := m.ctrl.Call(m, "GetAllLeafNodes")
-	ret0, _ := ret[0].([]*modules.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeaderByHash indicates an expected call of GetHeaderByHash
-func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllLeafNodes", reflect.TypeOf((*MockIDag)(nil).GetAllLeafNodes))
-}
-
 // GetUnstableUnits mocks base method
 func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
 	m.ctrl.T.Helper()

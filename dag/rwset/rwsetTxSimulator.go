@@ -95,7 +95,7 @@ func (s *RwSetTxSimulator) GetTimestamp(contractid []byte, ns string, rangeNumbe
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	header := s.dag.CurrentHeader()
+	header := s.dag.CurrentHeader(modules.PTNCOIN)
 	timeIndex := header.Number.Index / uint64(rangeNumber) * uint64(rangeNumber)
 	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, IsMain: true, Index: timeIndex})
 	if err != nil {
