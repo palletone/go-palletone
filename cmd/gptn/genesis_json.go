@@ -191,7 +191,6 @@ func createGenesisJson(ctx *cli.Context) error {
 }
 
 func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
-	//cfg := &FullConfig{Node: defaultNodeConfig()}
 	cfg := new(FullConfig)
 	configPath := getConfigPath(ctx)
 
