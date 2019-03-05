@@ -60,7 +60,7 @@ message ChaincodeMessage {
         PAY_OUT_TOKEN=26;
         DEFINE_TOKEN=27;
         SUPPLY_TOKEN=28;
-
+        GET_TIMESTAMP = 29;
     }
 
     Type type = 1;
@@ -88,7 +88,10 @@ message GetState {
     string key = 1;
     string collection = 2;
 }
-
+message GetTimestamp {
+    uint32 rangeNumber = 1;
+    string collection = 2;
+}
 message PutState {
     string key = 1;
     bytes value = 2;
