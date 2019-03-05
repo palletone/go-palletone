@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -23,9 +24,9 @@ import (
 	"io"
 	"os"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -90,10 +91,14 @@ func (journal *txJournal) load(add func(*modules.TxPoolTransaction) error) error
 		}
 		// Import the transaction and bump the appropriate progress counters
 		total++
-		if err = add(tx); err != nil {
-			log.Debug("Failed to add journaled transaction", "err", err)
-			dropped++
-			continue
+		if tx.Tx != nil {
+			if err = add(tx); err != nil {
+				log.Debug("Failed to add journaled transaction", "err", err)
+				dropped++
+				continue
+			}
+		} else {
+			log.Debug("journal decode tx failed. ", "error", "tx is nil.")
 		}
 	}
 	log.Info("Loaded local transaction journal", "transactions", total, "dropped", dropped)
