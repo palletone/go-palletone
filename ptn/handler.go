@@ -384,8 +384,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
-
-	head := pm.dag.CurrentHeader()
+	// @分区后需要用token获取
+	token := modules.PTNCOIN
+	head := pm.dag.CurrentHeader(token)
 	// Execute the PalletOne handshake
 	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash() /*mediator,*/, head.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
@@ -459,7 +460,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Status messages should never arrive after the handshake
 		return pm.StatusMsg(msg, p)
 
-	// Block header query, collect the requested headers and reply
+		// Block header query, collect the requested headers and reply
 	case msg.Code == GetBlockHeadersMsg:
 		// Decode the complex header query
 		return pm.GetBlockHeadersMsg(msg, p)
@@ -495,17 +496,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		return pm.TxMsg(msg, p)
 
-	// append by Albert·Gou
+		// append by Albert·Gou
 	case msg.Code == NewProducedUnitMsg:
 		// Retrieve and decode the propagated new produced unit
 		return pm.NewProducedUnitMsg(msg, p)
 
-	// append by Albert·Gou
+		// append by Albert·Gou
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
 
-	//21*21 resp
-	// append by Albert·Gou
+		//21*21 resp
+		// append by Albert·Gou
 	case msg.Code == VSSDealMsg:
 		return pm.VSSDealMsg(msg, p)
 
@@ -551,7 +552,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 			log.Debug("=====ProtocolManager=====", "txBroadcastLoop event.Tx", event.Tx)
 			self.BroadcastTx(event.Tx.Hash(), event.Tx)
 
-		// Err() channel will be closed when unsubscribing.
+			// Err() channel will be closed when unsubscribing.
 		case <-self.txSub.Err():
 			return
 		}
@@ -624,7 +625,9 @@ type NodeInfo struct {
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	unit := self.dag.CurrentUnit()
+	// TODO 按分区返回 unit
+	token := modules.PTNCOIN
+	unit := self.dag.CurrentUnit(token)
 	index := uint64(0)
 	if unit != nil {
 		index = unit.Number().Index

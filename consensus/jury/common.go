@@ -93,9 +93,9 @@ func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) er
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transaction) (modules.MessageType, []*modules.Message, error) {
+func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transaction) ([]*modules.Message, error) {
 	if trs == nil || len(trs.TxMessages) <= 0 {
-		return 0, nil, errors.New("runContractCmd transaction or msg is nil")
+		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
 	for _, msg := range trs.TxMessages {
 		switch msg.App {
@@ -112,11 +112,11 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				installResult, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
-					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_TPL_REQUEST txid(%s) err:%s", req.ccName, err))
+					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_TPL_REQUEST txid(%s) err:%s", req.ccName, err))
 				}
 				payload := installResult.(*modules.ContractTplPayload)
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_TPL, payload))
-				return modules.APP_CONTRACT_TPL, msgs, nil
+				return msgs, nil
 			}
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			{
@@ -132,11 +132,11 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				deployResult, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
-					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_DEPLOY_REQUEST TplId(%s) err:%s", req.templateId, err))
+					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_DEPLOY_REQUEST TplId(%s) err:%s", req.templateId, err))
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload))
-				return modules.APP_CONTRACT_DEPLOY, msgs, nil
+				return msgs, nil
 			}
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			{
@@ -148,26 +148,26 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					args:     reqPay.Args,
 					txid:     trs.RequestHash().String(),
 				}
-				//对msg0进行修改
+
 				fullArgs, err := handleMsg0(trs, dag, req.args)
 				if err != nil {
-					return modules.APP_CONTRACT_INVOKE, nil, err
+					return nil, err
 				}
 				req.args = fullArgs
 				invokeResult, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess", "ContractProcess error", err.Error())
-					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
+					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
 				toContractPayments, err := resultToContractPayments(dag, result)
 				if err != nil {
-					return modules.APP_CONTRACT_INVOKE, nil, err
+					return nil, err
 				}
 				if toContractPayments != nil && len(toContractPayments) > 0 {
 					for _, contractPayment := range toContractPayments {
@@ -176,14 +176,14 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				}
 				cs, err := resultToCoinbase(result)
 				if err != nil {
-					return modules.APP_CONTRACT_INVOKE, nil, err
+					return nil, err
 				}
 				if cs != nil && len(cs) > 0 {
 					for _, coinbase := range cs {
 						msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, coinbase))
 					}
 				}
-				return modules.APP_CONTRACT_INVOKE, msgs, nil
+				return msgs, nil
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			{
@@ -198,16 +198,16 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				stopResult, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
-					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_STOP_REQUEST contractId(%s) err:%s", req.deployId, err))
+					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_STOP_REQUEST contractId(%s) err:%s", req.deployId, err))
 				}
 				payload := stopResult.(*modules.ContractStopPayload)
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_STOP, payload))
-				return modules.APP_CONTRACT_STOP, msgs, nil
+				return msgs, nil
 			}
 		}
 	}
 
-	return 0, nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", trs.RequestHash().String()))
+	return nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", trs.RequestHash().String()))
 }
 
 func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, error) {

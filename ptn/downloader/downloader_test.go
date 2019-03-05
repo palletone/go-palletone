@@ -385,7 +385,7 @@ func (dl *downloadTester) GetUnit(hash common.Hash) (*modules.Unit, error) {
 }
 
 // CurrentHeader retrieves the current head header from the canonical chain.
-func (dl *downloadTester) CurrentHeader() *modules.Header {
+func (dl *downloadTester) CurrentHeader(token modules.IDType16) *modules.Header {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -398,7 +398,7 @@ func (dl *downloadTester) CurrentHeader() *modules.Header {
 }
 
 // CurrentBlock retrieves the current head block from the canonical chain.
-func (dl *downloadTester) CurrentUnit() *modules.Unit {
+func (dl *downloadTester) CurrentUnit(token modules.IDType16) *modules.Unit {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -1424,7 +1424,9 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 
 	// Create a small enough block chain to download
 	targetBlocks := 3*fsHeaderSafetyNet + 256 + fsMinFullBlocks
-	hashes, headers, blocks := tester.makeChain(targetBlocks, 0, tester.genesis, false)
+	genesis := tester.genesis
+	token := genesis.Number().AssetID
+	hashes, headers, blocks := tester.makeChain(targetBlocks, 0, genesis, false)
 
 	// Attempt to sync with an attacker that feeds junk during the fast sync phase.
 	// This should result in the last fsHeaderSafetyNet headers being rolled back.
@@ -1435,7 +1437,7 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 	if err := tester.sync("fast-attack", 0, mode); err == nil {
 		t.Fatalf("succeeded fast attacker synchronisation")
 	}
-	if head := tester.CurrentHeader().Number.Index; int(head) > MaxHeaderFetch {
+	if head := tester.CurrentHeader(token).Number.Index; int(head) > MaxHeaderFetch {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, MaxHeaderFetch)
 	}
 	// Attempt to sync with an attacker that feeds junk during the block import phase.
@@ -1449,7 +1451,7 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 	if err := tester.sync("block-attack", 0, mode); err == nil {
 		t.Fatalf("succeeded block attacker synchronisation")
 	}
-	if head := tester.CurrentHeader().Number.Index; int(head) > 2*fsHeaderSafetyNet+MaxHeaderFetch {
+	if head := tester.CurrentHeader(token).Number.Index; int(head) > 2*fsHeaderSafetyNet+MaxHeaderFetch {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, 2*fsHeaderSafetyNet+MaxHeaderFetch)
 	}
 	if mode == FastSync {
@@ -1473,11 +1475,11 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 	if err := tester.sync("withhold-attack", 0, mode); err == nil {
 		t.Fatalf("succeeded withholding attacker synchronisation")
 	}
-	if head := tester.CurrentHeader().Number.Index; int(head) > 2*fsHeaderSafetyNet+MaxHeaderFetch {
+	if head := tester.CurrentHeader(token).Number.Index; int(head) > 2*fsHeaderSafetyNet+MaxHeaderFetch {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, 2*fsHeaderSafetyNet+MaxHeaderFetch)
 	}
 	if mode == FastSync {
-		if head := tester.CurrentUnit().NumberU64(); head != 0 {
+		if head := tester.CurrentUnit(token).NumberU64(); head != 0 {
 			t.Errorf("fast sync pivot block #%d not rolled back", head)
 		}
 	}

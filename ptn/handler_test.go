@@ -23,9 +23,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	//"github.com/palletone/go-palletone/common/event"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/ethereum/go-ethereum/rlp"
 	//mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag"
@@ -137,7 +137,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 		true,
 		4,
 	}
-	i := pm.dag.CurrentUnit().Number()
+	i := pm.dag.CurrentUnit(modules.PTNCOIN).Number()
 	jia1 := modules.ChainIndex{
 		modules.PTNCOIN,
 		true,
@@ -220,20 +220,20 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index}, Amount: 1},
 			[]common.Hash{getUnitHashbyNumber(pm, &index)},
 		}, {
-			&getBlockHeadersData{Origin: hashOrNumber{Number: *pm.dag.CurrentUnit().Number()}, Amount: 1},
-			[]common.Hash{pm.dag.CurrentUnit().Hash()},
+			&getBlockHeadersData{Origin: hashOrNumber{Number: *pm.dag.CurrentUnit(modules.PTNCOIN).Number()}, Amount: 1},
+			[]common.Hash{pm.dag.CurrentUnit(modules.PTNCOIN).Hash()},
 		},
 		//// Ensure protocol limits are honored
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: in1}, Amount: limit + 10, Reverse: true},
-			pm.dag.GetUnitHashesFromHash(pm.dag.CurrentUnit().Hash(), limit),
+			pm.dag.GetUnitHashesFromHash(pm.dag.CurrentUnit(modules.PTNCOIN).Hash(), limit),
 		},
 		// Check that requesting more than available is handled gracefully
 		{
 			&getBlockHeadersData{Origin: hashOrNumber{Number: in4}, Skip: 3, Amount: 3},
 			[]common.Hash{
 				getUnitHashbyNumber(pm, &in4),
-				getUnitHashbyNumber(pm, pm.dag.CurrentUnit().Number()),
+				getUnitHashbyNumber(pm, pm.dag.CurrentUnit(modules.PTNCOIN).Number()),
 			},
 		}, {
 			&getBlockHeadersData{Origin: hashOrNumber{Number: index44}, Skip: 3, Amount: 3, Reverse: true},
@@ -335,8 +335,8 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 
 	dag.EXPECT().GetUnitByNumber(gomock.Any()).Return(mockUnit, nil).AnyTimes()
 	dag.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{}).AnyTimes()
-	dag.EXPECT().CurrentHeader().Return(mockUnit.Header()).AnyTimes()
-	dag.EXPECT().CurrentUnit().Return(mockUnit).AnyTimes()
+	dag.EXPECT().CurrentHeader(modules.PTNCOIN).Return(mockUnit.Header()).AnyTimes()
+	dag.EXPECT().CurrentUnit(modules.PTNCOIN).Return(mockUnit).AnyTimes()
 	dag.EXPECT().GetUnitTransactions(gomock.Any()).DoAndReturn(func(hash common.Hash) (modules.Transactions, error) {
 		return mockUnit.Transactions(), nil
 	}).AnyTimes()

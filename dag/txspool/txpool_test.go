@@ -78,14 +78,15 @@ func NewUnitDag4Test() *UnitDag4Test {
 	ud.outpoints = make(map[string]map[modules.OutPoint]*modules.Utxo)
 	return ud
 }
-func (ud *UnitDag4Test) CurrentUnit() *modules.Unit {
+func (ud *UnitDag4Test) CurrentUnit(token modules.IDType16) *modules.Unit {
 	return modules.NewUnit(&modules.Header{
-		Extra: []byte("test pool"),
+		Number: &modules.ChainIndex{AssetID: token},
+		Extra:  []byte("test pool"),
 	}, nil)
 }
 
 func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	return ud.CurrentUnit(), nil
+	return ud.CurrentUnit(modules.PTNCOIN), nil
 }
 
 func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {

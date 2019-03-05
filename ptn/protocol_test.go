@@ -19,9 +19,9 @@ package ptn
 import (
 	bytes2 "bytes"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"sync"
@@ -36,7 +36,7 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, 0, nil, nil, nil, nil)
 	var (
 		genesis, _ = pm.dag.GetGenesisUnit()
-		head       = pm.dag.CurrentHeader()
+		head       = pm.dag.CurrentHeader(modules.PTNCOIN)
 		index      = head.Number
 	)
 	defer pm.Stop()
