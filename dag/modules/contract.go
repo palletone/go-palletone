@@ -24,8 +24,6 @@ import (
 	"time"
 )
 
-var HeaderTimeKey = "headerTime"
-
 type Contract struct {
 	//Contract Id 即Address，[20]byte，
 	// 根据用户创建合约实例申请的RequestId截取其后20字节生成

@@ -116,7 +116,7 @@ type ChaincodeStubInterface interface {
 	// GetTxTimestamp returns the timestamp when the transaction was created. This
 	// is taken from the transaction ChannelHeader, therefore it will indicate the
 	// client's timestamp and will have the same value across all endorsers.
-	GetTxTimestamp() (*timestamp.Timestamp, error)
+	GetTxTimestamp(rangeNumber uint32) (*timestamp.Timestamp, error)
 
 	// SetEvent allows the chaincode to set an event on the response to the
 	// proposal to be included as part of a transaction. The event will be

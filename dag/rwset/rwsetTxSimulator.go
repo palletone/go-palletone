@@ -22,6 +22,7 @@ package rwset
 import (
 	"errors"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
@@ -88,6 +89,18 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	return val, nil
 }
 
+// GetState implements method in interface `ledger.TxSimulator`
+func (s *RwSetTxSimulator) GetTimestamp(contractid []byte, ns string, rangeNumber uint32) ([]byte, error) {
+	//testValue := []byte("abc")
+	if err := s.CheckDone(); err != nil {
+		return nil, err
+	}
+	header := s.dag.CurrentHeader()
+	timeIndex := header.Number.Index / uint64(rangeNumber) * uint64(rangeNumber)
+	timeHeader, _ := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, Index: timeIndex})
+
+	return []byte(fmt.Sprintf("%d", timeHeader.Creationdate)), nil
+}
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 	//log.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
 	//fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)

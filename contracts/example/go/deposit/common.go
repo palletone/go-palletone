@@ -32,7 +32,7 @@ func updateForPayValue(balance *DepositBalance, invokeTokens *modules.InvokeToke
 	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 
 	payTokens := &modules.InvokeTokens{}
-	payValue := &modules.PayValue{PayTokens: payTokens}
+	payValue := &PayValue{PayTokens: payTokens}
 	payValue.PayTokens.Amount = invokeTokens.Amount
 	payValue.PayTokens.Asset = invokeTokens.Asset
 	payValue.PayTime = time.Now().UTC().Unix() / 1800

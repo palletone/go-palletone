@@ -157,12 +157,12 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
+			pm.syncall()
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
 			log.Debug("start force Sync")
-			go pm.synchronise(pm.peers.BestPeer(modules.PTNCOIN), modules.PTNCOIN)
+			pm.syncall()
 
 		case <-pm.noMorePeers:
 			return
@@ -171,12 +171,20 @@ func (pm *ProtocolManager) syncer() {
 }
 
 func (pm *ProtocolManager) syncall() {
-	peer := pm.peers.BestPeer(modules.PTNCOIN)
-	pm.synchronise(peer, modules.PTNCOIN)
-	if strings.ToLower(pm.SubProtocols[0].Name) != ProtocolName {
+	asset := &modules.Asset{}
+	asset.SetString(strings.ToUpper(pm.SubProtocols[0].Name))
+	log.Info("ProtocolManager syncall", "pm.SubProtocols[0].Name", pm.SubProtocols[0].Name)
+	peer := pm.peers.BestPeer(asset.AssetId)
+	go pm.synchronise(peer, asset.AssetId)
+	return
+	if pm.SubProtocols[0].Name != ProtocolName || peer == nil {
 		return
 	}
-	leafnodes, err := pm.downloader.FetchAllToken(peer.id)
+	go pm.lightsync(peer)
+}
+
+func (pm *ProtocolManager) lightsync(peer *peer) {
+	leafnodes, err := pm.lightdownloader.FetchAllToken(peer.id)
 	if err != nil {
 		log.Info("sync get all leaf nodes", "counts leaf nodes", len(leafnodes), "err:", err)
 		return

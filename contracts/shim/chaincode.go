@@ -498,7 +498,7 @@ func (stub *ChaincodeStub) GetArgsSlice() ([]byte, error) {
 }
 
 // GetTxTimestamp documentation can be found in interfaces.go
-func (stub *ChaincodeStub) GetTxTimestamp() (*timestamp.Timestamp, error) {
+func (stub *ChaincodeStub) GetTxTimestamp(rangeNumber uint32) (*timestamp.Timestamp, error) {
 	//glh
 	/*
 		hdr, err := utils.GetHeader(stub.proposal.Header)
@@ -512,7 +512,7 @@ func (stub *ChaincodeStub) GetTxTimestamp() (*timestamp.Timestamp, error) {
 
 		return chdr.GetTimestamp(), nil
 	*/
-	headerTime, err := stub.handler.handleGetState("", modules.HeaderTimeKey, stub.ContractId, stub.ChannelId, stub.TxID)
+	headerTime, err := stub.handler.handleGetTimestamp("", rangeNumber, stub.ContractId, stub.ChannelId, stub.TxID)
 	if err != nil {
 		return nil, errors.New("handleGetState failed")
 	}
