@@ -30,26 +30,33 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury/vrfEc"
 	"github.com/palletone/go-palletone/common/crypto"
 	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
+	"github.com/palletone/go-palletone/consensus/jury/vrfEs"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core/accounts"
 )
 
 type vrfAccount struct {
-	pubKey *ecdsa.PublicKey
-	priKey *ecdsa.PrivateKey
+	pubKey *ecdsa.PublicKey  //vrfEc
+	priKey *ecdsa.PrivateKey //vrfEc
 }
 
 type elector struct {
 	num    uint
 	weight uint64
 	total  uint64
-	vrfAct vrfAccount
+	vrfAct vrfAccount //vrf ec
+
+	addr     common.Address
+	password string
+	ks       *keystore.KeyStore
 }
 
-func (e *elector) checkElected(data []byte) (proof []byte, err error) {
+func (e *elector) checkElectedEc(data []byte) (proof []byte, err error) {
 	if e.num < 0 || e.weight < 1 || data == nil {
 		errs := fmt.Sprintf("checkElected param error, num[%d], weight[%d]", e.num, e.weight)
 		return nil, errors.New(errs)
 	}
-	proof, err = vrfEc.VrfProve(e.vrfAct.priKey, data) //todo  后期调成为keystore中的vrf，先将功能调通
+	proof, err = vrfEc.VrfProve(e.vrfAct.priKey, data) //
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +69,55 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 	return nil, nil
 }
 
-func (e *elector) verifyVRF(proof, data []byte) (bool, error) {
+func (e *elector) checkElected(data []byte) (proof []byte, err error) {
+	if e.num < 0 || e.weight < 1 || data == nil {
+		errs := fmt.Sprintf("checkElected param error, num[%d], weight[%d]", e.num, e.weight)
+		return nil, errors.New(errs)
+	}
+	a := accounts.Account{
+		Address: e.addr,
+	}
+	privateKey, err := e.ks.DumpPrivateKey(a, e.password)
+	if err != nil {
+		return nil, err
+	}
+
+	proof, err = vrfEs.VrfProve(privateKey, data)
+	if err != nil {
+		return nil, err
+	}
+	vrfValue := proof
+	if len(vrfValue) > 0 {
+		if alg.Selected(e.num, e.weight, uint64(e.total), vrfValue) > 0 {
+			return proof, nil
+		}
+	}
+	return nil, nil
+}
+
+func (e *elector) verifyVrfEc(proof, data []byte) (bool, error) {
 	ok, err := vrfEc.VrfVerify(e.vrfAct.pubKey, data, proof)
 	if err != nil {
 		return false, err
 	}
 	if ok {
 		vrfValue := vrfEc.VrfProof2Value(e.vrfAct.pubKey.Params(), proof)
+		if len(vrfValue) > 0 {
+			if alg.Selected(e.num, e.weight, uint64(e.total), vrfValue) > 0 {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func (e *elector) verifyVrf(proof, data []byte, pubKey []byte) (bool, error) {
+	ok, err := vrfEs.VrfVerify(pubKey, data, proof)
+	if err != nil {
+		return false, err
+	}
+	if ok {
+		vrfValue := proof
 		if len(vrfValue) > 0 {
 			if alg.Selected(e.num, e.weight, uint64(e.total), vrfValue) > 0 {
 				return true, nil
@@ -126,7 +175,7 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 		log.Info("ProcessElectionResultEvent, The quantity has reached the requirement", "addrHash num ", eleInfo.eleNum)
 		return nil
 	}
-	ok, err := ele.verifyVRF(rstEvt.Proof, eleInfo.seedData)
+	ok, err := ele.verifyVrf(rstEvt.Proof, eleInfo.seedData, rstEvt.PublicKey)
 	if err != nil {
 		return err
 	}

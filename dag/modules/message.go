@@ -377,13 +377,6 @@ func assetAmt2DecimalAmt(asset *Asset, amount uint64) decimal.Decimal {
 	return d
 }
 
-//交易的内容
-type PayValue struct {
-	PayTokens *InvokeTokens `json:"pay_tokens"` //数量和资产
-	PayTime   int64         `json:"pay_time"`   //发生时间
-	//PayExtra  string        `json:"pay_extra"`  //额外内容
-}
-
 type TokenPayOut struct {
 	Asset    *Asset
 	Amount   uint64
