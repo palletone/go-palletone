@@ -85,70 +85,13 @@ func (d *Dag) IsEmpty() bool {
 	return !it.Next()
 }
 
-func (d *Dag) CurrentUnit() *modules.Unit {
-
-	//nconfig := &node.DefaultConfig
-	//gasToken := nconfig.GetGasToken()
-	return d.Memdag.GetLastMainchainUnit()
-
-	//hash, _, err := d.propRep.GetNewestUnit(gasToken)
-	//if err != nil {
-	//	log.Error("Can not get newest unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
-	//	return nil
-	//}
-	//unit, err := d.unstableUnitRep.GetUnit(hash)
-	//if err == nil {
-	//	log.Debugf("Get newest unit from memdag by hash:%s", hash.String())
-	//	return unit
-	//}
-	//log.Infof("Cannot get newest unit from memdag by hash:%s, try stable unit from db...", hash.String())
-	//hash, _, err = d.propRep.GetLastStableUnit(gasToken)
-	//if err != nil {
-	//	log.Error("Can not get last stable unit by gas token"+gasToken.ToAssetId(), "error", err.Error())
-	//	return nil
-	//}
-	//unit, err = d.unstableUnitRep.GetUnit(hash)
-	//if err != nil {
-	//	log.Error("Cannot get last stable unit from ldb", "error", err.Error())
-	//	return nil
-	//}
-	//return unit
-	//// step1. get current unit hash
-	//hash, err := d.GetHeadUnitHash()
-	//if err != nil {
-	//	log.Error("CurrentUnit when GetHeadUnitHash()", "error", err.Error())
-	//	return nil
-	//}
-	//// step2. get unit height
-	////height, err := d.GetUnitNumber(hash)
-	//// get unit header
-	//uHeader, err := d.unstableUnitRep.GetHeaderByHash(hash)
-	//if err != nil {
-	//	log.Error("Current unit when get unit header", "error", err.Error())
-	//	return nil
-	//}
-	//// get unit hash
-	//uHash := common.Hash{}
-	//uHash.SetBytes(hash.Bytes())
-	//// get transaction list
-	//txs, err := d.unstableUnitRep.GetUnitTransactions(uHash)
-	//if err != nil {
-	//	log.Error("Current unit when get transactions", "error", err.Error())
-	//	return nil
-	//}
-	//// generate unit
-	//unit := modules.Unit{
-	//	UnitHeader: uHeader,
-	//	UnitHash:   uHash,
-	//	Txs:        txs,
-	//}
-	//unit.UnitSize = unit.Size()
-	//return &unit
+func (d *Dag) CurrentUnit(token modules.IDType16) *modules.Unit {
+	return d.Memdag.GetLastMainchainUnit(token)
 }
 
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
-	curUnit := d.CurrentUnit()
+	curUnit := d.CurrentUnit(assetId)
 
 	if memUnit == nil {
 		return curUnit
@@ -160,11 +103,8 @@ func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
-	curUnit := d.Memdag.GetLastMainchainUnit()
-	//if err != nil {
-	//	log.Info("GetCurrentMemUnit", "error", err.Error())
-	//	return nil
-	//}
+	curUnit := d.Memdag.GetLastMainchainUnit(assetId)
+
 	return curUnit
 }
 
@@ -197,13 +137,6 @@ func (d *Dag) ParentsIsConfirmByHash(hash common.Hash) bool {
 	}
 	return false
 }
-
-// GetMemUnitbyHash: get unit from memdag
-//func (d *Dag) GetMemUnitbyHash(hash common.Hash) (*modules.Unit, error) {
-//
-//	unit, err := d.Memdag.GetUnit(hash)
-//	return unit, err
-//}
 
 func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
 	//return d.unstableUnitRep.GetUnitFormIndex(number)
@@ -389,8 +322,8 @@ func (d *Dag) Exists(hash common.Hash) bool {
 	exist, _ := d.unstableUnitRep.IsHeaderExist(hash)
 	return exist
 }
-func (d *Dag) CurrentHeader() *modules.Header {
-	unit := d.CurrentUnit()
+func (d *Dag) CurrentHeader(token modules.IDType16) *modules.Header {
+	unit := d.CurrentUnit(token)
 	if unit != nil {
 		return unit.Header()
 	}
@@ -1004,7 +937,8 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
 	// get current unit
-	currentUnit := d.CurrentUnit()
+	token := modules.PTNCOIN
+	currentUnit := d.CurrentUnit(token)
 	if currentUnit == nil {
 		return nil, fmt.Errorf("CreateUnitForTest ERROR: genesis unit is null")
 	}
@@ -1064,10 +998,10 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 	return d.unstableStateRep.GetContractTpl(templateID)
 }
 
-//@Yiran
-func (d *Dag) GetCurrentUnitIndex() (*modules.ChainIndex, error) {
-	currentUnitHash := d.CurrentUnit().UnitHash
-	return d.GetUnitNumber(currentUnitHash)
+func (d *Dag) GetCurrentUnitIndex(token modules.IDType16) (*modules.ChainIndex, error) {
+	currentUnit := d.CurrentUnit(token)
+	//	return d.GetUnitNumber(currentUnitHash)
+	return currentUnit.Number(), nil
 }
 
 //@Yiran save utxo snapshot when new mediator cycle begin
@@ -1313,6 +1247,9 @@ func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 
 //All leaf nodes for dag downloader.
 //MUST have Priority.
+//根据资产Id返回所有链的header。
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
+	// step1: get all AssetId
+
 	return []*modules.Header{}, nil
 }

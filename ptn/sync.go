@@ -251,7 +251,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
-	head := pm.dag.CurrentUnit()
+	head := pm.dag.CurrentUnit(assetId)
 	if head != nil && head.UnitHeader.Number.Index > 0 {
 		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
 	}
@@ -269,7 +269,7 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 	// Make sure the peer's TD is higher than our own
 	//TODO must recover
 	//currentHeader := pm.dag.CurrentHeader(assetId)
-	currentHeader := pm.dag.CurrentHeader()
+	currentHeader := pm.dag.CurrentHeader(assetId)
 	//if currentHeader == nil {
 	//	log.Info("light synchronise current header is nil")
 	//	return
@@ -294,7 +294,7 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
-	head := pm.dag.CurrentUnit()
+	head := pm.dag.CurrentUnit(assetId)
 	if head != nil && head.UnitHeader.Number.Index > 0 {
 		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
 	}

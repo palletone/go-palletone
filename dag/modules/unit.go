@@ -59,15 +59,14 @@ const (
 )
 
 type Header struct {
-	ParentsHash []common.Hash `json:"parents_hash"`
-	//AssetIDs     []IDType16    `json:"assets"`
-	Authors      Authentifier `json:"mediator"`    // the unit creation authors
-	GroupSign    []byte       `json:"groupSign"`   // 群签名, 用于加快单元确认速度
-	GroupPubKey  []byte       `json:"groupPubKey"` // 群公钥, 用于验证群签名
-	TxRoot       common.Hash  `json:"root"`
-	Number       *ChainIndex  `json:"index"`
-	Extra        []byte       `json:"extra"`
-	Creationdate int64        `json:"creation_time"` // unit create time
+	ParentsHash  []common.Hash `json:"parents_hash"`
+	Authors      Authentifier  `json:"mediator"`    // the unit creation authors
+	GroupSign    []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
+	GroupPubKey  []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
+	TxRoot       common.Hash   `json:"root"`
+	Number       *ChainIndex   `json:"index"`
+	Extra        []byte        `json:"extra"`
+	Creationdate int64         `json:"creation_time"` // unit create time
 }
 
 func (cpy *Header) CopyHeader(h *Header) {

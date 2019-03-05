@@ -39,7 +39,7 @@ type IDag interface {
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 
 	IsEmpty() bool
-	CurrentUnit() *modules.Unit
+	CurrentUnit(token modules.IDType16) *modules.Unit
 	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
@@ -54,7 +54,7 @@ type IDag interface {
 	//GetPrefix(prefix string) map[string][]byte
 
 	// CurrentHeader retrieves the head header from the local chain.
-	CurrentHeader() *modules.Header
+	CurrentHeader(token modules.IDType16) *modules.Header
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
@@ -110,12 +110,6 @@ type IDag interface {
 	/* Vote */
 	//GetElectedMediatorsAddress() (map[string]uint64, error)
 	//GetAccountMediatorVote(address common.Address) []common.Address
-
-	// get token info
-	//GetTokenInfo(key string) (*modules.TokenInfo, error)
-	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
-	//// save token info
-	//SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error)
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
