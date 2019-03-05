@@ -228,7 +228,7 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 		header.Number.Index = index
 		if header10, _ := idag.GetHeaderByNumber(header.Number); header10 != nil {
 			headerTime := fmt.Sprintf("%d", header10.Creationdate)
-			txsim.SetState(chainID, modules.HeaderTimeKey, []byte(headerTime)) // add time to contract
+			txsim.SetState(cid.Name, modules.HeaderTimeKey, []byte(headerTime)) // add time to contract
 		} else {
 			log.Debugf("ProcessProposal", "dag.GetHeaderByNumber not found. Index:", index)
 		}
