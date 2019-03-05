@@ -1941,13 +1941,11 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 	//
 	fromAddr, err := common.StringToAddress(from)
 	if err != nil {
-		fmt.Println(err.Error())
-		return common.Hash{}, err
+		return common.Hash{}, fmt.Errorf("sender address is invalid")
 	}
 	toAddr, err := common.StringToAddress(to)
 	if err != nil {
-		fmt.Println(err.Error())
-		return common.Hash{}, err
+		return common.Hash{}, fmt.Errorf("receive address is invalid")
 	}
 	//all utxos
 	utxoJsons, err := s.b.GetAddrUtxos(from)
