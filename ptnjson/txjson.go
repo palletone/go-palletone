@@ -126,7 +126,6 @@ func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *Ins
 func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *DeployRequestJson {
 	reqJson := &DeployRequestJson{}
 	reqJson.TplId = string(req.TplId)
-	reqJson.TxId = req.TxId
 	reqJson.Args = []string{}
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))

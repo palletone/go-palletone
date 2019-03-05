@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
@@ -508,7 +507,7 @@ var (
 	LogOutputPathFlag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
-		Value: strings.Join(log.DefaultConfig.OutputPaths, ","),
+		Value: "", //strings.Join(log.DefaultConfig.OutputPaths, ","),
 	}
 
 	LogLevelFlag = cli.StringFlag{
@@ -524,7 +523,7 @@ var (
 	LogErrPathFlag = cli.StringFlag{
 		Name:  "log.errpath",
 		Usage: "Log errpath",
-		Value: strings.Join(log.DefaultConfig.ErrorOutputPaths, ","),
+		Value: "", //strings.Join(log.DefaultConfig.ErrorOutputPaths, ","),
 	}
 	LogEncodingFlag = cli.StringFlag{
 		Name:  "log.encoding",
@@ -534,7 +533,7 @@ var (
 	LogOpenModuleFlag = cli.StringFlag{
 		Name:  "log.openmodule",
 		Usage: "Log openmodule",
-		Value: strings.Join(log.DefaultConfig.OpenModule, ","),
+		Value: "all", //strings.Join(log.DefaultConfig.OpenModule, ","),
 	}
 )
 
@@ -819,7 +818,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 
 // SetNodeConfig applies node-related command line flags to the config.
 // 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
-func SetNodeConfig(ctx *cli.Context, cfg *node.Config, path string) {
+func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) (dataDir string) {
 	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
@@ -834,15 +833,35 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, path string) {
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "testnet")
 	}
 
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.DataDir) {
+		path := filepath.Join(configDir, cfg.DataDir)
+		cfg.DataDir = common.GetAbsPath(path)
+	}
+	dataDir = cfg.DataDir
+
 	if ctx.GlobalIsSet(KeyStoreDirFlag.Name) {
 		cfg.KeyStoreDir = ctx.GlobalString(KeyStoreDirFlag.Name)
 	}
+
+	if cfg.KeyStoreDir == "" {
+		cfg.KeyStoreDir = filepath.Join(dataDir, "keystore")
+	}
+
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.KeyStoreDir) {
+		path := filepath.Join(configDir, cfg.KeyStoreDir)
+		cfg.KeyStoreDir = common.GetAbsPath(path)
+	}
+
 	// if ctx.GlobalIsSet(LightKDFFlag.Name) {
 	// 	cfg.UseLightweightKDF = ctx.GlobalBool(LightKDFFlag.Name)
 	// }
 	// if ctx.GlobalIsSet(NoUSBFlag.Name) {
 	// 	cfg.NoUSB = ctx.GlobalBool(NoUSBFlag.Name)
 	// }
+
+	return
 }
 
 /*
@@ -939,7 +958,7 @@ func checkExclusive(ctx *cli.Context, args ...interface{}) {
 // }
 
 // SetDagConfig applies dag related command line flags to the config.
-func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config) {
+func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 	//	if ctx.GlobalIsSet(DagValue1Flag.Name) {
 	//		cfg.DbPath = ctx.GlobalString(DagValue1Flag.Name)
 	//	}
@@ -947,18 +966,20 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config) {
 	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	//	}
 
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.DbPath) {
+		path := filepath.Join(dataDir, cfg.DbPath)
+		cfg.DbPath = common.GetAbsPath(path)
+	}
+
 	dagconfig.DagConfig = *cfg
 }
 
-func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config) {
-	switch {
-	case ctx.GlobalIsSet(DataDirFlag.Name):
-		dataDir := ctx.GlobalString(DataDirFlag.Name)
-		dataDir = strings.Replace(dataDir, "palletone", "", 1)
-		if !filepath.IsAbs(cfg.ContractFileSystemPath) {
-			path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
-			cfg.ContractFileSystemPath = GetAbsDirectory(path)
-		}
+func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string) {
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.ContractFileSystemPath) {
+		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
+		cfg.ContractFileSystemPath = common.GetAbsPath(path)
 	}
 }
 
@@ -991,8 +1012,8 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
 	if ctx.GlobalIsSet(LogIsDebugFlag.Name) {
 		cfg.Development = ctx.GlobalBool(LogIsDebugFlag.Name)
 	}
-	if ctx.GlobalIsSet(LogOpenModuleFlag.Name) {
-		cfg.OpenModule = []string{ctx.GlobalString(LogOpenModuleFlag.Name)}
+	if temp := ctx.GlobalString(LogOpenModuleFlag.Name); temp != "" {
+		cfg.OpenModule = strings.Split(temp, ",")
 	}
 
 	// 重新计算log.ErrPath的路径
@@ -1020,14 +1041,14 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
 	log.ApplyConfig(cfg)
 }
 
-func GetAbsDirectory(path string) string {
-	dir, err := filepath.Abs(path)
-	if err != nil {
-		Fatalf("GetAbsDirectory err:", err)
-		return ""
-	}
-	return strings.Replace(dir, "\\", "/", -1)
-}
+//func GetAbsDirectory(path string) string {
+//	dir, err := filepath.Abs(path)
+//	if err != nil {
+//		Fatalf("GetAbsDirectory err:", err)
+//		return ""
+//	}
+//	return strings.Replace(dir, "\\", "/", -1)
+//}
 
 // SetDagConfig applies dag related command line flags to the config.
 //func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
@@ -1182,21 +1203,21 @@ func SetupNetwork(ctx *cli.Context) {
 }
 
 // MakeChainDatabase open an LevelDB using the flags passed to the client and will hard crash if it fails.
-func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
-	var (
-		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
-		handles = makeDatabaseHandles()
-	)
-	name := "chaindata"
-	if ctx.GlobalBool(LightModeFlag.Name) {
-		name = "lightchaindata"
-	}
-	chainDb, err := stack.OpenDatabase(name, cache, handles)
-	if err != nil {
-		Fatalf("Could not open database: %v", err)
-	}
-	return chainDb
-}
+//func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
+//	var (
+//		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
+//		handles = makeDatabaseHandles()
+//	)
+//	name := "chaindata"
+//	if ctx.GlobalBool(LightModeFlag.Name) {
+//		name = "lightchaindata"
+//	}
+//	chainDb, err := stack.OpenDatabase(name, cache, handles)
+//	if err != nil {
+//		Fatalf("Could not open database: %v", err)
+//	}
+//	return chainDb
+//}
 
 func MakeGenesis(ctx *cli.Context) *core.Genesis {
 	var genesis *core.Genesis

@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -166,7 +167,7 @@ func getTimestamp(ctx *cli.Context) error {
 func listMediators(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 
-	Dbconn, err := node.OpenDatabase("leveldb", 0, 0)
+	Dbconn, err := node.OpenDatabase(dagconfig.DagConfig.DbPath, 0, 0)
 	if err != nil {
 		fmt.Println("leveldb init failed!")
 		return err

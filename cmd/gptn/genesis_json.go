@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
@@ -190,7 +191,8 @@ func createGenesisJson(ctx *cli.Context) error {
 }
 
 func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
-	cfg := &FullConfig{Node: defaultNodeConfig()}
+	//cfg := &FullConfig{Node: defaultNodeConfig()}
+	cfg := new(FullConfig)
 	configPath := getConfigPath(ctx)
 
 	// 加载配置文件中的配置信息到 cfg中
@@ -230,6 +232,10 @@ func getGenesisPath(ctx *cli.Context) string {
 	if len(genesisOut) == 0 {
 		// utils.Fatalf("Must supply path to genesis JSON file")
 		genesisOut = defaultGenesisJsonPath
+	}
+
+	if files.IsDir(genesisOut) {
+		genesisOut = filepath.Join(genesisOut, defaultGenesisJsonPath)
 	}
 
 	return common.GetAbsPath(genesisOut)

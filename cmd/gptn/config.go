@@ -155,9 +155,8 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
-func adaptorConfig(config *FullConfig) *FullConfig {
+func adaptorPtnConfig(config *FullConfig) *FullConfig {
 	config.Ptn.TxPool = config.TxPool
-	config.Node.P2P = config.P2P
 	config.Ptn.Dag = config.Dag
 	config.Ptn.Jury = config.Jury
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
@@ -182,6 +181,7 @@ func getConfigPath(ctx *cli.Context) string {
 }
 
 func parseLogPath(endpoint string, cfg *log.Config) error {
+	// todo 在windows系统下，ipc文件在\\.\pipe\ 目录下，需特殊处理
 	endpoint, err := filepath.Abs(endpoint)
 	if err != nil {
 		return err
@@ -196,11 +196,11 @@ func parseLogPath(endpoint string, cfg *log.Config) error {
 
 	if !filepath.IsAbs(cfg.OutputPaths[1]) {
 		path := filepath.Join(logpath, cfg.OutputPaths[1])
-		cfg.OutputPaths[1] = utils.GetAbsDirectory(path)
+		cfg.OutputPaths[1] = common.GetAbsPath(path)
 	}
 	if !filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
 		path := filepath.Join(logpath, cfg.ErrorOutputPaths[1])
-		cfg.ErrorOutputPaths[1] = utils.GetAbsDirectory(path)
+		cfg.ErrorOutputPaths[1] = common.GetAbsPath(path)
 	}
 	return nil
 }
@@ -248,7 +248,7 @@ func parseDataPath(ctx *cli.Context, endpoint string) string {
 func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
 	configPath := getConfigPath(ctx)
-	cfg := newDefaultConfig()
+	cfg := DefaultConfig()
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.FileExist(configPath) {
@@ -290,24 +290,26 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
 	utils.SetLogConfig(ctx, &cfg.Log, configDir)
 
+	cfg.Node.P2P = cfg.P2P
+	dataDir := utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
+	stack, err := node.New(&cfg.Node)
+	if err != nil {
+		utils.Fatalf("Failed to create the protocol stack: %v", err)
+	}
+
 	utils.SetP2PConfig(ctx, &cfg.P2P)
-	utils.SetContractConfig(ctx, &cfg.Contract)
+	utils.SetContractConfig(ctx, &cfg.Contract, dataDir)
 	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
-	utils.SetDagConfig(ctx, &cfg.Dag)
+	utils.SetDagConfig(ctx, &cfg.Dag, dataDir)
 	mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
 	jury.SetJuryConfig(ctx, &cfg.Jury)
 
 	// 为了方便用户配置，所以将各个子模块的配置提升到与ptn同级，
 	// 然而在RegisterPtnService()中，只能使用ptn下的配置
 	// 所以在此处将各个子模块的配置，复制到ptn下
-	adaptorConfig(&cfg)
+	adaptorPtnConfig(&cfg)
 
-	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
-	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
-	stack, err := node.New(&cfg.Node)
-	if err != nil {
-		utils.Fatalf("Failed to create the protocol stack: %v", err)
-	}
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
@@ -345,7 +347,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
-	cfg := newDefaultConfig()
+	cfg := DefaultConfig()
 	configPath := getDumpConfigPath(ctx)
 
 	err := makeConfigFile(&cfg, configPath)
@@ -365,11 +367,15 @@ func getDumpConfigPath(ctx *cli.Context) string {
 		configPath = defaultConfigPath
 	}
 
+	if files.IsDir(configPath) {
+		configPath = filepath.Join(configPath, defaultConfigPath)
+	}
+
 	return common.GetAbsPath(configPath)
 }
 
 func dumpUserCfg(ctx *cli.Context) error {
-	cfg := newDefaultConfig()
+	cfg := DefaultConfig()
 	cfg.MediatorPlugin = mp.MakeConfig()
 	cfg.Jury = jury.MakeConfig()
 
@@ -384,9 +390,9 @@ func dumpUserCfg(ctx *cli.Context) error {
 	return nil
 }
 
-// newDefaultConfig, create a default config
+// DefaultConfig, create a default config
 // @author Albert·Gou
-func newDefaultConfig() FullConfig {
+func DefaultConfig() FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
 	return FullConfig{
 		Ptn:            ptn.DefaultConfig,
