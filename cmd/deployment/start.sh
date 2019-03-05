@@ -7,6 +7,7 @@ function StartGPTN()
         nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml >> node$1/nohup.out &
     else
         nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml --noProduce --staleProduce  >> node$1/nohup.out &
+        #nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml --noProduce --staleProduce --allowConsecutive  >> node$1/nohup.out &
     fi
 }
 
