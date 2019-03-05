@@ -70,7 +70,7 @@ var (
 		utils.TxPoolPriceLimitFlag,
 		utils.TxPoolPriceBumpFlag,
 		utils.TxPoolGlobalSlotsFlag,
-		utils.TxPoolAccountQueueFlag,
+		//utils.TxPoolAccountQueueFlag,
 		utils.TxPoolGlobalQueueFlag,
 		utils.TxPoolLifetimeFlag,
 		utils.FastSyncFlag,

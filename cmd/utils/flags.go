@@ -232,11 +232,11 @@ var (
 		Usage: "Maximum number of executable transaction slots for all accounts",
 		Value: ptn.DefaultConfig.TxPool.GlobalSlots,
 	}
-	TxPoolAccountQueueFlag = cli.Uint64Flag{
-		Name:  "txpool.accountqueue",
-		Usage: "Maximum number of non-executable transaction slots permitted per account",
-		Value: ptn.DefaultConfig.TxPool.AccountQueue,
-	}
+	//TxPoolAccountQueueFlag = cli.Uint64Flag{
+	//	Name:  "txpool.accountqueue",
+	//	Usage: "Maximum number of non-executable transaction slots permitted per account",
+	//	Value: ptn.DefaultConfig.TxPool.AccountQueue,
+	//}
 	TxPoolGlobalQueueFlag = cli.Uint64Flag{
 		Name:  "txpool.globalqueue",
 		Usage: "Maximum number of non-executable transaction slots for all accounts",
@@ -870,9 +870,9 @@ func setTxPool(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
 	if ctx.GlobalIsSet(TxPoolGlobalSlotsFlag.Name) {
 		cfg.GlobalSlots = ctx.GlobalUint64(TxPoolGlobalSlotsFlag.Name)
 	}
-	if ctx.GlobalIsSet(TxPoolAccountQueueFlag.Name) {
-		cfg.AccountQueue = ctx.GlobalUint64(TxPoolAccountQueueFlag.Name)
-	}
+	//if ctx.GlobalIsSet(TxPoolAccountQueueFlag.Name) {
+	//	cfg.AccountQueue = ctx.GlobalUint64(TxPoolAccountQueueFlag.Name)
+	//}
 	if ctx.GlobalIsSet(TxPoolGlobalQueueFlag.Name) {
 		cfg.GlobalQueue = ctx.GlobalUint64(TxPoolGlobalQueueFlag.Name)
 	}

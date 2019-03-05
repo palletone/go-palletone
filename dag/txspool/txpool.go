@@ -109,9 +109,8 @@ type TxPoolConfig struct {
 	FeeLimit  uint64 // Minimum tx's fee  to enforce for acceptance into the pool
 	PriceBump uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
 
-	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
-	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
-	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
+	GlobalSlots uint64 // Maximum number of executable transaction slots for all accounts
+	GlobalQueue uint64 // Maximum number of non-executable transaction slots for all accounts
 
 	Lifetime   time.Duration // Maximum amount of time non-executable transaction are queued
 	Removetime time.Duration // Maximum amount of time txpool transaction are removed
@@ -136,10 +135,8 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	FeeLimit:  1,
 	PriceBump: 10,
 
-	//AccountSlots: 16,
-	GlobalSlots:  4096,
-	AccountQueue: 64,
-	GlobalQueue:  1024,
+	GlobalSlots: 4096,
+	GlobalQueue: 1024,
 
 	Lifetime:        3 * time.Hour,
 	Removetime:      30 * time.Minute,
