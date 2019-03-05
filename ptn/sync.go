@@ -157,12 +157,12 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			pm.syncall()
+			go pm.syncall()
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
 			log.Debug("start force Sync")
-			pm.syncall()
+			go pm.syncall()
 
 		case <-pm.noMorePeers:
 			return
@@ -175,12 +175,12 @@ func (pm *ProtocolManager) syncall() {
 	asset.SetString(strings.ToUpper(pm.SubProtocols[0].Name))
 	log.Info("ProtocolManager syncall", "pm.SubProtocols[0].Name", pm.SubProtocols[0].Name)
 	peer := pm.peers.BestPeer(asset.AssetId)
-	go pm.synchronise(peer, asset.AssetId)
-	return
+	pm.synchronise(peer, asset.AssetId)
+	//return
 	if pm.SubProtocols[0].Name != ProtocolName || peer == nil {
 		return
 	}
-	go pm.lightsync(peer)
+	pm.lightsync(peer)
 }
 
 func (pm *ProtocolManager) lightsync(peer *peer) {
