@@ -122,7 +122,7 @@ func (d *Dag) CurrentUnit() *modules.Unit {
 	//// step2. get unit height
 	////height, err := d.GetUnitNumber(hash)
 	//// get unit header
-	//uHeader, err := d.unstableUnitRep.GetHeader(hash)
+	//uHeader, err := d.unstableUnitRep.GetHeaderByHash(hash)
 	//if err != nil {
 	//	log.Error("Current unit when get unit header", "error", err.Error())
 	//	return nil
@@ -238,7 +238,7 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	//	return nil
 	//}
 	// get unit header
-	uHeader, err := d.unstableUnitRep.GetHeader(hash)
+	uHeader, err := d.unstableUnitRep.GetHeaderByHash(hash)
 	if err != nil {
 		log.Debug("Current unit when get unit header", "error", err.Error())
 		return nil, err
@@ -259,13 +259,13 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//}
 	uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
 	if err1 != nil {
-		log.Debug("getChainUnit when GetHeader failed ", "error:", err1, "hash", number.String())
+		log.Debug("getChainUnit when GetHeaderByHash failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
 	//uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
 	//if err1 != nil {
-	//	log.Debug("GetUnit when GetHeader failed ", "error:", err1, "hash", number.String())
+	//	log.Debug("GetUnit when GetHeaderByHash failed ", "error:", err1, "hash", number.String())
 	//	//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 	//	return nil, err1
 	//}
@@ -364,7 +364,7 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 			break
 		}
 		next := header.ParentsHash[0]
-		h, err := d.unstableUnitRep.GetHeader(next)
+		h, err := d.unstableUnitRep.GetHeaderByHash(next)
 		if err != nil {
 			break
 		}

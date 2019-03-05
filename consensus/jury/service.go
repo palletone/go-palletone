@@ -74,6 +74,7 @@ type iDag interface {
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	GetHeaderByHash(common.Hash) (*modules.Header, error)
 }
 
 type Juror struct {
@@ -454,7 +455,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if addrs, ok := p.lockAddr[contractId]; !ok || len(addrs) < p.electionNum {
-			p.lockAddr[contractId] = []common.Hash{} //清空
+			p.lockAddr[contractId] = []common.Hash{}                       //清空
 			if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 				return nil, nil, err
 			}
