@@ -584,32 +584,11 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-//local test
-func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
-	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
-	pm.contractCh <- event
-}
-
-func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
-	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
-	peers := pm.peers.GetPeers()
-	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
-
-	for _, peer := range peers {
-		if err := peer.SendContractTransaction(event); err != nil {
-			log.Error("ProtocolManager ContractBroadcast", "SendContractTransaction err:", err.Error())
-		}
+func (pm *ProtocolManager) GetLeafNodesMsg(msg p2p.Msg, p *peer) error {
+	headers, err := pm.dag.GetAllLeafNodes()
+	if err != nil {
+		log.Info("===GetLeafNodesMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-
-	if local {
-		go pm.contractProc.ProcessContractEvent(&event)
-	}
-}
-
-func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
-	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent), "data", event.Event.(jury.ElectionRequestEvent).Data)
-	peers := pm.peers.GetPeers()
-	for _, peer := range peers {
-		peer.SendElectionEvent(event)
-	}
+	return p.SendUnitHeaders(headers)
 }

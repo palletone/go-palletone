@@ -407,7 +407,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		log.Error("ComputeFees is failed.", "error", err.Error())
 		return nil, err
 	} else {
-		log.Debug("THE unit transactions fee is here. ", "fees", fees)
+		log.Debug("The unit transactions fee is here. ", "fees", fees)
 	}
 	additions := make(map[common.Address]*modules.Addition)
 	//TODO 附加利息收益

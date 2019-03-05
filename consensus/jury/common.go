@@ -127,7 +127,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				req := ContractDeployReq{
 					chainID:    "palletone",
 					templateId: reqPay.TplId,
-					txid:       reqPay.TxId,
+					txid:       string(common.BytesToAddress(trs.RequestHash().Bytes()).Bytes()),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout),
 				}
@@ -162,7 +162,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					return msg.App, nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -469,27 +469,3 @@ func getElectionSeedData(in common.Hash) ([]byte, error) {
 	return seedData, nil
 }
 
-func getContractIdFromMsg(msg *modules.Message) common.Address {
-	if msg == nil {
-		return common.Address{}
-	}
-	switch msg.App {
-	case modules.APP_CONTRACT_DEPLOY_REQUEST:
-		{
-			payload := msg.Payload.(*modules.ContractDeployRequestPayload)
-			//hex.DecodeString(txId)
-			return common.HexToAddress(payload.TxId)
-		}
-	case modules.APP_CONTRACT_INVOKE_REQUEST:
-		{
-			payload := msg.Payload.(*modules.ContractInvokeRequestPayload)
-			return common.BytesToAddress(payload.ContractId)
-		}
-	case modules.APP_CONTRACT_STOP_REQUEST:
-		{
-			payload := msg.Payload.(*modules.ContractStopRequestPayload)
-			return common.BytesToAddress(payload.ContractId)
-		}
-	}
-	return common.Address{}
-}

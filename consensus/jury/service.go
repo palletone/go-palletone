@@ -40,8 +40,6 @@ import (
 	"github.com/palletone/go-palletone/validator"
 )
 
-type PeerType = uint8
-
 const (
 	TJury     = 2
 	TMediator = 4
@@ -427,7 +425,7 @@ func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, d
 	}
 	log.Debug("createContractTxReq", "tx:", tx)
 
-	return p.signAndExecute(getContractIdFromMsg(msg), from, tx, isLocalInstall)
+	return p.signAndExecute(common.BytesToAddress(tx.RequestHash().Bytes()), from, tx, isLocalInstall)
 }
 
 func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
@@ -437,7 +435,7 @@ func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoF
 	}
 	log.Debug("createContractTxReq", "tx:", tx)
 
-	return p.signAndExecute(getContractIdFromMsg(msg), from, tx, isLocalInstall)
+	return p.signAndExecute(common.BytesToAddress(tx.RequestHash().Bytes()), from, tx, isLocalInstall)
 }
 
 func (p *Processor) signAndExecute(contractId common.Address, from common.Address, tx *modules.Transaction, isLocalInstall bool) ([]byte, *modules.Transaction, error) {
@@ -456,7 +454,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if addrs, ok := p.lockAddr[contractId]; !ok || len(addrs) < p.electionNum {
-			p.lockAddr[contractId] = []common.Hash{}                       //清空
+			p.lockAddr[contractId] = []common.Hash{} //清空
 			if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 				return nil, nil, err
 			}

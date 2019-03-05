@@ -113,7 +113,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			hasRequestMsg = true
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
-			if len(payload.TplId) == 0 || payload.TxId == "" || payload.Timeout < 0 {
+			if len(payload.TplId) == 0 || payload.Timeout < 0 {
 				return TxValidationCode_INVALID_CONTRACT
 			}
 
@@ -163,7 +163,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			if validateCode != TxValidationCode_VALID {
 				return validateCode
 			}
-
 
 		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:

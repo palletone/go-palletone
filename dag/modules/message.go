@@ -79,15 +79,15 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	default:
 		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
 		msg.Payload = cpyMsg.Payload
-	//case APP_CONFIG:
-	//	payload, _ := cpyMsg.Payload.(*ConfigPayload)
-	//	newPayload := ConfigPayload{
-	//		ConfigSet: []ContractWriteSet{},
-	//	}
-	//	for _, p := range payload.ConfigSet {
-	//		newPayload.ConfigSet = append(newPayload.ConfigSet, ContractWriteSet{Key: p.Key, Value: p.Value})
-	//	}
-	//	msg.Payload = newPayload
+		//case APP_CONFIG:
+		//	payload, _ := cpyMsg.Payload.(*ConfigPayload)
+		//	newPayload := ConfigPayload{
+		//		ConfigSet: []ContractWriteSet{},
+		//	}
+		//	for _, p := range payload.ConfigSet {
+		//		newPayload.ConfigSet = append(newPayload.ConfigSet, ContractWriteSet{Key: p.Key, Value: p.Value})
+		//	}
+		//	msg.Payload = newPayload
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
@@ -340,7 +340,6 @@ type InvokeInfo struct {
 	InvokeAddress string          `json:"invoke_address"` //请求地址
 	InvokeTokens  []*InvokeTokens `json:"invoke_tokens"`  //请求数量
 	InvokeFees    *AmountAsset    `json:"invoke_fees"`    //请求交易费
-
 }
 
 //请求的数量
@@ -459,7 +458,6 @@ type ContractTplRequestPayload struct {
 
 type ContractDeployRequestPayload struct {
 	TplId   []byte   `json:"tpl_name"`
-	TxId    string   `json:"transaction_id"` //todo
 	Args    [][]byte `json:"args"`
 	Timeout uint32   `json:"timeout"`
 }
@@ -719,7 +717,7 @@ func (a *ContractDeployRequestPayload) Equal(b *ContractDeployRequestPayload) bo
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.TplId, b.TplId) || !strings.EqualFold(a.TxId, b.TxId) || a.Timeout != b.Timeout {
+	if !bytes.Equal(a.TplId, b.TplId) || a.Timeout != b.Timeout {
 		return false
 	}
 	if len(a.Args) == len(b.Args) {

@@ -1689,12 +1689,11 @@ func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 			}
 			// Make sure the peer actually gave something valid
 			headers := packet.(*headerPack).headers
-			if len(headers) != 1 {
+			if len(headers) < 0 {
 				log.Debug("Multiple headers for single request", "headers", len(headers), "peer", p.id)
 				return nil, errBadPeer
 			}
-			head := headers[0]
-			log.Debug("Remote head header identified", "number", head.Number.Index, "hash", head.Hash(), "peer", packet.PeerId())
+			log.Debug("Remote leaf nodes", "counts", len(headers), "peer", packet.PeerId())
 			return headers, nil
 
 		case <-timeout:

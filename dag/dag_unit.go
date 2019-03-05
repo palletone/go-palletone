@@ -118,19 +118,21 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// dag.setUnitHeader(pendingUnit)
 
 	pendingUnit.UnitHeader.Creationdate = when.Unix()
-	currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()
-	pendingUnit.UnitHeader.ParentsHash[0] = currentHash
-	header, err := dag.GetHeaderByHash(currentHash)
-	if header == nil {
-		index, err := dag.GetIrreversibleUnit(gasToken)
-		if err != nil {
-			// todo
-			log.Error("GetCurrent header failed ", "error", err)
-		}
-		pendingUnit.UnitHeader.Number.Index = index.Index + 1
-	} else {
-		pendingUnit.UnitHeader.Number.Index = header.Number.Index + 1
-	}
+	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
+	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	//currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()
+	//pendingUnit.UnitHeader.ParentsHash[0] = currentHash
+	//header, err := dag.GetHeaderByHash(currentHash)
+	//if header == nil {
+	//	index, err := dag.GetIrreversibleUnit(gasToken)
+	//	if err != nil {
+	//		// todo
+	//		log.Error("GetCurrent header failed ", "error", err)
+	//	}
+	//	pendingUnit.UnitHeader.Number.Index = index.Index + 1
+	//} else {
+	//	pendingUnit.UnitHeader.Number.Index = header.Number.Index + 1
+	//}
 	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
 	pendingUnit.Hash()
 
