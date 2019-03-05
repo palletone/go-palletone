@@ -27,10 +27,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
@@ -87,7 +87,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	//defer func(start time.Time) {
 	//	log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
 	//}(time.Now())
-	gasToken := node.DefaultConfig.GetGasToken()
+	gasToken := dagconfig.DagConfig.GetGasToken()
 
 	// 1. 判断是否满足生产的若干条件
 
