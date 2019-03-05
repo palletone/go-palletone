@@ -167,10 +167,6 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"No vote end time\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	if VoteEndTime.Before(time.Now().UTC()) {
-		jsonResp := "{\"Error\":\"Invalid time\"}"
-		return shim.Success([]byte(jsonResp))
-	}
 	vt.VoteEndTime = VoteEndTime
 	//VoteContent
 	var voteTopics []VoteTopic
@@ -273,7 +269,12 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte(jsonResp))
 	}
 	//check time
-	if tokenInfo.VoteEndTime.Before(time.Now().UTC()) {
+	headerTime, err := stub.GetTxTimestamp()
+	if err != nil {
+		jsonResp := "{\"Error\":\"GetTxTimestamp invalid, Error!!!\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	if headerTime.Seconds > tokenInfo.VoteEndTime.Unix() {
 		jsonResp := "{\"Error\":\"Vote is over\"}"
 		return shim.Success([]byte(jsonResp))
 	}

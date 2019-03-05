@@ -38,7 +38,7 @@ func TestGetUnit(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	//l := log.NewTestLog()
 	dagdb := NewDagDb(db)
-	u, err := dagdb.GetHeader(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
+	u, err := dagdb.GetHeaderByHash(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 	assert.Nil(t, u, "empty db, must return nil Unit")
 	assert.NotNil(t, err)
 }
@@ -90,7 +90,7 @@ func TestGetHeader(t *testing.T) {
 
 	err := dagdb.SaveHeader(h)
 	assert.Nil(t, err)
-	dbHeader, err := dagdb.GetHeader(h.Hash())
+	dbHeader, err := dagdb.GetHeaderByHash(h.Hash())
 	assert.Nil(t, err)
 	t.Logf("%#v", dbHeader)
 	assertRlpHashEqual(t, h, dbHeader)

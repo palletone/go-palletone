@@ -29,6 +29,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -511,7 +512,13 @@ func (stub *ChaincodeStub) GetTxTimestamp() (*timestamp.Timestamp, error) {
 
 		return chdr.GetTimestamp(), nil
 	*/
-	return nil, errors.New("glh unfinished")
+	headerTime, err := stub.handler.handleGetState("", modules.HeaderTimeKey, stub.ContractId, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, errors.New("handleGetState failed")
+	}
+	secs, _ := strconv.ParseInt(string(headerTime), 10, 64)
+	timeStamp := &(timestamp.Timestamp{Seconds: secs, Nanos: 0})
+	return timeStamp, nil
 }
 
 // ------------- ChaincodeEvent API ----------------------

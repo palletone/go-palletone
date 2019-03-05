@@ -166,6 +166,19 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	if header.Number == nil {
 		return UNIT_STATE_INVALID_HEADER
 	}
+	parentHeader, err := validate.dagquery.GetHeaderByHash(header.ParentsHash[0])
+	if err != nil {
+		log.Errorf("Get header by hash[%s] err:%s", header.ParentsHash[0].String(), err.Error())
+		return UNIT_STATE_INVALID_HEADER
+	}
+	if parentHeader.Number.Index+1 != header.Number.Index {
+		log.Errorf("Unit[%s] has invalid number %d, parent unit[%s] number is %d", header.Hash().String(), header.Number.Index, parentHeader.Hash().String(), parentHeader.Number.Index)
+		return UNIT_STATE_INVALID_HEADER
+	}
+	if parentHeader.Number.AssetID != header.Number.AssetID {
+		log.Errorf("Unit[%s] has invalid asset %s, parent unit[%s] asset is %s", header.Hash().String(), header.Number.AssetID.String(), parentHeader.Hash().String(), parentHeader.Number.AssetID.String())
+		return UNIT_STATE_INVALID_HEADER
+	}
 	//if len(header.AssetIDs) == 0 {
 	//	return modules.UNIT_STATE_INVALID_HEADER
 	//}

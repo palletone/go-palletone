@@ -91,7 +91,9 @@ func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
 }
-
+func (ud *UnitDag4Test) GetHeaderByHash(common.Hash) (*modules.Header, error) {
+	return nil, nil
+}
 func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	if ud.outpoints == nil {
 		return nil, fmt.Errorf("outpoints is nil ")
@@ -241,7 +243,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		msgs = append(msgs, modules.NewMessage(modules.APP_DATA, &modules.DataPayload{MainData: []byte(fmt.Sprintf("text%d%v", i, time.Now()))}))
 	}
 
-	for j := 0; j < int(config.AccountSlots)*1; j++ {
+	for j := 0; j < 16; j++ {
 		txs = append(txs, transaction(append(msgs1, msgs[j])))
 	}
 	fmt.Println("range txs start.... ", time.Now().Unix()-t0.Unix())
@@ -272,7 +274,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	t1 := time.Now()
 	fmt.Println("addlocals start.... ", t1)
 	pool.AddLocals(txpool_txs)
-	pendingTxs, _ := pool.Pending()
+	pendingTxs, _ := pool.pending()
 	pending := 0
 	p_txs := make([]*modules.TxPoolTransaction, 0)
 	for _, txs := range pendingTxs {
@@ -284,8 +286,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 	log.Debugf("pending:%d", pending)
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
 	for hash, list := range pendingTxs {
-		if len(list) != int(config.AccountSlots) {
-			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(list), config.AccountSlots)
+		if len(list) != 16 {
+			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(list), 16)
 		} else {
 			log.Debug("account matched.", "pending addr:", addr.String(), "amont:", len(list))
 		}
