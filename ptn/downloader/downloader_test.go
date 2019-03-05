@@ -1455,7 +1455,7 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, 2*fsHeaderSafetyNet+MaxHeaderFetch)
 	}
 	if mode == FastSync {
-		if head := tester.CurrentUnit().NumberU64(); head != 0 {
+		if head := tester.CurrentUnit(token).NumberU64(); head != 0 {
 			t.Errorf("fast sync pivot block #%d not rolled back", head)
 		}
 	}
