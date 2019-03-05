@@ -21,6 +21,9 @@
 package memunit
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -28,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"sync"
 )
 
 type MemDag struct {
@@ -249,8 +251,9 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		return errors.ErrNullPoint
 	}
 	if unit.NumberU64() <= chain.stableUnitHeight {
-		log.Infof("This unit is too old! Ignore it,Stable unit height:%d", chain.stableUnitHeight)
-		return nil
+		msg := fmt.Sprintf("This unit is too old! Ignore it,Stable unit height:%d", chain.stableUnitHeight)
+		log.Debugf(msg)
+		return fmt.Errorf(msg)
 	}
 	chain.lock.Lock()
 	defer chain.lock.Unlock()

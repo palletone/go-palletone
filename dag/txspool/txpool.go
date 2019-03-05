@@ -91,7 +91,7 @@ type dags interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	// GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-
+	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription

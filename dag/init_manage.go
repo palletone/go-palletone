@@ -30,19 +30,26 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
-	phash, idx, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
-	if phash != nextUnit.ParentHash()[0] {
-		log.Debug("invalidated unit's parent hash!")
+func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) bool {
+	pHash := nextUnit.ParentHash()[0]
+	headHash, idx, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
+	if pHash != headHash {
+		// todo 出现分叉, 调用本方法之前未处理分叉
+		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
+			nextUnit.UnitHash.TerminalString(), pHash.TerminalString(), headHash.TerminalString())
 		return false
 	}
 
 	if idx.Index+1 != nextUnit.NumberU64() {
-		log.Debugf("invalidated unit's height number!, last height:%d, next unit height:%d",
-			idx.Index, nextUnit.NumberU64())
+		log.Debugf("invalidated unit(%v)'s height number!, last height:%d, next unit height:%d",
+			nextUnit.UnitHash.TerminalString(), idx.Index, nextUnit.NumberU64())
 		return false
 	}
 
+	return true
+}
+
+func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 	ts, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
 	if ts >= nextUnit.Timestamp() {
 		log.Debug("invalidated unit's timestamp!")
@@ -57,7 +64,7 @@ func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
 
 	scheduledMediator := dag.GetScheduledMediator(slotNum)
 	if !scheduledMediator.Equal(nextUnit.Author()) {
-		log.Debug("Mediator produced unit at wrong time!")
+		log.Debug("mediator(%v) produced unit at wrong time!", nextUnit.Author().Str())
 		return false
 	}
 

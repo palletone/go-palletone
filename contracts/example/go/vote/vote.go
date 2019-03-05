@@ -273,7 +273,13 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte(jsonResp))
 	}
 	//check time
-	if tokenInfo.VoteEndTime.Before(time.Now().UTC()) {
+	headerTime, err := stub.GetTxTimestamp()
+	if err != nil {
+		jsonResp := "{\"Error\":\"GetTxTimestamp invalid, Error!!!\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	headerTimeUTC := time.Unix(headerTime.Seconds, 0)
+	if tokenInfo.VoteEndTime.Before(headerTimeUTC) {
 		jsonResp := "{\"Error\":\"Vote is over\"}"
 		return shim.Success([]byte(jsonResp))
 	}

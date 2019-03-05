@@ -146,7 +146,10 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	//go log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
 
-	dag.PushUnit(sign_unit, txpool)
+	if !dag.PushUnit(sign_unit, txpool) {
+		return nil
+	}
+
 	return sign_unit
 }
 
@@ -162,7 +165,9 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
 
 	// 2. 更新状态
-	dag.ApplyUnit(newUnit)
+	if !dag.ApplyUnit(newUnit) {
+		return false
+	}
 
 	// 3. 将unit添加到本地DB
 	//err := dag.SaveUnit(newUnit, false)
@@ -172,24 +177,20 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	//}
 	//dag.SaveUnit(newUnit, txpool, false)
 	dag.Memdag.AddUnit(newUnit, txpool)
+
 	return true
 }
 
 // ApplyUnit, 运用下一个 unit 更新整个区块链状态
-func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
+func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) bool {
 	// 1. 下一个 unit 和本地 unit 连续性的判断
-	parentHash := nextUnit.ParentHash()[0]
-	headUnitHash, _, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
-	if parentHash != headUnitHash {
-		// todo 出现分叉, 调用本方法之前未处理分叉
-		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
-			nextUnit.UnitHash.TerminalString(), parentHash.TerminalString(), headUnitHash.TerminalString())
-		return
+	if !dag.validateUnitHeader(nextUnit) {
+		return false
 	}
 
 	// 2. 验证 unit 的 mediator 调度
 	if !dag.validateMediatorSchedule(nextUnit) {
-		return
+		return false
 	}
 
 	// todo 5. 运用Unit中的交易
@@ -212,4 +213,6 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) {
 
 	// 8. 洗牌
 	dag.updateMediatorSchedule()
+
+	return true
 }

@@ -368,7 +368,7 @@ func (dl *downloadTester) HasBlock(hash common.Hash, number uint64) bool {
 	return u != nil
 }
 
-// GetHeader retrieves a header from the testers canonical chain.
+// GetHeaderByHash retrieves a header from the testers canonical chain.
 func (dl *downloadTester) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()

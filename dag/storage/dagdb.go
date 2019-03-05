@@ -73,7 +73,7 @@ type IDagDb interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
 	GetPrefix(prefix []byte) map[string][]byte
-	GetHeader(hash common.Hash) (*modules.Header, error)
+	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
 	//GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
 	//GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
@@ -540,7 +540,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 //	return nil, errors.New(fmt.Sprintf("the irrekey :%s ,is not found unit's hash.", irreKey))
 //}
 
-func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
+func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
 	header := new(modules.Header)
 	err := retrieve(dagdb.db, key, header)
@@ -557,7 +557,7 @@ func (dagdb *DagDb) GetHeader(hash common.Hash) (*modules.Header, error) {
 //	if err != nil {
 //		return nil, err
 //	}
-//	return dagdb.GetHeader(hash)
+//	return dagdb.GetHeaderByHash(hash)
 //}
 
 //func (dagdb *DagDb) GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue {

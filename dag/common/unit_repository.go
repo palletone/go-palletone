@@ -54,7 +54,7 @@ type IUnitRepository interface {
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-	GetHeader(hash common.Hash) (*modules.Header, error)
+	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
@@ -121,8 +121,8 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, utxoRepository: utxoRep}
 }
 
-func (rep *UnitRepository) GetHeader(hash common.Hash) (*modules.Header, error) {
-	return rep.dagdb.GetHeader(hash)
+func (rep *UnitRepository) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
+	return rep.dagdb.GetHeaderByHash(hash)
 }
 func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error) {
 	rep.lock.RLock()
@@ -130,7 +130,7 @@ func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*
 	result := []*modules.Header{}
 	uhash := hash
 	for i := 0; i < parentCount; i++ {
-		h, err := rep.GetHeader(uhash)
+		h, err := rep.GetHeaderByHash(uhash)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +155,7 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 	if err != nil {
 		return nil, err
 	}
-	return rep.dagdb.GetHeader(hash)
+	return rep.dagdb.GetHeaderByHash(hash)
 }
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
 	return rep.dagdb.IsHeaderExist(uHash)
@@ -177,9 +177,9 @@ func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
 	//	return nil, err
 	//}
 	// 2. unit header
-	uHeader, err := rep.dagdb.GetHeader(hash)
+	uHeader, err := rep.dagdb.GetHeaderByHash(hash)
 	if err != nil {
-		log.Info("getChainUnit when GetHeader failed ", "error", err, "hash", hash.String())
+		log.Info("getChainUnit when GetHeaderByHash failed ", "error", err, "hash", hash.String())
 		//log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func (rep *UnitRepository) GetTrieSyncProgress() (uint64, error) {
 //	return rep.dagdb.GetHeadFastUnitHash()
 //}
 func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
-	header, err := rep.dagdb.GetHeader(hash)
+	header, err := rep.dagdb.GetHeaderByHash(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -1374,7 +1374,7 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 			return nil, err
 		}
 
-		header, err := rep.dagdb.GetHeader(unithash)
+		header, err := rep.dagdb.GetHeaderByHash(unithash)
 		if err != nil {
 			return nil, err
 		}
