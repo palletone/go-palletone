@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/node"
+	// "github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 

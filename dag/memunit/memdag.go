@@ -21,7 +21,6 @@
 package memunit
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
