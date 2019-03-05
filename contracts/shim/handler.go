@@ -24,10 +24,10 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/ethereum/go-ethereum/rlp"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
@@ -393,6 +393,34 @@ func (handler *Handler) handleGetState(collection string, key string, contractid
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
+func (handler *Handler) handleGetTimestamp(collection string, rangeNumber uint32, contractid []byte, channelId string, txid string) ([]byte, error) {
+	// Construct payload for GET_STATE
+
+	payloadBytes, _ := proto.Marshal(&pb.GetTimestamp{Collection: collection, RangeNumber: rangeNumber})
+
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_TIMESTAMP, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
+	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_TIMESTAMP)
+
+	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending GET_STATE", shorttxid(txid)))
+	}
+
+	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
+		// Success response
+		log.Debugf("[%s]GetState received payload %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
+		return responseMsg.Payload, nil
+	}
+	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
+		// Error response
+		log.Errorf("[%s]GetState received error %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_ERROR)
+		return nil, errors.New(string(responseMsg.Payload[:]))
+	}
+
+	// Incorrect chaincode message received
+	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
+}
+
 func (handler *Handler) handleGetTokenBalance(address string, token *modules.Asset, contractid []byte, channelId string, txid string) ([]*modules.InvokeTokens, error) {
 	par := &pb.GetTokenBalance{Address: address}
 	if token != nil {

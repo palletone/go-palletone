@@ -8,6 +8,7 @@ import (
 type TxSimulator interface {
 	GetConfig(name string) ([]byte, error)
 	GetState(contractid []byte, ns string, key string) ([]byte, error)
+	GetTimestamp(contractid []byte, ns string, rangeNumber uint32) ([]byte, error)
 	SetState(ns string, key string, value []byte) error
 	GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (map[modules.Asset]uint64, error)
 	PayOutToken(ns string, address string, token *modules.Asset, amount uint64, lockTime uint32) error

@@ -269,7 +269,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte(jsonResp))
 	}
 	//check time
-	headerTime, err := stub.GetTxTimestamp()
+	headerTime, err := stub.GetTxTimestamp(10)
 	if err != nil {
 		jsonResp := "{\"Error\":\"GetTxTimestamp invalid, Error!!!\"}"
 		return shim.Success([]byte(jsonResp))
