@@ -402,7 +402,7 @@ func DefaultConfig() FullConfig {
 		P2P:            p2p.DefaultConfig,
 		Jury:           jury.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
-		Dag:            dagconfig.DagConfig,
+		Dag:            dagconfig.DefaultConfig,
 		Log:            log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
 		Contract:       contractcfg.DefaultConfig,

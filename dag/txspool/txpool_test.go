@@ -57,7 +57,7 @@ type UnitDag4Test struct {
 func NewTxPool4Test() *TxPool {
 	//l := log.NewTestLog()
 	testDag := NewUnitDag4Test()
-	return NewTxPool(DefaultTxPoolConfig, testDag)
+	return NewTxPool(testTxPoolConfig, testDag)
 }
 
 func NewUnitDag4Test() *UnitDag4Test {
