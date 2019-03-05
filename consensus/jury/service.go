@@ -19,9 +19,6 @@
 package jury
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"sync"
 	"time"
 
@@ -115,7 +112,7 @@ type Processor struct {
 	dag       iDag
 	validator validator.Validator
 	contract  *contracts.Contract
-	vrfAct    vrfAccount
+	//vrfAct    vrfAccount
 	local     map[common.Address]*JuryAccount  //[]common.Address //local jury account addr
 	mtx       map[common.Hash]*contractTx      //all contract buffer
 	lockAddr  map[common.Address][]common.Hash //contractId/deployId ----addrHash, jury VRF
@@ -141,15 +138,15 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		accounts[addr] = account
 	}
 
-	c := elliptic.P256()
-	key, err := ecdsa.GenerateKey(c, rand.Reader)
-	if err != nil {
-		return nil, errors.New("NewContractProcessor, GenerateKey fail")
-	}
-	va := vrfAccount{
-		priKey: key,
-		pubKey: &key.PublicKey,
-	}
+	//c := elliptic.P256()
+	//key, err := ecdsa.GenerateKey(c, rand.Reader)
+	//if err != nil {
+	//	return nil, errors.New("NewContractProcessor, GenerateKey fail")
+	//}
+	//va := vrfAccount{
+	//	priKey: key,
+	//	pubKey: &key.PublicKey,
+	//}
 
 	validator := validator.NewValidate(dag, dag, nil)
 	p := &Processor{
@@ -157,7 +154,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		ptn:            ptn,
 		dag:            dag,
 		contract:       contract,
-		vrfAct:         va,
+		//vrfAct:         va,
 		local:          accounts,
 		locker:         new(sync.Mutex),
 		quit:           make(chan struct{}),
@@ -169,7 +166,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	}
 
 	log.Info("NewContractProcessor ok", "local address:", p.local)
-	log.Info("NewContractProcessor", "vrf Account publicKey", p.vrfAct.pubKey, "privateKey", p.vrfAct.priKey)
+	//log.Info("NewContractProcessor", "vrf Account publicKey", p.vrfAct.pubKey, "privateKey", p.vrfAct.priKey)
 	log.Info("NewContractProcessor", "electionNum:", p.electionNum)
 	return p, nil
 }
