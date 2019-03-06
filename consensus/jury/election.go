@@ -139,8 +139,8 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 		addrHash = util.RlpHash(addr)
 		break //only first one
 	}
-	log.Info("ProcessElectionRequestEvent", "reqHash", reqEvt.ReqId.String(), "num", reqEvt.Num)
-	proof, err := ele.checkElected(reqEvt.Data)
+	log.Info("ProcessElectionRequestEvent", "reqHash", reqEvt.ReqId.String())
+	proof, err := ele.checkElected(reqEvt.ReqId[:])
 	if err != nil {
 		log.Error("ProcessElectionRequestEvent", "reqHash", reqEvt.ReqId, "checkElected err", err)
 		return nil, err
@@ -155,7 +155,7 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 		//if true { //todo for test
 		rstEvt := &ElectionResultEvent{
 			ReqId: reqEvt.ReqId,
-			Ele:     ElectionInf{AddrHash: addrHash, Proof: proof, PublicKey: pubKey},
+			Ele:   ElectionInf{AddrHash: addrHash, Proof: proof, PublicKey: pubKey},
 		}
 		log.Debug("ProcessElectionRequestEvent", "reqId", reqEvt.ReqId.String())
 		evt := &ElectionEvent{EType: ELECTION_EVENT_RESULT, Event: rstEvt}
@@ -174,24 +174,22 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	}
 
 	mtx := p.mtx[rstEvt.ReqId]
-	eleInfo := &mtx.eleInfo
-	if len(mtx.addrHash) > int(eleInfo.eleNum) {
-		log.Info("ProcessElectionResultEvent, The quantity has reached the requirement", "addrHash num ", eleInfo.eleNum)
+	if len(mtx.eleInf) > VrfElectionNum {
+		log.Info("ProcessElectionResultEvent, The quantity has reached the requirement")
 		return nil
 	}
-	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, eleInfo.seedData, rstEvt.Ele.PublicKey)
+	contractId := common.BytesToAddress(rstEvt.ReqId.Bytes())
+	seedData :=contractId.Bytes()
+	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, seedData, rstEvt.Ele.PublicKey)
 	if err != nil {
 		return err
 	}
 	if ok {
-		mtx.addrHash = append(mtx.addrHash, rstEvt.Ele.AddrHash)
-		if eleInfo.contractId != (common.Address{}) {
-			p.lockAddr[eleInfo.contractId] = append(p.lockAddr[eleInfo.contractId], rstEvt.Ele.AddrHash) //add addrHash
-		}
-		if len(mtx.addrHash) > int(eleInfo.eleNum) {
+		p.lockArf[contractId] = append(p.lockArf[contractId], rstEvt.Ele) //add lock vrf election info
+		if len(mtx.eleInf) > VrfElectionNum {
 			//通知接收数量达到要求
 			log.Info("ProcessElectionResultEvent,add num Ok")
-			eleInfo.eleChan <- true
+			mtx.eleChan <- true
 		}
 	}
 	return nil
@@ -207,21 +205,14 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 	if err != nil {
 		return err
 	}
-	ele := electionInfo{
-		eleChan:  make(chan bool, 1),
-		eleNum:   uint(p.electionNum),
-		seedData: seedData,
-	}
 	p.locker.Lock()
-	p.mtx[reqId].eleInfo = ele
+	p.mtx[reqId].eleChan = make(chan bool, 1)
 	p.locker.Unlock()
 	reqEvent := &ElectionRequestEvent{
 		ReqId: reqId,
-		Num:     ele.eleNum,
-		Data:    ele.seedData,
+		//Data:  ele.seedData,
 	}
 	log.Debug("ElectionRequest", "reqId", reqId.String(), "seedData", seedData)
-	log.Debug("ElectionRequest", "reqEvent num", reqEvent.Num)
 	go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_REQUEST, Event: reqEvent})
 
 	//超时等待选举结果
@@ -232,7 +223,7 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 	}()
 
 	select {
-	case <-ele.eleChan:
+	case <-p.mtx[reqId].eleChan:
 		log.Debug("ElectionRequest, election Ok")
 		return nil
 	case <-timeout:
