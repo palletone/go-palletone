@@ -542,16 +542,17 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []common.Address, int, 
 	//		addrs = append(addrs, addr)
 	//	}
 	//
-	//case PubKeyTy:
-	//	// A pay-to-pubkey script is of the form:
-	//	//  <pubkey> OP_CHECKSIG
-	//	// Therefore the pubkey is the first item on the stack.
-	//	// Skip the pubkey if it's invalid for some reason.
-	//	requiredSigs = 1
-	//	addr, err := btcutil.NewAddressPubKey(pops[0].data)
-	//	if err == nil {
-	//		addrs = append(addrs, addr)
-	//	}
+	case PubKeyTy:
+		// A pay-to-pubkey script is of the form:
+		//  <pubkey> OP_CHECKSIG
+		// Therefore the pubkey is the first item on the stack.
+		// Skip the pubkey if it's invalid for some reason.
+		requiredSigs = 1
+
+		addr := crypto.PubkeyBytesToAddress(pops[0].data)
+
+		addrs = append(addrs, addr)
+
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
 		//  OP_HASH160 <scripthash> OP_EQUAL
@@ -565,6 +566,7 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []common.Address, int, 
 			addrs = append(addrs, addr)
 		}
 	case ContractHashTy:
+		//<contract hash> OP_JURY_REDEEM_EQUAL
 		requiredSigs = 1
 		addr := common.NewAddress(pops[0].data, common.ContractHash)
 		if err == nil {

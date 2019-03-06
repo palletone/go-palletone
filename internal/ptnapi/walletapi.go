@@ -851,10 +851,10 @@ func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, d
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
-	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 
-	return hex.EncodeToString(rsp), err
+	return hex.EncodeToString(reqId[:]), err
 }
 
 func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duration *uint64) error {

@@ -32,6 +32,10 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
+const(
+	VrfElectionNum = 4
+)
+
 func localIsMinSignature(tx *modules.Transaction) bool {
 	if tx == nil || len(tx.TxMessages) < 3 {
 		return false
