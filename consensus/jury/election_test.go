@@ -1,18 +1,24 @@
 package jury
 
 import (
-	"crypto/elliptic"
 	"crypto/ecdsa"
-	"crypto/rand"
-	"testing"
+	"crypto/elliptic"
+	crand "crypto/rand"
+	"fmt"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/errors"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
 )
 
 func createVrfCount() (*vrfAccount, error) {
 	c := elliptic.P256()
-	key, err := ecdsa.GenerateKey(c, rand.Reader)
+	key, err := ecdsa.GenerateKey(c, crand.Reader)
 	if err != nil {
 		log.Error("createVrfCount, GenerateKey fail")
 		return nil, errors.New("GenerateKey fail")
@@ -38,6 +44,9 @@ func electionOnce(index uint) {
 		total:  100,
 		vrfAct: *va,
 	}
+	rand.Seed(time.Now().UnixNano())
+	dir := filepath.Join(os.TempDir(), fmt.Sprintf("gptn-keystore-watch-test-%d-%d", os.Getpid(), rand.Int()))
+	ele.ks = keystore.NewKeyStore(dir, keystore.LightScryptN, keystore.LightScryptP)
 	seedData, err := getElectionSeedData(reqId)
 	if err != nil {
 		log.Error("electionOnce", "getElectionSeedData fail", err, "index", index)
@@ -52,7 +61,7 @@ func electionOnce(index uint) {
 	//log.Info("electionOnce", "index", index, "seedData", seedData)
 
 	if proof != nil {
-		ok, err := ele.verifyVRF(proof, seedData)
+		ok, err := ele.verifyVrfEc(proof, seedData)
 		if err != nil {
 			log.Error("electionOnce", "verifyVRF fail", err, "index", index)
 			return

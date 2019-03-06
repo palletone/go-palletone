@@ -5,15 +5,15 @@
 package dag
 
 import (
-	"github.com/golang/mock/gomock"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"reflect"
-	"time"
+	gomock "github.com/golang/mock/gomock"
+	common "github.com/palletone/go-palletone/common"
+	event "github.com/palletone/go-palletone/common/event"
+	discover "github.com/palletone/go-palletone/common/p2p/discover"
+	core "github.com/palletone/go-palletone/core"
+	modules "github.com/palletone/go-palletone/dag/modules"
+	txspool "github.com/palletone/go-palletone/dag/txspool"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -96,13 +96,15 @@ func (mr *MockIDagMockRecorder) IsEmpty() *gomock.Call {
 
 // CurrentUnit mocks base method
 func (m *MockIDag) CurrentUnit(token modules.IDType16) *modules.Unit {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CurrentUnit", token)
 	ret0, _ := ret[0].(*modules.Unit)
 	return ret0
 }
 
 // CurrentUnit indicates an expected call of CurrentUnit
-func (mr *MockIDagMockRecorder) CurrentUnit(token modules.IDType16) *gomock.Call {
+func (mr *MockIDagMockRecorder) CurrentUnit(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentUnit", reflect.TypeOf((*MockIDag)(nil).CurrentUnit), token)
 }
 
@@ -222,19 +224,6 @@ func (mr *MockIDagMockRecorder) GetHeaderByHash(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetHeaderByHash), arg0)
 }
 
-// GetAllLeafNodes mocks base method
-func (m *MockIDag) GetAllLeafNodes() ([]*modules.Header, error) {
-	ret := m.ctrl.Call(m, "GetAllLeafNodes")
-	ret0, _ := ret[0].([]*modules.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeaderByHash indicates an expected call of GetHeaderByHash
-func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllLeafNodes", reflect.TypeOf((*MockIDag)(nil).GetAllLeafNodes))
-}
-
 // GetUnstableUnits mocks base method
 func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
 	m.ctrl.T.Helper()
@@ -251,13 +240,15 @@ func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
 
 // CurrentHeader mocks base method
 func (m *MockIDag) CurrentHeader(token modules.IDType16) *modules.Header {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CurrentHeader", token)
 	ret0, _ := ret[0].(*modules.Header)
 	return ret0
 }
 
 // CurrentHeader indicates an expected call of CurrentHeader
-func (mr *MockIDagMockRecorder) CurrentHeader(token modules.IDType16) *gomock.Call {
+func (mr *MockIDagMockRecorder) CurrentHeader(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeader", reflect.TypeOf((*MockIDag)(nil).CurrentHeader), token)
 }
 
