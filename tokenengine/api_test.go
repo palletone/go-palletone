@@ -65,7 +65,11 @@ func TestGenerateP2CHLockScript(t *testing.T) {
 	assert.Equal(t, addr2.String(), addrStr)
 	t.Logf("get address:%s", addr2.String())
 }
-
+func TestDecodeScriptBytes(t *testing.T) {
+	data, _ := hex.DecodeString("21021b11a1d070a173edc33a25ad8382602b2ad9b58670f031059b8866fc8e1b16aeac")
+	str, _ := txscript.DisasmString(data)
+	t.Log(str)
+}
 func TestSignAndVerifyATx(t *testing.T) {
 
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
@@ -83,14 +87,14 @@ func TestSignAndVerifyATx(t *testing.T) {
 		TxMessages: make([]*modules.Message, 0),
 	}
 	payment := &modules.PaymentPayload{}
-	utxoTxId:= common.HexToHash("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	utxoTxId := common.HexToHash("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(txIn)
 	asset0 := &modules.Asset{}
 	payment.AddTxOut(modules.NewTxOut(1, lockScript, asset0))
 	payment2 := &modules.PaymentPayload{}
-	utxoTxId2:= common.HexToHash("1651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	utxoTxId2 := common.HexToHash("1651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint2 := modules.NewOutPoint(utxoTxId2, 1, 1)
 	txIn2 := modules.NewTxIn(outPoint2, []byte{})
 	payment2.AddTxIn(txIn2)
@@ -130,8 +134,8 @@ func TestSignAndVerifyATx(t *testing.T) {
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
-	unlockScript:=tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
-	t.Logf("UnlockScript:%x",unlockScript)
+	unlockScript := tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
+	t.Logf("UnlockScript:%x", unlockScript)
 	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	if err != nil {
 		t.Logf("validate error:%s", err)
@@ -308,7 +312,7 @@ func TestContractPayout(t *testing.T) {
 	}
 	asset0 := &modules.Asset{}
 	payment := &modules.PaymentPayload{}
-	utxoTxId:= common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	utxoTxId := common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(txIn)
