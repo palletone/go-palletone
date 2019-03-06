@@ -42,7 +42,7 @@ var (
 		Name:   "console",
 		Usage:  "Start an interactive JavaScript environment",
 		//Flags:    append(append(append(nodeFlags, rpcFlags...), consoleFlags...), whisperFlags...),
-		Flags:    append(append(append(nodeFlags, rpcFlags...), consoleFlags...)),
+		Flags:    append(append(nodeFlags, rpcFlags...), consoleFlags...),
 		Category: "CONSOLE COMMANDS",
 		Description: `
 The Geth console is an interactive shell for the JavaScript runtime environment
@@ -55,7 +55,7 @@ See https://github.com/palletone/go-palletone/wiki/JavaScript-Console.`,
 		Name:      "attach",
 		Usage:     "Start an interactive JavaScript environment (connect to node)",
 		ArgsUsage: "[endpoint]",
-		Flags:     append(consoleFlags, utils.DataDirFlag),
+		Flags:     append(consoleFlags, utils.DataDirFlag, ConfigFilePathFlag),
 		Category:  "CONSOLE COMMANDS",
 		Description: `
 The Geth console is an interactive shell for the JavaScript runtime environment
@@ -80,9 +80,9 @@ JavaScript API. See https://github.com/palletone/go-palletone/wiki/JavaScript-Co
 // localConsole starts a new gptn node, attaching a JavaScript console to it at the
 // same time.
 func localConsole(ctx *cli.Context) error {
-
 	// Create and start the node based on the CLI flags
 	node := makeFullNode(ctx)
+	log.LogConfig.LoggerLvl = "FATAL"
 	startNode(ctx, node)
 	defer node.Stop()
 
@@ -122,15 +122,14 @@ func remoteConsole(ctx *cli.Context) error {
 	// Attach to a remotely running gptn instance and start the JavaScript console
 	endpoint := ctx.Args().First()
 	// todo 待重新优化处理逻辑
-	cfg := &FullConfig{Node: defaultNodeConfig()}
-	//cfg := new(FullConfig)
+	cfg := DefaultConfig()
 	datadir := cfg.Node.DataDir
 	if endpoint == "" {
 		configPath := getConfigPath(ctx)
 
 		// On windows we can only use plain top-level pipes
 		if runtime.GOOS == "windows" {
-			err := loadConfig(configPath, cfg)
+			err := loadConfig(configPath, &cfg)
 			if err != nil {
 				utils.Fatalf("%v", err)
 				return err
@@ -145,7 +144,7 @@ func remoteConsole(ctx *cli.Context) error {
 			if ctx.GlobalIsSet(utils.DataDirFlag.Name) {
 				dataPath = ctx.GlobalString(utils.DataDirFlag.Name)
 			} else if common.FileExist(configPath) {
-				err := loadConfig(configPath, cfg)
+				err := loadConfig(configPath, &cfg)
 				if err != nil {
 					utils.Fatalf("%v", err)
 					return err
@@ -163,7 +162,7 @@ func remoteConsole(ctx *cli.Context) error {
 	} else {
 		//support abs log path
 		cfgpath := parseCfgPath(ctx, endpoint)
-		err := loadConfig(cfgpath, cfg)
+		err := loadConfig(cfgpath, &cfg)
 		if err != nil {
 			utils.Fatalf("%v", err, "cfgpath:", cfgpath)
 			return err

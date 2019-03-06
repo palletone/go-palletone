@@ -535,16 +535,16 @@ var (
 // MakeDataDir retrieves the currently requested data directory, terminating
 // if none (or the empty string) is specified. If the node is starting a testnet,
 // the a subdirectory of the specified datadir will be used.
-func MakeDataDir(ctx *cli.Context) string {
-	if path := ctx.GlobalString(DataDirFlag.Name); path != "" {
-		if ctx.GlobalBool(TestnetFlag.Name) {
-			return filepath.Join(path, "testnet")
-		}
-		return path
-	}
-	Fatalf("Cannot determine default data directory, please set manually (--datadir)")
-	return ""
-}
+//func MakeDataDir(ctx *cli.Context) string {
+//	if path := ctx.GlobalString(DataDirFlag.Name); path != "" {
+//		if ctx.GlobalBool(TestnetFlag.Name) {
+//			return filepath.Join(path, "testnet")
+//		}
+//		return path
+//	}
+//	Fatalf("Cannot determine default data directory, please set manually (--datadir)")
+//	return ""
+//}
 
 // setNodeKey creates a node key from set command line flags, either loading it
 // from a file or as a specified hex value. If neither flags were provided, this
@@ -1030,7 +1030,7 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
 
 	cfg.ErrorOutputPaths[errIndex] = common.GetAbsPath(errPath)
 
-	log.ApplyConfig(cfg)
+	log.LogConfig = *cfg
 }
 
 //func GetAbsDirectory(path string) string {

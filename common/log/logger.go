@@ -50,13 +50,13 @@ const (
 
 var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
 
-var config = DefaultConfig
+var LogConfig = DefaultConfig
 var Logger *zap.Logger
 var mux sync.RWMutex
 
 // init zap.logger
 func InitLogger() {
-	for _, path := range config.OutputPaths {
+	for _, path := range LogConfig.OutputPaths {
 		//if path == LogStdout {
 		//	continue
 		//}
@@ -71,9 +71,9 @@ func InitLogger() {
 }
 
 func ConsoleInitLogger(cfg *Config) {
-	config.LoggerLvl = "FATAL"
-	config.OutputPaths = cfg.OutputPaths
-	config.ErrorOutputPaths = cfg.ErrorOutputPaths
+	LogConfig.LoggerLvl = "FATAL"
+	LogConfig.OutputPaths = cfg.OutputPaths
+	LogConfig.ErrorOutputPaths = cfg.ErrorOutputPaths
 	InitLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
@@ -81,13 +81,13 @@ func ConsoleInitLogger(cfg *Config) {
 // init logger.
 func initLogger() {
 	var cfg zap.Config
-	cfg.OutputPaths = config.OutputPaths
-	cfg.ErrorOutputPaths = config.ErrorOutputPaths
+	cfg.OutputPaths = LogConfig.OutputPaths
+	cfg.ErrorOutputPaths = LogConfig.ErrorOutputPaths
 	var lvl zap.AtomicLevel
-	lvl.UnmarshalText([]byte(config.LoggerLvl))
+	lvl.UnmarshalText([]byte(LogConfig.LoggerLvl))
 	cfg.Level = lvl
-	cfg.Encoding = config.Encoding
-	cfg.Development = config.Development
+	cfg.Encoding = LogConfig.Encoding
+	cfg.Development = LogConfig.Development
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	//cfg.EncoderConfig.EncodeLevel=zapcore.LowercaseColorLevelEncoder
@@ -96,26 +96,26 @@ func initLogger() {
 		log.Fatal("init logger error: ", err)
 	}
 	// add openModule
-	if strings.Contains(config.OpenModule[0], ",") {
-		arr := strings.Split(config.OpenModule[0], ",")
-		config.OpenModule[0] = ""
-		config.OpenModule = append(config.OpenModule, arr...)
-		config.OpenModule = append(config.OpenModule, defaultLogModule...)
+	if strings.Contains(LogConfig.OpenModule[0], ",") {
+		arr := strings.Split(LogConfig.OpenModule[0], ",")
+		LogConfig.OpenModule[0] = ""
+		LogConfig.OpenModule = append(LogConfig.OpenModule, arr...)
+		LogConfig.OpenModule = append(LogConfig.OpenModule, defaultLogModule...)
 	} else {
-		if !(len(config.OpenModule) == 1 && config.OpenModule[0] == "all") {
-			config.OpenModule = append(config.OpenModule, defaultLogModule...)
+		if !(len(LogConfig.OpenModule) == 1 && LogConfig.OpenModule[0] == "all") {
+			LogConfig.OpenModule = append(LogConfig.OpenModule, defaultLogModule...)
 		}
 	}
-	l.SetOpenModule(config.OpenModule)
+	l.SetOpenModule(LogConfig.OpenModule)
 	l = l.WithOptions(zap.AddCallerSkip(1))
-	if config.RotationMaxSize > 0 {
-		includeStdout, filePath := getOutputPath(config.OutputPaths)
+	if LogConfig.RotationMaxSize > 0 {
+		includeStdout, filePath := getOutputPath(LogConfig.OutputPaths)
 		rotateLogCore := func(core zapcore.Core) zapcore.Core {
 			w := zapcore.AddSync(&lumberjack.Logger{
 				Filename:   filePath,
-				MaxSize:    config.RotationMaxSize, // megabytes
+				MaxSize:    LogConfig.RotationMaxSize, // megabytes
 				MaxBackups: 60,
-				MaxAge:     config.RotationMaxAge, // days
+				MaxAge:     LogConfig.RotationMaxAge, // days
 			})
 			if includeStdout {
 				stdout, _, _ := zap.Open("stdout")

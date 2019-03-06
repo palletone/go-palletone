@@ -39,7 +39,3 @@ type Config struct {
 	RotationMaxSize  int      `json:"rotation_max_size" yaml:"rotation_max_size"`
 	RotationMaxAge   int      `json:"rotation_max_age" yaml:"rotation_max_age"`
 }
-
-func ApplyConfig(cfg *Config) {
-	config = *cfg
-}
