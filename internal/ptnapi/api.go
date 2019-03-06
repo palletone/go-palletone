@@ -672,6 +672,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 	log.Info("-----Ccinvoketx:", "contractId", contractAddr.String())
 	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
 	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
+	log.Info("-----Ccinvoketx:", "daoAmount", daoAmount)
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
 	log.Info("-----Ccinvoketx:", "param len", len(param))
@@ -1620,7 +1621,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	return taken_utxo, change
 //}
 
-func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string) (core.Utxos, error) {
+func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string,asset string) (core.Utxos, error) {
 	var addr common.Address
 	// store tx input utxo outpoint
 	inputsOutpoint := []modules.OutPoint{}
@@ -1633,20 +1634,18 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 	vaildutxos := core.Utxos{}
 	op := modules.OutPoint{}
 	payout := new(modules.Output)
-	var err error
+
 	var PkScript string
+	tokenAsset, err := modules.StringToAsset(asset)
+	if err != nil {
+		return vaildutxos, err
+	}
 	for _, tx := range poolTxs {
 		for msgindex, msg := range tx.Tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
-				for _, input := range pay.Inputs {
-					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
-					//utxoinputs = append(utxoinputs, iutxo)
-					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
-					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
-					//result[*input.PreviousOutPoint] = lockScript
-					//5,6,8,9
-					fmt.Printf("-------inputsOutpoint---%+v\n", inputsOutpoint)
+				if pay.Outputs[0].Asset.IsSimilar(tokenAsset) == false {
+				    continue
 				}
 				for outIndex, output := range pay.Outputs {
 					op.TxHash = tx.Tx.Hash()
@@ -1661,7 +1660,14 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 					}
 					//outxo := s.b.GetUtxoEntry(op)
 					//utxooutputs = append(utxooutputs, outxo)
-					fmt.Printf("------------outputsOutpoint----%+v\n", outputsOutpoint)
+				}
+				for _, input := range pay.Inputs {
+					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
+					//utxoinputs = append(utxoinputs, iutxo)
+					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
+					//result[*input.PreviousOutPoint] = lockScript
+					//5,6,8,9
 				}
 			}
 		}
@@ -1767,7 +1773,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
 
 	if err == nil {
-		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from)
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from,"PTN")
 		if err != nil {
 			return "", fmt.Errorf("Select utxo err")
 		}
