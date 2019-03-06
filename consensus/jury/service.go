@@ -116,11 +116,11 @@ type Processor struct {
 	validator validator.Validator
 	contract  *contracts.Contract
 	//vrfAct    vrfAccount
-	local     map[common.Address]*JuryAccount  //[]common.Address //local jury account addr
-	mtx       map[common.Hash]*contractTx      //all contract buffer
-	lockAddr  map[common.Address][]common.Hash //contractId/deployId ----addrHash, jury VRF
-	quit      chan struct{}
-	locker    *sync.Mutex
+	local    map[common.Address]*JuryAccount  //[]common.Address //local jury account addr
+	mtx      map[common.Hash]*contractTx      //all contract buffer
+	lockAddr map[common.Address][]common.Hash //contractId/deployId ----addrHash, jury VRF
+	quit     chan struct{}
+	locker   *sync.Mutex
 
 	electionNum       int
 	contractSigNum    int
@@ -153,10 +153,10 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 
 	validator := validator.NewValidate(dag, dag, nil)
 	p := &Processor{
-		name:           "conractProcessor",
-		ptn:            ptn,
-		dag:            dag,
-		contract:       contract,
+		name:     "conractProcessor",
+		ptn:      ptn,
+		dag:      dag,
+		contract: contract,
 		//vrfAct:         va,
 		local:          accounts,
 		locker:         new(sync.Mutex),
@@ -300,12 +300,13 @@ func (p *Processor) GenContractSigTransction(singer common.Address, password str
 					needSignMsg = false
 					pubKey, _ := ks.GetPublicKey(singer)
 					redeemScript := tokenengine.GenerateRedeemScript(1, [][]byte{pubKey})
+					log.Debugf("RedeemScript:%x", redeemScript)
 					for inputIdx, input := range payment.Inputs {
 						utxo, err := p.dag.GetUtxoEntry(input.PreviousOutPoint)
 						if err != nil {
 							return nil, err
 						}
-
+						log.Debugf("Lock script:%x", utxo.PkScript)
 						sign, err := tokenengine.MultiSignOnePaymentInput(tx, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil, 0)
 						if err != nil {
 							log.Errorf("Sign error:%s", err)
@@ -379,10 +380,10 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			continue
 		}
 
-		if !p.checkTxValid(ctx.rstTx) {
-			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
-			continue
-		}
+		// if !p.checkTxValid(ctx.rstTx) {
+		// 	log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
+		// 	continue
+		// }
 		txHash, err := p.dag.GetTxHashByReqId(ctx.rstTx.RequestHash())
 		if err == nil && txHash != (common.Hash{}) {
 			log.Info("AddContractLoop", "transaction request Id already in dag", ctx.rstTx.RequestHash())

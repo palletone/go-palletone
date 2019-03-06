@@ -113,14 +113,14 @@ func SignatureScript(tx *modules.Transaction, msgIdx, idx int, subscript []byte,
 	return NewScriptBuilder().AddData(sig).AddData(pubKey).Script()
 }
 
-//func p2pkSignatureScript(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int, subScript []byte, hashType uint32, privKey *ecdsa.PrivateKey) ([]byte, error) {
-//	sig, err := RawTxInSignature(tx, msgIdx, idx, subScript, hashType, privKey)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return NewScriptBuilder().AddData(sig).Script()
-//}
+func p2pkSignatureScript(tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int, subScript []byte, hashType uint32, signHashFn SignHash) ([]byte, error) {
+	sig, err := RawTxInSignature(tx, msgIdx, idx, subScript, hashType, signHashFn)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewScriptBuilder().AddData(sig).Script()
+}
 
 // signMultiSig signs as many of the outputs in the provided multisig script as
 // possible. It returns the generated script and a boolean if the script fulfils
@@ -156,28 +156,28 @@ func signMultiSig(tx *modules.Transaction, msgIdx, idx int, subScript []byte, ha
 }
 
 func sign(tx *modules.Transaction, msgIdx int, idx int,
-	subScript []byte, hashType uint32, kdb KeyDB, sdb ScriptDB) ([]byte,ScriptClass, []common.Address, int, error) {
+	subScript []byte, hashType uint32, kdb KeyDB, sdb ScriptDB) ([]byte, ScriptClass, []common.Address, int, error) {
 	class, addresses, nrequired, err := ExtractPkScriptAddrs(subScript)
 	if err != nil {
 		return nil, NonStandardTy, nil, 0, err
 	}
 
 	switch class {
-	//case PubKeyTy:
-	//	// look up key for address
-	//
-	//	//fmt.Println(addresses)
-	//	key, _, err := kdb.GetKey(addresses[0])
-	//	if err != nil {
-	//		return nil, class, nil, 0, err
-	//	}
-	//
-	//	script, err := p2pkSignatureScript(tx, msgIdx, idx, subScript, hashType, key)
-	//	if err != nil {
-	//		return nil, class, nil, 0, err
-	//	}
-	//
-	//	return script, class, addresses, nrequired, nil
+	case PubKeyTy:
+		// look up key for address
+
+		//fmt.Println(addresses)
+		// _, err := kdb.GetPubKey(addresses[0])
+		// if err != nil {
+		// 	return nil, class, nil, 0, err
+		// }
+		signHashFn := kdb.GetSignFunction(addresses[0])
+		script, err := p2pkSignatureScript(tx, msgIdx, idx, subScript, hashType, signHashFn)
+		if err != nil {
+			return nil, class, nil, 0, err
+		}
+
+		return script, class, addresses, nrequired, nil
 	case PubKeyHashTy:
 		// look up key for address
 
