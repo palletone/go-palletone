@@ -155,6 +155,19 @@ web3._extend({
             // inputFormatter: [null]
         }),
 	],
-	properties: []
+	properties: [
+		new web3._extend.Property({
+			name: 'headUnitTime',
+			getter: 'dag_headUnitTime'
+		}),
+		new web3._extend.Property({
+			name: 'headUnitNum',
+			getter: 'dag_headUnitNum'
+		}),
+		new web3._extend.Property({
+			name: 'headUnitHash',
+			getter: 'dag_headUnitHash'
+		}),
+	]
 });
 `

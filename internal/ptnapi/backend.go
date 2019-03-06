@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/dag"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -141,7 +142,7 @@ type Backend interface {
 
 	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 
-	//Dag() dag.IDag
+	Dag() dag.IDag
 	//SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error)
 

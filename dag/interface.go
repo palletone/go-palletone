@@ -140,4 +140,8 @@ type IDag interface {
 	GetLightChainHeight(assetId modules.IDType16) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	GetAllLeafNodes() ([]*modules.Header, error)
+
+	HeadUnitTime() int64
+	HeadUnitNum() uint64
+	HeadUnitHash() common.Hash
 }
