@@ -86,7 +86,7 @@ var (
 )
 
 type dags interface {
-	CurrentUnit() *modules.Unit
+	CurrentUnit(token modules.IDType16) *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	// GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
@@ -282,7 +282,8 @@ func (pool *TxPool) loop() {
 	defer orphanExpireScan.Stop()
 
 	// Track the previous head headers for transaction reorgs
-	head := pool.unit.CurrentUnit()
+	// TODO 分区后 按token类型 loop 交易池。
+	head := pool.unit.CurrentUnit(modules.PTNCOIN)
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
@@ -344,7 +345,7 @@ func (pool *TxPool) loop() {
 // reset retrieves the current state of the blockchain and ensures the content
 // of the transaction pool is valid with regard to the chain state.
 func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
-
+	token := newHead.Number.AssetID
 	// If we're reorging an old state, reinject all dropped transactions
 	var reinject modules.Transactions
 
@@ -393,7 +394,7 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 	}
 	// Initialize the internal state to the current head
 	if newHead == nil {
-		newHead = pool.unit.CurrentUnit().Header() // Special case during testing
+		newHead = pool.unit.CurrentUnit(token).Header() // Special case during testing
 	}
 
 	// Inject any transactions discarded due to reorgs

@@ -45,7 +45,7 @@ type IMemDag interface {
 	SetStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool)
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error
 	//Init(stablehash common.Hash, stableHeight uint64)
-	GetLastMainchainUnit() *modules.Unit
+	GetLastMainchainUnit(token modules.IDType16) *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit
 	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository)
 	SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error

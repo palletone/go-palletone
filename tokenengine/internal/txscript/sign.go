@@ -156,8 +156,7 @@ func signMultiSig(tx *modules.Transaction, msgIdx, idx int, subScript []byte, ha
 }
 
 func sign(tx *modules.Transaction, msgIdx int, idx int,
-	subScript []byte, hashType uint32, kdb KeyDB, sdb ScriptDB) ([]byte,
-	ScriptClass, []common.Address, int, error) {
+	subScript []byte, hashType uint32, kdb KeyDB, sdb ScriptDB) ([]byte,ScriptClass, []common.Address, int, error) {
 	class, addresses, nrequired, err := ExtractPkScriptAddrs(subScript)
 	if err != nil {
 		return nil, NonStandardTy, nil, 0, err
@@ -217,9 +216,11 @@ func sign(tx *modules.Transaction, msgIdx int, idx int,
 		return nil, class, nil, 0,
 			errors.New("can't sign NULLDATA transactions")
 	default:
-
-		return nil, class, nil, 0,
-			errors.New("can't sign unknown transactions:" + class.String())
+		{
+			scriptTxt, _ := DisasmString(subScript)
+			return nil, class, nil, 0,
+				errors.New("can't sign unknown transactions:" + class.String() + " lockscript:" + scriptTxt)
+		}
 	}
 
 }

@@ -95,17 +95,17 @@ func (mr *MockIDagMockRecorder) IsEmpty() *gomock.Call {
 }
 
 // CurrentUnit mocks base method
-func (m *MockIDag) CurrentUnit() *modules.Unit {
+func (m *MockIDag) CurrentUnit(token modules.IDType16) *modules.Unit {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CurrentUnit")
+	ret := m.ctrl.Call(m, "CurrentUnit", token)
 	ret0, _ := ret[0].(*modules.Unit)
 	return ret0
 }
 
 // CurrentUnit indicates an expected call of CurrentUnit
-func (mr *MockIDagMockRecorder) CurrentUnit() *gomock.Call {
+func (mr *MockIDagMockRecorder) CurrentUnit(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentUnit", reflect.TypeOf((*MockIDag)(nil).CurrentUnit))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentUnit", reflect.TypeOf((*MockIDag)(nil).CurrentUnit), token)
 }
 
 // VerifyHeader mocks base method
@@ -239,17 +239,17 @@ func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
 }
 
 // CurrentHeader mocks base method
-func (m *MockIDag) CurrentHeader() *modules.Header {
+func (m *MockIDag) CurrentHeader(token modules.IDType16) *modules.Header {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CurrentHeader")
+	ret := m.ctrl.Call(m, "CurrentHeader", token)
 	ret0, _ := ret[0].(*modules.Header)
 	return ret0
 }
 
 // CurrentHeader indicates an expected call of CurrentHeader
-func (mr *MockIDagMockRecorder) CurrentHeader() *gomock.Call {
+func (mr *MockIDagMockRecorder) CurrentHeader(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeader", reflect.TypeOf((*MockIDag)(nil).CurrentHeader))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeader", reflect.TypeOf((*MockIDag)(nil).CurrentHeader), token)
 }
 
 // GetUnitTransactions mocks base method

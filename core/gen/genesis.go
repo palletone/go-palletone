@@ -206,60 +206,6 @@ func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) 
 	return tx, nil
 }
 
-func GenContractSigTransction(singer common.Address, password string, orgTx *modules.Transaction, ks *keystore.KeyStore) (*modules.Transaction, error) {
-	if orgTx == nil || len(orgTx.TxMessages) < 3 {
-		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions param is error"))
-	}
-	if password != "" {
-		err := ks.Unlock(accounts.Account{Address: singer}, password)
-		if err != nil {
-			return nil, err
-		}
-	}
-	tx := orgTx
-	var sigPayload *modules.SignaturePayload
-	sigs := make([]modules.SignatureSet, 0)
-	for _, v := range tx.TxMessages {
-		if v.App == modules.APP_SIGNATURE {
-			sigPayload = v.Payload.(*modules.SignaturePayload)
-			sigs = append(sigs, sigPayload.Signatures...)
-		}
-	}
-	pubKey, err := ks.GetPublicKey(singer)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
-	}
-	sig, err := GetTxSig(tx, ks, singer)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.RequestHash().String()))
-	}
-	sigSet := modules.SignatureSet{
-		PubKey:    pubKey,
-		Signature: sig,
-	}
-	sigs = append(sigs, sigSet)
-	msgSig := &modules.Message{
-		App: modules.APP_SIGNATURE,
-		Payload: &modules.SignaturePayload{
-			Signatures: sigs,
-		},
-	}
-	tx.TxMessages = append(tx.TxMessages, msgSig)
-	log.Debug("GenContractSigTransactions", "orgTx.TxId id ok:", tx.Hash())
-
-	return tx, nil
-}
-func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Address) ([]byte, error) {
-	sign, err := ks.SigData(tx, signer)
-	if err != nil {
-		msg := fmt.Sprintf("Failed to singure transaction:%v", err)
-		log.Error(msg)
-		return nil, errors.New(msg)
-	}
-
-	return sign, nil
-}
-
 //func CommitDB(dag dag.IDag, unit *modules.Unit, isGenesis bool) error {
 //	// save genesis unit to leveldb
 //	if err := dag.SaveUnit(unit, isGenesis); err != nil {

@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer <dev@pallet.one>
  * @date 2019
@@ -56,8 +57,8 @@ func (pm *ProtocolManager) PartitionHandle(p *peer) error {
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
-
-	head := pm.dag.CurrentHeader()
+	token := modules.PTNCOIN
+	head := pm.dag.CurrentHeader(token)
 	// Execute the PalletOne handshake
 	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash() /*mediator,*/, head.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)

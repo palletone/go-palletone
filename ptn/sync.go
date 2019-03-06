@@ -157,12 +157,12 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			pm.syncall()
+			go pm.syncall()
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
 			log.Debug("start force Sync")
-			pm.syncall()
+			go pm.syncall()
 
 		case <-pm.noMorePeers:
 			return
@@ -175,15 +175,19 @@ func (pm *ProtocolManager) syncall() {
 	asset.SetString(strings.ToUpper(pm.SubProtocols[0].Name))
 	log.Info("ProtocolManager syncall", "pm.SubProtocols[0].Name", pm.SubProtocols[0].Name)
 	peer := pm.peers.BestPeer(asset.AssetId)
-	go pm.synchronise(peer, asset.AssetId)
-	return
-	if pm.SubProtocols[0].Name != ProtocolName || peer == nil {
+	pm.synchronise(peer, asset.AssetId)
+	//return
+	if pm.SubProtocols[0].Name != ProtocolName {
 		return
 	}
-	go pm.lightsync(peer)
+	pm.lightsync(peer)
 }
 
 func (pm *ProtocolManager) lightsync(peer *peer) {
+	if peer == nil {
+		log.Debug("ProtocolManager lightsync peer is nil")
+		return
+	}
 	leafnodes, err := pm.lightdownloader.FetchAllToken(peer.id)
 	if err != nil {
 		log.Info("sync get all leaf nodes", "counts leaf nodes", len(leafnodes), "err:", err)
@@ -251,7 +255,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
-	head := pm.dag.CurrentUnit()
+	head := pm.dag.CurrentUnit(assetId)
 	if head != nil && head.UnitHeader.Number.Index > 0 {
 		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
 	}
@@ -269,7 +273,7 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 	// Make sure the peer's TD is higher than our own
 	//TODO must recover
 	//currentHeader := pm.dag.CurrentHeader(assetId)
-	currentHeader := pm.dag.CurrentHeader()
+	currentHeader := pm.dag.CurrentHeader(assetId)
 	//if currentHeader == nil {
 	//	log.Info("light synchronise current header is nil")
 	//	return
@@ -294,7 +298,7 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
-	head := pm.dag.CurrentUnit()
+	head := pm.dag.CurrentUnit(assetId)
 	if head != nil && head.UnitHeader.Number.Index > 0 {
 		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
 	}
