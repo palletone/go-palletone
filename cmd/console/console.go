@@ -309,7 +309,7 @@ func (c *Console) Welcome() {
 	fmt.Fprintf(c.printer, "Welcome to the Gptn JavaScript console!\n\n")
 	c.jsre.Run(`
 		console.log("instance: " + web3.version.node);
-		console.log("at unit: " + ptn.blockNumber + " (" + new Date(1000 * ptn.getBlock(ptn.blockNumber).timestamp) + ")");
+		console.log(" at unit: hash(" + dag.headUnitHash + ") #" + dag.headUnitNum + " @" + dag.headUnitTime);
 		console.log(" datadir: " + admin.datadir);
 	`)
 	//console.log("coinbase: " + ptn.coinbase);

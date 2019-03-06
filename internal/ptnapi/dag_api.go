@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -296,12 +297,13 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 //	return "is not exist!", err
 //}
 
-func (s *PublicDagAPI) HeadUnitHash() common.Hash {
-	return s.b.Dag().HeadUnitHash()
+func (s *PublicDagAPI) HeadUnitHash() string {
+	return s.b.Dag().HeadUnitHash().TerminalString()
 }
 
-func (s *PublicDagAPI) HeadUnitTime() int64 {
-	return s.b.Dag().HeadUnitTime()
+func (s *PublicDagAPI) HeadUnitTime() string {
+	time := time.Unix(s.b.Dag().HeadUnitTime(), 0)
+	return time.Format("2006-01-02 15:04:05 -0700 MST")
 }
 
 func (s *PublicDagAPI) HeadUnitNum() uint64 {
