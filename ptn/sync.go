@@ -177,13 +177,17 @@ func (pm *ProtocolManager) syncall() {
 	peer := pm.peers.BestPeer(asset.AssetId)
 	pm.synchronise(peer, asset.AssetId)
 	//return
-	if pm.SubProtocols[0].Name != ProtocolName || peer == nil {
+	if pm.SubProtocols[0].Name != ProtocolName {
 		return
 	}
 	pm.lightsync(peer)
 }
 
 func (pm *ProtocolManager) lightsync(peer *peer) {
+	if peer == nil {
+		log.Debug("ProtocolManager lightsync peer is nil")
+		return
+	}
 	leafnodes, err := pm.lightdownloader.FetchAllToken(peer.id)
 	if err != nil {
 		log.Info("sync get all leaf nodes", "counts leaf nodes", len(leafnodes), "err:", err)
