@@ -92,7 +92,7 @@ func localConsole(ctx *cli.Context) error {
 		utils.Fatalf("Failed to attach to the inproc gptn: %v", err)
 	}
 	config := console.Config{
-		DataDir: node.Config().DataDir, //utils.MakeDataDir(ctx),
+		DataDir: node.DataDir(), //utils.MakeDataDir(ctx),
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
@@ -233,7 +233,7 @@ func ephemeralConsole(ctx *cli.Context) error {
 		utils.Fatalf("Failed to attach to the inproc gptn: %v", err)
 	}
 	config := console.Config{
-		DataDir: node.Config().DataDir, //utils.MakeDataDir(ctx),
+		DataDir: node.DataDir(), //utils.MakeDataDir(ctx),
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),

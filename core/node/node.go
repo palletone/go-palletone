@@ -115,13 +115,13 @@ func New(conf *Config) (*Node, error) {
 	confCopy := *conf
 	conf = &confCopy
 	// 把datadir转成绝对路径
-	if conf.DataDir != "" {
-		absdatadir, err := filepath.Abs(conf.DataDir)
-		if err != nil {
-			return nil, err
-		}
-		conf.DataDir = absdatadir
-	}
+	//if conf.DataDir != "" {
+	//	absdatadir, err := filepath.Abs(conf.DataDir)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	conf.DataDir = absdatadir
+	//}
 	// Ensure that the instance name doesn't cause weird conflicts with
 	// other files in the data directory.
 	if strings.ContainsAny(conf.Name, `/\`) {
@@ -614,7 +614,6 @@ func (n *Node) Service(service interface{}) error {
 }
 
 // DataDir retrieves the current datadir used by the protocol stack.
-// Deprecated: No files should be stored in this directory, use InstanceDir instead.
 func (n *Node) DataDir() string {
 	return n.config.DataDir
 }
