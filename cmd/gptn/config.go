@@ -155,6 +155,11 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
+func adaptorNodeConfig(config *FullConfig) *FullConfig {
+	config.Node.P2P = config.P2P
+	return config
+}
+
 func adaptorPtnConfig(config *FullConfig) *FullConfig {
 	config.Ptn.TxPool = config.TxPool
 	config.Ptn.Dag = config.Dag
@@ -290,7 +295,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
 	utils.SetLogConfig(ctx, &cfg.Log, configDir)
 
-	cfg.Node.P2P = cfg.P2P
+	adaptorNodeConfig(&cfg)
 	dataDir := utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
