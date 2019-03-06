@@ -83,7 +83,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	log.Debug("ContractDeployReq", "enter, templateId ", templateId, "contractId", contractId)
 
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[reqId].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, contractId, err
 }
 
@@ -108,7 +108,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return common.Hash{}, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[reqId].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
 }
 
@@ -133,7 +133,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 		return common.Hash{}, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[reqId].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
 }
 
@@ -161,7 +161,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 		return common.Hash{}, err
 	}
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{AddrHash: p.mtx[reqId].addrHash, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
 }
 

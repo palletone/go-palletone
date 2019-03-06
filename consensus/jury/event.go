@@ -46,7 +46,6 @@ type ElectionInf struct {
 
 //contract
 type ContractEvent struct {
-	AddrHash []common.Hash //user contract jury addr hash
 	Ele      []ElectionInf
 
 	CType ContractEventType
