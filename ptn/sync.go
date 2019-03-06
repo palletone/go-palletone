@@ -171,8 +171,14 @@ func (pm *ProtocolManager) syncer() {
 }
 
 func (pm *ProtocolManager) syncall() {
-	asset := &modules.Asset{}
-	asset.SetString(strings.ToUpper(pm.SubProtocols[0].Name))
+	//YING 0x601892ec080000000000000000000000
+	//YOU 0x4000af9e080000000000000000000000
+
+	asset, err := modules.NewAsset(strings.ToUpper(pm.SubProtocols[0].Name), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.IDType16{})
+	if err != nil {
+		log.Error("ProtocolManager syncall asset err", err)
+		return
+	}
 	log.Info("ProtocolManager syncall", "pm.SubProtocols[0].Name", pm.SubProtocols[0].Name)
 	peer := pm.peers.BestPeer(asset.AssetId)
 	pm.synchronise(peer, asset.AssetId)
