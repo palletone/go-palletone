@@ -458,14 +458,11 @@ func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, che
 		log.Error("isValidateElection, ElectionInf number not enough ")
 	}
 	isExit := false
-
 	etor := &elector{
 		num:    VrfElectionNum,
 		weight: 1,
-		total:  1000,
-		ks:     p.ptn.GetKeyStore(),
+		total:  1000, //todo from dag
 	}
-
 	for i, e := range ele {
 		isMatch := false
 		isVerify := false
@@ -480,7 +477,7 @@ func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, che
 		}
 		//检查地址与pubKey是否匹配(从数据库中获取):获取当前pubKey下的Addr，将地址hash后与输入比较
 		isMatch = true
-		if !isMatch{
+		if !isMatch {
 			log.Info("isValidateElection", "index", i, "address does not match public key, reqId", reqId)
 			return false
 		}
@@ -515,7 +512,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 				log.Debug("contractEventExecutable", "is Mediator, addr:", addr.String())
 				isM = true
 			}
-			if true == p.isLocalActiveJury(addr) { //todo
+			if true == p.isLocalActiveJury(addr) {
 				log.Debug("contractEventExecutable", "is Jury, addr:", addr.String())
 				isJ = true
 			}
