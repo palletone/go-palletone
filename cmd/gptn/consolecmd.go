@@ -146,7 +146,7 @@ func remoteConsole(ctx *cli.Context) error {
 					endpoint = cfg.Node.IPCPath
 
 					if !filepath.IsAbs(dataDir) {
-						dataDir = filepath.Join(configPath, dataDir)
+						dataDir = filepath.Join(filepath.Dir(configPath), dataDir)
 					}
 
 					if !filepath.IsAbs(endpoint) {
@@ -170,6 +170,9 @@ func remoteConsole(ctx *cli.Context) error {
 						return err
 					}
 
+					configDir := filepath.Dir(configPath)
+					utils.SetLogConfig(ctx, &cfg.Log, configDir)
+					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 				}
 
 				endpoint = cfg.Node.IPCPath
@@ -178,9 +181,6 @@ func remoteConsole(ctx *cli.Context) error {
 				}
 
 				dataDir = cfg.Node.DataDir
-				if !filepath.IsAbs(dataDir) {
-					dataDir = filepath.Join(configPath, dataDir)
-				}
 			} else if endpoint == "" {
 				endpoint = cfg.Node.IPCPath
 				if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
@@ -210,7 +210,7 @@ func remoteConsole(ctx *cli.Context) error {
 	// 3. 创建 console
 	console, err := console.New(config)
 	if err != nil {
-		utils.Fatalf("Failed to start the JavaScript console: %v", err)
+		utils.Fatalf("Failed to start the JavaScript console2: %v", err)
 	}
 	defer console.Stop(false)
 
