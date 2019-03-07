@@ -1,19 +1,21 @@
 package jury
 
 import (
+	"testing"
+	"math/rand"
+	"time"
+	"path/filepath"
+	"os"
+	"fmt"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	crand "crypto/rand"
-	"fmt"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/errors"
-	"math/rand"
-	"os"
-	"path/filepath"
-	"testing"
-	"time"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
 )
 
 func createVrfCount() (*vrfAccount, error) {
@@ -30,8 +32,8 @@ func createVrfCount() (*vrfAccount, error) {
 	return &va, nil
 }
 
-func electionOnce(index uint) {
-	reqId := util.RlpHash(index)
+func electionOnce(index int, ks *keystore.KeyStore) {
+	reqId := util.RlpHash(util.IntToBytes(index))
 	//log.Info("electionOnce", "index", index, "id_hash", reqId)
 	va, err := createVrfCount()
 	if err != nil {
@@ -39,14 +41,24 @@ func electionOnce(index uint) {
 		return
 	}
 	ele := elector{
-		num:    10,
+		num:    20,
 		weight: 4,
 		total:  100,
 		vrfAct: *va,
+
+		password: "1",
+		ks:       ks,
 	}
-	rand.Seed(time.Now().UnixNano())
-	dir := filepath.Join(os.TempDir(), fmt.Sprintf("gptn-keystore-watch-test-%d-%d", os.Getpid(), rand.Int()))
-	ele.ks = keystore.NewKeyStore(dir, keystore.LightScryptN, keystore.LightScryptP)
+	acc, err := ele.ks.NewAccount(ele.password)
+	if err != nil {
+		log.Error("electionOnce", "NewAccount fail, index", index)
+	}
+	ele.addr = acc.Address
+	ele.ks.Unlock(acc, "1")
+
+	//h := util.RlpHash(acc)
+	//log.Info("electionOnce", "account hash", h)
+
 	seedData, err := getElectionSeedData(reqId)
 	if err != nil {
 		log.Error("electionOnce", "getElectionSeedData fail", err, "index", index)
@@ -61,7 +73,12 @@ func electionOnce(index uint) {
 	//log.Info("electionOnce", "index", index, "seedData", seedData)
 
 	if proof != nil {
-		ok, err := ele.verifyVrfEc(proof, seedData)
+		pk, err := ele.ks.GetPublicKey(ele.addr)
+		if err != nil{
+			log.Error("electionOnce GetPublicKey ", "error", err)
+			return
+		}
+		ok, err := ele.verifyVrf(proof, seedData, pk)
 		if err != nil {
 			log.Error("electionOnce", "verifyVRF fail", err, "index", index)
 			return
@@ -74,7 +91,22 @@ func electionOnce(index uint) {
 }
 
 func TestElection(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	dir := filepath.Join(os.TempDir(), fmt.Sprintf("gptn-keystore-watch-test-%d-%d", os.Getpid(), rand.Int()))
+
+	os.MkdirAll(dir, 0700)
+	ks := keystore.NewKeyStore(dir, keystore.LightScryptN, keystore.LightScryptP)
+
 	for i := 0; i < 100; i++ {
-		electionOnce(uint(i))
+		electionOnce(i, ks)
 	}
+}
+
+func TestContractProcess(t *testing.T) {
+	for i := 0; i < 100; i++ {
+		reqId := util.RlpHash(util.IntToBytes(rand.Int()))
+		sel := alg.Selected(40, 4, 100, reqId[:])
+		log.Info("TestContractProcess", "Selected", sel, "idx", i,  "reqId", reqId)
+	}
+
 }
