@@ -453,10 +453,51 @@ func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
 	return false
 }
 
-func (p *Processor) isValidateElection(ele []ElectionInf) bool {
-	//检查地址hash是否在本地
-	//检查地址与pubkey是否匹配
-	//验证proof是否通过
+func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, checkExit bool) bool {
+	if len(ele) < VrfElectionNum {
+		log.Error("isValidateElection, ElectionInf number not enough ")
+	}
+	isExit := false
+
+	etor := &elector{
+		num:    VrfElectionNum,
+		weight: 1,
+		total:  1000,
+		ks:     p.ptn.GetKeyStore(),
+	}
+
+	for i, e := range ele {
+		isMatch := false
+		isVerify := false
+		//检查地址hash是否在本地
+		if checkExit && !isExit {
+			for addr, _ := range p.local {
+				if e.AddrHash == util.RlpHash(addr) {
+					isExit = true
+					break
+				}
+			}
+		}
+		//检查地址与pubKey是否匹配(从数据库中获取):获取当前pubKey下的Addr，将地址hash后与输入比较
+		isMatch = true
+		if !isMatch{
+			log.Info("isValidateElection", "index", i, "address does not match public key, reqId", reqId)
+			return false
+		}
+
+		//验证proof是否通过
+		isVerify, err := etor.verifyVrf(e.Proof, reqId.Bytes(), e.PublicKey)
+		if err != nil || !isVerify {
+			log.Info("isValidateElection", "index", i, "verifyVrf fail, reqId", reqId)
+			return false
+		}
+	}
+	if checkExit {
+		if !isExit {
+			log.Debug("isValidateElection, election addr not in local")
+			return false
+		}
+	}
 
 	return true
 }
@@ -488,26 +529,30 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Mediator, true:tx requestId", tx.RequestHash())
 			return true
 		} else if !isSysContract && isJury {
-			if p.isValidateElection(ele) {
+			if p.isValidateElection(tx.RequestHash(), ele, true) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury,not in local addr, false:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, isValidateElection fail, false:tx requestId", tx.RequestHash())
 			}
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			if p.isValidateElection(ele) {
+			if p.isValidateElection(tx.RequestHash(), ele, true) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, not in local addr,false:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, isValidateElection fail, false:tx requestId", tx.RequestHash())
 			}
 		}
 	case CONTRACT_EVENT_COMMIT:
 		if isMediator {
-			log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, true:tx requestId", tx.RequestHash())
-			return true
+			if p.isValidateElection(tx.RequestHash(), ele, false) {
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, true:tx requestId", tx.RequestHash())
+				return true
+			} else {
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, isValidateElection fail, false:tx requestId", tx.RequestHash())
+			}
 		}
 	}
 	return false
