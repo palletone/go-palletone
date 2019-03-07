@@ -46,7 +46,6 @@ type ElectionInf struct {
 
 //contract
 type ContractEvent struct {
-	AddrHash []common.Hash //user contract jury addr hash
 	Ele      []ElectionInf
 
 	CType ContractEventType
@@ -56,12 +55,11 @@ type ContractEvent struct {
 //Election
 type ElectionRequestEvent struct {
 	ReqId common.Hash
-	Num     uint   //about the number of elections
-	Data    []byte //election data, input as vrf
+	//Data  []byte //election data, input as vrf. use reqId
 }
 type ElectionResultEvent struct {
 	ReqId common.Hash
-	Ele     ElectionInf
+	Ele   ElectionInf
 }
 
 type ElectionEvent struct {

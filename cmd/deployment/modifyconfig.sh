@@ -71,9 +71,9 @@ sed -i '/^EnableGroupSigning/c'$newEnableGroupSigning'' ptn-config.toml
 
 createaccount=`./createaccount.sh`
 tempinfo=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
-accountlength=35
-accounttemp=${tempinfo:0:$accountlength}
-account=`echo ${accounttemp///}`
+#accountlength=35
+#accounttemp=${tempinfo:0:$accountlength}
+account=`echo ${tempinfo///}`
 
 
 newAddress="Address=\"$account\""

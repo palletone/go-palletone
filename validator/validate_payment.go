@@ -83,9 +83,10 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			}
 			totalInput += utxo.Amount
 			// check SignatureScript
+
 			err = tokenengine.ScriptValidate(utxo.PkScript, nil, txForSign, msgIdx, inputIdx)
 			if err != nil {
-				log.Infof("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
+				log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
 					tx.Hash().String(), msgIdx, inputIdx, in.SignatureScript, utxo.PkScript)
 				txjson, _ := tx.MarshalJSON()
 				rlpdata, _ := rlp.EncodeToBytes(tx)

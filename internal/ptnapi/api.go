@@ -609,7 +609,7 @@ func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmou
 	log.Info("-----Ccinstalltx:", "version", version)
 
 	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version)
-	sReqId := hex.EncodeToString(reqId)
+	sReqId := hex.EncodeToString(reqId[:])
 	sTplId := hex.EncodeToString(tplId)
 	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)
 
@@ -640,7 +640,7 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	}
 	reqId, depId, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
 	addDepId := common.NewAddress(depId, common.ContractHash)
-	sReqId := hex.EncodeToString(reqId)
+	sReqId := hex.EncodeToString(reqId[:])
 	sDepId := hex.EncodeToString(addDepId[:len(addDepId)-2])
 	log.Info("-----Ccdeploytx:", "reqId", sReqId, "tplId", sDepId)
 	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", addDepId.String())
@@ -672,6 +672,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 	log.Info("-----Ccinvoketx:", "contractId", contractAddr.String())
 	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
 	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
+	log.Info("-----Ccinvoketx:", "daoAmount", daoAmount)
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
 	log.Info("-----Ccinvoketx:", "param len", len(param))
@@ -681,10 +682,10 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractDeployRsp{
-		ReqId:      hex.EncodeToString(rsp),
+		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: deployId,
 	}
 	return rsp1, err
@@ -714,10 +715,10 @@ func (s *PublicBlockChainAPI) CcinvokeToken(ctx context.Context, from, to, toTok
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, amount, fee, amountOfToken, assetToken, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, amount, fee, amountOfToken, assetToken, contractAddr, args, 0)
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractDeployRsp{
-		ReqId:      hex.EncodeToString(rsp),
+		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: deployId,
 	}
 	return rsp1, err
@@ -767,10 +768,10 @@ func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoA
 		return "", err
 	}
 
-	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 
-	return hex.EncodeToString(rsp), err
+	return hex.EncodeToString(reqId[:]), err
 }
 
 func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, deleteImage string) (string, error) {
@@ -791,9 +792,9 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	log.Info("-----Ccstoptx:", "contractId", contractAddr)
 	log.Info("-----Ccstoptx:", "delImg", delImg)
 
-	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
-	log.Info("-----Ccstoptx:" + hex.EncodeToString(rsp))
-	return hex.EncodeToString(rsp), err
+	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
+	log.Info("-----Ccstoptx:" + hex.EncodeToString(reqId[:]))
+	return hex.EncodeToString(reqId[:]), err
 }
 
 func (s *PublicBlockChainAPI) Election(ctx context.Context, sid string) (string, error) {
@@ -1620,7 +1621,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	return taken_utxo, change
 //}
 
-func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string) (core.Utxos, error) {
+func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string,asset string) (core.Utxos, error) {
 	var addr common.Address
 	// store tx input utxo outpoint
 	inputsOutpoint := []modules.OutPoint{}
@@ -1633,20 +1634,18 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 	vaildutxos := core.Utxos{}
 	op := modules.OutPoint{}
 	payout := new(modules.Output)
-	var err error
+
 	var PkScript string
+	tokenAsset, err := modules.StringToAsset(asset)
+	if err != nil {
+		return vaildutxos, err
+	}
 	for _, tx := range poolTxs {
 		for msgindex, msg := range tx.Tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
-				for _, input := range pay.Inputs {
-					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
-					//utxoinputs = append(utxoinputs, iutxo)
-					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
-					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
-					//result[*input.PreviousOutPoint] = lockScript
-					//5,6,8,9
-					fmt.Printf("-------inputsOutpoint---%+v\n", inputsOutpoint)
+				if pay.Outputs[0].Asset.IsSimilar(tokenAsset) == false {
+				    continue
 				}
 				for outIndex, output := range pay.Outputs {
 					op.TxHash = tx.Tx.Hash()
@@ -1661,7 +1660,14 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 					}
 					//outxo := s.b.GetUtxoEntry(op)
 					//utxooutputs = append(utxooutputs, outxo)
-					fmt.Printf("------------outputsOutpoint----%+v\n", outputsOutpoint)
+				}
+				for _, input := range pay.Inputs {
+					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
+					//utxoinputs = append(utxoinputs, iutxo)
+					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
+					//result[*input.PreviousOutPoint] = lockScript
+					//5,6,8,9
 				}
 			}
 		}
@@ -1767,7 +1773,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
 
 	if err == nil {
-		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from)
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from,"PTN")
 		if err != nil {
 			return "", fmt.Errorf("Select utxo err")
 		}

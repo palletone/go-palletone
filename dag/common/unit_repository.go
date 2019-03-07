@@ -349,6 +349,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+	log.Debug("Start create unit...")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	//if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
@@ -394,15 +395,16 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-
+	log.Debug("Start txpool.GetSortedTxs...")
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
-	for _, tx := range poolTxs {
-		log.Debugf("try to generate unit include txs[%s]", tx.Tx.Hash().String())
-	}
+	log.Debug("Complete txpool.GetSortedTxs...")
+	// for _, tx := range poolTxs {
+	// 	log.Debugf("try to generate unit include txs[%s]", tx.Tx.Hash().String())
+	// }
 
 	// step5. compute minner income: transaction fees + interest
-	fees, err := rep.utxoRepository.ComputeFees(poolTxs)
+	fees, err := ComputeFees(poolTxs)
 	if err != nil {
 		log.Error("ComputeFees is failed.", "error", err.Error())
 		return nil, err
@@ -448,10 +450,10 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
 	*/
-
+	log.Debug("Start core.DeriveSha...")
 	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
-
+	log.Debug("Complete core.DeriveSha...")
 	// step9. generate genesis unit header
 	header.TxRoot = root
 	unit := modules.Unit{}
@@ -464,9 +466,16 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	// step11. set size
 	unit.UnitSize = unit.Size()
 	units = append(units, unit)
+	log.Debugf("Complete create unit[%s]", unit.Hash().String())
 	return units, nil
 }
-
+func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
+	fee := uint64(0)
+	for _, tx := range txs {
+		fee += tx.TxFee.Amount
+	}
+	return fee, nil
+}
 func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
 	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
