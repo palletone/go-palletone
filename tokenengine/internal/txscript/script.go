@@ -642,9 +642,9 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 
 					sigScript, _ := unparseScript(script)
 					payment.Inputs[idx].SignatureScript = sigScript
-				} else {
-					payment.Inputs[idx].SignatureScript = nil
-				}
+				} //else {
+					//payment.Inputs[idx].SignatureScript = nil
+				//}
 			}
 		}
 	}
