@@ -375,6 +375,7 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			continue
 		}
 
+		//TODO 从保证金转出  token 时签名为空，先不做相应的判断，所以需要注释掉才能正常进行
 		if !p.checkTxValid(ctx.rstTx) {
 			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 			continue
@@ -480,7 +481,7 @@ func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, che
 		}
 		//检查地址与pubKey是否匹配(从数据库中获取):获取当前pubKey下的Addr，将地址hash后与输入比较
 		isMatch = true
-		if !isMatch{
+		if !isMatch {
 			log.Info("isValidateElection", "index", i, "address does not match public key, reqId", reqId)
 			return false
 		}
@@ -594,7 +595,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
-			p.lockArf[contractId] = []ElectionInf{} //清空
+			p.lockArf[contractId] = []ElectionInf{}                        //清空
 			if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 				return common.Hash{}, nil, err
 			}
