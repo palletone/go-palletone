@@ -277,7 +277,7 @@ func (c *Config) resolvePath(path string) string {
 		if c.Name == "gptn" {
 			oldpath = filepath.Join(c.DataDir, path)
 		}
-		if oldpath != "" && common.FileExist(oldpath) {
+		if oldpath != "" && common.IsExisted(oldpath) {
 			// TODO: print warning
 			return oldpath
 		}

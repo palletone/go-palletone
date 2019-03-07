@@ -119,76 +119,98 @@ func localConsole(ctx *cli.Context) error {
 // remoteConsole will connect to a remote gptn instance, attaching a JavaScript
 // console to it.
 func remoteConsole(ctx *cli.Context) error {
-	// Attach to a remotely running gptn instance and start the JavaScript console
+	// 1. 获取和计算 endpoint 和 dataDir 的实际路径
 	endpoint := ctx.Args().First()
-	// todo 待重新优化处理逻辑
+	dataDir := ctx.GlobalString(utils.DataDirFlag.Name)
 	cfg := DefaultConfig()
-	datadir := cfg.Node.DataDir
-	if endpoint == "" {
-		configPath := getConfigPath(ctx)
 
-		// On windows we can only use plain top-level pipes
-		if runtime.GOOS == "windows" {
-			err := loadConfig(configPath, &cfg)
-			if err != nil {
-				utils.Fatalf("%v", err)
-				return err
-			}
+	if endpoint == "" || dataDir == "" {
+		if runtime.GOOS != "windows" {
+			// 在非windows系统的中，ipc文件放在 dataDir 下
 
-			endpoint = cfg.Node.IPCPath
-			if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
-				endpoint = `\\.\pipe\` + endpoint
+			if endpoint == "" && dataDir == "" {
+				dataDir = cfg.Node.DataDir
+				endpoint = filepath.Join(dataDir, cfg.Node.IPCPath)
+
+				// 如果当前目录没有 ipc文件，则从配置文件中读取
+				if !common.IsExisted(endpoint) {
+					configPath := getConfigPath(ctx)
+
+					err := loadConfig(configPath, &cfg)
+					if err != nil {
+						utils.Fatalf("%v", err)
+						return err
+					}
+
+					dataDir = cfg.Node.DataDir
+					endpoint = cfg.Node.IPCPath
+
+					if !filepath.IsAbs(dataDir) {
+						dataDir = filepath.Join(configPath, dataDir)
+					}
+
+					if !filepath.IsAbs(endpoint) {
+						endpoint = filepath.Join(dataDir, endpoint)
+					}
+				}
+			} else if endpoint == "" {
+				endpoint = fmt.Sprintf("%s/gptn.ipc", dataDir)
+			} else {
+				dataDir = filepath.Dir(endpoint)
 			}
 		} else {
-			dataPath := node.DefaultDataDir()
-			if ctx.GlobalIsSet(utils.DataDirFlag.Name) {
-				dataPath = ctx.GlobalString(utils.DataDirFlag.Name)
-			} else if common.FileExist(configPath) {
-				err := loadConfig(configPath, &cfg)
-				if err != nil {
-					utils.Fatalf("%v", err)
-					return err
-				}
-				dataPath = cfg.Node.DataDir
-			}
+			// 在windows系统下，ipc文件在\\.\pipe\ 目录下
 
-			if dataPath != "" {
-				if ctx.GlobalBool(utils.TestnetFlag.Name) {
-					dataPath = filepath.Join(dataPath, "testnet")
+			if endpoint == "" && dataDir == "" {
+				configPath := getConfigPath(ctx)
+				if common.IsExisted(configPath) {
+					err := loadConfig(configPath, &cfg)
+					if err != nil {
+						utils.Fatalf("%v", err)
+						return err
+					}
+
 				}
+
+				endpoint = cfg.Node.IPCPath
+				if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
+					endpoint = `\\.\pipe\` + endpoint
+				}
+
+				dataDir = cfg.Node.DataDir
+				if !filepath.IsAbs(dataDir) {
+					dataDir = filepath.Join(configPath, dataDir)
+				}
+			} else if endpoint == "" {
+				endpoint = cfg.Node.IPCPath
+				if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
+					endpoint = `\\.\pipe\` + endpoint
+				}
+			} else {
+				dataDir = cfg.Node.DataDir
 			}
-			endpoint = fmt.Sprintf("%s/gptn.ipc", dataPath)
 		}
-	} else {
-		//support abs log path
-		cfgpath := parseCfgPath(ctx, endpoint)
-		err := loadConfig(cfgpath, &cfg)
-		if err != nil {
-			utils.Fatalf("%v", err, "cfgpath:", cfgpath)
-			return err
-		}
-		datadir = parseDataPath(ctx, endpoint)
 	}
 
-	if err := parseLogPath(endpoint, &cfg.Log); err != nil {
-		return err
-	}
+	// 设置 log 的配置
 	log.ConsoleInitLogger(&cfg.Log)
 
+	// 2. 连接 gptn
 	client, err := dialRPC(endpoint)
 	if err != nil {
 		utils.Fatalf("Unable to attach to remote gptn: %v", err)
 	}
 	config := console.Config{
-		DataDir: datadir, //utils.MakeDataDir(ctx),
+		DataDir: dataDir, //utils.MakeDataDir(ctx),
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
 	}
 
+	// 3. 创建 console
 	console, err := console.New(config)
 	if err != nil {
-		utils.Fatalf("Failed to start the JavaScript console2: %v", err)
+		utils.Fatalf("Failed to start the JavaScript console: %v", err)
 	}
 	defer console.Stop(false)
 
@@ -197,7 +219,7 @@ func remoteConsole(ctx *cli.Context) error {
 		return nil
 	}
 
-	// Otherwise print the welcome screen and enter interactive mode
+	// 4. Otherwise print the welcome screen and enter interactive mode
 	console.Welcome()
 	console.Interactive()
 

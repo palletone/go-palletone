@@ -23,7 +23,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"unicode"
 
 	"github.com/naoina/toml"
@@ -185,69 +184,6 @@ func getConfigPath(ctx *cli.Context) string {
 	return common.GetAbsPath(configPath)
 }
 
-func parseLogPath(endpoint string, cfg *log.Config) error {
-	// todo 在windows系统下，ipc文件在\\.\pipe\ 目录下，需特殊处理
-	endpoint, err := filepath.Abs(endpoint)
-	if err != nil {
-		return err
-	}
-	array := strings.Split(endpoint, "/")
-	if len(array) <= 2 {
-		return nil
-		//return errors.New("log parse path < 2")
-	}
-	index := len(array) - 2
-	logpath := strings.Join(array[:index], "/")
-
-	if !filepath.IsAbs(cfg.OutputPaths[1]) {
-		path := filepath.Join(logpath, cfg.OutputPaths[1])
-		cfg.OutputPaths[1] = common.GetAbsPath(path)
-	}
-	if !filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
-		path := filepath.Join(logpath, cfg.ErrorOutputPaths[1])
-		cfg.ErrorOutputPaths[1] = common.GetAbsPath(path)
-	}
-	return nil
-}
-
-//On the basis of gptn.ipc endpoint full path parse to cfg path
-func parseCfgPath(ctx *cli.Context, endpoint string) string {
-	endpoint, err := filepath.Abs(endpoint)
-	if err != nil {
-		return ""
-	}
-	array := strings.Split(endpoint, "/")
-	if len(array) <= 2 {
-		return ""
-	}
-	index := len(array) - 2
-	cfgpath := strings.Join(array[:index], "/")
-	cfgpath += "/ptn-config.toml"
-	cfgpath, err1 := filepath.Abs(cfgpath)
-	if err1 != nil {
-		return ""
-	}
-	return cfgpath
-}
-
-func parseDataPath(ctx *cli.Context, endpoint string) string {
-	endpoint, err := filepath.Abs(endpoint)
-	if err != nil {
-		return ""
-	}
-	array := strings.Split(endpoint, "/")
-	if len(array) <= 1 {
-		return ""
-	}
-	index := len(array) - 1
-	cfgpath := strings.Join(array[:index], "/")
-	cfgpath, err1 := filepath.Abs(cfgpath)
-	if err1 != nil {
-		return ""
-	}
-	return cfgpath
-}
-
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
 func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
@@ -256,7 +192,7 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	cfg := DefaultConfig()
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
-	if !common.FileExist(configPath) {
+	if !common.IsExisted(configPath) {
 		//listenAddr := cfg.P2P.ListenAddr
 		//if strings.HasPrefix(listenAddr, ":") {
 		//	cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
