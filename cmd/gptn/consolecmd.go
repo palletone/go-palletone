@@ -142,12 +142,12 @@ func remoteConsole(ctx *cli.Context) error {
 						return err
 					}
 
+					configDir := filepath.Dir(configPath)
+					utils.SetLogConfig(ctx, &cfg.Log, configDir)
+					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+
 					dataDir = cfg.Node.DataDir
 					endpoint = cfg.Node.IPCPath
-
-					if !filepath.IsAbs(dataDir) {
-						dataDir = filepath.Join(filepath.Dir(configPath), dataDir)
-					}
 
 					if !filepath.IsAbs(endpoint) {
 						endpoint = filepath.Join(dataDir, endpoint)
