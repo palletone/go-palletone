@@ -547,6 +547,10 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(MediatorCreateOperation)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == OP_MEDIATOR_COUNT_SET {
+				payload := new(MediatorCountSet)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
 			}
 
 		case msg.App >= APP_CONTRACT_TPL_REQUEST, msg.App <= APP_CONTRACT_STOP_REQUEST:

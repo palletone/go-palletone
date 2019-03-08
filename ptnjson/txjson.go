@@ -39,7 +39,7 @@ type TxJson struct {
 	StopRequest    *StopRequestJson    `json:"stop_request"`
 }
 type VoteJson struct {
-	Content string
+	Content string `json:"vote_content"`
 }
 
 type InvokeRequestJson struct {

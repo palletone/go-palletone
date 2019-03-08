@@ -166,6 +166,8 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 
 		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:
+		case modules.OP_MEDIATOR_COUNT_SET:
+
 		default:
 			return TxValidationCode_UNKNOWN_TX_TYPE
 		}
@@ -240,6 +242,10 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 	case *modules.MediatorCreateOperation:
 		if app == modules.OP_MEDIATOR_CREATE {
+			return true
+		}
+	case *modules.MediatorCountSet:
+		if app == modules.OP_MEDIATOR_COUNT_SET {
 			return true
 		}
 	case *modules.ContractDeployRequestPayload:

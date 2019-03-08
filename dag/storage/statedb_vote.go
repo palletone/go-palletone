@@ -20,9 +20,9 @@
 package storage
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 )
@@ -32,7 +32,7 @@ func (statedb *StateDb) AppendVotedMediator(voter, mediator common.Address) erro
 	accountInfo, _ := statedb.RetrieveAccountInfo(voter)
 
 	accountInfo.VotedMediators[mediator] = true
-	log.Debugf("Try to save mediator vote result{%s} for address:%s", mediator.Str(), voter.Str())
+	log.Debugf("Try to save voted mediator(%v) for account(%v)", mediator.Str(), voter.Str())
 	//
 	//newVotes := []vote.VoteInfo{}
 	//mediatorVotes := []vote.VoteInfo{}
