@@ -118,7 +118,7 @@ func createInitDKS(ctx *cli.Context) error {
 
 // author Albert·Gou
 func getNodeInfo(ctx *cli.Context) (string, error) {
-	_, cfg := makeConfigNode(ctx)
+	_, cfg := makeConfigNode(ctx, false)
 	privateKey := cfg.Node.NodeKey()
 	listenAddr := cfg.P2P.ListenAddr
 	if strings.HasPrefix(listenAddr, ":") {
@@ -165,7 +165,7 @@ func getTimestamp(ctx *cli.Context) error {
 }
 
 func listMediators(ctx *cli.Context) error {
-	node := makeFullNode(ctx)
+	node := makeFullNode(ctx, false)
 
 	Dbconn, err := node.OpenDatabase(dagconfig.DagConfig.DbPath, 0, 0)
 	if err != nil {
