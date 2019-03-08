@@ -1463,13 +1463,13 @@ func (pool *TxPool) demoteUnexecutables() {
 // Stop terminates the transaction pool.
 func (pool *TxPool) Stop() {
 	// Unsubscribe all subscriptions registered from txpool
-	fmt.Println("stop start.", time.Now())
+	//fmt.Println("stop start.", time.Now())
 	pool.scope.Close()
-	fmt.Println("scope closed.", time.Now())
+	//fmt.Println("scope closed.", time.Now())
 	// Unsubscribe subscriptions registered from blockchain
 	pool.chainHeadSub.Unsubscribe()
 	pool.wg.Wait()
-	fmt.Println("journal close...")
+	//fmt.Println("journal close...")
 	if pool.journal != nil {
 		pool.journal.close()
 	}
