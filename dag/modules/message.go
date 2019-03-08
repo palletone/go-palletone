@@ -43,6 +43,8 @@ const (
 
 	//APP_CONFIG
 	APP_DATA
+	// todo 以下两个类型待合并
+	OP_MEDIATOR_COUNT_SET
 	APP_VOTE
 	OP_MEDIATOR_CREATE
 

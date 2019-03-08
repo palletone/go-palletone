@@ -59,3 +59,7 @@ func NewAccountInfo() *AccountInfo {
 		VotedMediators:  make(map[common.Address]bool),
 	}
 }
+
+type MediatorCountSet struct {
+	DesiredMediatorCount uint8 `json:"desiredMediatorCount"`
+}

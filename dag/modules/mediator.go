@@ -13,14 +13,17 @@
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  *  * @date 2018
  *
  */
 
 package modules
 
-import "github.com/palletone/go-palletone/core"
+import (
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
+)
 
 // only for serialization(storage)
 type MediatorInfo struct {
@@ -53,4 +56,39 @@ func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 	md.MediatorInfoExpand = mi.MediatorInfoExpand
 
 	return md
+}
+
+type MediatorCreateOperation struct {
+	*core.MediatorInfoBase
+	Url string `json:"url"`
+}
+
+func (mco *MediatorCreateOperation) FeePayer() common.Address {
+	addr, _ := common.StringToAddress(mco.AddStr)
+
+	return addr
+}
+
+func (mco *MediatorCreateOperation) Validate() error {
+	_, err := core.StrToMedAdd(mco.AddStr)
+	if err != nil {
+		return err
+	}
+
+	_, err = core.StrToPoint(mco.InitPubKey)
+	if err != nil {
+		return err
+	}
+
+	node, err := core.StrToMedNode(mco.Node)
+	if err != nil {
+		return err
+	}
+
+	err = node.ValidateComplete()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -380,7 +380,24 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address, txPool txspool
 
 func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	return nil, 0, nil
+	// 1. 组装 message
+	setMediatorCount := &modules.MediatorCountSet{
+		DesiredMediatorCount: desiredMediatorCount,
+	}
+
+	msg := &modules.Message{
+		App:     modules.OP_MEDIATOR_COUNT_SET,
+		Payload: setMediatorCount,
+	}
+
+	// 2. 组装 tx
+	fee := dag.CurrentFeeSchedule().SetDesiredMediatorCountFee
+	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, msg, txPool)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return tx, fee, nil
 }
 
 func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
