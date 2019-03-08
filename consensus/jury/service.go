@@ -545,8 +545,11 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_COMMIT:
 		if isMediator {
-			if p.isValidateElection(tx.RequestHash(), ele, false) {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, true:tx requestId", tx.RequestHash())
+			if isSysContract{
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, sysContract, true:tx requestId", tx.RequestHash())
+				return true
+			}else if !isSysContract && p.isValidateElection(tx.RequestHash(), ele, false) {
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, userContract, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, isValidateElection fail, false:tx requestId", tx.RequestHash())
