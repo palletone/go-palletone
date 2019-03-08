@@ -1772,21 +1772,6 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 }
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	hash := tx.Hash()
-	// if the tx is not confired ,do this
-	if pool.isTransactionInPool(hash) {
-		// in txpool
-		if ptx, has := pool.all[hash]; has {
-			if !ptx.Pending {
-				// 直接在交易池计算交易费。
-				return ptx.Tx.GetTxFee(pool.GetUtxoEntry)
-			}
-		} else { // in orphanTx pool
-			if ptx, has := pool.orphans[hash]; has {
-				return ptx.Tx.GetTxFee(pool.GetUtxoEntry)
-			}
-		}
-	}
 	return tx.GetTxFee(pool.GetUtxoEntry)
 }
 
