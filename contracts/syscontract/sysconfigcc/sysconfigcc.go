@@ -31,7 +31,7 @@ type SysConfigChainCode struct {
 }
 
 func (d *SysConfigChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	fmt.Println("*** SysConfig ChainCode system contract init ***")
+	//fmt.Println("*** SysConfig ChainCode system contract init ***")
 	return shim.Success([]byte("ok"))
 }
 

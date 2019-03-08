@@ -81,8 +81,7 @@ JavaScript API. See https://github.com/palletone/go-palletone/wiki/JavaScript-Co
 // same time.
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
-	node := makeFullNode(ctx)
-	log.LogConfig.LoggerLvl = "FATAL"
+	node := makeFullNode(ctx, true)
 	startNode(ctx, node)
 	defer node.Stop()
 
@@ -143,7 +142,7 @@ func remoteConsole(ctx *cli.Context) error {
 					}
 
 					configDir := filepath.Dir(configPath)
-					utils.SetLogConfig(ctx, &cfg.Log, configDir)
+					utils.SetLogConfig(ctx, &cfg.Log, configDir, true)
 					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 
 					dataDir = cfg.Node.DataDir
@@ -171,7 +170,7 @@ func remoteConsole(ctx *cli.Context) error {
 					}
 
 					configDir := filepath.Dir(configPath)
-					utils.SetLogConfig(ctx, &cfg.Log, configDir)
+					utils.SetLogConfig(ctx, &cfg.Log, configDir, true)
 					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 				}
 
@@ -193,7 +192,7 @@ func remoteConsole(ctx *cli.Context) error {
 	}
 
 	// 设置 log 的配置
-	log.ConsoleInitLogger(&cfg.Log)
+	log.ConsoleInitLogger()
 
 	// 2. 连接 gptn
 	client, err := dialRPC(endpoint)
@@ -245,7 +244,7 @@ func dialRPC(endpoint string) (*rpc.Client, error) {
 // everything down.
 func ephemeralConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
-	node := makeFullNode(ctx)
+	node := makeFullNode(ctx, true)
 	startNode(ctx, node)
 	defer node.Stop()
 	// Attach to the newly started node and start the JavaScript console
