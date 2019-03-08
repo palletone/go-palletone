@@ -216,7 +216,7 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	return cfg, filepath.Dir(configPath), nil
 }
 
-func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
+func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig) {
 	// Load config file.
 	cfg, configDir, err := maybeLoadConfig(ctx)
 	if err != nil {
@@ -229,7 +229,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
 
 	// log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
-	utils.SetLogConfig(ctx, &cfg.Log, configDir)
+	utils.SetLogConfig(ctx, &cfg.Log, configDir, isInConsole)
 
 	adaptorNodeConfig(&cfg)
 	dataDir := utils.SetNodeConfig(ctx, &cfg.Node, configDir)
@@ -264,9 +264,9 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 // makeFullNode 函数用创建一个 PalletOne 节点，节点类型根据ctx参数传递的命令行指令来控制。
 // 生成node.Node一个结构，里面会有任务函数栈, 然后设置各个服务到serviceFuncs 里面，
 // 包括：全节点，dashboard，以及状态stats服务等
-func makeFullNode(ctx *cli.Context) *node.Node {
+func makeFullNode(ctx *cli.Context, isInConsole bool) *node.Node {
 	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
-	stack, cfg := makeConfigNode(ctx)
+	stack, cfg := makeConfigNode(ctx, isInConsole)
 
 	// 2. 创建 Ptn service、DashBoard service以及 PtnStats service 等 service ,
 	// 并注册到 Node 的 serviceFuncs 中，然后在 stack.Start() 执行的时候会调用这些 service

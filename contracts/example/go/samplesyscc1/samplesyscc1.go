@@ -41,7 +41,7 @@ func (t *SampleSysCC1) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	//as system chaincodes do not take part in consensus and are part of the system,
 	//best practice to do nothing (or very little) in Init.
 
-	fmt.Println("***sample system contract init***")
+	//fmt.Println("***sample system contract init***")
 	return shim.Success(nil)
 }
 
