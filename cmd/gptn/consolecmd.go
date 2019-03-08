@@ -140,9 +140,7 @@ func remoteConsole(ctx *cli.Context) error {
 						return err
 					}
 
-					configDir := filepath.Dir(configPath)
-					utils.SetLogConfig(ctx, &cfg.Log, configDir, true)
-					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+					utils.SetNodeConfig(ctx, &cfg.Node, filepath.Dir(configPath))
 
 					dataDir = cfg.Node.DataDir
 					endpoint = cfg.Node.IPCPath
@@ -153,10 +151,8 @@ func remoteConsole(ctx *cli.Context) error {
 				}
 			} else if endpoint == "" {
 				endpoint = fmt.Sprintf("%s/gptn.ipc", dataDir)
-				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			} else {
 				dataDir = filepath.Dir(endpoint)
-				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			}
 		} else {
 			// 在windows系统下，ipc文件在\\.\pipe\ 目录下, 没在 dataDir 下
@@ -170,9 +166,7 @@ func remoteConsole(ctx *cli.Context) error {
 						return err
 					}
 
-					configDir := filepath.Dir(configPath)
-					utils.SetLogConfig(ctx, &cfg.Log, configDir, true)
-					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+					utils.SetNodeConfig(ctx, &cfg.Node, filepath.Dir(configPath))
 				}
 
 				endpoint = cfg.Node.IPCPath
@@ -186,13 +180,14 @@ func remoteConsole(ctx *cli.Context) error {
 				if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
 					endpoint = `\\.\pipe\` + endpoint
 				}
-				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			} else {
 				dataDir = cfg.Node.DataDir
-				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			}
 		}
 	}
+
+	// 设置 log 的配置
+	utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 
 	// 2. 连接 gptn
 	client, err := dialRPC(endpoint)
