@@ -89,7 +89,6 @@ type iDag interface {
 	GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error)
 	IsApprovedMediator(address common.Address) bool
 
-	GetVotedMediator(addr common.Address) map[common.Address]bool
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 
@@ -100,6 +99,10 @@ type iDag interface {
 
 	IsConsecutiveMediator(nextMediator common.Address) bool
 	MediatorParticipationRate() uint32
+
+	GetAccountInfo(addr common.Address) *modules.AccountInfo
+	GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 }
 
 type MediatorPlugin struct {

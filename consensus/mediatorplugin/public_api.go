@@ -149,7 +149,7 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 		return nil, err
 	}
 
-	medMap := a.dag.GetVotedMediator(addr)
+	medMap := a.dag.GetAccountInfo(addr).VotedMediators
 	mediators := make([]string, 0, len(medMap))
 
 	for med, _ := range medMap {

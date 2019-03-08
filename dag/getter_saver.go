@@ -237,13 +237,13 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	return nodes
 }
 
-func (d *Dag) GetVotedMediator(addr common.Address) map[common.Address]bool {
+func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
 	accountInfo, err := d.unstableStateRep.RetrieveAccountInfo(addr)
 	if err != nil {
 		accountInfo = modules.NewAccountInfo()
 	}
 
-	return accountInfo.VotedMediators
+	return accountInfo
 }
 
 func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {

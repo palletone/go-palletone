@@ -378,6 +378,11 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address, txPool txspool
 	return tx, fee, nil
 }
 
+func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
+	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+	return nil, 0, nil
+}
+
 func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	fee := dag.CurrentFeeSchedule().TransferFee.BaseFee
