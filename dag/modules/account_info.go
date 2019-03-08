@@ -37,13 +37,13 @@ type AccountInfoBase struct {
 	//Votes []vote.VoteInfo
 
 	// 本账户期望的活跃mediator数量
-	DesiredMediatorNum uint8
+	DesiredMediatorCount uint8
 }
 
 func NewAccountInfoBase() *AccountInfoBase {
 	return &AccountInfoBase{
 		//PtnBalance:         0,
-		DesiredMediatorNum: 0,
+		DesiredMediatorCount: 0,
 	}
 }
 

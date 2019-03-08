@@ -49,13 +49,13 @@ type FeeSchedule struct {
 	MediatorCreateFee        uint64                `json:"mediatorCreateFee"`
 	VoteMediatorFee          uint64                `json:"voteMediatorFee"`
 	TransferFee              TransferFeeParameters `json:"transferPtnFee"`
-	SetDesiredMediatorNumFee uint8                 `json:"setDesiredMediatorNumFee"`
+	SetDesiredMediatorCountFee uint8                 `json:"setDesiredMediatorCountFee"`
 }
 
 func newFeeSchedule() (f FeeSchedule) {
 	f.MediatorCreateFee = DefaultMediatorCreateFee
 	f.VoteMediatorFee = DefaultVoteMediatorFee
-	f.SetDesiredMediatorNumFee = DefaultSetDesiredMediatorNumFee
+	f.SetDesiredMediatorCountFee = DefaultSetDesiredMediatorCountFee
 	f.TransferFee = newTransferFeeParameters()
 
 	return

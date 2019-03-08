@@ -188,3 +188,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 
 	return res, nil
 }
+
+func (a *PrivateMediatorAPI) SetDesiredMediatorCount() {
+
+}
