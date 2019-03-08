@@ -25,7 +25,7 @@ function ExecInit()
        fi
 
     path=`pwd`
-    fullpath=${path}"/palletone/gptn/leveldb"
+    fullpath=${path}"/palletone/leveldb"
     echo "leveldb path:"$fullpath
     if [ ! -d $fullpath ]; then
         echo "====================init err=================="
@@ -36,7 +36,7 @@ function ExecInit()
     else
     echo $count
         cd node$count
-        cp ../node1/palletone/gptn/leveldb ./palletone/gptn/. -rf
+        cp ../node1/palletone/leveldb ./palletone/. -rf
         rm -rf log
         cd ../
     fi
