@@ -195,7 +195,7 @@ function MakeTestNet()
     mkdir -p node_test/palletone/gptn
     cd node_test
     cp ../gptn .
-    cp ../node1/palletone/gptn/leveldb palletone/gptn/. -rf 
+    cp ../node1/palletone/leveldb palletone/. -rf
     dumcpconfig=`./gptn dumpuserconfig`
     echo $dumpconfig
 
