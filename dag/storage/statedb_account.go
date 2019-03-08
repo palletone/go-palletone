@@ -93,6 +93,15 @@ func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.A
 	return err
 }
 
+func (statedb *StateDb) UpdateDesiredMediatorCount(account common.Address, mediatorCountSet uint8) error {
+	accountInfo, _ := statedb.RetrieveAccountInfo(account)
+
+	accountInfo.DesiredMediatorCount = mediatorCountSet
+	log.Debugf("Try to save DesiredMediatorCount(%v) for account(%v)", mediatorCountSet, account.Str())
+
+	return statedb.StoreAccountInfo(account, accountInfo)
+}
+
 func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount int64) error {
 	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
 	balance := uint64(0)

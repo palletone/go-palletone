@@ -95,4 +95,5 @@ type IStateDb interface {
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
+	UpdateDesiredMediatorCount(account common.Address, mediatorCountSet uint8) error
 }

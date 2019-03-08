@@ -635,6 +635,19 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 	return payload, nil
 }
 
+func (rep *UnitRepository) SaveDesiredMediatorCount(msg *modules.Message, account common.Address) error {
+	mediatorCountSet, ok := msg.Payload.(*modules.MediatorCountSet)
+	if !ok {
+		return errors.New("not a valid mediator Count Set payload")
+	}
+
+	if err := rep.statedb.UpdateDesiredMediatorCount(account, mediatorCountSet.DesiredMediatorCount); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //Yiran
 func (rep *UnitRepository) SaveVote(msg *modules.Message, voter common.Address) error {
 
@@ -805,8 +818,12 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("Save vote payload error.")
 			}
 		case modules.OP_MEDIATOR_CREATE:
-			if ok := rep.MediatorCreateApply(msg); !ok {
+			if !rep.MediatorCreateApply(msg) {
 				return fmt.Errorf("apply Mediator Creating Operation error")
+			}
+		case modules.OP_MEDIATOR_COUNT_SET:
+			if err := rep.SaveDesiredMediatorCount(msg, requester); err != nil {
+				return fmt.Errorf("save Desired Mediator Count error")
 			}
 
 		case modules.APP_CONTRACT_TPL_REQUEST:
