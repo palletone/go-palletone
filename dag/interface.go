@@ -43,6 +43,7 @@ type IDag interface {
 	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
 	VerifyHeader(header *modules.Header, seal bool) error
 	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
+	GetMainCurrentUnit() *modules.Unit
 	GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit
 	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
