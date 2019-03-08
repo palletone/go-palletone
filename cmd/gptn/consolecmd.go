@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	"gopkg.in/urfave/cli.v1"
@@ -81,8 +80,7 @@ JavaScript API. See https://github.com/palletone/go-palletone/wiki/JavaScript-Co
 // same time.
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
-	node := makeFullNode(ctx)
-	log.LogConfig.LoggerLvl = "FATAL"
+	node := makeFullNode(ctx, true)
 	startNode(ctx, node)
 	defer node.Stop()
 
@@ -143,7 +141,7 @@ func remoteConsole(ctx *cli.Context) error {
 					}
 
 					configDir := filepath.Dir(configPath)
-					utils.SetLogConfig(ctx, &cfg.Log, configDir)
+					utils.SetLogConfig(ctx, &cfg.Log, configDir, true)
 					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 
 					dataDir = cfg.Node.DataDir
@@ -155,11 +153,13 @@ func remoteConsole(ctx *cli.Context) error {
 				}
 			} else if endpoint == "" {
 				endpoint = fmt.Sprintf("%s/gptn.ipc", dataDir)
+				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			} else {
 				dataDir = filepath.Dir(endpoint)
+				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			}
 		} else {
-			// 在windows系统下，ipc文件在\\.\pipe\ 目录下
+			// 在windows系统下，ipc文件在\\.\pipe\ 目录下, 没在 dataDir 下
 
 			if endpoint == "" && dataDir == "" {
 				configPath := getConfigPath(ctx)
@@ -171,7 +171,7 @@ func remoteConsole(ctx *cli.Context) error {
 					}
 
 					configDir := filepath.Dir(configPath)
-					utils.SetLogConfig(ctx, &cfg.Log, configDir)
+					utils.SetLogConfig(ctx, &cfg.Log, configDir, true)
 					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 				}
 
@@ -186,14 +186,13 @@ func remoteConsole(ctx *cli.Context) error {
 				if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
 					endpoint = `\\.\pipe\` + endpoint
 				}
+				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			} else {
 				dataDir = cfg.Node.DataDir
+				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			}
 		}
 	}
-
-	// 设置 log 的配置
-	log.ConsoleInitLogger(&cfg.Log)
 
 	// 2. 连接 gptn
 	client, err := dialRPC(endpoint)
@@ -245,7 +244,7 @@ func dialRPC(endpoint string) (*rpc.Client, error) {
 // everything down.
 func ephemeralConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
-	node := makeFullNode(ctx)
+	node := makeFullNode(ctx, true)
 	startNode(ctx, node)
 	defer node.Stop()
 	// Attach to the newly started node and start the JavaScript console

@@ -975,7 +975,7 @@ func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string
 	}
 }
 
-func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
+func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConsole bool) {
 	// 重新计算log.output的路径
 	if temp := ctx.GlobalString(LogOutputPathFlag.Name); temp != "" {
 		if !filepath.IsAbs(temp) {
@@ -1031,6 +1031,9 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
 	cfg.ErrorOutputPaths[errIndex] = common.GetAbsPath(errPath)
 
 	log.LogConfig = *cfg
+	if isInConsole {
+		log.ConsoleInitLogger()
+	}
 }
 
 //func GetAbsDirectory(path string) string {
@@ -1141,7 +1144,7 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	if gen := ctx.GlobalInt(TrieCacheGenFlag.Name); gen > 0 {
 		state.MaxTrieCacheGen = uint16(gen)
 	}
-	cfg.TokenSubProtocol = strings.ToLower(cfg.Dag.GasToken)
+	cfg.TokenSubProtocol = strings.ToLower(cfg.Dag.MainToken)
 }
 
 // SetDashboardConfig applies dashboard related command line flags to the config.

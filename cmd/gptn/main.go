@@ -234,7 +234,7 @@ func main() {
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
 func gptn(ctx *cli.Context) error {
-	node := makeFullNode(ctx)
+	node := makeFullNode(ctx, false)
 	startNode(ctx, node)
 	node.Wait()
 	return nil

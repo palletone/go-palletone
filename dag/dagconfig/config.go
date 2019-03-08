@@ -56,6 +56,7 @@ var DefaultConfig = Config{
 	AddrTxsIndex:                 false,
 	TextFileHashIndex:            false,
 	GasToken:                     DefaultToken,
+	MainToken:                    DefaultToken,
 }
 
 func init() {
@@ -108,6 +109,8 @@ type Config struct {
 	//当前节点选择的平台币，燃料币,必须为Asset全名
 	GasToken            string
 	gasToken            modules.IDType16 `toml:"-"`
+	MainToken           string
+	mainToken           modules.IDType16
 	SyncPartitionTokens []string
 	syncPartitionTokens []modules.IDType16 `toml:"-"`
 }
@@ -154,6 +157,18 @@ func (c *Config) GetGasToken() modules.IDType16 {
 		c.gasToken = token
 	}
 	return c.gasToken
+}
+func (c *Config) GetMainToken() modules.IDType16 {
+	if c.mainToken == modules.ZeroIdType16() {
+		token, err := modules.String2AssetId(c.MainToken)
+		{
+			if err != nil {
+				return modules.PTNCOIN
+			}
+		}
+		c.mainToken = token
+	}
+	return c.mainToken
 }
 func (c *Config) GeSyncPartitionTokens() []modules.IDType16 {
 	if c.syncPartitionTokens == nil {

@@ -562,8 +562,10 @@ func (ps *peerSet) BestPeer(assetId modules.IDType16) *peer {
 		bestTd   uint64 //*big.Int
 	)
 	for _, p := range ps.peers {
-		if _, number := p.Head(assetId); bestPeer == nil || number.Index > bestTd /*td.Cmp(bestTd) > 0*/ {
-			bestPeer, bestTd = p, number.Index
+		if _, number := p.Head(assetId); bestPeer == nil || number.Index > bestTd {
+			if number != nil {
+				bestPeer, bestTd = p, number.Index
+			}
 		}
 	}
 	return bestPeer
