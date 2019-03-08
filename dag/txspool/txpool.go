@@ -1121,7 +1121,7 @@ func (pool *TxPool) DeleteTx() error {
 			pool.DeleteTxByHash(hash)
 		}
 		if !tx.Confirmed {
-			if tx.CreationDate.Add(DefaultTxPoolConfig.Lifetime).Before(time.Now()) {
+			if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
 				continue
 			} else {
 				// delete
@@ -1129,7 +1129,7 @@ func (pool *TxPool) DeleteTx() error {
 				pool.DeleteTxByHash(hash)
 			}
 		}
-		if tx.CreationDate.Add(DefaultTxPoolConfig.Removetime).After(time.Now()) {
+		if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
 			// delete
 			log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
 			pool.DeleteTxByHash(hash)
@@ -1636,7 +1636,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
-	unit_size := common.StorageSize(dagconfig.DefaultConfig.UnitTxSize)
+	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
 	for {
 		tx := pool.priority_priced.Get()
 		if tx == nil {
