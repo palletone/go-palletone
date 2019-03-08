@@ -89,6 +89,11 @@ func (d *Dag) CurrentUnit(token modules.IDType16) *modules.Unit {
 	return d.Memdag.GetLastMainchainUnit(token)
 }
 
+func (d *Dag) GetMainCurrentUnit() *modules.Unit {
+	main_token := dagconfig.DagConfig.GetMainToken()
+	return d.Memdag.GetLastMainchainUnit(main_token)
+}
+
 func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
 	curUnit := d.CurrentUnit(assetId)

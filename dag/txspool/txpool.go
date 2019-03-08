@@ -1121,7 +1121,7 @@ func (pool *TxPool) DeleteTx() error {
 			pool.DeleteTxByHash(hash)
 		}
 		if !tx.Confirmed {
-			if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
+			if tx.CreationDate.Add(DefaultTxPoolConfig.Lifetime).Before(time.Now()) {
 				continue
 			} else {
 				// delete
@@ -1129,7 +1129,7 @@ func (pool *TxPool) DeleteTx() error {
 				pool.DeleteTxByHash(hash)
 			}
 		}
-		if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
+		if tx.CreationDate.Add(DefaultTxPoolConfig.Removetime).After(time.Now()) {
 			// delete
 			log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
 			pool.DeleteTxByHash(hash)
@@ -1636,7 +1636,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
-	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
+	unit_size := common.StorageSize(dagconfig.DefaultConfig.UnitTxSize)
 	for {
 		tx := pool.priority_priced.Get()
 		if tx == nil {
@@ -1772,22 +1772,6 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 }
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-
-	// hash := tx.Hash()
-	// // if the tx is not confired ,do this
-	// if pool.isTransactionInPool(hash) {
-	// 	// in txpool
-	// 	if ptx, has := pool.all[hash]; has {
-	// 		if !ptx.Pending {
-	// 			// 直接在交易池计算交易费。
-	// 			return ptx.Tx.GetTxFee(pool.GetUtxoEntry)
-	// 		}
-	// 	} else { // in orphanTx pool
-	// 		if ptx, has := pool.orphans[hash]; has {
-	// 			return ptx.Tx.GetTxFee(pool.GetUtxoEntry)
-	// 		}
-	// 	}
-	// }
 	return tx.GetTxFee(pool.GetUtxoEntry)
 }
 
