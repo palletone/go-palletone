@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 const (
@@ -145,16 +144,6 @@ type Config struct {
 	// *WARNING* Only set this if the node is running in a trusted network, exposing
 	// private APIs to untrusted users is a major security risk.
 	WSExposeAll bool `toml:",omitempty"`
-
-	// Logger is a custom logger to use with the p2p.Server.
-	//Logger log.ILogger `toml:",omitempty"`
-	//当前节点选择的平台币，燃料币,必须为Asset全名
-	GasToken            string
-	MainToken           string
-	mainToken           modules.IDType16 `toml:"-"`
-	gasToken            modules.IDType16 `toml:"-"`
-	SyncPartitionTokens []string
-	syncPartitionTokens []modules.IDType16 `toml:"-"`
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into
@@ -209,43 +198,6 @@ func (c *Config) HTTPEndpoint() string {
 		return ""
 	}
 	return fmt.Sprintf("%s:%d", c.HTTPHost, c.HTTPPort)
-}
-
-func (c *Config) GetGasToken() modules.IDType16 {
-	if c.gasToken == modules.ZeroIdType16() {
-		token, err := modules.String2AssetId(c.GasToken)
-		if err != nil {
-			log.Warn("Cannot parse node.GasToken to a correct asset, token str:" + c.GasToken)
-			return modules.PTNCOIN
-		}
-		c.gasToken = token
-	}
-	return c.gasToken
-}
-func (c *Config) GetMainToken() modules.IDType16 {
-	if c.mainToken == modules.ZeroIdType16() {
-		token, err := modules.String2AssetId(c.MainToken)
-		{
-			if err != nil {
-				return modules.PTNCOIN
-			}
-		}
-		c.mainToken = token
-	}
-	return c.mainToken
-}
-func (c *Config) GeSyncPartitionTokens() []modules.IDType16 {
-	if c.syncPartitionTokens == nil {
-		c.syncPartitionTokens = []modules.IDType16{}
-		for _, tokenString := range c.SyncPartitionTokens {
-			token, err := modules.String2AssetId(tokenString)
-			if err != nil {
-				log.Warn("Cannot parse node.SyncPartitionTokens to a correct asset, token str:" + c.GasToken)
-				c.syncPartitionTokens = append(c.syncPartitionTokens, token)
-			}
-		}
-	}
-	return c.syncPartitionTokens
 }
 
 // DefaultHTTPEndpoint returns the HTTP endpoint used by default.
@@ -322,7 +274,7 @@ func (c *Config) resolvePath(path string) string {
 		if c.Name == "gptn" {
 			oldpath = filepath.Join(c.DataDir, path)
 		}
-		if oldpath != "" && common.FileExist(oldpath) {
+		if oldpath != "" && common.IsExisted(oldpath) {
 			// TODO: print warning
 			return oldpath
 		}

@@ -30,7 +30,7 @@ func MakeName(name, version string) string {
 	return fmt.Sprintf("%s/v%s/%s/%s", name, version, runtime.GOOS, runtime.Version())
 }
 
-func FileExist(filePath string) bool {
+func IsExisted(filePath string) bool {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		return false
@@ -44,4 +44,18 @@ func AbsolutePath(Datadir string, filename string) string {
 		return filename
 	}
 	return filepath.Join(Datadir, filename)
+}
+
+func GetAbsPath(filename string) string {
+	if filepath.IsAbs(filename) {
+		return filename
+	}
+
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	return filepath.Join(dir, filename)
+}
+
+func GetWorkPath() string {
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	return dir
 }

@@ -22,7 +22,6 @@ package validator
 
 import (
 	"github.com/palletone/go-palletone/common/log"
-
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -183,7 +182,7 @@ func (validate *Validate) ValidateTransactions(txs modules.Transactions) error {
 }
 func ComputeRewards() uint64 {
 	var rewards uint64
-	if dagconfig.DefaultConfig.IsRewardCoin {
+	if dagconfig.DagConfig.IsRewardCoin {
 		rewards = uint64(modules.DAO)
 	}
 	return rewards

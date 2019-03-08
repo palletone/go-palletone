@@ -22,7 +22,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -81,7 +80,7 @@ func RemoveFileAndEmptyFolder(filePath string) error {
 			return nil
 		}
 	}
-	var parentFolder = path.Dir(filePath)
+	var parentFolder = filepath.Dir(filePath)
 	return RemoveFileAndEmptyFolder(parentFolder)
 }
 
@@ -94,7 +93,7 @@ func MakeDirAndFile(filePath string) error {
 	// log.Println("log file path:" + filePath)
 	if !IsExist(filePath) {
 		// log.Println("create folder and file:" + filePath)
-		err := os.MkdirAll(path.Dir(filePath), os.ModePerm)
+		err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
 		if err != nil {
 			return err
 		}

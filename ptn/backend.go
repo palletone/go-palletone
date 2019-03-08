@@ -34,12 +34,11 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/dagconfig"
-
 	//dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -102,7 +101,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
 
-	db, err := CreateDB(ctx, config, "leveldb") //MUST same with isOldGptnResource
+	db, err := CreateDB(ctx, config /*, "leveldb"*/) //MUST same with isOldGptnResource
 	if err != nil {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
@@ -171,12 +170,13 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 }
 
 // CreateDB creates the chain database.
-func CreateDB(ctx *node.ServiceContext, config *Config, name string) (palletdb.Database, error) {
+func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palletdb.Database, error) {
 	//db, err := ptndb.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
-	path := ctx.DatabasePath(name)
+	//path := ctx.DatabasePath(name)
+	path := dagconfig.DagConfig.DbPath
 
 	//fit dag DefaultConfig
-	dagconfig.DefaultConfig.DbPath = path
+	//dagconfig.DagConfig.DbPath = path
 
 	log.Debug("Open leveldb path:", "path", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
@@ -211,25 +211,12 @@ func (s *PalletOne) APIs() []rpc.API {
 			Service:   NewPublicPalletOneAPI(s),
 			Public:    true,
 		},
-		//{
-		//	Namespace: "ptn",
-		//	Version:   "1.0",
-		//	//Service:   NewPublicMinerAPI(s),
-		//	Public: true,
-		//},
 		{
 			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
 		},
-		//{
-		//	Namespace: "miner",
-		//	Version:   "2.0",
-		//	//Service:   NewPrivateMinerAPI(s),
-		//	Service: NewPublicDagAPI(s),
-		//	Public:  true,
-		//},
 		{
 			Namespace: "ptn",
 			Version:   "1.0",

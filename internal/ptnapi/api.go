@@ -609,7 +609,7 @@ func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmou
 	log.Info("-----Ccinstalltx:", "version", version)
 
 	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version)
-	sReqId := hex.EncodeToString(reqId)
+	sReqId := hex.EncodeToString(reqId[:])
 	sTplId := hex.EncodeToString(tplId)
 	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)
 
@@ -640,7 +640,7 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	}
 	reqId, depId, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
 	addDepId := common.NewAddress(depId, common.ContractHash)
-	sReqId := hex.EncodeToString(reqId)
+	sReqId := hex.EncodeToString(reqId[:])
 	sDepId := hex.EncodeToString(addDepId[:len(addDepId)-2])
 	log.Info("-----Ccdeploytx:", "reqId", sReqId, "tplId", sDepId)
 	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", addDepId.String())
@@ -672,6 +672,7 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 	log.Info("-----Ccinvoketx:", "contractId", contractAddr.String())
 	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
 	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
+	log.Info("-----Ccinvoketx:", "daoAmount", daoAmount)
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
 	log.Info("-----Ccinvoketx:", "param len", len(param))
@@ -681,10 +682,10 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractDeployRsp{
-		ReqId:      hex.EncodeToString(rsp),
+		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: deployId,
 	}
 	return rsp1, err
@@ -714,10 +715,10 @@ func (s *PublicBlockChainAPI) CcinvokeToken(ctx context.Context, from, to, toTok
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	rsp, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, amount, fee, amountOfToken, assetToken, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, amount, fee, amountOfToken, assetToken, contractAddr, args, 0)
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractDeployRsp{
-		ReqId:      hex.EncodeToString(rsp),
+		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: deployId,
 	}
 	return rsp1, err
@@ -767,10 +768,10 @@ func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoA
 		return "", err
 	}
 
-	rsp, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 
-	return hex.EncodeToString(rsp), err
+	return hex.EncodeToString(reqId[:]), err
 }
 
 func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, deleteImage string) (string, error) {
@@ -791,9 +792,9 @@ func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount,
 	log.Info("-----Ccstoptx:", "contractId", contractAddr)
 	log.Info("-----Ccstoptx:", "delImg", delImg)
 
-	rsp, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
-	log.Info("-----Ccstoptx:" + hex.EncodeToString(rsp))
-	return hex.EncodeToString(rsp), err
+	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
+	log.Info("-----Ccstoptx:" + hex.EncodeToString(reqId[:]))
+	return hex.EncodeToString(reqId[:]), err
 }
 
 func (s *PublicBlockChainAPI) Election(ctx context.Context, sid string) (string, error) {
@@ -1620,7 +1621,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	return taken_utxo, change
 //}
 
-func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string) (core.Utxos, error) {
+func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string,asset string) (core.Utxos, error) {
 	var addr common.Address
 	// store tx input utxo outpoint
 	inputsOutpoint := []modules.OutPoint{}
@@ -1633,20 +1634,18 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 	vaildutxos := core.Utxos{}
 	op := modules.OutPoint{}
 	payout := new(modules.Output)
-	var err error
+
 	var PkScript string
+	tokenAsset, err := modules.StringToAsset(asset)
+	if err != nil {
+		return vaildutxos, err
+	}
 	for _, tx := range poolTxs {
 		for msgindex, msg := range tx.Tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
-				for _, input := range pay.Inputs {
-					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
-					//utxoinputs = append(utxoinputs, iutxo)
-					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
-					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
-					//result[*input.PreviousOutPoint] = lockScript
-					//5,6,8,9
-					fmt.Printf("-------inputsOutpoint---%+v\n", inputsOutpoint)
+				if pay.Outputs[0].Asset.IsSimilar(tokenAsset) == false {
+				    continue
 				}
 				for outIndex, output := range pay.Outputs {
 					op.TxHash = tx.Tx.Hash()
@@ -1661,7 +1660,14 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 					}
 					//outxo := s.b.GetUtxoEntry(op)
 					//utxooutputs = append(utxooutputs, outxo)
-					fmt.Printf("------------outputsOutpoint----%+v\n", outputsOutpoint)
+				}
+				for _, input := range pay.Inputs {
+					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
+					//utxoinputs = append(utxoinputs, iutxo)
+					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
+					//result[*input.PreviousOutPoint] = lockScript
+					//5,6,8,9
 				}
 			}
 		}
@@ -1767,7 +1773,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
 
 	if err == nil {
-		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from)
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from,"PTN")
 		if err != nil {
 			return "", fmt.Errorf("Select utxo err")
 		}
@@ -2719,266 +2725,3 @@ func (s *PublicNetAPI) PeerCount() hexutil.Uint {
 func (s *PublicNetAPI) Version() string {
 	return fmt.Sprintf("%d", s.networkVersion)
 }
-
-type PublicDagAPI struct {
-	b Backend
-	// d *dag
-}
-
-func NewPublicDagAPI(b Backend) *PublicDagAPI {
-	return &PublicDagAPI{b}
-}
-
-func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error) {
-	// key to bytes
-	return s.b.GetCommon([]byte(key))
-}
-
-func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
-	result := s.b.GetCommonByPrefix([]byte(prefix))
-	if result == nil || len(result) == 0 {
-		return "all_items:null", nil
-	}
-
-	fmt.Println("...")
-	info := NewPublicReturnInfo("all_items", result)
-	result_json, err := json.Marshal(info)
-	return string(result_json), err
-}
-
-func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {
-	log.Info("PublicBlockChainAPI", "GetUnitByHash condition:", condition)
-	hash := common.Hash{}
-	if err := hash.SetHexString(condition); err != nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
-		return ""
-	}
-	unit := s.b.GetUnitByHash(hash)
-	if unit == nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByHash GetUnitByHash is nil hash:", hash)
-		return "GetUnitByHash nil"
-	}
-	content, err := json.Marshal(*unit)
-	if err != nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
-		return "Marshal err"
-	}
-	return *(*string)(unsafe.Pointer(&content))
-}
-
-func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) string {
-	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
-
-	number := &modules.ChainIndex{}
-	//if err := json.Unmarshal(*(*[]byte)(unsafe.Pointer(&condition)), &number); err != nil {
-	//	log.Info("PublicBlockChainAPI", "GetUnitByNumber Unmarshal err:", err, "condition:", condition)
-	//	return "Unmarshal err"
-	//}
-	index, err := strconv.ParseInt(condition, 10, 64)
-	if err != nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByNumber strconv.ParseInt err:", err, "condition:", condition)
-		return ""
-	}
-	number.Index = uint64(index)
-	number.IsMain = true
-
-	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
-	//asset := modules.NewPTNAsset()
-	number.AssetID = modules.CoreAsset.AssetId
-	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
-
-	unit := s.b.GetUnitByNumber(number)
-	if unit == nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
-		return "GetUnitByNumber nil"
-	}
-	jsonUnit := ptnjson.ConvertUnit2Json(unit)
-	content, err := json.Marshal(jsonUnit)
-	if err != nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
-		return "Marshal err"
-	}
-	return *(*string)(unsafe.Pointer(&content))
-}
-
-//func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
-//	items, err := s.b.GetAllTokenInfo()
-//	if err != nil {
-//		return "all_token_info:null", err
-//	}
-//
-//	info := NewPublicReturnInfo("all_token_info", items)
-//	result_json, _ := json.Marshal(info)
-//
-//	return string(result_json), nil
-//}
-//func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {
-//	hex := hexutil.Encode([]byte(key))
-//
-//	if item, err := s.b.GetTokenInfo(hex); err != nil {
-//		return "", err
-//	} else {
-//		info := NewPublicReturnInfo("token_info", item)
-//		result_json, _ := json.Marshal(info)
-//		return string(result_json), nil
-//	}
-//}
-
-// SaveTokenInfo save a token  ,return hex key.
-//func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator string) (string, error) {
-//	//info to token
-//	info := modules.NewTokenInfo(name, token, creator)
-//
-//	item, err := s.b.SaveTokenInfo(info)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	this := NewPublicReturnInfo("save_token_info", item)
-//	result_json, _ := json.Marshal(this)
-//	return string(result_json), nil
-//
-//}
-func (s *PublicDagAPI) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
-	return s.b.GetUnstableUnits()
-}
-func (s *PublicDagAPI) GetUnitTxsInfo(ctx context.Context, hashHex string) (string, error) {
-	hash := common.HexToHash(hashHex)
-	if item, err := s.b.GetUnitTxsInfo(hash); err != nil {
-		return "unit_txs:null", err
-	} else {
-		info := NewPublicReturnInfo("unit_txs", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
-	}
-}
-
-func (s *PublicDagAPI) GetUnitTxsHashHex(ctx context.Context, hashHex string) (string, error) {
-	hash := common.HexToHash(hashHex)
-
-	if item, err := s.b.GetUnitTxsHashHex(hash); err != nil {
-		return "unit_txs_hash:null", err
-	} else {
-		info := NewPublicReturnInfo("unit_txs_hash", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
-	}
-}
-
-func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string, error) {
-	hash := common.HexToHash(hashHex)
-	if item, err := s.b.GetTxByHash(hash); err != nil {
-		return "transaction_info:null", err
-	} else {
-		info := NewPublicReturnInfo("transaction_info", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
-	}
-}
-
-func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
-	hash := common.HexToHash(hashHex)
-	item, err := s.b.GetTxSearchEntry(hash)
-
-	info := NewPublicReturnInfo("tx_entry", item)
-	result_json, _ := json.Marshal(info)
-	return string(result_json), err
-}
-
-func (s *PublicDagAPI) GetAddrOutpoints(ctx context.Context, addr string) (string, error) {
-	items, err := s.b.GetAddrOutpoints(addr)
-	if err != nil {
-		return "", err
-	}
-	info := NewPublicReturnInfo("address_outpoints", items)
-	result_json, _ := json.Marshal(info)
-	return string(result_json), nil
-}
-
-func (s *PublicDagAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
-	items, err := s.b.GetAddrUtxos(addr)
-
-	if err != nil {
-		return "", err
-	}
-	info := NewPublicReturnInfo("address_utxos", items)
-	result_json, _ := json.Marshal(info)
-	return string(result_json), nil
-}
-
-func (s *PublicDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
-	items, err := s.b.GetAllUtxos()
-	if err != nil {
-		log.Error("Get all utxo failed.", "error", err, "result", items)
-		return "", err
-	}
-
-	info := NewPublicReturnInfo("all_utxos", items)
-
-	result_json, err := json.Marshal(info)
-	if err != nil {
-		log.Error("Get all utxo ,json marshal failed.", "error", err)
-	}
-
-	return string(result_json), nil
-}
-
-func (s *PublicDagAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*ptnjson.GetTxIdResult, error) {
-	tx, err := s.b.GetTxByTxid_back(txid)
-	if err != nil {
-		log.Error("Get transcation by hash ", "unit_hash", txid, "error", err.Error())
-		return nil, err
-	}
-	return tx, nil
-}
-
-func (s *PublicDagAPI) GetTxHashByReqId(ctx context.Context, hashHex string) (string, error) {
-	hash := common.HexToHash(hashHex)
-	item, err := s.b.GetTxHashByReqId(hash)
-
-	info := NewPublicReturnInfo("tx_hash", item)
-	result_json, _ := json.Marshal(info)
-	return string(result_json), err
-}
-
-// GetTxPoolTxByHash returns the pool transaction for the given hash
-func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
-	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
-	hash := common.HexToHash(hex)
-	log.Debug("this is hash tx's hash  to find tx.", "hash", hash.String())
-	item, err := s.b.GetTxPoolTxByHash(hash)
-	if err != nil {
-		return "pool_tx:null", err
-	} else {
-		info := NewPublicReturnInfo("txpool_tx", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
-	}
-}
-
-// GetHeadUnitHash returns the head unit's hash
-//func (s *PublicDagAPI) GetHeadUnitHash(ctx context.Context) (string, error) {
-//	hash, err := s.b.GetHeadUnitHash()
-//	if hash != (common.Hash{}) {
-//		return hash.String(), err
-//	}
-//	return "is not exist!", err
-//}
-//
-//// GetHeadHeaderHash returns the head header's hash
-//func (s *PublicDagAPI) GetHeadHeaderHash(ctx context.Context) (string, error) {
-//	hash, err := s.b.GetHeadHeaderHash()
-//	if hash != (common.Hash{}) {
-//		return hash.String(), err
-//	}
-//	return "is not exist!", err
-//}
-//
-//// GetHeadFastUnitHash returns the fast unit's hash
-//func (s *PublicDagAPI) GetHeadFastUnitHash(ctx context.Context) (string, error) {
-//	hash, err := s.b.GetHeadFastUnitHash()
-//	if hash != (common.Hash{}) {
-//		return hash.String(), err
-//	}
-//	return "is not exist!", err
-//}

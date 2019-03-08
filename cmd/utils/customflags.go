@@ -24,7 +24,7 @@ import (
 	"math/big"
 	"os"
 	"os/user"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/palletone/go-palletone/common/math"
@@ -226,7 +226,7 @@ func expandPath(p string) string {
 			p = home + p[1:]
 		}
 	}
-	return path.Clean(os.ExpandEnv(p))
+	return filepath.Clean(os.ExpandEnv(p))
 }
 
 func homeDir() string {

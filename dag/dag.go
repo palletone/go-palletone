@@ -32,8 +32,8 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 
-	"github.com/palletone/go-palletone/core/node"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -90,7 +90,7 @@ func (d *Dag) CurrentUnit(token modules.IDType16) *modules.Unit {
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
-	main_token := node.DefaultConfig.GetMainToken()
+	main_token := dagconfig.DagConfig.GetMainToken()
 	return d.Memdag.GetLastMainchainUnit(main_token)
 }
 
@@ -473,7 +473,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
 	partitionMemdag := make(map[modules.IDType16]memunit.IMemDag)
-	for _, ptoken := range node.DefaultConfig.GeSyncPartitionTokens() {
+	for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
 		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)
 	}
 

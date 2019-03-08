@@ -42,7 +42,7 @@ var (
 		Name:   "console",
 		Usage:  "Start an interactive JavaScript environment",
 		//Flags:    append(append(append(nodeFlags, rpcFlags...), consoleFlags...), whisperFlags...),
-		Flags:    append(append(append(nodeFlags, rpcFlags...), consoleFlags...)),
+		Flags:    append(append(nodeFlags, rpcFlags...), consoleFlags...),
 		Category: "CONSOLE COMMANDS",
 		Description: `
 The Geth console is an interactive shell for the JavaScript runtime environment
@@ -55,7 +55,7 @@ See https://github.com/palletone/go-palletone/wiki/JavaScript-Console.`,
 		Name:      "attach",
 		Usage:     "Start an interactive JavaScript environment (connect to node)",
 		ArgsUsage: "[endpoint]",
-		Flags:     append(consoleFlags, utils.DataDirFlag),
+		Flags:     append(consoleFlags, utils.DataDirFlag, ConfigFilePathFlag),
 		Category:  "CONSOLE COMMANDS",
 		Description: `
 The Geth console is an interactive shell for the JavaScript runtime environment
@@ -80,9 +80,9 @@ JavaScript API. See https://github.com/palletone/go-palletone/wiki/JavaScript-Co
 // localConsole starts a new gptn node, attaching a JavaScript console to it at the
 // same time.
 func localConsole(ctx *cli.Context) error {
-
 	// Create and start the node based on the CLI flags
 	node := makeFullNode(ctx)
+	log.LogConfig.LoggerLvl = "FATAL"
 	startNode(ctx, node)
 	defer node.Stop()
 
@@ -92,7 +92,7 @@ func localConsole(ctx *cli.Context) error {
 		utils.Fatalf("Failed to attach to the inproc gptn: %v", err)
 	}
 	config := console.Config{
-		DataDir: utils.MakeDataDir(ctx),
+		DataDir: node.DataDir(), //utils.MakeDataDir(ctx),
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
@@ -119,72 +119,95 @@ func localConsole(ctx *cli.Context) error {
 // remoteConsole will connect to a remote gptn instance, attaching a JavaScript
 // console to it.
 func remoteConsole(ctx *cli.Context) error {
-	// Attach to a remotely running gptn instance and start the JavaScript console
+	// 1. 获取和计算 endpoint 和 dataDir 的实际路径
 	endpoint := ctx.Args().First()
-	cfg := &FullConfig{Node: defaultNodeConfig()}
-	datadir := cfg.Node.DataDir
-	if endpoint == "" {
-		configPath := getConfigPath(ctx)
+	dataDir := ctx.GlobalString(utils.DataDirFlag.Name)
+	cfg := DefaultConfig()
 
-		// On windows we can only use plain top-level pipes
-		if runtime.GOOS == "windows" {
-			err := loadConfig(configPath, cfg)
-			if err != nil {
-				utils.Fatalf("%v", err)
-				return err
-			}
+	if endpoint == "" || dataDir == "" {
+		if runtime.GOOS != "windows" {
+			// 在非windows系统的中，ipc文件放在 dataDir 下
 
-			endpoint = cfg.Node.IPCPath
-			if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
-				endpoint = `\\.\pipe\` + endpoint
+			if endpoint == "" && dataDir == "" {
+				dataDir = cfg.Node.DataDir
+				endpoint = filepath.Join(dataDir, cfg.Node.IPCPath)
+
+				// 如果当前目录没有 ipc文件，则从配置文件中读取
+				if !common.IsExisted(endpoint) {
+					configPath := getConfigPath(ctx)
+
+					err := loadConfig(configPath, &cfg)
+					if err != nil {
+						utils.Fatalf("%v", err)
+						return err
+					}
+
+					configDir := filepath.Dir(configPath)
+					utils.SetLogConfig(ctx, &cfg.Log, configDir)
+					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+
+					dataDir = cfg.Node.DataDir
+					endpoint = cfg.Node.IPCPath
+
+					if !filepath.IsAbs(endpoint) {
+						endpoint = filepath.Join(dataDir, endpoint)
+					}
+				}
+			} else if endpoint == "" {
+				endpoint = fmt.Sprintf("%s/gptn.ipc", dataDir)
+			} else {
+				dataDir = filepath.Dir(endpoint)
 			}
 		} else {
-			dataPath := node.DefaultDataDir()
-			if ctx.GlobalIsSet(utils.DataDirFlag.Name) {
-				dataPath = ctx.GlobalString(utils.DataDirFlag.Name)
-			} else if common.FileExist(configPath) {
-				err := loadConfig(configPath, cfg)
-				if err != nil {
-					utils.Fatalf("%v", err)
-					return err
-				}
-				dataPath = cfg.Node.DataDir
-			}
+			// 在windows系统下，ipc文件在\\.\pipe\ 目录下
 
-			if dataPath != "" {
-				if ctx.GlobalBool(utils.TestnetFlag.Name) {
-					dataPath = filepath.Join(dataPath, "testnet")
+			if endpoint == "" && dataDir == "" {
+				configPath := getConfigPath(ctx)
+				if common.IsExisted(configPath) {
+					err := loadConfig(configPath, &cfg)
+					if err != nil {
+						utils.Fatalf("%v", err)
+						return err
+					}
+
+					configDir := filepath.Dir(configPath)
+					utils.SetLogConfig(ctx, &cfg.Log, configDir)
+					utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 				}
+
+				endpoint = cfg.Node.IPCPath
+				if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
+					endpoint = `\\.\pipe\` + endpoint
+				}
+
+				dataDir = cfg.Node.DataDir
+			} else if endpoint == "" {
+				endpoint = cfg.Node.IPCPath
+				if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
+					endpoint = `\\.\pipe\` + endpoint
+				}
+			} else {
+				dataDir = cfg.Node.DataDir
 			}
-			endpoint = fmt.Sprintf("%s/gptn.ipc", dataPath)
 		}
-	} else {
-		//support abs log path
-		cfgpath := parseCfgPath(ctx, endpoint)
-		err := loadConfig(cfgpath, cfg)
-		if err != nil {
-			utils.Fatalf("%v", err, "cfgpath:", cfgpath)
-			return err
-		}
-		datadir = parseDataPath(ctx, endpoint)
 	}
 
-	if err := parseLogPath(endpoint, cfg.Log); err != nil {
-		return err
-	}
-	log.ConsoleInitLogger(cfg.Log)
+	// 设置 log 的配置
+	log.ConsoleInitLogger(&cfg.Log)
 
+	// 2. 连接 gptn
 	client, err := dialRPC(endpoint)
 	if err != nil {
 		utils.Fatalf("Unable to attach to remote gptn: %v", err)
 	}
 	config := console.Config{
-		DataDir: datadir, //utils.MakeDataDir(ctx),
+		DataDir: dataDir, //utils.MakeDataDir(ctx),
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
 	}
 
+	// 3. 创建 console
 	console, err := console.New(config)
 	if err != nil {
 		utils.Fatalf("Failed to start the JavaScript console2: %v", err)
@@ -196,7 +219,7 @@ func remoteConsole(ctx *cli.Context) error {
 		return nil
 	}
 
-	// Otherwise print the welcome screen and enter interactive mode
+	// 4. Otherwise print the welcome screen and enter interactive mode
 	console.Welcome()
 	console.Interactive()
 
@@ -231,7 +254,7 @@ func ephemeralConsole(ctx *cli.Context) error {
 		utils.Fatalf("Failed to attach to the inproc gptn: %v", err)
 	}
 	config := console.Config{
-		DataDir: utils.MakeDataDir(ctx),
+		DataDir: node.DataDir(), //utils.MakeDataDir(ctx),
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),

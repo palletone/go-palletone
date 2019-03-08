@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -117,25 +118,6 @@ func createInitDKS(ctx *cli.Context) error {
 
 // author Albert·Gou
 func getNodeInfo(ctx *cli.Context) (string, error) {
-	//stack := makeFullNode(ctx)
-	//privateKey := stack.Config().NodeKey()
-	//listenAddr := stack.ListenAddr()
-	//
-	//listener, err := net.Listen("tcp", listenAddr)
-	//if err != nil {
-	//	return "", err
-	//	utils.Fatalf("Invalid listen address : %v", err)
-	//}
-	//realaddr := listener.Addr().(*net.TCPAddr)
-	//
-	//node := discover.NewNode(
-	//	discover.PubkeyID(&privateKey.PublicKey),
-	//	realaddr.IP,
-	//	uint16(realaddr.Port),
-	//	uint16(realaddr.Port))
-	//
-	//return node.String(), nil
-
 	_, cfg := makeConfigNode(ctx)
 	privateKey := cfg.Node.NodeKey()
 	listenAddr := cfg.P2P.ListenAddr
@@ -185,7 +167,7 @@ func getTimestamp(ctx *cli.Context) error {
 func listMediators(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 
-	Dbconn, err := node.OpenDatabase("leveldb", 0, 0)
+	Dbconn, err := node.OpenDatabase(dagconfig.DagConfig.DbPath, 0, 0)
 	if err != nil {
 		fmt.Println("leveldb init failed!")
 		return err

@@ -115,13 +115,13 @@ func New(conf *Config) (*Node, error) {
 	confCopy := *conf
 	conf = &confCopy
 	// 把datadir转成绝对路径
-	if conf.DataDir != "" {
-		absdatadir, err := filepath.Abs(conf.DataDir)
-		if err != nil {
-			return nil, err
-		}
-		conf.DataDir = absdatadir
-	}
+	//if conf.DataDir != "" {
+	//	absdatadir, err := filepath.Abs(conf.DataDir)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	conf.DataDir = absdatadir
+	//}
 	// Ensure that the instance name doesn't cause weird conflicts with
 	// other files in the data directory.
 	if strings.ContainsAny(conf.Name, `/\`) {
@@ -614,7 +614,6 @@ func (n *Node) Service(service interface{}) error {
 }
 
 // DataDir retrieves the current datadir used by the protocol stack.
-// Deprecated: No files should be stored in this directory, use InstanceDir instead.
 func (n *Node) DataDir() string {
 	return n.config.DataDir
 }
@@ -663,14 +662,14 @@ func (n *Node) EventMux() *event.TypeMux {
 // OpenDatabase opens an existing database with the given name (or creates one if no
 // previous can be found) from within the node's instance directory. If the node is
 // ephemeral, a memory database is returned.
-func (n *Node) OpenDatabase(name string, cache, handles int) (ptndb.Database, error) {
+func (n *Node) OpenDatabase(path string, cache, handles int) (ptndb.Database, error) {
 	if n.config.DataDir == "" {
 		log.Debug("Open a memery database.")
 		return ptndb.NewMemDatabase()
 	}
-	log.Debug("Open a leveldb, path:", "info", n.config.resolvePath(name))
+	log.Debug("Open a leveldb, path:", "info", path)
 	//return ptndb.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
-	return storage.Init(n.config.resolvePath(name), cache, handles)
+	return storage.Init(path, cache, handles)
 }
 
 // ResolvePath returns the absolute path of a resource in the instance directory.

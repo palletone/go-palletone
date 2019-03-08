@@ -30,14 +30,13 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/fdlimit"
+	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
-
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -112,7 +111,7 @@ var (
 	DataDirFlag = DirectoryFlag{
 		Name:  "datadir",
 		Usage: "Data directory for the databases and keystore",
-		Value: DirectoryString{node.DefaultDataDir()},
+		Value: DirectoryString{""}, //DirectoryString{node.DefaultDataDir()},
 	}
 	KeyStoreDirFlag = DirectoryFlag{
 		Name:  "keystore",
@@ -500,52 +499,52 @@ var (
 	//		Usage: "Dag dbname",
 	//		Value: ptn.DefaultConfig.Dag.DbName,
 	//	}
-	LogValue1Flag = cli.StringFlag{
+	LogOutputPathFlag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
-		Value: strings.Join(ptn.DefaultConfig.Log.OutputPaths, ","),
+		Value: "", //strings.Join(log.DefaultConfig.OutputPaths, ","),
 	}
 
-	LogValue2Flag = cli.StringFlag{
+	LogLevelFlag = cli.StringFlag{
 		Name:  "log.lvl",
 		Usage: "Log lvl",
-		Value: ptn.DefaultConfig.Log.LoggerLvl,
+		Value: log.DefaultConfig.LoggerLvl,
 	}
-	LogValue3Flag = cli.BoolFlag{
+	LogIsDebugFlag = cli.BoolFlag{
 		Name:  "log.debug",
 		Usage: "Log debug",
 		//Value: ptn.DefaultConfig.Log.IsDebug,
 	}
-	LogValue4Flag = cli.StringFlag{
+	LogErrPathFlag = cli.StringFlag{
 		Name:  "log.errpath",
 		Usage: "Log errpath",
-		Value: strings.Join(ptn.DefaultConfig.Log.ErrorOutputPaths, ","),
+		Value: "", //strings.Join(log.DefaultConfig.ErrorOutputPaths, ","),
 	}
-	LogValue5Flag = cli.StringFlag{
+	LogEncodingFlag = cli.StringFlag{
 		Name:  "log.encoding",
 		Usage: "Log encoding",
-		Value: ptn.DefaultConfig.Log.Encoding,
+		Value: log.DefaultConfig.Encoding,
 	}
 	LogOpenModuleFlag = cli.StringFlag{
 		Name:  "log.openmodule",
 		Usage: "Log openmodule",
-		Value: strings.Join(ptn.DefaultConfig.Log.OpenModule, ","),
+		Value: "all", //strings.Join(log.DefaultConfig.OpenModule, ","),
 	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
 // if none (or the empty string) is specified. If the node is starting a testnet,
 // the a subdirectory of the specified datadir will be used.
-func MakeDataDir(ctx *cli.Context) string {
-	if path := ctx.GlobalString(DataDirFlag.Name); path != "" {
-		if ctx.GlobalBool(TestnetFlag.Name) {
-			return filepath.Join(path, "testnet")
-		}
-		return path
-	}
-	Fatalf("Cannot determine default data directory, please set manually (--datadir)")
-	return ""
-}
+//func MakeDataDir(ctx *cli.Context) string {
+//	if path := ctx.GlobalString(DataDirFlag.Name); path != "" {
+//		if ctx.GlobalBool(TestnetFlag.Name) {
+//			return filepath.Join(path, "testnet")
+//		}
+//		return path
+//	}
+//	Fatalf("Cannot determine default data directory, please set manually (--datadir)")
+//	return ""
+//}
 
 // setNodeKey creates a node key from set command line flags, either loading it
 // from a file or as a specified hex value. If neither flags were provided, this
@@ -786,7 +785,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	if lightClient {
 		ptnPeers = 0
 	}
-	log.Info("Maximum peer count", "PTN", ptnPeers, "LES", lightPeers, "total", cfg.MaxPeers)
+	log.Debug("Maximum peer count", "PTN", ptnPeers, "LES", lightPeers, "total", cfg.MaxPeers)
 
 	if ctx.GlobalIsSet(MaxPendingPeersFlag.Name) {
 		cfg.MaxPendingPeers = ctx.GlobalInt(MaxPendingPeersFlag.Name)
@@ -814,8 +813,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 
 // SetNodeConfig applies node-related command line flags to the config.
 // 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
-func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
-	SetP2PConfig(ctx, &cfg.P2P)
+func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) (dataDir string) {
 	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
@@ -830,15 +828,35 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "testnet")
 	}
 
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.DataDir) {
+		path := filepath.Join(configDir, cfg.DataDir)
+		cfg.DataDir = common.GetAbsPath(path)
+	}
+	dataDir = cfg.DataDir
+
 	if ctx.GlobalIsSet(KeyStoreDirFlag.Name) {
 		cfg.KeyStoreDir = ctx.GlobalString(KeyStoreDirFlag.Name)
 	}
+
+	if cfg.KeyStoreDir == "" {
+		cfg.KeyStoreDir = filepath.Join(dataDir, "keystore")
+	}
+
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.KeyStoreDir) {
+		path := filepath.Join(configDir, cfg.KeyStoreDir)
+		cfg.KeyStoreDir = common.GetAbsPath(path)
+	}
+
 	// if ctx.GlobalIsSet(LightKDFFlag.Name) {
 	// 	cfg.UseLightweightKDF = ctx.GlobalBool(LightKDFFlag.Name)
 	// }
 	// if ctx.GlobalIsSet(NoUSBFlag.Name) {
 	// 	cfg.NoUSB = ctx.GlobalBool(NoUSBFlag.Name)
 	// }
+
+	return
 }
 
 /*
@@ -851,7 +869,7 @@ func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
 	}
 }
 */
-func setTxPool(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
+func SetTxPoolConfig(ctx *cli.Context, cfg *txspool.TxPoolConfig) {
 	if ctx.GlobalIsSet(TxPoolNoLocalsFlag.Name) {
 		cfg.NoLocals = ctx.GlobalBool(TxPoolNoLocalsFlag.Name)
 	}
@@ -932,82 +950,97 @@ func checkExclusive(ctx *cli.Context, args ...interface{}) {
 // }
 
 // SetDagConfig applies dag related command line flags to the config.
-func setDag(ctx *cli.Context, cfg *dagconfig.Config) {
+func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 	//	if ctx.GlobalIsSet(DagValue1Flag.Name) {
 	//		cfg.DbPath = ctx.GlobalString(DagValue1Flag.Name)
 	//	}
 	//	if ctx.GlobalIsSet(DagValue2Flag.Name) {
 	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	//	}
+
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.DbPath) {
+		path := filepath.Join(dataDir, cfg.DbPath)
+		cfg.DbPath = common.GetAbsPath(path)
+	}
+
+	dagconfig.DagConfig = *cfg
 }
 
-func SetContract(ctx *cli.Context, cfg *contractcfg.Config, cfg2 *contractcfg.Config) {
-	switch {
-	case ctx.GlobalIsSet(DataDirFlag.Name):
-		dataDir := ctx.GlobalString(DataDirFlag.Name)
-		dataDir = strings.Replace(dataDir, "palletone", "", 1)
-		if !filepath.IsAbs(cfg.ContractFileSystemPath) {
-			path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
-			cfg.ContractFileSystemPath = GetAbsDirectory(path)
-			cfg2.ContractFileSystemPath = cfg.ContractFileSystemPath
+func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string) {
+	// 重新计算为绝对路径
+	if !filepath.IsAbs(cfg.ContractFileSystemPath) {
+		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
+		cfg.ContractFileSystemPath = common.GetAbsPath(path)
+	}
+}
+
+func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string) {
+	// 重新计算log.output的路径
+	if temp := ctx.GlobalString(LogOutputPathFlag.Name); temp != "" {
+		if !filepath.IsAbs(temp) {
+			temp = filepath.Join(common.GetWorkPath(), temp)
 		}
-	}
-}
-
-func SetCfgPath(ctx *cli.Context, cfgPath string) string {
-	switch {
-	case ctx.GlobalIsSet(DataDirFlag.Name):
-		dataDir := ctx.GlobalString(DataDirFlag.Name)
-		dataDir = strings.Replace(dataDir, "palletone", "", 1)
-		if !filepath.IsAbs(cfgPath) {
-			path := filepath.Join(dataDir, cfgPath)
-			path = GetAbsDirectory(path)
-			return path
+		if files.IsDir(temp) {
+			temp = filepath.Join(temp, log.DefaultConfig.OutputPaths[1])
 		}
+		cfg.OutputPaths = []string{temp}
 	}
-	return cfgPath
-}
-
-func SetLog(ctx *cli.Context, cfg *log.Config) {
-	if ctx.GlobalIsSet(LogValue1Flag.Name) {
-		cfg.OutputPaths = []string{ctx.GlobalString(LogValue1Flag.Name)}
-	}
-	if ctx.GlobalIsSet(LogValue2Flag.Name) {
-		cfg.LoggerLvl = ctx.GlobalString(LogValue2Flag.Name)
-	}
-	if ctx.GlobalIsSet(LogValue3Flag.Name) {
-		cfg.Development = ctx.GlobalBool(LogValue3Flag.Name)
-	}
-	if ctx.GlobalIsSet(LogValue4Flag.Name) {
-		cfg.ErrorOutputPaths = []string{ctx.GlobalString(LogValue4Flag.Name)}
-	}
-	if ctx.GlobalIsSet(LogOpenModuleFlag.Name) {
-		cfg.OpenModule = []string{ctx.GlobalString(LogOpenModuleFlag.Name)}
+	if len(cfg.OutputPaths) == 0 {
+		cfg.OutputPaths = log.DefaultConfig.OutputPaths
 	}
 
-	switch {
-	case ctx.GlobalIsSet(DataDirFlag.Name):
-		dataDir := ctx.GlobalString(DataDirFlag.Name)
-		dataDir = strings.Replace(dataDir, "/palletone", "", 1)
-		if !filepath.IsAbs(cfg.OutputPaths[1]) {
-			path := filepath.Join(dataDir, cfg.OutputPaths[1])
-			cfg.OutputPaths[1] = GetAbsDirectory(path)
+	outIndex := len(cfg.OutputPaths) - 1
+	outPath := cfg.OutputPaths[outIndex]
+	if !filepath.IsAbs(outPath) {
+		outPath = filepath.Join(configDir, outPath)
+	}
+
+	cfg.OutputPaths[outIndex] = common.GetAbsPath(outPath)
+
+	if ctx.GlobalIsSet(LogLevelFlag.Name) {
+		cfg.LoggerLvl = ctx.GlobalString(LogLevelFlag.Name)
+	}
+	if ctx.GlobalIsSet(LogIsDebugFlag.Name) {
+		cfg.Development = ctx.GlobalBool(LogIsDebugFlag.Name)
+	}
+	if temp := ctx.GlobalString(LogOpenModuleFlag.Name); temp != "" {
+		cfg.OpenModule = strings.Split(temp, ",")
+	}
+
+	// 重新计算log.ErrPath的路径
+	if temp := ctx.GlobalString(LogErrPathFlag.Name); temp != "" {
+		if !filepath.IsAbs(temp) {
+			temp = filepath.Join(common.GetWorkPath(), temp)
 		}
-		if !filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
-			path := filepath.Join(dataDir, cfg.ErrorOutputPaths[1])
-			cfg.ErrorOutputPaths[1] = GetAbsDirectory(path)
+		if files.IsDir(temp) {
+			temp = filepath.Join(temp, log.DefaultConfig.ErrorOutputPaths[1])
 		}
+		cfg.ErrorOutputPaths = []string{temp}
 	}
+	if len(cfg.ErrorOutputPaths) == 0 {
+		cfg.ErrorOutputPaths = log.DefaultConfig.ErrorOutputPaths
+	}
+
+	errIndex := len(cfg.ErrorOutputPaths) - 1
+	errPath := cfg.ErrorOutputPaths[errIndex]
+	if !filepath.IsAbs(errPath) {
+		errPath = filepath.Join(configDir, errPath)
+	}
+
+	cfg.ErrorOutputPaths[errIndex] = common.GetAbsPath(errPath)
+
+	log.LogConfig = *cfg
 }
 
-func GetAbsDirectory(path string) string {
-	dir, err := filepath.Abs(path)
-	if err != nil {
-		Fatalf("GetAbsDirectory err:", err)
-		return ""
-	}
-	return strings.Replace(dir, "\\", "/", -1)
-}
+//func GetAbsDirectory(path string) string {
+//	dir, err := filepath.Abs(path)
+//	if err != nil {
+//		Fatalf("GetAbsDirectory err:", err)
+//		return ""
+//	}
+//	return strings.Replace(dir, "\\", "/", -1)
+//}
 
 // SetDagConfig applies dag related command line flags to the config.
 //func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
@@ -1025,9 +1058,6 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
 	ks := stack.GetKeyStore()
-	setTxPool(ctx, &cfg.TxPool)
-	setDag(ctx, &cfg.Dag)
-	//setLog(ctx, &cfg.Log)
 
 	switch {
 	case ctx.GlobalIsSet(SyncModeFlag.Name):
@@ -1111,7 +1141,7 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	if gen := ctx.GlobalInt(TrieCacheGenFlag.Name); gen > 0 {
 		state.MaxTrieCacheGen = uint16(gen)
 	}
-	cfg.TokenSubProtocol = strings.ToLower(stack.Config().GasToken)
+	cfg.TokenSubProtocol = strings.ToLower(cfg.Dag.GasToken)
 }
 
 // SetDashboardConfig applies dashboard related command line flags to the config.
@@ -1165,21 +1195,21 @@ func SetupNetwork(ctx *cli.Context) {
 }
 
 // MakeChainDatabase open an LevelDB using the flags passed to the client and will hard crash if it fails.
-func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
-	var (
-		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
-		handles = makeDatabaseHandles()
-	)
-	name := "chaindata"
-	if ctx.GlobalBool(LightModeFlag.Name) {
-		name = "lightchaindata"
-	}
-	chainDb, err := stack.OpenDatabase(name, cache, handles)
-	if err != nil {
-		Fatalf("Could not open database: %v", err)
-	}
-	return chainDb
-}
+//func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ptndb.Database {
+//	var (
+//		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
+//		handles = makeDatabaseHandles()
+//	)
+//	name := "chaindata"
+//	if ctx.GlobalBool(LightModeFlag.Name) {
+//		name = "lightchaindata"
+//	}
+//	chainDb, err := stack.OpenDatabase(name, cache, handles)
+//	if err != nil {
+//		Fatalf("Could not open database: %v", err)
+//	}
+//	return chainDb
+//}
 
 func MakeGenesis(ctx *cli.Context) *core.Genesis {
 	var genesis *core.Genesis

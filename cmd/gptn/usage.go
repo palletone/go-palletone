@@ -69,7 +69,7 @@ var AppHelpFlagGroups = []flagGroup{
 	{
 		Name: "PALLETONE",
 		Flags: []cli.Flag{
-			ConfigFileFlag,
+			ConfigFilePathFlag,
 			utils.DataDirFlag,
 			utils.KeyStoreDirFlag,
 			utils.NetworkIdFlag,
@@ -220,11 +220,11 @@ var AppHelpFlagGroups = []flagGroup{
 	{
 		Name: "LOGGING AND DEBUGGING",
 		Flags: append([]cli.Flag{
-			utils.LogValue1Flag,
-			utils.LogValue2Flag,
-			utils.LogValue3Flag,
-			utils.LogValue4Flag,
-			utils.LogValue5Flag,
+			utils.LogOutputPathFlag,
+			utils.LogLevelFlag,
+			utils.LogIsDebugFlag,
+			utils.LogErrPathFlag,
+			utils.LogEncodingFlag,
 			utils.LogOpenModuleFlag,
 			utils.MetricsEnabledFlag,
 			utils.FakePoWFlag,
@@ -232,14 +232,8 @@ var AppHelpFlagGroups = []flagGroup{
 		}, debug.Flags...),
 	},
 	{
-		Name: "MEDIATOR PLUGIN",
-		Flags: []cli.Flag{
-			mp.NoProduceUnitFlag,
-			mp.StaleProductionFlag,
-			mp.ConsecutiveProductionFlag,
-			mp.RequiredParticipationFlag,
-			mp.NoGroupSignFlag,
-		},
+		Name:  "MEDIATOR PLUGIN",
+		Flags: mp.MediatorFlags,
 	},
 	/*{
 		Name:  "WHISPER (EXPERIMENTAL)",

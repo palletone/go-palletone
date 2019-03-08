@@ -33,6 +33,14 @@ const (
 )
 
 var (
+	MediatorFlags = []cli.Flag{
+		NoProduceUnitFlag,
+		StaleProductionFlag,
+		ConsecutiveProductionFlag,
+		RequiredParticipationFlag,
+		NoGroupSignFlag,
+	}
+
 	NoProduceUnitFlag = cli.BoolFlag{
 		Name:  "noProduce",
 		Usage: "Disable producing unit when start up node.",
@@ -96,6 +104,12 @@ var DefaultConfig = Config{
 	Mediators: []*MediatorConf{
 		DefaultMediatorConf(),
 	},
+}
+
+func MakeConfig() Config {
+	cfg := DefaultConfig
+	cfg.Mediators = nil
+	return cfg
 }
 
 func SetMediatorConfig(ctx *cli.Context, cfg *Config) {

@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
@@ -65,6 +66,18 @@ with an existing account or a newly created account.
 
 If a well-formed JSON file exists at the path, 
 it will be replaced with an example Genesis State.`,
+	}
+
+	dumpJsonCommand = cli.Command{
+		Action:    utils.MigrateFlags(dumpJson),
+		Name:      "dumpjson",
+		Usage:     "Dumps genesis json to a specified file",
+		ArgsUsage: "<jsonFilePath>",
+		Flags: []cli.Flag{
+			GenesisJsonPathFlag,
+		},
+		Category:    "MISCELLANEOUS COMMANDS",
+		Description: `The dumpjson command dumps genesis json to a specified file.`,
 	}
 )
 
@@ -169,7 +182,7 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("Creating example genesis state in file " + genesisOut)
+	fmt.Println("Creating example genesis state in file: " + genesisOut)
 
 	// 修改本节点的一些特殊配置
 	modifyConfig(ctx, mcs)
@@ -178,7 +191,7 @@ func createGenesisJson(ctx *cli.Context) error {
 }
 
 func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
-	cfg := &FullConfig{Node: defaultNodeConfig()}
+	cfg := new(FullConfig)
 	configPath := getConfigPath(ctx)
 
 	// 加载配置文件中的配置信息到 cfg中
@@ -206,13 +219,12 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 		return err
 	}
 
-	fmt.Println("Rewriting config file at:", configPath)
+	fmt.Println("Rewriting config file at: ", configPath)
 
 	return nil
 }
 
 func getGenesisPath(ctx *cli.Context) string {
-	// Make sure we have a valid genesis JSON
 	genesisOut := ctx.Args().First()
 
 	// If no path is specified, the default path is used
@@ -221,7 +233,11 @@ func getGenesisPath(ctx *cli.Context) string {
 		genesisOut = defaultGenesisJsonPath
 	}
 
-	return genesisOut
+	if files.IsDir(genesisOut) {
+		genesisOut = filepath.Join(genesisOut, defaultGenesisJsonPath)
+	}
+
+	return common.GetAbsPath(genesisOut)
 }
 
 // initialAccount, create a initial account for a new account
@@ -287,4 +303,38 @@ func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string) []
 	}
 
 	return initialMediators
+}
+
+func dumpJson(ctx *cli.Context) error {
+	genesis := createExampleGenesis()
+
+	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	filePath := getGenesisPath(ctx)
+
+	err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	file, err1 := os.Create(filePath)
+	defer file.Close()
+	if err1 != nil {
+		utils.Fatalf("%v", err1)
+		return err1
+	}
+
+	_, err = file.Write(genesisJson)
+	if err != nil {
+		utils.Fatalf("%v", err)
+		return err
+	}
+
+	fmt.Println("Creating example genesis state in file: " + filePath)
+	return nil
 }

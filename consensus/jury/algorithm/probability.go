@@ -31,7 +31,7 @@ import (
 //weight 设置固定数值,即返回概率值*weight,返回值落在0  --   expectedNum/Total*weight之间的数值
 func Selected(expectedNum uint, weight, total uint64, vrf []byte) int {
 	hh := util.RlpHash(vrf)
-	h32:=hh[:common.HashLength]
+	h32 := hh[:common.HashLength]
 
 	//Total := 100
 	binomial := NewBinomial(int64(weight), int64(expectedNum), int64(total)) //weight=TokenPerUser; TotalTokenAmount = UserAmount * TokenPerUser
@@ -42,7 +42,7 @@ func Selected(expectedNum uint, weight, total uint64, vrf []byte) int {
 	//}
 	// hash / 2^hashlen ∉ [ ∑0,j B(k;w,p), ∑0,j+1 B(k;w,p))
 
-//	hashBig := new(big.Int).SetBytes(vrf)
+	//	hashBig := new(big.Int).SetBytes(vrf)
 	hashBig := new(big.Int).SetBytes(h32)
 	maxHash := new(big.Int).Exp(big.NewInt(2), big.NewInt(common.HashLength*8), nil)
 	hash := new(big.Rat).SetFrac(hashBig, maxHash)

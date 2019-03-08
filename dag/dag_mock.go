@@ -165,6 +165,20 @@ func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId, index interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentMemUnit", reflect.TypeOf((*MockIDag)(nil).GetCurrentMemUnit), assetId, index)
 }
 
+//// HeadUnitHash mocks base method
+//func (m *MockIDag) HeadUnitHash() common.Hash {
+//	m.ctrl.T.Helper()
+//	ret := m.ctrl.Call(m, "HeadUnitHash")
+//	ret0, _ := ret[0].(common.Hash)
+//	return ret0
+//}
+//
+//// HeadUnitHash indicates an expected call of HeadUnitHash
+//func (mr *MockIDagMockRecorder) HeadUnitHash() *gomock.Call {
+//	mr.mock.ctrl.T.Helper()
+//	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitHash", reflect.TypeOf((*MockIDag)(nil).HeadUnitHash))
+//}
+
 // InsertDag mocks base method
 func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
 	m.ctrl.T.Helper()

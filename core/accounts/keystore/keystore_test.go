@@ -60,7 +60,7 @@ func TestKeyStore(t *testing.T) {
 	if err := ks.Delete(a, "bar"); err != nil {
 		t.Errorf("Delete error: %v", err)
 	}
-	if common.FileExist(a.URL.Path) {
+	if common.IsExisted(a.URL.Path) {
 		t.Errorf("account file %s should be gone after Delete", a.URL)
 	}
 	if ks.HasAddress(a.Address) {

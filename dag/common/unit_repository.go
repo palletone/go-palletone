@@ -349,6 +349,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+	log.Debug("Start create unit...")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	//if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
@@ -394,15 +395,16 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-
+	log.Debug("Start txpool.GetSortedTxs...")
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
-	for _, tx := range poolTxs {
-		log.Debugf("try to generate unit include txs[%s]", tx.Tx.Hash().String())
-	}
+	log.Debug("Complete txpool.GetSortedTxs...")
+	// for _, tx := range poolTxs {
+	// 	log.Debugf("try to generate unit include txs[%s]", tx.Tx.Hash().String())
+	// }
 
 	// step5. compute minner income: transaction fees + interest
-	fees, err := rep.utxoRepository.ComputeFees(poolTxs)
+	fees, err := ComputeFees(poolTxs)
 	if err != nil {
 		log.Error("ComputeFees is failed.", "error", err.Error())
 		return nil, err
@@ -429,8 +431,8 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	// 若配置增发，或者该单元包含有效交易（rewards>0），则将增发奖励和交易费全发给该mediator。
 	txs := make(modules.Transactions, 0)
-	if rewards > 0 || dagconfig.DefaultConfig.IsRewardCoin {
-		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+	if rewards > 0 || dagconfig.DagConfig.IsRewardCoin {
+		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DagConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	} else {
 		//log.Debug("======================= success  ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
@@ -448,10 +450,10 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
 	*/
-
+	log.Debug("Start core.DeriveSha...")
 	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
-
+	log.Debug("Complete core.DeriveSha...")
 	// step9. generate genesis unit header
 	header.TxRoot = root
 	unit := modules.Unit{}
@@ -464,9 +466,16 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	// step11. set size
 	unit.UnitSize = unit.Size()
 	units = append(units, unit)
+	log.Debugf("Complete create unit[%s]", unit.Hash().String())
 	return units, nil
 }
-
+func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
+	fee := uint64(0)
+	for _, tx := range txs {
+		fee += tx.TxFee.Amount
+	}
+	return fee, nil
+}
 func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
 	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
@@ -831,7 +840,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		log.Info("Save transaction:", "error", err.Error())
 		return err
 	}
-	if dagconfig.DefaultConfig.AddrTxsIndex {
+	if dagconfig.DagConfig.AddrTxsIndex {
 		//Index TxId for address
 		addresses := getPayToAddresses(tx)
 		for _, addr := range addresses {
@@ -923,7 +932,7 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 		return false
 	}
 
-	if dagconfig.DefaultConfig.TextFileHashIndex {
+	if dagconfig.DagConfig.TextFileHashIndex {
 
 		err := rep.idxdb.SaveFileHash(payload.MainData, txHash)
 		if err != nil {
@@ -1308,7 +1317,7 @@ func (rep *UnitRepository) updateState(contractID []byte, key string, version *m
 }
 
 func IsGenesis(hash common.Hash) bool {
-	genHash := common.HexToHash(dagconfig.DefaultConfig.GenesisHash)
+	genHash := common.HexToHash(dagconfig.DagConfig.GenesisHash)
 	return genHash == hash
 }
 

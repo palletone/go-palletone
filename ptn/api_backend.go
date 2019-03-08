@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -46,9 +47,9 @@ type PtnApiBackend struct {
 	//gpo *gasprice.Oracle
 }
 
-//func (b *PtnApiBackend) Dag() dag.IDag {
-//	return b.ptn.dag
-//}
+func (b *PtnApiBackend) Dag() dag.IDag {
+	return b.ptn.dag
+}
 
 //func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
 //	return b.ptn.SignAndSendTransaction(addr, tx)
@@ -520,19 +521,19 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 }
 
 //
-func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId []byte, tplId []byte, err error) {
+func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId common.Hash, tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true)
 }
-func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId []byte, depId []byte, err error) {
+func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (rspPayload []byte, err error) {
+func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte, timeout uint32) (rspPayload []byte, err error) {
+func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddress, args, timeout)
 }
-func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) ([]byte, error) {
+func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, deleteImage)
 }
 func (b *PtnApiBackend) ElectionVrf(id uint32) ([]byte, error) {

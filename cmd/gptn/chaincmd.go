@@ -96,6 +96,7 @@ func removeDB(ctx *cli.Context) error {
 func initGenesis(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
 
+	// Make sure we have a valid genesis JSON
 	genesisPath := getGenesisPath(ctx)
 
 	file, err := os.Open(genesisPath)
@@ -113,12 +114,11 @@ func initGenesis(ctx *cli.Context) error {
 
 	validateGenesis(genesis)
 
-	Dbconn, err := node.OpenDatabase("leveldb", 0, 0)
+	dbPath := dagconfig.DagConfig.DbPath
+	Dbconn, err := node.OpenDatabase(dbPath, 0, 0)
 	if err != nil {
 		return errors.New("leveldb init failed")
 	}
-	filepath := node.ResolvePath("leveldb")
-	dagconfig.DefaultConfig.DbPath = filepath
 	dag, _ := dag.NewDag4GenesisInit(Dbconn)
 	ks := node.GetKeyStore()
 	// modify by Albert·Gou

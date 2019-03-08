@@ -18,7 +18,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -26,12 +25,11 @@ import (
 	"reflect"
 	"unicode"
 
-	"strings"
-
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/configure"
@@ -40,13 +38,14 @@ import (
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
 )
 
-var defaultConfigPath = "./ptn-config.toml"
+const defaultConfigPath = "./ptn-config.toml"
 
 var (
 	dumpConfigCommand = cli.Command{
@@ -54,9 +53,8 @@ var (
 		Name:      "dumpconfig",
 		Usage:     "Dumps configuration to a specified file",
 		ArgsUsage: "<configFilePath>",
-		//		Flags:       append(append(nodeFlags, rpcFlags...)),
 		Flags: []cli.Flag{
-			ConfigFileFlag,
+			ConfigFilePathFlag,
 		},
 		Category:    "MISCELLANEOUS COMMANDS",
 		Description: `The dumpconfig command dumps configuration to a specified file.`,
@@ -67,37 +65,17 @@ var (
 		Name:      "dumpuserconfig",
 		Usage:     "Dumps configuration to a specified file",
 		ArgsUsage: "<configFilePath>",
-		//		Flags:       append(append(nodeFlags, rpcFlags...)),
 		Flags: []cli.Flag{
-			ConfigFileFlag,
+			ConfigFilePathFlag,
 		},
 		Category:    "MISCELLANEOUS COMMANDS",
 		Description: `The dumpconfig command dumps configuration to a specified file.`,
 	}
 
-	ConfigFileFlag = cli.StringFlag{
+	ConfigFilePathFlag = cli.StringFlag{
 		Name:  "configfile",
 		Usage: "TOML configuration file",
 		Value: defaultConfigPath,
-	}
-
-	dumpJsonCommand = cli.Command{
-		Action:    utils.MigrateFlags(dumpJson),
-		Name:      "dumpjson",
-		Usage:     "Dumps genesis json to a specified file",
-		ArgsUsage: "<jsonFilePath>",
-		//		Flags:       append(append(nodeFlags, rpcFlags...)),
-		Flags: []cli.Flag{
-			ConfigFileFlag,
-		},
-		Category:    "MISCELLANEOUS COMMANDS",
-		Description: `The dumpjson command dumps genesis json to a specified file.`,
-	}
-
-	JsonFileFlag = cli.StringFlag{
-		Name:  "jsonfile",
-		Usage: "Genesis json file",
-		Value: defaultGenesisJsonPath,
 	}
 )
 
@@ -137,13 +115,14 @@ type ptnstatsConfig struct {
 
 type FullConfig struct {
 	Ptn            ptn.Config
+	TxPool         txspool.TxPoolConfig
 	Node           node.Config
 	Ptnstats       ptnstatsConfig
 	Dashboard      dashboard.Config
 	Jury           jury.Config
 	MediatorPlugin mp.Config
-	Log            *log.Config
-	Dag            *dagconfig.Config
+	Log            log.Config // log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
+	Dag            dagconfig.Config
 	P2P            p2p.Config
 	Ada            adaptor.Config
 	Contract       contractcfg.Config
@@ -166,6 +145,7 @@ func loadConfig(file string, cfg *FullConfig) error {
 
 func defaultNodeConfig() node.Config {
 	cfg := node.DefaultConfig
+	cfg.P2P = p2p.DefaultConfig
 	cfg.Name = clientIdentifier
 	cfg.Version = configure.VersionWithCommit(gitCommit)
 	cfg.HTTPModules = append(cfg.HTTPModules, "ptn" /*, "shh"*/)
@@ -174,10 +154,14 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
-func adaptorConfig(config *FullConfig) *FullConfig {
+func adaptorNodeConfig(config *FullConfig) *FullConfig {
 	config.Node.P2P = config.P2P
-	config.Ptn.Dag = *config.Dag
-	config.Ptn.Log = *config.Log
+	return config
+}
+
+func adaptorPtnConfig(config *FullConfig) *FullConfig {
+	config.Ptn.TxPool = config.TxPool
+	config.Ptn.Dag = config.Dag
 	config.Ptn.Jury = config.Jury
 	config.Ptn.MediatorPlugin = config.MediatorPlugin
 	config.Ptn.Contract = config.Contract
@@ -190,84 +174,25 @@ func adaptorConfig(config *FullConfig) *FullConfig {
 func getConfigPath(ctx *cli.Context) string {
 	// 获取配置文件路径: 命令行指定的路径 或者默认的路径
 	configPath := defaultConfigPath
-	if temp := ctx.GlobalString(ConfigFileFlag.Name); temp != "" {
+	if temp := ctx.GlobalString(ConfigFilePathFlag.Name); temp != "" {
+		if files.IsDir(temp) {
+			temp = filepath.Join(temp, defaultConfigPath)
+		}
 		configPath = temp
 	}
 
-	return configPath
-}
-
-func parseLogPath(endpoint string, cfg *log.Config) error {
-	endpoint, err := filepath.Abs(endpoint)
-	if err != nil {
-		return err
-	}
-	array := strings.Split(endpoint, "/")
-	if len(array) <= 2 {
-		return nil
-		//return errors.New("log parse path < 2")
-	}
-	index := len(array) - 2
-	logpath := strings.Join(array[:index], "/")
-
-	if !filepath.IsAbs(cfg.OutputPaths[1]) {
-		path := filepath.Join(logpath, cfg.OutputPaths[1])
-		cfg.OutputPaths[1] = utils.GetAbsDirectory(path)
-	}
-	if !filepath.IsAbs(cfg.ErrorOutputPaths[1]) {
-		path := filepath.Join(logpath, cfg.ErrorOutputPaths[1])
-		cfg.ErrorOutputPaths[1] = utils.GetAbsDirectory(path)
-	}
-	return nil
-}
-
-//On the basis of gptn.ipc endpoint full path parse to cfg path
-func parseCfgPath(ctx *cli.Context, endpoint string) string {
-	endpoint, err := filepath.Abs(endpoint)
-	if err != nil {
-		return ""
-	}
-	array := strings.Split(endpoint, "/")
-	if len(array) <= 2 {
-		return ""
-	}
-	index := len(array) - 2
-	cfgpath := strings.Join(array[:index], "/")
-	cfgpath += "/ptn-config.toml"
-	cfgpath, err1 := filepath.Abs(cfgpath)
-	if err1 != nil {
-		return ""
-	}
-	return cfgpath
-}
-
-func parseDataPath(ctx *cli.Context, endpoint string) string {
-	endpoint, err := filepath.Abs(endpoint)
-	if err != nil {
-		return ""
-	}
-	array := strings.Split(endpoint, "/")
-	if len(array) <= 1 {
-		return ""
-	}
-	index := len(array) - 1
-	cfgpath := strings.Join(array[:index], "/")
-	cfgpath, err1 := filepath.Abs(cfgpath)
-	if err1 != nil {
-		return ""
-	}
-	return cfgpath
+	return common.GetAbsPath(configPath)
 }
 
 // 加载指定的或者默认的配置文件，如果不存在则根据默认的配置生成文件
 // @author Albert·Gou
-func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
+func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
 	configPath := getConfigPath(ctx)
-	cfg := newDefaultConfig()
+	cfg := DefaultConfig()
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
-	if !common.FileExist(configPath) {
+	if !common.IsExisted(configPath) {
 		//listenAddr := cfg.P2P.ListenAddr
 		//if strings.HasPrefix(listenAddr, ":") {
 		//	cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
@@ -276,7 +201,7 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 		err := makeConfigFile(&cfg, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
-			return FullConfig{}, err
+			return FullConfig{}, "", err
 		}
 
 		fmt.Println("Writing new config file at: ", configPath)
@@ -285,15 +210,15 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, error) {
 	// 加载配置文件中的配置信息到 cfg中
 	if err := loadConfig(configPath, &cfg); err != nil {
 		utils.Fatalf("%v", err)
-		return FullConfig{}, err
+		return FullConfig{}, "", err
 	}
 
-	return cfg, nil
+	return cfg, filepath.Dir(configPath), nil
 }
 
 func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// Load config file.
-	cfg, err := maybeLoadConfig(ctx)
+	cfg, configDir, err := maybeLoadConfig(ctx)
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}
@@ -302,30 +227,37 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, FullConfig) {
 	// 将命令行中的配置参数覆盖cfg中对应的配置,
 	// 先处理node的配置信息，再创建node，然后再处理其他service的配置信息，因为其他service的配置依赖node中的协议
 	// 注意：不是将命令行中所有的配置都覆盖cfg中对应的配置，例如 Ptnstats 配置目前没有覆盖 (可能通过命令行设置)
-	adaptorConfig(&cfg)
-	utils.SetLog(ctx, &cfg.Ptn.Log)
-	utils.SetNodeConfig(ctx, &cfg.Node)
 
-	cfg.Log.OpenModule = cfg.Ptn.Log.OpenModule
+	// log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
+	utils.SetLogConfig(ctx, &cfg.Log, configDir)
+
+	adaptorNodeConfig(&cfg)
+	dataDir := utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
+
+	utils.SetP2PConfig(ctx, &cfg.P2P)
+	utils.SetContractConfig(ctx, &cfg.Contract, dataDir)
+	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
+	utils.SetDagConfig(ctx, &cfg.Dag, dataDir)
+	mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
+	jury.SetJuryConfig(ctx, &cfg.Jury)
+
+	// 为了方便用户配置，所以将各个子模块的配置提升到与ptn同级，
+	// 然而在RegisterPtnService()中，只能使用ptn下的配置
+	// 所以在此处将各个子模块的配置，复制到ptn下
+	adaptorPtnConfig(&cfg)
+
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
 
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-	utils.SetContract(ctx, &cfg.Ptn.Contract, &cfg.Contract)
-	mp.SetMediatorConfig(ctx, &cfg.Ptn.MediatorPlugin)
-	jury.SetJuryConfig(ctx, &cfg.Jury)
 
-	//create the cfg override the old cfg
-	defaultConfigPath = utils.SetCfgPath(ctx, defaultConfigPath)
-	//fmt.Println("=========================defaultConfigPath:", defaultConfigPath)
-	//makeConfigFile(&cfg, cfgPath)
 	return stack, cfg
 }
 
@@ -356,97 +288,63 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 
 // dumpConfig is the dumpconfig command.
 func dumpConfig(ctx *cli.Context) error {
-	cfg := newDefaultConfig()
-	configPath := ctx.Args().First()
-	// If no path is specified, the default path is used
-	if len(configPath) == 0 {
-		configPath = defaultConfigPath
-	}
+	cfg := DefaultConfig()
+	configPath := getDumpConfigPath(ctx)
 
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
-	fmt.Println("Dumping new config file at " + configPath)
+	fmt.Println("Dumping new config file at: " + configPath)
 	return nil
+}
+
+func getDumpConfigPath(ctx *cli.Context) string {
+	configPath := ctx.Args().First()
+
+	// If no path is specified, the default path is used
+	if len(configPath) == 0 {
+		configPath = defaultConfigPath
+	}
+
+	if files.IsDir(configPath) {
+		configPath = filepath.Join(configPath, defaultConfigPath)
+	}
+
+	return common.GetAbsPath(configPath)
 }
 
 func dumpUserCfg(ctx *cli.Context) error {
-	cfg := FullConfig{
-		Ptn:       ptn.DefaultConfig,
-		Node:      defaultNodeConfig(),
-		Dashboard: dashboard.DefaultConfig,
-		P2P:       p2p.DefaultConfig,
-		//Jury:           jury.DefaultConfig,
-		//MediatorPlugin: mp.DefaultConfig,
-		Dag:      &dagconfig.DefaultConfig,
-		Log:      &log.DefaultConfig,
-		Ada:      adaptor.DefaultConfig,
-		Contract: contractcfg.DefaultConfig,
-	}
-	configPath := ctx.Args().First()
-	// If no path is specified, the default path is used
-	if len(configPath) == 0 {
-		configPath = defaultConfigPath
-	}
+	cfg := DefaultConfig()
+	cfg.MediatorPlugin = mp.MakeConfig()
+	cfg.Jury = jury.MakeConfig()
 
+	configPath := getDumpConfigPath(ctx)
 	err := makeConfigFile(&cfg, configPath)
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
-	fmt.Println("Dumping new config file at " + configPath)
+
+	fmt.Println("Dumping new config file at: " + configPath)
 	return nil
 }
 
-func dumpJson(ctx *cli.Context) error {
-	genesis := createExampleGenesis()
-
-	genesisJson, err := json.MarshalIndent(*genesis, "", "  ")
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	filePath := getGenesisPath(ctx)
-
-	err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	file, err1 := os.Create(filePath)
-	defer file.Close()
-	if err1 != nil {
-		utils.Fatalf("%v", err1)
-		return err1
-	}
-
-	_, err = file.Write(genesisJson)
-	if err != nil {
-		utils.Fatalf("%v", err)
-		return err
-	}
-
-	fmt.Println("Creating example genesis state in file " + filePath)
-	return nil
-}
-
-// newDefaultConfig, create a default config
+// DefaultConfig, create a default config
 // @author Albert·Gou
-func newDefaultConfig() FullConfig {
+func DefaultConfig() FullConfig {
 	// 不是所有的配置都有默认值，例如 Ptnstats 目前没有设置默认值
 	return FullConfig{
 		Ptn:            ptn.DefaultConfig,
+		TxPool:         txspool.DefaultTxPoolConfig,
 		Node:           defaultNodeConfig(),
 		Dashboard:      dashboard.DefaultConfig,
 		P2P:            p2p.DefaultConfig,
 		Jury:           jury.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
-		Dag:            &dagconfig.DefaultConfig,
-		Log:            &log.DefaultConfig,
+		Dag:            dagconfig.DefaultConfig,
+		Log:            log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
 		Contract:       contractcfg.DefaultConfig,
 	}

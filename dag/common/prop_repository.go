@@ -23,10 +23,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"time"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 type PropRepository struct {
@@ -104,7 +104,7 @@ func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.IDType16) (int6
 // 洗牌算法，更新mediator的调度顺序
 func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty,
 	dgp *modules.DynamicGlobalProperty) bool {
-	token := node.DefaultConfig.GetGasToken()
+	token := dagconfig.DagConfig.GetGasToken()
 	_, idx, timestamp, err := pRep.db.GetNewestUnit(token)
 	if err != nil {
 		log.Debug("GetNewestUnit error:" + err.Error())

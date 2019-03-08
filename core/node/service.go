@@ -55,9 +55,9 @@ func (ctx *ServiceContext) OpenDatabase(name string, cache int, handles int) (pt
 }
 
 //Get leveldb file path for initdb storage Init
-func (ctx *ServiceContext) DatabasePath(name string) string {
-	return ctx.config.resolvePath(name)
-}
+//func (ctx *ServiceContext) DatabasePath(name string) string {
+//	return ctx.config.resolvePath(name)
+//}
 
 // ResolvePath resolves a user path into the data directory if that was relative
 // and if the user actually uses persistent storage. It will return an empty string

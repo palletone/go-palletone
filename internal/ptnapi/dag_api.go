@@ -1,0 +1,311 @@
+/*
+ *
+ *    This file is part of go-palletone.
+ *    go-palletone is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    go-palletone is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+ * /
+ *
+ *  * @author PalletOne core developers <dev@pallet.one>
+ *  * @date 2018
+ *
+ */
+
+package ptnapi
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"time"
+	"unsafe"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptnjson"
+)
+
+type PublicDagAPI struct {
+	b Backend
+	// d *dag
+}
+
+func NewPublicDagAPI(b Backend) *PublicDagAPI {
+	return &PublicDagAPI{b}
+}
+
+func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error) {
+	// key to bytes
+	return s.b.GetCommon([]byte(key))
+}
+
+func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
+	result := s.b.GetCommonByPrefix([]byte(prefix))
+	if result == nil || len(result) == 0 {
+		return "all_items:null", nil
+	}
+
+	fmt.Println("...")
+	info := NewPublicReturnInfo("all_items", result)
+	result_json, err := json.Marshal(info)
+	return string(result_json), err
+}
+
+func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {
+	log.Info("PublicBlockChainAPI", "GetUnitByHash condition:", condition)
+	hash := common.Hash{}
+	if err := hash.SetHexString(condition); err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
+		return ""
+	}
+	unit := s.b.GetUnitByHash(hash)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash GetUnitByHash is nil hash:", hash)
+		return "GetUnitByHash nil"
+	}
+	content, err := json.Marshal(*unit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
+func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) string {
+	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
+
+	number := &modules.ChainIndex{}
+	//if err := json.Unmarshal(*(*[]byte)(unsafe.Pointer(&condition)), &number); err != nil {
+	//	log.Info("PublicBlockChainAPI", "GetUnitByNumber Unmarshal err:", err, "condition:", condition)
+	//	return "Unmarshal err"
+	//}
+	index, err := strconv.ParseInt(condition, 10, 64)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber strconv.ParseInt err:", err, "condition:", condition)
+		return ""
+	}
+	number.Index = uint64(index)
+	number.IsMain = true
+
+	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	//asset := modules.NewPTNAsset()
+	number.AssetID = modules.CoreAsset.AssetId
+	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
+
+	unit := s.b.GetUnitByNumber(number)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
+		return "GetUnitByNumber nil"
+	}
+	jsonUnit := ptnjson.ConvertUnit2Json(unit)
+	content, err := json.Marshal(jsonUnit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
+//func (s *PublicDagAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
+//	items, err := s.b.GetAllTokenInfo()
+//	if err != nil {
+//		return "all_token_info:null", err
+//	}
+//
+//	info := NewPublicReturnInfo("all_token_info", items)
+//	result_json, _ := json.Marshal(info)
+//
+//	return string(result_json), nil
+//}
+//func (s *PublicDagAPI) GetTokenInfo(ctx context.Context, key string) (string, error) {
+//	hex := hexutil.Encode([]byte(key))
+//
+//	if item, err := s.b.GetTokenInfo(hex); err != nil {
+//		return "", err
+//	} else {
+//		info := NewPublicReturnInfo("token_info", item)
+//		result_json, _ := json.Marshal(info)
+//		return string(result_json), nil
+//	}
+//}
+
+// SaveTokenInfo save a token  ,return hex key.
+//func (s *PublicDagAPI) SaveTokenInfo(ctx context.Context, name, token, creator string) (string, error) {
+//	//info to token
+//	info := modules.NewTokenInfo(name, token, creator)
+//
+//	item, err := s.b.SaveTokenInfo(info)
+//	if err != nil {
+//		return "", err
+//	}
+//
+//	this := NewPublicReturnInfo("save_token_info", item)
+//	result_json, _ := json.Marshal(this)
+//	return string(result_json), nil
+//
+//}
+func (s *PublicDagAPI) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
+	return s.b.GetUnstableUnits()
+}
+func (s *PublicDagAPI) GetUnitTxsInfo(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetUnitTxsInfo(hash); err != nil {
+		return "unit_txs:null", err
+	} else {
+		info := NewPublicReturnInfo("unit_txs", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+func (s *PublicDagAPI) GetUnitTxsHashHex(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+
+	if item, err := s.b.GetUnitTxsHashHex(hash); err != nil {
+		return "unit_txs_hash:null", err
+	} else {
+		info := NewPublicReturnInfo("unit_txs_hash", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetTxByHash(hash); err != nil {
+		return "transaction_info:null", err
+	} else {
+		info := NewPublicReturnInfo("transaction_info", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	item, err := s.b.GetTxSearchEntry(hash)
+
+	info := NewPublicReturnInfo("tx_entry", item)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), err
+}
+
+func (s *PublicDagAPI) GetAddrOutpoints(ctx context.Context, addr string) (string, error) {
+	items, err := s.b.GetAddrOutpoints(addr)
+	if err != nil {
+		return "", err
+	}
+	info := NewPublicReturnInfo("address_outpoints", items)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), nil
+}
+
+func (s *PublicDagAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
+	items, err := s.b.GetAddrUtxos(addr)
+
+	if err != nil {
+		return "", err
+	}
+	info := NewPublicReturnInfo("address_utxos", items)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), nil
+}
+
+func (s *PublicDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
+	items, err := s.b.GetAllUtxos()
+	if err != nil {
+		log.Error("Get all utxo failed.", "error", err, "result", items)
+		return "", err
+	}
+
+	info := NewPublicReturnInfo("all_utxos", items)
+
+	result_json, err := json.Marshal(info)
+	if err != nil {
+		log.Error("Get all utxo ,json marshal failed.", "error", err)
+	}
+
+	return string(result_json), nil
+}
+
+func (s *PublicDagAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*ptnjson.GetTxIdResult, error) {
+	tx, err := s.b.GetTxByTxid_back(txid)
+	if err != nil {
+		log.Error("Get transcation by hash ", "unit_hash", txid, "error", err.Error())
+		return nil, err
+	}
+	return tx, nil
+}
+
+func (s *PublicDagAPI) GetTxHashByReqId(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	item, err := s.b.GetTxHashByReqId(hash)
+
+	info := NewPublicReturnInfo("tx_hash", item)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), err
+}
+
+// GetTxPoolTxByHash returns the pool transaction for the given hash
+func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
+	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
+	hash := common.HexToHash(hex)
+	log.Debug("this is hash tx's hash  to find tx.", "hash", hash.String())
+	item, err := s.b.GetTxPoolTxByHash(hash)
+	if err != nil {
+		return "pool_tx:null", err
+	} else {
+		info := NewPublicReturnInfo("txpool_tx", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
+// GetHeadUnitHash returns the head unit's hash
+//func (s *PublicDagAPI) GetHeadUnitHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadUnitHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}
+//
+//// GetHeadHeaderHash returns the head header's hash
+//func (s *PublicDagAPI) GetHeadHeaderHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadHeaderHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}
+//
+//// GetHeadFastUnitHash returns the fast unit's hash
+//func (s *PublicDagAPI) GetHeadFastUnitHash(ctx context.Context) (string, error) {
+//	hash, err := s.b.GetHeadFastUnitHash()
+//	if hash != (common.Hash{}) {
+//		return hash.String(), err
+//	}
+//	return "is not exist!", err
+//}
+
+func (s *PublicDagAPI) HeadUnitHash() string {
+	return s.b.Dag().HeadUnitHash().TerminalString()
+}
+
+func (s *PublicDagAPI) HeadUnitTime() string {
+	time := time.Unix(s.b.Dag().HeadUnitTime(), 0)
+	return time.Format("2006-01-02 15:04:05 -0700 MST")
+}
+
+func (s *PublicDagAPI) HeadUnitNum() uint64 {
+	return s.b.Dag().HeadUnitNum()
+}

@@ -55,26 +55,6 @@ func (api *PublicPalletOneAPI) Hashrate() hexutil.Uint64 {
 	return hexutil.Uint64(0)
 }
 
-type PublicDagAPI struct {
-	p *PalletOne
-}
-
-func NewPublicDagAPI(p *PalletOne) *PublicDagAPI {
-	return &PublicDagAPI{p}
-}
-
-//func (api *PublicDagAPI) TokenInfos() (string, error) {
-//	all, err := api.p.dag.GetAllTokenInfo()
-//	if err != nil {
-//		return "get failed.", err
-//	}
-//	if bytes, err := json.Marshal(all); err != nil {
-//		return "error", err
-//	} else {
-//		return string(bytes), nil
-//	}
-//}
-
 /*
 // PublicDebugAPI is the collection of PalletOne full node APIs exposed
 // over the public debugging endpoint.

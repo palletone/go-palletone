@@ -114,20 +114,15 @@ var (
 		utils.ExtraDataFlag,
 		//utils.DagValue1Flag,
 		//utils.DagValue2Flag,
-		utils.LogValue1Flag,
-		utils.LogValue2Flag,
-		utils.LogValue3Flag,
-		utils.LogValue4Flag,
-		utils.LogValue5Flag,
+		utils.LogOutputPathFlag,
+		utils.LogLevelFlag,
+		utils.LogIsDebugFlag,
+		utils.LogErrPathFlag,
+		utils.LogEncodingFlag,
 		utils.LogOpenModuleFlag,
-		ConfigFileFlag,
+		ConfigFilePathFlag,
 		GenesisJsonPathFlag,
 		GenesisTimestampFlag,
-		mp.NoProduceUnitFlag,
-		mp.StaleProductionFlag,
-		mp.ConsecutiveProductionFlag,
-		mp.RequiredParticipationFlag,
-		mp.NoGroupSignFlag,
 	}
 
 	rpcFlags = []cli.Flag{
@@ -195,6 +190,7 @@ func init() {
 	app.Flags = append(app.Flags, rpcFlags...)
 	app.Flags = append(app.Flags, consoleFlags...)
 	app.Flags = append(app.Flags, debug.Flags...)
+	app.Flags = append(app.Flags, mp.MediatorFlags...)
 
 	// before函数在app.Run的开始会先调用，也就是gopkg.in/urfave/cli.v1/app.go Run函数的前面
 	app.Before = func(ctx *cli.Context) error {

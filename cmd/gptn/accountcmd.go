@@ -377,12 +377,14 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	var err error
 	var cfg FullConfig
+	var configDir string
 	// Load config file.
-	if cfg, err = maybeLoadConfig(ctx); err != nil {
+	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
 		utils.Fatalf("%v", err)
 	}
 
-	utils.SetNodeConfig(ctx, &cfg.Node)
+	cfg.Node.P2P = cfg.P2P
+	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
 
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)

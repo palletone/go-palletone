@@ -57,7 +57,7 @@ type UnitDag4Test struct {
 func NewTxPool4Test() *TxPool {
 	//l := log.NewTestLog()
 	testDag := NewUnitDag4Test()
-	return NewTxPool(DefaultTxPoolConfig, testDag)
+	return NewTxPool(testTxPoolConfig, testDag)
 }
 
 func NewUnitDag4Test() *UnitDag4Test {
@@ -297,7 +297,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	//  test GetSortedTxs{}
 	unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	defer func(p *TxPool) {
-		if txs, total := p.GetSortedTxs(unit_hash); total.Float64() > dagconfig.DefaultConfig.UnitTxSize {
+		if txs, total := p.GetSortedTxs(unit_hash); total.Float64() > dagconfig.DagConfig.UnitTxSize {
 			all = len(txs)
 			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
 			t.Error(msg)

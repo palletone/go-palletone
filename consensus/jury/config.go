@@ -70,6 +70,12 @@ var DefaultConfig = Config{
 	},
 }
 
+func MakeConfig() Config {
+	cfg := DefaultConfig
+	cfg.Accounts = nil
+	return cfg
+}
+
 func SetJuryConfig(ctx *cli.Context, cfg *Config) {
 	switch {
 	case ctx.GlobalIsSet(AccountInfoFlag.Name):

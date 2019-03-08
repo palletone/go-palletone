@@ -64,7 +64,7 @@ type IUtxoRepository interface {
 	ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
-	ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error)
+
 	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	//GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
@@ -101,7 +101,7 @@ Return utxo struct and his total amount according to user's address, asset type
 */
 func (repository *UtxoRepository) ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
 
-	if dagconfig.DefaultConfig.UtxoIndex {
+	if dagconfig.DagConfig.UtxoIndex {
 		return repository.readUtxosByIndex(addr, asset)
 	} else {
 		return repository.readUtxosFrAll(addr, asset)
@@ -364,7 +364,7 @@ get asset infomation from leveldb by assetid ( Asset struct type )
 To get balance by wallet address and his/her chosen asset type
 */
 func (repository *UtxoRepository) WalletBalance(addr common.Address, asset modules.Asset) uint64 {
-	if dagconfig.DefaultConfig.UtxoIndex {
+	if dagconfig.DagConfig.UtxoIndex {
 		return repository.walletBalanceByIndex(addr, asset)
 	} else {
 		return repository.walletBalanceFrAll(addr, asset)
@@ -561,30 +561,30 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 根据交易列表计算交易费总和
 To compute transactions' fees
 */
-func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
-	// current time slice mediator default income is 1 ptn
-	fees := uint64(0)
-	unitUtxo := map[modules.OutPoint]*modules.Utxo{}
-	for i, tx := range txs {
-		getUtxoFromUnitAndDb := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-			if utxo, ok := unitUtxo[*outpoint]; ok {
-				return utxo, nil
-			}
-			return repository.utxodb.GetUtxoEntry(outpoint)
-		}
-		fee, err := tx.Tx.GetTxFee(getUtxoFromUnitAndDb)
-		if err != nil {
-			return 0, err
-		}
-		tx.TxFee = fee
-		txs[i] = tx
-		fees += fee.Amount
-		for outPoint, utxo := range tx.Tx.GetNewUtxos() {
-			unitUtxo[outPoint] = utxo
-		}
-	}
-	return fees, nil
-}
+// func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
+// 	// current time slice mediator default income is 1 ptn
+// 	fees := uint64(0)
+// 	unitUtxo := map[modules.OutPoint]*modules.Utxo{}
+// 	for i, tx := range txs {
+// 		getUtxoFromUnitAndDb := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+// 			if utxo, ok := unitUtxo[*outpoint]; ok {
+// 				return utxo, nil
+// 			}
+// 			return repository.utxodb.GetUtxoEntry(outpoint)
+// 		}
+// 		fee, err := tx.Tx.GetTxFee(getUtxoFromUnitAndDb)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+// 		tx.TxFee = fee
+// 		txs[i] = tx
+// 		fees += fee.Amount
+// 		for outPoint, utxo := range tx.Tx.GetNewUtxos() {
+// 			unitUtxo[outPoint] = utxo
+// 		}
+// 	}
+// 	return fees, nil
+// }
 
 /**
 根据交易列表计算保证金交易的收益
@@ -660,7 +660,7 @@ To compute mediator interest for packaging one unit
 */
 func ComputeRewards() uint64 {
 	var rewards uint64
-	if dagconfig.DefaultConfig.IsRewardCoin {
+	if dagconfig.DagConfig.IsRewardCoin {
 		rewards = uint64(modules.DAO)
 	}
 	return rewards

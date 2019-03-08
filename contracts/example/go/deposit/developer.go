@@ -52,7 +52,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		balance = &DepositBalance{}
 		if invokeTokens.Amount >= depositAmountsForDeveloper {
 			//加入列表
-			//addList("Jury", invokeAddr, stub)
+			//addList("Developer", invokeAddr, stub)
 			err = addCandaditeList(invokeAddr, stub, "DeveloperList")
 			if err != nil {
 				log.Error("AddCandaditeList err:", "error", err)
@@ -65,7 +65,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 	} else {
 		//账户已存在，进行信息的更新操作
 		if balance.TotalAmount >= depositAmountsForDeveloper {
-			//原来就是jury
+			//原来就是Developer
 			isDeveloper = true
 			//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 			endTime := balance.LastModifyTime * 1800
@@ -77,9 +77,9 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		updateForPayValue(balance, invokeTokens)
 	}
 	if !isDeveloper {
-		//判断交了保证金后是否超过了jury
+		//判断交了保证金后是否超过了Developer
 		if balance.TotalAmount >= depositAmountsForDeveloper {
-			//addList("Jury", invokeAddr, stub)
+			//addList("Developer", invokeAddr, stub)
 			err = addCandaditeList(invokeAddr, stub, "DeveloperList")
 			if err != nil {
 				log.Error("AddCandaditeList err:", "error", err)
@@ -147,7 +147,7 @@ func handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []st
 		//对余额处理
 		err = handleDeveloper(stub, addr, applyTime, balance)
 		if err != nil {
-			log.Error("handleJury err", "error", err)
+			log.Error("handleDeveloper err", "error", err)
 			return shim.Error(err.Error())
 		}
 	} else if strings.Compare(isOk, "no") == 0 {
@@ -213,7 +213,7 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 	}
 	err = handleDeveloperDepositCashback(stub, cashbackAddr, cashbackNode, balance)
 	if err != nil {
-		log.Error("HandleJuryDepositCashback err:", "error", err)
+		log.Error("HandleDeveloperDepositCashback err:", "error", err)
 		return err
 	}
 	return nil
@@ -221,18 +221,18 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 
 //对Developer退保证金的处理
 func handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
-	if balance.TotalAmount >= depositAmountsForJury {
+	if balance.TotalAmount >= depositAmountsForDeveloper {
 		//已在列表中
 		err := handleDeveloperFromList(stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
-			log.Error("HandleJuryFromList err:", "error", err)
+			log.Error("HandleDeveloperFromList err:", "error", err)
 			return err
 		}
 	} else {
 		////TODO 不在列表中,没有奖励，直接退
 		err := handleCommonJuryOrDev(stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
-			log.Error("HandleCommonJuryOrDev err:", "error", err)
+			log.Error("handleCommonJuryOrDev err:", "error", err)
 			return err
 		}
 	}
@@ -264,7 +264,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr stri
 		}
 	} else {
 		//TODO 退出一部分，且退出该部分金额后还在列表中，还没有计算利息
-		//d.addListForCashback("Jury", stub, cashbackAddr, invokeTokens)
+		//d.addListForCashback("Developer", stub, cashbackAddr, invokeTokens)
 		err = cashbackSomeDeposit("Developer", stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
 			log.Error("CashbackSomeDeposit err:", "error", err)
