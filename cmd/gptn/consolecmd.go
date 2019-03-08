@@ -82,7 +82,7 @@ JavaScript API. See https://github.com/palletone/go-palletone/wiki/JavaScript-Co
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
 	node := makeFullNode(ctx)
-	log.LogConfig.LoggerLvl = "FATAL"
+	log.ConsoleInitLogger()
 	startNode(ctx, node)
 	defer node.Stop()
 
@@ -193,7 +193,7 @@ func remoteConsole(ctx *cli.Context) error {
 	}
 
 	// 设置 log 的配置
-	log.ConsoleInitLogger(&cfg.Log)
+	log.ConsoleInitLogger()
 
 	// 2. 连接 gptn
 	client, err := dialRPC(endpoint)

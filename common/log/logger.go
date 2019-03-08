@@ -46,6 +46,7 @@ const (
 
 	errorKey  = "ZAPLOG_ERROR"
 	LogStdout = "stdout"
+	LogStderr = "stderr"
 )
 
 var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
@@ -70,10 +71,27 @@ func InitLogger() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
 
-func ConsoleInitLogger(cfg *Config) {
+func ConsoleInitLogger() {
 	LogConfig.LoggerLvl = "FATAL"
-	LogConfig.OutputPaths = cfg.OutputPaths
-	LogConfig.ErrorOutputPaths = cfg.ErrorOutputPaths
+
+	outputPaths := make([]string, 0)
+	for _, path := range LogConfig.OutputPaths {
+		if path == LogStdout {
+			continue
+		}
+		outputPaths = append(outputPaths, path)
+	}
+	LogConfig.OutputPaths = outputPaths
+
+	errorPaths := make([]string, 0)
+	for _, path := range LogConfig.ErrorOutputPaths {
+		if path == LogStderr {
+			continue
+		}
+		errorPaths = append(errorPaths, path)
+	}
+	LogConfig.ErrorOutputPaths = errorPaths
+
 	InitLogger()
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile | log.LstdFlags)
 }
