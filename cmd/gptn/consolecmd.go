@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	"gopkg.in/urfave/cli.v1"
@@ -154,11 +153,13 @@ func remoteConsole(ctx *cli.Context) error {
 				}
 			} else if endpoint == "" {
 				endpoint = fmt.Sprintf("%s/gptn.ipc", dataDir)
+				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			} else {
 				dataDir = filepath.Dir(endpoint)
+				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			}
 		} else {
-			// 在windows系统下，ipc文件在\\.\pipe\ 目录下
+			// 在windows系统下，ipc文件在\\.\pipe\ 目录下, 没在 dataDir 下
 
 			if endpoint == "" && dataDir == "" {
 				configPath := getConfigPath(ctx)
@@ -185,14 +186,13 @@ func remoteConsole(ctx *cli.Context) error {
 				if !strings.HasPrefix(endpoint, `\\.\pipe\`) {
 					endpoint = `\\.\pipe\` + endpoint
 				}
+				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			} else {
 				dataDir = cfg.Node.DataDir
+				utils.SetLogConfig(ctx, &cfg.Log, filepath.Dir(dataDir), true)
 			}
 		}
 	}
-
-	// 设置 log 的配置
-	log.ConsoleInitLogger()
 
 	// 2. 连接 gptn
 	client, err := dialRPC(endpoint)
