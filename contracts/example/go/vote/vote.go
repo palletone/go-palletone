@@ -179,7 +179,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		for _, oneOption := range oneTopic.SelectOptions {
 			var oneResult VoteResult
 			oneResult.SelectOption = oneOption
-			oneSupport.VoteResults = append(oneSupport.VoteResults)
+			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
 		}
 		//oneResult.SelectOptionsNum = uint64(len(oneRequest.SelectOptions))
 		oneSupport.SelectMax = oneTopic.SelectMax
@@ -195,7 +195,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(vt.Symbol, dm.AssetType_VoteToken,
 		0, common.Hex2Bytes(txid[2:]))
-	assetIDStr := assetID.Str()
+	assetIDStr := assetID.ToAssetId()
 	//check name is only or not
 	symbols, err := getSymbols(stub)
 	if _, ok := symbols.TokenInfos[assetIDStr]; ok {
@@ -254,8 +254,8 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		if invokeTokens[i].Asset.AssetId == dm.PTNCOIN {
 			continue
 		} else if invokeTokens[i].Address == "P1111111111111111111114oLvT2" {
-			if assetIDStr != "" {
-				assetIDStr = invokeTokens[i].Asset.AssetId.Str()
+			if assetIDStr == "" {
+				assetIDStr = invokeTokens[i].Asset.String()
 				voteNum += invokeTokens[i].Amount
 			} else if invokeTokens[i].Asset.AssetId.Str() == assetIDStr {
 				voteNum += invokeTokens[i].Amount
@@ -276,7 +276,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//parse support requests
 	var supportRequests []SupportRequest
-	err = json.Unmarshal([]byte(args[1]), &supportRequests)
+	err = json.Unmarshal([]byte(args[0]), &supportRequests)
 	if err != nil {
 		jsonResp := "{\"Error\":\"SupportRequestJson format invalid\"}"
 		return shim.Success([]byte(jsonResp))
