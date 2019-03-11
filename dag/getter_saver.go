@@ -213,6 +213,10 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 	return dag.GetGlobalProp().ChainParameters.CurrentFees
 }
 
+func (dag *Dag) GetChainParameters() core.ChainParameters {
+	return dag.GetGlobalProp().ChainParameters
+}
+
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 
 	unit, err := dag.unstableUnitRep.GetUnit(hash)

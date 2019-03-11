@@ -42,6 +42,7 @@ const (
 
 	DefaultJuryAddr = "P16bXzewsexHwhGYdt1c1qbzjBirCqDg8mN"
 
+	DefaultMaxMediatorCount    = 255
 	DefaultMediatorCount       = 5 //21
 	DefaultMinMediatorCount    = 3 //11
 	DefaultMinMediatorInterval = 1
@@ -66,9 +67,9 @@ const (
 	DefaultMediatorInterval    = 3       //5 /* seconds */
 	DefaultMaintenanceInterval = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
 
-	DefaultMediatorCreateFee        = 5000
-	DefaultVoteMediatorFee          = 20
+	DefaultMediatorCreateFee          = 5000
+	DefaultVoteMediatorFee            = 20
 	DefaultSetDesiredMediatorCountFee = 20
-	DefaultTransferPtnBaseFee       = 20
-	DefaultTransferPtnPricePerKByte = 20
+	DefaultTransferPtnBaseFee         = 20
+	DefaultTransferPtnPricePerKByte   = 20
 )
