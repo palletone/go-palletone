@@ -54,7 +54,7 @@ func init() {
 		partSec[i] = sec
 		partPubs[i] = pub
 
-		fmt.Printf("Key[%d] priv: %s, pub %s\n", i, sec.String(), pub.String())
+		fmt.Printf("Key[%v] priv: %v, pub %v\n", i, sec.String(), pub.String())
 	}
 }
 

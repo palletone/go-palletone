@@ -34,8 +34,8 @@ func TestConsoleWelcome(t *testing.T) {
 	gptn := runGptn(t, "console")
 	// Gather all the infos the welcome message needs to contain
 
-	gptn.Expect("2019")
-	//gptn.ExpectExitConsoleWelcome()
+	//gptn.Expect("2019")
+	gptn.ExpectExitConsoleWelcome()
 }
 
 func TestPeerToPeer(t *testing.T) {
