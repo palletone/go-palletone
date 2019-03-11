@@ -250,7 +250,7 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 				if err := checkAndAddSigSet(req.sigTx, rtx); err != nil {
 					log.Error("runContractReq", "checkAndAddSigSet error", err.Error())
 				} else {
-					log.Debug("runContractReq", "checkAndAddSigSet ok")
+					log.Debug("runContractReq", "checkAndAddSigSet ok, reqId", reqId)
 				}
 			}
 			req.rcvTx = nil
@@ -258,6 +258,7 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 
 		if getTxSigNum(req.sigTx) >= p.contractSigNum {
 			if localIsMinSignature(req.sigTx) {
+				log.Info("runContractReq", "localIsMinSignature Ok!, reqId", reqId)
 				go p.ptn.ContractBroadcast(ContractEvent{Ele: req.eleInf, CType: CONTRACT_EVENT_COMMIT, Tx: req.sigTx}, true)
 				return nil
 			}
