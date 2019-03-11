@@ -68,6 +68,17 @@ func (s *PrivateAccountAPI) ListAccounts() []string {
 	return addresses
 }
 
+// ListAccounts will return a list of addresses for accounts this node manages.
+func (s *PrivateAccountAPI) LlistAccounts() ([]string,error) {
+	addresses := make([]string, 0)
+	for _, wallet := range s.am.Wallets() {
+		for _, account := range wallet.Accounts() {
+			addresses = append(addresses, account.Address.String())
+		}
+	}
+	return addresses,nil 
+}
+
 // rawWallet is a JSON representation of an accounts.Wallet interface, with its
 // data contents extracted into plain fields.
 type rawWallet struct {
