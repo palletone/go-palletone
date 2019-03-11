@@ -217,6 +217,10 @@ func (dag *Dag) GetChainParameters() core.ChainParameters {
 	return dag.GetGlobalProp().ChainParameters
 }
 
+func (dag *Dag) GetImmutableChainParameters() core.ImmutableChainParameters {
+	return dag.GetGlobalProp().ImmutableParameters
+}
+
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 
 	unit, err := dag.unstableUnitRep.GetUnit(hash)

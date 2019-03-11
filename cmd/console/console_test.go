@@ -248,8 +248,6 @@ func TestWelcome(t *testing.T) {
 
 // Tests that JavaScript statement evaluation works as intended.
 func TestEvaluate(t *testing.T) {
-	return
-
 	tester := newTester(t, nil)
 	defer tester.Close(t)
 
