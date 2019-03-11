@@ -198,7 +198,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
-		go log.Info(fmt.Sprintf("Launching unit production for %d mediators.", len(mp.mediators)))
+		go log.Info(fmt.Sprintf("Launching unit production for %v mediators.", len(mp.mediators)))
 
 		if mp.productionEnabled {
 			dag := mp.dag
