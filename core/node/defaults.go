@@ -33,7 +33,7 @@ var DefaultConfig = Config{
 	DataDir:          DefaultDataDir(),
 	HTTPHost:         DefaultHTTPHost,
 	HTTPPort:         DefaultHTTPPort,
-	HTTPModules:      []string{"net", "web3", "wallet", "dag"},
+	HTTPModules:      []string{"net", "web3", "wallet", "dag", "personal"},
 	HTTPVirtualHosts: []string{"localhost"},
 	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
