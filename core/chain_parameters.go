@@ -33,12 +33,16 @@ type ChainParameters struct {
 
 	// 在维护时跳过的verifiedUnitInterval数量。 number of verifiedUnitInterval to skip at maintenance time
 	//	MaintenanceSkipSlots uint8
+
+	// 活跃mediator的最大数量。maximum number of active mediators
+	MaximumMediatorCount uint8 `json:"maxMediatorCount"`
 }
 
 func NewChainParams() (c ChainParameters) {
 	c.CurrentFees = newFeeSchedule()
 	c.MediatorInterval = DefaultMediatorInterval
 	c.MaintenanceInterval = DefaultMaintenanceInterval
+	c.MaximumMediatorCount = DefaultMaxMediatorCount
 
 	return
 }

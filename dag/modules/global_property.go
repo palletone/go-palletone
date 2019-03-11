@@ -29,11 +29,13 @@ import (
 )
 
 type GlobalPropBase struct {
-	ChainParameters core.ChainParameters // 区块链网络参数
+	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
+	ChainParameters     core.ChainParameters          // 区块链网络参数
 }
 
 func NewGlobalPropBase() *GlobalPropBase {
 	return &GlobalPropBase{
+		ImmutableParameters: core.NewImmutChainParams(),
 		ChainParameters: core.NewChainParams(),
 	}
 }
@@ -208,6 +210,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 
 	log.Debug("initialize chain parameters...")
 	gp.ChainParameters = genesis.InitialParameters
+	gp.ImmutableParameters = genesis.ImmutableParameters
 
 	log.Debug("Set active mediators...")
 	// Set active mediators

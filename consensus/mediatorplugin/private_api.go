@@ -197,6 +197,11 @@ func (a *PrivateMediatorAPI) SetDesiredMediatorCount(accountStr string,
 		return nil, fmt.Errorf("invalid account address: %s", accountStr)
 	}
 
+	maxMediatorCount := a.dag.GetChainParameters().MaximumMediatorCount
+	if desiredMediatorCount > maxMediatorCount {
+		return nil, fmt.Errorf("the max number of allowed active mediators is: %s", maxMediatorCount)
+	}
+
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.dag.IsSynced() {
 		return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")

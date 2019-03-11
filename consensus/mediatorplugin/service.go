@@ -103,6 +103,7 @@ type iDag interface {
 	GetAccountInfo(addr common.Address) *modules.AccountInfo
 	GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GetChainParameters() core.ChainParameters
 }
 
 type MediatorPlugin struct {

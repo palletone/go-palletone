@@ -195,4 +195,5 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 
 	// 6. 清理中间处理缓存数据
 	dag.mediatorVoteTally = nil
+	dag.mediatorCountHistogram = nil
 }
