@@ -139,7 +139,6 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 		addrHash = util.RlpHash(addr)
 		break //only first one
 	}
-	log.Info("ProcessElectionRequestEvent", "reqHash", reqEvt.ReqId.String())
 	proof, err := ele.checkElected(reqEvt.ReqId[:])
 	if err != nil {
 		log.Error("ProcessElectionRequestEvent", "reqHash", reqEvt.ReqId, "checkElected err", err)
@@ -157,7 +156,7 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 			ReqId: reqEvt.ReqId,
 			Ele:   ElectionInf{AddrHash: addrHash, Proof: proof, PublicKey: pubKey},
 		}
-		log.Debug("ProcessElectionRequestEvent", "reqId", reqEvt.ReqId.String())
+		log.Debug("ProcessElectionRequestEvent", "ok, reqId", reqEvt.ReqId.String())
 		evt := &ElectionEvent{EType: ELECTION_EVENT_RESULT, Event: rstEvt}
 		return evt, nil
 	}
@@ -179,7 +178,7 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 		return nil
 	}
 	contractId := common.BytesToAddress(rstEvt.ReqId.Bytes())
-	seedData :=contractId.Bytes()
+	seedData := contractId.Bytes()
 	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, seedData, rstEvt.Ele.PublicKey)
 	if err != nil {
 		return err
@@ -253,6 +252,8 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 		password: account.Password,
 		ks:       p.ptn.GetKeyStore(),
 	}
+	log.Info("ProcessElectionEvent", "event", event.EType)
+
 	if event.EType == ELECTION_EVENT_REQUEST {
 		return p.processElectionRequestEvent(ele, event.Event.(*ElectionRequestEvent))
 	} else if event.EType == ELECTION_EVENT_RESULT {

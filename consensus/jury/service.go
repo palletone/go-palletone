@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 const (
@@ -65,8 +66,8 @@ type iDag interface {
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetActiveMediators() []common.Address
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
-	IsActiveJury(add common.Address) bool
-	IsActiveMediator(add common.Address) bool
+	IsActiveJury(addr common.Address) bool
+	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
@@ -358,11 +359,12 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 	return sign, nil
 }
 func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
-	//log.Debug("ProcessContractEvent", "enter", addr.String())
+	//log.Debug("AddContractLoop", "loop", addr.String())
 	for _, ctx := range p.mtx {
 		if false == ctx.valid {
 			continue
 		}
+		log.Debug("AddContractLoop", "enter mtx", addr.String())
 		ctx.valid = false
 		if isSystemContract(ctx.reqTx) && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
@@ -476,7 +478,18 @@ func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, che
 				}
 			}
 		}
-		//检查地址与pubKey是否匹配(从数据库中获取):获取当前pubKey下的Addr，将地址hash后与输入比较
+		//检查地址与pubKey是否匹配:获取当前pubKey下的Addr，将地址hash后与输入比较
+		addr := crypto.PubkeyBytesToAddress(e.PublicKey)
+		if e.AddrHash != util.RlpHash(addr){
+			log.Error("isValidateElection",  "publicKey not match address, addrHash is", e.AddrHash)
+			return false
+		}
+		//从数据库中查询该地址是否为Jury
+		if !p.dag.IsActiveJury(addr){
+			log.Error("isValidateElection",  "not active Jury, addrHash is", e.AddrHash)
+			return false
+		}
+
 		isMatch = true
 		if !isMatch {
 			log.Info("isValidateElection", "index", i, "address does not match public key, reqId", reqId)

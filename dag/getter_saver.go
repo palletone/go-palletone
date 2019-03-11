@@ -263,8 +263,8 @@ func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
 	return mi
 }
 
-func (d *Dag) IsActiveJury(add common.Address) bool {
-	return d.GetGlobalProp().IsActiveJury(add)
+func (d *Dag) IsActiveJury(addr common.Address) bool {
+	return d.GetGlobalProp().IsActiveJury(addr)
 }
 
 func (d *Dag) GetActiveJuries() []common.Address {
