@@ -197,7 +197,7 @@ func (a *PrivateMediatorAPI) SetDesiredMediatorCount(accountStr string,
 		return nil, fmt.Errorf("invalid account address: %s", accountStr)
 	}
 
-	maxMediatorCount := a.dag.GetChainParameters().MaxMediatorCount
+	maxMediatorCount := a.dag.GetChainParameters().MaximumMediatorCount
 	if desiredMediatorCount > maxMediatorCount {
 		return nil, fmt.Errorf("the max number of allowed active mediators is: %s", maxMediatorCount)
 	}
