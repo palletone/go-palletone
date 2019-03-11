@@ -142,8 +142,15 @@ func (dag *Dag) updateActiveMediators() bool {
 		}
 	}
 
-	// todo 待优化，应当比最小值大
-	mediatorCount := mediatorCountIndex*2 + 1
+	maxFn := func(x, y int) int {
+		if x > y {
+			return x
+		}
+		return y
+	}
+
+	gp := dag.GetGlobalProp()
+	mediatorCount := maxFn(mediatorCountIndex*2+1, int(gp.ImmutableParameters.MinMediatorCount))
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
 	// todo 应当优化本排序方法，使用部分排序的方法
@@ -157,7 +164,6 @@ func (dag *Dag) updateActiveMediators() bool {
 	}
 
 	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
-	gp := dag.GetGlobalProp()
 	gp.PrecedingMediators = gp.ActiveMediators
 	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
 	for index := 0; index < mediatorCount; index++ {

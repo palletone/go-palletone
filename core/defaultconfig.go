@@ -44,7 +44,7 @@ const (
 
 	DefaultMaxMediatorCount    = 255
 	DefaultMediatorCount       = 5 //21
-	DefaultMinMediatorCount    = 3 //11
+	DefaultMinMediatorCount    = 5 //21
 	DefaultMinMediatorInterval = 1
 
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
