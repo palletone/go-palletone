@@ -199,7 +199,7 @@ func (a *PrivateMediatorAPI) SetDesiredMediatorCount(accountStr string,
 
 	maxMediatorCount := a.dag.GetChainParameters().MaximumMediatorCount
 	if desiredMediatorCount > maxMediatorCount {
-		return nil, fmt.Errorf("the max number of allowed active mediators is: %s", maxMediatorCount)
+		return nil, fmt.Errorf("the max number of allowed active mediators is: %d", maxMediatorCount)
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
