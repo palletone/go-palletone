@@ -30,6 +30,11 @@ web3._extend({
 			params: 2
 		}),
 		new web3._extend.Method({
+			name: 'llistAccounts',
+			call: 'personal_llistAccounts',
+			params: 0
+		}),
+		new web3._extend.Method({
 			name: 'sign',
 			call: 'personal_sign',
 			params: 3,

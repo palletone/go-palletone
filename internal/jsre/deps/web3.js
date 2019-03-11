@@ -5829,7 +5829,7 @@ var methods = function () {
     });
 
     var ecRecover = new Method({
-        name: 'ecRecover',
+    name: 'ecRecover',
 		call: 'personal_ecRecover',
 		params: 2
     });
@@ -5866,12 +5866,12 @@ var methods = function () {
 };
 
 var properties = function () {
-    return [
+    /*return [
         new Property({
             name: 'listAccounts',
             getter: 'personal_listAccounts'
         })
-    ];
+    ];*/
 };
 
 
