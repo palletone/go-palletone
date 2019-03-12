@@ -123,7 +123,7 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 
 	// 5. 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Create mediator %s with initPubKey : %s , node: %s , url: %s",
+	res.TxContent = fmt.Sprintf("Create mediator %v with initPubKey : %v , node: %v , url: %v",
 		args.AddStr, args.InitPubKey, args.Node, args.Url)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
@@ -142,12 +142,12 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 	// 参数检查
 	voter, err := common.StringToAddress(voterStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %s", voterStr)
+		return nil, fmt.Errorf("invalid account address: %v", voterStr)
 	}
 
 	mediator, err := common.StringToAddress(mediatorStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %s", mediatorStr)
+		return nil, fmt.Errorf("invalid account address: %v", mediatorStr)
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
@@ -180,7 +180,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 
 	// 5. 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account %s vote mediator %s", voterStr, mediatorStr)
+	res.TxContent = fmt.Sprintf("Account %v vote mediator %v", voterStr, mediatorStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
@@ -194,7 +194,12 @@ func (a *PrivateMediatorAPI) SetDesiredMediatorCount(accountStr string,
 	// 参数检查
 	account, err := common.StringToAddress(accountStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %s", accountStr)
+		return nil, fmt.Errorf("invalid account address: %v", accountStr)
+	}
+
+	maxMediatorCount := a.dag.GetChainParameters().MaximumMediatorCount
+	if desiredMediatorCount > maxMediatorCount {
+		return nil, fmt.Errorf("the max number of allowed active mediators is: %v", maxMediatorCount)
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
@@ -223,7 +228,7 @@ func (a *PrivateMediatorAPI) SetDesiredMediatorCount(accountStr string,
 
 	// 5. 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account %s set desired mediator count %v", accountStr, desiredMediatorCount)
+	res.TxContent = fmt.Sprintf("Account %v set desired mediator count %v", accountStr, desiredMediatorCount)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)

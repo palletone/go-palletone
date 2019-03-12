@@ -28,10 +28,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/consensus/jury/vrfEc"
-	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
 	"github.com/palletone/go-palletone/consensus/jury/vrfEs"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/accounts"
+	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
 )
 
 type vrfAccount struct {
@@ -113,6 +113,7 @@ func (e *elector) verifyVrfEc(proof, data []byte) (bool, error) {
 func (e *elector) verifyVrf(proof, data []byte, pubKey []byte) (bool, error) {
 	ok, err := vrfEs.VrfVerify(pubKey, data, proof)
 	if err != nil {
+		log.Error("verifyVrf fail", "ok?", ok)
 		return false, err
 	}
 	if ok {
@@ -173,21 +174,22 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	}
 
 	mtx := p.mtx[rstEvt.ReqId]
-	if len(mtx.eleInf) > VrfElectionNum {
+	if len(mtx.eleInf) >= VrfElectionNum {
 		log.Info("ProcessElectionResultEvent, The quantity has reached the requirement")
 		return nil
 	}
 	contractId := common.BytesToAddress(rstEvt.ReqId.Bytes())
-	seedData := contractId.Bytes()
-	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, seedData, rstEvt.Ele.PublicKey)
+	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, rstEvt.ReqId[:], rstEvt.Ele.PublicKey)
 	if err != nil {
+		log.Error("ProcessElectionResultEvent", "verify VRF fail, ReqId is", rstEvt.ReqId.Bytes())
 		return err
 	}
 	if ok {
+		mtx.eleInf = append(mtx.eleInf, rstEvt.Ele)
 		p.lockArf[contractId] = append(p.lockArf[contractId], rstEvt.Ele) //add lock vrf election info
-		if len(mtx.eleInf) > VrfElectionNum {
+		if len(mtx.eleInf) >= VrfElectionNum {
 			//通知接收数量达到要求
-			log.Info("ProcessElectionResultEvent,add num Ok")
+			log.Info("ProcessElectionResultEvent,VRF address number is enough, Ok")
 			mtx.eleChan <- true
 		}
 	}
@@ -195,7 +197,7 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 }
 
 func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) error {
-	return nil //todo
+	//return nil //todo
 
 	if reqId == (common.Hash{}) {
 		return errors.New("ElectionRequest param is nil")

@@ -103,6 +103,7 @@ type iDag interface {
 	GetAccountInfo(addr common.Address) *modules.AccountInfo
 	GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GetChainParameters() core.ChainParameters
 }
 
 type MediatorPlugin struct {
@@ -197,7 +198,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
-		go log.Info(fmt.Sprintf("Launching unit production for %d mediators.", len(mp.mediators)))
+		go log.Info(fmt.Sprintf("Launching unit production for %v mediators.", len(mp.mediators)))
 
 		if mp.productionEnabled {
 			dag := mp.dag
