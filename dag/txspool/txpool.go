@@ -791,6 +791,9 @@ func (pool *TxPool) AddLocal(tx *modules.TxPoolTransaction) error {
 // sender is not among the locally tracked ones, full pricing constraints will
 // apply.
 func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
+	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase(){
+		return nil
+	}
 	pool_tx := TxtoTxpoolTx(pool, tx)
 	return pool.addTx(pool_tx, false)
 }

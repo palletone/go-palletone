@@ -18,7 +18,6 @@ package modules
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -180,7 +179,8 @@ func (msg *Message) CompareMessages(inMsg *Message) bool {
 	case APP_CONTRACT_DEPLOY_REQUEST:
 		payA, _ := msg.Payload.(*ContractDeployRequestPayload)
 		payB, _ := inMsg.Payload.(*ContractDeployRequestPayload)
-		return reflect.DeepEqual(payA, payB)
+		return payA.Equal(payB)
+		//return reflect.DeepEqual(payA, payB)
 	case APP_CONTRACT_INVOKE_REQUEST:
 		payA, _ := msg.Payload.(*ContractInvokeRequestPayload)
 		payB, _ := inMsg.Payload.(*ContractInvokeRequestPayload)
@@ -189,11 +189,8 @@ func (msg *Message) CompareMessages(inMsg *Message) bool {
 		payA, _ := msg.Payload.(*ContractStopRequestPayload)
 		payB, _ := inMsg.Payload.(*ContractStopRequestPayload)
 		return payA.Equal(payB)
-	default:
-		return false
 	}
-
-	return false
+	return true
 }
 
 type ContractWriteSet struct {
