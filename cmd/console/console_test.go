@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -32,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
 	dag2 "github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/internal/jsre"
 	"github.com/palletone/go-palletone/ptn"
 )
@@ -130,9 +132,10 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		confOverride(ptnConf)
 	}
 
-	fmt.Println("------------start open leveldb and store test genesis unit--------------")
-	db_path := "./leveldb"
-	if err := os.MkdirAll(db_path, 0777); err != nil {
+	//fmt.Println("------------start open leveldb and store test genesis unit--------------")
+	dbPath := filepath.Join(workspace, "./leveldb")
+	dagconfig.DagConfig.DbPath = dbPath
+	if err := os.MkdirAll(dbPath, 0777); err != nil {
 		fmt.Println("mkdir error:", err)
 		return nil
 	}
@@ -144,7 +147,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 
 	// fmt.Println("new account success and address=", account.Address.String())
-	db, _ := stack.OpenDatabase(db_path, 0, 0)
+	db, _ := stack.OpenDatabase(dbPath, 0, 0)
 	//db, _ := ptndb.NewMemDatabase()
 	dag, _ := dag2.NewDag4GenesisInit(db)
 	err = ks.Unlock(account, password)
@@ -222,7 +225,6 @@ func (env *tester) Close(t *testing.T) {
 // the instance name, coinbase account, block number, data directory and supported
 // console modules.
 func TestWelcome(t *testing.T) {
-	return
 	tester := newTester(t, nil)
 	defer tester.Close(t)
 
@@ -249,8 +251,6 @@ func TestWelcome(t *testing.T) {
 
 // Tests that JavaScript statement evaluation works as intended.
 func TestEvaluate(t *testing.T) {
-	return
-
 	tester := newTester(t, nil)
 	defer tester.Close(t)
 
@@ -262,7 +262,6 @@ func TestEvaluate(t *testing.T) {
 
 // Tests that the console can be used in interactive mode.
 func TestInteractive(t *testing.T) {
-	return
 	// Create a tester and run an interactive console in the background
 	tester := newTester(t, nil)
 	defer tester.Close(t)
@@ -294,8 +293,6 @@ func TestInteractive(t *testing.T) {
 // Tests that preloaded JavaScript files have been executed before user is given
 // input.
 func TestPreload(t *testing.T) {
-	return
-
 	tester := newTester(t, nil)
 	defer tester.Close(t)
 
@@ -307,8 +304,6 @@ func TestPreload(t *testing.T) {
 
 // Tests that JavaScript scripts can be executes from the configured asset path.
 func TestExecute(t *testing.T) {
-	return
-
 	tester := newTester(t, nil)
 	defer tester.Close(t)
 
@@ -323,8 +318,6 @@ func TestExecute(t *testing.T) {
 // Tests that the JavaScript objects returned by statement executions are properly
 // pretty printed instead of just displaing "[object]".
 func TestPrettyPrint(t *testing.T) {
-	return
-
 	tester := newTester(t, nil)
 	defer tester.Close(t)
 
@@ -356,8 +349,6 @@ func TestPrettyPrint(t *testing.T) {
 
 // Tests that the JavaScript exceptions are properly formatted and colored.
 func TestPrettyError(t *testing.T) {
-	return
-
 	tester := newTester(t, nil)
 	defer tester.Close(t)
 	tester.console.Evaluate("throw 'hello'")

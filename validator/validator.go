@@ -21,6 +21,8 @@
 package validator
 
 import (
+	"sync"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -40,12 +42,14 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery) *Vali
 
 type newUtxoQuery struct {
 	oldUtxoQuery IUtxoQuery
-	unitUtxo     map[modules.OutPoint]*modules.Utxo
+	unitUtxo     sync.Map
+	//unitUtxo     map[modules.OutPoint]*modules.Utxo
 }
 
 func (q *newUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	if utxo, ok := q.unitUtxo[*outpoint]; ok {
-		return utxo, nil
+	utxo, ok := q.unitUtxo.Load(outpoint)
+	if ok {
+		return utxo.(*modules.Utxo), nil
 	}
 	return q.oldUtxoQuery.GetUtxoEntry(outpoint)
 }
@@ -59,7 +63,8 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 	needCheckCoinbase := false
 	oldUtxoQuery := validate.utxoquery
 
-	unitUtxo := map[modules.OutPoint]*modules.Utxo{}
+	//unitUtxo := map[modules.OutPoint]*modules.Utxo{}
+	var unitUtxo sync.Map
 	newUtxoQuery := &newUtxoQuery{oldUtxoQuery: oldUtxoQuery, unitUtxo: unitUtxo}
 	validate.utxoquery = newUtxoQuery
 	defer validate.setUtxoQuery(oldUtxoQuery)
@@ -90,7 +95,8 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 		txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 		fee += txFee.Amount
 		for outPoint, utxo := range tx.GetNewUtxos() {
-			unitUtxo[outPoint] = utxo
+			unitUtxo.Store(outPoint, utxo)
+			//unitUtxo[outPoint] = utxo
 		}
 	}
 	//验证第一条交易
