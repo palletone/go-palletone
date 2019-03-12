@@ -1,3 +1,4 @@
+// Copyright 2018 PalletOne
 // Copyright 2017 The go-ethereum Authors
 // This file is part of go-ethereum.
 //
