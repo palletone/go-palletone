@@ -58,9 +58,17 @@ func (pm *ProtocolManager) PartitionHandle(p *peer) error {
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
 
-	head := pm.dag.CurrentHeader(pm.mainAssetId)
+	var (
+		number = &modules.ChainIndex{}
+		hash   = common.Hash{}
+	)
+
+	if head := pm.dag.CurrentHeader(pm.mainAssetId); head != nil {
+		number = head.Number
+		hash = head.Hash()
+	}
 	// Execute the PalletOne handshake
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash() /*mediator,*/, head.Hash()); err != nil {
+	if err := p.Handshake(pm.networkId, number, pm.genesis.Hash(), hash); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
