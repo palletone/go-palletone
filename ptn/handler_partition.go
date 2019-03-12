@@ -57,8 +57,8 @@ func (pm *ProtocolManager) PartitionHandle(p *peer) error {
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
-	token := modules.PTNCOIN
-	head := pm.dag.CurrentHeader(token)
+
+	head := pm.dag.CurrentHeader(pm.mainAssetId)
 	// Execute the PalletOne handshake
 	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash() /*mediator,*/, head.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
