@@ -34,7 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	//"github.com/palletone/go-palletone/common/p2p/discv5"
+
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 )
@@ -1040,4 +1040,12 @@ func (srv *Server) PeersInfo() []*PeerInfo {
 		}
 	}
 	return infos
+}
+
+func (srv *Server) Corss() []string {
+	return nil
+}
+
+func (srv *Server) CorsPeerInfo(protocol string) []*PeerInfo {
+	return nil
 }

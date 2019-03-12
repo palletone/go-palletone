@@ -546,6 +546,9 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
 	}
 	// 交易池不需要验证交易存不存在。
+	if tx == nil || tx.Tx == nil {
+		return errors.New("This transaction is invalide.")
+	}
 	err := pool.txValidator.ValidateTx(tx.Tx, false)
 	return err
 }
@@ -587,7 +590,6 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	}
 
 	txpool_tx.CreationDate = time.Now()
-	txpool_tx.Nonce = txpool.GetNonce(tx.Hash()) + 1
 	// 孤兒交易和非孤兒的交易費分开计算。
 	if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
 		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
@@ -601,13 +603,6 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 
 func PooltxToTx(pooltx *modules.TxPoolTransaction) *modules.Transaction {
 	return pooltx.Tx
-}
-
-func (pool *TxPool) GetNonce(hash common.Hash) uint64 {
-	if tx, has := pool.all[hash]; has {
-		return tx.Nonce
-	}
-	return 0
 }
 
 // add validates a transaction and inserts it into the non-executable queue for
@@ -706,9 +701,9 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
 	pool.all[hash] = tx
-	pool.addCache(tx)
-	pool.priority_priced.Put(tx)
-	pool.journalTx(tx)
+	go pool.addCache(tx)
+	go pool.priority_priced.Put(tx)
+	go pool.journalTx(tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
@@ -728,7 +723,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 // Note, this method assumes the pool lock is held!
 func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.TxPoolTransaction) (bool, error) {
 	// Try to insert the transaction into the future queue
-
 	old, ok := pool.all[hash]
 	if ok {
 		if !old.Pending && !old.Confirmed {
@@ -2000,8 +1994,13 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 							break
 						}
 						if utxo != nil {
-							if utxo.IsModified() || utxo.IsSpent() {
+							if utxo.IsModified() {
 								str = fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is invalide。",
+									hash.String(), in.PreviousOutPoint.String())
+								log.Info(str)
+								break
+							} else if utxo.IsSpent() {
+								str = fmt.Sprintf("the tx: (%s) input utxo:<key:(%s)> is spent。",
 									hash.String(), in.PreviousOutPoint.String())
 								log.Info(str)
 								break

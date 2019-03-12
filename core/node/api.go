@@ -261,6 +261,22 @@ func (api *PublicAdminAPI) NodeInfo() (*p2p.NodeInfo, error) {
 	return server.NodeInfo(), nil
 }
 
+func (api *PublicAdminAPI) Corss() ([]string, error) {
+	server := api.node.Server()
+	if server == nil {
+		return nil, ErrNodeStopped
+	}
+	return server.Corss(), nil
+}
+
+func (api *PublicAdminAPI) CorsPeers(protocol string) ([]*p2p.PeerInfo, error) {
+	server := api.node.Server()
+	if server == nil {
+		return nil, ErrNodeStopped
+	}
+	return server.CorsPeerInfo(protocol), nil
+}
+
 // Datadir retrieves the current data directory the node is using.
 func (api *PublicAdminAPI) Datadir() string {
 	return api.node.DataDir()
