@@ -52,6 +52,12 @@ type Protocol struct {
 	// about a certain peer in the network. If an info retrieval function is set,
 	// but returns nil, it is assumed that the protocol handshake is still running.
 	PeerInfo func(id discover.NodeID) interface{}
+
+	//Corss protocols array
+	Corss func() interface{}
+
+	//cors Peers info
+	CorsPeerInfo func(protocl string, id discover.NodeID) interface{}
 }
 
 func (p Protocol) cap() Cap {

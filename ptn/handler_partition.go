@@ -200,3 +200,11 @@ func (pm *ProtocolManager) CorsLightHeader(header *modules.Header, subProtocolNa
 	//	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
 	//}
 }
+
+func (pm *ProtocolManager) Corss() []string {
+	return nil
+}
+
+func (pm *ProtocolManager) CorsPeerInfo(protocl string) []string {
+	return nil
+}
