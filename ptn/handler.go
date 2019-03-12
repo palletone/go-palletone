@@ -396,9 +396,18 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
 	// @分区后需要用token获取
-	head := pm.dag.CurrentHeader(pm.mainAssetId)
+	//head := pm.dag.CurrentHeader(pm.mainAssetId)
+	var (
+		number = &modules.ChainIndex{}
+		hash   = common.Hash{}
+	)
+	if head := pm.dag.CurrentHeader(pm.mainAssetId); head != nil {
+		number = head.Number
+		hash = head.Hash()
+	}
+
 	// Execute the PalletOne handshake
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), head.Hash()); err != nil {
+	if err := p.Handshake(pm.networkId, number, pm.genesis.Hash(), hash); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
@@ -637,14 +646,18 @@ type NodeInfo struct {
 func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	// TODO 按分区返回 unit
 	unit := self.dag.CurrentUnit(self.mainAssetId)
-	index := uint64(0)
+	var (
+		index = uint64(0)
+		hash  = common.Hash{}
+	)
 	if unit != nil {
 		index = unit.Number().Index
+		hash = unit.UnitHash
 	}
 	return &NodeInfo{
 		Network: self.networkId,
 		Index:   index,
 		Genesis: genesisHash,
-		Head:    unit.UnitHash,
+		Head:    hash,
 	}
 }
