@@ -991,7 +991,7 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConso
 					outputPath = filepath.Join(common.GetWorkPath(), outputPath)
 				}
 				if files.IsDir(outputPath) {
-					outputPath = filepath.Join(outputPath, log.DefaultConfig.OutputPaths[1])
+					outputPath = filepath.Join(outputPath, filepath.Base(log.DefaultConfig.OutputPaths[1]))
 				}
 			}
 
@@ -1042,7 +1042,7 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConso
 					errPath = filepath.Join(common.GetWorkPath(), errPath)
 				}
 				if files.IsDir(errPath) {
-					errPath = filepath.Join(errPath, log.DefaultConfig.ErrorOutputPaths[1])
+					errPath = filepath.Join(errPath, filepath.Base(log.DefaultConfig.ErrorOutputPaths[1]))
 				}
 			}
 
