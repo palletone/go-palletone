@@ -232,15 +232,15 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 	current := uint64(0)
 	switch d.mode {
 	case FullSync:
-		unit := d.dag.CurrentUnit(modules.PTNCOIN)
-		if unit != nil {
-			current = unit.Number().Index
-		}
+		//unit := d.dag.CurrentUnit(modules.PTNCOIN)
+		//if unit != nil {
+		//	current = unit.Number().Index
+		//}
 	case FastSync:
-		unit := d.dag.CurrentUnit(modules.PTNCOIN)
-		if unit != nil {
-			current = unit.Number().Index
-		}
+		//unit := d.dag.CurrentUnit(modules.PTNCOIN)
+		//if unit != nil {
+		//	current = unit.Number().Index
+		//}
 	case LightSync:
 		//current = d.lightdag.CurrentHeader().Number.Uint64()
 	}

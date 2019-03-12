@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"github.com/palletone/go-palletone/ptn/lps"
+	"strings"
 	"sync/atomic"
 )
 
@@ -63,8 +64,10 @@ func errResp(code errCode, format string, v ...interface{}) error {
 }
 
 type ProtocolManager struct {
-	networkId uint64
-	srvr      *p2p.Server
+	networkId    uint64
+	srvr         *p2p.Server
+	protocolName string
+	mainAssetId  modules.IDType16
 
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
@@ -141,6 +144,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 	manager := &ProtocolManager{
 		networkId:    networkId,
 		dag:          dag,
+		protocolName: protocolName,
 		txpool:       txpool,
 		eventMux:     mux,
 		peers:        newPeerSet(),
@@ -154,6 +158,13 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		contractProc: contractProc,
 		lightSync:    uint32(1),
 	}
+
+	asset, err := modules.NewAsset(strings.ToUpper(protocolName), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.IDType16{})
+	if err != nil {
+		log.Error("ProtocolManager new asset err", err)
+		return nil, err
+	}
+	manager.mainAssetId = asset.AssetId
 
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
@@ -374,9 +385,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
 	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
 
-	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
-		return pm.PartitionHandle(p)
-	}
+	//if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
+	//	return pm.PartitionHandle(p)
+	//}
 
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
@@ -385,10 +396,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	log.Debug("PalletOne peer connected", "name", p.Name())
 	// @分区后需要用token获取
-	token := modules.PTNCOIN
-	head := pm.dag.CurrentHeader(token)
+	head := pm.dag.CurrentHeader(pm.mainAssetId)
 	// Execute the PalletOne handshake
-	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash() /*mediator,*/, head.Hash()); err != nil {
+	if err := p.Handshake(pm.networkId, head.Number, pm.genesis.Hash(), head.Hash()); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
@@ -626,8 +636,7 @@ type NodeInfo struct {
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	// TODO 按分区返回 unit
-	token := modules.PTNCOIN
-	unit := self.dag.CurrentUnit(token)
+	unit := self.dag.CurrentUnit(self.mainAssetId)
 	index := uint64(0)
 	if unit != nil {
 		index = unit.Number().Index
