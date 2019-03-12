@@ -211,7 +211,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 				}
 				return nil
 			},
-			Corss: func() interface{} {
+			Corss: func() []string {
 				return manager.Corss()
 			},
 			CorsPeerInfo: func(protocl string, id discover.NodeID) interface{} {

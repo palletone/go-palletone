@@ -48,7 +48,7 @@ func NewBasedTxSimulator(idag dag.IDag, txid string) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
 	unit := idag.GetCurrentUnit(modules.PTNCOIN)
 	cIndex := unit.Header().Number
-	log.Debugf("constructing new tx simulator txid = [%s]", txid)
+	log.Debug("NewBasedTxSimulator","constructing new tx simulator txId", txid)
 	return &RwSetTxSimulator{cIndex, txid, rwsetBuilder, idag, false, false, false}
 }
 
@@ -157,7 +157,7 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 	var rd map[string]*KVRead
 	var wt map[string]*KVWrite
 
-	log.Infof("ns=%s", ns)
+	log.Info("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
 		if s.rwsetBuilder.pubRwBuilderMap != nil {

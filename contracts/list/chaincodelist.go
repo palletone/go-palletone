@@ -56,7 +56,7 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 func SetChaincode(cid string, version int, chaincode *CCInfo) error {
 	chains.mu.Lock()
 	defer chains.mu.Unlock()
-
+	log.Info("SetChaincode", "chainId", cid, "version", )
 	log.Infof("chainId[%s] ,%d, chaincode[%s]id[%s]", cid, version, chaincode.Name, hex.EncodeToString(chaincode.Id))
 	for k, v := range chains.Clist {
 		if k == cid {

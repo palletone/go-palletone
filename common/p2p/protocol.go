@@ -54,7 +54,7 @@ type Protocol struct {
 	PeerInfo func(id discover.NodeID) interface{}
 
 	//Corss protocols array
-	Corss func() interface{}
+	Corss func() []string
 
 	//cors Peers info
 	CorsPeerInfo func(protocl string, id discover.NodeID) interface{}

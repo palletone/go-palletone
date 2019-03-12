@@ -202,7 +202,16 @@ func (pm *ProtocolManager) CorsLightHeader(header *modules.Header, subProtocolNa
 }
 
 func (pm *ProtocolManager) Corss() []string {
-	return nil
+	peers := pm.lightPeers.peers
+	promaps := map[string]int{}
+	protocols := []string{}
+	for _, peer := range peers {
+		promaps[peer.Caps()[0].Name] = 0
+	}
+	for protocol, _ := range promaps {
+		protocols = append(protocols, protocol)
+	}
+	return protocols
 }
 
 func (pm *ProtocolManager) CorsPeerInfo(protocl string) []string {
