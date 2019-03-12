@@ -274,25 +274,26 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 	return txArgs, nil
 }
 
-func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
+func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
 	var recvSigMsg *modules.Message
 
 	if local == nil || recv == nil {
-		return false, errors.New("checkAndAddTxData param is nil")
+		return false, errors.New("checkAndAddTxSigMsgData param is nil")
 	}
 	if len(local.TxMessages) != len(recv.TxMessages) {
-		return false, errors.New("checkAndAddTxData tx msg is invalid")
+		return false, errors.New("checkAndAddTxSigMsgData tx msg is invalid")
 	}
 	for i := 0; i < len(local.TxMessages); i++ {
 		if recv.TxMessages[i].App == modules.APP_SIGNATURE {
 			recvSigMsg = recv.TxMessages[i]
 		} else if !local.TxMessages[i].CompareMessages(recv.TxMessages[i]) {
-			return false, errors.New("checkAndAddTxData tx msg is not equal")
+			log.Info("checkAndAddTxSigMsgData", "local", local.TxMessages[i], "recv", recv.TxMessages[i])
+			return false, errors.New("checkAndAddTxSigMsgData tx msg is not equal")
 		}
 	}
 
 	if recvSigMsg == nil {
-		return false, errors.New("checkAndAddTxData not find recv sig msg")
+		return false, errors.New("checkAndAddTxSigMsgData not find recv sig msg")
 	}
 	for i, msg := range local.TxMessages {
 		if msg.App == modules.APP_SIGNATURE {
@@ -301,7 +302,7 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 			for _, sig := range sigs {
 				if true == bytes.Equal(sig.PubKey, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].PubKey) &&
 					true == bytes.Equal(sig.Signature, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].Signature) {
-					log.Info("checkAndAddTxData tx  already recv:", recv.RequestHash().String())
+					log.Info("checkAndAddTxSigMsgData tx  already recv:", recv.RequestHash().String())
 					return false, nil
 				}
 			}
@@ -310,12 +311,12 @@ func checkAndAddTxData(local *modules.Transaction, recv *modules.Transaction) (b
 				sigPayload.Signatures = append(sigs, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0])
 			}
 			local.TxMessages[i].Payload = sigPayload
-			log.Info("checkAndAddTxData", "add sig payload:", sigPayload.Signatures)
+			log.Info("checkAndAddTxSigMsgData", "add sig payload:", sigPayload.Signatures)
 			return true, nil
 		}
 	}
 
-	return false, errors.New("checkAndAddTxData fail")
+	return false, errors.New("checkAndAddTxSigMsgData fail")
 }
 
 func getTxSigNum(tx *modules.Transaction) int {

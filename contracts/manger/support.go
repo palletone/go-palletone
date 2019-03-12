@@ -140,13 +140,13 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 
 //func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractDeployPayload, error) {
 func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractDeployPayload, error) {
-	log.Debug("enter")
+	log.Debug("RwTxResult2DagDeployUnit enter")
 
 	rd, wt, err := tx.GetRwData(nm)
 	if err != nil {
 		return nil, err
 	}
-	log.Infof(" nm=%s, rd=%v, wt=%v", nm, rd, wt)
+	log.Info("RwTxResult2DagDeployUnit", "nm=", nm, "rd=", rd, "wt=", wt)
 	deploy := &md.ContractDeployPayload{
 		TemplateId: templateId,
 		ContractId: deployId,
@@ -162,7 +162,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 			Version: val.GetVersion(),
 		}
 		deploy.ReadSet = append(deploy.ReadSet, rd)
-		log.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
+		log.Info("RwTxResult2DagDeployUnit", "ReadSet: idx", idx, "fun", args[1], "key", val.GetKey(), "val", *val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := md.ContractWriteSet{
@@ -171,7 +171,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 			IsDelete: val.GetIsDelete(),
 		}
 		deploy.WriteSet = append(deploy.WriteSet, rd)
-		log.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		log.Info("RwTxResult2DagDeployUnit", "WriteSet: idx", idx, "fun", args[1], "key", val.GetKey(), "val", val.GetValue(), "delete", val.GetIsDelete())
 	}
 
 	return deploy, nil
