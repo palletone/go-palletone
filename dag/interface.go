@@ -80,6 +80,8 @@ type IDag interface {
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	//GetCanonicalHash(number uint64) (common.Hash, error)
 	//GetHeadHeaderHash() (common.Hash, error)
