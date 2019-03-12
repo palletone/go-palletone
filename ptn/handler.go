@@ -644,7 +644,6 @@ type NodeInfo struct {
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	// TODO 按分区返回 unit
 	unit := self.dag.CurrentUnit(self.mainAssetId)
 	var (
 		index = uint64(0)
@@ -654,6 +653,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		index = unit.Number().Index
 		hash = unit.UnitHash
 	}
+
 	return &NodeInfo{
 		Network: self.networkId,
 		Index:   index,
