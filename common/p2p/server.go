@@ -1043,7 +1043,11 @@ func (srv *Server) PeersInfo() []*PeerInfo {
 }
 
 func (srv *Server) Corss() []string {
-	return nil
+	corss := []string{}
+	for _, proto := range srv.Protocols {
+		corss = append(corss, proto.Corss()...)
+	}
+	return corss
 }
 
 func (srv *Server) CorsPeerInfo(protocol string) []*PeerInfo {
