@@ -461,18 +461,6 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-//func (pm *ProtocolManager) ConsensusMsg(msg p2p.Msg, p *peer) error {
-//	var consensusmsg string
-//	if err := msg.Decode(&consensusmsg); err != nil {
-//		return errResp(ErrDecode, "msg %v: %v", msg, err)
-//	}
-//	log.Info("ConsensusMsg recv:", consensusmsg)
-//	if consensusmsg == "A" {
-//		p.SendConsensus("Hello I received A")
-//	}
-//	return nil
-//}
-
 func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
 	data := []byte{}

@@ -51,13 +51,19 @@ type FungibleToken struct {
 	SupplyAddress string `json:"supply_address"`
 }
 
+type NonFungibleMetaData struct {
+	UniqueBytes []byte `json:"UniqueBytes"`
+}
+
 //非同质化通证，比如ERC721
 type NonFungibleToken struct {
 	Name   string `json:"name"`
 	Symbol string `json:"symbol"`
+	Type   byte   `json:"type"`
 	//总发行量
-	TotalSupply   uint64 `json:"total_supply"`
-	SupplyAddress string `json:"supply_address"`
+	TotalSupply     uint64                `json:"total_supply"`
+	NonFungibleData []NonFungibleMetaData `json:"NonFungibleData"`
+	SupplyAddress   string                `json:"supply_address"`
 }
 
 //为投票而创建的Token

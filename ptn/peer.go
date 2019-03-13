@@ -112,11 +112,18 @@ func (p *peer) Info(protocal string) *PeerInfo {
 		log.Error("peer info asset err", err)
 		return &PeerInfo{}
 	}
-	hash, number := p.Head(asset.AssetId)
+	var (
+		hash  = common.Hash{}
+		index = uint64(0)
+	)
+	if ha, number := p.Head(asset.AssetId); number != nil {
+		hash = ha
+		index = number.Index
+	}
 
 	return &PeerInfo{
 		Version: p.version,
-		Index:   number.Index,
+		Index:   index,
 		Head:    hash.Hex(),
 	}
 }

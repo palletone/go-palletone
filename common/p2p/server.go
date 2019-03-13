@@ -1051,5 +1051,19 @@ func (srv *Server) Corss() []string {
 }
 
 func (srv *Server) CorsPeerInfo(protocol string) []*PeerInfo {
-	return nil
+	infos := make([]*PeerInfo, 0, srv.PeerCount())
+	for _, peer := range srv.Peers() {
+		if peer != nil && peer.Caps()[0].Name == protocol {
+			infos = append(infos, peer.CorsInfo(protocol))
+		}
+	}
+	// Sort the result array alphabetically by node identifier
+	for i := 0; i < len(infos); i++ {
+		for j := i + 1; j < len(infos); j++ {
+			if infos[i].ID > infos[j].ID {
+				infos[i], infos[j] = infos[j], infos[i]
+			}
+		}
+	}
+	return infos
 }
