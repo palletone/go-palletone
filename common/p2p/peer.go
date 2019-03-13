@@ -461,3 +461,38 @@ func (p *Peer) Info() *PeerInfo {
 	}
 	return info
 }
+
+func (p *Peer) CorsInfo(protocol string) *PeerInfo {
+	// Gather the protocol capabilities
+	var caps []string
+	for _, cap := range p.Caps() {
+		caps = append(caps, cap.String())
+	}
+	// Assemble the generic peer metadata
+	info := &PeerInfo{
+		ID:        p.ID().String(),
+		Name:      p.Name(),
+		Caps:      caps,
+		Protocols: make(map[string]interface{}),
+	}
+	info.Network.LocalAddress = p.LocalAddr().String()
+	info.Network.RemoteAddress = p.RemoteAddr().String()
+	info.Network.Inbound = p.rw.is(inboundConn)
+	info.Network.Trusted = p.rw.is(trustedConn)
+	info.Network.Static = p.rw.is(staticDialedConn)
+
+	// Gather all the running protocol infos
+	for _, proto := range p.running {
+		protoInfo := interface{}("unknown")
+		if query := proto.Protocol.CorsPeerInfo; query != nil {
+			if metadata := query(protocol, p.ID()); metadata != nil {
+				protoInfo = metadata
+			} else {
+				protoInfo = "handshake"
+			}
+		}
+		//info.Protocols[proto.Name] = protoInfo
+		info.Protocols[caps[0]] = protoInfo
+	}
+	return info
+}

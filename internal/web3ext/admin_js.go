@@ -65,6 +65,11 @@ web3._extend({
 			name: 'stopWS',
 			call: 'admin_stopWS'
 		}),
+		new web3._extend.Method({
+			name: 'corsPeers',
+			call: 'admin_corsPeers',
+			params: 1
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

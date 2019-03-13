@@ -274,7 +274,7 @@ func (api *PublicAdminAPI) CorsPeers(protocol string) ([]*p2p.PeerInfo, error) {
 	if server == nil {
 		return nil, ErrNodeStopped
 	}
-	return server.CorsPeerInfo(protocol), nil
+	return server.CorsPeerInfo(strings.ToLower(protocol)), nil
 }
 
 // Datadir retrieves the current data directory the node is using.

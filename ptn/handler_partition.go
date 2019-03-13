@@ -209,7 +209,7 @@ func (pm *ProtocolManager) Corss() []string {
 		promaps[peer.Caps()[0].Name] = 0
 	}
 	for protocol, _ := range promaps {
-		protocols = append(protocols, protocol)
+		protocols = append(protocols, strings.ToUpper(protocol))
 	}
 	return protocols
 }
