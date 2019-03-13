@@ -1027,7 +1027,7 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConso
 		cfg.OpenModule = strings.Split(temp, ",")
 	}
 
-	// 重新计算log.ErrPath的路径
+	// 3. 重新计算log.ErrPath的路径
 	if temp := ctx.GlobalString(LogErrPathFlag.Name); temp != "" {
 		errPaths := strings.Split(temp, ",")
 
@@ -1052,7 +1052,7 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConso
 		cfg.ErrorOutputPaths = newErrPaths
 	} else {
 		for i, errPath := range cfg.ErrorOutputPaths {
-			if errPath == log.LogStdout {
+			if errPath == log.LogStderr {
 				continue
 			}
 
@@ -1064,7 +1064,10 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConso
 		}
 	}
 
+	// 3. 应用 log 配置
 	log.LogConfig = *cfg
+
+	// 4. 处理console的特殊情况
 	if isInConsole {
 		log.ConsoleInitLogger()
 	}

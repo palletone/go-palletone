@@ -106,12 +106,6 @@ func (dag *Dag) performAccountMaintenance() {
 		// 统计该账户设置的活跃mediator数量
 		desiredMediatorCount := info.DesiredMediatorCount
 		if desiredMediatorCount <= maxMediatorCount {
-			minFn := func(x, y int) int {
-				if x < y {
-					return x
-				}
-				return y
-			}
 			offset := minFn(int(desiredMediatorCount/2), len(dag.mediatorCountHistogram)-1)
 			// votes for a number greater than MaximumMediatorCount
 			// are turned into votes for MaximumMediatorCount.
@@ -124,6 +118,13 @@ func (dag *Dag) performAccountMaintenance() {
 
 		dag.totalVotingStake += votingStake
 	}
+}
+
+func minFn(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
 }
 
 func (dag *Dag) updateActiveMediators() bool {
@@ -151,6 +152,7 @@ func (dag *Dag) updateActiveMediators() bool {
 
 	gp := dag.GetGlobalProp()
 	mediatorCount := maxFn(mediatorCountIndex*2+1, int(gp.ImmutableParameters.MinMediatorCount))
+	mediatorCount = minFn(mediatorCount, dag.mediatorVoteTally.Len())
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
 	// todo 应当优化本排序方法，使用部分排序的方法

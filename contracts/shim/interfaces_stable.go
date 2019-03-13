@@ -94,6 +94,7 @@ type ChaincodeStubInterface interface {
 	// consider data modified by PutState that has not been committed.
 	// If the key does not exist in the state database, (nil, nil) is returned.
 	GetState(key string) ([]byte, error)
+	GetStateByPrefix(prefix string) ([]*modules.KeyValue, error)
 
 	// PutState puts the specified `key` and `value` into the transaction's
 	// writeset as a data-write proposal. PutState doesn't effect the ledger

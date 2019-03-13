@@ -747,6 +747,9 @@ func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return d.unstableStateRep.GetContractStatesById(id)
 }
+func (d *Dag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	return d.unstableStateRep.GetContractStatesByPrefix(id, prefix)
+}
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
 	return d.unstableUnitRep.CreateUnit(mAddr, txpool, t)

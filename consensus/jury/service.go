@@ -220,12 +220,12 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 	}
 	msgs, err := runContractCmd(p.dag, p.contract, req.reqTx)
 	if err != nil {
-		log.Error("runContractReq runContractCmd", "reqTx", req.reqTx.RequestHash().String(), "error", err.Error())
+		log.Error("runContractReq", "runContractCmd reqTx", req.reqTx.RequestHash().String(), "error", err.Error())
 		return err
 	}
 	tx, err := gen.GenContractTransction(req.reqTx, msgs)
 	if err != nil {
-		log.Error("runContractReq GenContractSigTransctions", "error", err.Error())
+		log.Error("runContractReq", "GenContractSigTransctions error", err.Error())
 		return err
 	}
 
@@ -236,21 +236,25 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 	} else {
 		account := p.getLocalAccount()
 		if account == nil {
+			log.Error("runContractReq", "not find local account, reqId", reqId)
 			return errors.New("runContractReq no local account")
 		}
 		sigTx, err := p.GenContractSigTransaction(account.Address, account.Password, tx, p.ptn.GetKeyStore())
 		if err != nil {
-			log.Error("runContractReq GenContractSigTransctions", "error", err.Error())
+			log.Error("runContractReq", "GenContractSigTransctions error", err.Error())
 			return errors.New("")
 		}
 		req.sigTx = sigTx
 		//如果rcvTx存在，则比较执行结果，并将结果附加到sigTx上,并删除rcvTx
 		if len(req.rcvTx) > 0 {
-			for _, rtx := range req.rcvTx {
-				if err := checkAndAddSigSet(req.sigTx, rtx); err != nil {
-					log.Error("runContractReq", "checkAndAddSigSet error", err.Error())
+			for _, rtx := range req.rcvTx {				
+				ok, err := checkAndAddTxSigMsgData(req.sigTx, rtx)
+				if err != nil {
+					log.Debug("runContractReq", "checkAndAddTxSigMsgData error", err.Error())
+				} else if ok {
+					log.Debug("runContractReq", "checkAndAddTxSigMsgData ok, reqId", reqId)
 				} else {
-					log.Debug("runContractReq", "checkAndAddSigSet ok, reqId", reqId)
+					log.Debug("runContractReq", "checkAndAddTxSigMsgData fail, reqId", reqId)
 				}
 			}
 			req.rcvTx = nil
@@ -481,13 +485,13 @@ func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, che
 		}
 		//检查地址与pubKey是否匹配:获取当前pubKey下的Addr，将地址hash后与输入比较
 		addr := crypto.PubkeyBytesToAddress(e.PublicKey)
-		if e.AddrHash != util.RlpHash(addr){
-			log.Error("isValidateElection",  "publicKey not match address, addrHash is", e.AddrHash)
+		if e.AddrHash != util.RlpHash(addr) {
+			log.Error("isValidateElection", "publicKey not match address, addrHash is", e.AddrHash)
 			return false
 		}
 		//从数据库中查询该地址是否为Jury
-		if !p.dag.IsActiveJury(addr){
-			log.Error("isValidateElection",  "not active Jury, addrHash is", e.AddrHash)
+		if !p.dag.IsActiveJury(addr) {
+			log.Error("isValidateElection", "not active Jury, addrHash is", e.AddrHash)
 			return false
 		}
 
@@ -550,7 +554,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			if p.isValidateElection(tx.RequestHash(), ele, true) {
+			if p.isValidateElection(tx.RequestHash(), ele, false) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
@@ -559,10 +563,10 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_COMMIT:
 		if isMediator {
-			if isSysContract{
+			if isSysContract {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, sysContract, true:tx requestId", tx.RequestHash())
 				return true
-			}else if !isSysContract && p.isValidateElection(tx.RequestHash(), ele, false) {
+			} else if !isSysContract && p.isValidateElection(tx.RequestHash(), ele, false) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, userContract, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
@@ -609,7 +613,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
-			p.lockArf[contractId] = []ElectionInf{}                        //清空
+			p.lockArf[contractId] = []ElectionInf{} //清空
 			if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 				return common.Hash{}, nil, err
 			}

@@ -109,7 +109,8 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []ElectionInf)
 	ctx := p.mtx[reqId]
 	ctx.rcvTx = append(ctx.rcvTx, tx)
 	//如果是jury，将接收到tx与本地执行后的tx进行对比，相同则添加签名到sigTx，如果满足三个签名且签名值最小则广播tx，否则函数返回
-	if ok, err := checkAndAddTxData(ctx.sigTx, tx); err == nil && ok {
+
+	if ok, err := checkAndAddTxSigMsgData(ctx.sigTx, tx); err == nil && ok {
 		if getTxSigNum(ctx.sigTx) >= p.contractSigNum {
 			if localIsMinSignature(ctx.sigTx) {
 				go p.ptn.ContractBroadcast(ContractEvent{Ele: ele, CType: CONTRACT_EVENT_COMMIT, Tx: ctx.sigTx}, true)
