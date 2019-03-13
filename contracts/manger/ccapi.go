@@ -178,9 +178,9 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 }
 
 func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
-	log.Infof("enter ccapi.go Deploy")
-	defer log.Infof("exit ccapi.go Deploy")
-	log.Infof("chainid[%s]-templateId[%s]-txid[%s]", chainID, hex.EncodeToString(templateId), txId)
+	log.Info("enter Deploy", "chainID", chainID,"templateId", hex.EncodeToString(templateId), "txId", txId)
+	defer log.Info("exit Deploy", "txId", txId)
+
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second

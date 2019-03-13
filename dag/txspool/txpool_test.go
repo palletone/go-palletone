@@ -22,6 +22,7 @@ package txspool
 import (
 	"fmt"
 	"math/big"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -423,4 +424,52 @@ func getProscerTx(this *user, us []*user) []int {
 	}
 
 	return list
+}
+
+func TestPriorityHeap(t *testing.T) {
+	list := new(priorityHeap)
+	tx := new(modules.TxPoolTransaction)
+	tx.Priority_lvl = "1.0"
+	list.Push(tx)
+	tx1 := new(modules.TxPoolTransaction)
+	tx1.Priority_lvl = "2.0"
+	list.Push(tx1)
+	tx2 := new(modules.TxPoolTransaction)
+	tx2.Priority_lvl = "0.8"
+	list.Push(tx2)
+
+	tx3 := new(modules.TxPoolTransaction)
+	tx3.Priority_lvl = "10"
+	list.Push(tx3)
+	tx.Priority_lvl = "8"
+	list.Push(tx)
+
+	list.Push(&modules.TxPoolTransaction{Priority_lvl: "0.001"})
+
+	list.Push(&modules.TxPoolTransaction{Priority_lvl: "0.05"})
+	count := 0
+	biger := new(modules.TxPoolTransaction)
+	for {
+		inter := list.Pop()
+		if inter != nil {
+			ptx, ok := inter.(*modules.TxPoolTransaction)
+			if ok {
+				if count == 0 {
+					biger.Priority_lvl = ptx.Priority_lvl
+				}
+				if count > 1 {
+					bp, _ := strconv.ParseFloat(biger.Priority_lvl, 64)
+					pp, _ := strconv.ParseFloat(ptx.Priority_lvl, 64)
+					if bp < pp {
+						t.Fatal(fmt.Sprintf("sort.Sort.priorityHeap is failed.biger:  %s ,ptx: %s  ", biger.Priority_lvl, ptx.Priority_lvl))
+					}
+				}
+				count++
+				biger.Priority_lvl = ptx.Priority_lvl
+			}
+		} else {
+			log.Debug("all tx pop.")
+			break
+		}
+	}
 }

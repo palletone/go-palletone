@@ -34,7 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	//"github.com/palletone/go-palletone/common/p2p/discv5"
+
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 )
@@ -1027,8 +1027,34 @@ func (srv *Server) PeersInfo() []*PeerInfo {
 	// Gather all the generic and sub-protocol specific infos
 	infos := make([]*PeerInfo, 0, srv.PeerCount())
 	for _, peer := range srv.Peers() {
-		if peer != nil {
+		if peer != nil && srv.Protocols[0].Name == peer.Caps()[0].Name {
 			infos = append(infos, peer.Info())
+		}
+	}
+	// Sort the result array alphabetically by node identifier
+	for i := 0; i < len(infos); i++ {
+		for j := i + 1; j < len(infos); j++ {
+			if infos[i].ID > infos[j].ID {
+				infos[i], infos[j] = infos[j], infos[i]
+			}
+		}
+	}
+	return infos
+}
+
+func (srv *Server) Corss() []string {
+	corss := []string{}
+	for _, proto := range srv.Protocols {
+		corss = append(corss, proto.Corss()...)
+	}
+	return corss
+}
+
+func (srv *Server) CorsPeerInfo(protocol string) []*PeerInfo {
+	infos := make([]*PeerInfo, 0, srv.PeerCount())
+	for _, peer := range srv.Peers() {
+		if peer != nil && peer.Caps()[0].Name == protocol {
+			infos = append(infos, peer.CorsInfo(protocol))
 		}
 	}
 	// Sort the result array alphabetically by node identifier

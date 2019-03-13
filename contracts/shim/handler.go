@@ -393,6 +393,38 @@ func (handler *Handler) handleGetState(collection string, key string, contractid
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
+
+// TODO: Implement a method to get multiple keys at a time [FAB-1244]
+// handleGetState communicates with the peer to fetch the requested state information from the ledger.
+func (handler *Handler) handelGetStateByPrefix(prefix string, contractid []byte, channelId string, txid string) ([]*modules.KeyValue, error) {
+	// Construct payload for GET_STATE
+
+	payloadBytes, _ := proto.Marshal(&pb.GetStateByPrefix{Prefix: prefix})
+
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE_BY_PREFIX, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
+	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STATE_BY_PREFIX)
+
+	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending GET_STATE_BY_PREFIX", shorttxid(txid)))
+	}
+
+	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
+		// Success response
+		log.Debugf("[%s]GetState received payload %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
+		rows := []*modules.KeyValue{}
+		err = json.Unmarshal(responseMsg.Payload, &rows)
+		return rows, err
+	}
+	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
+		// Error response
+		log.Errorf("[%s]GetState received error %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_ERROR)
+		return nil, errors.New(string(responseMsg.Payload[:]))
+	}
+
+	// Incorrect chaincode message received
+	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
+}
 func (handler *Handler) handleGetTimestamp(collection string, rangeNumber uint32, contractid []byte, channelId string, txid string) ([]byte, error) {
 	// Construct payload for GET_STATE
 

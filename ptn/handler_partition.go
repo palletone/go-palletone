@@ -36,7 +36,7 @@ func (pm *ProtocolManager) newLightFetcher() *lps.LightFetcher {
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
 		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
-		pm.BroadcastLightHeader(header, pm.SubProtocols[0].Name)
+		pm.BroadcastLocalLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -160,11 +160,9 @@ func (pm *ProtocolManager) NewBlockHeaderMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header, subProtocolName string) {
-	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "protocal name:", subProtocolName)
-	if strings.ToLower(subProtocolName) != ProtocolName {
-		return
-	}
+func (pm *ProtocolManager) BroadcastLocalLightHeader(header *modules.Header) {
+	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
+
 	hash := header.Hash()
 	peers := pm.peers.PeersWithoutLightHeader(hash)
 	for _, peer := range peers {
@@ -175,7 +173,7 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header, subProto
 }
 
 //subprotocal equal ptn or not equal ptn
-func (pm *ProtocolManager) CorsLightHeader(header *modules.Header, subProtocolName string) {
+func (pm *ProtocolManager) BroadcastCorsHeader(header *modules.Header, subProtocolName string) {
 	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "protocal name:", subProtocolName)
 	hash := header.Hash()
 	peers := pm.lightPeers.GetPeers()
@@ -199,4 +197,21 @@ func (pm *ProtocolManager) CorsLightHeader(header *modules.Header, subProtocolNa
 	//	}
 	//	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
 	//}
+}
+
+func (pm *ProtocolManager) Corss() []string {
+	peers := pm.lightPeers.peers
+	promaps := map[string]int{}
+	protocols := []string{}
+	for _, peer := range peers {
+		promaps[peer.Caps()[0].Name] = 0
+	}
+	for protocol, _ := range promaps {
+		protocols = append(protocols, strings.ToUpper(protocol))
+	}
+	return protocols
+}
+
+func (pm *ProtocolManager) CorsPeerInfo(protocl string) []string {
+	return nil
 }

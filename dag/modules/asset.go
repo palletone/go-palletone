@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"strings"
 
+	"bytes"
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 )
@@ -144,7 +145,9 @@ func (asset *Asset) SetBytes(data []byte) error {
 	}
 	return nil
 }
-
+func (asset *Asset) IsSameAssetId(another *Asset) bool {
+	return bytes.Equal(asset.AssetId.Bytes(), another.AssetId.Bytes())
+}
 func (asset *Asset) IsSimilar(similar *Asset) bool {
 	if !strings.EqualFold(asset.AssetId.String(), similar.AssetId.String()) {
 		return false

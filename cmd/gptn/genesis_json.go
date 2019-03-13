@@ -48,7 +48,7 @@ var (
 	GenesisJsonPathFlag = cli.StringFlag{
 		Name:  "genesispath",
 		Usage: "Path to create a Genesis State at.",
-		Value: defaultGenesisJsonPath,
+		Value: "", //defaultGenesisJsonPath,
 	}
 
 	createGenesisJsonCommand = cli.Command{
@@ -147,6 +147,10 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.SystemConfig.FoundationAddress = genesisState.TokenHolder
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
 
+	initMediatorCount := len(mcs)
+	genesisState.InitialActiveMediators = uint16(initMediatorCount)
+	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
+
 	//配置测试的基金会地址及密码
 	account, _, err = createExampleAccount(ctx)
 	if err != nil {
@@ -234,7 +238,7 @@ func getGenesisPath(ctx *cli.Context) string {
 	}
 
 	if files.IsDir(genesisOut) {
-		genesisOut = filepath.Join(genesisOut, defaultGenesisJsonPath)
+		genesisOut = filepath.Join(genesisOut, filepath.Base(defaultGenesisJsonPath))
 	}
 
 	return common.GetAbsPath(genesisOut)

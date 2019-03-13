@@ -60,7 +60,7 @@ type Dag struct {
 	propRep       dagcommon.IPropRepository
 	validate      validator.Validator
 	ChainHeadFeed *event.Feed
-	// GenesisUnit   *Unit  // comment by Albert·Gou
+	
 	Mutex           sync.RWMutex
 	Memdag          memunit.IMemDag                      // memory unit
 	PartitionMemDag map[modules.IDType16]memunit.IMemDag //其他分区的MemDag
@@ -276,7 +276,6 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		d.ApplyUnit(u)
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
-		// modified by albert·gou
 		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
 		if err := d.SaveUnit(u, txpool, false); err != nil {
 			fmt.Errorf("Insert dag, save error: %s", err.Error())
@@ -747,15 +746,13 @@ func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return d.unstableStateRep.GetContractStatesById(id)
 }
+func (d *Dag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	return d.unstableStateRep.GetContractStatesByPrefix(id, prefix)
+}
 
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
 	return d.unstableUnitRep.CreateUnit(mAddr, txpool, t)
 }
-
-//modified by Albert·Gou
-//func (d *Dag) SaveUnit4GenesisInit(unit *modules.Unit, txpool txspool.ITxPool) error {
-//	return d.stableUnitRep.SaveUnit(unit, true)
-//}
 
 func (d *Dag) saveHeader(header *modules.Header) error {
 	unit := &modules.Unit{UnitHeader: header}

@@ -976,81 +976,102 @@ func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string
 }
 
 func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConsole bool) {
-	// 重新计算log.output的路径
+	// 1. 重新计算log.output的路径
 	if temp := ctx.GlobalString(LogOutputPathFlag.Name); temp != "" {
-		if !filepath.IsAbs(temp) {
-			temp = filepath.Join(common.GetWorkPath(), temp)
+		outputPaths := strings.Split(temp, ",")
+
+		newOutputPaths := make([]string, 0)
+		for _, outputPath := range outputPaths {
+			if outputPath == "" {
+				continue
+			}
+
+			if outputPath != log.LogStdout {
+				if !filepath.IsAbs(outputPath) {
+					outputPath = filepath.Join(common.GetWorkPath(), outputPath)
+				}
+				if files.IsDir(outputPath) {
+					outputPath = filepath.Join(outputPath, filepath.Base(log.DefaultConfig.OutputPaths[1]))
+				}
+			}
+
+			newOutputPaths = append(newOutputPaths, outputPath)
 		}
-		if files.IsDir(temp) {
-			temp = filepath.Join(temp, log.DefaultConfig.OutputPaths[1])
+
+		cfg.OutputPaths = newOutputPaths
+	} else {
+		for i, outputPath := range cfg.OutputPaths {
+			if outputPath == log.LogStdout {
+				continue
+			}
+
+			if !filepath.IsAbs(outputPath) {
+				outputPath = filepath.Join(configDir, outputPath)
+			}
+
+			cfg.OutputPaths[i] = common.GetAbsPath(outputPath)
 		}
-		cfg.OutputPaths = []string{temp}
-	}
-	if len(cfg.OutputPaths) == 0 {
-		cfg.OutputPaths = log.DefaultConfig.OutputPaths
 	}
 
-	outIndex := len(cfg.OutputPaths) - 1
-	outPath := cfg.OutputPaths[outIndex]
-	if !filepath.IsAbs(outPath) {
-		outPath = filepath.Join(configDir, outPath)
-	}
-
-	cfg.OutputPaths[outIndex] = common.GetAbsPath(outPath)
-
+	// 2. 处理其他 log 配置
 	if ctx.GlobalIsSet(LogLevelFlag.Name) {
 		cfg.LoggerLvl = ctx.GlobalString(LogLevelFlag.Name)
 	}
 	if ctx.GlobalIsSet(LogIsDebugFlag.Name) {
 		cfg.Development = ctx.GlobalBool(LogIsDebugFlag.Name)
 	}
+	if ctx.GlobalIsSet(LogEncodingFlag.Name) {
+		cfg.Encoding = ctx.GlobalString(LogEncodingFlag.Name)
+	}
 	if temp := ctx.GlobalString(LogOpenModuleFlag.Name); temp != "" {
 		cfg.OpenModule = strings.Split(temp, ",")
 	}
 
-	// 重新计算log.ErrPath的路径
+	// 3. 重新计算log.ErrPath的路径
 	if temp := ctx.GlobalString(LogErrPathFlag.Name); temp != "" {
-		if !filepath.IsAbs(temp) {
-			temp = filepath.Join(common.GetWorkPath(), temp)
+		errPaths := strings.Split(temp, ",")
+
+		newErrPaths := make([]string, 0)
+		for _, errPath := range errPaths {
+			if errPath == "" {
+				continue
+			}
+
+			if errPath != log.LogStderr {
+				if !filepath.IsAbs(errPath) {
+					errPath = filepath.Join(common.GetWorkPath(), errPath)
+				}
+				if files.IsDir(errPath) {
+					errPath = filepath.Join(errPath, filepath.Base(log.DefaultConfig.ErrorOutputPaths[1]))
+				}
+			}
+
+			newErrPaths = append(newErrPaths, errPath)
 		}
-		if files.IsDir(temp) {
-			temp = filepath.Join(temp, log.DefaultConfig.ErrorOutputPaths[1])
+
+		cfg.ErrorOutputPaths = newErrPaths
+	} else {
+		for i, errPath := range cfg.ErrorOutputPaths {
+			if errPath == log.LogStderr {
+				continue
+			}
+
+			if !filepath.IsAbs(errPath) {
+				errPath = filepath.Join(configDir, errPath)
+			}
+
+			cfg.ErrorOutputPaths[i] = common.GetAbsPath(errPath)
 		}
-		cfg.ErrorOutputPaths = []string{temp}
-	}
-	if len(cfg.ErrorOutputPaths) == 0 {
-		cfg.ErrorOutputPaths = log.DefaultConfig.ErrorOutputPaths
 	}
 
-	errIndex := len(cfg.ErrorOutputPaths) - 1
-	errPath := cfg.ErrorOutputPaths[errIndex]
-	if !filepath.IsAbs(errPath) {
-		errPath = filepath.Join(configDir, errPath)
-	}
-
-	cfg.ErrorOutputPaths[errIndex] = common.GetAbsPath(errPath)
-
+	// 3. 应用 log 配置
 	log.LogConfig = *cfg
+
+	// 4. 处理console的特殊情况
 	if isInConsole {
 		log.ConsoleInitLogger()
 	}
 }
-
-//func GetAbsDirectory(path string) string {
-//	dir, err := filepath.Abs(path)
-//	if err != nil {
-//		Fatalf("GetAbsDirectory err:", err)
-//		return ""
-//	}
-//	return strings.Replace(dir, "\\", "/", -1)
-//}
-
-// SetDagConfig applies dag related command line flags to the config.
-//func setConsensus(ctx *cli.Context, cfg *consensusconfig.Config) {
-//	if ctx.GlobalIsSet(ConsensusEngineFlag.Name) {
-//		cfg.Engine = ctx.GlobalString(ConsensusEngineFlag.Name)
-//	}
-//}
 
 // SetPtnConfig applies ptn-related command line flags to the config.
 func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {

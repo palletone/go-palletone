@@ -105,10 +105,10 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	totalOutput := uint64(0)
 	//Check payment
 	//rule:
-	//	1. all outputs have same asset
+	//	1. all outputs have same asset id
 	asset0 := payment.Outputs[0].Asset
 	for _, out := range payment.Outputs {
-		if !asset0.IsSimilar(out.Asset) {
+		if !asset0.IsSameAssetId(out.Asset) {
 			return TxValidationCode_INVALID_ASSET
 		}
 		totalOutput += out.Value
@@ -118,7 +118,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	}
 	if !isInputnil {
 		//Input Output asset mustbe same
-		if !asset.IsSimilar(asset0) {
+		if !asset.IsSameAssetId(asset0) {
 			return TxValidationCode_INVALID_ASSET
 		}
 		if totalOutput > totalInput { //相当于手续费为负数

@@ -35,7 +35,6 @@ import (
 To validate unit's signature, and mediators' signature
 */
 func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCode {
-
 	// copy unit's header
 	header := modules.CopyHeader(h)
 	// signature does not contain authors and witness fields
@@ -97,9 +96,8 @@ func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCod
 
 /**
 验证Unit
-Validate unit
+Validate unit(除群签名以外), 新生产的unit暂时还没有群签名
 */
-// modified by Albert·Gou 新生产的unit暂时还没有群签名
 //func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
 func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	//  unit's size  should bigger than minimum.
@@ -134,8 +132,6 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	return nil
 }
 
-// modified by Albert·Gou 新生产的unit暂时还没有群签名
-//func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
 func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) ValidationCode {
 	// todo yangjie 应当错误返回前，打印验错误的具体消息
 	if header == nil {
@@ -143,7 +139,6 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	}
 
 	if len(header.ParentsHash) == 0 {
-
 		return UNIT_STATE_INVALID_HEADER
 	}
 	//  check header's extra data
@@ -179,47 +174,6 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		log.Errorf("Unit[%s] has invalid asset %s, parent unit[%s] asset is %s", header.Hash().String(), header.Number.AssetID.String(), parentHeader.Hash().String(), parentHeader.Number.AssetID.String())
 		return UNIT_STATE_INVALID_HEADER
 	}
-	//if len(header.AssetIDs) == 0 {
-	//	return modules.UNIT_STATE_INVALID_HEADER
-	//}
-
-	//if isGenesis {
-	//	if len(header.AssetIDs) != 1 {
-	//		return modules.UNIT_STATE_INVALID_HEADER
-	//	}
-	//	//ptnAssetID, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-	//	asset := modules.NewPTNAsset()
-	//	ptnAssetID := asset.AssetId
-	//	if header.AssetIDs[0] != ptnAssetID || !header.Number.IsMain || header.Number.Index != 0 {
-	//		fmt.Println(6)
-	//		fmt.Println(header.AssetIDs[0].String())
-	//		fmt.Println(ptnAssetID.String())
-	//		return modules.UNIT_STATE_INVALID_HEADER
-	//	}
-	//	// 	return modules.UNIT_STATE_CHECK_HEADER_PASSED
-	//}
-	//var isValidAssetId bool
-	//for _, asset := range header.AssetIDs {
-	//	if asset == header.Number.AssetID {
-	//		isValidAssetId = true
-	//		break
-	//	}
-	//}
-	//if !isValidAssetId {
-	//	fmt.Println(7)
-	//	return modules.UNIT_STATE_INVALID_HEADER
-	//}
-
-	// check authors
-	//TODO must recover
-	//if header.Authors.Empty() {
-	//	return modules.UNIT_STATE_INVALID_AUTHOR_SIGNATURE
-	//}
-
-	// comment by Albert·Gou 新生产的unit暂时还没有群签名
-	//if len(header.GroupSign) < 64 {
-	//	return modules.UNIT_STATE_INVALID_HEADER_WITNESS
-	//}
 
 	// TODO 同步过来的unit 没有Authors ，因此无法验证签名有效性。
 	var thisUnitIsNotTransmitted bool

@@ -48,7 +48,7 @@ func NewBasedTxSimulator(idag dag.IDag, txid string) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
 	unit := idag.GetCurrentUnit(modules.PTNCOIN)
 	cIndex := unit.Header().Number
-	log.Debugf("constructing new tx simulator txid = [%s]", txid)
+	log.Debug("NewBasedTxSimulator","constructing new tx simulator txId", txid)
 	return &RwSetTxSimulator{cIndex, txid, rwsetBuilder, idag, false, false, false}
 }
 
@@ -87,6 +87,32 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	//TODO change.
 	//return testValue, nil
 	return val, nil
+}
+func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefix string) ([]*modules.KeyValue, error) {
+	if err := s.CheckDone(); err != nil {
+		return nil, err
+	}
+
+	data, err := s.dag.GetContractStatesByPrefix(contractid, prefix)
+
+	if err != nil {
+		log.Debugf("get value from db[%s] failed,prefix:%s", ns, prefix)
+		return nil, nil
+		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
+		//		//return nil, errors.New(errstr)
+	}
+	result := []*modules.KeyValue{}
+	for key, row := range data {
+		kv := &modules.KeyValue{Key: key, Value: row.Value}
+		result = append(result, kv)
+		if s.rwsetBuilder != nil {
+			s.rwsetBuilder.AddToReadSet(ns, key, row.Version)
+		}
+	}
+
+	log.Debugf("RW:GetStatesByPrefix,ns[%s]--contractid[%x]---prefix[%s]", ns, contractid, prefix)
+
+	return result, nil
 }
 
 // GetState implements method in interface `ledger.TxSimulator`
@@ -131,7 +157,7 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 	var rd map[string]*KVRead
 	var wt map[string]*KVWrite
 
-	log.Infof("ns=%s", ns)
+	log.Info("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
 		if s.rwsetBuilder.pubRwBuilderMap != nil {

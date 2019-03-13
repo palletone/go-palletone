@@ -389,6 +389,9 @@ func (stub *ChaincodeStub) GetState(key string) ([]byte, error) {
 	collection := ""
 	return stub.handler.handleGetState(collection, key, stub.ContractId, stub.ChannelId, stub.TxID)
 }
+func (stub *ChaincodeStub) GetStateByPrefix(prefix string) ([]*modules.KeyValue, error) {
+	return stub.handler.handelGetStateByPrefix(prefix, stub.ContractId, stub.ChannelId, stub.TxID)
+}
 
 // PutState documentation can be found in interfaces.go
 func (stub *ChaincodeStub) PutState(key string, value []byte) error {

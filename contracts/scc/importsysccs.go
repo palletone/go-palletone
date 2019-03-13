@@ -23,6 +23,7 @@ package scc
 import (
 	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/example/go/prc20"
+	"github.com/palletone/go-palletone/contracts/example/go/prc721"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 	"github.com/palletone/go-palletone/contracts/example/go/vote"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -97,6 +98,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &sysconfigcc.SysConfigChainCode{},
+	},
+	{
+		Id:        syscontract.CreateToken721ContractAddress.Bytes21(), //合约ID为20字节
+		Enabled:   true,
+		Name:      "createToken721_sycc",
+		Path:      "../example/go/prc721/prc721",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &prc721.PRC721{},
 	},
 	{
 		Id:        syscontract.TestContractAddress.Bytes21(),

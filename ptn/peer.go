@@ -30,6 +30,7 @@ import (
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/fatih/set.v0"
+	"strings"
 )
 
 var (
@@ -104,22 +105,25 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 	}
 }
 
-/*func (p *peer) ID() int32 {
-	p.lock.Lock()
-	id := p.id
-	p.lock.Unlock()
-
-	return id
-}*/
 // Info gathers and returns a collection of metadata known about a peer.
-func (p *peer) Info( /*assetId modules.IDType16*/ ) *PeerInfo {
-	//ptnAssetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-	//asset := modules.NewPTNAsset()
-	hash, number := p.Head(modules.CoreAsset.AssetId)
+func (p *peer) Info(protocal string) *PeerInfo {
+	asset, err := modules.NewAsset(strings.ToUpper(protocal), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.IDType16{})
+	if err != nil {
+		log.Error("peer info asset err", err)
+		return &PeerInfo{}
+	}
+	var (
+		hash  = common.Hash{}
+		index = uint64(0)
+	)
+	if ha, number := p.Head(asset.AssetId); number != nil {
+		hash = ha
+		index = number.Index
+	}
 
 	return &PeerInfo{
 		Version: p.version,
-		Index:   number.Index,
+		Index:   index,
 		Head:    hash.Hex(),
 	}
 }

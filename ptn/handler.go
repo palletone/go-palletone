@@ -23,6 +23,9 @@ import (
 	"sync"
 	"time"
 
+	"strings"
+	"sync/atomic"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -36,8 +39,6 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"github.com/palletone/go-palletone/ptn/lps"
-	"strings"
-	"sync/atomic"
 )
 
 const (
@@ -207,7 +208,16 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
 				if p := manager.peers.Peer(id.TerminalString()); p != nil {
-					return p.Info()
+					return p.Info(p.Caps()[0].Name)
+				}
+				return nil
+			},
+			Corss: func() []string {
+				return manager.Corss()
+			},
+			CorsPeerInfo: func(protocl string, id discover.NodeID) interface{} {
+				if p := manager.lightPeers.Peer(id.TerminalString()); p != nil {
+					return p.Info(protocl)
 				}
 				return nil
 			},
@@ -385,10 +395,14 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
 	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
 
-	//if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
-	//	return pm.PartitionHandle(p)
-	//}
+	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
+		return pm.PartitionHandle(p)
+	}
+	return pm.LocalHandle(p)
 
+}
+
+func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
@@ -644,7 +658,6 @@ type NodeInfo struct {
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	// TODO 按分区返回 unit
 	unit := self.dag.CurrentUnit(self.mainAssetId)
 	var (
 		index = uint64(0)
@@ -654,6 +667,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		index = unit.Number().Index
 		hash = unit.UnitHash
 	}
+
 	return &NodeInfo{
 		Network: self.networkId,
 		Index:   index,

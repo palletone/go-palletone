@@ -95,7 +95,6 @@ type TxPoolTransaction struct {
 	From         []*OutPoint
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
-	Nonce        uint64    // transaction'hash maybe repeat.
 	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
@@ -336,13 +335,6 @@ func TxDifference(a, b Transactions) (keep Transactions) {
 	return keep
 }
 
-// single account, otherwise a nonce comparison doesn't make much sense.
-type TxByNonce TxPoolTxs
-
-func (s TxByNonce) Len() int           { return len(s) }
-func (s TxByNonce) Less(i, j int) bool { return s[i].Nonce < s[j].Nonce }
-func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-
 // TxByPrice implements both the sort and the heap interface, making it useful
 // for all at once sorting as well as individually adding and removing elements.
 type TxByPrice TxPoolTxs
@@ -429,7 +421,7 @@ type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 		if payload.IsCoinbase() {
