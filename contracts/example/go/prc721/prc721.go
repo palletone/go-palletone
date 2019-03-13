@@ -166,8 +166,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	if totalSupply > 100 {
-		jsonResp := "{\"Error\":\"Not allow bigger than 100 NonFungibleToken when create\"}"
+	if totalSupply > 1000 {
+		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
 		return shim.Success([]byte(jsonResp))
 	}
 	nonFungible.TotalSupply = totalSupply
@@ -308,8 +308,8 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	if supplyAmount > 100 {
-		jsonResp := "{\"Error\":\"Not allow bigger than 100 NonFungibleToken when create\"}"
+	if supplyAmount > 1000 {
+		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
 		return shim.Success([]byte(jsonResp))
 	}
 	if math.MaxInt64-tokenInfo.TotalSupply < supplyAmount {
