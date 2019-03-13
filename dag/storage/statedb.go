@@ -80,12 +80,10 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 
 // ######################### GET IMPL END ###########################
 
-// author albert·gou
 func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
 	return StoreMediator(statedb.db, med)
 }
 
-// author albert·gou
 func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
 	return StoreMediatorInfo(statedb.db, add, mi)
 }
@@ -94,7 +92,6 @@ func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.M
 	return RetrieveMediatorInfo(statedb.db, address)
 }
 
-// author albert·gou
 func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
 	return RetrieveMediator(statedb.db, address)
 }
@@ -124,22 +121,18 @@ func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator
 //	return chainIndex, nil
 //}
 
-// author albert·gou
 func (statedb *StateDb) GetMediatorCount() int {
 	return GetMediatorCount(statedb.db)
 }
 
-// author albert·gou
 func (statedb *StateDb) IsMediator(address common.Address) bool {
 	return IsMediator(statedb.db, address)
 }
 
-// author albert·gou
 func (statedb *StateDb) GetMediators() map[common.Address]bool {
 	return GetMediators(statedb.db)
 }
 
-// author albert·gou
 func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 	return LookupMediator(statedb.db)
 }

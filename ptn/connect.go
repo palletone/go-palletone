@@ -18,7 +18,6 @@
 
 package ptn
 
-// modified by albert·gou
 //func (pm *ProtocolManager) mediatorConnect() {
 //	//if pm.isTest {
 //	//	return

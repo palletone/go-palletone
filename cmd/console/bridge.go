@@ -313,7 +313,7 @@ func (b *bridge) TransferToken(call otto.FunctionCall) (response otto.Value) {
 // uses a non-echoing password prompt to acquire the passphrase and executes the
 // original RPC method (saved in jptn.TransferPtn) with it to actually execute
 // the RPC call.
-// appended by albert·gou
+// append by albert·gou
 func (b *bridge) TransferPtn(call otto.FunctionCall) (response otto.Value) {
 	var (
 		from     = call.Argument(0)
@@ -360,6 +360,7 @@ func (b *bridge) TransferPtn(call otto.FunctionCall) (response otto.Value) {
 
 	return val
 }
+
 func (b *bridge) LlistAccounts(call otto.FunctionCall) (response otto.Value) {
 	// Send the request to the backend and return
 	val, err := call.Otto.Call("jptn.llistAccounts", nil)
