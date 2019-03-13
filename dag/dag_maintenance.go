@@ -23,6 +23,7 @@ import (
 	"sort"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -85,6 +86,13 @@ func (dag *Dag) performAccountMaintenance() {
 		index++
 	}
 
+	minFn := func(x, y int) int {
+		if x < y {
+			return x
+		}
+		return y
+	}
+
 	// 2. 遍历所有账户
 	allAccount := dag.LookupAccount()
 	for addr, info := range allAccount {
@@ -107,24 +115,19 @@ func (dag *Dag) performAccountMaintenance() {
 		desiredMediatorCount := info.DesiredMediatorCount
 		if desiredMediatorCount <= maxMediatorCount {
 			offset := minFn(int(desiredMediatorCount/2), len(dag.mediatorCountHistogram)-1)
+
 			// votes for a number greater than MaximumMediatorCount
 			// are turned into votes for MaximumMediatorCount.
 			//
 			// in particular, this takes care of the case where a
 			// member was voting for a high number, then the
 			// parameter was lowered.
+
 			dag.mediatorCountHistogram[offset] += votingStake
 		}
 
 		dag.totalVotingStake += votingStake
 	}
-}
-
-func minFn(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
 }
 
 func (dag *Dag) updateActiveMediators() bool {
@@ -151,8 +154,15 @@ func (dag *Dag) updateActiveMediators() bool {
 	}
 
 	gp := dag.GetGlobalProp()
-	mediatorCount := maxFn(mediatorCountIndex*2+1, int(gp.ImmutableParameters.MinMediatorCount))
-	mediatorCount = minFn(mediatorCount, dag.mediatorVoteTally.Len())
+	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
+	mediatorCount := maxFn(mediatorCountIndex*2+1, int(minMediatorCount))
+
+	mediatorLen := dag.mediatorVoteTally.Len()
+	if mediatorLen < mediatorCount {
+		log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
+			" the minimum mediator count is %v", mediatorCount, mediatorLen, minMediatorCount)
+		mediatorCount = mediatorLen
+	}
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
 	// todo 应当优化本排序方法，使用部分排序的方法
