@@ -97,9 +97,8 @@ func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCod
 
 /**
 验证Unit
-Validate unit
+Validate unit(除群签名以外), 新生产的unit暂时还没有群签名
 */
-// modified by Albert·Gou 新生产的unit暂时还没有群签名
 //func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
 func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	//  unit's size  should bigger than minimum.
@@ -134,8 +133,6 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	return nil
 }
 
-// modified by Albert·Gou 新生产的unit暂时还没有群签名
-//func (validate *Validate) validateHeader(header *modules.Header, isGenesis bool) byte {
 func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) ValidationCode {
 	// todo yangjie 应当错误返回前，打印验错误的具体消息
 	if header == nil {
