@@ -124,8 +124,8 @@ func generateUUID() ([]byte, error) {
 
 func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
-	if len(args) < 5 {
-		return shim.Error("need 5 args (Name,Symbol,Type,TotalSupply,TokenIDs,[SupplyAddress])")
+	if len(args) < 4 {
+		return shim.Error("need 5 args (Name,Symbol,Type,TotalSupply,[TokenIDs,SupplyAddress])")
 	}
 
 	//==== convert params to token information
@@ -150,7 +150,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	} else if args[2] == "2" {
 		tokenType = 2
 	} else {
-		jsonResp := "{\"Error\":\"Only string, 0 or 1 or 2\"}"
+		jsonResp := "{\"Error\":\"Only string, 0(Seqence) or 1(UDID) or 2(Custom)\"}"
 		return shim.Success([]byte(jsonResp))
 	}
 	nonFungible.Type = byte(tokenType)
@@ -173,6 +173,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//tokenIDs
 	var tokenIDStrs []string
 	if tokenType == 2 {
+		if len(args) < 5 {
+			jsonResp := "{\"Error\":\"Your tokeType is 2(Custom), need tokenIDs\"}"
+			return shim.Success([]byte(jsonResp))
+		}
 		err = json.Unmarshal([]byte(args[4]), &tokenIDStrs)
 		if err != nil {
 			jsonResp := "{\"Error\":\"tokenIDs format invalid, must be hex strings\"}"
@@ -252,6 +256,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	assetID, _ := dm.NewAssetId(nonFungible.Symbol, dm.AssetType_FungibleToken,
 		0, common.Hex2Bytes(txid[2:]))
 
+	//
 	newAsset := &dm.Asset{}
 	newAsset.AssetId = assetID
 	for _, nFdata := range nonFungible.NonFungibleData {
@@ -314,6 +319,10 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//tokenIDs
 	var tokenIDStrs []string
 	if len(args) > 2 && tokenInfo.TokenType == 2 {
+		if len(args) < 2 {
+			jsonResp := "{\"Error\":\"Your tokeType is 2(Custom), need tokenIDs\"}"
+			return shim.Success([]byte(jsonResp))
+		}
 		err = json.Unmarshal([]byte(args[2]), &tokenIDStrs)
 		if err != nil {
 			jsonResp := "{\"Error\":\"tokenIDs format invalid, must be hex strings\"}"
@@ -342,6 +351,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//call SupplyToken
 	assetID := symbols.TokenInfos[symbol].AssetID
 	tokenType := symbols.TokenInfos[symbol].TokenType
+	nFdatas := []dm.NonFungibleMetaData{}
 	if tokenType == 0 {
 		start := symbols.TokenInfos[symbol].TokenMax + 1
 		for i := uint64(0); i < supplyAmount; i++ {
@@ -351,6 +361,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 				jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 				return shim.Error(jsonResp)
 			}
+			nFdatas = append(nFdatas, dm.NonFungibleMetaData{seqByte})
 		}
 	} else if tokenType == 1 {
 		for i := uint64(0); i < supplyAmount; i++ {
@@ -364,6 +375,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 				jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 				return shim.Error(jsonResp)
 			}
+			nFdatas = append(nFdatas, dm.NonFungibleMetaData{UDID})
 		}
 	} else if tokenType == 2 {
 		for _, oneTokenID := range tokenIDStrs {
@@ -377,6 +389,20 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 				jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 				return shim.Error(jsonResp)
 			}
+			nFdatas = append(nFdatas, dm.NonFungibleMetaData{oneTokenIDByte})
+		}
+	}
+
+	//
+	newAsset := &dm.Asset{}
+	newAsset.AssetId = assetID
+	for _, nFdata := range nFdatas {
+		newAsset.UniqueId.SetBytes(nFdata.UniqueBytes)
+		key := newAsset.String()
+		err = stub.PutState(key, []byte(""))
+		if err != nil {
+			jsonResp := "{\"Error\":\"Failed to set Asset\"}"
+			return shim.Error(jsonResp)
 		}
 	}
 
