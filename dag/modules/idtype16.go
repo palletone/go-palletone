@@ -21,9 +21,9 @@
 package modules
 
 import (
+	"encoding/hex"
 	"errors"
 	"github.com/martinlindhe/base36"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"strconv"
 	"strings"
 )
@@ -101,7 +101,7 @@ func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte) {
 	return symbol, AssetType(t), assetId[4], assetId[5:]
 }
 func (it *IDType16) Str() string {
-	return hexutil.Encode(it.Bytes())
+	return hex.EncodeToString(it.Bytes())
 }
 
 func (it *IDType16) TokenType() string {
@@ -125,7 +125,7 @@ func (it *IDType16) SetBytes(b []byte) {
 }
 
 func SetIdTypeByHex(id string) (IDType16, error) {
-	bytes, err := hexutil.Decode(id)
+	bytes, err := hex.DecodeString(id)
 	if err != nil {
 		return IDType16{}, err
 	}
