@@ -153,7 +153,7 @@ type LightDag interface {
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	CurrentHeader(token modules.IDType16) *modules.Header
-	//InsertHeaderDag([]*modules.Header, int) (int, error)
+	InsertLightHeader(headers []*modules.Header) (int, error)
 	//GetAllLeafNodes() ([]*modules.Header, error)
 	//Rollback([]common.Hash)
 }
@@ -1273,7 +1273,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				chunk := headers[:limit]
 
 				// In case of header only syncing, validate the chunk immediately
-				if d.mode == FastSync || d.mode == LightSync {
+				if d.mode == LightSync {
 					// Collect the yet unknown headers to mark them as uncertain
 					unknown := make([]*modules.Header, 0, len(headers))
 					for _, header := range chunk {
@@ -1282,20 +1282,18 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 						}
 					}
 					// If we're importing pure headers, verify based on their recentness
-					//TODO Whether or not recover
-
 					//frequency := fsHeaderCheckFrequency
 					//if chunk[len(chunk)-1].Number.Index+uint64(fsHeaderForceVerify) > pivot {
 					//	frequency = 1
 					//}
-					//if n, err := d.lightdag.InsertHeaderDag(chunk, frequency); err != nil {
-					//	// If some headers were inserted, add them too to the rollback list
-					//	if n > 0 {
-					//		rollback = append(rollback, chunk[:n]...)
-					//	}
-					//	log.Debug("Invalid header encountered", "number", chunk[n].Number, "hash", chunk[n].Hash(), "err", err)
-					//	return errInvalidChain
-					//}
+					if n, err := d.lightdag.InsertLightHeader(chunk); err != nil {
+						// If some headers were inserted, add them too to the rollback list
+						if n > 0 {
+							rollback = append(rollback, chunk[:n]...)
+						}
+						log.Debug("Invalid header encountered", "number", chunk[n].Number, "hash", chunk[n].Hash(), "err", err)
+						return errInvalidChain
+					}
 					// All verifications passed, store newly found uncertain headers
 					rollback = append(rollback, unknown...)
 					if len(rollback) > fsHeaderSafetyNet {
