@@ -360,6 +360,7 @@ func (b *bridge) TransferPtn(call otto.FunctionCall) (response otto.Value) {
 
 	return val
 }
+
 func (b *bridge) LlistAccounts(call otto.FunctionCall) (response otto.Value) {
 	// Send the request to the backend and return
 	val, err := call.Otto.Call("jptn.llistAccounts", nil)
