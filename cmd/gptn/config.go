@@ -76,7 +76,7 @@ var (
 	ConfigFilePathFlag = cli.StringFlag{
 		Name:  "configfile",
 		Usage: "TOML configuration file",
-		Value: defaultConfigPath,
+		Value: "", //defaultConfigPath,
 	}
 )
 
@@ -177,7 +177,7 @@ func getConfigPath(ctx *cli.Context) string {
 	configPath := defaultConfigPath
 	if temp := ctx.GlobalString(ConfigFilePathFlag.Name); temp != "" {
 		if files.IsDir(temp) {
-			temp = filepath.Join(temp, defaultConfigPath)
+			temp = filepath.Join(temp, filepath.Base(defaultConfigPath))
 		}
 		configPath = temp
 	}
@@ -310,7 +310,7 @@ func getDumpConfigPath(ctx *cli.Context) string {
 	}
 
 	if files.IsDir(configPath) {
-		configPath = filepath.Join(configPath, defaultConfigPath)
+		configPath = filepath.Join(configPath, filepath.Base(defaultConfigPath))
 	}
 
 	return common.GetAbsPath(configPath)

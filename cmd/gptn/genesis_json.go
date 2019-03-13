@@ -48,7 +48,7 @@ var (
 	GenesisJsonPathFlag = cli.StringFlag{
 		Name:  "genesispath",
 		Usage: "Path to create a Genesis State at.",
-		Value: defaultGenesisJsonPath,
+		Value: "", //defaultGenesisJsonPath,
 	}
 
 	createGenesisJsonCommand = cli.Command{
@@ -234,7 +234,7 @@ func getGenesisPath(ctx *cli.Context) string {
 	}
 
 	if files.IsDir(genesisOut) {
-		genesisOut = filepath.Join(genesisOut, defaultGenesisJsonPath)
+		genesisOut = filepath.Join(genesisOut, filepath.Base(defaultGenesisJsonPath))
 	}
 
 	return common.GetAbsPath(genesisOut)
