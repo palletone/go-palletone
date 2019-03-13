@@ -278,16 +278,15 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 
 	// Make sure the peer's TD is higher than our own
 	//TODO must recover
-	//currentHeader := pm.dag.CurrentHeader(assetId)
 	currentHeader := pm.dag.CurrentHeader(assetId)
-	//if currentHeader == nil {
-	//	log.Info("light synchronise current header is nil")
-	//	return
-	//}
-	//hash, number := peer.LightHead(assetId)
-	//if common.EmptyHash(hash) || (!common.EmptyHash(hash) && currentHeader.Number.Index > number.Index) {
-	//	return
-	//}
+	if currentHeader == nil {
+		log.Info("light synchronise current header is nil")
+		return
+	}
+	hash, number := peer.LightHead(assetId)
+	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && currentHeader.Number.Index > number.Index) {
+		return
+	}
 
 	// Otherwise try to sync with the downloader
 	mode := downloader.LightSync
@@ -298,15 +297,14 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 		return
 	}
 
-	if atomic.LoadUint32(&pm.fastSync) == 1 {
-		log.Debug("Fast sync complete, auto disabling")
-		atomic.StoreUint32(&pm.fastSync, 0)
-	}
-	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
+	//if atomic.LoadUint32(&pm.fastSync) == 1 {
+	//	log.Debug("Fast sync complete, auto disabling")
+	//	atomic.StoreUint32(&pm.fastSync, 0)
+	//}
 
-	head := pm.dag.CurrentUnit(assetId)
-	if head != nil && head.UnitHeader.Number.Index > 0 {
-		go pm.BroadcastUnit(head, false /*, noBroadcastMediator*/)
+	head := pm.dag.CurrentHeader(assetId)
+	if head != nil && head.Number.Index > 0 {
+		go pm.BroadcastLocalLightHeader(head)
 	}
 }
 
