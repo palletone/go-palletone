@@ -149,7 +149,7 @@ func homeDir() string {
 
 func (c *Config) GetGasToken() modules.IDType16 {
 	if c.gasToken == modules.ZeroIdType16() {
-		token, err := modules.String2AssetId(c.GasToken)
+		token, _, err := modules.String2AssetId(c.GasToken)
 		if err != nil {
 			log.Warn("Cannot parse node.GasToken to a correct asset, token str:" + c.GasToken)
 			return modules.PTNCOIN
@@ -160,7 +160,7 @@ func (c *Config) GetGasToken() modules.IDType16 {
 }
 func (c *Config) GetMainToken() modules.IDType16 {
 	if c.mainToken == modules.ZeroIdType16() {
-		token, err := modules.String2AssetId(c.MainToken)
+		token, _, err := modules.String2AssetId(c.MainToken)
 		{
 			if err != nil {
 				return modules.PTNCOIN
@@ -174,7 +174,7 @@ func (c *Config) GeSyncPartitionTokens() []modules.IDType16 {
 	if c.syncPartitionTokens == nil {
 		c.syncPartitionTokens = []modules.IDType16{}
 		for _, tokenString := range c.SyncPartitionTokens {
-			token, err := modules.String2AssetId(tokenString)
+			token, _, err := modules.String2AssetId(tokenString)
 			if err != nil {
 				log.Warn("Cannot parse node.SyncPartitionTokens to a correct asset, token str:" + c.GasToken)
 				c.syncPartitionTokens = append(c.syncPartitionTokens, token)
