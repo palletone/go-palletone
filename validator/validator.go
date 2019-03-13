@@ -42,12 +42,11 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery) *Vali
 
 type newUtxoQuery struct {
 	oldUtxoQuery IUtxoQuery
-	unitUtxo     sync.Map
-	//unitUtxo     map[modules.OutPoint]*modules.Utxo
+	unitUtxo     *sync.Map
 }
 
 func (q *newUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	utxo, ok := q.unitUtxo.Load(outpoint)
+	utxo, ok := q.unitUtxo.Load(*outpoint)
 	if ok {
 		return utxo.(*modules.Utxo), nil
 	}
@@ -63,8 +62,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 	needCheckCoinbase := false
 	oldUtxoQuery := validate.utxoquery
 
-	//unitUtxo := map[modules.OutPoint]*modules.Utxo{}
-	var unitUtxo sync.Map
+	unitUtxo := new(sync.Map)
 	newUtxoQuery := &newUtxoQuery{oldUtxoQuery: oldUtxoQuery, unitUtxo: unitUtxo}
 	validate.utxoquery = newUtxoQuery
 	defer validate.setUtxoQuery(oldUtxoQuery)
@@ -94,10 +92,12 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 		//txFee, _ := tx.GetTxFee(getUtxoFromUnitAndDb)
 		txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 		fee += txFee.Amount
+
 		for outPoint, utxo := range tx.GetNewUtxos() {
 			unitUtxo.Store(outPoint, utxo)
-			//unitUtxo[outPoint] = utxo
 		}
+		//newUtxoQuery.unitUtxo = unitUtxo
+		//validate.utxoquery = newUtxoQuery
 	}
 	//验证第一条交易
 	if needCheckCoinbase {

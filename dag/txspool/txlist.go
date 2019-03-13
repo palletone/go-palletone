@@ -20,7 +20,6 @@
 package txspool
 
 import (
-	//"container/heap"
 	"math/big"
 	"sort"
 	"strconv"
@@ -96,7 +95,6 @@ func newTxPricedList(all *map[common.Hash]*modules.TxPoolTransaction) *txPricedL
 func (l *txPricedList) Put(tx *modules.TxPoolTransaction) *priorityHeap {
 	l.Lock()
 	defer l.Unlock()
-	//heap.Push(l.items, tx)
 	l.items.Push(tx)
 	//(*l.all)[tx.Tx.Hash()] = tx
 	return l.items
@@ -137,7 +135,6 @@ func (l *txPricedList) Removed(hash common.Hash) {
 			l.stales--
 		}
 	}
-	// heap.Init(l.items)
 	sort.Sort(l.items)
 }
 
@@ -213,10 +210,8 @@ func (l *txPricedList) Discard(count int) modules.TxPoolTxs {
 			l.stales--
 			continue
 		}
-
 	}
 	for _, tx := range save {
-		//heap.Push(l.items, tx)
 		l.items.Push(tx)
 	}
 	return drop
