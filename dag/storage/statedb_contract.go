@@ -210,6 +210,32 @@ func (statedb *StateDb) GetContractStatesById(id []byte) (map[string]*modules.Co
 }
 
 /**
+获取合约（或模板）全部属性 by Prefix
+To get contract or contract template all fields
+*/
+func (statedb *StateDb) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	key := append(constants.CONTRACT_STATE_PREFIX, id...)
+	data := getprefix(statedb.db, append(key, []byte(prefix)...))
+	if data == nil || len(data) == 0 {
+		return nil, errors.New(fmt.Sprintf("the contract %s state is null.", id))
+	}
+	var err error
+	result := make(map[string]*modules.ContractStateValue, 0)
+	for dbkey, state_version := range data {
+		state, version, err0 := splitValueAndVersion(state_version)
+		if err0 != nil {
+			err = err0
+		}
+		realKey := dbkey[len(key):]
+		if realKey != "" {
+			result[realKey] = &modules.ContractStateValue{Value: state, Version: version}
+			log.Info("the contract's state get info.", "key", realKey)
+		}
+	}
+	return result, err
+}
+
+/**
 获取合约（或模板）某一个属性
 To get contract or contract template one field
 */

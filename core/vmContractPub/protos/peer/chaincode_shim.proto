@@ -45,7 +45,7 @@ message ChaincodeMessage {
         DEL_STATE = 10;
         INVOKE_CHAINCODE = 11;
         RESPONSE = 13;
-//        GET_STATE_BY_RANGE = 14;
+        GET_STATE_BY_PREFIX=14;
 //        GET_QUERY_RESULT = 15;
 //        QUERY_STATE_NEXT = 16;
 //        QUERY_STATE_CLOSE = 17;
@@ -61,6 +61,7 @@ message ChaincodeMessage {
         DEFINE_TOKEN=27;
         SUPPLY_TOKEN=28;
         GET_TIMESTAMP = 29;
+
     }
 
     Type type = 1;
@@ -87,6 +88,9 @@ message ChaincodeMessage {
 message GetState {
     string key = 1;
     string collection = 2;
+}
+message GetStateByPrefix {
+    string prefix = 1;
 }
 message GetTimestamp {
     uint32 rangeNumber = 1;
@@ -177,6 +181,11 @@ message SupplyToken{
 message KeyForSystemConfig{
     string key = 1;
 }
+message GetStateByPrefixKv {
+    string key = 1;
+    bytes resultBytes = 2;
+}
+
 // Interface that provides support to chaincode execution. ChaincodeContext
 // provides the context necessary for the server to respond appropriately.
 service ChaincodeSupport {

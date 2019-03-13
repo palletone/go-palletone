@@ -27,3 +27,7 @@ type DbRow struct {
 	Key   []byte
 	Value []byte
 }
+type KeyValue struct {
+	Key   string
+	Value []byte
+}
