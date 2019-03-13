@@ -122,6 +122,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 		for _, tokenSupply := range result.TokenSupply {
 			assetId := &modules.Asset{}
 			assetId.AssetId.SetBytes(tokenSupply.AssetId)
+			assetId.UniqueId.SetBytes(tokenSupply.UniqueId)
 			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.GenerateLockScript(tokenSupply.Creator), assetId)
 			//
 			coinbase := &modules.PaymentPayload{}

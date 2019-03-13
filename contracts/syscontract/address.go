@@ -38,6 +38,10 @@ var (
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRS71ZEM
 	SysConfigContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000041C")
 
+	//创币合约PRC721
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRijspoq
+	CreateToken721ContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000071C")
+
 	//测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
 	TestContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000081C")

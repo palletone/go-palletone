@@ -23,6 +23,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -269,7 +270,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		}
 	}
 
-	info := TokenInfo{nonFungible.Symbol, tokenType, totalSupply - 1, createAddr, totalSupply,
+	info := TokenInfo{nonFungible.Symbol, tokenType, totalSupply, createAddr, totalSupply,
 		nonFungible.SupplyAddress, assetID}
 	symbols.TokenInfos[nonFungible.Symbol] = info
 
@@ -457,6 +458,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			tkIDs = append(tkIDs, assetTkID[1])
 		}
 	}
+	sort.Strings(tkIDs)
 
 	//
 	tkIDInfo := TokenIDInfo{symbol, symbols.TokenInfos[symbol].CreateAddr,
@@ -484,7 +486,7 @@ func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//return json
-	tksJson, err := json.Marshal(tkIDs)
+	tksJson, err := json.Marshal(tkIDInfos)
 	if err != nil {
 		return shim.Success([]byte(err.Error()))
 	}

@@ -413,7 +413,7 @@ func (handler *Handler) handelGetStateByPrefix(prefix string, contractid []byte,
 		// Success response
 		log.Debugf("[%s]GetState received payload %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
 		rows := []*modules.KeyValue{}
-		err = json.Unmarshal(responseMsg.Payload, rows)
+		err = json.Unmarshal(responseMsg.Payload, &rows)
 		return rows, err
 	}
 	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
