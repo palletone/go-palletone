@@ -90,8 +90,8 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 				log.Error("Cannot parse token define json to NonFungibleToken", result.TokenDefine.TokenDefineJson)
 				return nil, err
 			}
-			if token.TotalSupply > 100 {
-				return nil, errors.New("Not allow bigger than 100 NonFungibleToken when create")
+			if token.TotalSupply > 1000 {
+				return nil, errors.New("Not allow bigger than 1000 NonFungibleToken when create")
 			}
 			for i := uint64(0); i < token.TotalSupply; i++ {
 				if len(token.NonFungibleData[i].UniqueBytes) < 16 {
@@ -122,6 +122,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 		for _, tokenSupply := range result.TokenSupply {
 			assetId := &modules.Asset{}
 			assetId.AssetId.SetBytes(tokenSupply.AssetId)
+			assetId.UniqueId.SetBytes(tokenSupply.UniqueId)
 			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.GenerateLockScript(tokenSupply.Creator), assetId)
 			//
 			coinbase := &modules.PaymentPayload{}

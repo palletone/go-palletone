@@ -155,8 +155,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		fmt.Printf("Failed to unlock account: %v, address: %v \n", err, account.Address.Str())
 		return nil
 	}
-
-	// modified by Albert·Gou
+	
 	unit, err := gen.SetupGenesisUnit(ptnConf.Genesis, ks, account)
 	if err != nil {
 		fmt.Printf("Failed to write genesis unit: %v \n", err)

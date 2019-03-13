@@ -23,6 +23,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -165,8 +166,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	if totalSupply > 100 {
-		jsonResp := "{\"Error\":\"Not allow bigger than 100 NonFungibleToken when create\"}"
+	if totalSupply > 1000 {
+		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
 		return shim.Success([]byte(jsonResp))
 	}
 	nonFungible.TotalSupply = totalSupply
@@ -269,7 +270,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		}
 	}
 
-	info := TokenInfo{nonFungible.Symbol, tokenType, totalSupply - 1, createAddr, totalSupply,
+	info := TokenInfo{nonFungible.Symbol, tokenType, totalSupply, createAddr, totalSupply,
 		nonFungible.SupplyAddress, assetID}
 	symbols.TokenInfos[nonFungible.Symbol] = info
 
@@ -307,8 +308,8 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	if supplyAmount > 100 {
-		jsonResp := "{\"Error\":\"Not allow bigger than 100 NonFungibleToken when create\"}"
+	if supplyAmount > 1000 {
+		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
 		return shim.Success([]byte(jsonResp))
 	}
 	if math.MaxInt64-tokenInfo.TotalSupply < supplyAmount {
@@ -457,6 +458,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			tkIDs = append(tkIDs, assetTkID[1])
 		}
 	}
+	sort.Strings(tkIDs)
 
 	//
 	tkIDInfo := TokenIDInfo{symbol, symbols.TokenInfos[symbol].CreateAddr,
@@ -484,7 +486,7 @@ func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//return json
-	tksJson, err := json.Marshal(tkIDs)
+	tksJson, err := json.Marshal(tkIDInfos)
 	if err != nil {
 		return shim.Success([]byte(err.Error()))
 	}
