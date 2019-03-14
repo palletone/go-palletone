@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          公共参数列表.txt
+Resource          publicParams.txt
 
 *** Variables ***
 ${mediatorAddr_01}    ${EMPTY}
