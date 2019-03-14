@@ -1,6 +1,6 @@
 *** Settings ***
 Library           RequestsLibrary
-Resource          公共参数列表.txt
+Resource          publicParams.txt
 
 *** Variables ***
 
