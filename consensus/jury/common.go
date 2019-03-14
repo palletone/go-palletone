@@ -129,7 +129,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				req := ContractDeployReq{
 					chainID:    "palletone",
 					templateId: reqPay.TplId,
-					txid:       string(common.BytesToAddress(trs.RequestHash().Bytes()).Bytes()),
+					txid:       common.BytesToAddress(trs.RequestHash().Bytes()).String(),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout),
 				}
