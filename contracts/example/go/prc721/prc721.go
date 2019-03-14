@@ -23,6 +23,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -165,8 +166,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	if totalSupply > 100 {
-		jsonResp := "{\"Error\":\"Not allow bigger than 100 NonFungibleToken when create\"}"
+	if totalSupply > 1000 {
+		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
 		return shim.Success([]byte(jsonResp))
 	}
 	nonFungible.TotalSupply = totalSupply
@@ -200,9 +201,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"The symbol have been used\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-
+	idType := dm.UniqueIdType_Null
 	//generate nonFungibleData
 	if tokenType == 0 {
+		idType = dm.UniqueIdType_Sequence
 		start := uint64(1)
 		for i := uint64(0); i < totalSupply; i++ {
 			seqByte := convertToByte(start + i)
@@ -210,6 +212,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			nonFungible.NonFungibleData = append(nonFungible.NonFungibleData, nFdata)
 		}
 	} else if tokenType == 1 {
+		idType = dm.UniqueIdType_Uuid
 		for i := uint64(0); i < totalSupply; i++ {
 			UDID, _ := generateUUID()
 			if len(UDID) < 16 {
@@ -220,6 +223,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			nonFungible.NonFungibleData = append(nonFungible.NonFungibleData, nFdata)
 		}
 	} else if tokenType == 2 {
+		idType = dm.UniqueIdType_UserDefine
 		for _, oneTokenID := range tokenIDStrs {
 			oneTokenIDByte, _ := hex.DecodeString(oneTokenID)
 			if len(oneTokenID) < 16 {
@@ -254,7 +258,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//last put state
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(nonFungible.Symbol, dm.AssetType_FungibleToken,
-		0, common.Hex2Bytes(txid[2:]))
+		0, common.Hex2Bytes(txid[2:]), idType)
 
 	//
 	newAsset := &dm.Asset{}
@@ -269,7 +273,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		}
 	}
 
-	info := TokenInfo{nonFungible.Symbol, tokenType, totalSupply - 1, createAddr, totalSupply,
+	info := TokenInfo{nonFungible.Symbol, tokenType, totalSupply, createAddr, totalSupply,
 		nonFungible.SupplyAddress, assetID}
 	symbols.TokenInfos[nonFungible.Symbol] = info
 
@@ -307,8 +311,8 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Success([]byte(jsonResp))
 	}
-	if supplyAmount > 100 {
-		jsonResp := "{\"Error\":\"Not allow bigger than 100 NonFungibleToken when create\"}"
+	if supplyAmount > 1000 {
+		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
 		return shim.Success([]byte(jsonResp))
 	}
 	if math.MaxInt64-tokenInfo.TotalSupply < supplyAmount {
@@ -457,6 +461,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			tkIDs = append(tkIDs, assetTkID[1])
 		}
 	}
+	sort.Strings(tkIDs)
 
 	//
 	tkIDInfo := TokenIDInfo{symbol, symbols.TokenInfos[symbol].CreateAddr,
@@ -484,7 +489,7 @@ func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//return json
-	tksJson, err := json.Marshal(tkIDs)
+	tksJson, err := json.Marshal(tkIDInfos)
 	if err != nil {
 		return shim.Success([]byte(err.Error()))
 	}

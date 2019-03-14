@@ -174,7 +174,7 @@ func (pm *ProtocolManager) syncall() {
 	//YING 0x601892ec080000000000000000000000
 	//YOU 0x4000af9e080000000000000000000000
 
-	asset, err := modules.NewAsset(strings.ToUpper(pm.SubProtocols[0].Name), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.IDType16{})
+	asset, err := modules.NewAsset(strings.ToUpper(pm.SubProtocols[0].Name), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.IDType16{})
 	if err != nil {
 		log.Error("ProtocolManager syncall asset err", err)
 		return
