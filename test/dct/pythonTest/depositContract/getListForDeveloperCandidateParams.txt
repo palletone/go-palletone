@@ -1,0 +1,11 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Variables ***
+
+*** Keywords ***
+getListForDeveloperCandidate
+    ${one}    Create List    GetListForDeveloperCandidate
+    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForDeveloperCandidate    ${one}
+    ${result}    Set Variable    ${resp.content}
+    [Return]    ${result}

@@ -1,0 +1,1172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 3.1.1 (Python 3.6.7 on linux)" generated="20190314 00:45:18.059" rpa="false">
+<suite id="s1" name="DepositContractTest" source="/home/zhichunqi/gowork/src/github.com/palletone/go-palletone/test/dct/pythonTest/depositContract/DepositContractTest.robot">
+<test id="s1-t1" name="Business_01">
+<kw name="applyBecomeMediator" library="applyBecomeMediatorParams">
+<arguments>
+<arg>${mediatorAddr_01}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<kw name="申请加入Mediator候选节点所需参数" library="applyBecomeMediatorParams">
+<arguments>
+<arg>${mediatorAddr}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>ApplyBecomeMediator</arg>
+<arg>{\"key\":\"value\"}</arg>
+</arguments>
+<assign>
+<var>${one}</var>
+</assign>
+<msg timestamp="20190314 00:45:18.236" level="INFO">${one} = ['ApplyBecomeMediator', '{"key":"value"}']</msg>
+<status status="PASS" starttime="20190314 00:45:18.236" endtime="20190314 00:45:18.236"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${mediatorAddr}</arg>
+<arg>${mediatorAddr}</arg>
+<arg>${amount}</arg>
+<arg>${fee}</arg>
+<arg>${one}</arg>
+</arguments>
+<assign>
+<var>${two}</var>
+</assign>
+<msg timestamp="20190314 00:45:18.237" level="INFO">${two} = ['P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', '1000000000', '1000000000', ['ApplyBecomeMediator', '{"key":"value"}']]</msg>
+<status status="PASS" starttime="20190314 00:45:18.237" endtime="20190314 00:45:18.237"></status>
+</kw>
+<msg timestamp="20190314 00:45:18.237" level="INFO">${params} = ['P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', '1000000000', '1000000000', ['ApplyBecomeMediator', '{"key":"value"}']]</msg>
+<status status="PASS" starttime="20190314 00:45:18.235" endtime="20190314 00:45:18.238"></status>
+</kw>
+<kw name="创建公用的POST请求" library="postRequest">
+<arguments>
+<arg>${depositContractInvoke}</arg>
+<arg>ApplyBecomeMediator</arg>
+<arg>${params}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20190314 00:45:18.240" level="INFO">${header} = {'Content-Type': 'application/json'}</msg>
+<status status="PASS" starttime="20190314 00:45:18.239" endtime="20190314 00:45:18.240"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=@{params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20190314 00:45:18.241" level="INFO">${data} = {'jsonrpc': '2.0', 'method': 'ptn_depositContractInvoke', 'params': ['P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', '1000000000', '1000000000', ['ApplyBecomeMediator', '...</msg>
+<status status="PASS" starttime="20190314 00:45:18.241" endtime="20190314 00:45:18.241"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20190314 00:45:18.242" level="INFO">Creating Session using : alias=ApplyBecomeMediator, url=http://127.0.0.1:8545, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" starttime="20190314 00:45:18.242" endtime="20190314 00:45:18.243"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the
+given `alias`</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20190314 00:45:18.248" level="INFO">Starting new HTTP connection (1): 127.0.0.1</msg>
+<msg timestamp="20190314 00:45:18.464" level="INFO">Post Request using : alias=ApplyBecomeMediator, uri=http://127.0.0.1:8545, data={"jsonrpc": "2.0", "method": "ptn_depositContractInvoke", "params": ["P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP", "P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP", "1000000000", "1000000000", ["ApplyBecomeMediator", "{\"key\":\"value\"}"]], "id": "1"}, headers={'Content-Type': 'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190314 00:45:18.464" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:18.243" endtime="20190314 00:45:18.464"></status>
+</kw>
+<msg timestamp="20190314 00:45:18.464" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:18.238" endtime="20190314 00:45:18.464"></status>
+</kw>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<msg timestamp="20190314 00:45:18.465" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"cf36adccf7043da425e7302de605f9e91a5d186fb2e438344cf95022a79ea609"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:18.465" endtime="20190314 00:45:18.465"></status>
+</kw>
+<kw name="Sleep" library="BuiltIn">
+<doc>Pauses the test executed for the given time.</doc>
+<arguments>
+<arg>3</arg>
+</arguments>
+<msg timestamp="20190314 00:45:21.467" level="INFO">Slept 3 seconds</msg>
+<status status="PASS" starttime="20190314 00:45:18.465" endtime="20190314 00:45:21.468"></status>
+</kw>
+<msg timestamp="20190314 00:45:21.469" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"cf36adccf7043da425e7302de605f9e91a5d186fb2e438344cf95022a79ea609"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:18.235" endtime="20190314 00:45:21.469"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<msg timestamp="20190314 00:45:21.472" level="INFO">{"jsonrpc":"2.0","id":"1","result":"cf36adccf7043da425e7302de605f9e91a5d186fb2e438344cf95022a79ea609"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:21.471" endtime="20190314 00:45:21.472"></status>
+</kw>
+<kw name="getBecomeMediatorApplyList" library="getBecomeMediatorApplyListParams">
+<assign>
+<var>${result}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>GetBecomeMediatorApplyList</arg>
+</arguments>
+<assign>
+<var>${one}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.478" level="INFO">${one} = ['GetBecomeMediatorApplyList']</msg>
+<status status="PASS" starttime="20190314 00:45:21.476" endtime="20190314 00:45:21.478"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${one}</arg>
+</arguments>
+<assign>
+<var>${two}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.481" level="INFO">${two} = [['GetBecomeMediatorApplyList']]</msg>
+<status status="PASS" starttime="20190314 00:45:21.479" endtime="20190314 00:45:21.481"></status>
+</kw>
+<kw name="创建公用的POST请求" library="postRequest">
+<arguments>
+<arg>${depositContractQuery}</arg>
+<arg>GetBecomeMediatorApplyList</arg>
+<arg>${two}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.492" level="INFO">${header} = {'Content-Type': 'application/json'}</msg>
+<status status="PASS" starttime="20190314 00:45:21.486" endtime="20190314 00:45:21.493"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=@{params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.496" level="INFO">${data} = {'jsonrpc': '2.0', 'method': 'ptn_depositContractQuery', 'params': [['GetBecomeMediatorApplyList']], 'id': '1'}</msg>
+<status status="PASS" starttime="20190314 00:45:21.494" endtime="20190314 00:45:21.496"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20190314 00:45:21.499" level="INFO">Creating Session using : alias=GetBecomeMediatorApplyList, url=http://127.0.0.1:8545, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" starttime="20190314 00:45:21.497" endtime="20190314 00:45:21.500"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the
+given `alias`</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.508" level="INFO">Starting new HTTP connection (1): 127.0.0.1</msg>
+<msg timestamp="20190314 00:45:21.511" level="INFO">Post Request using : alias=GetBecomeMediatorApplyList, uri=http://127.0.0.1:8545, data={"jsonrpc": "2.0", "method": "ptn_depositContractQuery", "params": [["GetBecomeMediatorApplyList"]], "id": "1"}, headers={'Content-Type': 'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190314 00:45:21.511" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:21.502" endtime="20190314 00:45:21.511"></status>
+</kw>
+<msg timestamp="20190314 00:45:21.512" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:21.482" endtime="20190314 00:45:21.512"></status>
+</kw>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.512" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:21.512" endtime="20190314 00:45:21.512"></status>
+</kw>
+<msg timestamp="20190314 00:45:21.513" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:21.474" endtime="20190314 00:45:21.513"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<msg timestamp="20190314 00:45:21.513" level="INFO">{"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:21.513" endtime="20190314 00:45:21.513"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<assign>
+<var>${jsonResult}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.514" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+ </msg>
+<msg timestamp="20190314 00:45:21.514" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20190314 00:45:21.514" level="INFO">${jsonResult} = {'jsonrpc': '2.0', 'id': '1', 'result': '[{"address":"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP","content":"{\\"key\\":\\"value\\"}","time":862527}]'}</msg>
+<status status="PASS" starttime="20190314 00:45:21.514" endtime="20190314 00:45:21.514"></status>
+</kw>
+<kw name="Should Contain" library="BuiltIn">
+<doc>Fails if ``container`` does not contain ``item`` one or more times.</doc>
+<arguments>
+<arg>${jsonResult['result']}</arg>
+<arg>${mediatorAddr_01}</arg>
+</arguments>
+<status status="PASS" starttime="20190314 00:45:21.515" endtime="20190314 00:45:21.515"></status>
+</kw>
+<kw name="handleForApplyBecomeMediator" library="handleForApplyBecomeMediatorParams">
+<arguments>
+<arg>${foundationAddr}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<kw name="基金会处理申请所需参数" library="handleForApplyBecomeMediatorParams">
+<arguments>
+<arg>${foundationAddr}</arg>
+</arguments>
+<assign>
+<var>${基金会处理申请所需参数 }</var>
+</assign>
+<kw name="获取Mediator申请加入列表" library="getBecomeMediatorApplyListParams">
+<assign>
+<var>${获取Mediator申请加入列表 }</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>GetBecomeMediatorApplyList</arg>
+</arguments>
+<assign>
+<var>${one}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.518" level="INFO">${one} = ['GetBecomeMediatorApplyList']</msg>
+<status status="PASS" starttime="20190314 00:45:21.518" endtime="20190314 00:45:21.518"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${one}</arg>
+</arguments>
+<assign>
+<var>${two}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.519" level="INFO">${two} = [['GetBecomeMediatorApplyList']]</msg>
+<status status="PASS" starttime="20190314 00:45:21.519" endtime="20190314 00:45:21.519"></status>
+</kw>
+<kw name="创建公用的POST请求" library="postRequest">
+<arguments>
+<arg>${depositContractQuery}</arg>
+<arg>GetBecomeMediatorApplyList</arg>
+<arg>${two}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.520" level="INFO">${header} = {'Content-Type': 'application/json'}</msg>
+<status status="PASS" starttime="20190314 00:45:21.520" endtime="20190314 00:45:21.520"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=@{params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.521" level="INFO">${data} = {'jsonrpc': '2.0', 'method': 'ptn_depositContractQuery', 'params': [['GetBecomeMediatorApplyList']], 'id': '1'}</msg>
+<status status="PASS" starttime="20190314 00:45:21.521" endtime="20190314 00:45:21.521"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20190314 00:45:21.522" level="INFO">Creating Session using : alias=GetBecomeMediatorApplyList, url=http://127.0.0.1:8545, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" starttime="20190314 00:45:21.522" endtime="20190314 00:45:21.522"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the
+given `alias`</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.523" level="INFO">Starting new HTTP connection (1): 127.0.0.1</msg>
+<msg timestamp="20190314 00:45:21.526" level="INFO">Post Request using : alias=GetBecomeMediatorApplyList, uri=http://127.0.0.1:8545, data={"jsonrpc": "2.0", "method": "ptn_depositContractQuery", "params": [["GetBecomeMediatorApplyList"]], "id": "1"}, headers={'Content-Type': 'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190314 00:45:21.527" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:21.522" endtime="20190314 00:45:21.527"></status>
+</kw>
+<msg timestamp="20190314 00:45:21.527" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:21.519" endtime="20190314 00:45:21.527"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respContentJson}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.528" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+ </msg>
+<msg timestamp="20190314 00:45:21.528" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20190314 00:45:21.528" level="INFO">${respContentJson} = {'jsonrpc': '2.0', 'id': '1', 'result': '[{"address":"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP","content":"{\\"key\\":\\"value\\"}","time":862527}]'}</msg>
+<status status="PASS" starttime="20190314 00:45:21.527" endtime="20190314 00:45:21.528"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${respContentJson['result']}</arg>
+</arguments>
+<msg timestamp="20190314 00:45:21.528" level="INFO">[{"address":"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP","content":"{\"key\":\"value\"}","time":862527}]</msg>
+<status status="PASS" starttime="20190314 00:45:21.528" endtime="20190314 00:45:21.529"></status>
+</kw>
+<kw name="Evaluate" library="BuiltIn">
+<doc>Evaluates the given expression in Python and returns the results.</doc>
+<arguments>
+<arg>[addresses['address'] for addresses in ${respContentJson['result']}]</arg>
+</arguments>
+<assign>
+<var>${addresses}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.529" level="INFO">${addresses} = ['P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP']</msg>
+<status status="PASS" starttime="20190314 00:45:21.529" endtime="20190314 00:45:21.529"></status>
+</kw>
+<kw name="Evaluate" library="BuiltIn">
+<doc>Evaluates the given expression in Python and returns the results.</doc>
+<arguments>
+<arg>[times['time'] for times in ${respContentJson['result']}]</arg>
+</arguments>
+<assign>
+<var>${times}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.530" level="INFO">${times} = [862527]</msg>
+<status status="PASS" starttime="20190314 00:45:21.530" endtime="20190314 00:45:21.530"></status>
+</kw>
+<kw name="Get Length" library="BuiltIn">
+<doc>Returns and logs the length of the given item as an integer.</doc>
+<arguments>
+<arg>${addresses}</arg>
+</arguments>
+<assign>
+<var>${arrayLen}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.531" level="INFO">Length is 1</msg>
+<msg timestamp="20190314 00:45:21.531" level="INFO">${arrayLen} = 1</msg>
+<status status="PASS" starttime="20190314 00:45:21.530" endtime="20190314 00:45:21.531"></status>
+</kw>
+<kw name="Set Variable If" library="BuiltIn">
+<doc>Sets variable based on the given condition.</doc>
+<arguments>
+<arg>${arrayLen} != 0</arg>
+<arg>${addresses}[0]</arg>
+</arguments>
+<assign>
+<var>${address0}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.531" level="INFO">${address0} = P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP</msg>
+<status status="PASS" starttime="20190314 00:45:21.531" endtime="20190314 00:45:21.531"></status>
+</kw>
+<kw name="Set Variable If" library="BuiltIn">
+<doc>Sets variable based on the given condition.</doc>
+<arguments>
+<arg>${arrayLen} != 0</arg>
+<arg>${times}[0]</arg>
+</arguments>
+<assign>
+<var>${time0}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.532" level="INFO">${time0} = 862527</msg>
+<status status="PASS" starttime="20190314 00:45:21.532" endtime="20190314 00:45:21.532"></status>
+</kw>
+<msg timestamp="20190314 00:45:21.532" level="INFO">${获取Mediator申请加入列表 } = ['P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', 862527]</msg>
+<status status="PASS" starttime="20190314 00:45:21.517" endtime="20190314 00:45:21.532"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>HandleForApplyBecomeMediator</arg>
+<arg>ok</arg>
+<arg>${获取Mediator申请加入列表}[0]</arg>
+</arguments>
+<assign>
+<var>${1}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.533" level="INFO">${1} = ['HandleForApplyBecomeMediator', 'ok', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP']</msg>
+<status status="PASS" starttime="20190314 00:45:21.533" endtime="20190314 00:45:21.533"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${foundationAddr}</arg>
+<arg>${foundationAddr}</arg>
+<arg>${amount}</arg>
+<arg>${fee}</arg>
+<arg>${1}</arg>
+</arguments>
+<assign>
+<var>${one}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.534" level="INFO">${one} = ['P1AiLqwQzZ3JxiURJij2KyKzTZ6JrF19YDS', 'P1AiLqwQzZ3JxiURJij2KyKzTZ6JrF19YDS', '1000000000', '1000000000', ['HandleForApplyBecomeMediator', 'ok', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP']]</msg>
+<status status="PASS" starttime="20190314 00:45:21.533" endtime="20190314 00:45:21.534"></status>
+</kw>
+<msg timestamp="20190314 00:45:21.534" level="INFO">${基金会处理申请所需参数 } = ['P1AiLqwQzZ3JxiURJij2KyKzTZ6JrF19YDS', 'P1AiLqwQzZ3JxiURJij2KyKzTZ6JrF19YDS', '1000000000', '1000000000', ['HandleForApplyBecomeMediator', 'ok', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP']]</msg>
+<status status="PASS" starttime="20190314 00:45:21.516" endtime="20190314 00:45:21.534"></status>
+</kw>
+<kw name="创建公用的POST请求" library="postRequest">
+<arguments>
+<arg>${depositContractInvoke}</arg>
+<arg>HandleForApplyBecomeMediator</arg>
+<arg>${基金会处理申请所需参数 }</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.535" level="INFO">${header} = {'Content-Type': 'application/json'}</msg>
+<status status="PASS" starttime="20190314 00:45:21.535" endtime="20190314 00:45:21.536"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=@{params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.536" level="INFO">${data} = {'jsonrpc': '2.0', 'method': 'ptn_depositContractInvoke', 'params': ['P1AiLqwQzZ3JxiURJij2KyKzTZ6JrF19YDS', 'P1AiLqwQzZ3JxiURJij2KyKzTZ6JrF19YDS', '1000000000', '1000000000', ['HandleForApplyBecomeMed...</msg>
+<status status="PASS" starttime="20190314 00:45:21.536" endtime="20190314 00:45:21.536"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20190314 00:45:21.537" level="INFO">Creating Session using : alias=HandleForApplyBecomeMediator, url=http://127.0.0.1:8545, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" starttime="20190314 00:45:21.537" endtime="20190314 00:45:21.537"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the
+given `alias`</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.539" level="INFO">Starting new HTTP connection (1): 127.0.0.1</msg>
+<msg timestamp="20190314 00:45:21.541" level="INFO">Post Request using : alias=HandleForApplyBecomeMediator, uri=http://127.0.0.1:8545, data={"jsonrpc": "2.0", "method": "ptn_depositContractInvoke", "params": ["P1AiLqwQzZ3JxiURJij2KyKzTZ6JrF19YDS", "P1AiLqwQzZ3JxiURJij2KyKzTZ6JrF19YDS", "1000000000", "1000000000", ["HandleForApplyBecomeMediator", "ok", "P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP"]], "id": "1"}, headers={'Content-Type': 'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190314 00:45:21.542" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:21.537" endtime="20190314 00:45:21.542"></status>
+</kw>
+<msg timestamp="20190314 00:45:21.542" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:21.534" endtime="20190314 00:45:21.542"></status>
+</kw>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<msg timestamp="20190314 00:45:21.542" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"2bf98652eb76fb775c92964476d6d42ec9e1b449b679978cf8cd0ee2cfceef35"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:21.542" endtime="20190314 00:45:21.543"></status>
+</kw>
+<kw name="Sleep" library="BuiltIn">
+<doc>Pauses the test executed for the given time.</doc>
+<arguments>
+<arg>3</arg>
+</arguments>
+<msg timestamp="20190314 00:45:24.545" level="INFO">Slept 3 seconds</msg>
+<status status="PASS" starttime="20190314 00:45:21.543" endtime="20190314 00:45:24.545"></status>
+</kw>
+<msg timestamp="20190314 00:45:24.547" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"2bf98652eb76fb775c92964476d6d42ec9e1b449b679978cf8cd0ee2cfceef35"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:21.516" endtime="20190314 00:45:24.547"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<msg timestamp="20190314 00:45:24.550" level="INFO">{"jsonrpc":"2.0","id":"1","result":"2bf98652eb76fb775c92964476d6d42ec9e1b449b679978cf8cd0ee2cfceef35"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:24.548" endtime="20190314 00:45:24.550"></status>
+</kw>
+<kw name="getAgreeForBecomeMediatorList" library="getAgreeForBecomeMediatorListParams">
+<assign>
+<var>${result}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>GetAgreeForBecomeMediatorList</arg>
+</arguments>
+<assign>
+<var>${one}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.556" level="INFO">${one} = ['GetAgreeForBecomeMediatorList']</msg>
+<status status="PASS" starttime="20190314 00:45:24.555" endtime="20190314 00:45:24.556"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${one}</arg>
+</arguments>
+<assign>
+<var>${two}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.559" level="INFO">${two} = [['GetAgreeForBecomeMediatorList']]</msg>
+<status status="PASS" starttime="20190314 00:45:24.557" endtime="20190314 00:45:24.559"></status>
+</kw>
+<kw name="创建公用的POST请求" library="postRequest">
+<arguments>
+<arg>${depositContractQuery}</arg>
+<arg>GetAgreeForBecomeMediatorList</arg>
+<arg>${two}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.567" level="INFO">${header} = {'Content-Type': 'application/json'}</msg>
+<status status="PASS" starttime="20190314 00:45:24.564" endtime="20190314 00:45:24.567"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=@{params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.570" level="INFO">${data} = {'jsonrpc': '2.0', 'method': 'ptn_depositContractQuery', 'params': [['GetAgreeForBecomeMediatorList']], 'id': '1'}</msg>
+<status status="PASS" starttime="20190314 00:45:24.568" endtime="20190314 00:45:24.570"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20190314 00:45:24.571" level="INFO">Creating Session using : alias=GetAgreeForBecomeMediatorList, url=http://127.0.0.1:8545, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" starttime="20190314 00:45:24.571" endtime="20190314 00:45:24.572"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the
+given `alias`</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.577" level="INFO">Starting new HTTP connection (1): 127.0.0.1</msg>
+<msg timestamp="20190314 00:45:24.590" level="INFO">Post Request using : alias=GetAgreeForBecomeMediatorList, uri=http://127.0.0.1:8545, data={"jsonrpc": "2.0", "method": "ptn_depositContractQuery", "params": [["GetAgreeForBecomeMediatorList"]], "id": "1"}, headers={'Content-Type': 'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190314 00:45:24.591" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:24.573" endtime="20190314 00:45:24.592"></status>
+</kw>
+<msg timestamp="20190314 00:45:24.593" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:24.560" endtime="20190314 00:45:24.593"></status>
+</kw>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.597" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:24.595" endtime="20190314 00:45:24.597"></status>
+</kw>
+<msg timestamp="20190314 00:45:24.599" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:24.552" endtime="20190314 00:45:24.599"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<msg timestamp="20190314 00:45:24.601" level="INFO">{"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:24.600" endtime="20190314 00:45:24.601"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<assign>
+<var>${jsonResult}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.602" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+ </msg>
+<msg timestamp="20190314 00:45:24.603" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20190314 00:45:24.603" level="INFO">${jsonResult} = {'jsonrpc': '2.0', 'id': '1', 'result': '[{"address":"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP","content":"{\\"key\\":\\"value\\"}","time":862527}]'}</msg>
+<status status="PASS" starttime="20190314 00:45:24.602" endtime="20190314 00:45:24.603"></status>
+</kw>
+<kw name="Should Contain" library="BuiltIn">
+<doc>Fails if ``container`` does not contain ``item`` one or more times.</doc>
+<arguments>
+<arg>${jsonResult['result']}</arg>
+<arg>${mediatorAddr_01}</arg>
+</arguments>
+<status status="PASS" starttime="20190314 00:45:24.604" endtime="20190314 00:45:24.605"></status>
+</kw>
+<kw name="mediatorPayToDepositContract" library="mediatorPayToDepositContractParams">
+<arguments>
+<arg>${mediatorAddr_01}</arg>
+<arg>200000000000</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<kw name="Mediator交付保证金所需参数" library="mediatorPayToDepositContractParams">
+<arguments>
+<arg>${mediatorAddr}</arg>
+<arg>${depositAmounts}</arg>
+</arguments>
+<assign>
+<var>${Mediator交付保证金所需参数}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>MediatorPayToDepositContract</arg>
+</arguments>
+<assign>
+<var>${one}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.608" level="INFO">${one} = ['MediatorPayToDepositContract']</msg>
+<status status="PASS" starttime="20190314 00:45:24.607" endtime="20190314 00:45:24.608"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${mediatorAddr}</arg>
+<arg>${depositContractAddress}</arg>
+<arg>${depositAmounts}</arg>
+<arg>${fee}</arg>
+<arg>${one}</arg>
+</arguments>
+<assign>
+<var>${two}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.609" level="INFO">${two} = ['P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', 'PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM', '200000000000', '1000000000', ['MediatorPayToDepositContract']]</msg>
+<status status="PASS" starttime="20190314 00:45:24.608" endtime="20190314 00:45:24.609"></status>
+</kw>
+<msg timestamp="20190314 00:45:24.609" level="INFO">${Mediator交付保证金所需参数} = ['P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', 'PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM', '200000000000', '1000000000', ['MediatorPayToDepositContract']]</msg>
+<status status="PASS" starttime="20190314 00:45:24.606" endtime="20190314 00:45:24.609"></status>
+</kw>
+<kw name="创建公用的POST请求" library="postRequest">
+<arguments>
+<arg>${depositContractInvoke}</arg>
+<arg>MediatorPayToDepositContract</arg>
+<arg>${Mediator交付保证金所需参数}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.610" level="INFO">${header} = {'Content-Type': 'application/json'}</msg>
+<status status="PASS" starttime="20190314 00:45:24.610" endtime="20190314 00:45:24.610"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=@{params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.611" level="INFO">${data} = {'jsonrpc': '2.0', 'method': 'ptn_depositContractInvoke', 'params': ['P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP', 'PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM', '200000000000', '1000000000', ['MediatorPayToDepositC...</msg>
+<status status="PASS" starttime="20190314 00:45:24.611" endtime="20190314 00:45:24.611"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20190314 00:45:24.612" level="INFO">Creating Session using : alias=MediatorPayToDepositContract, url=http://127.0.0.1:8545, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" starttime="20190314 00:45:24.611" endtime="20190314 00:45:24.612"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the
+given `alias`</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.614" level="INFO">Starting new HTTP connection (1): 127.0.0.1</msg>
+<msg timestamp="20190314 00:45:24.619" level="INFO">Post Request using : alias=MediatorPayToDepositContract, uri=http://127.0.0.1:8545, data={"jsonrpc": "2.0", "method": "ptn_depositContractInvoke", "params": ["P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP", "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", "200000000000", "1000000000", ["MediatorPayToDepositContract"]], "id": "1"}, headers={'Content-Type': 'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190314 00:45:24.619" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:24.612" endtime="20190314 00:45:24.619"></status>
+</kw>
+<msg timestamp="20190314 00:45:24.620" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:24.609" endtime="20190314 00:45:24.620"></status>
+</kw>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<msg timestamp="20190314 00:45:24.622" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"b0665a5ffc1c9badaf6682471b956ddc5ba4a2f9c7274df8ac95ca0d157811e2"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:24.621" endtime="20190314 00:45:24.622"></status>
+</kw>
+<kw name="Sleep" library="BuiltIn">
+<doc>Pauses the test executed for the given time.</doc>
+<arguments>
+<arg>3</arg>
+</arguments>
+<msg timestamp="20190314 00:45:27.624" level="INFO">Slept 3 seconds</msg>
+<status status="PASS" starttime="20190314 00:45:24.622" endtime="20190314 00:45:27.624"></status>
+</kw>
+<msg timestamp="20190314 00:45:27.625" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"b0665a5ffc1c9badaf6682471b956ddc5ba4a2f9c7274df8ac95ca0d157811e2"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:24.605" endtime="20190314 00:45:27.626"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<msg timestamp="20190314 00:45:27.629" level="INFO">{"jsonrpc":"2.0","id":"1","result":"b0665a5ffc1c9badaf6682471b956ddc5ba4a2f9c7274df8ac95ca0d157811e2"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:27.627" endtime="20190314 00:45:27.629"></status>
+</kw>
+<kw name="getListForMediatorCandidate" library="getListForMediatorCandidateParams">
+<assign>
+<var>${result}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>GetListForMediatorCandidate</arg>
+</arguments>
+<assign>
+<var>${one}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.635" level="INFO">${one} = ['GetListForMediatorCandidate']</msg>
+<status status="PASS" starttime="20190314 00:45:27.633" endtime="20190314 00:45:27.636"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${one}</arg>
+</arguments>
+<assign>
+<var>${two}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.638" level="INFO">${two} = [['GetListForMediatorCandidate']]</msg>
+<status status="PASS" starttime="20190314 00:45:27.637" endtime="20190314 00:45:27.638"></status>
+</kw>
+<kw name="创建公用的POST请求" library="postRequest">
+<arguments>
+<arg>${depositContractQuery}</arg>
+<arg>GetListForMediatorCandidate</arg>
+<arg>${two}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.642" level="INFO">${header} = {'Content-Type': 'application/json'}</msg>
+<status status="PASS" starttime="20190314 00:45:27.641" endtime="20190314 00:45:27.643"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=@{params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.646" level="INFO">${data} = {'jsonrpc': '2.0', 'method': 'ptn_depositContractQuery', 'params': [['GetListForMediatorCandidate']], 'id': '1'}</msg>
+<status status="PASS" starttime="20190314 00:45:27.644" endtime="20190314 00:45:27.646"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20190314 00:45:27.648" level="INFO">Creating Session using : alias=GetListForMediatorCandidate, url=http://127.0.0.1:8545, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" starttime="20190314 00:45:27.647" endtime="20190314 00:45:27.650"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the
+given `alias`</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.658" level="INFO">Starting new HTTP connection (1): 127.0.0.1</msg>
+<msg timestamp="20190314 00:45:27.663" level="INFO">Post Request using : alias=GetListForMediatorCandidate, uri=http://127.0.0.1:8545, data={"jsonrpc": "2.0", "method": "ptn_depositContractQuery", "params": [["GetListForMediatorCandidate"]], "id": "1"}, headers={'Content-Type': 'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190314 00:45:27.663" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:27.651" endtime="20190314 00:45:27.663"></status>
+</kw>
+<msg timestamp="20190314 00:45:27.663" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:27.639" endtime="20190314 00:45:27.663"></status>
+</kw>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.664" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:27.664" endtime="20190314 00:45:27.664"></status>
+</kw>
+<msg timestamp="20190314 00:45:27.664" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:27.631" endtime="20190314 00:45:27.664"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<msg timestamp="20190314 00:45:27.666" level="INFO">{"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:27.665" endtime="20190314 00:45:27.666"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<assign>
+<var>${jsonResult}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.667" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":"[{\"address\":\"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP\",\"content\":\"{\\\"key\\\":\\\"value\\\"}\",\"time\":862527}]"}
+ </msg>
+<msg timestamp="20190314 00:45:27.668" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20190314 00:45:27.668" level="INFO">${jsonResult} = {'jsonrpc': '2.0', 'id': '1', 'result': '[{"address":"P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP","content":"{\\"key\\":\\"value\\"}","time":862527}]'}</msg>
+<status status="PASS" starttime="20190314 00:45:27.667" endtime="20190314 00:45:27.668"></status>
+</kw>
+<kw name="Should Contain" library="BuiltIn">
+<doc>Fails if ``container`` does not contain ``item`` one or more times.</doc>
+<arguments>
+<arg>${jsonResult['result']}</arg>
+<arg>${mediatorAddr_01}</arg>
+</arguments>
+<status status="PASS" starttime="20190314 00:45:27.669" endtime="20190314 00:45:27.670"></status>
+</kw>
+<kw name="getCandidateBalanceWithAddr" library="getCandidateBalanceWithAddrParams">
+<arguments>
+<arg>${mediatorAddr_01}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<kw name="获取某个节点的账户" library="getCandidateBalanceWithAddrParams">
+<arguments>
+<arg>${nodeAddr}</arg>
+</arguments>
+<assign>
+<var>${11}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>GetBalanceWithAddr</arg>
+<arg>${nodeAddr}</arg>
+</arguments>
+<assign>
+<var>${one}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.672" level="INFO">${one} = ['GetBalanceWithAddr', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP']</msg>
+<status status="PASS" starttime="20190314 00:45:27.672" endtime="20190314 00:45:27.672"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${one}</arg>
+</arguments>
+<assign>
+<var>${two}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.673" level="INFO">${two} = [['GetBalanceWithAddr', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP']]</msg>
+<status status="PASS" starttime="20190314 00:45:27.672" endtime="20190314 00:45:27.673"></status>
+</kw>
+<msg timestamp="20190314 00:45:27.673" level="INFO">${11} = [['GetBalanceWithAddr', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP']]</msg>
+<status status="PASS" starttime="20190314 00:45:27.671" endtime="20190314 00:45:27.673"></status>
+</kw>
+<kw name="创建公用的POST请求" library="postRequest">
+<arguments>
+<arg>${depositContractQuery}</arg>
+<arg>GetCandidateBalanceWithAddr</arg>
+<arg>${11}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.674" level="INFO">${header} = {'Content-Type': 'application/json'}</msg>
+<status status="PASS" starttime="20190314 00:45:27.674" endtime="20190314 00:45:27.674"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=@{params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.675" level="INFO">${data} = {'jsonrpc': '2.0', 'method': 'ptn_depositContractQuery', 'params': [['GetBalanceWithAddr', 'P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP']], 'id': '1'}</msg>
+<status status="PASS" starttime="20190314 00:45:27.675" endtime="20190314 00:45:27.675"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20190314 00:45:27.676" level="INFO">Creating Session using : alias=GetCandidateBalanceWithAddr, url=http://127.0.0.1:8545, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" starttime="20190314 00:45:27.675" endtime="20190314 00:45:27.676"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the
+given `alias`</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.679" level="INFO">Starting new HTTP connection (1): 127.0.0.1</msg>
+<msg timestamp="20190314 00:45:27.683" level="INFO">Post Request using : alias=GetCandidateBalanceWithAddr, uri=http://127.0.0.1:8545, data={"jsonrpc": "2.0", "method": "ptn_depositContractQuery", "params": [["GetBalanceWithAddr", "P1BvVqLgBzYb86o6tshgyGVHaAoPWagn9ZP"]], "id": "1"}, headers={'Content-Type': 'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190314 00:45:27.683" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:27.677" endtime="20190314 00:45:27.683"></status>
+</kw>
+<msg timestamp="20190314 00:45:27.684" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" starttime="20190314 00:45:27.673" endtime="20190314 00:45:27.684"></status>
+</kw>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.685" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"{\"total_amount\":200000000000,\"last_modify_time\":862527,\"enter_time\":862527,\"pay_values\":[{\"pay_tokens\":{\"amount\":200000000000,\"asset\":\"PTN\",\"addres...</msg>
+<status status="PASS" starttime="20190314 00:45:27.684" endtime="20190314 00:45:27.685"></status>
+</kw>
+<msg timestamp="20190314 00:45:27.685" level="INFO">${result} = {"jsonrpc":"2.0","id":"1","result":"{\"total_amount\":200000000000,\"last_modify_time\":862527,\"enter_time\":862527,\"pay_values\":[{\"pay_tokens\":{\"amount\":200000000000,\"asset\":\"PTN\",\"addres...</msg>
+<status status="PASS" starttime="20190314 00:45:27.670" endtime="20190314 00:45:27.685"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<msg timestamp="20190314 00:45:27.687" level="INFO">{"jsonrpc":"2.0","id":"1","result":"{\"total_amount\":200000000000,\"last_modify_time\":862527,\"enter_time\":862527,\"pay_values\":[{\"pay_tokens\":{\"amount\":200000000000,\"asset\":\"PTN\",\"address\":\"\"},\"pay_time\":862527}],\"cashback_values\":null,\"forfeiture_values\":null}"}
+</msg>
+<status status="PASS" starttime="20190314 00:45:27.686" endtime="20190314 00:45:27.687"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<assign>
+<var>${jsonResult}</var>
+</assign>
+<msg timestamp="20190314 00:45:27.688" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":"{\"total_amount\":200000000000,\"last_modify_time\":862527,\"enter_time\":862527,\"pay_values\":[{\"pay_tokens\":{\"amount\":200000000000,\"asset\":\"PTN\",\"address\":\"\"},\"pay_time\":862527}],\"cashback_values\":null,\"forfeiture_values\":null}"}
+ </msg>
+<msg timestamp="20190314 00:45:27.688" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20190314 00:45:27.688" level="INFO">${jsonResult} = {'jsonrpc': '2.0', 'id': '1', 'result': '{"total_amount":200000000000,"last_modify_time":862527,"enter_time":862527,"pay_values":[{"pay_tokens":{"amount":200000000000,"asset":"PTN","address":""},"pay_...</msg>
+<status status="PASS" starttime="20190314 00:45:27.688" endtime="20190314 00:45:27.688"></status>
+</kw>
+<kw name="Should Contain" library="BuiltIn">
+<doc>Fails if ``container`` does not contain ``item`` one or more times.</doc>
+<arguments>
+<arg>${jsonResult['result']}</arg>
+<arg>200000000000</arg>
+</arguments>
+<status status="PASS" starttime="20190314 00:45:27.689" endtime="20190314 00:45:27.689"></status>
+</kw>
+<status status="PASS" starttime="20190314 00:45:18.234" endtime="20190314 00:45:27.690" critical="yes"></status>
+</test>
+<status status="PASS" starttime="20190314 00:45:18.060" endtime="20190314 00:45:27.690"></status>
+</suite>
+<statistics>
+<total>
+<stat pass="1" fail="0">Critical Tests</stat>
+<stat pass="1" fail="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat pass="1" fail="0" id="s1" name="DepositContractTest">DepositContractTest</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
