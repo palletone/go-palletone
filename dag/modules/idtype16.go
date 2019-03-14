@@ -23,8 +23,9 @@ package modules
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/martinlindhe/base36"
-	"strconv"
+	"math/big"
 	"strings"
 )
 
@@ -48,35 +49,121 @@ func ZeroIdType16() IDType16 {
 func (it *IDType16) String() string {
 	return it.Str()
 }
+func (it *IDType16) StringFriendly(t UniqueIdType) string {
+	switch t {
+	case UniqueIdType_Sequence:
+		{
+			i := big.Int{}
+			i.SetBytes(it.Bytes())
+			return i.String()
+		}
+	case UniqueIdType_Null:
+		return ""
+	case UniqueIdType_Uuid:
+		return FormatUUID(it.Bytes())
+	case UniqueIdType_UserDefine:
+		return hex.EncodeToString(it.Bytes())
+	}
+	return ""
+
+}
+func FormatUUID(buf []byte) string {
+	return fmt.Sprintf("%x-%x-%x-%x-%x",
+		buf[0:4],
+		buf[4:6],
+		buf[6:8],
+		buf[8:10],
+		buf[10:16])
+}
+func ParseUUID(uuid string) ([]byte, error) {
+	uuidLen := 16
+	if len(uuid) != 2*uuidLen+4 {
+		return nil, fmt.Errorf("uuid string is wrong length")
+	}
+
+	if uuid[8] != '-' ||
+		uuid[13] != '-' ||
+		uuid[18] != '-' ||
+		uuid[23] != '-' {
+		return nil, fmt.Errorf("uuid is improperly formatted")
+	}
+
+	hexStr := uuid[0:8] + uuid[9:13] + uuid[14:18] + uuid[19:23] + uuid[24:36]
+
+	ret, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return nil, err
+	}
+	if len(ret) != uuidLen {
+		return nil, fmt.Errorf("decoded hex is the wrong length")
+	}
+
+	return ret, nil
+}
 
 func (it *IDType16) ToAssetId() string {
 	//if *it == PTNCOIN {
 	//	return "PTN"
 	//}
-	symbol, assetType, decimal, txHash := it.ParseAssetId()
+	symbol, assetType, decimal, txHash, uidType := it.ParseAssetId()
 	//b12 := make([]byte, 11)
 	//b12[0] = decimal
 	//copy(b12[1:], txHash)
-	return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + strconv.Itoa(int(assetType)) + base36.EncodeBytes(txHash)
+	type2 := byte(assetType)<<2 | byte(uidType)
+	return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + base36.EncodeBytes([]byte{type2}) + base36.EncodeBytes(txHash)
 }
-func String2AssetId(str string) (IDType16, error) {
+func String2AssetId(str string) (IDType16, UniqueIdType, error) {
 	if str == "PTN" {
-		return PTNCOIN, nil
+		return PTNCOIN, UniqueIdType_Null, nil
 	}
 	strArray := strings.Split(str, "+")
 	if len(strArray) < 2 {
-		return IDType16{}, errors.New("Asset string invalid")
+		return IDType16{}, UniqueIdType_Null, errors.New("Asset string invalid")
 	}
 	symbol := strArray[0]
-	ty := strArray[1][1] - 48
+	type2 := base36.DecodeToBytes(string(strArray[1][1]))[0]
+	assetType := AssetType(type2 >> 2)
+	uniqueIdType := UniqueIdType(type2 & 3)
 	decimal := base36.DecodeToBytes(strArray[1][0:1])
 	tx12 := base36.DecodeToBytes(strArray[1][2:])
-	return NewAssetId(symbol, AssetType(ty), decimal[0], tx12)
-
+	assetId, err := NewAssetId(symbol, assetType, decimal[0], tx12, uniqueIdType)
+	return assetId, uniqueIdType, err
 }
-func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []byte) (IDType16, error) {
+func String2UniqueId(str string, t UniqueIdType) (IDType16, error) {
+	uid := IDType16{}
+	switch t {
+	case UniqueIdType_Sequence:
+		{
+			i := big.Int{}
+			i.SetString(str, 0)
+			uid.SetBytes(i.Bytes())
+			return uid, nil
+		}
+	case UniqueIdType_Null:
+		return uid, nil
+	case UniqueIdType_Uuid:
+		{
+			b, err := ParseUUID(str)
+			uid.SetBytes(b)
+			return uid, err
+		}
+
+	case UniqueIdType_UserDefine:
+		{
+			b, err := hex.DecodeString(str)
+			uid.SetBytes(b)
+			return uid, err
+		}
+	}
+	return uid, errors.New("Unknown UniequeIdType")
+}
+
+func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []byte, uniqueIdType UniqueIdType) (IDType16, error) {
 	if len(symbol) > 5 {
 		return IDType16{}, errors.New("Symbol must less than 5 characters")
+	}
+	if decimal > 18 {
+		return IDType16{}, errors.New("Decimal must less than 19")
 	}
 	assetId := IDType16{}
 	assetSymbol := base36.DecodeToBytes(symbol)
@@ -85,12 +172,12 @@ func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []by
 	firstByte := assetId[0] | (byte(len(assetSymbol) << 5))
 	firstByte = firstByte | byte(assetType)<<2
 	assetId[0] = firstByte
-	assetId[4] = decimal
+	assetId[4] = byte(uniqueIdType)<<5 | decimal
 	copy(assetId[5:], requestId[0:11])
 	return assetId, nil
 }
 
-func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte) {
+func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte, UniqueIdType) {
 	var assetId [16]byte
 	copy(assetId[:], id[:])
 	assetId0 := id[0]
@@ -98,7 +185,7 @@ func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte) {
 	t := (assetId0 & 0xc) >> 2
 	assetId[0] = assetId0 & 3
 	symbol := base36.EncodeBytes(assetId[4-len : 4])
-	return symbol, AssetType(t), assetId[4], assetId[5:]
+	return symbol, AssetType(t), assetId[4] & 0x1f, assetId[5:], UniqueIdType(assetId[4] >> 5)
 }
 func (it *IDType16) Str() string {
 	return hex.EncodeToString(it.Bytes())

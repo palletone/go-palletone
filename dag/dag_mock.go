@@ -5,16 +5,15 @@
 package dag
 
 import (
-	"reflect"
-	"time"
-
-	"github.com/golang/mock/gomock"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	gomock "github.com/golang/mock/gomock"
+	common "github.com/palletone/go-palletone/common"
+	event "github.com/palletone/go-palletone/common/event"
+	discover "github.com/palletone/go-palletone/common/p2p/discover"
+	core "github.com/palletone/go-palletone/core"
+	modules "github.com/palletone/go-palletone/dag/modules"
+	txspool "github.com/palletone/go-palletone/dag/txspool"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -164,20 +163,6 @@ func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId, index interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentMemUnit", reflect.TypeOf((*MockIDag)(nil).GetCurrentMemUnit), assetId, index)
 }
-
-//// HeadUnitHash mocks base method
-//func (m *MockIDag) HeadUnitHash() common.Hash {
-//	m.ctrl.T.Helper()
-//	ret := m.ctrl.Call(m, "HeadUnitHash")
-//	ret0, _ := ret[0].(common.Hash)
-//	return ret0
-//}
-//
-//// HeadUnitHash indicates an expected call of HeadUnitHash
-//func (mr *MockIDagMockRecorder) HeadUnitHash() *gomock.Call {
-//	mr.mock.ctrl.T.Helper()
-//	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitHash", reflect.TypeOf((*MockIDag)(nil).HeadUnitHash))
-//}
 
 // InsertDag mocks base method
 func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
@@ -533,6 +518,21 @@ func (m *MockIDag) GetContractStatesById(id []byte) (map[string]*modules.Contrac
 func (mr *MockIDagMockRecorder) GetContractStatesById(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesById", reflect.TypeOf((*MockIDag)(nil).GetContractStatesById), id)
+}
+
+// GetContractStatesByPrefix mocks base method
+func (m *MockIDag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContractStatesByPrefix", id, prefix)
+	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContractStatesByPrefix indicates an expected call of GetContractStatesByPrefix
+func (mr *MockIDagMockRecorder) GetContractStatesByPrefix(id, prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesByPrefix", reflect.TypeOf((*MockIDag)(nil).GetContractStatesByPrefix), id, prefix)
 }
 
 // GetUnitNumber mocks base method
@@ -1036,4 +1036,46 @@ func (m *MockIDag) GetAllLeafNodes() ([]*modules.Header, error) {
 func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllLeafNodes", reflect.TypeOf((*MockIDag)(nil).GetAllLeafNodes))
+}
+
+// HeadUnitTime mocks base method
+func (m *MockIDag) HeadUnitTime() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HeadUnitTime")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// HeadUnitTime indicates an expected call of HeadUnitTime
+func (mr *MockIDagMockRecorder) HeadUnitTime() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitTime", reflect.TypeOf((*MockIDag)(nil).HeadUnitTime))
+}
+
+// HeadUnitNum mocks base method
+func (m *MockIDag) HeadUnitNum() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HeadUnitNum")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// HeadUnitNum indicates an expected call of HeadUnitNum
+func (mr *MockIDagMockRecorder) HeadUnitNum() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitNum", reflect.TypeOf((*MockIDag)(nil).HeadUnitNum))
+}
+
+// HeadUnitHash mocks base method
+func (m *MockIDag) HeadUnitHash() common.Hash {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HeadUnitHash")
+	ret0, _ := ret[0].(common.Hash)
+	return ret0
+}
+
+// HeadUnitHash indicates an expected call of HeadUnitHash
+func (mr *MockIDagMockRecorder) HeadUnitHash() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitHash", reflect.TypeOf((*MockIDag)(nil).HeadUnitHash))
 }

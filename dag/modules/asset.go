@@ -21,7 +21,6 @@
 package modules
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -50,17 +49,26 @@ const (
 	AssetType_VoteToken
 )
 
+type UniqueIdType byte
+
+const (
+	UniqueIdType_Null       UniqueIdType = iota
+	UniqueIdType_Sequence   UniqueIdType = 1
+	UniqueIdType_Uuid       UniqueIdType = 2
+	UniqueIdType_UserDefine UniqueIdType = 3
+)
+
 func NewPTNAsset() *Asset {
 	//return &Asset{AssetId: PTNCOIN}
-	asset, err := NewAsset("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, IDType16{})
+	asset, err := NewAsset("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null, IDType16{})
 	if err != nil {
 		return nil
 	}
 	return asset
 }
-func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte, uniqueId IDType16) (*Asset, error) {
+func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte, uidType UniqueIdType, uniqueId IDType16) (*Asset, error) {
 	asset := &Asset{}
-	assetId, err := NewAssetId(symbol, assetType, decimal, requestId)
+	assetId, err := NewAssetId(symbol, assetType, decimal, requestId, uidType)
 	if err != nil {
 		return nil, err
 	}
@@ -70,24 +78,24 @@ func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte
 }
 
 func NewPTNIdType() IDType16 {
-	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
 	return ptn
 }
 func (asset *Asset) GetDecimal() byte {
-	_, _, decimal, _ := asset.AssetId.ParseAssetId()
+	_, _, decimal, _, _ := asset.AssetId.ParseAssetId()
 	return decimal
 }
 func (asset *Asset) String() string {
 	if asset.AssetId == PTNCOIN {
 		return "PTN"
 	}
-	//symbol, t, tx12 := asset.AssetId.ParseAssetId()
+	_, t, _, _, uidType := asset.AssetId.ParseAssetId()
 	assetIdStr := asset.AssetId.ToAssetId()
-	if asset.UniqueId == ZeroIdType16() {
+	if asset.UniqueId == ZeroIdType16() || t != AssetType_NonFungibleToken {
 		return assetIdStr
 	}
 
-	return fmt.Sprintf("%s-%s", assetIdStr, asset.UniqueId.String())
+	return fmt.Sprintf("%s-%s", assetIdStr, asset.UniqueId.StringFriendly(uidType))
 }
 func StringToAsset(str string) (*Asset, error) {
 	asset := &Asset{}
@@ -101,7 +109,7 @@ func (asset *Asset) SetString(str string) error {
 	}
 	if !strings.Contains(str, "-") {
 		//ERC20, AssetID only
-		a, err := String2AssetId(str)
+		a, _, err := String2AssetId(str)
 		if err != nil {
 			return err
 		}
@@ -109,16 +117,17 @@ func (asset *Asset) SetString(str string) error {
 	} else {
 		//ERC721
 		strArray := strings.Split(str, "-")
-		a, err := String2AssetId(strArray[0])
+		a, uniqueIdType, err := String2AssetId(strArray[0])
 		if err != nil {
 			return err
 		}
 		asset.AssetId = a
-		uniqueId, err := hex.DecodeString(strArray[1])
+		uidStr := str[len(strArray[0])+1:]
+		uniqueId, err := String2UniqueId(uidStr, uniqueIdType)
 		if err != nil {
 			return err
 		}
-		asset.UniqueId.SetBytes(uniqueId)
+		asset.UniqueId = uniqueId
 	}
 
 	return nil

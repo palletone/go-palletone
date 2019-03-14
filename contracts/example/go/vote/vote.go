@@ -194,7 +194,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(vt.Symbol, dm.AssetType_VoteToken,
-		0, common.Hex2Bytes(txid[2:]))
+		0, common.Hex2Bytes(txid[2:]), dm.UniqueIdType_Null)
 	assetIDStr := assetID.ToAssetId()
 	//check name is only or not
 	symbols, err := getSymbols(stub)
