@@ -79,7 +79,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
-	contractId := common.BytesToAddress(reqId[:]).Bytes()
+	contractId := common.BytesToAddress(reqId.Bytes()).Bytes()
 	log.Debug("ContractDeployReq", "enter, templateId ", templateId, "contractId", contractId)
 
 	//broadcast

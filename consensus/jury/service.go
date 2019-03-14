@@ -23,8 +23,10 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -38,7 +40,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/common/crypto"
 )
 
 const (
@@ -247,7 +248,7 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 		req.sigTx = sigTx
 		//如果rcvTx存在，则比较执行结果，并将结果附加到sigTx上,并删除rcvTx
 		if len(req.rcvTx) > 0 {
-			for _, rtx := range req.rcvTx {				
+			for _, rtx := range req.rcvTx {
 				ok, err := checkAndAddTxSigMsgData(req.sigTx, rtx)
 				if err != nil {
 					log.Debug("runContractReq", "checkAndAddTxSigMsgData error", err.Error())
@@ -366,7 +367,7 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
 	//log.Debug("AddContractLoop", "loop", addr.String())
 	for _, ctx := range p.mtx {
-		if false == ctx.valid {
+		if false == ctx.valid && ctx.reqTx == nil {
 			continue
 		}
 		log.Debug("AddContractLoop", "enter mtx", addr.String())
@@ -413,16 +414,16 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 
 func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) bool {
 	if tx == nil {
-		log.Error("CheckContractTxValid", "param is nil")
+		log.Error("CheckContractTxValid, param is nil")
 		return false
 	}
 	log.Debug("CheckContractTxValid", "reqId:", tx.RequestHash().String(), "exec:", execute)
+	if !execute || !isSystemContract(tx) { //不执行合约或者用户合约
+		return true
+	}
 	if !p.checkTxValid(tx) {
 		log.Error("CheckContractTxValid checkTxValid fail")
 		return false
-	}
-	if !execute || !isSystemContract(tx) { //不执行合约或者用户合约
-		return true
 	}
 	//只检查invoke类型
 	if txType, err := getContractTxType(tx); err == nil {
@@ -432,7 +433,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 	}
 	//检查本阶段时候有合约执行权限
 	if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, nil) {
-		log.Error("CheckContractTxValid", "nodeContractExecutable false")
+		log.Error("CheckContractTxValid, nodeContractExecutable false")
 		return false
 	}
 	msgs, err := runContractCmd(p.dag, p.contract, tx) // long time ...
@@ -613,7 +614,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
-			p.lockArf[contractId] = []ElectionInf{} //清空
+			p.lockArf[contractId] = []ElectionInf{}                        //清空
 			if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 				return common.Hash{}, nil, err
 			}

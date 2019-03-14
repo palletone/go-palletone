@@ -23,6 +23,9 @@ import (
 	"sync"
 	"time"
 
+	"strings"
+	"sync/atomic"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -36,8 +39,6 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"github.com/palletone/go-palletone/ptn/lps"
-	"strings"
-	"sync/atomic"
 )
 
 const (

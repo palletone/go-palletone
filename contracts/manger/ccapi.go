@@ -225,7 +225,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		log.Error("getTxSimulator err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
-	usrccName := templateCC.Name + "-" + txId
+	usrccName := templateCC.Name //+ "_" + txId
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
