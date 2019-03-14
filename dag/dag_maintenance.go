@@ -137,12 +137,17 @@ func (dag *Dag) updateActiveMediators() bool {
 	// accounts that vote for 0 or 1 mediator do not get to express an opinion on
 	// the number of mediators to have (they abstain and are non-voting accounts)
 
-	mediatorCountIndex := 1
-	var stakeTally uint64 = 0
+	mediatorCountIndex := 0
 	if stakeTarget > 0 {
-		for mediatorCountIndex < len(dag.mediatorCountHistogram) && stakeTally <= stakeTarget {
-			stakeTally += dag.mediatorCountHistogram[mediatorCountIndex]
+		var stakeTally uint64 = 0
+		upperLimit := len(dag.mediatorCountHistogram) - 1
+		for mediatorCountIndex < upperLimit {
 			mediatorCountIndex++
+			stakeTally += dag.mediatorCountHistogram[mediatorCountIndex]
+
+			if stakeTally > stakeTarget {
+				break
+			}
 		}
 	}
 
@@ -161,8 +166,10 @@ func (dag *Dag) updateActiveMediators() bool {
 	if mediatorLen < mediatorCount {
 		log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
 			" the minimum mediator count is %v", mediatorCount, mediatorLen, minMediatorCount)
-		mediatorCount = mediatorLen
+		// 保证活跃mediator的总数为奇数
+		mediatorCount = (mediatorLen-1)/2*2 + 1
 	}
+	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
 	// todo 应当优化本排序方法，使用部分排序的方法
