@@ -797,7 +797,7 @@ func (pool *TxPool) AddLocal(tx *modules.TxPoolTransaction) error {
 // sender is not among the locally tracked ones, full pricing constraints will
 // apply.
 func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
-	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase(){
+	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}
 	pool_tx := TxtoTxpoolTx(pool, tx)
@@ -1719,7 +1719,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			}
 		}
 	}
-	log.Debug(fmt.Sprintf("get sorted txs spent times: %d , count: %d", time.Now().Nanosecond()-t0.Nanosecond(), len(list)))
+	log.Infof("get sorted txs spent times: %s , count: %d", time.Since(t0), len(list))
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, error) {
