@@ -351,7 +351,12 @@ return: correct if error is nil, and otherwise is incorrect
 func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
 	log.Debug("Start create unit...")
 	rep.lock.RLock()
-	defer rep.lock.RUnlock()
+	begin := time.Now()
+
+	defer func() {
+		rep.lock.RUnlock()
+		log.Infof("CreateUnit cost time %s", time.Since(begin))
+	}()
 	//if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
 	//	log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
 	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
@@ -398,7 +403,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	log.Debug("Start txpool.GetSortedTxs...")
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
-	log.Debug("Complete txpool.GetSortedTxs...")
+	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// for _, tx := range poolTxs {
 	// 	log.Debugf("try to generate unit include txs[%s]", tx.Tx.Hash().String())
 	// }
@@ -453,7 +458,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	log.Debug("Start core.DeriveSha...")
 	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
-	log.Debug("Complete core.DeriveSha...")
+	log.Infof("core.DeriveSha cost time %s", time.Since(begin))
 	// step9. generate genesis unit header
 	header.TxRoot = root
 	unit := modules.Unit{}
@@ -466,7 +471,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	// step11. set size
 	unit.UnitSize = unit.Size()
 	units = append(units, unit)
-	log.Debugf("Complete create unit[%s]", unit.Hash().String())
+
 	return units, nil
 }
 func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {

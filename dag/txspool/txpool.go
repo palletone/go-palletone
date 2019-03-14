@@ -177,7 +177,6 @@ type TxPool struct {
 	orphansByPrev   map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction // 缓存 orphanTx input's utxo
 	addrTxs         map[string][]*modules.TxPoolTransaction                         // 缓存 地址对应的交易列表
 	outputs         sync.Map                                                        // 缓存 交易的outputs
-	//outputs         map[modules.OutPoint]*modules.Utxo                              // 缓存 交易的outputs
 
 	mu             *sync.RWMutex
 	wg             sync.WaitGroup // for shutdown sync
@@ -797,7 +796,7 @@ func (pool *TxPool) AddLocal(tx *modules.TxPoolTransaction) error {
 // sender is not among the locally tracked ones, full pricing constraints will
 // apply.
 func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
-	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase(){
+	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}
 	pool_tx := TxtoTxpoolTx(pool, tx)
@@ -1647,7 +1646,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			log.Debug("Txspool get  priority_pricedtx failed.", "error", "tx is null")
 			break
 		} else {
-			log.Debug("Txspool get  priority_pricedtx success.", "tx_info", tx)
 			if !tx.Pending {
 				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
 				if total += tx.Tx.Size(); total <= unit_size {
@@ -1701,25 +1699,26 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		break
 
 	}
-	go func(txs []*modules.TxPoolTransaction) {
-		// rm orphanTx
-		for _, tx := range txs {
-			pool.removeOrphan(tx, false)
-		}
-	}(validated_txs)
+	log.Infof("get sorted txs spent times: %s , count: %d", time.Since(t0), len(list))
 	// 	去重
-	for i := 0; i < len(list)-1; i++ {
-		for j := i + 1; j < len(list); j++ {
-			if list[i].Tx.Hash() == list[j].Tx.Hash() {
-				fmt.Println("重复", j, list[j].Tx.Hash().String())
-				item := list[:i]
-				item = append(item, list[j:]...)
-				list = make([]*modules.TxPoolTransaction, 0)
-				list = item[:]
-			}
+	m := make(map[int]*modules.TxPoolTransaction)
+	for i, tx := range list {
+		tx.Index = i
+		m[i] = tx
+	}
+	list = make([]*modules.TxPoolTransaction, 0)
+	for i := 0; i < len(m); i++ {
+		if tx, has := m[i]; has {
+			list = append(list, tx)
+		} else {
+			log.Info("rm repeat error", "index", i)
 		}
 	}
-	log.Debug(fmt.Sprintf("get sorted txs spent times: %d , count: %d", time.Now().Nanosecond()-t0.Nanosecond(), len(list)))
+	// rm orphanTx
+	for _, tx := range validated_txs {
+		go pool.RemoveOrphan(tx)
+	}
+	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,phan_count: %d ", time.Since(t0), len(list), len(validated_txs))
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, error) {
@@ -1900,10 +1899,6 @@ func (pool *TxPool) removeOrphan(tx *modules.TxPoolTransaction, reRedeemers bool
 							delete(pool.orphansByPrev, *in.PreviousOutPoint)
 						}
 					}
-					//if _, has := pool.outputs[*in.PreviousOutPoint]; has {
-					//	//delete(pool.outputs, *in.PreviousOutPoint)
-					//	pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
-					//}
 
 					if _, ok := pool.outputs.Load(*in.PreviousOutPoint); ok {
 						pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)

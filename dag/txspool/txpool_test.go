@@ -372,25 +372,21 @@ func TestGetProscerTx(t *testing.T) {
 	us = append(us, &user{append(list, 1, 2), 2, append(list, 3, 4)}, &user{append(list, 3), 1, append(list, 5)}, &user{append(list, 4), 0, append(list, 7)}, &user{append(list, 7), 4, append(list, 8)}, &user{append(list, 8), 5, append(list, 9)}, &user{append(list, 0), 6, append(list, 1, 2)})
 
 	l := getProscerTx(&user{append(list, 3), 1, append(list, 5)}, us)
+	fmt.Println("getProscer:", l)
 	// 去重
-	for i := 0; i < len(l)-1; i++ {
-		for j := i + 1; j < len(l); j++ {
-			if l[i] == l[j] {
-				fmt.Println("重复", j, l)
-				item := l[:i]
-				item = append(item, l[j:]...)
-				l = make([]int, 0)
-				l = item[:]
-				fmt.Println("重复", j, l)
-			}
-		}
+	m := make(map[int]int)
+	for _, u := range l {
+		m[u] = u
 	}
+	l = make([]int, 0)
+	for _, u := range m {
+		l = append(l, u)
+	}
+
 	if len(l) < 1 {
 		fmt.Println("failed.", l)
 	} else {
-		for _, n := range l {
-			fmt.Println("number:", n)
-		}
+		fmt.Println("rm repeat:", l)
 	}
 }
 
