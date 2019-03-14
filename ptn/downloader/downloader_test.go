@@ -324,6 +324,9 @@ func (dl *downloadTester) makeChainFork(n, f int, parent *modules.Unit, balanced
 func (dl *downloadTester) terminate() {
 	dl.downloader.Terminate()
 }
+func (dl *downloadTester) InsertLightHeader(headers []*modules.Header) (int, error) {
+	return len(headers), nil
+}
 
 func (dl *downloadTester) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return &modules.Unit{}, nil
