@@ -81,8 +81,6 @@ type IStateDb interface {
 	//SaveChainIndex(index *modules.ChainIndex) error
 	//GetCurrentUnit(assetId modules.IDType16) *modules.Unit
 
-	CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error
-
 	StoreMediator(med *core.Mediator) error
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
