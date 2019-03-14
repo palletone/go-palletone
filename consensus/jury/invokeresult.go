@@ -98,7 +98,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 					return nil, errors.New("UniqueBytes's len must bigger than 16")
 				}
 				newAsset := &modules.Asset{}
-				newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_NonFungibleToken, 0, result.RequestId.Bytes(), modules.UniqueIdType_Null)
+				newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_NonFungibleToken, 0, result.RequestId.Bytes(), modules.UniqueIdType(token.Type))
 				newAsset.UniqueId.SetBytes(token.NonFungibleData[i].UniqueBytes)
 				out := modules.NewTxOut(1, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 				coinbase.AddTxOut(out)
