@@ -50,6 +50,6 @@ robot -d ./log -v mediatorAddr_01:$one -v foundationAddr:$two --test Business_01
 
 sleep 1
 
-./test_case_teardown.sh
+#./test_case_teardown.sh
 
-killall gptn
+#killall gptn
