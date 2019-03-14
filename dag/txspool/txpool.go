@@ -1701,13 +1701,18 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	}
 	log.Infof("get sorted txs spent times: %s , count: %d", time.Since(t0), len(list))
 	// 	去重
-	m := make(map[common.Hash]*modules.TxPoolTransaction)
-	for _, tx := range list {
-		m[tx.Tx.Hash()] = tx
+	m := make(map[int]*modules.TxPoolTransaction)
+	for i, tx := range list {
+		tx.Index = i
+		m[i] = tx
 	}
 	list = make([]*modules.TxPoolTransaction, 0)
-	for _, tx := range m {
-		list = append(list, tx)
+	for i := 0; i < len(m); i++ {
+		if tx, has := m[i]; has {
+			list = append(list, tx)
+		} else {
+			log.Info("rm repeat error", "index", i)
+		}
 	}
 	// rm orphanTx
 	for _, tx := range validated_txs {
