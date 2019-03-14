@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          公共参数列表.txt
+Resource          publicParams.txt
 
 *** Keywords ***
 基金会处理申请所需参数

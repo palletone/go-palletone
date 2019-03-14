@@ -1,6 +1,5 @@
 *** Settings ***
-Resource          创建公用的POST请求.txt
-Resource          公共参数列表.txt
+Resource          publicParams.txt
 
 *** Variables ***
 
