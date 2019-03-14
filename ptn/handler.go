@@ -160,7 +160,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		lightSync:    uint32(1),
 	}
 
-	asset, err := modules.NewAsset(strings.ToUpper(protocolName), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.IDType16{})
+	asset, err := modules.NewAsset(strings.ToUpper(protocolName), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.IDType16{})
 	if err != nil {
 		log.Error("ProtocolManager new asset err", err)
 		return nil, err

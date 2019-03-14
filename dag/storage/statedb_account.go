@@ -94,7 +94,10 @@ func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.A
 }
 
 func (statedb *StateDb) UpdateDesiredMediatorCount(account common.Address, mediatorCountSet uint8) error {
-	accountInfo, _ := statedb.RetrieveAccountInfo(account)
+	accountInfo, err := statedb.RetrieveAccountInfo(account)
+	if accountInfo == nil || err != nil {
+		accountInfo = modules.NewAccountInfo()
+	}
 
 	accountInfo.DesiredMediatorCount = mediatorCountSet
 	log.Debugf("Try to save DesiredMediatorCount(%v) for account(%v)", mediatorCountSet, account.Str())
@@ -116,6 +119,7 @@ func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount i
 	balance = uint64(int64(balance) + addAmount)
 	return statedb.db.Put(key, Uint64ToBytes(balance))
 }
+
 func (statedb *StateDb) GetAccountBalance(address common.Address) uint64 {
 	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
 	balance := uint64(0)
@@ -126,33 +130,6 @@ func (statedb *StateDb) GetAccountBalance(address common.Address) uint64 {
 	}
 	return balance
 }
-
-//func (statedb *StateDb) GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte {
-//	accountInfo, err := statedb.GetAccountInfo(address)
-//	if err != nil {
-//		return nil
-//	}
-//	res := make([][]byte, 0)
-//	for _, vote := range accountInfo.Votes {
-//		if vote.VoteType == voteType {
-//			res = append(res, vote.Contents)
-//		}
-//	}
-//	return res
-//
-//}
-
-//func (statedb *StateDb) AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error {
-//	accountInfo, err := statedb.GetAccountInfo(address)
-//	if err != nil {
-//		return err
-//	}
-//	accountInfo.Votes = append(accountInfo.Votes, voteInfo)
-//	if err = statedb.SaveAccountInfo(address, accountInfo); err != nil {
-//		return err
-//	}
-//	return nil
-//}
 
 func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo {
 	result := make(map[common.Address]*modules.AccountInfo)

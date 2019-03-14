@@ -25,74 +25,18 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func (statedb *StateDb) AppendVotedMediator(voter, mediator common.Address) error {
 	//1. get current account info
-	accountInfo, _ := statedb.RetrieveAccountInfo(voter)
+	accountInfo, err := statedb.RetrieveAccountInfo(voter)
+	if accountInfo == nil || err != nil {
+		accountInfo = modules.NewAccountInfo()
+	}
 
 	accountInfo.VotedMediators[mediator] = true
 	log.Debugf("Try to save voted mediator(%v) for account(%v)", mediator.Str(), voter.Str())
-	//
-	//newVotes := []vote.VoteInfo{}
-	//mediatorVotes := []vote.VoteInfo{}
-	////2. split vote by type
-	//for _, voteInfo := range accountInfo.Votes {
-	//	if voteInfo.VoteType != 0 {
-	//		newVotes = append(newVotes, voteInfo)
-	//	} else {
-	//		mediatorVotes = append(mediatorVotes, voteInfo)
-	//	}
-	//}
-	//switch {
-	//
-	//case mode == 0: //[Replace all]
-	//	//3. append new data
-	//	for _, candidate := range candidates {
-	//		newVotes = append(newVotes, vote.VoteInfo{VoteType: vote.TYPE_MEDIATOR, VoteContent: candidate.Bytes()})
-	//	}
-	//
-	//case mode == 1: //[Replace]
-	//	//3. format examination
-	//	if len(candidates)%2 != 0 {
-	//		return errors.New("invalid candidates number, must be even")
-	//	}
-	//	// 4. replace appointed data
-	//	stride := len(candidates)
-	//	for i := 0; i < stride; i++ {
-	//		for j, voteInfo := range mediatorVotes {
-	//			if util.BytesEqual(voteInfo.VoteContent, candidates[i].Bytes()) {
-	//				mediatorVotes[j].VoteContent = candidates[i+stride].Bytes()
-	//			}
-	//		}
-	//	}
-	//	//5. merge to newVotes
-	//	newVotes = append(newVotes, mediatorVotes...)
-	//
-	//case mode == 2: //[Delete]
-	//	// 3. copy votes which not in address list
-	//	resMediatorVotes := []vote.VoteInfo{}
-	//	pairFlag := false
-	//	for _, mediatorVoteInfo := range mediatorVotes {
-	//		for _, candidate := range candidates {
-	//			if util.BytesEqual(candidate.Bytes(), mediatorVoteInfo.VoteContent) {
-	//				pairFlag = true
-	//			}
-	//		}
-	//		if pairFlag == false {
-	//			resMediatorVotes = append(resMediatorVotes, mediatorVoteInfo)
-	//		}
-	//		pairFlag = false
-	//	}
-	//	// 4. merge vote
-	//	newVotes = append(newVotes, resMediatorVotes...)
-	//case mode == 3: //[Delete all]
-	//default:
-	//	return errors.New("Invalid mode")
-	//
-	//}
-	////$. save new account info
-	//accountInfo.Votes = newVotes
 
 	return statedb.StoreAccountInfo(voter, accountInfo)
 }
@@ -117,74 +61,4 @@ func (statedb *StateDb) GetVoterList(voteType uint8, MinTermLimit uint16) []comm
 		}
 	}
 	return res
-}
-
-//func (statedb *StateDb) GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error) {
-//	// todo
-//	// 1. get account info
-//	accountInfo, err := statedb.GetAccountInfo(voterAddress)
-//	if err != nil {
-//		return nil, 0, err
-//	}
-//	// 2. get mediator vote
-//	mediatorVotes := []common.Address{}
-//	for _, voteInfo := range accountInfo.Votes {
-//		if voteInfo.VoteType == vote.TYPE_MEDIATOR {
-//			mediatorVotes = append(mediatorVotes, common.BytesToAddress(voteInfo.Contents))
-//		}
-//	}
-//	// 3. get weight
-//	weight := accountInfo.PtnBalance
-//
-//	return mediatorVotes, weight, nil
-//}
-
-//func (statedb *StateDb) GetSortedMediatorVote(returnNumber int) (map[string]uint64, error) {
-//	// todo
-//	result := make(map[string]uint64)
-//	for _, info := range statedb.getAllAccountInfo() {
-//		if !info.MediatorVote.Equal(common.Address{}) && len(info.MediatorVote) > 0 {
-//			addrs := []string{}
-//			json.Unmarshal(info.MediatorVote[:], &addrs)
-//			for _, addr := range addrs {
-//				if val, ok := result[addr]; ok {
-//					result[addr] = val + info.PtnBalance
-//				} else {
-//					result[addr] = info.PtnBalance
-//				}
-//			}
-//		}
-//	}
-//	//TODO sort
-//	return result, nil
-//
-//	//voteBox := vote.NewBaseVote()
-//	//// 1. get voter list
-//	//voterList := statedb.GetVoterList(voteType, minTermLimit)
-//	//
-//	//// 2. register candidate
-//	//addresses := statedb.GetMediators()
-//	//voteBox.RegisterCandidates(addresses)
-//	//
-//	//// 3. collect ballot
-//	//for _, voterAddress := range voterList {
-//	//	to, weight, err := statedb.GetAccountMediatorVote(voterAddress)
-//	//	if err != nil {
-//	//		return nil, err
-//	//	}
-//	//	voteBox.AddToBox(weight, to)
-//	//}
-//	//
-//	//// $. return elected mediator
-//	//res := make([]common.Address, 0)
-//	//voteBox.GetResult(ReturnNumber, &res)
-//	//return res, nil
-//
-//}
-
-//CreateUserVote YiRan@
-func (statedb *StateDb) CreateUserVote(voter common.Address, detail [][]byte, bHash []byte) error {
-	key := util.KeyConnector(constants.CREATE_VOTE_PREFIX, bHash)
-	value := detail
-	return StoreBytes(statedb.db, key, value)
 }

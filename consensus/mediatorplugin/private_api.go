@@ -189,7 +189,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) SetDesiredMediatorCount(accountStr string,
+func (a *PrivateMediatorAPI) SetDesiredCount(accountStr string,
 	desiredMediatorCount uint8) (*TxExecuteResult, error) {
 	// 参数检查
 	account, err := common.StringToAddress(accountStr)

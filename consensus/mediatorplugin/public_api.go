@@ -159,6 +159,16 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	return mediators, nil
 }
 
+func (a *PublicMediatorAPI) GetDesiredCount(addStr string) (uint8, error) {
+	addr, err := common.StringToAddress(addStr)
+	if err != nil {
+		return 0, err
+	}
+
+	desiredCount := a.dag.GetAccountInfo(addr).DesiredMediatorCount
+	return desiredCount, nil
+}
+
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 	dgp := a.dag.GetDynGlobalProp()
 	time := time.Unix(int64(dgp.NextMaintenanceTime), 0)

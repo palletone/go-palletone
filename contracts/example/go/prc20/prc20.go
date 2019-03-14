@@ -168,7 +168,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//last put state
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
-		fungible.Decimals, common.Hex2Bytes(txid[2:]))
+		fungible.Decimals, common.Hex2Bytes(txid[2:]), dm.UniqueIdType_Null)
 	info := TokenInfo{fungible.Symbol, createAddr, totalSupply, decimals,
 		fungible.SupplyAddress, assetID}
 	symbols.TokenInfos[fungible.Symbol] = info
