@@ -227,7 +227,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	}
 	pool.mu = new(sync.RWMutex)
 	pool.priority_priced = newTxPricedList(&pool.all)
-
+	pool.txValidator = validator.NewValidate(unit, pool, nil)
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)
@@ -242,7 +242,6 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	}
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
-	pool.txValidator = validator.NewValidate(unit, pool, nil)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
@@ -552,9 +551,6 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	// 交易池不需要验证交易存不存在。
 	if tx == nil || tx.Tx == nil {
 		return errors.New("This transaction is invalide.")
-	}
-	if pool.txValidator == nil {
-		panic("txValidator is nil.")
 	}
 	err := pool.txValidator.ValidateTx(tx.Tx, false)
 	return err
