@@ -67,6 +67,12 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return createToken(args, stub)
 	case "supplyToken":
 		return supplyToken(args, stub)
+	case "existTokenID":
+		return existTokenID(args, stub)
+	case "setTokenURI":
+		return setTokenURI(args, stub)
+	case "getTokenURI":
+		return getTokenURI(args, stub)
 	case "getTokenInfo":
 		return oneToken(args, stub)
 	case "getAllTokenInfo":
@@ -262,7 +268,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	for _, nFdata := range nonFungible.NonFungibleData {
 		newAsset.UniqueId.SetBytes(nFdata.UniqueBytes)
 		key := newAsset.String()
-		err = stub.PutState(key, []byte(""))
+		err = stub.PutState(key, []byte("0"))
 		if err != nil {
 			jsonResp := "{\"Error\":\"Failed to set Asset\"}"
 			return shim.Error(jsonResp)
@@ -399,7 +405,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	for _, nFdata := range nFdatas {
 		newAsset.UniqueId.SetBytes(nFdata.UniqueBytes)
 		key := newAsset.String()
-		err = stub.PutState(key, []byte(""))
+		err = stub.PutState(key, []byte("0"))
 		if err != nil {
 			jsonResp := "{\"Error\":\"Failed to set Asset\"}"
 			return shim.Error(jsonResp)
@@ -430,6 +436,82 @@ type TokenIDInfo struct {
 	TokenIDs    []string
 }
 
+func existTokenID(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 1 {
+		return shim.Error("need 1 args (Asset_TokenID)")
+	}
+
+	//asset
+	assetStr := args[0]
+	asset := &dm.Asset{}
+	err := asset.SetString(assetStr)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Asset_TokenID invalid\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	//
+	valBytes, err := stub.GetState(assetStr)
+	if len(valBytes) == 0 {
+		return shim.Success([]byte("False")) //
+	}
+	return shim.Success([]byte("True")) //test
+}
+
+func setTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 2 {
+		return shim.Error("need 1 args (Asset_TokenID,TokenURI)")
+	}
+
+	//asset
+	assetStr := args[0]
+	tokenURI := args[1]
+	asset := &dm.Asset{}
+	err := asset.SetString(assetStr)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Asset_TokenID invalid\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	//
+	valBytes, _ := stub.GetState(assetStr)
+	if len(valBytes) == 0 {
+		jsonResp := "{\"Error\":\"No this tokenID\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+
+	err = stub.PutState(assetStr, []byte(tokenURI))
+	if err != nil {
+		return shim.Success([]byte("Failed to set tokenURI")) //test
+	}
+
+	return shim.Success([]byte("True")) //test
+}
+
+func getTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 1 {
+		return shim.Error("need 1 args (Asset_TokenID)")
+	}
+
+	//asset
+	assetStr := args[0]
+	asset := &dm.Asset{}
+	err := asset.SetString(assetStr)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Asset_TokenID invalid\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	//
+	valBytes, _ := stub.GetState(assetStr)
+	if len(valBytes) == 0 {
+		jsonResp := "{\"Error\":\"No this tokenID\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	//
+	return shim.Success(valBytes) //test
+}
+
 func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 1 {
@@ -450,7 +532,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//
 	var tkIDs []string
-	KVs, err := stub.GetStateByPrefix(assetID.ToAssetId())
+	KVs, _ := stub.GetStateByPrefix(assetID.ToAssetId())
 	for _, oneKV := range KVs {
 		assetTkID := strings.SplitN(oneKV.Key, "-", 2)
 		if len(assetTkID) == 2 {
