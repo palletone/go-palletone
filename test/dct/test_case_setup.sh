@@ -8,6 +8,8 @@ cd ./node1
 
 ./createaccounts.sh $1
 
+rm ./createaccount.sh ./createaccounts.sh ./node1
+
 cd ..
 
 ./start.sh
