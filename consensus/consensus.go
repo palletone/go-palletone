@@ -22,46 +22,32 @@ import (
 	//"fmt"
 	//"sync"
 
+	"encoding/json"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"time"
 )
 
 // Engine is an algorithm agnostic consensus engine.
 type Engine interface {
 }
 
-type Mode uint
-
-const (
-	ModeNormal Mode = iota
-	ModeShared
-	ModeTest
-	ModeFake
-	ModeFullFake
-)
-
-type Config struct {
-	CacheDir       string
-	CachesInMem    int
-	CachesOnDisk   int
-	DatasetDir     string
-	DatasetsInMem  int
-	DatasetsOnDisk int
-	PowMode        Mode
-}
-
 type DPOSEngine struct {
-	config   Config
 	scope    event.SubscriptionScope
 	dposFeed event.Feed
+	dag      dag.IDag
+	txpool   txspool.ITxPool
 }
 
 func (engine *DPOSEngine) SubscribeCeEvent(ch chan<- core.ConsensusEvent) event.Subscription {
 	return engine.scope.Track(engine.dposFeed.Subscribe(ch))
 }
 
-func (engine *DPOSEngine) SendEvents(content string) {
+func (engine *DPOSEngine) SendEvents(content []byte) {
 	engine.dposFeed.Send(core.ConsensusEvent{content})
 }
 
@@ -72,11 +58,33 @@ func (engine *DPOSEngine) Stop() {
 }
 
 func (engine *DPOSEngine) Engine() int {
-	//engine.SendEvents("A")
+	return 0
+	address, err := common.StringToAddress("P19QMdx59PDYRxJpR2T9c2r5F5VhxxnkoRe")
+	if err != nil {
+		log.Debug("Test P2P", "DPOSEngine->Engine err", err)
+		return -1
+	}
+	when := time.Time{}
+
+	newUnits, err1 := engine.dag.CreateUnit(&address, engine.txpool, when)
+	if err1 != nil {
+		log.Debug("Test P2P", "DPOSEngine->Engine CreateUnit err", err1)
+		return -2
+	}
+	data, err2 := json.Marshal(newUnits[0])
+	if err2 != nil {
+		log.Debug("Test P2P", "DPOSEngine->Engine CreateUnit json marshal err:", err2)
+		return -3
+	}
+	log.Debug("Test P2P", "DPOSEngine->Engine SendEvents data", string(data))
+	engine.SendEvents(data)
 	return 0
 }
-func New() *DPOSEngine {
-	return &DPOSEngine{}
+func New(dag dag.IDag, txpool txspool.ITxPool) *DPOSEngine {
+	return &DPOSEngine{
+		dag:    dag,
+		txpool: txpool,
+	}
 }
 
 //var engine ConsensusEngine = DPOSEngine{}

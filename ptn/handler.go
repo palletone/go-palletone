@@ -688,7 +688,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 }
 
 //test for p2p broadcast
-func (pm *ProtocolManager) BroadcastCe(ce string) {
+func (pm *ProtocolManager) BroadcastCe(ce []byte) {
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendConsensus(ce)
