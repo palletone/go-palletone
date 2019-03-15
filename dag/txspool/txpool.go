@@ -818,7 +818,6 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 		pool_txs = append(pool_txs, TxtoTxpoolTx(pool, tx))
 	}
 	return pool.addTxs(pool_txs, false)
-	return pool.addTxs(pool_txs, false)
 }
 
 type Tag uint64
@@ -1698,7 +1697,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		break
 
 	}
-	log.Infof("get sorted txs spent times: %s , count: %d", time.Since(t0), len(list))
 	// 	去重
 	m := make(map[int]*modules.TxPoolTransaction)
 	for i, tx := range list {
