@@ -165,6 +165,9 @@ func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []by
 	if decimal > 18 {
 		return IDType16{}, errors.New("Decimal must less than 19")
 	}
+	if len(requestId) < 11 {
+		return IDType16{}, errors.New("requestId must more than 10")
+	}
 	assetId := IDType16{}
 	assetSymbol := base36.DecodeToBytes(symbol)
 	//fmt.Printf(base36.EncodeBytes(assetSymbol))
