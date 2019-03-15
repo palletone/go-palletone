@@ -172,7 +172,7 @@ type TxPool struct {
 
 	all             map[common.Hash]*modules.TxPoolTransaction                      // All transactions to allow lookups
 	priority_priced *txPricedList                                                   // All transactions sorted by price and priority
-	outpoints       map[modules.OutPoint]*modules.TxPoolTransaction                 // utxo标记池
+	outpoints       sync.Map                                                        // utxo标记池  map[modules.OutPoint]*modules.TxPoolTransaction
 	orphans         map[common.Hash]*modules.TxPoolTransaction                      // 孤儿交易缓存池
 	orphansByPrev   map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction // 缓存 orphanTx input's utxo
 	addrTxs         map[string][]*modules.TxPoolTransaction                         // 缓存 地址对应的交易列表
@@ -218,7 +218,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		unit:           unit,
 		all:            make(map[common.Hash]*modules.TxPoolTransaction),
 		chainHeadCh:    make(chan modules.ChainHeadEvent, chainHeadChanSize),
-		outpoints:      make(map[modules.OutPoint]*modules.TxPoolTransaction),
+		outpoints:      sync.Map{},
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
 		orphans:        make(map[common.Hash]*modules.TxPoolTransaction),
 		orphansByPrev:  make(map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction),
@@ -552,6 +552,9 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	// 交易池不需要验证交易存不存在。
 	if tx == nil || tx.Tx == nil {
 		return errors.New("This transaction is invalide.")
+	}
+	if pool.txValidator == nil {
+		panic("txValidator is nil.")
 	}
 	err := pool.txValidator.ValidateTx(tx.Tx, false)
 	return err
@@ -1160,7 +1163,7 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 						if input.PreviousOutPoint == nil {
 							continue
 						}
-						delete(pool.outpoints, *input.PreviousOutPoint)
+						go pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 					// delete outputs's utxo
 					preout := modules.OutPoint{TxHash: hash}
@@ -1197,7 +1200,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 				for _, input := range payment.Inputs {
 					// 排除手续费的输入为nil
 					if input.PreviousOutPoint != nil {
-						delete(pool.outpoints, *input.PreviousOutPoint)
+						go pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 				}
 				// delete outputs's utxo
@@ -1229,8 +1232,8 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 					for j := uint32(0); j < uint32(len(msg.Outputs)); j++ {
 						preout := modules.OutPoint{TxHash: hash, MessageIndex: uint32(i), OutIndex: j}
-						if pooltxRedeemer, exist := pool.outpoints[preout]; exist {
-							pool.removeTransaction(pooltxRedeemer, true)
+						if pooltxRedeemer, exist := pool.outpoints.Load(preout); exist {
+							pool.removeTransaction(pooltxRedeemer.(*modules.TxPoolTransaction), true)
 						}
 					}
 				}
@@ -1244,7 +1247,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 					for _, input := range msg.Inputs {
-						delete(pool.outpoints, *input.PreviousOutPoint)
+						go pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 				}
 			}
@@ -1277,8 +1280,9 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range inputs.Inputs {
-				if tx, ok := pool.outpoints[*input.PreviousOutPoint]; ok {
-					pool.removeTransaction(tx, true)
+				if tx, ok := pool.outpoints.Load(*input.PreviousOutPoint); ok {
+					ptx := tx.(*modules.TxPoolTransaction)
+					pool.removeTransaction(ptx, true)
 				}
 			}
 		}
@@ -1311,22 +1315,22 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 }
 
 func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
-	if tx, ok := pool.outpoints[*outPoint]; ok {
+	if tx, ok := pool.outpoints.Load(*outPoint); ok {
 		str := fmt.Sprintf("output %v already spent by "+
 			"transaction %x in the memory pool",
-			outPoint, tx.Tx.Hash())
+			outPoint, tx.(*modules.TxPoolTransaction).Tx.Hash())
 		return true, errors.New(str)
 	}
-
 	return false, nil
 }
 
 // CheckSpend checks whether the passed outpoint is already spent by a transaction in the txpool
 func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
-	pool.mu.RLock()
-	tx := pool.outpoints[output]
-	pool.mu.RUnlock()
-	return tx.Tx
+	tx, has := pool.outpoints.Load(output)
+	if has {
+		return tx.(*modules.TxPoolTransaction).Tx
+	}
+	return nil
 }
 func (pool *TxPool) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
@@ -1561,11 +1565,8 @@ func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, txin := range msg.Inputs {
-					if pool.outpoints == nil {
-						pool.outpoints = make(map[modules.OutPoint]*modules.TxPoolTransaction)
-					}
 					if txin.PreviousOutPoint != nil {
-						pool.outpoints[*txin.PreviousOutPoint] = tx
+						pool.outpoints.Store(*txin.PreviousOutPoint, tx)
 					}
 				}
 				// add  outputs
@@ -1613,7 +1614,7 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
 				for _, input := range payment.Inputs {
-					delete(pool.outpoints, *input.PreviousOutPoint)
+					go pool.outpoints.Delete(*input.PreviousOutPoint)
 				}
 				preout := modules.OutPoint{TxHash: hash}
 				for j := range payment.Outputs {
