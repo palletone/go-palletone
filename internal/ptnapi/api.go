@@ -641,9 +641,7 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	reqId, depId, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
 	addDepId := common.NewAddress(depId, common.ContractHash)
 	sReqId := hex.EncodeToString(reqId[:])
-	sDepId := hex.EncodeToString(addDepId[:len(addDepId)-2])
-	log.Info("-----Ccdeploytx:", "reqId", sReqId, "tplId", sDepId)
-	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", addDepId.String())
+	log.Info("-----Ccdeploytx:", "reqId", sReqId, "depId", addDepId.String())
 	rsp := &ContractDeployRsp{
 		ReqId:      sReqId,
 		ContractId: addDepId.String(),

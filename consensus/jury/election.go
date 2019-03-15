@@ -152,7 +152,6 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 	}
 
 	if proof != nil {
-		//if true { //todo for test
 		rstEvt := &ElectionResultEvent{
 			ReqId: reqEvt.ReqId,
 			Ele:   ElectionInf{AddrHash: addrHash, Proof: proof, PublicKey: pubKey},
@@ -174,24 +173,29 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	}
 
 	mtx := p.mtx[rstEvt.ReqId]
-	if len(mtx.eleInf) >= VrfElectionNum {
+	if len(mtx.eleInf) >= p.electionNum {
 		log.Info("ProcessElectionResultEvent, The quantity has reached the requirement")
 		return nil
 	}
-	contractId := common.BytesToAddress(rstEvt.ReqId.Bytes())
+	tmpReqId := common.BytesToAddress(rstEvt.ReqId.Bytes())
+	contractId := common.NewAddress(tmpReqId.Bytes(), common.ContractHash)
+	log.Debug("ProcessElectionResultEvent", "reqId", rstEvt.ReqId.Bytes(), "contractId", contractId, "tmpReqId", tmpReqId)
+
 	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, rstEvt.ReqId[:], rstEvt.Ele.PublicKey)
 	if err != nil {
 		log.Error("ProcessElectionResultEvent", "verify VRF fail, ReqId is", rstEvt.ReqId.Bytes())
 		return err
 	}
 	if ok {
+		p.locker.Lock()
 		mtx.eleInf = append(mtx.eleInf, rstEvt.Ele)
 		p.lockArf[contractId] = append(p.lockArf[contractId], rstEvt.Ele) //add lock vrf election info
-		if len(mtx.eleInf) >= VrfElectionNum {
+		if len(mtx.eleInf) >= p.electionNum {
 			//通知接收数量达到要求
-			log.Info("ProcessElectionResultEvent,VRF address number is enough, Ok")
+			log.Info("ProcessElectionResultEvent,VRF address number is enough, Ok", "contractId", contractId)
 			mtx.eleChan <- true
 		}
+		p.locker.Unlock()
 	}
 	return nil
 }

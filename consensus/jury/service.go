@@ -160,7 +160,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		quit:           make(chan struct{}),
 		mtx:            make(map[common.Hash]*contractTx),
 		lockArf:        make(map[common.Address][]ElectionInf),
-		electionNum:    cfg.ElectionNum,
+		electionNum:    VrfElectionNum,
 		contractSigNum: cfg.ContractSigNum,
 		validator:      validator,
 	}
@@ -463,12 +463,13 @@ func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
 }
 
 func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, checkExit bool) bool {
-	if len(ele) < VrfElectionNum {
-		log.Error("isValidateElection, ElectionInf number not enough ")
+	if len(ele) < p.electionNum {
+		log.Info("isValidateElection, ElectionInf number not enough ")
+		return false
 	}
 	isExit := false
 	etor := &elector{
-		num:    VrfElectionNum,
+		num:    uint(p.electionNum),
 		weight: 1,
 		total:  1000, //todo from dag
 	}
@@ -588,14 +589,14 @@ func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, d
 	return p.signAndExecute(common.BytesToAddress(tx.RequestHash().Bytes()), from, tx, isLocalInstall)
 }
 
-func (p *Processor) createContractTxReq(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
+func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
-	log.Debug("createContractTxReq", "tx:", tx)
+	log.Debug("createContractTxReq", "contractId", contractId, "tx:", tx)
 
-	return p.signAndExecute(common.BytesToAddress(tx.RequestHash().Bytes()), from, tx, isLocalInstall)
+	return p.signAndExecute(contractId, from, tx, isLocalInstall)
 }
 
 func (p *Processor) signAndExecute(contractId common.Address, from common.Address, tx *modules.Transaction, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
@@ -610,14 +611,18 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		valid: true,
 	}
 	ctx := p.mtx[reqId]
-	if !isSystemContract(tx) && contractId != (common.Address{}) {
+	if !isSystemContract(tx) {
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
-		if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
-			p.lockArf[contractId] = []ElectionInf{}                        //清空
-			if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
-				return common.Hash{}, nil, err
+		if contractId == (common.Address{}) { //deploy
+			if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
+				p.lockArf[contractId] = []ElectionInf{} //清空
+				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
+					return common.Hash{}, nil, err
+				}
 			}
+		} else {//invoke,stop
+			ctx.eleInf = p.lockArf[contractId]
 		}
 	}
 	if isLocalInstall {
