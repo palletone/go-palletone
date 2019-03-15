@@ -367,7 +367,7 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
 	//log.Debug("AddContractLoop", "loop", addr.String())
 	for _, ctx := range p.mtx {
-		if false == ctx.valid && ctx.reqTx == nil {
+		if false == ctx.valid || ctx.reqTx == nil {
 			continue
 		}
 		log.Debug("AddContractLoop", "enter mtx", addr.String())
@@ -462,7 +462,7 @@ func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
 	return false
 }
 
-func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, checkExit bool) bool {
+func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExit bool) bool {
 	if len(ele) < p.electionNum {
 		log.Info("isValidateElection, ElectionInf number not enough ")
 		return false
@@ -504,7 +504,7 @@ func (p *Processor) isValidateElection(reqId common.Hash, ele []ElectionInf, che
 		}
 
 		//验证proof是否通过
-		isVerify, err := etor.verifyVrf(e.Proof, reqId.Bytes(), e.PublicKey)
+		isVerify, err := etor.verifyVrf(e.Proof, reqId, e.PublicKey)
 		if err != nil || !isVerify {
 			log.Info("isValidateElection", "index", i, "verifyVrf fail, reqId", reqId)
 			return false
@@ -547,7 +547,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Mediator, true:tx requestId", tx.RequestHash())
 			return true
 		} else if !isSysContract && isJury {
-			if p.isValidateElection(tx.RequestHash(), ele, true) {
+			if p.isValidateElection(tx.ContractIdBytes(), ele, true) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
@@ -556,7 +556,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			if p.isValidateElection(tx.RequestHash(), ele, false) {
+			if p.isValidateElection(tx.ContractIdBytes(), ele, false) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
@@ -568,7 +568,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			if isSysContract {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, sysContract, true:tx requestId", tx.RequestHash())
 				return true
-			} else if !isSysContract && p.isValidateElection(tx.RequestHash(), ele, false) {
+			} else if !isSysContract && p.isValidateElection(tx.ContractIdBytes(), ele, false) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, userContract, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
@@ -621,7 +621,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 					return common.Hash{}, nil, err
 				}
 			}
-		} else {//invoke,stop
+		} else { //invoke,stop
 			ctx.eleInf = p.lockArf[contractId]
 		}
 	}
