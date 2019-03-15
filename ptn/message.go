@@ -354,7 +354,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	unit := &modules.Unit{}
 	if err := json.Unmarshal(data, &unit); err != nil {
-		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err)
+		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err, "data", string(data))
 		return err
 	}
 

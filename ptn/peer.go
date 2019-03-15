@@ -242,10 +242,10 @@ func (p *peer) SendElectionEvent(event jury.ElectionEvent) error {
 	return p2p.Send(p.rw, ElectionMsg, *evs)
 }
 
-//SendConsensus sends consensus msg to the peer
-//func (p *peer) SendConsensus(msgs string) error {
-//	return p2p.Send(p.rw, ConsensusMsg, msgs)
-//}
+//Test SendConsensus sends consensus msg to the peer
+func (p *peer) SendConsensus(msgs []byte) error {
+	return p2p.Send(p.rw, NewBlockMsg, msgs)
+}
 
 // SendNewBlockHashes announces the availability of a number of blocks through
 // a hash notification.
@@ -380,8 +380,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			NetworkId:       network,
 			Index:           index,
 			GenesisUnit:     genesis,
-			//Mediator:        mediator,
-			CurrentHeader: headHash,
+			CurrentHeader:   headHash,
 		})
 	}()
 	go func() {
@@ -399,7 +398,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-	//p.mediator = status.Mediator
+
 	p.SetHead(status.CurrentHeader, status.Index)
 	return nil
 }

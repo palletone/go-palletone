@@ -128,6 +128,7 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 	//合约安装，检查合约签名数据
 	//用户合约，检查签名数量及有效性
 	p.locker.Lock()
+	defer p.locker.Unlock()
 	if _, ok := p.mtx[reqId]; !ok {
 		log.Debug("contractCommitEvent", "local not find reqId,create it", reqId.String())
 		p.mtx[reqId] = &contractTx{
@@ -141,7 +142,6 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 	}
 	p.mtx[reqId].valid = true
 	p.mtx[reqId].rstTx = tx
-	p.locker.Unlock()
 
 	return nil
 }

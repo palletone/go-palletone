@@ -1,0 +1,26 @@
+*** Settings ***
+Library           RequestsLibrary
+Resource          publicParams.txt
+
+*** Variables ***
+
+*** Keywords ***
+获取Mediator申请加入列表
+    ${one}    Create List    GetBecomeMediatorApplyList
+    ${two}    Create List    ${one}
+    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetBecomeMediatorApplyList    ${two}
+    ${respContentJson}    to json    ${resp.content}
+    log    ${respContentJson['result']}
+    ${addresses}    Evaluate    [addresses['address'] for addresses in ${respContentJson['result']}]
+    ${times}    Evaluate    [times['time'] for times in ${respContentJson['result']}]
+    ${arrayLen}    get Length    ${addresses}
+    ${address0}    set variable if    ${arrayLen} != 0    ${addresses}[0]
+    ${time0}    set variable if    ${arrayLen} != 0    ${times}[0]
+    [Return]    ${address0}    ${time0}
+
+getBecomeMediatorApplyList
+    ${one}    Create List    GetBecomeMediatorApplyList
+    ${two}    Create List    ${one}
+    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetBecomeMediatorApplyList    ${two}
+    ${result}    Set Variable    ${resp.content}
+    [Return]    ${result}

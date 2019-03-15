@@ -1,0 +1,18 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+基金会处理申请所需参数
+    [Arguments]    ${foundationAddr}
+    ${获取Mediator申请加入列表 }    获取Mediator申请加入列表
+    ${1}    Create List    HandleForApplyBecomeMediator    ok    ${获取Mediator申请加入列表}[0]
+    ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
+    [Return]    ${one}
+
+handleForApplyBecomeMediator
+    [Arguments]    ${foundationAddr}
+    ${基金会处理申请所需参数 }    基金会处理申请所需参数    ${foundationAddr}
+    ${resp}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyBecomeMediator    ${基金会处理申请所需参数 }
+    ${result}    Set Variable    ${resp.content}
+    sleep    3
+    [Return]    ${result}

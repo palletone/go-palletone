@@ -46,7 +46,7 @@ one=`echo ${mediatorAddr_01//\"/}`
 two=`echo ${foundationAddr//\"/}`
 #echo $one
 
-robot -d ./log -v mediatorAddr_01:$one -v foundationAddr:$two --test Business_01 ./pythonTest/depositContract/DepositContractTest.robot
+robot -d ./log -v mediatorAddr_01:$one -v foundationAddr:$two --test Business_01 ./deposit_test_cases/DepositContractTest.robot
 
 sleep 1
 

@@ -93,12 +93,12 @@ type TxPoolTransaction struct {
 	Tx *Transaction
 
 	From         []*OutPoint
-	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time    `json:"creation_date"`
+	Priority_lvl string       `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
-	Discarded    bool         // will remove
+	Discarded    bool // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
 	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
@@ -223,6 +223,23 @@ func (tx *Transaction) RequestHash() common.Hash {
 		}
 	}
 	return util.RlpHash(req)
+}
+
+func (tx *Transaction) ContractIdBytes() []byte {
+	for _, msg := range tx.TxMessages {
+		switch  msg.App {
+		case APP_CONTRACT_DEPLOY:
+			payload := msg.Payload.(ContractDeployPayload)
+			return payload.ContractId
+		case APP_CONTRACT_INVOKE:
+			payload := msg.Payload.(ContractInvokePayload)
+			return payload.ContractId
+		case APP_CONTRACT_STOP:
+			payload := msg.Payload.(ContractStopPayload)
+			return payload.ContractId
+		}
+	}
+	return nil
 }
 
 func (tx *Transaction) Messages() []*Message {

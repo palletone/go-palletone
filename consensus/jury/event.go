@@ -39,6 +39,7 @@ const (
 )
 
 type ElectionInf struct {
+	VData     []byte      //vrf data
 	AddrHash  common.Hash //common.Address将地址hash后，返回给请求节点
 	Proof     []byte      //vrf proof
 	PublicKey []byte      //alg.PublicKey, rlp not support
@@ -46,7 +47,7 @@ type ElectionInf struct {
 
 //contract
 type ContractEvent struct {
-	Ele      []ElectionInf
+	Ele []ElectionInf
 
 	CType ContractEventType
 	Tx    *modules.Transaction
