@@ -135,8 +135,8 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	FeeLimit:  1,
 	PriceBump: 10,
 
-	GlobalSlots: 4096,
-	GlobalQueue: 1024,
+	GlobalSlots: 8192,
+	GlobalQueue: 2048,
 
 	Lifetime:        3 * time.Hour,
 	Removetime:      30 * time.Minute,
@@ -224,7 +224,6 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		orphansByPrev:  make(map[modules.OutPoint]map[common.Hash]*modules.TxPoolTransaction),
 		addrTxs:        make(map[string][]*modules.TxPoolTransaction),
 		outputs:        sync.Map{},
-		//outputs:        make(map[modules.OutPoint]*modules.Utxo),
 	}
 	pool.mu = new(sync.RWMutex)
 	pool.priority_priced = newTxPricedList(&pool.all)
