@@ -46,7 +46,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			Version: version,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, true)
+	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, msgReq, true)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -75,16 +75,16 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			Timeout: uint32(timeout),
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, msgReq, false)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
-	contractId := common.BytesToAddress(reqId[:]).Bytes()
+	contractId := common.BytesToAddress(reqId.Bytes()).Bytes()
 	log.Debug("ContractDeployReq", "enter, templateId ", templateId, "contractId", contractId)
 
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
-	return reqId, contractId, err
+	return reqId, contractId[:], err
 }
 
 func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
@@ -103,7 +103,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 			Timeout:      timeout,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, msgReq, false)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -142,7 +142,6 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 		log.Error("ContractStopReq", "param is error")
 		return common.Hash{}, errors.New("ContractStopReq request param is error")
 	}
-
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
 		return common.Hash{}, errors.New("GetRandomNonce error")
@@ -156,7 +155,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 			DeleteImage: deleteImage,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, msgReq, false)
 	if err != nil {
 		return common.Hash{}, err
 	}

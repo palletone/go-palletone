@@ -68,9 +68,14 @@ web3._extend({
 			params: 0,
 		}),
 		new web3._extend.Method({
-			name: 'setDesiredMediatorCount',
-			call: 'mediator_setDesiredMediatorCount',
+			name: 'setDesiredCount',
+			call: 'mediator_setDesiredCount',
 			params: 2,
+		}),
+		new web3._extend.Method({
+			name: 'getDesiredCount',
+			call: 'mediator_getDesiredCount',
+			params: 1,
 		}),
 	],
 	properties: [

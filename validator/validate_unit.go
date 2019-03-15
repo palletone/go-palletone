@@ -119,6 +119,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
 	if root != unit.UnitHeader.TxRoot {
+		log.Debug("Validate unit's header failed.", "root", root,"unit.UnitHeader.TxRoot", unit.UnitHeader.TxRoot)
 		return NewValidateError(UNIT_STATE_INVALID_HEADER_TXROOT)
 	}
 	// step2. check transactions in unit
