@@ -77,7 +77,9 @@ func (engine *DPOSEngine) Engine() int {
 		return -3
 	}
 	log.Debug("Test P2P", "DPOSEngine->Engine SendEvents data", string(data))
-	engine.SendEvents(data)
+
+	content := "{\"unit_header\":{\"parents_hash\":[\"0xc69a9a1cd244c79e1979ffc0ff460c2a77ec95a172a1af853099573bcd6c6d14\"],\"mediator\":{\"address\":\"0x000000000000000000000000000000000000000000\",\"r\":null,\"s\":null,\"v\":null},\"groupSign\":null,\"groupPubKey\":null,\"root\":\"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"index\":{\"asset_id\":[64,0,130,187,8,0,0,0,0,0,0,0,0,0,0,0],\"is_main\":true,\"index\":11},\"extra\":null,\"creation_time\":0},\"transactions\":null,\"unit_hash\":\"0x543492c15f936a1d0012902362dbb8ce470325a005c2a883087c8f46604fbdcc\",\"unit_size\":162,\"ReceivedAt\":\"0001-01-01T00:00:00Z\",\"ReceivedFrom\":null}"
+	engine.SendEvents([]byte(content))
 	return 0
 }
 func New(dag dag.IDag, txpool txspool.ITxPool) *DPOSEngine {
