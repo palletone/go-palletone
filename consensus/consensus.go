@@ -72,7 +72,7 @@ func (engine *DPOSEngine) Stop() {
 }
 
 func (engine *DPOSEngine) Engine() int {
-	engine.SendEvents("A")
+	//engine.SendEvents("A")
 	return 0
 }
 func New() *DPOSEngine {

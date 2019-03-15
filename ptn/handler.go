@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -99,6 +100,11 @@ type ProtocolManager struct {
 	quitSync    chan struct{}
 	noMorePeers chan struct{}
 
+	//consensus test for p2p
+	consEngine core.ConsensusEngine
+	ceCh       chan core.ConsensusEvent
+	ceSub      event.Subscription
+
 	// append by Albert·Gou
 	producer           producer
 	newProducedUnitCh  chan mp.NewProducedUnitEvent
@@ -139,7 +145,7 @@ type ProtocolManager struct {
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName string, txpool txPool,
 	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
-	contractProc contractInf) (*ProtocolManager, error) {
+	contractProc contractInf, engine core.ConsensusEngine) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:    networkId,
@@ -147,6 +153,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		protocolName: protocolName,
 		txpool:       txpool,
 		eventMux:     mux,
+		consEngine:   engine,
 		peers:        newPeerSet(),
 		lightPeers:   newPeerSet(),
 		newPeerCh:    make(chan *peer),
@@ -287,6 +294,10 @@ func (pm *ProtocolManager) removePeer(id string) {
 func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
+
+	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
+	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
+	go pm.ceBroadcastLoop()
 
 	// start sync handlers
 	//定时与相邻个体进行全链的强制同步,syncer()首先启动fetcher成员，然后进入一个无限循环，
@@ -672,5 +683,25 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		Index:   index,
 		Genesis: genesisHash,
 		Head:    hash,
+	}
+}
+
+//test for p2p broadcast
+func (pm *ProtocolManager) BroadcastCe(ce string) {
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendConsensus(ce)
+	}
+}
+func (self *ProtocolManager) ceBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.ceCh:
+			self.BroadcastCe(event.Ce)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.ceSub.Err():
+			return
+		}
 	}
 }

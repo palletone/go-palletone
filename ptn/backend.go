@@ -160,7 +160,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, config.TokenSubProtocol, ptn.txPool,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func (s *PalletOne) Stop() error {
 	//s.bloomIndexer.Close()
 	s.protocolManager.Stop()
 	s.txPool.Stop()
-	//	s.engine.Stop()
+	s.engine.Stop()
 	s.eventMux.Stop()
 	close(s.shutdownChan)
 
