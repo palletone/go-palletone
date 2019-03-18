@@ -504,7 +504,7 @@ func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExi
 		}
 
 		//验证proof是否通过
-		isVerify, err := etor.verifyVrf(e.Proof, reqId, e.PublicKey)
+		isVerify, err := etor.verifyVrf(e.Proof, conversionElectionSeedData(reqId), e.PublicKey)
 		if err != nil || !isVerify {
 			log.Info("isValidateElection", "index", i, "verifyVrf fail, reqId", reqId)
 			return false

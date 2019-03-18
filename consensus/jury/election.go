@@ -140,7 +140,7 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 		addrHash = util.RlpHash(addr)
 		break //only first one
 	}
-	proof, err := ele.checkElected(reqEvt.ReqId[:])
+	proof, err := ele.checkElected(conversionElectionSeedData(reqEvt.ReqId[:]))
 	if err != nil {
 		log.Error("ProcessElectionRequestEvent", "reqHash", reqEvt.ReqId, "checkElected err", err)
 		return nil, err
@@ -179,9 +179,10 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	}
 	tmpReqId := common.BytesToAddress(rstEvt.ReqId.Bytes())
 	contractId := common.NewAddress(tmpReqId.Bytes(), common.ContractHash)
-	log.Debug("ProcessElectionResultEvent", "reqId", rstEvt.ReqId.Bytes(), "contractId", contractId, "tmpReqId", tmpReqId)
+	log.Debug("ProcessElectionResultEvent", "reqId", rstEvt.ReqId.Bytes(), "reqIdStr", rstEvt.ReqId.String(), "contractId", contractId, "tmpReqId", tmpReqId)
+	log.Debug("ProcessElectionResultEvent", "contractIdBytes", contractId.Bytes(), "contractIdStr", contractId.String())
 
-	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, rstEvt.ReqId[:], rstEvt.Ele.PublicKey)
+	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, conversionElectionSeedData(rstEvt.ReqId[:]), rstEvt.Ele.PublicKey) //rstEvt.ReqId[:]
 	if err != nil {
 		log.Error("ProcessElectionResultEvent", "verify VRF fail, ReqId is", rstEvt.ReqId.Bytes())
 		return err
