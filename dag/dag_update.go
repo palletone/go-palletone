@@ -26,7 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -57,10 +57,20 @@ func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	return uint64(missedUnits)
 }
 
+// UpdateDynGlobalProp, update global dynamic data
 func (dag *Dag) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
 	dgp := dag.GetDynGlobalProp()
 
-	dgp.UpdateDynGlobalProp(unit, missedUnits)
+	//dgp.HeadUnitNum = unit.NumberU64()
+	//dgp.HeadUnitHash = unit.Hash()
+	//dgp.HeadUnitTime = unit.Timestamp()
+	//dgp.SetNewestUnit(unit.Header())
+
+	dgp.LastMediator = unit.Author()
+	dgp.IsShuffledSchedule = false
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled<<(missedUnits+1) + 1
+	dgp.CurrentASlot += missedUnits + 1
+
 	dag.SaveDynGlobalProp(dgp, false)
 
 	return
@@ -106,23 +116,23 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 	sort.Ints(lastConfirmedUnitNums)
 
 	// 3. 获取倒数第 > 2/3 个确认unit编号
-	//offset := aSize - dag.ChainThreshold()
-	//var newLastIrreversibleUnitNum = uint64(lastConfirmedUnitNums[offset])
-	//TODO Devin where is unit hash?
+	offset := aSize - dag.ChainThreshold()
+	var newLastIrreversibleUnitNum = uint64(lastConfirmedUnitNums[offset])
+
 	// 4. 更新
-	//dag.updateLastIrreversibleUnitNum( newLastIrreversibleUnitNum)
+	dag.updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum)
 }
 
-//func (dag *Dag) updateLastIrreversibleUnitNum(hash common.Hash, newLastIrreversibleUnitNum uint64) {
-//	//dgp := dag.GetDynGlobalProp()
-//	token := node.DefaultConfig.GetGasToken()
-//	_, index, _ := dag.propRep.GetLastStableUnit(token)
-//	if newLastIrreversibleUnitNum > index.Index {
-//		dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
-//		//dgp.s = newLastIrreversibleUnitNum
-//		//dag.SaveDynGlobalProp(dgp, false)
-//	}
-//}
+func (dag *Dag) updateLastIrreversibleUnitNum( /*hash common.Hash, */ newLastIrreversibleUnitNum uint64) {
+	dgp := dag.GetDynGlobalProp()
+	token := dagconfig.DagConfig.GetGasToken()
+	_, index, _ := dag.propRep.GetLastStableUnit(token)
+	if newLastIrreversibleUnitNum > index.Index {
+		//dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
+		dgp.LastIrreversibleUnitNum = newLastIrreversibleUnitNum
+		dag.SaveDynGlobalProp(dgp, false)
+	}
+}
 
 //func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
 //	unit, err := dag.GetUnitByHash(unitHash)

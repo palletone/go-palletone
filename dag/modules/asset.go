@@ -158,10 +158,10 @@ func (asset *Asset) IsSameAssetId(another *Asset) bool {
 	return bytes.Equal(asset.AssetId.Bytes(), another.AssetId.Bytes())
 }
 func (asset *Asset) IsSimilar(similar *Asset) bool {
-	if !strings.EqualFold(asset.AssetId.String(), similar.AssetId.String()) {
+	if !bytes.Equal(asset.AssetId.Bytes(), similar.AssetId.Bytes()) {
 		return false
 	}
-	if !strings.EqualFold(asset.UniqueId.String(), similar.UniqueId.String()) {
+	if !bytes.Equal(asset.UniqueId.Bytes(), similar.UniqueId.Bytes()) {
 		return false
 	}
 	return true

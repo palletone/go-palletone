@@ -36,7 +36,7 @@ type GlobalPropBase struct {
 func NewGlobalPropBase() *GlobalPropBase {
 	return &GlobalPropBase{
 		ImmutableParameters: core.NewImmutChainParams(),
-		ChainParameters: core.NewChainParams(),
+		ChainParameters:     core.NewChainParams(),
 	}
 }
 
@@ -79,7 +79,7 @@ type DynamicGlobalProperty struct {
 	// 最低位表示最近一个slot， 初始值全为1。
 	RecentSlotsFilled uint64
 
-	//LastIrreversibleUnitNum uint32
+	LastIrreversibleUnitNum uint64
 	//NewestUnit     map[IDType16]*UnitProperty
 	//LastStableUnit map[IDType16]*UnitProperty
 }
@@ -103,7 +103,7 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 
 		RecentSlotsFilled: ^uint64(0),
 
-		//LastIrreversibleUnitNum: 0,
+		LastIrreversibleUnitNum: 0,
 		//NewestUnit:     map[IDType16]*UnitProperty{},
 		//LastStableUnit: map[IDType16]*UnitProperty{},
 	}
@@ -236,20 +236,4 @@ func InitDynGlobalProp(genesis *Unit) *DynamicGlobalProperty {
 	//dgp.SetNewestUnit(genesis.Header())
 	//dgp.SetLastStableUnit(genesis.Header())
 	return dgp
-}
-
-// UpdateDynGlobalProp, update global dynamic data
-// @author Albert·Gou
-func (dgp *DynamicGlobalProperty) UpdateDynGlobalProp(unit *Unit, missedUnits uint64) {
-	//dgp.HeadUnitNum = unit.NumberU64()
-	//dgp.HeadUnitHash = unit.Hash()
-	//dgp.HeadUnitTime = unit.Timestamp()
-	//dgp.SetNewestUnit(unit.Header())
-
-	dgp.LastMediator = unit.Author()
-	dgp.IsShuffledSchedule = false
-
-	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled<<(missedUnits+1) + 1
-
-	dgp.CurrentASlot += missedUnits + 1
 }
