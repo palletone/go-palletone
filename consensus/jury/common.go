@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
-const(
+const (
 	VrfElectionNum = 4
 )
 
@@ -164,7 +164,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -472,4 +472,10 @@ func getElectionSeedData(in common.Hash) ([]byte, error) {
 	//return seedData, nil
 
 	return in.Bytes(), nil
+}
+
+func conversionElectionSeedData(in []byte) []byte {
+	tmp := common.BytesToAddress(in)
+	out := common.NewAddress(tmp.Bytes(), common.ContractHash)
+	return out[:]
 }
