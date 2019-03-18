@@ -228,14 +228,15 @@ func (tx *Transaction) RequestHash() common.Hash {
 func (tx *Transaction) ContractIdBytes() []byte {
 	for _, msg := range tx.TxMessages {
 		switch  msg.App {
-		case APP_CONTRACT_DEPLOY:
-			payload := msg.Payload.(ContractDeployPayload)
+		case APP_CONTRACT_DEPLOY_REQUEST:
+			tmp := common.BytesToAddress(tx.RequestHash().Bytes())
+			out := common.NewAddress(tmp.Bytes(), common.ContractHash)
+			return out[:]
+		case APP_CONTRACT_INVOKE_REQUEST:
+			payload := msg.Payload.(*ContractInvokeRequestPayload)
 			return payload.ContractId
-		case APP_CONTRACT_INVOKE:
-			payload := msg.Payload.(ContractInvokePayload)
-			return payload.ContractId
-		case APP_CONTRACT_STOP:
-			payload := msg.Payload.(ContractStopPayload)
+		case APP_CONTRACT_STOP_REQUEST:
+			payload := msg.Payload.(*ContractStopRequestPayload)
 			return payload.ContractId
 		}
 	}

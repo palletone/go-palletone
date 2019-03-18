@@ -473,6 +473,18 @@ func setTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Asset_TokenID invalid\"}"
 		return shim.Success([]byte(jsonResp))
 	}
+	//get invoke address
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	tokens, err := stub.GetTokenBalance(invokeAddr, asset)
+	if len(tokens) == 0 {
+		jsonResp := "{\"Error\":\"Failed to get the balance of invoke address\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+
 	//
 	valBytes, _ := stub.GetState(assetStr)
 	if len(valBytes) == 0 {
