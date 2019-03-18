@@ -709,18 +709,21 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	log.Debug("add output utxoview info: ", "utxoinfo", utxoview.entries[preout])
 
 	// If the transaction pool is full, discard underpriced transactions
-
-	if uint64(pool.AllLength()) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
+	length := pool.AllLength()
+	if uint64(length) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underpriced, don't accept it
 		if pool.priority_priced.Underpriced(tx) {
 			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.GetTxFee().Int64())
 			return false, ErrUnderpriced
 		}
 		// New transaction is better than our worse ones, make room for it
-		drop := pool.priority_priced.Discard(pool.AllLength() - int(pool.config.GlobalSlots+pool.config.GlobalQueue-1))
-		for _, tx := range drop {
-			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.Hash(), "price", tx.GetTxFee().Int64())
-			pool.removeTransaction(tx, true)
+		count := length - int(pool.config.GlobalSlots+pool.config.GlobalQueue-1)
+		if count > 0 {
+			drop := pool.priority_priced.Discard(count)
+			for _, tx := range drop {
+				log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.Hash(), "price", tx.GetTxFee().Int64())
+				pool.removeTransaction(tx, true)
+			}
 		}
 	}
 	// If the transaction is replacing an already pending one, do directly
@@ -735,9 +738,10 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		}
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
+	pool.priority_priced.Put(tx)
+	//log.Info("add heap susccee", "length", heap.Len())
 	pool.all.Store(hash, tx)
 	go pool.addCache(tx)
-	go pool.priority_priced.Put(tx)
 	go pool.journalTx(tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
@@ -1586,6 +1590,7 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction)
 			otx.Pending = true
 			otx.Confirmed = false
 			otx.Discarded = false
+			otx.IsOrphan = true
 			pool.orphans.Store(hash, otx)
 		} else {
 			// in all pool
@@ -1621,14 +1626,10 @@ func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
 				// add  outputs
 				preout := modules.OutPoint{TxHash: tx.Tx.Hash()}
 				for j, out := range msg.Outputs {
-					//if pool.outputs == nil {
-					//	pool.outputs = make(map[modules.OutPoint]*modules.Utxo)
-					//}
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
 					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{out.Asset.AssetId, out.Asset.UniqueId},
 						PkScript: out.PkScript[:]}
-					//pool.outputs[preout] = utxo
 					pool.outputs.Store(preout, utxo)
 					log.Debugf("add utxo to pool.outputs,outpoint:%s", preout.String())
 				}
@@ -1686,13 +1687,17 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.Lock()
 
-	orphanTxs := pool.AllOrphanTxs()
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
+LOOP:
 	for {
+		if time.Since(t0) > time.Second*1 {
+			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
+			break LOOP
+		}
 		tx := pool.priority_priced.Get()
 		if tx == nil {
-			log.Debug("Txspool get  priority_pricedtx failed.", "error", "tx is null")
-			break
+			log.Info("Txspool get  priority_pricedtx failed.", "error", "tx is null")
+			break LOOP
 		} else {
 			if !tx.Pending {
 				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
@@ -1711,17 +1716,19 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 					pool.promoteTx(hash, tx)
 				} else {
 					total = total - tx.Tx.Size()
-					break
+					break LOOP
 				}
 			}
 		}
-		if time.Since(t0) > time.Second*1 {
-			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
-			break
-		}
 	}
+
 	t1 := time.Now()
 	//添加孤儿交易
+	orphanTxs := pool.AllOrphanTxs()
+	if time.Since(t1) > time.Second*1 {
+		log.Infof("get sorted and get all Orphan txs spent times: %s , count: %d ,t3: %s ", time.Since(t0), len(list), time.Since(t1))
+	}
+	t2 := time.Now()
 	validated_txs := make([]*modules.TxPoolTransaction, 0)
 	for {
 		//  验证孤儿交易
@@ -1740,7 +1747,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 				tx.Pending = true
 				tx.UnitHash = hash
 				pool.all.Store(tx.Tx.Hash(), tx)
-				pool.orphans.Store(tx.Tx.Hash(), tx)
+				pool.orphans.Delete(tx.Tx.Hash())
+				//pool.orphans.Store(tx.Tx.Hash(), tx)
 				list = append(list, tx)
 				total += tx.Tx.Size()
 				if total > unit_size {
@@ -1766,15 +1774,13 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			log.Info("rm repeat error", "index", i)
 		}
 	}
-	if time.Since(t1) > time.Second*1 {
-		log.Infof("get sorted and orphan txs timeout spent times: %s ,  t2: %s ", time.Since(t0), time.Since(t1))
-	}
-	t3 := time.Now()
 	// rm orphanTx
 	for _, tx := range validated_txs {
 		go pool.RemoveOrphan(tx)
 	}
-	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t3: %s ", time.Since(t0), len(list), time.Since(t3))
+	if time.Since(t2) > time.Second*1 {
+		log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t3: %s ", time.Since(t0), len(list), time.Since(t2))
+	}
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, error) {
@@ -1907,6 +1913,7 @@ func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
 
 	otx.Expiration = otx.CreationDate.Add(pool.config.OrphanTTL)
 	otx.Tag = tag
+	otx.IsOrphan = true
 	pool.orphans.Store(otx.Tx.Hash(), otx)
 
 	for i, msg := range otx.Tx.Messages() {
@@ -2022,7 +2029,6 @@ func (pool *TxPool) isOrphanInPool(hash common.Hash) bool {
 	if _, exists := pool.orphans.Load(hash); exists {
 		return true
 	}
-
 	return false
 }
 

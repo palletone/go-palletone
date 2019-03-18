@@ -18,6 +18,7 @@ type TxPoolTxJson struct {
 	Priority     float64         `json:"priority"` // 打包的优先级
 	Pending      bool            `json:"pending"`
 	Confirmed    bool            `json:"confirmed"`
+	IsOrphan     bool            `json:"is_orphan"`
 	Index        int             `json:"index"` // index 是该tx在优先级堆中的位置
 	Extra        []byte          `json:"extra"`
 }
@@ -62,6 +63,7 @@ func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPo
 		Priority:     tx.GetPriorityfloat64(),
 		Pending:      tx.Pending,
 		Confirmed:    tx.Confirmed,
+		IsOrphan:     tx.IsOrphan,
 		Extra:        tx.Extra[:],
 	}
 }
