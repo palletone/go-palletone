@@ -156,10 +156,6 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]map[string]*RPCTransac
 	for account, tx := range pending {
 		txHash := tx.Hash()
 		dump := make(map[string]*RPCTransaction)
-		// for _, tx := range txs {
-		// 	tx = tx
-		// 	//dump[fmt.Sprintf("%d", tx.Nonce())] = newRPCPendingTransaction(tx)
-		// }
 		dump[txHash.String()] = newRPCPendingTransaction(tx)
 		content["pending"][account.String()] = dump
 	}
@@ -182,6 +178,10 @@ func (s *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
 		"pending": hexutil.Uint(pending),
 		"queued":  hexutil.Uint(queue),
 	}
+}
+func (s *PublicTxPoolAPI) Pending() map[common.Hash]*modules.Transaction {
+	pending, _ := s.b.TxPoolContent()
+	return pending
 }
 
 /*

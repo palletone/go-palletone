@@ -154,6 +154,12 @@ web3._extend({
             params: 0,
             // inputFormatter: [null]
         }),
+        new web3._extend.Method({
+            name: 'getFastUnitIndex',
+            call: 'dag_getFastUnitIndex',
+            params: 1,
+            // inputFormatter: [null]
+        }),
 	],
 	properties: [
 		new web3._extend.Property({
