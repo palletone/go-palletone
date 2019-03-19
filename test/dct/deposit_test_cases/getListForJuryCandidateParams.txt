@@ -8,5 +8,7 @@ getListForJuryCandidate
     ${one}    Create List    GetListForJuryCandidate
     ${two}    Create List    ${one}
     ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForJuryCandidate    ${two}
-    ${result}    Set Variable    ${resp.content}
+    ${respContentJson}    to json    ${resp.content}
+    log    ${respContentJson['result']}
+    ${result}    Set Variable    ${respContentJson['result']}
     [Return]    ${result}

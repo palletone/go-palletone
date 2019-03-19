@@ -14,5 +14,6 @@ getCandidateBalanceWithAddr
     [Arguments]    ${nodeAddr}
     ${11}    获取某个节点的账户    ${nodeAddr}
     ${resp}    创建公用的POST请求    ${depositContractQuery}    GetCandidateBalanceWithAddr    ${11}
-    ${result}    Set Variable    ${resp.content}
-    [Return]    ${result}
+    ${respContentJson}    to json    ${resp.content}
+    ${balance}    Set Variable    ${respContentJson['result']}
+    [Return]    ${balance}

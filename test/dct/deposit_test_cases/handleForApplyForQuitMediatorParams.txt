@@ -4,7 +4,7 @@ Resource          publicParams.txt
 *** Keywords ***
 基金会处理申请退出Mediator列表的所需参数
     [Arguments]    ${foundationAddr}
-    ${获取Mediator申请退出列表}    获取Mediator申请退出列表
+    ${获取Mediator申请退出列表}    获取Mediator申请退出列表    0
     ${1}    Create List    HandleForApplyQuitMediator    ok    ${获取Mediator申请退出列表}[0]
     ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
     [Return]    ${one}
@@ -14,5 +14,5 @@ handleForApplyForQuitMediator
     ${基金会处理申请退出Mediator列表的所需参数}    基金会处理申请退出Mediator列表的所需参数    ${foundationAddr}
     ${resp}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyForQuitMediator    ${基金会处理申请退出Mediator列表的所需参数}
     ${result}    Set Variable    ${resp.content}
-    sleep    3
+    sleep    8
     [Return]    ${result}
