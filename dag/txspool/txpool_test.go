@@ -21,12 +21,12 @@ package txspool
 
 import (
 	"fmt"
-	"math/big"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
 
+	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -75,8 +75,7 @@ func NewUnitDag4Test() *UnitDag4Test {
 	//idagdb.PutHeadUnitHash()
 	mutex := new(sync.RWMutex)
 
-	ud := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
-	ud.outpoints = make(map[string]map[modules.OutPoint]*modules.Utxo)
+	ud := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), make(map[string]map[modules.OutPoint]*modules.Utxo)}
 	return ud
 }
 func (ud *UnitDag4Test) CurrentUnit(token modules.IDType16) *modules.Unit {
@@ -178,75 +177,17 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	txs := modules.Transactions{}
 
-	msgs := make([]*modules.Message, 0)
-	msgs1 := make([]*modules.Message, 0)
-	addr := new(common.Address)
-	addr.SetString("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-
-	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
-	// step. compute total income
-
-	totalIncome := uint64(100000000)
-	// step2. create payload
-	createT := big.Int{}
-
-	outpoint := modules.OutPoint{
-		// TxHash: ,
-		MessageIndex: 2,
-		OutIndex:     3,
-	}
-	input := modules.Input{
-		PreviousOutPoint: &outpoint,
-		SignatureScript:  []byte("xxxxxxxxxx"),
-		Extra:            createT.SetInt64(time.Now().Unix()).Bytes(),
-	}
-	time.Sleep(1 * time.Second)
-	input1 := modules.Input{
-		PreviousOutPoint: &outpoint,
-		SignatureScript:  []byte("cccccccccc"),
-		Extra:            createT.SetInt64(time.Now().Unix()).Bytes(),
-	}
-	time.Sleep(1 * time.Second)
-	input2 := modules.Input{
-		PreviousOutPoint: &outpoint,
-		SignatureScript:  []byte("vvvvvvvvvv"),
-		Extra:            createT.SetInt64(time.Now().Unix()).Bytes(),
-	}
-	output := modules.Output{
-		Value: totalIncome,
-		Asset: &modules.Asset{
-			AssetId: modules.BTCCOIN,
-		},
-		PkScript: script,
-	}
-
-	payload0 := &modules.PaymentPayload{
-		Inputs:  []*modules.Input{&input},
-		Outputs: []*modules.Output{&output},
-	}
-	payload1 := &modules.PaymentPayload{
-		Inputs:  []*modules.Input{&input1},
-		Outputs: []*modules.Output{&output},
-	}
-	payload2 := &modules.PaymentPayload{
-		Inputs:  []*modules.Input{&input2},
-		Outputs: []*modules.Output{&output},
-	}
-	for i := 0; i < 16; i++ {
-		if i == 0 {
-			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload0))
-		}
-		if i == 1 {
-			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload1))
-		}
-		if i == 2 {
-			msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, payload2))
-		}
-		msgs = append(msgs, modules.NewMessage(modules.APP_DATA, &modules.DataPayload{MainData: []byte(fmt.Sprintf("text%d%v", i, time.Now()))}))
-	}
-
+	sign, _ := hex.DecodeString("2c731f854ef544796b2e86c61b1a9881a0148da0c1001f0da5bd2074d2b8360367e2e0a57de91a5cfe92b79721692741f47588036cf0101f34dab1bfda0eb030")
+	pubKey, _ := hex.DecodeString("0386df0aef707cc5bc8d115c2576f844d2734b05040ef2541e691763f802092c09")
+	unlockScript := tokenengine.GenerateP2PKHUnlockScript(sign, pubKey)
+	a := modules.NewPTNAsset()
+	addr, _ := common.StringToAddress("P13pBrshF6JU7QhMmzJjXx3mWHh13YHAUAa")
+	lockScript := tokenengine.GenerateLockScript(addr)
 	for j := 0; j < 16; j++ {
-		txs = append(txs, transaction(append(msgs1, msgs[j])))
+		tx := modules.NewTransaction([]*modules.Message{})
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0), unlockScript)},
+			[]*modules.Output{modules.NewTxOut(uint64(j+1), lockScript, a)})))
+		txs = append(txs, tx)
 	}
 	fmt.Println("range txs start.... ", time.Now().Unix()-t0.Unix())
 	// Import the batch and verify that limits have been enforced
@@ -312,7 +253,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 				}
 			}
 			all = len(txs)
-			for _, tx := range p.all {
+			poolTxs := pool.AllTxpoolTxs()
+			for _, tx := range poolTxs {
 				if tx.Pending {
 					pending_cache++
 				} else {
@@ -337,7 +279,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		} else {
 			log.Error("test added tx failed.")
 		}
-		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, len(pool.all), pending_cache, queue_cache)
+		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, pool.AllLength(), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
 }

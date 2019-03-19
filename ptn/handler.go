@@ -296,10 +296,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
-	pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
-	pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
-	go pm.ceBroadcastLoop()
-
 	// start sync handlers
 	//定时与相邻个体进行全链的强制同步,syncer()首先启动fetcher成员，然后进入一个无限循环，
 	//每次循环中都会向相邻peer列表中“最优”的那个peer作一次区块全链同步
@@ -359,6 +355,12 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 	pm.activeMediatorsUpdatedCh = make(chan dag.ActiveMediatorsUpdatedEvent)
 	pm.activeMediatorsUpdatedSub = pm.dag.SubscribeActiveMediatorsUpdatedEvent(pm.activeMediatorsUpdatedCh)
 	go pm.activeMediatorsUpdatedEventRecvLoop()
+
+	if pm.consEngine != nil {
+		pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
+		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
+		go pm.ceBroadcastLoop()
+	}
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -688,7 +690,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 }
 
 //test for p2p broadcast
-func (pm *ProtocolManager) BroadcastCe(ce string) {
+func (pm *ProtocolManager) BroadcastCe(ce []byte) {
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendConsensus(ce)

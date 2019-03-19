@@ -60,7 +60,7 @@ type IUtxoRepository interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
-	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
@@ -85,8 +85,8 @@ func (repository *UtxoRepository) GetAllUtxos() (map[modules.OutPoint]*modules.U
 func (repository *UtxoRepository) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
 	return repository.utxodb.GetAddrOutpoints(addr)
 }
-func (repository *UtxoRepository) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
-	return repository.utxodb.GetAddrUtxos(addr)
+func (repository *UtxoRepository) GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+	return repository.utxodb.GetAddrUtxos(addr, asset)
 }
 func (repository *UtxoRepository) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
 	return repository.utxodb.SaveUtxoView(view)

@@ -60,7 +60,7 @@ type Dag struct {
 	propRep       dagcommon.IPropRepository
 	validate      validator.Validator
 	ChainHeadFeed *event.Feed
-	
+
 	Mutex           sync.RWMutex
 	Memdag          memunit.IMemDag                      // memory unit
 	PartitionMemDag map[modules.IDType16]memunit.IMemDag //其他分区的MemDag
@@ -707,18 +707,18 @@ func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error
 	return d.unstableUnitRep.GetTxFromAddress(tx)
 }
 
-//func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
-//	return d.unstableUnitRep.GetAddrOutput(addr)
-//}
+func (d *Dag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error) {
+	return d.unstableUnitRep.GetAssetTxHistory(asset)
+}
 
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
-	all, err := d.unstableUtxoRep.GetAddrUtxos(addr)
+	all, err := d.unstableUtxoRep.GetAddrUtxos(addr, asset)
 	return all, err
 }
 
 func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 
-	all, err := d.unstableUtxoRep.GetAddrUtxos(addr)
+	all, err := d.unstableUtxoRep.GetAddrUtxos(addr, nil)
 
 	return all, err
 }

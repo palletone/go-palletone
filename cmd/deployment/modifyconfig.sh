@@ -164,11 +164,9 @@ function addBootstrapNodes()
         newarr=${array:0:$[$l-1]}
         newarr="$newarr]"
     fi
-    newBootstrapNodes="BootstrapNodes=$newarr"
+    #newBootstrapNodes="BootstrapNodes=$newarr"
+    newBootstrapNodes="StaticNodes=$newarr"
     echo $newBootstrapNodes
-    ##sed -i '/^StaticNodes/c'$newStaticNodes'' node$index/ptn-config.toml
-    #sed -i '/^BootstrapNodes/c'$newBootstrapNodes'' node$index/ptn-config.toml
-    #echo "=====addBootstrapNodes $index ok======="
 }
 
 
@@ -180,7 +178,8 @@ function ModifyBootstrapNodes()
     while [ $count -le $1 ] ;
     do
         arrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-        sed -i '/^BootstrapNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
+        #sed -i '/^BootstrapNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
+        sed -i '/^StaticNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
         echo "=====addBootstrapNodes $count ok======="
 
         let ++count;

@@ -288,6 +288,16 @@ func (s *PublicBlockChainAPI) GetAddrTransactions(ctx context.Context, addr stri
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
+func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr string) ([]*ptnjson.TxJson, error) {
+	asset := &modules.Asset{}
+	err := asset.SetString(assetStr)
+	if err != nil {
+		return nil, errors.New("Invalid asset string")
+	}
+	result, err := s.b.GetAssetTxHistory(asset)
+
+	return result, err
+}
 
 //func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
 //	result, err := s.b.WalletTokens(address)
@@ -1619,7 +1629,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	return taken_utxo, change
 //}
 
-func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string,asset string) (core.Utxos, error) {
+func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string, asset string) (core.Utxos, error) {
 	var addr common.Address
 	// store tx input utxo outpoint
 	inputsOutpoint := []modules.OutPoint{}
@@ -1643,7 +1653,7 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
 				if pay.Outputs[0].Asset.IsSimilar(tokenAsset) == false {
-				    continue
+					continue
 				}
 				for outIndex, output := range pay.Outputs {
 					op.TxHash = tx.Tx.Hash()
@@ -1771,7 +1781,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
 
 	if err == nil {
-		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from,"PTN")
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from, "PTN")
 		if err != nil {
 			return "", fmt.Errorf("Select utxo err")
 		}
@@ -2173,18 +2183,18 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
-    for msgidx, msg := range tx.TxMessages {
-        payload, ok := msg.Payload.(*modules.PaymentPayload)
-        if ok == false {
-            continue
-        }
-        for inputindex, _ := range payload.Inputs {
-	        err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
-	        if err != nil {
-	            return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
-	        }
-          }
-    }
+	for msgidx, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+		for inputindex, _ := range payload.Inputs {
+			err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+			if err != nil {
+				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+			}
+		}
+	}
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
 	mtxbt, err := rlp.EncodeToBytes(tx)
@@ -2435,7 +2445,6 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 	if 0 == len(tx.TxMessages) {
-		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
@@ -2446,11 +2455,11 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 		}
 
 		for _, txout := range payload.Outputs {
-			log.Info("+++++++++++++++++++++++++++++++++++++++++", "tx_outAmount", txout.Value, "outInfo", txout)
+			// log.Debug("+++++++++++++++++++++++++++++++++++++++++", "tx_outAmount", txout.Value, "outInfo", txout)
 			outAmount += txout.Value
 		}
 	}
-	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
+	// log.Debug("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
 	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)

@@ -80,7 +80,7 @@ type IUnitRepository interface {
 	//GetHeadFastUnitHash() (common.Hash, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	//GetCanonicalHash(number uint64) (common.Hash, error)
-
+	GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error)
 	//SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	//SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
@@ -251,9 +251,21 @@ func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.Cha
 	return header.Number, nil
 }
 
-//func (rep *UnitRepository) GetCanonicalHash(number uint64) (common.Hash, error) {
-//	return rep.dagdb.GetCanonicalHash(number)
-//}
+func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error) {
+	txIds, err := rep.idxdb.GetTokenTxIds(asset)
+	if err != nil {
+		return nil, err
+	}
+	var result []*modules.Transaction
+	for _, txId := range txIds {
+		tx, err := rep.dagdb.GetTransactionOnly(txId)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Retrieve Tx by hash[%s] get error:%s", txId.String(), err.Error()))
+		}
+		result = append(result, tx)
+	}
+	return result, nil
+}
 
 //func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
 //	return rep.dagdb.SaveNumberByHash(uHash, number)
@@ -937,11 +949,24 @@ func (rep *UnitRepository) savePaymentPayload(txHash common.Hash, msg *modules.P
 		return false
 	}
 
+	//对PRC721类型的通证的流转历史记录索引
+	if dagconfig.DefaultConfig.Token721TxIndex {
+
+		for _, output := range msg.Outputs {
+			asset := output.Asset
+			if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
+				if err = rep.idxdb.SaveTokenTxId(asset, txHash); err != nil {
+					log.Errorf("Save token and txid index data error:%s", err.Error())
+				}
+			}
+
+		}
+	}
 	return true
 }
 
 /**
-保存TextPayload
+保存DataPayload
 save DataPayload data
 */
 

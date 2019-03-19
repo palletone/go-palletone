@@ -256,7 +256,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	}
 	err = cclist.SetChaincode(setChainId, 0, cc)
 	if err != nil {
-		log.Errorf("setchaincode[%s]-[%s] fail", setChainId, cc.Name)
+		log.Error("Deploy","SetChaincode fail, chainId", setChainId,"name", cc.Name)
 	}
 
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, cc.Name, cc.Id, args, timeout)

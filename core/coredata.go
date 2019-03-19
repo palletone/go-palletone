@@ -30,5 +30,5 @@ type ConsensusEngine interface {
 }
 
 type ConsensusEvent struct {
-	Ce string
+	Ce []byte
 }

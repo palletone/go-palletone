@@ -106,7 +106,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	//logger := log.New()
 	dag, err := dag.NewDag(db)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
@@ -117,14 +116,10 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		config:         config,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
-		engine:         CreateConsensusEngine(ctx),
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		//levelDb:        db,
-		bloomRequests: make(chan chan *bloombits.Retrieval),
-		dag:           dag,
-		//bloomIndexer:   NewBloomIndexer(configure.BloomBitsBlocks),
-		//etherbase:      config.Etherbase,
+		bloomRequests:  make(chan chan *bloombits.Retrieval),
+		dag:            dag,
 	}
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
 
@@ -133,6 +128,9 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	pool := txspool.NewTxPool(config.TxPool, ptn.dag)
 	ptn.txPool = pool
+
+	//Test for P2P
+	ptn.engine = consensus.New(dag, pool)
 
 	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
 	if err != nil {
@@ -187,12 +185,6 @@ func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palle
 	//		db.Meter("eth/db/chaindata/")
 	//	}
 	return db, nil
-}
-
-//CreateConsensusEngine creates the required type of consensus engine instance for an PalletOne service
-func CreateConsensusEngine(ctx *node.ServiceContext) core.ConsensusEngine {
-	engine := consensus.New()
-	return engine
 }
 
 // APIs returns the collection of RPC services the ethereum package offers.
