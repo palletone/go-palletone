@@ -28,11 +28,11 @@ import (
 )
 
 type TxJson struct {
-	TxHash  string       `json:"tx_hash"`
-	TxSize  float64      `json:"tx_size"`
-	Payment *PaymentJson `json:"payment"`
-	Vote    *VoteJson    `json:"vote"`
-
+	TxHash         string              `json:"tx_hash"`
+	TxSize         float64             `json:"tx_size"`
+	Payment        *PaymentJson        `json:"payment"`
+	Vote           *VoteJson           `json:"vote"`
+	Data           *DataJson           `json:"data"`
 	InstallRequest *InstallRequestJson `json:"install_request"`
 	DeployRequest  *DeployRequestJson  `json:"deploy_request"`
 	InvokeRequest  *InvokeRequestJson  `json:"invoke_request"`
@@ -66,6 +66,10 @@ type StopRequestJson struct {
 	Txid        string
 	DeleteImage bool
 }
+type DataJson struct {
+	MainData  string
+	ExtraData string
+}
 
 func ConvertTx2Json(tx *modules.Transaction) TxJson {
 	json := TxJson{TxHash: tx.Hash().String(), TxSize: float64(tx.Size())}
@@ -80,6 +84,9 @@ func ConvertTx2Json(tx *modules.Transaction) TxJson {
 				vote := &VoteJson{Content: string(v.Contents)}
 				json.Vote = vote
 			}
+		} else if m.App == modules.APP_DATA {
+			data := m.Payload.(*modules.DataPayload)
+			json.Data = &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData)}
 		} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {
 			req := m.Payload.(*modules.ContractInstallRequestPayload)
 			json.InstallRequest = convertInstallRequest2Json(req)
