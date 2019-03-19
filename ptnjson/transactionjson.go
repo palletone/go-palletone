@@ -49,7 +49,7 @@ func ConvertTx02Json(tx *modules.Transaction, hash common.Hash) *TransactionJson
 		TxHash:     tx.Hash().String(),
 		UnitHash:   hexHash,
 		TxSize:     float64(tx.Size()),
-		Payment:    &payment,
+		Payment:    payment,
 		TxMessages: ConvertMegs2Json(tx.TxMessages),
 	}
 }

@@ -61,7 +61,7 @@ func ConvertUnit2Json(unit *modules.Unit) *UnitJson {
 	}
 
 	for _, tx := range unit.Txs {
-		txjson := ConvertTx2Json(tx)
+		txjson := ConvertTx2Json(tx, nil)
 		json.Txs = append(json.Txs, &txjson)
 	}
 	return json
