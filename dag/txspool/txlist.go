@@ -20,7 +20,6 @@
 package txspool
 
 import (
-	"math/big"
 	"sort"
 	"strconv"
 	"sync"
@@ -136,7 +135,6 @@ func (l *txPricedList) Removed(hash common.Hash) {
 	defer l.Unlock()
 	// Seems we've reached a critical number of stale transactions, reheap
 	reheap := make(priorityHeap, 0)
-	l.stales = 0
 	var exist bool
 	for i, tx := range *l.items {
 		if hash == tx.Tx.Hash() {
@@ -153,35 +151,6 @@ func (l *txPricedList) Removed(hash common.Hash) {
 	if exist {
 		l.items = &reheap
 	}
-}
-
-// Cap finds all the transactions below the given price threshold, drops them
-// from the priced list and returs them for further removal from the entire pool.
-func (l *txPricedList) Cap(threshold *big.Int) modules.TxPoolTxs {
-	l.Lock()
-	defer l.Unlock()
-
-	drop := make(modules.TxPoolTxs, 0, 128) // Remote underpriced transactions to drop
-	save := make(modules.TxPoolTxs, 0, 64)  // Local underpriced transactions to keep
-
-	for len(*l.items) > 0 {
-		// Discard stale transactions if found during cleanup
-		tx := l.items.Pop().(*modules.TxPoolTransaction)
-		if _, ok := (*l.all)[tx.Tx.Hash()]; !ok {
-			l.stales--
-			continue
-		}
-		// Stop the discards if we've reached the threshold
-		if tx.GetTxFee().Cmp(threshold) >= 0 {
-			save = append(save, tx)
-			break
-		}
-
-	}
-	for _, tx := range save {
-		l.items.Push(tx)
-	}
-	return drop
 }
 
 // Underpriced checks whether a transaction is cheaper than (or as cheap as) the

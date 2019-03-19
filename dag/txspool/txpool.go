@@ -1686,18 +1686,17 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.Lock()
-
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
-LOOP:
+
 	for {
-		if time.Since(t0) > time.Second*1 {
+		if time.Since(t0) > time.Second*2 {
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
-			break LOOP
+			break
 		}
 		tx := pool.priority_priced.Get()
 		if tx == nil {
 			log.Info("Txspool get  priority_pricedtx failed.", "error", "tx is null")
-			break LOOP
+			break
 		} else {
 			if !tx.Pending {
 				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
@@ -1716,7 +1715,7 @@ LOOP:
 					pool.promoteTx(hash, tx)
 				} else {
 					total = total - tx.Tx.Size()
-					break LOOP
+					break
 				}
 			}
 		}
@@ -1730,34 +1729,32 @@ LOOP:
 	}
 	t2 := time.Now()
 	validated_txs := make([]*modules.TxPoolTransaction, 0)
-	for {
-		//  验证孤儿交易
-		or_list := make(orList, 0)
-		for _, tx := range orphanTxs {
-			or_list = append(or_list, tx)
-		}
-		// 按入池时间排序
-		if len(or_list) > 1 {
-			sort.Sort(or_list)
-		}
-		for _, tx := range or_list {
-			ok, err := pool.ValidateOrphanTx(tx.Tx)
-			if !ok && err == nil {
-				//  更改孤儿交易的状态
-				tx.Pending = true
-				tx.UnitHash = hash
-				pool.all.Store(tx.Tx.Hash(), tx)
-				pool.orphans.Delete(tx.Tx.Hash())
-				//pool.orphans.Store(tx.Tx.Hash(), tx)
-				list = append(list, tx)
-				total += tx.Tx.Size()
-				if total > unit_size {
-					break
-				}
-				validated_txs = append(validated_txs, tx)
+
+	//  验证孤儿交易
+	or_list := make(orList, 0)
+	for _, tx := range orphanTxs {
+		or_list = append(or_list, tx)
+	}
+	// 按入池时间排序
+	if len(or_list) > 1 {
+		sort.Sort(or_list)
+	}
+	for _, tx := range or_list {
+		ok, err := pool.ValidateOrphanTx(tx.Tx)
+		if !ok && err == nil {
+			//  更改孤儿交易的状态
+			tx.Pending = true
+			tx.UnitHash = hash
+			go pool.all.Store(tx.Tx.Hash(), tx)
+			go pool.orphans.Delete(tx.Tx.Hash())
+			//pool.orphans.Store(tx.Tx.Hash(), tx)
+			list = append(list, tx)
+			total += tx.Tx.Size()
+			validated_txs = append(validated_txs, tx)
+			if total > unit_size {
+				break
 			}
 		}
-		break
 	}
 	pool.mu.Unlock()
 	// 	去重
