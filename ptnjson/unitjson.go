@@ -66,7 +66,7 @@ func ConvertUnit2Json(unit *modules.Unit) *UnitJson {
 	}
 
 	for _, tx := range unit.Txs {
-		txjson := ConvertTx2Json(tx)
+		txjson := ConvertTx2Json(tx, nil)
 		json.Txs = append(json.Txs, &txjson)
 	}
 	return json
@@ -95,6 +95,7 @@ type UnitSummaryJson struct {
 	Txs        []common.Hash      `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
+	TxCount    int                `json:"transaction_count"`
 }
 
 func ConvertUnit2SummaryJson(unit *modules.Unit) *UnitSummaryJson {
@@ -103,6 +104,7 @@ func ConvertUnit2SummaryJson(unit *modules.Unit) *UnitSummaryJson {
 		UnitSize:   unit.Size(),
 		UnitHeader: convertUnitHeader2Json(unit.UnitHeader),
 		Txs:        []common.Hash{},
+		TxCount:    len(unit.Txs),
 	}
 
 	for _, tx := range unit.Txs {

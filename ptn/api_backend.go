@@ -277,7 +277,7 @@ func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxJs
 	}
 	txjs := []*ptnjson.TxJson{}
 	for _, tx := range txs {
-		txj := ptnjson.ConvertTx2Json(tx)
+		txj := ptnjson.ConvertTx2Json(tx, b.ptn.dag.GetUtxoEntry)
 		txjs = append(txjs, &txj)
 	}
 	return txjs, nil
@@ -566,7 +566,7 @@ func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	txjson := ptnjson.ConvertTx2Json(tx)
+	txjson := ptnjson.ConvertTx2Json(tx, nil)
 	json, err := json.Marshal(txjson)
 	return string(json), err
 }

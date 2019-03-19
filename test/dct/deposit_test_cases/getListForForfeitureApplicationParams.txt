@@ -6,22 +6,25 @@ Resource          publicParams.txt
 *** Keywords ***
 获取没收保证金申请列表
     ${one}    Create List    GetListForForfeitureApplication
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForForfeitureApplication    ${one}
+    ${two}    Create List    ${one}
+    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForForfeitureApplication    ${two}
     ${respContentJson}    to json    ${resp.content}
     log    ${respContentJson['result']}
     ${addresses}    Evaluate    [addresses['forfeiture_address'] for addresses in ${respContentJson['result']}]
     ${times}    Evaluate    [times['apply_time'] for times in ${respContentJson['result']}]
-    ${arrayLen}    get Length    ${addresses}
-    ${address0}    set variable if    ${arrayLen} != 0    ${addresses}[0]
-    ${time0}    set variable if    ${arrayLen} != 0    ${times}[0]
+    #    get Length    ${addresses}
+    #    set variable if    ${arrayLen} != 0    ${addresses}[0]
+    #    set variable if    ${arrayLen} != 0    ${times}[0]
+    #    set variable if    ${arrayLen} == 0    ""
+    #    set variable if    ${arrayLen} == 0    0
+    #    Evaluate    str(${time0})
+    ${address0}    Set Variable    ${addresses}[0]
     ${strTime}    Evaluate    str(${times}[0])
-    log    ${strTime}
-    log    ${address0}
-    log    ${time0}
     [Return]    ${address0}    ${strTime}
 
 getListForForfeitureApplication
     ${one}    Create List    GetListForForfeitureApplication
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForForfeitureApplication    ${one}
+    ${two}    Create List    ${one}
+    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForForfeitureApplication    ${two}
     ${result}    Set Variable    ${resp.content}
     [Return]    ${result}

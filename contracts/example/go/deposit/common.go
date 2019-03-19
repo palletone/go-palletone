@@ -483,6 +483,25 @@ func GetDepositBalance(stub shim.ChaincodeStubInterface, nodeAddr string) (*Depo
 
 //获取候选列表信息
 func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]string, error) {
+	if strings.Compare(role,"MediatorList") == 0 {
+		candidateListByte, err := stub.GetState(role)
+		if err != nil {
+			return nil, err
+		}
+		if candidateListByte == nil {
+			return nil, nil
+		}
+		var candiateList []*MediatorRegisterInfo
+		err = json.Unmarshal(candidateListByte, &candiateList)
+		if err != nil {
+			return nil, err
+		}
+		var candidateListStr []string
+		for i := range candiateList{
+			candidateListStr = append(candidateListStr,candiateList[i].Address)
+		}
+		return candidateListStr,err
+	}
 	candidateListByte, err := stub.GetState(role)
 	if err != nil {
 		return nil, err

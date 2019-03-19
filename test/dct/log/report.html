@@ -1585,22 +1585,22 @@ storage = function () {
 window.output = {};
 </script>
 <script type="text/javascript">
-window.output["suite"] = [1,2,3,0,[],[1,0,9535],[],[[4,0,1,0,[],[1,150,9385],[]]],[],[1,1,1,1]];
+window.output["suite"] = [1,2,3,0,[],[1,0,178416],[],[[4,0,1,5,[],[1,199,40587],[]],[6,0,1,7,[],[1,40786,40373],[]],[8,0,1,9,[],[1,81159,8087],[]],[10,0,1,11,[],[1,89246,8073],[]],[12,0,1,13,[],[1,97319,24240],[]],[14,0,1,15,[],[1,121559,16186],[]],[16,0,1,17,[],[1,137745,8089],[]],[18,0,1,19,[],[1,145835,8090],[]],[20,0,1,21,[],[1,153926,8319],[]],[22,0,1,0,[],[1,162245,16169],[]]],[],[10,10,10,10]];
 </script>
 <script type="text/javascript">
 window.output["strings"] = [];
 </script>
 <script type="text/javascript">
-window.output["strings"] = window.output["strings"].concat(["*","*DepositContractTest","*/home/zhichunqi/gowork/src/github.com/palletone/go-palletone/test/dct/deposit_test_cases/DepositContractTest.robot","*../deposit_test_cases/DepositContractTest.robot","*Business_01"]);
+window.output["strings"] = window.output["strings"].concat(["*","*DepositContractTest","*/home/zhichunqi/gowork/src/github.com/palletone/go-palletone/test/dct/deposit_test_cases/DepositContractTest.robot","*../deposit_test_cases/DepositContractTest.robot","*Business_01","*<p>某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点申请退出候选列表-》进入退出列表-》基金会同意。此时，所有列表为空\x3c/p>","*Business_02","*<p>某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》社区节点申请没收改地址所以保证金-》基金会同意，此时，只有同意列表不为空，其他的为空。\x3c/p>","*Business_03","*<p>某节点想成为jury，直接可交付保证金，但是该节点交的钱不够，所以无法加入jury候选列表，但是可以查询改地址在合约账户的相关信息\x3c/p>","*Business_04","*<p>该节点想成为合约开发者，由于交付保证金足够，所以加入了开发者的候选列表，也可以查询到账户余额信息。\x3c/p>","*Business_06","*<p>该节点是在 Business_03 的基础上，再进行交付一下保证金，但是加起来还是没有达到保证金数量，所以jury候选列表为空，然后该节点提出申请退还一些保证金，基金会同意，退出保证金列表为空，该节点的账户余额会减少。\x3c/p>","*Business_07","*<p>该节点在 Business_04 的基础上，申请退出相应保证金，由于退出保证金后，余额不足，会被移除开发者候选列表，账户余额改变，退出列表为空，候选列表为空。\x3c/p>","*Business_05","*<p>在 Business_02 的基础上，被没收节点继续申请加入mediator候选列举，因此该地址只需交付足够保证金即可，但是，由于该节点交付不够，所以无法加入候选类别，并且规定账户也是为空的。\x3c/p>","*Business_08","*<p>在 Business_02 的基础上，被没收节点继续申请加入mediator候选列举，因此该地址只需交付足够保证金即可\x3c/p>","*Business_09","*<p>在 Business_06 的基础上，该节点继续交付保证金想成为 jury 候选列表的节点，此次交付了足够的保证金，所以成功进入候选列表，并且余额相应的改变。\x3c/p>","*Business_10"]);
 </script>
 <script type="text/javascript">
-window.output["stats"] = [[{"elapsed":"00:00:09","fail":0,"label":"Critical Tests","pass":1},{"elapsed":"00:00:09","fail":0,"label":"All Tests","pass":1}],[],[{"elapsed":"00:00:10","fail":0,"id":"s1","label":"DepositContractTest","name":"DepositContractTest","pass":1}]];
+window.output["stats"] = [[{"elapsed":"00:02:58","fail":0,"label":"Critical Tests","pass":10},{"elapsed":"00:02:58","fail":0,"label":"All Tests","pass":10}],[],[{"elapsed":"00:02:58","fail":0,"id":"s1","label":"DepositContractTest","name":"DepositContractTest","pass":10}]];
 </script>
 <script type="text/javascript">
-window.output["baseMillis"] = 1552637312870;
+window.output["baseMillis"] = 1552985580807;
 </script>
 <script type="text/javascript">
-window.output["generated"] = 9568;
+window.output["generated"] = 178684;
 </script>
 <script type="text/javascript">
 window.settings = {"background":{"fail":"#f66","nonCriticalFail":"#9e9","pass":"#9e9"},"logURL":"log.html","rpa":false,"title":""};

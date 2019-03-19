@@ -20,7 +20,7 @@ do
 	account0=`echo $list|jq ".[1]"`
 	another=`echo $list|jq ".[$index]"`
 	./transfertoken.sh $account0 $another
-	sleep 1 
+	sleep 3 
 	fi
 	#echo $list | jq ".[$index]";
 done
@@ -41,15 +41,31 @@ do
 	#echo $list | jq ".[$index]";
 done
 
-one=`echo ${mediatorAddr_01//\"/}`
+mdi_01=`echo ${mediatorAddr_01//\"/}`
 
-two=`echo ${foundationAddr//\"/}`
-#echo $one
+found=`echo ${foundationAddr//\"/}`
 
-robot -d ./log -v mediatorAddr_01:$one -v foundationAddr:$two --test Business_01 ./deposit_test_cases/DepositContractTest.robot
+mediatorAddr_02=`echo $list | jq ".[3]"`
+mdi_02=`echo ${mediatorAddr_02//\"/}`
 
-sleep 1
+#mdiatorAddr_03=`echo $list | jq ".[4]"`
+#mdi_03=`echo ${mediatorAddr_03//\"/}`
+
+juryAddr_01=`echo $list | jq ".[5]"`
+jury_01=`echo ${juryAddr_01//\"/}`
+
+developerAddr_01=`echo $list | jq ".[6]"`
+developer_01=`echo ${developerAddr_01//\"/}`
+
+anotherAddr=`echo $list | jq ".[4]"`
+another=`echo ${anotherAddr//\"/}`
+
+#robot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found --test Business_01 ./deposit_test_cases/DepositContractTest.robot
+#robot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found -v anotherAddr:$another --test Business_02 ./deposit_test_cases/DepositContractTest.robot
+#echo $another
+robot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v anotherAddr:$another ./deposit_test_cases/DepositContractTest.robot
+
 
 #./test_case_teardown.sh
 
-#killall gptn
+killall gptn
