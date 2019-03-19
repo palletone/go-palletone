@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	VrfElectionNum = 4
+	//VrfElectionNum = 4
 )
 
 func localIsMinSignature(tx *modules.Transaction) bool {
