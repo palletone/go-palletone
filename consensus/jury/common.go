@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"encoding/hex"
 )
 
 const (
@@ -97,11 +98,11 @@ func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) er
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transaction) ([]*modules.Message, error) {
-	if trs == nil || len(trs.TxMessages) <= 0 {
+func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transaction) ([]*modules.Message, error) {
+	if tx == nil || len(tx.TxMessages) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
-	for _, msg := range trs.TxMessages {
+	for _, msg := range tx.TxMessages {
 		switch msg.App {
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			{
@@ -129,7 +130,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				req := ContractDeployReq{
 					chainID:    "palletone",
 					templateId: reqPay.TplId,
-					txid:       common.BytesToAddress(trs.RequestHash().Bytes()).String(),
+					txid:       hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes21()),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout),
 				}
@@ -150,10 +151,10 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 					chainID:  "palletone",
 					deployId: reqPay.ContractId,
 					args:     reqPay.Args,
-					txid:     trs.RequestHash().String(),
+					txid:     tx.RequestHash().String(),
 				}
 
-				fullArgs, err := handleMsg0(trs, dag, req.args)
+				fullArgs, err := handleMsg0(tx, dag, req.args)
 				if err != nil {
 					return nil, err
 				}
@@ -196,7 +197,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 				req := ContractStopReq{
 					chainID:     "palletone",
 					deployId:    reqPay.ContractId,
-					txid:        reqPay.Txid,
+					txid:        tx.RequestHash().String(),
 					deleteImage: reqPay.DeleteImage,
 				}
 				stopResult, err := ContractProcess(contract, req)
@@ -211,7 +212,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, trs *modules.Transac
 		}
 	}
 
-	return nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", trs.RequestHash().String()))
+	return nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", tx.RequestHash().String()))
 }
 
 func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, error) {

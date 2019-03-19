@@ -2,7 +2,6 @@ package list
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"sync"
 
@@ -44,7 +43,7 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 
 	for k, v := range c.CClist {
 		if k == cc.Name && v.Version == cc.Version {
-			log.Errorf("chaincode [%s] , version[%s] already exit, %v", cc.Name, cc.Version, v)
+			log.Error("addChainCodeInfo", "chaincode  already exit, name", cc.Name, "version", cc.Version)
 			return errors.New("already exit chaincode")
 		}
 	}
@@ -56,12 +55,10 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 func SetChaincode(cid string, version int, chaincode *CCInfo) error {
 	chains.mu.Lock()
 	defer chains.mu.Unlock()
-	log.Info("SetChaincode", "chainId", cid, "version", )
-	log.Infof("chainId[%s] ,%d, chaincode[%s]id[%s]", cid, version, chaincode.Name, hex.EncodeToString(chaincode.Id))
+	log.Info("SetChaincode", "chainId", cid, "version", version, "Name", chaincode.Name, "Id", chaincode.Id)
 	for k, v := range chains.Clist {
 		if k == cid {
-			log.Infof("chainId[%s] already exit, %v", cid, v)
-
+			log.Info("SetChaincode", "chainId already exit, cid:", cid, "version", v)
 			return addChainCodeInfo(v, chaincode)
 		}
 	}
@@ -94,10 +91,8 @@ func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
 	if chains.Clist[cid] != nil {
 		clist := chains.Clist[cid]
 		for _, v := range clist.CClist {
-			//log.Infof("++++:%v",  *v)
-			log.Infof("GetChaincode find,%s, id[%s]--[%s], ", v.Name, hex.EncodeToString(v.Id), hex.EncodeToString(deployId))
+			log.Info("GetChaincode", "find chaincode,name", v.Name, "list id", v.Id, "depId", deployId)
 			if bytes.Equal(v.Id, deployId) {
-				//log.Infof("++++++++++++++++find,%s", v.Name)
 				return v, nil
 			}
 		}
@@ -113,13 +108,12 @@ func DelChaincode(cid string, ccName string, version string) error {
 	if cid == "" || ccName == "" {
 		return errors.New("param is nil")
 	}
-
 	if chains.Clist[cid] != nil {
 		delete(chains.Clist[cid].CClist, ccName)
-		log.Infof("del chaincode[%s]", ccName)
+		log.Info("DelChaincode", "delete chaincode", ccName)
 		return nil
 	}
-	log.Infof("not find chaincode[%s]", ccName)
+	log.Info("DelChaincode", "not find chaincode", ccName)
 
 	return nil
 }

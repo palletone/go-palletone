@@ -312,7 +312,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 				}
 			}
 			all = len(txs)
-			for _, tx := range p.all {
+			poolTxs := pool.AllTxpoolTxs()
+			for _, tx := range poolTxs {
 				if tx.Pending {
 					pending_cache++
 				} else {
@@ -337,7 +338,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		} else {
 			log.Error("test added tx failed.")
 		}
-		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, len(pool.all), pending_cache, queue_cache)
+		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, pool.AllLength(), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
 }

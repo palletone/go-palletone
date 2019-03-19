@@ -707,9 +707,9 @@ func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error
 	return d.unstableUnitRep.GetTxFromAddress(tx)
 }
 
-//func (d *Dag) GetAddrOutput(addr string) ([]modules.Output, error) {
-//	return d.unstableUnitRep.GetAddrOutput(addr)
-//}
+func (d *Dag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error) {
+	return d.unstableUnitRep.GetAssetTxHistory(asset)
+}
 
 func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
 	all, err := d.unstableUtxoRep.GetAddrUtxos(addr, asset)

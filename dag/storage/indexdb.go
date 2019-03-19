@@ -23,10 +23,10 @@ package storage
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -46,6 +46,8 @@ type IIndexDb interface {
 	GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error)
 	DeleteUtxoByIndex(idx *modules.UtxoIndex) error
 	SaveAddressTxId(address common.Address, txid common.Hash) error
+	SaveTokenTxId(asset *modules.Asset, txid common.Hash) error
+	GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error)
 	GetAddressTxIds(address common.Address) ([]common.Hash, error)
 	GetFromAddressTxIds(addr string) ([]common.Hash, error)
 	GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
@@ -81,6 +83,23 @@ func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) err
 	key = append(key, txid[:]...)
 	log.Debugf("Index address[%s] and tx[%s]", address.String(), txid.String())
 	return db.db.Put(key, txid[:])
+}
+func (db *IndexDb) SaveTokenTxId(asset *modules.Asset, txid common.Hash) error {
+	key := append(constants.TokenTxHash_Prefix, asset.Bytes()...)
+	key = append(key, txid[:]...)
+	log.Debugf("Index Token[%s] and tx[%s]", asset.String(), txid.String())
+	return db.db.Put(key, txid[:])
+}
+func (db *IndexDb) GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error) {
+	prefix := append(constants.TokenTxHash_Prefix, asset.Bytes()...)
+	data := getprefix(db.db, prefix)
+	var result []common.Hash
+	for _, v := range data {
+		hash := common.Hash{}
+		hash.SetBytes(v)
+		result = append(result, hash)
+	}
+	return result, nil
 }
 func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error) {
 	prefix := append(constants.AddrTransactionsHash_Prefix, address.Bytes()...)
@@ -138,16 +157,16 @@ func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
 }
 
 //save filehash key:IDX_FileHash_Txid   value:Txid
-func (db *IndexDb) SaveFileHash(filehash []byte,txid common.Hash) error {
-	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
-	key = append(key,[]byte(txid.String())...)
+func (db *IndexDb) SaveFileHash(filehash []byte, txid common.Hash) error {
+	key := append(constants.IDX_FileHash_Txid, []byte(filehash)...)
+	key = append(key, []byte(txid.String())...)
 
-	return db.db.Put(key,txid[:])
+	return db.db.Put(key, txid[:])
 }
 
-func (db *IndexDb) GetTxByFileHash(filehash []byte)([]common.Hash,error) {
-	key := append(constants.IDX_FileHash_Txid,[]byte(filehash)...)
-	data := getprefix(db.db,key)
+func (db *IndexDb) GetTxByFileHash(filehash []byte) ([]common.Hash, error) {
+	key := append(constants.IDX_FileHash_Txid, []byte(filehash)...)
+	data := getprefix(db.db, key)
 	var result []common.Hash
 	for _, v := range data {
 		hash := common.Hash{}

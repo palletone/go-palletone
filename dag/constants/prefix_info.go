@@ -59,6 +59,7 @@ var (
 	MEDIATOR_SCHEME_PREFIX        = []byte("ms")
 	ACCOUNT_INFO_PREFIX           = []byte("ai")
 	ACCOUNT_PTN_BALANCE_PREFIX    = []byte("ab")
+	TokenTxHash_Prefix            = []byte("tt")
 	// lookup
 	LookupPrefix = []byte("l")
 

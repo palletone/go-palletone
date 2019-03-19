@@ -54,6 +54,7 @@ var DefaultConfig = Config{
 	PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
 	IsRewardCoin:                 false,
 	AddrTxsIndex:                 false,
+	Token721TxIndex:              true,
 	TextFileHashIndex:            false,
 	GasToken:                     DefaultToken,
 	MainToken:                    DefaultToken,
@@ -101,8 +102,9 @@ type Config struct {
 	PtnAssetHex string
 	PtnAssetId  []byte
 
-	IsRewardCoin bool
-	AddrTxsIndex bool
+	IsRewardCoin    bool
+	AddrTxsIndex    bool
+	Token721TxIndex bool
 
 	TextFileHashIndex bool
 

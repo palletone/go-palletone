@@ -28,12 +28,12 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/dag"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -122,7 +122,8 @@ type Backend interface {
 	//SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
 
 	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
+	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxJson, error)
+
 	//GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)

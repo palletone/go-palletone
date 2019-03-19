@@ -270,9 +270,18 @@ func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
 }
 
 // GetCanonicalHash
-//func (b *PtnApiBackend) GetCanonicalHash(number uint64) (common.Hash, error) {
-//	return b.ptn.dag.GetCanonicalHash(number)
-//}
+func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxJson, error) {
+	txs, err := b.ptn.dag.GetAssetTxHistory(asset)
+	if err != nil {
+		return nil, err
+	}
+	txjs := []*ptnjson.TxJson{}
+	for _, tx := range txs {
+		txj := ptnjson.ConvertTx2Json(tx)
+		txjs = append(txjs, &txj)
+	}
+	return txjs, nil
+}
 
 // Get state
 //func (b *PtnApiBackend) GetHeadHeaderHash() (common.Hash, error) {

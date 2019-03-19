@@ -684,6 +684,21 @@ func (mr *MockIDagMockRecorder) GetAddrTransactions(addr interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrTransactions", reflect.TypeOf((*MockIDag)(nil).GetAddrTransactions), addr)
 }
 
+// GetAssetTxHistory mocks base method
+func (m *MockIDag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssetTxHistory", asset)
+	ret0, _ := ret[0].([]*modules.Transaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssetTxHistory indicates an expected call of GetAssetTxHistory
+func (mr *MockIDagMockRecorder) GetAssetTxHistory(asset interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetTxHistory", reflect.TypeOf((*MockIDag)(nil).GetAssetTxHistory), asset)
+}
+
 // GetContractTpl mocks base method
 func (m *MockIDag) GetContractTpl(templateID []byte) (*modules.StateVersion, []byte, string, string, string) {
 	m.ctrl.T.Helper()
