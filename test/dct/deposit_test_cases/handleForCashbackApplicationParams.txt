@@ -3,16 +3,16 @@ Resource          publicParams.txt
 
 *** Keywords ***
 基金会处理申请保证金退还所需参数
-    [Arguments]    ${foundationAddr}    ${handleWho}
+    [Arguments]    ${foundationAddr}    ${handleWho}    ${isAgree}
     ${获取提取保证金申请列表所需参数 }    获取提取保证金申请列表所需参数
-    ${1}    Create List    ${who}    ${获取提取保证金申请列表所需参数 }[0]    ${获取提取保证金申请列表所需参数 }[1]    ok
+    ${1}    Create List    ${handleWho}    ${获取提取保证金申请列表所需参数 }[0]    ${获取提取保证金申请列表所需参数 }[1]    ${isAgree}
     ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
     [Return]    ${one}
 
 handleForCashbackApplication
-    [Arguments]    ${foundationAddr}    ${handleWho}
-    ${基金会处理申请保证金退还所需参数}    基金会处理申请保证金退还所需参数    ${foundationAddr}    ${handleWho}
+    [Arguments]    ${foundationAddr}    ${handleWho}    ${isAgree}
+    ${基金会处理申请保证金退还所需参数}    基金会处理申请保证金退还所需参数    ${foundationAddr}    ${handleWho}    ${isAgree}
     ${resp}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyCashback    ${基金会处理申请保证金退还所需参数}
     ${result}    Set Variable    ${resp.content}
-    sleep    3
+    sleep    8
     [Return]    ${result}

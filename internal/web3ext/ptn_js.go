@@ -85,8 +85,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'transferToken',
 			call: 'ptn_transferToken',
-			params: 7,
-			inputFormatter: [null,null,null,null,null,null,null]
+			params: 8,
+			inputFormatter: [null,null,null,null,null,null,null,null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinstalltx',

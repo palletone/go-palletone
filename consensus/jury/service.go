@@ -160,14 +160,13 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		quit:           make(chan struct{}),
 		mtx:            make(map[common.Hash]*contractTx),
 		lockArf:        make(map[common.Address][]ElectionInf),
-		electionNum:    VrfElectionNum,
+		electionNum:    cfg.ElectionNum,
 		contractSigNum: cfg.ContractSigNum,
 		validator:      validator,
 	}
 
-	log.Info("NewContractProcessor ok", "local address:", p.local)
+	log.Info("NewContractProcessor ok", "local address:", p.local, "electionNum", p.electionNum)
 	//log.Info("NewContractProcessor", "vrf Account publicKey", p.vrfAct.pubKey, "privateKey", p.vrfAct.priKey)
-	log.Info("NewContractProcessor", "electionNum:", p.electionNum)
 	return p, nil
 }
 
@@ -215,7 +214,6 @@ func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
 
 func (p *Processor) runContractReq(reqId common.Hash) error {
 	req := p.mtx[reqId]
-
 	if req == nil {
 		return errors.New("runContractReq param is nil")
 	}

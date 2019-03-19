@@ -277,10 +277,11 @@ func (b *bridge) TransferToken(call otto.FunctionCall) (response otto.Value) {
 	//4 index, fee
 	amount := call.Argument(3)
 	fee := call.Argument(4)
+	extra := call.Argument(5)
+
 	// If password is not given or is the null value, prompt the user for it
 	var passwd otto.Value
-
-	if call.Argument(5).IsUndefined() || call.Argument(5).IsNull() {
+	if call.Argument(6).IsUndefined() || call.Argument(6).IsNull() {
 		fmt.Fprintf(b.printer, "asset: %s\n", asset)
 		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
 			throwJSException(err.Error())
@@ -288,21 +289,21 @@ func (b *bridge) TransferToken(call otto.FunctionCall) (response otto.Value) {
 			passwd, _ = otto.ToValue(input)
 		}
 	} else {
-		if !call.Argument(5).IsString() {
+		if !call.Argument(6).IsString() {
 			throwJSException("password must be a string")
 		}
-		passwd = call.Argument(5)
+		passwd = call.Argument(6)
 	}
 	// Third argument is the duration how long the account must be unlocked.
 	duration := otto.NullValue()
-	if call.Argument(6).IsDefined() && !call.Argument(6).IsNull() {
-		if !call.Argument(6).IsNumber() {
+	if call.Argument(7).IsDefined() && !call.Argument(7).IsNull() {
+		if !call.Argument(7).IsNumber() {
 			throwJSException("unlock duration must be a number")
 		}
-		duration = call.Argument(6)
+		duration = call.Argument(7)
 	}
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jptn.transferToken", nil, asset, from, to, amount, fee, passwd, duration)
+	val, err := call.Otto.Call("jptn.transferToken", nil, asset, from, to, amount, fee, extra, passwd, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}

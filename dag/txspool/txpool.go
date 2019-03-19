@@ -308,10 +308,8 @@ func (pool *TxPool) loop() {
 
 			// Handle stats reporting ticks
 		case <-report.C:
-			pool.mu.RLock()
 			pending, queued := pool.stats()
-			stales := pool.priority_priced.stales
-			pool.mu.RUnlock()
+			stales := pool.priority_priced.getStales()
 
 			if pending != prevPending || queued != prevQueued || stales != prevStales {
 				log.Debug("Transaction pool status report", "executable", pending, "queued", queued, "stales", stales)
@@ -418,7 +416,7 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 
 	// Check the queue and move transactions over to the pending if possible
 	// or remove those that have become invalid
-	pool.promoteExecutables(nil)
+	pool.promoteExecutables()
 
 }
 
@@ -597,10 +595,7 @@ func (pool *TxPool) isTransactionInPool(hash common.Hash) bool {
 
 // IsTransactionInPool returns whether or not the passed transaction already exists in the main pool.
 func (pool *TxPool) IsTransactionInPool(hash common.Hash) bool {
-	pool.mu.RLock()
-	inpool := pool.isTransactionInPool(hash)
-	pool.mu.RUnlock()
-	return inpool
+	return pool.isTransactionInPool(hash)
 }
 
 //
@@ -871,19 +866,13 @@ type Tag uint64
 
 func (pool *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
 	// Protect concurrent access.
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
 
 	// Potentially accept the transaction to the memory pool.
-	missingParents, _, err := pool.maybeAcceptTransaction(tx, true, rateLimit, false)
+	_, _, err := pool.maybeAcceptTransaction(tx, true, rateLimit, false)
 	if err != nil {
 		log.Info("txpool", "accept transaction err:", err)
 		return nil, err
 	}
-	missingParents = missingParents
-
-	// Potentially add the orphan transaction to the orphan pool.
-	//err = mp.maybeAddOrphan(tx, tag)
 	return nil, nil
 }
 
@@ -965,12 +954,7 @@ func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
 	}
 	// If we added a new transaction, run promotion checks and return
 	if !replace {
-		if len(tx.From) > 0 {
-			for _, from := range tx.From { // already validated
-				pool.promoteExecutables([]modules.OutPoint{*from})
-			}
-		}
-
+		pool.promoteExecutables()
 	}
 	return nil
 }
@@ -987,28 +971,16 @@ func (pool *TxPool) addTxs(txs []*modules.TxPoolTransaction, local bool) []error
 // whilst assuming the transaction pool lock is already held.
 func (pool *TxPool) addTxsLocked(txs []*modules.TxPoolTransaction, local bool) []error {
 	// Add the batch of transaction, tracking the accepted ones
-	dirty := make(map[modules.OutPoint]struct{})
 	errs := make([]error, len(txs))
+	var replace bool
 	for i, tx := range txs {
-		var replace bool
-		if replace, errs[i] = pool.add(tx, local); errs[i] == nil {
-			if !replace {
-				if len(tx.From) > 0 {
-					for _, from := range tx.From { // already validated
-						dirty[*from] = struct{}{}
-					}
-				}
-
-			}
+		if replace, errs[i] = pool.add(tx, local); errs[i] != nil {
+			break
 		}
 	}
-	// Only reprocess the internal state if something was actually added
-	if len(dirty) > 0 {
-		addrs := make([]modules.OutPoint, 0, len(dirty))
-		for addr := range dirty {
-			addrs = append(addrs, addr)
-		}
-		pool.promoteExecutables(addrs)
+
+	if !replace {
+		pool.promoteExecutables()
 	}
 	return errs
 }
@@ -1263,8 +1235,6 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	}
 }
 func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
 	for _, hash := range hashs {
 		pool.removeTx(hash)
 	}
@@ -1309,13 +1279,13 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 	}
 }
 func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
-	pool.mu.Lock()
+	//pool.mu.Lock()
 	if interTx, has := pool.all.Load(hash); has {
 		go pool.removeTransaction(interTx.(*modules.TxPoolTransaction), removeRedeemers)
 	} else {
 		go pool.removeTx(hash)
 	}
-	pool.mu.Unlock()
+	//pool.mu.Unlock()
 }
 
 // RemoveDoubleSpends removes all transactions whitch spend outpoints spent by the passed
@@ -1324,7 +1294,7 @@ func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
 // to the main chain because the block may contain transactions whitch were previously unknow to
 // the memory pool.
 func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
-	pool.mu.Lock()
+	//pool.mu.Lock()
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(*modules.PaymentPayload)
@@ -1336,7 +1306,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 			}
 		}
 	}
-	pool.mu.Unlock()
+	//pool.mu.Unlock()
 }
 
 func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
@@ -1436,17 +1406,16 @@ func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 // promoteExecutables moves transactions that have become processable from the
 // future queue to the set of pending transactions. During this process, all
 // invalidated transactions (low nonce, low balance) are deleted.
-func (pool *TxPool) promoteExecutables(accounts []modules.OutPoint) {
+func (pool *TxPool) promoteExecutables() {
 	// If the pending limit is overflown, start equalizing allowances
-	pending := 0
 	pendingTxs := make([]*modules.TxPoolTransaction, 0)
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
-		if tx.Pending {
-			pending++
+		if !tx.Pending {
 			pendingTxs = append(pendingTxs, tx)
 		}
 	}
+	pending := len(pendingTxs)
 	if uint64(pending) > pool.config.GlobalSlots {
 		// Assemble a spam order to penalize large transactors first
 		spammers := prque.New()
@@ -1537,8 +1506,6 @@ func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
 
 // 打包后的没有被最终确认的交易，废弃处理
 func (pool *TxPool) DiscardTxs(hashs []common.Hash) error {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
 	for _, hash := range hashs {
 		err := pool.discardTx(hash)
 		if err != nil {
@@ -1548,8 +1515,6 @@ func (pool *TxPool) DiscardTxs(hashs []common.Hash) error {
 	return nil
 }
 func (pool *TxPool) DiscardTx(hash common.Hash) error {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
 	return pool.discardTx(hash)
 }
 func (pool *TxPool) discardTx(hash common.Hash) error {
@@ -1575,8 +1540,6 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 	return nil
 }
 func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
 	for _, tx := range txs {
 		err := pool.setPendingTx(unit_hash, tx)
 		if err != nil {
@@ -1610,7 +1573,6 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction)
 	}
 	// add in pool
 	p_tx := TxtoTxpoolTx(pool, tx)
-	pool.all.Store(hash, p_tx)
 	// 将该交易的输入输出缓存到交易池
 	pool.addCache(p_tx)
 	pool.promoteTx(unit_hash, p_tx)
@@ -1643,8 +1605,8 @@ func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
 	}
 }
 func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
 	for _, tx := range txs {
 		err := pool.resetPendingTx(tx)
 		if err != nil {
@@ -2038,10 +2000,8 @@ func (pool *TxPool) isOrphanInPool(hash common.Hash) bool {
 
 func (pool *TxPool) IsOrphanInPool(hash common.Hash) bool {
 	// Protect concurrent access.
-	pool.mu.RLock()
-	inPool := pool.isOrphanInPool(hash)
-	pool.mu.RUnlock()
-	return inPool
+	return pool.isOrphanInPool(hash)
+
 }
 
 // validate tx is an orphanTx or not.
@@ -2100,7 +2060,6 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 }
 
 func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
-	//delete(pool.outputs, outpoint)
 	pool.outputs.Delete(outpoint)
 	//log.Debug(fmt.Sprintf("delete the outputs (%s), the created tx_hash(%s)", outpoint.String(), outpoint.TxHash.String()))
 }

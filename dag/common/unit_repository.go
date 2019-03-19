@@ -948,21 +948,25 @@ func (rep *UnitRepository) savePaymentPayload(txHash common.Hash, msg *modules.P
 		log.Error("Update utxo failed.", "error", err)
 		return false
 	}
-	asset := msg.Outputs[0].Asset
+
 	//对PRC721类型的通证的流转历史记录索引
 	if dagconfig.DefaultConfig.Token721TxIndex {
-		if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
 
-			if err = rep.idxdb.SaveTokenTxId(asset, txHash); err != nil {
-				log.Errorf("Save token and txid index data error:%s", err.Error())
+		for _, output := range msg.Outputs {
+			asset := output.Asset
+			if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
+				if err = rep.idxdb.SaveTokenTxId(asset, txHash); err != nil {
+					log.Errorf("Save token and txid index data error:%s", err.Error())
+				}
 			}
+
 		}
 	}
 	return true
 }
 
 /**
-保存TextPayload
+保存DataPayload
 save DataPayload data
 */
 
