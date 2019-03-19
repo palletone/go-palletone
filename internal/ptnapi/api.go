@@ -1527,7 +1527,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
-	}
+	} 
 	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
 	mtxHex := hex.EncodeToString(mtxbt)
 	return mtxHex, nil
@@ -2297,11 +2297,14 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, hashtype string,password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
+	}
+	if hashtype != "ALL" && hashtype != "NONE" && hashtype != "SINGLE"{
+		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error")
 	}
 	serializedTx, err := decodeHexStr(params)
 	if err != nil {
@@ -2379,11 +2382,11 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		errors.New("get addr by outpoint is err")
 		return ptnjson.SignRawTransactionResult{}, err
 	}
-
-	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String("ALL"))
+    
+	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String(hashtype))
 	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
 
-	fmt.Println(result)
+	fmt.Println(result)		
 	return result, nil
 }
 
