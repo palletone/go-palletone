@@ -288,6 +288,16 @@ func (s *PublicBlockChainAPI) GetAddrTransactions(ctx context.Context, addr stri
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
+func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr string) ([]*ptnjson.TxJson, error) {
+	asset := &modules.Asset{}
+	err := asset.SetString(assetStr)
+	if err != nil {
+		return nil, errors.New("Invalid asset string")
+	}
+	result, err := s.b.GetAssetTxHistory(asset)
+
+	return result, err
+}
 
 //func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
 //	result, err := s.b.WalletTokens(address)
@@ -1619,7 +1629,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 //	return taken_utxo, change
 //}
 
-func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string,asset string) (core.Utxos, error) {
+func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint, from string, asset string) (core.Utxos, error) {
 	var addr common.Address
 	// store tx input utxo outpoint
 	inputsOutpoint := []modules.OutPoint{}
@@ -1643,7 +1653,7 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
 				if pay.Outputs[0].Asset.IsSimilar(tokenAsset) == false {
-				    continue
+					continue
 				}
 				for outIndex, output := range pay.Outputs {
 					op.TxHash = tx.Tx.Hash()
@@ -1771,7 +1781,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
 
 	if err == nil {
-		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from,"PTN")
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from, "PTN")
 		if err != nil {
 			return "", fmt.Errorf("Select utxo err")
 		}
@@ -2173,18 +2183,18 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
-    for msgidx, msg := range tx.TxMessages {
-        payload, ok := msg.Payload.(*modules.PaymentPayload)
-        if ok == false {
-            continue
-        }
-        for inputindex, _ := range payload.Inputs {
-	        err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
-	        if err != nil {
-	            return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
-	        }
-          }
-    }
+	for msgidx, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+		for inputindex, _ := range payload.Inputs {
+			err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+			if err != nil {
+				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+			}
+		}
+	}
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
 	mtxbt, err := rlp.EncodeToBytes(tx)

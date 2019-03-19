@@ -190,6 +190,10 @@ func (id *IDType16) ParseAssetId() (string, AssetType, byte, []byte, UniqueIdTyp
 	symbol := base36.EncodeBytes(assetId[4-len : 4])
 	return symbol, AssetType(t), assetId[4] & 0x1f, assetId[5:], UniqueIdType(assetId[4] >> 5)
 }
+func (id *IDType16) GetAssetType() AssetType {
+	t := (id[0] & 0xc) >> 2
+	return AssetType(t)
+}
 func (it *IDType16) Str() string {
 	return hex.EncodeToString(it.Bytes())
 }

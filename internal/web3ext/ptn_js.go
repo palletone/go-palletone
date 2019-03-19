@@ -177,6 +177,12 @@ web3._extend({
 			params: 1,
 			inputFormatter: [null]
 		}),
+  		new web3._extend.Method({
+			name: 'getTokenTxHistory',
+			call: 'ptn_getTokenTxHistory',
+			params: 1,
+			inputFormatter: [null]
+		}),
         new web3._extend.Method({
 			name: 'getTransactionsByTxid',
             call: 'ptn_getTransactionsByTxid',
