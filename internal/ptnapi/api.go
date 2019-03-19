@@ -2445,7 +2445,6 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 	if 0 == len(tx.TxMessages) {
-		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
@@ -2456,11 +2455,11 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 		}
 
 		for _, txout := range payload.Outputs {
-			log.Info("+++++++++++++++++++++++++++++++++++++++++", "tx_outAmount", txout.Value, "outInfo", txout)
+			// log.Debug("+++++++++++++++++++++++++++++++++++++++++", "tx_outAmount", txout.Value, "outInfo", txout)
 			outAmount += txout.Value
 		}
 	}
-	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
+	// log.Debug("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
 	log.Debugf("Tx outpoint tx hash:%s", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	//log.Info("PublicTransactionPoolAPI", "SendRawTransaction tx", tx)

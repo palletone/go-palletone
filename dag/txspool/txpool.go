@@ -645,6 +645,10 @@ func PooltxToTx(pooltx *modules.TxPoolTransaction) *modules.Transaction {
 // whitelisted, preventing any associated transaction from being dropped out of
 // the pool due to pricing constraints.
 func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error) {
+	if tx.Tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+		return true, nil
+	}
+
 	// If the transaction is already known, discard it
 	hash := tx.Tx.Hash()
 	if _, has := pool.all.Load(hash); has {
@@ -950,6 +954,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
+
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
@@ -1685,7 +1690,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	t0 := time.Now()
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
-	pool.mu.Lock()
+	pool.mu.RLock()
+
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
 
 	for {
@@ -1709,10 +1715,10 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 					}
 					list = append(list, tx)
 					// add  pending
-					for _, t := range p_txs {
-						pool.promoteTx(hash, t)
-					}
-					pool.promoteTx(hash, tx)
+					// for _, t := range p_txs {
+					// 	pool.promoteTx(hash, t)
+					// }
+					// pool.promoteTx(hash, tx)
 				} else {
 					total = total - tx.Tx.Size()
 					break
@@ -1756,7 +1762,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			}
 		}
 	}
-	pool.mu.Unlock()
+	pool.mu.RUnlock()
 	// 	去重
 	m := make(map[int]*modules.TxPoolTransaction)
 	for i, tx := range list {
@@ -1767,6 +1773,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	for i := 0; i < len(m); i++ {
 		if tx, has := m[i]; has {
 			list = append(list, tx)
+			go pool.promoteTx(hash, tx)
 		} else {
 			log.Info("rm repeat error", "index", i)
 		}
@@ -1775,9 +1782,9 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	for _, tx := range validated_txs {
 		go pool.RemoveOrphan(tx)
 	}
-	if time.Since(t2) > time.Second*1 {
-		log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t3: %s ", time.Since(t0), len(list), time.Since(t2))
-	}
+	// if time.Since(t2) > time.Second*1 {
+	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t3: %s ", time.Since(t0), len(list), time.Since(t2))
+	// }
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, error) {
