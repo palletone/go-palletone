@@ -639,18 +639,25 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 			payment := msg.Payload.(*modules.PaymentPayload)
 			for j := range payment.Inputs {
 				if i == msgIdx && j == idx {
-
 					sigScript, _ := unparseScript(script)
 					payment.Inputs[idx].SignatureScript = sigScript
 				} else {
 					payment.Inputs[j].SignatureScript = nil
 				}
-            }
-            for k := range payment.Outputs {
-                switch hashType & sigHashMask {
-					case SigHashNone:
-						payment.Outputs[k] = nil // Empty slice.
+			}
+			for k := range payment.Outputs {
+				switch hashType & sigHashMask {
+				case SigHashNone:
+					payment.Outputs[k] = nil // Empty slice.
+				case SigHashSingle:
+					// Resize output array to up to and including requested index.
+					payment.Outputs = payment.Outputs[:idx+1]
+					// All but current output get zeroed out.
+					for i := 0; i < idx; i++ {
+						payment.Outputs[i].Value = 0
+						payment.Outputs[i].PkScript = nil
 					}
+				}
 			}
 		}
 	}
@@ -663,25 +670,25 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 				txCopy.Inputs[i].Sequence = 0
 			}
 		}
-	
+
 	case SigHashSingle:
 		// Resize output array to up to and including requested index.
 		txCopy.Output = txCopy.Output[:idx+1]
-	
+
 		// All but current output get zeroed out.
 		//modify -1 to 0 by wzhyuan
 		for i := 0; i < idx; i++ {
 			txCopy.Output[i].Value = 0
 			txCopy.Output[i].PkScript = nil
 		}
-	
+
 		// Sequence on all other inputs is 0, too.
 		for i := range txCopy.Input {
 			if i != idx {
 			   txCopy.Inputs[i].Sequence = 0
 			}
 		}
-	
+
 	default:
 		// Consensus treats undefined hashtypes like normal SigHashAll
 		// for purposes of hash generation.
