@@ -645,49 +645,55 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 				} else {
 					payment.Inputs[j].SignatureScript = nil
 				}
+            }
+            for k := range payment.Outputs {
+                switch hashType & sigHashMask {
+					case SigHashNone:
+						payment.Outputs[k] = nil // Empty slice.
+					}
 			}
 		}
 	}
 
-	//switch hashType & sigHashMask {
-	//case SigHashNone:
-	//	txCopy.Output = txCopy.Output[0:0] // Empty slice.
-	//	for i := range txCopy.Input {
-	//		if i != idx {
-	//		//	txCopy.Inputs[i].Sequence = 0
-	//		}
-	//	}
-	//
-	//case SigHashSingle:
-	//	// Resize output array to up to and including requested index.
-	//	txCopy.Output = txCopy.Output[:idx+1]
-	//
-	//	// All but current output get zeroed out.
-	//	//modify -1 to 0 by wzhyuan
-	//	for i := 0; i < idx; i++ {
-	//		txCopy.Output[i].Value = 0
-	//		txCopy.Output[i].PkScript = nil
-	//	}
-	//
-	//	// Sequence on all other inputs is 0, too.
-	//	for i := range txCopy.Input {
-	//		if i != idx {
-	//			//txCopy.Inputs[i].Sequence = 0
-	//		}
-	//	}
-	//
-	//default:
-	//	// Consensus treats undefined hashtypes like normal SigHashAll
-	//	// for purposes of hash generation.
-	//	fallthrough
-	//case SigHashOld:
-	//	fallthrough
-	//case SigHashAll:
-	//	// Nothing special here.
-	//}
-	//if hashType&SigHashAnyOneCanPay != 0 {
-	//	txCopy.Input = txCopy.Input[idx : idx+1]
-	//}
+	/*switch hashType & sigHashMask {
+	case SigHashNone:
+		txCopy.Output = txCopy.Output[0:0] // Empty slice.
+		for i := range txCopy.Input {
+			if i != idx {
+				txCopy.Inputs[i].Sequence = 0
+			}
+		}
+	
+	case SigHashSingle:
+		// Resize output array to up to and including requested index.
+		txCopy.Output = txCopy.Output[:idx+1]
+	
+		// All but current output get zeroed out.
+		//modify -1 to 0 by wzhyuan
+		for i := 0; i < idx; i++ {
+			txCopy.Output[i].Value = 0
+			txCopy.Output[i].PkScript = nil
+		}
+	
+		// Sequence on all other inputs is 0, too.
+		for i := range txCopy.Input {
+			if i != idx {
+			   txCopy.Inputs[i].Sequence = 0
+			}
+		}
+	
+	default:
+		// Consensus treats undefined hashtypes like normal SigHashAll
+		// for purposes of hash generation.
+		fallthrough
+	case SigHashOld:
+		fallthrough
+	case SigHashAll:
+		// Nothing special here.
+	}
+	if hashType&SigHashAnyOneCanPay != 0 {
+		txCopy.Input = txCopy.Input[idx : idx+1]
+	}*/
 
 	// The final hash is the double sha256 of both the serialized modified
 	// transaction and the hash type (encoded as a 4-byte little-endian
