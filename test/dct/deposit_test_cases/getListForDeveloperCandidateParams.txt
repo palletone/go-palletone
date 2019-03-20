@@ -6,6 +6,9 @@ Resource          publicParams.txt
 *** Keywords ***
 getListForDeveloperCandidate
     ${one}    Create List    GetListForDeveloperCandidate
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForDeveloperCandidate    ${one}
-    ${result}    Set Variable    ${resp.content}
+    ${two}    Create List    ${one}
+    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForDeveloperCandidate    ${two}
+    ${respContentJson}    to json    ${resp.content}
+    log    ${respContentJson['result']}
+    ${result}    Set Variable    ${respContentJson['result']}
     [Return]    ${result}

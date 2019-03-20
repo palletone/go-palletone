@@ -359,19 +359,15 @@ func (d *Dag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
 //	}
 //	return tx, uhash, nil
 //}
-func (d *Dag) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
+func (d *Dag) GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error) {
 	return d.unstableUnitRep.GetTransaction(hash)
 }
 func (d *Dag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return d.unstableUnitRep.GetTransactionOnly(hash)
 }
 func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
-	unitHash, unitNumber, txIndex, err := d.unstableUnitRep.GetTxLookupEntry(hash)
-	return &modules.TxLookupEntry{
-		UnitHash:  unitHash,
-		UnitIndex: unitNumber,
-		Index:     txIndex,
-	}, err
+	txlookup, err := d.unstableUnitRep.GetTxLookupEntry(hash)
+	return txlookup, err
 }
 
 // InsertHeaderDag attempts to insert the given header chain in to the local
@@ -707,7 +703,7 @@ func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error
 	return d.unstableUnitRep.GetTxFromAddress(tx)
 }
 
-func (d *Dag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error) {
+func (d *Dag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error) {
 	return d.unstableUnitRep.GetAssetTxHistory(asset)
 }
 
@@ -728,7 +724,7 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 //	return d.unstableUtxoRep.SaveUtxoView(view.Entries())
 //}
 
-func (d *Dag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
+func (d *Dag) GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error) {
 	return d.unstableUnitRep.GetAddrTransactions(addr)
 }
 

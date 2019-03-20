@@ -89,6 +89,14 @@ func (pld *PaymentPayload) AddTxOut(to *Output) {
 	pld.Outputs = append(pld.Outputs, to)
 }
 
+type TransactionWithUnitInfo struct {
+	*Transaction
+	UnitHash  common.Hash
+	UnitIndex uint64
+	Timestamp uint64
+	TxIndex   uint64
+}
+
 type TxPoolTransaction struct {
 	Tx *Transaction
 
@@ -420,6 +428,7 @@ type TxLookupEntry struct {
 	UnitHash  common.Hash `json:"unit_hash"`
 	UnitIndex uint64      `json:"unit_index"`
 	Index     uint64      `json:"index"`
+	Timestamp uint64      `json:"timestamp"`
 }
 type Transactions []*Transaction
 

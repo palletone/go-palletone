@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
-	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
+	GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
@@ -66,9 +66,9 @@ type IUnitRepository interface {
 	GetUnit(hash common.Hash) (*modules.Unit, error)
 
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
-	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
+	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
@@ -80,7 +80,7 @@ type IUnitRepository interface {
 	//GetHeadFastUnitHash() (common.Hash, error)
 	GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
 	//GetCanonicalHash(number uint64) (common.Hash, error)
-	GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error)
+	GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error)
 	//SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error
 	//SaveHashByNumber(uHash common.Hash, number modules.ChainIndex) error
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
@@ -208,13 +208,23 @@ func (rep *UnitRepository) GetHashByNumber(number *modules.ChainIndex) (common.H
 func (rep *UnitRepository) GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	return rep.dagdb.GetBody(unitHash)
 }
-func (rep *UnitRepository) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
-	return rep.dagdb.GetTransaction(hash)
+func (rep *UnitRepository) GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error) {
+	tx, err := rep.dagdb.GetTransactionOnly(hash)
+	if err != nil {
+		return nil, err
+	}
+	txlookup, err1 := rep.dagdb.GetTxLookupEntry(hash)
+	if err1 != nil {
+		log.Info("dag db GetTransaction,GetTxLookupEntry failed.", "error", err1, "tx_hash:", hash)
+		return nil, err1
+	}
+	resultTx := &modules.TransactionWithUnitInfo{Transaction: tx, UnitHash: txlookup.UnitHash, UnitIndex: txlookup.UnitIndex, TxIndex: txlookup.Index, Timestamp: txlookup.Timestamp}
+	return resultTx, nil
 }
 func (rep *UnitRepository) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return rep.dagdb.GetTransactionOnly(hash)
 }
-func (rep *UnitRepository) GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error) {
+func (rep *UnitRepository) GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
 	return rep.dagdb.GetTxLookupEntry(hash)
 }
 func (rep *UnitRepository) GetCommon(key []byte) ([]byte, error) { return rep.dagdb.GetCommon(key) }
@@ -251,14 +261,14 @@ func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.Cha
 	return header.Number, nil
 }
 
-func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error) {
+func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error) {
 	txIds, err := rep.idxdb.GetTokenTxIds(asset)
 	if err != nil {
 		return nil, err
 	}
-	var result []*modules.Transaction
+	var result []*modules.TransactionWithUnitInfo
 	for _, txId := range txIds {
-		tx, err := rep.dagdb.GetTransactionOnly(txId)
+		tx, err := rep.GetTransaction(txId)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("Retrieve Tx by hash[%s] get error:%s", txId.String(), err.Error()))
 		}
@@ -593,7 +603,7 @@ func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Tr
 	}
 	// get transaction by tx'hash.
 	for _, txHash := range txHashList {
-		tx, _, _, _, err := rep.dagdb.GetTransaction(txHash)
+		tx, err := rep.dagdb.GetTransactionOnly(txHash)
 		if err != nil {
 			return nil, err
 		}
@@ -948,21 +958,25 @@ func (rep *UnitRepository) savePaymentPayload(txHash common.Hash, msg *modules.P
 		log.Error("Update utxo failed.", "error", err)
 		return false
 	}
-	asset := msg.Outputs[0].Asset
+
 	//对PRC721类型的通证的流转历史记录索引
 	if dagconfig.DefaultConfig.Token721TxIndex {
-		if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
 
-			if err = rep.idxdb.SaveTokenTxId(asset, txHash); err != nil {
-				log.Errorf("Save token and txid index data error:%s", err.Error())
+		for _, output := range msg.Outputs {
+			asset := output.Asset
+			if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
+				if err = rep.idxdb.SaveTokenTxId(asset, txHash); err != nil {
+					log.Errorf("Save token and txid index data error:%s", err.Error())
+				}
 			}
+
 		}
 	}
 	return true
 }
 
 /**
-保存TextPayload
+保存DataPayload
 save DataPayload data
 */
 
@@ -1365,7 +1379,7 @@ func IsGenesis(hash common.Hash) bool {
 }
 
 // GetAddrTransactions containing from && to address
-func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
+func (rep *UnitRepository) GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	address, _ := common.StringToAddress(addr)
@@ -1373,16 +1387,16 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 	if err != nil {
 		return nil, err
 	}
-	alltxs := make(map[string]modules.Transactions)
-	txs := make(modules.Transactions, 0)
+	//alltxs := make(map[string]modules.Transactions)
+	txs := make([]*modules.TransactionWithUnitInfo, 0)
 	for _, hash := range hashs {
-		tx, _, _, _, err := rep.dagdb.GetTransaction(hash)
+		tx, err := rep.GetTransaction(hash)
 		if err != nil {
 			return nil, err
 		}
 		txs = append(txs, tx)
 	}
-	alltxs["into"] = txs
+	//alltxs["into"] = txs
 
 	// @yangyu 20 Feb, 2019. There is no SetFromAddressTxIds in project.
 	//// from tx
@@ -1395,7 +1409,7 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) (map[string]modules.
 	//	}
 	//}
 	//alltxs["out"] = txs
-	return alltxs, err
+	return txs, err
 }
 
 func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
@@ -1421,28 +1435,28 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 	var mds []*modules.FileInfo
 	for _, hash := range hashs {
 		var md modules.FileInfo
-		unithash, unitindex, _, err := rep.dagdb.GetTxLookupEntry(hash)
+		//txlookup, err := rep.dagdb.GetTxLookupEntry(hash)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//
+		//header, err := rep.dagdb.GetHeaderByHash(unithash)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//for _, v := range header.ParentsHash {
+		//	md.ParentsHash = v
+		//}
+		tx, err := rep.GetTransaction(hash)
 		if err != nil {
 			return nil, err
 		}
-
-		header, err := rep.dagdb.GetHeaderByHash(unithash)
-		if err != nil {
-			return nil, err
-		}
-		for _, v := range header.ParentsHash {
-			md.ParentsHash = v
-		}
-		tx, _, _, _, err := rep.dagdb.GetTransaction(hash)
-		if err != nil {
-			return nil, err
-		}
-		md.MainData = getMaindata(tx)
-		md.ExtraData = getExtradata(tx)
-		md.UnitHash = unithash
-		md.UintHeight = unitindex
+		md.MainData = getMaindata(tx.Transaction)
+		md.ExtraData = getExtradata(tx.Transaction)
+		md.UnitHash = tx.UnitHash
+		md.UintHeight = tx.UnitIndex
 		md.Txid = tx.Hash()
-		md.Timestamp = header.Creationdate
+		md.Timestamp = tx.Timestamp
 		mds = append(mds, &md)
 	}
 	return mds, nil

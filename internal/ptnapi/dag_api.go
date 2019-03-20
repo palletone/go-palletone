@@ -61,7 +61,7 @@ func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (st
 }
 
 func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {
-	log.Info("PublicBlockChainAPI", "GetUnitByHash condition:", condition)
+	log.Info("PublicDagAPI", "GetUnitByHash condition:", condition)
 	hash := common.Hash{}
 	if err := hash.SetHexString(condition); err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
@@ -81,6 +81,57 @@ func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) stri
 }
 
 func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) string {
+	log.Info("PublicDagAPI", "GetUnitByNumber condition:", condition)
+
+	number := &modules.ChainIndex{}
+	index, err := strconv.ParseInt(condition, 10, 64)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber strconv.ParseInt err:", err, "condition:", condition)
+		return ""
+	}
+	number.Index = uint64(index)
+	number.IsMain = true
+
+	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
+	//asset := modules.NewPTNAsset()
+	number.AssetID = modules.CoreAsset.AssetId
+	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
+
+	unit := s.b.GetUnitByNumber(number)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
+		return "GetUnitByNumber nil"
+	}
+	jsonUnit := ptnjson.ConvertUnit2Json(unit)
+	content, err := json.Marshal(jsonUnit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
+	log.Info("PublicDagAPI", "GetUnitByNumber condition:", assetid)
+	token, _, _ := modules.String2AssetId(assetid)
+	stableUnit := s.b.Dag().CurrentUnit(token)
+	ustabeUnit := s.b.Dag().GetCurrentMemUnit(token, 0)
+	result := new(ptnjson.FastUnitJson)
+	if ustabeUnit != nil {
+		result.FastHash = ustabeUnit.UnitHash
+		result.FastIndex = ustabeUnit.NumberU64()
+	}
+	if stableUnit != nil {
+		result.StableHash = stableUnit.UnitHash
+		result.StableIndex = stableUnit.NumberU64()
+	}
+	content, err := json.Marshal(result)
+	if err != nil {
+		log.Info("PublicDagAPI", "GetFastUnitIndex Marshal err:", err)
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition string) string {
 	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
 
 	number := &modules.ChainIndex{}
@@ -106,7 +157,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
 		return "GetUnitByNumber nil"
 	}
-	jsonUnit := ptnjson.ConvertUnit2Json(unit)
+	jsonUnit := ptnjson.ConvertUnit2SummaryJson(unit)
 	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)

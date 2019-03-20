@@ -22,14 +22,15 @@ package ptnjson
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type PaymentJson struct {
-	Inputs   []InputJson  `json:"inputs"`
-	Outputs  []OutputJson `json:"outputs"`
-	LockTime uint32       `json:"locktime"`
+	Inputs   []*InputJson  `json:"inputs"`
+	Outputs  []*OutputJson `json:"outputs"`
+	LockTime uint32        `json:"locktime"`
 }
 type InputJson struct {
 	TxHash       string `json:"txid"`          // reference Utxo struct key field
@@ -37,6 +38,7 @@ type InputJson struct {
 	OutIndex     uint32 `json:"out_index"`
 	UnlockScript string `json:"unlock_script"`
 	//UnlockScriptHex string `json:"unlock_script_hex"`
+	FromAddress string `json:"from_address"`
 }
 type OutputJson struct {
 	Amount     uint64 `json:"amount"`
@@ -51,11 +53,26 @@ type OutPointJson struct {
 	OutIndex     uint32 `json:"out_index"`
 }
 
-func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
-	json := PaymentJson{}
+func ConvertPayment2JsonIncludeFromAddr(payment *modules.PaymentPayload, utxoQuery modules.QueryUtxoFunc) *PaymentJson {
+	paymentJson := ConvertPayment2Json(payment)
+	for _, input := range paymentJson.Inputs {
+		if input.TxHash != "" {
+			utxo, err := utxoQuery(modules.NewOutPoint(common.HexToHash(input.TxHash), input.MessageIndex, input.OutIndex))
+			if err != nil {
+				log.Warnf("Query utxo error:%s", err.Error())
+			} else {
+				addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+				input.FromAddress = addr.String()
+			}
+		}
+	}
+	return paymentJson
+}
+func ConvertPayment2Json(payment *modules.PaymentPayload) *PaymentJson {
+	json := &PaymentJson{}
 	json.LockTime = payment.LockTime
-	json.Inputs = []InputJson{}
-	json.Outputs = []OutputJson{}
+	json.Inputs = []*InputJson{}
+	json.Outputs = []*OutputJson{}
 	if len(payment.Inputs) > 0 {
 		for _, in := range payment.Inputs {
 			// @jay :genesis or coinbase unit occured nil error.
@@ -71,7 +88,7 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
 			if in.SignatureScript != nil {
 				unlock, _ = tokenengine.DisasmString(in.SignatureScript)
 			}
-			input := InputJson{TxHash: hstr, MessageIndex: mindex, OutIndex: outindex, UnlockScript: unlock}
+			input := &InputJson{TxHash: hstr, MessageIndex: mindex, OutIndex: outindex, UnlockScript: unlock}
 			json.Inputs = append(json.Inputs, input)
 
 		}
@@ -80,16 +97,16 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) PaymentJson {
 	for _, out := range payment.Outputs {
 		addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
 		lock, _ := tokenengine.DisasmString(out.PkScript)
-		output := OutputJson{Amount: out.Value, Asset: out.Asset.String(), ToAddress: addr.String(), LockScript: lock}
+		output := &OutputJson{Amount: out.Value, Asset: out.Asset.String(), ToAddress: addr.String(), LockScript: lock}
 		json.Outputs = append(json.Outputs, output)
 	}
 	return json
 }
-func ConvertJson2Payment(json *PaymentJson) modules.PaymentPayload {
-	payment := modules.PaymentPayload{}
+func ConvertJson2Payment(json *PaymentJson) *modules.PaymentPayload {
+	payment := &modules.PaymentPayload{}
 	payment.LockTime = json.LockTime
 	for _, in := range json.Inputs {
-		hash:= common.HexToHash(in.TxHash)
+		hash := common.HexToHash(in.TxHash)
 		outPoint := modules.NewOutPoint(hash, in.MessageIndex, in.OutIndex)
 		input := modules.NewTxIn(outPoint, []byte{})
 		payment.AddTxIn(input)

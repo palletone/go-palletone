@@ -69,9 +69,9 @@ type IDagDb interface {
 
 	//getChainUnit(hash common.Hash) (*modules.Unit, error)
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
-	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	//GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	GetTxLookupEntry(hash common.Hash) (common.Hash, uint64, uint64, error)
+	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
@@ -337,6 +337,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 			UnitHash:  unit.Hash(),
 			UnitIndex: unit.NumberU64(),
 			Index:     uint64(i),
+			Timestamp: uint64(unit.UnitHeader.Creationdate),
 		}
 		key := append(constants.LookupPrefix, tx.Hash().Bytes()...)
 
@@ -346,15 +347,15 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 	}
 	return batch.Write()
 }
-func (dagdb *DagDb) GetTxLookupEntry(txHash common.Hash) (common.Hash, uint64, uint64, error) {
+func (dagdb *DagDb) GetTxLookupEntry(txHash common.Hash) (*modules.TxLookupEntry, error) {
 	key := append(constants.LookupPrefix, txHash.Bytes()...)
 	entry := &modules.TxLookupEntry{}
 	err := retrieve(dagdb.db, key, entry)
 	if err != nil {
 		log.Info("get entry structure info:", "error", err, "tx_entry", entry)
-		return common.Hash{}, 0, 0, err
+		return nil, err
 	}
-	return entry.UnitHash, entry.UnitIndex, entry.Index, nil
+	return entry, nil
 }
 
 //func (dagdb *DagDb) SaveTokenInfo(token_info *modules.TokenInfo) (*modules.TokenInfo, error) {

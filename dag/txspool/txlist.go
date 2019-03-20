@@ -201,3 +201,9 @@ func (l *txPricedList) Discard(count int) modules.TxPoolTxs {
 	}
 	return drop
 }
+
+func (l *txPricedList) getStales() int {
+	l.RLock()
+	defer l.RUnlock()
+	return l.stales
+}

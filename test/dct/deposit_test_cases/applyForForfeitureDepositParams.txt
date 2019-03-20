@@ -15,5 +15,5 @@ applyForForfeitureDeposit
     ${某节点申请没收候选列表某账户所需参数 }    某节点申请没收候选列表某账户所需参数    ${whoApply}    ${forfeitureAddr}    ${forfertureAmounts}    ${role}
     ${resp}    创建公用的POST请求    ${depositContractInvoke}    ApplyForForfeitureDeposit    ${某节点申请没收候选列表某账户所需参数}
     ${result}    Set Variable    ${resp.content}
-    sleep    3
+    sleep    8
     [Return]    ${result}
