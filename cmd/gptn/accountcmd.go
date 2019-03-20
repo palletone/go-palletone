@@ -514,7 +514,7 @@ func accountSignVerify(ctx *cli.Context) error {
 // 	stack, _ := makeConfigNode(ctx, false)
 // 	passphrase := getPassPhrase("", false, 0, utils.MakePasswordList(ctx))
 
-// 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+// 	ks := stack.GetKeyStore()
 // 	acct, err := ks.ImportPreSaleKey(keyJson, passphrase)
 // 	if err != nil {
 // 		utils.Fatalf("%v", err)
