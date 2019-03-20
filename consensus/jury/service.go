@@ -382,6 +382,11 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 		if ctx.rstTx == nil {
 			continue
 		}
+		tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
+		if err != nil {
+			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
+			continue
+		}
 
 		//TODO 从保证金转出  token 时签名为空，先不做相应的判断，所以需要注释掉才能正常进行
 		if !p.checkTxValid(ctx.rstTx) {
@@ -393,11 +398,7 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Info("AddContractLoop", "transaction request Id already in dag", ctx.rstTx.RequestHash())
 			continue
 		}
-		tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
-		if err != nil {
-			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
-			continue
-		}
+
 		//if false == checkTxValid(ctx.rstTx) {
 		//	log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 		//	continue

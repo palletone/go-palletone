@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
@@ -54,6 +55,10 @@ func (b *PtnApiBackend) Dag() dag.IDag {
 //func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
 //	return b.ptn.SignAndSendTransaction(addr, tx)
 //}
+
+func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
+	return b.ptn.GetKeyStore()
+}
 
 func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
 	text *string) (*mp.TxExecuteResult, error) {
