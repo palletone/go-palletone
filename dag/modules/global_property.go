@@ -141,22 +141,6 @@ func calcThreshold(aSize int) int {
 	return aSize - offset
 }
 
-func (gp *GlobalProperty) IsActiveJury(add common.Address) bool {
-	return true //todo for test
-
-	//return gp.ActiveJuries[add]
-}
-
-func (gp *GlobalProperty) GetActiveJuries() []common.Address {
-	juries := make([]common.Address, 0, len(gp.ActiveJuries))
-	for addr, _ := range gp.ActiveJuries {
-		juries = append(juries, addr)
-	}
-	sortAddress(juries)
-
-	return juries
-}
-
 func (gp *GlobalProperty) IsActiveMediator(add common.Address) bool {
 	return gp.ActiveMediators[add]
 }

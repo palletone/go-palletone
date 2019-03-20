@@ -50,6 +50,9 @@ type IStateRepository interface {
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
+
+	GetJuryCandidateList() ([]string, error)
+	IsJury(address common.Address) bool
 }
 
 type StateRepository struct {
@@ -119,4 +122,12 @@ func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name st
 }
 func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
 	return rep.statedb.GetMinFee()
+}
+
+func (rep *StateRepository) GetJuryCandidateList() ([]string, error) {
+	return rep.statedb.GetJuryCandidateList()
+}
+
+func (rep *StateRepository) IsJury(address common.Address) bool {
+	return rep.statedb.IsInJuryCandidateList(address)
 }
