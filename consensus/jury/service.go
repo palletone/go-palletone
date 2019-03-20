@@ -68,6 +68,8 @@ type iDag interface {
 	GetActiveMediators() []common.Address
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	IsActiveJury(addr common.Address) bool
+	JuryCount() int
+	GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
@@ -469,7 +471,7 @@ func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExi
 	etor := &elector{
 		num:    uint(p.electionNum),
 		weight: 1,
-		total:  1000, //todo from dag
+		total:  uint64(p.dag.JuryCount()), //todo from dag
 	}
 	for i, e := range ele {
 		isMatch := false
