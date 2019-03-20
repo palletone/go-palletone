@@ -648,7 +648,7 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 			for k := range payment.Outputs {
 				switch hashType & sigHashMask {
 				case SigHashNone:
-					payment.Outputs[k] = nil // Empty slice.
+					payment.Outputs[k].PkScript = payment.Outputs[k].PkScript[0:0] // Empty slice.
 				case SigHashSingle:
 					// Resize output array to up to and including requested index.
 					payment.Outputs = payment.Outputs[:idx+1]
