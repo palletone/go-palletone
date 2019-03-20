@@ -33,12 +33,12 @@ import (
 )
 
 var (
-	isLoad                     bool
-	depositAmountsForJury      uint64
-	depositAmountsForMediator  uint64
-	depositAmountsForDeveloper uint64
-	depositPeriod              int
-	foundationAddress          string
+	//isLoad                     bool
+	//depositAmountsForJury      uint64
+	//depositAmountsForMediator  uint64
+	//depositAmountsForDeveloper uint64
+	//depositPeriod              int
+	//foundationAddress          string
 )
 
 type DepositChaincode struct {
@@ -51,10 +51,10 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	//初始化保证金合约的配置
-	if !isLoad {
-		log.Info("init deposit contract config")
-		initDepositCfg(stub)
-	}
+	//if !isLoad {
+	//	log.Info("init deposit contract config")
+	//	initDepositCfg(stub)
+	//}
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
 	case "ApplyBecomeMediator":
@@ -204,70 +204,70 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	return shim.Error("Please enter validate function name.")
 }
 
-func initDepositCfg(stub shim.ChaincodeStubInterface) {
-	depositPeriod, err := stub.GetSystemConfig("DepositPeriod")
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositPeriod err:", "error", err)
-		return
-	}
-	day, err := strconv.Atoi(depositPeriod)
-	if err != nil {
-		log.Error("Strconv.Atoi err:", "error", err)
-		return
-	}
-	log.Info("Stub.GetSystemConfig with DepositPeriod:", "value", day)
-	foundationAddress, err = stub.GetSystemConfig("FoundationAddress")
-	if err != nil {
-		//fmt.Println(err.Error())
-		log.Error("Stub.GetSystemConfig with FoundationAddress err:", "error", err)
-		return
-	}
-	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
-	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
-
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForMediator err:", "error", err)
-		return
-	}
-	//转换
-	depositAmountsForMediator, err = strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return
-	}
-	log.Info("Stub.GetSystemConfig with DepositAmountForMediator:", "value", depositAmountsForMediator)
-	//
-	//fmt.Println("需要的mediator保证金数量=", depositAmountsForMediator)
-	//fmt.Println()
-	depositAmountsForJuryStr, err := stub.GetSystemConfig("DepositAmountForJury")
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
-		return
-	}
-	//转换
-	depositAmountsForJury, err = strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return
-	}
-	log.Info("Stub.GetSystemConfig with DepositAmountForJury:", "value", depositAmountsForJury)
-
-	depositAmountsForDeveloperStr, err := stub.GetSystemConfig("DepositAmountForDeveloper")
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
-		return
-	}
-	//转换
-	depositAmountsForDeveloper, err = strconv.ParseUint(depositAmountsForDeveloperStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return
-	}
-	log.Info("Stub.GetSystemConfig with DepositAmountForDeveloper:", "value", depositAmountsForDeveloper)
-	isLoad = true
-	log.Info("Init deposit config success.")
-}
+//func initDepositCfg(stub shim.ChaincodeStubInterface) {
+//	depositPeriod, err := stub.GetSystemConfig("DepositPeriod")
+//	if err != nil {
+//		log.Error("Stub.GetSystemConfig with DepositPeriod err:", "error", err)
+//		return
+//	}
+//	day, err := strconv.Atoi(depositPeriod)
+//	if err != nil {
+//		log.Error("Strconv.Atoi err:", "error", err)
+//		return
+//	}
+//	log.Info("Stub.GetSystemConfig with DepositPeriod:", "value", day)
+//	foundationAddress, err = stub.GetSystemConfig("FoundationAddress")
+//	if err != nil {
+//		//fmt.Println(err.Error())
+//		log.Error("Stub.GetSystemConfig with FoundationAddress err:", "error", err)
+//		return
+//	}
+//	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
+//	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
+//
+//	depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")
+//	if err != nil {
+//		log.Error("Stub.GetSystemConfig with DepositAmountForMediator err:", "error", err)
+//		return
+//	}
+//	//转换
+//	depositAmountsForMediator, err = strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
+//	if err != nil {
+//		log.Error("Strconv.ParseUint err:", "error", err)
+//		return
+//	}
+//	log.Info("Stub.GetSystemConfig with DepositAmountForMediator:", "value", depositAmountsForMediator)
+//	//
+//	//fmt.Println("需要的mediator保证金数量=", depositAmountsForMediator)
+//	//fmt.Println()
+//	depositAmountsForJuryStr, err := stub.GetSystemConfig("DepositAmountForJury")
+//	if err != nil {
+//		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+//		return
+//	}
+//	//转换
+//	depositAmountsForJury, err = strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
+//	if err != nil {
+//		log.Error("Strconv.ParseUint err:", "error", err)
+//		return
+//	}
+//	log.Info("Stub.GetSystemConfig with DepositAmountForJury:", "value", depositAmountsForJury)
+//
+//	depositAmountsForDeveloperStr, err := stub.GetSystemConfig("DepositAmountForDeveloper")
+//	if err != nil {
+//		log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
+//		return
+//	}
+//	//转换
+//	depositAmountsForDeveloper, err = strconv.ParseUint(depositAmountsForDeveloperStr, 10, 64)
+//	if err != nil {
+//		log.Error("Strconv.ParseUint err:", "error", err)
+//		return
+//	}
+//	log.Info("Stub.GetSystemConfig with DepositAmountForDeveloper:", "value", depositAmountsForDeveloper)
+//	isLoad = true
+//	log.Info("Init deposit config success.")
+//}
 
 func (d *DepositChaincode) mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return mediatorPayToDepositContract(stub, args)
@@ -350,6 +350,14 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 		log.Error("Stub.GetInvokeAddress err", "error", err)
 		return shim.Error(err.Error())
 	}
+	foundationAddress, err := stub.GetSystemConfig("FoundationAddress")
+	if err != nil {
+		//fmt.Println(err.Error())
+		log.Error("Stub.GetSystemConfig with FoundationAddress err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
+	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
 	//判断没收请求地址是否是基金会地址
 	if strings.Compare(invokeAddr, foundationAddress) != 0 {
 		log.Error("Please use foundation address.")
@@ -728,7 +736,18 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 }
 
 func (d *DepositChaincode) handleJuryForfeitureDeposit(foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance, stub shim.ChaincodeStubInterface) pb.Response {
-	var err error
+	depositAmountsForJuryStr, err := stub.GetSystemConfig("DepositAmountForJury")
+	if err != nil {
+		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	//转换
+	depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
+	if err != nil {
+		log.Error("Strconv.ParseUint err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	log.Info("Stub.GetSystemConfig with DepositAmountForJury:", "value", depositAmountsForJury)
 	//计算余额
 	result := balance.TotalAmount - forfeiture.ApplyTokens.Amount
 	//判断是否没收全部，即在列表中移除该节点
@@ -751,7 +770,18 @@ func (d *DepositChaincode) handleJuryForfeitureDeposit(foundationAddr string, fo
 }
 
 func (d *DepositChaincode) handleDeveloperForfeitureDeposit(foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance, stub shim.ChaincodeStubInterface) pb.Response {
-	var err error
+	depositAmountsForDeveloperStr, err := stub.GetSystemConfig("DepositAmountForDeveloper")
+	if err != nil {
+		log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	//转换
+	depositAmountsForDeveloper, err := strconv.ParseUint(depositAmountsForDeveloperStr, 10, 64)
+	if err != nil {
+		log.Error("Strconv.ParseUint err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	log.Info("Stub.GetSystemConfig with DepositAmountForDeveloper:", "value", depositAmountsForDeveloper)
 	//计算余额
 	result := balance.TotalAmount - forfeiture.ApplyTokens.Amount
 	//判断是否没收全部，即在列表中移除该节点
