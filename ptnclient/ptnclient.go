@@ -23,10 +23,10 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -425,9 +425,9 @@ func (ec *Client) GetPtnTestCoin(ctx context.Context, from string, to string, am
 	return result, err
 }
 
-func (ec *Client) TransferToken(ctx context.Context, asset string, from string, to string, amount uint64, fee uint64, password string, duration *uint64) (string, error) {
+func (ec *Client) TransferToken(ctx context.Context, asset string, from string, to string, amount uint64, fee uint64, password string, extra string, duration *uint64) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_transferToken", asset, from, to, amount, fee, password, duration)
+	err := ec.c.CallContext(ctx, &result, "ptn_transferToken", asset, from, to, amount, fee, extra, password, duration)
 	return result, err
 }
 
