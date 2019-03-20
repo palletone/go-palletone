@@ -288,7 +288,7 @@ func (s *PublicBlockChainAPI) GetAddrTransactions(ctx context.Context, addr stri
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
-func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr string) ([]*ptnjson.TxJson, error) {
+func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr string) ([]*ptnjson.TxHistoryJson, error) {
 	asset := &modules.Asset{}
 	err := asset.SetString(assetStr)
 	if err != nil {

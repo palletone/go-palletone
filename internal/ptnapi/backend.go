@@ -121,8 +121,8 @@ type Backend interface {
 	/* ---------------------save token info ------------------------*/
 	//SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
 
-	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxJson, error)
+	GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error)
+	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
 
 	//GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)
 	//contract control

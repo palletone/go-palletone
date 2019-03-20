@@ -490,7 +490,7 @@ type FileInfo struct {
 	UintHeight  uint64      `json:"unit_index"`
 	ParentsHash common.Hash `json:"parents_hash"`
 	Txid        common.Hash `json:"txid"`
-	Timestamp   int64       `json:"timestamp"`
+	Timestamp   uint64      `json:"timestamp"`
 	MainData    string      `json:"main_data"`
 	ExtraData   string      `json:"extra_data"`
 }

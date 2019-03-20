@@ -58,7 +58,7 @@ type IDag interface {
 	CurrentHeader(token modules.IDType16) *modules.Header
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
-	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 
@@ -97,8 +97,8 @@ type IDag interface {
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
-	GetAddrTransactions(addr string) (map[string]modules.Transactions, error)
-	GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error)
+	GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error)
+	GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error)
 
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
 	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
