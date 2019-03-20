@@ -156,6 +156,18 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		return fmt.Errorf("%s", "balance is not enough")
 	}
 	if strings.Compare(role, "Mediator") == 0 {
+		depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")
+		if err != nil {
+			log.Error("Stub.GetSystemConfig with DepositAmountForMediator err:", "error", err)
+			return err
+		}
+		//转换
+		depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
+		if err != nil {
+			log.Error("Strconv.ParseUint err:", "error", err)
+			return err
+		}
+		log.Info("Stub.GetSystemConfig with DepositAmountForMediator:", "value", depositAmountsForMediator)
 		if balance.TotalAmount-invokeTokens.Amount < depositAmountsForMediator {
 			log.Error("can not cashback some")
 			return fmt.Errorf("%s", "can not cashback some")
@@ -223,6 +235,18 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 	//TODO 如果推出后低于保证金，则退出列表
 	if role == "Jury" {
 		//如果推出后低于保证金，则退出列表
+		depositAmountsForJuryStr, err := stub.GetSystemConfig("DepositAmountForJury")
+		if err != nil {
+			log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+			return err
+		}
+		//转换
+		depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
+		if err != nil {
+			log.Error("Strconv.ParseUint err:", "error", err)
+			return err
+		}
+		log.Info("Stub.GetSystemConfig with DepositAmountForJury:", "value", depositAmountsForJury)
 		if balance.TotalAmount < depositAmountsForJury {
 			//handleMember("Jury", cashbackAddr, stub)
 			err = moveCandidate("JuryList", cashbackAddr, stub)
@@ -233,6 +257,18 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		}
 	} else if role == "Developer" {
 		//如果推出后低于保证金，则退出列表
+		depositAmountsForDeveloperStr, err := stub.GetSystemConfig("DepositAmountForDeveloper")
+		if err != nil {
+			log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
+			return err
+		}
+		//转换
+		depositAmountsForDeveloper, err := strconv.ParseUint(depositAmountsForDeveloperStr, 10, 64)
+		if err != nil {
+			log.Error("Strconv.ParseUint err:", "error", err)
+			return err
+		}
+		log.Info("Stub.GetSystemConfig with DepositAmountForDeveloper:", "value", depositAmountsForDeveloper)
 		if balance.TotalAmount < depositAmountsForDeveloper {
 			//handleMember("Developer", cashbackAddr, stub)
 			err = moveCandidate("DeveloperList", cashbackAddr, stub)

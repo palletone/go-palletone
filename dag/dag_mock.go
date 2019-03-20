@@ -297,15 +297,12 @@ func (mr *MockIDagMockRecorder) GetUnitTxsHash(hash interface{}) *gomock.Call {
 }
 
 // GetTransaction mocks base method
-func (m *MockIDag) GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error) {
+func (m *MockIDag) GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransaction", hash)
-	ret0, _ := ret[0].(*modules.Transaction)
-	ret1, _ := ret[1].(common.Hash)
-	ret2, _ := ret[2].(uint64)
-	ret3, _ := ret[3].(uint64)
-	ret4, _ := ret[4].(error)
-	return ret0, ret1, ret2, ret3, ret4
+	ret0, _ := ret[0].(*modules.TransactionWithUnitInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetTransaction indicates an expected call of GetTransaction
@@ -670,10 +667,10 @@ func (mr *MockIDagMockRecorder) GetAllUtxos() *gomock.Call {
 }
 
 // GetAddrTransactions mocks base method
-func (m *MockIDag) GetAddrTransactions(addr string) (map[string]modules.Transactions, error) {
+func (m *MockIDag) GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddrTransactions", addr)
-	ret0, _ := ret[0].(map[string]modules.Transactions)
+	ret0, _ := ret[0].([]*modules.TransactionWithUnitInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -685,10 +682,10 @@ func (mr *MockIDagMockRecorder) GetAddrTransactions(addr interface{}) *gomock.Ca
 }
 
 // GetAssetTxHistory mocks base method
-func (m *MockIDag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transaction, error) {
+func (m *MockIDag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAssetTxHistory", asset)
-	ret0, _ := ret[0].([]*modules.Transaction)
+	ret0, _ := ret[0].([]*modules.TransactionWithUnitInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

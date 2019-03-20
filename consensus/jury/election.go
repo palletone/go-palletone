@@ -251,8 +251,8 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 
 	ele := &elector{
 		num:    uint(p.electionNum),
-		weight: 10,   //todo config
-		total:  1000, //todo dynamic acquisition
+		weight: 1,   //todo config
+		total:  uint64(p.dag.JuryCount()),//todo dynamic acquisition
 		//vrfAct: p.vrfAct,
 
 		addr:     account.Address,

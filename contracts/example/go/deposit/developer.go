@@ -27,6 +27,18 @@ import (
 )
 
 func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	depositAmountsForDeveloperStr, err := stub.GetSystemConfig("DepositAmountForDeveloper")
+	if err != nil {
+		log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	//转换
+	depositAmountsForDeveloper, err := strconv.ParseUint(depositAmountsForDeveloperStr, 10, 64)
+	if err != nil {
+		log.Error("Strconv.ParseUint err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	log.Info("Stub.GetSystemConfig with DepositAmountForDeveloper:", "value", depositAmountsForDeveloper)
 	//交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -119,6 +131,14 @@ func handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []st
 		return shim.Error(err.Error())
 	}
 	//判断没收请求地址是否是基金会地址
+	foundationAddress, err := stub.GetSystemConfig("FoundationAddress")
+	if err != nil {
+		//fmt.Println(err.Error())
+		log.Error("Stub.GetSystemConfig with FoundationAddress err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
+	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
 	if strings.Compare(invokeAddr, foundationAddress) != 0 {
 		log.Error("Please use foundation address.")
 		return shim.Error("Please use foundation address.")
@@ -221,6 +241,18 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 
 //对Developer退保证金的处理
 func handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
+	depositAmountsForDeveloperStr, err := stub.GetSystemConfig("DepositAmountForDeveloper")
+	if err != nil {
+		log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
+		return err
+	}
+	//转换
+	depositAmountsForDeveloper, err := strconv.ParseUint(depositAmountsForDeveloperStr, 10, 64)
+	if err != nil {
+		log.Error("Strconv.ParseUint err:", "error", err)
+		return err
+	}
+	log.Info("Stub.GetSystemConfig with DepositAmountForDeveloper:", "value", depositAmountsForDeveloper)
 	if balance.TotalAmount >= depositAmountsForDeveloper {
 		//已在列表中
 		err := handleDeveloperFromList(stub, cashbackAddr, cashbackValue, balance)
@@ -241,8 +273,18 @@ func handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, cashbackAd
 
 //Developer已在列表中
 func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
+	depositPeriod, err := stub.GetSystemConfig("DepositPeriod")
+	if err != nil {
+		log.Error("Stub.GetSystemConfig with DepositPeriod err:", "error", err)
+		return err
+	}
+	day, err := strconv.Atoi(depositPeriod)
+	if err != nil {
+		log.Error("Strconv.Atoi err:", "error", err)
+		return err
+	}
+	log.Info("Stub.GetSystemConfig with DepositPeriod:", "value", day)
 	//退出列表
-	var err error
 	//计算余额
 	result := balance.TotalAmount - cashbackValue.CashbackTokens.Amount
 	//判断是否退出列表
@@ -252,7 +294,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr stri
 		//当前退出时间
 		endTime := time.Now().UTC().YearDay()
 		//判断是否已到期
-		if endTime-startTime >= depositPeriod {
+		if endTime-startTime >= day {
 			//退出全部，即删除cashback，利息计算好了
 			err = cashbackAllDeposit("Developer", stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
 			if err != nil {

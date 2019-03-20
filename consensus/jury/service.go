@@ -68,13 +68,15 @@ type iDag interface {
 	GetActiveMediators() []common.Address
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	IsActiveJury(addr common.Address) bool
+	JuryCount() int
+	GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 }
@@ -380,6 +382,11 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 		if ctx.rstTx == nil {
 			continue
 		}
+		tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
+		if err != nil {
+			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
+			continue
+		}
 
 		//TODO 从保证金转出  token 时签名为空，先不做相应的判断，所以需要注释掉才能正常进行
 		if !p.checkTxValid(ctx.rstTx) {
@@ -391,11 +398,7 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			log.Info("AddContractLoop", "transaction request Id already in dag", ctx.rstTx.RequestHash())
 			continue
 		}
-		tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
-		if err != nil {
-			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
-			continue
-		}
+
 		//if false == checkTxValid(ctx.rstTx) {
 		//	log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 		//	continue
@@ -469,7 +472,7 @@ func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExi
 	etor := &elector{
 		num:    uint(p.electionNum),
 		weight: 1,
-		total:  1000, //todo from dag
+		total:  uint64(p.dag.JuryCount()), //todo from dag
 	}
 	for i, e := range ele {
 		isMatch := false
@@ -614,7 +617,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if contractId == (common.Address{}) { //deploy
 			if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[contractId] = []ElectionInf{} //清空
+				p.lockArf[contractId] = []ElectionInf{}                        //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}
