@@ -918,7 +918,6 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 		log.Info("txpool check coinbase tx.", "info", str)
 		return nil, nil, nil
 	}
-
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
@@ -936,7 +935,6 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
-
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
@@ -1020,7 +1018,6 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
-
 	return pool.getPoolTxsByAddr(addr)
 }
 
@@ -1646,12 +1643,15 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.RLock()
-
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
 
 	for {
 		if time.Since(t0) > time.Second*2 {
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
+			break
+		}
+		if total >= unit_size {
+			log.Infof("the unit size is %s", total.String())
 			break
 		}
 		tx := pool.priority_priced.Get()
@@ -1660,24 +1660,17 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			break
 		} else {
 			if !tx.Pending {
-				// dagconfig.DefaultConfig.UnitTxSize = 1024 * 16
-				if total += tx.Tx.Size(); total <= unit_size {
-					// 获取该交易的前驱交易列表
-					// add precusorTxs
-					p_txs, _ := pool.getPrecusorTxs(tx)
-					if len(p_txs) > 0 {
-						list = append(list, p_txs...)
+				// 获取该交易的前驱交易列表
+				// add precusorTxs
+				p_txs, _ := pool.getPrecusorTxs(tx)
+				if len(p_txs) > 0 {
+					for _, ptx := range p_txs {
+						list = append(list, ptx)
+						total += ptx.Tx.Size()
 					}
-					list = append(list, tx)
-					// add  pending
-					// for _, t := range p_txs {
-					// 	pool.promoteTx(hash, t)
-					// }
-					// pool.promoteTx(hash, tx)
-				} else {
-					total = total - tx.Tx.Size()
-					break
 				}
+				list = append(list, tx)
+				total += tx.Tx.Size()
 			}
 		}
 	}
