@@ -32,7 +32,12 @@ type UnitJson struct {
 	Txs        []*TxJson          `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
-
+}
+type FastUnitJson struct {
+	FastHash    common.Hash `json:"fast_hash"`
+	FastIndex   uint64      `json:"fast_index"`
+	StableHash  common.Hash `json:"stable_hash"`
+	StableIndex uint64      `json:"stable_index"`
 }
 type HeaderJson struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
@@ -61,7 +66,7 @@ func ConvertUnit2Json(unit *modules.Unit) *UnitJson {
 	}
 
 	for _, tx := range unit.Txs {
-		txjson := ConvertTx2Json(tx)
+		txjson := ConvertTx2Json(tx, nil)
 		json.Txs = append(json.Txs, &txjson)
 	}
 	return json

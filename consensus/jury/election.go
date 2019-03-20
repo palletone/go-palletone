@@ -167,16 +167,16 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	//验证vrf证明
 	//收集vrf地址并添加缓存
 	//检查缓存地址数量
-	log.Info("ProcessElectionResultEvent", "reqHash", rstEvt.ReqId.String(), "addrHash", rstEvt.Ele.AddrHash.String())
 	if _, ok := p.mtx[rstEvt.ReqId]; !ok {
 		return errors.New("ProcessElectionResultEvent, reqHash not find")
 	}
-
 	mtx := p.mtx[rstEvt.ReqId]
 	if len(mtx.eleInf) >= p.electionNum {
 		log.Info("ProcessElectionResultEvent, The quantity has reached the requirement")
 		return nil
 	}
+	log.Info("ProcessElectionResultEvent", "reqHash", rstEvt.ReqId.String(), "addrHash", rstEvt.Ele.AddrHash.String())
+
 	tmpReqId := common.BytesToAddress(rstEvt.ReqId.Bytes())
 	contractId := common.NewAddress(tmpReqId.Bytes(), common.ContractHash)
 	log.Debug("ProcessElectionResultEvent", "reqId", rstEvt.ReqId.Bytes(), "reqIdStr", rstEvt.ReqId.String(), "contractId", contractId, "tmpReqId", tmpReqId)
@@ -251,8 +251,8 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 
 	ele := &elector{
 		num:    uint(p.electionNum),
-		weight: 10,   //todo config
-		total:  1000, //todo dynamic acquisition
+		weight: 1,   //todo config
+		total:  uint64(p.dag.JuryCount()),//todo dynamic acquisition
 		//vrfAct: p.vrfAct,
 
 		addr:     account.Address,

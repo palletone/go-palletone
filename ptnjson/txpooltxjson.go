@@ -55,7 +55,7 @@ func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPo
 	return &TxPoolTxJson{
 		TxHash:     tx.Tx.Hash().String(),
 		UnitHash:   hex_hash,
-		Payment:    &payJson,
+		Payment:    payJson,
 		TxMessages: ConvertMegs2Json(tx.Tx.TxMessages),
 
 		Froms:        froms,

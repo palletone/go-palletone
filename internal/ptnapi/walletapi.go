@@ -17,7 +17,6 @@ import (
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
@@ -349,14 +348,14 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
-		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		ks := s.b.GetKeyStore()
 
 		return ks.GetPublicKey(addr)
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		ks := s.b.GetKeyStore()
 		//account, _ := MakeAddress(ks, addr.String())
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		return ks.SignHash(addr, hash)
@@ -407,7 +406,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	//} else {
 	//	d = time.Duration(*duration) * time.Second
 	//}
-	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := s.b.GetKeyStore()
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
 		errors.New("get addr by outpoint is err")
@@ -607,50 +606,49 @@ func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (
 	}
 
 	gets := []ptnjson.GetTransactions{}
-	for _, items := range txs {
-		for _, tx := range items {
+	for _, tx := range txs {
 
-			get := ptnjson.GetTransactions{}
-			get.Txid = tx.Hash().String()
+		get := ptnjson.GetTransactions{}
+		get.Txid = tx.Hash().String()
 
-			for _, msg := range tx.TxMessages {
-				payload, ok := msg.Payload.(*modules.PaymentPayload)
+		for _, msg := range tx.TxMessages {
+			payload, ok := msg.Payload.(*modules.PaymentPayload)
 
-				if ok == false {
-					continue
-				}
+			if ok == false {
+				continue
+			}
 
-				for _, txin := range payload.Inputs {
+			for _, txin := range payload.Inputs {
 
-					if txin.PreviousOutPoint != nil {
-						addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
-						if err != nil {
-
-							return "null", err
-						}
-
-						get.Inputs = append(get.Inputs, addr.String())
-					} else {
-						get.Inputs = append(get.Inputs, "coinbase")
-					}
-
-				}
-
-				for _, txout := range payload.Outputs {
-					var gout ptnjson.GetTranscationOut
-					addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
+				if txin.PreviousOutPoint != nil {
+					addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
 					if err != nil {
+
 						return "null", err
 					}
-					gout.Addr = addr.String()
-					gout.Value = txout.Value
-					gout.Asset = txout.Asset.String()
-					get.Outputs = append(get.Outputs, gout)
+
+					get.Inputs = append(get.Inputs, addr.String())
+				} else {
+					get.Inputs = append(get.Inputs, "coinbase")
 				}
 
-				gets = append(gets, get)
 			}
+
+			for _, txout := range payload.Outputs {
+				var gout ptnjson.GetTranscationOut
+				addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
+				if err != nil {
+					return "null", err
+				}
+				gout.Addr = addr.String()
+				gout.Value = txout.Value
+				gout.Asset = txout.Asset.String()
+				get.Outputs = append(get.Outputs, gout)
+			}
+
+			gets = append(gets, get)
 		}
+
 	}
 	result := ptnjson.ConvertGetTransactions2Json(gets)
 
@@ -727,14 +725,14 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
-		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		ks := s.b.GetKeyStore()
 
 		return ks.GetPublicKey(addr)
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		ks := s.b.GetKeyStore()
 		//account, _ := MakeAddress(ks, addr.String())
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		return ks.SignHash(addr, hash)
@@ -785,7 +783,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	} else {
 		d = time.Duration(*duration) * time.Second
 	}
-	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := s.b.GetKeyStore()
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
 		errors.New("get addr by outpoint is err")
@@ -867,7 +865,7 @@ func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duratio
 	} else {
 		d = time.Duration(*duration) * time.Second
 	}
-	ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	ks := s.b.GetKeyStore()
 	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
 		errors.New("get addr by outpoint is err")
@@ -974,12 +972,12 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
-		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		ks := s.b.GetKeyStore()
 		return ks.GetPublicKey(addr)
 	}
 	//sign tx
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		ks := s.b.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+		ks := s.b.GetKeyStore()
 		return ks.SignHash(addr, hash)
 	}
 	//raw inputs
@@ -1044,7 +1042,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 		get.ParentsHash = file.ParentsHash.String()
 		get.FileHash = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
-		timestamp = file.Timestamp
+		timestamp = int64(file.Timestamp)
 		tm := time.Unix(timestamp, 0)
 		get.Timestamp = tm.Format("2006-01-02 15:04:05")
 		get.TransactionHash = file.Txid.String()
