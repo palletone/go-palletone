@@ -136,7 +136,7 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 		encodedAddr := addramt.Address
 		ptnAmt := addramt.Amount
 		amount := ptnjson.Ptn2Dao(ptnAmt)
-		//		// Ensure amount is in the valid range for monetary amounts.
+		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
 			return "", &ptnjson.RPCError{
 				Code:    ptnjson.ErrRPCType,
@@ -416,7 +416,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String("ALL"))
-	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
+	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn,addr)
 
 	fmt.Println(signresult)
 	stx := new(modules.Transaction)
@@ -794,7 +794,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String("ALL"))
-	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
+	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn,addr)
 
 	fmt.Println(signresult)
 	stx := new(modules.Transaction)

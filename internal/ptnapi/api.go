@@ -1981,7 +1981,7 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s 
 }
 
 //sign rawtranscation
-func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign) (ptnjson.SignRawTransactionResult, error) {
+func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign,addr common.Address) (ptnjson.SignRawTransactionResult, error) {
 	cmd := icmd.(*ptnjson.SignRawTransactionCmd)
 	serializedTx, err := decodeHexStr(cmd.RawTx)
 	if err != nil {
@@ -2099,13 +2099,25 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 			case tokenengine.SigHashSingle:
 				// Resize output array to up to and including requested index.
 				payload.Outputs = payload.Outputs[:1+1]
+				pk_addr, err := tokenengine.GetAddressFromScript(payload.Outputs[k].PkScript)
+			    if err != nil {
+				    return ptnjson.SignRawTransactionResult{}, errors.New("Get addr FromScript is err when signtx")
+			    }
 				// All but current output get zeroed out.
-				for i := 0; i < 1; i++ {
-					payload.Outputs[i].Value = 0
-					payload.Outputs[i].PkScript = nil
+				if pk_addr != addr {
+					payload.Outputs[k].PkScript = nil
+					payload.Outputs[k].Value = 0
+					payload.Outputs[k].Asset = &modules.Asset{}
 				}
 			}
 		}
+
+			for _, txin := range payload.Inputs {
+            fmt.Printf("-----------------2115----%+v\n",txin)
+		    }
+		    for _, txout := range payload.Outputs {
+		        fmt.Printf("-----------------2118----%+v\n",txout)
+		    }
 	}
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
@@ -2296,7 +2308,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String(hashtype))
-	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn)
+	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn,addr)
 
 	fmt.Println(result)
 	return result, nil

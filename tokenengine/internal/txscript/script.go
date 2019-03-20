@@ -656,6 +656,7 @@ func calcSignatureHash(script []parsedOpcode, hashType uint32, tx *modules.Trans
 					for i := 0; i < idx; i++ {
 						payment.Outputs[i].Value = 0
 						payment.Outputs[i].PkScript = nil
+						payment.Outputs[i].Asset = &modules.Asset{}
 					}
 				}
 			}
