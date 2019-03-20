@@ -50,7 +50,7 @@ type IStateDb interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
 	//GetContractAllState() []*modules.ContractReadSet
-	GetContractStatesByPrefix(id []byte,prefix string) (map[string]*modules.ContractStateValue, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
 	GetContract(id []byte) (*modules.Contract, error)
@@ -95,4 +95,7 @@ type IStateDb interface {
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 	UpdateDesiredMediatorCount(account common.Address, mediatorCountSet uint8) error
+
+	GetJuryCandidateList() ([]string, error)
+	IsInJuryCandidateList(address common.Address) bool
 }

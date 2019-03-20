@@ -391,6 +391,12 @@ func (ks *KeyStore) TimedUnlock(a accounts.Account, passphrase string, timeout t
 	return nil
 }
 
+func (ks *KeyStore) IsUnlock(addr common.Address) bool {
+	_, found := ks.unlocked[addr]
+
+	return found
+}
+
 // Find resolves the given account into a unique entry in the keystore.
 func (ks *KeyStore) Find(a accounts.Account) (accounts.Account, error) {
 	ks.cache.maybeReload()

@@ -607,50 +607,49 @@ func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (
 	}
 
 	gets := []ptnjson.GetTransactions{}
-	for _, items := range txs {
-		for _, tx := range items {
+	for _, tx := range txs {
 
-			get := ptnjson.GetTransactions{}
-			get.Txid = tx.Hash().String()
+		get := ptnjson.GetTransactions{}
+		get.Txid = tx.Hash().String()
 
-			for _, msg := range tx.TxMessages {
-				payload, ok := msg.Payload.(*modules.PaymentPayload)
+		for _, msg := range tx.TxMessages {
+			payload, ok := msg.Payload.(*modules.PaymentPayload)
 
-				if ok == false {
-					continue
-				}
+			if ok == false {
+				continue
+			}
 
-				for _, txin := range payload.Inputs {
+			for _, txin := range payload.Inputs {
 
-					if txin.PreviousOutPoint != nil {
-						addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
-						if err != nil {
-
-							return "null", err
-						}
-
-						get.Inputs = append(get.Inputs, addr.String())
-					} else {
-						get.Inputs = append(get.Inputs, "coinbase")
-					}
-
-				}
-
-				for _, txout := range payload.Outputs {
-					var gout ptnjson.GetTranscationOut
-					addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
+				if txin.PreviousOutPoint != nil {
+					addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
 					if err != nil {
+
 						return "null", err
 					}
-					gout.Addr = addr.String()
-					gout.Value = txout.Value
-					gout.Asset = txout.Asset.String()
-					get.Outputs = append(get.Outputs, gout)
+
+					get.Inputs = append(get.Inputs, addr.String())
+				} else {
+					get.Inputs = append(get.Inputs, "coinbase")
 				}
 
-				gets = append(gets, get)
 			}
+
+			for _, txout := range payload.Outputs {
+				var gout ptnjson.GetTranscationOut
+				addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
+				if err != nil {
+					return "null", err
+				}
+				gout.Addr = addr.String()
+				gout.Value = txout.Value
+				gout.Asset = txout.Asset.String()
+				get.Outputs = append(get.Outputs, gout)
+			}
+
+			gets = append(gets, get)
 		}
+
 	}
 	result := ptnjson.ConvertGetTransactions2Json(gets)
 
@@ -1044,7 +1043,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 		get.ParentsHash = file.ParentsHash.String()
 		get.FileHash = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
-		timestamp = file.Timestamp
+		timestamp = int64(file.Timestamp)
 		tm := time.Unix(timestamp, 0)
 		get.Timestamp = tm.Format("2006-01-02 15:04:05")
 		get.TransactionHash = file.Txid.String()

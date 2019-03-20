@@ -68,13 +68,15 @@ type iDag interface {
 	GetActiveMediators() []common.Address
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	IsActiveJury(addr common.Address) bool
+	JuryCount() int
+	GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
+	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 }
@@ -469,7 +471,7 @@ func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExi
 	etor := &elector{
 		num:    uint(p.electionNum),
 		weight: 1,
-		total:  1000, //todo from dag
+		total:  uint64(p.dag.JuryCount()), //todo from dag
 	}
 	for i, e := range ele {
 		isMatch := false
@@ -614,7 +616,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if contractId == (common.Address{}) { //deploy
 			if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[contractId] = []ElectionInf{} //清空
+				p.lockArf[contractId] = []ElectionInf{}                        //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}

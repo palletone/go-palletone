@@ -267,10 +267,25 @@ func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
 	return mi
 }
 
-func (d *Dag) IsActiveJury(addr common.Address) bool {
-	return d.GetGlobalProp().IsActiveJury(addr)
+func (d *Dag) JuryCount() int{
+	return 100 //todo test
+
+	juryList, err := d.unstableStateRep.GetJuryCandidateList()
+	if err != nil{
+		return len(juryList)
+	}
+	return 0
 }
 
 func (d *Dag) GetActiveJuries() []common.Address {
-	return d.GetGlobalProp().GetActiveJuries()
+	return nil
+	//return d.unstableStateRep.GetJuryCandidateList()
 }
+
+func (d *Dag) IsActiveJury(addr common.Address) bool {
+	return true //todo for test
+	return d.unstableStateRep.IsJury(addr)
+}
+
+
+
