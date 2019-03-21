@@ -20,13 +20,15 @@
 package txspool
 
 import (
+	"container/heap"
+	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
 
-	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -154,6 +156,25 @@ func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transacti
 	return nil, nil
 }
 
+// create txs
+func createTxs(address string) []*modules.Transaction {
+	txs := make([]*modules.Transaction, 0)
+
+	sign, _ := hex.DecodeString("2c731f854ef544796b2e86c61b1a9881a0148da0c1001f0da5bd2074d2b8360367e2e0a57de91a5cfe92b79721692741f47588036cf0101f34dab1bfda0eb030")
+	pubKey, _ := hex.DecodeString("0386df0aef707cc5bc8d115c2576f844d2734b05040ef2541e691763f802092c09")
+	unlockScript := tokenengine.GenerateP2PKHUnlockScript(sign, pubKey)
+	a := modules.NewPTNAsset()
+	addr, _ := common.StringToAddress(address)
+	lockScript := tokenengine.GenerateLockScript(addr)
+	for j := 0; j < 16; j++ {
+		tx := modules.NewTransaction([]*modules.Message{})
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0), unlockScript)},
+			[]*modules.Output{modules.NewTxOut(uint64(j+1), lockScript, a)})))
+		txs = append(txs, tx)
+	}
+	return txs
+}
+
 // Tests that if the transaction count belonging to multiple accounts go above
 // some hard threshold, if they are under the minimum guaranteed slot count then
 // the transactions are still kept.
@@ -164,32 +185,19 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	//l := log.NewTestLog()
 	utxodb := storage.NewUtxoDb(db)
 	mutex := new(sync.RWMutex)
 	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
-	var pending_cache, queue_cache, all, origin int
-	pool := NewTxPool(config, unitchain)
 
+	pool := NewTxPool(config, unitchain)
 	defer pool.Stop()
 
-	txs := modules.Transactions{}
-
-	sign, _ := hex.DecodeString("2c731f854ef544796b2e86c61b1a9881a0148da0c1001f0da5bd2074d2b8360367e2e0a57de91a5cfe92b79721692741f47588036cf0101f34dab1bfda0eb030")
-	pubKey, _ := hex.DecodeString("0386df0aef707cc5bc8d115c2576f844d2734b05040ef2541e691763f802092c09")
-	unlockScript := tokenengine.GenerateP2PKHUnlockScript(sign, pubKey)
-	a := modules.NewPTNAsset()
-	addr, _ := common.StringToAddress("P13pBrshF6JU7QhMmzJjXx3mWHh13YHAUAa")
-	lockScript := tokenengine.GenerateLockScript(addr)
-	for j := 0; j < 16; j++ {
-		tx := modules.NewTransaction([]*modules.Message{})
-		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0), unlockScript)},
-			[]*modules.Output{modules.NewTxOut(uint64(j+1), lockScript, a)})))
-		txs = append(txs, tx)
-	}
-	fmt.Println("range txs start.... ", time.Now().Unix()-t0.Unix())
+	var pending_cache, queue_cache, all, origin int
+	address := "P13pBrshF6JU7QhMmzJjXx3mWHh13YHAUAa"
+	txs := createTxs(address)
+	fmt.Println("range txs start...  , spent time:", time.Since(t0))
 	// Import the batch and verify that limits have been enforced
 	//	pool.AddRemotes(txs)
 	for i, tx := range txs {
@@ -232,7 +240,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		if len(list) != 16 {
 			t.Errorf("addr %x: total pending transactions mismatch: have %d, want %d", hash.String(), len(list), 16)
 		} else {
-			log.Debug("account matched.", "pending addr:", addr.String(), "amont:", len(list))
+			log.Debug("account matched.", "pending addr:", address, "amont:", len(list))
 		}
 	}
 	fmt.Println("defer start.... ", time.Now().Unix()-t0.Unix())
@@ -282,14 +290,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, pool.AllLength(), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())
 	}(pool)
-}
-func transaction(msg []*modules.Message) *modules.Transaction {
-	return pricedTransaction(msg)
-}
-func pricedTransaction(msgs []*modules.Message) *modules.Transaction {
-	tx := modules.NewTransaction(msgs)
-	//tx.SetHash(rlp.RlpHash(tx))
-	return tx
 }
 
 func TestUtxoViewPoint(t *testing.T) {
@@ -360,35 +360,26 @@ func getProscerTx(this *user, us []*user) []int {
 			}
 		}
 	}
-
 	return list
 }
 
 func TestPriorityHeap(t *testing.T) {
+	txs := createTxs("P13pBrshF6JU7QhMmzJjXx3mWHh13YHAUAa")
+	p_txs := make([]*modules.TxPoolTransaction, 0)
 	list := new(priorityHeap)
-	tx := new(modules.TxPoolTransaction)
-	tx.Priority_lvl = "1.0"
-	list.Push(tx)
-	tx1 := new(modules.TxPoolTransaction)
-	tx1.Priority_lvl = "2.0"
-	list.Push(tx1)
-	tx2 := new(modules.TxPoolTransaction)
-	tx2.Priority_lvl = "0.8"
-	list.Push(tx2)
-
-	tx3 := new(modules.TxPoolTransaction)
-	tx3.Priority_lvl = "10"
-	list.Push(tx3)
-	tx.Priority_lvl = "8"
-	list.Push(tx)
-
-	list.Push(&modules.TxPoolTransaction{Priority_lvl: "0.001"})
-
-	list.Push(&modules.TxPoolTransaction{Priority_lvl: "0.05"})
+	for _, tx := range txs {
+		priority := rand.Float64()
+		str := strconv.FormatFloat(priority, 'f', -1, 64)
+		ptx := &modules.TxPoolTransaction{Tx: tx, Priority_lvl: str}
+		p_txs = append(p_txs, ptx)
+		//list.Push(ptx)
+		heap.Push(list, ptx)
+	}
 	count := 0
 	biger := new(modules.TxPoolTransaction)
-	for {
-		inter := list.Pop()
+	for list.Len() > 0 {
+		//inter := list.Pop()
+		inter := heap.Pop(list)
 		if inter != nil {
 			ptx, ok := inter.(*modules.TxPoolTransaction)
 			if ok {
@@ -399,15 +390,16 @@ func TestPriorityHeap(t *testing.T) {
 					bp, _ := strconv.ParseFloat(biger.Priority_lvl, 64)
 					pp, _ := strconv.ParseFloat(ptx.Priority_lvl, 64)
 					if bp < pp {
-						t.Fatal(fmt.Sprintf("sort.Sort.priorityHeap is failed.biger:  %s ,ptx: %s  ", biger.Priority_lvl, ptx.Priority_lvl))
+						t.Fatal(fmt.Sprintf("sort.Sort.priorityHeap is failed.biger:  %s ,ptx: %s  , index: %d ", biger.Priority_lvl, ptx.Priority_lvl, ptx.Index))
 					}
 				}
 				count++
-				biger.Priority_lvl = ptx.Priority_lvl
+				biger = ptx
 			}
 		} else {
-			log.Debug("all tx pop.")
+			log.Debug("pop error: the interTx is nil ", "count", count)
 			break
 		}
 	}
+	log.Debug("all pop end. ", "count", count, "bad priority  tx: ", biger)
 }
