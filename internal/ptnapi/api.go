@@ -1672,7 +1672,9 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 				for _, input := range pay.Inputs {
 					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
 					//utxoinputs = append(utxoinputs, iutxo)
-					inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+					if input.PreviousOutPoint != nil {
+					    inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+				    }
 					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
 					//result[*input.PreviousOutPoint] = lockScript
 					//5,6,8,9
