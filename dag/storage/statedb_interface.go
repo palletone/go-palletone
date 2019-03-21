@@ -76,10 +76,10 @@ type IStateDb interface {
 	AppendVotedMediator(voter, mediator common.Address) error
 
 	// world state chainIndex
-	//GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
+	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 	//保存当前最新单元的高度，即使是未稳定的单元，也会更新
 	//SaveChainIndex(index *modules.ChainIndex) error
-	//GetCurrentUnit(assetId modules.IDType16) *modules.Unit
+	//GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 
 	StoreMediator(med *core.Mediator) error
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error

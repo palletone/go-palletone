@@ -42,7 +42,7 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//}
 	//db := MockStateMemDb()
 	//confs := []modules.ContractWriteSet{}
-	//aid := modules.IDType16{}
+	//aid := modules.AssetId{}
 	//aid.SetBytes([]byte("1111111111111111222222222222222222"))
 	//st := modules.Asset{
 	//	AssetId:  aid,
@@ -106,7 +106,7 @@ func TestSaveAndGetConfig(t *testing.T) {
 //	//	return
 //	//}
 //	db:=MockStateMemDb()
-//	aid := modules.IDType16{}
+//	aid := modules.AssetId{}
 //	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 //	st := modules.Asset{
 //		AssetId:  aid,

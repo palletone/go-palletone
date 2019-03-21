@@ -39,12 +39,12 @@ type IDag interface {
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 
 	IsEmpty() bool
-	CurrentUnit(token modules.IDType16) *modules.Unit
+	CurrentUnit(token modules.AssetId) *modules.Unit
 	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
 	VerifyHeader(header *modules.Header, seal bool) error
-	GetCurrentUnit(assetId modules.IDType16) *modules.Unit
+	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
-	GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit
+	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
 	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
@@ -55,7 +55,7 @@ type IDag interface {
 	//GetPrefix(prefix string) map[string][]byte
 
 	// CurrentHeader retrieves the head header from the local chain.
-	CurrentHeader(token modules.IDType16) *modules.Header
+	CurrentHeader(token modules.AssetId) *modules.Header
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
@@ -142,7 +142,7 @@ type IDag interface {
 
 	//Light Palletone Subprotocal
 	GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error)
-	GetLightChainHeight(assetId modules.IDType16) uint64
+	GetLightChainHeight(assetId modules.AssetId) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	GetAllLeafNodes() ([]*modules.Header, error)
 

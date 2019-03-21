@@ -83,7 +83,7 @@ func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 		CreationTime:  time.Now(), // TODO: header.Creationdate
 	}
 	json.Number = ChainIndexJson{
-		AssetID: header.Number.AssetID.ToAssetId(),
+		AssetID: header.Number.AssetID.String(),
 		IsMain:  header.Number.IsMain,
 		Index:   header.Number.Index,
 	}

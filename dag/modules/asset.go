@@ -26,7 +26,7 @@ import (
 
 	"bytes"
 	"encoding/json"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 var CoreAsset = NewPTNAsset()
@@ -36,8 +36,8 @@ var CoreAsset = NewPTNAsset()
 //默认的PTN资产，则AssetId=0，UniqueId=0
 type Asset struct {
 	//AssetId 资产类别,前26bit是symbol的base36编码，27-29是Symbol编码后字节长度，30-32bit为AssetType，剩下的是Txid的前12字节
-	AssetId  IDType16 `json:"asset_id"`
-	UniqueId IDType16 `json:"unique_id"` // every token has its unique id
+	AssetId  AssetId  `json:"asset_id"`
+	UniqueId UniqueId `json:"unique_id"` // every token has its unique id
 	//ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id,read from toml config NetworkId
 }
 
@@ -49,24 +49,15 @@ const (
 	AssetType_VoteToken
 )
 
-type UniqueIdType byte
-
-const (
-	UniqueIdType_Null       UniqueIdType = iota
-	UniqueIdType_Sequence   UniqueIdType = 1
-	UniqueIdType_Uuid       UniqueIdType = 2
-	UniqueIdType_UserDefine UniqueIdType = 3
-)
-
 func NewPTNAsset() *Asset {
 	//return &Asset{AssetId: PTNCOIN}
-	asset, err := NewAsset("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null, IDType16{})
+	asset, err := NewAsset("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null, UniqueId{})
 	if err != nil {
 		return nil
 	}
 	return asset
 }
-func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte, uidType UniqueIdType, uniqueId IDType16) (*Asset, error) {
+func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte, uidType UniqueIdType, uniqueId UniqueId) (*Asset, error) {
 	asset := &Asset{}
 	assetId, err := NewAssetId(symbol, assetType, decimal, requestId, uidType)
 	if err != nil {
@@ -77,7 +68,7 @@ func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte
 	return asset, nil
 }
 
-func NewPTNIdType() IDType16 {
+func NewPTNIdType() AssetId {
 	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
 	return ptn
 }
@@ -90,8 +81,8 @@ func (asset *Asset) String() string {
 		return "PTN"
 	}
 	_, t, _, _, uidType := asset.AssetId.ParseAssetId()
-	assetIdStr := asset.AssetId.ToAssetId()
-	if asset.UniqueId == ZeroIdType16() || t != AssetType_NonFungibleToken {
+	assetIdStr := asset.AssetId.String()
+	if t != AssetType_NonFungibleToken {
 		return assetIdStr
 	}
 
@@ -141,17 +132,21 @@ func (asset *Asset) IsEmpty() bool {
 }
 
 func (asset *Asset) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(asset)
-	if err != nil {
-		return nil
-	}
-	return data
+	//data, err := rlp.EncodeToBytes(asset)
+	//if err != nil {
+	//	return nil
+	//}
+	//return data
+	b := asset.AssetId.Bytes()
+	return append(b, asset.UniqueId.Bytes()...)
 }
 
 func (asset *Asset) SetBytes(data []byte) error {
-	if err := rlp.DecodeBytes(data, asset); err != nil {
-		return err
+	if len(data) != 32 {
+		return errors.New("data length not equal 32")
 	}
+	asset.AssetId.SetBytes(data[:16])
+	asset.UniqueId.SetBytes(data[16:])
 	return nil
 }
 func (asset *Asset) IsSameAssetId(another *Asset) bool {

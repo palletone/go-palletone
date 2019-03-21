@@ -28,9 +28,9 @@ import (
 	"unsafe"
 
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -98,11 +98,11 @@ func TestCopyHeader(t *testing.T) {
 	//}
 	w := make([]byte, 0)
 	w = append(w, []byte("sign")...)
-	assetID := IDType16{}
+	assetID := AssetId{}
 	assetID.SetBytes([]byte("0000000011111111"))
 	h := Header{
 		ParentsHash: []common.Hash{u1, u2},
-		//AssetIDs:    []IDType16{assetID},
+		//AssetIDs:    []AssetId{assetID},
 		Authors:     auth,
 		GroupSign:   w,
 		GroupPubKey: w,
@@ -164,7 +164,7 @@ func TestOutPointToKey(t *testing.T) {
 }
 func TestHeaderPointer(t *testing.T) {
 	h := new(Header)
-	//h.AssetIDs = []IDType16{PTNCOIN}
+	//h.AssetIDs = []AssetId{PTNCOIN}
 	h.Creationdate = time.Now().Unix()
 	h.Extra = []byte("jay")
 	index := new(ChainIndex)
@@ -223,12 +223,12 @@ func TestHeaderRLP(t *testing.T) {
 	h.Authors = au
 	h.Creationdate = 123
 
-	t.Log("data",h)
+	t.Log("data", h)
 	bytes, err := rlp.EncodeToBytes(h)
 	assert.Nil(t, err)
 	t.Logf("Rlp data:%x", bytes)
 	h2 := &headerTemp{}
 	err = rlp.DecodeBytes(bytes, h2)
-	t.Log("data",h2)
+	t.Log("data", h2)
 	assert.Equal(t, h, h2)
 }

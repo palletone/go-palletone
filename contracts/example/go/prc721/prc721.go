@@ -48,7 +48,7 @@ type TokenInfo struct {
 	CreateAddr  string
 	TotalSupply uint64
 	SupplyAddr  string
-	AssetID     dm.IDType16
+	AssetID     dm.AssetId
 }
 
 type Symbols struct {
@@ -545,7 +545,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	var tkIDs []string
-	KVs, _ := stub.GetStateByPrefix(tkInfo.AssetID.ToAssetId())
+	KVs, _ := stub.GetStateByPrefix(tkInfo.AssetID.String())
 	for _, oneKV := range KVs {
 		assetTkID := strings.SplitN(oneKV.Key, "-", 2)
 		if len(assetTkID) == 2 {
@@ -556,7 +556,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//
 	tkIDInfo := TokenIDInfo{symbol, tkInfo.CreateAddr, tkInfo.TokenType,
-		tkInfo.TotalSupply, tkInfo.SupplyAddr, tkInfo.AssetID.ToAssetId(), tkIDs}
+		tkInfo.TotalSupply, tkInfo.SupplyAddr, tkInfo.AssetID.String(), tkIDs}
 	//return json
 	tkJson, err := json.Marshal(tkIDInfo)
 	if err != nil {
@@ -572,7 +572,7 @@ func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	for _, tkInfo := range tkInfos {
 		tkIDInfo := TokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr,
 			tkInfo.TokenType, tkInfo.TotalSupply,
-			tkInfo.SupplyAddr, tkInfo.AssetID.ToAssetId(), tkIDs}
+			tkInfo.SupplyAddr, tkInfo.AssetID.String(), tkIDs}
 		tkIDInfos = append(tkIDInfos, tkIDInfo)
 	}
 

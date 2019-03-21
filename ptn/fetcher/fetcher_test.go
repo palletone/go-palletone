@@ -228,7 +228,7 @@ func (f *fetcherTester) broadcastBlock(block *modules.Unit, propagate bool) {
 }
 
 // chainHeight retrieves the current height (block number) of the chain.
-func (f *fetcherTester) chainHeight(assetId modules.IDType16) uint64 {
+func (f *fetcherTester) chainHeight(assetId modules.AssetId) uint64 {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 	//mem, _ := ptndb.NewMemDatabase()

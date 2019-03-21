@@ -45,9 +45,9 @@ type IPropertyDb interface {
 
 	//设置稳定单元的Hash
 	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
-	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
+	GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
-	GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, int64, error)
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
 }
 
 // modified by Yiran
@@ -109,14 +109,15 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 func (db *PropertyDb) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
 	data := &modules.UnitProperty{hash, index, 0}
 	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
-	log.Debugf("Save last stable index:%s,unit %s", index.String(), hash.String())
+	log.Debugf("Save last stable assetId:%s,unit: %s", index.AssetID.String(), hash.String())
 	return StoreBytes(db.db, key, data)
 }
-func (db *PropertyDb) GetLastStableUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	key := append(constants.LastStableUnitHash, asset.Bytes()...)
 	data := &modules.UnitProperty{}
 	err := retrieve(db.db, key, data)
 	if err != nil {
+		log.Warnf("Cannot retrieve last stable unit hash by asset:%s",asset.String())
 		return common.Hash{}, nil, err
 	}
 	return data.Hash, data.Index, nil
@@ -131,7 +132,7 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 
 	return StoreBytes(db.db, key, data)
 }
-func (db *PropertyDb) GetNewestUnit(asset modules.IDType16) (common.Hash, *modules.ChainIndex, int64, error) {
+func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
 	key := append(constants.LastUnstableUnitHash, asset.Bytes()...)
 	data := &modules.UnitProperty{}
 	err := retrieve(db.db, key, data)

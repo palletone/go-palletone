@@ -388,7 +388,7 @@ func (dl *downloadTester) GetUnit(hash common.Hash) (*modules.Unit, error) {
 }
 
 // CurrentHeader retrieves the current head header from the canonical chain.
-func (dl *downloadTester) CurrentHeader(token modules.IDType16) *modules.Header {
+func (dl *downloadTester) CurrentHeader(token modules.AssetId) *modules.Header {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -401,7 +401,7 @@ func (dl *downloadTester) CurrentHeader(token modules.IDType16) *modules.Header 
 }
 
 // CurrentBlock retrieves the current head block from the canonical chain.
-func (dl *downloadTester) CurrentUnit(token modules.IDType16) *modules.Unit {
+func (dl *downloadTester) CurrentUnit(token modules.AssetId) *modules.Unit {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -662,7 +662,7 @@ func (dlp *downloadTesterPeer) waitDelay() {
 //}
 // Head constructs a function to retrieve a peer's current head hash and total difficulty.
 //头构造一个函数来检索对等点的当前头哈希值和总难度。
-func (dlp *downloadTesterPeer) Head(assetId modules.IDType16) (common.Hash, *modules.ChainIndex) {
+func (dlp *downloadTesterPeer) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	dlp.dl.lock.RLock()
 	defer dlp.dl.lock.RUnlock()
 	index := &modules.ChainIndex{
@@ -1928,7 +1928,7 @@ type floodingTestPeer struct {
 	pend   sync.WaitGroup
 }
 
-func (ftp *floodingTestPeer) Head(assetId modules.IDType16) (common.Hash, *modules.ChainIndex) {
+func (ftp *floodingTestPeer) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	return ftp.peer.Head(assetId)
 }
 func (ftp *floodingTestPeer) RequestHeadersByHash(hash common.Hash, count int, skip int, reverse bool) error {

@@ -86,7 +86,7 @@ var (
 )
 
 type dags interface {
-	CurrentUnit(token modules.IDType16) *modules.Unit
+	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	// GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)

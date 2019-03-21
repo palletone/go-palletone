@@ -21,8 +21,8 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -110,16 +110,16 @@ func (pRep *PropCacheRepository) RetrieveMediatorSchl() (*modules.MediatorSchedu
 func (pRep *PropCacheRepository) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
 	return pRep.dbRep.SetLastStableUnit(hash, index)
 }
-func (pRep *PropCacheRepository) GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+func (pRep *PropCacheRepository) GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	return pRep.dbRep.GetLastStableUnit(token)
 }
 func (pRep *PropCacheRepository) SetNewestUnit(header *modules.Header) error {
 	return pRep.dbRep.SetNewestUnit(header)
 }
-func (pRep *PropCacheRepository) GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+func (pRep *PropCacheRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	return pRep.dbRep.GetNewestUnit(token)
 }
-func (pRep *PropCacheRepository) GetNewestUnitTimestamp(token modules.IDType16) (int64, error) {
+func (pRep *PropCacheRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
 	return pRep.dbRep.GetNewestUnitTimestamp(token)
 }
 func (pRep *PropCacheRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty) bool {

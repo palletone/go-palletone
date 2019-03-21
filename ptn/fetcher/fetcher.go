@@ -60,7 +60,7 @@ type headerVerifierFn func(header *modules.Header) error
 type blockBroadcasterFn func(block *modules.Unit, propagate bool /*, broadcastMediator int*/)
 
 // chainHeightFn is a callback type to retrieve the current chain height.
-type chainHeightFn func(assetId modules.IDType16) uint64
+type chainHeightFn func(assetId modules.AssetId) uint64
 
 // chainInsertFn is a callback type to insert a batch of blocks into the local chain.
 type chainInsertFn func(modules.Units) (int, error)

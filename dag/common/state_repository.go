@@ -49,7 +49,7 @@ type IStateRepository interface {
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 	GetMinFee() (*modules.AmountAsset, error)
-	//GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error)
+	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
 	GetJuryCandidateList() ([]string, error)
 	IsJury(address common.Address) bool

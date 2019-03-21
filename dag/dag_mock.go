@@ -95,7 +95,7 @@ func (mr *MockIDagMockRecorder) IsEmpty() *gomock.Call {
 }
 
 // CurrentUnit mocks base method
-func (m *MockIDag) CurrentUnit(token modules.IDType16) *modules.Unit {
+func (m *MockIDag) CurrentUnit(token modules.AssetId) *modules.Unit {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CurrentUnit", token)
 	ret0, _ := ret[0].(*modules.Unit)
@@ -123,7 +123,7 @@ func (mr *MockIDagMockRecorder) VerifyHeader(header, seal interface{}) *gomock.C
 }
 
 // GetCurrentUnit mocks base method
-func (m *MockIDag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
+func (m *MockIDag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentUnit", assetId)
 	ret0, _ := ret[0].(*modules.Unit)
@@ -151,7 +151,7 @@ func (mr *MockIDagMockRecorder) GetMainCurrentUnit() *gomock.Call {
 }
 
 // GetCurrentMemUnit mocks base method
-func (m *MockIDag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
+func (m *MockIDag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentMemUnit", assetId, index)
 	ret0, _ := ret[0].(*modules.Unit)
@@ -253,7 +253,7 @@ func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
 }
 
 // CurrentHeader mocks base method
-func (m *MockIDag) CurrentHeader(token modules.IDType16) *modules.Header {
+func (m *MockIDag) CurrentHeader(token modules.AssetId) *modules.Header {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CurrentHeader", token)
 	ret0, _ := ret[0].(*modules.Header)
@@ -1007,7 +1007,7 @@ func (mr *MockIDagMockRecorder) GetLightHeaderByHash(headerHash interface{}) *go
 }
 
 // GetLightChainHeight mocks base method
-func (m *MockIDag) GetLightChainHeight(assetId modules.IDType16) uint64 {
+func (m *MockIDag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLightChainHeight", assetId)
 	ret0, _ := ret[0].(uint64)

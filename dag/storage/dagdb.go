@@ -88,7 +88,7 @@ type IDagDb interface {
 	//GetHeadFastUnitHash() (common.Hash, error)
 	//GetAllLeafNodes() ([]*modules.Header, error)
 	GetTrieSyncProgress() (uint64, error)
-	//GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
+	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 	//GetTokenInfo(key string) (*modules.TokenInfo, error)
 	//GetAllTokenInfo() (*modules.AllTokenInfo, error)
 
@@ -500,7 +500,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 //	return dagdb.getChainUnit(h)
 //}
 //
-//func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
+//func (dagdb *DagDb) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
 //	key := fmt.Sprintf("%s_%s_1_", constants.UNIT_NUMBER_PREFIX, assetID.String())
 //
 //	data := dagdb.GetPrefix([]byte(key))

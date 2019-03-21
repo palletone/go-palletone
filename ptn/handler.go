@@ -69,7 +69,7 @@ type ProtocolManager struct {
 	networkId    uint64
 	srvr         *p2p.Server
 	protocolName string
-	mainAssetId  modules.IDType16
+	mainAssetId  modules.AssetId
 
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
@@ -167,7 +167,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		lightSync:    uint32(1),
 	}
 
-	asset, err := modules.NewAsset(strings.ToUpper(protocolName), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.IDType16{})
+	asset, err := modules.NewAsset(strings.ToUpper(protocolName), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
 	if err != nil {
 		log.Error("ProtocolManager new asset err", err)
 		return nil, err
@@ -251,7 +251,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		}
 		return nil
 	}
-	heighter := func(assetId modules.IDType16) uint64 {
+	heighter := func(assetId modules.AssetId) uint64 {
 		unit := pm.dag.GetCurrentUnit(assetId)
 		if unit != nil {
 			return unit.NumberU64()

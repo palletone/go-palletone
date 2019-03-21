@@ -107,7 +107,7 @@ func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator
 //	}
 //	return nil
 //}
-//func (statedb *StateDb) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+//func (statedb *StateDb) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
 //	// get current chainIndex
 //	key := constants.CURRENTCHAININDEX_PREFIX + assetId.String()
 //	bytes, err := statedb.db.Get([]byte(key))

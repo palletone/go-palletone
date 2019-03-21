@@ -89,7 +89,7 @@ type IUnitRepository interface {
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 
 	//获得某个分区上的最新不可逆单元
-	GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error)
+	GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 }
@@ -503,7 +503,7 @@ func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 	}
 	return fee, nil
 }
-func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
 	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
 		return nil, err
@@ -1462,7 +1462,7 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 	return mds, nil
 }
 
-func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.IDType16) (*modules.Unit, error) {
+func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	hash, _, err := rep.propdb.GetLastStableUnit(assetID)

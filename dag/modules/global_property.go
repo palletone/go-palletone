@@ -80,8 +80,8 @@ type DynamicGlobalProperty struct {
 	RecentSlotsFilled uint64
 
 	LastIrreversibleUnitNum uint64
-	//NewestUnit     map[IDType16]*UnitProperty
-	//LastStableUnit map[IDType16]*UnitProperty
+	//NewestUnit     map[AssetId]*UnitProperty
+	//LastStableUnit map[AssetId]*UnitProperty
 }
 type UnitProperty struct {
 	Hash      common.Hash // 最近的单元hash
@@ -104,8 +104,8 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 		RecentSlotsFilled: ^uint64(0),
 
 		LastIrreversibleUnitNum: 0,
-		//NewestUnit:     map[IDType16]*UnitProperty{},
-		//LastStableUnit: map[IDType16]*UnitProperty{},
+		//NewestUnit:     map[AssetId]*UnitProperty{},
+		//LastStableUnit: map[AssetId]*UnitProperty{},
 	}
 }
 

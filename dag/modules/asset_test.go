@@ -30,7 +30,7 @@ import (
 func TestAsset_MaxSymbol(t *testing.T) {
 	s := base36.DecodeToBytes("ZZZZZ")
 	t.Logf("Data:%08b", s)
-	a, _ := NewAsset("ZZZZZ", AssetType_NonFungibleToken, 18, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, UniqueIdType_Sequence, IDType16{0xff, 0xff, 0xff})
+	a, _ := NewAsset("ZZZZZ", AssetType_NonFungibleToken, 18, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, UniqueIdType_Sequence, UniqueId{0xff, 0xff, 0xff})
 	t.Logf("asset:%x,\r\nstr:%s", a.Bytes(), a.String())
 }
 
@@ -44,14 +44,14 @@ func TestAsset_String(t *testing.T) {
 	//t.Logf("Data:%08b", base36.DecodeToBytes("ZZ"))
 	//t.Logf("Data:%08b", base36.DecodeToBytes("Z"))
 	//symbol := base36.DecodeToBytes("Z")
-	//id := IDType16{}
+	//id := AssetId{}
 	//copy(id[4-len(symbol):4], symbol)
 	//t.Logf("Data:%08b", id)
-	asset, err := NewAsset("DEVIN", AssetType_FungibleToken, 4, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, UniqueIdType_Null, IDType16{})
+	asset, err := NewAsset("DEVIN", AssetType_FungibleToken, 4, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, UniqueIdType_Null, UniqueId{})
 	assert.Nil(t, err)
 	t.Log(asset.String())
 	t.Logf("AssetId:%08b", asset.AssetId)
-	asset2, err := NewAsset("ABC", AssetType_FungibleToken, 18, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, UniqueIdType_Null, IDType16{})
+	asset2, err := NewAsset("ABC", AssetType_FungibleToken, 18, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, UniqueIdType_Null, UniqueId{})
 	assetStr := asset2.String()
 	t.Log("Asset2:" + assetStr)
 	t.Logf("AssetId:%08b", asset2.AssetId)
@@ -74,14 +74,14 @@ func TestAsset_SetString(t *testing.T) {
 func TestPTNAsset(t *testing.T) {
 	asset, err := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
 	assert.Nil(t, err)
-	t.Logf("PTN hex:%X,String:%s", asset.Bytes(), asset.ToAssetId())
+	t.Logf("PTN hex:%X,String:%s", asset.Bytes(), asset.String())
 	assert.Equal(t, asset, PTNCOIN)
 }
 func TestAssetToString(t *testing.T) {
 	t1, _ := NewAssetId("T1", AssetType_FungibleToken, 8, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, UniqueIdType_Null)
-	t.Logf("Hex: %x,Str: %s", t1.Bytes(), t1.ToAssetId())
+	t.Logf("Hex: %x,Str: %s", t1.Bytes(), t1.String())
 	t2, _ := NewAssetId("T1", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
-	t.Logf("Hex: %x,Str: %s", t2.Bytes(), t2.ToAssetId())
+	t.Logf("Hex: %x,Str: %s", t2.Bytes(), t2.String())
 }
 func TestAsset_MarshalJSON(t *testing.T) {
 	ptn := NewPTNAsset()
@@ -92,17 +92,17 @@ func TestAsset_MarshalJSON(t *testing.T) {
 	t.Logf("%s", string(js))
 }
 func TestAsset721(t *testing.T) {
-	t1, _ := NewAsset("CAT0", AssetType_NonFungibleToken, 0, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, UniqueIdType_Sequence, IDType16{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88})
+	t1, _ := NewAsset("CAT0", AssetType_NonFungibleToken, 0, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, UniqueIdType_Sequence, UniqueId{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88})
 	t.Logf("PRC721 string:%s", t1.String())
 	t2, _ := StringToAsset(t1.String())
 	assert.Equal(t, t1, t2)
 
-	t11, _ := NewAsset("CAT1", AssetType_NonFungibleToken, 0, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, UniqueIdType_Uuid, IDType16{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88})
+	t11, _ := NewAsset("CAT1", AssetType_NonFungibleToken, 0, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, UniqueIdType_Uuid, UniqueId{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88})
 	t.Logf("PRC721 string:%s", t11.String())
 	t22, _ := StringToAsset(t11.String())
 	assert.Equal(t, t11, t22)
 
-	t111, _ := NewAsset("CAT1", AssetType_NonFungibleToken, 0, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, UniqueIdType_UserDefine, IDType16{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88})
+	t111, _ := NewAsset("CAT1", AssetType_NonFungibleToken, 0, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, UniqueIdType_UserDefine, UniqueId{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88})
 	t.Logf("PRC721 string:%s", t111.String())
 	t222, _ := StringToAsset(t111.String())
 	assert.Equal(t, t111, t222)
