@@ -2264,13 +2264,6 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 				}
 			}
 		}
-
-		for _, txin := range payload.Inputs {
-			fmt.Printf("-----------------2115----%+v\n", txin)
-		}
-		for _, txout := range payload.Outputs {
-			fmt.Printf("-----------------2118----%+v\n", txout)
-		}
 	}
 	// All returned errors (not OOM, which panics) encounted during
 	// bytes.Buffer writes are unexpected.
