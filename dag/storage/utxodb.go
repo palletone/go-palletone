@@ -163,32 +163,6 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	return nil
 }
 
-//@Yiran
-//func (utxodb *UtxoDb) SaveUtxoSnapshot(index *modules.ChainIndex) error {
-//	//0. examine wrong calling
-//	if index.Index%modules.TERMINTERVAL != 0 {
-//		return errors.New("SaveUtxoSnapshot must wait until last term period end")
-//	}
-//	//1. get all utxo
-//	utxos, err := utxodb.GetAllUtxos()
-//	if err != nil {
-//		return util.ErrorLogHandler(err, "utxodb.GetAllUtxos")
-//	}
-//	PTNutxos := make([]modules.Utxo, 0)
-//	for _, utxo := range utxos {
-//		if utxo.Asset.AssetId == modules.PTNCOIN {
-//			PTNutxos = append(PTNutxos, *utxo)
-//		}
-//	}
-//	//2. store utxo
-//	key := util.KeyConnector([]byte(constants.UTXOSNAPSHOT_PREFIX), ConvertBytes(index))
-//	return utxodb.SaveUtxoEntities(key, &PTNutxos)
-//}
-
-//func (utxodb *UtxoDb) GetUtxoSnapshot(index []byte) error {
-//
-//}
-
 // ###################### SAVE IMPL END ######################
 
 // ###################### GET IMPL START ######################
