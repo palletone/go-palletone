@@ -109,7 +109,7 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 func (db *PropertyDb) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
 	data := &modules.UnitProperty{hash, index, 0}
 	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
-	log.Debugf("Save last stable index:%s,unit %s", index.String(), hash.String())
+	log.Debugf("Save last stable assetId:%s,unit: %s", index.AssetID.String(), hash.String())
 	return StoreBytes(db.db, key, data)
 }
 func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
@@ -117,6 +117,7 @@ func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *mo
 	data := &modules.UnitProperty{}
 	err := retrieve(db.db, key, data)
 	if err != nil {
+		log.Warnf("Cannot retrieve last stable unit hash by asset:%s",asset.String())
 		return common.Hash{}, nil, err
 	}
 	return data.Hash, data.Index, nil

@@ -64,7 +64,7 @@ func init() {
 	if DagConfig.PtnAssetHex != "" {
 		id, _ := modules.SetIdTypeByHex(DagConfig.PtnAssetHex)
 		DagConfig.PtnAssetId = id[:]
-		modules.PTNCOIN.SetBytes(DagConfig.PtnAssetId)
+		// modules.PTNCOIN.SetBytes(DagConfig.PtnAssetId)
 	}
 }
 
