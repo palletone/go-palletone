@@ -36,8 +36,8 @@ import (
 // 	Prune(assetId string, hashs []common.Hash) error
 // 	SwitchMainChain() error
 // 	QueryIndex(assetId string, maturedUnitHash common.Hash) (uint64, int)
-// 	GetCurrentUnit(assetid modules.IDType16, index uint64) (*modules.Unit, error)
-// 	GetNewestUnit(assetid modules.IDType16) (*modules.Unit, error)
+// 	GetCurrentUnit(assetid modules.AssetId, index uint64) (*modules.Unit, error)
+// 	GetNewestUnit(assetid modules.AssetId) (*modules.Unit, error)
 // 	GetDelhashs() chan common.Hash
 // 	PushDelHashs(hashs []common.Hash)
 // }
@@ -45,7 +45,7 @@ type IMemDag interface {
 	SetStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool)
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error
 	//Init(stablehash common.Hash, stableHeight uint64)
-	GetLastMainchainUnit(token modules.IDType16) *modules.Unit
+	GetLastMainchainUnit(token modules.AssetId) *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit
 	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository)
 	SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error

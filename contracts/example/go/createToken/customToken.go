@@ -33,7 +33,7 @@ type ICustomToken interface {
 
 type Token struct {
 	InnerID     uint64
-	GlobalID    modules.IDType16
+	GlobalID    modules.AssetId
 	Holder      common.Address
 	Creator     common.Address
 	CreatedTime []byte
@@ -113,12 +113,12 @@ func (ct *CustomToken) BalanceOf(caller common.Address) []uint64 {
 }
 
 //GetUniversalToken(const):AnyOne
-func (ct *CustomToken) GlobalIDByInnerID(caller common.Address, id uint64) modules.IDType16 {
+func (ct *CustomToken) GlobalIDByInnerID(caller common.Address, id uint64) modules.AssetId {
 	return ct.Inventory[id].GlobalID
 }
 
 //GetUniversalToken(const):AnyOne
-func (ct *CustomToken) GetGlobalID(caller common.Address, innerID uint64) modules.IDType16 {
+func (ct *CustomToken) GetGlobalID(caller common.Address, innerID uint64) modules.AssetId {
 	var buffer bytes.Buffer
 	buffer.WriteString(ct.CustomTokenSymbol)
 	buffer.WriteString(ct.CustomTokenName)

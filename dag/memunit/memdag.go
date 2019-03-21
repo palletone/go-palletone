@@ -33,10 +33,10 @@ import (
 )
 
 type MemDag struct {
-	token             modules.IDType16
-	stableUnitHash    map[modules.IDType16]common.Hash
-	stableUnitHeight  map[modules.IDType16]uint64
-	lastMainchainUnit map[modules.IDType16]*modules.Unit
+	token             modules.AssetId
+	stableUnitHash    map[modules.AssetId]common.Hash
+	stableUnitHeight  map[modules.AssetId]uint64
+	lastMainchainUnit map[modules.AssetId]*modules.Unit
 	orphanUnits       map[common.Hash]*modules.Unit
 	chainUnits        map[common.Hash]*modules.Unit
 	tempdbunitRep     common2.IUnitRepository
@@ -49,7 +49,7 @@ type MemDag struct {
 	lock              sync.RWMutex
 }
 
-func NewMemDag(token modules.IDType16, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository) *MemDag {
+func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository) *MemDag {
 	tempdb, _ := NewTempdb(db)
 	trep := common2.NewUnitRepository4Db(tempdb)
 	tutxoRep := common2.NewUtxoRepository4Db(tempdb)
@@ -62,9 +62,9 @@ func NewMemDag(token modules.IDType16, saveHeaderOnly bool, db ptndb.Database, s
 	}
 	stableUnit, _ := stableUnitRep.GetUnit(stablehash)
 	log.Debugf("Init MemDag, get last stable unit[%s] to set lastMainchainUnit", stablehash.String())
-	stable_unit_hash := make(map[modules.IDType16]common.Hash)
-	stable_unit_height := make(map[modules.IDType16]uint64)
-	last_mainchain_unit := make(map[modules.IDType16]*modules.Unit)
+	stable_unit_hash := make(map[modules.AssetId]common.Hash)
+	stable_unit_height := make(map[modules.AssetId]uint64)
+	last_mainchain_unit := make(map[modules.AssetId]*modules.Unit)
 	stable_unit_hash[token] = stablehash
 	stable_unit_height[token] = stbIndex.Index
 	last_mainchain_unit[token] = stableUnit
@@ -212,7 +212,7 @@ func (chain *MemDag) checkStableCondition(needAddrCount int, txpool txspool.ITxP
 }
 
 //清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
-func (chain *MemDag) rebuildTempdb(token modules.IDType16) {
+func (chain *MemDag) rebuildTempdb(token modules.AssetId) {
 	log.Debugf("Clear tempdb and reubild data")
 	chain.tempdb.Clear()
 	unstableUnits := chain.getMainChainUnits(token)
@@ -223,7 +223,7 @@ func (chain *MemDag) rebuildTempdb(token modules.IDType16) {
 
 //获得从稳定单元到最新单元的主链上的单元列表，从久到新排列
 // todo 按assetid 返回
-func (chain *MemDag) getMainChainUnits(token modules.IDType16) []*modules.Unit {
+func (chain *MemDag) getMainChainUnits(token modules.AssetId) []*modules.Unit {
 	unstableCount := int(chain.lastMainchainUnit[token].NumberU64() - chain.stableUnitHeight[token])
 	log.Debugf("Unstable unit count:%d", unstableCount)
 	unstableUnits := make([]*modules.Unit, unstableCount)
@@ -394,7 +394,7 @@ func (chain *MemDag) getChainUnit(hash common.Hash) (*modules.Unit, error) {
 //	_, ok := chain.chainUnits[uHash]
 //	return ok
 //}
-func (chain *MemDag) GetLastMainchainUnit(token modules.IDType16) *modules.Unit {
+func (chain *MemDag) GetLastMainchainUnit(token modules.AssetId) *modules.Unit {
 	return chain.lastMainchainUnit[token]
 }
 
@@ -402,7 +402,7 @@ func (chain *MemDag) GetLastMainchainUnit(token modules.IDType16) *modules.Unit 
 func (chain *MemDag) setLastMainchainUnit(unit *modules.Unit) {
 	token := unit.Number().AssetID
 	if chain.lastMainchainUnit == nil {
-		chain.lastMainchainUnit = make(map[modules.IDType16]*modules.Unit)
+		chain.lastMainchainUnit = make(map[modules.AssetId]*modules.Unit)
 	}
 	chain.lastMainchainUnit[token] = unit
 	chain.ldbPropRep.SetNewestUnit(unit.Header())
@@ -411,10 +411,10 @@ func (chain *MemDag) setLastMainchainUnit(unit *modules.Unit) {
 //设置最新的稳定单元，并更新PropDB
 func (chain *MemDag) setStableUnit(unit *modules.Unit) {
 	if chain.stableUnitHash == nil {
-		chain.stableUnitHash = make(map[modules.IDType16]common.Hash)
+		chain.stableUnitHash = make(map[modules.AssetId]common.Hash)
 	}
 	if chain.stableUnitHeight == nil {
-		chain.stableUnitHeight = make(map[modules.IDType16]uint64)
+		chain.stableUnitHeight = make(map[modules.AssetId]uint64)
 	}
 	token := unit.Number().AssetID
 	hash := unit.Hash()

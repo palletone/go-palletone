@@ -62,8 +62,8 @@ type Dag struct {
 	ChainHeadFeed *event.Feed
 
 	Mutex           sync.RWMutex
-	Memdag          memunit.IMemDag                      // memory unit
-	PartitionMemDag map[modules.IDType16]memunit.IMemDag //其他分区的MemDag
+	Memdag          memunit.IMemDag                     // memory unit
+	PartitionMemDag map[modules.AssetId]memunit.IMemDag //其他分区的MemDag
 	// memutxo
 	// 按unit单元划分存储Utxo
 	//utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
@@ -86,7 +86,7 @@ func (d *Dag) IsEmpty() bool {
 	return !it.Next()
 }
 
-func (d *Dag) CurrentUnit(token modules.IDType16) *modules.Unit {
+func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 	return d.Memdag.GetLastMainchainUnit(token)
 }
 
@@ -95,7 +95,7 @@ func (d *Dag) GetMainCurrentUnit() *modules.Unit {
 	return d.Memdag.GetLastMainchainUnit(main_token)
 }
 
-func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
+func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
 	curUnit := d.CurrentUnit(assetId)
 
@@ -108,7 +108,7 @@ func (d *Dag) GetCurrentUnit(assetId modules.IDType16) *modules.Unit {
 	return memUnit
 }
 
-func (d *Dag) GetCurrentMemUnit(assetId modules.IDType16, index uint64) *modules.Unit {
+func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
 	curUnit := d.Memdag.GetLastMainchainUnit(assetId)
 
 	return curUnit
@@ -313,7 +313,7 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 	return chain
 }
 
-// need add:   assetId modules.IDType16, onMain bool
+// need add:   assetId modules.AssetId, onMain bool
 func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	h, _ := d.GetHeaderByHash(hash)
 	return h != nil
@@ -327,7 +327,7 @@ func (d *Dag) Exists(hash common.Hash) bool {
 	exist, _ := d.unstableUnitRep.IsHeaderExist(hash)
 	return exist
 }
-func (d *Dag) CurrentHeader(token modules.IDType16) *modules.Header {
+func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	unit := d.CurrentUnit(token)
 	if unit != nil {
 		return unit.Header()
@@ -417,8 +417,8 @@ To get account token list and tokens's information
 //}
 //
 //func (d *Dag) WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
-//	newAssetid := modules.IDType16{}
-//	newUnitqueid := modules.IDType16{}
+//	newAssetid := modules.AssetId{}
+//	newUnitqueid := modules.AssetId{}
 //
 //	if len(assetid) != cap(newAssetid) {
 //		return 0, fmt.Errorf("Assetid lenth is wrong")
@@ -468,7 +468,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
-	partitionMemdag := make(map[modules.IDType16]memunit.IMemDag)
+	partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
 	for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
 		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)
 	}
@@ -997,7 +997,7 @@ func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, 
 	return d.unstableStateRep.GetContractTpl(templateID)
 }
 
-func (d *Dag) GetCurrentUnitIndex(token modules.IDType16) (*modules.ChainIndex, error) {
+func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, error) {
 	currentUnit := d.CurrentUnit(token)
 	//	return d.GetUnitNumber(currentUnitHash)
 	return currentUnit.Number(), nil
@@ -1046,7 +1046,7 @@ func (d *Dag) GetCurrentUnitIndex(token modules.IDType16) (*modules.ChainIndex, 
 //	return &AddressVoteBox.Candidates, nil
 //}
 
-//func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.IDType16) []*modules.Utxo {
+//func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.AssetId) []*modules.Utxo {
 //	res := make([]*modules.Utxo, 0)
 //	for _, utxo := range utxos {
 //		if utxo.Asset.AssetId == assetId {
@@ -1128,7 +1128,7 @@ func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
 }
 
-//func (d *Dag) GetCurrentChainIndex(assetId modules.IDType16) (*modules.ChainIndex, error) {
+//func (d *Dag) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
 //	return d.unstableStateRep.GetCurrentChainIndex(assetId)
 //}
 
@@ -1233,7 +1233,7 @@ func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error) {
 	return nil, nil
 }
-func (d *Dag) GetLightChainHeight(assetId modules.IDType16) uint64 {
+func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 	return uint64(0)
 }
 func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {

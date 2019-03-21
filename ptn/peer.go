@@ -76,10 +76,10 @@ type peer struct {
 	version  int         // Protocol version negotiated
 	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
-	peermsg map[modules.IDType16]peerMsg
+	peermsg map[modules.AssetId]peerMsg
 	lock    sync.RWMutex
 
-	lightpeermsg map[modules.IDType16]peerMsg
+	lightpeermsg map[modules.AssetId]peerMsg
 	lightlock    sync.RWMutex
 
 	knownTxs          *set.Set // Set of transaction hashes known to be known by this peer
@@ -100,14 +100,14 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownBlocks:       set.New(),
 		knownLightHeaders: set.New(),
 		knownGroupSig:     set.New(),
-		peermsg:           map[modules.IDType16]peerMsg{},
-		lightpeermsg:      map[modules.IDType16]peerMsg{},
+		peermsg:           map[modules.AssetId]peerMsg{},
+		lightpeermsg:      map[modules.AssetId]peerMsg{},
 	}
 }
 
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info(protocal string) *PeerInfo {
-	asset, err := modules.NewAsset(strings.ToUpper(protocal), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.IDType16{})
+	asset, err := modules.NewAsset(strings.ToUpper(protocal), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
 	if err != nil {
 		log.Error("peer info asset err", err)
 		return &PeerInfo{}
@@ -131,7 +131,7 @@ func (p *peer) Info(protocal string) *PeerInfo {
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
 //only retain the max index header.will in other mediator,not in ptn mediator.
-func (p *peer) Head(assetID modules.IDType16) (hash common.Hash, number *modules.ChainIndex) {
+func (p *peer) Head(assetID modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -158,7 +158,7 @@ func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
 	p.peermsg[number.AssetID] = msg
 }
 
-func (p *peer) LightHead(assetID modules.IDType16) (hash common.Hash, number *modules.ChainIndex) {
+func (p *peer) LightHead(assetID modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
 	p.lightlock.RLock()
 	defer p.lightlock.RUnlock()
 
@@ -556,7 +556,7 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 }
 
 // BestPeer retrieves the known peer with the currently highest total difficulty.
-func (ps *peerSet) BestPeer(assetId modules.IDType16) *peer {
+func (ps *peerSet) BestPeer(assetId modules.AssetId) *peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 

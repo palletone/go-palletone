@@ -78,7 +78,7 @@ type peerConnection struct {
 // LightPeer encapsulates the methods required to synchronise with a remote light peer.
 type LightPeer interface {
 	//Head() (common.Hash, *big.Int)
-	Head(modules.IDType16) (common.Hash, *modules.ChainIndex)
+	Head(modules.AssetId) (common.Hash, *modules.ChainIndex)
 	RequestHeadersByHash(common.Hash, int, int, bool) error
 	RequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error
 	RequestDagHeadersByHash(common.Hash, int, int, bool) error
@@ -98,7 +98,7 @@ type lightPeerWrapper struct {
 	peer LightPeer
 }
 
-func (w *lightPeerWrapper) Head(coin modules.IDType16) (common.Hash, *modules.ChainIndex) {
+func (w *lightPeerWrapper) Head(coin modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	return w.peer.Head(coin)
 }
 func (w *lightPeerWrapper) RequestHeadersByHash(h common.Hash, amount int, skip int, reverse bool) error {
@@ -154,7 +154,7 @@ func (p *peerConnection) Reset() {
 }
 
 // FetchHeaders sends a header retrieval request to the remote peer.
-func (p *peerConnection) FetchHeaders(from uint64, count int, assetId modules.IDType16) error {
+func (p *peerConnection) FetchHeaders(from uint64, count int, assetId modules.AssetId) error {
 	// Sanity check the protocol version
 	//if p.version < 62 {
 	if p.version < 0 {

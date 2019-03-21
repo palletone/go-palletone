@@ -274,13 +274,13 @@ type TxPoolTxs []*TxPoolTransaction
 //}
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
-	AssetID IDType16 `json:"asset_id"`
-	IsMain  bool     `json:"is_main"`
-	Index   uint64   `json:"index"`
+	AssetID AssetId `json:"asset_id"`
+	IsMain  bool    `json:"is_main"`
+	Index   uint64  `json:"index"`
 }
 
 func (height *ChainIndex) String() string {
-	return fmt.Sprintf("%s-%d", height.AssetID.ToAssetId(), height.Index)
+	return fmt.Sprintf("%s-%d", height.AssetID.String(), height.Index)
 }
 func (height *ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)

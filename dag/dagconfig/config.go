@@ -110,11 +110,11 @@ type Config struct {
 
 	//当前节点选择的平台币，燃料币,必须为Asset全名
 	GasToken            string
-	gasToken            modules.IDType16 `toml:"-"`
+	gasToken            modules.AssetId `toml:"-"`
 	MainToken           string
-	mainToken           modules.IDType16
+	mainToken           modules.AssetId
 	SyncPartitionTokens []string
-	syncPartitionTokens []modules.IDType16 `toml:"-"`
+	syncPartitionTokens []modules.AssetId `toml:"-"`
 }
 
 type Sconfig struct {
@@ -149,7 +149,7 @@ func homeDir() string {
 	return ""
 }
 
-func (c *Config) GetGasToken() modules.IDType16 {
+func (c *Config) GetGasToken() modules.AssetId {
 	if c.gasToken == modules.ZeroIdType16() {
 		token, _, err := modules.String2AssetId(c.GasToken)
 		if err != nil {
@@ -160,7 +160,7 @@ func (c *Config) GetGasToken() modules.IDType16 {
 	}
 	return c.gasToken
 }
-func (c *Config) GetMainToken() modules.IDType16 {
+func (c *Config) GetMainToken() modules.AssetId {
 	if c.mainToken == modules.ZeroIdType16() {
 		token, _, err := modules.String2AssetId(c.MainToken)
 		{
@@ -172,9 +172,9 @@ func (c *Config) GetMainToken() modules.IDType16 {
 	}
 	return c.mainToken
 }
-func (c *Config) GeSyncPartitionTokens() []modules.IDType16 {
+func (c *Config) GeSyncPartitionTokens() []modules.AssetId {
 	if c.syncPartitionTokens == nil {
-		c.syncPartitionTokens = []modules.IDType16{}
+		c.syncPartitionTokens = []modules.AssetId{}
 		for _, tokenString := range c.SyncPartitionTokens {
 			token, _, err := modules.String2AssetId(tokenString)
 			if err != nil {

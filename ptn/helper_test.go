@@ -563,7 +563,7 @@ func NewUnit(header *modules.Header, txs modules.Transactions) *modules.Unit {
 	u.UnitHash = u.Hash()
 	return u
 }
-func NewHeader(parents []common.Hash, asset []modules.IDType16, extra []byte) *modules.Header {
+func NewHeader(parents []common.Hash, asset []modules.AssetId, extra []byte) *modules.Header {
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte

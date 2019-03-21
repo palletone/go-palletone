@@ -174,7 +174,7 @@ func (pm *ProtocolManager) syncall() {
 	//YING 0x601892ec080000000000000000000000
 	//YOU 0x4000af9e080000000000000000000000
 
-	asset, err := modules.NewAsset(strings.ToUpper(pm.SubProtocols[0].Name), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.IDType16{})
+	asset, err := modules.NewAsset(strings.ToUpper(pm.SubProtocols[0].Name), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
 	if err != nil {
 		log.Error("ProtocolManager syncall asset err", err)
 		return
@@ -207,7 +207,7 @@ func (pm *ProtocolManager) lightsync(peer *peer) {
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.
-func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
+func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	// Short circuit if no peers are available
 	if peer == nil {
 		log.Debug("ProtocolManager synchronise peer is nil")
@@ -267,7 +267,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.IDType16) {
 	}
 }
 
-func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16) {
+func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.AssetId) {
 	// Short circuit if no peers are available
 	if peer == nil {
 		log.Debug("ProtocolManager light synchronise peer is nil")
@@ -308,7 +308,7 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.IDType16
 	}
 }
 
-func (pm *ProtocolManager) getMaxNodes(headers []*modules.Header, assetId modules.IDType16) (*modules.Header, error) {
+func (pm *ProtocolManager) getMaxNodes(headers []*modules.Header, assetId modules.AssetId) (*modules.Header, error) {
 	size := len(headers)
 	if size == 0 {
 		return nil, nil

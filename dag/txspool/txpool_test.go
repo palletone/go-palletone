@@ -78,7 +78,7 @@ func NewUnitDag4Test() *UnitDag4Test {
 	ud := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), make(map[string]map[modules.OutPoint]*modules.Utxo)}
 	return ud
 }
-func (ud *UnitDag4Test) CurrentUnit(token modules.IDType16) *modules.Unit {
+func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
 	return modules.NewUnit(&modules.Header{
 		Number: &modules.ChainIndex{AssetID: token},
 		Extra:  []byte("test pool"),

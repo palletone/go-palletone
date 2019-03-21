@@ -288,7 +288,7 @@ func (version *StateVersion) Bytes() []byte {
 	return b[:]
 }
 func (version *StateVersion) SetBytes(b []byte) {
-	asset := IDType16{}
+	asset := AssetId{}
 	asset.SetBytes(b[:15])
 	heightIdx := littleEndian.Uint64(b[16:24])
 	isMain := b[24]

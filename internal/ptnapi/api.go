@@ -1347,7 +1347,7 @@ const (
 //func CreateVoteTransaction( /*s *rpcServer*/ cmd interface{}) (string, error) {
 //	c := cmd.(*ptnjson.CreateVoteTransactionCmd)
 //	// Validate the locktime, if given.
-//	aid := modules.IDType16{}
+//	aid := modules.AssetId{}
 //	aid.SetBytes([]byte("1111111111111111222222222222222222"))
 //	ast := modules.Asset{
 //		AssetId:  aid,
@@ -1673,8 +1673,8 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
 					//utxoinputs = append(utxoinputs, iutxo)
 					if input.PreviousOutPoint != nil {
-					    inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
-				    }
+						inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
+					}
 					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
 					//result[*input.PreviousOutPoint] = lockScript
 					//5,6,8,9

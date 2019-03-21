@@ -164,7 +164,7 @@ func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
 	return false
 }
 
-func (d *Dag) GetIrreversibleUnit(id modules.IDType16) (*modules.ChainIndex, error) {
+func (d *Dag) GetIrreversibleUnit(id modules.AssetId) (*modules.ChainIndex, error) {
 	_, idx, err := d.propRep.GetLastStableUnit(id)
 	return idx, err
 }

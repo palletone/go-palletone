@@ -266,7 +266,7 @@ func TestTransactionEncode(t *testing.T) {
 	t.Log("ContractInvokeRequestPayload:", result)
 }
 func TestIDType16Hex(t *testing.T) {
-	PTNCOIN := IDType16{'p', 't', 'n', 'c', 'o', 'i', 'n'}
+	PTNCOIN := AssetId{'p', 't', 'n', 'c', 'o', 'i', 'n'}
 	fmt.Println("ptn hex:", PTNCOIN.String())
 	fmt.Println("ptn hex:", PTNCOIN)
 	fmt.Println("btc hex:", BTCCOIN.String())

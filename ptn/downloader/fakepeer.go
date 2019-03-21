@@ -33,7 +33,7 @@ type FakePeer struct{}
 func NewFakePeer(id string, db ptndb.Database, dl *Downloader) *FakePeer {
 	return &FakePeer{}
 }
-func (p *FakePeer) Head(ptncoin modules.IDType16) (common.Hash, *big.Int) {
+func (p *FakePeer) Head(ptncoin modules.AssetId) (common.Hash, *big.Int) {
 	return common.Hash{}, &big.Int{}
 }
 func (p *FakePeer) RequestHeadersByHash(hash common.Hash, amount int, skip int, reverse bool) error {
@@ -43,7 +43,7 @@ func (p *FakePeer) RequestHeadersByHash(hash common.Hash, amount int, skip int, 
 
 // RequestHeadersByNumber implements downloader.Peer, returning a batch of headers
 // defined by the origin number and the associated query parameters.
-func (p *FakePeer) RequestHeadersByNumber(assetId modules.IDType16, amount int, skip int, reverse bool) error {
+func (p *FakePeer) RequestHeadersByNumber(assetId modules.AssetId, amount int, skip int, reverse bool) error {
 	log.Debug("===RequestHeadersByNumber===")
 	return nil
 }

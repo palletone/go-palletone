@@ -65,7 +65,7 @@ type TokenInfo struct {
 	TotalSupply uint64
 	VoteEndTime time.Time
 	VoteContent []byte
-	AssetID     dm.IDType16
+	AssetID     dm.AssetId
 }
 
 //one user's support
@@ -103,7 +103,7 @@ func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(symbolsKey+tkInfo.AssetID.ToAssetId(), val)
+	err = stub.PutState(symbolsKey+tkInfo.AssetID.String(), val)
 	return err
 }
 func getSymbols(stub shim.ChaincodeStubInterface, assetID string) *TokenInfo {
@@ -194,7 +194,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(vt.Symbol, dm.AssetType_VoteToken,
 		0, common.Hex2Bytes(txid[2:]), dm.UniqueIdType_Null)
-	assetIDStr := assetID.ToAssetId()
+	assetIDStr := assetID.String()
 	//check name is only or not
 	tkInfo := getSymbols(stub, assetIDStr)
 	if tkInfo != nil {
@@ -256,7 +256,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			if assetIDStr == "" {
 				assetIDStr = invokeTokens[i].Asset.String()
 				voteNum += invokeTokens[i].Amount
-			} else if invokeTokens[i].Asset.AssetId.Str() == assetIDStr {
+			} else if invokeTokens[i].Asset.AssetId.String() == assetIDStr {
 				voteNum += invokeTokens[i].Amount
 			}
 		}
@@ -424,7 +424,7 @@ func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response 
 	//token
 	asset := tkInfo.AssetID
 	tkID := TokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
-		SupportResults: supportResults, AssetID: asset.ToAssetId()}
+		SupportResults: supportResults, AssetID: asset.String()}
 
 	//return json
 	tkJson, err := json.Marshal(tkID)

@@ -42,7 +42,7 @@ type TokenInfo struct {
 	TotalSupply uint64
 	Decimals    uint64
 	SupplyAddr  string
-	AssetID     dm.IDType16
+	AssetID     dm.AssetId
 }
 
 func (p *PRC20) Init(stub shim.ChaincodeStubInterface) pb.Response {
@@ -278,7 +278,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//token
 	asset := tkInfo.AssetID
 	tkID := TokenIDInfo{symbol, tkInfo.CreateAddr, tkInfo.TotalSupply,
-		tkInfo.Decimals, tkInfo.SupplyAddr, asset.ToAssetId()}
+		tkInfo.Decimals, tkInfo.SupplyAddr, asset.String()}
 	//return json
 	tkJson, err := json.Marshal(tkID)
 	if err != nil {
@@ -294,7 +294,7 @@ func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	for _, tkInfo := range tkInfos {
 		asset := tkInfo.AssetID
 		tkID := TokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr, tkInfo.TotalSupply,
-			tkInfo.Decimals, tkInfo.SupplyAddr, asset.ToAssetId()}
+			tkInfo.Decimals, tkInfo.SupplyAddr, asset.String()}
 		tkIDs = append(tkIDs, tkID)
 	}
 

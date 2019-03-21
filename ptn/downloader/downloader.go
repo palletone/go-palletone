@@ -152,7 +152,7 @@ type Downloader struct {
 type LightDag interface {
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	CurrentHeader(token modules.IDType16) *modules.Header
+	CurrentHeader(token modules.AssetId) *modules.Header
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	//GetAllLeafNodes() ([]*modules.Header, error)
 	//Rollback([]common.Hash)
@@ -162,7 +162,7 @@ type LightDag interface {
 type BlockDag interface {
 	LightDag
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
-	CurrentUnit(token modules.IDType16) *modules.Unit
+	CurrentUnit(token modules.AssetId) *modules.Unit
 	FastSyncCommitHead(common.Hash) error
 	//SaveDag(unit modules.Unit, isGenesis bool) (int, error)
 	//InsertDag(modules.Units) (int, error)
@@ -304,7 +304,7 @@ func (d *Downloader) UnregisterPeer(id string) error {
 
 // Synchronise tries to sync up our local block chain with a remote peer, both
 // adding various sanity checks as well as wrapping it with various log entries.
-func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode SyncMode, assetId modules.IDType16) error {
+func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode SyncMode, assetId modules.AssetId) error {
 	//return nil
 	err := d.synchronise(id, head, index, mode, assetId)
 	switch err {
@@ -332,7 +332,7 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 // synchronise will select the peer and use it for synchronising. If an empty string is given
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
-func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode SyncMode, assetId modules.IDType16) error {
+func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode SyncMode, assetId modules.AssetId) error {
 	log.Debug("Enter Downloader synchronise", "peer id:", id)
 	defer log.Debug("End Downloader synchronise", "peer id:", id)
 	// Mock out the synchronisation if testing
@@ -399,7 +399,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode
 
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
-func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uint64, assetId modules.IDType16) (err error) {
+func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uint64, assetId modules.AssetId) (err error) {
 	d.mux.Post(StartEvent{})
 	defer func() {
 		// reset on error
@@ -544,7 +544,7 @@ func (d *Downloader) Terminate() {
 
 // fetchHeight retrieves the head header of the remote peer to aid in estimating
 // the total time a pending synchronisation would take.
-func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*modules.Header, error) {
+func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.AssetId) (*modules.Header, error) {
 	log.Debug("Retrieving remote chain height", "peer", p.id)
 
 	// Request the advertised remote head block and wait for the response
@@ -591,7 +591,7 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.IDType16) (*
 // In the rare scenario when we ended up on a long reorganisation (i.e. none of
 // the head links match), we do a binary search to find the common ancestor.
 
-func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, assetId modules.IDType16) (uint64, error) {
+func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, assetId modules.AssetId) (uint64, error) {
 	height := latest.Index()
 	token := latest.Number.AssetID
 	// Figure out the valid ancestor range to prevent rewrite attacks
@@ -778,7 +778,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 //我们使用我们正在同步的“origin”peer构造一个头文件链骨架，并使用其他人填充缺失的header。
 //其他peer的header只有在干净地映射到骨架上时才被接受。
 //如果没有人能够填充骨架 - 甚至origin peer也不能填充 - 它被认为是无效的，并且origin peer也被丢弃。
-func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, assetId modules.IDType16) error {
+func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, assetId modules.AssetId) error {
 	log.Debug("Directing header downloads", "origin", from)
 	defer log.Debug("Header download terminated")
 
@@ -792,7 +792,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 	defer timeout.Stop()
 
 	var ttl time.Duration
-	getHeaders := func(from uint64, assetId modules.IDType16) {
+	getHeaders := func(from uint64, assetId modules.AssetId) {
 		request = time.Now()
 
 		ttl = d.requestTTL()
@@ -919,7 +919,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 //
 // The method returns the entire filled skeleton and also the number of headers
 // already forwarded for processing.
-func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header, assetId modules.IDType16) ([]*modules.Header, int, error) {
+func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header, assetId modules.AssetId) ([]*modules.Header, int, error) {
 	log.Debug("Filling up skeleton", "from", from, "len(skeleton):", len(skeleton))
 	d.queue.ScheduleSkeleton(from, skeleton)
 
@@ -952,7 +952,7 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header,
 // fetchBodies iteratively downloads the scheduled block bodies, taking any
 // available peers, reserving a chunk of blocks for each, waiting for delivery
 // and also periodically checking for timeouts.
-func (d *Downloader) fetchBodies(from uint64, assetId modules.IDType16) error {
+func (d *Downloader) fetchBodies(from uint64, assetId modules.AssetId) error {
 	log.Debug("Downloading block bodies", "origin", from)
 	var (
 		deliver = func(packet dataPack) (int, error) {
@@ -1163,7 +1163,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 // keeps processing and scheduling them into the header chain and downloader's
 // queue until the stream ends or a failure occurs.
 //从输入通道获取一批又一批的检索头，并将它们处理和调度到头链和下加载程序的队列中，直到流结束或发生故障。
-func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, assetId modules.IDType16) error {
+func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, assetId modules.AssetId) error {
 	log.Debug("===Enter processHeaders===", "d.mode:", d.mode)
 	defer log.Debug("===End processHeaders===")
 	// Keep a count of uncertain headers to roll back
@@ -1395,7 +1395,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 
 // processFastSyncContent takes fetch results from the queue and writes them to the database.
 // It also controls the synchronisation of state nodes of the pivot block.
-func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modules.IDType16) error {
+func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modules.AssetId) error {
 	// Start syncing state of the reported head block. This should get us most of
 	// the state of the pivot block.
 	log.Debug("", "===Enter processFastSyncContent===latest.Number.Index:", latest.Number.Index)

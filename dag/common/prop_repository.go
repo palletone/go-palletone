@@ -23,10 +23,10 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"time"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 type PropRepository struct {
@@ -41,10 +41,10 @@ type IPropRepository interface {
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 	GetChainThreshold() (int, error)
 	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
-	GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
+	GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
-	GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error)
-	GetNewestUnitTimestamp(token modules.IDType16) (int64, error)
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
+	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty) bool
 	GetSlotTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, slotNum uint32) time.Time
@@ -86,17 +86,17 @@ func (pRep *PropRepository) RetrieveMediatorSchl() (*modules.MediatorSchedule, e
 func (pRep *PropRepository) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
 	return pRep.db.SetLastStableUnit(hash, index)
 }
-func (pRep *PropRepository) GetLastStableUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+func (pRep *PropRepository) GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	return pRep.db.GetLastStableUnit(token)
 }
 func (pRep *PropRepository) SetNewestUnit(header *modules.Header) error {
 	return pRep.db.SetNewestUnit(header)
 }
-func (pRep *PropRepository) GetNewestUnit(token modules.IDType16) (common.Hash, *modules.ChainIndex, error) {
+func (pRep *PropRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	hash, index, _, e := pRep.db.GetNewestUnit(token)
 	return hash, index, e
 }
-func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.IDType16) (int64, error) {
+func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
 	_, _, t, e := pRep.db.GetNewestUnit(token)
 	return t, e
 }

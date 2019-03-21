@@ -24,7 +24,7 @@ import (
 
 type headerTemp struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
-	//AssetIDs     []IDType16    `json:"assets"`
+	//AssetIDs     []AssetId    `json:"assets"`
 	Authors      Authentifier `json:"mediator"`    // the unit creation authors
 	GroupSign    []byte       `json:"groupSign"`   // 群签名, 用于加快单元确认速度
 	GroupPubKey  []byte       `json:"groupPubKey"` // 群公钥, 用于验证群签名
