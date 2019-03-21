@@ -640,7 +640,11 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				//header, _ := dagdb.GetHeaderByHash(unitHash)
 				//3.通过单元获取头部信息中的时间戳
 				timestamp := int64(txlookup.Timestamp)
-				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp)
+				depositRate,_,err := repository.statedb.GetConfig("DepositRate")
+				if err != nil {
+					return 0,err
+				}
+				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp,string(depositRate))
 				awards += award
 			}
 			return awards, nil

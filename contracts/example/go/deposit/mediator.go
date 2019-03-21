@@ -403,7 +403,12 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeAddr string) error {
 	//计算币龄收益
 	endTime := balance.LastModifyTime * 1800
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
+	depositRate,err := stub.GetSystemConfig("DepositRate")
+	if err != nil {
+		log.Error("stub.GetSystemConfig err:","error",err)
+		return err
+	}
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
 	//本金+利息
 	balance.TotalAmount += awards
 	//TODO 是否传入
@@ -412,7 +417,7 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 	asset := modules.NewPTNAsset()
 	invokeTokens.Asset = asset
 	//调用从合约把token转到请求地址
-	err := stub.PayOutToken(nodeAddr, invokeTokens, 0)
+	err = stub.PayOutToken(nodeAddr, invokeTokens, 0)
 	if err != nil {
 		log.Error("Stub.PayOutToken err:", "error", err)
 		return err
@@ -528,7 +533,12 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	} else {
 		//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		endTime := balance.LastModifyTime * 1800
-		awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
+		depositRate,err := stub.GetSystemConfig("DepositRate")
+		if err != nil {
+			log.Error("stub.GetSystemConfig err:","error",err)
+			return shim.Error(err.Error())
+		}
+		awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
 		balance.TotalAmount += awards
 		//处理数据
 		updateForPayValue(balance, invokeTokens)

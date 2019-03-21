@@ -226,7 +226,12 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		return err
 	}
 	endTime := balance.LastModifyTime * 1800
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
+	depositRate,err := stub.GetSystemConfig("DepositRate")
+	if err != nil {
+		log.Error("stub.GetSystemConfig err:","error",err)
+		return err
+	}
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
 	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	//加上利息奖励
 	balance.TotalAmount += awards
@@ -298,11 +303,16 @@ func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackA
 	////计算币龄收益
 	//awards := award.CalculateAwardsForDepositContractNodes(coinDays)
 	endTime := balance.LastModifyTime * 1800
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
+	depositRate,err := stub.GetSystemConfig("DepositRate")
+	if err != nil {
+		log.Error("stub.GetSystemConfig err:","error",err)
+		return err
+	}
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
 	//本金+利息
 	invokeTokens.Amount += awards
 	//调用从合约把token转到请求地址
-	err := stub.PayOutToken(cashbackAddr, invokeTokens, 0)
+	err = stub.PayOutToken(cashbackAddr, invokeTokens, 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err

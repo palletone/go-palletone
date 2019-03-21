@@ -697,7 +697,12 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	//计算一部分的利息
 	//获取币龄
 	endTime := balance.LastModifyTime * 1800
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
+	depositRate,err := stub.GetSystemConfig("DepositRate")
+	if err != nil {
+		log.Error("stub.GetSystemConfig err:","error",err)
+		return shim.Error(err.Error())
+	}
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
 	//fmt.Println("awards ", awards)
 	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	//加上利息奖励
@@ -721,7 +726,12 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 	}
 	//计算当前币龄奖励
 	endTime := balance.LastModifyTime * 1800
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
+	depositRate,err := stub.GetSystemConfig("DepositRate")
+	if err != nil {
+		log.Error("stub.GetSystemConfig err:","error",err)
+		return shim.Error(err.Error())
+	}
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
 	//fmt.Println("awards ", awards)
 	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	//加上利息奖励

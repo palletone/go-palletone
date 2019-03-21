@@ -83,7 +83,12 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			isJury = true
 			//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 			endTime := balance.LastModifyTime * 1800
-			awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime)
+			depositRate,err := stub.GetSystemConfig("DepositRate")
+			if err != nil {
+				log.Error("stub.GetSystemConfig err:","error",err)
+				return shim.Error(err.Error())
+			}
+			awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
 			balance.TotalAmount += awards
 
 		}
