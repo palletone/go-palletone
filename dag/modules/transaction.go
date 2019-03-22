@@ -117,49 +117,11 @@ type TxPoolTransaction struct {
 	DependOnTxs []common.Hash
 }
 
-//// EncodeRLP implements rlp.Encoder
-//func (tx *Transaction) EncodeRLP(w io.Writer) error {
-//	return rlp.Encode(w, &tx.data)
-//}
-//
-//// DecodeRLP implements rlp.Decoder
-//func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
-//	_, UnitSize, _ := s.Kind()
-//	err := s.Decode(&tx.data)
-//	if err == nil {
-//		tx.UnitSize.Store(common.StorageSize(rlp.ListSize(UnitSize)))
-//	}
-//
-//	return err
-//}
-//
-//// MarshalJSON encodes the web3 RPC transaction format.
-//func (tx *Transaction) MarshalJSON() ([]byte, error) {
-//	UnitHash := tx.Hash()
-//	data := tx.data
-//	data.Hash = &UnitHash
-//	return data.MarshalJSON()
-//}
-//
-//// UnmarshalJSON decodes the web3 RPC transaction format.
-//func (tx *Transaction) UnmarshalJSON(input []byte) error {
-//	var dec txdata
-//	if err := dec.UnmarshalJSON(input); err != nil {
-//		return err
-//	}
-//	var V byte
-//	if isProtectedV(dec.V) {
-//		chainID := deriveChainId(dec.V).Uint64()
-//		V = byte(dec.V.Uint64() - 35 - 2*chainID)
-//	} else {
-//		V = byte(dec.V.Uint64() - 27)
-//	}
-//	if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
-//		return errors.New("invalid transaction v, r, s values")
-//	}
-//	*tx = Transaction{data: dec}
-//	return nil
-//}
+func (tx *TxPoolTransaction) Less(otherTx interface{}) bool {
+	ap, _ := strconv.ParseFloat(tx.Priority_lvl, 64)
+	bp, _ := strconv.ParseFloat(otherTx.(*TxPoolTransaction).Priority_lvl, 64)
+	return ap < bp
+}
 
 func (tx *TxPoolTransaction) GetPriorityLvl() string {
 	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
@@ -253,20 +215,12 @@ func (tx *Transaction) ContractIdBytes() []byte {
 }
 
 func (tx *Transaction) Messages() []*Message {
-	msgs := make([]*Message, 0)
-	for _, msg := range tx.TxMessages {
-		msgs = append(msgs, msg)
-	}
-	return msgs
+	return tx.TxMessages[:]
 }
 
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
-	//c := WriteCounter(0)
-	//rlp.Encode(&c, &tx)
-	//return common.StorageSize(c)
-
 	return CalcDateSize(tx)
 }
 
@@ -317,9 +271,7 @@ func (tx *Transaction) Asset() *Asset {
 	return asset
 }
 func (tx *Transaction) CopyFrTransaction(cpy *Transaction) {
-
 	obj.DeepCopy(&tx, cpy)
-
 }
 
 // Len returns the length of s.
@@ -402,10 +354,6 @@ type TxByCreationDate []*TxPoolTransaction
 func (tc TxByCreationDate) Len() int           { return len(tc) }
 func (tc TxByCreationDate) Less(i, j int) bool { return tc[i].Priority_lvl > tc[j].Priority_lvl }
 func (tc TxByCreationDate) Swap(i, j int)      { tc[i], tc[j] = tc[j], tc[i] }
-
-// Message is a fully derived transaction and implements Message
-//
-// NOTE: In a future PR this will be removed.
 
 type WriteCounter common.StorageSize
 
@@ -684,31 +632,7 @@ func (tx *Transaction) Clone() Transaction {
 	return *newTx
 }
 
-// AddTxOut adds a transaction output to the message.
-//func (msg *PaymentPayload) AddTxOut(to *Output) {
-//	msg.Output = append(msg.Output, to)
-//}
-// AddTxIn adds a transaction input to the message.
-//func (msg *PaymentPayload) AddTxIn(ti *Input) {
-//	msg.Input = append(msg.Input, ti)
-//}
-//const HashSize = 32
 const defaultTxInOutAlloc = 15
-
-//type Hash [HashSize]byte
-
-// DoubleHashH calculates hash(hash(b)) and returns the resulting bytes as a
-// Hash.
-// TxHash generates the Hash for the transaction.
-//func (msg *PaymentPayload) TxHash() common.Hash {
-//	// Encode the transaction and calculate double sha256 on the result.
-//	// Ignore the error returns since the only way the encode could fail
-//	// is being out of memory or due to nil pointers, both of which would
-//	// cause a run-time panic.
-//	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSizeStripped()))
-//	_ = msg.SerializeNoWitness(buf)
-//	return common.DoubleHashH(buf.Bytes())
-//}
 
 // SerializeNoWitness encodes the transaction to w in an identical manner to
 // Serialize, however even if the source transaction has inputs with witness
@@ -717,22 +641,6 @@ func (msg *PaymentPayload) SerializeNoWitness(w io.Writer) error {
 	//return msg.BtcEncode(w, 0, BaseEncoding)
 	return nil
 }
-
-// baseSize returns the serialized size of the transaction without accounting
-// for any witness data.
-//func (msg *PaymentPayload) baseSize() int {
-//	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
-//	// number of transaction inputs and outputs.
-//	n := 8 + VarIntSerializeSize(uint64(len(msg.Inputs))) +
-//		VarIntSerializeSize(uint64(len(msg.Outputs)))
-//	for _, txIn := range msg.Inputs {
-//		n += txIn.SerializeSize()
-//	}
-//	for _, txOut := range msg.Outputs {
-//		n += txOut.SerializeSize()
-//	}
-//	return n
-//}
 
 func (msg *Transaction) baseSize() int {
 	b, _ := rlp.EncodeToBytes(msg)

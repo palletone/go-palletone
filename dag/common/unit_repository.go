@@ -426,9 +426,6 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
 	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
-	// for _, tx := range poolTxs {
-	// 	log.Debugf("try to generate unit include txs[%s]", tx.Tx.Hash().String())
-	// }
 
 	// step5. compute minner income: transaction fees + interest
 	fees, err := ComputeFees(poolTxs)
@@ -461,8 +458,6 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	if rewards > 0 || dagconfig.DagConfig.IsRewardCoin {
 		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DagConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
-	} else {
-		//log.Debug("======================= success  ================", "IsReward", dagconfig.DefaultConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
 	}
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover

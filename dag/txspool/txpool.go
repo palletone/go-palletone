@@ -563,12 +563,6 @@ func (pool *TxPool) local() map[common.Hash]*modules.TxPoolTransaction {
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error {
-	// Don't accept the transaction if it already in the pool .
-	//isContractTplTx := false
-	hash := tx.Tx.Hash()
-	if pool.isTransactionInPool(hash) {
-		return errors.New(fmt.Sprintf("already have transaction %v", tx.Tx.Hash()))
-	}
 	// 交易池不需要验证交易存不存在。
 	if tx == nil || tx.Tx == nil {
 		return errors.New("This transaction is invalide.")
@@ -636,11 +630,13 @@ func PooltxToTx(pooltx *modules.TxPoolTransaction) *modules.Transaction {
 // whitelisted, preventing any associated transaction from being dropped out of
 // the pool due to pricing constraints.
 func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error) {
-	if tx.Tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+
+	msgs := tx.Tx.Messages()
+	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return true, nil
 	}
 
-	// If the transaction is already known, discard it
+	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
 	if _, has := pool.all.Load(hash); has {
 		log.Trace("Discarding already known transaction", "hash", hash)
@@ -684,7 +680,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	log.Debug("fetch utxoview info:", "utxoinfo", utxoview)
 	// Check the transaction if it exists in the main chain and is not already fully spent.
 	preout := modules.OutPoint{TxHash: hash}
-	for i, msgcopy := range tx.Tx.TxMessages {
+	for i, msgcopy := range msgs {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for j := range msg.Outputs {
@@ -722,7 +718,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
 	pool.priority_sorted.Put(tx)
-	//log.Info("add heap susccee", "length", heap.Len())
 	pool.all.Store(hash, tx)
 	go pool.addCache(tx)
 	go pool.journalTx(tx)
@@ -730,14 +725,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
 
-	// New transaction isn't replacing a pending one, push into queue
-	replace, err := pool.enqueueTx(hash, tx)
-	if err != nil {
-		return false, err
-	}
-	// pool.journalTx(tx)
-	log.Trace("Pooled new future transaction", "hash", hash, "repalce", replace, "err", err)
-	return replace, nil
+	return true, nil
 }
 
 // enqueueTx inserts a new transaction into the non-executable transaction queue.
@@ -749,7 +737,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *modules.TxPoolTransaction) (
 	if has {
 		old, ok := interTx.(*modules.TxPoolTransaction)
 		if ok {
-			if !old.Pending && !old.Confirmed {
+			if !old.Pending && !old.Discarded {
 				// An older transaction was better, discard this
 				if old.GetPriorityfloat64() > tx.GetPriorityfloat64() {
 					return false, ErrReplaceUnderpriced
@@ -1142,10 +1130,9 @@ func (pool *TxPool) DeleteTx() error {
 func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	inter, has := pool.all.Load(hash)
 	if !has {
-		return errors.New(fmt.Sprintf("the tx(%s) isn't exist.", hash.String()))
+		return errors.New(fmt.Sprintf("the tx(%s) isn't exist in pool.", hash.String()))
 	}
 	tx := inter.(*modules.TxPoolTransaction)
-	log.Debug("delete the tx.", "time", time.Now().Second()-tx.CreationDate.Second(), "hash", hash.String())
 	pool.all.Delete(hash)
 	pool.priority_sorted.Removed()
 
@@ -1464,14 +1451,10 @@ func (pool *TxPool) demoteUnexecutables() {
 
 // Stop terminates the transaction pool.
 func (pool *TxPool) Stop() {
-	// Unsubscribe all subscriptions registered from txpool
-	//fmt.Println("stop start.", time.Now())
 	pool.scope.Close()
-	//fmt.Println("scope closed.", time.Now())
 	// Unsubscribe subscriptions registered from blockchain
 	pool.chainHeadSub.Unsubscribe()
 	pool.wg.Wait()
-	//fmt.Println("journal close...")
 	if pool.journal != nil {
 		pool.journal.close()
 	}
@@ -1587,38 +1570,18 @@ func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 	for _, tx := range txs {
-		err := pool.resetPendingTx(tx)
-		if err != nil {
-			return err
+		if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+			continue
 		}
+		pool.resetPendingTx(tx)
 	}
 	return nil
 }
 func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 	hash := tx.Hash()
 	err := pool.DeleteTxByHash(hash)
-	if err == nil {
-		pool.add(TxtoTxpoolTx(pool, tx), !pool.config.NoLocals)
-		return nil
-	}
-	pool.all.Delete(hash)
-	pool.priority_sorted.Removed()
-	// delete outpoints  and outputs
-	for i, msg := range tx.Messages() {
-		if msg.App == modules.APP_PAYMENT {
-			payment, ok := msg.Payload.(*modules.PaymentPayload)
-			if ok {
-				for _, input := range payment.Inputs {
-					go pool.outpoints.Delete(*input.PreviousOutPoint)
-				}
-				preout := modules.OutPoint{TxHash: hash}
-				for j := range payment.Outputs {
-					preout.MessageIndex = uint32(i)
-					preout.OutIndex = uint32(j)
-					pool.deleteOrphanTxOutputs(preout)
-				}
-			}
-		}
+	if err != nil {
+		log.Info(err.Error())
 	}
 	pool.add(TxtoTxpoolTx(pool, tx), !pool.config.NoLocals)
 	return nil
@@ -1644,16 +1607,14 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		t := time.Now()
 		tx := pool.priority_sorted.Get()
 		if tx == nil {
-			log.Info("Txspool get  priority_pricedtx failed.", "error", "tx is null")
+			log.Info("Txspool get priority_pricedtx failed.", "error", "tx is null")
 			break
 		} else {
 			if !tx.Pending {
 				// 获取该交易的前驱交易列表
 				// add precusorTxs
-				log.Infof("get tx spent times: %s ,priority: %s", time.Since(t), tx.Priority_lvl)
 				p_txs, _ := pool.getPrecusorTxs(tx)
 				if len(p_txs) > 0 {
-					log.Infof("getPrecusorTxs success, len: %d", len(p_txs))
 					for _, ptx := range p_txs {
 						list = append(list, ptx)
 						total += ptx.Tx.Size()
@@ -2004,5 +1965,4 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 
 func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
 	pool.outputs.Delete(outpoint)
-	//log.Debug(fmt.Sprintf("delete the outputs (%s), the created tx_hash(%s)", outpoint.String(), outpoint.TxHash.String()))
 }

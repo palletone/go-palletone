@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -640,11 +641,11 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				//header, _ := dagdb.GetHeaderByHash(unitHash)
 				//3.通过单元获取头部信息中的时间戳
 				timestamp := int64(txlookup.Timestamp)
-				depositRate,_,err := repository.statedb.GetConfig("DepositRate")
+				depositRate, _, err := repository.statedb.GetConfig("DepositRate")
 				if err != nil {
-					return 0,err
+					return 0, err
 				}
-				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp,string(depositRate))
+				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp, string(depositRate))
 				awards += award
 			}
 			return awards, nil
@@ -669,18 +670,3 @@ func ComputeRewards() uint64 {
 	}
 	return rewards
 }
-
-//func IsCoinBase(tx *modules.Transaction) bool {
-//	if len(tx.TxMessages) != 1 {
-//		return false
-//	}
-//	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-//	if !ok {
-//		return false
-//	}
-//	prevOut := msg.Inputs[0].PreviousOutPoint
-//	if prevOut.TxHash != (common.Hash{}) {
-//		return false
-//	}
-//	return true
-//}
