@@ -376,11 +376,11 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return shim.Error(jsonResp)
 	}
-	//check supply address
-	if invokeAddr != tkInfo.SupplyAddr {
-		jsonResp := "{\"Error\":\"Not the supply address\"}"
-		return shim.Success([]byte(jsonResp))
-	}
+	////check supply address
+	//if invokeAddr != tkInfo.SupplyAddr {
+	//	jsonResp := "{\"Error\":\"Not the supply address\"}"
+	//	return shim.Success([]byte(jsonResp))
+	//}
 
 	//call SupplyToken
 	nFdatas, errStr := genNFData(idType, supplyAmount, tkInfo.TokenMax+1, tokenIDMetas)
