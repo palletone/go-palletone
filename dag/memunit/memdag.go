@@ -344,9 +344,10 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	unstableUnits := chain.getMainChainUnits(token)
 	for _, unit := range unstableUnits {
 		if unit.Hash() != oldLastMainchainUnit.Hash() {
-			if len(unit.Txs) > 0 {
-				log.Debugf("Reset tx[%x] status to not pending", unit.Txs.GetTxIds())
-				txpool.ResetPendingTxs(unit.Txs)
+			txs := unit.Transactions()
+			if len(txs) > 0 {
+				log.Debugf("Reset unit[%x] 's txs status to not pending", unit.UnitHash)
+				txpool.ResetPendingTxs(txs)
 			}
 		}
 	}

@@ -44,9 +44,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 		return TxValidationCode_INVALID_MSG
 	}
 
-	//if validate.checkTxIsExist(tx) {
-	//	return TxValidationCode_DUPLICATE_TXID
-	//}
 	if !validate.validateTxFee(tx) {
 		return TxValidationCode_INVALID_FEE
 	}
