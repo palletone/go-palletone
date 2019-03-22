@@ -303,7 +303,7 @@ func (pool *TxPool) loop() {
 
 			// Handle stats reporting ticks
 		case <-report.C:
-			pending, queued := pool.stats()
+			pending, queued, _ := pool.stats()
 
 			if pending != prevPending || queued != prevQueued {
 				log.Debug("Transaction pool status report", "executable", pending, "queued", queued)
@@ -417,13 +417,13 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 
 // Stats retrieves the current pool stats, namely the number of pending and the
 // number of queued (non-executable) transactions.
-func (pool *TxPool) Stats() (int, int) {
+func (pool *TxPool) Stats() (int, int, int) {
 	return pool.stats()
 }
 
 // stats retrieves the current pool stats, namely the number of pending and the
 // number of queued (non-executable) transactions.
-func (pool *TxPool) stats() (int, int) {
+func (pool *TxPool) stats() (int, int, int) {
 	p_count, q_count := 0, 0
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
@@ -440,7 +440,7 @@ func (pool *TxPool) stats() (int, int) {
 			q_count++
 		}
 	}
-	return p_count, q_count + len(orphanTxs)
+	return p_count, q_count, len(orphanTxs)
 }
 
 // Content retrieves the data content of the transaction pool, returning all the
@@ -1259,7 +1259,6 @@ func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
 // to the main chain because the block may contain transactions whitch were previously unknow to
 // the memory pool.
 func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
-	//pool.mu.Lock()
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(*modules.PaymentPayload)
@@ -1271,7 +1270,6 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 			}
 		}
 	}
-	//pool.mu.Unlock()
 }
 
 func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {

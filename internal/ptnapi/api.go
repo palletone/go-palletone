@@ -177,10 +177,11 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]map[string]*RPCTransac
 
 // Status returns the number of pending and queued transaction in the pool.
 func (s *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
-	pending, queue := s.b.Stats()
+	pending, queue, orphans := s.b.Stats()
 	return map[string]hexutil.Uint{
 		"pending": hexutil.Uint(pending),
 		"queued":  hexutil.Uint(queue),
+		"orphans": hexutil.Uint(orphans),
 	}
 }
 func (s *PublicTxPoolAPI) Pending() map[common.Hash]*modules.Transaction {
@@ -829,11 +830,11 @@ func (s *PublicBlockChainAPI) SetJuryAccount(ctx context.Context, addr, pwd stri
 	}
 }
 
-func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) (*JuryList) {
+func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) *JuryList {
 	log.Info("-----GetJuryAccount")
 	jAccounts := s.b.GetJuryAccount()
 	jlist := &JuryList{
-		Addr:make([]string, len(jAccounts)),
+		Addr: make([]string, len(jAccounts)),
 	}
 	for i := 0; i < len(jAccounts); i++ {
 		jlist.Addr[i] = jAccounts[i].String()

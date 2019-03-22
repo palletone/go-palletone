@@ -164,7 +164,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 //	return b.ptn.txPool.State().GetNonce(addr), nil
 //}
 
-func (b *PtnApiBackend) Stats() (pending int, queued int) {
+func (b *PtnApiBackend) Stats() (int, int, int) {
 	return b.ptn.txPool.Stats()
 }
 
@@ -557,7 +557,7 @@ func (b *PtnApiBackend) UpdateJuryAccount(addr common.Address, pwd string) bool 
 	return b.ptn.contractPorcessor.UpdateJuryAccount(addr, pwd)
 }
 
-func (b *PtnApiBackend) GetJuryAccount() []common.Address{
+func (b *PtnApiBackend) GetJuryAccount() []common.Address {
 	return b.ptn.contractPorcessor.GetJuryAccount()
 }
 

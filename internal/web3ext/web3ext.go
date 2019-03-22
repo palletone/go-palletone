@@ -157,6 +157,7 @@ web3._extend({
 			getter: 'txpool_status',
 			outputFormatter: function(status) {
 				status.pending = web3._extend.utils.toDecimal(status.pending);
+      			status.orphans = web3._extend.utils.toDecimal(status.orphans);
 				status.queued = web3._extend.utils.toDecimal(status.queued);
 				return status;
 			}

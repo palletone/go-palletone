@@ -69,7 +69,7 @@ type Backend interface {
 	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
 
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
-	Stats() (pending int, queued int)
+	Stats() (int, int, int)
 	TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 

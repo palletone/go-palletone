@@ -206,8 +206,8 @@ func (p *testTxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransactio
 func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
 	return nil
 }
-func (p *testTxPool) Stats() (int, int) {
-	return 0, 0
+func (p *testTxPool) Stats() (int, int, int) {
+	return 0, 0, 0
 }
 
 func (p *testTxPool) Stop() {}

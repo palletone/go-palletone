@@ -80,6 +80,7 @@ type txPrioritiedList struct {
 	all    *sync.Map     // Pointer to the map of all transactions
 	items  *priorityHeap // Heap of priority of all the stored transactions
 	stales int           // Number of stale priority points to (re-heap trigger)
+	mu     sync.RWMutex
 }
 
 // newTxPricedList creates a new price-sorted transaction heap.
@@ -92,10 +93,14 @@ func newTxPrioritiedList(all *sync.Map) *txPrioritiedList {
 
 // Put inserts a new transaction into the heap.
 func (l *txPrioritiedList) Put(tx *modules.TxPoolTransaction) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	heap.Push(l.items, tx)
 }
 func (l *txPrioritiedList) Get() *modules.TxPoolTransaction {
 	if l != nil {
+		l.mu.RLock()
+		defer l.mu.RUnlock()
 		for len(*l.items) > 0 {
 			tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
 			if _, ok := (*l.all).Load(tx.Tx.Hash()); !ok {
@@ -127,6 +132,8 @@ func (l *txPrioritiedList) All() map[common.Hash]*modules.TxPoolTransaction {
 // the heap if a large enough ratio of transactions go stale.
 func (l *txPrioritiedList) Removed() {
 	// Bump the stale counter, but exit if still too low (< 20%)
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.stales++
 	if l.stales <= len(*l.items)/5 {
 		return
@@ -147,6 +154,8 @@ func (l *txPrioritiedList) Removed() {
 func (l *txPrioritiedList) Cap(threshold float64) []*modules.TxPoolTransaction {
 	save := make([]*modules.TxPoolTransaction, 0)
 	drop := make([]*modules.TxPoolTransaction, 0)
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	for len(*l.items) > 0 {
 		tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
 		if _, has := (*l.all).Load(tx.Tx.Hash()); !has {
@@ -173,6 +182,8 @@ func (l *txPrioritiedList) Underpriced(tx *modules.TxPoolTransaction) bool {
 	if _, has := all[tx.Tx.Hash()]; has {
 		return false
 	}
+	l.mu.RLock()
+	defer l.mu.RUnlock()
 	// Discard stale price points if found at the heap start
 	for len(*l.items) > 0 {
 		head := []*modules.TxPoolTransaction(*l.items)[0]
@@ -199,6 +210,8 @@ func (l *txPrioritiedList) Underpriced(tx *modules.TxPoolTransaction) bool {
 func (l *txPrioritiedList) Discard(count int) modules.TxPoolTxs {
 	drop := make(modules.TxPoolTxs, 0, count) // Remote underpriced transactions to drop
 	all := l.All()
+	l.mu.RLock()
+	defer l.mu.RUnlock()
 	for len(*l.items) > 0 && count > 0 {
 		// Discard stale transactions if found during cleanup
 		tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
