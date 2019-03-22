@@ -1044,7 +1044,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 		get.ExtraData = string(file.ExtraData)
 		timestamp = int64(file.Timestamp)
 		tm := time.Unix(timestamp, 0)
-		get.Timestamp = tm.Format("2006-01-02 15:04:05")
+		get.Timestamp = tm.String()
 		get.TransactionHash = file.Txid.String()
 		get.UintHeight = file.UintHeight
 		get.UnitHash = file.UnitHash.String()
