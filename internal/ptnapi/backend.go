@@ -141,6 +141,8 @@ type Backend interface {
 	ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) (reqId common.Hash, err error)
 	ElectionVrf(id uint32) ([]byte, error)
+	UpdateJuryAccount(addr common.Address, pwd string) bool
+	GetJuryAccount() []common.Address
 
 	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 

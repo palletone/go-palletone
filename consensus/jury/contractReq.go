@@ -174,3 +174,30 @@ func (p *Processor) ElectionVrfReq(id uint32) ([]byte, error) {
 
 	return nil, nil
 }
+
+func (p *Processor) UpdateJuryAccount(addr common.Address, pwd string) bool {
+	acc := &JuryAccount{
+		Address:  addr,
+		Password: pwd,
+	}
+	accMap := make(map[common.Address]*JuryAccount, 0)
+	accMap[addr] = acc
+	p.locker.Lock()
+	defer p.locker.Unlock()
+
+	p.local = nil
+	p.local = accMap
+
+	return true
+}
+
+func (p *Processor) GetJuryAccount() []common.Address {
+	num := len(p.local)
+	addrs := make([]common.Address, num)
+	i := 0
+	for addr, _ := range p.local {
+		addrs[i] = addr
+		i++
+	}
+	return addrs
+}

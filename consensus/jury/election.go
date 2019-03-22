@@ -191,12 +191,12 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 		p.locker.Lock()
 		mtx.eleInf = append(mtx.eleInf, rstEvt.Ele)
 		p.lockArf[contractId] = append(p.lockArf[contractId], rstEvt.Ele) //add lock vrf election info
+		p.locker.Unlock()
 		if len(mtx.eleInf) >= p.electionNum {
 			//通知接收数量达到要求
 			log.Info("ProcessElectionResultEvent,VRF address number is enough, Ok", "contractId", contractId)
 			mtx.eleChan <- true
 		}
-		p.locker.Unlock()
 	}
 	return nil
 }
@@ -234,8 +234,9 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 		return nil
 	case <-timeout:
 		log.Debug("ElectionRequest, election time out")
+		return errors.New("ElectionRequest, election time out")
 	}
-	return errors.New("ElectionRequest, election time out")
+	return errors.New("ElectionRequest, election fail")
 }
 
 func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *ElectionEvent, err error) {
@@ -251,8 +252,8 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 
 	ele := &elector{
 		num:    uint(p.electionNum),
-		weight: 1,   //todo config
-		total:  uint64(p.dag.JuryCount()),//todo dynamic acquisition
+		weight: 1,                         //todo config
+		total:  uint64(p.dag.JuryCount()), //todo dynamic acquisition
 		//vrfAct: p.vrfAct,
 
 		addr:     account.Address,
