@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/example/go/vote"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
+	"github.com/palletone/go-palletone/contracts/syscontract/digitalidcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 )
 
@@ -107,6 +108,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &prc721.PRC721{},
+	},
+	{
+		Id:        syscontract.DigitalIdentityContractAddress.Bytes21(),
+		Enabled:   true,
+		Name:      "digital_identity_sycc",
+		Path:      ".",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &digitalidcc.DigitalIdentityChainCode{},
 	},
 	{
 		Id:        syscontract.TestContractAddress.Bytes21(),
