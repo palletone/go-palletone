@@ -377,7 +377,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//check supply address
-	if invokeAddr != tkInfo.SupplyAddr {
+	if invokeAddr != tkInfo.SupplyAddr && tkInfo.SupplyAddr != "" {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Success([]byte(jsonResp))
 	}

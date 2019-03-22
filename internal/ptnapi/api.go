@@ -89,6 +89,10 @@ type ContractDeployRsp struct {
 	ContractId string `json:"ContractId"`
 }
 
+type JuryList struct {
+	Addr []string `json:"account"`
+}
+
 // PublicPalletOneAPI provides an API to access PalletOne related information.
 // It offers only methods that operate on public data that is freely available to anyone.
 type PublicPalletOneAPI struct {
@@ -812,6 +816,31 @@ func (s *PublicBlockChainAPI) Election(ctx context.Context, sid string) (string,
 	rsp, err := s.b.ElectionVrf(uint32(id))
 	log.Info("-----Election:" + hex.EncodeToString(rsp))
 	return hex.EncodeToString(rsp), err
+}
+
+func (s *PublicBlockChainAPI) SetJuryAccount(ctx context.Context, addr, pwd string) string {
+	jAddr, _ := common.StringToAddress(addr)
+	log.Info("-----UpdateJuryAccount:", "addr", jAddr, "pwd", pwd)
+
+	if s.b.UpdateJuryAccount(jAddr, pwd) {
+		return "OK"
+	} else {
+		return "Fail"
+	}
+}
+
+func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) (*JuryList) {
+	log.Info("-----GetJuryAccount")
+	jAccounts := s.b.GetJuryAccount()
+	jlist := &JuryList{
+		Addr:make([]string, len(jAccounts)),
+	}
+	for i := 0; i < len(jAccounts); i++ {
+		jlist.Addr[i] = jAccounts[i].String()
+		log.Info("-----GetJuryAccount", "addr", jlist.Addr[i])
+	}
+
+	return jlist
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM

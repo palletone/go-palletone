@@ -43,7 +43,8 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	cctyp := pb.ChaincodeMessage_INIT
 	if cds, _ = spec.(*pb.ChaincodeDeploymentSpec); cds == nil {
 		if ci, _ = spec.(*pb.ChaincodeInvocationSpec); ci == nil {
-			panic("Execute should be called with deployment or invocation spec")
+			log.Error("Execute, Execute should be called with deployment or invocation spec")
+			return nil, nil, errors.New("Execute should be called with deployment or invocation spec")
 		}
 		cctyp = pb.ChaincodeMessage_TRANSACTION
 	}

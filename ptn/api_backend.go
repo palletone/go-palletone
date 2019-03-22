@@ -553,6 +553,13 @@ func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 func (b *PtnApiBackend) ElectionVrf(id uint32) ([]byte, error) {
 	return b.ptn.contractPorcessor.ElectionVrfReq(id)
 }
+func (b *PtnApiBackend) UpdateJuryAccount(addr common.Address, pwd string) bool {
+	return b.ptn.contractPorcessor.UpdateJuryAccount(addr, pwd)
+}
+
+func (b *PtnApiBackend) GetJuryAccount() []common.Address{
+	return b.ptn.contractPorcessor.GetJuryAccount()
+}
 
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 	return b.ptn.dag.GetCommon(key)
