@@ -245,9 +245,6 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	return pool
 }
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	//if utxo, ok := pool.outputs[*outpoint]; ok {
-	//	return utxo, nil
-	//}
 	if inter, ok := pool.outputs.Load(*outpoint); ok {
 		utxo := inter.(*modules.Utxo)
 		return utxo, nil
@@ -511,10 +508,14 @@ func (pool *TxPool) AllLength() int {
 func (pool *TxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
 	txs := make(map[common.Hash]*modules.TxPoolTransaction)
 	pool.all.Range(func(k, v interface{}) bool {
-		var hash common.Hash
-		hash.SetBytes((k.(common.Hash)).Bytes())
+		hash := k.(common.Hash)
 		tx := v.(*modules.TxPoolTransaction)
-		txs[hash] = tx
+		tx_hash := tx.Tx.Hash()
+		if hash != tx_hash {
+			pool.all.Delete(hash)
+			pool.all.Store(tx_hash, tx)
+		}
+		txs[tx_hash] = tx
 		return true
 	})
 	return txs
@@ -522,10 +523,8 @@ func (pool *TxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
 func (pool *TxPool) AllOrphanTxs() map[common.Hash]*modules.TxPoolTransaction {
 	txs := make(map[common.Hash]*modules.TxPoolTransaction)
 	pool.orphans.Range(func(k, v interface{}) bool {
-		fmt.Println("range orphans:", k, v)
-		hash := k.(common.Hash)
 		tx := v.(*modules.TxPoolTransaction)
-		txs[hash] = tx
+		txs[tx.Tx.Hash()] = tx
 		return true
 	})
 	return txs
@@ -1084,6 +1083,11 @@ func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Ha
 	interTx, has := pool.all.Load(hash)
 	if has {
 		tx = interTx.(*modules.TxPoolTransaction)
+		if tx.Tx.Hash() != hash {
+			pool.all.Delete(hash)
+			pool.priority_sorted.Removed()
+			return nil, u_hash
+		}
 		if tx.Pending {
 			log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", tx.UnitHash, "p_tx", tx)
 			return tx, tx.UnitHash
@@ -1244,13 +1248,11 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 	}
 }
 func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
-	//pool.mu.Lock()
 	if interTx, has := pool.all.Load(hash); has {
 		go pool.removeTransaction(interTx.(*modules.TxPoolTransaction), removeRedeemers)
 	} else {
 		go pool.removeTx(hash)
 	}
-	//pool.mu.Unlock()
 }
 
 // RemoveDoubleSpends removes all transactions whitch spend outpoints spent by the passed
@@ -1501,6 +1503,9 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 }
 func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
 	for _, tx := range txs {
+		if tx.Messages()[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+			continue
+		}
 		err := pool.setPendingTx(unit_hash, tx)
 		if err != nil {
 			return err
@@ -1855,9 +1860,6 @@ func (pool *TxPool) removeOrphan(tx *modules.TxPoolTransaction, reRedeemers bool
 						pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
 					}
 				}
-				//for j, out := range payment.Outputs {
-				//
-				//}
 			}
 		}
 	}

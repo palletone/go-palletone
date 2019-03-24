@@ -831,10 +831,10 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			if ok := rep.saveContractStop(reqId, msg); !ok {
 				return fmt.Errorf("save contract stop payload failed.")
 			}
-		//case modules.APP_CONFIG:
-		//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-		//		return fmt.Errorf("Save contract invode payload error.")
-		//	}
+			//case modules.APP_CONFIG:
+			//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
+			//		return fmt.Errorf("Save contract invode payload error.")
+			//	}
 		case modules.APP_VOTE:
 			if err = rep.SaveVote(msg, requester); err != nil {
 				return fmt.Errorf("Save vote payload error.")
@@ -1289,13 +1289,7 @@ func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Add
 	}
 	// step4. create coinbase
 	coinbase := new(modules.Transaction)
-	//coinbase := modules.Transaction{
-	//	TxMessages: []modules.Message{msg},
-	//}
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
-	// coinbase.CreationDate = coinbase.CreateDate()
-	//coinbase.TxHash = coinbase.Hash()
-
 	return coinbase, totalIncome, nil
 }
 
