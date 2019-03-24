@@ -1112,6 +1112,13 @@ func (pool *TxPool) DeleteTx() error {
 			log.Debug("delete the status of Discarded tx.", "tx_hash", hash.String())
 			pool.DeleteTxByHash(hash)
 		}
+		if tx.Pending {
+			if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
+				// delete
+				log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
+				pool.DeleteTxByHash(hash)
+			}
+		}
 		if !tx.Confirmed {
 			if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
 				continue
@@ -1120,11 +1127,6 @@ func (pool *TxPool) DeleteTx() error {
 				log.Debug("delete the non confirmed tx(overtime).", "tx_hash", tx.Tx.Hash())
 				pool.DeleteTxByHash(hash)
 			}
-		}
-		if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
-			// delete
-			log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
-			pool.DeleteTxByHash(hash)
 		}
 
 	}
@@ -1598,7 +1600,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.RLock()
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
-
 	for {
 		if time.Since(t0) > time.Second*2 {
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
@@ -1622,11 +1623,12 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 						list = append(list, ptx)
 						total += ptx.Tx.Size()
 					}
-					log.Infof("get pre_tx spent times: %s ", time.Since(t))
+
 				}
 				list = append(list, tx)
 				total += tx.Tx.Size()
 			}
+			log.Infof("get pre_tx spent times: %s ", time.Since(t))
 		}
 	}
 

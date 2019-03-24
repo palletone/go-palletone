@@ -44,13 +44,7 @@ func (h priorityHeap) Swap(i, j int) {
 func (h *priorityHeap) Push(x interface{}) {
 	item := x.(*modules.TxPoolTransaction)
 	*h = append(*h, item)
-	//hash := item.Tx.Hash()
 	//sort.Sort(*h)
-	//for i, tx := range *h {
-	//	if tx.Tx.Hash() == hash {
-	//		item.Index = i
-	//	}
-	//}
 }
 
 func (h *priorityHeap) Pop() interface{} {
@@ -102,9 +96,9 @@ func (l *txPrioritiedList) Get() *modules.TxPoolTransaction {
 		l.mu.RLock()
 		defer l.mu.RUnlock()
 		for len(*l.items) > 0 {
+			//tx := l.items.Pop().(*modules.TxPoolTransaction)
 			tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
 			if _, ok := (*l.all).Load(tx.Tx.Hash()); !ok {
-				l.stales--
 				continue
 			}
 			if tx.Pending || tx.Discarded {
