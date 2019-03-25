@@ -39,7 +39,7 @@ var (
 var DefaultConfig = Config{
 	DbPath: "./leveldb",
 	// txpool
-	UnitTxSize: 1024 * 1024,
+	UnitTxSize: 1024 * 1024 * 10,
 
 	// utxo
 	UtxoIndex: true,

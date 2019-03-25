@@ -1681,7 +1681,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		go pool.RemoveOrphan(tx)
 	}
 	// if time.Since(t2) > time.Second*1 {
-	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t3: %s ", time.Since(t0), len(list), time.Since(t2))
+	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
 	// }
 	return list, total
 }
