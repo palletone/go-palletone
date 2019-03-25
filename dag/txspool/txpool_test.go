@@ -20,7 +20,6 @@
 package txspool
 
 import (
-	"container/heap"
 	"encoding/hex"
 	"fmt"
 	"math/rand"
@@ -372,14 +371,13 @@ func TestPriorityHeap(t *testing.T) {
 		str := strconv.FormatFloat(priority, 'f', -1, 64)
 		ptx := &modules.TxPoolTransaction{Tx: tx, Priority_lvl: str}
 		p_txs = append(p_txs, ptx)
-		//list.Push(ptx)
-		heap.Push(list, ptx)
+		list.Push(ptx)
 	}
 	count := 0
 	biger := new(modules.TxPoolTransaction)
+	bad := new(modules.TxPoolTransaction)
 	for list.Len() > 0 {
-		//inter := list.Pop()
-		inter := heap.Pop(list)
+		inter := list.Pop()
 		if inter != nil {
 			ptx, ok := inter.(*modules.TxPoolTransaction)
 			if ok {
@@ -390,16 +388,21 @@ func TestPriorityHeap(t *testing.T) {
 					bp, _ := strconv.ParseFloat(biger.Priority_lvl, 64)
 					pp, _ := strconv.ParseFloat(ptx.Priority_lvl, 64)
 					if bp < pp {
+						biger = ptx
 						t.Fatal(fmt.Sprintf("sort.Sort.priorityHeap is failed.biger:  %s ,ptx: %s  , index: %d ", biger.Priority_lvl, ptx.Priority_lvl, ptx.Index))
+					} else {
+						bad = ptx
 					}
 				}
 				count++
-				biger = ptx
+
 			}
 		} else {
 			log.Debug("pop error: the interTx is nil ", "count", count)
 			break
 		}
 	}
-	log.Debug("all pop end. ", "count", count, "bad priority  tx: ", biger)
+	log.Debug("all pop end. ", "count", count)
+	log.Debug("best priority  tx: ", "info", biger)
+	log.Debug("bad priority  tx: ", "info", bad)
 }

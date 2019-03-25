@@ -20,9 +20,10 @@
 package txspool
 
 import (
-	"container/heap"
+	"sort"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -44,10 +45,10 @@ func (h priorityHeap) Swap(i, j int) {
 func (h *priorityHeap) Push(x interface{}) {
 	item := x.(*modules.TxPoolTransaction)
 	*h = append(*h, item)
-	//sort.Sort(*h)
+	sort.Sort(*h)
 }
 
-func (h *priorityHeap) Pop() interface{} {
+func (h *priorityHeap) LastPop() interface{} {
 	old := *h
 	n := len(old)
 	if n <= 0 {
@@ -57,7 +58,7 @@ func (h *priorityHeap) Pop() interface{} {
 	*h = old[0 : n-1]
 	return x
 }
-func (h *priorityHeap) LastPop() interface{} {
+func (h *priorityHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
 	if n <= 0 {
@@ -89,23 +90,24 @@ func newTxPrioritiedList(all *sync.Map) *txPrioritiedList {
 func (l *txPrioritiedList) Put(tx *modules.TxPoolTransaction) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	heap.Push(l.items, tx)
+	l.items.Push(tx)
+	//heap.Push(l.items, tx)
 }
 func (l *txPrioritiedList) Get() *modules.TxPoolTransaction {
-	if l != nil {
-		l.mu.RLock()
-		defer l.mu.RUnlock()
-		for len(*l.items) > 0 {
-			//tx := l.items.Pop().(*modules.TxPoolTransaction)
-			tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
-			if _, ok := (*l.all).Load(tx.Tx.Hash()); !ok {
-				continue
-			}
-			if tx.Pending || tx.Discarded {
-				continue
-			}
-			return tx
+	t := time.Now()
+	l.mu.RLock()
+	log.Infof("get txpriority rwmutex spent times: %s ", time.Since(t))
+	defer l.mu.RUnlock()
+	for len(*l.items) > 0 {
+		tx := l.items.Pop().(*modules.TxPoolTransaction)
+		//tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
+		if _, ok := (*l.all).Load(tx.Tx.Hash()); !ok {
+			continue
 		}
+		if tx.Pending || tx.Discarded {
+			continue
+		}
+		return tx
 	}
 	return nil
 }
@@ -142,7 +144,8 @@ func (l *txPrioritiedList) Removed() {
 			*l.items = append(*l.items, tx)
 		}
 	}
-	heap.Init(l.items)
+	sort.Sort(*l.items)
+	//heap.Init(l.items)
 }
 
 func (l *txPrioritiedList) Cap(threshold float64) []*modules.TxPoolTransaction {
@@ -151,7 +154,8 @@ func (l *txPrioritiedList) Cap(threshold float64) []*modules.TxPoolTransaction {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	for len(*l.items) > 0 {
-		tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
+		tx := l.items.Pop().(*modules.TxPoolTransaction)
+		//tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
 		if _, has := (*l.all).Load(tx.Tx.Hash()); !has {
 			l.stales--
 			continue
@@ -164,7 +168,8 @@ func (l *txPrioritiedList) Cap(threshold float64) []*modules.TxPoolTransaction {
 		drop = append(drop, tx)
 	}
 	for _, tx := range save {
-		heap.Push(l.items, tx)
+		l.items.Push(tx)
+		//heap.Push(l.items, tx)
 	}
 	return drop
 }
@@ -183,7 +188,8 @@ func (l *txPrioritiedList) Underpriced(tx *modules.TxPoolTransaction) bool {
 		head := []*modules.TxPoolTransaction(*l.items)[0]
 		if _, ok := (*l.all).Load(head.Tx.Hash()); !ok {
 			l.stales--
-			heap.Pop(l.items)
+			l.items.Pop()
+			//heap.Pop(l.items)
 			continue
 		}
 		break
@@ -208,7 +214,8 @@ func (l *txPrioritiedList) Discard(count int) modules.TxPoolTxs {
 	defer l.mu.RUnlock()
 	for len(*l.items) > 0 && count > 0 {
 		// Discard stale transactions if found during cleanup
-		tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
+		tx := l.items.Pop().(*modules.TxPoolTransaction)
+		//tx := heap.Pop(l.items).(*modules.TxPoolTransaction)
 		if _, ok := all[tx.Tx.Hash()]; !ok {
 			l.stales--
 			continue
