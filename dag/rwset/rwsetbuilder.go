@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -78,9 +79,12 @@ func (b *RWSetBuilder) GetTokenDefine(ns string) *modules.TokenDefine {
 }
 func (b *RWSetBuilder) GetTokenSupply(ns string) []*modules.TokenSupply {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
-	var tokenSupply []*modules.TokenSupply
-	tokenSupply = nsPubRwBuilder.tokenSupply
-	nsPubRwBuilder.tokenSupply = []*modules.TokenSupply{}
+	tokenSupply := make([]*modules.TokenSupply, 0)
+	if nsPubRwBuilder.tokenSupply == nil {
+		nsPubRwBuilder.tokenSupply = tokenSupply
+	}
+	// 上层对tokenSupply的更改不影响nsPubRwBuilder原值。
+	tokenSupply = append(tokenSupply, nsPubRwBuilder.tokenSupply...)
 	return tokenSupply
 }
 func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte, createAddr common.Address) {
@@ -90,7 +94,7 @@ func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte, cr
 func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt uint64, createAddr common.Address) error {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.tokenSupply == nil {
-		nsPubRwBuilder.tokenSupply = []*modules.TokenSupply{}
+		nsPubRwBuilder.tokenSupply = make([]*modules.TokenSupply, 0)
 	}
 	//TODO Devin 检查assetId，禁止创建PTN BTC ETH等系统定义的Token
 	if bytes.Equal(assetId, modules.PTNCOIN.Bytes()) {

@@ -31,7 +31,7 @@ import (
 
 type RwSetTxSimulator struct {
 	chainIndex              *modules.ChainIndex
-	txid                    string
+	txid                    common.Hash
 	rwsetBuilder            *RWSetBuilder
 	dag                     dag.IDag
 	writePerformed          bool
@@ -44,21 +44,18 @@ type VersionedValue struct {
 	Version *Version
 }
 
-func NewBasedTxSimulator(idag dag.IDag, txid string) *RwSetTxSimulator {
+func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
 	unit := idag.GetCurrentUnit(modules.PTNCOIN)
 	cIndex := unit.Header().Number
-	log.Debug("NewBasedTxSimulator","constructing new tx simulator txId", txid)
-	return &RwSetTxSimulator{cIndex, txid, rwsetBuilder, idag, false, false, false}
+	log.Debugf("constructing new tx simulator txid = [%s]", hash.String())
+	return &RwSetTxSimulator{cIndex, hash, rwsetBuilder, idag, false, false, false}
 }
 
 func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
 	val, _, err := s.dag.GetConfig(name)
 	if err != nil {
 		return nil, err
-	}
-	if val == nil {
-		return nil, nil
 	}
 	return val, nil
 }
@@ -149,7 +146,6 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 
 // DeleteState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) DeleteState(ns string, key string) error {
-	//fmt.Println("DeleteState(ns string, key string)===>\n\n", ns, key)
 	return s.SetState(ns, key, nil)
 }
 
@@ -188,8 +184,8 @@ func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]
 	return s.dag.GetContractStatesById(contractid)
 }
 
-func (h *RwSetTxSimulator) CheckDone() error {
-	if h.doneInvoked {
+func (s *RwSetTxSimulator) CheckDone() error {
+	if s.doneInvoked {
 		return errors.New("This instance should not be used after calling Done()")
 	}
 	return nil
@@ -210,6 +206,7 @@ func (h *RwSetTxSimulator) Done() {
 		return
 	}
 	//todo
+	h.doneInvoked = true
 }
 
 func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {

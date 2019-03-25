@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -30,7 +31,9 @@ type KVRWSet struct {
 	Writes map[string]*KVWrite `protobuf:"bytes,3,rep,name=writes" json:"writes,omitempty"`
 }
 
-func (m *KVRWSet) Reset()                    { *m = KVRWSet{} }
+func (m *KVRWSet) Reset() {
+	m = &KVRWSet{Reads: make(map[string]*KVRead), Writes: make(map[string]*KVWrite)}
+}
 func (m *KVRWSet) String() string            { return proto.CompactTextString(m) }
 func (*KVRWSet) ProtoMessage()               {}
 func (*KVRWSet) Descriptor() ([]byte, []int) { return nil, nil }

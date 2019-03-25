@@ -22,12 +22,12 @@ package rwset
 import (
 	"errors"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
 )
 
 type RwSetTxMgr struct {
-	//db                    DB
 	//rwLock            	sync.RWMutex
 	name      string
 	baseTxSim map[string]TxSimulator
@@ -40,15 +40,15 @@ func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
 func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string) (TxSimulator, error) {
 	log.Debugf("constructing new tx simulator")
-
+	hash := common.HexToHash(txid)
 	if _, ok := m.baseTxSim[chainid]; ok {
-		if m.baseTxSim[chainid].(*RwSetTxSimulator).txid == txid {
+		if m.baseTxSim[chainid].(*RwSetTxSimulator).txid == hash {
 			log.Infof("chainid[%s] , txid[%s]already exit", chainid, txid)
 			return m.baseTxSim[chainid], nil
 		}
 	}
 
-	t := NewBasedTxSimulator(idag, txid)
+	t := NewBasedTxSimulator(idag, hash)
 	if t == nil {
 		return nil, errors.New("NewBaseTxSimulator is failed.")
 	}
