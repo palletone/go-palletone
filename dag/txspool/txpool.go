@@ -1599,6 +1599,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
 	pool.mu.RLock()
+	poolTxs := pool.AllTxpoolTxs()
+	orphanTxs := pool.AllOrphanTxs()
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
 	for {
 		if time.Since(t0) > time.Second*2 {
@@ -1608,16 +1610,14 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		if total >= unit_size {
 			break
 		}
-		t := time.Now()
 		tx := pool.priority_sorted.Get()
 		if tx == nil {
 			log.Info("Txspool get priority_pricedtx failed.", "error", "tx is null")
 			break
 		} else {
 			if !tx.Pending {
-				// 获取该交易的前驱交易列表
-				// add precusorTxs
-				p_txs, _ := pool.getPrecusorTxs(tx)
+				// add precusorTxs 获取该交易的前驱交易列表
+				p_txs, _ := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 				if len(p_txs) > 0 {
 					for _, ptx := range p_txs {
 						list = append(list, ptx)
@@ -1628,16 +1628,9 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 				list = append(list, tx)
 				total += tx.Tx.Size()
 			}
-			log.Infof("get pre_tx spent times: %s ", time.Since(t))
 		}
 	}
 
-	t1 := time.Now()
-	//添加孤儿交易
-	orphanTxs := pool.AllOrphanTxs()
-	if time.Since(t1) > time.Second*1 {
-		log.Infof("get sorted and get all Orphan txs spent times: %s , count: %d ,t3: %s ", time.Since(t0), len(list), time.Since(t1))
-	}
 	t2 := time.Now()
 	validated_txs := make([]*modules.TxPoolTransaction, 0)
 
@@ -1692,17 +1685,18 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	// }
 	return list, total
 }
-func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, error) {
+func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs, orphanTxs map[common.Hash]*modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, error) {
 	pretxs := make([]*modules.TxPoolTransaction, 0)
-	poolTxs := pool.AllTxpoolTxs()
-	orphanTxs := pool.AllOrphanTxs()
 	for _, msg := range tx.Tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
 				for _, input := range payment.Inputs {
 					if input.PreviousOutPoint != nil {
-						_, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
+						utxo, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
+						if utxo.IsSpent() {
+							continue
+						}
 						if err != nil { //  若该utxo在db里找不到
 							queue_tx, has := poolTxs[input.PreviousOutPoint.TxHash]
 							queue_otx, has1 := orphanTxs[input.PreviousOutPoint.TxHash]
@@ -1713,11 +1707,11 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.Tx
 									continue
 								}
 							}
-							list, _ := pool.getPrecusorTxs(queue_tx)
-							if len(list) > 0 {
-								pretxs = append(pretxs, list...)
-							}
 							if !queue_tx.Pending {
+								list, _ := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
+								if len(list) > 0 {
+									pretxs = append(pretxs, list...)
+								}
 								pretxs = append(pretxs, queue_tx)
 							}
 						}
@@ -1726,7 +1720,6 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction) ([]*modules.Tx
 			}
 		}
 	}
-
 	return pretxs, nil
 }
 

@@ -23,7 +23,6 @@ import (
 	"sort"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -94,9 +93,7 @@ func (l *txPrioritiedList) Put(tx *modules.TxPoolTransaction) {
 	//heap.Push(l.items, tx)
 }
 func (l *txPrioritiedList) Get() *modules.TxPoolTransaction {
-	t := time.Now()
 	l.mu.RLock()
-	log.Infof("get txpriority rwmutex spent times: %s ", time.Since(t))
 	defer l.mu.RUnlock()
 	for len(*l.items) > 0 {
 		tx := l.items.Pop().(*modules.TxPoolTransaction)
