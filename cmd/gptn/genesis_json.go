@@ -147,6 +147,9 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.SystemConfig.FoundationAddress = genesisState.TokenHolder
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
 
+	// set root ca holder
+	genesisState.SystemConfig.RootCaHolder = genesisState.TokenHolder
+
 	initMediatorCount := len(mcs)
 	genesisState.InitialActiveMediators = uint16(initMediatorCount)
 	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
@@ -272,6 +275,8 @@ func createExampleGenesis() *core.Genesis {
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 		DepositPeriod:             core.DefaultDepositPeriod,
+		// default root ca holder, 默认是基金会地址
+		RootCaHolder: core.DefaultFoundationAddress,
 	}
 
 	initParams := core.NewChainParams()
