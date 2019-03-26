@@ -97,7 +97,7 @@ type IDag interface {
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
-	GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error)
+	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error)
 
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)

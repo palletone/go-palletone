@@ -43,6 +43,15 @@ StateDB保存了以下信息：
 * 账户信息
 * 投票信息
 
+## Index DB的设计
+
+IndexDB是一个可选的数据库，里面保存了为了快速查询某些信息而建立的关联关系信息。在TOML中可以开启或者关闭多个Index数据。
+目前建立了Index的数据包括：
+
+* Address     ->  TxId
+* TokenAsset    ->  TxId
+* DataPayload.MainData-> TxId
+
 ## 基于Token的共识分区
 每个分区有自己的唯一的GasToken，每个分区的创世单元为该GasToken创建时的单元。每个分区只记录自己GasToken相关的Unit全账本，PTN分区除了记录PTN全账本外，会同步所有其他分区的Unit Header。
 每个分区以ChainIndex中的AssetId来唯一区分分区。

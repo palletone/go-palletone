@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
-	GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error)
+	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
@@ -880,9 +880,14 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		return err
 	}
 	if dagconfig.DagConfig.AddrTxsIndex {
-		//Index TxId for address
+		//Index TxId for to address
 		addresses := getPayToAddresses(tx)
 		for _, addr := range addresses {
+			rep.idxdb.SaveAddressTxId(addr, txHash)
+		}
+		//Index from address to txid
+		fromAddrs := rep.getPayFromAddresses(tx)
+		for _, addr := range fromAddrs {
 			rep.idxdb.SaveAddressTxId(addr, txHash)
 		}
 	}
@@ -909,9 +914,32 @@ func getPayToAddresses(tx *modules.Transaction) []common.Address {
 	return keys
 }
 
-func getPayFromAddresses(tx *modules.Transaction) []*modules.OutPoint {
-	outpoints, _ := tx.GetAddressInfo()
-	return outpoints
+func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common.Address {
+	resultMap := map[common.Address]int{}
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			pay := msg.Payload.(*modules.PaymentPayload)
+			for _, input := range pay.Inputs {
+				if input.PreviousOutPoint != nil {
+					utxo, err := rep.utxoRepository.GetUtxoEntry(input.PreviousOutPoint)
+					if err != nil {
+						log.Errorf("Get utxo by [%s] throw an error:%s", input.PreviousOutPoint.String(), err.Error())
+						return []common.Address{}
+					}
+					addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+					if _, ok := resultMap[addr]; !ok {
+						resultMap[addr] = 1
+					}
+				}
+
+			}
+		}
+	}
+	keys := make([]common.Address, 0, len(resultMap))
+	for k := range resultMap {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 func getMaindata(tx *modules.Transaction) string {
@@ -986,7 +1014,7 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 
 	if dagconfig.DagConfig.TextFileHashIndex {
 
-		err := rep.idxdb.SaveFileHash(payload.MainData, txHash)
+		err := rep.idxdb.SaveMainDataTxId(payload.MainData, txHash)
 		if err != nil {
 			log.Error("error savefilehash", "err", err)
 			return false
@@ -1368,10 +1396,9 @@ func IsGenesis(hash common.Hash) bool {
 }
 
 // GetAddrTransactions containing from && to address
-func (rep *UnitRepository) GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error) {
+func (rep *UnitRepository) GetAddrTransactions(address common.Address) ([]*modules.TransactionWithUnitInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
-	address, _ := common.StringToAddress(addr)
 	hashs, err := rep.idxdb.GetAddressTxIds(address)
 	if err != nil {
 		return nil, err
@@ -1404,7 +1431,7 @@ func (rep *UnitRepository) GetAddrTransactions(addr string) ([]*modules.Transact
 func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
-	hashs, err := rep.idxdb.GetTxByFileHash(filehash)
+	hashs, err := rep.idxdb.GetMainDataTxIds(filehash)
 	if err != nil {
 		return nil, err
 	}

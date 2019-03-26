@@ -478,7 +478,11 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 //}
 
 func (b *PtnApiBackend) GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error) {
-	return b.ptn.dag.GetAddrTransactions(addr)
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	return b.ptn.dag.GetAddrTransactions(address)
 }
 
 //contract control

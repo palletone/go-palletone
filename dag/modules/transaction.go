@@ -230,28 +230,28 @@ func (tx *Transaction) CreateDate() string {
 }
 
 // address return the tx's original address  of from and to
-func (tx *Transaction) GetAddressInfo() ([]*OutPoint, [][]byte) {
-	froms := make([]*OutPoint, 0)
-	tos := make([][]byte, 0)
-	if len(tx.Messages()) > 0 {
-		msg := tx.Messages()[0]
-		if msg.App == APP_PAYMENT {
-			payment, ok := msg.Payload.(*PaymentPayload)
-			if ok {
-				for _, input := range payment.Inputs {
-					if input.PreviousOutPoint != nil {
-						froms = append(froms, input.PreviousOutPoint)
-					}
-				}
-
-				for _, out := range payment.Outputs {
-					tos = append(tos, out.PkScript[:])
-				}
-			}
-		}
-	}
-	return froms, tos
-}
+//func (tx *Transaction) GetAddressInfo() ([]*OutPoint, [][]byte) {
+//	froms := make([]*OutPoint, 0)
+//	tos := make([][]byte, 0)
+//	if len(tx.Messages()) > 0 {
+//		msg := tx.Messages()[0]
+//		if msg.App == APP_PAYMENT {
+//			payment, ok := msg.Payload.(*PaymentPayload)
+//			if ok {
+//				for _, input := range payment.Inputs {
+//					if input.PreviousOutPoint != nil {
+//						froms = append(froms, input.PreviousOutPoint)
+//					}
+//				}
+//
+//				for _, out := range payment.Outputs {
+//					tos = append(tos, out.PkScript[:])
+//				}
+//			}
+//		}
+//	}
+//	return froms, tos
+//}
 func (tx *Transaction) Asset() *Asset {
 	if tx == nil {
 		return nil
