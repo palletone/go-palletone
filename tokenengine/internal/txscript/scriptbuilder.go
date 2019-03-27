@@ -62,35 +62,14 @@ func (b *ScriptBuilder) AddOp(opcode byte) *ScriptBuilder {
 
 	// Pushes that would cause the script to exceed the largest allowed
 	// script size would result in a non-canonical script.
-	if len(b.script)+1 > MaxScriptSize {
+	if len(b.script)+1 > maxScriptSize {
 		str := fmt.Sprintf("adding an opcode would exceed the maximum "+
-			"allowed canonical script length of %d", MaxScriptSize)
+			"allowed canonical script length of %d", maxScriptSize)
 		b.err = ErrScriptNotCanonical(str)
 		return b
 	}
 
 	b.script = append(b.script, opcode)
-	return b
-}
-
-// AddOps pushes the passed opcodes to the end of the script.  The script will
-// not be modified if pushing the opcodes would cause the script to exceed the
-// maximum allowed script engine size.
-func (b *ScriptBuilder) AddOps(opcodes []byte) *ScriptBuilder {
-	if b.err != nil {
-		return b
-	}
-
-	// Pushes that would cause the script to exceed the largest allowed
-	// script size would result in a non-canonical script.
-	if len(b.script)+len(opcodes) > MaxScriptSize {
-		str := fmt.Sprintf("adding opcodes would exceed the maximum "+
-			"allowed canonical script length of %d", MaxScriptSize)
-		b.err = ErrScriptNotCanonical(str)
-		return b
-	}
-
-	b.script = append(b.script, opcodes...)
 	return b
 }
 
@@ -135,7 +114,7 @@ func (b *ScriptBuilder) addData(data []byte) *ScriptBuilder {
 		b.script = append(b.script, OP_0)
 		return b
 	} else if dataLen == 1 && data[0] <= 16 {
-		b.script = append(b.script, (OP_1-1)+data[0])
+		b.script = append(b.script, byte((OP_1-1)+data[0]))
 		return b
 	} else if dataLen == 1 && data[0] == 0x81 {
 		b.script = append(b.script, byte(OP_1NEGATE))
@@ -198,10 +177,10 @@ func (b *ScriptBuilder) AddData(data []byte) *ScriptBuilder {
 	// Pushes that would cause the script to exceed the largest allowed
 	// script size would result in a non-canonical script.
 	dataSize := canonicalDataSize(data)
-	if len(b.script)+dataSize > MaxScriptSize {
+	if len(b.script)+dataSize > maxScriptSize {
 		str := fmt.Sprintf("adding %d bytes of data would exceed the "+
 			"maximum allowed canonical script length of %d",
-			dataSize, MaxScriptSize)
+			dataSize, maxScriptSize)
 		b.err = ErrScriptNotCanonical(str)
 		return b
 	}
@@ -212,7 +191,7 @@ func (b *ScriptBuilder) AddData(data []byte) *ScriptBuilder {
 	if dataLen > MaxScriptElementSize {
 		str := fmt.Sprintf("adding a data element of %d bytes would "+
 			"exceed the maximum allowed script element size of %d",
-			dataLen, MaxScriptElementSize)
+			dataLen, maxScriptSize)
 		b.err = ErrScriptNotCanonical(str)
 		return b
 	}
@@ -230,10 +209,10 @@ func (b *ScriptBuilder) AddInt64(val int64) *ScriptBuilder {
 
 	// Pushes that would cause the script to exceed the largest allowed
 	// script size would result in a non-canonical script.
-	if len(b.script)+1 > MaxScriptSize {
+	if len(b.script)+1 > maxScriptSize {
 		str := fmt.Sprintf("adding an integer would exceed the "+
 			"maximum allow canonical script length of %d",
-			MaxScriptSize)
+			maxScriptSize)
 		b.err = ErrScriptNotCanonical(str)
 		return b
 	}
@@ -258,7 +237,7 @@ func (b *ScriptBuilder) Reset() *ScriptBuilder {
 	return b
 }
 
-// Script returns the currently built script.  When any errors occurred while
+// Script returns the currently built script.  When any errors occured while
 // building the script, the script will be returned up the point of the first
 // error along with the error.
 func (b *ScriptBuilder) Script() ([]byte, error) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2016 The btcsuite developers
+// Copyright (c) 2015 The btcsuite developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// genRandomSig returns a random message, a signature of the message under the
-// public key and the public key. This function is used to generate randomized
+// genRandomSig returns a random message, public key, and a signature of the
+// message under the public key. This function is used to generate randomized
 // test data.
 func genRandomSig() (*common.Hash, *btcec.Signature, *btcec.PublicKey, error) {
 	privKey, err := btcec.NewPrivateKey(btcec.S256())
@@ -88,7 +88,7 @@ func TestSigCacheAddEvictEntry(t *testing.T) {
 	}
 
 	// Add a new entry, this should cause eviction of a randomly chosen
-	// previous entry.
+	// previously entry.
 	msgNew, sigNew, keyNew, err := genRandomSig()
 	if err != nil {
 		t.Fatalf("unable to generate random signature test data")
