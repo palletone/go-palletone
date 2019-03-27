@@ -415,7 +415,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String("ALL"))
-	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn,addr)
+	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
 
 	fmt.Println(signresult)
 	stx := new(modules.Transaction)
@@ -599,60 +599,66 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[s
 	return result, nil
 }
 
-func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (string, error) {
-	txs, err := s.b.GetAddrTransactions(address)
-	if err != nil {
-		return "null", err
-	}
+//func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (string, error) {
+//	txs, err := s.b.GetAddrTransactions(address)
+//	if err != nil {
+//		return "null", err
+//	}
+//
+//	gets := []ptnjson.GetTransactions{}
+//	for _, tx := range txs {
+//
+//		get := ptnjson.GetTransactions{}
+//		get.Txid = tx.Hash().String()
+//
+//		for _, msg := range tx.TxMessages {
+//			payload, ok := msg.Payload.(*modules.PaymentPayload)
+//
+//			if ok == false {
+//				continue
+//			}
+//
+//			for _, txin := range payload.Inputs {
+//
+//				if txin.PreviousOutPoint != nil {
+//					addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
+//					if err != nil {
+//
+//						return "null", err
+//					}
+//
+//					get.Inputs = append(get.Inputs, addr.String())
+//				} else {
+//					get.Inputs = append(get.Inputs, "coinbase")
+//				}
+//
+//			}
+//
+//			for _, txout := range payload.Outputs {
+//				var gout ptnjson.GetTranscationOut
+//				addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
+//				if err != nil {
+//					return "null", err
+//				}
+//				gout.Addr = addr.String()
+//				gout.Value = txout.Value
+//				gout.Asset = txout.Asset.String()
+//				get.Outputs = append(get.Outputs, gout)
+//			}
+//
+//			gets = append(gets, get)
+//		}
+//
+//	}
+//	result := ptnjson.ConvertGetTransactions2Json(gets)
+//
+//	return result, nil
+//}
 
-	gets := []ptnjson.GetTransactions{}
-	for _, tx := range txs {
+func (s *PublicWalletAPI) GetAddrTxHistory(ctx context.Context, addr string) ([]*ptnjson.TxHistoryJson, error) {
+	result, err := s.b.GetAddrTxHistory(addr)
 
-		get := ptnjson.GetTransactions{}
-		get.Txid = tx.Hash().String()
-
-		for _, msg := range tx.TxMessages {
-			payload, ok := msg.Payload.(*modules.PaymentPayload)
-
-			if ok == false {
-				continue
-			}
-
-			for _, txin := range payload.Inputs {
-
-				if txin.PreviousOutPoint != nil {
-					addr, err := s.b.GetAddrByOutPoint(txin.PreviousOutPoint)
-					if err != nil {
-
-						return "null", err
-					}
-
-					get.Inputs = append(get.Inputs, addr.String())
-				} else {
-					get.Inputs = append(get.Inputs, "coinbase")
-				}
-
-			}
-
-			for _, txout := range payload.Outputs {
-				var gout ptnjson.GetTranscationOut
-				addr, err := tokenengine.GetAddressFromScript(txout.PkScript)
-				if err != nil {
-					return "null", err
-				}
-				gout.Addr = addr.String()
-				gout.Value = txout.Value
-				gout.Asset = txout.Asset.String()
-				get.Outputs = append(get.Outputs, gout)
-			}
-
-			gets = append(gets, get)
-		}
-
-	}
-	result := ptnjson.ConvertGetTransactions2Json(gets)
-
-	return result, nil
+	return result, err
 }
 
 //sign rawtranscation
@@ -792,7 +798,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String("ALL"))
-	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn,addr)
+	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
 
 	fmt.Println(signresult)
 	stx := new(modules.Transaction)

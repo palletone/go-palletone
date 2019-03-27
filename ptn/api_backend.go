@@ -449,40 +449,21 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 
 }
 
-//所有TokenInfo信息从创币合约读取
-//func (b *PtnApiBackend) GetAllTokenInfo() (*modules.AllTokenInfo, error) {
-//	all, err := b.ptn.dag.GetAllTokenInfo()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return all, nil
-//}
-//func (b *PtnApiBackend) GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error) {
-//	tokenInfo, err := b.ptn.dag.GetTokenInfo(key)
-//	if err != nil {
-//		return nil, err
-//	}
-//	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(tokenInfo)
-//	return tokenInfoJson, nil
-//}
-
-//
-//func (b *PtnApiBackend) SaveTokenInfo(token *modules.TokenInfo) (*ptnjson.TokenInfoJson, error) {
-//	s_token, err := b.ptn.dag.SaveTokenInfo(token)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	tokenInfoJson := ptnjson.ConvertTokenInfo2Json(s_token)
-//	return tokenInfoJson, nil
-//}
-
-func (b *PtnApiBackend) GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error) {
+func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {
 		return nil, err
 	}
-	return b.ptn.dag.GetAddrTransactions(address)
+	txs, err := b.ptn.dag.GetAddrTransactions(address)
+	if err != nil {
+		return nil, err
+	}
+	txjs := []*ptnjson.TxHistoryJson{}
+	for _, tx := range txs {
+		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetUtxoEntry)
+		txjs = append(txjs, txj)
+	}
+	return txjs, nil
 }
 
 //contract control
