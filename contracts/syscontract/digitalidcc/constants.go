@@ -25,4 +25,5 @@ var (
 	// certificate
 	CERT_SERVER_SYMBOL = "cert_server_"
 	CERT_MEMBER_SYMBOL = "cert_member_"
+	CERT_ID            = "cert_id_"
 )

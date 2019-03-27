@@ -576,6 +576,38 @@ func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.Invoke
 	return stub.handler.handlePayOutToken("", addr, invokeTokens, lockTime, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
+/*
+// 获得发行者的所有证书ID
+func (stub *ChaincodeStub) GetIssuerCertsIDs(issuer string) (serverCertsIDs []string, memberCertsIDs []string, err error) {
+
+}
+
+// 获得发行者的所有中间证书ID
+func (stub *ChaincodeStub) GetIssuerServerCertsIDs(issuer string) (serverCertsIDs []string, err error) {
+
+}
+
+// 获得发行者的所有交易证书ID
+func (stub *ChaincodeStub) GetIssuerMemberCertsIDs(issuer string) (memberCertsIDs []string, err error) {
+
+}
+
+// 根据证书ID获得证书字节数据
+func (stub *ChaincodeStub) GetCertByID(certID string) (certBytes []byte, err error) {
+
+}
+
+// 根据证书ID列表获得证书字节数据列表
+func (stub *ChaincodeStub) GetCertsByIDs(certIDs []string) (certBytes map[string][]byte, err error) {
+
+}
+
+// 根据证书ID获得某个证书的所有者
+func (stub *ChaincodeStub) GetIssuerByID(certID string) (issuer string, err error) {
+
+}
+*/
+
 // ------------- Logging Control and Chaincode Loggers ---------------
 
 // As independent programs, Go language chaincodes can use any logging
