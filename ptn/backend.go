@@ -250,6 +250,10 @@ func (s *PalletOne) ContractBroadcast(event jury.ContractEvent, local bool) {
 func (s *PalletOne) ElectionBroadcast(event jury.ElectionEvent) {
 	s.protocolManager.ElectionBroadcast(event)
 }
+func (s *PalletOne) AdapterBroadcast(event jury.AdapterEvent){
+	s.protocolManager.AdapterBroadcast(event)
+}
+
 func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
 }

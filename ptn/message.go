@@ -538,7 +538,6 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===ContractMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-
 	log.Info("===ContractMsg===", "event type:", event.CType)
 	err := pm.contractProc.ProcessContractEvent(&event)
 	if err != nil {
@@ -566,6 +565,25 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 		if event.EType == jury.ELECTION_EVENT_REQUEST {
 			if result != nil {
 				p.SendElectionEvent(*result)
+			}
+		}
+	}
+	return nil
+}
+
+func (pm *ProtocolManager) AdapterMsg(msg p2p.Msg, p *peer) error {
+	var event jury.AdapterEvent
+	if err := msg.Decode(&event); err != nil {
+		log.Info("===AdapterMsg===", "err:", err)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+	result, err := pm.contractProc.ProcessAdapterEvent(&event)
+	if err != nil {
+		log.Debug("AdapterMsg", "ProcessAdapterEvent error:", err)
+	} else {
+		if event.AType == jury.ADAPTER_EVENT_REQUEST {
+			if result != nil {
+				p.SendAdapterEvent(*result)
 			}
 		}
 	}

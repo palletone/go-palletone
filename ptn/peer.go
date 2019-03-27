@@ -242,6 +242,10 @@ func (p *peer) SendElectionEvent(event jury.ElectionEvent) error {
 	return p2p.Send(p.rw, ElectionMsg, *evs)
 }
 
+func (p *peer) SendAdapterEvent(event jury.AdapterEvent) error {
+	return p2p.Send(p.rw, AdapterMsg, event)
+}
+
 //Test SendConsensus sends consensus msg to the peer
 func (p *peer) SendConsensus(msgs []byte) error {
 	return p2p.Send(p.rw, NewBlockMsg, msgs)

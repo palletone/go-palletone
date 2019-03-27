@@ -54,6 +54,7 @@ type PalletOne interface {
 	MockContractLocalSend(event ContractEvent)
 	ContractBroadcast(event ContractEvent, local bool)
 	ElectionBroadcast(event ElectionEvent)
+	AdapterBroadcast(event AdapterEvent)
 
 	GetLocalMediators() []common.Address
 	IsLocalActiveMediator(add common.Address) bool
@@ -103,8 +104,10 @@ type contractTx struct {
 	rcvTx    []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
 	tm       time.Time              //create time
 	valid    bool                   //contract request valid identification
+	eleChan  chan bool              //election event chan
+	adaChan  chan bool              //adapter event chan
+	adaInf   []AdapterInf           //adapter event data information
 	//eleInfo  electionInfo           //vrf election jury list
-	eleChan chan bool
 }
 
 type Processor struct {
