@@ -122,7 +122,7 @@ var systemChaincodes = []*SystemChaincode{
 		Id:        syscontract.TestContractAddress.Bytes21(),
 		Enabled:   true,
 		Name:      "debug_sycc",
-		Path:      ".",
+		Path:      "../syscontract/debugcc/debugcc",
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &debugcc.DebugChainCode{},

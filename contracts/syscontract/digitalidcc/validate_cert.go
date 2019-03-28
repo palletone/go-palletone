@@ -24,6 +24,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
+	dagConstants "github.com/palletone/go-palletone/dag/constants"
 )
 
 func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
@@ -38,7 +39,7 @@ func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStub
 }
 
 func checkExists(certid string, stub shim.ChaincodeStubInterface) error {
-	key := CERT_ID + certid
+	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
 	if err != nil {
 		return err
@@ -58,7 +59,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 	// check in server list
 	if issuer != rootCAHolder {
 		// query server list
-		certids, err := queryCertsIDs(CERT_SERVER_SYMBOL, issuer, stub)
+		certids, err := queryCertsIDs(dagConstants.CERT_SERVER_SYMBOL, issuer, stub)
 		if err != nil {
 			return err
 		}

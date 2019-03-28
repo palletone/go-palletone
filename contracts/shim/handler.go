@@ -844,37 +844,27 @@ func (handler *Handler) handleMessage(msg *pb.ChaincodeMessage) error {
 	return filterError(err)
 }
 
-/*
-// 获得发行者的所有证书ID
-func (handler *Handler) GetIssuerCertsIDs(issuer string) (serverCertsIDs []string, memberCertsIDs []string, err error) {
-
-}
-
-// 获得发行者的所有中间证书ID
-func (handler *Handler) GetIssuerServerCertsIDs(issuer string) (serverCertsIDs []string, err error) {
-
-}
-
-// 获得发行者的所有交易证书ID
-func (handler *Handler) GetIssuerMemberCertsIDs(issuer string) (memberCertsIDs []string, err error) {
-
-}
-
 // 根据证书ID获得证书字节数据
-func (handler *Handler) GetCertByID(certID string) (certBytes []byte, err error) {
+func (handler *Handler) handleGetCertByID(key string, channelId string, txid string) (certBytes []byte, err error) {
+	// Construct payload for PUT_STATE
+	payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_CERT, Payload: payloadBytes, ChannelId: channelId, Txid: txid}
+	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CERT)
+	//Execute the request and get response
+	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error GetRequesterCert ", msg.Txid))
+	}
+	//正确返回
+	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
+		//Success response
+		log.Debugf("[%s]Received %s. Successfully get cert bytes", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
+		return responseMsg.Payload, nil
+	}
+	// Incorrect chaincode message received
+	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
 }
-
-// 根据证书ID列表获得证书字节数据列表
-func (handler *Handler) GetCertsByIDs(certIDs []string) (certBytes map[string][]byte, err error) {
-
-}
-
-// 根据证书ID获得某个证书的所有者
-func (handler *Handler) GetIssuerByID(certID string) (issuer string, err error) {
-
-}
-*/
 
 // filterError filters the errors to allow NoTransitionError and CanceledError to not propagate for cases where embedded Err == nil.
 func filterError(errFromFSMEvent error) error {
