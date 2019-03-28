@@ -85,17 +85,16 @@ func TestCopyHeader(t *testing.T) {
 	addr := common.Address{}
 	addr.SetString("0000000011111111")
 
-	auth := Authentifier{
-		Address: addr,
-		R:       []byte("12345678901234567890"),
-		S:       []byte("09876543210987654321"),
-		V:       []byte("1"),
-	}
-	//author := Author{
-	//	Address:        addr,
-	//	Pubkey:         []byte("1234567890123456789"),
-	//	TxAuthentifier: auth,
+	//auth := Authentifier{
+	//	Address: addr,
+	//	R:       []byte("12345678901234567890"),
+	//	S:       []byte("09876543210987654321"),
+	//	V:       []byte("1"),
 	//}
+	auth := Authentifier{
+		Signature: []byte("1234567890123456789"),
+		PubKey:    []byte("1234567890123456789"),
+	}
 	w := make([]byte, 0)
 	w = append(w, []byte("sign")...)
 	assetID := AssetId{}
@@ -144,9 +143,8 @@ func TestUnitSize(t *testing.T) {
 
 	h.TxRoot = h.Hash()
 	sig, _ := crypto.Sign(h.TxRoot[:], key)
-	au.R = sig[:32]
-	au.S = sig[32:64]
-	au.V = sig[64:]
+	au.Signature = sig
+	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
 	h.Authors = au
 
 	log.Println("size: ", unsafe.Sizeof(h))
@@ -217,9 +215,8 @@ func TestHeaderRLP(t *testing.T) {
 	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	sig, _ := crypto.Sign(h.TxRoot[:], key)
-	au.R = sig[:32]
-	au.S = sig[32:64]
-	au.V = sig[64:]
+	au.Signature = sig
+	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
 	h.Authors = au
 	h.Creationdate = 123
 

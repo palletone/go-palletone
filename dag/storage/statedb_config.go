@@ -35,7 +35,7 @@ import (
 get config information
 */
 func (statedb *StateDb) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	id := syscontract.SysConfigContractAddress.Bytes()
+	id := syscontract.SysConfigContractAddress.Bytes21()
 	return statedb.GetContractState(id, name)
 }
 

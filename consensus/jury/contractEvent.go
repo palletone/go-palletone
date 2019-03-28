@@ -72,6 +72,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []ElectionInf
 		eleInf: ele,
 		tm:     time.Now(),
 		valid:  true,
+		adaInf: make(map[uint32][]AdapterInf),
 	}
 	p.locker.Unlock()
 	log.Debug("contractExecEvent", "add tx req id", reqId)
@@ -99,6 +100,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []ElectionInf)
 			eleInf: ele,
 			tm:     time.Now(),
 			valid:  true,
+			adaInf: make(map[uint32][]AdapterInf),
 		}
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
 		p.locker.Unlock()
@@ -132,9 +134,10 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 	if _, ok := p.mtx[reqId]; !ok {
 		log.Debug("contractCommitEvent", "local not find reqId,create it", reqId.String())
 		p.mtx[reqId] = &contractTx{
-			reqTx: tx,
-			tm:    time.Now(),
-			valid: true,
+			reqTx:  tx,
+			tm:     time.Now(),
+			valid:  true,
+			adaInf: make(map[uint32][]AdapterInf),
 		}
 	} else if p.mtx[reqId].rstTx != nil {
 		log.Info("contractCommitEvent", "rstTx already receive,reqId", reqId)

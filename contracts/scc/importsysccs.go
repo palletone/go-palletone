@@ -37,7 +37,7 @@ var systemChaincodes = []*SystemChaincode{
 		Id:        syscontract.TestRunContractAddress.Bytes21(), //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 		Enabled:   true,
 		Name:      "sample_syscc",
-		Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc/samplesyscc",
+		Path:      "../example/go/samplesyscc/samplesyscc",
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &samplesyscc.SampleSysCC{},
@@ -86,7 +86,7 @@ var systemChaincodes = []*SystemChaincode{
 		Id:        syscontract.VoteTokenContractAddress.Bytes21(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "voteToken_sycc",
-		Path:      "../syscontract//vote/vote",
+		Path:      "../syscontract/vote/vote",
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &vote.Vote{},
@@ -95,7 +95,7 @@ var systemChaincodes = []*SystemChaincode{
 		Id:        syscontract.SysConfigContractAddress.Bytes21(),
 		Enabled:   true,
 		Name:      "sysconfig_sycc",
-		Path:      ".",
+		Path:      "../syscontract/sysconfigcc/sysconfigcc",
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &sysconfigcc.SysConfigChainCode{},

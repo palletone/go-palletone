@@ -106,8 +106,9 @@ type contractTx struct {
 	valid    bool                   //contract request valid identification
 	eleChan  chan bool              //election event chan
 	adaChan  chan bool              //adapter event chan
-	adaInf   []AdapterInf           //adapter event data information
-	//eleInfo  electionInfo           //vrf election jury list
+	//adaInf   []AdapterInf           //adapter event data information
+	adaInf map[uint32][]AdapterInf //adapter event data information
+	// eleInfo  electionInfo           //vrf election jury list
 }
 
 type Processor struct {
@@ -393,7 +394,6 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 			continue
 		}
 
-		//TODO 从保证金转出  token 时签名为空，先不做相应的判断，所以需要注释掉才能正常进行
 		if !p.checkTxValid(ctx.rstTx) {
 			log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 			continue
@@ -612,9 +612,10 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	}
 	reqId := tx.RequestHash()
 	p.mtx[reqId] = &contractTx{
-		reqTx: tx,
-		tm:    time.Now(),
-		valid: true,
+		reqTx:  tx,
+		tm:     time.Now(),
+		valid:  true,
+		adaInf: make(map[uint32][]AdapterInf),
 	}
 	ctx := p.mtx[reqId]
 	if !isSystemContract(tx) {

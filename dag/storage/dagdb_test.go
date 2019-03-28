@@ -77,9 +77,8 @@ func TestGetHeader(t *testing.T) {
 	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	sig, _ := crypto.Sign(h.TxRoot[:], key)
-	au.R = sig[:32]
-	au.S = sig[32:64]
-	au.V = sig[64:]
+	au.Signature = sig
+	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
 	h.Authors = au
 	h.Creationdate = 123
 

@@ -109,6 +109,9 @@ type ChaincodeStubInterface interface {
 	OutChainTransaction(outChainName string, params []byte) ([]byte, error)
 	OutChainQuery(outChainName string, params []byte) ([]byte, error)
 
+	SendJury(msgType uint32, content []byte) ([]byte, error)
+	RecvJury(msgType uint32, timeout uint32) ([]byte, error)
+
 	// DelState records the specified `key` to be deleted in the writeset of
 	// the transaction proposal. The `key` and its value will be deleted from
 	// the ledger when the transaction is validated and successfully committed.
