@@ -6,9 +6,7 @@ package txscript
 
 import (
 	"fmt"
-	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -77,7 +75,7 @@ const (
 )
 
 // halforder is used to tame ECDSA malleability (see BIP0062).
-var halfOrder = new(big.Int).Rsh(btcec.S256().N, 1)
+//var halfOrder = new(big.Int).Rsh(btcec.S256().N, 1)
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
@@ -524,12 +522,12 @@ func (vm *Engine) checkSignatureEncoding(sig []byte) error {
 	// valid transaction with the complement while still being a valid
 	// signature that verifies.  This would result in changing the
 	// transaction hash and thus is source of malleability.
-	if vm.hasFlag(ScriptVerifyLowS) {
-		sValue := new(big.Int).SetBytes(sig[rLen+6 : rLen+6+sLen])
-		if sValue.Cmp(halfOrder) > 0 {
-			return ErrStackInvalidLowSSignature
-		}
-	}
+	//if vm.hasFlag(ScriptVerifyLowS) {
+	//	sValue := new(big.Int).SetBytes(sig[rLen+6 : rLen+6+sLen])
+	//	if sValue.Cmp(halfOrder) > 0 {
+	//		return ErrStackInvalidLowSSignature
+	//	}
+	//}
 
 	return nil
 }

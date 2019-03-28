@@ -141,6 +141,13 @@ func sign(tx *modules.Transaction, msgIdx, idx int,
 		}
 
 		return script, class, addresses, nrequired, nil
+	case ContractHashTy:
+		script, err := sdb.GetScript(addresses[0].Address)
+		if err != nil {
+			return nil, class, nil, 0, err
+		}
+
+		return script, class, addresses, nrequired, nil
 	case MultiSigTy:
 		script, _ := signMultiSig(tx, msgIdx, idx, subScript, hashType,
 			addresses, nrequired, kdb)
@@ -384,7 +391,7 @@ func SignTxOutput(tx *modules.Transaction, msgIdx, idx int,
 		return nil, err
 	}
 
-	if class == ScriptHashTy {
+	if class == ScriptHashTy || class == ContractHashTy {
 		// TODO keep the sub addressed and pass down to merge.
 		realSigScript, _, _, _, err := sign(tx, msgIdx, idx,
 			sigScript, hashType, crypto, sdb)

@@ -7,10 +7,8 @@ package txscript
 import (
 	"bytes"
 	"crypto/rand"
-	"sync"
-
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common"
+	"sync"
 )
 
 // sigInfo represents an entry in the SigCache. Entries in the sigcache are a
@@ -51,9 +49,8 @@ func NewSigCache(maxEntries uint) *SigCache {
 //
 // NOTE: This function is safe for concurrent access. Readers won't be blocked
 // unless there exists a writer, adding an entry to the SigCache.
-func (s *SigCache) Exists(sigHash common.Hash, sig *btcec.Signature, pubKey *btcec.PublicKey) bool {
-	info := sigInfo{sigHash, string(sig.Serialize()),
-		string(pubKey.SerializeCompressed())}
+func (s *SigCache) Exists(sigHash common.Hash, sig, pubKey []byte) bool {
+	info := sigInfo{sigHash, string(sig), string(pubKey)}
 
 	s.RLock()
 	_, ok := s.validSigs[info]
@@ -68,7 +65,7 @@ func (s *SigCache) Exists(sigHash common.Hash, sig *btcec.Signature, pubKey *btc
 //
 // NOTE: This function is safe for concurrent access. Writers will block
 // simultaneous readers until function execution has concluded.
-func (s *SigCache) Add(sigHash common.Hash, sig *btcec.Signature, pubKey *btcec.PublicKey) {
+func (s *SigCache) Add(sigHash common.Hash, sig, pubKey []byte) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -96,7 +93,7 @@ func (s *SigCache) Add(sigHash common.Hash, sig *btcec.Signature, pubKey *btcec.
 		// the random hash.
 		var foundEntry sigInfo
 		for sigEntry := range s.validSigs {
-			if foundEntry.sig == "" {
+			if len(foundEntry.sig) == 0 {
 				foundEntry = sigEntry
 			}
 			if bytes.Compare(sigEntry.sigHash.Bytes(), randHashBytes) > 0 {
@@ -107,7 +104,6 @@ func (s *SigCache) Add(sigHash common.Hash, sig *btcec.Signature, pubKey *btcec.
 		delete(s.validSigs, foundEntry)
 	}
 
-	info := sigInfo{sigHash, string(sig.Serialize()),
-		string(pubKey.SerializeCompressed())}
+	info := sigInfo{sigHash, string(sig), string(pubKey)}
 	s.validSigs[info] = struct{}{}
 }

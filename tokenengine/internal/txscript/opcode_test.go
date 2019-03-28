@@ -121,7 +121,9 @@ func TestOpcodeDisasm(t *testing.T) {
 		case opcodeVal >= 0xba && opcodeVal <= 0xf8 || opcodeVal == 0xfc:
 			expectedStr = "OP_UNKNOWN" + strconv.Itoa(int(opcodeVal))
 		}
-
+		if opcodeVal == 200 {
+			expectedStr = "OP_JURY_REDEEM_EQUAL"
+		}
 		pop := parsedOpcode{opcode: &opcodeArray[opcodeVal], data: data}
 		gotStr := pop.print(true)
 		if gotStr != expectedStr {
@@ -183,7 +185,9 @@ func TestOpcodeDisasm(t *testing.T) {
 		case opcodeVal >= 0xba && opcodeVal <= 0xf8 || opcodeVal == 0xfc:
 			expectedStr = "OP_UNKNOWN" + strconv.Itoa(int(opcodeVal))
 		}
-
+		if opcodeVal == 200 {
+			expectedStr = "OP_JURY_REDEEM_EQUAL"
+		}
 		pop := parsedOpcode{opcode: &opcodeArray[opcodeVal], data: data}
 		gotStr := pop.print(false)
 		if gotStr != expectedStr {

@@ -53,7 +53,7 @@ func NewAddressOriginalData(data []byte, at ScriptClass) AddressOriginalData {
 }
 
 //根据合约地址和版本，获得该合约对应的陪审团赎回脚本
-type PickupJuryRedeemScript func(common.Address, int) ([]byte, error)
+type PickupJuryRedeemScript func(common.Address) ([]byte, error)
 
 type ICrypto interface {
 	Hash(msg []byte) ([]byte, error)

@@ -124,7 +124,7 @@ func newTx1(t *testing.T) *modules.Transaction {
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		return crypto.Sign(hash, privKey)
 	}
-	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn, 0)
+	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -165,7 +165,7 @@ func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		return crypto.Sign(hash, privKey)
 	}
-	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn, 0)
+	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -233,7 +233,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	}
 	var hashtype uint32
 	hashtype = 1
-	_, err := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn, 0)
+	_, err := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}

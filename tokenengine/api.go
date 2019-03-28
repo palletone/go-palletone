@@ -205,7 +205,7 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 //	return sigScript, nil
 //}
 func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, redeemScript []byte,
-	pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte, juryVersion int) ([]byte, error) {
+	pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte) ([]byte, error) {
 
 	lookupRedeemScript := func(a common.Address) ([]byte, error) {
 		return redeemScript, nil
@@ -255,7 +255,7 @@ func CalcSignatureHash(tx *modules.Transaction, msgIdx, inputIdx int, lockOrRede
 
 //Sign a full transaction
 func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
-	redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign, juryVersion int) ([]common.SignatureError, error) {
+	redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error) {
 
 	lookupRedeemScript := func(a common.Address) ([]byte, error) {
 
