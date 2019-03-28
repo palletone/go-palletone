@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestValidate_ValidateUnitTxs(t *testing.T) {
@@ -124,7 +125,7 @@ func newTx1(t *testing.T) *modules.Transaction {
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		return crypto.Sign(hash, privKey)
 	}
-	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn, 0)
+	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -165,7 +166,7 @@ func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		return crypto.Sign(hash, privKey)
 	}
-	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn, 0)
+	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -175,12 +176,28 @@ func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 }
 func newHeader(txs modules.Transactions) *modules.Header {
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-	addr, _ := common.StringToAddress("P1LWaK3KBCuPVsXUPHXkMZr2Cm5tZquRDK8")
+	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
+	privKey, _ := crypto.ToECDSA(privKeyBytes)
+	pubKey, _ := hex.DecodeString("038cc8c907b29a58b00f8c2590303bfc93c69d773b9da204337678865ee0cafadb")
+	//addr:= crypto.PubkeyBytesToAddress(pubKey)
 	header := &modules.Header{}
 	header.ParentsHash = []common.Hash{hash}
 	header.TxRoot = core.DeriveSha(txs)
-	header.Authors = modules.Authentifier{Address: addr}
+	headerHash := header.HashWithoutAuthor()
+	sign, _ := crypto.Sign(headerHash[:], privKey)
+	header.Authors = modules.Authentifier{PubKey: pubKey, Signature: sign}
+	header.Creationdate = time.Now().Unix()
+	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), true, 1}
 	return header
+}
+func TestValidate_ValidateHeader(t *testing.T) {
+	tx := newTx1(t)
+
+	header := newHeader(modules.Transactions{tx})
+	v := NewValidate(nil, nil, nil)
+	vresult := v.validateHeaderExceptGroupSig(header)
+	t.Log(vresult)
+	assert.Equal(t, vresult, TxValidationCode_VALID)
 }
 
 func TestSignAndVerifyATx(t *testing.T) {
@@ -233,7 +250,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	}
 	var hashtype uint32
 	hashtype = 1
-	_, err := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn, 0)
+	_, err := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}

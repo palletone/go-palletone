@@ -342,19 +342,20 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 		log.Error(msg)
 		return unit, err1
 	}
-
-	r := sign[:32]
-	s := sign[32:64]
-	v := sign[64:]
-	if len(v) != 1 {
-		return unit, errors.New("error.")
+	pubKey, err := ks.GetPublicKey(signer)
+	if err != nil {
+		return nil, err
 	}
+	//r := sign[:32]
+	//s := sign[32:64]
+	//v := sign[64:]
+	//if len(v) != 1 {
+	//	return unit, errors.New("error.")
+	//}
 	log.Debugf("Unit[%s] signed by address:%s", unit.Hash().String(), signer.String())
 	unit.UnitHeader.Authors = modules.Authentifier{
-		Address: signer,
-		R:       r,
-		S:       s,
-		V:       v,
+		PubKey:    pubKey,
+		Signature: sign,
 	}
 	// to set witness list, should be creator himself
 	// var authentifier modules.Authentifier

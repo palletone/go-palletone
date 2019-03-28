@@ -148,6 +148,10 @@ type ChaincodeStubInterface interface {
 	//增发一种之前已经定义好的Token
 	//如果是ERC20增发，则uniqueId为空，如果是ERC721增发，则必须指定唯一的uniqueId
 	SupplyToken(assetId []byte, uniqueId []byte, amt uint64, creator string) error
+
+	// 根据证书ID获得证书字节数据
+	GetRequesterCert(certID string) (certBytes []byte, err error)
+
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys
 	// between the startKey (inclusive) and endKey (exclusive).

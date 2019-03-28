@@ -55,6 +55,7 @@ const (
 	ChaincodeMessage_DEFINE_TOKEN              ChaincodeMessage_Type = 27
 	ChaincodeMessage_SUPPLY_TOKEN              ChaincodeMessage_Type = 28
 	ChaincodeMessage_GET_TIMESTAMP             ChaincodeMessage_Type = 29
+	ChaincodeMessage_GET_CERT                  ChaincodeMessage_Type = 30
 )
 
 var ChaincodeMessage_Type_name = map[int32]string{
@@ -83,6 +84,7 @@ var ChaincodeMessage_Type_name = map[int32]string{
 	27: "DEFINE_TOKEN",
 	28: "SUPPLY_TOKEN",
 	29: "GET_TIMESTAMP",
+	30: "GET_REQUESTER_CERT",
 }
 
 var ChaincodeMessage_Type_value = map[string]int32{
@@ -111,6 +113,7 @@ var ChaincodeMessage_Type_value = map[string]int32{
 	"DEFINE_TOKEN":              27,
 	"SUPPLY_TOKEN":              28,
 	"GET_TIMESTAMP":             29,
+	"GET_REQUESTER_CERT":        30,
 }
 
 func (x ChaincodeMessage_Type) String() string {

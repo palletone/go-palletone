@@ -146,7 +146,7 @@ func peerCreateChain(cid string) error {
 
 var grpcServer *grpc.Server
 
-func peerServerInit() error {
+func peerServerInit(jury core.IAdapterJury) error {
 	var opts []grpc.ServerOption
 
 	grpcServer = grpc.NewServer(opts...)
@@ -166,7 +166,7 @@ func peerServerInit() error {
 	if err != nil {
 		return err
 	}
-	pb.RegisterChaincodeSupportServer(grpcServer, core.NewChaincodeSupport(peerAddress, false, ccStartupTimeout, ca))
+	pb.RegisterChaincodeSupportServer(grpcServer, core.NewChaincodeSupport(peerAddress, false, ccStartupTimeout, ca, jury))
 	go grpcServer.Serve(lis)
 
 	return nil

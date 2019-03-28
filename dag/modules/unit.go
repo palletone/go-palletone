@@ -235,8 +235,7 @@ func (unit *Unit) Author() common.Address {
 	if unit == nil {
 		log.Error("the Unit pointer is nil!")
 	}
-
-	return unit.UnitHeader.Authors.Address
+	return crypto.PubkeyBytesToAddress(unit.UnitHeader.Authors.PubKey)
 }
 
 func (unit *Unit) GroupPubKey() (kyber.Point, error) {
@@ -297,17 +296,16 @@ func (height *ChainIndex) Bytes() []byte {
 //}
 
 type Authentifier struct {
-	Address common.Address `json:"address"`
-	R       []byte         `json:"r"`
-	S       []byte         `json:"s"`
-	V       []byte         `json:"v"`
+	PubKey    []byte `json:"pubkey"`
+	Signature []byte `json:"signature"`
 }
 
 func (au *Authentifier) Empty() bool {
-	if common.IsValidAddress(au.Address.String()) || len(au.R) == 0 || len(au.S) == 0 || len(au.V) == 0 {
-		return true
-	}
-	return false
+	return len(au.PubKey) == 0 || len(au.Signature) == 0
+}
+func (au *Authentifier) Address() common.Address {
+
+	return crypto.PubkeyBytesToAddress(au.PubKey)
 }
 
 func NewUnit(header *Header, txs Transactions) *Unit {

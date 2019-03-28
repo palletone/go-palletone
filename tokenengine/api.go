@@ -26,6 +26,7 @@ import (
 	"sort"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
@@ -87,7 +88,7 @@ func GetAddressFromScript(lockScript []byte) (common.Address, error) {
 	if len(addrs) != 1 {
 		return common.Address{}, err
 	}
-	return addrs[0], nil
+	return addrs[0].Address, nil
 }
 
 type PubKey4Sort [][]byte
@@ -182,7 +183,8 @@ func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte, version int) 
 
 //validate this transaction and input index script can unlock the utxo.
 func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, inputIndex int) error {
-	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, nil, 0)
+	acc := &account{}
+	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, acc)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
@@ -203,14 +205,14 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 //	return sigScript, nil
 //}
 func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, redeemScript []byte,
-	pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte, juryVersion int) ([]byte, error) {
+	pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte) ([]byte, error) {
 
 	lookupRedeemScript := func(a common.Address) ([]byte, error) {
 		return redeemScript, nil
 	}
-	tmpAcc := &account{pubKeyFn: pubKeyFn, hashFn: hashFn}
+	tmpAcc := &account{pubKeyFn: pubKeyFn, signFn: hashFn}
 	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashAll,
-		tmpAcc, txscript.ScriptClosure(lookupRedeemScript), previousScript, juryVersion)
+		tmpAcc, txscript.ScriptClosure(lookupRedeemScript), previousScript)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -219,33 +221,47 @@ func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockS
 
 type account struct {
 	pubKeyFn AddressGetPubKey
-	hashFn   AddressGetSign
+	signFn   AddressGetSign
 }
 
-func (a *account) GetSignFunction(addr common.Address) txscript.SignHash {
-	signFn := func(hash []byte) ([]byte, error) {
-		return a.hashFn(addr, hash)
-	}
-	return signFn
+func (a *account) Hash(msg []byte) ([]byte, error) {
+	return crypto.Keccak256(msg), nil
 }
-func (a *account) GetPubKey(addr common.Address) ([]byte, error) {
-	return a.pubKeyFn(addr)
+func (a *account) Sign(address common.Address, digest []byte) ([]byte, error) {
+	return a.signFn(address, digest)
 }
+func (a *account) Verify(pubKey, signature, digest []byte) (bool, error) {
+	return crypto.VerifySignature(pubKey, digest, signature), nil
+}
+func (a *account) GetPubKey(address common.Address) ([]byte, error) {
+	return a.pubKeyFn(address)
+}
+
+//func (a *account) GetSignFunction(addr common.Address) txscript.SignHash {
+//	signFn := func(hash []byte) ([]byte, error) {
+//		return a.hashFn(addr, hash)
+//	}
+//	return signFn
+//}
+//func (a *account) GetPubKey(addr common.Address) ([]byte, error) {
+//	return a.pubKeyFn(addr)
+//}
 
 //为钱包计算要签名某个Input对应的Hash
 func CalcSignatureHash(tx *modules.Transaction, msgIdx, inputIdx int, lockOrRedeemScript []byte) ([]byte, error) {
-	return txscript.CalcSignatureHash(lockOrRedeemScript, txscript.SigHashAll, tx, msgIdx, inputIdx)
+	acc := &account{}
+	return txscript.CalcSignatureHash(lockOrRedeemScript, txscript.SigHashAll, tx, msgIdx, inputIdx, acc)
 }
 
 //Sign a full transaction
 func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
-	redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign, juryVersion int) ([]common.SignatureError, error) {
+	redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error) {
 
 	lookupRedeemScript := func(a common.Address) ([]byte, error) {
 
 		return redeemScript, nil
 	}
-	tmpAcc := &account{pubKeyFn: pubKeyFn, hashFn: hashFn}
+	tmpAcc := &account{pubKeyFn: pubKeyFn, signFn: hashFn}
 	var signErrors []common.SignatureError
 	for i, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
@@ -257,11 +273,10 @@ func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScr
 				utxoLockScript, _ := utxoLockScripts[*input.PreviousOutPoint]
 				checkscript := make([]byte, len(utxoLockScript))
 				copy(checkscript, utxoLockScript)
-				if (hashType&txscript.SigHashSingle) !=
-					txscript.SigHashSingle || j < len(pay.Outputs) {
-					sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, hashType,
+				if (hashType&uint32(txscript.SigHashSingle)) != uint32(txscript.SigHashSingle) || j < len(pay.Outputs) {
+					sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, txscript.SigHashType(hashType),
 						tmpAcc, txscript.ScriptClosure(lookupRedeemScript),
-						input.SignatureScript, juryVersion)
+						input.SignatureScript)
 					if err != nil {
 						signErrors = append(signErrors, common.SignatureError{
 							InputIndex: uint32(j),

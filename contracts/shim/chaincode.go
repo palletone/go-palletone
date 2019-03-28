@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/comm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -574,6 +575,12 @@ func (stub *ChaincodeStub) SupplyToken(assetId []byte, uniqueId []byte, amt uint
 func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error {
 	//TODO Devin return stub.handler.handlePayOutToken(  stub.ContractId, stub.ChannelId, stub.TxID)
 	return stub.handler.handlePayOutToken("", addr, invokeTokens, lockTime, stub.ContractId, stub.ChannelId, stub.TxID)
+}
+
+// 根据证书ID获得证书字节数据，不包含BEGIN和EN两行字符
+func (stub *ChaincodeStub) GetRequesterCert(certID string) (certBytes []byte, err error) {
+	key := dagConstants.CERT_BYTES_SYMBOL + certID
+	return stub.handler.handleGetCertByID(key, stub.ChannelId, stub.TxID)
 }
 
 // ------------- Logging Control and Chaincode Loggers ---------------

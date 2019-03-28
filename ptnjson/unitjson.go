@@ -43,6 +43,7 @@ type HeaderJson struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
 	//AssetIDs      []string       `json:"assets"`
 	AuthorAddress string         `json:"mediator_address"`
+	AuthorPubKey  string         `json:"mediator_pubkey"`
 	AuthorSign    string         `json:"mediator_sign"` // the unit creation authors
 	GroupSign     string         `json:"groupSign"`     // 群签名, 用于加快单元确认速度
 	GroupPubKey   string         `json:"groupPubKey"`   // 群公钥, 用于验证群签名
@@ -74,8 +75,9 @@ func ConvertUnit2Json(unit *modules.Unit) *UnitJson {
 func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	json := &HeaderJson{
 		ParentsHash:   header.ParentsHash,
-		AuthorAddress: header.Authors.Address.String(),
-		AuthorSign:    hex.EncodeToString(append(header.Authors.R, header.Authors.S...)),
+		AuthorAddress: header.Authors.Address().String(),
+		AuthorPubKey:  hex.EncodeToString(header.Authors.PubKey),
+		AuthorSign:    hex.EncodeToString(header.Authors.Signature),
 		GroupSign:     hex.EncodeToString(header.GroupSign),
 		GroupPubKey:   hex.EncodeToString(header.GroupPubKey),
 		TxRoot:        header.TxRoot,

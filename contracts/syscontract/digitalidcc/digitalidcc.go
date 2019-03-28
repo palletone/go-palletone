@@ -23,14 +23,11 @@ package digitalidcc
 import (
 	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"io/ioutil"
 	"strconv"
-	"strings"
 )
 
 type DigitalIdentityChainCode struct {
@@ -55,6 +52,10 @@ func (d *DigitalIdentityChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.R
 		return d.addCRLCert(stub, args)
 	case "getAddressCertIDs":
 		return d.getAddressCertIDs(stub, args)
+	case "getCertFormateInfo":
+		return d.getCertFormateInfo(stub, args)
+	case "getCertBytes":
+		return d.getCertBytes(stub, args)
 	default:
 		return shim.Error("Invoke error")
 	}
@@ -67,33 +68,49 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		return shim.Error(reqStr)
 	}
 	certPath := args[0]
-	// check issuer
-	issuer, err := validateIssuer(stub)
+	var certInfo CertInfo
+	// parse issuer
+	issuer, err := stub.GetInvokeAddress()
 	if err != nil {
-		reqStr := fmt.Sprintf("DigitalIdentityChainCode validate issuer error: %s", err.Error())
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode parse issuer error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
 	// load cert file
 	pemBytes, err := loadCert(certPath)
 	if err != nil {
-		reqStr := fmt.Sprintf("DigitalIdentityChainCode error: load cert file[%s] error", certPath)
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode load [%s] error: %s", certPath, err.Error())
 		return shim.Error(reqStr)
 	}
-	// dump cert from bytes to Certificate struct
-	certID, err := checkCertSignature(pemBytes)
+	// parse cert bytes to Certificate struct
+	cert, err := x509.ParseCertificate(pemBytes)
 	if err != nil {
-		reqStr := fmt.Sprintf("DigitalIdentityChainCode check signature error:", err.Error())
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode parse cert error: %s", certPath)
 		return shim.Error(reqStr)
 	}
-	// TODO check certificate signature
-
+	// validate certificate
+	log.Debugf("cert serial number", cert.SerialNumber.String())
+	// check issuer
+	if err := ValidateCert(issuer, cert, stub); err != nil {
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode validate error: %s", err.Error())
+		return shim.Error(reqStr)
+	}
+	// query nonce
+	nonce, err := queryNonce(isServer, issuer, stub)
+	if err != nil {
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode query nonce error: %s", err.Error())
+		return shim.Error(reqStr)
+	}
+	certInfo.Issuer = issuer
+	certInfo.CertBytes = pemBytes
+	certInfo.cert = cert
+	certInfo.Nonce = nonce + 1
 	// put cert state to write set
-	if err := setCert(issuer, certID, pemBytes, isServer, stub); err != nil {
-		reqStr := fmt.Sprintf("DigitalIdentityChainCode add simulator error:", err.Error())
+	if err := setCert(&certInfo, isServer, stub); err != nil {
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode add simulator error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
 
-	rspStr := fmt.Sprintf("Add Cert success")
+	rspStr := fmt.Sprintf("------ Add Cert success ------")
 	return shim.Success([]byte(rspStr))
 }
 
@@ -125,98 +142,47 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 	if err != nil {
 		return shim.Success([]byte(err.Error()))
 	}
-	return shim.Success(cerIDsJson) //test
+	return shim.Success(cerIDsJson)
 }
 
-func validateIssuer(stub shim.ChaincodeStubInterface) (issuer string, err error) {
-	if issuer, err := stub.GetInvokeAddress(); err != nil {
-		return "", err
-	} else {
-		// check with root ca holder
-		rootCAHolder, err := stub.GetSystemConfig("RootCaHolder")
-		if err != nil {
-			return "", err
-		}
-		// check in server list
-		if issuer != rootCAHolder {
-			// TODO query from server certs db
-			return "", fmt.Errorf("Has no validate intermidate certificate")
-		}
-		return issuer, nil
+func (d *DigitalIdentityChainCode) getCertFormateInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 1 {
+		reqStr := fmt.Sprintf("Need one args: [certificate serial number]")
+		return shim.Error(reqStr)
 	}
-}
-
-// put cert state to write set
-func setCert(issuer string, certID string, certBytes []byte, isServer bool, stub shim.ChaincodeStubInterface) error {
-	var key string
-	if isServer {
-		key = CERT_SERVER_SYMBOL
-	} else {
-		key = CERT_MEMBER_SYMBOL
-	}
-	key += issuer + SPLIT_CH + certID
-
-	return stub.PutState(string(key), certBytes)
-}
-
-func getAddressCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCertIDs []string, memberCertIDs []string, err error) {
-	// query server certificates
-	serverCertIDs, err = queryCertsIDs(CERT_SERVER_SYMBOL, addr, stub)
+	data, err := GetCertBytes(args[0], stub)
 	if err != nil {
-		return nil, nil, err
+		reqStr := fmt.Sprintf("Get cert byts error: %s", err.Error())
+		return shim.Error(reqStr)
 	}
-	// query memmber certificates
-	memberCertIDs, err = queryCertsIDs(CERT_MEMBER_SYMBOL, addr, stub)
+	cert, err := x509.ParseCertificate(data)
+	certInfoJson, err := json.Marshal(cert)
 	if err != nil {
-		return nil, nil, err
+		reqStr := fmt.Sprintf("Get cert format info error: %s", err.Error())
+		return shim.Error(reqStr)
 	}
-	return serverCertIDs, memberCertIDs, nil
+	return shim.Success(certInfoJson)
 }
 
-func queryCertsIDs(symbol string, issuer string, stub shim.ChaincodeStubInterface) (certids []string, err error) {
-	prefixKey := symbol + issuer + SPLIT_CH
-	KVs, err := stub.GetStateByPrefix(prefixKey)
+func (d *DigitalIdentityChainCode) getCertBytes(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 1 {
+		reqStr := fmt.Sprintf("Need one args: [certificate serial number]")
+		return shim.Error(reqStr)
+	}
+	data, err := GetCertBytes(args[0], stub)
 	if err != nil {
-		return nil, err
+		reqStr := fmt.Sprintf("Get cert byts error: %s", err.Error())
+		return shim.Error(reqStr)
 	}
-	certids = []string{}
-	for _, data := range KVs {
-		certID, err := parseSerialFrKey(data.Key)
-		if err != nil {
-			continue
-		}
-		certids = append(certids, certID)
-	}
-	return certids, nil
-}
 
-func loadCert(path string) ([]byte, error) {
-	//加载PEM格式证书到字节数组
-	data, err := ioutil.ReadFile(path)
+	certInfoMap := map[string]interface{}{
+		"CertID":    args[0],
+		"CertBytes": data,
+	}
+	certInfoJson, err := json.Marshal(certInfoMap)
 	if err != nil {
-		return nil, err
+		reqStr := fmt.Sprintf("Get cert byts error: %s", err.Error())
+		return shim.Error(reqStr)
 	}
-	certDERBlock, _ := pem.Decode(data)
-	if certDERBlock == nil {
-		return nil, fmt.Errorf("get none cert infor")
-	}
-
-	return certDERBlock.Bytes, nil
-}
-
-func checkCertSignature(pemBytes []byte) (certID string, err error) {
-	cert, err := x509.ParseCertificate(pemBytes)
-	if err != nil {
-		return "", err
-	}
-	log.Debugf("cert serial number", cert.SerialNumber.String())
-	return cert.SerialNumber.String(), nil
-}
-
-func parseSerialFrKey(key string) (certID string, err error) {
-	ss := strings.Split(key, SPLIT_CH)
-	if len(ss) != 2 {
-		return "", fmt.Errorf("get none serial number from key")
-	}
-	return ss[1], nil
+	return shim.Success(certInfoJson)
 }

@@ -173,6 +173,9 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	//log.Info("NewContractProcessor", "vrf Account publicKey", p.vrfAct.pubKey, "privateKey", p.vrfAct.priKey)
 	return p, nil
 }
+func (p *Processor) SetContract(contract *contracts.Contract) {
+	p.contract = contract
+}
 
 func (p *Processor) Start(server *p2p.Server) error {
 	//启动消息接收处理线程
@@ -311,7 +314,7 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 							return nil, err
 						}
 						log.Debugf("Lock script:%x", utxo.PkScript)
-						sign, err := tokenengine.MultiSignOnePaymentInput(tx, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil, 0)
+						sign, err := tokenengine.MultiSignOnePaymentInput(tx, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil)
 						if err != nil {
 							log.Errorf("Sign error:%s", err)
 						}
@@ -619,7 +622,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if contractId == (common.Address{}) { //deploy
 			if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[contractId] = []ElectionInf{} //清空
+				p.lockArf[contractId] = []ElectionInf{}                        //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}

@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	cc "github.com/palletone/go-palletone/contracts/manger"
 
+	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"sync/atomic"
@@ -58,7 +59,7 @@ type ContractInf interface {
 // 由上层应用指定dag以及初始合约配置信息
 // Initialize the contract management module and load the system contract,
 // Specify dag and initial contract configuration information by the upper application
-func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
+func Initialize(idag dag.IDag, jury core.IAdapterJury, cfg *contractcfg.Config) (*Contract, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag > 0 {
 		//todo  tmp delete
@@ -77,7 +78,7 @@ func Initialize(idag dag.IDag, cfg *contractcfg.Config) (*Contract, error) {
 		cfg:  cfg,
 	}
 	contractcfg.SetConfig(&contractCfg)
-	if err := cc.Init(idag); err != nil {
+	if err := cc.Init(idag, jury); err != nil {
 		return nil, err
 	}
 
@@ -148,13 +149,13 @@ func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
 //Stop the specified contract. The image file can be deleted according to requirements.
-func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload,error) {
+func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
 	log.Info("===========================enter contract.go Stop==============================")
 	defer log.Info("===========================exit contract.go Stop==============================")
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("initFlag == 0")
-		return nil,errors.New("contract not initialized")
+		return nil, errors.New("contract not initialized")
 	}
 	return cc.Stop(deployId, chainID, deployId, txid, deleteImage)
 }

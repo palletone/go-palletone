@@ -187,7 +187,7 @@ func TestTransactionEncode(t *testing.T) {
 	//*rlp_hash = rlp.RlpHash(txmsg3)
 	//rightvrsTx.SetHash(*rlp_hash)
 	// storage test
-	t.Log("rlp ", txb)
+	t.Logf("rlp tx: %x", txb)
 
 	//tx := &TestTransaction{}
 	tx := &Transaction{}
