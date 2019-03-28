@@ -104,3 +104,12 @@ var (
 var (
 	NumberSuffix = []byte("n")
 )
+
+// symbols
+var (
+	CERT_SPLIT_CH = string("||")
+	// certificate
+	CERT_SERVER_SYMBOL = "_cert_server"
+	CERT_MEMBER_SYMBOL = "cert_member_"
+	CERT_BYTES_SYMBOL  = "cert_bytes_"
+)

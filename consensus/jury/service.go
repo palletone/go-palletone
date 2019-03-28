@@ -106,8 +106,9 @@ type contractTx struct {
 	valid    bool                   //contract request valid identification
 	eleChan  chan bool              //election event chan
 	adaChan  chan bool              //adapter event chan
-	adaInf   []AdapterInf           //adapter event data information
-	//eleInfo  electionInfo           //vrf election jury list
+	//adaInf   []AdapterInf           //adapter event data information
+	adaInf map[uint32][]AdapterInf //adapter event data information
+	// eleInfo  electionInfo           //vrf election jury list
 }
 
 type Processor struct {
@@ -314,7 +315,7 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 							return nil, err
 						}
 						log.Debugf("Lock script:%x", utxo.PkScript)
-						sign, err := tokenengine.MultiSignOnePaymentInput(tx, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil, 0)
+						sign, err := tokenengine.MultiSignOnePaymentInput(tx, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil)
 						if err != nil {
 							log.Errorf("Sign error:%s", err)
 						}
@@ -611,9 +612,10 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	}
 	reqId := tx.RequestHash()
 	p.mtx[reqId] = &contractTx{
-		reqTx: tx,
-		tm:    time.Now(),
-		valid: true,
+		reqTx:  tx,
+		tm:     time.Now(),
+		valid:  true,
+		adaInf: make(map[uint32][]AdapterInf),
 	}
 	ctx := p.mtx[reqId]
 	if !isSystemContract(tx) {

@@ -25,6 +25,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
+	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"io/ioutil"
 	"math/big"
 	"sort"
@@ -43,28 +44,28 @@ type CertInfo struct {
 func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface) error {
 	var key string
 	if isServer {
-		key = CERT_SERVER_SYMBOL
+		key = dagConstants.CERT_SERVER_SYMBOL
 	} else {
-		key = CERT_MEMBER_SYMBOL
+		key = dagConstants.CERT_MEMBER_SYMBOL
 	}
 	// put {issuer, certid} state
-	key += certInfo.Issuer + SPLIT_CH + strconv.Itoa(certInfo.Nonce)
+	key += certInfo.Issuer + dagConstants.CERT_SPLIT_CH + strconv.Itoa(certInfo.Nonce)
 	if err := stub.PutState(key, certInfo.cert.SerialNumber.Bytes()); err != nil {
 		return err
 	}
 	// put {certid, cert bytes} state
-	key = CERT_ID + certInfo.cert.SerialNumber.String()
+	key = dagConstants.CERT_BYTES_SYMBOL + certInfo.cert.SerialNumber.String()
 	return stub.PutState(key, certInfo.CertBytes)
 }
 
 func getAddressCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCertIDs []string, memberCertIDs []string, err error) {
 	// query server certificates
-	serverCertIDs, err = queryCertsIDs(CERT_SERVER_SYMBOL, addr, stub)
+	serverCertIDs, err = queryCertsIDs(dagConstants.CERT_SERVER_SYMBOL, addr, stub)
 	if err != nil {
 		return nil, nil, err
 	}
 	// query memmber certificates
-	memberCertIDs, err = queryCertsIDs(CERT_MEMBER_SYMBOL, addr, stub)
+	memberCertIDs, err = queryCertsIDs(dagConstants.CERT_MEMBER_SYMBOL, addr, stub)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -72,7 +73,7 @@ func getAddressCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCer
 }
 
 func queryCertsIDs(symbol string, issuer string, stub shim.ChaincodeStubInterface) (certids []string, err error) {
-	prefixKey := symbol + issuer + SPLIT_CH
+	prefixKey := symbol + issuer + dagConstants.CERT_SPLIT_CH
 	KVs, err := stub.GetStateByPrefix(prefixKey)
 	if err != nil {
 		return nil, err
@@ -101,7 +102,7 @@ func loadCert(path string) ([]byte, error) {
 }
 
 func parseNondeFrKey(key string) (nonce int, err error) {
-	ss := strings.Split(key, SPLIT_CH)
+	ss := strings.Split(key, dagConstants.CERT_SPLIT_CH)
 	if len(ss) != 2 {
 		return -1, fmt.Errorf("get nonce from key error")
 	}
@@ -115,9 +116,9 @@ func parseNondeFrKey(key string) (nonce int, err error) {
 func queryNonce(isServer bool, issuer string, stub shim.ChaincodeStubInterface) (nonce int, err error) {
 	var prefixKey string
 	if isServer {
-		prefixKey = CERT_SERVER_SYMBOL + issuer + SPLIT_CH
+		prefixKey = dagConstants.CERT_SERVER_SYMBOL + issuer + dagConstants.CERT_SPLIT_CH
 	} else {
-		prefixKey = CERT_SERVER_SYMBOL + issuer + SPLIT_CH
+		prefixKey = dagConstants.CERT_SERVER_SYMBOL + issuer + dagConstants.CERT_SPLIT_CH
 	}
 	KVs, err := stub.GetStateByPrefix(prefixKey)
 	if err != nil {
@@ -141,7 +142,7 @@ func queryNonce(isServer bool, issuer string, stub shim.ChaincodeStubInterface) 
 }
 
 func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []byte, err error) {
-	key := CERT_ID + certid
+	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
 	if err != nil {
 		return nil, err

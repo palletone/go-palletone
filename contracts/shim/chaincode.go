@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/comm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -440,6 +441,18 @@ func (stub *ChaincodeStub) OutChainQuery(outChainName string, params []byte) ([]
 	return stub.handler.handleOutQuery(collection, outChainName, params, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) SendJury(msgType uint32, content []byte) ([]byte, error) {
+	// Access public data by setting the collection to empty string
+	collection := ""
+	return stub.handler.handleSendJury(collection, msgType, content, stub.ChannelId, stub.TxID)
+}
+
+func (stub *ChaincodeStub) RecvJury(msgType uint32, timeout uint32) ([]byte, error) {
+	// Access public data by setting the collection to empty string
+	collection := ""
+	return stub.handler.handleRecvJury(collection, msgType, timeout, stub.ChannelId, stub.TxID)
+}
+
 // GetArgs documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetArgs() [][]byte {
 
@@ -576,37 +589,11 @@ func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.Invoke
 	return stub.handler.handlePayOutToken("", addr, invokeTokens, lockTime, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
-/*
-// 获得发行者的所有证书ID
-func (stub *ChaincodeStub) GetIssuerCertsIDs(issuer string) (serverCertsIDs []string, memberCertsIDs []string, err error) {
-
+// 根据证书ID获得证书字节数据，不包含BEGIN和EN两行字符
+func (stub *ChaincodeStub) GetRequesterCert(certID string) (certBytes []byte, err error) {
+	key := dagConstants.CERT_BYTES_SYMBOL + certID
+	return stub.handler.handleGetCertByID(key, stub.ChannelId, stub.TxID)
 }
-
-// 获得发行者的所有中间证书ID
-func (stub *ChaincodeStub) GetIssuerServerCertsIDs(issuer string) (serverCertsIDs []string, err error) {
-
-}
-
-// 获得发行者的所有交易证书ID
-func (stub *ChaincodeStub) GetIssuerMemberCertsIDs(issuer string) (memberCertsIDs []string, err error) {
-
-}
-
-// 根据证书ID获得证书字节数据
-func (stub *ChaincodeStub) GetCertByID(certID string) (certBytes []byte, err error) {
-
-}
-
-// 根据证书ID列表获得证书字节数据列表
-func (stub *ChaincodeStub) GetCertsByIDs(certIDs []string) (certBytes map[string][]byte, err error) {
-
-}
-
-// 根据证书ID获得某个证书的所有者
-func (stub *ChaincodeStub) GetIssuerByID(certID string) (issuer string, err error) {
-
-}
-*/
 
 // ------------- Logging Control and Chaincode Loggers ---------------
 

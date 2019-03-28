@@ -46,22 +46,17 @@ func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCod
 		log.Debug("Verify unit signature ,header's authors is nil.")
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
-	sig := make([]byte, 65)
-	copy(sig[32-len(h.Authors.R):32], h.Authors.R)
-	copy(sig[64-len(h.Authors.S):64], h.Authors.S)
-	copy(sig[64:], h.Authors.V)
-	// recover pubkey
 
 	hash := header.HashWithoutAuthor()
-	pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
-	if err != nil {
-		log.Debug("Verify unit signature when recover pubkey", "error", err.Error())
-		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
-	}
+	//pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
+	//if err != nil {
+	//	log.Debug("Verify unit signature when recover pubkey", "error", err.Error())
+	//	return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
+	//}
 	//  pubKey to pubKey_bytes
-	pubKey_bytes := crypto.CompressPubkey(pubKey)
+	//pubKey_bytes := crypto.CompressPubkey(pubKey)
 
-	if !crypto.VerifySignature(pubKey_bytes, hash.Bytes(), sig[:64]) {
+	if !crypto.VerifySignature(h.Authors.PubKey, hash.Bytes(), h.Authors.Signature) {
 		log.Debug("Verify unit signature error.")
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
@@ -119,7 +114,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
 	if root != unit.UnitHeader.TxRoot {
-		log.Debug("Validate unit's header failed.", "root", root,"unit.UnitHeader.TxRoot", unit.UnitHeader.TxRoot)
+		log.Debug("Validate unit's header failed.", "root", root, "unit.UnitHeader.TxRoot", unit.UnitHeader.TxRoot)
 		return NewValidateError(UNIT_STATE_INVALID_HEADER_TXROOT)
 	}
 	// step2. check transactions in unit
@@ -150,32 +145,34 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	}
 	// check txroot
 	if header.TxRoot == (common.Hash{}) {
-		return UNIT_STATE_INVALID_HEADER
+		return UNIT_STATE_INVALID_HEADER_TXROOT
 	}
 
 	// check creation_time
 	if header.Creationdate <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
-		return UNIT_STATE_INVALID_HEADER
+		return UNIT_STATE_INVALID_HEADER_TIME
 	}
 
 	// check header's number
 	if header.Number == nil {
-		return UNIT_STATE_INVALID_HEADER
+		return UNIT_STATE_INVALID_HEADER_NUMBER
 	}
-	parentHeader, err := validate.dagquery.GetHeaderByHash(header.ParentsHash[0])
-	if err != nil {
-		log.Errorf("Get header by hash[%s] err:%s", header.ParentsHash[0].String(), err.Error())
-		return UNIT_STATE_INVALID_HEADER
+	//Check unit and parent units relationship
+	if validate.dagquery != nil {
+		parentHeader, err := validate.dagquery.GetHeaderByHash(header.ParentsHash[0])
+		if err != nil {
+			log.Errorf("Get header by hash[%s] err:%s", header.ParentsHash[0].String(), err.Error())
+			return UNIT_STATE_INVALID_HEADER
+		}
+		if parentHeader.Number.Index+1 != header.Number.Index {
+			log.Errorf("Unit[%s] has invalid number %d, parent unit[%s] number is %d", header.Hash().String(), header.Number.Index, parentHeader.Hash().String(), parentHeader.Number.Index)
+			return UNIT_STATE_INVALID_HEADER_NUMBER
+		}
+		if parentHeader.Number.AssetID != header.Number.AssetID {
+			log.Errorf("Unit[%s] has invalid asset %s, parent unit[%s] asset is %s", header.Hash().String(), header.Number.AssetID.String(), parentHeader.Hash().String(), parentHeader.Number.AssetID.String())
+			return UNIT_STATE_INVALID_HEADER
+		}
 	}
-	if parentHeader.Number.Index+1 != header.Number.Index {
-		log.Errorf("Unit[%s] has invalid number %d, parent unit[%s] number is %d", header.Hash().String(), header.Number.Index, parentHeader.Hash().String(), parentHeader.Number.Index)
-		return UNIT_STATE_INVALID_HEADER
-	}
-	if parentHeader.Number.AssetID != header.Number.AssetID {
-		log.Errorf("Unit[%s] has invalid asset %s, parent unit[%s] asset is %s", header.Hash().String(), header.Number.AssetID.String(), parentHeader.Hash().String(), parentHeader.Number.AssetID.String())
-		return UNIT_STATE_INVALID_HEADER
-	}
-
 	// TODO 同步过来的unit 没有Authors ，因此无法验证签名有效性。
 	var thisUnitIsNotTransmitted bool
 

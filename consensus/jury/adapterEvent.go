@@ -20,14 +20,30 @@
 package jury
 
 import (
-	"time"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/dag/errors"
+	"time"
 )
 
+func checkValid(reqEvt *AdapterRequestEvent) bool {
+	hash := crypto.Keccak256(reqEvt.data)
+	sig := reqEvt.sig[:len(reqEvt.sig)-1] // remove recovery id
+	return crypto.VerifySignature(reqEvt.pubkey, hash, sig)
+}
 func (p *Processor) processAdapterRequestEvent(reqEvt *AdapterRequestEvent) (result *AdapterEvent, err error) {
 	log.Info("processAdapterRequestEvent")
+
+	//todo
+	isValid := checkValid(reqEvt)
+	if isValid {
+
+	}
+
+	//todo
+
 	//todo
 
 	return nil, nil
@@ -40,17 +56,58 @@ func (p *Processor) processAdapterResultEvent(rstEvt *AdapterResultEvent) error 
 	return nil
 }
 
-func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Address, timeOut time.Duration) (interface{}, error) {
+func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Address, msgType uint32, content []byte) ([]byte, error) {
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
+
+	//
+	account := p.getLocalAccount()
+	if account == nil {
+		return nil, errors.New("AdapterFunRequest no local account")
+	}
+
+	//
+	hash := crypto.Keccak256(content)
+	sig, err := p.ptn.GetKeyStore().SignHashWithPassphrase(accounts.Account{Address: account.Address}, account.Password, hash)
+	if err != nil {
+		return nil, errors.New("AdapterFunRequest SignHashWithPassphrase failed")
+	}
+	//
+	pubKey, err := p.ptn.GetKeyStore().GetPublicKey(account.Address)
+	if err != nil {
+		return nil, errors.New("AdapterFunRequest GetPublicKey failed")
+	}
+	//
+	reqEvt := &AdapterRequestEvent{
+		contractId: contractId,
+		data:       content,
+		sig:        sig,
+		pubkey:     pubKey,
+	}
+	//
+	isValid := checkValid(reqEvt)
+	if isValid {
+
+	}
+
+	go p.ptn.AdapterBroadcast(AdapterEvent{AType: AdapterEventType(msgType), Event: reqEvt})
+
 	p.locker.Lock()
 	p.mtx[reqId].adaChan = make(chan bool, 1)
 	p.locker.Unlock()
-	reqEvent := &AdapterRequestEvent{
-		contractId: contractId,
+
+	return nil, errors.New("AdapterFunRequest, fail")
+}
+
+func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Address, msgType uint32, timeOut time.Duration) ([]byte, error) {
+	if reqId == (common.Hash{}) {
+		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-	go p.ptn.AdapterBroadcast(AdapterEvent{AType: ADAPTER_EVENT_REQUEST, Event: reqEvent})
+
+	p.locker.Lock()
+	p.mtx[reqId].adaChan = make(chan bool, 1)
+	p.locker.Unlock()
 
 	timeout := make(chan bool, 1)
 	go func() {

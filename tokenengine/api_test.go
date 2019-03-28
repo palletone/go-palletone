@@ -126,16 +126,19 @@ func TestSignAndVerifyATx(t *testing.T) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		return crypto.Sign(hash, privKey)
+		s, e := crypto.Sign(hash, privKey)
+		return s[0:64], e
 	}
 	var hashtype uint32
 	hashtype = 1
-	_, err := SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn, 0)
+	_, err := SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
 	unlockScript := tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
 	t.Logf("UnlockScript:%x", unlockScript)
+	s, _ := DisasmString(unlockScript)
+	t.Logf("UnlockScript string:%s", s)
 	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	if err != nil {
 		t.Logf("validate error:%s", err)
@@ -220,7 +223,7 @@ func TestMultiSign1Step(t *testing.T) {
 		}
 		return nil, nil
 	}
-	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil, 0)
+	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -276,7 +279,7 @@ func TestMultiSign2Step(t *testing.T) {
 		}
 		return nil, nil
 	}
-	sign1, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil, 0)
+	sign1, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -289,7 +292,7 @@ func TestMultiSign2Step(t *testing.T) {
 	//}
 	//scriptCp2:=make([]byte,len(lockScript))
 	//copy(scriptCp2,lockScript)
-	sign2, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, sign1, 0)
+	sign2, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, sign1)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -303,7 +306,7 @@ func TestMultiSign2Step(t *testing.T) {
 	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 }
-func mockPickupJuryRedeemScript(addr common.Address, ver int) ([]byte, error) {
+func mockPickupJuryRedeemScript(addr common.Address) ([]byte, error) {
 	return GenerateRedeemScript(2, [][]byte{pubKey1B, pubKey2B, pubKey3B, pubKey4B}), nil
 }
 func TestContractPayout(t *testing.T) {
@@ -360,10 +363,10 @@ func TestContractPayout(t *testing.T) {
 		}
 		return nil, nil
 	}
-	redeemScript, _ := mockPickupJuryRedeemScript(contractAddr, 1)
+	redeemScript, _ := mockPickupJuryRedeemScript(contractAddr)
 	r, _ := txscript.DisasmString(redeemScript)
 	t.Logf("RedeemScript:%s", r)
-	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil, 1)
+	sign12, err := MultiSignOnePaymentInput(tx, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
