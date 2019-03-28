@@ -45,6 +45,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/validator"
 	"sync"
+	"encoding/json"
 )
 
 type IUnitRepository interface {
@@ -639,6 +640,9 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 				writeSets = append(writeSets,
 					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
 			}
+			sysConfByte,_ := json.Marshal(genesisConf.SystemConfig)
+			writeSets = append(writeSets,modules.ContractWriteSet{Key:"sysConf",Value:[]byte(sysConfByte)})
+
 		} else {
 			sk := tt.Field(i).Name
 			if strings.Contains(sk, "Initial") {
@@ -653,7 +657,7 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 		modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
 	payload := &modules.ContractInvokePayload{}
-	payload.ContractId = syscontract.SysConfigContractAddress.Bytes()
+	payload.ContractId = syscontract.SysConfigContractAddress.Bytes21()
 	payload.WriteSet = writeSets
 	return payload, nil
 }
