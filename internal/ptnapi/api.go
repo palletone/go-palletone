@@ -1939,7 +1939,7 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 
 	//
 	var signErrors []common.SignatureError
-	signErrors, err := tokenengine.SignTxAllPaymentInput(tx, hashType, inputPoints, redeem, pubKeyFn, hashFn, 0)
+	signErrors, err := tokenengine.SignTxAllPaymentInput(tx, hashType, inputPoints, redeem, pubKeyFn, hashFn)
 	if err != nil {
 		return err
 	}
@@ -2252,7 +2252,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	//}
 
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn, 0)
+	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
@@ -2334,7 +2334,7 @@ func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction, password 
 		return ks.SignHashWithPassphrase(account, password, hash)
 	}
 	utxos := s.getTxUtxoLockScript(tx)
-	return tokenengine.SignTxAllPaymentInput(tx, 0, utxos, nil, getPubKeyFn, getSignFn, 0)
+	return tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxos, nil, getPubKeyFn, getSignFn)
 
 }
 func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) map[modules.OutPoint][]byte {
@@ -2378,7 +2378,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 		},
 			func(addresses common.Address, hash []byte) ([]byte, error) {
 				return ks.SignHash(addresses, hash)
-			}, 0)
+			})
 		if len(errs) > 0 || err != nil {
 			return nil, err
 		}

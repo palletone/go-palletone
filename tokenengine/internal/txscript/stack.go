@@ -1,13 +1,10 @@
-// Copyright (c) 2013-2017 The btcsuite developers
+// Copyright (c) 2013-2015 The btcsuite developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
 package txscript
 
-import (
-	"encoding/hex"
-	"fmt"
-)
+import "encoding/hex"
 
 // asBool gets the boolean value of the byte array.
 func asBool(t []byte) bool {
@@ -106,9 +103,7 @@ func (s *stack) PopBool() (bool, error) {
 func (s *stack) PeekByteArray(idx int32) ([]byte, error) {
 	sz := int32(len(s.stk))
 	if idx < 0 || idx >= sz {
-		str := fmt.Sprintf("index %d is invalid for stack size %d", idx,
-			sz)
-		return nil, scriptError(ErrInvalidStackOperation, str)
+		return nil, ErrStackUnderflow
 	}
 
 	return s.stk[sz-idx-1], nil
@@ -146,16 +141,14 @@ func (s *stack) PeekBool(idx int32) (bool, error) {
 func (s *stack) nipN(idx int32) ([]byte, error) {
 	sz := int32(len(s.stk))
 	if idx < 0 || idx > sz-1 {
-		str := fmt.Sprintf("index %d is invalid for stack size %d", idx,
-			sz)
-		return nil, scriptError(ErrInvalidStackOperation, str)
+		return nil, ErrStackUnderflow
 	}
 
 	so := s.stk[sz-idx-1]
 	if idx == 0 {
 		s.stk = s.stk[:sz-1]
 	} else if idx == sz-1 {
-		s1 := make([][]byte, sz-1)
+		s1 := make([][]byte, sz-1, sz-1)
 		copy(s1, s.stk[1:])
 		s.stk = s1
 	} else {
@@ -204,8 +197,7 @@ func (s *stack) Tuck() error {
 // DropN(2): [... x1 x2] -> [...]
 func (s *stack) DropN(n int32) error {
 	if n < 1 {
-		str := fmt.Sprintf("attempt to drop %d items from stack", n)
-		return scriptError(ErrInvalidStackOperation, str)
+		return ErrStackInvalidArgs
 	}
 
 	for ; n > 0; n-- {
@@ -224,8 +216,7 @@ func (s *stack) DropN(n int32) error {
 // DupN(2): [... x1 x2] -> [... x1 x2 x1 x2]
 func (s *stack) DupN(n int32) error {
 	if n < 1 {
-		str := fmt.Sprintf("attempt to dup %d stack items", n)
-		return scriptError(ErrInvalidStackOperation, str)
+		return ErrStackInvalidArgs
 	}
 
 	// Iteratively duplicate the value n-1 down the stack n times.
@@ -247,8 +238,7 @@ func (s *stack) DupN(n int32) error {
 // RotN(2): [... x1 x2 x3 x4 x5 x6] -> [... x3 x4 x5 x6 x1 x2]
 func (s *stack) RotN(n int32) error {
 	if n < 1 {
-		str := fmt.Sprintf("attempt to rotate %d stack items", n)
-		return scriptError(ErrInvalidStackOperation, str)
+		return ErrStackInvalidArgs
 	}
 
 	// Nip the 3n-1th item from the stack to the top n times to rotate
@@ -272,8 +262,7 @@ func (s *stack) RotN(n int32) error {
 // SwapN(2): [... x1 x2 x3 x4] -> [... x3 x4 x1 x2]
 func (s *stack) SwapN(n int32) error {
 	if n < 1 {
-		str := fmt.Sprintf("attempt to swap %d stack items", n)
-		return scriptError(ErrInvalidStackOperation, str)
+		return ErrStackInvalidArgs
 	}
 
 	entry := 2*n - 1
@@ -296,9 +285,7 @@ func (s *stack) SwapN(n int32) error {
 // OverN(2): [... x1 x2 x3 x4] -> [... x1 x2 x3 x4 x1 x2]
 func (s *stack) OverN(n int32) error {
 	if n < 1 {
-		str := fmt.Sprintf("attempt to perform over on %d stack items",
-			n)
-		return scriptError(ErrInvalidStackOperation, str)
+		return ErrStackInvalidArgs
 	}
 
 	// Copy 2n-1th entry to top of the stack.

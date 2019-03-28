@@ -37,6 +37,6 @@ after_build:
   - go run build\ci.go archive -type zip -signer WINDOWS_SIGNING_KEY -upload ""
   # - go run build\ci.go nsis -signer WINDOWS_SIGNING_KEY -upload ""
 
-# test_script:
-#   - set CGO_ENABLED=1
-#   - go run build\ci.go test -coverage
+test_script:
+   - set CGO_ENABLED=1
+   - go test ./...

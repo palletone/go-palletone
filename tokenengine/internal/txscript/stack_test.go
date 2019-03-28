@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2017 The btcsuite developers
+// Copyright (c) 2013-2015 The btcsuite developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -8,52 +8,19 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"reflect"
 	"testing"
 )
-
-// tstCheckScriptError ensures the type of the two passed errors are of the
-// same type (either both nil or both of type Error) and their error codes
-// match when not nil.
-func tstCheckScriptError(gotErr, wantErr error) error {
-	// Ensure the error code is of the expected type and the error
-	// code matches the value specified in the test instance.
-	if reflect.TypeOf(gotErr) != reflect.TypeOf(wantErr) {
-		return fmt.Errorf("wrong error - got %T (%[1]v), want %T",
-			gotErr, wantErr)
-	}
-	if gotErr == nil {
-		return nil
-	}
-
-	// Ensure the want error type is a script error.
-	werr, ok := wantErr.(Error)
-	if !ok {
-		return fmt.Errorf("unexpected test error type %T", wantErr)
-	}
-
-	// Ensure the error codes match.  It's safe to use a raw type assert
-	// here since the code above already proved they are the same type and
-	// the want error is a script error.
-	gotErrorCode := gotErr.(Error).ErrorCode
-	if gotErrorCode != werr.ErrorCode {
-		return fmt.Errorf("mismatched error code - got %v (%v), want %v",
-			gotErrorCode, gotErr, werr.ErrorCode)
-	}
-
-	return nil
-}
 
 // TestStack tests that all of the stack operations work as expected.
 func TestStack(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
-		before    [][]byte
-		operation func(*stack) error
-		err       error
-		after     [][]byte
+		name           string
+		before         [][]byte
+		operation      func(*stack) error
+		expectedReturn error
+		after          [][]byte
 	}{
 		{
 			"noop",
@@ -71,7 +38,7 @@ func TestStack(t *testing.T) {
 				_, err := s.PeekByteArray(5)
 				return err
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -81,7 +48,7 @@ func TestStack(t *testing.T) {
 				_, err := s.PeekInt(5)
 				return err
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -91,8 +58,24 @@ func TestStack(t *testing.T) {
 				_, err := s.PeekBool(5)
 				return err
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
+		},
+		{
+			"pop",
+			[][]byte{{1}, {2}, {3}, {4}, {5}},
+			func(s *stack) error {
+				val, err := s.PopByteArray()
+				if err != nil {
+					return err
+				}
+				if !bytes.Equal(val, []byte{5}) {
+					return errors.New("not equal")
+				}
+				return err
+			},
+			nil,
+			[][]byte{{1}, {2}, {3}, {4}},
 		},
 		{
 			"pop",
@@ -137,7 +120,7 @@ func TestStack(t *testing.T) {
 				}
 				return nil
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -149,7 +132,7 @@ func TestStack(t *testing.T) {
 					return err
 				}
 
-				if val {
+				if val != false {
 					return errors.New("unexpected value")
 				}
 				return nil
@@ -166,7 +149,7 @@ func TestStack(t *testing.T) {
 					return err
 				}
 
-				if !val {
+				if val != true {
 					return errors.New("unexpected value")
 				}
 				return nil
@@ -179,9 +162,13 @@ func TestStack(t *testing.T) {
 			nil,
 			func(s *stack) error {
 				_, err := s.PopBool()
-				return err
+				if err != nil {
+					return err
+				}
+
+				return nil
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -374,7 +361,12 @@ func TestStack(t *testing.T) {
 			"dup",
 			[][]byte{{1}},
 			func(s *stack) error {
-				return s.DupN(1)
+				err := s.DupN(1)
+				if err != nil {
+					return err
+				}
+
+				return nil
 			},
 			nil,
 			[][]byte{{1}, {1}},
@@ -383,7 +375,12 @@ func TestStack(t *testing.T) {
 			"dup2",
 			[][]byte{{1}, {2}},
 			func(s *stack) error {
-				return s.DupN(2)
+				err := s.DupN(2)
+				if err != nil {
+					return err
+				}
+
+				return nil
 			},
 			nil,
 			[][]byte{{1}, {2}, {1}, {2}},
@@ -392,7 +389,12 @@ func TestStack(t *testing.T) {
 			"dup3",
 			[][]byte{{1}, {2}, {3}},
 			func(s *stack) error {
-				return s.DupN(3)
+				err := s.DupN(3)
+				if err != nil {
+					return err
+				}
+
+				return nil
 			},
 			nil,
 			[][]byte{{1}, {2}, {3}, {1}, {2}, {3}},
@@ -401,27 +403,56 @@ func TestStack(t *testing.T) {
 			"dup0",
 			[][]byte{{1}},
 			func(s *stack) error {
-				return s.DupN(0)
+				err := s.DupN(0)
+				if err != nil {
+					return err
+				}
+
+				return nil
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackInvalidArgs,
 			nil,
 		},
 		{
 			"dup-1",
 			[][]byte{{1}},
 			func(s *stack) error {
-				return s.DupN(-1)
+				err := s.DupN(-1)
+				if err != nil {
+					return err
+				}
+
+				return nil
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackInvalidArgs,
 			nil,
 		},
 		{
 			"dup too much",
 			[][]byte{{1}},
 			func(s *stack) error {
-				return s.DupN(2)
+				err := s.DupN(2)
+				if err != nil {
+					return err
+				}
+
+				return nil
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
+			nil,
+		},
+		{
+			"dup-1",
+			[][]byte{{1}},
+			func(s *stack) error {
+				err := s.DupN(-1)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+			ErrStackInvalidArgs,
 			nil,
 		},
 		{
@@ -455,7 +486,7 @@ func TestStack(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				if !val {
+				if val != true {
 					return errors.New("unexpected value")
 				}
 
@@ -473,7 +504,7 @@ func TestStack(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				if val {
+				if val != false {
 					return errors.New("unexpected value")
 				}
 
@@ -491,7 +522,7 @@ func TestStack(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				if !val {
+				if val != true {
 					return errors.New("unexpected value")
 				}
 
@@ -509,7 +540,25 @@ func TestStack(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				if val {
+				if val != false {
+					return errors.New("unexpected value")
+				}
+
+				return nil
+			},
+			nil,
+			nil,
+		},
+		{
+			"PushInt PopBool 2",
+			nil,
+			func(s *stack) error {
+				s.PushInt(scriptNum(0))
+				val, err := s.PopBool()
+				if err != nil {
+					return err
+				}
+				if val != false {
 					return errors.New("unexpected value")
 				}
 
@@ -552,7 +601,7 @@ func TestStack(t *testing.T) {
 				// bite off more than we can chew
 				return s.NipN(3)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			[][]byte{{2}, {3}},
 		},
 		{
@@ -570,7 +619,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.Tuck()
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -579,7 +628,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.Tuck()
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -624,7 +673,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.DropN(5)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -633,7 +682,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.DropN(0)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackInvalidArgs,
 			nil,
 		},
 		{
@@ -660,7 +709,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.RotN(1)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -669,7 +718,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.RotN(0)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackInvalidArgs,
 			nil,
 		},
 		{
@@ -696,7 +745,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.SwapN(1)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -705,7 +754,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.SwapN(0)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackInvalidArgs,
 			nil,
 		},
 		{
@@ -732,7 +781,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.OverN(1)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -741,7 +790,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.OverN(0)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackInvalidArgs,
 			nil,
 		},
 		{
@@ -768,7 +817,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.PickN(1)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -795,7 +844,7 @@ func TestStack(t *testing.T) {
 			func(s *stack) error {
 				return s.RollN(1)
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 		{
@@ -808,7 +857,7 @@ func TestStack(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				if !val {
+				if val != true {
 					return errors.New("invalid result")
 				}
 				return nil
@@ -826,7 +875,7 @@ func TestStack(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				if val {
+				if val != false {
 					return errors.New("invalid result")
 				}
 				return nil
@@ -898,39 +947,32 @@ func TestStack(t *testing.T) {
 				_, err := s.PopInt()
 				return err
 			},
-			scriptError(ErrInvalidStackOperation, ""),
+			ErrStackUnderflow,
 			nil,
 		},
 	}
 
 	for _, test := range tests {
-		// Setup the initial stack state and perform the test operation.
 		s := stack{}
+
 		for i := range test.before {
 			s.PushByteArray(test.before[i])
 		}
 		err := test.operation(&s)
-
-		// Ensure the error code is of the expected type and the error
-		// code matches the value specified in the test instance.
-		if e := tstCheckScriptError(err, test.err); e != nil {
-			t.Errorf("%s: %v", test.name, e)
-			continue
+		if err != test.expectedReturn {
+			t.Errorf("%s: operation return not what expected: %v "+
+				"vs %v", test.name, err, test.expectedReturn)
 		}
 		if err != nil {
 			continue
 		}
 
-		// Ensure the resulting stack is the expected length.
 		if int32(len(test.after)) != s.Depth() {
 			t.Errorf("%s: stack depth doesn't match expected: %v "+
 				"vs %v", test.name, len(test.after),
 				s.Depth())
-			continue
 		}
 
-		// Ensure all items of the resulting stack are the expected
-		// values.
 		for i := range test.after {
 			val, err := s.PeekByteArray(s.Depth() - int32(i) - 1)
 			if err != nil {
