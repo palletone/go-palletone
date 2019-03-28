@@ -61,7 +61,9 @@ message ChaincodeMessage {
         DEFINE_TOKEN=27;
         SUPPLY_TOKEN=28;
         GET_TIMESTAMP = 29;
-
+        GET_CERT = 30;
+        SEND_JURY = 31;
+        RECV_JURY = 32;
     }
 
     Type type = 1;
@@ -157,6 +159,18 @@ message OutChainQuery {
     bytes params = 2;
     string collection = 3;
 }
+
+message SendJury {
+    uint32 msgType =1;
+    bytes content = 2;
+    string collection = 3;
+}
+message RecvJury {
+    uint32 msgType =1;
+    uint32 timeout =2;
+    string collection = 3;
+}
+
 message GetTokenBalance {
     string address = 1;
     string asset = 2;

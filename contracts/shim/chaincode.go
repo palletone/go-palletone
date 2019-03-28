@@ -441,6 +441,18 @@ func (stub *ChaincodeStub) OutChainQuery(outChainName string, params []byte) ([]
 	return stub.handler.handleOutQuery(collection, outChainName, params, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) SendJury(msgType uint32, content []byte) ([]byte, error) {
+	// Access public data by setting the collection to empty string
+	collection := ""
+	return stub.handler.handleSendJury(collection, msgType, content, stub.ChannelId, stub.TxID)
+}
+
+func (stub *ChaincodeStub) RecvJury(msgType uint32, timeout uint32) ([]byte, error) {
+	// Access public data by setting the collection to empty string
+	collection := ""
+	return stub.handler.handleRecvJury(collection, msgType, timeout, stub.ChannelId, stub.TxID)
+}
+
 // GetArgs documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetArgs() [][]byte {
 

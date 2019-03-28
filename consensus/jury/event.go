@@ -20,13 +20,13 @@ package jury
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type ContractEventType uint8
 type ElectionEventType uint8
-type AdapterEventType uint8
+type AdapterEventType uint32
 
 const (
 	CONTRACT_EVENT_EXEC   ContractEventType = 1 //合约执行，系统合约由Mediator完成，用户合约由Jury完成
@@ -117,6 +117,8 @@ type AdapterEvent struct {
 type AdapterRequestEvent struct {
 	contractId common.Address `json:"contractId"`
 	data       []byte         `json:"data"` //change
+	sig        []byte
+	pubkey     []byte
 }
 type AdapterResultEvent struct {
 	contractId common.Address `json:"contractId"`
