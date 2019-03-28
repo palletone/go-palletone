@@ -21,53 +21,140 @@
 package sysconfigcc
 
 import (
-	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"strconv"
+	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
+	"encoding/json"
+	"fmt"
 )
 
 type SysConfigChainCode struct {
 }
 
-func (d *SysConfigChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	//fmt.Println("*** SysConfig ChainCode system contract init ***")
-	return shim.Success([]byte("ok"))
+func (s *SysConfigChainCode) Init(stub shim.ChaincodeStubInterface) peer.Response {
+	log.Info("*** SysConfigChainCode system contract init ***")
+	return shim.Success([]byte("success"))
 }
 
-func (d *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
-	case "add":
-		return d.add(stub, args)
-	case "update":
-		return d.updateSysConfig(stub, args)
-	case "ForfeitureDeposit":
-
+	case "getAllSysParamsConf":
+		log.Info("Start getAllSysParamsConf Invoke")
+		allValBytes,err := s.getAllSysParamsConf(stub)
+		if err != nil {
+			return shim.Error("getAllSysParamsConf err: "+err.Error())
+		}
+		return shim.Success(allValBytes)
+	//case "getOldSysParamByKey":
+	//	log.Info("Start getOldSysParamByKey Invoke")
+	//	oldValByte, err :=s.getOldSysParamByKey(stub,args[0])
+	//	if err != nil {
+	//		return shim.Error("getOldSysParamByKey err: "+err.Error())
+	//	}
+	//	return shim.Success(oldValByte)
+	//case "getCurrSysParamByKey":
+	//	log.Info("Start getCurrSysParamByKey")
+	//	currValByte,err := s.getCurrSysParamByKey(stub,args[0])
+	//	if err != nil {
+	//		return shim.Error("getCurrSysParamByKey err: "+err.Error())
+	//	}
+	//	return shim.Success(currValByte)
+	case "getSysParamValByKey":
+		log.Info("Start getSysParamValByKey Invoke")
+		val, err := s.getSysParamValByKey(stub,args[0])
+		if err != nil {
+			return shim.Error("getSysParamValByKey err: "+err.Error())
+		}
+		return shim.Success(val)
+	case "updateSysParamWithoutVote":
+		log.Info("Start updateSysParamWithoutVote Invoke")
+		resultByte, err := s.updateSysParamWithoutVote(stub,args)
+		if err != nil {
+			return shim.Error("updateSysParamWithoutVote err: "+err.Error())
+		}
+		return shim.Success(resultByte)
+	//case "updateSysParamWithVote":
+	//	log.Info("Start updateSysParamWithVote Invoke")
+	//	resultByte,err := s.updateSysParamWithVote(stub,args)
+	//	if err != nil {
+	//		return shim.Error("updateSysParamWithVote err: "+err.Error())
+	//	}
+	//	return shim.Success(resultByte)
 	default:
-		return shim.Error("Invoke error")
+		log.Error("Invoke funcName err: ","error",funcName)
+		return shim.Error("Invoke funcName err: " + funcName)
 	}
-	return shim.Error("Invoke error")
 }
 
-func (d *SysConfigChainCode) add(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	a, _ := strconv.Atoi(args[0])
-	b, _ := strconv.Atoi(args[1])
-	rspStr := fmt.Sprintf("Value:%d", a+b)
-	return shim.Success([]byte(rspStr))
-}
-func (d *SysConfigChainCode) updateSysConfig(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	key := args[0]
-	value := args[1]
-	invokeFromAddr, err := stub.GetInvokeAddress()
+func (s *SysConfigChainCode) getAllSysParamsConf(stub shim.ChaincodeStubInterface) ([]byte,error){
+	sysVal,err := stub.GetState("sysConf")
 	if err != nil {
-		return shim.Error(err.Error())
+		return nil,err
+	}
+	return sysVal,nil
+}
+
+func (s *SysConfigChainCode) getOldSysParamByKey(stub shim.ChaincodeStubInterface,key string) ([]byte, error){
+	return []byte("one value"),nil
+}
+
+func (s *SysConfigChainCode) getCurrSysParamByKey(stub shim.ChaincodeStubInterface,key string) ([]byte, error){
+	return []byte("curr value"),nil
+}
+
+func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubInterface,args []string) ([]byte, error){
+	invokeFromAddr,err := stub.GetInvokeAddress()
+	if err != nil {
+		return nil,err
 	}
 	//基金会地址
 	foundationAddress, _ := stub.GetSystemConfig("FoundationAddress")
 	if invokeFromAddr != foundationAddress {
-		return shim.Error("Only foundation can call this function")
+		return nil, fmt.Errorf("Only foundation can call this function")
 	}
-	stub.PutState(key, []byte(value))
-	return shim.Success(nil)
+	key := args[0]
+	newValue := args[1]
+	oldValue, err := stub.GetState(args[0])
+	if err != nil {
+		return nil,err
+	}
+	err = stub.PutState(key,[]byte(newValue))
+	if err != nil {
+		return nil,err
+	}
+	sysValByte,err := stub.GetState("sysConf")
+	if err != nil {
+		return nil,err
+	}
+	sysVal := &core.SystemConfig{}
+	err = json.Unmarshal(sysValByte,sysVal)
+	if err != nil {
+		return nil,err
+	}
+	if key ==  "DepositAmountForJury"{
+		sysVal.DepositAmountForJury = newValue
+	}
+	sysValByte,err = json.Marshal(sysVal)
+	if err != nil {
+		return nil,err
+	}
+	err = stub.PutState("sysConf",sysValByte)
+	if err != nil {
+		return nil,err
+	}
+	return []byte("update value from "+string(oldValue)+" to "+newValue),nil
+}
+
+func (s *SysConfigChainCode) updateSysParamWithVote(stub shim.ChaincodeStubInterface,args []string) ([]byte, error){
+	return []byte("with vote"),nil
+}
+
+func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterface,key string) ([]byte, error){
+	val, err := stub.GetState(key)
+	if err != nil {
+		return nil,err
+	}
+	return val,nil
 }
