@@ -18,13 +18,15 @@
  * @date 2018
  */
 
-package sort
+package sort_test
 
 import (
 	"fmt"
 	"math/rand"
 	"sort"
 	"testing"
+
+	csort "github.com/palletone/go-palletone/core/sort"
 )
 
 const (
@@ -45,8 +47,6 @@ const (
 	_Dither
 	_NMode
 )
-
-var ints = [...]int{74, 59, 238, -784, 9845, 959, 905, 0, 0, 42, 7586, -5467984, 7586}
 
 type testingData struct {
 	desc        string
@@ -184,5 +184,5 @@ func testBentleyMcIlroy(t *testing.T, sortFn func(sort.Interface), maxswap func(
 }
 
 func TestHeapsortBM(t *testing.T) {
-	testBentleyMcIlroy(t, HeapSort, func(n int) int { return n * lg(n) * 12 / 10 })
+	testBentleyMcIlroy(t, csort.HeapSort, func(n int) int { return n * lg(n) * 12 / 10 })
 }
