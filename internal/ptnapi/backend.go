@@ -122,7 +122,7 @@ type Backend interface {
 	/* ---------------------save token info ------------------------*/
 	//SaveTokenInfo(token_info *modules.TokenInfo) (*ptnjson.TokenInfoJson, error)
 
-	GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error)
+	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
 
 	//GetTokenInfo(key string) (*ptnjson.TokenInfoJson, error)

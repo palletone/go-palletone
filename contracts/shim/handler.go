@@ -844,6 +844,38 @@ func (handler *Handler) handleMessage(msg *pb.ChaincodeMessage) error {
 	return filterError(err)
 }
 
+/*
+// 获得发行者的所有证书ID
+func (handler *Handler) GetIssuerCertsIDs(issuer string) (serverCertsIDs []string, memberCertsIDs []string, err error) {
+
+}
+
+// 获得发行者的所有中间证书ID
+func (handler *Handler) GetIssuerServerCertsIDs(issuer string) (serverCertsIDs []string, err error) {
+
+}
+
+// 获得发行者的所有交易证书ID
+func (handler *Handler) GetIssuerMemberCertsIDs(issuer string) (memberCertsIDs []string, err error) {
+
+}
+
+// 根据证书ID获得证书字节数据
+func (handler *Handler) GetCertByID(certID string) (certBytes []byte, err error) {
+
+}
+
+// 根据证书ID列表获得证书字节数据列表
+func (handler *Handler) GetCertsByIDs(certIDs []string) (certBytes map[string][]byte, err error) {
+
+}
+
+// 根据证书ID获得某个证书的所有者
+func (handler *Handler) GetIssuerByID(certID string) (issuer string, err error) {
+
+}
+*/
+
 // filterError filters the errors to allow NoTransitionError and CanceledError to not propagate for cases where embedded Err == nil.
 func filterError(errFromFSMEvent error) error {
 	if errFromFSMEvent != nil {

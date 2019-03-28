@@ -116,13 +116,7 @@ web3._extend({
             call: 'dag_getAllUtxos',
             params: 0,
             // inputFormatter: [null]
-        }),
-        new web3._extend.Method({
-            name: 'getAddrTransactions',
-            call: 'dag_getAddrTransactions',
-            params: 1,
-            // inputFormatter: [null]
-        }),
+        }),        
         new web3._extend.Method({
             name: 'getTokenInfo',
             call: 'dag_getTokenInfo',

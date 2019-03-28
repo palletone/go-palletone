@@ -283,16 +283,7 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (m
 	}
 	return result, nil
 }
-func (s *PublicBlockChainAPI) GetAddrTransactions(ctx context.Context, addr string) (string, error) {
-	result, err := s.b.GetAddrTransactions(addr)
-	if result == nil {
-		return "all_txs:null", nil
-	}
 
-	info := NewPublicReturnInfo("all_txs", result)
-	result_json, err := json.Marshal(info)
-	return string(result_json), err
-}
 func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr string) ([]*ptnjson.TxHistoryJson, error) {
 	asset := &modules.Asset{}
 	err := asset.SetString(assetStr)

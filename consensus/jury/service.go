@@ -54,6 +54,7 @@ type PalletOne interface {
 	MockContractLocalSend(event ContractEvent)
 	ContractBroadcast(event ContractEvent, local bool)
 	ElectionBroadcast(event ElectionEvent)
+	AdapterBroadcast(event AdapterEvent)
 
 	GetLocalMediators() []common.Address
 	IsLocalActiveMediator(add common.Address) bool
@@ -84,7 +85,7 @@ type iDag interface {
 type Juror struct {
 	name        string
 	address     common.Address
-	InitPartPub kyber.Point
+	initPartPub kyber.Point
 }
 
 //合约节点类型、地址信息
@@ -103,8 +104,10 @@ type contractTx struct {
 	rcvTx    []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
 	tm       time.Time              //create time
 	valid    bool                   //contract request valid identification
+	eleChan  chan bool              //election event chan
+	adaChan  chan bool              //adapter event chan
+	adaInf   []AdapterInf           //adapter event data information
 	//eleInfo  electionInfo           //vrf election jury list
-	eleChan chan bool
 }
 
 type Processor struct {
@@ -113,12 +116,11 @@ type Processor struct {
 	dag       iDag
 	validator validator.Validator
 	contract  *contracts.Contract
-	local     map[common.Address]*JuryAccount //[]common.Address //local jury account addr
-	mtx       map[common.Hash]*contractTx     //all contract buffer
-	//lockAddr  map[common.Address][]common.Hash //contractId/deployId ----addrHash, jury VRF
-	lockArf map[common.Address][]ElectionInf //contractId/deployId ----vrfInfo, jury VRF
-	quit    chan struct{}
-	locker  *sync.Mutex
+	local     map[common.Address]*JuryAccount  //[]common.Address //local jury account addr
+	mtx       map[common.Hash]*contractTx      //all contract buffer
+	lockArf   map[common.Address][]ElectionInf //contractId/deployId ----vrfInfo, jury VRF
+	quit      chan struct{}
+	locker    *sync.Mutex
 	//vrfAct    vrfAccount
 
 	electionNum       int
@@ -152,7 +154,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 
 	validator := validator.NewValidate(dag, dag, nil)
 	p := &Processor{
-		name:     "conractProcessor",
+		name:     "contractProcessor",
 		ptn:      ptn,
 		dag:      dag,
 		contract: contract,
@@ -170,6 +172,9 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	log.Info("NewContractProcessor ok", "local address:", p.local, "electionNum", p.electionNum)
 	//log.Info("NewContractProcessor", "vrf Account publicKey", p.vrfAct.pubKey, "privateKey", p.vrfAct.priKey)
 	return p, nil
+}
+func (p *Processor) SetContract(contract *contracts.Contract) {
+	p.contract = contract
 }
 
 func (p *Processor) Start(server *p2p.Server) error {

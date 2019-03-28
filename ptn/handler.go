@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"github.com/palletone/go-palletone/ptn/lps"
+	"github.com/palletone/go-palletone/consensus"
 )
 
 const (
@@ -128,7 +129,7 @@ type ProtocolManager struct {
 	vssResponseSub event.Subscription
 
 	//contract exec
-	contractProc contractInf
+	contractProc consensus.ContractInf
 	contractCh   chan jury.ContractEvent
 	contractSub  event.Subscription
 
@@ -146,7 +147,7 @@ type ProtocolManager struct {
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName string, txpool txPool,
 	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
-	contractProc contractInf, engine core.ConsensusEngine) (*ProtocolManager, error) {
+	contractProc consensus.ContractInf, engine core.ConsensusEngine) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:    networkId,
@@ -569,6 +570,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == ElectionMsg:
 		return pm.ElectionMsg(msg, p)
 
+	case msg.Code == AdapterMsg:
+		return pm.AdapterMsg(msg, p)
+
 	case msg.Code == GetLeafNodesMsg:
 		return pm.GetLeafNodesMsg(msg, p)
 
@@ -643,6 +647,14 @@ func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
 		peer.SendElectionEvent(event)
 	}
 }
+
+func (pm *ProtocolManager) AdapterBroadcast(event jury.AdapterEvent) {
+	peers := pm.peers.GetPeers()
+	for _, peer := range peers {
+		peer.SendAdapterEvent(event)
+	}
+}
+
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)

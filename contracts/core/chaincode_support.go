@@ -144,7 +144,7 @@ func (chaincodeSupport *ChaincodeSupport) launchStarted(chaincode string) bool {
 }
 
 // NewChaincodeSupport creates a new ChaincodeSupport instance
-func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA) pb.ChaincodeSupportServer {
+func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA, jury IAdapterJury) pb.ChaincodeSupportServer {
 	//path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
 	path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
 	log.Infof("NewChaincodeSupport chaincodes path: %s, cfgpath[%s]\n", path, cfg.GetConfig().ContractFileSystemPath)
@@ -158,7 +158,7 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 		runningChaincodes: &runningChaincodes{
 			chaincodeMap:  make(map[string]*chaincodeRTEnv),
 			launchStarted: make(map[string]bool),
-		}, peerNetworkID: pnid, peerID: pid,
+		}, peerNetworkID: pnid, peerID: pid, jury: jury,
 	}
 
 	theChaincodeSupport.auth = accesscontrol.NewAuthenticator(theChaincodeSupport, ca)
@@ -243,6 +243,7 @@ type ChaincodeSupport struct {
 	executetimeout    time.Duration
 	userRunsCC        bool
 	peerTLS           bool
+	jury              IAdapterJury
 }
 
 // DuplicateChaincodeHandlerError returned if attempt to register same chaincodeID while a stream already exists.
@@ -818,7 +819,7 @@ func (chaincodeSupport *ChaincodeSupport) getVMType(cds *pb.ChaincodeDeploymentS
 
 // HandleChaincodeStream implements ccintf.HandleChaincodeStream for all vms to call with appropriate stream
 func (chaincodeSupport *ChaincodeSupport) HandleChaincodeStream(ctxt context.Context, stream ccintf.ChaincodeStream) error {
-	return HandleChaincodeStream(chaincodeSupport, ctxt, stream)
+	return HandleChaincodeStream(chaincodeSupport, ctxt, stream, chaincodeSupport.jury)
 }
 
 // Register the bidi stream entry point called by chaincode to register with the Peer.

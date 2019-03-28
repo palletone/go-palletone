@@ -113,7 +113,7 @@ var systemChaincodes = []*SystemChaincode{
 		Id:        syscontract.DigitalIdentityContractAddress.Bytes21(),
 		Enabled:   true,
 		Name:      "digital_identity_sycc",
-		Path:      ".",
+		Path:      "../syscontract/digitalidcc/digitalidcc",
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &digitalidcc.DigitalIdentityChainCode{},

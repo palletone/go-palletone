@@ -14,6 +14,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	db "github.com/palletone/go-palletone/contracts/comm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/core"
 	cclist "github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
@@ -67,11 +68,11 @@ func listGet(templateId []byte) (*TempCC, error) {
 }
 
 // contract manger module init
-func Init(dag dag.IDag) error {
+func Init(dag dag.IDag, jury core.IAdapterJury) error {
 	if err := db.SetCcDagHand(dag); err != nil {
 		return err
 	}
-	if err := peerServerInit(); err != nil {
+	if err := peerServerInit(jury); err != nil {
 		log.Errorf("peerServerInit:%s", err)
 		return err
 	}
@@ -84,8 +85,8 @@ func Init(dag dag.IDag) error {
 	return nil
 }
 
-func InitNoSysCCC() error {
-	if err := peerServerInit(); err != nil {
+func InitNoSysCCC(jury core.IAdapterJury) error {
+	if err := peerServerInit(jury); err != nil {
 		log.Errorf("peerServerInit error:%s", err)
 		return err
 	}

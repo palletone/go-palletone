@@ -132,12 +132,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	//Test for P2P
 	ptn.engine = consensus.New(dag, pool)
 
-	ptn.contract, err = contracts.Initialize(ptn.dag, &config.Contract)
-	if err != nil {
-		log.Error("Contract Initialize err:", "error", err)
-		return nil, err
-	}
-
 	// append by Albert·Gou
 	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, dag, &config.MediatorPlugin)
 	if err != nil {
@@ -145,11 +139,19 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, ptn.contract, &config.Jury)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err
 	}
+
+	aJury := &consensus.AdapterJury{ptn.contractPorcessor}
+	ptn.contract, err = contracts.Initialize(ptn.dag, aJury, &config.Contract)
+	if err != nil {
+		log.Error("Contract Initialize err:", "error", err)
+		return nil, err
+	}
+	ptn.contractPorcessor.SetContract(ptn.contract)
 
 	genesis, err := ptn.dag.GetGenesisUnit()
 	if err != nil {
@@ -250,6 +252,10 @@ func (s *PalletOne) ContractBroadcast(event jury.ContractEvent, local bool) {
 func (s *PalletOne) ElectionBroadcast(event jury.ElectionEvent) {
 	s.protocolManager.ElectionBroadcast(event)
 }
+func (s *PalletOne) AdapterBroadcast(event jury.AdapterEvent) {
+	s.protocolManager.AdapterBroadcast(event)
+}
+
 func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
 }

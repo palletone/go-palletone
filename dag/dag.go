@@ -724,7 +724,7 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 //	return d.unstableUtxoRep.SaveUtxoView(view.Entries())
 //}
 
-func (d *Dag) GetAddrTransactions(addr string) ([]*modules.TransactionWithUnitInfo, error) {
+func (d *Dag) GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
 	return d.unstableUnitRep.GetAddrTransactions(addr)
 }
 

@@ -61,6 +61,7 @@ const (
 	LeafNodesMsg       = 0x0f
 	ContractMsg        = 0x10
 	ElectionMsg        = 0x11
+	AdapterMsg         = 0x12
 
 	GetNodeDataMsg = 0x20
 	NodeDataMsg    = 0x21
@@ -71,7 +72,7 @@ const (
 type errCode int
 
 const (
-	ErrMsgTooLarge = iota
+	ErrMsgTooLarge             = iota
 	ErrDecode
 	ErrInvalidMsgCode
 	ErrProtocolVersionMismatch

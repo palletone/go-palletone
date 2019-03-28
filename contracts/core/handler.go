@@ -86,6 +86,10 @@ type nextStateInfo struct {
 	sendSync bool
 }
 
+type IAdapterJury interface {
+	AdapterFunRequest(reqId common.Hash, contractId common.Address, timeOut time.Duration) (interface{}, error)
+}
+
 // Handler responsible for management of Peer's side of chaincode stream
 type Handler struct {
 	sync.RWMutex
@@ -107,13 +111,15 @@ type Handler struct {
 
 	// used to do Send after making sure the state transition is complete
 	nextState chan *nextStateInfo
+
+	aJury IAdapterJury
 }
 
 // HandleChaincodeStream Main loop for handling the associated Chaincode stream
-func HandleChaincodeStream(chaincodeSupport *ChaincodeSupport, ctxt context.Context, stream ccintf.ChaincodeStream) error {
+func HandleChaincodeStream(chaincodeSupport *ChaincodeSupport, ctxt context.Context, stream ccintf.ChaincodeStream, jury IAdapterJury) error {
 	deadline, ok := ctxt.Deadline()
 	log.Debugf("Current context deadline = %s, ok = %v", deadline, ok)
-	handler := newChaincodeSupportHandler(chaincodeSupport, stream)
+	handler := newChaincodeSupportHandler(chaincodeSupport, stream, jury)
 	return handler.processStream()
 }
 
@@ -179,11 +185,12 @@ func shorttxid(txid string) string {
 	return txid[0:8]
 }
 
-func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStream ccintf.ChaincodeStream) *Handler {
+func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStream ccintf.ChaincodeStream, aJury IAdapterJury) *Handler {
 	v := &Handler{
 		ChatStream: peerChatStream,
 	}
 	v.chaincodeSupport = chaincodeSupport
+	v.aJury = aJury
 	//we want this to block
 	v.nextState = make(chan *nextStateInfo)
 
