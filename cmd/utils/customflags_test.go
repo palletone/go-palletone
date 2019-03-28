@@ -19,11 +19,13 @@ package utils
 import (
 	"os"
 	"os/user"
+	"path/filepath"
 	"testing"
 )
 
 func TestPathExpansion(t *testing.T) {
 	user, _ := user.Current()
+	t.Log(user.HomeDir)
 	tests := map[string]string{
 		"/home/someuser/tmp": "/home/someuser/tmp",
 		"~/tmp":              user.HomeDir + "/tmp",
@@ -34,8 +36,9 @@ func TestPathExpansion(t *testing.T) {
 	os.Setenv("DDDXXX", "/tmp")
 	for test, expected := range tests {
 		got := expandPath(test)
-		if got != expected {
-			t.Errorf("test %s, got %s, expected %s\n", test, got, expected)
+		path := filepath.Clean(expected)
+		if got != path {
+			t.Errorf("test %s, got %s, expected %s\n", test, got, path)
 		}
 	}
 }

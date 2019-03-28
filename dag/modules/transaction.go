@@ -390,6 +390,7 @@ func (txs Transactions) GetTxIds() []common.Hash {
 
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
+	CertId []byte
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 

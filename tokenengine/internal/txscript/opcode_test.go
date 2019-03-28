@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2017 The btcsuite developers
+// Copyright (c) 2013-2015 The btcsuite developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -24,11 +24,10 @@ func TestOpcodeDisabled(t *testing.T) {
 	}
 	for _, opcodeVal := range tests {
 		pop := parsedOpcode{opcode: &opcodeArray[opcodeVal], data: nil}
-		err := opcodeDisabled(&pop, nil)
-		if !IsErrorCode(err, ErrDisabledOpcode) {
+		if err := opcodeDisabled(&pop, nil); err != ErrStackOpDisabled {
 			t.Errorf("opcodeDisabled: unexpected error - got %v, "+
-				"want %v", err, ErrDisabledOpcode)
-			continue
+				"want %v", err, ErrStackOpDisabled)
+			return
 		}
 	}
 }
@@ -75,8 +74,8 @@ func TestOpcodeDisasm(t *testing.T) {
 		0xa9: "OP_HASH160", 0xaa: "OP_HASH256", 0xab: "OP_CODESEPARATOR",
 		0xac: "OP_CHECKSIG", 0xad: "OP_CHECKSIGVERIFY",
 		0xae: "OP_CHECKMULTISIG", 0xaf: "OP_CHECKMULTISIGVERIFY",
-		0xfa: "OP_SMALLINTEGER", 0xfb: "OP_PUBKEYS",
-		0xfd: "OP_PUBKEYHASH", 0xfe: "OP_PUBKEY",
+		0xf9: "OP_SMALLDATA", 0xfa: "OP_SMALLINTEGER",
+		0xfb: "OP_PUBKEYS", 0xfd: "OP_PUBKEYHASH", 0xfe: "OP_PUBKEY",
 		0xff: "OP_INVALIDOPCODE",
 	}
 	for opcodeVal, expectedStr := range expectedStrings {
@@ -101,8 +100,7 @@ func TestOpcodeDisasm(t *testing.T) {
 		case opcodeVal == 0x4e:
 			data = bytes.Repeat(oneBytes, 3)
 			expectedStr = strings.Repeat(oneStr, 3)
-		case opcodeVal == 200: //PalletOne contract extend
-			expectedStr = "OP_JURY_REDEEM_EQUAL"
+
 		// OP_1 through OP_16 display the numbers themselves.
 		case opcodeVal >= 0x51 && opcodeVal <= 0x60:
 			val := byte(opcodeVal - (0x51 - 1))
@@ -111,23 +109,21 @@ func TestOpcodeDisasm(t *testing.T) {
 
 		// OP_NOP1 through OP_NOP10.
 		case opcodeVal >= 0xb0 && opcodeVal <= 0xb9:
-			switch opcodeVal {
-			case 0xb1:
-				// OP_NOP2 is an alias of OP_CHECKLOCKTIMEVERIFY
+			// OP_NOP2 is an alias of OP_CHECKLOCKTIMEVERIFY
+			if opcodeVal == 0xb1 {
 				expectedStr = "OP_CHECKLOCKTIMEVERIFY"
-			case 0xb2:
-				// OP_NOP3 is an alias of OP_CHECKSEQUENCEVERIFY
-				expectedStr = "OP_CHECKSEQUENCEVERIFY"
-			default:
+			} else {
 				val := byte(opcodeVal - (0xb0 - 1))
 				expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 			}
 
 		// OP_UNKNOWN#.
-		case opcodeVal >= 0xba && opcodeVal <= 0xf9 || opcodeVal == 0xfc:
+		case opcodeVal >= 0xba && opcodeVal <= 0xf8 || opcodeVal == 0xfc:
 			expectedStr = "OP_UNKNOWN" + strconv.Itoa(int(opcodeVal))
 		}
-
+		if opcodeVal == 200 {
+			expectedStr = "OP_JURY_REDEEM_EQUAL"
+		}
 		pop := parsedOpcode{opcode: &opcodeArray[opcodeVal], data: data}
 		gotStr := pop.print(true)
 		if gotStr != expectedStr {
@@ -174,27 +170,24 @@ func TestOpcodeDisasm(t *testing.T) {
 			val := byte(opcodeVal - (0x51 - 1))
 			data = []byte{val}
 			expectedStr = "OP_" + strconv.Itoa(int(val))
-		case opcodeVal == 200:
-			expectedStr = "OP_JURY_REDEEM_EQUAL"
+
 		// OP_NOP1 through OP_NOP10.
 		case opcodeVal >= 0xb0 && opcodeVal <= 0xb9:
-			switch opcodeVal {
-			case 0xb1:
-				// OP_NOP2 is an alias of OP_CHECKLOCKTIMEVERIFY
+			// OP_NOP2 is an alias of OP_CHECKLOCKTIMEVERIFY
+			if opcodeVal == 0xb1 {
 				expectedStr = "OP_CHECKLOCKTIMEVERIFY"
-			case 0xb2:
-				// OP_NOP3 is an alias of OP_CHECKSEQUENCEVERIFY
-				expectedStr = "OP_CHECKSEQUENCEVERIFY"
-			default:
+			} else {
 				val := byte(opcodeVal - (0xb0 - 1))
 				expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 			}
 
 		// OP_UNKNOWN#.
-		case opcodeVal >= 0xba && opcodeVal <= 0xf9 || opcodeVal == 0xfc:
+		case opcodeVal >= 0xba && opcodeVal <= 0xf8 || opcodeVal == 0xfc:
 			expectedStr = "OP_UNKNOWN" + strconv.Itoa(int(opcodeVal))
 		}
-
+		if opcodeVal == 200 {
+			expectedStr = "OP_JURY_REDEEM_EQUAL"
+		}
 		pop := parsedOpcode{opcode: &opcodeArray[opcodeVal], data: data}
 		gotStr := pop.print(false)
 		if gotStr != expectedStr {

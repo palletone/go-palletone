@@ -314,7 +314,7 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 							return nil, err
 						}
 						log.Debugf("Lock script:%x", utxo.PkScript)
-						sign, err := tokenengine.MultiSignOnePaymentInput(tx, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil, 0)
+						sign, err := tokenengine.MultiSignOnePaymentInput(tx, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil)
 						if err != nil {
 							log.Errorf("Sign error:%s", err)
 						}
