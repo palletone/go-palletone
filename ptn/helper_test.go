@@ -362,7 +362,7 @@ func unitForTest(index int) *modules.Unit {
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = uint64(index)
-	header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 	header.GroupSign = []byte{}
 	header.GroupPubKey = []byte{}
 	//tx, _ := NewCoinbaseTransaction()
@@ -378,7 +378,7 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header.Number.AssetID = modules.PTNCOIN
 	header.Number.IsMain = true
 	header.Number.Index = 0
-	header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 	header.GroupSign = []byte{}
 	header.GroupPubKey = []byte{}
 	//tx, _ := NewCoinbaseTransaction()
@@ -401,7 +401,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
-		header.Authors = modules.Authentifier{common.Address{}, []byte{}, []byte{}, []byte{}}
+		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 		header.GroupSign = []byte{}
 		header.GroupPubKey = []byte{}
 		//tx, _ := NewCoinbaseTransaction()

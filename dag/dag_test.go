@@ -142,9 +142,8 @@ func newHeader() *modules.Header {
 
 	h.TxRoot = h.Hash()
 	sig, _ := crypto.Sign(h.TxRoot[:], key)
-	au.R = sig[:32]
-	au.S = sig[32:64]
-	au.V = sig[64:]
+	au.Signature = sig
+	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
 	h.Authors = au
 	return h
 }

@@ -103,17 +103,16 @@ func TestSaveUnit(t *testing.T) {
 	header.Number = &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
 	//header.AssetIDs = []modules.AssetId{aid}
 	key, _ := crypto.GenerateKey()
-	addr0 := crypto.PubkeyToAddress(&key.PublicKey)
+	//addr0 := crypto.PubkeyToAddress(&key.PublicKey)
 
 	sig, err := crypto.Sign(header.Hash().Bytes(), key)
 	if err != nil {
 		log.Println("sign header occured error: ", err)
 	}
 	auth := new(modules.Authentifier)
-	auth.R = sig[:32]
-	auth.S = sig[32:64]
-	auth.V = sig[64:]
-	auth.Address = addr0
+	auth.Signature = sig
+	auth.PubKey = crypto.CompressPubkey(&key.PublicKey)
+
 	header.Authors = *auth
 	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
 		"TestContractTpl", "./contract", "1.1.1", 1024,
