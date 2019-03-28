@@ -10,6 +10,8 @@
    GNU General Public License for more details.
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+
+// (Reference from Go SDK 1.10.2 package sort.)
 */
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
