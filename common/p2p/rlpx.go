@@ -38,10 +38,11 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/crypto/ecies"
 	// "github.com/palletone/go-palletone/common/crypto/secp256k1"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/snappy"
 	"github.com/palletone/go-palletone/common/crypto/sha3"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (
@@ -57,8 +58,9 @@ const (
 
 	eciesOverhead = 65 /* pubkey */ + 16 /* IV */ + 32 /* MAC */
 
-	encAuthMsgLen  = authMsgLen + eciesOverhead  // size of encrypted pre-EIP-8 initiator handshake
-	encAuthRespLen = authRespLen + eciesOverhead // size of encrypted pre-EIP-8 handshake reply
+	//encAuthMsgLen  = authMsgLen + eciesOverhead  // size of encrypted pre-EIP-8 initiator handshake
+	encAuthMsgLen  = authMsgLen + pubLen + eciesOverhead // size of encrypted pre-EIP-8 initiator handshake //modify by wangjiyou
+	encAuthRespLen = authRespLen + eciesOverhead         // size of encrypted pre-EIP-8 handshake reply
 
 	// total timeout for encryption handshake and protocol
 	// handshake in both directions.
@@ -222,7 +224,7 @@ type authMsgV4 struct {
 	InitiatorPubkey [pubLen]byte
 	Nonce           [shaLen]byte
 	Version         uint
-
+	RandomPubkey    [pubLen]byte
 	// Ignore additional fields (forward-compatibility)
 	Rest []rlp.RawValue `rlp:"tail"`
 }
@@ -290,6 +292,7 @@ func initiatorEncHandshake(conn io.ReadWriter, prv *ecdsa.PrivateKey, remoteID d
 	if err != nil {
 		return s, err
 	}
+
 	if _, err = conn.Write(authPacket); err != nil {
 		return s, err
 	}
@@ -338,6 +341,7 @@ func (h *encHandshake) makeAuthMsg(prv *ecdsa.PrivateKey, token []byte) (*authMs
 	copy(msg.Signature[:], signature)
 	copy(msg.InitiatorPubkey[:], crypto.FromECDSAPub(&prv.PublicKey)[1:])
 	copy(msg.Nonce[:], h.initNonce)
+	copy(msg.RandomPubkey[:], exportPubkey(&h.randomPrivKey.PublicKey)) //Add by wangjiyou
 	msg.Version = 4
 	return msg, nil
 }
@@ -402,18 +406,28 @@ func (h *encHandshake) handleAuthMsg(msg *authMsgV4, prv *ecdsa.PrivateKey) erro
 		}
 	}
 
+	//TODO modify for wangjiyou
 	// Check the signature.
-	token, err := h.staticSharedSecret(prv)
+	/*token*/
+	_, err = h.staticSharedSecret(prv)
 	if err != nil {
 		return err
 	}
-	signedMsg := xor(token, h.initNonce)
-	remoteRandomPub, err := crypto.Ecrecover(signedMsg, msg.Signature[:])
-	if err != nil {
-		return err
+	//signedMsg := xor(token, h.initNonce)
+	//remoteRandomPub, err := crypto.Ecrecover(signedMsg, msg.Signature[:])
+	//if err != nil {
+	//	return err
+	//}
+
+	randpk := []byte{}
+	for i := range msg.RandomPubkey {
+		randpk = append(randpk, msg.RandomPubkey[i])
 	}
-	h.remoteRandomPub, _ = importPublicKey(remoteRandomPub)
-	return nil
+	h.remoteRandomPub, err = importPublicKey(randpk)
+	if err != nil {
+		log.Error("encHandshake->handleAuthMsg", "importPublicKey err:", err, "randpk", randpk)
+	}
+	return err
 }
 
 func (h *encHandshake) makeAuthResp() (msg *authRespV4, err error) {
