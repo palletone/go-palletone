@@ -24,15 +24,19 @@ import "github.com/palletone/go-palletone/contracts/shim"
 
 type SysParamsConfInterface interface {
 	//获取全部系统参数配置信息
-	getAllSysParamsConf(stub shim.ChaincodeStubInterface) ([]byte,error)
-	////通过键获取旧的相应的值
-	//getOldSysParamByKey(stub shim.ChaincodeStubInterface,key string) ([]byte,error)
-	////通过键获取当前申请修改的相应的值
-	//getCurrSysParamByKey(stub shim.ChaincodeStubInterface,key string) ([]byte,error)
+	getAllSysParamsConf(stub shim.ChaincodeStubInterface) ([]byte, error)
 	//基金会发起更新某个系统参数（不需要投票）
-	updateSysParamWithoutVote(stub shim.ChaincodeStubInterface,args []string) ([]byte, error)
+	updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
 	//通过键获取值
-	getSysParamValByKey(stub shim.ChaincodeStubInterface,key string) ([]byte,error)
-	//基金会发起更新某个系统参数（需要投票）
-	//updateSysParamWithVote(stub shim.ChaincodeStubInterface,args []string) ([]byte,error)
+	getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
+
+	//通过投票方式来修改系统参数
+	//首先，提供查询投票当前结果
+	getVotesResult(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
+	//第一步：基金会创建投票tokens
+	createVotesTokens(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
+	//第二步：基金会将投票tokens发给其他参与投票的节点：这一步需要基金会转账相应tokens给投票节点
+	//第三步：参与投票的节点在截止日期之前投票即可
+	nodesVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
+	//第四步：到了mediators的时候更新当前得票数最高的结果
 }
