@@ -183,6 +183,6 @@ func testBentleyMcIlroy(t *testing.T, sortFn func(sort.Interface), maxswap func(
 	}
 }
 
-func TestHeapsortBM(t *testing.T) {
+func TestHeapSortBM(t *testing.T) {
 	testBentleyMcIlroy(t, csort.HeapSort, func(n int) int { return n * lg(n) * 12 / 10 })
 }
