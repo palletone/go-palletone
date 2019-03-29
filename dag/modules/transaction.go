@@ -390,7 +390,7 @@ func (txs Transactions) GetTxIds() []common.Hash {
 
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
-	CertId []byte
+	CertId     []byte
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 
@@ -626,11 +626,11 @@ func (msg *Transaction) SerializeSize() int {
 }
 
 //Deep copy transaction to a new object
-func (tx *Transaction) Clone() Transaction {
+func (tx *Transaction) Clone() *Transaction {
 	newTx := &Transaction{}
 	data, _ := rlp.EncodeToBytes(tx)
 	rlp.DecodeBytes(data, newTx)
-	return *newTx
+	return newTx
 }
 
 const defaultTxInOutAlloc = 15

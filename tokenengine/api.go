@@ -172,12 +172,12 @@ func GenerateP2SHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 }
 
 //根据收集到的签名和脚本生成解锁合约上的Token的脚本
-func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte, version int) []byte {
+func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 	builder := txscript.NewScriptBuilder()
 	for _, sign := range signs {
 		builder = builder.AddData(sign)
 	}
-	unlock, _ := builder.AddData(redeemScript).AddInt64(int64(version)).Script()
+	unlock, _ := builder.AddData(redeemScript).Script()
 	return unlock
 }
 
@@ -204,14 +204,14 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 //	}
 //	return sigScript, nil
 //}
-func MultiSignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, redeemScript []byte,
+func MultiSignOnePaymentInput(tx *modules.Transaction, hashType uint32, msgIdx, id int, utxoLockScript []byte, redeemScript []byte,
 	pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte) ([]byte, error) {
 
 	lookupRedeemScript := func(a common.Address) ([]byte, error) {
 		return redeemScript, nil
 	}
 	tmpAcc := &account{pubKeyFn: pubKeyFn, signFn: hashFn}
-	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashAll,
+	sigScript, err := txscript.SignTxOutput(tx, msgIdx, id, utxoLockScript, txscript.SigHashType(hashType),
 		tmpAcc, txscript.ScriptClosure(lookupRedeemScript), previousScript)
 	if err != nil {
 		return []byte{}, err
@@ -248,9 +248,9 @@ func (a *account) GetPubKey(address common.Address) ([]byte, error) {
 //}
 
 //为钱包计算要签名某个Input对应的Hash
-func CalcSignatureHash(tx *modules.Transaction, msgIdx, inputIdx int, lockOrRedeemScript []byte) ([]byte, error) {
+func CalcSignatureHash(tx *modules.Transaction, hashType uint32, msgIdx, inputIdx int, lockOrRedeemScript []byte) ([]byte, error) {
 	acc := &account{}
-	return txscript.CalcSignatureHash(lockOrRedeemScript, txscript.SigHashAll, tx, msgIdx, inputIdx, acc)
+	return txscript.CalcSignatureHash(lockOrRedeemScript, txscript.SigHashType(hashType), tx, msgIdx, inputIdx, acc)
 }
 
 //Sign a full transaction
