@@ -88,7 +88,7 @@ func TestPartialSortStringSlice(t *testing.T) {
 	a := sort.StringSlice(data[0:])
 	n := a.Len()
 
-	m := 5
+	m := 3
 	p := sort.StringSlice(data[:m])
 
 	csort.PartialSort(a, m)

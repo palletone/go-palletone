@@ -20,10 +20,9 @@
 package dag
 
 import (
-	"sort"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	csort "github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -171,8 +170,7 @@ func (dag *Dag) updateActiveMediators() bool {
 	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
-	// todo 应当优化本排序方法，使用部分排序的方法
-	sort.Sort(dag.mediatorVoteTally)
+	csort.PartialSort(dag.mediatorVoteTally, mediatorCount)
 
 	// 3. 更新每个mediator的得票数
 	for _, voteTally := range dag.mediatorVoteTally {
