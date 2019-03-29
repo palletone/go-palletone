@@ -308,23 +308,24 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	indexHistory := make(map[uint64]uint8)
 	indexRepeat := false
 	for _, oneSupport := range supportRequests {
-		selectIndex := oneSupport.TopicIndex - 1
-		if _, ok := indexHistory[selectIndex]; ok { //check select repeat
+		topicIndex := oneSupport.TopicIndex - 1
+		if _, ok := indexHistory[topicIndex]; ok { //check select repeat
 			indexRepeat = true
 			break
 		}
-		indexHistory[selectIndex] = 1
-		if selectIndex < uint64(len(topicSupports)) { //1.check index, must not out of total
-			if uint64(len(oneSupport.SelectIndexs)) <= topicSupports[selectIndex].SelectMax { //2.check one select's options, must not out of select's max
-				lenOfVoteResult := uint64(len(topicSupports[selectIndex].VoteResults))
+		indexHistory[topicIndex] = 1
+		if topicIndex < uint64(len(topicSupports)) { //1.check index, must not out of total
+			if uint64(len(oneSupport.SelectIndexs)) <= topicSupports[topicIndex].SelectMax { //2.check one select's options, must not out of select's max
+				lenOfVoteResult := uint64(len(topicSupports[topicIndex].VoteResults))
 				selIndexHistory := make(map[uint64]uint8)
 				for _, index := range oneSupport.SelectIndexs {
-					if _, ok := selIndexHistory[index]; ok { //check select repeat
+					selectIndex := index - 1
+					if _, ok := selIndexHistory[selectIndex]; ok { //check select repeat
 						break
 					}
-					selIndexHistory[index] = 1
-					if index > 0 && index < lenOfVoteResult { //3.index must be real select options
-						topicSupports[selectIndex].VoteResults[index-1].Num += 1
+					selIndexHistory[selectIndex] = 1
+					if selectIndex > 0 && selectIndex < lenOfVoteResult { //3.index must be real select options
+						topicSupports[topicIndex].VoteResults[selectIndex].Num += 1
 					}
 				}
 			}
@@ -415,9 +416,10 @@ func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response 
 		oneResult.TopicIndex = uint64(i) + 1
 		oneResult.TopicTitle = oneTopicSupport.TopicTitle
 		oneResultSort := sortSupportByCount(oneTopicSupport.VoteResults)
-		for i := uint64(0); i < oneTopicSupport.SelectMax; i++ {
-			oneResult.VoteResults = append(oneResult.VoteResults, oneResultSort[i])
-		}
+		oneResult.VoteResults = append(oneResult.VoteResults, oneResultSort...)
+		//for i := uint64(0); i < oneTopicSupport.SelectMax; i++ {
+		//	oneResult.VoteResults = append(oneResult.VoteResults, oneResultSort[i])
+		//}
 		supportResults = append(supportResults, oneResult)
 	}
 
