@@ -11,7 +11,7 @@ script:
     - cp gptn bdd/node
     - cd bdd/node
     - nohup ./gptn &
-    - sleep 15
+    - sleep 30
     - netstat -ap | grep gptn
     - cd ../dct
     - ./deposit_test.sh 4
