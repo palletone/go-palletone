@@ -7,10 +7,11 @@
 /tmp
 **/data1
 *.log
+!bdd/node/*
 */**/*un~
 */**/*.test
 log.txt
-UTC--*
+#UTC--*
 *un~
 .DS_Store
 */**/.DS_Store
@@ -56,7 +57,7 @@ bin/
 #run temp file
 /cmd/gptn/data1
 /cmd/gptn/log
-**/leveldb/
+#**/leveldb/
 *.rlp
 **/ptn-config.toml
 dag/common/unit.go.orig
