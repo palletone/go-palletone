@@ -11,11 +11,11 @@ script:
     - cp gptn bdd/node
     - cd bdd/node
     - nohup ./gptn &
-    - sleep 30
+    - sleep 15
     - netstat -ap | grep gptn
-    - cd ../dct
-    - ./deposit_test.sh 4
-    - python -m robot.run ../testcase/createTrans
+    #- cd ../dct
+    #- ./deposit_test.sh 4
+    #- python -m robot.run ../testcase/createTrans
 after_success:
     - killall gptn
 after_failure:
