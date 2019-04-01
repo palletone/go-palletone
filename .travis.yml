@@ -16,7 +16,7 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     - ./deposit_test.sh 4
-    - python -m robot.run ../testcase/createTrans
+#    - python -m robot.run ../testcase/createTrans
 after_success:
     - killall gptn
 after_failure:

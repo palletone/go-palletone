@@ -44,7 +44,7 @@ ContractSigNum = 1
 ElectionNum = 4
 
 [[Jury.Accounts]]
-Address = "P1NiAuNgjxgKJ6Yn7juvEycvZiwh8p1VMmN"
+Address = "P1Bzdwi9ox8cffGRmGpVNJn7Xidh6YfAaq1"
 Password = "1"
 
 [MediatorPlugin]
@@ -55,34 +55,34 @@ RequiredParticipation = 0
 EnableGroupSigning = true
 
 [[MediatorPlugin.Mediators]]
-Address = "P1NiAuNgjxgKJ6Yn7juvEycvZiwh8p1VMmN"
+Address = "P1Bzdwi9ox8cffGRmGpVNJn7Xidh6YfAaq1"
 Password = "1"
-InitPrivKey = "7KK44L1CuVdLszePUaFU5iRbtboYFmwXyVXre6YV41G7"
-InitPubKey = "TrPWH9GNHXMsJeW4RgAMcCVbHWkyLJ3uFhSfYkFSyN17m5J4wmnSLDs4hGHwyo5nzxhhRyPH3YUFzxZJXpUTdXRJrEw8ZVM7EYh3CjEaZeFw8bZk2hFJT8RgszGxfhyasTnv95vjuCLqy3ybHVLmJhckthUM7RFkcjyrVaihLsioypH"
+InitPrivKey = "74t3GCqyStK7yUfY7NDmpq2HbzC79RTtC9TRGojNbpH2"
+InitPubKey = "VLXDAP6Km5dUPxdi4GYX633kNCsQjXCqHHddeQgfmBLPRC2HbuVaCp3kDc7RJo2HfUAvGkVajzqCZBX4iM4un2muR97KPv8ihCwLoFYcLcMKp9YyUSkymRSdze635hsHzspW6BNQ66wmhSNDKtqMFPXzx8Q5jex9Hf7LiFt7xTWugrY"
 
 [[MediatorPlugin.Mediators]]
-Address = "P15iYWVKHdKW3YfmnYLE362awkZ84x2CRyK"
+Address = "P1F2Aw7HbWdVmRoX8rzuoa9Tti9VK9Xrb2p"
 Password = "1"
-InitPrivKey = "6HCtyFVcsWm7y9WR3egRuK3doTHdhq5F1WMdzZG1vkPV"
-InitPubKey = "Z466LFE7FrMjs91vrqrNdUMYfsgGBqCszJFpwWKHVxDNuzxWW6mWNoggea5r9BnZ9RTZgscVQVpdjFTw8pVR12esWf8VycPDAj3JnxGj9PhhFudTn2EQqeJAf9woyYonLgtLREWb9NdbLhovasSKJqrot8piw5G4cAAGeS9JZxqRyrj"
+InitPrivKey = "7yg3r4GQmjyUXBsAeLRTyUVjZugR17bmDeUKaRszdkvx"
+InitPubKey = "cvfSBs4DyUXRe1Jy31v18pzLoEYjQKZRnxtWLkbrgdMSNSDdiPmLwmSdsPw4vS9upusQmABbgEF9Einvwkm2svoCsunL8sf7PkfqrD1iyKqTE3So4zMGBoLFkkxkJjaQepa9mLbsvS8YSY7jhV47xiG1fVLQCwRaLtYwkLGuiXSM6zA"
 
 [[MediatorPlugin.Mediators]]
-Address = "P18ZY8j8NKahu5QpCvgHYsDE6q5xavZGgEp"
+Address = "P18WKX862hFcMYNJoii6CRgNDHKAVvx5K1r"
 Password = "1"
-InitPrivKey = "5U4yLKKPmAHsSVzqcXwmeQkt4bpCZYbDHeqbi4Uddq9E"
-InitPubKey = "WPDCggDM8pfzJqaFKjunnwiBcEytpE85CesoyTBJVasACj9CDHLTjpjv8hJsUH8oJFZwKdnsPoeFj7VqBkhoS9ppHvfgdV5wJGjJaFuxU1mDAYVpgFDd9PCaShGzS9X2GYwY7TkXSQpweTGFmEbq6GVw6AzwEYakK4Hg6k35HTgJ9tq"
+InitPrivKey = "7XZY8fx92cUQQBbE8JfgG9xLomTRb17uYV9knSSZAib5"
+InitPubKey = "WY3ykoSKfbs92F2wSa2GdDqEhNBtM8kj4Kb9Vgr81z65svf4Gw3WBsT5Y2b6Ger8PWQQm64mQ9vUnuimT2WaebqJzKdkA3uUzFEm3c9DNdU7gY1MMukDQNh1eqj8hbyD6uDEyoZo8aE8vTtEf9dTjtt7yVmu2gSRNWuVE2u4ArbKU5T"
 
 [[MediatorPlugin.Mediators]]
-Address = "P12zqDqM6cLZeC6o8meM4p5P6pYcFACUAKy"
+Address = "P1LFxvvESGoyUTcFtwBsk5yBTXnFvXJ318A"
 Password = "1"
-InitPrivKey = "4ZChGJ74zwXmAZdszHPTjiVqot7BXksfX2yzfzZUAkZ4"
-InitPubKey = "hsf7V3ZC2XhPukFqNxC36YbTS4GDnS8XjXwP7NXuAA69xvRj8wWypuTq4Digo1A2oSVx5VskGdQaGCKGxzXM31NDcKBFiQU11okxHybg6qkvQ81KLSJctRf2RE9dtni7faZTZvkx4vFvFiQ4vWfEzgjNpPgPBEbUAnPMx19VWVppCNX"
+InitPrivKey = "4W7aQ8EZXHjPKvSRkkBvoJ2gfWKLMge6UJdztjxWnPsT"
+InitPubKey = "XqsQiyjV5kadFoy65BRgVVfSwfPAGiLM8Z1A1AxQsnqYQYZbctSNdLEeTvzniYJ8ZjpwJKqQBrcTmrVaF8imS63CFk5GwLiSdNFae6Yy1bu4tTTq1xLwZgo7BH35ehiUaT7vMAQntUxcMqQ7vRsKMk521J46dk2wsSNtPrPXVumhjCQ"
 
 [[MediatorPlugin.Mediators]]
-Address = "P1BMQBPpvoB8GsSDUwqGZ385VSAMXansP3a"
+Address = "P13dqj7q9McKKMwzDp75KRoFfN4Dm15pWYJ"
 Password = "1"
-InitPrivKey = "8UNYLpdmHjNqNxmFo4dMjB6zqAxhFrfoDKfHecr5ZMeq"
-InitPubKey = "gmvpr69zhS9bVPes2q9RR4gKJxoceivkAsihq8cT85bavgdQJj8Z7DDYJ5PgEmaypqraBrFzw7CkJoekPjWxSK7i9nB5qFTEoU18ieXtsxar7WeYF1wzsTW8PdcU9HVJooNr4x5V15VpmCwmNfB39gro3Kk8zVCoPAmfXJu7Kj3DjS1"
+InitPrivKey = "7xfxSXAM2RxpMDqtk2NuMJrbYu7FseSXu7s9Z1RamzWu"
+InitPubKey = "XcCiWFUaScDcmyhxHievqxMeRmbY5NUTYAUfn2Vk4XqLvbqwTmqtZbY3CdKSR7F3dB7qF3eHuWJfBM1gpcwQkjfVwjTBr5QfHYZaFggibJet1zcK1o9P3Fkoy8TrrUqwe6HKGum1UhWB6wYieAtQbf2qbK7EfRanrmSo7WCTBTffdzo"
 
 [Log]
 OutputPaths = ["stdout", "./log/all.log"]
