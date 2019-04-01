@@ -1,0 +1,65 @@
+{
+  "version": "0.6.1-beta",
+  "alias": "PTN",
+  "tokenAmount": "100000000000000000",
+  "tokenDecimal": 8,
+  "decimal_unit": "",
+  "chainId": 1,
+  "tokenHolder": "P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv",
+  "text": "姓名 丨 坐标 丨 简介   \r\n孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n刘百祥丨上海丨 GoC-lab发起人兼技术社群负责人,复旦大学计算机博士.\r\n陈澄丨上海丨引力区开发者社区总理事,EOS超级节点负责人.\r\n孙红景丨北京丨CTO、13年IT开发和管理经验.\r\nkobegpfan丨北京丨世界500强企业技术总监.\r\n余奎丨上海丨加密经济学研究员、产品研发经理.\r\nShangsong丨北京丨Fabric、 多链、 分片 、跨链技术.\r\n郑广军丨上海丨区块链java应用开发.\r\n钮祜禄虫丨北京丨大数据架构、Dapp开发.\r\n彭敏丨四川丨计算机网络和系统集成十余年有经验.\r\n",
+  "systemConfig": {
+    "depositRate": "0.02",
+    "foundationAddress": "P18XpiXv3H8vVXMxgf7wDx6tYbJpSm6Swaf",
+    "depositAmountForMediator": "200000000000",
+    "depositAmountForJury": "100000000000",
+    "depositAmountForDeveloper": "80000000000",
+    "depositPeriod": "0"
+  },
+  "initialParameters": {
+    "currentFees": {
+      "mediatorCreateFee": 5000,
+      "voteMediatorFee": 20,
+      "transferPtnFee": {
+        "baseFee": 20,
+        "pricePerKByte": 20
+      },
+      "setDesiredMediatorCountFee": 20
+    },
+    "mediatorInterval": 3,
+    "maintenanceInterval": 600,
+    "maxMediatorCount": 255
+  },
+  "immutableChainParameters": {
+    "minMediatorCount": 5,
+    "minMediatorInterval": 1
+  },
+  "initialTimestamp": 1553685069,
+  "initialActiveMediators": 5,
+  "initialMediatorCandidates": [
+    {
+      "account": "P1F5nbVubkAquaBYSoYi7385gn5UYz79x5Y",
+      "initPubKey": "TF9RTGE1XRyAdgLBL81NsGFXeHVTGVLk4KiUCqGP9Q565gHczh7ASdptWtzsmkBcicPNfEmEmvgKJR4niMsgAiaJoLo9yWZXHqjfmDAj9byn6xYV6p2gxaHMSpPyXeJYyt4raSF6vGNymoXiG7LkQWdNW4tkJTBkW6MQSLFnXr9a3tf",
+      "node": "pnode://5b05b48da0dbb3c0da446f1e3d341d31598343fcd1834d8f81e9000a34095b25f811ce9d0060aba2b796c92624a540db33aa0cf40dcec541dc3b111851cb8025@127.0.0.1:30303"
+    },
+    {
+      "account": "P16LPc7ZgZr5WWALVQSSg8toPvoVjYXQkxr",
+      "initPubKey": "dJ1NziFRo75srfqs9SXxVqmqv5nof9GvW8aCpTBbqPz8PD9kZoApDWktBYK7dq61JSPHXUeUATfcACRSp8XtZ1de6s6Asr2FoqW5HN5E9WJzHNBGR7VS1Amqwv4i36fpy2VVRyFhkk4knCNcafVbKxeHXRqqdZVeaWKYYvUAzxZFocA",
+      "node": "pnode://5b05b48da0dbb3c0da446f1e3d341d31598343fcd1834d8f81e9000a34095b25f811ce9d0060aba2b796c92624a540db33aa0cf40dcec541dc3b111851cb8025@127.0.0.1:30303"
+    },
+    {
+      "account": "P12myeS8B3QFSBz5WH4ySimomnChAVyD3DE",
+      "initPubKey": "WMMKaRrkYLVEbAGRbNXn43sD5fT65vhHcJhMk2xyDZGfaCi5VoCwiVeJL5yqbh56zjPgotM3qddVQNTU3hzwPuXiX4WJeQkMVVXzQSXr9zSKcovvxhRbHF9PeTL4Q8Yhkc5SVV8zCbPG2xY6pZyUk7DmufcEaYb9fBPe9JckxGhKJme",
+      "node": "pnode://5b05b48da0dbb3c0da446f1e3d341d31598343fcd1834d8f81e9000a34095b25f811ce9d0060aba2b796c92624a540db33aa0cf40dcec541dc3b111851cb8025@127.0.0.1:30303"
+    },
+    {
+      "account": "P1FxaU7Qom6qkCmPBYgsAHDbQfPEbwTjQip",
+      "initPubKey": "aQfN2we9rtZLBwQmMiVx2V6vWyecxGGMSnG3HhmTazS55SQ2TBDvtoez81bzkGsXfA8pzJoBZGtg4PSVtgpxKEUBd2xpUZesF75x99CExQeeqdLL9tKetdbMC6Pn3uSiJgErvvMv3pnz8whtCnWc9QX1VF6CvZKewD2UgNMtgSA3kX5",
+      "node": "pnode://5b05b48da0dbb3c0da446f1e3d341d31598343fcd1834d8f81e9000a34095b25f811ce9d0060aba2b796c92624a540db33aa0cf40dcec541dc3b111851cb8025@127.0.0.1:30303"
+    },
+    {
+      "account": "P1EZvT7bT5DFs8QAXAhuYLKUjFaejWcCG68",
+      "initPubKey": "Wc4cRFtuSKj2x7nYdQbgYJC8PVivddt9QFJNxh6fAAsbUSPFhH46EQgyEqRpQR4Ci66myytGMM9ET1EoABMEBCk1bd2vmU7GHe3NgKaGqikmuLDXcyimPNsbhivd8Q1vRpziEtKZETQSrsoJbMtH8zGkoGfcdGY3YgZbJgCS12HMjmj",
+      "node": "pnode://5b05b48da0dbb3c0da446f1e3d341d31598343fcd1834d8f81e9000a34095b25f811ce9d0060aba2b796c92624a540db33aa0cf40dcec541dc3b111851cb8025@127.0.0.1:30303"
+    }
+  ]
+}
