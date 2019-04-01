@@ -10,12 +10,13 @@ script:
     # - $GOPATH/bin/goveralls -service=travis-ci
     - cp gptn bdd/node
     - cd bdd/node
+    - chmod +x gptn
     - nohup ./gptn &
     - sleep 15
     - netstat -ap | grep gptn
-    #- cd ../dct
-    #- ./deposit_test.sh 4
-    #- python -m robot.run ../testcase/createTrans
+    - cd ../dct
+    - ./deposit_test.sh 4
+    - python -m robot.run ../testcase/createTrans
 after_success:
     - killall gptn
 after_failure:
