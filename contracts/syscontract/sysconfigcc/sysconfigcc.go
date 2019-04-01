@@ -86,6 +86,14 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 			return shim.Success([]byte(jsonResp))
 		}
 		return shim.Success(resultByte)
+	case "nodesVote":
+		log.Info("Start nodesVote Invoke")
+		resultByte, err := s.nodesVote(stub, args)
+		if err != nil {
+			jsonResp := "{\"Error\":\"nodesVote err: " + err.Error() + "\"}"
+			return shim.Success([]byte(jsonResp))
+		}
+		return shim.Success(resultByte)
 	default:
 		log.Error("Invoke funcName err: ", "error", funcName)
 		jsonResp := "{\"Error\":\"Invoke funcName err: " + funcName + "\"}"
@@ -104,24 +112,21 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetIDStr)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return nil, fmt.Errorf(jsonResp)
+		return nil, fmt.Errorf("Token not exist")
 	}
 
 	//get token information
 	var topicSupports []TopicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Results format invalid, Error!!!\"}"
-		return nil, fmt.Errorf(jsonResp)
+		return nil, fmt.Errorf("Results format invalid, Error!!!")
 	}
 
 	//
 	isVoteEnd := false
 	headerTime, err := stub.GetTxTimestamp(10)
 	if err != nil {
-		jsonResp := "{\"Error\":\"GetTxTimestamp invalid, Error!!!\"}"
-		return nil, fmt.Errorf(jsonResp)
+		return nil, fmt.Errorf("GetTxTimestamp invalid, Error!!!")
 	}
 	if headerTime.Seconds > tkInfo.VoteEndTime.Unix() {
 		isVoteEnd = true
@@ -148,16 +153,14 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 	//return json
 	tkJson, err := json.Marshal(tkID)
 	if err != nil {
-		jsonResp := "{\"Error\":\"" + err.Error() + "\"}"
-
-		return nil, fmt.Errorf(jsonResp)
+		return nil, fmt.Errorf(err.Error())
 	}
 	return tkJson, nil //test
 }
 
 func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	//params check
-	if len(args) < 5 {
+	if len(args) < 4 {
 		return nil, fmt.Errorf("need 5 args (Name,VoteType,TotalSupply,VoteEndTime,VoteContentJson)")
 	}
 	//get creator
@@ -176,7 +179,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	var vt modules.VoteToken
 	//name symbol
 	vt.Name = args[0]
-	vt.Symbol = "VOTE"
+	vt.Symbol = "SVOTE"
 
 	//vote type
 	//if args[1] == "0" {
@@ -190,7 +193,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	//	return shim.Success([]byte(jsonResp))
 	//}
 	//total supply
-	totalSupply, err := strconv.ParseUint(args[2], 10, 64)
+	totalSupply, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
 		return nil, fmt.Errorf(jsonResp)
@@ -201,7 +204,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	}
 	vt.TotalSupply = totalSupply
 	//VoteEndTime
-	VoteEndTime, err := time.Parse("2006-01-02 15:04:05", args[3])
+	VoteEndTime, err := time.Parse("2006-01-02 15:04:05", args[2])
 	if err != nil {
 		jsonResp := "{\"Error\":\"No vote end time\"}"
 		return nil, fmt.Errorf(jsonResp)
@@ -209,7 +212,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	vt.VoteEndTime = VoteEndTime
 	//VoteContent
 	var voteTopics []VoteTopic
-	err = json.Unmarshal([]byte(args[4]), &voteTopics)
+	err = json.Unmarshal([]byte(args[3]), &voteTopics)
 	if err != nil {
 		jsonResp := "{\"Error\":\"VoteContent format invalid\"}"
 		return nil, fmt.Errorf(jsonResp)
@@ -274,7 +277,115 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 }
 
 func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	return nil, nil
+	//params check
+	if len(args) < 1 {
+		return nil, fmt.Errorf("need 1 args (SupportRequestJson)")
+	}
+
+	//check token
+	invokeTokens, err := stub.GetInvokeTokens()
+	if err != nil {
+		return nil, fmt.Errorf("GetInvokeTokens failed")
+	}
+	voteNum := uint64(0)
+	assetIDStr := ""
+	for i := 0; i < len(invokeTokens); i++ {
+		if invokeTokens[i].Asset.AssetId == modules.PTNCOIN {
+			continue
+		} else if invokeTokens[i].Address == "P1111111111111111111114oLvT2" {
+			if assetIDStr == "" {
+				assetIDStr = invokeTokens[i].Asset.String()
+				voteNum += invokeTokens[i].Amount
+			} else if invokeTokens[i].Asset.AssetId.String() == assetIDStr {
+				voteNum += invokeTokens[i].Amount
+			}
+		}
+	}
+	if voteNum == 0 || assetIDStr == "" { //no vote token
+		return nil, fmt.Errorf("Vote token empty")
+	}
+
+	//check name is exist or not
+	tkInfo := getSymbols(stub, assetIDStr)
+	if tkInfo == nil {
+		return nil, fmt.Errorf("Token not exist")
+	}
+
+	//parse support requests
+	var supportRequests []SupportRequest
+	err = json.Unmarshal([]byte(args[0]), &supportRequests)
+	if err != nil {
+		return nil, fmt.Errorf("SupportRequestJson format invalid")
+	}
+	//get token information
+	var topicSupports []TopicSupports
+	err = json.Unmarshal(tkInfo.VoteContent, &topicSupports)
+	if err != nil {
+		return nil, fmt.Errorf("Results format invalid, Error!!!")
+
+	}
+
+	if voteNum < uint64(len(supportRequests)) { //vote token more than request
+		return nil, fmt.Errorf("Vote token more than support request")
+
+	}
+
+	//check time
+	headerTime, err := stub.GetTxTimestamp(10)
+	if err != nil {
+		return nil, fmt.Errorf("GetTxTimestamp invalid, Error!!!")
+
+	}
+	if headerTime.Seconds > tkInfo.VoteEndTime.Unix() {
+		return nil, fmt.Errorf("Vote is over")
+
+	}
+
+	//save support
+	indexHistory := make(map[uint64]uint8)
+	indexRepeat := false
+	for _, oneSupport := range supportRequests {
+		topicIndex := oneSupport.TopicIndex - 1
+		if _, ok := indexHistory[topicIndex]; ok { //check select repeat
+			indexRepeat = true
+			break
+		}
+		indexHistory[topicIndex] = 1
+		if topicIndex < uint64(len(topicSupports)) { //1.check index, must not out of total
+			if uint64(len(oneSupport.SelectIndexs)) <= topicSupports[topicIndex].SelectMax { //2.check one select's options, must not out of select's max
+				lenOfVoteResult := uint64(len(topicSupports[topicIndex].VoteResults))
+				selIndexHistory := make(map[uint64]uint8)
+				for _, index := range oneSupport.SelectIndexs {
+					selectIndex := index - 1
+					if _, ok := selIndexHistory[selectIndex]; ok { //check select repeat
+						break
+					}
+					selIndexHistory[selectIndex] = 1
+					if selectIndex < lenOfVoteResult { //3.index must be real select options
+						topicSupports[topicIndex].VoteResults[selectIndex].Num += 1
+					}
+				}
+			}
+		}
+	}
+	if indexRepeat {
+		return nil, fmt.Errorf("Repeat index of select option ")
+
+	}
+	voteContentJson, err := json.Marshal(topicSupports)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to generate voteContent Json")
+
+	}
+	tkInfo.VoteContent = voteContentJson
+
+	//save token information
+	err = setSymbols(stub, tkInfo)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to set symbols")
+
+	}
+	return []byte("NodesVote success."), nil
 }
 
 func (s *SysConfigChainCode) getAllSysParamsConf(stub shim.ChaincodeStubInterface) ([]byte, error) {
