@@ -22,6 +22,7 @@ package digitalidcc
 
 import (
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
@@ -34,6 +35,17 @@ func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStub
 	if err := validateIssuer(issuer, cert, stub); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func ValidateCRLCert(issuer string, crl *pkix.CertificateList, stub shim.ChaincodeStubInterface) error {
+	//if err := checkExists(Cert.SerialNumber.String(), stub); err != nil {
+	//	return err
+	//}
+	//if err := validateIssuer(issuer, nil, stub); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
