@@ -1,0 +1,966 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generated="20190328 09:00:32.603" generator="Robot 2.8.5 (Python 2.7.12 on linux2)">
+<suite source="/home/zhichunqi/gowork/src/github.com/palletone/go-palletone/bdd/testcase/createTrans/query" id="s1" name="Query">
+<suite source="/home/zhichunqi/gowork/src/github.com/palletone/go-palletone/bdd/testcase/createTrans/query/getBalance_Invalid.robot" id="s1-s1" name="getBalance Invalid">
+<test id="s1-s1-t1" name="getBalance_Invalid1">
+<kw type="kw" name="behaveKwd.invalidGetbalance">
+<doc></doc>
+<arguments>
+<arg>${empty}</arg>
+<arg>-32000</arg>
+<arg>Address cannot be null</arg>
+</arguments>
+<kw type="kw" name="${result} = invalidKwd.Given I set getBalance params to ${i}">
+<doc></doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<kw type="kw" name="@{transList} = BuiltIn.Create List">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.692" level="INFO">@{transList} = [  ]</msg>
+<status status="PASS" endtime="20190328 09:00:32.692" starttime="20190328 09:00:32.691"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.692" level="INFO">${result} = ['']</msg>
+<status status="PASS" endtime="20190328 09:00:32.692" starttime="20190328 09:00:32.691"></status>
+</kw>
+<kw type="kw" name="${resp} = invalidKwd.When I post a getBalance request">
+<doc></doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<kw type="kw" name="${resp} = utilDefined.setPostRequest">
+<doc></doc>
+<arguments>
+<arg>${host}</arg>
+<arg>${method}</arg>
+<arg>@{transList}</arg>
+</arguments>
+<kw type="kw" name="${headers} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+<arg>Connection=close</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.693" level="INFO">${headers} = {'Connection': u'close', 'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20190328 09:00:32.693" starttime="20190328 09:00:32.693"></status>
+</kw>
+<kw type="kw" name="${data} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${transList}</arg>
+<arg>id=${1}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.694" level="INFO">${data} = {'params': [''], 'jsonrpc': u'2.0', 'method': u'ptn_getBalance', 'id': 1}</msg>
+<status status="PASS" endtime="20190328 09:00:32.694" starttime="20190328 09:00:32.694"></status>
+</kw>
+<kw type="kw" name="RequestsLibrary.Create Session">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.695" level="INFO">Creating Session using : alias=trans, url=http://localhost:8545/, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<msg timestamp="20190328 09:00:32.696" level="INFO">Argument types are:
+&lt;type 'bool'&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.696" starttime="20190328 09:00:32.694"></status>
+</kw>
+<kw type="kw" name="${resp} = RequestsLibrary.Post Request">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${headers}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.701" level="INFO">Post Request using : alias=trans, uri=http://localhost:8545/, data={"params": [""], "jsonrpc": "2.0", "method": "ptn_getBalance", "id": 1}, headers={'Connection': u'close', 'Content-Type': u'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190328 09:00:32.701" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.701" starttime="20190328 09:00:32.697"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.701" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.701" starttime="20190328 09:00:32.693"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.702" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.702" starttime="20190328 09:00:32.692"></status>
+</kw>
+<kw type="kw" name="invalidKwd.Then I get a Getbalance code ${error_code} and a message ${error_message}">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Log">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.703" level="INFO">{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"Address cannot be null"}}
+</msg>
+<status status="PASS" endtime="20190328 09:00:32.703" starttime="20190328 09:00:32.703"></status>
+</kw>
+<kw type="kw" name="utilDefined.assertInvalid">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+<arg>${error_code}</arg>
+<arg>${error_message}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['jsonrpc']</arg>
+<arg>"2.0"</arg>
+<arg>msg="jsonrpc:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.705" starttime="20190328 09:00:32.704"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['id']</arg>
+<arg>1</arg>
+<arg>msg="id:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.705" starttime="20190328 09:00:32.705"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['code']</arg>
+<arg>${error_code}</arg>
+<arg>msg="error_code:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.706" starttime="20190328 09:00:32.705"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['message']</arg>
+<arg>${error_message}</arg>
+<arg>msg="error_message:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.706" starttime="20190328 09:00:32.706"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.706" starttime="20190328 09:00:32.703"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.706" starttime="20190328 09:00:32.702"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.706" starttime="20190328 09:00:32.690"></status>
+</kw>
+<doc></doc>
+<tags>
+<tag>invalidBalance</tag>
+</tags>
+<status status="PASS" endtime="20190328 09:00:32.707" critical="yes" starttime="20190328 09:00:32.690"></status>
+</test>
+<test id="s1-s1-t2" name="getBalance_Invalid2">
+<kw type="kw" name="behaveKwd.invalidGetbalance">
+<doc></doc>
+<arguments>
+<arg>.</arg>
+<arg>-32000</arg>
+<arg>PalletOne address must start with 'P'</arg>
+</arguments>
+<kw type="kw" name="${result} = invalidKwd.Given I set getBalance params to ${i}">
+<doc></doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<kw type="kw" name="@{transList} = BuiltIn.Create List">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.709" level="INFO">@{transList} = [ . ]</msg>
+<status status="PASS" endtime="20190328 09:00:32.709" starttime="20190328 09:00:32.709"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.709" level="INFO">${result} = [u'.']</msg>
+<status status="PASS" endtime="20190328 09:00:32.709" starttime="20190328 09:00:32.708"></status>
+</kw>
+<kw type="kw" name="${resp} = invalidKwd.When I post a getBalance request">
+<doc></doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<kw type="kw" name="${resp} = utilDefined.setPostRequest">
+<doc></doc>
+<arguments>
+<arg>${host}</arg>
+<arg>${method}</arg>
+<arg>@{transList}</arg>
+</arguments>
+<kw type="kw" name="${headers} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+<arg>Connection=close</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.711" level="INFO">${headers} = {'Connection': u'close', 'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20190328 09:00:32.711" starttime="20190328 09:00:32.710"></status>
+</kw>
+<kw type="kw" name="${data} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${transList}</arg>
+<arg>id=${1}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.711" level="INFO">${data} = {'params': [u'.'], 'jsonrpc': u'2.0', 'method': u'ptn_getBalance', 'id': 1}</msg>
+<status status="PASS" endtime="20190328 09:00:32.711" starttime="20190328 09:00:32.711"></status>
+</kw>
+<kw type="kw" name="RequestsLibrary.Create Session">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.712" level="INFO">Creating Session using : alias=trans, url=http://localhost:8545/, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<msg timestamp="20190328 09:00:32.713" level="INFO">Argument types are:
+&lt;type 'bool'&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.713" starttime="20190328 09:00:32.711"></status>
+</kw>
+<kw type="kw" name="${resp} = RequestsLibrary.Post Request">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${headers}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.716" level="INFO">Post Request using : alias=trans, uri=http://localhost:8545/, data={"params": ["."], "jsonrpc": "2.0", "method": "ptn_getBalance", "id": 1}, headers={'Connection': u'close', 'Content-Type': u'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190328 09:00:32.717" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.716" starttime="20190328 09:00:32.713"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.717" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.717" starttime="20190328 09:00:32.710"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.717" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.717" starttime="20190328 09:00:32.709"></status>
+</kw>
+<kw type="kw" name="invalidKwd.Then I get a Getbalance code ${error_code} and a message ${error_message}">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Log">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.719" level="INFO">{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"PalletOne address must start with 'P'"}}
+</msg>
+<status status="PASS" endtime="20190328 09:00:32.719" starttime="20190328 09:00:32.718"></status>
+</kw>
+<kw type="kw" name="utilDefined.assertInvalid">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+<arg>${error_code}</arg>
+<arg>${error_message}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['jsonrpc']</arg>
+<arg>"2.0"</arg>
+<arg>msg="jsonrpc:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.720" starttime="20190328 09:00:32.720"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['id']</arg>
+<arg>1</arg>
+<arg>msg="id:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.721" starttime="20190328 09:00:32.720"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['code']</arg>
+<arg>${error_code}</arg>
+<arg>msg="error_code:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.722" starttime="20190328 09:00:32.721"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['message']</arg>
+<arg>${error_message}</arg>
+<arg>msg="error_message:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.722" starttime="20190328 09:00:32.722"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.723" starttime="20190328 09:00:32.719"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.723" starttime="20190328 09:00:32.718"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.723" starttime="20190328 09:00:32.707"></status>
+</kw>
+<kw type="kw" name="behaveKwd.invalidGetbalance">
+<doc></doc>
+<arguments>
+<arg>gr#tw</arg>
+<arg>-32000</arg>
+<arg>PalletOne address must start with 'P'</arg>
+</arguments>
+<kw type="kw" name="${result} = invalidKwd.Given I set getBalance params to ${i}">
+<doc></doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<kw type="kw" name="@{transList} = BuiltIn.Create List">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.725" level="INFO">@{transList} = [ gr#tw ]</msg>
+<status status="PASS" endtime="20190328 09:00:32.725" starttime="20190328 09:00:32.724"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.725" level="INFO">${result} = [u'gr#tw']</msg>
+<status status="PASS" endtime="20190328 09:00:32.725" starttime="20190328 09:00:32.724"></status>
+</kw>
+<kw type="kw" name="${resp} = invalidKwd.When I post a getBalance request">
+<doc></doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<kw type="kw" name="${resp} = utilDefined.setPostRequest">
+<doc></doc>
+<arguments>
+<arg>${host}</arg>
+<arg>${method}</arg>
+<arg>@{transList}</arg>
+</arguments>
+<kw type="kw" name="${headers} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+<arg>Connection=close</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.727" level="INFO">${headers} = {'Connection': u'close', 'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20190328 09:00:32.727" starttime="20190328 09:00:32.727"></status>
+</kw>
+<kw type="kw" name="${data} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${transList}</arg>
+<arg>id=${1}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.728" level="INFO">${data} = {'params': [u'gr#tw'], 'jsonrpc': u'2.0', 'method': u'ptn_getBalance', 'id': 1}</msg>
+<status status="PASS" endtime="20190328 09:00:32.728" starttime="20190328 09:00:32.727"></status>
+</kw>
+<kw type="kw" name="RequestsLibrary.Create Session">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.728" level="INFO">Creating Session using : alias=trans, url=http://localhost:8545/, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<msg timestamp="20190328 09:00:32.729" level="INFO">Argument types are:
+&lt;type 'bool'&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.729" starttime="20190328 09:00:32.728"></status>
+</kw>
+<kw type="kw" name="${resp} = RequestsLibrary.Post Request">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${headers}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.732" level="INFO">Post Request using : alias=trans, uri=http://localhost:8545/, data={"params": ["gr#tw"], "jsonrpc": "2.0", "method": "ptn_getBalance", "id": 1}, headers={'Connection': u'close', 'Content-Type': u'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190328 09:00:32.733" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.732" starttime="20190328 09:00:32.729"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.733" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.733" starttime="20190328 09:00:32.726"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.733" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.733" starttime="20190328 09:00:32.725"></status>
+</kw>
+<kw type="kw" name="invalidKwd.Then I get a Getbalance code ${error_code} and a message ${error_message}">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Log">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.735" level="INFO">{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"PalletOne address must start with 'P'"}}
+</msg>
+<status status="PASS" endtime="20190328 09:00:32.735" starttime="20190328 09:00:32.734"></status>
+</kw>
+<kw type="kw" name="utilDefined.assertInvalid">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+<arg>${error_code}</arg>
+<arg>${error_message}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['jsonrpc']</arg>
+<arg>"2.0"</arg>
+<arg>msg="jsonrpc:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.736" starttime="20190328 09:00:32.736"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['id']</arg>
+<arg>1</arg>
+<arg>msg="id:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.737" starttime="20190328 09:00:32.736"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['code']</arg>
+<arg>${error_code}</arg>
+<arg>msg="error_code:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.737" starttime="20190328 09:00:32.737"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['message']</arg>
+<arg>${error_message}</arg>
+<arg>msg="error_message:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.738" starttime="20190328 09:00:32.737"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.738" starttime="20190328 09:00:32.735"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.738" starttime="20190328 09:00:32.734"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.738" starttime="20190328 09:00:32.723"></status>
+</kw>
+<kw type="kw" name="behaveKwd.invalidGetbalance">
+<doc></doc>
+<arguments>
+<arg>fdsas</arg>
+<arg>-32000</arg>
+<arg>PalletOne address must start with 'P'</arg>
+</arguments>
+<kw type="kw" name="${result} = invalidKwd.Given I set getBalance params to ${i}">
+<doc></doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<kw type="kw" name="@{transList} = BuiltIn.Create List">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.740" level="INFO">@{transList} = [ fdsas ]</msg>
+<status status="PASS" endtime="20190328 09:00:32.740" starttime="20190328 09:00:32.740"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.740" level="INFO">${result} = [u'fdsas']</msg>
+<status status="PASS" endtime="20190328 09:00:32.740" starttime="20190328 09:00:32.739"></status>
+</kw>
+<kw type="kw" name="${resp} = invalidKwd.When I post a getBalance request">
+<doc></doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<kw type="kw" name="${resp} = utilDefined.setPostRequest">
+<doc></doc>
+<arguments>
+<arg>${host}</arg>
+<arg>${method}</arg>
+<arg>@{transList}</arg>
+</arguments>
+<kw type="kw" name="${headers} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+<arg>Connection=close</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.743" level="INFO">${headers} = {'Connection': u'close', 'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20190328 09:00:32.743" starttime="20190328 09:00:32.742"></status>
+</kw>
+<kw type="kw" name="${data} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${transList}</arg>
+<arg>id=${1}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.743" level="INFO">${data} = {'params': [u'fdsas'], 'jsonrpc': u'2.0', 'method': u'ptn_getBalance', 'id': 1}</msg>
+<status status="PASS" endtime="20190328 09:00:32.743" starttime="20190328 09:00:32.743"></status>
+</kw>
+<kw type="kw" name="RequestsLibrary.Create Session">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.744" level="INFO">Creating Session using : alias=trans, url=http://localhost:8545/, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<msg timestamp="20190328 09:00:32.744" level="INFO">Argument types are:
+&lt;type 'bool'&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.744" starttime="20190328 09:00:32.744"></status>
+</kw>
+<kw type="kw" name="${resp} = RequestsLibrary.Post Request">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${headers}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.747" level="INFO">Post Request using : alias=trans, uri=http://localhost:8545/, data={"params": ["fdsas"], "jsonrpc": "2.0", "method": "ptn_getBalance", "id": 1}, headers={'Connection': u'close', 'Content-Type': u'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190328 09:00:32.747" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.747" starttime="20190328 09:00:32.744"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.748" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.748" starttime="20190328 09:00:32.741"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.748" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.748" starttime="20190328 09:00:32.741"></status>
+</kw>
+<kw type="kw" name="invalidKwd.Then I get a Getbalance code ${error_code} and a message ${error_message}">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Log">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.749" level="INFO">{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"PalletOne address must start with 'P'"}}
+</msg>
+<status status="PASS" endtime="20190328 09:00:32.749" starttime="20190328 09:00:32.749"></status>
+</kw>
+<kw type="kw" name="utilDefined.assertInvalid">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+<arg>${error_code}</arg>
+<arg>${error_message}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['jsonrpc']</arg>
+<arg>"2.0"</arg>
+<arg>msg="jsonrpc:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.751" starttime="20190328 09:00:32.750"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['id']</arg>
+<arg>1</arg>
+<arg>msg="id:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.751" starttime="20190328 09:00:32.751"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['code']</arg>
+<arg>${error_code}</arg>
+<arg>msg="error_code:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.752" starttime="20190328 09:00:32.751"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['message']</arg>
+<arg>${error_message}</arg>
+<arg>msg="error_message:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.752" starttime="20190328 09:00:32.752"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.752" starttime="20190328 09:00:32.750"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.753" starttime="20190328 09:00:32.748"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.753" starttime="20190328 09:00:32.738"></status>
+</kw>
+<doc></doc>
+<tags>
+<tag>invalidBalance</tag>
+</tags>
+<status status="PASS" endtime="20190328 09:00:32.753" critical="yes" starttime="20190328 09:00:32.707"></status>
+</test>
+<test id="s1-s1-t3" name="getBalance_Invalid3">
+<kw type="kw" name="behaveKwd.invalidGetbalance">
+<doc></doc>
+<arguments>
+<arg>Pfsadf</arg>
+<arg>-32000</arg>
+<arg>invalid format: version and/or checksum bytes missing</arg>
+</arguments>
+<kw type="kw" name="${result} = invalidKwd.Given I set getBalance params to ${i}">
+<doc></doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<kw type="kw" name="@{transList} = BuiltIn.Create List">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${i}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.756" level="INFO">@{transList} = [ Pfsadf ]</msg>
+<status status="PASS" endtime="20190328 09:00:32.756" starttime="20190328 09:00:32.755"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.756" level="INFO">${result} = [u'Pfsadf']</msg>
+<status status="PASS" endtime="20190328 09:00:32.756" starttime="20190328 09:00:32.755"></status>
+</kw>
+<kw type="kw" name="${resp} = invalidKwd.When I post a getBalance request">
+<doc></doc>
+<arguments>
+<arg>${result}</arg>
+</arguments>
+<kw type="kw" name="${resp} = utilDefined.setPostRequest">
+<doc></doc>
+<arguments>
+<arg>${host}</arg>
+<arg>${method}</arg>
+<arg>@{transList}</arg>
+</arguments>
+<kw type="kw" name="${headers} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+<arg>Connection=close</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.758" level="INFO">${headers} = {'Connection': u'close', 'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20190328 09:00:32.758" starttime="20190328 09:00:32.758"></status>
+</kw>
+<kw type="kw" name="${data} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${transList}</arg>
+<arg>id=${1}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.759" level="INFO">${data} = {'params': [u'Pfsadf'], 'jsonrpc': u'2.0', 'method': u'ptn_getBalance', 'id': 1}</msg>
+<status status="PASS" endtime="20190328 09:00:32.759" starttime="20190328 09:00:32.758"></status>
+</kw>
+<kw type="kw" name="RequestsLibrary.Create Session">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.759" level="INFO">Creating Session using : alias=trans, url=http://localhost:8545/, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<msg timestamp="20190328 09:00:32.760" level="INFO">Argument types are:
+&lt;type 'bool'&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.760" starttime="20190328 09:00:32.759"></status>
+</kw>
+<kw type="kw" name="${resp} = RequestsLibrary.Post Request">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${headers}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.764" level="INFO">Post Request using : alias=trans, uri=http://localhost:8545/, data={"params": ["Pfsadf"], "jsonrpc": "2.0", "method": "ptn_getBalance", "id": 1}, headers={'Connection': u'close', 'Content-Type': u'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190328 09:00:32.764" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.764" starttime="20190328 09:00:32.760"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.765" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.765" starttime="20190328 09:00:32.757"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.765" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.765" starttime="20190328 09:00:32.756"></status>
+</kw>
+<kw type="kw" name="invalidKwd.Then I get a Getbalance code ${error_code} and a message ${error_message}">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Log">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.767" level="INFO">{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"invalid format: version and/or checksum bytes missing"}}
+</msg>
+<status status="PASS" endtime="20190328 09:00:32.767" starttime="20190328 09:00:32.766"></status>
+</kw>
+<kw type="kw" name="utilDefined.assertInvalid">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+<arg>${error_code}</arg>
+<arg>${error_message}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['jsonrpc']</arg>
+<arg>"2.0"</arg>
+<arg>msg="jsonrpc:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.768" starttime="20190328 09:00:32.768"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['id']</arg>
+<arg>1</arg>
+<arg>msg="id:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.769" starttime="20190328 09:00:32.769"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['code']</arg>
+<arg>${error_code}</arg>
+<arg>msg="error_code:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.769" starttime="20190328 09:00:32.769"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['error']['message']</arg>
+<arg>${error_message}</arg>
+<arg>msg="error_message:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.770" starttime="20190328 09:00:32.770"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.770" starttime="20190328 09:00:32.767"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.770" starttime="20190328 09:00:32.765"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.770" starttime="20190328 09:00:32.754"></status>
+</kw>
+<doc></doc>
+<tags>
+<tag>invalidBalance</tag>
+</tags>
+<status status="PASS" endtime="20190328 09:00:32.771" critical="yes" starttime="20190328 09:00:32.753"></status>
+</test>
+<doc></doc>
+<metadata>
+</metadata>
+<status status="PASS" endtime="20190328 09:00:32.771" starttime="20190328 09:00:32.623"></status>
+</suite>
+<suite source="/home/zhichunqi/gowork/src/github.com/palletone/go-palletone/bdd/testcase/createTrans/query/getBalance_Normal.robot" id="s1-s2" name="getBalance Normal">
+<test id="s1-s2-t1" name="getBalance_Normal">
+<kw type="kw" name="behaveKwd.normalGetBalance">
+<doc></doc>
+<arguments>
+<arg>${address}</arg>
+</arguments>
+<kw type="kw" name="${ret} = normalKwd.Given I_set_getBalance_params_to_Normal">
+<doc></doc>
+<arguments>
+<arg>${address}</arg>
+</arguments>
+<kw type="kw" name="@{address} = BuiltIn.Create List">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${address}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.940" level="INFO">@{address} = [ P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv ]</msg>
+<status status="PASS" endtime="20190328 09:00:32.940" starttime="20190328 09:00:32.940"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.941" level="INFO">${ret} = [u'P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv']</msg>
+<status status="PASS" endtime="20190328 09:00:32.941" starttime="20190328 09:00:32.938"></status>
+</kw>
+<kw type="kw" name="${resp} = normalKwd.When I_post_a_getBalance_request">
+<doc></doc>
+<arguments>
+<arg>${ret}</arg>
+</arguments>
+<kw type="kw" name="${resp} = utilDefined.setPostRequest">
+<doc></doc>
+<arguments>
+<arg>${host}</arg>
+<arg>ptn_getBalance</arg>
+<arg>@{address}</arg>
+</arguments>
+<kw type="kw" name="${headers} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+<arg>Connection=close</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.946" level="INFO">${headers} = {'Connection': u'close', 'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20190328 09:00:32.946" starttime="20190328 09:00:32.945"></status>
+</kw>
+<kw type="kw" name="${data} = Collections.Create Dictionary">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${transList}</arg>
+<arg>id=${1}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.947" level="INFO">${data} = {'params': [u'P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv'], 'jsonrpc': u'2.0', 'method': u'ptn_getBalance', 'id': 1}</msg>
+<status status="PASS" endtime="20190328 09:00:32.947" starttime="20190328 09:00:32.946"></status>
+</kw>
+<kw type="kw" name="RequestsLibrary.Create Session">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.948" level="INFO">Creating Session using : alias=trans, url=http://localhost:8545/, headers={},                     cookies=None, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<msg timestamp="20190328 09:00:32.949" level="INFO">Argument types are:
+&lt;type 'bool'&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.949" starttime="20190328 09:00:32.948"></status>
+</kw>
+<kw type="kw" name="${resp} = RequestsLibrary.Post Request">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>trans</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${headers}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.953" level="INFO">Post Request using : alias=trans, uri=http://localhost:8545/, data={"params": ["P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv"], "jsonrpc": "2.0", "method": "ptn_getBalance", "id": 1}, headers={'Connection': u'close', 'Content-Type': u'application/json'}, files=None, allow_redirects=True </msg>
+<msg timestamp="20190328 09:00:32.954" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.954" starttime="20190328 09:00:32.949"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.954" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.954" starttime="20190328 09:00:32.943"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.954" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20190328 09:00:32.954" starttime="20190328 09:00:32.942"></status>
+</kw>
+<kw type="kw" name="${result} = normalKwd.Then I_get_a_getBalance_result">
+<doc></doc>
+<arguments>
+<arg>${resp}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['jsonrpc']</arg>
+<arg>"2.0"</arg>
+<arg>msg="jsonrpc:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.956" starttime="20190328 09:00:32.955"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Should Contain">
+<doc>Fails if `item1` does not contain `item2` one or more times.</doc>
+<arguments>
+<arg>${resp.content}['id']</arg>
+<arg>1</arg>
+<arg>msg="id:failed"</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.957" starttime="20190328 09:00:32.956"></status>
+</kw>
+<kw type="kw" name="${jsonRes} = BuiltIn.Evaluate">
+<doc>Evaluates the given expression in Python and returns the results.</doc>
+<arguments>
+<arg>demjson.encode(${resp.content})</arg>
+<arg>demjson</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.958" level="INFO">${jsonRes} = {"id":1,"jsonrpc":"2.0","result":{"PTN":"1000000000"}}</msg>
+<status status="PASS" endtime="20190328 09:00:32.958" starttime="20190328 09:00:32.957"></status>
+</kw>
+<kw type="kw" name="${jsonRes} = RequestsLibrary.To Json">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${jsonRes}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.959" level="INFO">To JSON using : content={"id":1,"jsonrpc":"2.0","result":{"PTN":"1000000000"}} </msg>
+<msg timestamp="20190328 09:00:32.959" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20190328 09:00:32.959" level="INFO">${jsonRes} = {u'jsonrpc': u'2.0', u'id': 1, u'result': {u'PTN': u'1000000000'}}</msg>
+<status status="PASS" endtime="20190328 09:00:32.959" starttime="20190328 09:00:32.959"></status>
+</kw>
+<kw type="kw" name="${strResult} = BuiltIn.Evaluate">
+<doc>Evaluates the given expression in Python and returns the results.</doc>
+<arguments>
+<arg>str(${jsonRes['result']})</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.960" level="INFO">${strResult} = {u'PTN': u'1000000000'}</msg>
+<status status="PASS" endtime="20190328 09:00:32.960" starttime="20190328 09:00:32.959"></status>
+</kw>
+<kw type="kw" name="${PTN} = BuiltIn.Run Keyword If">
+<doc>Runs the given keyword with the given arguments, if `condition` is true.</doc>
+<arguments>
+<arg>${strResult}=={}</arg>
+<arg>Set Variable</arg>
+<arg>${0}</arg>
+<arg>ELSE</arg>
+<arg>Set Variable</arg>
+<arg>${jsonRes['result']['PTN']}</arg>
+</arguments>
+<kw type="kw" name="BuiltIn.Set Variable">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${jsonRes['result']['PTN']}</arg>
+</arguments>
+<status status="PASS" endtime="20190328 09:00:32.961" starttime="20190328 09:00:32.960"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.961" level="INFO">${PTN} = 1000000000</msg>
+<status status="PASS" endtime="20190328 09:00:32.961" starttime="20190328 09:00:32.960"></status>
+</kw>
+<kw type="kw" name="BuiltIn.Log">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${PTN}</arg>
+</arguments>
+<msg timestamp="20190328 09:00:32.961" level="INFO">1000000000</msg>
+<status status="PASS" endtime="20190328 09:00:32.961" starttime="20190328 09:00:32.961"></status>
+</kw>
+<msg timestamp="20190328 09:00:32.962" level="INFO">${result} = 1000000000</msg>
+<status status="PASS" endtime="20190328 09:00:32.961" starttime="20190328 09:00:32.955"></status>
+</kw>
+<status status="PASS" endtime="20190328 09:00:32.962" starttime="20190328 09:00:32.936"></status>
+</kw>
+<doc></doc>
+<tags>
+<tag>normal</tag>
+</tags>
+<status status="PASS" endtime="20190328 09:00:32.962" critical="yes" starttime="20190328 09:00:32.934"></status>
+</test>
+<doc></doc>
+<metadata>
+</metadata>
+<status status="PASS" endtime="20190328 09:00:32.963" starttime="20190328 09:00:32.772"></status>
+</suite>
+<doc></doc>
+<metadata>
+</metadata>
+<status status="PASS" endtime="20190328 09:00:32.964" starttime="20190328 09:00:32.603"></status>
+</suite>
+<statistics>
+<total>
+<stat fail="0" pass="4">Critical Tests</stat>
+<stat fail="0" pass="4">All Tests</stat>
+</total>
+<tag>
+<stat info="" links="" doc="" combined="" pass="3" fail="0">invalidBalance</stat>
+<stat info="" links="" doc="" combined="" pass="1" fail="0">normal</stat>
+</tag>
+<suite>
+<stat fail="0" pass="4" id="s1" name="Query">Query</stat>
+<stat fail="0" pass="3" id="s1-s1" name="getBalance Invalid">Query.getBalance Invalid</stat>
+<stat fail="0" pass="1" id="s1-s2" name="getBalance Normal">Query.getBalance Normal</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>

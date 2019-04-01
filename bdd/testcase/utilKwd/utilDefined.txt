@@ -1,0 +1,34 @@
+*** Keywords ***
+setPostRequest
+    [Arguments]    ${host}    ${method}    ${transList}
+    ${headers}    Create Dictionary    Content-Type=application/json    Connection=close
+    ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${transList}    id=${1}
+    Create Session    trans    ${host}
+    ${resp}    Post Request    trans    ${host}    data=${data}    headers=${headers}
+    [Return]    ${resp}
+
+assertInvalid
+    [Arguments]    ${resp}    ${error_code}    ${error_message}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    Should Contain    ${resp.content}['error']['code']    ${error_code}    msg="error_code:failed"
+    Should Contain    ${resp.content}['error']['message']    ${error_message}    msg="error_message:failed"
+
+assertBalanceInvalid
+    [Arguments]    ${resp}    ${error_code}    ${error_message}
+    #Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    #Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    ${strResult}    Evaluate    str(${jsonRes['error']})
+    [Return]    ${resp.content}['error']
+
+geneNickname
+    ${nickname}    evaluate    random.randint(100,999)    random
+    ${nickname}    evaluate    'qa'+str(${nickname})
+    [Return]    ${nickname}
+
+getTokenId
+    ${nickname}    evaluate    random.randint(100,999)    random
+    ${nickname}    evaluate    'qa'+str(${nickname})
+    [Return]    ${nickname}

@@ -1,13 +1,51 @@
-language: go
-sudo: false
-go:
-  - 1.10.8
-before_install:
-  - go get github.com/mattn/goveralls
-  - go get -u github.com/palletone/adaptor
-  - go get -u github.com/palletone/btc-adaptor
-  - go get -u github.com/palletone/eth-adaptor
-  - source ./gomockgen.sh
+os: linux
+dist: xenial
+sudo: required
+language: 
+    - go
+go: 
+    - 1.10.5
 script:
-  - go build ./cmd/gptn
-  - $GOPATH/bin/goveralls -service=travis-ci
+    - go build ./cmd/gptn
+    # - $GOPATH/bin/goveralls -service=travis-ci
+    - cp gptn bdd/node
+    - cd bdd/node
+    - nohup ./gptn &
+    - sleep 15
+    - netstat -ap | grep gptn
+    - cd ../dct
+    - ./deposit_test.sh 4
+    - python -m robot.run ../testcase/createTrans
+after_success:
+    - killall gptn
+after_failure:
+    - killall gptn
+    
+before_install:
+    - go get github.com/mattn/goveralls
+    - go get -u github.com/palletone/adaptor
+    - go get -u github.com/palletone/btc-adaptor
+    - go get -u github.com/palletone/eth-adaptor
+    - source ./gomockgen.sh
+ 
+install: 
+    - python -V
+    - sudo -H pip install --upgrade pip
+    - sudo -H pip install robotframework==2.8.5
+    - sudo -H pip install requests
+    - sudo -H pip install robotframework-requests
+    - sudo -H pip install demjson 
+    - sudo -H apt-get install expect
+    #- sudo -H apt-get install jq tcl tk
+
+addons:
+    apt:
+        update: true
+
+notifications:
+    email: elva1087penny@163.com
+    email:
+        recipients:
+            - elva1087penny@163.com
+        on_success: always # default: change
+        on_failure: always
