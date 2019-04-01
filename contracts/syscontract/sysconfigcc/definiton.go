@@ -52,3 +52,9 @@ type TokenIDInfo struct {
 	SupportResults []SupportResult
 	AssetID        string
 }
+
+//one user's support
+type SupportRequest struct {
+	TopicIndex   uint64
+	SelectIndexs []uint64
+}
