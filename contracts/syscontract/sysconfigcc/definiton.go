@@ -46,15 +46,22 @@ type SupportResult struct {
 }
 
 type TokenIDInfo struct {
-	IsVoteEnd      bool
 	CreateAddr     string
 	TotalSupply    uint64
-	SupportResults []SupportResult
 	AssetID        string
+	CreateTime     time.Time
+	IsVoteEnd      bool
+	SupportResults []SupportResult
 }
 
 //one user's support
 type SupportRequest struct {
 	TopicIndex   uint64
 	SelectIndexs []uint64
+}
+
+//foundation modify sys param
+type FoundModify struct {
+	Key   string
+	Value string
 }

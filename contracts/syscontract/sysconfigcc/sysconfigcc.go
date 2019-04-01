@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 	"sort"
@@ -68,6 +67,14 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		if err != nil {
 			jsonResp := "{\"Error\":\"updateSysParamWithoutVote err: " + err.Error() + "\"}"
 			return shim.Error(jsonResp)
+		}
+		return shim.Success(resultByte)
+	case "getWithoutVoteResult":
+		log.Info("Start getWithoutVoteResult Invoke")
+		resultByte, err := stub.GetState("foundModify")
+		if err != nil {
+			jsonResp := "{\"Error\":\"getWithoutVoteResult err: " + err.Error() + "\"}"
+			return shim.Success([]byte(jsonResp))
 		}
 		return shim.Success(resultByte)
 	case "getVotesResult":
@@ -148,7 +155,7 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 	//token
 	asset := tkInfo.AssetID
 	tkID := TokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
-		SupportResults: supportResults, AssetID: asset.String()}
+		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC()}
 
 	//return json
 	tkJson, err := json.Marshal(tkID)
@@ -407,51 +414,76 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	//	jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
 	//	return nil, fmt.Errorf(jsonResp)
 	//}
-	key := args[0]
-	newValue := args[1]
-	oldValue, err := stub.GetState(args[0])
+	//key := args[0]
+	//newValue := args[1]
+	//oldValue, err := stub.GetState(args[0])
+	//if err != nil {
+	//	return nil, err
+	//}
+	//err = stub.PutState(key, []byte(newValue))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//sysValByte, err := stub.GetState("sysConf")
+	//if err != nil {
+	//	return nil, err
+	//}
+	//sysVal := &core.SystemConfig{}
+	//err = json.Unmarshal(sysValByte, sysVal)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//switch key {
+	//case "DepositAmountForJury":
+	//	sysVal.DepositAmountForJury = newValue
+	//case "DepositRate":
+	//	sysVal.DepositRate = newValue
+	//case "FoundationAddress":
+	//	sysVal.FoundationAddress = newValue
+	//case "DepositAmountForMediator":
+	//	sysVal.DepositAmountForMediator = newValue
+	//case "DepositAmountForDeveloper":
+	//	sysVal.DepositAmountForDeveloper = newValue
+	//case "DepositPeriod":
+	//	sysVal.DepositPeriod = newValue
+	//case "RootCaHolder":
+	//	sysVal.RootCaHolder = newValue
+	//}
+	//sysValByte, err = json.Marshal(sysVal)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//err = stub.PutState("sysConf", sysValByte)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//jsonResp := "{\"Success\":\"update value from " + string(oldValue) + " to " + newValue + "\"}"
+	//return []byte(jsonResp), nil
+
+	//TODO mediator 换届时的相关处理
+	modify := &FoundModify{}
+	modify.Key = args[0]
+	modify.Value = args[1]
+	resultBytes, err := stub.GetState("foundModify")
 	if err != nil {
 		return nil, err
 	}
-	err = stub.PutState(key, []byte(newValue))
+	var modifys []*FoundModify
+	if resultBytes == nil {
+		modifys = append(modifys, modify)
+	} else {
+		err := json.Unmarshal(resultBytes, &modifys)
+		if err != nil {
+			return nil, err
+		}
+		modifys = append(modifys, modify)
+	}
+	modifyByte, err := json.Marshal(modifys)
+	err = stub.PutState("foundModify", modifyByte)
 	if err != nil {
 		return nil, err
 	}
-	sysValByte, err := stub.GetState("sysConf")
-	if err != nil {
-		return nil, err
-	}
-	sysVal := &core.SystemConfig{}
-	err = json.Unmarshal(sysValByte, sysVal)
-	if err != nil {
-		return nil, err
-	}
-	switch key {
-	case "DepositAmountForJury":
-		sysVal.DepositAmountForJury = newValue
-	case "DepositRate":
-		sysVal.DepositRate = newValue
-	case "FoundationAddress":
-		sysVal.FoundationAddress = newValue
-	case "DepositAmountForMediator":
-		sysVal.DepositAmountForMediator = newValue
-	case "DepositAmountForDeveloper":
-		sysVal.DepositAmountForDeveloper = newValue
-	case "DepositPeriod":
-		sysVal.DepositPeriod = newValue
-	case "RootCaHolder":
-		sysVal.RootCaHolder = newValue
-	}
-	sysValByte, err = json.Marshal(sysVal)
-	if err != nil {
-		return nil, err
-	}
-	err = stub.PutState("sysConf", sysValByte)
-	if err != nil {
-		return nil, err
-	}
-	jsonResp := "{\"Success\":\"update value from " + string(oldValue) + " to " + newValue + "\"}"
-	return []byte(jsonResp), nil
+	return []byte(modifyByte), nil
 }
 
 func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
@@ -459,7 +491,8 @@ func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterfac
 		jsonResp := "{\"Error\":\" need 1 args (AssetID String)\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
-	val, err := stub.GetState(args[0])
+	val, err := stub.GetSystemConfig(args[0])
+	//val, err := stub.GetState(args[0])
 	if err != nil {
 		return nil, err
 	}
