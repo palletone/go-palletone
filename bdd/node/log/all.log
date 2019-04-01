@@ -1,3 +1,56 @@
 2019-04-01T18:22:18.803+0800	debug	utils/flags.go:788	Maximum peer count	{"PTN": 25, "LES": 0, "total": 25}
 2019-04-01T18:22:18.909+0800	debug	keystore/file_cache.go:87	FS scan times	{"list": 0, "set": 0, "diff": 0}
 2019-04-01T18:22:18.910+0800	debug	keystore/account_cache.go:296	Handled keystore changes	{"time": 0.0009773}
+2019-04-01T18:30:32.997+0800	debug	utils/flags.go:788	Maximum peer count	{"PTN": 25, "LES": 0, "total": 25}
+2019-04-01T18:30:33.047+0800	debug	keystore/file_cache.go:87	FS scan times	{"list": 0, "set": 0, "diff": 0}
+2019-04-01T18:30:33.051+0800	debug	keystore/account_cache.go:296	Handled keystore changes	{"time": 0.0009767}
+2019-04-01T18:30:33.052+0800	debug	node/node.go:670	Open a leveldb, path:	{"info": "D:\\palletonetest\\node2\\palletone\\leveldb"}
+2019-04-01T18:30:33.055+0800	info	ptndb/database.go:75	Allocated cache and file handles	{"cache": 16, "handles": 16}
+2019-04-01T18:30:35.111+0800	debug	keystore/file_cache.go:87	FS scan times	{"list": 0, "set": 0, "diff": 0}
+2019-04-01T18:30:35.876+0800	info	gptn/accountcmd.go:301	Unlocked account	{"address": "P1HWnu7GY4zmkS13PHCo3VqHroWn4rUfdtZ"}
+2019-04-01T18:30:36.647+0800	info	gen/genesis.go:95	Writing custom genesis block
+2019-04-01T18:30:36.648+0800	info	gen/genesis.go:98	-> Genesis transactions:
+2019-04-01T18:30:36.649+0800	info	gen/genesis.go:101	Tx[0]: 0x77372bbddfc55b571f9546a87799ec79fad96c3fd92dc2043ba41cf893146593
+
+2019-04-01T18:30:36.650+0800	debug	common/unit_repository.go:356	Unit[0xdd996868eb342937d83960d210534b5bdb21d5414613985a76c03168ca86fb70] signed by address:P1HWnu7GY4zmkS13PHCo3VqHroWn4rUfdtZ
+2019-04-01T18:30:36.652+0800	debug	gptn/chaincmd.go:141	Save unit:&modules.Unit{UnitHeader:(*modules.Header)(0xc0420c2300), Txs:modules.Transactions{(*modules.Transaction)(0xc042330780)}, UnitHash:[221 153 104 104 235 52 41 55 216 57 96 210 16 83 75 91 219 33 213 65 70 19 152 90 118 192 49 104 202 134 251 112], UnitSize:4395, ReceivedAt:time.Time{wall:0x0, ext:0, loc:(*time.Location)(nil)}, ReceivedFrom:interface {}(nil)}
+2019-04-01T18:30:36.653+0800	debug	common/unit_repository.go:725	Try to save a new unit to db:0x64a95f2880d63ede88b497eaa316e8f6b04d4656e626e6ba749560e841caf471
+2019-04-01T18:30:36.654+0800	debug	storage/dagdb.go:182	Save header for unit: 64a95f2880d63ede88b497eaa316e8f6b04d4656e626e6ba749560e841caf471
+2019-04-01T18:30:36.654+0800	debug	storage/dagdb.go:195	Save header number PTN-0 for unit: 64a95f2880d63ede88b497eaa316e8f6b04d4656e626e6ba749560e841caf471
+2019-04-01T18:30:36.654+0800	debug	storage/utxodb.go:99	Try to save utxo by key:	{"outpoint_key": "Outpoint[TxId:{77372bbddfc55b571f9546a87799ec79fad96c3fd92dc2043ba41cf893146593},MsgIdx:{0},OutIdx:{0}]", "and index by address:": "P1HWnu7GY4zmkS13PHCo3VqHroWn4rUfdtZ"}
+2019-04-01T18:30:36.655+0800	debug	storage/statedb_account.go:114	Account info for [P1HWnu7GY4zmkS13PHCo3VqHroWn4rUfdtZ] don't exist,create it first
+2019-04-01T18:30:36.655+0800	debug	storage/statedb_account.go:118	Update Ptn Balance for address:P1HWnu7GY4zmkS13PHCo3VqHroWn4rUfdtZ, add Amount:100000000000000000
+2019-04-01T18:30:36.655+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:Version, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.656+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:Alias, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.657+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:TokenAmount, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.657+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:TokenDecimal, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.657+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:DecimalUnit, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.657+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:ChainID, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.657+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:TokenHolder, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.657+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:Text, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.658+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:DepositRate, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.658+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:FoundationAddress, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.658+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:DepositAmountForMediator, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.659+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:DepositAmountForJury, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.659+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:DepositAmountForDeveloper, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.659+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:DepositPeriod, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.659+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:RootCaHolder, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.659+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:sysConf, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.659+0800	debug	storage/statedb_contract.go:69	Try to save contract state with key:GenesisAsset, version:400082bb08000000000000000000000000000000000000000100000000
+2019-04-01T18:30:36.660+0800	debug	common/unit_repository.go:1029	dagconfig textfileindex is false, don't build index for data
+2019-04-01T18:30:36.660+0800	debug	storage/dagdb_tx.go:40	Try to save tx[0x77372bbddfc55b571f9546a87799ec79fad96c3fd92dc2043ba41cf893146593]
+2019-04-01T18:30:36.660+0800	debug	storage/dagdb_tx.go:96	Save RequestId[0x77372bbddfc55b571f9546a87799ec79fad96c3fd92dc2043ba41cf893146593] map to TxId[0x77372bbddfc55b571f9546a87799ec79fad96c3fd92dc2043ba41cf893146593]
+2019-04-01T18:30:36.660+0800	debug	storage/dagdb.go:304	Save body of unit[0x64a95f2880d63ede88b497eaa316e8f6b04d4656e626e6ba749560e841caf471], include txs:[77372bbddfc55b571f9546a87799ec79fad96c3fd92dc2043ba41cf893146593]
+2019-04-01T18:30:36.660+0800	debug	storage/dagdb.go:331	Batch save tx lookup entry, tx count:1
+2019-04-01T18:30:36.661+0800	debug	storage/propertydb.go:131	Save newest unit 0x64a95f2880d63ede88b497eaa316e8f6b04d4656e626e6ba749560e841caf471,index:PTN-0
+2019-04-01T18:30:36.661+0800	debug	storage/propertydb.go:112	Save last stable assetId:PTN,unit: 0x64a95f2880d63ede88b497eaa316e8f6b04d4656e626e6ba749560e841caf471
+2019-04-01T18:30:36.661+0800	debug	storage/dagdb.go:141	Save GenesisUnitHash:64a95f2880d63ede88b497eaa316e8f6b04d4656e626e6ba749560e841caf471
+2019-04-01T18:30:36.661+0800	info	gptn/chaincmd.go:161	Successfully Get Genesis Unit, it's hash: 0x64a95f2880d63ede88b497eaa316e8f6b04d4656e626e6ba749560e841caf471
+2019-04-01T18:30:36.662+0800	debug	modules/global_property.go:190	initialize global property...
+2019-04-01T18:30:36.662+0800	debug	modules/global_property.go:195	initialize chain parameters...
+2019-04-01T18:30:36.663+0800	debug	modules/global_property.go:199	Set active mediators...
+2019-04-01T18:30:36.663+0800	debug	storage/propertydb.go:93	Save global property to db.
+2019-04-01T18:30:36.663+0800	debug	modules/global_property.go:214	initialize dynamic global property...
+2019-04-01T18:30:36.664+0800	debug	storage/propertydb.go:88	Save dynamic global property to db.
+2019-04-01T18:30:36.664+0800	debug	modules/mediator_schedule.go:33	initialize mediator schedule...
+2019-04-01T18:30:36.665+0800	debug	storage/propertydb.go:83	Save mediator schedule to db.
