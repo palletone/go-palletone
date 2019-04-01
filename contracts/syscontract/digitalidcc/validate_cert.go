@@ -39,15 +39,30 @@ func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStub
 	return nil
 }
 
-func ValidateCRLCert(issuer string, crl *pkix.CertificateList, stub shim.ChaincodeStubInterface) error {
-	//if err := checkExists(Cert.SerialNumber.String(), stub); err != nil {
-	//	return err
-	//}
-	//if err := validateIssuer(issuer, nil, stub); err != nil {
-	//	return err
-	//}
-
-	return nil
+func ValidateCRLIssuer(issuer string, crl *pkix.CertificateList, stub shim.ChaincodeStubInterface) (certHolder []*CertHolderInfo, err error) {
+	// check issuer identity
+	certsInfo, err := getIssuerCertsInfo(issuer, stub)
+	if err != nil {
+		return nil, err
+	}
+	certHolder = []*CertHolderInfo{}
+	for _, revokeCert := range crl.TBSCertList.RevokedCertificates {
+		var i int = 0
+		for j, holder := range certsInfo {
+			i = j
+			if revokeCert.SerialNumber.String() == holder.CertID {
+				certHolder = append(certHolder, holder)
+				break
+			}
+		}
+		if i > len(certsInfo) {
+			return nil, fmt.Errorf("Issuer(%s) can not revoke cert(%s): has no authority", issuer, revokeCert.SerialNumber.String())
+		}
+	}
+	if len(certHolder) != len(crl.TBSCertList.RevokedCertificates) {
+		return nil, fmt.Errorf("DigitalIdentityChainCode addCRLCert validate error: cert lenth is invalid")
+	}
+	return certsInfo, nil
 }
 
 func checkExists(certid string, stub shim.ChaincodeStubInterface) error {

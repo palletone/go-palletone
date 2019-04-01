@@ -56,9 +56,14 @@ func (d *DigitalIdentityChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.R
 		return d.getCertFormateInfo(stub, args)
 	case "getCertBytes":
 		return d.getCertBytes(stub, args)
+	case "getCertHolder":
+		return d.getCertHolder(stub, args)
 	// 添加CRL证书
-	case "addCRLCert":
+	case "addCRL":
 		return d.addCRLCert(stub, args)
+	// 获得crl的byte数据
+	case "getCRL":
+		return d.getIssuerCRL(stub, args)
 	default:
 		return shim.Error("Invoke error")
 	}
@@ -102,11 +107,10 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		return shim.Error(reqStr)
 	}
 	certInfo := CertInfo{
-		Issuer:    issuer,
-		Holder:    certHolder,
-		Cert:      cert,
-		Nonce:     nonce + 1,
-		CertBytes: pemBytes,
+		Issuer: issuer,
+		Holder: certHolder,
+		Cert:   cert,
+		Nonce:  nonce + 1,
 	}
 
 	// put Cert state to write set
@@ -130,32 +134,30 @@ func (d *DigitalIdentityChainCode) addCRLCert(stub shim.ChaincodeStubInterface, 
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert parse issuer error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
-	// load Cert file
+	// load crl file
 	crlPath := args[0]
 	pemBytes, err := loadCert(crlPath)
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load [%s] error: %s", crlPath, err.Error())
 		return shim.Error(reqStr)
 	}
-
-	// parse Cert bytes to Certificate struct
+	// parse crl bytes to CertificateList struct
 	crl, err := x509.ParseCRL(pemBytes)
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert parse Cert error: %s", crlPath)
 		return shim.Error(reqStr)
 	}
-	// validate certificate
-	if err := ValidateCRLCert(issuer, crl, stub); err != nil {
+	// validate crl issuer
+	certHolderInfo, err := ValidateCRLIssuer(issuer, crl, stub)
+	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert validate error: %s", err.Error())
 		return shim.Error(reqStr)
 	}
-	//// handle state
-	//for _, crl := range crl.TBSCertList.RevokedCertificates {
-	//	certid := crl.SerialNumber.String()
-	//	// 删除状态
-	//
-	//	// 更新crl状态
-	//}
+
+	// handle state
+	if err := setCRL(issuer, crl, certHolderInfo, stub); err != nil {
+		return shim.Error(fmt.Sprintf("DigitalIdentityChainCode addCRLCert save state error: %s", err.Error()))
+	}
 	return shim.Success([]byte("---- Add CRL Success --- "))
 }
 
@@ -242,4 +244,41 @@ func (d *DigitalIdentityChainCode) getCertBytes(stub shim.ChaincodeStubInterface
 		return shim.Error(reqStr)
 	}
 	return shim.Success(certInfoJson)
+}
+
+func (d *DigitalIdentityChainCode) getCertHolder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 1 {
+		reqStr := fmt.Sprintf("Need one args: [certificate serial number]")
+		return shim.Error(reqStr)
+	}
+	data, err := GetCertDBInfo(args[0], stub)
+	if err != nil {
+		reqStr := fmt.Sprintf("Get Cert holder error: %s", err.Error())
+		return shim.Error(reqStr)
+	}
+	certInfoJson, err := json.Marshal(data.Holder)
+	if err != nil {
+		reqStr := fmt.Sprintf("Get Cert holder error: %s", err.Error())
+		return shim.Error(reqStr)
+	}
+	return shim.Success(certInfoJson)
+}
+
+func (d *DigitalIdentityChainCode) getIssuerCRL(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 1 {
+		reqStr := fmt.Sprintf("Need one args: [issuer address]")
+		return shim.Error(reqStr)
+	}
+	crlInfo, err := getIssuerCRLBytes(args[0], stub)
+	if err != nil {
+		reqStr := fmt.Sprintf("get issuer crl info error:%s", err.Error())
+		return shim.Error(reqStr)
+	}
+
+	//return json
+	crlBytesJson, err := json.Marshal(crlInfo)
+	if err != nil {
+		return shim.Success([]byte(err.Error()))
+	}
+	return shim.Success(crlBytesJson)
 }
