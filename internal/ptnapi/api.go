@@ -45,7 +45,6 @@ import (
 	//"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	vote2 "github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
@@ -511,27 +510,6 @@ func (s *PublicBlockChainAPI) Ccdeploy(ctx context.Context, templateId string, t
 	//args := ut.ToChaincodeArgs(f, "a", "100", "b", "200")
 	deployId, err := s.b.ContractDeploy(tempId, txid, args, 30*time.Second)
 	return hexutil.Bytes(deployId), err
-}
-func (s *PublicBlockChainAPI) CreateMediatorVote(ctx context.Context, paymentHex, mediatorAddr string) (string, error) {
-	txBytes, err := hex.DecodeString(paymentHex)
-	if err != nil {
-		return "", err
-	}
-	tx := &modules.Transaction{}
-	err = rlp.DecodeBytes(txBytes, tx)
-	if err != nil {
-		return "", err
-	}
-	vote := &vote2.VoteInfo{}
-	vote.VoteType = vote2.TypeMediator
-	add, _ := common.StringToAddress(mediatorAddr)
-	vote.Contents = add.Bytes()
-	//strings := []string{}
-	//strings = append(strings, mediatorAddr)
-	//vote.Contents, _ = json.Marshal(strings)
-	tx.AddMessage(modules.NewMessage(modules.APP_VOTE, vote))
-	txB, _ := rlp.EncodeToBytes(tx)
-	return fmt.Sprintf("%X", txB), nil
 }
 
 //func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (string, error) {
