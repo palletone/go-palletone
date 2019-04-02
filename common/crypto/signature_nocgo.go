@@ -26,6 +26,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 )
 
+/*
 // Ecrecover returns the uncompressed public key that created the given signature.
 func Ecrecover(hash, sig []byte) ([]byte, error) {
 	pub, err := SigToPub(hash, sig)
@@ -46,7 +47,7 @@ func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
 	pub, _, err := btcec.RecoverCompact(btcec.S256(), btcsig, hash)
 	return (*ecdsa.PublicKey)(pub), err
 }
-
+*/
 // Sign calculates an ECDSA signature.
 //
 // This function is susceptible to chosen plaintext attacks that can leak

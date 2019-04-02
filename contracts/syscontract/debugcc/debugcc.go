@@ -79,7 +79,7 @@ func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface, args
 		reqStr := fmt.Sprintf("Need one args: [requester cert id]")
 		return shim.Error(reqStr)
 	}
-	certBytes, err := stub.GetRequesterCert(args[0])
+	certBytes, err := stub.GetRequesterCert()
 	if err != nil {
 		return shim.Error(err.Error())
 	}

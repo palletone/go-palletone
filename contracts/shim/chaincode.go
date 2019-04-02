@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"strconv"
 	"strings"
@@ -455,8 +456,10 @@ func (stub *ChaincodeStub) RecvJury(msgType uint32, timeout uint32) ([]byte, err
 
 // GetArgs documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetArgs() [][]byte {
-
-	return stub.args[1:]
+	if len(stub.args) <= 2 {
+		return nil
+	}
+	return stub.args[2:]
 }
 
 // GetStringArgs documentation can be found in interfaces.go
@@ -590,8 +593,13 @@ func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.Invoke
 }
 
 // 根据证书ID获得证书字节数据，不包含BEGIN和EN两行字符
-func (stub *ChaincodeStub) GetRequesterCert(certID string) (certBytes []byte, err error) {
-	key := dagConstants.CERT_BYTES_SYMBOL + certID
+func (stub *ChaincodeStub) GetRequesterCert() (certBytes []byte, err error) {
+	if len(stub.args) <= 1 {
+		return nil, fmt.Errorf("args error: has no cert info")
+	}
+	certID := big.Int{}
+	certID.SetBytes(stub.args[1])
+	key := dagConstants.CERT_BYTES_SYMBOL + certID.String()
 	return stub.handler.handleGetCertByID(key, stub.ChannelId, stub.TxID)
 }
 

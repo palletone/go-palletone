@@ -153,7 +153,7 @@ type ChaincodeStubInterface interface {
 	SupplyToken(assetId []byte, uniqueId []byte, amt uint64, creator string) error
 
 	// 根据证书ID获得证书字节数据
-	GetRequesterCert(certID string) (certBytes []byte, err error)
+	GetRequesterCert() (certBytes []byte, err error)
 
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys

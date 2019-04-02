@@ -71,7 +71,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Success(resultByte)
 	case "getWithoutVoteResult":
 		log.Info("Start getWithoutVoteResult Invoke")
-		resultByte, err := stub.GetState("foundModify")
+		resultByte, err := stub.GetState(sysParam)
 		if err != nil {
 			jsonResp := "{\"Error\":\"getWithoutVoteResult err: " + err.Error() + "\"}"
 			return shim.Success([]byte(jsonResp))
@@ -123,7 +123,7 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 	}
 
 	//get token information
-	var topicSupports []TopicSupports
+	var topicSupports []SysTopicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
 		return nil, fmt.Errorf("Results format invalid, Error!!!")
@@ -139,9 +139,9 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 		isVoteEnd = true
 	}
 	//calculate result
-	var supportResults []SupportResult
+	var supportResults []*modules.SysSupportResult
 	for i, oneTopicSupport := range topicSupports {
-		var oneResult SupportResult
+		oneResult := &modules.SysSupportResult{}
 		oneResult.TopicIndex = uint64(i) + 1
 		oneResult.TopicTitle = oneTopicSupport.TopicTitle
 		oneResultSort := sortSupportByCount(oneTopicSupport.VoteResults)
@@ -154,7 +154,7 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 
 	//token
 	asset := tkInfo.AssetID
-	tkID := TokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
+	tkID := modules.SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
 		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC()}
 
 	//return json
@@ -218,19 +218,19 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	}
 	vt.VoteEndTime = VoteEndTime
 	//VoteContent
-	var voteTopics []VoteTopic
+	var voteTopics []SysVoteTopic
 	err = json.Unmarshal([]byte(args[3]), &voteTopics)
 	if err != nil {
 		jsonResp := "{\"Error\":\"VoteContent format invalid\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
 	//init support
-	var supports []TopicSupports
+	var supports []SysTopicSupports
 	for _, oneTopic := range voteTopics {
-		var oneSupport TopicSupports
+		var oneSupport SysTopicSupports
 		oneSupport.TopicTitle = oneTopic.TopicTitle
 		for _, oneOption := range oneTopic.SelectOptions {
-			var oneResult VoteResult
+			oneResult := &modules.SysVoteResult{}
 			oneResult.SelectOption = oneOption
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
 		}
@@ -264,7 +264,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	}
 
 	//last put state
-	info := TokenInfo{vt.Name, vt.Symbol, createAddr, vt.VoteType, totalSupply,
+	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr, vt.VoteType, totalSupply,
 		VoteEndTime, voteContentJson, assetID}
 
 	err = setSymbols(stub, &info)
@@ -319,13 +319,13 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 	}
 
 	//parse support requests
-	var supportRequests []SupportRequest
+	var supportRequests []SysSupportRequest
 	err = json.Unmarshal([]byte(args[0]), &supportRequests)
 	if err != nil {
 		return nil, fmt.Errorf("SupportRequestJson format invalid")
 	}
 	//get token information
-	var topicSupports []TopicSupports
+	var topicSupports []SysTopicSupports
 	err = json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
 		return nil, fmt.Errorf("Results format invalid, Error!!!")
@@ -461,25 +461,25 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	//return []byte(jsonResp), nil
 
 	//TODO mediator 换届时的相关处理
-	modify := &FoundModify{}
+	modify := &modules.FoundModify{}
 	modify.Key = args[0]
 	modify.Value = args[1]
-	resultBytes, err := stub.GetState("foundModify")
+	resultBytes, err := stub.GetState(sysParam)
 	if err != nil {
 		return nil, err
 	}
-	var modifys []*FoundModify
+	var modifies []*modules.FoundModify
 	if resultBytes == nil {
-		modifys = append(modifys, modify)
+		modifies = append(modifies, modify)
 	} else {
-		err := json.Unmarshal(resultBytes, &modifys)
+		err := json.Unmarshal(resultBytes, &modifies)
 		if err != nil {
 			return nil, err
 		}
-		modifys = append(modifys, modify)
+		modifies = append(modifies, modify)
 	}
-	modifyByte, err := json.Marshal(modifys)
-	err = stub.PutState("foundModify", modifyByte)
+	modifyByte, err := json.Marshal(modifies)
+	err = stub.PutState(sysParam, modifyByte)
 	if err != nil {
 		return nil, err
 	}
@@ -500,10 +500,12 @@ func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterfac
 	return []byte(jsonResp), nil
 }
 
-func getSymbols(stub shim.ChaincodeStubInterface, assetID string) *TokenInfo {
+func getSymbols(stub shim.ChaincodeStubInterface, assetID string) *SysTokenInfo {
 	//
-	tkInfo := TokenInfo{}
-	tkInfoBytes, _ := stub.GetState(symbolsKey + assetID)
+	tkInfo := SysTokenInfo{}
+	//TODO
+	//tkInfoBytes, _ := stub.GetState(symbolsKey + assetID)
+	tkInfoBytes, _ := stub.GetState(sysParams)
 	if len(tkInfoBytes) == 0 {
 		return nil
 	}
@@ -514,17 +516,17 @@ func getSymbols(stub shim.ChaincodeStubInterface, assetID string) *TokenInfo {
 	}
 	return &tkInfo
 }
-func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
+func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 	val, err := json.Marshal(tkInfo)
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(symbolsKey+tkInfo.AssetID.String(), val)
+	err = stub.PutState(sysParams, val)
 	return err
 }
 
 // A slice of TopicResult that implements sort.Interface to sort by Value.
-type VoteResultList []VoteResult
+type VoteResultList []*modules.SysVoteResult
 
 func (p VoteResultList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p VoteResultList) Len() int           { return len(p) }

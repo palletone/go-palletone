@@ -18,7 +18,6 @@
 package modules
 
 import (
-	"crypto/ecdsa"
 	"strings"
 	"time"
 	"unsafe"
@@ -479,6 +478,8 @@ func MsgstoAddress(msgs []*Message) common.Address {
 	}
 	return common.Address{}
 }
+
+/*
 func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
 	sig := make([]byte, 65)
 	copy(sig[32-len(r):32], r)
@@ -486,7 +487,7 @@ func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
 	copy(sig[64:], v)
 	return crypto.SigToPub(hash, sig)
 }
-
+*/
 /**
 根据大端规则填充字节
 To full fill bytes according bigendian

@@ -191,3 +191,47 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 	}
 	return false
 }
+
+func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error) {
+	val, _, err := statedb.GetConfig("sysParam")
+	if err != nil {
+		return nil, err
+	}
+	var modifies []*modules.FoundModify
+	if val == nil {
+		return nil, err
+	} else {
+		err := json.Unmarshal(val, &modifies)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return modifies, nil
+}
+
+func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
+	val, _, err := statedb.GetConfig("sysParams")
+	if err != nil {
+		return nil, err
+	}
+	info := &modules.SysTokenIDInfo{}
+	if val == nil {
+		return nil, err
+	} else {
+		err := json.Unmarshal(val, info)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return info, nil
+}
+
+func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
+	//SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion)
+	id := syscontract.SysConfigContractAddress.Bytes21()
+	err := statedb.SaveContractState(id, key, val, ver)
+	if err != nil {
+		return err
+	}
+	return nil
+}

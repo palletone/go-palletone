@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 )
 
 func ExampleNewNode() {
@@ -222,6 +221,7 @@ func TestNodeID_textEncoding(t *testing.T) {
 	}
 }
 
+/*
 func TestNodeID_recover(t *testing.T) {
 	prv := newkey()
 	hash := make([]byte, 32)
@@ -247,7 +247,7 @@ func TestNodeID_recover(t *testing.T) {
 		t.Errorf("Pubkey mismatch:\n  got:  %#v\n  want: %#v", ecdsa, &prv.PublicKey)
 	}
 }
-
+*/
 func TestNodeID_pubkeyBad(t *testing.T) {
 	ecdsa, err := NodeID{}.Pubkey()
 	if err == nil {

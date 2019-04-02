@@ -57,7 +57,7 @@ bin/
 #run temp file
 /cmd/gptn/data1
 /cmd/gptn/log
-#**/leveldb/
+**/leveldb/
 *.rlp
 **/ptn-config.toml
 dag/common/unit.go.orig
@@ -69,7 +69,7 @@ palletone\.sublime-workspace
 dag/common/utxo.go.orig
 
 *.sublime-project
-
+core/accounts/keystore/UTC*
 *.sublime-workspace
 cmd/gptn/gptn/
 cmd/gptn/keystore/
