@@ -22,69 +22,150 @@ package digitalidcc
 
 import (
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"io/ioutil"
-	"math/big"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type CertInfo struct {
-	Issuer    string
-	Nonce     int // 不断加1的数，可以表示当前issuer发布的第几个证书。
-	cert      *x509.Certificate
-	CertBytes []byte
+	Issuer string
+	Holder string
+	Nonce  int // 不断加1的数，可以表示当前issuer发布的第几个证书。
+	Cert   *x509.Certificate
 }
 
-// put cert state to write set
+type CertDBInfo struct {
+	Holder string
+	Raw    []byte
+}
+
+type CertHolderInfo struct {
+	Holder   string
+	IsServer bool // 是否是中间证书
+	CertID   string
+}
+
+type CertState struct {
+	CertID         string
+	RecovationTime string
+}
+
+func (certHolderInfo *CertHolderInfo) Bytes() []byte {
+	val, err := json.Marshal(certHolderInfo)
+	if err != nil {
+		return nil
+	}
+	return val
+}
+
+func (certHolderInfo *CertHolderInfo) SetBytes(data []byte) error {
+	if err := json.Unmarshal(data, certHolderInfo); err != nil {
+		return err
+	}
+	return nil
+}
+
+// put Cert state to write set
 func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface) error {
-	var key string
+	// put {issuer, certid} state
+	key := dagConstants.CERT_ISSUER_SYMBOL + certInfo.Issuer + dagConstants.CERT_SPLIT_CH + strconv.Itoa(certInfo.Nonce)
+	certHolderInfo := CertHolderInfo{
+		Holder:   certInfo.Holder,
+		IsServer: isServer,
+		CertID:   certInfo.Cert.SerialNumber.String(),
+	}
+	if err := stub.PutState(key, certHolderInfo.Bytes()); err != nil {
+		return err
+	}
+	// put {holder, revocation} state
 	if isServer {
 		key = dagConstants.CERT_SERVER_SYMBOL
 	} else {
 		key = dagConstants.CERT_MEMBER_SYMBOL
 	}
-	// put {issuer, certid} state
-	key += certInfo.Issuer + dagConstants.CERT_SPLIT_CH + strconv.Itoa(certInfo.Nonce)
-	if err := stub.PutState(key, certInfo.cert.SerialNumber.Bytes()); err != nil {
+	key += certInfo.Holder + dagConstants.CERT_SPLIT_CH + certInfo.Cert.SerialNumber.String()
+	recovationTime, _ := time.Time{}.MarshalBinary()
+	if err := stub.PutState(key, recovationTime); err != nil {
 		return err
 	}
-	// put {certid, cert bytes} state
-	key = dagConstants.CERT_BYTES_SYMBOL + certInfo.cert.SerialNumber.String()
-	return stub.PutState(key, certInfo.CertBytes)
+	// put {certid, Cert bytes} state
+	key = dagConstants.CERT_BYTES_SYMBOL + certInfo.Cert.SerialNumber.String()
+	cerDBInfo := CertDBInfo{
+		Holder: certInfo.Holder,
+		Raw:    certInfo.Cert.Raw,
+	}
+	val, err := json.Marshal(cerDBInfo)
+	if err != nil {
+		return err
+	}
+	if err := stub.PutState(key, val); err != nil {
+		return err
+	}
+	return nil
 }
 
-func getAddressCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCertIDs []string, memberCertIDs []string, err error) {
+func getHolderCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCertStates []*CertState, memberCertStates []*CertState, err error) {
 	// query server certificates
-	serverCertIDs, err = queryCertsIDs(dagConstants.CERT_SERVER_SYMBOL, addr, stub)
+	serverCertStates, err = queryCertsIDs(dagConstants.CERT_SERVER_SYMBOL, addr, stub)
 	if err != nil {
 		return nil, nil, err
 	}
 	// query memmber certificates
-	memberCertIDs, err = queryCertsIDs(dagConstants.CERT_MEMBER_SYMBOL, addr, stub)
+	memberCertStates, err = queryCertsIDs(dagConstants.CERT_MEMBER_SYMBOL, addr, stub)
 	if err != nil {
 		return nil, nil, err
 	}
-	return serverCertIDs, memberCertIDs, nil
+	return serverCertStates, memberCertStates, nil
 }
 
-func queryCertsIDs(symbol string, issuer string, stub shim.ChaincodeStubInterface) (certids []string, err error) {
-	prefixKey := symbol + issuer + dagConstants.CERT_SPLIT_CH
+func getIssuerCertsInfo(issuer string, stub shim.ChaincodeStubInterface) (certHolderInfo []*CertHolderInfo, err error) {
+	// query server certificates
+	prefixKey := dagConstants.CERT_ISSUER_SYMBOL + issuer + dagConstants.CERT_SPLIT_CH
 	KVs, err := stub.GetStateByPrefix(prefixKey)
 	if err != nil {
 		return nil, err
 	}
-	certids = []string{}
 	for _, data := range KVs {
-		var certID big.Int
-		certID.SetBytes(data.Value)
-		certids = append(certids, certID.String())
+		info := CertHolderInfo{}
+		if err := info.SetBytes(data.Value); err != nil {
+			return nil, err
+		}
+		certHolderInfo = append(certHolderInfo, &info)
 	}
-	return certids, nil
+	return certHolderInfo, nil
+}
+
+func queryCertsIDs(symbol string, holder string, stub shim.ChaincodeStubInterface) (certstate []*CertState, err error) {
+	prefixKey := symbol + holder + dagConstants.CERT_SPLIT_CH
+	KVs, err := stub.GetStateByPrefix(prefixKey)
+	if err != nil {
+		return nil, err
+	}
+	certstate = []*CertState{}
+	var revocationTime time.Time
+	for _, data := range KVs {
+		if err := revocationTime.UnmarshalBinary(data.Value); err != nil {
+			return nil, err
+		}
+		certid, err := parseCertIDFrKey(data.Key)
+		if err != nil {
+			return nil, nil
+		}
+		state := CertState{
+			CertID:         certid,
+			RecovationTime: revocationTime.String(),
+		}
+		certstate = append(certstate, &state)
+	}
+	return certstate, nil
 }
 
 func loadCert(path string) ([]byte, error) {
@@ -95,7 +176,7 @@ func loadCert(path string) ([]byte, error) {
 	}
 	certDERBlock, _ := pem.Decode(data)
 	if certDERBlock == nil {
-		return nil, fmt.Errorf("get none cert infor")
+		return nil, fmt.Errorf("get none Cert infor")
 	}
 
 	return certDERBlock.Bytes, nil
@@ -113,13 +194,17 @@ func parseNondeFrKey(key string) (nonce int, err error) {
 	return nonce, nil
 }
 
-func queryNonce(isServer bool, issuer string, stub shim.ChaincodeStubInterface) (nonce int, err error) {
-	var prefixKey string
-	if isServer {
-		prefixKey = dagConstants.CERT_SERVER_SYMBOL + issuer + dagConstants.CERT_SPLIT_CH
-	} else {
-		prefixKey = dagConstants.CERT_SERVER_SYMBOL + issuer + dagConstants.CERT_SPLIT_CH
+func parseCertIDFrKey(key string) (certId string, err error) {
+	ss := strings.Split(key, dagConstants.CERT_SPLIT_CH)
+	if len(ss) != 2 {
+		return "", fmt.Errorf("get nonce from key error")
 	}
+
+	return ss[1], nil
+}
+
+func queryNonce(prefixSymbol string, issuer string, stub shim.ChaincodeStubInterface) (nonce int, err error) {
+	prefixKey := prefixSymbol + issuer + dagConstants.CERT_SPLIT_CH
 	KVs, err := stub.GetStateByPrefix(prefixKey)
 	if err != nil {
 		return -1, err
@@ -144,8 +229,62 @@ func queryNonce(isServer bool, issuer string, stub shim.ChaincodeStubInterface) 
 func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []byte, err error) {
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
+	certDBInfo := CertDBInfo{}
+	if err := json.Unmarshal(data, &certDBInfo); err != nil {
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
+	return certDBInfo.Raw, nil
+}
+
+func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo *CertDBInfo, err error) {
+	key := dagConstants.CERT_BYTES_SYMBOL + certid
+	data, err := stub.GetState(key)
+	certDBInfo = &CertDBInfo{}
+	if err := json.Unmarshal(data, certDBInfo); err != nil {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	return certDBInfo, nil
+}
+
+func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*CertHolderInfo, stub shim.ChaincodeStubInterface) error {
+	var symbol string = ""
+	for index, revokeCert := range crl.TBSCertList.RevokedCertificates {
+		t, err := revokeCert.RevocationTime.MarshalBinary()
+		if err != nil {
+			return err
+		}
+		// update holder cert revocation
+		if certHolderInfo[index].IsServer {
+			symbol = dagConstants.CERT_SERVER_SYMBOL
+		} else {
+			symbol = dagConstants.CERT_MEMBER_SYMBOL
+		}
+		key := symbol + certHolderInfo[index].Holder + dagConstants.CERT_SPLIT_CH + certHolderInfo[index].CertID
+		if err := stub.PutState(key, t); err != nil {
+			return err
+		}
+		// update issuer crl bytes
+		key = dagConstants.CRL_BYTES_SYMBOL + issuer
+		if err := stub.PutState(key, crl.TBSCertList.Raw); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getIssuerCRLBytes(issuer string, stub shim.ChaincodeStubInterface) ([]byte, error) {
+	// query server certificates
+	key := dagConstants.CRL_BYTES_SYMBOL + issuer
+	data, err := stub.GetState(key)
+	if err != nil {
+		return nil, err
+	}
+
 	return data, nil
 }

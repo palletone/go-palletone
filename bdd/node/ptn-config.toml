@@ -1,0 +1,160 @@
+[Ptn]
+NetworkId = 1
+SyncMode = "fast"
+NoPruning = false
+LightPeers = 100
+DatabaseCache = 768
+TrieCache = 256
+TrieTimeout = 300000000000
+GasPrice = 1000000
+EnablePreimageRecording = false
+
+[TxPool]
+NoLocals = false
+Journal = "transactions.rlp"
+Rejournal = 3600000000000
+FeeLimit = 1
+PriceBump = 10
+GlobalSlots = 8192
+GlobalQueue = 2048
+Lifetime = 10800000000000
+Removetime = 1800000000000
+OrphanTTL = 900000000000
+MaxOrphanTxs = 10000
+MaxOrphanTxSize = 2000000
+
+[Node]
+DataDir = "./palletone"
+IPCPath = "gptn.ipc"
+HTTPHost = "localhost"
+HTTPPort = 8545
+HTTPVirtualHosts = ["localhost"]
+HTTPModules = ["net", "web3", "wallet", "dag", "personal", "mediator", "ptn"]
+WSHost = "localhost"
+WSPort = 8546
+WSModules = ["net", "web3", "dag", "mediator", "ptn"]
+
+[Dashboard]
+Host = "localhost"
+Port = 8080
+Refresh = 5000000000
+
+[Jury]
+ContractSigNum = 1
+ElectionNum = 4
+
+[[Jury.Accounts]]
+Address = "P1Bzdwi9ox8cffGRmGpVNJn7Xidh6YfAaq1"
+Password = "1"
+
+[MediatorPlugin]
+EnableProducing = true
+EnableStaleProduction = true
+EnableConsecutiveProduction = false
+RequiredParticipation = 0
+EnableGroupSigning = true
+
+[[MediatorPlugin.Mediators]]
+Address = "P1Bzdwi9ox8cffGRmGpVNJn7Xidh6YfAaq1"
+Password = "1"
+InitPrivKey = "74t3GCqyStK7yUfY7NDmpq2HbzC79RTtC9TRGojNbpH2"
+InitPubKey = "VLXDAP6Km5dUPxdi4GYX633kNCsQjXCqHHddeQgfmBLPRC2HbuVaCp3kDc7RJo2HfUAvGkVajzqCZBX4iM4un2muR97KPv8ihCwLoFYcLcMKp9YyUSkymRSdze635hsHzspW6BNQ66wmhSNDKtqMFPXzx8Q5jex9Hf7LiFt7xTWugrY"
+
+[[MediatorPlugin.Mediators]]
+Address = "P1F2Aw7HbWdVmRoX8rzuoa9Tti9VK9Xrb2p"
+Password = "1"
+InitPrivKey = "7yg3r4GQmjyUXBsAeLRTyUVjZugR17bmDeUKaRszdkvx"
+InitPubKey = "cvfSBs4DyUXRe1Jy31v18pzLoEYjQKZRnxtWLkbrgdMSNSDdiPmLwmSdsPw4vS9upusQmABbgEF9Einvwkm2svoCsunL8sf7PkfqrD1iyKqTE3So4zMGBoLFkkxkJjaQepa9mLbsvS8YSY7jhV47xiG1fVLQCwRaLtYwkLGuiXSM6zA"
+
+[[MediatorPlugin.Mediators]]
+Address = "P18WKX862hFcMYNJoii6CRgNDHKAVvx5K1r"
+Password = "1"
+InitPrivKey = "7XZY8fx92cUQQBbE8JfgG9xLomTRb17uYV9knSSZAib5"
+InitPubKey = "WY3ykoSKfbs92F2wSa2GdDqEhNBtM8kj4Kb9Vgr81z65svf4Gw3WBsT5Y2b6Ger8PWQQm64mQ9vUnuimT2WaebqJzKdkA3uUzFEm3c9DNdU7gY1MMukDQNh1eqj8hbyD6uDEyoZo8aE8vTtEf9dTjtt7yVmu2gSRNWuVE2u4ArbKU5T"
+
+[[MediatorPlugin.Mediators]]
+Address = "P1LFxvvESGoyUTcFtwBsk5yBTXnFvXJ318A"
+Password = "1"
+InitPrivKey = "4W7aQ8EZXHjPKvSRkkBvoJ2gfWKLMge6UJdztjxWnPsT"
+InitPubKey = "XqsQiyjV5kadFoy65BRgVVfSwfPAGiLM8Z1A1AxQsnqYQYZbctSNdLEeTvzniYJ8ZjpwJKqQBrcTmrVaF8imS63CFk5GwLiSdNFae6Yy1bu4tTTq1xLwZgo7BH35ehiUaT7vMAQntUxcMqQ7vRsKMk521J46dk2wsSNtPrPXVumhjCQ"
+
+[[MediatorPlugin.Mediators]]
+Address = "P13dqj7q9McKKMwzDp75KRoFfN4Dm15pWYJ"
+Password = "1"
+InitPrivKey = "7xfxSXAM2RxpMDqtk2NuMJrbYu7FseSXu7s9Z1RamzWu"
+InitPubKey = "XcCiWFUaScDcmyhxHievqxMeRmbY5NUTYAUfn2Vk4XqLvbqwTmqtZbY3CdKSR7F3dB7qF3eHuWJfBM1gpcwQkjfVwjTBr5QfHYZaFggibJet1zcK1o9P3Fkoy8TrrUqwe6HKGum1UhWB6wYieAtQbf2qbK7EfRanrmSo7WCTBTffdzo"
+
+[Log]
+OutputPaths = ["stdout", "./log/all.log"]
+ErrorOutputPaths = ["stderr", "./log/error.log"]
+OpenModule = ["all"]
+LoggerLvl = "DEBUG"
+Encoding = "console"
+Development = true
+RotationMaxSize = 500
+RotationMaxAge = 28
+
+[Dag]
+DbPath = "./leveldb"
+DbCache = 0
+DbHandles = 0
+CacheSource = ""
+RedisAddr = ""
+RedisPwd = ""
+RedisPrefix = ""
+RedisDb = 0
+UnitTxSize = 1.048576e+07
+UtxoIndex = true
+MemoryUnitSize = 1280
+IrreversibleHeight = 1
+WhetherValidateUnitSignature = false
+GenesisHash = "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c"
+PtnAssetHex = "PTN"
+PtnAssetId = [64, 0, 130, 187, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+IsRewardCoin = false
+AddrTxsIndex = false
+Token721TxIndex = true
+TextFileHashIndex = false
+GasToken = "PTN"
+MainToken = "PTN"
+SyncPartitionTokens = []
+
+[P2P]
+MaxPeers = 25
+NoDiscovery = false
+BootstrapNodes = []
+StaticNodes = []
+TrustedNodes = []
+ListenAddr = ":30303"
+EnableMsgEvents = false
+
+[Ada.Btc]
+NetID = 1
+BtcHost = "localhost:18332"
+RPCUser = "zxl"
+RPCPasswd = "123456"
+CertPath = ""
+WalletPasswd = "1"
+
+[Ada.Eth]
+NetID = 1
+Rawurl = "\\\\.\\pipe\\geth.ipc"
+
+[Ada.CCInfoKV.test]
+CCName = ""
+
+[Ada.CCInfoKV.test.ChainCodeKV]
+testk = [116, 101, 115, 116, 118]
+
+[Contract]
+ContractFileSystemPath = "./chaincodes"
+ContractAddress = "127.0.0.1:12345"
+ContractExecutetimeout = 20000000000
+ContractDeploytimeout = 40000000000
+VmEndpoint = "unix:///var/run/docker.sock"
+ContractBuilder = "palletone/goimg"
+
+[Contract.SysContract]
+createToken_sycc = "true"
+deposit_syscc = "true"
+sample_syscc = "true"

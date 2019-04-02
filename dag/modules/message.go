@@ -751,3 +751,27 @@ func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
 	}
 	return true
 }
+
+//foundation modify sys param
+type FoundModify struct {
+	Key   string
+	Value string
+}
+
+type SysTokenIDInfo struct {
+	CreateAddr     string
+	TotalSupply    uint64
+	AssetID        string
+	CreateTime     time.Time
+	IsVoteEnd      bool
+	SupportResults []*SysSupportResult
+}
+type SysSupportResult struct {
+	TopicIndex  uint64
+	TopicTitle  string
+	VoteResults []*SysVoteResult
+}
+type SysVoteResult struct {
+	SelectOption string
+	Num          uint64
+}

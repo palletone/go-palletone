@@ -25,11 +25,11 @@ import (
 	"net"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const Version = 4
@@ -438,9 +438,11 @@ func (t *udp) loop() {
 }
 
 const (
-	macSize  = 256 / 8
-	sigSize  = 520 / 8
-	headSize = macSize + sigSize // space of packet frame data
+	macSize = 256 / 8
+	//sigSize  = 520 / 8
+	//headSize = macSize + sigSize // space of packet frame data
+	IdSize   = NodeIDBits / 8
+	headSize = macSize + IdSize
 )
 
 var (
@@ -492,12 +494,9 @@ func encodePacket(priv *ecdsa.PrivateKey, ptype byte, req interface{}) (packet, 
 		return nil, nil, err
 	}
 	packet = b.Bytes()
-	sig, err := crypto.Sign(crypto.Keccak256(packet[headSize:]), priv)
-	if err != nil {
-		log.Error("Can't sign discv4 packet", "err", err)
-		return nil, nil, err
-	}
-	copy(packet[macSize:], sig)
+
+	nodeID := PubkeyID(&priv.PublicKey)
+	copy(packet[macSize:], nodeID.Bytes())
 	// add the hash to the front. Note: this doesn't protect the
 	// packet in any way. Our public key will be part of this hash in
 	// The future.
@@ -551,12 +550,12 @@ func decodePacket(buf []byte) (packet, NodeID, []byte, error) {
 	if len(buf) < headSize+1 {
 		return nil, NodeID{}, nil, errPacketTooSmall
 	}
-	hash, sig, sigdata := buf[:macSize], buf[macSize:headSize], buf[headSize:]
+	hash, id, sigdata := buf[:macSize], buf[macSize:headSize], buf[headSize:]
 	shouldhash := crypto.Keccak256(buf[macSize:])
 	if !bytes.Equal(hash, shouldhash) {
 		return nil, NodeID{}, nil, errBadHash
 	}
-	fromID, err := recoverNodeID(crypto.Keccak256(buf[headSize:]), sig)
+	fromID, err := BytesID(id)
 	if err != nil {
 		return nil, NodeID{}, hash, err
 	}

@@ -324,7 +324,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 						break
 					}
 					selIndexHistory[selectIndex] = 1
-					if selectIndex > 0 && selectIndex < lenOfVoteResult { //3.index must be real select options
+					if selectIndex < lenOfVoteResult { //3.index must be real select options
 						topicSupports[topicIndex].VoteResults[selectIndex].Num += 1
 					}
 				}
