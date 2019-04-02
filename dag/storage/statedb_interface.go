@@ -29,7 +29,7 @@ import (
 type IStateDb interface {
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetPrefix(prefix []byte) map[string][]byte
-	SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error
+	//SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error
 	//SaveAssetInfo(assetInfo *modules.AssetInfo) error
 	//GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
 	SaveContract(contract *modules.Contract) error
