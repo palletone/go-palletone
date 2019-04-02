@@ -241,7 +241,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.OP_MEDIATOR_CREATE {
 			return true
 		}
-	case *modules.MediatorCountSet:
+	case *modules.AccountUpdateOperation:
 		if app == modules.OP_MEDIATOR_COUNT_SET {
 			return true
 		}

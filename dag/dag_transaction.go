@@ -381,8 +381,8 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address, txPool txspool
 func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
-	setMediatorCount := &modules.MediatorCountSet{
-		DesiredMediatorCount: desiredMediatorCount,
+	setMediatorCount := &modules.AccountUpdateOperation{
+		DesiredMediatorCount: &desiredMediatorCount,
 	}
 
 	msg := &modules.Message{

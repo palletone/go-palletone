@@ -60,6 +60,6 @@ func NewAccountInfo() *AccountInfo {
 	}
 }
 
-type MediatorCountSet struct {
-	DesiredMediatorCount uint8 `json:"desiredMediatorCount"`
+type AccountUpdateOperation struct {
+	DesiredMediatorCount *uint8 `json:"desiredMediatorCount"`
 }

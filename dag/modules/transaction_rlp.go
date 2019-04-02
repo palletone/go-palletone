@@ -137,7 +137,7 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			rlp.DecodeBytes(m.Data, &mediatorCreateOp)
 			m1.Payload = &mediatorCreateOp
 		} else if m.App == OP_MEDIATOR_COUNT_SET {
-			var mediatorCountSet MediatorCountSet
+			var mediatorCountSet AccountUpdateOperation
 			rlp.DecodeBytes(m.Data, &mediatorCountSet)
 			m1.Payload = &mediatorCountSet
 		} else {
