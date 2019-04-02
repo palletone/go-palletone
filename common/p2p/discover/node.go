@@ -334,6 +334,7 @@ func (id NodeID) Pubkey() (*ecdsa.PublicKey, error) {
 	return p, nil
 }
 
+/*
 // recoverNodeID computes the public key used to sign the
 // given hash from the signature.
 func recoverNodeID(hash, sig []byte) (id NodeID, err error) {
@@ -349,7 +350,7 @@ func recoverNodeID(hash, sig []byte) (id NodeID, err error) {
 	}
 	return id, nil
 }
-
+*/
 // distcmp compares the distances a->target and b->target.
 // Returns -1 if a is closer to target, 1 if b is closer to target
 // and 0 if they are equal.
