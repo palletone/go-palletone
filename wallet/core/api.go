@@ -28,11 +28,11 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	//"github.com/palletone/go-palletone/core/accounts/usbwallet"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 )
 
@@ -415,6 +415,7 @@ func (api *SignerAPI) Sign(ctx context.Context, addr common.MixedcaseAddress, da
 	return signature, nil
 }
 
+/*
 // EcRecover returns the address for the Account that was used to create the signature.
 // Note, this function is compatible with eth_sign and personal_sign. As such it recovers
 // the address of:
@@ -442,7 +443,7 @@ func (api *SignerAPI) EcRecover(ctx context.Context, data, sig hexutil.Bytes) (c
 	recoveredAddr := crypto.PubkeyToAddress(pubKey)
 	return recoveredAddr, nil
 }
-
+*/
 // SignHash is a helper function that calculates a hash for the given message that can be
 // safely used to calculate a signature from.
 //
