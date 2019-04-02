@@ -44,8 +44,8 @@ import (
 	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/validator"
-	"sync"
 	"encoding/json"
+	"sync"
 )
 
 type IUnitRepository interface {
@@ -386,25 +386,12 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	//}
 	units := []modules.Unit{}
-	// step1. get mediator responsible for asset (for now is ptn)
-	// bAsset, _, _ := rep.statedb.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
-	// if len(bAsset) <= 0 {
-	// 	return nil, fmt.Errorf("Create unit error: query asset info empty")
-	// }
-	// var asset modules.Asset
-	// if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
-	// 	return nil, fmt.Errorf("Create unit: %s", err.Error())
-	// }
 
-	// @jay
-	//var asset modules.Asset
-	//assetId, _ := modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex)
-	//asset.AssetId = assetId
-	//asset.UniqueId = assetId
+	// step1. get mediator responsible for asset (for now is ptn)
 	asset := modules.NewPTNAsset()
+
 	// step2. compute chain height
 	// get current world_state index.
-
 	index := uint64(1)
 	isMain := true
 	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
@@ -415,16 +402,16 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	} else {
 		chainIndex.Index += 1
 	}
+
 	// step3. generate genesis unit header
 	header := modules.Header{
 		Number:      chainIndex,
 		ParentsHash: []common.Hash{},
-		//TxRoot:   root,
-		//		Creationdate: time.Now().Unix(),
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
 	log.Debug("Start txpool.GetSortedTxs...")
+
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
 	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
@@ -434,8 +421,6 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	if err != nil {
 		log.Error("ComputeFees is failed.", "error", err.Error())
 		return nil, err
-	} else {
-		log.Debug("The unit transactions fee is here. ", "fees", fees)
 	}
 	additions := make(map[common.Address]*modules.Addition)
 	//TODO 附加利息收益
@@ -461,6 +446,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DagConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	}
+
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
 	if len(poolTxs) > 0 {
@@ -474,7 +460,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
 	*/
-	log.Debug("Start core.DeriveSha...")
+
 	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
 	log.Infof("core.DeriveSha cost time %s", time.Since(begin))
@@ -640,8 +626,8 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 				writeSets = append(writeSets,
 					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
 			}
-			sysConfByte,_ := json.Marshal(genesisConf.SystemConfig)
-			writeSets = append(writeSets,modules.ContractWriteSet{Key:"sysConf",Value:[]byte(sysConfByte)})
+			sysConfByte, _ := json.Marshal(genesisConf.SystemConfig)
+			writeSets = append(writeSets, modules.ContractWriteSet{Key: "sysConf", Value: []byte(sysConfByte)})
 
 		} else {
 			sk := tt.Field(i).Name
