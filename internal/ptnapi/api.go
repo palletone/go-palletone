@@ -550,10 +550,12 @@ func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, deployId string, txi
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	//参数前面加入msg0,这里为空
+	//参数前面加入msg0和msg1,这里为空
 	var fullArgs [][]byte
 	msgArg := []byte("query has no msg0")
+	msgArg1 := []byte("query has no msg1")
 	fullArgs = append(fullArgs, msgArg)
+	fullArgs = append(fullArgs, msgArg1)
 	fullArgs = append(fullArgs, args...)
 	rsp, err := s.b.ContractInvoke(depId, txid, fullArgs, 0)
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
@@ -568,10 +570,12 @@ func (s *PublicBlockChainAPI) Ccquery(ctx context.Context, deployId string, para
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d],value[%s]\n", i, arg)
 	}
-	//参数前面加入msg0,这里为空
+	//参数前面加入msg0和msg1,这里为空
 	var fullArgs [][]byte
 	msgArg := []byte("query has no msg0")
+	msgArg1 := []byte("query has no msg1")
 	fullArgs = append(fullArgs, msgArg)
+	fullArgs = append(fullArgs, msgArg1)
 	fullArgs = append(fullArgs, args...)
 
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
