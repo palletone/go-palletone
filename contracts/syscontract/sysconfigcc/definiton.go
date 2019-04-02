@@ -5,30 +5,26 @@ import (
 	"time"
 )
 
-const symbolsKey = "symbol_"
+const sysParam = "sysParam"
+const sysParams = "sysParams"
 
 //one topic
-type VoteTopic struct {
+type SysVoteTopic struct {
 	TopicTitle    string
 	SelectOptions []string
 	SelectMax     uint64
 }
 
 //topic support result
-type TopicSupports struct {
+type SysTopicSupports struct {
 	TopicTitle  string
-	VoteResults []VoteResult
+	VoteResults []*modules.SysVoteResult
 	SelectMax   uint64
 	//SelectOptionsNum  uint64
 }
 
-type VoteResult struct {
-	SelectOption string
-	Num          uint64
-}
-
 //vote token information
-type TokenInfo struct {
+type SysTokenInfo struct {
 	Name        string
 	Symbol      string
 	CreateAddr  string
@@ -39,16 +35,8 @@ type TokenInfo struct {
 	AssetID     modules.AssetId
 }
 
-type SupportResult struct {
-	TopicIndex  uint64
-	TopicTitle  string
-	VoteResults []VoteResult
-}
-
-type TokenIDInfo struct {
-	IsVoteEnd      bool
-	CreateAddr     string
-	TotalSupply    uint64
-	SupportResults []SupportResult
-	AssetID        string
+//one user's support
+type SysSupportRequest struct {
+	TopicIndex   uint64
+	SelectIndexs []uint64
 }

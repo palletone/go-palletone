@@ -41,7 +41,7 @@ func siftDown(data sort.Interface, lo, hi, first int) {
 	}
 }
 
-// Build heap with greatest element at top.
+// makeHeap implement Build heap with greatest element at top.
 func makeHeap(data sort.Interface, a, b int) {
 	first := a
 	hi := b - a
@@ -51,7 +51,8 @@ func makeHeap(data sort.Interface, a, b int) {
 	}
 }
 
-func heapSort(data sort.Interface, a, b int) {
+// heapsort implement Heap sorting a max-heap
+func heapsort(data sort.Interface, a, b int) {
 	first := a
 	hi := b - a
 
@@ -62,8 +63,13 @@ func heapSort(data sort.Interface, a, b int) {
 	}
 }
 
+// heapSort implement heap sorting of all elements in data
 func HeapSort(data sort.Interface) {
-	n := data.Len()
-	makeHeap(data, 0, n)
-	heapSort(data, 0, n)
+	heapSort(data, 0, data.Len())
+}
+
+// heapSort implement heap sorting of all elements in data[a, b)
+func heapSort(data sort.Interface, a, b int) {
+	makeHeap(data, a, b)
+	heapsort(data, a, b)
 }

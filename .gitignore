@@ -7,10 +7,11 @@
 /tmp
 **/data1
 *.log
+!bdd/node/*
 */**/*un~
 */**/*.test
 log.txt
-UTC--*
+#UTC--*
 *un~
 .DS_Store
 */**/.DS_Store
@@ -68,7 +69,7 @@ palletone\.sublime-workspace
 dag/common/utxo.go.orig
 
 *.sublime-project
-
+core/accounts/keystore/UTC*
 *.sublime-workspace
 cmd/gptn/gptn/
 cmd/gptn/keystore/

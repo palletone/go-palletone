@@ -396,6 +396,8 @@ func (chain *MemDag) getChainUnit(hash common.Hash) (*modules.Unit, error) {
 //	return ok
 //}
 func (chain *MemDag) GetLastMainchainUnit(token modules.AssetId) *modules.Unit {
+	chain.lock.RLock()
+	defer chain.lock.RUnlock()
 	return chain.lastMainchainUnit[token]
 }
 
@@ -427,5 +429,7 @@ func (chain *MemDag) setStableUnit(unit *modules.Unit) {
 
 //查询所有不稳定单元（不包括孤儿单元）
 func (chain *MemDag) GetChainUnits() map[common.Hash]*modules.Unit {
+	chain.lock.RLock()
+	defer chain.lock.RUnlock()
 	return chain.chainUnits
 }

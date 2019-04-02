@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 func TestGetContractState(t *testing.T) {
@@ -123,4 +124,64 @@ func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 	hash1 := util.RlpHash(a)
 	hash2 := util.RlpHash(b)
 	assert.Equal(t, hash1, hash2)
+}
+
+func TestStateDb_GetSysParamWithoutVote(t *testing.T) {
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	modifies := []*modules.FoundModify{}
+	modify := &modules.FoundModify{}
+	modify.Key = "key1"
+	modify.Value = "val1"
+	modifies = append(modifies, modify)
+	modify1 := &modules.FoundModify{}
+	modify1.Key = "key2"
+	modify1.Value = "val2"
+	modifies = append(modifies, modify1)
+	modifiesByte, _ := json.Marshal(modifies)
+	//[{\"Key\":\"depositAmountForJury\",\"Value\":\"9000000\"}]
+	//err := statedb.SaveContractState(syscontract.SysConfigContractAddress.Bytes21(), "sysParam", modifiesByte, version)
+	err := statedb.SaveSysConfig("sysParam", modifiesByte, version)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	modifies, err = statedb.GetSysParamWithoutVote()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	t.Logf("----%#v\n", modifies[0])
+	t.Logf("----%#v\n", modifies[1])
+}
+
+func TestStateDb_GetSysParamsWithVotes(t *testing.T) {
+	sysTokenIDInfo := &modules.SysTokenIDInfo{}
+	sysSupportResult := &modules.SysSupportResult{}
+	sysVoteResult := &modules.SysVoteResult{}
+	sysTokenIDInfo.CreateTime = time.Now().UTC()
+	sysTokenIDInfo.AssetID = "sysParams"
+	sysTokenIDInfo.CreateAddr = "P1--------xxxxxxxxxxxxxxxxx"
+	sysTokenIDInfo.IsVoteEnd = false
+	sysTokenIDInfo.TotalSupply = 10
+	sysSupportResult.TopicIndex = 1
+	sysSupportResult.TopicTitle = "lalala"
+	sysVoteResult.Num = 1
+	sysVoteResult.SelectOption = "2"
+	sysSupportResult.VoteResults = []*modules.SysVoteResult{sysVoteResult}
+	sysTokenIDInfo.SupportResults = []*modules.SysSupportResult{sysSupportResult}
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	infoByte, _ := json.Marshal(sysTokenIDInfo)
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	err := statedb.SaveSysConfig("sysParams", infoByte, version)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	sysTokenIDInfo, err = statedb.GetSysParamsWithVotes()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	t.Logf("---%#v\n", sysTokenIDInfo)
+	t.Logf("---%#v\n", sysTokenIDInfo.SupportResults[0])
+	t.Logf("---%#v\n", sysTokenIDInfo.SupportResults[0].VoteResults[0])
 }

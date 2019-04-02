@@ -42,5 +42,5 @@ func PartialSort(data sort.Interface, m int) {
 	}
 
 	// Sort this heap
-	heapSort(data, 0, m)
+	heapsort(data, 0, m)
 }
