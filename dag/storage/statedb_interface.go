@@ -69,10 +69,8 @@ type IStateDb interface {
 	//AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
 	//GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 	GetMinFee() (*modules.AmountAsset, error)
-	//GetSortedMediatorVote(returnNumber int) (map[string]uint64, error)
 	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
-	//GetAccountMediatorVote(voterAddress common.Address) ([]common.Address, uint64, error)
 	AppendVotedMediator(voter, mediator common.Address) error
 
 	// world state chainIndex

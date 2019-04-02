@@ -55,7 +55,7 @@ func (acc *accountInfo) accountToInfo() *modules.AccountInfo {
 	return ai
 }
 
-func infoToaccount(ai *modules.AccountInfo) *accountInfo {
+func infoToAccount(ai *modules.AccountInfo) *accountInfo {
 	acc := newAccountInfo()
 	acc.AccountInfoBase = ai.AccountInfoBase
 
@@ -85,7 +85,7 @@ func (statedb *StateDb) RetrieveAccountInfo(address common.Address) (*modules.Ac
 }
 
 func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.AccountInfo) error {
-	err := StoreBytes(statedb.db, accountKey(address), infoToaccount(info))
+	err := StoreBytes(statedb.db, accountKey(address), infoToAccount(info))
 	if err != nil {
 		log.Debugf("Save account info throw an error:%s", err)
 	}

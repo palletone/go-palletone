@@ -112,13 +112,8 @@ type IDag interface {
 	GetActiveMediatorNode(index int) *discover.Node
 	GetActiveMediatorNodes() map[string]*discover.Node
 
-	/* Vote */
-	//GetElectedMediatorsAddress() (map[string]uint64, error)
-	//GetAccountMediatorVote(address common.Address) []common.Address
-
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-	// set groupsign
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
 	IsSynced() bool
