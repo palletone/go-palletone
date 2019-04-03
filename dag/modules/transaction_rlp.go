@@ -136,10 +136,10 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			var mediatorCreateOp MediatorCreateOperation
 			rlp.DecodeBytes(m.Data, &mediatorCreateOp)
 			m1.Payload = &mediatorCreateOp
-		} else if m.App == OP_MEDIATOR_COUNT_SET {
-			var mediatorCountSet AccountUpdateOperation
-			rlp.DecodeBytes(m.Data, &mediatorCountSet)
-			m1.Payload = &mediatorCountSet
+		} else if m.App == OP_ACCOUNT_UPDATE {
+			var accountUpdateOp AccountUpdateOperation
+			rlp.DecodeBytes(m.Data, &accountUpdateOp)
+			m1.Payload = &accountUpdateOp
 		} else {
 			fmt.Println("Unknown message app type:", m.App)
 		}

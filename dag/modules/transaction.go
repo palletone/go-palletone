@@ -516,7 +516,7 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(MediatorCreateOperation)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == OP_MEDIATOR_COUNT_SET {
+			} else if msg.App == OP_ACCOUNT_UPDATE {
 				payload := new(AccountUpdateOperation)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))

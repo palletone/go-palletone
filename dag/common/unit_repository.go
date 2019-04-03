@@ -835,7 +835,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			if !rep.MediatorCreateApply(msg) {
 				return fmt.Errorf("apply Mediator Creating Operation error")
 			}
-		case modules.OP_MEDIATOR_COUNT_SET:
+		case modules.OP_ACCOUNT_UPDATE:
 			if err := rep.SaveDesiredMediatorCount(msg, requester); err != nil {
 				return fmt.Errorf("save Desired Mediator Count error")
 			}

@@ -386,7 +386,7 @@ func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMedi
 	}
 
 	msg := &modules.Message{
-		App:     modules.OP_MEDIATOR_COUNT_SET,
+		App:     modules.OP_ACCOUNT_UPDATE,
 		Payload: setMediatorCount,
 	}
 
