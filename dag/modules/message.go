@@ -42,8 +42,8 @@ const (
 
 	//APP_CONFIG
 	APP_DATA
-	OP_ACCOUNT_UPDATE
 	OP_MEDIATOR_CREATE
+	OP_ACCOUNT_UPDATE
 
 	APP_UNKNOW = 99
 
@@ -52,8 +52,8 @@ const (
 	APP_CONTRACT_INVOKE_REQUEST = 102
 	APP_CONTRACT_STOP_REQUEST   = 103
 	// 为了兼容起见:
-	// 添加別的request需要添加在 APP_CONTRACT_TPL_REQUEST �? APP_CONTRACT_STOP_REQUEST 之间
-	// 添加别的msg类型，需要添加到OP_MEDIATOR_CREATE �? APP_UNKNOW之间
+	// 添加別的request需要添加在 APP_CONTRACT_TPL_REQUEST 与 APP_CONTRACT_STOP_REQUEST 之间
+	// 添加别的msg类型，需要添加到OP_MEDIATOR_CREATE 与 APP_UNKNOW之间
 )
 
 // key: message.UnitHash(message+timestamp)

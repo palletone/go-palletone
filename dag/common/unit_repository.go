@@ -808,7 +808,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			}
 		case modules.OP_ACCOUNT_UPDATE:
 			if err := rep.UpdateAccountInfo(msg, requester); err != nil {
-				return fmt.Errorf("save Desired Mediator Count error")
+				return fmt.Errorf("apply Account Updating Operation error")
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			// todo

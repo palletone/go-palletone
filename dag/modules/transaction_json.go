@@ -13,7 +13,7 @@
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @author PalletOne core developers <dev@pallet.one>
  *  * @date 2018
  *
  */
@@ -22,8 +22,9 @@ package modules
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/dag/errors"
 	"strconv"
+
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 type idxPaymentPayload struct {
@@ -35,17 +36,25 @@ type idxPaymentPayload struct {
 //	Index int
 //	*ConfigPayload
 //}
+
 type idxSignaturePayload struct {
 	Index int
 	*SignaturePayload
 }
+
 type idxTextPayload struct {
 	Index int
 	*DataPayload
 }
+
 type idxMediatorCreateOperation struct {
 	Index int
 	*MediatorCreateOperation
+}
+
+type idxAccountUpdateOperation struct {
+	Index int
+	*AccountUpdateOperation
 }
 
 //install
@@ -53,6 +62,7 @@ type idxContractInstallRequestPayload struct {
 	Index int
 	*ContractInstallRequestPayload
 }
+
 type idxContractTplPayload struct {
 	Index int
 	*ContractTplPayload
@@ -63,6 +73,7 @@ type idxContractDeployRequestPayload struct {
 	Index int
 	*ContractDeployRequestPayload
 }
+
 type idxContractDeployPayload struct {
 	Index int
 	*ContractDeployPayload
@@ -73,6 +84,7 @@ type idxContractInvokeRequestPayload struct {
 	Index int
 	*ContractInvokeRequestPayload
 }
+
 type idxContractInvokePayload struct {
 	Index int
 	*ContractInvokePayload
@@ -83,6 +95,7 @@ type idxContractStopRequestPayload struct {
 	Index int
 	*ContractStopRequestPayload
 }
+
 type idxContractStopPayload struct {
 	Index int
 	*ContractStopPayload
@@ -94,6 +107,7 @@ type txJsonTemp struct {
 	//Config                  []*idxConfigPayload
 	Text                    []*idxTextPayload
 	MediatorCreateOperation []*idxMediatorCreateOperation
+	AccountUpdateOperation  []*idxAccountUpdateOperation
 	Signature               []*idxSignaturePayload
 
 	ContractInstallRequest []*idxContractInstallRequestPayload
@@ -153,6 +167,9 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 		} else if msg.App == OP_MEDIATOR_CREATE {
 			temp.MediatorCreateOperation = append(temp.MediatorCreateOperation,
 				&idxMediatorCreateOperation{Index: idx, MediatorCreateOperation: msg.Payload.(*MediatorCreateOperation)})
+		} else if msg.App == OP_ACCOUNT_UPDATE {
+			temp.AccountUpdateOperation = append(temp.AccountUpdateOperation,
+				&idxAccountUpdateOperation{Index: idx, AccountUpdateOperation: msg.Payload.(*AccountUpdateOperation)})
 		} else {
 			return nil, errors.New("Unsupport APP" + strconv.Itoa(int(msg.App)) + " please edit transaction_json.go")
 		}
@@ -219,11 +236,16 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 		tx.TxMessages[p.Index] = NewMessage(OP_MEDIATOR_CREATE, p.MediatorCreateOperation)
 		processed++
 	}
+	for _, p := range temp.AccountUpdateOperation {
+		tx.TxMessages[p.Index] = NewMessage(OP_ACCOUNT_UPDATE, p.AccountUpdateOperation)
+		processed++
+	}
 	if processed < temp.MsgCount {
 		return errors.New("Some message don't process in transaction_json.go")
 	}
 	return nil
 }
+
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	temp, err := tx2JsonTemp(tx)
 	if err != nil {
@@ -231,6 +253,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(temp)
 }
+
 func (tx *Transaction) UnmarshalJSON(data []byte) error {
 	temp := &txJsonTemp{}
 	err := json.Unmarshal([]byte(data), temp)
