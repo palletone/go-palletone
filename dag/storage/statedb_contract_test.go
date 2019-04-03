@@ -219,6 +219,10 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
+	err = statedb.SaveSysConfig("FoundationAddress", []byte("P1--------xxxxxxxxxxxxxxxxx"), version)
+	if err != nil {
+		t.Error(err.Error())
+	}
 	modifies := []*modules.FoundModify{}
 	modify := &modules.FoundModify{}
 	modify.Key = "key1"

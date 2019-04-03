@@ -71,8 +71,7 @@ type VoteToken struct {
 	Name   string `json:"name"`
 	Symbol string `json:"symbol"`
 	//该投票是否允许改投
-	VoteType byte   `json:"vote_type"`
-	LeastNum uint64 `json:"least_number"`
+	VoteType byte `json:"vote_type"`
 	//投票结束时间
 	VoteEndTime time.Time `json:"vote_end_time"`
 	//投票内容，JSON格式的表单

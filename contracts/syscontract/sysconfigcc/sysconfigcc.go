@@ -218,7 +218,6 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
-	vt.LeastNum = leastNum
 	//VoteEndTime
 	VoteEndTime, err := time.Parse("2006-01-02 15:04:05", args[3])
 	if err != nil {
@@ -273,7 +272,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	}
 
 	//last put state
-	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr, vt.LeastNum, totalSupply,
+	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr, leastNum, totalSupply,
 		VoteEndTime, voteContentJson, assetID}
 
 	err = setSymbols(stub, &info)
