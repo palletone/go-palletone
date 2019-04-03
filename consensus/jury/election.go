@@ -299,17 +299,15 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 		account.Password = a.Password
 		break //first one
 	}
-
 	ele := &elector{
-		num:    uint(p.electionNum),
-		weight: 1,                         //todo config
-		total:  uint64(p.dag.JuryCount()), //todo dynamic acquisition
-		//vrfAct: p.vrfAct,
-
+		num:      uint(p.electionNum),
+		total:    uint64(p.dag.JuryCount()), //todo dynamic acquisition
 		addr:     account.Address,
 		password: account.Password,
 		ks:       p.ptn.GetKeyStore(),
+		//vrfAct: p.vrfAct,
 	}
+	ele.weight = electionWeightValue(ele.total)
 	//log.Info("ProcessElectionEvent0", "event", event.EType)
 
 	recved, err := p.electionEventBroadcast(event)
