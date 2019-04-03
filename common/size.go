@@ -29,9 +29,9 @@ type StorageSize float64
 
 // String implements the stringer interface.
 func (s StorageSize) String() string {
-	if s > 1000000 {
+	if s > 1024000 {
 		return fmt.Sprintf("%.2f MB", s/1024000)
-	} else if s > 1000 {
+	} else if s > 1024 {
 		return fmt.Sprintf("%.2f KB", s/1024)
 	} else {
 		return fmt.Sprintf("%.2f B", s)
@@ -41,10 +41,10 @@ func (s StorageSize) String() string {
 // TerminalString implements log.TerminalStringer, formatting a string for console
 // output during logging.
 func (s StorageSize) TerminalString() string {
-	if s > 1000000 {
-		return fmt.Sprintf("%.2fmB", s/1000000)
-	} else if s > 1000 {
-		return fmt.Sprintf("%.2fkB", s/1000)
+	if s > 1024000 {
+		return fmt.Sprintf("%.2fmB", s/1024000)
+	} else if s > 1024 {
+		return fmt.Sprintf("%.2fkB", s/1024)
 	} else {
 		return fmt.Sprintf("%.2fB", s)
 	}
