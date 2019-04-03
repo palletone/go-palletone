@@ -170,7 +170,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -506,4 +506,33 @@ func conversionElectionSeedData(in []byte) []byte {
 	tmp := common.BytesToAddress(in)
 	out := common.NewAddress(tmp.Bytes(), common.ContractHash)
 	return out[:]
+}
+
+/*
+Preliminary test conclusion
+expectNum:4
+use:
+total    weight    num
+20         4        5
+50         7        7
+100        8        5
+200        15       5
+500        17       6
+1000       18       5
+*/
+func electionWeightValue(total uint64) (val uint64) {
+	if total <= 20 {
+		return 4
+	} else if total > 20 && total <= 50 {
+		return 7
+	} else if total > 50 && total <= 100 {
+		return 8
+	} else if total > 100 && total <= 200 {
+		return 15
+	} else if total > 200 && total <= 500 {
+		return 17
+	}else if total >500{
+		return 20
+	}
+	return 4
 }

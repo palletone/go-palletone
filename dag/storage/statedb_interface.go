@@ -93,4 +93,6 @@ type IStateDb interface {
 
 	GetJuryCandidateList() ([]string, error)
 	IsInJuryCandidateList(address common.Address) bool
+
+	UpdateSysParams(ver *modules.StateVersion) error
 }

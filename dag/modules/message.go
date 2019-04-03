@@ -761,6 +761,7 @@ type FoundModify struct {
 type SysTokenIDInfo struct {
 	CreateAddr     string
 	TotalSupply    uint64
+	LeastNum       uint64
 	AssetID        string
 	CreateTime     time.Time
 	IsVoteEnd      bool

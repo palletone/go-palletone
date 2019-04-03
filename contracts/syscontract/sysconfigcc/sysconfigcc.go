@@ -110,14 +110,14 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 
 func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	//params check
-	if len(args) < 1 {
-		return nil, fmt.Errorf("need 1 args (AssetID String)")
-	}
+	//if len(args) < 1 {
+	//	return nil, fmt.Errorf("need 1 args (AssetID String)")
+	//}
 
 	//assetIDStr
-	assetIDStr := strings.ToUpper(args[0])
+	//assetIDStr := strings.ToUpper(args[0])
 	//check name is exist or not
-	tkInfo := getSymbols(stub, assetIDStr)
+	tkInfo := getSymbols(stub)
 	if tkInfo == nil {
 		return nil, fmt.Errorf("Token not exist")
 	}
@@ -155,7 +155,7 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 	//token
 	asset := tkInfo.AssetID
 	tkID := modules.SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
-		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC()}
+		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC(), LeastNum: tkInfo.LeastNum}
 
 	//return json
 	tkJson, err := json.Marshal(tkID)
@@ -167,7 +167,7 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 
 func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	//params check
-	if len(args) < 4 {
+	if len(args) < 5 {
 		return nil, fmt.Errorf("need 5 args (Name,VoteType,TotalSupply,VoteEndTime,VoteContentJson)")
 	}
 	//get creator
@@ -210,8 +210,18 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		return nil, fmt.Errorf(jsonResp)
 	}
 	vt.TotalSupply = totalSupply
+	leastNum, err := strconv.ParseUint(args[2], 10, 64)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to convert least numbers\"}"
+		return nil, fmt.Errorf(jsonResp)
+	}
+	if leastNum == 0 {
+		jsonResp := "{\"Error\":\"Can't be zero\"}"
+		return nil, fmt.Errorf(jsonResp)
+	}
+	vt.LeastNum = leastNum
 	//VoteEndTime
-	VoteEndTime, err := time.Parse("2006-01-02 15:04:05", args[2])
+	VoteEndTime, err := time.Parse("2006-01-02 15:04:05", args[3])
 	if err != nil {
 		jsonResp := "{\"Error\":\"No vote end time\"}"
 		return nil, fmt.Errorf(jsonResp)
@@ -219,7 +229,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	vt.VoteEndTime = VoteEndTime
 	//VoteContent
 	var voteTopics []SysVoteTopic
-	err = json.Unmarshal([]byte(args[3]), &voteTopics)
+	err = json.Unmarshal([]byte(args[4]), &voteTopics)
 	if err != nil {
 		jsonResp := "{\"Error\":\"VoteContent format invalid\"}"
 		return nil, fmt.Errorf(jsonResp)
@@ -264,7 +274,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	}
 
 	//last put state
-	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr, vt.VoteType, totalSupply,
+	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr, vt.LeastNum, totalSupply,
 		VoteEndTime, voteContentJson, assetID}
 
 	err = setSymbols(stub, &info)
@@ -500,7 +510,7 @@ func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterfac
 	return []byte(jsonResp), nil
 }
 
-func getSymbols(stub shim.ChaincodeStubInterface, assetID string) *SysTokenInfo {
+func getSymbols(stub shim.ChaincodeStubInterface) *SysTokenInfo {
 	//
 	tkInfo := SysTokenInfo{}
 	//TODO
