@@ -41,7 +41,6 @@ import (
 
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
@@ -648,41 +647,18 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 	return payload, nil
 }
 
-func (rep *UnitRepository) SaveDesiredMediatorCount(msg *modules.Message, account common.Address) error {
-	mediatorCountSet, ok := msg.Payload.(*modules.MediatorCountSet)
+func (rep *UnitRepository) UpdateAccountInfo(msg *modules.Message, account common.Address) error {
+	accountUpdateOp, ok := msg.Payload.(*modules.AccountUpdateOperation)
 	if !ok {
 		return errors.New("not a valid mediator Count Set payload")
 	}
 
-	if err := rep.statedb.UpdateDesiredMediatorCount(account, mediatorCountSet.DesiredMediatorCount); err != nil {
+	err := rep.statedb.UpdateAccountInfo(account, accountUpdateOp)
+	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-//Yiran
-func (rep *UnitRepository) SaveVote(msg *modules.Message, voter common.Address) error {
-
-	// type deduct
-	VotePayLoad, ok := msg.Payload.(*vote.VoteInfo)
-	if !ok {
-		return errors.New("not a valid vote payload")
-	}
-
-	// save by type
-	switch {
-	case VotePayLoad.VoteType == vote.TypeMediator:
-		//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
-		mediator := common.BytesToAddress(VotePayLoad.Contents)
-
-		if err := rep.statedb.AppendVotedMediator(voter, mediator); err != nil {
-			return err
-		}
-
-	}
-	return nil
-
 }
 
 //Get who send this transaction
@@ -826,19 +802,14 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 			//		return fmt.Errorf("Save contract invode payload error.")
 			//	}
-		case modules.APP_VOTE:
-			if err = rep.SaveVote(msg, requester); err != nil {
-				return fmt.Errorf("Save vote payload error.")
-			}
 		case modules.OP_MEDIATOR_CREATE:
 			if !rep.MediatorCreateApply(msg) {
 				return fmt.Errorf("apply Mediator Creating Operation error")
 			}
-		case modules.OP_MEDIATOR_COUNT_SET:
-			if err := rep.SaveDesiredMediatorCount(msg, requester); err != nil {
+		case modules.OP_ACCOUNT_UPDATE:
+			if err := rep.UpdateAccountInfo(msg, requester); err != nil {
 				return fmt.Errorf("save Desired Mediator Count error")
 			}
-
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			// todo
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:

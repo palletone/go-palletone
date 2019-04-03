@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	vote2 "github.com/palletone/go-palletone/dag/vote"
 	"io"
 )
 
@@ -128,18 +127,14 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			var sigPayload SignaturePayload
 			rlp.DecodeBytes(m.Data, &sigPayload)
 			m1.Payload = &sigPayload
-		} else if m.App == APP_VOTE {
-			var vote vote2.VoteInfo
-			rlp.DecodeBytes(m.Data, &vote)
-			m1.Payload = &vote
 		} else if m.App == OP_MEDIATOR_CREATE {
 			var mediatorCreateOp MediatorCreateOperation
 			rlp.DecodeBytes(m.Data, &mediatorCreateOp)
 			m1.Payload = &mediatorCreateOp
-		} else if m.App == OP_MEDIATOR_COUNT_SET {
-			var mediatorCountSet MediatorCountSet
-			rlp.DecodeBytes(m.Data, &mediatorCountSet)
-			m1.Payload = &mediatorCountSet
+		} else if m.App == OP_ACCOUNT_UPDATE {
+			var accountUpdateOp AccountUpdateOperation
+			rlp.DecodeBytes(m.Data, &accountUpdateOp)
+			m1.Payload = &accountUpdateOp
 		} else {
 			fmt.Println("Unknown message app type:", m.App)
 		}
