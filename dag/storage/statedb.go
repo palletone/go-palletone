@@ -224,6 +224,13 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 	if info == nil {
 		return nil
 	}
+	foundAddr, _, err := statedb.GetConfig("FoundationAddress")
+	if err != nil {
+		return err
+	}
+	if info.CreateAddr != string(foundAddr) {
+		return fmt.Errorf("only foundation can call this function")
+	}
 	if !info.IsVoteEnd {
 		return nil
 	}

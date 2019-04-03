@@ -127,6 +127,27 @@ func (e *elector) verifyVrf(proof, data []byte, pubKey []byte) (bool, error) {
 	return false, nil
 }
 
+func (p *Processor) electionEventIsProcess(event *ElectionEvent, addr *common.Address) bool {
+	if event == nil {
+		return false
+	}
+	reqId := common.Hash{}
+	switch event.EType {
+	case ELECTION_EVENT_REQUEST:
+		reqId = event.Event.(*ElectionRequestEvent).ReqId
+	case ELECTION_EVENT_RESULT:
+		reqId = event.Event.(*ElectionResultEvent).ReqId
+	}
+	//election request node
+	if _, ok := p.mel[reqId]; ok && p.mel[reqId].eChan != nil {
+		return true
+	}
+	//jury node
+	if p.isLocalActiveJury(*addr) {
+		return true
+	}
+	return false
+}
 func (p *Processor) electionEventBroadcast(event *ElectionEvent) (recved bool, err error) {
 	if event == nil {
 		return false, errors.New("electionEventBroadcast event is nil")
@@ -298,6 +319,10 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 		account.Address = a.Address
 		account.Password = a.Password
 		break //first one
+	}
+	if !p.electionEventIsProcess(event, &account.Address) {
+		log.Info("ProcessElectionEvent", "electionEventIsProcess if false, addr", account.Address, "event type", event.EType)
+		return nil, nil
 	}
 	ele := &elector{
 		num:      uint(p.electionNum),

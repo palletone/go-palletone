@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -219,7 +218,6 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
-	vt.LeastNum = leastNum
 	//VoteEndTime
 	VoteEndTime, err := time.Parse("2006-01-02 15:04:05", args[3])
 	if err != nil {
@@ -258,9 +256,9 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	txid := stub.GetTxID()
 	assetID, _ := modules.NewAssetId(vt.Symbol, modules.AssetType_VoteToken,
 		0, common.Hex2Bytes(txid[2:]), modules.UniqueIdType_Null)
-	assetIDStr := assetID.String()
+	//assetIDStr := assetID.String()
 	//check name is only or not
-	tkInfo := getSymbols(stub, assetIDStr)
+	tkInfo := getSymbols(stub)
 	if tkInfo != nil {
 		jsonResp := "{\"Error\":\"Repeat AssetID\"}"
 		return nil, fmt.Errorf(jsonResp)
@@ -274,7 +272,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	}
 
 	//last put state
-	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr, vt.LeastNum, totalSupply,
+	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr, leastNum, totalSupply,
 		VoteEndTime, voteContentJson, assetID}
 
 	err = setSymbols(stub, &info)
@@ -323,7 +321,7 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 	}
 
 	//check name is exist or not
-	tkInfo := getSymbols(stub, assetIDStr)
+	tkInfo := getSymbols(stub)
 	if tkInfo == nil {
 		return nil, fmt.Errorf("Token not exist")
 	}

@@ -37,7 +37,8 @@ func (validate *Validate) validateCoinbase(payment *modules.PaymentPayload) Vali
 //1. Amount correct
 //2. Asset must be equal
 //3. Unlock correct
-func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int, payment *modules.PaymentPayload, isCoinbase bool) ValidationCode {
+func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
+	payment *modules.PaymentPayload, isCoinbase bool, usedUtxo map[string]bool) ValidationCode {
 
 	if isCoinbase {
 		return validate.validateCoinbase(payment)
@@ -60,19 +61,25 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		if msgIdx < invokeReqMsgIdx {
 			txForSign = tx.GetRequestTx()
 		}
-		utxos := []*modules.Utxo{}
+
 		for inputIdx, in := range payment.Inputs {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
 				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
+			usedUtxoKey := in.PreviousOutPoint.String()
+			if _, exist := usedUtxo[usedUtxoKey]; exist {
+				log.Error("double spend utxo:", usedUtxoKey)
+				return TxValidationCode_INVALID_DOUBLE_SPEND
+			}
+			usedUtxo[usedUtxoKey] = true
 			// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
 			utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
 			if utxo == nil || err != nil {
 				return TxValidationCode_INVALID_OUTPOINT
 			}
-			utxos = append(utxos, utxo)
+
 			if asset == nil {
 				asset = utxo.Asset
 			} else {
@@ -86,6 +93,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 			err = tokenengine.ScriptValidate(utxo.PkScript, nil, txForSign, msgIdx, inputIdx)
 			if err != nil {
+
 				log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
 					tx.Hash().String(), msgIdx, inputIdx, in.SignatureScript, utxo.PkScript)
 				txjson, _ := tx.MarshalJSON()

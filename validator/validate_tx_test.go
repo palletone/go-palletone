@@ -24,11 +24,25 @@ import (
 	"log"
 	"testing"
 
+	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
+
+	"crypto/ecdsa"
+	"fmt"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/tokenengine"
 )
+
+func getAccount() (*ecdsa.PrivateKey, []byte, common.Address) {
+	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
+	privKey, _ := crypto.ToECDSA(privKeyBytes)
+	pubKey := crypto.CompressPubkey(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKey)
+	return privKey, pubKey, addr
+}
 
 func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
 	tx := &modules.Transaction{} //Empty Tx
@@ -59,6 +73,7 @@ func TestValidate_ValidateTx_IncorrectFee(t *testing.T) {
 	outPoint := &modules.OutPoint{hash1, 0, 1}
 	pay1 := newTestPayment(outPoint, 2000)
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+	signTx(tx, outPoint)
 	utxoq := &testutxoQuery{}
 	validat := NewValidate(nil, utxoq, nil)
 	err := validat.ValidateTx(tx, false)
@@ -66,17 +81,41 @@ func TestValidate_ValidateTx_IncorrectFee(t *testing.T) {
 	t.Log(err)
 
 	pay1.Outputs[0].Value = 999
+	signTx(tx, outPoint)
 	err = validat.ValidateTx(tx, false)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	t.Log(err)
 
+}
+
+func signTx(tx *modules.Transaction, outPoint *modules.OutPoint) {
+	privKey, _, addr := getAccount()
+	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScripts := map[modules.OutPoint][]byte{
+		*outPoint: lockScript[:],
+	}
+
+	getPubKeyFn := func(common.Address) ([]byte, error) {
+		return crypto.CompressPubkey(&privKey.PublicKey), nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		s, e := crypto.Sign(hash, privKey)
+		return s[0:64], e
+	}
+	var hashtype uint32
+	hashtype = 1
+	_, e := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	if e != nil {
+		fmt.Println(e.Error())
+	}
 }
 
 type testutxoQuery struct {
 }
 
 func (u *testutxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	lockScript := []byte{}
+	_, _, addr := getAccount()
+	lockScript := tokenengine.GenerateLockScript(addr)
 	if outpoint.TxHash == hash1 {
 		return &modules.Utxo{Asset: modules.NewPTNAsset(), Amount: 1000, PkScript: lockScript}, nil
 	}
@@ -157,4 +196,23 @@ func TestGetRequestTx(t *testing.T) {
 			log.Println("rmsg:", msg.App, msg.Payload)
 		}
 	}
+}
+func TestValidateDoubleSpendOn1Tx(t *testing.T) {
+	outPoint := modules.NewOutPoint(hash1, 0, 1)
+	pay1 := newTestPayment(outPoint, 1)
+
+	tx := &modules.Transaction{}
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+
+	signTx(tx, outPoint)
+	utxoq := &testutxoQuery{}
+	validate := NewValidate(nil, utxoq, nil)
+	result := validate.ValidateTx(tx, false)
+	assert.Nil(t, result)
+	pay2 := newTestPayment(outPoint, 2)
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
+	signTx(tx, outPoint)
+	result = validate.ValidateTx(tx, false)
+	assert.NotNil(t, result)
+	t.Log(result)
 }
