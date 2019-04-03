@@ -21,10 +21,10 @@
 package ptnjson
 
 import (
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/vote"
-	"time"
 )
 
 type TxJson struct {
@@ -82,12 +82,6 @@ func ConvertTx2Json(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) Tx
 			} else {
 				payJson := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
 				json.Payment = payJson
-			}
-		} else if m.App == modules.APP_VOTE {
-			v := m.Payload.(*vote.VoteInfo)
-			if v.VoteType == vote.TypeMediator {
-				vote := &VoteJson{Content: string(v.Contents)}
-				json.Vote = vote
 			}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)

@@ -1111,24 +1111,22 @@ func (pool *TxPool) DeleteTx() error {
 			// delete Discarded tx
 			log.Debug("delete the status of Discarded tx.", "tx_hash", hash.String())
 			pool.DeleteTxByHash(hash)
+			continue
 		}
-		if tx.Pending {
+		if tx.Confirmed {
 			if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
 				// delete
 				log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
 				pool.DeleteTxByHash(hash)
-			}
-		}
-		if !tx.Confirmed {
-			if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
 				continue
-			} else {
-				// delete
-				log.Debug("delete the non confirmed tx(overtime).", "tx_hash", tx.Tx.Hash())
-				pool.DeleteTxByHash(hash)
 			}
 		}
-
+		if tx.CreationDate.Add(pool.config.Lifetime).After(time.Now()) {
+			// delete
+			log.Debug("delete the tx(overtime).", "tx_hash", tx.Tx.Hash())
+			pool.DeleteTxByHash(hash)
+			continue
+		}
 	}
 	return nil
 }

@@ -596,7 +596,7 @@ func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 //		}
 //		switch msg.App {
 //		default:
-//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
+//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA:
 //			// payment := new(modules.PaymentPayload)
 //			// err2 := json.Unmarshal(data1, &payment)
 //			// if err2 != nil {
@@ -669,14 +669,6 @@ func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 //			msgs = append(msgs, msg)
 //		case modules.APP_DATA: //6
 //			payment := new(modules.DataPayload)
-//			err2 := json.Unmarshal(data1, &payment)
-//			if err2 != nil {
-//				return nil, err2
-//			}
-//			msg.Payload = payment
-//			msgs = append(msgs, msg)
-//		case modules.APP_VOTE: //7
-//			payment := new(vote.VoteInfo)
 //			err2 := json.Unmarshal(data1, &payment)
 //			if err2 != nil {
 //				return nil, err2

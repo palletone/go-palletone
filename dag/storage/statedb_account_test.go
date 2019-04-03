@@ -51,9 +51,6 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	//info.PtnBalance = 12345
 	info.VotedMediators[addr] = true
 
-	//Votes: []vote.VoteInfo{{Contents: , VoteType: vote.TYPE_MEDIATOR}}
-	// err = statedb.StoreAccountInfo(addr, info)
-	// assert.Nil(t, err)
 	info2, err := statedb.RetrieveAccountInfo(addr)
 	assert.NotNil(t, info2)
 	//assert.Equal(t, info.PtnBalance, info2.PtnBalance)

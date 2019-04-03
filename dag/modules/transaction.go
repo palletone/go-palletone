@@ -35,7 +35,6 @@ import (
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/vote"
 )
 
 var (
@@ -508,16 +507,12 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(DataPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_VOTE {
-				payload := new(vote.VoteInfo)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
 			} else if msg.App == OP_MEDIATOR_CREATE {
 				payload := new(MediatorCreateOperation)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == OP_MEDIATOR_COUNT_SET {
-				payload := new(MediatorCountSet)
+			} else if msg.App == OP_ACCOUNT_UPDATE {
+				payload := new(AccountUpdateOperation)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
 			}
