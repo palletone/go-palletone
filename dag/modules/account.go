@@ -33,9 +33,6 @@ type AccountInfoBase struct {
 	//当前账户的PTN余额，Devin:因为操作太频繁，转移到AccountBalance上了
 	//PtnBalance uint64
 
-	//通用可改选投票的结果
-	//Votes []vote.VoteInfo
-
 	// 本账户期望的活跃mediator数量
 	DesiredMediatorCount uint8
 }

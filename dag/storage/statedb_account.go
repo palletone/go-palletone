@@ -93,14 +93,18 @@ func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.A
 	return err
 }
 
-func (statedb *StateDb) UpdateDesiredMediatorCount(account common.Address, mediatorCountSet uint8) error {
+func (statedb *StateDb) UpdateAccountInfo(account common.Address,
+	accountUpdateOp *modules.AccountUpdateOperation) error {
 	accountInfo, err := statedb.RetrieveAccountInfo(account)
 	if accountInfo == nil || err != nil {
 		accountInfo = modules.NewAccountInfo()
 	}
 
-	accountInfo.DesiredMediatorCount = mediatorCountSet
-	log.Debugf("Try to save DesiredMediatorCount(%v) for account(%v)", mediatorCountSet, account.Str())
+	if accountUpdateOp.DesiredMediatorCount != nil {
+		mediatorCountSet := *accountUpdateOp.DesiredMediatorCount
+		accountInfo.DesiredMediatorCount = mediatorCountSet
+		log.Debugf("Try to update DesiredMediatorCount(%v) for account(%v)", mediatorCountSet, account.Str())
+	}
 
 	return statedb.StoreAccountInfo(account, accountInfo)
 }

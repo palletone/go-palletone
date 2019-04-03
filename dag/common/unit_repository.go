@@ -648,13 +648,13 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 	return payload, nil
 }
 
-func (rep *UnitRepository) SaveDesiredMediatorCount(msg *modules.Message, account common.Address) error {
-	mediatorCountSet, ok := msg.Payload.(*modules.AccountUpdateOperation)
+func (rep *UnitRepository) UpdateAccountInfo(msg *modules.Message, account common.Address) error {
+	accountUpdateOp, ok := msg.Payload.(*modules.AccountUpdateOperation)
 	if !ok {
 		return errors.New("not a valid mediator Count Set payload")
 	}
 
-	err := rep.statedb.UpdateDesiredMediatorCount(account, *(mediatorCountSet.DesiredMediatorCount))
+	err := rep.statedb.UpdateAccountInfo(account, accountUpdateOp)
 	if err != nil {
 		return err
 	}
@@ -836,7 +836,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("apply Mediator Creating Operation error")
 			}
 		case modules.OP_ACCOUNT_UPDATE:
-			if err := rep.SaveDesiredMediatorCount(msg, requester); err != nil {
+			if err := rep.UpdateAccountInfo(msg, requester); err != nil {
 				return fmt.Errorf("save Desired Mediator Count error")
 			}
 

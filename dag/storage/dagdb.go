@@ -675,14 +675,6 @@ func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 //			}
 //			msg.Payload = payment
 //			msgs = append(msgs, msg)
-//		case modules.APP_VOTE: //7
-//			payment := new(vote.VoteInfo)
-//			err2 := json.Unmarshal(data1, &payment)
-//			if err2 != nil {
-//				return nil, err2
-//			}
-//			msg.Payload = payment
-//			msgs = append(msgs, msg)
 //		case modules.APP_SIGNATURE: //8
 //			payment := new(modules.SignaturePayload)
 //			err2 := json.Unmarshal(data1, &payment)

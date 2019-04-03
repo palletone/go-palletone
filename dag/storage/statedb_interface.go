@@ -66,8 +66,6 @@ type IStateDb interface {
 	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
 	GetAccountBalance(address common.Address) uint64
-	//AddVote2Account(address common.Address, voteInfo vote.VoteInfo) error
-	//GetAccountVoteInfo(address common.Address, voteType uint8) [][]byte
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
@@ -92,7 +90,7 @@ type IStateDb interface {
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
-	UpdateDesiredMediatorCount(account common.Address, mediatorCountSet uint8) error
+	UpdateAccountInfo(account common.Address, accountUpdateOp *modules.AccountUpdateOperation) error
 
 	GetJuryCandidateList() ([]string, error)
 	IsInJuryCandidateList(address common.Address) bool
