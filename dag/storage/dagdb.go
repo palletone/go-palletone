@@ -596,7 +596,7 @@ func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 //		}
 //		switch msg.App {
 //		default:
-//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
+//			//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA:
 //			// payment := new(modules.PaymentPayload)
 //			// err2 := json.Unmarshal(data1, &payment)
 //			// if err2 != nil {

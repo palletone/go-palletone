@@ -77,7 +77,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	//msg.Payload = cpyMsg.Payload
 	switch cpyMsg.App {
 	default:
-		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
+		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA:
 		msg.Payload = cpyMsg.Payload
 		//case APP_CONFIG:
 		//	payload, _ := cpyMsg.Payload.(*ConfigPayload)
