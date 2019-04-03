@@ -1252,3 +1252,12 @@ func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 
 	return []*modules.Header{}, nil
 }
+
+func (d *Dag) UpdateSysParams() error {
+	version := &modules.StateVersion{}
+	//Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1
+	unit := d.GetMainCurrentUnit()
+	version.Height = unit.UnitHeader.Number
+	version.TxIndex = 0
+	return d.stableStateRep.UpdateSysParams(version)
+}

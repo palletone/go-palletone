@@ -149,4 +149,6 @@ type IDag interface {
 	HeadUnitTime() int64
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
+
+	UpdateSysParams() error
 }

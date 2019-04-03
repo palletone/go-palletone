@@ -28,7 +28,7 @@ type SysTokenInfo struct {
 	Name        string
 	Symbol      string
 	CreateAddr  string
-	VoteType    byte
+	LeastNum    uint64
 	TotalSupply uint64
 	VoteEndTime time.Time
 	VoteContent []byte

@@ -192,6 +192,61 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 	return false
 }
 
+func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
+	//基金会单独修改的
+	var err error
+	modifies, err := statedb.GetSysParamWithoutVote()
+	if err != nil {
+		return err
+	}
+	//基金会发起投票的
+	info, err := statedb.GetSysParamsWithVotes()
+	if err != nil {
+		return err
+	}
+	if modifies == nil && info == nil {
+		return nil
+	}
+	//获取当前的version
+	if len(modifies) > 0 {
+		for _, v := range modifies {
+			err = statedb.SaveSysConfig(v.Key, []byte(v.Value), version)
+			if err != nil {
+				return err
+			}
+		}
+		//将基金会当前单独修改的制为nil
+		err = statedb.SaveSysConfig("sysParam", nil, version)
+		if err != nil {
+			return err
+		}
+	}
+	if info == nil {
+		return nil
+	}
+	if !info.IsVoteEnd {
+		return nil
+	}
+	for _, v1 := range info.SupportResults {
+		for _, v2 := range v1.VoteResults {
+			//TODO
+			if v2.Num >= info.LeastNum {
+				err = statedb.SaveSysConfig(v1.TopicTitle, []byte(v2.SelectOption), version)
+				if err != nil {
+					return err
+				}
+				break
+			}
+		}
+	}
+	//将基金会当前投票修改的制为nil
+	err = statedb.SaveSysConfig("sysParams", nil, version)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error) {
 	val, _, err := statedb.GetConfig("sysParam")
 	if err != nil {
@@ -200,13 +255,15 @@ func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error)
 	var modifies []*modules.FoundModify
 	if val == nil {
 		return nil, err
-	} else {
+	} else if len(val) > 0 {
 		err := json.Unmarshal(val, &modifies)
 		if err != nil {
 			return nil, err
 		}
+		return modifies, nil
+	} else {
+		return nil, nil
 	}
-	return modifies, nil
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
@@ -217,13 +274,15 @@ func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	info := &modules.SysTokenIDInfo{}
 	if val == nil {
 		return nil, err
-	} else {
+	} else if len(val) > 0 {
 		err := json.Unmarshal(val, info)
 		if err != nil {
 			return nil, err
 		}
+		return info, nil
+	} else {
+		return nil, nil
 	}
-	return info, nil
 }
 
 func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
