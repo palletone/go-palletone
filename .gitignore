@@ -63,9 +63,8 @@ cmd/console/leveldb/
 dag/common/unit.go.orig
 cmd/test/
 
-palletone\.sublime-project
+palletone/
 
-palletone\.sublime-workspace
 dag/common/utxo.go.orig
 
 *.sublime-project
