@@ -883,7 +883,8 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
 	//
 	if asset == "ptn"|| asset == "PTN"{
-		return common.Hash{}, errors.New("Cannot Transfer PTN By This API")
+		mp,err := s.b.TransferPtn(from, to, amount, &Extra)
+		return mp.TxHash, err
 	}
 	tokenAsset, err := modules.StringToAsset(asset)
 	if err != nil {
