@@ -94,21 +94,27 @@ type nodeInfo struct {
 	ntype int //1:default, 2:jury, 4:mediator
 }
 
+type electionVrf struct {
+	eChan chan bool     //election event chan
+	eInf  []ElectionInf //receive ele info already
+
+	rst []common.Hash //receive result event address hash
+	req bool          //receive request event
+	tm  time.Time
+}
+
 type contractTx struct {
-	state    int                    //contract run state, 0:default, 1:running
-	addrHash []common.Hash          //dynamic
-	eleInf   []ElectionInf          //dynamic
-	reqTx    *modules.Transaction   //request contract
-	rstTx    *modules.Transaction   //contract run result---system
-	sigTx    *modules.Transaction   //contract sig result---user, 0:local, 1,2 other
-	rcvTx    []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
-	tm       time.Time              //create time
-	valid    bool                   //contract request valid identification
-	eleChan  chan bool              //election event chan
-	adaChan  chan bool              //adapter event chan
-	//adaInf   []AdapterInf           //adapter event data information
-	adaInf map[uint32][]AdapterInf //adapter event data information
-	// eleInfo  electionInfo           //vrf election jury list
+	state    int                     //contract run state, 0:default, 1:running
+	addrHash []common.Hash           //dynamic
+	eleInf   []ElectionInf           //dynamic
+	reqTx    *modules.Transaction    //request contract
+	rstTx    *modules.Transaction    //contract run result---system
+	sigTx    *modules.Transaction    //contract sig result---user, 0:local, 1,2 other,signature is the same as local value
+	rcvTx    []*modules.Transaction  //the local has not received the request contract, the cache has signed the contract
+	tm       time.Time               //create time
+	valid    bool                    //contract request valid identification
+	adaChan  chan bool               //adapter event chan
+	adaInf   map[uint32][]AdapterInf //adapter event data information
 }
 
 type Processor struct {
@@ -119,6 +125,7 @@ type Processor struct {
 	contract  *contracts.Contract
 	local     map[common.Address]*JuryAccount  //[]common.Address //local jury account addr
 	mtx       map[common.Hash]*contractTx      //all contract buffer
+	mel       map[common.Hash]*electionVrf     //election vrf inform
 	lockArf   map[common.Address][]ElectionInf //contractId/deployId ----vrfInfo, jury VRF
 	quit      chan struct{}
 	locker    *sync.Mutex
@@ -164,6 +171,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		locker:         new(sync.Mutex),
 		quit:           make(chan struct{}),
 		mtx:            make(map[common.Hash]*contractTx),
+		mel:            make(map[common.Hash]*electionVrf),
 		lockArf:        make(map[common.Address][]ElectionInf),
 		electionNum:    cfg.ElectionNum,
 		contractSigNum: cfg.ContractSigNum,
@@ -232,7 +240,7 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 	}
 	tx, err := gen.GenContractTransction(req.reqTx, msgs)
 	if err != nil {
-		log.Error("runContractReq", "GenContractSigTransctions error", err.Error())
+		log.Error("runContractReq", "GenContractSigTransactions error", err.Error())
 		return err
 	}
 
@@ -470,7 +478,7 @@ func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
 
 func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExit bool) bool {
 	if len(ele) < p.electionNum {
-		log.Info("isValidateElection, ElectionInf number not enough ")
+		log.Info("isValidateElection, ElectionInf number not enough ", "len(ele)=", len(ele), "set electionNum=", p.electionNum)
 		return false
 	}
 	isExit := false
@@ -522,7 +530,6 @@ func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExi
 			return false
 		}
 	}
-
 	return true
 }
 
@@ -622,12 +629,14 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if contractId == (common.Address{}) { //deploy
-			if ele, ok := p.lockArf[contractId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[contractId] = []ElectionInf{}                        //清空
+			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
+			if ele, ok := p.lockArf[cId]; !ok || len(ele) < p.electionNum {
+				p.lockArf[cId] = []ElectionInf{} //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}
 			}
+			ctx.eleInf = p.lockArf[cId]
 		} else { //invoke,stop
 			ctx.eleInf = p.lockArf[contractId]
 		}
@@ -666,6 +675,12 @@ func (p *Processor) ContractTxDeleteLoop() {
 					log.Info("ContractTxDeleteLoop, contract is valid", "delete tx id", k.String())
 					delete(p.mtx, k)
 				}
+			}
+		}
+		for k, v := range p.mel {
+			if time.Since(v.tm) > time.Second*10 {
+				log.Info("ContractTxDeleteLoop", "delete electionVrf,  id", k.String())
+				delete(p.mtx, k)
 			}
 		}
 		p.locker.Unlock()

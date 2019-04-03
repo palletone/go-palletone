@@ -79,7 +79,7 @@ func checkExists(certid string, stub shim.ChaincodeStubInterface) error {
 
 func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
 	// check with root ca holder
-	rootCAHolder, err := stub.GetSystemConfig("RootCaHolder")
+	rootCAHolder, err := stub.GetSystemConfig("RootCAHolder")
 	if err != nil {
 		return err
 	}

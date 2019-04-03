@@ -59,6 +59,7 @@ func BenchmarkSha3(b *testing.B) {
 	}
 }
 
+/*
 func TestSign(t *testing.T) {
 	key, _ := HexToECDSA(testPrivHex)
 
@@ -90,7 +91,7 @@ func TestSign(t *testing.T) {
 		t.Errorf("Address mismatch: want: %x have: %x", addr, recoveredAddr2)
 	}
 }
-
+*/
 func TestInvalidSign(t *testing.T) {
 	if _, err := Sign(make([]byte, 1), nil); err == nil {
 		t.Errorf("expected sign with hash 1 byte to error")

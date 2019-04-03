@@ -24,17 +24,17 @@ import (
 	"fmt"
 	"time"
 
+	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"encoding/hex"
 )
 
 const (
-	//VrfElectionNum = 4
+//VrfElectionNum = 4
 )
 
 func localIsMinSignature(tx *modules.Transaction) bool {
@@ -158,14 +158,19 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 				if err != nil {
 					return nil, err
 				}
-				req.args = fullArgs
+				// add cert id to args
+				newFullArgs, err := handleArg1(tx, fullArgs)
+				if err != nil {
+					return nil, err
+				}
+				req.args = newFullArgs
 				invokeResult, err := ContractProcess(contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess", "ContractProcess error", err.Error())
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload)
 
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
@@ -273,6 +278,28 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 	txArgs = append(txArgs, reqArgs...)
 	//reqArgs = append(reqArgs, txArgs...)
 	return txArgs, nil
+}
+
+func handleArg1(tx *modules.Transaction, reqArgs [][]byte) ([][]byte, error) {
+	if len(reqArgs) <= 1 {
+		return nil, fmt.Errorf("handlemsg1 req args error")
+	}
+	certInfo := modules.CertInfo{}
+	if len(tx.CertId) > 0 {
+		certInfo.NeedCert = true
+		certInfo.Certid = tx.CertId
+	} else {
+		certInfo.NeedCert = false
+	}
+	val, err := json.Marshal(certInfo)
+	if err != nil {
+		return nil, err
+	}
+	newReqArgs := [][]byte{}
+	newReqArgs = append(newReqArgs, reqArgs[0])
+	newReqArgs = append(newReqArgs, val)
+	newReqArgs = append(newReqArgs, reqArgs[1:]...)
+	return newReqArgs, nil
 }
 
 func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
