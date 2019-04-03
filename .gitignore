@@ -57,7 +57,7 @@ bin/
 #run temp file
 /cmd/gptn/data1
 /cmd/gptn/log
-#**/leveldb/
+cmd/console/leveldb/
 *.rlp
 **/ptn-config.toml
 dag/common/unit.go.orig
