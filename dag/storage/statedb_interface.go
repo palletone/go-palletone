@@ -67,8 +67,6 @@ type IStateDb interface {
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
 	GetAccountBalance(address common.Address) uint64
 	GetMinFee() (*modules.AmountAsset, error)
-	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
-	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
 
 	// world state chainIndex
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)

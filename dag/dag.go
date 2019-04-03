@@ -1046,68 +1046,6 @@ func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, e
 //	return res
 //}
 
-////@Yiran
-//func (d *Dag) UpdateActiveMediators() error {
-//	var TermInterval uint64 = 50
-//	MediatorNumber := d.ActiveMediatorsCount()
-//	// <1> Get election unit
-//	hash := d.CurrentUnit().UnitHash
-//	index, err := d.GetUnitNumber(hash)
-//	if err != nil {
-//		return err
-//	}
-//	if index.Index <= TermInterval {
-//		return errors.New("first election must wait until first term period end")
-//		//adjust TermInterval to fit the unit number
-//		//TermInterval = index.Index
-//	}
-//	index.Index -= index.Index % TermInterval
-//	d.GetUnitByNumber(index).
-//
-//	//// <2> Get all votes belonged to this election period
-//	//voteBox := storage.AddressVoteBox{}
-//	//for i := TermInterval; i > 0; i-- { // for each unit in period.
-//	//	for _, Tx := range d.GetUnitByNumber(index).Txs { //for each transaction in unit
-//	//		voter := Tx.TxMessages.GetInputAddress()
-//	//		voteTo := Tx.TxMessages.GetVoteResult()
-//	//		voteBox.AddToBoxIfNotVoted(voter, voteTo)
-//	//	}
-//	//}
-//
-//	// <3> calculate vote result
-//	addresses := voteBox.Head(MediatorNumber) //sort by candidates vote number & return the addresses of the top n account
-//
-//	// <4> create active mediators from addresses & update globalProperty
-//	activeMediators := make(map[common.Address]core.Mediator, 0)
-//	for _, addr := range (addresses) {
-//		newmediator := *d.GetGlobalProp().GetActiveMediator(addr)
-//		activeMediators[addr] = newmediator
-//	}
-//
-//	return nil
-//}
-
-//GetElectedMediatorsAddress YiRan@
-//func (dag *Dag) GetElectedMediatorsAddress() (map[string]uint64, error) {
-//	//gp, err := dag.propdb.RetrieveGlobalProp()
-//	//if err != nil {
-//	//	return nil, err
-//	//}
-//	//MediatorNumber := gp.ActiveMediatorsCount()
-//	return dag.statedb.GetSortedMediatorVote(0)
-//}
-
-// UpdateMediator
-//func (d *Dag) UpdateMediator() error {
-//	mas, err := d.GetElectedMediatorsAddress()
-//	if err != nil {
-//		return err
-//	}
-//	fmt.Println(mas)
-//	//TODO
-//	return nil
-//}
-
 // dag's common geter
 func (d *Dag) GetCommon(key []byte) ([]byte, error) {
 	return d.unstableUnitRep.GetCommon(key)
