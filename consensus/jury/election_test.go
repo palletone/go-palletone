@@ -154,7 +154,7 @@ func Test_Election_Optimal(t *testing.T) {
 	def_weight := 1
 	max_weight := 20
 
-	total_list := []uint64{20, 50, 100, 200, 500} //1000, 1500
+	total_list := []uint64{20, 50, 100, 200, 500, 1000} //1000, 1500
 
 	for _, total := range total_list {
 		//log.Info("Election", "total", total)

@@ -483,10 +483,10 @@ func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExi
 	}
 	isExit := false
 	etor := &elector{
-		num:    uint(p.electionNum),
-		weight: 1,
-		total:  uint64(p.dag.JuryCount()), //todo from dag
+		num: uint(p.electionNum),
+		total: uint64(p.dag.JuryCount()), //todo from dag
 	}
+	etor.weight = electionWeightValue(etor.total)
 	for i, e := range ele {
 		isMatch := false
 		isVerify := false
