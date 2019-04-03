@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -258,9 +257,9 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	txid := stub.GetTxID()
 	assetID, _ := modules.NewAssetId(vt.Symbol, modules.AssetType_VoteToken,
 		0, common.Hex2Bytes(txid[2:]), modules.UniqueIdType_Null)
-	assetIDStr := assetID.String()
+	//assetIDStr := assetID.String()
 	//check name is only or not
-	tkInfo := getSymbols(stub, assetIDStr)
+	tkInfo := getSymbols(stub)
 	if tkInfo != nil {
 		jsonResp := "{\"Error\":\"Repeat AssetID\"}"
 		return nil, fmt.Errorf(jsonResp)
@@ -323,7 +322,7 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 	}
 
 	//check name is exist or not
-	tkInfo := getSymbols(stub, assetIDStr)
+	tkInfo := getSymbols(stub)
 	if tkInfo == nil {
 		return nil, fmt.Errorf("Token not exist")
 	}
