@@ -38,9 +38,9 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	//if !p.checkTxIsExist(event.Tx) {
 	//	return errors.New("ProcessContractEvent event Tx is exist")
 	//}
-	//if !p.checkTxValid(event.Tx) {
-	//	return errors.New("ProcessContractEvent event Tx is invalid")
-	//}
+	if !p.checkTxValid(event.Tx) {
+		return errors.New("ProcessContractEvent event Tx is invalid")
+	}
 	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
 		log.Debug("ProcessContractEvent", "contractEventExecutable is false, reqId", event.Tx.RequestHash())
 		return nil
