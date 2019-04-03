@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -363,14 +362,13 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
-	voting := &vote.VoteInfo{
-		VoteType: vote.TypeMediator,
-		Contents: mediator.Bytes21(),
+	accountUpdateOp := &modules.AccountUpdateOperation{
+		VotingMediator: &mediator,
 	}
 
 	msg := &modules.Message{
-		App:     modules.APP_VOTE,
-		Payload: voting,
+		App:     modules.OP_ACCOUNT_UPDATE,
+		Payload: accountUpdateOp,
 	}
 
 	// 2. 组装 tx
@@ -386,13 +384,13 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address,
 func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
-	setMediatorCount := &modules.AccountUpdateOperation{
+	accountUpdateOp := &modules.AccountUpdateOperation{
 		DesiredMediatorCount: &desiredMediatorCount,
 	}
 
 	msg := &modules.Message{
 		App:     modules.OP_ACCOUNT_UPDATE,
-		Payload: setMediatorCount,
+		Payload: accountUpdateOp,
 	}
 
 	// 2. 组装 tx

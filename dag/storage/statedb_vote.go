@@ -22,24 +22,9 @@ package storage
 import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 )
-
-func (statedb *StateDb) AppendVotedMediator(voter, mediator common.Address) error {
-	//1. get current account info
-	accountInfo, err := statedb.RetrieveAccountInfo(voter)
-	if accountInfo == nil || err != nil {
-		accountInfo = modules.NewAccountInfo()
-	}
-
-	accountInfo.VotedMediators[mediator] = true
-	log.Debugf("Try to save voted mediator(%v) for account(%v)", mediator.Str(), voter.Str())
-
-	return statedb.StoreAccountInfo(voter, accountInfo)
-}
 
 //UpdateVoterList YiRan@
 func (statedb *StateDb) UpdateVoterList(voter common.Address, voteType uint8, term uint16) error {

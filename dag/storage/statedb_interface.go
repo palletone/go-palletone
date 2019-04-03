@@ -69,7 +69,6 @@ type IStateDb interface {
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetVoterList(voteType uint8, MinTermLimit uint16) []common.Address
 	//UpdateVoterList(voter common.Address, voteType uint8, term uint16) error
-	AppendVotedMediator(voter, mediator common.Address) error
 
 	// world state chainIndex
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)

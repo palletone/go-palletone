@@ -674,13 +674,12 @@ func (rep *UnitRepository) SaveVote(msg *modules.Message, voter common.Address) 
 	// save by type
 	switch {
 	case VotePayLoad.VoteType == vote.TypeMediator:
-		//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
-		mediator := common.BytesToAddress(VotePayLoad.Contents)
-
-		if err := rep.statedb.AppendVotedMediator(voter, mediator); err != nil {
-			return err
-		}
-
+		//	//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
+		//	mediator := common.BytesToAddress(VotePayLoad.Contents)
+		//
+		//	if err := rep.statedb.AppendVotedMediator(voter, mediator); err != nil {
+		//		return err
+		//	}
 	}
 	return nil
 

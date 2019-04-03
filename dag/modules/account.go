@@ -58,5 +58,6 @@ func NewAccountInfo() *AccountInfo {
 }
 
 type AccountUpdateOperation struct {
-	DesiredMediatorCount *uint8 `json:"desiredMediatorCount"`
+	DesiredMediatorCount *uint8          `json:"desiredMediatorCount"`
+	VotingMediator       *common.Address `json:"votingMediator"`
 }

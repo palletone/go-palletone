@@ -106,6 +106,12 @@ func (statedb *StateDb) UpdateAccountInfo(account common.Address,
 		log.Debugf("Try to update DesiredMediatorCount(%v) for account(%v)", mediatorCountSet, account.Str())
 	}
 
+	if accountUpdateOp.VotingMediator != nil {
+		mediator := *accountUpdateOp.VotingMediator
+		accountInfo.VotedMediators[mediator] = true
+		log.Debugf("Try to save voted mediator(%v) for account(%v)", mediator.Str(), account.Str())
+	}
+
 	return statedb.StoreAccountInfo(account, accountInfo)
 }
 
