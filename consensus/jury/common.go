@@ -159,7 +159,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, err
 				}
 				// add cert id to args
-				newFullArgs, err := handleMsg1(tx, fullArgs)
+				newFullArgs, err := handleArg1(tx, fullArgs)
 				if err != nil {
 					return nil, err
 				}
@@ -280,7 +280,7 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 	return txArgs, nil
 }
 
-func handleMsg1(tx *modules.Transaction, reqArgs [][]byte) ([][]byte, error) {
+func handleArg1(tx *modules.Transaction, reqArgs [][]byte) ([][]byte, error) {
 	if len(reqArgs) <= 1 {
 		return nil, fmt.Errorf("handlemsg1 req args error")
 	}
