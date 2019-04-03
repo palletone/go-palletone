@@ -446,8 +446,8 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	//	sysVal.DepositAmountForDeveloper = newValue
 	//case "DepositPeriod":
 	//	sysVal.DepositPeriod = newValue
-	//case "RootCaHolder":
-	//	sysVal.RootCaHolder = newValue
+	//case "RootCAHolder":
+	//	sysVal.RootCAHolder = newValue
 	//}
 	//sysValByte, err = json.Marshal(sysVal)
 	//if err != nil {
