@@ -41,7 +41,6 @@ import (
 
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
@@ -662,29 +661,6 @@ func (rep *UnitRepository) UpdateAccountInfo(msg *modules.Message, account commo
 	return nil
 }
 
-//Yiran
-func (rep *UnitRepository) SaveVote(msg *modules.Message, voter common.Address) error {
-
-	// type deduct
-	VotePayLoad, ok := msg.Payload.(*vote.VoteInfo)
-	if !ok {
-		return errors.New("not a valid vote payload")
-	}
-
-	// save by type
-	switch {
-	case VotePayLoad.VoteType == vote.TypeMediator:
-		//	//Addresses := common.BytesListToAddressList(VotePayLoad.Contents)
-		//	mediator := common.BytesToAddress(VotePayLoad.Contents)
-		//
-		//	if err := rep.statedb.AppendVotedMediator(voter, mediator); err != nil {
-		//		return err
-		//	}
-	}
-	return nil
-
-}
-
 //Get who send this transaction
 func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	msg0 := tx.TxMessages[0]
@@ -834,7 +810,6 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			if err := rep.UpdateAccountInfo(msg, requester); err != nil {
 				return fmt.Errorf("save Desired Mediator Count error")
 			}
-
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			// todo
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:

@@ -993,49 +993,6 @@ func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, e
 	return currentUnit.Number(), nil
 }
 
-//@Yiran save utxo snapshot when new mediator cycle begin
-// unit index MUST to be  integer multiples of  termInterval.
-//func (d *Dag) SaveUtxoSnapshot() error {
-//	currentUnitIndex, err := d.GetCurrentUnitIndex()
-//	if err != nil {
-//		return err
-//	}
-//	return d.utxodb.SaveUtxoSnapshot(currentUnitIndex)
-//}
-
-//@Yiran Get last utxo snapshot
-// must calling after SaveUtxoSnapshot call , before this mediator cycle end.
-// called by GenerateVoteResult
-//func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
-//	unitIndex, err := d.GetCurrentUnitIndex()
-//	if err != nil {
-//		return nil, err
-//	}
-//	unitIndex.Index -= unitIndex.Index % modules.TERMINTERVAL
-//	return d.utxodb.GetUtxoEntities(unitIndex)
-//}
-
-////@Yiran
-//func (d *Dag) GenerateVoteResult() (*[]storage.AddressVote, error) {
-//	AddressVoteBox := storage.NewAddressVoteBox()
-//
-//	utxos, err := d.utxodb.GetAllUtxos()
-//	if err != nil {
-//		return nil, err
-//	}
-//	for _, utxo := range utxos {
-//		if utxo.Asset.AssetId == modules.PTNCOIN {
-//			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-//			if err != nil {
-//				return nil, err
-//			}
-//			AddressVoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
-//		}
-//	}
-//	AddressVoteBox.Sort()
-//	return &AddressVoteBox.Candidates, nil
-//}
-
 //func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.AssetId) []*modules.Utxo {
 //	res := make([]*modules.Utxo, 0)
 //	for _, utxo := range utxos {
