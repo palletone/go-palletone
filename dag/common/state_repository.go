@@ -53,6 +53,7 @@ type IStateRepository interface {
 
 	GetJuryCandidateList() ([]string, error)
 	IsJury(address common.Address) bool
+	UpdateSysParams(ver *modules.StateVersion) error
 }
 
 type StateRepository struct {
@@ -130,4 +131,8 @@ func (rep *StateRepository) GetJuryCandidateList() ([]string, error) {
 
 func (rep *StateRepository) IsJury(address common.Address) bool {
 	return rep.statedb.IsInJuryCandidateList(address)
+}
+
+func (rep *StateRepository) UpdateSysParams(ver *modules.StateVersion) error {
+	return rep.statedb.UpdateSysParams(ver)
 }

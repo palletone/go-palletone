@@ -23,7 +23,6 @@ package validator
 import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/vote"
 )
 
 /**
@@ -165,9 +164,8 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 				return validateCode
 			}
 
-		case modules.APP_VOTE:
 		case modules.OP_MEDIATOR_CREATE:
-		case modules.OP_MEDIATOR_COUNT_SET:
+		case modules.OP_ACCOUNT_UPDATE:
 
 		default:
 			return TxValidationCode_UNKNOWN_TX_TYPE
@@ -237,16 +235,12 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_DATA {
 			return true
 		}
-	case *vote.VoteInfo:
-		if app == modules.APP_VOTE {
-			return true
-		}
 	case *modules.MediatorCreateOperation:
 		if app == modules.OP_MEDIATOR_CREATE {
 			return true
 		}
-	case *modules.MediatorCountSet:
-		if app == modules.OP_MEDIATOR_COUNT_SET {
+	case *modules.AccountUpdateOperation:
+		if app == modules.OP_ACCOUNT_UPDATE {
 			return true
 		}
 	case *modules.ContractDeployRequestPayload:

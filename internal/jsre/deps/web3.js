@@ -5411,13 +5411,6 @@ var methods = function () {
         inputFormatter: [null]
     });*/
 
-    var createMediatorVote = new Method({
-        name: 'createMediatorVote',
-        call: 'ptn_createMediatorVote',
-        params: 2,
-    });
-
-    
    /* var signRawTransaction = new Method({
         name: 'signRawTransaction',
         call: 'ptn_signRawTransaction',
@@ -5614,7 +5607,6 @@ var methods = function () {
         //walletSendTransaction,
         //cmdCreateTransaction,
         //createRawTransaction,
-        createMediatorVote,
         //signRawTransaction,
         //sendRawTransaction,
         //signTransaction,

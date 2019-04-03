@@ -41,7 +41,9 @@ type SystemConfig struct {
 	DepositPeriod string `json:"depositPeriod"`
 
 	// ROOT CA的持有者
-	RootCaHolder string `json:"rootCaHolder"`
+	RootCAHolder string `json:"rootCAHolder"`
+	// ROOT CA证书内容
+	RootCABytes string `json:"rootCABytes"`
 }
 
 type Genesis struct {
@@ -54,6 +56,7 @@ type Genesis struct {
 	ChainID      uint64       `json:"chainId"`
 	TokenHolder  string       `json:"tokenHolder"`
 	Text         string       `json:"text"`
+	RootCA       string       `json:"rootCA"`
 	SystemConfig SystemConfig `json:"systemConfig"`
 
 	InitialParameters         ChainParameters          `json:"initialParameters"`

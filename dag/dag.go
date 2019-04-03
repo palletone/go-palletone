@@ -924,16 +924,6 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 //	return true, nil
 //}
 
-//func (d *Dag) GetAccountMediatorVote(address common.Address) []common.Address {
-//	// todo
-//	bAddress := d.statedb.GetAccountVoteInfo(address, vote.TYPE_MEDIATOR)
-//	res := []common.Address{}
-//	for _, b := range bAddress {
-//		res = append(res, common.BytesToAddress(b))
-//	}
-//	return res
-//}
-
 func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
 	// get current unit
 	token := modules.PTNCOIN
@@ -1003,49 +993,6 @@ func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, e
 	return currentUnit.Number(), nil
 }
 
-//@Yiran save utxo snapshot when new mediator cycle begin
-// unit index MUST to be  integer multiples of  termInterval.
-//func (d *Dag) SaveUtxoSnapshot() error {
-//	currentUnitIndex, err := d.GetCurrentUnitIndex()
-//	if err != nil {
-//		return err
-//	}
-//	return d.utxodb.SaveUtxoSnapshot(currentUnitIndex)
-//}
-
-//@Yiran Get last utxo snapshot
-// must calling after SaveUtxoSnapshot call , before this mediator cycle end.
-// called by GenerateVoteResult
-//func (d *Dag) GetUtxoSnapshot() (*[]modules.Utxo, error) {
-//	unitIndex, err := d.GetCurrentUnitIndex()
-//	if err != nil {
-//		return nil, err
-//	}
-//	unitIndex.Index -= unitIndex.Index % modules.TERMINTERVAL
-//	return d.utxodb.GetUtxoEntities(unitIndex)
-//}
-
-////@Yiran
-//func (d *Dag) GenerateVoteResult() (*[]storage.AddressVote, error) {
-//	AddressVoteBox := storage.NewAddressVoteBox()
-//
-//	utxos, err := d.utxodb.GetAllUtxos()
-//	if err != nil {
-//		return nil, err
-//	}
-//	for _, utxo := range utxos {
-//		if utxo.Asset.AssetId == modules.PTNCOIN {
-//			utxoHolder, err := tokenengine.GetAddressFromScript(utxo.PkScript)
-//			if err != nil {
-//				return nil, err
-//			}
-//			AddressVoteBox.AddToBoxIfNotVoted(utxoHolder, utxo.VoteResult)
-//		}
-//	}
-//	AddressVoteBox.Sort()
-//	return &AddressVoteBox.Candidates, nil
-//}
-
 //func UtxoFilter(utxos map[modules.OutPoint]*modules.Utxo, assetId modules.AssetId) []*modules.Utxo {
 //	res := make([]*modules.Utxo, 0)
 //	for _, utxo := range utxos {
@@ -1054,68 +1001,6 @@ func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, e
 //		}
 //	}
 //	return res
-//}
-
-////@Yiran
-//func (d *Dag) UpdateActiveMediators() error {
-//	var TermInterval uint64 = 50
-//	MediatorNumber := d.ActiveMediatorsCount()
-//	// <1> Get election unit
-//	hash := d.CurrentUnit().UnitHash
-//	index, err := d.GetUnitNumber(hash)
-//	if err != nil {
-//		return err
-//	}
-//	if index.Index <= TermInterval {
-//		return errors.New("first election must wait until first term period end")
-//		//adjust TermInterval to fit the unit number
-//		//TermInterval = index.Index
-//	}
-//	index.Index -= index.Index % TermInterval
-//	d.GetUnitByNumber(index).
-//
-//	//// <2> Get all votes belonged to this election period
-//	//voteBox := storage.AddressVoteBox{}
-//	//for i := TermInterval; i > 0; i-- { // for each unit in period.
-//	//	for _, Tx := range d.GetUnitByNumber(index).Txs { //for each transaction in unit
-//	//		voter := Tx.TxMessages.GetInputAddress()
-//	//		voteTo := Tx.TxMessages.GetVoteResult()
-//	//		voteBox.AddToBoxIfNotVoted(voter, voteTo)
-//	//	}
-//	//}
-//
-//	// <3> calculate vote result
-//	addresses := voteBox.Head(MediatorNumber) //sort by candidates vote number & return the addresses of the top n account
-//
-//	// <4> create active mediators from addresses & update globalProperty
-//	activeMediators := make(map[common.Address]core.Mediator, 0)
-//	for _, addr := range (addresses) {
-//		newmediator := *d.GetGlobalProp().GetActiveMediator(addr)
-//		activeMediators[addr] = newmediator
-//	}
-//
-//	return nil
-//}
-
-//GetElectedMediatorsAddress YiRan@
-//func (dag *Dag) GetElectedMediatorsAddress() (map[string]uint64, error) {
-//	//gp, err := dag.propdb.RetrieveGlobalProp()
-//	//if err != nil {
-//	//	return nil, err
-//	//}
-//	//MediatorNumber := gp.ActiveMediatorsCount()
-//	return dag.statedb.GetSortedMediatorVote(0)
-//}
-
-// UpdateMediator
-//func (d *Dag) UpdateMediator() error {
-//	mas, err := d.GetElectedMediatorsAddress()
-//	if err != nil {
-//		return err
-//	}
-//	fmt.Println(mas)
-//	//TODO
-//	return nil
 //}
 
 // dag's common geter
@@ -1251,4 +1136,13 @@ func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 	// step1: get all AssetId
 
 	return []*modules.Header{}, nil
+}
+
+func (d *Dag) UpdateSysParams() error {
+	version := &modules.StateVersion{}
+	//Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1
+	unit := d.GetMainCurrentUnit()
+	version.Height = unit.UnitHeader.Number
+	version.TxIndex = 0
+	return d.stableStateRep.UpdateSysParams(version)
 }

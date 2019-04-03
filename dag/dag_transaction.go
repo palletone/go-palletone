@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/dag/vote"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -47,7 +46,8 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 	}
 }
 
-func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, txPool txspool.ITxPool) (*modules.Transaction, error) {
+func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64,
+	txPool txspool.ITxPool) (*modules.Transaction, error) {
 	// 条件判断
 	if daoFee == 0 {
 		return nil, fmt.Errorf("transaction fee cannot be 0")
@@ -172,7 +172,8 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 	return tx, nil
 }
 
-func getPayload(from, to common.Address, daoAmount, daoFee uint64, utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error) {
+func getPayload(from, to common.Address, daoAmount, daoFee uint64,
+	utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error) {
 	// 1. 利用贪心算法得到指定额度的utxo集合
 	greedyUtxos := core.Utxos{}
 	for outPoint, utxo := range utxos {
@@ -234,7 +235,8 @@ func getPayload(from, to common.Address, daoAmount, daoFee uint64, utxos map[mod
 	return pload, nil
 }
 
-func (dag *Dag) getAddrCoreUtxos(addr common.Address, txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, error) {
+func (dag *Dag) getAddrCoreUtxos(addr common.Address,
+	txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, error) {
 	// todo 待优化
 	allTxos, err := dag.GetAddrUtxos(addr)
 	if err != nil {
@@ -263,7 +265,8 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address, txPool txspool.ITxPool) (m
 	return coreUtxos, nil
 }
 
-func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string, txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, map[modules.OutPoint]*modules.Utxo, error) {
+func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string,
+	txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, map[modules.OutPoint]*modules.Utxo, error) {
 	// todo 待优化
 	allTxos, err := dag.GetAddrUtxos(addr)
 	if err != nil {
@@ -356,16 +359,16 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 	return tx, fee, nil
 }
 
-func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address,
+	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
-	voting := &vote.VoteInfo{
-		VoteType: vote.TypeMediator,
-		Contents: mediator.Bytes21(),
+	accountUpdateOp := &modules.AccountUpdateOperation{
+		VotingMediator: &mediator,
 	}
 
 	msg := &modules.Message{
-		App:     modules.APP_VOTE,
-		Payload: voting,
+		App:     modules.OP_ACCOUNT_UPDATE,
+		Payload: accountUpdateOp,
 	}
 
 	// 2. 组装 tx
@@ -381,13 +384,13 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address, txPool txspool
 func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
-	setMediatorCount := &modules.MediatorCountSet{
-		DesiredMediatorCount: desiredMediatorCount,
+	accountUpdateOp := &modules.AccountUpdateOperation{
+		DesiredMediatorCount: &desiredMediatorCount,
 	}
 
 	msg := &modules.Message{
-		App:     modules.OP_MEDIATOR_COUNT_SET,
-		Payload: setMediatorCount,
+		App:     modules.OP_ACCOUNT_UPDATE,
+		Payload: accountUpdateOp,
 	}
 
 	// 2. 组装 tx

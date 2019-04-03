@@ -874,8 +874,7 @@ func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duratio
 	ks := s.b.GetKeyStore()
 	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		errors.New("get addr by outpoint is err")
-		return err
+		return errors.New("get addr by outpoint is err")
 	}
 	return nil
 }
@@ -883,9 +882,11 @@ func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duratio
 func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
 	//
+	if asset == "ptn"|| asset == "PTN"{
+		return common.Hash{}, errors.New("Cannot Transfer PTN By This API")
+	}
 	tokenAsset, err := modules.StringToAsset(asset)
 	if err != nil {
-		fmt.Println(err.Error())
 		return common.Hash{}, err
 	}
 	if !fee.IsPositive() {

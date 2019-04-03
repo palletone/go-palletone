@@ -42,10 +42,8 @@ const (
 
 	//APP_CONFIG
 	APP_DATA
-	// todo 以下两个类型待合�?
-	OP_MEDIATOR_COUNT_SET
-	APP_VOTE
 	OP_MEDIATOR_CREATE
+	OP_ACCOUNT_UPDATE
 
 	APP_UNKNOW = 99
 
@@ -54,8 +52,8 @@ const (
 	APP_CONTRACT_INVOKE_REQUEST = 102
 	APP_CONTRACT_STOP_REQUEST   = 103
 	// 为了兼容起见:
-	// 添加別的request需要添加在 APP_CONTRACT_TPL_REQUEST �? APP_CONTRACT_STOP_REQUEST 之间
-	// 添加别的msg类型，需要添加到OP_MEDIATOR_CREATE �? APP_UNKNOW之间
+	// 添加別的request需要添加在 APP_CONTRACT_TPL_REQUEST 与 APP_CONTRACT_STOP_REQUEST 之间
+	// 添加别的msg类型，需要添加到OP_MEDIATOR_CREATE 与 APP_UNKNOW之间
 )
 
 // key: message.UnitHash(message+timestamp)
@@ -77,7 +75,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	//msg.Payload = cpyMsg.Payload
 	switch cpyMsg.App {
 	default:
-		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA, APP_VOTE:
+		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA:
 		msg.Payload = cpyMsg.Payload
 		//case APP_CONFIG:
 		//	payload, _ := cpyMsg.Payload.(*ConfigPayload)
@@ -761,6 +759,7 @@ type FoundModify struct {
 type SysTokenIDInfo struct {
 	CreateAddr     string
 	TotalSupply    uint64
+	LeastNum       uint64
 	AssetID        string
 	CreateTime     time.Time
 	IsVoteEnd      bool
