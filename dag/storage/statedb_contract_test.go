@@ -280,7 +280,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	t.Logf("DepositAmountForMediator=%s\n\n", depositAmountForMediator)
 	t.Logf("第一次============换届之前，还没有更改系统参数")
 	//更新
-	err = statedb.UpdateSysParams()
+	err = statedb.UpdateSysParams(version)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -345,7 +345,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 
 	t.Logf("第二次============换届之前，还没有更改系统参数")
 	//更新
-	err = statedb.UpdateSysParams()
+	err = statedb.UpdateSysParams(version)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -376,7 +376,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 
 	t.Logf("第三次============换届之前，还没有更改系统参数")
 	//更新
-	err = statedb.UpdateSysParams()
+	err = statedb.UpdateSysParams(version)
 	if err != nil {
 		t.Error(err.Error())
 	}
