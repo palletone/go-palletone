@@ -42,9 +42,7 @@ const (
 
 	//APP_CONFIG
 	APP_DATA
-	// todo 以下两个类型待合�?
 	OP_ACCOUNT_UPDATE
-	APP_VOTE
 	OP_MEDIATOR_CREATE
 
 	APP_UNKNOW = 99

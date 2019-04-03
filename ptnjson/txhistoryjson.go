@@ -71,12 +71,6 @@ func ConvertTx2HistoryJson(tx *modules.TransactionWithUnitInfo, utxoQuery module
 				payJson := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
 				json.Payment = payJson
 			}
-		} else if m.App == modules.APP_VOTE {
-			//v := m.Payload.(*vote.VoteInfo)
-			//if v.VoteType == vote.TypeMediator {
-			//	vote := &VoteJson{Content: string(v.Contents)}
-			//	json.Vote = vote
-			//}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
 			json.Data = &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData)}

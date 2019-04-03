@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	vote2 "github.com/palletone/go-palletone/dag/vote"
 	"io"
 )
 
@@ -128,10 +127,6 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			var sigPayload SignaturePayload
 			rlp.DecodeBytes(m.Data, &sigPayload)
 			m1.Payload = &sigPayload
-		} else if m.App == APP_VOTE {
-			var vote vote2.VoteInfo
-			rlp.DecodeBytes(m.Data, &vote)
-			m1.Payload = &vote
 		} else if m.App == OP_MEDIATOR_CREATE {
 			var mediatorCreateOp MediatorCreateOperation
 			rlp.DecodeBytes(m.Data, &mediatorCreateOp)
