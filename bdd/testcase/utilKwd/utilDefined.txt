@@ -32,3 +32,11 @@ getTokenId
     ${nickname}    evaluate    random.randint(100,999)    random
     ${nickname}    evaluate    'qa'+str(${nickname})
     [Return]    ${nickname}
+
+getGeneAdd
+    [Arguments]    ${host}
+    ${list}    Create List    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
+    log    ${resp.content}['result']
+    ${log}    evaluate    str(${resp.content}['result'][0])
+    [Return]    ${log}

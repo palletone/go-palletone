@@ -33,21 +33,26 @@ I get a code ${error_code} and a message ${error_message}
 
 I set signTrans result to ${i}
     [Arguments]    ${i}
-    @{transList}    Create List    ${i}    1
+    @{transList}    Create List    ${i}    ALL    1
     [Return]    @{transList}
 
 I set signTrans password to Empty
     [Arguments]    ${crtResult}
-    @{transList}    Create List    ${crtResult}
+    @{transList}    Create List    ${crtResult}    ALL
+    [Return]    @{transList}
+
+I set signTrans password to ${i}
+    [Arguments]    ${crtResult}    ${i}
+    @{transList}    Create List    ${crtResult}    ALL    ${i}
     [Return]    @{transList}
 
 I set signTrans to blank list
-    @{transList}    Create List    ${Empty}    ${Empty}
+    @{transList}    Create List    ${Empty}    ALL    ${Empty}
     [Return]    @{transList}
 
 I set signTrans to empty list
     [Arguments]    ${i}
-    @{transList}    Create List    ${Empty}    ${i}
+    @{transList}    Create List    ${Empty}    ALL    ${i}
     [Return]    @{transList}
 
 I post a signTrans request
