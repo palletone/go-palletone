@@ -372,7 +372,7 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address,
 	}
 
 	// 2. 组装 tx
-	fee := dag.CurrentFeeSchedule().VoteMediatorFee
+	fee := dag.CurrentFeeSchedule().AccountUpdateFee
 	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, msg, txPool)
 	if err != nil {
 		return nil, 0, err
@@ -394,7 +394,7 @@ func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMedi
 	}
 
 	// 2. 组装 tx
-	fee := dag.CurrentFeeSchedule().SetDesiredMediatorCountFee
+	fee := dag.CurrentFeeSchedule().AccountUpdateFee
 	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, msg, txPool)
 	if err != nil {
 		return nil, 0, err
