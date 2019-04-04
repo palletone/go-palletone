@@ -21,6 +21,7 @@
 package dag
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/dedis/kyber/sign/bls"
@@ -30,6 +31,24 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
+
+func (dag *Dag) validateUnit(unit *modules.Unit) error {
+	author := unit.Author()
+	if !dag.IsActiveMediator(author) && !dag.IsPrecedingMediator(author) {
+		errStr := fmt.Sprintf("The author(%v) of unit(%v) is not mediator!",
+			author.Str(), unit.UnitHash.TerminalString())
+		log.Debugf(errStr)
+
+		return fmt.Errorf(errStr)
+	}
+
+	err := dag.validate.ValidateUnitExceptGroupSig(unit)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) bool {
 	pHash := nextUnit.ParentHash()[0]

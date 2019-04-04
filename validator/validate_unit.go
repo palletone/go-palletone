@@ -137,12 +137,14 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	if len(header.ParentsHash) == 0 {
 		return UNIT_STATE_INVALID_HEADER
 	}
+
 	//  check header's extra data
 	if uint64(len(header.Extra)) > configure.MaximumExtraDataSize {
 		msg := fmt.Sprintf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
 		log.Debug(msg)
 		return UNIT_STATE_INVALID_EXTRA_DATA
 	}
+
 	// check txroot
 	if header.TxRoot == (common.Hash{}) {
 		return UNIT_STATE_INVALID_HEADER_TXROOT
@@ -157,6 +159,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	if header.Number == nil {
 		return UNIT_STATE_INVALID_HEADER_NUMBER
 	}
+
 	//Check unit and parent units relationship
 	if validate.dagquery != nil {
 		parentHeader, err := validate.dagquery.GetHeaderByHash(header.ParentsHash[0])
@@ -173,6 +176,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 			return UNIT_STATE_INVALID_HEADER
 		}
 	}
+
 	// TODO 同步过来的unit 没有Authors ，因此无法验证签名有效性。
 	var thisUnitIsNotTransmitted bool
 
@@ -180,8 +184,10 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		sigState := validate.validateUnitSignature(header)
 		return sigState
 	}
+
 	return TxValidationCode_VALID
 }
+
 func (validate *Validate) ValidateHeader(h *modules.Header) error {
 	return nil
 }

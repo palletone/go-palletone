@@ -21,6 +21,7 @@ package dag
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,8 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/configure"
-
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -41,7 +40,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"sort"
+	"github.com/palletone/go-palletone/configure"
 )
 
 type Dag struct {
@@ -557,6 +556,7 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
 	return d.unstableStateRep.GetContract(id)
 }
+
 func (d *Dag) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
 	return d.unstableStateRep.GetContractDeploy(tempId, contractId, name)
 }
@@ -566,7 +566,6 @@ func (d *Dag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
 	return d.unstableUnitRep.GetNumberWithUnitHash(hash)
 }
 
-//
 //// GetCanonicalHash
 //func (d *Dag) GetCanonicalHash(number uint64) (common.Hash, error) {
 //	return d.unstableUnitRep.GetCanonicalHash(number)
@@ -617,6 +616,7 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 //	defer d.Mutex.RUnlock()
 //	return d.utxodb.GetUtxoPkScripHexByTxhash(txhash, mindex, outindex)
 //}
+
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	//preout := modules.OutPoint{TxHash: tx.Hash()}
@@ -655,11 +655,13 @@ func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, erro
 
 	return view, err
 }
+
 func (d *Dag) GetUtxosOutViewbyTx(tx *modules.Transaction) *txspool.UtxoViewpoint {
 	view := txspool.NewUtxoViewpoint()
 	view.AddTxOuts(tx)
 	return view
 }
+
 func (d *Dag) GetUtxosOutViewbyUnit(unit *modules.Unit) *txspool.UtxoViewpoint {
 	txs := unit.Transactions()
 	view := txspool.NewUtxoViewpoint()
@@ -742,6 +744,7 @@ func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return d.unstableStateRep.GetContractStatesById(id)
 }
+
 func (d *Dag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return d.unstableStateRep.GetContractStatesByPrefix(id, prefix)
 }
@@ -785,7 +788,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
 		}
 		// step2. validate unit
-		err := d.validate.ValidateUnitExceptGroupSig(unit)
+		err := d.validateUnit(unit)
 		if err != nil {
 			return fmt.Errorf("SaveDag, validate unit error, err=%s", err.Error())
 		}

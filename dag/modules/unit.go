@@ -230,11 +230,18 @@ type Unit struct {
 	ReceivedFrom interface{}
 }
 
+func (h *Header) Author() common.Address {
+	if h == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return crypto.PubkeyBytesToAddress(h.Authors.PubKey)
+}
+
 func (unit *Unit) Author() common.Address {
 	if unit == nil {
 		log.Error("the Unit pointer is nil!")
 	}
-	return crypto.PubkeyBytesToAddress(unit.UnitHeader.Authors.PubKey)
+	return unit.UnitHeader.Author()
 }
 
 func (unit *Unit) GroupPubKey() (kyber.Point, error) {
