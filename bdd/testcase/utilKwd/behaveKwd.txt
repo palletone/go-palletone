@@ -1,7 +1,7 @@
 *** Keywords ***
 normalCrtTrans
     [Arguments]    ${result_code}
-    ${ret}    Given I_set_crtTrans_params_to_Normal    @{transList}
+    ${ret}    Given I_set_crtTrans_params_to_Normal
     ${resp}    When I_post_a_crtTrans_request    ${ret}
     ${resultCrt}    Then I_get_a_crtTrans_result${result_code}    ${resp}
     [Return]    ${resultCrt}

@@ -42,7 +42,3 @@ signPassInvalid4
     FDEW    1    -32000    Params is invalid
 
 *** Keywords ***
-I set signTrans password to ${i}
-    [Arguments]    ${crtResult}    ${i}
-    @{transList}    Create List    ${crtResult}    ${i}
-    [Return]    @{transList}

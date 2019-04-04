@@ -18,7 +18,7 @@ ${error_message}    Params is empty
 signTransInvalid1
     [Tags]    invalidSign1
     [Template]    setEmptySign
-    ${Empty}
+    ${EMPTY}
     2
 
 *** Keywords ***
