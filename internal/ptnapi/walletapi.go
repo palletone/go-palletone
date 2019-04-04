@@ -882,8 +882,21 @@ func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duratio
 func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
 	//
-	if asset == "ptn"|| asset == "PTN"{
-		mp,err := s.b.TransferPtn(from, to, amount, &Extra)
+	if asset == "ptn" || asset == "PTN" {
+		fromAdd, err := common.StringToAddress(from)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("invalid account address: %v", from)
+		}
+		// 解锁账户
+		ks := fetchKeystore(s.b.AccountManager())
+		if !ks.IsUnlock(fromAdd) {
+			duration := 1 * time.Second
+			err = ks.TimedUnlock(accounts.Account{Address: fromAdd}, password, duration)
+			if err != nil {
+				return common.Hash{}, err
+			}
+		}
+		mp, err := s.b.TransferPtn(from, to, amount, &Extra)
 		return mp.TxHash, err
 	}
 	tokenAsset, err := modules.StringToAsset(asset)
