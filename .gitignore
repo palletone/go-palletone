@@ -57,15 +57,14 @@ bin/
 #run temp file
 /cmd/gptn/data1
 /cmd/gptn/log
-**/leveldb/
+cmd/console/leveldb/
 *.rlp
 **/ptn-config.toml
 dag/common/unit.go.orig
 cmd/test/
 
-palletone\.sublime-project
+palletone/
 
-palletone\.sublime-workspace
 dag/common/utxo.go.orig
 
 *.sublime-project

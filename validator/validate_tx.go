@@ -31,7 +31,10 @@ Tx的第一条Msg必须是Payment
 如果有ContractInvokeRequest，那么要么：
 	1.	ContractInvoke不存在（这是一个Request）
 	2.	ContractInvoke必然在Request的下面，不可能在Request的上面
+	3.  不是Coinbase的情况下，创币PaymentMessage必须在Request下面，并由系统合约创建
+	4.  如果是系统合约的请求和结果，必须重新运行合约，保证结果一致
 To validate one transaction
+
 */
 func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) ValidationCode {
 	if len(tx.TxMessages) == 0 {
@@ -47,6 +50,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 		return TxValidationCode_INVALID_FEE
 	}
 	hasRequestMsg := false
+	usedUtxo := make(map[string]bool) //Cached all used utxo in this tx
 	for msgIdx, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
@@ -69,7 +73,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD
 			}
-			validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase)
+			validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase, usedUtxo)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode
 			}

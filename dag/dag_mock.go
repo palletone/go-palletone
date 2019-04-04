@@ -1091,3 +1091,17 @@ func (mr *MockIDagMockRecorder) HeadUnitHash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitHash", reflect.TypeOf((*MockIDag)(nil).HeadUnitHash))
 }
+
+// UpdateSysParams mocks base method
+func (m *MockIDag) UpdateSysParams() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSysParams")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSysParams indicates an expected call of UpdateSysParams
+func (mr *MockIDagMockRecorder) UpdateSysParams() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSysParams", reflect.TypeOf((*MockIDag)(nil).UpdateSysParams))
+}
