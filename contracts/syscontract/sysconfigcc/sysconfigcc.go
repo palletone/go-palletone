@@ -272,7 +272,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	}
 
 	//last put state
-	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr, leastNum, totalSupply,
+	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr.String(), leastNum, totalSupply,
 		VoteEndTime, voteContentJson, assetID}
 
 	err = setSymbols(stub, &info)
@@ -282,7 +282,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	}
 
 	//set token define
-	err = stub.DefineToken(byte(modules.AssetType_VoteToken), createJson, createAddr)
+	err = stub.DefineToken(byte(modules.AssetType_VoteToken), createJson, createAddr.String())
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return nil, fmt.Errorf(jsonResp)

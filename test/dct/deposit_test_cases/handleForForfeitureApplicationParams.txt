@@ -5,7 +5,9 @@ Resource          publicParams.txt
 基金会处理没收请求所需参数
     [Arguments]    ${foundationAddr}    ${isAgree}
     ${获取没收保证金申请列表}    获取没收保证金申请列表
-    ${1}    Create List    HandleForForfeitureApplication    ${获取没收保证金申请列表}[0]    ${获取没收保证金申请列表}[1]    ${isAgree}
+    ${获取没收保证金申请列表1}    Evaluate    ${获取没收保证金申请列表}[0]
+    ${获取没收保证金申请列表2}    Evaluate    ${获取没收保证金申请列表}[1]
+    ${1}    Create List    HandleForForfeitureApplication    ${获取没收保证金申请列表1}    ${获取没收保证金申请列表2}    ${isAgree}
     ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
     [Return]    ${one}
 

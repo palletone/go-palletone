@@ -171,7 +171,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
 		fungible.Decimals, common.Hex2Bytes(txid[2:]), dm.UniqueIdType_Null)
-	info := TokenInfo{fungible.Symbol, createAddr, totalSupply, decimals,
+	info := TokenInfo{fungible.Symbol, createAddr.String(), totalSupply, decimals,
 		fungible.SupplyAddress, assetID}
 
 	err = setSymbols(stub, &info)
@@ -181,7 +181,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//set token define
-	err = stub.DefineToken(byte(dm.AssetType_FungibleToken), createJson, createAddr)
+	err = stub.DefineToken(byte(dm.AssetType_FungibleToken), createJson, createAddr.String())
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
@@ -227,7 +227,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//check supply address
-	if invokeAddr != tkInfo.SupplyAddr {
+	if invokeAddr.String() != tkInfo.SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Success([]byte(jsonResp))
 	}

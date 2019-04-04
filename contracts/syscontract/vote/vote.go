@@ -216,7 +216,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//last put state
-	info := TokenInfo{vt.Name, vt.Symbol, createAddr, vt.VoteType, totalSupply,
+	info := TokenInfo{vt.Name, vt.Symbol, createAddr.String(), vt.VoteType, totalSupply,
 		VoteEndTime, voteContentJson, assetID}
 
 	err = setSymbols(stub, &info)
@@ -226,7 +226,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//set token define
-	err = stub.DefineToken(byte(dm.AssetType_VoteToken), createJson, createAddr)
+	err = stub.DefineToken(byte(dm.AssetType_VoteToken), createJson, createAddr.String())
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)

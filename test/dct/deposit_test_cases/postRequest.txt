@@ -1,6 +1,6 @@
 *** Settings ***
 Library           RequestsLibrary
-
+Library		  Collections
 *** Keywords ***
 创建公用的POST请求
     [Arguments]    ${method}    ${alias}    ${params}

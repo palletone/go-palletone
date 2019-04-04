@@ -56,7 +56,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	//fmt.Printf("lalal %#v\n", invokeTokens)
 
 	//获取账户
-	balance, err := GetDepositBalance(stub, invokeAddr)
+	balance, err := GetDepositBalance(stub, invokeAddr.String())
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -107,7 +107,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			balance.EnterTime = time.Now().UTC().Unix() / 1800
 		}
 	}
-	err = marshalAndPutStateForBalance(stub, invokeAddr, balance)
+	err = marshalAndPutStateForBalance(stub, invokeAddr.String(), balance)
 	if err != nil {
 		log.Error("MarshalAndPutStateForBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -146,7 +146,7 @@ func handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string)
 	}
 	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
-	if strings.Compare(invokeAddr, foundationAddress) != 0 {
+	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
 		log.Error("Please use foundation address.")
 		return shim.Error("Please use foundation address.")
 	}

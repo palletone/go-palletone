@@ -96,18 +96,18 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		return shim.Error(reqStr)
 	}
 	// validate certificate
-	if err := ValidateCert(issuer, cert, stub); err != nil {
+	if err := ValidateCert(issuer.String(), cert, stub); err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode validate error: %s", err.Error())
 		return shim.Error(reqStr)
 	}
 	// query nonce
-	nonce, err := queryNonce(dagConstants.CERT_ISSUER_SYMBOL, issuer, stub)
+	nonce, err := queryNonce(dagConstants.CERT_ISSUER_SYMBOL, issuer.String(), stub)
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode query nonce error: %s", err.Error())
 		return shim.Error(reqStr)
 	}
 	certInfo := CertInfo{
-		Issuer: issuer,
+		Issuer: issuer.String(),
 		Holder: certHolder,
 		Cert:   cert,
 		Nonce:  nonce + 1,
@@ -148,14 +148,14 @@ func (d *DigitalIdentityChainCode) addCRLCert(stub shim.ChaincodeStubInterface, 
 		return shim.Error(reqStr)
 	}
 	// validate crl issuer
-	certHolderInfo, err := ValidateCRLIssuer(issuer, crl, stub)
+	certHolderInfo, err := ValidateCRLIssuer(issuer.String(), crl, stub)
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert validate error: %s", err.Error())
 		return shim.Error(reqStr)
 	}
 
 	// handle state
-	if err := setCRL(issuer, crl, certHolderInfo, stub); err != nil {
+	if err := setCRL(issuer.String(), crl, certHolderInfo, stub); err != nil {
 		return shim.Error(fmt.Sprintf("DigitalIdentityChainCode addCRLCert save state error: %s", err.Error()))
 	}
 	return shim.Success([]byte("---- Add CRL Success --- "))

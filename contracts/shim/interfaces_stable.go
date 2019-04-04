@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common"
 )
 
 // Chaincode interface must be implemented by all chaincodes. The runs
@@ -131,7 +132,7 @@ type ChaincodeStubInterface interface {
 	//获取合约的一些配置参数
 	GetSystemConfig(filed string) (value string, err error)
 	//获取支付合约的 from 地址
-	GetInvokeAddress() (addr string, err error)
+	GetInvokeAddress() (invokeAddr common.Address, err error)
 	//获取支付ptn数量
 	GetInvokeTokens() (invokeTokens []*modules.InvokeTokens, err error)
 	//获取所有的世界状态
@@ -145,7 +146,7 @@ type ChaincodeStubInterface interface {
 	//将合约上锁定的某种Token支付出去
 	PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error
 	//获取invoke参数，包括invokeAddr,tokens,fee,funcName,params
-	GetInvokeParameters() (invokeAddr string, invokeTokens []*modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error)
+	GetInvokeParameters() (invokeAddr common.Address, invokeTokens []*modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error)
 	//定义并发行一种全新的Token
 	DefineToken(tokenType byte, define []byte, creator string) error
 	//增发一种之前已经定义好的Token

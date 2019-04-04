@@ -1,5 +1,6 @@
 *** Settings ***
 Resource          publicParams.txt
+Library           RequestsLibrary
 
 *** Variables ***
 ${mediatorAddr_01}    ${EMPTY}

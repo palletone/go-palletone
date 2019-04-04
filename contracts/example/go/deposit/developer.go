@@ -54,7 +54,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(err.Error())
 	}
 	//获取账户
-	balance, err := GetDepositBalance(stub, invokeAddr)
+	balance, err := GetDepositBalance(stub, invokeAddr.String())
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -105,7 +105,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 			balance.EnterTime = time.Now().UTC().Unix() / 1800
 		}
 	}
-	err = marshalAndPutStateForBalance(stub, invokeAddr, balance)
+	err = marshalAndPutStateForBalance(stub, invokeAddr.String(), balance)
 	if err != nil {
 		log.Error("MarshalAndPutStateForBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -144,7 +144,7 @@ func handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []st
 	}
 	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
-	if strings.Compare(invokeAddr, foundationAddress) != 0 {
+	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
 		log.Error("Please use foundation address.")
 		return shim.Error("Please use foundation address.")
 	}

@@ -47,7 +47,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 	content := args[0]
 	mediatorInfo := MediatorRegisterInfo{
-		Address: invokeAddr,
+		Address: invokeAddr.String(),
 		Content: content,
 		Time:    time.Now().UTC().Unix() / 1800,
 	}
@@ -58,7 +58,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(err.Error())
 	}
 	if agreeList != nil {
-		isExist := isInMediatorInfolist(invokeAddr, agreeList)
+		isExist := isInMediatorInfolist(invokeAddr.String(), agreeList)
 		if isExist {
 			log.Error("Node is exist in the agree list.")
 			return shim.Error("Node is exist in the agree list.")
@@ -116,7 +116,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 	}
 	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
-	if strings.Compare(invokeAddr, foundationAddress) != 0 {
+	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
 		log.Error("Please use foundation address.")
 		return shim.Error("Please use foundation address.")
 	}
@@ -241,7 +241,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		log.Error("Stub.GetAgreeForBecomeMediatorList:list is nil")
 		return shim.Error("Agree list is nil.")
 	}
-	isExist := isInMediatorInfolist(invokeAddr, agreeList)
+	isExist := isInMediatorInfolist(invokeAddr.String(), agreeList)
 	if !isExist {
 		log.Error("Node is not exist in the agree list.")
 		return shim.Error("Node is not exist in the agree list.")
@@ -257,7 +257,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("Stub.GetCandidateListForMediator err: list is nil.")
 
 	}
-	isExist = isInMediatorInfolist(invokeAddr, candidateList)
+	isExist = isInMediatorInfolist(invokeAddr.String(), candidateList)
 	if !isExist {
 		log.Error("Node is not exist in the candidate list.")
 		return shim.Error("Node is not exist in the candidate list.")
@@ -265,7 +265,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 	//获取节点信息
 	mediator := &MediatorRegisterInfo{}
 	for _, m := range agreeList {
-		if strings.Compare(m.Address, invokeAddr) == 0 {
+		if strings.Compare(m.Address, invokeAddr.String()) == 0 {
 			mediator = m
 			break
 		}
@@ -314,7 +314,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 	}
 	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
-	if strings.Compare(invokeAddr, foundationAddress) != 0 {
+	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
 		log.Error("Please use foundation address.")
 		return shim.Success([]byte("Please use foundation address."))
 	}
@@ -486,7 +486,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		log.Error("Stub.GetAgreeForBecomeMediatorList err: list is nil.")
 		return shim.Error("Stub.GetAgreeForBecomeMediatorList err: list is nil.")
 	}
-	isExist := isInMediatorInfolist(invokeAddr, agreeList)
+	isExist := isInMediatorInfolist(invokeAddr.String(), agreeList)
 	if !isExist {
 		log.Error("Node is not exist in the agree list,you should apply for it.")
 		return shim.Error("Node is not exist in the agree list,you should apply for it.")
@@ -495,7 +495,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	mediator := &MediatorRegisterInfo{}
 	isFound := false
 	for _, m := range agreeList {
-		if strings.Compare(m.Address, invokeAddr) == 0 {
+		if strings.Compare(m.Address, invokeAddr.String()) == 0 {
 			mediator = m
 			isFound = true
 			break
@@ -506,7 +506,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("Apply time is wrong.")
 	}
 	//获取账户
-	balance, err := GetDepositBalance(stub, invokeAddr)
+	balance, err := GetDepositBalance(stub, invokeAddr.String())
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -543,7 +543,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//处理数据
 		updateForPayValue(balance, invokeTokens)
 	}
-	err = marshalAndPutStateForBalance(stub, invokeAddr, balance)
+	err = marshalAndPutStateForBalance(stub, invokeAddr.String(), balance)
 	if err != nil {
 		log.Error("MarshalAndPutStateForBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -613,7 +613,7 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 	}
 	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
-	if strings.Compare(invokeAddr, foundationAddress) != 0 {
+	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
 		log.Error("Please use foundation address.")
 		return shim.Error("Please use foundation address.")
 	}

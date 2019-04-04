@@ -47,6 +47,7 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"github.com/palletone/go-palletone/common"
 )
 
 // Logger for the shim package.
@@ -485,13 +486,13 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 }
 
 //GetInvokeParameters documentation can be found in interfaces.go
-func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr string, invokeTokens []*modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error) {
+func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, invokeTokens []*modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error) {
 	allargs := stub.args
 	//if len(allargs) > 2 {
 	invokeInfo := &modules.InvokeInfo{}
 	err = json.Unmarshal(allargs[0], invokeInfo)
 	if err != nil {
-		return "", nil, nil, "", nil, err
+		return common.Address{}, nil, nil, "", nil, err
 	}
 	invokeAddr = invokeInfo.InvokeAddress
 	invokeTokens = invokeInfo.InvokeTokens
@@ -555,7 +556,7 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 func (stub *ChaincodeStub) GetSystemConfig(key string) (string, error) {
 	return stub.handler.handleGetSystemConfig(key, stub.ChannelId, stub.TxID)
 }
-func (stub *ChaincodeStub) GetInvokeAddress() (string, error) {
+func (stub *ChaincodeStub) GetInvokeAddress() (common.Address, error) {
 	invokeAddr, _, _, _, _, err := stub.GetInvokeParameters()
 	return invokeAddr, err
 }
