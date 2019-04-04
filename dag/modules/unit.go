@@ -58,14 +58,15 @@ const (
 )
 
 type Header struct {
-	ParentsHash  []common.Hash `json:"parents_hash"`
-	Authors      Authentifier  `json:"mediator"`    // the unit creation authors
-	GroupSign    []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
-	GroupPubKey  []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
-	TxRoot       common.Hash   `json:"root"`
-	Number       *ChainIndex   `json:"index"`
-	Extra        []byte        `json:"extra"`
-	Creationdate int64         `json:"creation_time"` // unit create time
+	ParentsHash []common.Hash `json:"parents_hash"`
+	Authors     Authentifier  `json:"mediator"`    // the unit creation authors
+	GroupSign   []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
+	GroupPubKey []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
+	TxRoot      common.Hash   `json:"root"`
+	Number      *ChainIndex   `json:"index"`
+	Extra       []byte        `json:"extra"`
+	Time        int64         `json:"creation_time"` // unit create time
+	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
@@ -159,7 +160,7 @@ func CopyHeader(h *Header) *Header {
 		cpy.Number = CopyChainIndex(h.Number)
 	}
 	cpy.Extra = h.Extra[:]
-	cpy.Creationdate = h.Creationdate
+	cpy.Time = h.Time
 	cpy.Authors = h.Authors
 
 	if len(h.ParentsHash) > 0 {
@@ -393,7 +394,7 @@ func (u *Unit) NumberU64() uint64 {
 }
 
 func (u *Unit) Timestamp() int64 {
-	return u.UnitHeader.Creationdate
+	return u.UnitHeader.Time
 }
 
 // return unit's parents UnitHash

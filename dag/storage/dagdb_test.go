@@ -80,7 +80,7 @@ func TestGetHeader(t *testing.T) {
 	au.Signature = sig
 	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
 	h.Authors = au
-	h.Creationdate = 123
+	h.Time = 123
 
 	t.Logf("%#v", h)
 

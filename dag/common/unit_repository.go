@@ -317,9 +317,9 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) 
 
 	// generate genesis unit header
 	header := modules.Header{
-		Number:       chainIndex,
-		TxRoot:       root,
-		Creationdate: time,
+		Number: chainIndex,
+		TxRoot: root,
+		Time:   time,
 	}
 
 	gUnit.UnitHeader = &header

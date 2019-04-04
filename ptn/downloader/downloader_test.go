@@ -75,7 +75,7 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header.Number.IsMain = true
 	header.Number.Index = 0
 	//
-	header.Creationdate = time.Now().Unix()
+	header.Time = time.Now().Unix()
 	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 	header.GroupSign = []byte{}
 	header.GroupPubKey = []byte{}
@@ -127,7 +127,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modu
 		header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
 		//
-		header.Creationdate = time.Now().Unix()
+		header.Time = time.Now().Unix()
 		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 		header.GroupSign = []byte{}
 		header.GroupPubKey = []byte{}

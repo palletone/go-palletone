@@ -125,7 +125,7 @@ func (s *RwSetTxSimulator) GetTimestamp(contractid []byte, ns string, rangeNumbe
 		return nil, errors.New("GetHeaderByNumber failed" + err.Error())
 	}
 
-	return []byte(fmt.Sprintf("%d", timeHeader.Creationdate)), nil
+	return []byte(fmt.Sprintf("%d", timeHeader.Time)), nil
 }
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 	//log.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)

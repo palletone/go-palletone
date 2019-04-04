@@ -117,7 +117,7 @@ func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *mo
 	data := &modules.UnitProperty{}
 	err := retrieve(db.db, key, data)
 	if err != nil {
-		log.Warnf("Cannot retrieve last stable unit hash by asset:%s",asset.String())
+		log.Warnf("Cannot retrieve last stable unit hash by asset:%s", asset.String())
 		return common.Hash{}, nil, err
 	}
 	return data.Hash, data.Index, nil
@@ -125,7 +125,7 @@ func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *mo
 func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
 	index := header.Number
-	timestamp := uint32(header.Creationdate)
+	timestamp := uint32(header.Time)
 	data := &modules.UnitProperty{hash, index, timestamp}
 	key := append(constants.LastUnstableUnitHash, index.AssetID.Bytes()...)
 	log.Debugf("Save newest unit %s,index:%s", hash.String(), index.String())

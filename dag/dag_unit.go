@@ -117,7 +117,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	pendingUnit := &newUnits[0]
 	// dag.setUnitHeader(pendingUnit)
 
-	pendingUnit.UnitHeader.Creationdate = when.Unix()
+	pendingUnit.UnitHeader.Time = when.Unix()
 	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
 	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	//currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()

@@ -110,10 +110,10 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 }
 
 //func (gdp *DynamicGlobalProperty) SetNewestUnit(header *Header) {
-//	gdp.NewestUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Creationdate}
+//	gdp.NewestUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Time}
 //}
 //func (gdp *DynamicGlobalProperty) SetLastStableUnit(header *Header) {
-//	gdp.LastStableUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Creationdate}
+//	gdp.LastStableUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Time}
 //}
 
 const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000

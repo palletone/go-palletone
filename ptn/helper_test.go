@@ -567,8 +567,8 @@ func NewHeader(parents []common.Hash, asset []modules.AssetId, extra []byte) *mo
 	hashs := make([]common.Hash, 0)
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
-	//return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...), Creationdate: time.Now().Unix()}
-	return &modules.Header{ParentsHash: hashs, Extra: append(b, extra...), Creationdate: time.Now().Unix()}
+	//return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...), Time: time.Now().Unix()}
+	return &modules.Header{ParentsHash: hashs, Extra: append(b, extra...), Time: time.Now().Unix()}
 }
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}

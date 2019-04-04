@@ -151,7 +151,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	}
 
 	// check creation_time
-	if header.Creationdate <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
+	if header.Time <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
 		return UNIT_STATE_INVALID_HEADER_TIME
 	}
 

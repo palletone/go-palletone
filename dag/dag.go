@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/configure"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -40,7 +41,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/configure"
 )
 
 type Dag struct {
@@ -944,10 +944,10 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	unitHeader := modules.Header{
 		ParentsHash: []common.Hash{currentUnit.UnitHash},
 		//Authors:      nil,
-		GroupSign:    make([]byte, 0),
-		GroupPubKey:  make([]byte, 0),
-		Number:       height,
-		Creationdate: time.Now().Unix(),
+		GroupSign:   make([]byte, 0),
+		GroupPubKey: make([]byte, 0),
+		Number:      height,
+		Time:        time.Now().Unix(),
 	}
 
 	sAddr := "P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B"

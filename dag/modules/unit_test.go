@@ -36,7 +36,7 @@ import (
 
 func TestNewUnit(t *testing.T) {
 	txs := make(Transactions, 0)
-	unit := NewUnit(&Header{Extra: []byte("hello"), Creationdate: time.Now().Unix()}, txs)
+	unit := NewUnit(&Header{Extra: []byte("hello"), Time: time.Now().Unix()}, txs)
 	hash := unit.Hash()
 	unit.UnitHash = common.Hash{}
 	if unit.UnitHash != (common.Hash{}) {
@@ -163,7 +163,7 @@ func TestOutPointToKey(t *testing.T) {
 func TestHeaderPointer(t *testing.T) {
 	h := new(Header)
 	//h.AssetIDs = []AssetId{PTNCOIN}
-	h.Creationdate = time.Now().Unix()
+	h.Time = time.Now().Unix()
 	h.Extra = []byte("jay")
 	index := new(ChainIndex)
 	index.AssetID = PTNCOIN
@@ -210,6 +210,7 @@ func TestHeaderRLP(t *testing.T) {
 	h.Number.AssetID = PTNCOIN
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)
+	h.CryptoLib = []byte{0x1, 0x2}
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
 	//tr := common.Hash{}
 	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
@@ -218,7 +219,7 @@ func TestHeaderRLP(t *testing.T) {
 	au.Signature = sig
 	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
 	h.Authors = au
-	h.Creationdate = 123
+	h.Time = 123
 
 	t.Log("data", h)
 	bytes, err := rlp.EncodeToBytes(h)

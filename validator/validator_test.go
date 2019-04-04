@@ -186,7 +186,7 @@ func newHeader(txs modules.Transactions) *modules.Header {
 	headerHash := header.HashWithoutAuthor()
 	sign, _ := crypto.Sign(headerHash[:], privKey)
 	header.Authors = modules.Authentifier{PubKey: pubKey, Signature: sign}
-	header.Creationdate = time.Now().Unix()
+	header.Time = time.Now().Unix()
 	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), true, 1}
 	return header
 }

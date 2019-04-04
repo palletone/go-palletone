@@ -25,13 +25,14 @@ import (
 type headerTemp struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
 	//AssetIDs     []AssetId    `json:"assets"`
-	Authors      Authentifier `json:"mediator"`    // the unit creation authors
-	GroupSign    []byte       `json:"groupSign"`   // 群签名, 用于加快单元确认速度
-	GroupPubKey  []byte       `json:"groupPubKey"` // 群公钥, 用于验证群签名
-	TxRoot       common.Hash  `json:"root"`
-	Number       *ChainIndex  `json:"index"`
-	Extra        []byte       `json:"extra"`
-	Creationdate uint32       `json:"creation_time"` // unit create time
+	Authors     Authentifier `json:"mediator"`    // the unit creation authors
+	GroupSign   []byte       `json:"groupSign"`   // 群签名, 用于加快单元确认速度
+	GroupPubKey []byte       `json:"groupPubKey"` // 群公钥, 用于验证群签名
+	TxRoot      common.Hash  `json:"root"`
+	Number      *ChainIndex  `json:"index"`
+	Extra       []byte       `json:"extra"`
+	Time        uint32       `json:"creation_time"` // unit create time
+	CryptoLib   []byte       `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
 func (input *Header) DecodeRLP(s *rlp.Stream) error {
@@ -52,7 +53,8 @@ func (input *Header) DecodeRLP(s *rlp.Stream) error {
 	input.TxRoot = temp.TxRoot
 	input.Number = temp.Number
 	input.Extra = temp.Extra
-	input.Creationdate = int64(temp.Creationdate)
+	input.Time = int64(temp.Time)
+	input.CryptoLib = temp.CryptoLib
 	return nil
 }
 func (input *Header) EncodeRLP(w io.Writer) error {
@@ -64,7 +66,8 @@ func (input *Header) EncodeRLP(w io.Writer) error {
 	temp.TxRoot = input.TxRoot
 	temp.Number = input.Number
 	temp.Extra = input.Extra
-	temp.Creationdate = uint32(input.Creationdate)
+	temp.Time = uint32(input.Time)
+	temp.CryptoLib = input.CryptoLib
 	return rlp.Encode(w, temp)
 }
 

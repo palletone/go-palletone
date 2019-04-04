@@ -337,7 +337,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 			UnitHash:  unit.Hash(),
 			UnitIndex: unit.NumberU64(),
 			Index:     uint64(i),
-			Timestamp: uint64(unit.UnitHeader.Creationdate),
+			Timestamp: uint64(unit.UnitHeader.Time),
 		}
 		key := append(constants.LookupPrefix, tx.Hash().Bytes()...)
 

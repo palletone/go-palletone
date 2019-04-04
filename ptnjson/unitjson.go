@@ -82,7 +82,7 @@ func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 		GroupPubKey:   hex.EncodeToString(header.GroupPubKey),
 		TxRoot:        header.TxRoot,
 		Extra:         hex.EncodeToString(header.Extra),
-		CreationTime:  time.Now(), // TODO: header.Creationdate
+		CreationTime:  time.Now(), // TODO: header.Time
 	}
 	json.Number = ChainIndexJson{
 		AssetID: header.Number.AssetID.String(),
