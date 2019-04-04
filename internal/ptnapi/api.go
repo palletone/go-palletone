@@ -2182,8 +2182,9 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	if params == "" {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
 	}
-	if hashtype != "ALL" && hashtype != "NONE" && hashtype != "SINGLE" {
-		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error")
+	upper_type := strings.ToUpper(hashtype)
+	if upper_type != "ALL" && upper_type != "NONE" && upper_type != "SINGLE" {
+		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type:" + hashtype)
 	}
 	serializedTx, err := decodeHexStr(params)
 	if err != nil {
