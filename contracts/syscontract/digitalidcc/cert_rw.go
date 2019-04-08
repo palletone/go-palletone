@@ -96,6 +96,11 @@ func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface
 	if err := stub.PutState(key, recovationTime); err != nil {
 		return err
 	}
+	// put {subject, certid} state
+	key = dagConstants.CERT_SUBJECT_SYMBOL + certInfo.Cert.Subject.String()
+	if err := stub.PutState(key, certInfo.Cert.SerialNumber.Bytes()); err != nil {
+		return err
+	}
 	// put {certid, Cert bytes} state
 	key = dagConstants.CERT_BYTES_SYMBOL + certInfo.Cert.SerialNumber.String()
 	cerDBInfo := CertDBInfo{
@@ -174,9 +179,13 @@ func loadCert(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	certDERBlock, _ := pem.Decode(data)
+	return loadCertBytes(data)
+}
+
+func loadCertBytes(original []byte) ([]byte, error) {
+	certDERBlock, _ := pem.Decode(original)
 	if certDERBlock == nil {
-		return nil, fmt.Errorf("get none Cert infor")
+		return nil, fmt.Errorf("get none Cert info")
 	}
 
 	return certDERBlock.Bytes, nil

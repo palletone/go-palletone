@@ -67,7 +67,6 @@ func (d *DigitalIdentityChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.R
 	default:
 		return shim.Error("Invoke error")
 	}
-	return shim.Error("Invoke error")
 }
 
 func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, args []string, isServer bool) pb.Response {
@@ -89,6 +88,7 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode load [%s] error: %s", certPath, err.Error())
 		return shim.Error(reqStr)
 	}
+
 	// parse Cert bytes to Certificate struct
 	cert, err := x509.ParseCertificate(pemBytes)
 	if err != nil {
