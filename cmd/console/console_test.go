@@ -95,7 +95,7 @@ func DevGenesisBlock() *core.Genesis {
 	return &core.Genesis{
 		Version:                "0.6.0",
 		TokenAmount:            "1000000000",
-		TokenDecimal:           8,
+		GasToken:               "PTN",
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		InitialParameters:      initParams,
@@ -155,7 +155,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		fmt.Printf("Failed to unlock account: %v, address: %v \n", err, account.Address.Str())
 		return nil
 	}
-	
+
 	unit, err := gen.SetupGenesisUnit(ptnConf.Genesis, ks, account)
 	if err != nil {
 		fmt.Printf("Failed to write genesis unit: %v \n", err)
