@@ -28,8 +28,9 @@ import (
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 )
 
+// This is the basic validation
 func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
-	if err := checkExists(cert.SerialNumber.String(), stub); err != nil {
+	if err := checkExists(cert, stub); err != nil {
 		return err
 	}
 	if err := validateIssuer(issuer, cert, stub); err != nil {
@@ -65,14 +66,31 @@ func ValidateCRLIssuer(issuer string, crl *pkix.CertificateList, stub shim.Chain
 	return certsInfo, nil
 }
 
-func checkExists(certid string, stub shim.ChaincodeStubInterface) error {
-	key := dagConstants.CERT_BYTES_SYMBOL + certid
+func checkExists(cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
+	// check root ca
+	val, err := stub.GetSystemConfig("RootCABytes")
+	if err != nil {
+		return err
+	}
+	bytes, err := loadCertBytes([]byte(val))
+	if err != nil {
+		return err
+	}
+	rootCert, err := x509.ParseCertificate(bytes)
+	if err != nil {
+		return err
+	}
+	if rootCert.SerialNumber.String() == cert.SerialNumber.String() {
+		return fmt.Errorf("Can not add root ca.")
+	}
+	// check other certificates
+	key := dagConstants.CERT_BYTES_SYMBOL + cert.SerialNumber.String()
 	data, err := stub.GetState(key)
 	if err != nil {
 		return err
 	}
 	if len(data) > 0 {
-		return fmt.Errorf("Cert(%s) is existing.", certid)
+		return fmt.Errorf("Cert(%s) is existing.", cert.SerialNumber.String())
 	}
 	return nil
 }
@@ -83,7 +101,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 	if err != nil {
 		return err
 	}
-	// check in server list
+	// check in intermediate certificate
 	if issuer != rootCAHolder {
 		// query server list
 		certids, err := queryCertsIDs(dagConstants.CERT_SERVER_SYMBOL, issuer, stub)
