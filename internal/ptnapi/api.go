@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	//"github.com/palletone/go-palletone/dag/coredata"
 	//"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -1410,7 +1411,8 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		txOut := modules.NewTxOut(uint64(dao), pkScript, modules.NewPTNAsset())
+		assetId := dagconfig.DagConfig.GetGasToken()
+		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
 	}
 	//	// Set the Locktime, if given.
@@ -1578,7 +1580,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	//vutxos := core.Utxos{}
 	// store dag input utxo outpoint
 	dagOutpoint := []modules.OutPoint{}
-	ptn := modules.CoreAsset.String()
+	ptn := dagconfig.DagConfig.GasToken
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
@@ -1648,7 +1650,8 @@ func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 		payPTN.AddTxIn(txInput)
 	}
 	//ptn outputs
-	payPTN.AddTxOut(modules.NewTxOut(change+1, tokenengine.GenerateLockScript(fromAddr), modules.NewPTNAsset()))
+	assetId := dagconfig.DagConfig.GetGasToken()
+	payPTN.AddTxOut(modules.NewTxOut(change+1, tokenengine.GenerateLockScript(fromAddr), assetId.ToAsset()))
 
 	//Token
 	utxosTkTaken, change, err := core.Select_utxo_Greedy(utxosToken, amountToken)
@@ -1783,7 +1786,7 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 	//ptn utxos and token utxos
 	utxosPTN := core.Utxos{}
 	utxosToken := core.Utxos{}
-	ptn := modules.CoreAsset.String()
+	ptn := dagconfig.DagConfig.GasToken
 	dagOutpoint_token := []modules.OutPoint{}
 	dagOutpoint_ptn := []modules.OutPoint{}
 	for _, json := range utxoJsons {
@@ -2149,13 +2152,14 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 	ks.Unlock(accounts.Account{Address: fromAddr}, password)
 	pubKey, _ := ks.GetPublicKey(fromAddr)
 	result := []string{}
+	asset := dagconfig.DagConfig.GetGasToken().ToAsset()
 	for i := 0; i < count; i++ {
 		tx := &modules.Transaction{}
 		pay := &modules.PaymentPayload{}
 		outPoint := modules.NewOutPoint(txHash, 0, uint32(i))
 		pay.AddTxIn(modules.NewTxIn(outPoint, []byte{}))
 		lockScript := tokenengine.GenerateLockScript(toAddr)
-		pay.AddTxOut(modules.NewTxOut(uint64(amount*100000000), lockScript, modules.NewPTNAsset()))
+		pay.AddTxOut(modules.NewTxOut(uint64(amount*100000000), lockScript, asset))
 		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
 		utxoLookup := map[modules.OutPoint][]byte{}
 		utxoLookup[*outPoint] = utxoScript

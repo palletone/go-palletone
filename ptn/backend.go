@@ -159,7 +159,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, config.TokenSubProtocol, ptn.txPool,
+	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, config.Dag.GetGasToken(), ptn.txPool,
 		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err

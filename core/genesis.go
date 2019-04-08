@@ -23,6 +23,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/dedis/kyber"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 )
 
@@ -47,18 +48,19 @@ type SystemConfig struct {
 }
 
 type Genesis struct {
-	Version string `json:"version"`
-	Alias   string `json:"alias"`
+	Version  string `json:"version"`
+	GasToken string `json:"gasToken"`
 	//TokenAmount  uint64       `json:"tokenAmount"`
-	TokenAmount  string       `json:"tokenAmount"`
-	TokenDecimal uint32       `json:"tokenDecimal"`
-	DecimalUnit  string       `json:"decimal_unit"`
-	ChainID      uint64       `json:"chainId"`
-	TokenHolder  string       `json:"tokenHolder"`
-	Text         string       `json:"text"`
-	RootCA       string       `json:"rootCA"`
-	SystemConfig SystemConfig `json:"systemConfig"`
-
+	TokenAmount string `json:"tokenAmount"`
+	//TokenDecimal              uint32                   `json:"tokenDecimal"`
+	//DecimalUnit               string                   `json:"decimal_unit"`
+	ChainID                   uint64                   `json:"chainId"`
+	TokenHolder               string                   `json:"tokenHolder"`
+	Text                      string                   `json:"text"`
+	RootCA                    string                   `json:"rootCA"`
+	SystemConfig              SystemConfig             `json:"systemConfig"`
+	ParentUnitHash            common.Hash              `json:"parentUnitHash"`
+	ParentUnitHeight          int64                    `json:"parentUnitHeight"`
 	InitialParameters         ChainParameters          `json:"initialParameters"`
 	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`
 	InitialTimestamp          int64                    `json:"initialTimestamp"`

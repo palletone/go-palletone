@@ -169,7 +169,8 @@ func (pRep *PropRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *modules
 	}
 
 	interval := gp.ChainParameters.MediatorInterval
-	_, idx, ts, _ := pRep.db.GetNewestUnit(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	_, idx, ts, _ := pRep.db.GetNewestUnit(gasToken)
 	// 本条件是用来生产第一个unit
 	if idx.Index == 0 {
 		/**

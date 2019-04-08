@@ -279,7 +279,8 @@ func (pool *TxPool) loop() {
 
 	// Track the previous head headers for transaction reorgs
 	// TODO 分区后 按token类型 loop 交易池。
-	head := pool.unit.CurrentUnit(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	head := pool.unit.CurrentUnit(gasToken)
 	// Keep waiting for and reacting to the various events
 	for {
 		select {

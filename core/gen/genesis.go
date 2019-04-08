@@ -101,7 +101,7 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 		log.Info(msg)
 	}
 	//return modules.NewGenesisUnit(genesis, txs)
-	return dagCommon.NewGenesisUnit(txs, genesis.InitialTimestamp, asset)
+	return dagCommon.NewGenesisUnit(txs, genesis.InitialTimestamp, asset, genesis.ParentUnitHeight, genesis.ParentUnitHash)
 }
 
 func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules.Transactions, *modules.Asset) {
@@ -113,39 +113,39 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		return nil, nil
 	}
 
-	assetInfo := modules.FungibleToken{
-		Name:        genesis.Alias,
-		TotalSupply: genesis.GetTokenAmount(),
-		Decimals:    byte(genesis.TokenDecimal),
-		Symbol:      genesis.DecimalUnit,
-		//SupplyAddress: holder,
-	}
+	//assetInfo := modules.FungibleToken{
+	//	Name:        genesis.GasToken,
+	//	TotalSupply: genesis.GetTokenAmount(),
+	//	Decimals:    byte(genesis.TokenDecimal),
+	//	Symbol:      genesis.DecimalUnit,
+	//	//SupplyAddress: holder,
+	//}
 	// get new asset id
-	asset := modules.NewPTNAsset()
+	//asset := modules.NewPTNAsset()
 	//err = err
 	//asset := &modules.Asset{
 	//	AssetId: assetId,
 	//}
 	//assetInfo.AssetID = asset
-	extra, err := rlp.EncodeToBytes(assetInfo)
-	if err != nil {
-		log.Error("Get genesis assetinfo bytes error.")
-		return nil, nil
-	}
-	txin := &modules.Input{
-		Extra: extra, // save asset info
-	}
+	//extra, err := rlp.EncodeToBytes(assetInfo)
+	//if err != nil {
+	//	log.Error("Get genesis assetinfo bytes error.")
+	//	return nil, nil
+	//}
+	//txin := &modules.Input{
+	//	Extra: extra, // save asset info
+	//}
 	// generate p2pkh bytes
 	addr, _ := common.StringToAddress(holder.String())
 	pkscript := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
-
+	asset, _ := modules.StringToAsset(genesis.GasToken)
 	txout := &modules.Output{
 		Value:    genesis.GetTokenAmount(),
 		Asset:    asset,
 		PkScript: pkscript,
 	}
 	pay := &modules.PaymentPayload{
-		Inputs:  []*modules.Input{txin},
+		//Inputs:  []*modules.Input{txin},
 		Outputs: []*modules.Output{txout},
 	}
 	msg0 := &modules.Message{
@@ -231,9 +231,10 @@ func DefaultGenesisBlock() *core.Genesis {
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
-		Version:                configure.Version,
-		TokenAmount:            core.DefaultTokenAmount,
-		TokenDecimal:           core.DefaultTokenDecimal,
+		Version:     configure.Version,
+		TokenAmount: core.DefaultTokenAmount,
+		//TokenDecimal:           core.DefaultTokenDecimal,
+		ParentUnitHeight:       -1,
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
@@ -260,9 +261,10 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
-		Version:                configure.Version,
-		TokenAmount:            core.DefaultTokenAmount,
-		TokenDecimal:           core.DefaultTokenDecimal,
+		Version:     configure.Version,
+		TokenAmount: core.DefaultTokenAmount,
+		//TokenDecimal:           core.DefaultTokenDecimal,
+		ParentUnitHeight:       -1,
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,

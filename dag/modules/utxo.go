@@ -268,7 +268,7 @@ type SpendProof struct {
 structure for saving asset property infomation
 */
 //type AssetInfo struct {
-//	Alias          string         `json:"alias"`           // asset name
+//	GasToken          string         `json:"alias"`           // asset name
 //	AssetID        *Asset         `json:"asset_id"`        // asset id
 //	InitialTotal   uint64         `json:"initial_total"`   // total circulation
 //	Decimal        uint32         `json:"deciaml"`         // asset accuracy
@@ -284,7 +284,7 @@ structure for saving asset property infomation
 //}
 //
 //func (assetInfo *AssetInfo) Print() {
-//	fmt.Println("Asset alias", assetInfo.Alias)
+//	fmt.Println("Asset alias", assetInfo.GasToken)
 //	fmt.Println("Asset Assetid", assetInfo.AssetID.AssetId)
 //	fmt.Println("Asset UniqueId", assetInfo.AssetID.UniqueId)
 //	//fmt.Println("Asset ChainId", assetInfo.AssetID.ChainId)
@@ -294,7 +294,7 @@ structure for saving asset property infomation
 //}
 
 //type AccountToken struct {
-//	Alias   string `json:"alias"`
+//	GasToken   string `json:"alias"`
 //	AssetID *Asset `json:"asset_id"`
 //	Balance uint64 `json:"balance"`
 //}

@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 )
 
-var CoreAsset = NewPTNAsset()
+//var CoreAsset = NewPTNAsset()
 
 //Asset to identify token
 //By default, system asset id=0,UniqueId=0

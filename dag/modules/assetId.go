@@ -26,6 +26,7 @@ import (
 
 	"github.com/martinlindhe/base36"
 
+	"bytes"
 	"strings"
 )
 
@@ -99,7 +100,7 @@ func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []by
 	return assetId, nil
 }
 
-func (id *AssetId) ParseAssetId() (string, AssetType, byte, []byte, UniqueIdType) {
+func (id AssetId) ParseAssetId() (string, AssetType, byte, []byte, UniqueIdType) {
 	var assetId [16]byte
 	copy(assetId[:], id[:])
 	assetId0 := id[0]
@@ -109,9 +110,24 @@ func (id *AssetId) ParseAssetId() (string, AssetType, byte, []byte, UniqueIdType
 	symbol := base36.EncodeBytes(assetId[4-len : 4])
 	return symbol, AssetType(t), assetId[4] & 0x1f, assetId[5:], UniqueIdType(assetId[4] >> 5)
 }
-func (id *AssetId) GetAssetType() AssetType {
+func (id AssetId) GetSymbol() string {
+	var assetId [16]byte
+	copy(assetId[:], id[:])
+	assetId0 := id[0]
+	len := assetId0 >> 5
+	assetId[0] = assetId0 & 3
+	symbol := base36.EncodeBytes(assetId[4-len : 4])
+	return symbol
+}
+func (id AssetId) GetAssetType() AssetType {
 	t := (id[0] & 0xc) >> 2
 	return AssetType(t)
+}
+func (id AssetId) ToAsset() *Asset {
+	return &Asset{AssetId: id}
+}
+func (asset AssetId) Equal(another AssetId) bool {
+	return bytes.Equal(asset.Bytes(), another.Bytes())
 }
 
 //func (it *AssetId) Str() string {
@@ -122,7 +138,7 @@ func (id *AssetId) GetAssetType() AssetType {
 //	return string(it.Bytes()[:])
 //}
 
-func (it *AssetId) Bytes() []byte {
+func (it AssetId) Bytes() []byte {
 	//idBytes := make([]byte, len(it))
 	//for i := 0; i < len(it); i++ {
 	//	idBytes[i] = it[i]
@@ -131,7 +147,7 @@ func (it *AssetId) Bytes() []byte {
 	return it[:]
 }
 
-func (it *AssetId) SetBytes(b []byte) {
+func (it AssetId) SetBytes(b []byte) {
 	if len(b) > len(it) {
 		b = b[len(b)-ID_LENGTH:]
 	}

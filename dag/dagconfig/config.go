@@ -50,23 +50,24 @@ var DefaultConfig = Config{
 	IrreversibleHeight:           1, // 单节点memdag正常缓存区块，需要将该值设置为1
 	WhetherValidateUnitSignature: false,
 	GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
-	PtnAssetHex:                  modules.CoreAsset.AssetId.String(),
-	PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
-	IsRewardCoin:                 false,
-	AddrTxsIndex:                 false,
-	Token721TxIndex:              true,
-	TextFileHashIndex:            false,
-	GasToken:                     DefaultToken,
-	MainToken:                    DefaultToken,
+	PartitionForkUnitHeight:      0,
+	//PtnAssetHex:                  modules.CoreAsset.AssetId.String(),
+	//PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
+	IsRewardCoin:      false,
+	AddrTxsIndex:      false,
+	Token721TxIndex:   true,
+	TextFileHashIndex: false,
+	GasToken:          DefaultToken,
+	//MainToken:                    DefaultToken,
 }
 
-func init() {
-	if DagConfig.PtnAssetHex != "" {
-		id, _ := modules.SetIdTypeByHex(DagConfig.PtnAssetHex)
-		DagConfig.PtnAssetId = id[:]
-		// modules.PTNCOIN.SetBytes(DagConfig.PtnAssetId)
-	}
-}
+//func init() {
+//	if DagConfig.PtnAssetHex != "" {
+//		id, _ := modules.SetIdTypeByHex(DagConfig.PtnAssetHex)
+//		DagConfig.PtnAssetId = id[:]
+//		// modules.PTNCOIN.SetBytes(DagConfig.PtnAssetId)
+//	}
+//}
 
 // global configuration of dag modules
 type Config struct {
@@ -98,9 +99,8 @@ type Config struct {
 	// Validate unit signature, just for debug version
 	WhetherValidateUnitSignature bool
 	// genesis hash‘s hex
-	GenesisHash string
-	PtnAssetHex string
-	PtnAssetId  []byte
+	GenesisHash             string
+	PartitionForkUnitHeight int
 
 	IsRewardCoin    bool
 	AddrTxsIndex    bool
@@ -109,10 +109,9 @@ type Config struct {
 	TextFileHashIndex bool
 
 	//当前节点选择的平台币，燃料币,必须为Asset全名
-	GasToken            string
-	gasToken            modules.AssetId `toml:"-"`
-	MainToken           string
-	mainToken           modules.AssetId
+	GasToken string
+	gasToken modules.AssetId `toml:"-"`
+
 	SyncPartitionTokens []string
 	syncPartitionTokens []modules.AssetId `toml:"-"`
 }
@@ -160,18 +159,19 @@ func (c *Config) GetGasToken() modules.AssetId {
 	}
 	return c.gasToken
 }
-func (c *Config) GetMainToken() modules.AssetId {
-	if c.mainToken == modules.ZeroIdType16() {
-		token, _, err := modules.String2AssetId(c.MainToken)
-		{
-			if err != nil {
-				return modules.PTNCOIN
-			}
-		}
-		c.mainToken = token
-	}
-	return c.mainToken
-}
+
+//func (c *Config) GetMainToken() modules.AssetId {
+//	if c.mainToken == modules.ZeroIdType16() {
+//		token, _, err := modules.String2AssetId(c.MainToken)
+//		{
+//			if err != nil {
+//				return modules.PTNCOIN
+//			}
+//		}
+//		c.mainToken = token
+//	}
+//	return c.mainToken
+//}
 func (c *Config) GeSyncPartitionTokens() []modules.AssetId {
 	if c.syncPartitionTokens == nil {
 		c.syncPartitionTokens = []modules.AssetId{}

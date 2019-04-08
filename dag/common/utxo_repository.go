@@ -278,7 +278,8 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 		//	errs = append(errs, err)
 		//}
 		//update address account info
-		if txout.Asset.AssetId == modules.PTNCOIN {
+		gasToken := dagconfig.DagConfig.GetGasToken()
+		if txout.Asset.AssetId == gasToken {
 			repository.statedb.UpdateAccountBalance(sAddr, int64(txout.Value))
 		}
 	}
@@ -488,7 +489,7 @@ To get account's token info by utxo index db
 //				return nil, fmt.Errorf("Get acount tokens by index error: asset info does not exist")
 //			}
 //			tokens[utxoIndex.Asset.AssetId.String()] = &modules.AccountToken{
-//				Alias:   assetInfo.Alias,
+//				GasToken:   assetInfo.GasToken,
 //				AssetID: utxoIndex.Asset,
 //				Balance: utxoIndexVal.Amount,
 //			}
@@ -529,7 +530,7 @@ To get account token info by query the whole utxo table
 //				return nil, fmt.Errorf("Get acount tokens by whole error: asset info does not exist")
 //			}
 //			tokens[utxo.Asset.AssetId.String()] = &modules.AccountToken{
-//				Alias:   assetInfo.Alias,
+//				GasToken:   assetInfo.GasToken,
 //				AssetID: utxo.Asset,
 //				Balance: utxo.Amount,
 //			}
@@ -603,7 +604,8 @@ func (repository *UtxoRepository) ComputeAwards(txs []*modules.TxPoolTransaction
 		return nil, nil
 	} else {
 		addition := new(modules.Addition)
-		addition.Asset = *modules.NewPTNAsset()
+		//first tx's asset
+		addition.Asset = *txs[0].Tx.Asset()
 		return addition, nil
 	}
 }

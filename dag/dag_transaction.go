@@ -25,6 +25,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -112,10 +113,10 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 			outAmounts = append(outAmounts, &OutAmount{from, change})
 		}
 	}
-
+	asset := dagconfig.DagConfig.GetGasToken().ToAsset()
 	for _, outAmount := range outAmounts {
 		pkScript := tokenengine.GenerateLockScript(outAmount.addr)
-		txOut := modules.NewTxOut(outAmount.amount, pkScript, modules.CoreAsset)
+		txOut := modules.NewTxOut(outAmount.amount, pkScript, asset)
 		pload.AddTxOut(txOut)
 	}
 
@@ -242,11 +243,11 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address,
 	if err != nil {
 		return nil, err
 	}
-
+	assetId := dagconfig.DagConfig.GetGasToken()
 	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
 	for outPoint, utxo := range allTxos {
 		// 剔除非PTN资产
-		if !utxo.Asset.IsSimilar(modules.CoreAsset) {
+		if !utxo.Asset.AssetId.Equal(assetId) {
 			continue
 		}
 
@@ -275,10 +276,11 @@ func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string,
 
 	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
 	tokenUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
+	assetId := dagconfig.DagConfig.GetGasToken()
 	for outPoint, utxo := range allTxos {
 		// 剔除非PTN资产
 		isPTN := true
-		if !utxo.Asset.IsSimilar(modules.CoreAsset) {
+		if !utxo.Asset.AssetId.Equal(assetId) {
 			if utxo.Asset.String() != assetToken {
 				continue
 			}

@@ -21,9 +21,9 @@
 package core
 
 const (
-	DefaultAlias                     = "PTN"
-	DefaultTokenAmount               = "100000000000000000"
-	DefaultTokenDecimal              = 8
+	DefaultAlias       = "PTN"
+	DefaultTokenAmount = "100000000000000000"
+	//DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
 	DefaultDepositRate               = "0.02"
 	DefaultDepositPeriod             = "0"

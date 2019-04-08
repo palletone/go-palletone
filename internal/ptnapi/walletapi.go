@@ -17,6 +17,7 @@ import (
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
@@ -67,7 +68,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 		return "", err
 	}
 	utxos := core.Utxos{}
-	ptn := modules.CoreAsset.String()
+	ptn := dagconfig.DagConfig.GasToken
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
@@ -169,10 +170,10 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		asset := modules.NewPTNAsset()
-		txOut := modules.NewTxOut(uint64(dao), pkScript, asset)
+		assetId := dagconfig.DagConfig.GetGasToken()
+		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
-		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: asset.String(), ToAddress: addr.String()})
+		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: assetId.String(), ToAddress: addr.String()})
 	}
 	//	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -289,7 +290,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 	utxos := core.Utxos{}
 	dagOutpoint := []modules.OutPoint{}
-	ptn := modules.CoreAsset.String()
+	ptn := dagconfig.DagConfig.GasToken
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
@@ -518,10 +519,10 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 			context := "Failed to convert amount"
 			return "", internalRPCError(err.Error(), context)
 		}
-		asset := modules.NewPTNAsset()
-		txOut := modules.NewTxOut(uint64(dao), pkScript, asset)
+		assetId := dagconfig.DagConfig.GetGasToken()
+		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
-		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: asset.String(), ToAddress: addr.String()})
+		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: assetId.String(), ToAddress: addr.String()})
 	}
 	//	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -682,7 +683,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		return common.Hash{}, err
 	}
 	utxos := core.Utxos{}
-	ptn := modules.CoreAsset.String()
+	ptn := modules.NewPTNIdType().String()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
@@ -925,7 +926,7 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 	//ptn utxos and token utxos
 	utxosPTN := core.Utxos{}
 	utxosToken := core.Utxos{}
-	ptn := modules.CoreAsset.String()
+	ptn := modules.NewPTNIdType().String()
 	dagOutpoint_token := []modules.OutPoint{}
 	dagOutpoint_ptn := []modules.OutPoint{}
 	for _, json := range utxoJsons {

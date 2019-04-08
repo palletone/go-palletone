@@ -22,6 +22,7 @@ package validator
 
 import (
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -184,7 +185,8 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) bool {
 		log.Warn("compute tx fee error: " + err.Error())
 		return false
 	}
-	minFee := &modules.AmountAsset{0, modules.NewPTNAsset()}
+	assetId := dagconfig.DagConfig.GetGasToken()
+	minFee := &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}
 	if validate.statequery != nil {
 		minFee, err = validate.statequery.GetMinFee()
 	}

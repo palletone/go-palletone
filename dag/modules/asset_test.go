@@ -47,7 +47,7 @@ func TestAsset_String(t *testing.T) {
 	//id := AssetId{}
 	//copy(id[4-len(symbol):4], symbol)
 	//t.Logf("Data:%08b", id)
-	asset, err := NewAsset("DEVIN", AssetType_FungibleToken, 4, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, UniqueIdType_Null, UniqueId{})
+	asset, err := NewAsset("DEVIN", AssetType_FungibleToken, 8, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, UniqueIdType_Null, UniqueId{})
 	assert.Nil(t, err)
 	t.Log(asset.String())
 	t.Logf("AssetId:%08b", asset.AssetId)
@@ -70,6 +70,10 @@ func TestAsset_SetString(t *testing.T) {
 	t.Logf("%08b", asset.AssetId)
 	t.Logf("ptn string:%s", asset.String())
 	assert.Equal(t, asset.String(), "PTN")
+	asset, err := NewAsset("DEVIN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null, UniqueId{})
+	assert.Nil(t, err)
+	t.Log(asset.String())
+
 }
 func TestPTNAsset(t *testing.T) {
 	asset, err := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)

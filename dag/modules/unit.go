@@ -286,7 +286,7 @@ type ChainIndex struct {
 }
 
 func (height *ChainIndex) String() string {
-	return fmt.Sprintf("%s-%d", height.AssetID.String(), height.Index)
+	return fmt.Sprintf("%s-%d", height.AssetID.GetSymbol(), height.Index)
 }
 func (height *ChainIndex) Bytes() []byte {
 	data, err := rlp.EncodeToBytes(height)

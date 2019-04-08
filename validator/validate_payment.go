@@ -23,6 +23,7 @@ package validator
 import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -46,12 +47,12 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	if payment.LockTime > 0 {
 		// TODO check locktime
 	}
-
+	gasToken := dagconfig.DagConfig.GetGasToken()
 	var asset *modules.Asset
 	totalInput := uint64(0)
 	isInputnil := false
 	if len(payment.Inputs) == 0 {
-		if payment.Outputs[0].Asset.AssetId == modules.PTNCOIN {
+		if payment.Outputs[0].Asset.AssetId.Equal(gasToken) {
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
 		}
 		isInputnil = true

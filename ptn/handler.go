@@ -23,7 +23,6 @@ import (
 	"sync"
 	"time"
 
-	"strings"
 	"sync/atomic"
 
 	"github.com/palletone/go-palletone/common"
@@ -31,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
@@ -40,7 +40,6 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"github.com/palletone/go-palletone/ptn/lps"
-	"github.com/palletone/go-palletone/consensus"
 )
 
 const (
@@ -67,10 +66,10 @@ func errResp(code errCode, format string, v ...interface{}) error {
 }
 
 type ProtocolManager struct {
-	networkId    uint64
-	srvr         *p2p.Server
-	protocolName string
-	mainAssetId  modules.AssetId
+	networkId uint64
+	srvr      *p2p.Server
+	//protocolName string
+	mainAssetId modules.AssetId
 
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
@@ -145,14 +144,14 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName string, txpool txPool,
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txPool,
 	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
 	contractProc consensus.ContractInf, engine core.ConsensusEngine) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId:    networkId,
-		dag:          dag,
-		protocolName: protocolName,
+		networkId: networkId,
+		dag:       dag,
+		//protocolName: protocolName,
 		txpool:       txpool,
 		eventMux:     mux,
 		consEngine:   engine,
@@ -167,14 +166,15 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, protocolName
 		contractProc: contractProc,
 		lightSync:    uint32(1),
 	}
-
-	asset, err := modules.NewAsset(strings.ToUpper(protocolName), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
-	if err != nil {
-		log.Error("ProtocolManager new asset err", err)
-		return nil, err
-	}
-	manager.mainAssetId = asset.AssetId
-
+	symbol, _, _, _, _ := gasToken.ParseAssetId()
+	protocolName := symbol
+	//asset, err := modules.NewAsset(strings.ToUpper(gasToken), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
+	//if err != nil {
+	//	log.Error("ProtocolManager new asset err", err)
+	//	return nil, err
+	//}
+	//manager.mainAssetId = asset.AssetId
+	manager.mainAssetId = gasToken
 	// Figure out whether to allow fast sync or not
 	/*blockchain.CurrentBlock().NumberU64() > 0 */
 	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
@@ -654,7 +654,6 @@ func (pm *ProtocolManager) AdapterBroadcast(event jury.AdapterEvent) {
 		peer.SendAdapterEvent(event)
 	}
 }
-
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
 	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)

@@ -1165,7 +1165,7 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	if gen := ctx.GlobalInt(TrieCacheGenFlag.Name); gen > 0 {
 		state.MaxTrieCacheGen = uint16(gen)
 	}
-	cfg.TokenSubProtocol = strings.ToLower(cfg.Dag.MainToken)
+	//cfg.TokenSubProtocol = strings.ToLower(cfg.Dag.MainToken)
 }
 
 // SetDashboardConfig applies dashboard related command line flags to the config.

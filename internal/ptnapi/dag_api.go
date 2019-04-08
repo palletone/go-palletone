@@ -30,6 +30,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 )
@@ -94,7 +95,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
-	number.AssetID = modules.CoreAsset.AssetId
+	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
 
 	unit := s.b.GetUnitByNumber(number)
@@ -149,7 +150,7 @@ func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition str
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
-	number.AssetID = modules.CoreAsset.AssetId
+	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
 
 	unit := s.b.GetUnitByNumber(number)

@@ -90,7 +90,7 @@ func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
-	main_token := dagconfig.DagConfig.GetMainToken()
+	main_token := dagconfig.DagConfig.GetGasToken()
 	return d.Memdag.GetLastMainchainUnit(main_token)
 }
 
@@ -464,7 +464,8 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
-	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	unstableChain := memunit.NewMemDag(gasToken, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
 	partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
@@ -757,7 +758,8 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 	unit := &modules.Unit{UnitHeader: header}
 	asset := header.Number.AssetID
 	var memdag memunit.IMemDag
-	if asset == modules.PTNCOIN {
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	if asset == gasToken {
 		memdag = d.Memdag
 	} else {
 		memdag = d.PartitionMemDag[asset]

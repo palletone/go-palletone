@@ -305,24 +305,28 @@ func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.T
 /**
 生成创世单元，需要传入创世单元的配置信息以及coinbase交易
 generate genesis unit, need genesis unit configure fields and transactions list
+parentUnitHeight=-1,means don't have parent unit
 */
-func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset) (*modules.Unit, error) {
+func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, parentUnitHeight int64, parentUnitHash common.Hash) (*modules.Unit, error) {
 	gUnit := &modules.Unit{}
 
 	// genesis unit height
-	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: 0}
+	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: uint64(parentUnitHeight + 1)}
 
 	// transactions merkle root
 	root := core.DeriveSha(txs)
 
 	// generate genesis unit header
-	header := modules.Header{
+	header := &modules.Header{
 		Number: chainIndex,
 		TxRoot: root,
 		Time:   time,
 	}
+	if parentUnitHeight >= 0 { //has parent unit
+		header.ParentsHash = []common.Hash{parentUnitHash}
+	}
 
-	gUnit.UnitHeader = &header
+	gUnit.UnitHeader = header
 	// copy txs
 	gUnit.CopyBody(txs)
 	// set unit size
@@ -387,16 +391,16 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	units := []modules.Unit{}
 
 	// step1. get mediator responsible for asset (for now is ptn)
-	asset := modules.NewPTNAsset()
+	assetId := dagconfig.DagConfig.GetGasToken()
 
 	// step2. compute chain height
 	// get current world_state index.
 	index := uint64(1)
 	isMain := true
 	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
-	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(asset.AssetId)
+	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
-		chainIndex = &modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index + 1}
+		chainIndex = &modules.ChainIndex{AssetID: assetId, IsMain: isMain, Index: index + 1}
 		log.Error("GetCurrentChainIndex is failed.", "error", err)
 	} else {
 		chainIndex.Index += 1
@@ -434,7 +438,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		additions[addr] = contractAddition
 	}
 	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
-	coinbase, rewards, err := CreateCoinbase(mAddr, fees, additions, asset, t)
+	coinbase, rewards, err := CreateCoinbase(mAddr, fees, additions, assetId.ToAsset(), t)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
