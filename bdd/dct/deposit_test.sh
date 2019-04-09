@@ -64,7 +64,7 @@ another=`echo ${anotherAddr//\"/}`
 echo $mdi_01
 echo "----0000"
 echo $found
-#pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found --test Business_01 ./deposit_test_cases/DepositContractTest.robot
+pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found --test Business_01 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found --test Business_02 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v juryAddr:$jury_01 --test Business_03 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v developerAddr:$developer_01 --test Business_04 ./deposit_test_cases/DepositContractTest.robot
@@ -76,7 +76,7 @@ echo $found
 #pybot -d ./log -v juryAddr:$jury_01 -v foundationAddr:$found--test Business_10 ./deposit_test_cases/DepositContractTest.robot
 #robot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found -v anotherAddr:$another --test Business_02 ./deposit_test_cases/DepositContractTest.robot
 #echo $another
-pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v anotherAddr:$another ./deposit_test_cases/DepositContractTest.robot
+#pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v anotherAddr:$another ./deposit_test_cases/DepositContractTest.robot
 
 
 #./test_case_teardown.sh
