@@ -75,6 +75,15 @@ func TestAsset_SetString(t *testing.T) {
 	t.Log(asset.String())
 
 }
+func TestAsset_SetBytes(t *testing.T) {
+	asset := &Asset{}
+	ptn := NewPTNAsset()
+	t.Log(ptn.String(), ptn.Bytes())
+	ptnB := ptn.Bytes()
+	asset.SetBytes(ptnB)
+	t.Log(asset.String())
+	assert.Equal(t, asset.String(), "PTN")
+}
 func TestPTNAsset(t *testing.T) {
 	asset, err := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
 	assert.Nil(t, err)
