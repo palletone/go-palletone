@@ -288,10 +288,8 @@ func (pool *TxPool) loop() {
 		case ev := <-pool.chainHeadCh:
 			if ev.Unit != nil {
 				pool.mu.Lock()
-
 				pool.reset(head.Header(), ev.Unit.Header())
 				head = ev.Unit
-
 				pool.mu.Unlock()
 			}
 			// Be unsubscribed due to system stopped
@@ -1073,7 +1071,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 		}
 		return result, nil
 	}
-	return nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
+	return result, nil //nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
 }
 
 // Get returns a transaction if it is contained in the pool

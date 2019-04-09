@@ -104,17 +104,17 @@ type electionVrf struct {
 }
 
 type contractTx struct {
-	state    int                     //contract run state, 0:default, 1:running
-	addrHash []common.Hash           //dynamic
-	eleInf   []ElectionInf           //dynamic
-	reqTx    *modules.Transaction    //request contract
-	rstTx    *modules.Transaction    //contract run result---system
-	sigTx    *modules.Transaction    //contract sig result---user, 0:local, 1,2 other,signature is the same as local value
-	rcvTx    []*modules.Transaction  //the local has not received the request contract, the cache has signed the contract
-	tm       time.Time               //create time
-	valid    bool                    //contract request valid identification
-	adaChan  chan bool               //adapter event chan
-	adaInf   map[uint32][]AdapterInf //adapter event data information
+	state    int                    //contract run state, 0:default, 1:running
+	addrHash []common.Hash          //dynamic
+	eleInf   []ElectionInf          //dynamic
+	reqTx    *modules.Transaction   //request contract
+	rstTx    *modules.Transaction   //contract run result---system
+	sigTx    *modules.Transaction   //contract sig result---user, 0:local, 1,2 other,signature is the same as local value
+	rcvTx    []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
+	tm       time.Time              //create time
+	valid    bool                   //contract request valid identification
+	adaChan  chan bool              //adapter event chan
+	adaInf   map[uint32]*AdapterInf //adapter event data information
 }
 
 type Processor struct {
@@ -483,7 +483,7 @@ func (p *Processor) isValidateElection(reqId []byte, ele []ElectionInf, checkExi
 	}
 	isExit := false
 	etor := &elector{
-		num: uint(p.electionNum),
+		num:   uint(p.electionNum),
 		total: uint64(p.dag.JuryCount()), //todo from dag
 	}
 	etor.weight = electionWeightValue(etor.total)
@@ -622,7 +622,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		reqTx:  tx,
 		tm:     time.Now(),
 		valid:  true,
-		adaInf: make(map[uint32][]AdapterInf),
+		adaInf: make(map[uint32]*AdapterInf),
 	}
 	ctx := p.mtx[reqId]
 	if !isSystemContract(tx) {
@@ -631,7 +631,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		if contractId == (common.Address{}) { //deploy
 			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
 			if ele, ok := p.lockArf[cId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[cId] = []ElectionInf{} //清空
+				p.lockArf[cId] = []ElectionInf{}                               //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}

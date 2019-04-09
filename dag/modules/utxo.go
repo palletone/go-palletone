@@ -52,6 +52,16 @@ type Utxo struct {
 	// been modified since is was loaded.
 	Flags txoFlags
 }
+
+func NewUtxo(output *Output, lockTime uint32) *Utxo {
+	return &Utxo{
+		Amount:   output.Value,
+		Asset:    output.Asset,
+		PkScript: output.PkScript,
+		LockTime: lockTime,
+	}
+}
+
 type UtxoWithOutPoint struct {
 	Utxo
 	OutPoint

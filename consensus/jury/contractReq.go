@@ -169,7 +169,7 @@ func (p *Processor) ElectionVrfReq(id uint32) ([]byte, error) {
 	p.mtx[reqId] = &contractTx{
 		tm:     time.Now(),
 		valid:  true,
-		adaInf: make(map[uint32][]AdapterInf),
+		adaInf: make(map[uint32]*AdapterInf),
 	}
 	p.ElectionRequest(reqId, time.Second*5)
 
