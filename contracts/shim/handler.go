@@ -696,9 +696,9 @@ func (handler *Handler) handleOutQuery(collection string, outChainName string, p
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
 
-func (handler *Handler) handleSendJury(collection string, msgType uint32, content []byte, channelId string, txid string) ([]byte, error) {
+func (handler *Handler) handleSendJury(collection string, msgType uint32, consultContent []byte, myAnswer []byte, channelId string, txid string) ([]byte, error) {
 	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.SendJury{Collection: collection, MsgType: msgType, Content: content})
+	payloadBytes, _ := proto.Marshal(&pb.SendJury{Collection: collection, MsgType: msgType, ConsultContent: consultContent, MyAnswer: myAnswer})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_SEND_JURY, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_SEND_JURY)
@@ -725,9 +725,9 @@ func (handler *Handler) handleSendJury(collection string, msgType uint32, conten
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
 
-func (handler *Handler) handleRecvJury(collection string, msgType uint32, timeout uint32, channelId string, txid string) ([]byte, error) {
+func (handler *Handler) handleRecvJury(collection string, msgType uint32, consultContent []byte, timeout uint32, channelId string, txid string) ([]byte, error) {
 	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.RecvJury{Collection: collection, MsgType: msgType, Timeout: timeout})
+	payloadBytes, _ := proto.Marshal(&pb.RecvJury{Collection: collection, MsgType: msgType, ConsultContent: consultContent, Timeout: timeout})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_SEND_JURY, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RECV_JURY)
