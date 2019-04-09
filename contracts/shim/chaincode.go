@@ -37,6 +37,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
@@ -47,7 +48,6 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"github.com/palletone/go-palletone/common"
 )
 
 // Logger for the shim package.
@@ -443,16 +443,16 @@ func (stub *ChaincodeStub) OutChainQuery(outChainName string, params []byte) ([]
 	return stub.handler.handleOutQuery(collection, outChainName, params, stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) SendJury(msgType uint32, content []byte) ([]byte, error) {
+func (stub *ChaincodeStub) SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error) {
 	// Access public data by setting the collection to empty string
 	collection := ""
-	return stub.handler.handleSendJury(collection, msgType, content, stub.ChannelId, stub.TxID)
+	return stub.handler.handleSendJury(collection, msgType, consultContent, myAnswer, stub.ChannelId, stub.TxID)
 }
 
-func (stub *ChaincodeStub) RecvJury(msgType uint32, timeout uint32) ([]byte, error) {
+func (stub *ChaincodeStub) RecvJury(msgType uint32, consultContent []byte, timeout uint32) ([]byte, error) {
 	// Access public data by setting the collection to empty string
 	collection := ""
-	return stub.handler.handleRecvJury(collection, msgType, timeout, stub.ChannelId, stub.TxID)
+	return stub.handler.handleRecvJury(collection, msgType, consultContent, timeout, stub.ChannelId, stub.TxID)
 }
 
 // GetArgs documentation can be found in interfaces.go

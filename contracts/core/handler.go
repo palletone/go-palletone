@@ -88,8 +88,8 @@ type nextStateInfo struct {
 }
 
 type IAdapterJury interface {
-	AdapterFunRequest(reqId common.Hash, contractId common.Address, msgType uint32, content []byte) ([]byte, error)
-	AdapterFunResult(reqId common.Hash, contractId common.Address, msgType uint32, timeOut time.Duration) ([]byte, error)
+	AdapterFunRequest(reqId common.Hash, contractId common.Address, msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
+	AdapterFunResult(reqId common.Hash, contractId common.Address, msgType uint32, consultContent []byte, timeOut time.Duration) ([]byte, error)
 }
 
 // Handler responsible for management of Peer's side of chaincode stream
@@ -1937,7 +1937,8 @@ func (handler *Handler) enterSendJury(e *fsm.Event, state string) {
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}
-		result, err := handler.aJury.AdapterFunRequest(common.HexToHash(msg.Txid), common.BytesToAddress(msg.ContractId), sendJury.MsgType, sendJury.Content)
+		result, err := handler.aJury.AdapterFunRequest(common.HexToHash(msg.Txid), common.BytesToAddress(msg.ContractId),
+			sendJury.MsgType, sendJury.ConsultContent, sendJury.MyAnswer)
 		if err == nil {
 			res = result
 		}
@@ -2022,7 +2023,8 @@ func (handler *Handler) enterRecvJury(e *fsm.Event, state string) {
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}
-		result, err := handler.aJury.AdapterFunResult(common.HexToHash(msg.Txid), common.BytesToAddress(msg.ContractId), recvJury.MsgType, time.Second*time.Duration(recvJury.Timeout))
+		result, err := handler.aJury.AdapterFunResult(common.HexToHash(msg.Txid), common.BytesToAddress(msg.ContractId),
+			recvJury.MsgType, recvJury.ConsultContent, time.Second*time.Duration(recvJury.Timeout))
 		if err == nil {
 			res = result
 		}

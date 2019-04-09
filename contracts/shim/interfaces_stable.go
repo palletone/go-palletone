@@ -21,9 +21,9 @@ package shim
 
 import (
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/palletone/go-palletone/common"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common"
 )
 
 // Chaincode interface must be implemented by all chaincodes. The runs
@@ -110,8 +110,8 @@ type ChaincodeStubInterface interface {
 	OutChainTransaction(outChainName string, params []byte) ([]byte, error)
 	OutChainQuery(outChainName string, params []byte) ([]byte, error)
 
-	SendJury(msgType uint32, content []byte) ([]byte, error)
-	RecvJury(msgType uint32, timeout uint32) ([]byte, error)
+	SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
+	RecvJury(msgType uint32, consultContent []byte, timeout uint32) ([]byte, error)
 
 	// DelState records the specified `key` to be deleted in the writeset of
 	// the transaction proposal. The `key` and its value will be deleted from
