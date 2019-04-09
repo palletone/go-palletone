@@ -344,7 +344,7 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 	// If we're reorging an old state, reinject all dropped transactions
 	var reinject modules.Transactions
 
-	if oldHead != nil && modules.HeaderEqual(oldHead, newHead) {
+	if oldHead != nil /*&& modules.HeaderEqual(oldHead, newHead)*/ {
 		// If the reorg is too deep, avoid doing it (will happen during fast sync)
 		oldNum := oldHead.Index()
 		newNum := newHead.Index()
