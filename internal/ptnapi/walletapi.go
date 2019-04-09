@@ -68,13 +68,23 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 		return "", err
 	}
 	utxos := core.Utxos{}
+	dagOutpoint := []modules.OutPoint{}
 	ptn := dagconfig.DagConfig.GasToken
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if json.Asset == ptn {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+		    dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
 		}
 	}
+	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+
+	if err == nil {
+		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from, ptn)
+		if err != nil {
+			return "", fmt.Errorf("Select utxo err")
+		}
+	} // end of pooltx is not nil
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is ZERO ")
 	}
@@ -104,7 +114,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	//fmt.Println(result)
 	return result, nil
 }
-func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) (string, error) {
+func WalletCreateTransaction( c *ptnjson.CreateRawTransactionCmd) (string, error) {
 
 	// Validate the locktime, if given.
 	if c.LockTime != nil &&
@@ -198,15 +208,6 @@ func WalletCreateTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCm
 		sh := common.BytesToHash(hashforsign)
 		inputjson[index].HashForSign = sh.String()
 	}
-	//PaymentJson := walletjson.PaymentJson{}
-	//PaymentJson.Inputs = inputjson
-	//PaymentJson.Outputs = OutputJson
-	//txjson := walletjson.TxJson{}
-	//txjson.Payload = append(txjson.Payload, PaymentJson)
-	/*bytetxjson, err := json.Marshal(txjson)
-	if err != nil {
-		return "", err
-	}*/
 	bytetxjson, err := json.Marshal(mtx)
 	if err != nil {
 		return "", err
@@ -229,7 +230,6 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	//fmt.Printf("---------------------------RawTxjsonGenParams----------%+v\n",RawTxjsonGenParams)
 	pload := new(modules.PaymentPayload)
 	for _, input := range RawTxjsonGenParams.Payload[0].Inputs {
 		txHash := common.HexToHash(input.TxHash)
