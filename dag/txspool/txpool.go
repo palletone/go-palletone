@@ -288,10 +288,8 @@ func (pool *TxPool) loop() {
 		case ev := <-pool.chainHeadCh:
 			if ev.Unit != nil {
 				pool.mu.Lock()
-
 				pool.reset(head.Header(), ev.Unit.Header())
 				head = ev.Unit
-
 				pool.mu.Unlock()
 			}
 			// Be unsubscribed due to system stopped
