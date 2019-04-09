@@ -386,17 +386,19 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			}
 		}
 	}
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	//const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var duration *uint64 
+    const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
-	//var duration
-	//if duration == nil {
-	d = 300 * time.Second
-	//} else if *duration > max {
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return common.Hash{}, err
+	} else {
+		d = time.Duration(*duration) * time.Second
+	}
 
-	//return common.Hash{}, err
-	//} else {
-	//	d = time.Duration(*duration) * time.Second
-	//}
+
 	ks := s.b.GetKeyStore()
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
