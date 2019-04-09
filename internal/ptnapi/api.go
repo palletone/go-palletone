@@ -42,8 +42,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	//"github.com/palletone/go-palletone/dag/coredata"
-	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -1437,26 +1435,24 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 	return mtxHex, nil
 }
 
-func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, dagOutpoint []modules.OutPoint,
+type GetUtxoEntry func(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
+
+func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*modules.TxPoolTransaction,
 	from string, asset string) (core.Utxos, error) {
+	tokenAsset, err := modules.StringToAsset(asset)
+	if err != nil {
+		return nil, err
+	}
 	var addr common.Address
 	// store tx input utxo outpoint
 	inputsOutpoint := []modules.OutPoint{}
-	// store tx output utxo outpoint
-	outputsOutpoint := []modules.OutPoint{}
-	// store dag and pool  all utxo outpoint
-	dagpoolOutpoint := []modules.OutPoint{}
-	// store dag and pool  vaild utxo outpoint
-	merge_Outpoint := []modules.OutPoint{}
-	vaildutxos := core.Utxos{}
-	op := modules.OutPoint{}
-	payout := new(modules.Output)
-
-	var PkScript string
-	tokenAsset, err := modules.StringToAsset(asset)
-	if err != nil {
-		return vaildutxos, err
+	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
+	for k, v := range dbUtxo {
+		if v.Asset.IsSimilar(tokenAsset) {
+			allUtxo[k] = v
+		}
 	}
+
 	for _, tx := range poolTxs {
 		for msgindex, msg := range tx.Tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
@@ -1465,6 +1461,7 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 					continue
 				}
 				for outIndex, output := range pay.Outputs {
+					op := modules.OutPoint{}
 					op.TxHash = tx.Tx.Hash()
 					op.MessageIndex = uint32(msgindex)
 					op.OutIndex = uint32(outIndex)
@@ -1473,74 +1470,26 @@ func SelectUtxoFromDagAndPool(b Backend, poolTxs []*modules.TxPoolTransaction, d
 						return nil, err
 					}
 					if addr.String() == from {
-						outputsOutpoint = append(outputsOutpoint, op)
+						allUtxo[op] = modules.NewUtxo(output, pay.LockTime)
 					}
-					//outxo := s.b.GetUtxoEntry(op)
-					//utxooutputs = append(utxooutputs, outxo)
+
 				}
 				for _, input := range pay.Inputs {
-					//iutxo, _ := s.b.GetUtxoEntry(input.PreviousOutPoint)
-					//utxoinputs = append(utxoinputs, iutxo)
+
 					if input.PreviousOutPoint != nil {
 						inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
 					}
-					//lockScript, _ := hexutil.Decode(utxo.PkScriptHex)
-					//result[*input.PreviousOutPoint] = lockScript
-					//5,6,8,9
 				}
 			}
 		}
 	}
-	//5,6,8,9,16
-	merge_flag := false
-	dagpoolOutpoint = append(dagOutpoint, outputsOutpoint...)
-	for _, dppoint := range dagpoolOutpoint {
-		//find if 5,6,8,9,in  2,3,5,6,8,9,16
-		//if in it ,continue ,find vaild outpoint
-		merge_flag = false
-		for _, inputpoint := range inputsOutpoint {
-			if dppoint.TxHash == inputpoint.TxHash && dppoint.MessageIndex == inputpoint.MessageIndex && dppoint.OutIndex == inputpoint.OutIndex {
-
-				merge_flag = true
-			}
-		}
-		//2,3,16
-		if merge_flag == false {
-
-			merge_Outpoint = append(merge_Outpoint, dppoint)
-		}
+	for _, used := range inputsOutpoint {
+		delete(allUtxo, used)
 	}
-	for _, mpoint := range merge_Outpoint {
-		// if utxo in dag, build utxo
-		for _, dpoint := range dagOutpoint {
-			if dpoint.TxHash == mpoint.TxHash && dpoint.MessageIndex == mpoint.MessageIndex && dpoint.OutIndex == mpoint.OutIndex {
-				op.TxHash = mpoint.TxHash
-				op.MessageIndex = mpoint.MessageIndex
-				op.OutIndex = mpoint.OutIndex
-				dutxo, _ := b.GetUtxoEntry(&op)
-				vaildutxos = append(vaildutxos, dutxo)
-			}
-		}
-		// if utxo in txpool, build utxo
-		for _, opoint := range outputsOutpoint {
-			if opoint.TxHash == mpoint.TxHash && opoint.MessageIndex == mpoint.MessageIndex && opoint.OutIndex == mpoint.OutIndex {
-				op.TxHash = mpoint.TxHash
-				op.MessageIndex = mpoint.MessageIndex
-				op.OutIndex = mpoint.MessageIndex
-				for _, tx := range poolTxs {
-					for msgindex, msg := range tx.Tx.TxMessages {
-						if opoint.TxHash == tx.Tx.Hash() && uint32(msgindex) == mpoint.MessageIndex {
-							payout = msg.Payload.(*modules.PaymentPayload).Outputs[mpoint.OutIndex]
-							PkScript, err = tokenengine.DisasmString(payout.PkScript)
-							if err != nil {
-								return nil, fmt.Errorf("Get PkScript err")
-							}
-							vaildutxos = append(vaildutxos, &ptnjson.UtxoJson{TxHash: mpoint.TxHash.String(), MessageIndex: mpoint.MessageIndex, OutIndex: mpoint.OutIndex, Amount: payout.Value, Asset: payout.Asset.String(), PkScriptHex: PkScript, LockTime: msg.Payload.(*modules.PaymentPayload).LockTime})
-						}
-					}
-				}
-			}
-		}
+	vaildutxos := core.Utxos{}
+	for k, v := range allUtxo {
+		json := ptnjson.ConvertUtxo2Json(&k, v)
+		vaildutxos = append(vaildutxos, json)
 	}
 	return vaildutxos, nil
 }
@@ -1571,37 +1520,25 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		return "", fmt.Errorf("amounts is invalid")
 	}
 
-	utxoJsons, err := s.b.GetAddrUtxos(from)
+	utxos, err := s.b.GetAddrRawUtxos(from)
 	if err != nil {
 		return "", err
 	}
-
-	utxos := core.Utxos{}
-	//vutxos := core.Utxos{}
-	// store dag input utxo outpoint
-	dagOutpoint := []modules.OutPoint{}
+	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+	if err != nil {
+		return "", err
+	}
 	ptn := dagconfig.DagConfig.GasToken
-	for _, json := range utxoJsons {
-		//utxos = append(utxos, &json)
-		if json.Asset == ptn {
-			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
-			dagOutpoint = append(dagOutpoint, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
-		}
+	resultUtxo, err := SelectUtxoFromDagAndPool(utxos, poolTxs, from, ptn)
+	if err != nil {
+		return "", fmt.Errorf("Select utxo err")
 	}
 
-	poolTxs, err := s.b.GetPoolTxsByAddr(from)
-
-	if err == nil {
-		utxos, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint, from, "PTN")
-		if err != nil {
-			return "", fmt.Errorf("Select utxo err")
-		}
-	} // end of pooltx is not nil
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is invalid")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
-	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
+	taken_utxo, change, err := core.Select_utxo_Greedy(resultUtxo, daoAmount)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
@@ -1779,38 +1716,45 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 		return common.Hash{}, err
 	}
 	//all utxos
-	utxoJsons, err := s.b.GetAddrUtxos(from)
+	dbUtxos, err := s.b.GetAddrRawUtxos(from)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	//ptn utxos and token utxos
-	utxosPTN := core.Utxos{}
-	utxosToken := core.Utxos{}
-	ptn := dagconfig.DagConfig.GasToken
-	dagOutpoint_token := []modules.OutPoint{}
-	dagOutpoint_ptn := []modules.OutPoint{}
-	for _, json := range utxoJsons {
-		//utxos = append(utxos, &json)
-		if json.Asset == asset {
-			utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
-			dagOutpoint_token = append(dagOutpoint_token, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
-		}
-		if json.Asset == ptn {
-			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
-			dagOutpoint_ptn = append(dagOutpoint_ptn, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
-		}
-	}
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
-	if len(poolTxs) > 0 {
-		utxosToken, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint_token, from, asset)
-		if err != nil {
-			return common.Hash{}, fmt.Errorf("Select utxo err")
-		}
-		utxosPTN, err = SelectUtxoFromDagAndPool(s.b, poolTxs, dagOutpoint_ptn, from, "PTN")
-		if err != nil {
-			return common.Hash{}, fmt.Errorf("Select utxo err")
-		}
+	if err != nil {
+		return common.Hash{}, err
 	}
+
+	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, asset)
+	if err != nil {
+		return common.Hash{}, fmt.Errorf("Select utxo err")
+	}
+	utxosGasToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, dagconfig.DagConfig.GasToken)
+	if err != nil {
+		return common.Hash{}, fmt.Errorf("Select utxo err")
+	}
+	//
+	////ptn utxos and token utxos
+	//utxosPTN := core.Utxos{}
+	//utxosToken := core.Utxos{}
+	//ptn := dagconfig.DagConfig.GasToken
+	//dagOutpoint_token := []modules.OutPoint{}
+	//dagOutpoint_ptn := []modules.OutPoint{}
+	//for _, json := range utxoJsons {
+	//	//utxos = append(utxos, &json)
+	//	if json.Asset == asset {
+	//		utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+	//		dagOutpoint_token = append(dagOutpoint_token, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
+	//	}
+	//	if json.Asset == ptn {
+	//		utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+	//		dagOutpoint_ptn = append(dagOutpoint_ptn, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
+	//	}
+	//}
+	//
+	//
+	//
+	//}
 	//else{
 	//ptn utxos and token utxos
 	/*for _, json := range utxoJsons {
@@ -1840,7 +1784,7 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 	//1.
 	tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
 	feeAmount := ptnjson.Ptn2Dao(fee)
-	tx, err := createTokenTx(fromAddr, toAddr, tokenAmount, feeAmount, utxosPTN, utxosToken, tokenAsset)
+	tx, err := createTokenTx(fromAddr, toAddr, tokenAmount, feeAmount, utxosGasToken, utxosToken, tokenAsset)
 	if err != nil {
 		return common.Hash{}, err
 	}

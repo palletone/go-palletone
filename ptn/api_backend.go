@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"log"
 	"math/big"
 	"time"
 
@@ -28,12 +27,14 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -268,7 +269,7 @@ func (b *PtnApiBackend) GetUnit(hash common.Hash) *modules.Unit {
 func (b *PtnApiBackend) GetUnitNumber(hash common.Hash) uint64 {
 	number, err := b.ptn.dag.GetUnitNumber(hash)
 	if err != nil {
-		log.Println("GetUnitNumber when b.ptn.dag.GetUnitNumber", err.Error())
+		log.Warnf("GetUnitNumber when b.ptn.dag.GetUnitNumber,%s", err.Error())
 		return uint64(0)
 	}
 	return number.Index
@@ -396,8 +397,17 @@ func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
 
 	utxo, err := b.ptn.dag.GetUtxoEntry(outpoint)
+
 	if err != nil {
-		return nil, err
+		if errors.IsNotFoundError(err) {
+			log.Infof("utxo not found in db by key:%s, try query txpool", outpoint.String())
+			utxo, err = b.ptn.txPool.GetUtxoEntry(outpoint)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 	ujson := ptnjson.ConvertUtxo2Json(outpoint, utxo)
 	return ujson, nil
@@ -434,6 +444,13 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	}
 	return result, nil
 }
+func (b *PtnApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	return b.ptn.dag.GetAddrUtxos(address)
+}
 
 func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	utxos, err := b.ptn.dag.GetAllUtxos()
@@ -469,7 +486,7 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 //contract control
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error) {
 	//tempid := []byte{0x1, 0x2, 0x3}
-	log.Printf("======>ContractInstall:name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
+	log.Debugf("======>ContractInstall:name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
 
 	//payload, err := cc.Install("palletone", ccName, ccPath, ccVersion)
 	payload, err := b.ptn.contract.Install("palletone", ccName, ccPath, ccVersion)
@@ -479,7 +496,7 @@ func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion 
 
 func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error) {
 	//depid := []byte{0x4, 0x5, 0x6}
-	log.Printf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
+	log.Debugf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
 
 	//depid, _, err := cc.Deploy("palletone", templateId, txid, args, timeout)
 	depid, _, err := b.ptn.contract.Deploy("palletone", templateId, txid, args, timeout)
@@ -487,7 +504,7 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 }
 
 func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
-	log.Printf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
+	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
 	//todo print rwset
@@ -506,13 +523,13 @@ func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]b
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("=====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
+	log.Debugf("=====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
 	//fmt.Printf("contract query rsp = %#v\n", string(rsp.Payload))
 	return rsp.Payload, nil
 }
 
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
-	log.Printf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
+	log.Debugf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
 	_, err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
