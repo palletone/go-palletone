@@ -476,6 +476,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+// todo 待合并 NewBlockMsg
 func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
 	data := []byte{}
@@ -488,6 +489,15 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	if err := json.Unmarshal(data, &unit); err != nil {
 		log.Debug("ProtocolManager", "NewBlockMsg json ummarshal err:", err)
 		return err
+	}
+
+	timestamp := time.Unix(unit.Timestamp(), 0)
+	latency := time.Now().Sub(timestamp)
+	if latency < -3*time.Second {
+		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
+			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
+		log.Debugf(errStr)
+		return fmt.Errorf(errStr)
 	}
 
 	pm.producer.AddToTBLSSignBufs(&unit)
