@@ -208,7 +208,7 @@ func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modu
 				return
 			}
 			header := ev.Unit.Header()
-			log.Debug("=========ChainIndexer->eventLoop", "index", header.Number.Index)
+			log.Debug("ChainIndexer->eventLoop", "index", header.Number.Index)
 			//TODO must modify some parent hash
 			if header.ParentsHash[0] != prevHash {
 				// Reorg to the common ancestor (might not exist in light sync mode, skip reorg then)

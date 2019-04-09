@@ -298,7 +298,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
 		log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
-		events = append(events, modules.ChainHeadEvent{u})
+		events = append(events, modules.ChainEvent{u, common.Hash{}, nil})
 	}
 
 	//TODO add PostChainEvents
@@ -1196,6 +1196,7 @@ func (bc *Dag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscript
 // posts them into the event feed.
 // TODO: Should not expose PostChainEvents. The chain events should be posted in WriteBlock.
 func (bc *Dag) PostChainEvents(events []interface{}, logs []*types.Log) {
+	log.Debug("enter PostChainEvents")
 	// post event logs for further processing
 	if logs != nil {
 		bc.logsFeed.Send(logs)
@@ -1203,6 +1204,7 @@ func (bc *Dag) PostChainEvents(events []interface{}, logs []*types.Log) {
 	for _, event := range events {
 		switch ev := event.(type) {
 		case modules.ChainEvent:
+			log.Debug("======PostChainEvents======", "ev", ev)
 			bc.chainFeed.Send(ev)
 
 		case modules.ChainHeadEvent:
