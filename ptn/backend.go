@@ -92,10 +92,10 @@ type PalletOne struct {
 	contractPorcessor *jury.Processor
 }
 
-func (p *PalletOne) AddLesServer(ls LesServer) {
-	p.lesServer = ls
-	ls.SetBloomBitsIndexer(p.bloomIndexer)
-}
+//func (p *PalletOne) AddLesServer(ls LesServer) {
+//	p.lesServer = ls
+//	ls.SetBloomBitsIndexer(p.bloomIndexer)
+//}
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
