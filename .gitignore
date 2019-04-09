@@ -73,6 +73,6 @@ core/accounts/keystore/UTC*
 cmd/gptn/gptn/
 cmd/gptn/keystore/
 #cmd/gptn/
-gptn/
+#gptn/
 dag/transactions.rlp.new
 dag/transactions.rlp
