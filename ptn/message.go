@@ -21,6 +21,7 @@ package ptn
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -358,12 +359,26 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return err
 	}
 
+	timestamp := time.Unix(unit.Timestamp(), 0)
+	log.Info(fmt.Sprint("Received unit("+unit.UnitHash.TerminalString()+") #", unit.NumberU64(),
+		" parent(", unit.ParentHash()[0].TerminalString(), ") @", timestamp.Format("2006-01-02 15:04:05"),
+		" signed by ", unit.Author().Str()))
+
+	latency := time.Now().Sub(timestamp)
+	if latency < -3*time.Second {
+		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
+			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
+		log.Debugf(errStr)
+		return fmt.Errorf(errStr)
+	}
+
 	var temptxs modules.Transactions
 	for _, tx := range unit.Txs {
 		if tx.IsContractTx() {
 			if !pm.contractProc.CheckContractTxValid(tx, true) {
 				log.Debug("NewBlockMsg,CheckContractTxValid is false.", "reqHash", tx.RequestHash().String())
-				return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
+				//return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
+				continue
 			}
 		}
 		temptxs = append(temptxs, tx)
@@ -372,7 +387,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
-	log.Debug("===NewBlockMsg===", "peer id:", p.id, "index:", unit.Number().Index, "unit:", *unit)
+	//log.Debug("===NewBlockMsg===", "peer id:", p.id, "index:", unit.Number().Index, "unit:", *unit)
 
 	// Mark the peer as owning the block and schedule it for import
 	p.MarkUnit(unit.UnitHash)

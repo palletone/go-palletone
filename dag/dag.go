@@ -268,10 +268,6 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		}
 
 		// append by albert·gou, 利用 unit 更新相关状态
-		time := time.Unix(u.Timestamp(), 0)
-		log.Info(fmt.Sprint("Received unit("+u.UnitHash.TerminalString()+") #", u.NumberU64(),
-			" parent(", u.ParentHash()[0].TerminalString(), ") @", time.Format("2006-01-02 15:04:05"),
-			" signed by ", u.Author().Str()))
 		d.ApplyUnit(u)
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
