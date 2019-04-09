@@ -30,6 +30,7 @@ before_build:
   - go get -u github.com/palletone/adaptor
   - go get -u github.com/palletone/btc-adaptor
   - go get -u github.com/palletone/eth-adaptor
+  - go get -u github.com/palletone/digital-identity
 build_script:
   - go run build\ci.go install
 
