@@ -84,32 +84,32 @@ type VoteJson struct {
 }
 
 type InvokeRequestJson struct {
-	ContractAddr string
-	FunctionName string
-	Args         []string
+	ContractAddr string `json:"contract_addr"`
+	FunctionName string `json:"function_name"`
+	Args         []string `json"arg_set"`
 }
 
 type InstallRequestJson struct {
-	TplName string
-	Path    string
-	Version string
+	TplName string `json:"tpl_name"`
+	Path    string `json:"path"`
+	Version string `json:"version"`
 }
 
 type DeployRequestJson struct {
-	TplId   string
-	TxId    string
-	Args    []string
-	Timeout time.Duration
+	TplId   string `json:"tpl_id"`
+	TxId    string `json:"tx_id"`
+	Args    []string `json:"arg_set"`
+	Timeout time.Duration `json:"timeout"`
 }
 
 type StopRequestJson struct {
-	ContractId  string
-	Txid        string
-	DeleteImage bool
+	ContractId  string `json:"contract_id"`
+	Txid        string `json:"tx_id"`
+	DeleteImage bool `json:"delete_image"`
 }
 type DataJson struct {
-	MainData  string
-	ExtraData string
+	MainData  string `json:"main_data"`
+	ExtraData string `json:"extra_data"`
 }
 
 func ConvertTx2Json(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) TxJson {
