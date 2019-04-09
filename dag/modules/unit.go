@@ -88,10 +88,12 @@ func NewHeader(parents []common.Hash, used uint64, extra []byte) *Header {
 }
 
 func HeaderEqual(oldh, newh *Header) bool {
-	if oldh.ParentsHash[0] == newh.ParentsHash[0] && oldh.ParentsHash[1] == newh.ParentsHash[1] {
-		return true
-	} else if oldh.ParentsHash[0] == newh.ParentsHash[1] && oldh.ParentsHash[1] == newh.ParentsHash[0] {
-		return true
+	if len(oldh.ParentsHash) > 0 && len(oldh.ParentsHash) == len(newh.ParentsHash) {
+		if oldh.ParentsHash[0] == newh.ParentsHash[0] && oldh.ParentsHash[1] == newh.ParentsHash[1] {
+			return true
+		} else if oldh.ParentsHash[0] == newh.ParentsHash[1] && oldh.ParentsHash[1] == newh.ParentsHash[0] {
+			return true
+		}
 	}
 	return false
 }

@@ -48,9 +48,17 @@ type ElectionInf struct {
 	Proof     []byte      //vrf proof
 	PublicKey []byte      //alg.PublicKey, rlp not support
 }
+
 type AdapterInf struct {
-	AData []byte //adapter data
-	//todo add
+	JuryMsgAll map[string]*MsgSigCollect
+}
+type MsgSigCollect struct {
+	OneMsgAllSig map[string]JuryMsgSig
+	//recvTime    time.Time
+}
+type JuryMsgSig struct {
+	Signature []byte
+	Answer    []byte
 }
 
 //contract
@@ -115,12 +123,10 @@ type AdapterEvent struct {
 	Event interface{}      `json:"event"`
 }
 type AdapterRequestEvent struct {
-	contractId common.Address `json:"contractId"`
-	data       []byte         `json:"data"` //change
-	sig        []byte
-	pubkey     []byte
-}
-type AdapterResultEvent struct {
-	contractId common.Address `json:"contractId"`
-	data       []byte         `json:"data"` //change
+	reqId       common.Hash    `json:"reqId"`
+	contractId  common.Address `json:"contractId"`  //todo delete
+	consultData []byte         `json:"consultdata"` //
+	answer      []byte         `json:"answer"`
+	sig         []byte         `json:"sig"`
+	pubkey      []byte         `json:"pubkey"`
 }
