@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -46,7 +47,8 @@ type VersionedValue struct {
 
 func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
-	unit := idag.GetCurrentUnit(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	unit := idag.GetCurrentUnit(gasToken)
 	cIndex := unit.Header().Number
 	log.Debugf("constructing new tx simulator txid = [%s]", hash.String())
 	return &RwSetTxSimulator{cIndex, hash, rwsetBuilder, idag, false, false, false}
@@ -118,7 +120,8 @@ func (s *RwSetTxSimulator) GetTimestamp(contractid []byte, ns string, rangeNumbe
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	header := s.dag.CurrentHeader(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	header := s.dag.CurrentHeader(gasToken)
 	timeIndex := header.Number.Index / uint64(rangeNumber) * uint64(rangeNumber)
 	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, IsMain: true, Index: timeIndex})
 	if err != nil {

@@ -302,7 +302,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(jsonResp)
 		}
 	}
-	info := TokenInfo{nonFungible.Symbol, byte(idType), totalSupply, createAddr, totalSupply,
+	info := TokenInfo{nonFungible.Symbol, byte(idType), totalSupply, createAddr.String(), totalSupply,
 		nonFungible.SupplyAddress, assetID}
 	err = setSymbols(stub, &info)
 	if err != nil {
@@ -310,7 +310,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//set token define
-	err = stub.DefineToken(byte(dm.AssetType_NonFungibleToken), createJson, createAddr)
+	err = stub.DefineToken(byte(dm.AssetType_NonFungibleToken), createJson, createAddr.String())
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
@@ -377,7 +377,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//check supply address
-	if invokeAddr != tkInfo.SupplyAddr && tkInfo.SupplyAddr != "" {
+	if invokeAddr.String() != tkInfo.SupplyAddr && tkInfo.SupplyAddr != "" {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Success([]byte(jsonResp))
 	}
@@ -421,7 +421,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	for _, nFdata := range nFdatas {
-		err = stub.SupplyToken(tkInfo.AssetID.Bytes(), nFdata.UniqueBytes, 1, invokeAddr)
+		err = stub.SupplyToken(tkInfo.AssetID.Bytes(), nFdata.UniqueBytes, 1, invokeAddr.String())
 		if err != nil {
 			jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 			return shim.Error(jsonResp)
@@ -484,7 +484,7 @@ func setTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return shim.Error(jsonResp)
 	}
-	tokens, err := stub.GetTokenBalance(invokeAddr, asset)
+	tokens, err := stub.GetTokenBalance(invokeAddr.String(), asset)
 	if len(tokens) == 0 {
 		jsonResp := "{\"Error\":\"Failed to get the balance of invoke address\"}"
 		return shim.Success([]byte(jsonResp))

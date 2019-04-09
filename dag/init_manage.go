@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -70,7 +71,8 @@ func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) bool {
 }
 
 func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
-	ts, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	ts, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
 	if ts >= nextUnit.Timestamp() {
 		log.Debug("invalidated unit's timestamp!")
 		return false

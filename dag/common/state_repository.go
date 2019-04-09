@@ -51,7 +51,7 @@ type IStateRepository interface {
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
-	GetJuryCandidateList() ([]string, error)
+	GetJuryCandidateList() ([]common.Address, error)
 	IsJury(address common.Address) bool
 	UpdateSysParams(ver *modules.StateVersion) error
 }
@@ -125,7 +125,7 @@ func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
 	return rep.statedb.GetMinFee()
 }
 
-func (rep *StateRepository) GetJuryCandidateList() ([]string, error) {
+func (rep *StateRepository) GetJuryCandidateList() ([]common.Address, error) {
 	return rep.statedb.GetJuryCandidateList()
 }
 

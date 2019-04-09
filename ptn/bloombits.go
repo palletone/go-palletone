@@ -20,13 +20,18 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	//"github.com/palletone/go-palletone/common/bitutil"
 	"github.com/palletone/go-palletone/common/bloombits"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptn/indexer"
 )
 
 const (
-	// bloomServiceThreads is the number of goroutines used globally by an PalletOne
+	// bloomServiceThreads is the number of goroutines used globally by an Ethereum
 	// instance to service bloombits lookups for all running filters.
 	bloomServiceThreads = 16
 
@@ -42,32 +47,45 @@ const (
 	// to accumulate request an entire batch (avoiding hysteresis).
 	bloomRetrievalWait = time.Duration(0)
 )
+const (
+	// BloomBitsBlocks is the number of blocks a single bloom bit section vector
+	// contains.
+	BloomBitsBlocks uint64 = 4096
+)
+
+var (
+	// Chain index prefixes (use `i` + single byte to avoid mixing data types).
+	BloomBitsIndexPrefix = []byte("iB") // BloomBitsIndexPrefix is the data table of a chain indexer to track its progress
+)
 
 // startBloomHandlers starts a batch of goroutines to accept bloom bit database
 // retrievals from possibly a range of filters and serving the data to satisfy.
-func (ptn *PalletOne) startBloomHandlers() {
+func (eth *PalletOne) startBloomHandlers() {
 	for i := 0; i < bloomServiceThreads; i++ {
 		go func() {
 			for {
 				select {
-				case <-ptn.shutdownChan:
+				case <-eth.shutdownChan:
 					return
 
-				case request := <-ptn.bloomRequests:
+				case request := <-eth.bloomRequests:
 					task := <-request
 					task.Bitsets = make([][]byte, len(task.Sections))
-					/*for i, section := range task.Sections {
-						head := coredata.GetCanonicalHash(ptn.chainDb, (section+1)*configure.BloomBitsBlocks-1) //would recover
-						if compVector, err := coredata.GetBloomBits(ptn.chainDb, task.Bit, section, head); err == nil {
-							if blob, err := bitutil.DecompressBytes(compVector, int(configure.BloomBitsBlocks)/8); err == nil {
-								task.Bitsets[i] = blob
-							} else {
-								task.Error = err
-							}
-						} else {
-							task.Error = err
-						}
-					}*/
+					for i, section := range task.Sections {
+						i = i
+						section = section
+						task.Error = errors.New("404 Not Found")
+						//head := core.GetCanonicalHash(eth.chainDb, (section+1)*BloomBitsBlocks-1)
+						//if compVector, err := core.GetBloomBits(eth.chainDb, task.Bit, section, head); err == nil {
+						//	if blob, err := bitutil.DecompressBytes(compVector, int(BloomBitsBlocks)/8); err == nil {
+						//		task.Bitsets[i] = blob
+						//	} else {
+						//		task.Error = err
+						//	}
+						//} else {
+						//	task.Error = err
+						//}
+					}
 					request <- task
 				}
 			}
@@ -86,7 +104,7 @@ const (
 )
 
 // BloomIndexer implements a core.ChainIndexer, building up a rotated bloom bits index
-// for the PalletOne header bloom filters, permitting blazing fast filtering.
+// for the Ethereum header bloom filters, permitting blazing fast filtering.
 type BloomIndexer struct {
 	size uint64 // section size to generate bloombits for
 
@@ -97,14 +115,18 @@ type BloomIndexer struct {
 	head    common.Hash // Head is the hash of the last header processed
 }
 
-/*
 // NewBloomIndexer returns a chain indexer that generates bloom bits data for the
 // canonical chain for fast logs filtering.
-func NewBloomIndexer(size uint64) *coredata.ChainIndexer {
+func NewBloomIndexer(db ptndb.Database, size uint64) *indexer.ChainIndexer {
+	backend := &BloomIndexer{
+		db:   db,
+		size: size,
+	}
+	table := ptndb.NewTable(db, string(BloomBitsIndexPrefix))
 
-	return nil
+	return indexer.NewChainIndexer(db, table, backend, size, bloomConfirms, bloomThrottling, "bloombits")
 }
-*/
+
 // Reset implements core.ChainIndexerBackend, starting a new bloombits index
 // section.
 func (b *BloomIndexer) Reset(section uint64, lastSectionHead common.Hash) error {
@@ -116,22 +138,25 @@ func (b *BloomIndexer) Reset(section uint64, lastSectionHead common.Hash) error 
 // Process implements core.ChainIndexerBackend, adding a new header's bloom into
 // the index.
 func (b *BloomIndexer) Process(header *modules.Header) {
-	//b.gen.AddBloom(uint(header.Number.Uint64()-b.section*b.size), header.Bloom)
-	b.head = header.Hash()
+	log.Debug("========BloomIndexer Process========")
+	//TODO must be recover
+	//b.gen.AddBloom(uint(header.Number.Index-b.section*b.size), header.Bloom)
+	//b.head = header.Hash()
 }
 
 // Commit implements core.ChainIndexerBackend, finalizing the bloom section and
 // writing it out into the database.
 func (b *BloomIndexer) Commit() error {
-	return nil
-	//	batch := b.db.NewBatch()
+	batch := b.db.NewBatch()
 
-	//	for i := 0; i < types.BloomBitLength; i++ {
-	//		bits, err := b.gen.Bitset(uint(i))
-	//		if err != nil {
-	//			return err
-	//		}
-	//		coredata.WriteBloomBits(batch, uint(i), b.section, b.head, bitutil.CompressBytes(bits))
-	//	}
-	//	return batch.Write()
+	for i := 0; i < types.BloomBitLength; i++ {
+		bits, err := b.gen.Bitset(uint(i))
+		if err != nil {
+			return err
+		}
+		bits = bits
+		//TODO must be recover
+		//core.WriteBloomBits(batch, uint(i), b.section, b.head, bitutil.CompressBytes(bits))
+	}
+	return batch.Write()
 }

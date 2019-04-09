@@ -1,5 +1,4 @@
 *** Settings ***
-Library           RequestsLibrary
 Resource          publicParams.txt
 
 *** Variables ***
@@ -21,7 +20,7 @@ Resource          publicParams.txt
     #    set variable if    ${arrayLen} == 0    ""
     #    set variable if    ${arrayLen} == 0    0
     #    Evaluate    str(${time0})
-    ${address0}    Set Variable    ${addresses}[0]
+    ${address0}    Evaluate    ${addresses}[0]
     ${strTime}    Evaluate    str(${times}[0])
     [Return]    ${address0}    ${strTime}
 

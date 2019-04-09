@@ -92,7 +92,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
 
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, "ptn", &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -199,7 +199,9 @@ func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction
 func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 	return 0
 }
-
+func (p *testTxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return nil, nil
+}
 func (p *testTxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
 	return nil, 0
 }

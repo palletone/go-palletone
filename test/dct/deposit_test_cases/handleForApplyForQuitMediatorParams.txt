@@ -5,7 +5,8 @@ Resource          publicParams.txt
 基金会处理申请退出Mediator列表的所需参数
     [Arguments]    ${foundationAddr}
     ${获取Mediator申请退出列表}    获取Mediator申请退出列表    0
-    ${1}    Create List    HandleForApplyQuitMediator    ok    ${获取Mediator申请退出列表}[0]
+    ${获取Mediator申请退出列表}    Evaluate    ${获取Mediator申请退出列表}[0]
+    ${1}    Create List    HandleForApplyQuitMediator    ok    ${获取Mediator申请退出列表}
     ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
     [Return]    ${one}
 

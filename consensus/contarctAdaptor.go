@@ -10,9 +10,9 @@ type AdapterJury struct {
 	Processor *jury.Processor
 }
 
-func (a *AdapterJury) AdapterFunRequest(reqId common.Hash, contractId common.Address, msgType uint32, content []byte) ([]byte, error) {
-	return a.Processor.AdapterFunRequest(reqId, contractId, msgType, content)
+func (a *AdapterJury) AdapterFunRequest(reqId common.Hash, contractId common.Address, msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error) {
+	return a.Processor.AdapterFunRequest(reqId, contractId, msgType, consultContent, myAnswer)
 }
-func (a *AdapterJury) AdapterFunResult(reqId common.Hash, contractId common.Address, msgType uint32, timeOut time.Duration) ([]byte, error) {
-	return a.Processor.AdapterFunResult(reqId, contractId, msgType, timeOut)
+func (a *AdapterJury) AdapterFunResult(reqId common.Hash, contractId common.Address, msgType uint32, consultContent []byte, timeOut time.Duration) ([]byte, error) {
+	return a.Processor.AdapterFunResult(reqId, contractId, msgType, consultContent, timeOut)
 }

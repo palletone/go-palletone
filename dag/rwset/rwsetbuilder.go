@@ -22,6 +22,7 @@ package rwset
 import (
 	"bytes"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -96,9 +97,13 @@ func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt u
 	if nsPubRwBuilder.tokenSupply == nil {
 		nsPubRwBuilder.tokenSupply = make([]*modules.TokenSupply, 0)
 	}
-	//TODO Devin 检查assetId，禁止创建PTN BTC ETH等系统定义的Token
+
 	if bytes.Equal(assetId, modules.PTNCOIN.Bytes()) {
 		return errors.New("Forbidden to supply System token PTN")
+	}
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	if bytes.Equal(assetId, gasToken.Bytes()) {
+		return errors.New("Forbidden to supply System token " + gasToken.String())
 	}
 	nsPubRwBuilder.tokenSupply = append(nsPubRwBuilder.tokenSupply, &modules.TokenSupply{AssetId: assetId,
 		UniqueId: uniqueId, Amount: amt, Creator: createAddr})

@@ -16,8 +16,8 @@ Resource          publicParams.txt
     ${time}    Run Keyword If    ${resultLen} == 0    set variable    ""
     ${addresses}    Run Keyword If    ${resultLen} != 0    Evaluate    [addresses['address'] for addresses in ${respContentJson['result']}]
     ${times}    Run Keyword If    ${resultLen} != 0    Evaluate    [times['time'] for times in ${respContentJson['result']}]
-    ${address}    Run Keyword If    ${resultLen} != 0    set variable    ${addresses}[${index}]
-    ${time}    Run Keyword If    ${resultLen} != 0    set variable    ${times}[${index}]
+    ${address}    Run Keyword If    ${resultLen} != 0    Evaluate    ${addresses}[${index}]
+    ${time}    Run Keyword If    ${resultLen} != 0    Evaluate    ${times}[${index}]
     [Return]    ${address}    ${time}
 
 getQuitMediatorApplyList

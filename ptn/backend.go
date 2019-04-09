@@ -29,15 +29,14 @@ import (
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus"
+	"github.com/palletone/go-palletone/consensus/jury"
+	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
-	//dagcommon "github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/consensus/jury"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -45,17 +44,18 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
+	"github.com/palletone/go-palletone/ptn/indexer"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
 )
 
-//type LesServer interface {
-//	Start(srvr *p2p.Server)
-//	Stop()
-//	Protocols() []p2p.Protocol
-//	SetBloomBitsIndexer(bbIndexer *coredata.ChainIndexer)
-//}
+type LesServer interface {
+	Start(srvr *p2p.Server)
+	Stop()
+	Protocols() []p2p.Protocol
+	SetBloomBitsIndexer(bbIndexer *indexer.ChainIndexer)
+}
 
 // PalletOne implements the PalletOne full node service.
 type PalletOne struct {
@@ -67,14 +67,13 @@ type PalletOne struct {
 	// Handlers
 	txPool          txspool.ITxPool
 	protocolManager *ProtocolManager
+	lesServer       LesServer
 
 	eventMux       *event.TypeMux
 	engine         core.ConsensusEngine
 	accountManager *accounts.Manager
 
 	ApiBackend *PtnApiBackend
-
-	//levelDb palletdb.Database
 
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
@@ -86,12 +85,16 @@ type PalletOne struct {
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
-	//bloomIndexer  *coredata.ChainIndexer         // Bloom indexer operating during block imports
-	//etherbase  common.Address
+	bloomIndexer  *indexer.ChainIndexer          // Bloom indexer operating during block imports
 
 	// append by Albert·Gou
 	mediatorPlugin    *mp.MediatorPlugin
 	contractPorcessor *jury.Processor
+}
+
+func (p *PalletOne) AddLesServer(ls LesServer) {
+	p.lesServer = ls
+	ls.SetBloomBitsIndexer(p.bloomIndexer)
 }
 
 // New creates a new PalletOne object (including the
@@ -101,7 +104,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
 
-	db, err := CreateDB(ctx, config /*, "leveldb"*/) //MUST same with isOldGptnResource
+	db, err := CreateDB(ctx, config)
 	if err != nil {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
@@ -118,8 +121,9 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		accountManager: ctx.AccountManager,
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		bloomRequests:  make(chan chan *bloombits.Retrieval),
 		dag:            dag,
+		bloomRequests:  make(chan chan *bloombits.Retrieval),
+		bloomIndexer:   NewBloomIndexer(db, BloomBitsBlocks),
 	}
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
 
@@ -132,7 +136,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	//Test for P2P
 	ptn.engine = consensus.New(dag, pool)
 
-	// append by Albert·Gou
 	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, dag, &config.MediatorPlugin)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
@@ -159,7 +162,9 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, config.TokenSubProtocol, ptn.txPool,
+	gasToken := config.Dag.GetGasToken()
+	ptn.bloomIndexer.Start(dag, gasToken)
+	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
@@ -266,16 +271,15 @@ func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *PalletOne) Protocols() []p2p.Protocol {
-	// modify by Albert·Gou
-	return append(s.protocolManager.SubProtocols, s.mediatorPlugin.Protocols()...)
+	if s.lesServer == nil {
+		return s.protocolManager.SubProtocols
+	}
+	return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
 // PalletOne protocol implementation.
 func (s *PalletOne) Start(srvr *p2p.Server) error {
-	// append by Albert·Gou
-	s.mediatorPlugin.Start(srvr)
-
 	// Start the bloom bits servicing goroutines
 	s.startBloomHandlers()
 
@@ -290,6 +294,7 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 
 	s.contractPorcessor.Start(srvr)
 
+	s.mediatorPlugin.Start(srvr)
 	return nil
 }
 

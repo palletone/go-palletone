@@ -109,9 +109,10 @@ var (
 var (
 	CERT_SPLIT_CH = string("||")
 	// certificate
-	CERT_ISSUER_SYMBOL = "certissuer_"
-	CERT_SERVER_SYMBOL = "certserver_"
-	CERT_MEMBER_SYMBOL = "certmember_"
-	CERT_BYTES_SYMBOL  = "certbytes_"
-	CRL_BYTES_SYMBOL   = "crlbytes_"
+	CERT_ISSUER_SYMBOL  = "certissuer_"
+	CERT_SERVER_SYMBOL  = "certserver_"
+	CERT_MEMBER_SYMBOL  = "certmember_"
+	CERT_BYTES_SYMBOL   = "certbytes_"
+	CERT_SUBJECT_SYMBOL = "certsubject_"
+	CRL_BYTES_SYMBOL    = "crlbytes_"
 )

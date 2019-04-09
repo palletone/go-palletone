@@ -4,10 +4,10 @@ sudo: required
 language: 
     - go
 go: 
-    - 1.10.5
+    - 1.10.8
 script:
     - go build ./cmd/gptn
-    #- $GOPATH/bin/goveralls -service=travis-ci
+    - $GOPATH/bin/goveralls -service=travis-ci
     - cp gptn bdd/node
     - cd bdd/node
     - pwd

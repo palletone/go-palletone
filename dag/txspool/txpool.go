@@ -279,7 +279,8 @@ func (pool *TxPool) loop() {
 
 	// Track the previous head headers for transaction reorgs
 	// TODO 分区后 按token类型 loop 交易池。
-	head := pool.unit.CurrentUnit(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	head := pool.unit.CurrentUnit(gasToken)
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
@@ -287,10 +288,8 @@ func (pool *TxPool) loop() {
 		case ev := <-pool.chainHeadCh:
 			if ev.Unit != nil {
 				pool.mu.Lock()
-
 				pool.reset(head.Header(), ev.Unit.Header())
 				head = ev.Unit
-
 				pool.mu.Unlock()
 			}
 			// Be unsubscribed due to system stopped
@@ -343,7 +342,7 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 	// If we're reorging an old state, reinject all dropped transactions
 	var reinject modules.Transactions
 
-	if oldHead != nil && modules.HeaderEqual(oldHead, newHead) {
+	if oldHead != nil /*&& modules.HeaderEqual(oldHead, newHead)*/ {
 		// If the reorg is too deep, avoid doing it (will happen during fast sync)
 		oldNum := oldHead.Index()
 		newNum := newHead.Index()
@@ -1072,7 +1071,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 		}
 		return result, nil
 	}
-	return nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
+	return result, nil //nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
 }
 
 // Get returns a transaction if it is contained in the pool

@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/palletone/go-palletone/common"
 )
 
 //处理交付保证金数据
@@ -142,7 +143,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		Asset:  asset,
 	}
 	//先获取数据库信息
-	balance, err := GetDepositBalance(stub, invokeAddr)
+	balance, err := GetDepositBalance(stub, invokeAddr.String())
 	if err != nil {
 		log.Error("stub.GetDepositBalance err:", "error", err)
 		return err
@@ -173,7 +174,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 			return fmt.Errorf("%s", "can not cashback some")
 		}
 	}
-	err = addListAndPutStateForCashback(role, stub, invokeAddr, invokeTokens)
+	err = addListAndPutStateForCashback(role, stub, invokeAddr.String(), invokeTokens)
 	if err != nil {
 		log.Error("addListAndPutStateForCashback err:", "error", err)
 		return err
@@ -357,7 +358,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 	return nil
 }
 
-func addCandaditeList(invokeAddr string, stub shim.ChaincodeStubInterface, candidate string) error {
+func addCandaditeList(invokeAddr common.Address, stub shim.ChaincodeStubInterface, candidate string) error {
 	list, err := GetCandidateList(stub, candidate)
 	if err != nil {
 		log.Error("stub.GetCandidateList err:", "error", err)
@@ -365,7 +366,7 @@ func addCandaditeList(invokeAddr string, stub shim.ChaincodeStubInterface, candi
 	}
 	if list == nil {
 		log.Info("stub.GetCandidateList: list is nil")
-		list = []string{invokeAddr}
+		list = []common.Address{invokeAddr}
 	} else {
 		list = append(list, invokeAddr)
 	}
@@ -393,7 +394,7 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 		return fmt.Errorf("%s", "list is nil.")
 	}
 	for i := 0; i < len(list); i++ {
-		if list[i] == invokeFromAddr {
+		if list[i].String() == invokeFromAddr {
 			list = append(list[:i], list[i+1:]...)
 			break
 		}
@@ -528,7 +529,7 @@ func GetDepositBalance(stub shim.ChaincodeStubInterface, nodeAddr string) (*Depo
 }
 
 //获取候选列表信息
-func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]string, error) {
+func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]common.Address, error) {
 	if strings.Compare(role,"MediatorList") == 0 {
 		candidateListByte, err := stub.GetState(role)
 		if err != nil {
@@ -542,9 +543,13 @@ func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]string, 
 		if err != nil {
 			return nil, err
 		}
-		var candidateListStr []string
+		var candidateListStr []common.Address
 		for i := range candiateList{
-			candidateListStr = append(candidateListStr,candiateList[i].Address)
+			adrr,err := common.StringToAddress(candiateList[i].Address)
+			if err != nil {
+				return nil,err
+			}
+			candidateListStr = append(candidateListStr,adrr)
 		}
 		return candidateListStr,err
 	}
@@ -555,7 +560,7 @@ func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]string, 
 	if candidateListByte == nil {
 		return nil, nil
 	}
-	var candidateList []string
+	var candidateList []common.Address
 	err = json.Unmarshal(candidateListByte, &candidateList)
 	if err != nil {
 		return nil, err

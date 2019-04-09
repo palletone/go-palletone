@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -149,7 +150,13 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
 	}
-
+	//TODO add PostChainEvents
+	var (
+		events        = make([]interface{}, 0, 1)
+		coalescedLogs []*types.Log
+	)
+	events = append(events, modules.ChainEvent{pendingUnit, common.Hash{}, nil})
+	dag.PostChainEvents(events, coalescedLogs)
 	return sign_unit
 }
 

@@ -123,7 +123,7 @@ type Config struct {
 	MediatorPlugin mediatorplugin.Config `toml:"-"`
 
 	//must be equal to the node.GasToken
-	TokenSubProtocol string `toml:"-"`
+	//TokenSubProtocol string `toml:"-"`
 }
 
 type configMarshaling struct {

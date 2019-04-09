@@ -89,7 +89,7 @@ type IStateDb interface {
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 	UpdateAccountInfo(account common.Address, accountUpdateOp *modules.AccountUpdateOperation) error
 
-	GetJuryCandidateList() ([]string, error)
+	GetJuryCandidateList() ([]common.Address, error)
 	IsInJuryCandidateList(address common.Address) bool
 
 	UpdateSysParams(ver *modules.StateVersion) error

@@ -121,7 +121,7 @@ func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount i
 	data, err := statedb.db.Get(key)
 	if err != nil {
 		// 第一次更新时， 数据库没有该账户的相关数据
-		log.Debugf("Account info for [%s] don't exist,create it first", address.String())
+		log.Debugf("Account balance for [%s] don't exist,create it first", address.String())
 	} else {
 		balance = BytesToUint64(data)
 	}

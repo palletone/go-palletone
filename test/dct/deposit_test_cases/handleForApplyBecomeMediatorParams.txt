@@ -5,7 +5,8 @@ Resource          publicParams.txt
 基金会处理申请所需参数
     [Arguments]    ${foundationAddr}    ${index}
     ${获取Mediator申请加入列表 }    获取Mediator申请加入列表    ${index}
-    ${1}    Create List    HandleForApplyBecomeMediator    ok    ${获取Mediator申请加入列表}[0]
+    ${获取Mediator申请加入列表}    Run Keyword If    ${获取Mediator申请加入列表 } != 0    Evaluate    ${获取Mediator申请加入列表}[0]
+    ${1}    Create List    HandleForApplyBecomeMediator    ok    ${获取Mediator申请加入列表}
     ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
     [Return]    ${one}
 

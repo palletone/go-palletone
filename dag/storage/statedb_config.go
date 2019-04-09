@@ -24,6 +24,7 @@ package storage
 
 import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -47,5 +48,6 @@ func (statedb *StateDb) GetConfig(name string) ([]byte, *modules.StateVersion, e
 //	return statedb.SaveContractStates(id, confs, stateVersion)
 //}
 func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
-	return &modules.AmountAsset{0, modules.NewPTNAsset()}, nil
+	assetId := dagconfig.DagConfig.GetGasToken()
+	return &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}, nil
 }

@@ -333,7 +333,7 @@ type ContractReadSet struct {
 
 //请求合约信息
 type InvokeInfo struct {
-	InvokeAddress string          `json:"invoke_address"` //请求地址
+	InvokeAddress common.Address          `json:"invoke_address"` //请求地址
 	InvokeTokens  []*InvokeTokens `json:"invoke_tokens"`  //请求数量
 	InvokeFees    *AmountAsset    `json:"invoke_fees"`    //请求交易�?
 }

@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/palletone/go-palletone/common"
 )
 
 var (
@@ -359,7 +360,7 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
 	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
 	//判断没收请求地址是否是基金会地址
-	if strings.Compare(invokeAddr, foundationAddress) != 0 {
+	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
 		log.Error("Please use foundation address.")
 		return shim.Error("Please use foundation address.")
 	}
@@ -384,7 +385,7 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 		log.Error("Strconv.ParseInt err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	return d.handleForfeitureDepositApplication(stub, invokeAddr, addr, applyTime, balance, isOk)
+	return d.handleForfeitureDepositApplication(stub, invokeAddr.String(), addr, applyTime, balance, isOk)
 }
 
 //社区申请没收某节点的保证金数量
@@ -408,7 +409,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	}
 
 	forfeiture := new(Forfeiture)
-	forfeiture.ApplyAddress = invokeAddr
+	forfeiture.ApplyAddress = invokeAddr.String()
 	//判断被没收时，该节点是否在相应的候选列表当中
 	isFound := isFoundInCandidateList(stub, forfeitureRole, forfeitureAddr)
 	if !isFound {
@@ -500,9 +501,9 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 	}
 }
 
-func isInCandidateList(addr string, list []string) bool {
+func isInCandidateList(addr string, list []common.Address) bool {
 	for _, a := range list {
-		if strings.Compare(addr, a) == 0 {
+		if strings.Compare(addr, a.String()) == 0 {
 			return true
 		}
 	}

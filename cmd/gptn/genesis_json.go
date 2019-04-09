@@ -284,13 +284,13 @@ func createExampleGenesis() *core.Genesis {
 	mediators := []*mp.MediatorConf{mp.DefaultMediatorConf()}
 
 	return &core.Genesis{
-		Alias:        core.DefaultAlias,
-		Version:      configure.Version,
-		TokenAmount:  core.DefaultTokenAmount,
-		TokenDecimal: core.DefaultTokenDecimal,
-		ChainID:      core.DefaultChainID,
-		TokenHolder:  core.DefaultTokenHolder,
-
+		GasToken:    core.DefaultAlias,
+		Version:     configure.Version,
+		TokenAmount: core.DefaultTokenAmount,
+		//TokenDecimal:              core.DefaultTokenDecimal,
+		ChainID:                   core.DefaultChainID,
+		TokenHolder:               core.DefaultTokenHolder,
+		ParentUnitHeight:          -1,
 		Text:                      core.DefaultText,
 		SystemConfig:              SystemConfig,
 		InitialParameters:         initParams,

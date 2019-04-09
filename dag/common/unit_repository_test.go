@@ -57,7 +57,7 @@ func TestGenesisUnit(t *testing.T) {
 	tx := modules.NewTransaction(append(msgs, msg))
 	asset := modules.NewPTNAsset()
 
-	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset)
+	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset, -1, common.Hash{})
 
 	log.Println("Genesis unit struct:")
 	log.Println("parent units:", gUnit.UnitHeader.ParentsHash)

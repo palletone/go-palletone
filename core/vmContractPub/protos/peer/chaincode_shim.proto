@@ -162,13 +162,15 @@ message OutChainQuery {
 
 message SendJury {
     uint32 msgType =1;
-    bytes content = 2;
-    string collection = 3;
+    bytes consultContent = 2;
+    bytes myAnswer = 3;
+    string collection = 4;
 }
 message RecvJury {
     uint32 msgType =1;
-    uint32 timeout =2;
-    string collection = 3;
+    bytes consultContent = 2;
+    uint32 timeout =3;
+    string collection = 4;
 }
 
 message GetTokenBalance {

@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -171,12 +172,14 @@ func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
 }
 
 func (dag *Dag) HeadUnitTime() int64 {
-	t, _ := dag.propRep.GetNewestUnitTimestamp(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	t, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
 	return t
 }
 
 func (dag *Dag) HeadUnitNum() uint64 {
-	_, idx, _ := dag.propRep.GetNewestUnit(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	_, idx, _ := dag.propRep.GetNewestUnit(gasToken)
 	return idx.Index
 }
 
@@ -185,7 +188,8 @@ func (dag *Dag) LastMaintenanceTime() int64 {
 }
 
 func (dag *Dag) HeadUnitHash() common.Hash {
-	hash, _, _ := dag.propRep.GetNewestUnit(modules.PTNCOIN)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
 	return hash
 }
 

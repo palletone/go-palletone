@@ -165,13 +165,13 @@ func (statedb *StateDb) IsApprovedMediator(address common.Address) bool {
 	return false
 }
 
-func (statedb *StateDb) GetJuryCandidateList() ([]string, error) {
+func (statedb *StateDb) GetJuryCandidateList() ([]common.Address, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), "JuryList")
 	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
-	var candidateList []string
+	var candidateList []common.Address
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 		return false
 	}
 	for _, v := range list {
-		if strings.Compare(v, address.String()) == 0 {
+		if strings.Compare(v.String(), address.String()) == 0 {
 			return true
 		}
 	}
