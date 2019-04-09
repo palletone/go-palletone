@@ -29,7 +29,7 @@ before_install:
     - go get -u github.com/palletone/adaptor
     - go get -u github.com/palletone/btc-adaptor
     - go get -u github.com/palletone/eth-adaptor
-    - go get -u github.com/palletone/digital-identity
+    - go get -u github.com/palletone/digital-identity/...
     - source ./gomockgen.sh
  
 install: 
