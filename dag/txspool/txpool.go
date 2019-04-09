@@ -1073,7 +1073,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 		}
 		return result, nil
 	}
-	return nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
+	return result, nil //nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
 }
 
 // Get returns a transaction if it is contained in the pool
