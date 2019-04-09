@@ -1912,7 +1912,8 @@ func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset stri
 }
 
 //create raw transction
-func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s *rpcServer*/, params string) (string, error) {
+/*
+func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context, params string) (string, error) {
 	var rawTransactionGenParams ptnjson.RawTransactionGenParams
 	err := json.Unmarshal([]byte(params), &rawTransactionGenParams)
 	if err != nil {
@@ -1943,7 +1944,7 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context /*s 
 	result, _ := CreateRawTransaction(arg)
 	fmt.Println(result)
 	return result, nil
-}
+}*/
 
 //sign rawtranscation
 func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign, addr common.Address) (ptnjson.SignRawTransactionResult, error) {
