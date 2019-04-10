@@ -36,6 +36,7 @@ func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStub
 	if err := validateIssuer(issuer, cert, stub); err != nil {
 		return err
 	}
+	// validate receiver
 
 	return nil
 }
@@ -114,3 +115,46 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 	}
 	return nil
 }
+
+// This is the certificate chain validation
+// To validate certificate chain signature
+func ValidateCertChain(cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
+	// query root ca cert bytes
+	rootCABytes, err := stub.GetSystemConfig("RootCABytes")
+	if err != nil {
+		return err
+	}
+	val, err := loadCertBytes([]byte(rootCABytes))
+	if err != nil {
+		return err
+	}
+	rootCert, err := x509.ParseCertificate(val)
+	// query intermidate cert bytes
+	chancerts := []*x509.Certificate{}
+	if cert.Issuer.String() != rootCert.Subject.String() {
+		chancerts, err = GetIntermidateCertChains(cert, rootCert.Subject.String(), stub)
+		if err != nil {
+			return err
+		}
+	}
+	// package x509.VerifyOptions, Intermediates and Roots field
+	roots := x509.NewCertPool()
+	roots.AddCert(rootCert)
+
+	intermediates := x509.NewCertPool()
+	for _, newCert := range chancerts {
+		intermediates.AddCert(newCert)
+	}
+	opts := x509.VerifyOptions{
+		Roots:         roots,
+		Intermediates: intermediates,
+	}
+	// user x509.Verify to verify cert chain
+	if _, err := cert.Verify(opts); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// This is the certificate chain organization

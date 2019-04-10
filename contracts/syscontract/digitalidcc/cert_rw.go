@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"io/ioutil"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
@@ -238,6 +239,9 @@ func queryNonce(prefixSymbol string, issuer string, stub shim.ChaincodeStubInter
 func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []byte, err error) {
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
+	if err != nil { // query none
+		return nil, nil
+	}
 	certDBInfo := CertDBInfo{}
 	if err := json.Unmarshal(data, &certDBInfo); err != nil {
 		return nil, err
@@ -296,4 +300,39 @@ func getIssuerCRLBytes(issuer string, stub shim.ChaincodeStubInterface) ([]byte,
 	}
 
 	return data, nil
+}
+
+func GetIntermidateCertChains(cert *x509.Certificate, rootIssuer string, stub shim.ChaincodeStubInterface) (certChains []*x509.Certificate, err error) {
+	subject := cert.Issuer.String()
+	for {
+		key := dagConstants.CERT_SUBJECT_SYMBOL + subject
+		val, err := stub.GetState(key)
+		if err != nil {
+			return nil, err
+		}
+		// query chain done
+		if val == nil {
+			break
+		}
+		// parse certid
+		certID := big.Int{}
+		certID.SetBytes(val)
+		// get cert bytes
+		bytes, err := GetCertBytes(certID.String(), stub)
+		if err != nil {
+			return nil, err
+		}
+		// parse cert
+		newCert, err := x509.ParseCertificate(bytes)
+		if err != nil {
+			return nil, err
+		}
+		certChains = append(certChains, newCert)
+		subject = newCert.Issuer.String()
+		if subject == rootIssuer {
+			break
+		}
+	}
+
+	return certChains, nil
 }

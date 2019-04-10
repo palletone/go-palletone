@@ -95,9 +95,14 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode parse Cert error: %s", certPath)
 		return shim.Error(reqStr)
 	}
-	// validate certificate
+	// basic validate certificate
 	if err := ValidateCert(issuer.String(), cert, stub); err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode validate error: %s", err.Error())
+		return shim.Error(reqStr)
+	}
+	// cert chain validation
+	if err := ValidateCertChain(cert, stub); err != nil {
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode chain validate error: %s", err.Error())
 		return shim.Error(reqStr)
 	}
 	// query nonce
