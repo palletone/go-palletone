@@ -1688,7 +1688,7 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs, orpha
 			if ok {
 				for _, input := range payment.Inputs {
 					if input.PreviousOutPoint != nil {
-						utxo, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
+						utxo, err := pool.GetUtxoEntry(input.PreviousOutPoint)
 						if utxo.IsSpent() {
 							continue
 						}
@@ -1914,7 +1914,7 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 			if ok {
 				for _, in := range payment.Inputs {
 					if in.PreviousOutPoint != nil {
-						utxo, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
+						utxo, err := pool.GetUtxoEntry(in.PreviousOutPoint)
 						if err != nil && err == errors.ErrUtxoNotFound {
 							// validate utxo in pool
 							_, has := pool.outputs.Load(*in.PreviousOutPoint)
