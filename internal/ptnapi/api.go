@@ -2179,6 +2179,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			}
 			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
 			if eerr != nil {
+				log.Error(eerr.Error())
 				return ptnjson.SignRawTransactionResult{}, err
 			}
 			TxHash := trimx(uvu.TxHash)
@@ -2187,6 +2188,7 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
+				log.Error(err.Error())
 				return ptnjson.SignRawTransactionResult{}, errors.New("get addr FromScript is err")
 			}
 		}
@@ -2208,15 +2210,20 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 	ks := s.b.GetKeyStore()
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		errors.New("get addr by outpoint is err")
-		return ptnjson.SignRawTransactionResult{}, err
+		newErr := errors.New("get addr by outpoint get err:" + err.Error())
+		log.Error(newErr.Error())
+		return ptnjson.SignRawTransactionResult{}, newErr
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String(hashtype))
-	result, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
-
-	fmt.Println(result)
-	return result, nil
+	result, err := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
+	if !result.Complete {
+		log.Error("Not complete!!!")
+		for _, e := range result.Errors {
+			log.Error("SignError:" + e.Error)
+		}
+	}
+	return result, err
 }
 
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
