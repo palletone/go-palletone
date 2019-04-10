@@ -25,6 +25,7 @@ import (
 	"errors"
 	"sort"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -270,7 +271,12 @@ func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScr
 				return nil, errors.New("Invalid payment message")
 			}
 			for j, input := range pay.Inputs {
-				utxoLockScript, _ := utxoLockScripts[*input.PreviousOutPoint]
+				utxoLockScript, find := utxoLockScripts[*input.PreviousOutPoint]
+				if !find {
+					errMsg := fmt.Sprintf("Don't find utxo for outpoint[%s]", input.PreviousOutPoint.String())
+					log.Error(errMsg)
+					return nil, errors.New(errMsg)
+				}
 				checkscript := make([]byte, len(utxoLockScript))
 				copy(checkscript, utxoLockScript)
 				if (hashType&uint32(txscript.SigHashSingle)) != uint32(txscript.SigHashSingle) || j < len(pay.Outputs) {
