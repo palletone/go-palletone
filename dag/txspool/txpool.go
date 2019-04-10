@@ -342,7 +342,7 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 	// If we're reorging an old state, reinject all dropped transactions
 	var reinject modules.Transactions
 
-	if oldHead != nil /*&& modules.HeaderEqual(oldHead, newHead)*/ {
+	if oldHead != nil && !modules.HeaderEqual(oldHead, newHead) {
 		// If the reorg is too deep, avoid doing it (will happen during fast sync)
 		oldNum := oldHead.Index()
 		newNum := newHead.Index()
@@ -396,19 +396,17 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 	for _, tx := range reinject {
 		pooltxs = append(pooltxs, TxtoTxpoolTx(pool, tx))
 	}
-
-	pool.addTxsLocked(pooltxs, false)
-
+	if len(pooltxs) > 0 {
+		pool.addTxsLocked(pooltxs, false)
+	}
 	// validate the pool of pending transactions, this will remove
 	// any transactions that have been included in the block or
 	// have been invalidated because of another transaction (e.g.
 	// higher gas price)
 	pool.demoteUnexecutables()
-
 	// Check the queue and move transactions over to the pending if possible
 	// or remove those that have become invalid
 	pool.promoteExecutables()
-
 }
 
 // Stats retrieves the current pool stats, namely the number of pending and the
