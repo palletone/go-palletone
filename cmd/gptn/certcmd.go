@@ -20,6 +20,7 @@ import (
 	"github.com/palletone/digital-identity/client"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"gopkg.in/urfave/cli.v1"
+	"github.com/palletone/digital-identity/config"
 )
 
 var (
@@ -43,8 +44,6 @@ var (
 Send the request for the registration administrator certificate to the fabric ca server.
 `,
 			},
-
-			// 列出当前区块链所有mediator的地址
 			{
 				Action:    utils.MigrateFlags(enrollUser),
 				Name:      "new",
@@ -55,16 +54,64 @@ Send the request for the registration administrator certificate to the fabric ca
 Send the registered user request to the fabric ca server.
 `,
 			},
+			{
+				Action:    utils.MigrateFlags(revoke),
+				Name:      "revoke",
+				Usage:     "Revoke a certificate of an address.",
+				ArgsUsage: "<address>",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert revoke <address>
+
+Palletone sends a request to the fabric ca server to cancel the certificate, and CRL files are generated in the MSP directory.
+`,
+			},
+			{
+				Action:    utils.MigrateFlags(getIndentity),
+				Name:      "getindentity",
+				Usage:     "get a certificate indentity",
+				ArgsUsage: "<address> <caname>",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert getindentity <address> <caname>
+Gets the certificate identity attribute based on the address and caname.
+`,
+			},
+			{
+				Action:    utils.MigrateFlags(getIndentities),
+				Name:      "getindenties",
+				Usage:     "get certificate indentities",
+				ArgsUsage: "",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert getindenties
+Gets the certificate identities .
+`,
+			},
+			{
+				Action:    utils.MigrateFlags(getCaCertificateChain),
+				Name:      "getcertchain",
+				Usage:     "get certificate chain",
+				ArgsUsage: "<caname>",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert getcacertificatechain
+Gets the certificate chain attribute based on the  caname.
+`,
+			},
 		},
 	}
 )
 
 func newCaGenInfo() *client.CaGenInfo {
-	cainfo := client.NewCaGenInfo("11", "zk", "Hi palletOne", true, "user", "gptn.mediator1",)
+	cainfo := client.NewCaGenInfo("14", "zk", "Hi palletOne", true, "user", "gptn.mediator1",)
 	return cainfo
 }
 
+
 func enrollAdmin(ctx *cli.Context) error {
+	path := config.GetWorkPath()
+	fmt.Println(path)
 	cainfo := newCaGenInfo()
 	err := cainfo.EnrollAdmin()
 	if err != nil {
@@ -86,3 +133,63 @@ func enrollUser(ctx *cli.Context) error {
 	return nil
 }
 
+func revoke(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		fmt.Println("No certficate to revoke")
+	}
+
+	for _,addr := range ctx.Args() {
+		fmt.Println(addr)
+		cainfo := newCaGenInfo()
+		reson := "Forced to compromise"
+		err := cainfo.Revoke(addr,reson)
+		if err != nil {
+			return err
+		}
+	}
+
+
+	return nil
+}
+
+func getIndentity(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		fmt.Println("No certficate to getIndentity")
+		return nil
+	}
+	if len(ctx.Args()) != 2 {
+		fmt.Println("Please enter full address and caname")
+		return nil
+	}
+	address := ctx.Args().First()
+	caname := ctx.Args()[1]
+	cainfo := newCaGenInfo()
+
+    idtRep := cainfo.GetIndentity(address,caname)
+    fmt.Println(idtRep)
+	return nil
+}
+
+func getIndentities(ctx *cli.Context) error {
+	cainfo := newCaGenInfo()
+
+	idtReps := cainfo.GetIndentities()
+	fmt.Println(idtReps)
+	return nil
+}
+
+func getCaCertificateChain(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		fmt.Println("No certficatechain to get")
+		return nil
+	}
+	caname := ctx.Args().First()
+	cainfo := newCaGenInfo()
+
+	idtReps,err := cainfo.GetCaCertificateChain(caname)
+	if err != nil {
+		return err
+	}
+	fmt.Println(idtReps)
+	return nil
+}
