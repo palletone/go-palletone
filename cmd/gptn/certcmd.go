@@ -20,7 +20,6 @@ import (
 	"github.com/palletone/digital-identity/client"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"gopkg.in/urfave/cli.v1"
-	"github.com/palletone/digital-identity/config"
 )
 
 var (
@@ -110,8 +109,6 @@ func newCaGenInfo() *client.CaGenInfo {
 
 
 func enrollAdmin(ctx *cli.Context) error {
-	path := config.GetWorkPath()
-	fmt.Println(path)
 	cainfo := newCaGenInfo()
 	err := cainfo.EnrollAdmin()
 	if err != nil {
