@@ -877,7 +877,6 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 
 	//our responsibility to delete transaction context if sendExecuteMessage succeeded
 	chrte.handler.deleteTxContext(msg.ChannelId, msg.Txid)
-
 	return ccresp, err
 }
 

@@ -179,6 +179,10 @@ func DockerBuild(opts DockerBuildOptions) error {
 	// Create an ephemeral container, armed with our Env/Cmd
 	//创建一个暂时的容器用于链码编译
 	//-----------------------------------------------------------------------------------
+	//TODO
+	hostConfig := &docker.HostConfig{
+		Memory:           int64(1073741824), //1GB
+	}
 	container, err := client.CreateContainer(docker.CreateContainerOptions{
 		Config: &docker.Config{
 			Image:        opts.Image,
@@ -187,6 +191,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 			AttachStdout: true,
 			AttachStderr: true,
 		},
+		HostConfig:hostConfig,
 	})
 	if err != nil {
 		return fmt.Errorf("Error creating container: %s", err)

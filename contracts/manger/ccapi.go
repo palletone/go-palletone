@@ -22,6 +22,9 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
+	"strings"
+	"github.com/fsouza/go-dockerclient"
+	"github.com/palletone/go-palletone/vm/common"
 )
 
 var debugX bool = true
@@ -333,6 +336,28 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
 	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 	//}
+	name := fmt.Sprintf("%s:%s",cc.Name,cc.Version)
+	newName := strings.Replace(name,":","-",-1)
+	log.Debugf("chaincode newNamenewNamenewNamenewName name: %s", newName)
+	client, err := util.NewDockerClient()
+	log.Info("----------4-------44------------------")
+
+	if err != nil {
+		log.Info("----------4-------------------------")
+
+	}
+	log.Info("----------5-----------5---------------")
+
+	stats := docker.StatsOptions{ID:newName}
+	err = client.Stats(stats)
+	log.Info("----------5-----------5---5------------")
+panic("lala")
+	if err != nil {
+
+		log.Infof("-----------------5-----------------------------%#v\n\n\n\n\n",stats)
+		log.Infof("-----------------5-----------------------------%#v\n\n\n\n\n",stats.Stats)
+	}
+	log.Info("----------5--------------------------")
 	fmt.Println("Invoke result:==========================================================", unit)
 	return unit, nil
 }

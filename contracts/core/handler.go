@@ -1594,7 +1594,8 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 
 			// Execute the chaincode... this CANNOT be an init at least for now
 			response, execErr := handler.chaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)
-
+			log.Infof("----------------2-------------------------------%s\n\n\n\n\n",response)
+			log.Infof("-----------------2------------------------------%s\n\n\n\n\n",string(response.Payload))
 			//payload is marshalled and send to the calling chaincode's shim which unmarshals and
 			//sends it to chaincode
 			res = nil

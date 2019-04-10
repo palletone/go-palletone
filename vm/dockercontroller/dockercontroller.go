@@ -101,6 +101,7 @@ func getDockerClient() (dockerClient, error) {
 	return com.NewDockerClient()
 }
 
+//TODO
 func getDockerHostConfig() *docker.HostConfig {
 	if hostConfig != nil {
 		return hostConfig
@@ -145,8 +146,10 @@ func getDockerHostConfig() *docker.HostConfig {
 		ReadonlyRootfs:   viper.GetBool(dockerKey("ReadonlyRootfs")),
 		SecurityOpt:      viper.GetStringSlice(dockerKey("SecurityOpt")),
 		CgroupParent:     viper.GetString(dockerKey("CgroupParent")),
-		Memory:           getInt64("Memory"),
+		//Memory:           getInt64("Memory"),
 		MemorySwap:       getInt64("MemorySwap"),
+		Memory:           int64(104857600), //100mB
+		//MemorySwap:       int64(20971520),
 		MemorySwappiness: getInt64("MemorySwappiness"),
 		OOMKillDisable:   viper.GetBool(dockerKey("OomKillDisable")),
 		CPUShares:        getInt64("CpuShares"),
@@ -232,6 +235,7 @@ func (vm *DockerVM) Deploy(ctxt context.Context, ccid ccintf.CCID,
 //这里还可以指定对容器日志的输出
 func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	args []string, env []string, filesToUpload map[string][]byte, builder container.BuildSpecFactory, prelaunchFunc container.PrelaunchFunc) error {
+		log.Infof("----------1-----------")
 	//获取本地基础镜像
 	imageID, err := vm.GetImageId(ccid)
 	if err != nil {
@@ -260,12 +264,16 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	//创建容器
 	log.Debugf("Start container %s", containerID)
 	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
+	log.Infof("----------2-----------")
+
 	//var reader io.Reader
 	//var err1 error
 	//var isInit = false
 	if err != nil {
 		//if image not found try to create image and retry
 		if err == docker.ErrNoSuchImage {
+			log.Infof("----------3-----------")
+
 			log.Debugf("start-could not find image <%s> (container id <%s>), because of <%s>..."+
 				"attempt to recreate image", imageID, containerID, err)
 			log.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
@@ -284,6 +292,8 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 				}
 			}
 			err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
+			log.Infof("----------4-----------")
+
 			if err != nil {
 				return fmt.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
 			}
@@ -320,6 +330,8 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	}
 
 	if attachStdout {
+		log.Infof("----------5-----------")
+
 		// Launch a few go-threads to manage output streams from the container.
 		// They will be automatically destroyed when the container exits
 		attached := make(chan struct{})
@@ -392,6 +404,8 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	// upload specified files to the container before starting it
 	// this can be used for configurations such as TLS key and certs
 	if len(filesToUpload) != 0 {
+		log.Infof("----------6-----------")
+
 		// the docker upload API takes a tar file, so we need to first
 		// consolidate the file entries to a tar
 		payload := bytes.NewBuffer(nil)
@@ -421,6 +435,8 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	}
 
 	if prelaunchFunc != nil {
+		log.Infof("----------7-----------")
+
 		if err = prelaunchFunc(); err != nil {
 			return err
 		}
@@ -438,12 +454,15 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 		Path:                 "/",
 		NoOverwriteDirNonDir: false,
 	})
+	log.Infof("----------8-----------")
 
 	if err != nil {
 		return fmt.Errorf("Error uploading files to the container instance %s: %s", containerID, err)
 	}
 	// start container with HostConfig was deprecated since v1.10 and removed in v1.2
 	err = client.StartContainer(containerID, nil)
+	log.Infof("----------9-----------")
+
 	if err != nil {
 		log.Errorf("start-could not start container: %s", err)
 		return err
