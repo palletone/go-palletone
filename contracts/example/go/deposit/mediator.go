@@ -411,11 +411,14 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
 	//本金+利息
 	balance.TotalAmount += awards
-	//TODO 是否传入
 	invokeTokens := new(modules.InvokeTokens)
 	invokeTokens.Amount = balance.TotalAmount
-	asset := modules.NewPTNAsset()
-	invokeTokens.Asset = asset
+	fees,err := stub.GetInvokeFees()
+	if err != nil {
+		log.Error("stub.GetInvokeFees err:", "error", err)
+		return err
+	}
+	invokeTokens.Asset = fees.Asset
 	//调用从合约把token转到请求地址
 	err = stub.PayOutToken(nodeAddr, invokeTokens, 0)
 	if err != nil {

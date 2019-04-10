@@ -363,7 +363,6 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
-
 	var addr common.Address
 	var keys []string
 	from, _ := common.StringToAddress(proofTransactionGenParams.From)
@@ -386,22 +385,22 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			}
 		}
 	}
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	//const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var duration *uint64 
+    const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
-	//var duration
-	//if duration == nil {
-	d = 300 * time.Second
-	//} else if *duration > max {
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return common.Hash{}, err
+	} else {
+		d = time.Duration(*duration) * time.Second
+	}
 
-	//return common.Hash{}, err
-	//} else {
-	//	d = time.Duration(*duration) * time.Second
-	//}
 	ks := s.b.GetKeyStore()
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
 		errors.New("get addr by outpoint is err")
-		//return nil, err
 		return common.Hash{}, err
 	}
 

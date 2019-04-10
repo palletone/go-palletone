@@ -10,14 +10,17 @@ fi
 ada=github.com/palletone/adaptor
 btc=github.com/palletone/btc-adaptor
 eth=github.com/palletone/eth-adaptor
+di=github.com/palletone/digital-identity
 
 adafullpath=$GOPATH/src/$ada
 btcfullpath=$GOPATH/src/$btc
 ethfullpath=$GOPATH/src/$eth
+difullpath=$GOPATH/src/$di
 
 echo $adafullpath
 echo $btcfullpath
 echo $ethfullpath
+echo $difullpath
 
 
 #go get -u github.com/palletone/eth-adaptor
@@ -49,6 +52,16 @@ else
 fi
 
 
+if [ ! -d "$difullpath" ]; then
+	echo "di not exist"
+	go get -u $di
+else
+	echo "di exist"
+	git -C $difullpath  pull
+fi
+
+
+
 # Create fake Go workspace if it doesn't exist yet.
 workspace="$PWD/build/_workspace"
 root="$PWD"
@@ -60,6 +73,7 @@ if [ ! -L "$ethdir/go-palletone" ]; then
     ln -s ../../../../../../adaptor/. adaptor
     ln -s ../../../../../../btc-adaptor/. btc-adaptor
     ln -s ../../../../../../eth-adaptor/. eth-adaptor
+    ln -s ../../../../../../digital-identity/. digital-identity
 
     cd "$root"
 fi

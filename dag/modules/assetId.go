@@ -147,7 +147,7 @@ func (it AssetId) Bytes() []byte {
 	return it[:]
 }
 
-func (it AssetId) SetBytes(b []byte) {
+func (it *AssetId) SetBytes(b []byte) {
 	if len(b) > len(it) {
 		b = b[len(b)-ID_LENGTH:]
 	}

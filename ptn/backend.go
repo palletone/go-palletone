@@ -92,10 +92,10 @@ type PalletOne struct {
 	contractPorcessor *jury.Processor
 }
 
-func (p *PalletOne) AddLesServer(ls LesServer) {
-	p.lesServer = ls
-	ls.SetBloomBitsIndexer(p.bloomIndexer)
-}
+//func (p *PalletOne) AddLesServer(ls LesServer) {
+//	p.lesServer = ls
+//	ls.SetBloomBitsIndexer(p.bloomIndexer)
+//}
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
@@ -163,7 +163,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	gasToken := config.Dag.GetGasToken()
-	//ptn.bloomIndexer.Start(dag, gasToken)
+	ptn.bloomIndexer.Start(dag, gasToken)
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)

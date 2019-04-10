@@ -428,10 +428,14 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	//	return shim.Success([]byte("Forfeiture too many."))
 	//}
 	forfeiture.ForfeitureAddress = forfeitureAddr
-	asset := modules.NewPTNAsset()
+	fees,err := stub.GetInvokeFees()
+	if err != nil {
+		log.Error("stub.GetInvokeFees err:", "error", err)
+		return shim.Error(err.Error())
+	}
 	invokeTokens := &modules.InvokeTokens{
 		Amount: ptnAccount,
-		Asset:  asset,
+		Asset:  fees.Asset,
 	}
 	forfeiture.ApplyTokens = invokeTokens
 	forfeiture.ForfeitureRole = forfeitureRole
