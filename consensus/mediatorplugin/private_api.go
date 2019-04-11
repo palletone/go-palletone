@@ -93,10 +93,10 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.dag.IsSynced() {
-		return nil, fmt.Errorf("the data of this node is not synced, " +
-			"and mediator cannot be created at present")
-	}
+	//if !a.dag.IsSynced() {
+	//	return nil, fmt.Errorf("the data of this node is not synced, " +
+	//		"and mediator cannot be created at present")
+	//}
 
 	addr := args.FeePayer()
 	// 判断是否已经是mediator
@@ -151,9 +151,9 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.dag.IsSynced() {
-		return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
-	}
+	//if !a.dag.IsSynced() {
+	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
+	//}
 
 	// 判断是否是mediator
 	if !a.dag.IsMediator(mediator) {
@@ -203,9 +203,9 @@ func (a *PrivateMediatorAPI) SetDesiredCount(accountStr string,
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.dag.IsSynced() {
-		return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
-	}
+	//if !a.dag.IsSynced() {
+	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
+	//}
 
 	// 判断账户是否已经设置此数量
 	ai := a.dag.GetAccountInfo(account)
