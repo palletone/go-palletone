@@ -171,15 +171,31 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 		reqStr := fmt.Sprintf("Need one args: [holder address]")
 		return shim.Error(reqStr)
 	}
-	serverCertIDs, memberCertIDs, err := getHolderCertIDs(args[0], stub)
+	serverCertIDs := []*CertState{}
+	val, err := stub.GetSystemConfig("RootCAHolder")
+	if err != nil {
+		return shim.Error(fmt.Sprintf("get ca holder error"))
+	}
+	if val == args[0] {
+		rootcert, err := GetRootCert(stub)
+		if err != nil {
+			return shim.Error(fmt.Sprintf("get root cert error:%s", err.Error()))
+		}
+		rootState := CertState{
+			CertID:         rootcert.SerialNumber.String(),
+			RecovationTime: rootcert.NotAfter.String(),
+		}
+		serverCertIDs = append(serverCertIDs, &rootState)
+	}
+	newServerCertIDs, memberCertIDs, err := getHolderCertIDs(args[0], stub)
 	if err != nil {
 		reqStr := fmt.Sprintf("get address Cert ids error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
-
+	serverCertIDs = append(serverCertIDs, newServerCertIDs...)
 	certIDs := map[string][]*CertState{
-		"InterCertIDs":  serverCertIDs,
-		"MemberCertIDs": memberCertIDs,
+		"IntermediateCertIDs": serverCertIDs,
+		"MemberCertIDs":       memberCertIDs,
 	}
 
 	//return json
