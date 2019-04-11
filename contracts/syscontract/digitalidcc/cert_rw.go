@@ -135,6 +135,7 @@ func getHolderCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCert
 	return serverCertStates, memberCertStates, nil
 }
 
+// Return all validated certificate
 func getIssuerCertsInfo(issuer string, stub shim.ChaincodeStubInterface) (certHolderInfo []*CertHolderInfo, err error) {
 	// query server certificates
 	prefixKey := dagConstants.CERT_ISSUER_SYMBOL + issuer + dagConstants.CERT_SPLIT_CH
@@ -243,7 +244,10 @@ func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
 	if err != nil { // query none
-		return nil, nil
+		return nil, err
+	}
+	if len(data) <= 0 {
+		return nil, fmt.Errorf("query no cert bytes")
 	}
 	certDBInfo := CertDBInfo{}
 	if err := json.Unmarshal(data, &certDBInfo); err != nil {
@@ -255,6 +259,14 @@ func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []
 	return certDBInfo.Raw, nil
 }
 
+func GetX509Cert(certid string, stub shim.ChaincodeStubInterface) (cert *x509.Certificate, err error) {
+	bytes, err := GetCertBytes(certid, stub)
+	if err != nil {
+		return nil, err
+	}
+	cert, err = x509.ParseCertificate(bytes)
+	return
+}
 func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo *CertDBInfo, err error) {
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)

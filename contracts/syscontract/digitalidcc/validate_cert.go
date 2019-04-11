@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
+	"math/big"
 	"time"
 )
 
@@ -174,4 +175,46 @@ func ValidateCertChain(cert *x509.Certificate, stub shim.ChaincodeStubInterface)
 	return nil
 }
 
-// This is the certificate chain organization
+// Validate CRL Issuer Signature
+func ValidateCRLIssuerSig(issuerAddr string, crl *pkix.CertificateList, stub shim.ChaincodeStubInterface) error {
+	// check ca holder
+	caHolder, err := stub.GetSystemConfig("RootCAHolder")
+	if err != nil {
+		return err
+	}
+	if issuerAddr == caHolder {
+		rootCert, err := GetRootCert(stub)
+		if err != nil {
+			return err
+		}
+		return rootCert.CheckCRLSignature(crl)
+	}
+	// query issuer cert info
+	key := dagConstants.CERT_SUBJECT_SYMBOL + crl.TBSCertList.Issuer.String()
+	val, err := stub.GetState(key)
+	if err != nil {
+		return err
+	}
+	certid := big.Int{}
+	certid.SetBytes(val)
+	// check revocation time
+	key = dagConstants.CERT_SERVER_SYMBOL + issuerAddr + dagConstants.CERT_SPLIT_CH + certid.String()
+	val, err = stub.GetState(key)
+	if err != nil {
+		return err
+	}
+	revocationTime := time.Time{}
+	if err = revocationTime.UnmarshalBinary(val); err != nil {
+		return err
+	}
+	if revocationTime.String() < time.Now().String() {
+		return fmt.Errorf("your certificate has been revocation")
+	}
+	// query issuer cert info
+	cert, err := GetX509Cert(certid.String(), stub)
+	if err != nil {
+		return err
+	}
+	// check signature
+	return cert.CheckCRLSignature(crl)
+}
