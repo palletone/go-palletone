@@ -61,7 +61,7 @@ const (
 	TxValidationCode_INVALID_CONTRACT             ValidationCode = 33
 	TxValidationCode_INVALID_DATAPAYLOAD          ValidationCode = 34
 	TxValidationCode_INVALID_DOUBLE_SPEND         ValidationCode = 35
-	TxValidationCode_NOT_VALIDATED                ValidationCode = 254
+	TxValidationCode_ORPHAN                       ValidationCode = 998
 	TxValidationCode_NOT_COMPARE_SIZE             ValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         ValidationCode = 256
 
@@ -76,7 +76,7 @@ const (
 	UNIT_STATE_INVALID_HEADER_NUMBER    ValidationCode = 109
 	UNIT_STATE_INVALID_HEADER_TXROOT    ValidationCode = 110
 	UNIT_STATE_INVALID_HEADER_TIME      ValidationCode = 111
-	UNIT_STATE_OTHER_ERROR              ValidationCode = 125
+	UNIT_STATE_ORPHAN                   ValidationCode = 999
 )
 
 var validationCode_name = map[int32]string{
@@ -130,6 +130,8 @@ var validationCode_name = map[int32]string{
 	254: "NOT_VALIDATED",
 	255: "NOT_COMPARE_SIZE",
 	256: "INVALID_OTHER_REASON",
+	998: "ORPHAN TX",
+	999: "ORPHAN UNIT",
 }
 
 func NewValidateError(code ValidationCode) error {
@@ -137,4 +139,7 @@ func NewValidateError(code ValidationCode) error {
 		return nil
 	}
 	return errors.New(validationCode_name[int32(code)])
+}
+func IsOrphanError(err error) bool {
+	return err.Error() == "ORPHAN TX" || err.Error() == "ORPHAN UNIT"
 }

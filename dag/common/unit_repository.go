@@ -179,7 +179,7 @@ func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
 	// 2. unit header
 	uHeader, err := rep.dagdb.GetHeaderByHash(hash)
 	if err != nil {
-		log.Info("getChainUnit when GetHeaderByHash failed ", "error", err, "hash", hash.String())
+		log.Error("getChainUnit when GetHeaderByHash failed ", "error", err, "hash", hash.String())
 		//log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}

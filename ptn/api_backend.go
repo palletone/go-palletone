@@ -34,7 +34,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/errors"
+
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -396,18 +396,11 @@ func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
 
-	utxo, err := b.ptn.dag.GetUtxoEntry(outpoint)
-
+	//This function query from txpool first, not exist, then query from leveldb.
+	utxo, err := b.ptn.txPool.GetUtxoEntry(outpoint)
 	if err != nil {
-		if errors.IsNotFoundError(err) {
-			log.Infof("utxo not found in db by key:%s, try query txpool", outpoint.String())
-			utxo, err = b.ptn.txPool.GetUtxoEntry(outpoint)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
+		log.Errorf("Utxo not found in txpool and leveldb, key:%s", outpoint.String())
+		return nil, err
 	}
 	ujson := ptnjson.ConvertUtxo2Json(outpoint, utxo)
 	return ujson, nil

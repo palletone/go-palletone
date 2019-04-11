@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"io/ioutil"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
@@ -93,6 +94,9 @@ func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface
 	}
 	key += certInfo.Holder + dagConstants.CERT_SPLIT_CH + certInfo.Cert.SerialNumber.String()
 	recovationTime, _ := time.Time{}.MarshalBinary()
+	if !certInfo.Cert.NotAfter.IsZero() {
+		recovationTime, _ = certInfo.Cert.NotAfter.MarshalBinary()
+	}
 	if err := stub.PutState(key, recovationTime); err != nil {
 		return err
 	}
@@ -131,6 +135,7 @@ func getHolderCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCert
 	return serverCertStates, memberCertStates, nil
 }
 
+// Return all validated certificate
 func getIssuerCertsInfo(issuer string, stub shim.ChaincodeStubInterface) (certHolderInfo []*CertHolderInfo, err error) {
 	// query server certificates
 	prefixKey := dagConstants.CERT_ISSUER_SYMBOL + issuer + dagConstants.CERT_SPLIT_CH
@@ -238,6 +243,12 @@ func queryNonce(prefixSymbol string, issuer string, stub shim.ChaincodeStubInter
 func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []byte, err error) {
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
+	if err != nil { // query none
+		return nil, err
+	}
+	if len(data) <= 0 {
+		return nil, fmt.Errorf("query no cert bytes")
+	}
 	certDBInfo := CertDBInfo{}
 	if err := json.Unmarshal(data, &certDBInfo); err != nil {
 		return nil, err
@@ -248,6 +259,14 @@ func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []
 	return certDBInfo.Raw, nil
 }
 
+func GetX509Cert(certid string, stub shim.ChaincodeStubInterface) (cert *x509.Certificate, err error) {
+	bytes, err := GetCertBytes(certid, stub)
+	if err != nil {
+		return nil, err
+	}
+	cert, err = x509.ParseCertificate(bytes)
+	return
+}
 func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo *CertDBInfo, err error) {
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
@@ -296,4 +315,80 @@ func getIssuerCRLBytes(issuer string, stub shim.ChaincodeStubInterface) ([]byte,
 	}
 
 	return data, nil
+}
+
+func GetIntermidateCertChains(cert *x509.Certificate, rootIssuer string, stub shim.ChaincodeStubInterface) (certChains []*x509.Certificate, err error) {
+	subject := cert.Issuer.String()
+	for {
+		key := dagConstants.CERT_SUBJECT_SYMBOL + subject
+		val, err := stub.GetState(key)
+		if err != nil {
+			return nil, err
+		}
+		// query chain done
+		if val == nil {
+			break
+		}
+		// parse certid
+		certID := big.Int{}
+		certID.SetBytes(val)
+		// get cert bytes
+		bytes, err := GetCertBytes(certID.String(), stub)
+		if err != nil {
+			return nil, err
+		}
+		// parse cert
+		newCert, err := x509.ParseCertificate(bytes)
+		if err != nil {
+			return nil, err
+		}
+		certChains = append(certChains, newCert)
+		subject = newCert.Issuer.String()
+		if subject == rootIssuer {
+			break
+		}
+	}
+
+	return certChains, nil
+}
+
+func GetCertIDBySubject(subject string, stub shim.ChaincodeStubInterface) (certid string, err error) {
+	key := dagConstants.CERT_SUBJECT_SYMBOL + subject
+	val, err := stub.GetState(key)
+	if err != nil {
+		return "", err
+	}
+	serial := big.Int{}
+	serial.SetBytes(val)
+	return serial.String(), nil
+}
+
+func GetCertRevocationTime(holder string, certid string, stub shim.ChaincodeStubInterface) (revocationtime time.Time, err error) {
+	key := dagConstants.CERT_SERVER_SYMBOL + holder + dagConstants.CERT_SPLIT_CH + certid
+	val, err := stub.GetState(key)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	revocationtime = time.Time{}
+	if err != revocationtime.UnmarshalBinary(val) {
+		return time.Time{}, err
+	}
+	return revocationtime, nil
+}
+
+func GetRootCert(stub shim.ChaincodeStubInterface) (cert *x509.Certificate, err error) {
+	val, err := stub.GetSystemConfig("RootCABytes")
+	if err != nil {
+		return nil, err
+	}
+	bytes, err := loadCertBytes([]byte(val))
+	if err != nil {
+		return nil, err
+	}
+	cert, err = x509.ParseCertificate(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return cert, nil
 }

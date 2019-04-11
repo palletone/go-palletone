@@ -26,6 +26,8 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
+	"math/big"
+	"time"
 )
 
 // This is the basic validation
@@ -36,6 +38,7 @@ func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStub
 	if err := validateIssuer(issuer, cert, stub); err != nil {
 		return err
 	}
+	// validate
 
 	return nil
 }
@@ -102,15 +105,116 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 		return err
 	}
 	// check in intermediate certificate
-	if issuer != rootCAHolder {
-		// query server list
-		certids, err := queryCertsIDs(dagConstants.CERT_SERVER_SYMBOL, issuer, stub)
+	rootCert, err := GetRootCert(stub)
+	if err != nil {
+		return err
+	}
+	if issuer == rootCAHolder {
+		if cert.Issuer.String() != rootCert.Subject.String() {
+			return fmt.Errorf("cert issuer is invalid")
+		}
+	} else {
+		// query certid
+		certid, err := GetCertIDBySubject(cert.Issuer.String(), stub)
 		if err != nil {
 			return err
 		}
-		if len(certids) <= 0 {
+		if certid == "" {
+			return fmt.Errorf("Has no validate intermidate certificate")
+		}
+		// query server list
+		revocationTime, err := GetCertRevocationTime(issuer, certid, stub)
+		if err != nil {
+			return err
+		}
+		if revocationTime.IsZero() || revocationTime.String() < time.Now().String() {
 			return fmt.Errorf("Has no validate intermidate certificate")
 		}
 	}
 	return nil
+}
+
+// This is the certificate chain validation
+// To validate certificate chain signature
+func ValidateCertChain(cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
+	// query root ca cert bytes
+	rootCABytes, err := stub.GetSystemConfig("RootCABytes")
+	if err != nil {
+		return err
+	}
+	val, err := loadCertBytes([]byte(rootCABytes))
+	if err != nil {
+		return err
+	}
+	rootCert, err := x509.ParseCertificate(val)
+	// query intermidate cert bytes
+	chancerts := []*x509.Certificate{}
+	if cert.Issuer.String() != rootCert.Subject.String() {
+		chancerts, err = GetIntermidateCertChains(cert, rootCert.Subject.String(), stub)
+		if err != nil {
+			return err
+		}
+	}
+	// package x509.VerifyOptions, Intermediates and Roots field
+	roots := x509.NewCertPool()
+	roots.AddCert(rootCert)
+
+	intermediates := x509.NewCertPool()
+	for _, newCert := range chancerts {
+		intermediates.AddCert(newCert)
+	}
+	opts := x509.VerifyOptions{
+		Roots:         roots,
+		Intermediates: intermediates,
+	}
+	// user x509.Verify to verify cert chain
+	if _, err := cert.Verify(opts); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Validate CRL Issuer Signature
+func ValidateCRLIssuerSig(issuerAddr string, crl *pkix.CertificateList, stub shim.ChaincodeStubInterface) error {
+	// check ca holder
+	caHolder, err := stub.GetSystemConfig("RootCAHolder")
+	if err != nil {
+		return err
+	}
+	if issuerAddr == caHolder {
+		rootCert, err := GetRootCert(stub)
+		if err != nil {
+			return err
+		}
+		return rootCert.CheckCRLSignature(crl)
+	}
+	// query issuer cert info
+	key := dagConstants.CERT_SUBJECT_SYMBOL + crl.TBSCertList.Issuer.String()
+	val, err := stub.GetState(key)
+	if err != nil {
+		return err
+	}
+	certid := big.Int{}
+	certid.SetBytes(val)
+	// check revocation time
+	key = dagConstants.CERT_SERVER_SYMBOL + issuerAddr + dagConstants.CERT_SPLIT_CH + certid.String()
+	val, err = stub.GetState(key)
+	if err != nil {
+		return err
+	}
+	revocationTime := time.Time{}
+	if err = revocationTime.UnmarshalBinary(val); err != nil {
+		return err
+	}
+	if revocationTime.String() < time.Now().String() {
+		return fmt.Errorf("your certificate has been revocation")
+	}
+	// query issuer cert info
+	cert, err := GetX509Cert(certid.String(), stub)
+	if err != nil {
+		return err
+	}
+	// check signature
+	return cert.CheckCRLSignature(crl)
 }
