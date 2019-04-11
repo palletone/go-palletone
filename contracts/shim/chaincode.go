@@ -117,7 +117,7 @@ func userChaincodeStreamGetter(name string) (PeerChaincodeStream, error) {
 	}
 	flag.Parse()
 	//TODO peer
-	log.Debugf("Peer address: %s", getPeerAddress())
+	log.Debugf("Peer address: %s", viper.GetString("chaincode.peer.address"))
 	// Establish connection with validating peer
 	clientConn, err := newPeerClientConnection()
 	if err != nil {

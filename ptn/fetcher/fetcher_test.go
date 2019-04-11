@@ -211,15 +211,16 @@ func newTester() *fetcherTester {
 	return tester
 }
 
-// getBlock retrieves a block from the tester's block chain.
-func (f *fetcherTester) getBlock(hash common.Hash) (*modules.Unit, error) {
+// isHeaderExist retrieves a block from the tester's block chain.
+func (f *fetcherTester) getBlock(hash common.Hash) bool {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-	return f.blocks[hash], nil
+	_, exist := f.blocks[hash]
+	return exist
 }
 
 // verifyHeader is a nop placeholder for the block header verification.
-func (f *fetcherTester) verifyHeader(header *modules.Header) error {
+func (f *fetcherTester) verifyHeader(header *modules.Unit) error {
 	return nil
 }
 

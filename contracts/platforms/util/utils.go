@@ -179,7 +179,6 @@ func DockerBuild(opts DockerBuildOptions) error {
 	// Create an ephemeral container, armed with our Env/Cmd
 	//创建一个暂时的容器用于链码编译
 	//-----------------------------------------------------------------------------------
-	//TODO
 	hostConfig := &docker.HostConfig{
 		Memory:           int64(1073741824), //1GB
 	}

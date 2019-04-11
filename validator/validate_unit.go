@@ -104,11 +104,12 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	// step1. check header.New unit is no group signature yet
 	//TODO must recover
 
-	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
-	if sigState != modules.UNIT_STATE_VALIDATED &&
-		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && sigState != modules.UNIT_STATE_CHECK_HEADER_PASSED {
-		log.Debug("Validate unit's header failed.", "error code", sigState)
-		return NewValidateError(sigState)
+	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
+	if unitHeaderValidateResult != TxValidationCode_VALID &&
+		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
+		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
+		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
+		return NewValidateError(unitHeaderValidateResult)
 	}
 
 	//validate tx root
@@ -125,28 +126,34 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 		log.Debug(msg)
 		return NewValidateError(UNIT_STATE_HAS_INVALID_TRANSACTIONS)
 	}
+	//maybe orphan unit
+	if unitHeaderValidateResult != TxValidationCode_VALID {
+		return NewValidateError(unitHeaderValidateResult)
+	}
 	return nil
 }
 
 func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) ValidationCode {
-	// todo yangjie 应当错误返回前，打印验错误的具体消息
 	if header == nil {
+		log.Info("header is nil.")
 		return UNIT_STATE_INVALID_HEADER
 	}
 
 	if len(header.ParentsHash) == 0 {
+		log.Info("the header's parentHash is null.")
 		return UNIT_STATE_INVALID_HEADER
 	}
 
 	//  check header's extra data
 	if uint64(len(header.Extra)) > configure.MaximumExtraDataSize {
 		msg := fmt.Sprintf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
-		log.Debug(msg)
+		log.Info(msg)
 		return UNIT_STATE_INVALID_EXTRA_DATA
 	}
 
 	// check txroot
 	if header.TxRoot == (common.Hash{}) {
+		log.Info("the header's txroot is null.")
 		return UNIT_STATE_INVALID_HEADER_TXROOT
 	}
 
@@ -160,31 +167,40 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		return UNIT_STATE_INVALID_HEADER_NUMBER
 	}
 
-	//Check unit and parent units relationship
-	if validate.dagquery != nil {
-		parentHeader, err := validate.dagquery.GetHeaderByHash(header.ParentsHash[0])
-		if err != nil {
-			log.Errorf("Get header by hash[%s] err:%s", header.ParentsHash[0].String(), err.Error())
-			return UNIT_STATE_INVALID_HEADER
-		}
-		if parentHeader.Number.Index+1 != header.Number.Index {
-			log.Errorf("Unit[%s] has invalid number %d, parent unit[%s] number is %d", header.Hash().String(), header.Number.Index, parentHeader.Hash().String(), parentHeader.Number.Index)
-			return UNIT_STATE_INVALID_HEADER_NUMBER
-		}
-		if parentHeader.Number.AssetID != header.Number.AssetID {
-			log.Errorf("Unit[%s] has invalid asset %s, parent unit[%s] asset is %s", header.Hash().String(), header.Number.AssetID.String(), parentHeader.Hash().String(), parentHeader.Number.AssetID.String())
-			return UNIT_STATE_INVALID_HEADER
-		}
-	}
+	////Check unit and parent units relationship
+	//if validate.dagquery != nil {
+	//	parentHeader, err := validate.dagquery.GetHeaderByHash(header.ParentsHash[0])
+	//	if err != nil {
+	//		log.Errorf("Get parent header of the header, parent hash[%s] err:%s", header.ParentsHash[0].String(), err.Error())
+	//		return UNIT_STATE_INVALID_HEADER
+	//	}
+	//	if parentHeader.Number.Index+1 != header.Number.Index {
+	//		log.Errorf("Unit[%s] has invalid number %d, parent unit[%s] number is %d", header.Hash().String(), header.Number.Index, parentHeader.Hash().String(), parentHeader.Number.Index)
+	//		return UNIT_STATE_INVALID_HEADER_NUMBER
+	//	}
+	//	if parentHeader.Number.AssetID != header.Number.AssetID {
+	//		log.Errorf("Unit[%s] has invalid asset %s, parent unit[%s] asset is %s", header.Hash().String(), header.Number.AssetID.String(), parentHeader.Hash().String(), parentHeader.Number.AssetID.String())
+	//		return UNIT_STATE_INVALID_HEADER
+	//	}
+	//}
 
 	// TODO 同步过来的unit 没有Authors ，因此无法验证签名有效性。
 	var thisUnitIsNotTransmitted bool
-
 	if thisUnitIsNotTransmitted {
 		sigState := validate.validateUnitSignature(header)
 		return sigState
 	}
-
+	//Is orphan?
+	parent := header.ParentsHash[0]
+	if validate.dagquery != nil {
+		parentHeader, err := validate.dagquery.GetHeaderByHash(parent)
+		if err != nil {
+			return UNIT_STATE_ORPHAN
+		}
+		if parentHeader.Number.Index+1 != header.Number.Index {
+			return UNIT_STATE_INVALID_HEADER_NUMBER
+		}
+	}
 	return TxValidationCode_VALID
 }
 

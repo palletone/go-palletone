@@ -413,7 +413,11 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	if chaincodeSupport.shimLogLevel != "" {
 		envs = append(envs, "CORE_CHAINCODE_LOGGING_SHIM="+chaincodeSupport.shimLogLevel)
 	}
+	if chaincodeSupport.peerAddress != "" {
+		log.Infof("-------------------------------------------%s\n\n",chaincodeSupport.peerAddress)
+		envs = append(envs, "CORE_CHAINCODE_PEER_ADDRESS="+chaincodeSupport.peerAddress)
 
+	}
 	if chaincodeSupport.logFormat != "" {
 		envs = append(envs, "CORE_CHAINCODE_LOGGING_FORMAT="+chaincodeSupport.logFormat)
 	}
