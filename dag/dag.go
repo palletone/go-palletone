@@ -206,7 +206,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//}
 	uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
 	if err1 != nil {
-		log.Error("getChainUnit when GetHeaderByHash failed ", "error:", err1, "hash", number.String())
+		log.Error("getChainUnit when GetHeaderByNumber failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
@@ -405,11 +405,12 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go
-func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
+func (d *Dag) VerifyHeader(header *modules.Header) error {
 	// step1. check unit signature, should be compare to mediator list
 	unitState := d.validate.ValidateHeader(header)
 	if unitState != nil {
-		return fmt.Errorf("Validate unit signature error, errno=%s", unitState.Error())
+		log.Errorf("Validate unit header error, errno=%s", unitState.Error())
+		return unitState
 	}
 
 	// step2. check extra data

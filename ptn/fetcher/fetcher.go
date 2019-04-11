@@ -54,7 +54,7 @@ type headerRequesterFn func(common.Hash) error
 type bodyRequesterFn func([]common.Hash) error
 
 // headerVerifierFn is a callback type to verify a block's header for fast propagation.
-type headerVerifierFn func(header *modules.Header) error
+type unitVerifierFn func(unit *modules.Unit) error
 
 // blockBroadcasterFn is a callback type for broadcasting a block to connected peers.
 type blockBroadcasterFn func(block *modules.Unit, propagate bool /*, broadcastMediator int*/)
@@ -132,7 +132,7 @@ type Fetcher struct {
 
 	// Callbacks
 	isHeaderExist  headerExistFn      // Retrieves a block from the local chain
-	verifyHeader   headerVerifierFn   // Checks if a block's headers have a valid proof of work
+	verifyUnit     unitVerifierFn     // Checks if a block's headers have a valid proof of work
 	broadcastBlock blockBroadcasterFn // Broadcasts a block to connected peers
 	chainHeight    chainHeightFn      // Retrieves the current chain's height
 	insertChain    chainInsertFn      // Injects a batch of blocks into the chain
@@ -147,7 +147,7 @@ type Fetcher struct {
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func New(getBlock headerExistFn, verifyHeader headerVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain chainInsertFn, dropPeer peerDropFn) *Fetcher {
+func New(getBlock headerExistFn, verifyUnit unitVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain chainInsertFn, dropPeer peerDropFn) *Fetcher {
 	return &Fetcher{
 		notify:         make(chan *announce),
 		inject:         make(chan *inject),
@@ -165,7 +165,7 @@ func New(getBlock headerExistFn, verifyHeader headerVerifierFn, broadcastBlock b
 		queues:         make(map[string]int),
 		queued:         make(map[common.Hash]*inject),
 		isHeaderExist:  getBlock,
-		verifyHeader:   verifyHeader,
+		verifyUnit:     verifyUnit,
 		broadcastBlock: broadcastBlock,
 		chainHeight:    chainHeight,
 		insertChain:    insertChain,
@@ -667,7 +667,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		}
 
 		// Quickly validate the header and propagate the block if it passes
-		switch err := f.verifyHeader(block.Header()); err {
+		switch err := f.verifyUnit(block); err {
 		case nil:
 			// All ok, quickly propagate to our peers
 			propBroadcastOutTimer.UpdateSince(block.ReceivedAt)

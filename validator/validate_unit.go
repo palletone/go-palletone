@@ -104,11 +104,12 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	// step1. check header.New unit is no group signature yet
 	//TODO must recover
 
-	sigState := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
-	if sigState != modules.UNIT_STATE_VALIDATED &&
-		sigState != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED && sigState != modules.UNIT_STATE_CHECK_HEADER_PASSED {
-		log.Debug("Validate unit's header failed.", "error code", sigState)
-		return NewValidateError(sigState)
+	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
+	if unitHeaderValidateResult != TxValidationCode_VALID &&
+		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
+		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
+		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
+		return NewValidateError(unitHeaderValidateResult)
 	}
 
 	//validate tx root
@@ -124,6 +125,10 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 		log.Debug(msg)
 		return NewValidateError(UNIT_STATE_HAS_INVALID_TRANSACTIONS)
+	}
+	//maybe orphan unit
+	if unitHeaderValidateResult != TxValidationCode_VALID {
+		return NewValidateError(unitHeaderValidateResult)
 	}
 	return nil
 }
@@ -184,6 +189,15 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	if thisUnitIsNotTransmitted {
 		sigState := validate.validateUnitSignature(header)
 		return sigState
+	}
+	//Is orphan?
+	parent := header.ParentsHash[0]
+	parentHeader, err := validate.dagquery.GetHeaderByHash(parent)
+	if err != nil {
+		return UNIT_STATE_ORPHAN
+	}
+	if parentHeader.Number.Index+1 != header.Number.Index {
+		return UNIT_STATE_INVALID_HEADER_NUMBER
 	}
 	return TxValidationCode_VALID
 }
