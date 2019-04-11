@@ -45,7 +45,7 @@ var (
 )
 
 // blockRetrievalFn is a callback type for retrieving a block from the local chain.
-type blockRetrievalFn func(common.Hash) (*modules.Unit, error)
+type headerExistFn func(common.Hash) bool
 
 // headerRequesterFn is a callback type for sending a header retrieval request.
 type headerRequesterFn func(common.Hash) error
@@ -131,7 +131,7 @@ type Fetcher struct {
 	queued map[common.Hash]*inject // Set of already queued blocks (to dedupe imports)
 
 	// Callbacks
-	getBlock       blockRetrievalFn   // Retrieves a block from the local chain
+	isHeaderExist  headerExistFn      // Retrieves a block from the local chain
 	verifyHeader   headerVerifierFn   // Checks if a block's headers have a valid proof of work
 	broadcastBlock blockBroadcasterFn // Broadcasts a block to connected peers
 	chainHeight    chainHeightFn      // Retrieves the current chain's height
@@ -147,7 +147,7 @@ type Fetcher struct {
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func New(getBlock blockRetrievalFn, verifyHeader headerVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain chainInsertFn, dropPeer peerDropFn) *Fetcher {
+func New(getBlock headerExistFn, verifyHeader headerVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain chainInsertFn, dropPeer peerDropFn) *Fetcher {
 	return &Fetcher{
 		notify:         make(chan *announce),
 		inject:         make(chan *inject),
@@ -164,7 +164,7 @@ func New(getBlock blockRetrievalFn, verifyHeader headerVerifierFn, broadcastBloc
 		queue:          prque.New(),
 		queues:         make(map[string]int),
 		queued:         make(map[common.Hash]*inject),
-		getBlock:       getBlock,
+		isHeaderExist:  getBlock,
 		verifyHeader:   verifyHeader,
 		broadcastBlock: broadcastBlock,
 		chainHeight:    chainHeight,
@@ -308,8 +308,8 @@ func (f *Fetcher) loop() {
 			}
 			// Otherwise if fresh and still unknown, try and import
 			hash := op.unit.Hash()
-			block, _ := f.getBlock(hash)
-			if number+maxUncleDist < height || block != nil {
+			//block, _ := f.isHeaderExist(hash)
+			if f.isHeaderExist(hash) {
 				f.forgetBlock(hash)
 				continue
 			}
@@ -377,8 +377,8 @@ func (f *Fetcher) loop() {
 					f.forgetHash(hash)
 
 					// If the block still didn't arrive, queue for fetching
-					block, _ := f.getBlock(hash)
-					if block == nil {
+
+					if !f.isHeaderExist(hash) {
 						request[announce.origin] = append(request[announce.origin], hash)
 						f.fetching[hash] = announce
 					}
@@ -413,8 +413,8 @@ func (f *Fetcher) loop() {
 				f.forgetHash(hash)
 
 				// If the block still didn't arrive, queue for completion
-				block, _ := f.getBlock(hash)
-				if block == nil {
+
+				if !f.isHeaderExist(hash) {
 					request[announce.origin] = append(request[announce.origin], hash)
 					f.completing[hash] = announce
 				}
@@ -462,8 +462,8 @@ func (f *Fetcher) loop() {
 						continue
 					}
 					// Only keep if not imported by other means
-					blk, _ := f.getBlock(hash)
-					if blk == nil {
+
+					if !f.isHeaderExist(hash) {
 						announce.header = header
 						announce.time = task.time
 
@@ -540,8 +540,7 @@ func (f *Fetcher) loop() {
 							// Mark the body matched, reassemble if still unknown
 							matched = true
 
-							blk, _ := f.getBlock(hash)
-							if blk == nil {
+							if !f.isHeaderExist(hash) {
 								block := modules.NewUnitWithHeader(announce.header).WithBody(task.transactions[i])
 								block.ReceivedAt = task.time
 
@@ -656,13 +655,13 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		defer func() { f.done <- hash }()
 
 		// If the parent's unknown, abort insertion
-		//parent := f.getBlock(block.ParentHash())
+		//parent := f.isHeaderExist(block.ParentHash())
 		parentsHash := block.ParentHash()
 		for _, parentHash := range parentsHash {
 			//fmt.Println("parentHash=>", parentHash)
-			blk, _ := f.getBlock(parentHash)
-			if blk == nil {
-				log.Debug("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
+
+			if !f.isHeaderExist(parentHash) {
+				log.Warn("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
 				return
 			}
 		}

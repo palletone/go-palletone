@@ -211,7 +211,7 @@ func newTester() *fetcherTester {
 	return tester
 }
 
-// getBlock retrieves a block from the tester's block chain.
+// isHeaderExist retrieves a block from the tester's block chain.
 func (f *fetcherTester) getBlock(hash common.Hash) (*modules.Unit, error) {
 	f.lock.RLock()
 	defer f.lock.RUnlock()

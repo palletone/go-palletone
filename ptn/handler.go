@@ -247,7 +247,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	validator := func(header *modules.Header) error {
 		//return dagerrors.ErrFutureBlock
-		if _, err := pm.dag.GetUnitByHash(header.Hash()); err != nil {
+		if !pm.dag.IsHeaderExist(header.Hash()) {
 			return dagerrors.ErrFutureBlock
 		}
 		return nil
@@ -270,7 +270,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return pm.dag.InsertDag(blocks, pm.txpool)
 	}
-	return fetcher.New(pm.dag.GetUnitByHash, validator, pm.BroadcastUnit, heighter, inserter, pm.removePeer)
+	return fetcher.New(pm.dag.IsHeaderExist, validator, pm.BroadcastUnit, heighter, inserter, pm.removePeer)
 }
 
 func (pm *ProtocolManager) removePeer(id string) {
