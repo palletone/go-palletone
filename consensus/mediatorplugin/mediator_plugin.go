@@ -200,9 +200,14 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	//	return NoPrivateKey, detail
 	//}
 
-	if !mp.consecutiveProduceEnabled && dag.IsConsecutiveMediator(scheduledMediator) {
-		detail["Mediator"] = scheduledMediator.Str()
-		return Consecutive, detail
+	if dag.IsConsecutiveMediator(scheduledMediator) {
+		if mp.consecutiveProduceEnabled {
+			// 连续产块的特权只能使用一次
+			mp.consecutiveProduceEnabled = false
+		} else {
+			detail["Mediator"] = scheduledMediator.Str()
+			return Consecutive, detail
+		}
 	}
 
 	pRate := dag.MediatorParticipationRate()
