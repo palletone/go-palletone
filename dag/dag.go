@@ -288,7 +288,6 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
 		if err := d.SaveUnit(u, txpool, false); err != nil {
-			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
 		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
@@ -790,19 +789,11 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
-	//var parent_hash common.Hash
-	//if !isGenesis {
-	//	parent_hash = unit.ParentHash()[0]
-	//} else {
-	//	parent_hash = unit.Hash()
-	//}
-
-	//log.Debug("start save dag", "index", unit.UnitHeader.Index(), "hash", unit.Hash())
 
 	if !isGenesis {
 		if d.Exists(unit.Hash()) {
 			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
-			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+			return errors.ErrUnitExist
 		}
 		// step2. validate unit
 		err := d.validateUnit(unit)
