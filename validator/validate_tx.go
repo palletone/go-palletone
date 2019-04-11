@@ -41,7 +41,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 	if len(tx.TxMessages) == 0 {
 		return TxValidationCode_INVALID_MSG
 	}
-
+	isOrphanTx := false
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		//fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
 		return TxValidationCode_INVALID_MSG
@@ -76,7 +76,11 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			}
 			validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase, usedUtxo)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode
+				if validateCode == TxValidationCode_ORPHAN {
+					isOrphanTx = true
+				} else {
+					return validateCode
+				}
 			}
 		case modules.APP_CONTRACT_TPL:
 			payload, _ := msg.Payload.(*modules.ContractTplPayload)
@@ -171,6 +175,9 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 		default:
 			return TxValidationCode_UNKNOWN_TX_TYPE
 		}
+	}
+	if isOrphanTx {
+		return TxValidationCode_ORPHAN
 	}
 	return TxValidationCode_VALID
 }

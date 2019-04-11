@@ -98,12 +98,9 @@ func (d *Dag) Close() {
 }
 
 // @author Albert·Gou
-func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit, isGenesis bool) bool {
+func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit)
-	if unitState != nil {
-		return false
-	}
-	return true
+	return unitState
 }
 
 // author Albert·Gou

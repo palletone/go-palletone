@@ -206,7 +206,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//}
 	uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
 	if err1 != nil {
-		log.Debug("getChainUnit when GetHeaderByHash failed ", "error:", err1, "hash", number.String())
+		log.Info("getChainUnit when GetHeaderByNumber failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
@@ -288,7 +288,6 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
 		if err := d.SaveUnit(u, txpool, false); err != nil {
-			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
 		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
@@ -332,7 +331,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	h, _ := d.GetHeaderByHash(hash)
 	return h != nil
 }
-func (d *Dag) Exists(hash common.Hash) bool {
+func (d *Dag) IsHeaderExist(hash common.Hash) bool {
 	//if unit, err := d.unstableUnitRep.getChainUnit(hash); err == nil && unit != nil {
 	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 	//	return true
@@ -406,11 +405,12 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go
-func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
+func (d *Dag) VerifyHeader(header *modules.Header) error {
 	// step1. check unit signature, should be compare to mediator list
 	unitState := d.validate.ValidateHeader(header)
 	if unitState != nil {
-		return fmt.Errorf("Validate unit signature error, errno=%s", unitState.Error())
+		log.Errorf("Validate unit header error, errno=%s", unitState.Error())
+		return unitState
 	}
 
 	// step2. check extra data
@@ -790,19 +790,11 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
-	//var parent_hash common.Hash
-	//if !isGenesis {
-	//	parent_hash = unit.ParentHash()[0]
-	//} else {
-	//	parent_hash = unit.Hash()
-	//}
-
-	//log.Debug("start save dag", "index", unit.UnitHeader.Index(), "hash", unit.Hash())
 
 	if !isGenesis {
-		if d.Exists(unit.Hash()) {
+		if d.IsHeaderExist(unit.Hash()) {
 			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
-			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+			return errors.ErrUnitExist
 		}
 		// step2. validate unit
 		err := d.validateUnit(unit)

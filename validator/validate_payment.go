@@ -78,9 +78,12 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
 			utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
 			if utxo == nil || err != nil {
-				return TxValidationCode_INVALID_OUTPOINT
+				//找不到对应的UTXO，应该是孤儿交易
+				return TxValidationCode_ORPHAN
 			}
-
+			if utxo.IsSpent() {
+				return TxValidationCode_INVALID_DOUBLE_SPEND
+			}
 			if asset == nil {
 				asset = utxo.Asset
 			} else {

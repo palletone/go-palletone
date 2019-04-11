@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
+	"time"
 )
 
 // This is the basic validation
@@ -36,7 +37,7 @@ func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStub
 	if err := validateIssuer(issuer, cert, stub); err != nil {
 		return err
 	}
-	// validate receiver
+	// validate
 
 	return nil
 }
@@ -103,13 +104,29 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 		return err
 	}
 	// check in intermediate certificate
-	if issuer != rootCAHolder {
-		// query server list
-		certids, err := queryCertsIDs(dagConstants.CERT_SERVER_SYMBOL, issuer, stub)
+	rootCert, err := GetRootCert(stub)
+	if err != nil {
+		return err
+	}
+	if issuer == rootCAHolder {
+		if cert.Issuer.String() != rootCert.Subject.String() {
+			return fmt.Errorf("cert issuer is invalid")
+		}
+	} else {
+		// query certid
+		certid, err := GetCertIDBySubject(cert.Issuer.String(), stub)
 		if err != nil {
 			return err
 		}
-		if len(certids) <= 0 {
+		if certid == "" {
+			return fmt.Errorf("Has no validate intermidate certificate")
+		}
+		// query server list
+		revocationTime, err := GetCertRevocationTime(issuer, certid, stub)
+		if err != nil {
+			return err
+		}
+		if revocationTime.IsZero() || revocationTime.String() < time.Now().String() {
 			return fmt.Errorf("Has no validate intermidate certificate")
 		}
 	}
