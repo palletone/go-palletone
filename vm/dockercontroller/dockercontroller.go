@@ -39,6 +39,7 @@ import (
 	com "github.com/palletone/go-palletone/vm/common"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 var (
@@ -129,11 +130,18 @@ func getDockerHostConfig() *docker.HostConfig {
 		networkMode = "host"
 	}
 	log.Debugf("docker container hostconfig NetworkMode: %s", networkMode)
+	portBindings := make(map[docker.Port][]docker.PortBinding)
+	hosts := strings.Split(contractcfg.GetConfig().ContractAddress,":")
 
+	portBinding := docker.PortBinding{
+		HostIP:hosts[0],
+		HostPort:hosts[1],
+	}
+	portBindings[docker.Port(hosts[1]+"/tcp")] = []docker.PortBinding{portBinding}
 	hostConfig = &docker.HostConfig{
 		CapAdd:  viper.GetStringSlice(dockerKey("CapAdd")),
 		CapDrop: viper.GetStringSlice(dockerKey("CapDrop")),
-
+		PortBindings:portBindings,
 		DNS:         viper.GetStringSlice(dockerKey("Dns")),
 		DNSSearch:   viper.GetStringSlice(dockerKey("DnsSearch")),
 		ExtraHosts:  viper.GetStringSlice(dockerKey("ExtraHosts")),

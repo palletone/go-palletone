@@ -116,6 +116,7 @@ func userChaincodeStreamGetter(name string) (PeerChaincodeStream, error) {
 		cert = string(data)
 	}
 	flag.Parse()
+	//TODO peer
 	log.Debugf("Peer address: %s", getPeerAddress())
 	// Establish connection with validating peer
 	clientConn, err := newPeerClientConnection()
@@ -253,6 +254,8 @@ func newPeerClientConnection() (*grpc.ClientConn, error) {
 		return comm.NewClientConnectionWithAddress(peerAddress, true, true,
 			comm.InitTLSForShim(key, cert), kaOpts)
 	}
+	//TODO peer
+	log.Debugf("PeerClient: %s", getPeerAddress())
 	return comm.NewClientConnectionWithAddress(peerAddress, true, false, nil, kaOpts)
 }
 

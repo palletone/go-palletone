@@ -22,9 +22,6 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
-	"strings"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/palletone/go-palletone/vm/common"
 )
 
 var debugX bool = true
@@ -336,28 +333,56 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
 	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 	//}
-	name := fmt.Sprintf("%s:%s",cc.Name,cc.Version)
-	newName := strings.Replace(name,":","-",-1)
-	log.Debugf("chaincode newNamenewNamenewNamenewName name: %s", newName)
-	client, err := util.NewDockerClient()
-	log.Info("----------4-------44------------------")
+	//name := fmt.Sprintf("%s:%s",cc.Name,cc.Version)
+	//newName := strings.Replace(name,":","-",-1)
+	//log.Debugf("chaincode newNamenewNamenewNamenewName name: %s", newName)
+	//client, err := util.NewDockerClient()
+	//if err != nil {
+	//	log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
+	//
+	//	return nil,fmt.Errorf("Error creating docker client: %s", err)
+	//}
+	//log.Info("----------4-------44------------------")
+	//
+	//if err != nil {
+	//	log.Info("----------4-------------------------")
+	//	log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
+	//
+	//	return nil,err
+	//
+	//}
+	log.Info("----------5-----------5---------55------")
+	//errC := make(chan error, 1)
+	//statsC := make(chan *docker.Stats)
+	//done := make(chan bool)
+	//go func() {
+	//	errC <- client.Stats(docker.StatsOptions{ID: newName, Stats: statsC, Stream: true, Done: done})
+	//	close(errC)
+	//}()
+	//var resultStats []*docker.Stats
+	//for {
+	//	stats, ok := <-statsC
+	//	if !ok {
+	//		break
+	//	}
+	//	resultStats = append(resultStats, stats)
+	//}
+	//err = <-errC
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+	//log.Info("----------5-----------5---5------------")
+	//if err != nil {
+	//	log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
+	//
+	//	log.Infof("-----------------5-----------------------------%#v\n\n\n\n\n",statsC)
+	//	return nil,err
+	//
+	//}
+	//log.Info("----------5--------------------------")
+	//log.Infof("-----------------5-----------------------------%#v\n\n\n\n\n",<-statsC)
+	//log.Infof("-----------------5---------------------4--------%#v\n\n\n\n\n",statsC)
 
-	if err != nil {
-		log.Info("----------4-------------------------")
-
-	}
-	log.Info("----------5-----------5---------------")
-
-	stats := docker.StatsOptions{ID:newName}
-	err = client.Stats(stats)
-	log.Info("----------5-----------5---5------------")
-panic("lala")
-	if err != nil {
-
-		log.Infof("-----------------5-----------------------------%#v\n\n\n\n\n",stats)
-		log.Infof("-----------------5-----------------------------%#v\n\n\n\n\n",stats.Stats)
-	}
-	log.Info("----------5--------------------------")
 	fmt.Println("Invoke result:==========================================================", unit)
 	return unit, nil
 }
