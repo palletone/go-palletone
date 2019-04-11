@@ -109,17 +109,17 @@ func (mr *MockIDagMockRecorder) CurrentUnit(token interface{}) *gomock.Call {
 }
 
 // VerifyHeader mocks base method
-func (m *MockIDag) VerifyHeader(header *modules.Header, seal bool) error {
+func (m *MockIDag) VerifyHeader(header *modules.Header) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VerifyHeader", header, seal)
+	ret := m.ctrl.Call(m, "VerifyHeader", header)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // VerifyHeader indicates an expected call of VerifyHeader
-func (mr *MockIDagMockRecorder) VerifyHeader(header, seal interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) VerifyHeader(header interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyHeader", reflect.TypeOf((*MockIDag)(nil).VerifyHeader), header, seal)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyHeader", reflect.TypeOf((*MockIDag)(nil).VerifyHeader), header)
 }
 
 // GetCurrentUnit mocks base method
@@ -398,18 +398,18 @@ func (mr *MockIDagMockRecorder) ParentsIsConfirmByHash(hash interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParentsIsConfirmByHash", reflect.TypeOf((*MockIDag)(nil).ParentsIsConfirmByHash), hash)
 }
 
-// Exists mocks base method
-func (m *MockIDag) Exists(hash common.Hash) bool {
+// IsHeaderExist mocks base method
+func (m *MockIDag) IsHeaderExist(hash common.Hash) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", hash)
+	ret := m.ctrl.Call(m, "IsHeaderExist", hash)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// Exists indicates an expected call of Exists
-func (mr *MockIDagMockRecorder) Exists(hash interface{}) *gomock.Call {
+// IsHeaderExist indicates an expected call of IsHeaderExist
+func (mr *MockIDagMockRecorder) IsHeaderExist(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockIDag)(nil).Exists), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHeaderExist", reflect.TypeOf((*MockIDag)(nil).IsHeaderExist), hash)
 }
 
 // SaveUnit mocks base method
@@ -1104,4 +1104,18 @@ func (m *MockIDag) UpdateSysParams() error {
 func (mr *MockIDagMockRecorder) UpdateSysParams() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSysParams", reflect.TypeOf((*MockIDag)(nil).UpdateSysParams))
+}
+
+// ValidateUnitExceptGroupSig mocks base method
+func (m *MockIDag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateUnitExceptGroupSig", unit)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidateUnitExceptGroupSig indicates an expected call of ValidateUnitExceptGroupSig
+func (mr *MockIDagMockRecorder) ValidateUnitExceptGroupSig(unit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnitExceptGroupSig", reflect.TypeOf((*MockIDag)(nil).ValidateUnitExceptGroupSig), unit)
 }

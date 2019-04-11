@@ -192,12 +192,14 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	}
 	//Is orphan?
 	parent := header.ParentsHash[0]
-	parentHeader, err := validate.dagquery.GetHeaderByHash(parent)
-	if err != nil {
-		return UNIT_STATE_ORPHAN
-	}
-	if parentHeader.Number.Index+1 != header.Number.Index {
-		return UNIT_STATE_INVALID_HEADER_NUMBER
+	if validate.dagquery != nil {
+		parentHeader, err := validate.dagquery.GetHeaderByHash(parent)
+		if err != nil {
+			return UNIT_STATE_ORPHAN
+		}
+		if parentHeader.Number.Index+1 != header.Number.Index {
+			return UNIT_STATE_INVALID_HEADER_NUMBER
+		}
 	}
 	return TxValidationCode_VALID
 }
