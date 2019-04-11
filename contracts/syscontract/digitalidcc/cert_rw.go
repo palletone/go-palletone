@@ -94,6 +94,9 @@ func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface
 	}
 	key += certInfo.Holder + dagConstants.CERT_SPLIT_CH + certInfo.Cert.SerialNumber.String()
 	recovationTime, _ := time.Time{}.MarshalBinary()
+	if !certInfo.Cert.NotAfter.IsZero() {
+		recovationTime, _ = certInfo.Cert.NotAfter.MarshalBinary()
+	}
 	if err := stub.PutState(key, recovationTime); err != nil {
 		return err
 	}
@@ -335,4 +338,45 @@ func GetIntermidateCertChains(cert *x509.Certificate, rootIssuer string, stub sh
 	}
 
 	return certChains, nil
+}
+
+func GetCertIDBySubject(subject string, stub shim.ChaincodeStubInterface) (certid string, err error) {
+	key := dagConstants.CERT_SUBJECT_SYMBOL + subject
+	val, err := stub.GetState(key)
+	if err != nil {
+		return "", err
+	}
+	serial := big.Int{}
+	serial.SetBytes(val)
+	return serial.String(), nil
+}
+
+func GetCertRevocationTime(holder string, certid string, stub shim.ChaincodeStubInterface) (revocationtime time.Time, err error) {
+	key := dagConstants.CERT_SERVER_SYMBOL + holder + dagConstants.CERT_SPLIT_CH + certid
+	val, err := stub.GetState(key)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	revocationtime = time.Time{}
+	if err != revocationtime.UnmarshalBinary(val) {
+		return time.Time{}, err
+	}
+	return revocationtime, nil
+}
+
+func GetRootCert(stub shim.ChaincodeStubInterface) (cert *x509.Certificate, err error) {
+	val, err := stub.GetSystemConfig("RootCABytes")
+	if err != nil {
+		return nil, err
+	}
+	bytes, err := loadCertBytes([]byte(val))
+	if err != nil {
+		return nil, err
+	}
+	cert, err = x509.ParseCertificate(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return cert, nil
 }
