@@ -19,6 +19,7 @@ import (
 	"github.com/palletone/digital-identity/client"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"gopkg.in/urfave/cli.v1"
+	"github.com/palletone/go-palletone/core"
 )
 
 var (
@@ -135,8 +136,8 @@ func enrollUser(ctx *cli.Context) error {
 	affiliation := ctx.Args()[3]
 	ty := "user"
 
-	certinfo := NewCertInfo(address, name, data, ty, affiliation, true)
-	err := GenCert(*certinfo)
+	certinfo := core.NewCertInfo(address, name, data, ty, affiliation, true)
+	err := core.GenCert(*certinfo)
 	if err != nil {
 		return err
 	}
@@ -153,7 +154,7 @@ func revoke(ctx *cli.Context) error {
 	if len(ctx.Args()) == 1 {
 		address := ctx.Args().First()
 		reason := "Forced to compromise"
-		err := RevokeCert(address,reason)
+		err := core.RevokeCert(address,reason)
 		if err != nil {
 			return err
 		}
@@ -163,7 +164,7 @@ func revoke(ctx *cli.Context) error {
 	address := ctx.Args().First()
 	reason := ctx.Args()[1]
 
-	err := RevokeCert(address, reason)
+	err := core.RevokeCert(address, reason)
 	fmt.Println(address + "  Revoked  certificate  OK")
 	if err != nil {
 		return err
@@ -184,7 +185,7 @@ func getIndentity(ctx *cli.Context) error {
 	address := ctx.Args().First()
 	caname := ctx.Args()[1]
 
-	idtRep, err := GetIndentity(address, caname)
+	idtRep, err := core.GetIndentity(address, caname)
 	if err != nil {
 		return err
 	}
@@ -193,7 +194,7 @@ func getIndentity(ctx *cli.Context) error {
 }
 
 func getIndentities(ctx *cli.Context) error {
-	idtReps,err := GetIndentities()
+	idtReps,err := core.GetIndentities()
 	if err != nil {
 		return err
 	}
@@ -208,7 +209,7 @@ func getCaCertificateChain(ctx *cli.Context) error {
 	}
 	caname := ctx.Args().First()
 
-	certchain, err := GetCaCertificateChain(caname)
+	certchain, err := core.GetCaCertificateChain(caname)
 	if err != nil {
 		return err
 	}
