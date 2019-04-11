@@ -68,7 +68,7 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 
 	if len(coreUtxos) == 0 {
-		return nil, fmt.Errorf("%v 's uxto is null", from.Str())
+		return nil, fmt.Errorf("%v 's utxo is empty", from.Str())
 	}
 
 	// 2. 利用贪心算法得到指定额度的utxo集合
@@ -149,10 +149,10 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 	}
 
 	if len(coreUtxos) == 0 {
-		return nil, fmt.Errorf("%v 's uxto is null", from.Str())
+		return nil, fmt.Errorf("%v 's utxo is empty", from.Str())
 	}
 	if len(tokenUtxos) == 0 {
-		return nil, fmt.Errorf("%v 's  uxto of this Token is null", from.Str())
+		return nil, fmt.Errorf("%v 's  utxo of this Token is empty", from.Str())
 	}
 	//2. 获取 PaymentPayload
 	ploadPTN, err := getPayload(from, to, daoAmount, daoFee, coreUtxos)

@@ -424,7 +424,7 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *s
 	}
 
 	res := &mp.TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account %s transfer %vPTN to account %s with message: '%s'",
+	res.TxContent = fmt.Sprintf("Account(%s) transfer %vPTN to account(%s) with message: '%s'",
 		from, amount, to, textStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()

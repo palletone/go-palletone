@@ -218,10 +218,9 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// todo 由于当前代码更新数据库没有加锁，可能如下情况：
 	// 生产单元的协程满足了前面的判断，此时新收到一个unit正在更新数据库，后面的判断有不能通过
-	// todo 调试的代码，暂时注释掉该判断，release版本的代码必须使用该判断
 	scheduledTime := dag.GetSlotTime(slot)
 	diff := scheduledTime.Sub(now)
-	if diff > 500*time.Millisecond || diff < -500*time.Millisecond {
+	if diff > 2500*time.Millisecond || diff < -2500*time.Millisecond {
 		detail["ScheduledTime"] = scheduledTime.Format("2006-01-02 15:04:05")
 		detail["Now"] = now.Format("2006-01-02 15:04:05")
 		return Lag, detail
