@@ -835,7 +835,6 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 type Tag uint64
 
 func (pool *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
-	// Protect concurrent access.
 
 	// Potentially accept the transaction to the memory pool.
 	_, _, err := pool.maybeAcceptTransaction(tx, true, rateLimit, false)
@@ -896,7 +895,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	p_tx := TxtoTxpoolTx(pool, tx)
 	err = pool.checkPoolDoubleSpend(p_tx)
 	if err != nil {
-		log.Info("txpool", "check PoolD oubleSpend err:", err)
+		log.Info("txpool check PoolDoubleSpend", "error", err)
 		return nil, nil, err
 	}
 	_, err1 := pool.add(p_tx, !pool.config.NoLocals)

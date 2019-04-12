@@ -37,6 +37,7 @@ func checkValid(reqEvt *AdapterRequestEvent) bool {
 }
 func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) {
 	p.locker.Lock()
+	//todo check is select jury or not
 	pubkeyHex := common.Bytes2Hex(reqEvt.pubkey)
 	if _, exist := p.mtx[reqEvt.reqId].adaInf[msgType]; !exist {
 		//all jury msg

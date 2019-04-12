@@ -441,33 +441,12 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			}
 		}
 		// @Jay ---> 同步过来的交易 p2p层不需要做交易的验证。
-
-		//for msgIndex, msg := range tx.TxMessages {
-		//	payload, ok := msg.Payload.(*modules.PaymentPayload)
-		//	if ok == false {
-		//		continue
-		//	}
-		//	for inputIndex, txin := range payload.Inputs {
-		//		if txin.PreviousOutPoint == nil {
-		//			continue
-		//		}
-		//		st, err := pm.dag.GetUtxoEntry(txin.PreviousOutPoint)
-		//		if st == nil || err != nil {
-		//			return err
-		//		}
-		//		err = tokenengine.ScriptValidate(st.PkScript, nil, tx, msgIndex, inputIndex)
-		//		if err != nil {
-		//			return err
-		//		}
-		//	}
-		//}
 		p.MarkTransaction(tx.Hash())
-		//txHash := tx.Hash()
-		//txHash = txHash
 		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
-		//acceptedTxs = acceptedTxs
 		if err != nil {
-			return errResp(ErrDecode, "transaction %d not accepteable ", i, "err:", err)
+			log.Infof("transaction %s not accepteable, err:%s", tx.Hash(), err.Error())
+			continue
+			//return errResp(ErrDecode, "transaction %d not accepteable ", i, "err:", err)
 		}
 		pm.txpool.AddRemote(tx)
 	}

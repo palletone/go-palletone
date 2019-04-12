@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus"
@@ -79,6 +80,8 @@ type PalletOne struct {
 	netRPCService *ptnapi.PublicNetAPI
 
 	dag dag.IDag
+	// DB interfaces
+	unitDb ptndb.Database // Block chain database
 
 	contract *contracts.Contract
 
@@ -92,10 +95,10 @@ type PalletOne struct {
 	contractPorcessor *jury.Processor
 }
 
-func (p *PalletOne) AddLesServer(ls LesServer) {
-	p.lesServer = ls
-	ls.SetBloomBitsIndexer(p.bloomIndexer)
-}
+//func (p *PalletOne) AddLesServer(ls LesServer) {
+//	p.lesServer = ls
+//	ls.SetBloomBitsIndexer(p.bloomIndexer)
+//}
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
@@ -122,8 +125,9 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
 		dag:            dag,
-		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		bloomIndexer:   NewBloomIndexer(db, BloomBitsBlocks),
+		unitDb:         db,
+		//bloomRequests:  make(chan chan *bloombits.Retrieval),
+		//bloomIndexer:   NewBloomIndexer(db, BloomBitsBlocks),
 	}
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
 
@@ -163,13 +167,54 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	gasToken := config.Dag.GetGasToken()
-	ptn.bloomIndexer.Start(dag, gasToken)
+	//ptn.bloomIndexer.Start(dag, gasToken)
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
 
+	//======test start======
+
+	//db.Database().OpenTrie(header.Root)
+	//strhash := "0x6ca6de56eaffb9baab65102ee3ed60511b991c6dbfed8facc62da3ee068835ca"
+	//unithash := common.Hash{}
+	//unithash.SetHexString(strhash)
+	//
+	//unit, err := dag.GetUnitByHash(unithash)
+	//if err != nil {
+	//	log.Debug("NewProtocolManager GetUnitByHash", "err", err, "hash", unithash)
+	//	return nil, err
+	//}
+	//unit = unit
+	//var MaxTrieCacheGen = uint16(120)
+	//_, err = trie.NewSecure(unit.Header().Hash(), trie.NewDatabase(db), MaxTrieCacheGen)
+	//if err != nil {
+	//	log.Debug("NewProtocolManager NewSecure", "err", err)
+	//	return nil, err
+	//}
+	//diskdb, _ := ptndb.NewMemDatabase()
+	//triedb := trie.NewDatabase(ptn.unitDb)
+	//if err := triedb.Commit(unit.Hash(), true); err != nil {
+	//	log.Debug("NewProtocolManager triedb.Commit", "err", err)
+	//	return nil, err
+	//}
+	//trdb, err1 := trie.NewSecure(unit.Hash(), trie.NewDatabase(ptn.unitDb), 0)
+	//if err1 != nil {
+	//	log.Debug("NewProtocolManager trie.NewSecure", "err", err1)
+	//	return nil, err1
+	//}
+
+	//node, err1 := triedb.Node(unit.Hash())
+	//if err1 != nil {
+	//	log.Debug("NewProtocolManager triedb.Node", "err", err1)
+	//	return nil, err
+	//}
+	//log.Debug("NewProtocolManager triedb.Node", "node", string(node))
+
+	//var proof light.NodeList
+	//trie.Prove(req.Key, 0, &proof)
+	//======test end======
 	ptn.ApiBackend = &PtnApiBackend{ptn}
 	return ptn, nil
 }
@@ -424,7 +469,7 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *s
 	}
 
 	res := &mp.TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account %s transfer %vPTN to account %s with message: '%s'",
+	res.TxContent = fmt.Sprintf("Account(%s) transfer %vPTN to account(%s) with message: '%s'",
 		from, amount, to, textStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()

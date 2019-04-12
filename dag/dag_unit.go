@@ -145,7 +145,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	sign_unit.UnitSize = sign_unit.Size()
 
-	//go log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
+	//log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
 
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
