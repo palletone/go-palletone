@@ -22,7 +22,6 @@ import (
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core"
 )
 
 const (
@@ -68,7 +67,8 @@ var DefaultConfig = Config{
 	ContractSigNum: DefaultContractSigNum,
 	ElectionNum:    DefaultElectionNum,
 	Accounts: []*AccountConf{
-		&AccountConf{core.DefaultJuryAddr, DefaultPassword},
+		//&AccountConf{core.DefaultJuryAddr, DefaultPassword},
+		&AccountConf{},
 	},
 }
 
