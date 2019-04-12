@@ -586,8 +586,9 @@ func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Tr
 为创世单元生成ConfigPayload
 To generate config payload for genesis unit
 */
-func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*modules.ContractInvokePayload, error) {
+func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([]*modules.ContractInvokePayload, error) {
 	writeSets := []modules.ContractWriteSet{}
+	digitalWriteSets := []modules.ContractWriteSet{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
@@ -616,6 +617,18 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 			sysConfByte, _ := json.Marshal(genesisConf.SystemConfig)
 			writeSets = append(writeSets, modules.ContractWriteSet{Key: "sysConf", Value: []byte(sysConfByte)})
 
+		} else if strings.Compare(tt.Field(i).Name, "DigitalConfig") == 0 {
+			// 2019.4.12
+			t := reflect.TypeOf(genesisConf.DigitalConfig)
+			v := reflect.ValueOf(genesisConf.DigitalConfig)
+			for k := 0; k < t.NumField(); k++ {
+				sk := t.Field(k).Name
+				digitalWriteSets = append(digitalWriteSets,
+					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
+				log.Debugf(">>>> save digital contract state, key:%s", sk)
+			}
+			digitalConfByte, _ := json.Marshal(genesisConf.DigitalConfig)
+			digitalWriteSets = append(digitalWriteSets, modules.ContractWriteSet{Key: "digitalConf", Value: []byte(digitalConfByte)})
 		} else {
 			sk := tt.Field(i).Name
 			if strings.Contains(sk, "Initial") {
@@ -629,10 +642,20 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 	writeSets = append(writeSets,
 		modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
-	payload := &modules.ContractInvokePayload{}
-	payload.ContractId = syscontract.SysConfigContractAddress.Bytes21()
-	payload.WriteSet = writeSets
-	return payload, nil
+	contractInvokePayloads := []*modules.ContractInvokePayload{}
+	// generate systemcontract invoke payload
+	sysconfigPayload := &modules.ContractInvokePayload{}
+	sysconfigPayload.ContractId = syscontract.SysConfigContractAddress.Bytes21()
+	sysconfigPayload.WriteSet = writeSets
+	contractInvokePayloads = append(contractInvokePayloads, sysconfigPayload)
+
+	// generate digital identity contract invoke pyaload
+	digitalPayload := &modules.ContractInvokePayload{
+		ContractId: syscontract.DigitalIdentityContractAddress.Bytes21(),
+		WriteSet:   digitalWriteSets,
+	}
+	contractInvokePayloads = append(contractInvokePayloads, digitalPayload)
+	return contractInvokePayloads, nil
 }
 
 func (rep *UnitRepository) UpdateAccountInfo(msg *modules.Message, account common.Address) error {

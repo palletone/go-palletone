@@ -93,7 +93,7 @@ func checkExists(cert *x509.Certificate, stub shim.ChaincodeStubInterface) error
 
 func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
 	// check with root ca holder
-	rootCAHolder, err := stub.GetSystemConfig("RootCAHolder")
+	rootCAHolder, err := stub.GetState("RootCAHolder")
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 	if err != nil {
 		return err
 	}
-	if issuer == rootCAHolder {
+	if issuer == string(rootCAHolder) {
 		if cert.Issuer.String() != rootCert.Subject.String() {
 			return fmt.Errorf("cert issuer is invalid")
 		}
@@ -166,11 +166,11 @@ func ValidateCertChain(cert *x509.Certificate, stub shim.ChaincodeStubInterface)
 // Validate CRL Issuer Signature
 func ValidateCRLIssuerSig(issuerAddr string, crl *pkix.CertificateList, stub shim.ChaincodeStubInterface) error {
 	// check ca holder
-	caHolder, err := stub.GetSystemConfig("RootCAHolder")
+	caHolder, err := stub.GetState("RootCAHolder")
 	if err != nil {
 		return err
 	}
-	if issuerAddr == caHolder {
+	if issuerAddr == string(caHolder) {
 		rootCert, err := GetRootCert(stub)
 		if err != nil {
 			return err

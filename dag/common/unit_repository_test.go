@@ -74,16 +74,18 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 
 	genesisConf.InitialParameters.MediatorInterval = 10
 
-	payload, err := GenGenesisConfigPayload(&genesisConf, &modules.Asset{})
+	payloads, err := GenGenesisConfigPayload(&genesisConf, &modules.Asset{})
 
 	if err != nil {
 		log.Println(err)
 	}
+	for _, payload := range payloads {
 
-	for _, w := range payload.WriteSet {
-		k := w.Key
-		v := w.Value
-		log.Println(k, v)
+		for _, w := range payload.WriteSet {
+			k := w.Key
+			v := w.Value
+			log.Println(k, v)
+		}
 	}
 }
 
