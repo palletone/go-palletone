@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	DefaultContractSigNum = 1
-	DefaultElectionNum    = 1
+	DefaultContractSigNum = 2
+	DefaultElectionNum    = 2
 	DefaultPassword       = "password"
 )
 

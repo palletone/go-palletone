@@ -22,6 +22,8 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
+	"github.com/fsouza/go-dockerclient"
+	"strings"
 )
 
 var debugX bool = true
@@ -333,8 +335,55 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
 	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 	//}
-	//name := fmt.Sprintf("%s:%s",cc.Name,cc.Version)
-	//newName := strings.Replace(name,":","-",-1)
+	name := fmt.Sprintf("%s:%s:%s",cc.Name,cc.Version,cfg.GetConfig().ContractAddress)
+	newName := strings.Replace(name,":","-",-1)
+	serApi := "http://localhost:2375"
+	client, err := docker.NewClient(serApi)
+	if err != nil {
+				log.Infof("-------------------1---------------------%s\n\n",err.Error())
+			}
+	info,err := client.Info()
+	if err != nil {
+		log.Infof("----------------------2--------------%s\n\n",err.Error())
+	}else{
+
+		log.Infof("========================2=================%#v\n\n",info)
+	}
+	con,err := client.InspectContainer(newName)
+	if err != nil {
+		log.Infof("----------------------3--------------%s\n\n",err.Error())
+	}else{
+		log.Infof("========================2=================%#v\n\n",con)
+
+	}
+	errC := make(chan error, 1)
+	statsC := make(chan *docker.Stats)
+	done := make(chan bool)
+	defer close(done)
+	go func() {
+		errC <- client.Stats(docker.StatsOptions{ID: con.ID, Stats: statsC, Stream: false, Done: done})
+		close(errC)
+	}()
+	var resultStats []*docker.Stats
+	for {
+		stats, ok := <-statsC
+		if !ok {
+			break
+		}
+		resultStats = append(resultStats, stats)
+	}
+	err = <-errC
+	if err != nil {
+		log.Infof("----------------------------------------%s\n\n",err.Error())
+	}
+if len(resultStats) == 0 {
+	log.Infof("--------------len(resultStats) == 0--------------------------\n\n")
+}else {
+	for _,v := range resultStats {
+		log.Infof("----------------------------------------%#v\n\n",v)
+
+	}
+}
 	//log.Debugf("chaincode newNamenewNamenewNamenewName name: %s", newName)
 	//client, err := util.NewDockerClient()
 	//if err != nil {
@@ -351,7 +400,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//	return nil,err
 	//
 	//}
-	log.Info("----------5-----------5---------55------")
+	//log.Info("----------5-----------5---------55------")
 	//errC := make(chan error, 1)
 	//statsC := make(chan *docker.Stats)
 	//done := make(chan bool)
