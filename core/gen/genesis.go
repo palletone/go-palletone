@@ -231,7 +231,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		DepositPeriod:             core.DefaultDepositPeriod,
 	}
 
-	DigitalConfig := core.DigitalConfig{
+	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
 		RootCAHolder: core.DefaultFoundationAddress,
 		RootCABytes:  core.DefaultRootCABytes,
@@ -246,7 +246,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
-		DigitalConfig:          DigitalConfig,
+		DigitalIdentityConfig:  DigitalIdentityConfig,
 		InitialParameters:      initParams,
 		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
@@ -267,7 +267,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		DepositPeriod:             core.DefaultDepositPeriod,
 	}
 
-	DigitalConfig := core.DigitalConfig{
+	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
 		RootCAHolder: core.DefaultFoundationAddress,
 		RootCABytes:  core.DefaultRootCABytes,
@@ -282,7 +282,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
-		DigitalConfig:          DigitalConfig,
+		DigitalIdentityConfig:  DigitalIdentityConfig,
 		InitialParameters:      initParams,
 		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),

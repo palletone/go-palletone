@@ -42,7 +42,7 @@ type SystemConfig struct {
 	DepositPeriod string `json:"depositPeriod"`
 }
 
-type DigitalConfig struct {
+type DigitalIdentityConfig struct {
 	// ROOT CA的持有者
 	RootCAHolder string `json:"rootCAHolder"`
 	// ROOT CA证书内容
@@ -61,7 +61,7 @@ type Genesis struct {
 	Text                      string                   `json:"text"`
 	RootCA                    string                   `json:"rootCA"`
 	SystemConfig              SystemConfig             `json:"systemConfig"`
-	DigitalConfig             DigitalConfig            `json:"digitalConfig"`
+	DigitalIdentityConfig     DigitalIdentityConfig    `json:"digitalIdentityConfig"`
 	ParentUnitHash            common.Hash              `json:"parentUnitHash"`
 	ParentUnitHeight          int64                    `json:"parentUnitHeight"`
 	InitialParameters         ChainParameters          `json:"initialParameters"`

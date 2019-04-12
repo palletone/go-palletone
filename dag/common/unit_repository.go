@@ -617,17 +617,17 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 			sysConfByte, _ := json.Marshal(genesisConf.SystemConfig)
 			writeSets = append(writeSets, modules.ContractWriteSet{Key: "sysConf", Value: []byte(sysConfByte)})
 
-		} else if strings.Compare(tt.Field(i).Name, "DigitalConfig") == 0 {
+		} else if strings.Compare(tt.Field(i).Name, "DigitalIdentityConfig") == 0 {
 			// 2019.4.12
-			t := reflect.TypeOf(genesisConf.DigitalConfig)
-			v := reflect.ValueOf(genesisConf.DigitalConfig)
+			t := reflect.TypeOf(genesisConf.DigitalIdentityConfig)
+			v := reflect.ValueOf(genesisConf.DigitalIdentityConfig)
 			for k := 0; k < t.NumField(); k++ {
 				sk := t.Field(k).Name
 				digitalWriteSets = append(digitalWriteSets,
 					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
 				log.Debugf(">>>> save digital contract state, key:%s", sk)
 			}
-			digitalConfByte, _ := json.Marshal(genesisConf.DigitalConfig)
+			digitalConfByte, _ := json.Marshal(genesisConf.DigitalIdentityConfig)
 			digitalWriteSets = append(digitalWriteSets, modules.ContractWriteSet{Key: "digitalConf", Value: []byte(digitalConfByte)})
 		} else {
 			sk := tt.Field(i).Name
