@@ -40,7 +40,9 @@ type SystemConfig struct {
 	DepositAmountForDeveloper string `json:"depositAmountForDeveloper"`
 	//保证金周期
 	DepositPeriod string `json:"depositPeriod"`
+}
 
+type DigitalIdentityConfig struct {
 	// ROOT CA的持有者
 	RootCAHolder string `json:"rootCAHolder"`
 	// ROOT CA证书内容
@@ -59,6 +61,7 @@ type Genesis struct {
 	Text                      string                   `json:"text"`
 	RootCA                    string                   `json:"rootCA"`
 	SystemConfig              SystemConfig             `json:"systemConfig"`
+	DigitalIdentityConfig     DigitalIdentityConfig    `json:"digitalIdentityConfig"`
 	ParentUnitHash            common.Hash              `json:"parentUnitHash"`
 	ParentUnitHeight          int64                    `json:"parentUnitHeight"`
 	InitialParameters         ChainParameters          `json:"initialParameters"`
@@ -129,28 +132,4 @@ func CreateInitDKS() (secStr, pubStr string) {
 	pubStr = PointToStr(pub)
 
 	return
-}
-
-// this is for root ca
-type RootCA struct {
-	// 组织/公司
-	Organization string
-	// 部门/单位
-	Department string
-	// 城市
-	Location string
-	// 省份
-	State string
-	// 国家
-	Country string
-	// 加密算法
-	Encption string
-	// 哈希签名算法ry
-	SignatureAlgorithm string
-	// 加密位数
-	EncryptionBits int8
-	// 邮箱
-	Email string
-	// 域名
-	Domain string
 }

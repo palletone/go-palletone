@@ -432,10 +432,6 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		if tx.IsContractTx() {
-			//if !pm.contractProc.CheckContractTxValid(tx, false) {
-			//	log.Debug("TxMsg", "CheckContractTxValid is false")
-			//	return nil //errResp(ErrDecode, "msg %v: Contract transaction valid fail", msg)
-			//}
 			if pm.contractProc.IsSystemContractTx(tx) {
 				continue
 			}
@@ -444,7 +440,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		p.MarkTransaction(tx.Hash())
 		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
 		if err != nil {
-			log.Infof("transaction %s not accepteable, err:%s", tx.Hash(), err.Error())
+			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 			continue
 			//return errResp(ErrDecode, "transaction %d not accepteable ", i, "err:", err)
 		}
@@ -581,21 +577,17 @@ func (pm *ProtocolManager) AdapterMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===AdapterMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
+	log.Debug("===============ProtocolManager", "avs:", avs)
+
 	event, err := avs.ToAdapterEvent()
 	if err != nil {
-		log.Debug("ElectionMsg, ToElectionEvent fail")
+		log.Debug("AdapterMsg, ToAdapterEvent fail")
 		return nil
 	}
 
-	result, err := pm.contractProc.ProcessAdapterEvent(event)
+	_, err = pm.contractProc.ProcessAdapterEvent(event)
 	if err != nil {
 		log.Debug("AdapterMsg", "ProcessAdapterEvent error:", err)
-	} else {
-		if event.AType == jury.ADAPTER_EVENT_REQUEST {
-			if result != nil {
-				p.SendAdapterEvent(*result)
-			}
-		}
 	}
 	return nil
 }

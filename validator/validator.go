@@ -86,13 +86,6 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 
 			return txCode
 		}
-		//getUtxoFromUnitAndDb := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-		//	if utxo, ok := unitUtxo[*outpoint]; ok {
-		//		return utxo, nil
-		//	}
-		//	return validate.utxoquery.GetUtxoEntry(outpoint)
-		//}
-		//txFee, _ := tx.GetTxFee(getUtxoFromUnitAndDb)
 		txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 		fee += txFee.Amount
 

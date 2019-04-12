@@ -24,6 +24,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
@@ -183,11 +184,12 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 		return shim.Error(reqStr)
 	}
 	serverCertIDs := []*CertState{}
-	val, err := stub.GetSystemConfig("RootCAHolder")
+	val, err := stub.GetState("RootCAHolder")
 	if err != nil {
 		return shim.Error(fmt.Sprintf("get ca holder error"))
 	}
-	if val == args[0] {
+	log.Debugf(">>>>> get root ca holder:%s", val)
+	if string(val) == args[0] {
 		rootcert, err := GetRootCert(stub)
 		if err != nil {
 			return shim.Error(fmt.Sprintf("get root cert error:%s", err.Error()))

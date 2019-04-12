@@ -104,23 +104,22 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	// 2. 生产unit，添加交易集、时间戳、签名
-	newUnits, err := dag.CreateUnit(&producer, txpool, when)
+	newUnit, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
 		log.Debug("GenerateUnit", "error", err.Error())
 		return nil
 	}
 	// added by yangyu, 2018.8.9
-	if newUnits == nil || len(newUnits) == 0 || newUnits[0].IsEmpty() {
-		log.Info("No unit need to be packaged for now.", "unit", newUnits[0])
+	if newUnit == nil || newUnit.IsEmpty() {
+		log.Info("No unit need to be packaged for now.", "unit", newUnit)
 		return nil
 	}
 
-	pendingUnit := &newUnits[0]
 	// dag.setUnitHeader(pendingUnit)
 
-	pendingUnit.UnitHeader.Time = when.Unix()
-	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
-	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	newUnit.UnitHeader.Time = when.Unix()
+	newUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
+	newUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	//currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()
 	//pendingUnit.UnitHeader.ParentsHash[0] = currentHash
 	//header, err := dag.GetHeaderByHash(currentHash)
@@ -134,29 +133,31 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	//} else {
 	//	pendingUnit.UnitHeader.Number.Index = header.Number.Index + 1
 	//}
-	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
-	pendingUnit.Hash()
+	newUnit.UnitHeader.GroupPubKey = groupPubKey
+	newUnit.Hash()
 
-	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
+	sign_unit, err1 := dagcommon.GetUnitWithSig(newUnit, ks, producer)
 	if err1 != nil {
 		log.Debug(fmt.Sprintf("GetUnitWithSig error: %v", err))
 		return nil
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
+	log.Debugf("Generate new unit[%s],size:%s, parent unit[%s]", sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String())
 
-	//log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
+	//TODO add PostChainEvents
+	go func() {
+		var (
+			events        = make([]interface{}, 0, 1)
+			coalescedLogs []*types.Log
+		)
+		events = append(events, modules.ChainEvent{newUnit, common.Hash{}, nil})
+		dag.PostChainEvents(events, coalescedLogs)
+	}()
 
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
 	}
-	//TODO add PostChainEvents
-	var (
-		events        = make([]interface{}, 0, 1)
-		coalescedLogs []*types.Log
-	)
-	events = append(events, modules.ChainEvent{pendingUnit, common.Hash{}, nil})
-	dag.PostChainEvents(events, coalescedLogs)
 	return sign_unit
 }
 
@@ -172,19 +173,15 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
 
 	// 2. 更新状态
+	log.Debug("start apply  unit ...........")
 	if !dag.ApplyUnit(newUnit) {
 		return false
 	}
+	log.Debug("end apply  unit ...........")
 
-	// 3. 将unit添加到本地DB
-	//err := dag.SaveUnit(newUnit, false)
-	//if err != nil {
-	//	log.Debug("unit_production", "PushUnit err:", err)
-	//	return false
-	//}
-	//dag.SaveUnit(newUnit, txpool, false)
+	log.Debug("start save  unit ...........")
 	dag.Memdag.AddUnit(newUnit, txpool)
-
+	log.Debug("end  save unit ...........")
 	return true
 }
 

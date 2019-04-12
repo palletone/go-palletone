@@ -51,7 +51,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -359,7 +359,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	log.Debug("Start create unit...")
 	rep.lock.RLock()
 	begin := time.Now()
@@ -372,7 +372,6 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	//	log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
 	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	//}
-	units := []modules.Unit{}
 
 	// step1. get mediator responsible for asset (for now is ptn)
 	assetId := dagconfig.DagConfig.GetGasToken()
@@ -453,7 +452,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	log.Infof("core.DeriveSha cost time %s", time.Since(begin))
 	// step9. generate genesis unit header
 	header.TxRoot = root
-	unit := modules.Unit{}
+	unit := &modules.Unit{}
 	unit.UnitHeader = &header
 	unit.UnitHash = header.Hash()
 
@@ -462,9 +461,8 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 
 	// step11. set size
 	unit.UnitSize = unit.Size()
-	units = append(units, unit)
-
-	return units, nil
+	//units = append(units, unit)
+	return unit, nil
 }
 func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 	fee := uint64(0)
@@ -586,8 +584,9 @@ func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Tr
 为创世单元生成ConfigPayload
 To generate config payload for genesis unit
 */
-func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*modules.ContractInvokePayload, error) {
+func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([]*modules.ContractInvokePayload, error) {
 	writeSets := []modules.ContractWriteSet{}
+	digitalWriteSets := []modules.ContractWriteSet{}
 
 	tt := reflect.TypeOf(*genesisConf)
 	vv := reflect.ValueOf(*genesisConf)
@@ -616,6 +615,18 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 			sysConfByte, _ := json.Marshal(genesisConf.SystemConfig)
 			writeSets = append(writeSets, modules.ContractWriteSet{Key: "sysConf", Value: []byte(sysConfByte)})
 
+		} else if strings.Compare(tt.Field(i).Name, "DigitalIdentityConfig") == 0 {
+			// 2019.4.12
+			t := reflect.TypeOf(genesisConf.DigitalIdentityConfig)
+			v := reflect.ValueOf(genesisConf.DigitalIdentityConfig)
+			for k := 0; k < t.NumField(); k++ {
+				sk := t.Field(k).Name
+				digitalWriteSets = append(digitalWriteSets,
+					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
+				log.Debugf(">>>> save digital contract state, key:%s", sk)
+			}
+			digitalConfByte, _ := json.Marshal(genesisConf.DigitalIdentityConfig)
+			digitalWriteSets = append(digitalWriteSets, modules.ContractWriteSet{Key: "digitalConf", Value: []byte(digitalConfByte)})
 		} else {
 			sk := tt.Field(i).Name
 			if strings.Contains(sk, "Initial") {
@@ -629,10 +640,20 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) (*
 	writeSets = append(writeSets,
 		modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
-	payload := &modules.ContractInvokePayload{}
-	payload.ContractId = syscontract.SysConfigContractAddress.Bytes21()
-	payload.WriteSet = writeSets
-	return payload, nil
+	contractInvokePayloads := []*modules.ContractInvokePayload{}
+	// generate systemcontract invoke payload
+	sysconfigPayload := &modules.ContractInvokePayload{}
+	sysconfigPayload.ContractId = syscontract.SysConfigContractAddress.Bytes21()
+	sysconfigPayload.WriteSet = writeSets
+	contractInvokePayloads = append(contractInvokePayloads, sysconfigPayload)
+
+	// generate digital identity contract invoke pyaload
+	digitalPayload := &modules.ContractInvokePayload{
+		ContractId: syscontract.DigitalIdentityContractAddress.Bytes21(),
+		WriteSet:   digitalWriteSets,
+	}
+	contractInvokePayloads = append(contractInvokePayloads, digitalPayload)
+	return contractInvokePayloads, nil
 }
 
 func (rep *UnitRepository) UpdateAccountInfo(msg *modules.Message, account common.Address) error {

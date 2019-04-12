@@ -197,3 +197,17 @@ func (mr *MockproducerMockRecorder) UpdateMediatorsDKG(isRenew interface{}) *gom
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMediatorsDKG", reflect.TypeOf((*Mockproducer)(nil).UpdateMediatorsDKG), isRenew)
 }
+
+// IsEnabledGroupSign mocks base method
+func (m *Mockproducer) IsEnabledGroupSign() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsEnabledGroupSign")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsEnabledGroupSign indicates an expected call of IsEnabledGroupSign
+func (mr *MockproducerMockRecorder) IsEnabledGroupSign() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEnabledGroupSign", reflect.TypeOf((*Mockproducer)(nil).IsEnabledGroupSign))
+}

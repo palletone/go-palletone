@@ -93,7 +93,7 @@ func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface, args
 }
 
 func (d *DebugChainCode) getRootCABytes(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	val, err := stub.GetSystemConfig("RootCABytes")
+	val, err := stub.GetState("RootCABytes")
 	if err != nil {
 		return shim.Error(err.Error())
 	}
