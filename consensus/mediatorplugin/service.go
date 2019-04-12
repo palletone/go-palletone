@@ -121,7 +121,7 @@ type MediatorPlugin struct {
 	// 其他节点必须设为false，否则容易导致分叉
 	productionEnabled bool
 
-	// 允许本节点的mediator可以连续生产unit
+	// 允许本节点的mediator可以连续生产unit, 只能使用一次
 	consecutiveProduceEnabled bool
 	// 本节点要求的mediator参与率，低于该参与率不生产unit
 	requiredParticipation uint32
@@ -198,7 +198,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
-		go log.Info(fmt.Sprintf("Launching unit production for %v mediators.", len(mp.mediators)))
+		log.Info(fmt.Sprintf("Launching unit production for %v mediators.", len(mp.mediators)))
 
 		if mp.productionEnabled {
 			dag := mp.dag
