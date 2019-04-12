@@ -151,7 +151,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			events        = make([]interface{}, 0, 1)
 			coalescedLogs []*types.Log
 		)
-		events = append(events, modules.ChainEvent{pendingUnit, common.Hash{}, nil})
+		events = append(events, modules.ChainEvent{newUnit, common.Hash{}, nil})
 		dag.PostChainEvents(events, coalescedLogs)
 	}()
 
