@@ -110,7 +110,9 @@ type ChaincodeStubInterface interface {
 	OutChainTransaction(outChainName string, params []byte) ([]byte, error)
 	OutChainQuery(outChainName string, params []byte) ([]byte, error)
 
+	//retrun local jury's signature
 	SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
+	//return all jury's signature and answer,format:
 	RecvJury(msgType uint32, consultContent []byte, timeout uint32) ([]byte, error)
 
 	// DelState records the specified `key` to be deleted in the writeset of

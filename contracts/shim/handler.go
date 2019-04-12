@@ -706,7 +706,7 @@ func (handler *Handler) handleSendJury(collection string, msgType uint32, consul
 	// Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending OUTCHAIN_QUERY", msg.Txid))
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending ChaincodeMessage_SEND_JURY", msg.Txid))
 	}
 
 	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
@@ -729,13 +729,13 @@ func (handler *Handler) handleRecvJury(collection string, msgType uint32, consul
 	// Construct payload for PUT_STATE
 	payloadBytes, _ := proto.Marshal(&pb.RecvJury{Collection: collection, MsgType: msgType, ConsultContent: consultContent, Timeout: timeout})
 
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_SEND_JURY, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RECV_JURY, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RECV_JURY)
 
 	// Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending OUTCHAIN_QUERY", msg.Txid))
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending ChaincodeMessage_RECV_JURY", msg.Txid))
 	}
 
 	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
