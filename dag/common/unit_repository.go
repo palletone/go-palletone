@@ -51,7 +51,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -359,7 +359,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	log.Debug("Start create unit...")
 	rep.lock.RLock()
 	begin := time.Now()
@@ -372,7 +372,6 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	//	log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
 	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
 	//}
-	units := []modules.Unit{}
 
 	// step1. get mediator responsible for asset (for now is ptn)
 	assetId := dagconfig.DagConfig.GetGasToken()
@@ -453,7 +452,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	log.Infof("core.DeriveSha cost time %s", time.Since(begin))
 	// step9. generate genesis unit header
 	header.TxRoot = root
-	unit := modules.Unit{}
+	unit := &modules.Unit{}
 	unit.UnitHeader = &header
 	unit.UnitHash = header.Hash()
 
@@ -462,9 +461,8 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 
 	// step11. set size
 	unit.UnitSize = unit.Size()
-	units = append(units, unit)
-
-	return units, nil
+	//units = append(units, unit)
+	return unit, nil
 }
 func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 	fee := uint64(0)
