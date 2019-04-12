@@ -659,11 +659,12 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		parentsHash := block.ParentHash()
 		for _, parentHash := range parentsHash {
 			//fmt.Println("parentHash=>", parentHash)
-
+			log.Debug("Importing propagated block insert DAG Enter isHeaderExist")
 			if !f.isHeaderExist(parentHash) {
 				log.Warn("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
 				return
 			}
+			log.Debug("Importing propagated block insert DAG End isHeaderExist")
 		}
 
 		// Quickly validate the header and propagate the block if it passes
@@ -671,7 +672,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		case nil:
 			// All ok, quickly propagate to our peers
 			propBroadcastOutTimer.UpdateSince(block.ReceivedAt)
-			go f.broadcastBlock(block, true /*, noBroadcastMediator*/)
+			go f.broadcastBlock(block, true)
 
 		case dagerrors.ErrFutureBlock:
 		// Weird future block, don't fail, but neither propagate
