@@ -166,30 +166,14 @@ func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	return rep.getUnit(hash)
 }
 func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
-	// 1. get chainindex
-	//height, err := dagdb.GetNumberWithUnitHash(hash)
-	//if err != nil {
-	//	return nil, err
-	//}
-	////dagdb.logger.Debug("index info:", "height", height.String(), "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
-	//if err != nil {
-	//	log.Error("getChainUnit when GetUnitNumber failed", "error:", err)
-	//	return nil, err
-	//}
-	// 2. unit header
 	uHeader, err := rep.dagdb.GetHeaderByHash(hash)
 	if err != nil {
 		log.Error("getChainUnit when GetHeaderByHash failed ", "error", err, "hash", hash.String())
-		//log.Error("index info:", "height", height, "index", height.Index, "asset", height.AssetID, "ismain", height.IsMain)
 		return nil, err
 	}
-	// get unit hash
-	//uHash := common.Hash{}
-	//uHash.SetBytes(hash.Bytes())
-	// get transaction list
 	txs, err := rep.dagdb.GetUnitTransactions(hash)
 	if err != nil {
-		log.Error("getChainUnit when GetUnitTransactions failed , error:", err)
+		log.Error("getChainUnit when GetUnitTransactions failed ", "error", err)
 		return nil, err
 	}
 	// generate unit
