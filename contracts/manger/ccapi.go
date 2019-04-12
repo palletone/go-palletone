@@ -24,6 +24,7 @@ import (
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/fsouza/go-dockerclient"
 	"strings"
+	"github.com/palletone/go-palletone/vm/common"
 )
 
 var debugX bool = true
@@ -337,8 +338,9 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//}
 	name := fmt.Sprintf("%s:%s:%s",cc.Name,cc.Version,cfg.GetConfig().ContractAddress)
 	newName := strings.Replace(name,":","-",-1)
-	serApi := "http://localhost:2375"
-	client, err := docker.NewClient(serApi)
+	//serApi := "http://localhost:2375"
+	//client, err := docker.NewClient(serApi)
+	client, err := util.NewDockerClient()
 	if err != nil {
 				log.Infof("-------------------1---------------------%s\n\n",err.Error())
 			}
