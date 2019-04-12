@@ -757,7 +757,7 @@ func (d *Dag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*m
 	return d.unstableStateRep.GetContractStatesByPrefix(id, prefix)
 }
 
-func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	return d.unstableUnitRep.CreateUnit(mAddr, txpool, t)
 }
 

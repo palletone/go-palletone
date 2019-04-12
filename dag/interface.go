@@ -69,7 +69,7 @@ type IDag interface {
 	ParentsIsConfirmByHash(hash common.Hash) bool
 	IsHeaderExist(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 
 	// validate group signature by hash
 	//ValidateUnitGroupSig(hash common.Hash) (bool, error)

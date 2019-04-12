@@ -104,23 +104,22 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	// 2. 生产unit，添加交易集、时间戳、签名
-	newUnits, err := dag.CreateUnit(&producer, txpool, when)
+	newUnit, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
 		log.Debug("GenerateUnit", "error", err.Error())
 		return nil
 	}
 	// added by yangyu, 2018.8.9
-	if newUnits == nil || len(newUnits) == 0 || newUnits[0].IsEmpty() {
-		log.Info("No unit need to be packaged for now.", "unit", newUnits[0])
+	if newUnit == nil || newUnit.IsEmpty() {
+		log.Info("No unit need to be packaged for now.", "unit", newUnit)
 		return nil
 	}
 
-	pendingUnit := &newUnits[0]
 	// dag.setUnitHeader(pendingUnit)
 
-	pendingUnit.UnitHeader.Time = when.Unix()
-	pendingUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
-	pendingUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
+	newUnit.UnitHeader.Time = when.Unix()
+	newUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
+	newUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	//currentHash := dag.HeadUnitHash() //dag.GetHeadUnitHash()
 	//pendingUnit.UnitHeader.ParentsHash[0] = currentHash
 	//header, err := dag.GetHeaderByHash(currentHash)
@@ -134,16 +133,17 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	//} else {
 	//	pendingUnit.UnitHeader.Number.Index = header.Number.Index + 1
 	//}
-	pendingUnit.UnitHeader.GroupPubKey = groupPubKey
-	pendingUnit.Hash()
+	newUnit.UnitHeader.GroupPubKey = groupPubKey
+	newUnit.Hash()
 
-	sign_unit, err1 := dagcommon.GetUnitWithSig(pendingUnit, ks, producer)
+	sign_unit, err1 := dagcommon.GetUnitWithSig(newUnit, ks, producer)
 	if err1 != nil {
 		log.Debug(fmt.Sprintf("GetUnitWithSig error: %v", err))
 		return nil
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
+	log.Debugf("Generate new unit[%s],size:%d, parent unit[%s]", sign_unit.UnitHash.String(), sign_unit.UnitSize, newUnit.UnitHeader.ParentsHash[0].String())
 
 	//TODO add PostChainEvents
 	go func() {
