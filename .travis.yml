@@ -1,5 +1,9 @@
-os: linux
-dist: xenial
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+    - os: osx
+      osx_image: xcode10
 sudo: required
 language: 
     - go
@@ -7,6 +11,7 @@ go:
     - 1.10.8
 script:
     - go build ./cmd/gptn
+    - make gptn
     - $GOPATH/bin/goveralls -service=travis-ci
     - cp gptn bdd/node
     - cd bdd/node
