@@ -366,7 +366,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		}
 
 		// 2. 验证本 unit
-		if !dag.ValidateUnitExceptGroupSig(newUnit, false) {
+		if dag.ValidateUnitExceptGroupSig(newUnit) != nil {
 			log.Debugf("the unit validate except group sig fail: %v", newUnit.UnitHash.TerminalString())
 			return
 		}

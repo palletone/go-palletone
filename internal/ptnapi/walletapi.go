@@ -363,7 +363,6 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
-
 	var addr common.Address
 	var keys []string
 	from, _ := common.StringToAddress(proofTransactionGenParams.From)
@@ -375,15 +374,6 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			continue
 		}
 		for _, txin := range payload.Inputs {
-			/*inpoint := modules.OutPoint{
-				TxHash:       txin.PreviousOutPoint.TxHash,
-				OutIndex:     txin.PreviousOutPoint.OutIndex,
-				MessageIndex: txin.PreviousOutPoint.MessageIndex,
-			}
-			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
-			if eerr != nil {
-				return common.Hash{}, err
-			}*/
 			TxHash := txin.PreviousOutPoint.TxHash.String()
 			OutIndex := txin.PreviousOutPoint.OutIndex
 			MessageIndex := txin.PreviousOutPoint.MessageIndex
@@ -395,22 +385,22 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			}
 		}
 	}
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	//const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var duration *uint64 
+    const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
-	//var duration
-	//if duration == nil {
-	d = 300 * time.Second
-	//} else if *duration > max {
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return common.Hash{}, err
+	} else {
+		d = time.Duration(*duration) * time.Second
+	}
 
-	//return common.Hash{}, err
-	//} else {
-	//	d = time.Duration(*duration) * time.Second
-	//}
 	ks := s.b.GetKeyStore()
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
 		errors.New("get addr by outpoint is err")
-		//return nil, err
 		return common.Hash{}, err
 	}
 
@@ -476,14 +466,14 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	}
 	var OutputJson []walletjson.OutputJson
 	// Add all transaction outputs to the transaction after performing
-	//	// some validity checks.
-	//	//only support mainnet
-	//	var params *chaincfg.Params
+	// some validity checks.
+	// only support mainnet
+	// var params *chaincfg.Params
 	for _, addramt := range c.Amounts {
 		encodedAddr := addramt.Address
 		ptnAmt := addramt.Amount
 		amount := ptnjson.Ptn2Dao(ptnAmt)
-		//		// Ensure amount is in the valid range for monetary amounts.
+		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
 			return "", &ptnjson.RPCError{
 				Code:    ptnjson.ErrRPCType,
@@ -522,7 +512,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		pload.AddTxOut(txOut)
 		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: assetId.String(), ToAddress: addr.String()})
 	}
-	//	// Set the Locktime, if given.
+	// Set the Locktime, if given.
 	if c.LockTime != nil {
 		pload.LockTime = uint32(*c.LockTime)
 	}
@@ -537,27 +527,6 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
-	//mtx.TxHash = mtx.Hash()
-	// sign mtx
-	/*for index, input := range inputjson {
-		hashforsign, err := tokenengine.CalcSignatureHash(mtx, int(input.MessageIndex), int(input.OutIndex), nil)
-		if err != nil {
-			return "", err
-		}
-		sh := common.BytesToHash(hashforsign)
-		inputjson[index].HashForSign = sh.String()
-	}
-	ProofJson := walletjson.ProofJson{}
-	ProofJson.Inputs = inputjson
-	ProofJson.Outputs = OutputJson
-	ProofJson.Proof = string(textPayload.MainData)
-	ProofJson.Extra = string(textPayload.ExtraData)
-	txproofjson := walletjson.TxProofJson{}
-	txproofjson.Payload = append(txproofjson.Payload,ProofJson)
-	bytetxproofjson, err := json.Marshal(txproofjson)
-	if err != nil {
-		return "", err
-	}*/
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
@@ -681,10 +650,10 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		return common.Hash{}, err
 	}
 	utxos := core.Utxos{}
-	ptn := modules.NewPTNIdType().String()
+	ptn := dagconfig.DagConfig.GetGasToken()
 	for _, json := range utxoJsons {
 		//utxos = append(utxos, &json)
-		if json.Asset == ptn {
+		if json.Asset == ptn.String() {
 			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
 		}
 	}
@@ -769,14 +738,8 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
 				return common.Hash{}, err
-				//fmt.Println("get addr by outpoint is err")
 			}
 		}
-		/*for _, txout := range payload.Outputs {
-			err = tokenengine.ScriptValidate(txout.PkScript, tx, 0, 0)
-			if err != nil {
-			}
-		}*/
 	}
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration

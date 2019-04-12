@@ -34,7 +34,10 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		select {
 		case event := <-self.newProducedUnitCh:
 			// 广播给其他活跃 mediator，进行验证并群签名
-			self.BroadcastNewProducedUnit(event.Unit)
+			if self.producer.IsEnabledGroupSign() {
+				self.BroadcastNewProducedUnit(event.Unit)
+			}
+
 			self.BroadcastUnit(event.Unit, true)
 			self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 

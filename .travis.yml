@@ -7,6 +7,7 @@ go:
     - 1.10.8
 script:
     - go build ./cmd/gptn
+    - make gptn
     - $GOPATH/bin/goveralls -service=travis-ci
     - cp gptn bdd/node
     - cd bdd/node
@@ -29,6 +30,7 @@ before_install:
     - go get -u github.com/palletone/adaptor
     - go get -u github.com/palletone/btc-adaptor
     - go get -u github.com/palletone/eth-adaptor
+    - go get -u github.com/palletone/digital-identity/...
     - source ./gomockgen.sh
  
 install: 

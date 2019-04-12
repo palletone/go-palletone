@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -76,6 +77,14 @@ type Dag struct {
 	mediatorVoteTally      voteTallys
 	totalVotingStake       uint64
 	mediatorCountHistogram []uint64
+
+	//SPV
+	rmLogsFeed    event.Feed
+	chainFeed     event.Feed
+	chainSideFeed event.Feed
+	chainHeadFeed event.Feed
+	logsFeed      event.Feed
+	scope         event.SubscriptionScope
 }
 
 //type MemUtxos map[modules.OutPoint]*modules.Utxo
@@ -197,7 +206,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	//}
 	uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
 	if err1 != nil {
-		log.Debug("getChainUnit when GetHeaderByHash failed ", "error:", err1, "hash", number.String())
+		log.Info("getChainUnit when GetHeaderByNumber failed ", "error:", err1, "hash", number.String())
 		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
@@ -214,9 +223,9 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 //	return d.unstableUnitRep.GetPrefix(*(*[]byte)(unsafe.Pointer(&prefix)))
 //}
 
-func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
-	return d.ChainHeadFeed.Subscribe(ch)
-}
+//func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
+//	return d.ChainHeadFeed.Subscribe(ch)
+//}
 
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
@@ -240,13 +249,11 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
-	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
-	//defer func(start time.Time) {
-	//	if len(units) > 0 {
-	//		log.Debug("Dag InsertDag", "elapsed", time.Since(start), "unit index start", units[0].NumberU64(), "size:", len(units))
-	//	}
-	//
-	//}(time.Now())
+	var (
+		events        = make([]interface{}, 0, len(units))
+		coalescedLogs []*types.Log
+	)
+
 	count := int(0)
 	for i, u := range units {
 		// todo 此处应判断第0个unit的父unit是否已存入本节点
@@ -268,22 +275,21 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		}
 
 		// append by albert·gou, 利用 unit 更新相关状态
-		time := time.Unix(u.Timestamp(), 0)
-		log.Info(fmt.Sprint("Received unit("+u.UnitHash.TerminalString()+") #", u.NumberU64(),
-			" parent(", u.ParentHash()[0].TerminalString(), ") @", time.Format("2006-01-02 15:04:05"),
-			" signed by ", u.Author().Str()))
 		d.ApplyUnit(u)
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
 		if err := d.SaveUnit(u, txpool, false); err != nil {
-			fmt.Errorf("Insert dag, save error: %s", err.Error())
 			return count, err
 		}
 		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
 		log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
+		events = append(events, modules.ChainEvent{u, common.Hash{}, nil})
 	}
+
+	//TODO add PostChainEvents
+	d.PostChainEvents(events, coalescedLogs)
 
 	return count, nil
 }
@@ -317,7 +323,7 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	h, _ := d.GetHeaderByHash(hash)
 	return h != nil
 }
-func (d *Dag) Exists(hash common.Hash) bool {
+func (d *Dag) IsHeaderExist(hash common.Hash) bool {
 	//if unit, err := d.unstableUnitRep.getChainUnit(hash); err == nil && unit != nil {
 	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
 	//	return true
@@ -391,11 +397,12 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go
-func (d *Dag) VerifyHeader(header *modules.Header, seal bool) error {
+func (d *Dag) VerifyHeader(header *modules.Header) error {
 	// step1. check unit signature, should be compare to mediator list
 	unitState := d.validate.ValidateHeader(header)
 	if unitState != nil {
-		return fmt.Errorf("Validate unit signature error, errno=%s", unitState.Error())
+		log.Errorf("Validate unit header error, errno=%s", unitState.Error())
+		return unitState
 	}
 
 	// step2. check extra data
@@ -750,7 +757,7 @@ func (d *Dag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*m
 	return d.unstableStateRep.GetContractStatesByPrefix(id, prefix)
 }
 
-func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	return d.unstableUnitRep.CreateUnit(mAddr, txpool, t)
 }
 
@@ -775,19 +782,11 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
-	//var parent_hash common.Hash
-	//if !isGenesis {
-	//	parent_hash = unit.ParentHash()[0]
-	//} else {
-	//	parent_hash = unit.Hash()
-	//}
-
-	//log.Debug("start save dag", "index", unit.UnitHeader.Index(), "hash", unit.Hash())
 
 	if !isGenesis {
-		if d.Exists(unit.Hash()) {
+		if d.IsHeaderExist(unit.Hash()) {
 			log.Debug("dag:the unit is already exist in leveldb. ", "unit_hash", unit.Hash().String())
-			return errors.ErrUnitExist //fmt.Errorf("SaveDag, unit(%s) is already existing.", unit.Hash().String())
+			return errors.ErrUnitExist
 		}
 		// step2. validate unit
 		err := d.validateUnit(unit)
@@ -1151,3 +1150,53 @@ func (d *Dag) UpdateSysParams() error {
 	version.TxIndex = 0
 	return d.stableStateRep.UpdateSysParams(version)
 }
+
+//SPV
+// SubscribeRemovedLogsEvent registers a subscription of RemovedLogsEvent.
+func (bc *Dag) SubscribeRemovedLogsEvent(ch chan<- modules.RemovedLogsEvent) event.Subscription {
+	return bc.scope.Track(bc.rmLogsFeed.Subscribe(ch))
+}
+
+// SubscribeChainHeadEvent registers a subscription of ChainHeadEvent.
+func (bc *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
+	return bc.scope.Track(bc.chainHeadFeed.Subscribe(ch))
+}
+
+// SubscribeLogsEvent registers a subscription of []*types.Log.
+func (bc *Dag) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription {
+	return bc.scope.Track(bc.logsFeed.Subscribe(ch))
+}
+
+// SubscribeChainEvent registers a subscription of ChainEvent.
+func (bc *Dag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription {
+	return bc.scope.Track(bc.chainFeed.Subscribe(ch))
+}
+
+// PostChainEvents iterates over the events generated by a chain insertion and
+// posts them into the event feed.
+// TODO: Should not expose PostChainEvents. The chain events should be posted in WriteBlock.
+func (bc *Dag) PostChainEvents(events []interface{}, logs []*types.Log) {
+	log.Debug("enter PostChainEvents")
+	// post event logs for further processing
+	if logs != nil {
+		bc.logsFeed.Send(logs)
+	}
+	for _, event := range events {
+		switch ev := event.(type) {
+		case modules.ChainEvent:
+			log.Debug("======PostChainEvents======", "ev", ev)
+			bc.chainFeed.Send(ev)
+
+		case modules.ChainHeadEvent:
+			bc.chainHeadFeed.Send(ev)
+
+			//case modules.ChainSideEvent:
+			//	bc.chainSideFeed.Send(ev)
+		}
+	}
+}
+
+// SubscribeChainSideEvent registers a subscription of ChainSideEvent.
+//func (bc *Dag) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {
+//	return bc.scope.Track(bc.chainSideFeed.Subscribe(ch))
+//}

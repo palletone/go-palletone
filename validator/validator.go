@@ -70,6 +70,9 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 	var coinbase *modules.Transaction
 	for txIndex, tx := range txs {
 		txHash := tx.Hash()
+		if validate.checkTxIsExist(tx) {
+			return TxValidationCode_DUPLICATE_TXID
+		}
 		if txIndex == 0 && tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 			needCheckCoinbase = true
 			coinbase = tx
@@ -83,13 +86,6 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 
 			return txCode
 		}
-		//getUtxoFromUnitAndDb := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-		//	if utxo, ok := unitUtxo[*outpoint]; ok {
-		//		return utxo, nil
-		//	}
-		//	return validate.utxoquery.GetUtxoEntry(outpoint)
-		//}
-		//txFee, _ := tx.GetTxFee(getUtxoFromUnitAndDb)
 		txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 		fee += txFee.Amount
 
@@ -122,69 +118,6 @@ return all transactions' fee
 func (validate *Validate) ValidateTransactions(txs modules.Transactions) error {
 	code := validate.validateTransactions(txs)
 	return NewValidateError(code)
-	//if txs == nil || txs.Len() < 1 {
-	//	if !dagconfig.DefaultConfig.IsRewardCoin {
-	//		return nil
-	//	}
-	//	return fmt.Errorf("Transactions should not be empty.")
-	//}
-	//
-	//// todo zxl overflow
-	//txFlags := map[common.Hash]ValidationCode{}
-	//isSuccess := bool(true)
-	//// all transactions' new worldState
-	////worldState := map[string]map[string]interface{}{}
-	//
-	//for txIndex, tx := range *txs {
-	//	txHash := tx.Hash()
-	//	// validate transaction id duplication
-	//	if _, ok := txFlags[txHash]; ok == true {
-	//		isSuccess = false
-	//		log.Info("ValidateTx", "txhash", txHash, "error validate code", TxValidationCode_DUPLICATE_TXID)
-	//		txFlags[txHash] = TxValidationCode_DUPLICATE_TXID
-	//		continue
-	//	}
-	//	// validate common property
-	//	//The first Tx(txIdx==0) is a coinbase tx.
-	//
-	//	txCode := validate.validateTx(tx, txIndex == 0)
-	//	if txCode != TxValidationCode_VALID {
-	//		log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
-	//		isSuccess = false
-	//		txFlags[txHash] = txCode
-	//		continue
-	//	}
-	//	// validate total fee
-	//	if isGenesis == false && txIndex != 0 {
-	//		txFee, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
-	//		if err != nil {
-	//			log.Info("ValidateTx", "txhash", txHash, "error validate code", TxValidationCode_INVALID_FEE)
-	//			return err
-	//		}
-	//		fee += txFee.Amount
-	//	}
-	//	txFlags[txHash] = TxValidationCode_VALID
-	//}
-	//
-	//// check coinbase fee and income
-	//if !isGenesis && isSuccess {
-	//	if len((*txs)[0].TxMessages) != 1 {
-	//		return fmt.Errorf("Unit coinbase length is error.")
-	//	}
-	//
-	//	coinIn, ok := (*txs)[0].TxMessages[0].Payload.(*modules.PaymentPayload)
-	//	if !ok {
-	//		return fmt.Errorf("Coinbase payload type error.")
-	//	}
-	//	if len(coinIn.Outputs) != 1 {
-	//		return fmt.Errorf("Coinbase outputs error0.")
-	//	}
-	//	income := uint64(fee) + ComputeRewards()
-	//	if coinIn.Outputs[0].Value < income {
-	//		return fmt.Errorf("Coinbase outputs error: 1.%d", income)
-	//	}
-	//}
-	//return nil
 }
 func ComputeRewards() uint64 {
 	var rewards uint64

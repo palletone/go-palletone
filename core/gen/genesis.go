@@ -152,28 +152,31 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		App:     modules.APP_PAYMENT,
 		Payload: pay,
 	}
-
-	// step2, generate global config payload message
-	configPayload, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
+	// step2 generate text payload
+	msg1 := &modules.Message{
+		App:     modules.APP_DATA,
+		Payload: &modules.DataPayload{MainData: []byte("Genesis Text"), ExtraData: []byte(genesis.Text)},
+	}
+	tx := &modules.Transaction{
+		TxMessages: []*modules.Message{msg0, msg1},
+	}
+	// step3, generate global config payload message
+	configPayloads, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
 		log.Error("Generate genesis unit config payload error.")
 		return nil, nil
 	}
-	msg1 := &modules.Message{
-		App:     modules.APP_CONTRACT_INVOKE,
-		Payload: configPayload,
-	}
-	msg2 := &modules.Message{
-		App:     modules.APP_DATA,
-		Payload: &modules.DataPayload{MainData: []byte("Genesis Text"), ExtraData: []byte(genesis.Text)},
+
+	for _, payload := range configPayloads {
+		newMsg := &modules.Message{
+			App:     modules.APP_CONTRACT_INVOKE,
+			Payload: payload,
+		}
+		tx.TxMessages = append(tx.TxMessages, newMsg)
 	}
 
+	// step4, generate inital mediator info payload
 	initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
-
-	// step3, genesis transaction
-	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{msg0, msg1, msg2},
-	}
 	tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
 
 	// tx.CreationDate = tx.CreateDate()
@@ -228,6 +231,11 @@ func DefaultGenesisBlock() *core.Genesis {
 		DepositPeriod:             core.DefaultDepositPeriod,
 	}
 
+	DigitalIdentityConfig := core.DigitalIdentityConfig{
+		// default root ca holder, 默认是基金会地址
+		RootCAHolder: core.DefaultFoundationAddress,
+		RootCABytes:  core.DefaultRootCABytes,
+	}
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
@@ -238,6 +246,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
+		DigitalIdentityConfig:  DigitalIdentityConfig,
 		InitialParameters:      initParams,
 		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
@@ -258,6 +267,11 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		DepositPeriod:             core.DefaultDepositPeriod,
 	}
 
+	DigitalIdentityConfig := core.DigitalIdentityConfig{
+		// default root ca holder, 默认是基金会地址
+		RootCAHolder: core.DefaultFoundationAddress,
+		RootCABytes:  core.DefaultRootCABytes,
+	}
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
@@ -268,6 +282,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		ChainID:                1,
 		TokenHolder:            core.DefaultTokenHolder,
 		SystemConfig:           SystemConfig,
+		DigitalIdentityConfig:  DigitalIdentityConfig,
 		InitialParameters:      initParams,
 		ImmutableParameters:    core.NewImmutChainParams(),
 		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),

@@ -145,7 +145,8 @@ func getDockerHostConfig() *docker.HostConfig {
 		ReadonlyRootfs:   viper.GetBool(dockerKey("ReadonlyRootfs")),
 		SecurityOpt:      viper.GetStringSlice(dockerKey("SecurityOpt")),
 		CgroupParent:     viper.GetString(dockerKey("CgroupParent")),
-		Memory:           getInt64("Memory"),
+		//Memory:           getInt64("Memory"),
+		Memory:           int64(104857600), //100mB
 		MemorySwap:       getInt64("MemorySwap"),
 		MemorySwappiness: getInt64("MemorySwappiness"),
 		OOMKillDisable:   viper.GetBool(dockerKey("OomKillDisable")),

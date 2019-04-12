@@ -40,7 +40,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -235,10 +234,11 @@ func getPeerAddress() string {
 	if peerAddress != "" {
 		return peerAddress
 	}
-	//if peerAddress = viper.GetString("peer.address"); peerAddress == "" {
-	if peerAddress = cfg.GetConfig().ContractAddress; peerAddress == "" {
-		log.Error("peer.address not configured, can't connect to peer")
-	}
+	////if peerAddress = viper.GetString("peer.address"); peerAddress == "" {
+	//if peerAddress = cfg.GetConfig().ContractAddress; peerAddress == "" {
+	//	log.Error("peer.address not configured, can't connect to peer")
+	//}
+	peerAddress = viper.GetString("chaincode.peer.address")
 	return peerAddress
 }
 

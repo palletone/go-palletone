@@ -249,7 +249,7 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 		utxo := inter.(*modules.Utxo)
 		return utxo, nil
 	}
-	log.Debug("Outpoint and Utxo not in pool. query from db")
+	log.Debugf("Outpoint[%s] and Utxo not in pool. query from db", outpoint.String())
 	return pool.unit.GetUtxoEntry(outpoint)
 }
 
@@ -288,10 +288,8 @@ func (pool *TxPool) loop() {
 		case ev := <-pool.chainHeadCh:
 			if ev.Unit != nil {
 				pool.mu.Lock()
-
 				pool.reset(head.Header(), ev.Unit.Header())
 				head = ev.Unit
-
 				pool.mu.Unlock()
 			}
 			// Be unsubscribed due to system stopped
@@ -344,7 +342,7 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 	// If we're reorging an old state, reinject all dropped transactions
 	var reinject modules.Transactions
 
-	if oldHead != nil && modules.HeaderEqual(oldHead, newHead) {
+	if oldHead != nil && !modules.HeaderEqual(oldHead, newHead) {
 		// If the reorg is too deep, avoid doing it (will happen during fast sync)
 		oldNum := oldHead.Index()
 		newNum := newHead.Index()
@@ -398,19 +396,17 @@ func (pool *TxPool) reset(oldHead, newHead *modules.Header) {
 	for _, tx := range reinject {
 		pooltxs = append(pooltxs, TxtoTxpoolTx(pool, tx))
 	}
-
-	pool.addTxsLocked(pooltxs, false)
-
+	if len(pooltxs) > 0 {
+		pool.addTxsLocked(pooltxs, false)
+	}
 	// validate the pool of pending transactions, this will remove
 	// any transactions that have been included in the block or
 	// have been invalidated because of another transaction (e.g.
 	// higher gas price)
 	pool.demoteUnexecutables()
-
 	// Check the queue and move transactions over to the pending if possible
 	// or remove those that have become invalid
 	pool.promoteExecutables()
-
 }
 
 // Stats retrieves the current pool stats, namely the number of pending and the
@@ -839,7 +835,6 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 type Tag uint64
 
 func (pool *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error) {
-	// Protect concurrent access.
 
 	// Potentially accept the transaction to the memory pool.
 	_, _, err := pool.maybeAcceptTransaction(tx, true, rateLimit, false)
@@ -900,7 +895,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	p_tx := TxtoTxpoolTx(pool, tx)
 	err = pool.checkPoolDoubleSpend(p_tx)
 	if err != nil {
-		log.Info("txpool", "check PoolD oubleSpend err:", err)
+		log.Info("txpool check PoolDoubleSpend", "error", err)
 		return nil, nil, err
 	}
 	_, err1 := pool.add(p_tx, !pool.config.NoLocals)
@@ -1692,7 +1687,7 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs, orpha
 			if ok {
 				for _, input := range payment.Inputs {
 					if input.PreviousOutPoint != nil {
-						utxo, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
+						utxo, err := pool.GetUtxoEntry(input.PreviousOutPoint)
 						if utxo.IsSpent() {
 							continue
 						}
@@ -1918,7 +1913,7 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 			if ok {
 				for _, in := range payment.Inputs {
 					if in.PreviousOutPoint != nil {
-						utxo, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint)
+						utxo, err := pool.GetUtxoEntry(in.PreviousOutPoint)
 						if err != nil && err == errors.ErrUtxoNotFound {
 							// validate utxo in pool
 							_, has := pool.outputs.Load(*in.PreviousOutPoint)

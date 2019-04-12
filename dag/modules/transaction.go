@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 var (
@@ -100,13 +101,13 @@ type TxPoolTransaction struct {
 	Tx *Transaction
 
 	From         []*OutPoint
-	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time    `json:"creation_date"`
+	Priority_lvl string       `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool         // will remove
+	Discarded    bool // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
 	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
@@ -389,7 +390,7 @@ func (txs Transactions) GetTxIds() []common.Hash {
 
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
-	CertId     []byte     // should be big.Int byte
+	CertId     []byte // should be big.Int byte
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 
@@ -467,6 +468,23 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 		}
 	}
 	return result
+}
+
+func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
+	if !tx.IsContractTx() {
+		return nil
+	}
+	addrs := make([]common.Address, 4)
+	for _, msg := range tx.TxMessages {
+		switch msg.App {
+		case APP_SIGNATURE:
+			payload := msg.Payload.(*SignaturePayload)
+			for _, sig := range payload.Signatures {
+				addrs = append(addrs, crypto.PubkeyBytesToAddress(sig.PubKey))
+			}
+		}
+	}
+	return addrs
 }
 
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
@@ -553,7 +571,7 @@ LOOP:
 
 //增发的利息
 type Addition struct {
-	//Addr   common.Address
+	Addr  common.Address
 	Asset  Asset
 	Amount uint64
 }

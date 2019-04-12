@@ -136,11 +136,15 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
-	//TODO 是否传进来
-	asset := modules.NewPTNAsset()
+	fees,err := stub.GetInvokeFees()
+	if err != nil {
+		log.Error("stub.GetInvokeFees err:", "error", err)
+		return err
+	}
+	//asset := modules.NewPTNAsset()
 	invokeTokens := &modules.InvokeTokens{
 		Amount: ptnAccount,
-		Asset:  asset,
+		Asset:  fees.Asset,
 	}
 	//先获取数据库信息
 	balance, err := GetDepositBalance(stub, invokeAddr.String())

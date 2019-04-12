@@ -41,7 +41,7 @@ type IDag interface {
 	IsEmpty() bool
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
-	VerifyHeader(header *modules.Header, seal bool) error
+	VerifyHeader(header *modules.Header) error
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
 	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
@@ -67,9 +67,9 @@ type IDag interface {
 	HasUnit(hash common.Hash) bool
 	UnitIsConfirmedByHash(hash common.Hash) bool
 	ParentsIsConfirmByHash(hash common.Hash) bool
-	Exists(hash common.Hash) bool
+	IsHeaderExist(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error)
+	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 
 	// validate group signature by hash
 	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
@@ -146,4 +146,6 @@ type IDag interface {
 	HeadUnitHash() common.Hash
 
 	UpdateSysParams() error
+
+	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 }

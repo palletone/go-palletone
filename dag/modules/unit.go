@@ -35,20 +35,20 @@ import (
 )
 
 // validate unit state
-const (
-	UNIT_STATE_VALIDATED                = 0x00
-	UNIT_STATE_AUTHOR_SIGNATURE_PASSED  = 0x01
-	UNIT_STATE_EMPTY                    = 0x02
-	UNIT_STATE_INVALID_AUTHOR_SIGNATURE = 0x03
-	UNIT_STATE_INVALID_GROUP_SIGNATURE  = 0x04
-	UNIT_STATE_HAS_INVALID_TRANSACTIONS = 0x05
-	UNIT_STATE_INVALID_SIZE             = 0x06
-	UNIT_STATE_INVALID_EXTRA_DATA       = 0x07
-	UNIT_STATE_INVALID_HEADER           = 0x08
-	UNIT_STATE_CHECK_HEADER_PASSED      = 0x09
-	UNIT_STATE_INVALID_HEADER_WITNESS   = 0x10
-	UNIT_STATE_OTHER_ERROR              = 0xFF
-)
+//const (
+//	UNIT_STATE_VALIDATED                = 0x00
+//	UNIT_STATE_AUTHOR_SIGNATURE_PASSED  = 0x01
+//	UNIT_STATE_EMPTY                    = 0x02
+//	UNIT_STATE_INVALID_AUTHOR_SIGNATURE = 0x03
+//	UNIT_STATE_INVALID_GROUP_SIGNATURE  = 0x04
+//	UNIT_STATE_HAS_INVALID_TRANSACTIONS = 0x05
+//	UNIT_STATE_INVALID_SIZE             = 0x06
+//	UNIT_STATE_INVALID_EXTRA_DATA       = 0x07
+//	UNIT_STATE_INVALID_HEADER           = 0x08
+//	UNIT_STATE_CHECK_HEADER_PASSED      = 0x09
+//	UNIT_STATE_INVALID_HEADER_WITNESS   = 0x10
+//	UNIT_STATE_OTHER_ERROR              = 0xFF
+//)
 
 // unit state
 const (
@@ -88,10 +88,15 @@ func NewHeader(parents []common.Hash, used uint64, extra []byte) *Header {
 }
 
 func HeaderEqual(oldh, newh *Header) bool {
-	if oldh.ParentsHash[0] == newh.ParentsHash[0] && oldh.ParentsHash[1] == newh.ParentsHash[1] {
+	if oldh.Hash() == newh.Hash() {
 		return true
-	} else if oldh.ParentsHash[0] == newh.ParentsHash[1] && oldh.ParentsHash[1] == newh.ParentsHash[0] {
-		return true
+	}
+	pars := len(oldh.ParentsHash)
+	// 两个parents hash
+	if pars == 2 && 2 == len(newh.ParentsHash) {
+		if oldh.ParentsHash[0] == newh.ParentsHash[1] && oldh.ParentsHash[1] == newh.ParentsHash[0] {
+			return true
+		}
 	}
 	return false
 }
