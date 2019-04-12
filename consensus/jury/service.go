@@ -680,9 +680,9 @@ func (p *Processor) ContractTxDeleteLoop() {
 			}
 		}
 		for k, v := range p.mel {
-			if time.Since(v.tm) > time.Second*10 {
+			if time.Since(v.tm) > time.Second*30 {
 				log.Info("ContractTxDeleteLoop", "delete electionVrf,  id", k.String())
-				delete(p.mtx, k)
+				delete(p.mel, k)
 			}
 		}
 		p.locker.Unlock()
