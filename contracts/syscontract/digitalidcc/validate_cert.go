@@ -51,35 +51,28 @@ func ValidateCRLIssuer(issuer string, crl *pkix.CertificateList, stub shim.Chain
 	}
 	certHolder = []*CertHolderInfo{}
 	for _, revokeCert := range crl.TBSCertList.RevokedCertificates {
-		var i int = 0
-		for j, holder := range certsInfo {
-			i = j
+		hasHolder := false
+		for _, holder := range certsInfo {
 			if revokeCert.SerialNumber.String() == holder.CertID {
 				certHolder = append(certHolder, holder)
+				hasHolder = true
 				break
 			}
 		}
-		if i > len(certsInfo) {
-			return nil, fmt.Errorf("Issuer(%s) can not revoke cert(%s): has no authority", issuer, revokeCert.SerialNumber.String())
+		if !hasHolder {
+			return nil, fmt.Errorf("Issuer(%s) has no authority to revoke cert(%s)", issuer, revokeCert.SerialNumber.String())
 		}
 	}
+
 	if len(certHolder) != len(crl.TBSCertList.RevokedCertificates) {
-		return nil, fmt.Errorf("DigitalIdentityChainCode addCRLCert validate error: cert lenth is invalid")
+		return nil, fmt.Errorf("cert lenth is invalid")
 	}
 	return certsInfo, nil
 }
 
 func checkExists(cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
 	// check root ca
-	val, err := stub.GetSystemConfig("RootCABytes")
-	if err != nil {
-		return err
-	}
-	bytes, err := loadCertBytes([]byte(val))
-	if err != nil {
-		return err
-	}
-	rootCert, err := x509.ParseCertificate(bytes)
+	rootCert, err := GetRootCert(stub)
 	if err != nil {
 		return err
 	}
@@ -120,7 +113,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 			return err
 		}
 		if certid == "" {
-			return fmt.Errorf("Has no validate intermidate certificate")
+			return fmt.Errorf("the issuer has no verified certificate")
 		}
 		// query server list
 		revocationTime, err := GetCertRevocationTime(issuer, certid, stub)
@@ -138,15 +131,10 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 // To validate certificate chain signature
 func ValidateCertChain(cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
 	// query root ca cert bytes
-	rootCABytes, err := stub.GetSystemConfig("RootCABytes")
+	rootCert, err := GetRootCert(stub)
 	if err != nil {
 		return err
 	}
-	val, err := loadCertBytes([]byte(rootCABytes))
-	if err != nil {
-		return err
-	}
-	rootCert, err := x509.ParseCertificate(val)
 	// query intermidate cert bytes
 	chancerts := []*x509.Certificate{}
 	if cert.Issuer.String() != rootCert.Subject.String() {
