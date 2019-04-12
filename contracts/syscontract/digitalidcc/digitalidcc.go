@@ -71,28 +71,31 @@ func (d *DigitalIdentityChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.R
 
 func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, args []string, isServer bool) pb.Response {
 	if len(args) != 2 {
-		reqStr := fmt.Sprintf("Need two args: [holder address][Cert path]")
+		reqStr := fmt.Sprintf("Need two args: [holder address][Cert Bytes]")
 		return shim.Error(reqStr)
 	}
 	certHolder := args[0]
-	certPath := args[1]
 	// parse issuer
 	issuer, err := stub.GetInvokeAddress()
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode parse issuer error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
-	// load Cert file
-	pemBytes, err := loadCert(certPath)
+	//// load Cert file
+	//pemBytes, err := loadCert(certPath)
+	//if err != nil {
+	//	reqStr := fmt.Sprintf("DigitalIdentityChainCode load [%s] error: %s", certPath, err.Error())
+	//	return shim.Error(reqStr)
+	//}
+	certBytes, err := loadCertBytes([]byte(args[1]))
 	if err != nil {
-		reqStr := fmt.Sprintf("DigitalIdentityChainCode load [%s] error: %s", certPath, err.Error())
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode load cert bytes error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
-
 	// parse Cert bytes to Certificate struct
-	cert, err := x509.ParseCertificate(pemBytes)
+	cert, err := x509.ParseCertificate([]byte(certBytes))
 	if err != nil {
-		reqStr := fmt.Sprintf("DigitalIdentityChainCode parse Cert error: %s", certPath)
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode parse to certificate error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
 	// basic validate certificate
@@ -130,7 +133,7 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 
 func (d *DigitalIdentityChainCode) addCRLCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 1 {
-		reqStr := fmt.Sprintf("Need 1 arg:[CRL Cert path]")
+		reqStr := fmt.Sprintf("Need 1 arg:[CRL Cert Bytes]")
 		return shim.Error(reqStr)
 	}
 	// parse issuerAddr
@@ -140,16 +143,21 @@ func (d *DigitalIdentityChainCode) addCRLCert(stub shim.ChaincodeStubInterface, 
 		return shim.Error(reqStr)
 	}
 	// load crl file
-	crlPath := args[0]
-	pemBytes, err := loadCert(crlPath)
+	//crlPath := args[0]
+	//	//pemBytes, err := loadCert(crlPath)
+	//	//if err != nil {
+	//	//	reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load [%s] error: %s", crlPath, err.Error())
+	//	//	return shim.Error(reqStr)
+	//	//}
+	crlBytes, err := loadCertBytes([]byte(args[0]))
 	if err != nil {
-		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load [%s] error: %s", crlPath, err.Error())
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load bytes to CRL error: %s", err.Error())
 		return shim.Error(reqStr)
 	}
 	// parse crl bytes to CertificateList struct
-	crl, err := x509.ParseCRL(pemBytes)
+	crl, err := x509.ParseCRL(crlBytes)
 	if err != nil {
-		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert parse Cert error: %s", crlPath)
+		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert parse bytes to CRL error: %s", err.Error())
 		return shim.Error(reqStr)
 	}
 	// check whether the issuer address has authority to revoke certificates in CRL revocation list
