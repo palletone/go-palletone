@@ -378,11 +378,11 @@ func GetCertRevocationTime(holder string, certid string, stub shim.ChaincodeStub
 }
 
 func GetRootCert(stub shim.ChaincodeStubInterface) (cert *x509.Certificate, err error) {
-	val, err := stub.GetSystemConfig("RootCABytes")
+	val, err := stub.GetState("RootCABytes")
 	if err != nil {
 		return nil, err
 	}
-	bytes, err := loadCertBytes([]byte(val))
+	bytes, err := loadCertBytes(val)
 	if err != nil {
 		return nil, err
 	}
