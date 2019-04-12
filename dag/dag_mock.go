@@ -427,10 +427,10 @@ func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *g
 }
 
 // CreateUnit mocks base method
-func (m *MockIDag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) ([]modules.Unit, error) {
+func (m *MockIDag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUnit", mAddr, txpool, t)
-	ret0, _ := ret[0].([]modules.Unit)
+	ret0, _ := ret[0].(*modules.Unit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
