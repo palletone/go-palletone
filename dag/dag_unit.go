@@ -145,18 +145,19 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	sign_unit.UnitSize = sign_unit.Size()
 
-	//log.Debug("Dag", "GenerateUnit unit:", *sign_unit)
+	//TODO add PostChainEvents
+	go func() {
+		var (
+			events        = make([]interface{}, 0, 1)
+			coalescedLogs []*types.Log
+		)
+		events = append(events, modules.ChainEvent{pendingUnit, common.Hash{}, nil})
+		dag.PostChainEvents(events, coalescedLogs)
+	}()
 
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
 	}
-	//TODO add PostChainEvents
-	var (
-		events        = make([]interface{}, 0, 1)
-		coalescedLogs []*types.Log
-	)
-	events = append(events, modules.ChainEvent{pendingUnit, common.Hash{}, nil})
-	dag.PostChainEvents(events, coalescedLogs)
 	return sign_unit
 }
 
@@ -172,19 +173,15 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
 
 	// 2. 更新状态
+	log.Debug("start apply  unit ...........")
 	if !dag.ApplyUnit(newUnit) {
 		return false
 	}
+	log.Debug("end apply  unit ...........")
 
-	// 3. 将unit添加到本地DB
-	//err := dag.SaveUnit(newUnit, false)
-	//if err != nil {
-	//	log.Debug("unit_production", "PushUnit err:", err)
-	//	return false
-	//}
-	//dag.SaveUnit(newUnit, txpool, false)
+	log.Debug("start save  unit ...........")
 	dag.Memdag.AddUnit(newUnit, txpool)
-
+	log.Debug("end  save unit ...........")
 	return true
 }
 
