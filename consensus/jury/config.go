@@ -54,12 +54,14 @@ type Config struct {
 
 func (aConf *AccountConf) configToAccount() *JuryAccount {
 	addr, _ := common.StringToAddress(aConf.Address)
-
-	medAcc := &JuryAccount{
-		addr,
-		aConf.Password,
+	if addr != (common.Address{}){
+		medAcc := &JuryAccount{
+			addr,
+			aConf.Password,
+		}
+		return medAcc
 	}
-	return medAcc
+	return nil
 }
 
 var DefaultConfig = Config{
