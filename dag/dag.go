@@ -249,14 +249,6 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
-	//TODO must recover，不连续的孤儿unit也应当存起来，以方便后面处理
-	//defer func(start time.Time) {
-	//	if len(units) > 0 {
-	//		log.Debug("Dag InsertDag", "elapsed", time.Since(start), "unit index start", units[0].NumberU64(), "size:", len(units))
-	//	}
-	//
-	//}(time.Now())
-
 	var (
 		events        = make([]interface{}, 0, len(units))
 		coalescedLogs []*types.Log
