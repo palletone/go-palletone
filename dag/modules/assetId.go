@@ -79,7 +79,7 @@ func String2AssetId(str string) (AssetId, UniqueIdType, error) {
 }
 
 func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []byte, uniqueIdType UniqueIdType) (AssetId, error) {
-	if len(symbol) > 5 {
+	if len(symbol) > 5 || len(symbol) == 0 {
 		return AssetId{}, errors.New("Symbol must less than 5 characters")
 	}
 	if decimal > 18 {
