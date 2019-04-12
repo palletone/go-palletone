@@ -577,21 +577,17 @@ func (pm *ProtocolManager) AdapterMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===AdapterMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
+	log.Debug("===============ProtocolManager", "avs:", avs)
+
 	event, err := avs.ToAdapterEvent()
 	if err != nil {
-		log.Debug("ElectionMsg, ToElectionEvent fail")
+		log.Debug("AdapterMsg, ToAdapterEvent fail")
 		return nil
 	}
 
-	result, err := pm.contractProc.ProcessAdapterEvent(event)
+	_, err = pm.contractProc.ProcessAdapterEvent(event)
 	if err != nil {
 		log.Debug("AdapterMsg", "ProcessAdapterEvent error:", err)
-	} else {
-		if event.AType == jury.ADAPTER_EVENT_REQUEST {
-			if result != nil {
-				p.SendAdapterEvent(*result)
-			}
-		}
 	}
 	return nil
 }
