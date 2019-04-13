@@ -31,48 +31,48 @@ import (
 )
 
 func checkValid(reqEvt *AdapterRequestEvent) bool {
-	hash := crypto.Keccak256(reqEvt.consultData, reqEvt.answer)
-	log.Debugf("sig: %s", common.Bytes2Hex(reqEvt.sig))
-	sig := reqEvt.sig[:len(reqEvt.sig)-1] // remove recovery id
-	return crypto.VerifySignature(reqEvt.pubkey, hash, sig)
+	hash := crypto.Keccak256(reqEvt.ConsultData, reqEvt.Answer)
+	log.Debugf("sig: %s", common.Bytes2Hex(reqEvt.Sig))
+	sig := reqEvt.Sig[:len(reqEvt.Sig)-1] // remove recovery id
+	return crypto.VerifySignature(reqEvt.Pubkey, hash, sig)
 }
 func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstSave bool) {
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
-	pubkeyHex := common.Bytes2Hex(reqEvt.pubkey)
-	if _, exist := p.mtx[reqEvt.reqId].adaInf[msgType]; !exist {
+	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
+	if _, exist := p.mtx[reqEvt.ReqId].adaInf[msgType]; !exist {
 		//all jury msg
 		adaInf := &AdapterInf{JuryMsgAll: make(map[string]*MsgSigCollect)}
 		//one msg collect
 		msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
-		msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.sig, reqEvt.answer}
-		adaInf.JuryMsgAll[string(reqEvt.consultData)] = msgSigCollect
+		msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
+		adaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
 		//
-		p.mtx[reqEvt.reqId].adaInf[msgType] = adaInf
+		p.mtx[reqEvt.ReqId].adaInf[msgType] = adaInf
 	} else {
 		//
-		adaInf := p.mtx[reqEvt.reqId].adaInf[msgType]
-		if _, existCollect := adaInf.JuryMsgAll[string(reqEvt.consultData)]; !existCollect { //new collect
+		adaInf := p.mtx[reqEvt.ReqId].adaInf[msgType]
+		if _, existCollect := adaInf.JuryMsgAll[string(reqEvt.ConsultData)]; !existCollect { //new collect
 			msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
-			msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.sig, reqEvt.answer}
-			adaInf.JuryMsgAll[string(reqEvt.consultData)] = msgSigCollect
+			msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
+			adaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
 		} else {
-			if _, exist := adaInf.JuryMsgAll[string(reqEvt.consultData)].OneMsgAllSig[pubkeyHex]; exist {
+			if _, exist := adaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex]; exist {
 				return false
 			}
-			adaInf.JuryMsgAll[string(reqEvt.consultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.sig, reqEvt.answer}
+			adaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
 		}
 	}
 	return true
 }
 
 func (p *Processor) checkJury(reqEvt *AdapterRequestEvent) bool {
-	if _, exist := p.lockArf[reqEvt.contractId]; !exist {
+	if _, exist := p.lockArf[reqEvt.ContractId]; !exist {
 		return false
 	}
-	pubkeyHex := common.Bytes2Hex(reqEvt.pubkey)
-	juryAll := p.lockArf[reqEvt.contractId]
+	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
+	juryAll := p.lockArf[reqEvt.ContractId]
 	for i := range juryAll {
 		if common.Bytes2Hex(juryAll[i].PublicKey) == pubkeyHex {
 			return true
@@ -133,12 +133,12 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	}
 	//
 	reqEvt := &AdapterRequestEvent{
-		reqId:       reqId,
-		contractId:  contractId,
-		consultData: consultContent,
-		answer:      myAnswer,
-		sig:         sig,
-		pubkey:      pubKey,
+		ReqId:       reqId,
+		ContractId:  contractId,
+		ConsultData: consultContent,
+		Answer:      myAnswer,
+		Sig:         sig,
+		Pubkey:      pubKey,
 	}
 
 	//todo delete test
