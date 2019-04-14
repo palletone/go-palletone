@@ -40,28 +40,38 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
+	if _, exist := p.mtx[reqEvt.ReqId]; !exist { //todo how to process
+		p.mtx[reqEvt.ReqId] = &contractTx{
+			tm:     time.Now(),
+			valid:  false,
+			adaInf: make(map[uint32]*AdapterInf),
+		}
+	}
+	if p.mtx[reqEvt.ReqId].adaInf == nil {
+		p.mtx[reqEvt.ReqId].adaInf = make(map[uint32]*AdapterInf)
+	}
 	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
 	if _, exist := p.mtx[reqEvt.ReqId].adaInf[msgType]; !exist {
 		//all jury msg
-		adaInf := &AdapterInf{JuryMsgAll: make(map[string]*MsgSigCollect)}
+		typeAdaInf := &AdapterInf{JuryMsgAll: make(map[string]*MsgSigCollect)}
 		//one msg collect
 		msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
 		msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
-		adaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
+		typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
 		//
-		p.mtx[reqEvt.ReqId].adaInf[msgType] = adaInf
+		p.mtx[reqEvt.ReqId].adaInf[msgType] = typeAdaInf
 	} else {
 		//
-		adaInf := p.mtx[reqEvt.ReqId].adaInf[msgType]
-		if _, existCollect := adaInf.JuryMsgAll[string(reqEvt.ConsultData)]; !existCollect { //new collect
+		typeAdaInf := p.mtx[reqEvt.ReqId].adaInf[msgType]
+		if _, existCollect := typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)]; !existCollect { //new collect
 			msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
 			msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
-			adaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
+			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
 		} else {
-			if _, exist := adaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex]; exist {
+			if _, exist := typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex]; exist {
 				return false
 			}
-			adaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
+			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
 		}
 	}
 	return true
