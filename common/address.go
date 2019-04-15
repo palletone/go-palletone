@@ -77,7 +77,7 @@ func NewAddress(hash160 []byte, ty AddressType) Address {
 
 //将一个字符串格式的Address转换为Address对象
 func StringToAddress(a string) (Address, error) {
-	if len(a) <=0 {
+	if len(a) <= 0 {
 		return Address{}, errors.New("Address cannot be null")
 	}
 	if a[0] != byte('P') {
@@ -169,7 +169,7 @@ func (a Address) Bytes21() []byte {
 
 func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a.Bytes()) }
 func (a Address) Hash() Hash    { return BytesToHash(a.Bytes()) }
-func (a Address) Hex() string   { return fmt.Sprintf("0x%x", a.Bytes()) }
+func (a Address) Hex() string   { return fmt.Sprintf("%#x", a.Bytes()) }
 
 // String implements the stringer interface and is used also by the logger.
 func (a Address) String() string {

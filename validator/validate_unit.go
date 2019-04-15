@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 /**
@@ -95,6 +96,10 @@ Validate unit(除群签名以外), 新生产的unit暂时还没有群签名
 */
 //func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
 func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
+	start := time.Now()
+	defer func() {
+		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unit.Hash().String(), time.Since(start))
+	}()
 	//  unit's size  should bigger than minimum.
 	if unit.Size() < 125 {
 		log.Debug("Validate size", "error", "size is invalid", "size", unit.Size())

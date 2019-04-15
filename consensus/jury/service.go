@@ -146,8 +146,10 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	accounts := make(map[common.Address]*JuryAccount, 0)
 	for _, cfg := range cfg.Accounts {
 		account := cfg.configToAccount()
-		addr := account.Address
-		accounts[addr] = account
+		if account != nil {
+			addr := account.Address
+			accounts[addr] = account
+		}
 	}
 
 	//c := elliptic.P256()
@@ -631,7 +633,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		if contractId == (common.Address{}) { //deploy
 			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
 			if ele, ok := p.lockArf[cId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[cId] = []ElectionInf{}                               //清空
+				p.lockArf[cId] = []ElectionInf{} //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}
@@ -678,9 +680,9 @@ func (p *Processor) ContractTxDeleteLoop() {
 			}
 		}
 		for k, v := range p.mel {
-			if time.Since(v.tm) > time.Second*10 {
+			if time.Since(v.tm) > time.Second*30 {
 				log.Info("ContractTxDeleteLoop", "delete electionVrf,  id", k.String())
-				delete(p.mtx, k)
+				delete(p.mel, k)
 			}
 		}
 		p.locker.Unlock()

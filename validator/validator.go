@@ -70,6 +70,9 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 	var coinbase *modules.Transaction
 	for txIndex, tx := range txs {
 		txHash := tx.Hash()
+		if validate.checkTxIsExist(tx) {
+			return TxValidationCode_DUPLICATE_TXID
+		}
 		if txIndex == 0 && tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 			needCheckCoinbase = true
 			coinbase = tx
@@ -83,13 +86,6 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 
 			return txCode
 		}
-		//getUtxoFromUnitAndDb := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-		//	if utxo, ok := unitUtxo[*outpoint]; ok {
-		//		return utxo, nil
-		//	}
-		//	return validate.utxoquery.GetUtxoEntry(outpoint)
-		//}
-		//txFee, _ := tx.GetTxFee(getUtxoFromUnitAndDb)
 		txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 		fee += txFee.Amount
 

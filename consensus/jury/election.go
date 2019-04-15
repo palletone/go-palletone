@@ -55,7 +55,7 @@ func (e *elector) checkElectedEc(data []byte) (proof []byte, err error) {
 		errs := fmt.Sprintf("checkElected param error, num[%d], weight[%d]", e.num, e.weight)
 		return nil, errors.New(errs)
 	}
-	proof, err = vrfEc.VrfProve(e.vrfAct.priKey, data) //
+	proof, err = vrfEc.VrfProve(e.vrfAct.priKey, data)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,6 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-
 	proof, err = vrfEs.VrfProve(privateKey, data)
 	if err != nil {
 		return nil, err
@@ -138,7 +137,7 @@ func (p *Processor) electionEventIsProcess(event *ElectionEvent, addr *common.Ad
 	case ELECTION_EVENT_RESULT:
 		reqId = event.Event.(*ElectionResultEvent).ReqId
 	}
-	//election request node
+	//request node
 	if _, ok := p.mel[reqId]; ok && p.mel[reqId].eChan != nil {
 		return true
 	}
@@ -155,7 +154,6 @@ func (p *Processor) electionEventBroadcast(event *ElectionEvent) (recved bool, e
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
-	//检查是否是jury，如果不是，则返回
 	switch event.EType {
 	case ELECTION_EVENT_REQUEST:
 		evt := event.Event.(*ElectionRequestEvent)

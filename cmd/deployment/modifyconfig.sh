@@ -222,7 +222,8 @@ function MakeTestNet()
     cd ../
     #addBootstrapNodes $1 0
     newarrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-    sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test/ptn-config.toml
+    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test/ptn-config.toml
+    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test/ptn-config.toml
 
     newInitPrivKey="InitPrivKey=\"\""
     sed -i '/^InitPrivKey/c'$newInitPrivKey'' node_test/ptn-config.toml

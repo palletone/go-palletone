@@ -212,8 +212,12 @@ func (repository *UtxoRepository) GetUtxoByOutpoint(outpoint *modules.OutPoint) 
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
 func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
+	log.Debugf("Try to destroy old Utxo and generate new Utxo by Tx[%s]", txHash.String())
 	// update utxo
-	repository.destoryUtxo(payment.Inputs)
+	err := repository.destoryUtxo(payment.Inputs)
+	if err != nil {
+		return err
+	}
 	// create utxo
 	errs := repository.writeUtxo(txHash, msgIndex, payment.Outputs, payment.LockTime)
 	if len(errs) > 0 {
@@ -290,7 +294,7 @@ func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32,
 销毁utxo
 destory utxo, delete from UTXO database
 */
-func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
+func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) error {
 	for _, txin := range txins {
 		//TODO for download sync
 		if txin == nil {
@@ -313,13 +317,13 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 		utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
 		if err != nil {
 			log.Error("Query utxo when destory uxto", "error", err.Error())
-			continue
+			return err
 		}
 
 		// delete utxo
 		if err := repository.utxodb.DeleteUtxo(outpoint); err != nil {
 			log.Error("Update uxto... ", "error", err.Error())
-			continue
+			return err
 		}
 		// delete index data
 		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
@@ -334,10 +338,14 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) {
 		// 	log.Error("Destory uxto index", "error", err.Error())
 		// 	continue
 		// }
-		if utxo.Asset.AssetId == modules.NewPTNIdType() { // modules.PTNCOIN
-			repository.statedb.UpdateAccountBalance(sAddr, -int64(utxo.Amount))
+		if utxo.Asset.AssetId == dagconfig.DagConfig.GetGasToken() { // modules.PTNCOIN
+			err := repository.statedb.UpdateAccountBalance(sAddr, -int64(utxo.Amount))
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 /**

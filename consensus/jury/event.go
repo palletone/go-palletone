@@ -122,11 +122,39 @@ type AdapterEvent struct {
 	AType AdapterEventType `json:"atype"`
 	Event interface{}      `json:"event"`
 }
+
+func (av *AdapterEvent) ToAdapterEventBytes() (*AdapterEventBytes, error) {
+	as := &AdapterEventBytes{}
+
+	byteJson, err := json.Marshal(av.Event)
+	as.AType = av.AType
+	as.Event = byteJson
+	return as, err
+}
+
 type AdapterRequestEvent struct {
-	reqId       common.Hash    `json:"reqId"`
-	contractId  common.Address `json:"contractId"`  //todo delete
-	consultData []byte         `json:"consultdata"` //
-	answer      []byte         `json:"answer"`
-	sig         []byte         `json:"sig"`
-	pubkey      []byte         `json:"pubkey"`
+	ReqId       common.Hash    `json:"reqId"`
+	ContractId  common.Address `json:"contractId"`  //
+	ConsultData []byte         `json:"consultdata"` //
+	Answer      []byte         `json:"Answer"`
+	Sig         []byte         `json:"sig"`
+	Pubkey      []byte         `json:"Pubkey"`
+}
+
+type AdapterEventBytes struct {
+	AType AdapterEventType `json:"atype"`
+	Event []byte           `json:"event"`
+}
+
+func (es *AdapterEventBytes) ToAdapterEvent() (*AdapterEvent, error) {
+	event := AdapterEvent{}
+	event.AType = es.AType
+	var req AdapterRequestEvent
+	err := json.Unmarshal(es.Event, &req)
+	if err != nil {
+		return nil, err
+	}
+	event.Event = &req
+
+	return &event, nil
 }

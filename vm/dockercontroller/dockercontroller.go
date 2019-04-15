@@ -39,6 +39,7 @@ import (
 	com "github.com/palletone/go-palletone/vm/common"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 )
 
 var (
@@ -565,6 +566,7 @@ func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	} else if ccid.PeerID != "" {
 		name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
 	}
+	name = name+contractcfg.GetConfig().ContractAddress
 	// replace any invalid characters with "-" (either in network id, peer id, or in the
 	// entire name returned by any format function)
 	name = vmRegExp.ReplaceAllString(name, "-")

@@ -31,51 +31,89 @@ import (
 )
 
 func checkValid(reqEvt *AdapterRequestEvent) bool {
-	hash := crypto.Keccak256(reqEvt.consultData)
-	sig := reqEvt.sig[:len(reqEvt.sig)-1] // remove recovery id
-	return crypto.VerifySignature(reqEvt.pubkey, hash, sig)
+	hash := crypto.Keccak256(reqEvt.ConsultData, reqEvt.Answer)
+	log.Debugf("sig: %s", common.Bytes2Hex(reqEvt.Sig))
+	sig := reqEvt.Sig[:len(reqEvt.Sig)-1] // remove recovery id
+	return crypto.VerifySignature(reqEvt.Pubkey, hash, sig)
 }
-func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) {
+func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstSave bool) {
 	p.locker.Lock()
-	pubkeyHex := common.Bytes2Hex(reqEvt.pubkey)
-	if _, exist := p.mtx[reqEvt.reqId].adaInf[msgType]; !exist {
-		//all jury msg
-		adaInf := &AdapterInf{JuryMsgAll: make(map[string]*MsgSigCollect)}
-		//one msg collect
-		msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
-		msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.sig, reqEvt.answer}
-		adaInf.JuryMsgAll[string(reqEvt.consultData)] = msgSigCollect
-		//
-		p.mtx[reqEvt.reqId].adaInf[msgType] = adaInf
-	} else {
-		//
-		adaInf := p.mtx[reqEvt.reqId].adaInf[msgType]
-		if _, existCollect := adaInf.JuryMsgAll[string(reqEvt.consultData)]; !existCollect { //new collect
-			msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
-			msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.sig, reqEvt.answer}
-			adaInf.JuryMsgAll[string(reqEvt.consultData)] = msgSigCollect
-		} else {
-			adaInf.JuryMsgAll[string(reqEvt.consultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.sig, reqEvt.answer}
+	defer p.locker.Unlock()
+
+	if _, exist := p.mtx[reqEvt.ReqId]; !exist { //todo how to process
+		p.mtx[reqEvt.ReqId] = &contractTx{
+			tm:     time.Now(),
+			valid:  false,
+			adaInf: make(map[uint32]*AdapterInf),
 		}
 	}
-	p.locker.Unlock()
+	if p.mtx[reqEvt.ReqId].adaInf == nil {
+		p.mtx[reqEvt.ReqId].adaInf = make(map[uint32]*AdapterInf)
+	}
+	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
+	if _, exist := p.mtx[reqEvt.ReqId].adaInf[msgType]; !exist {
+		//all jury msg
+		typeAdaInf := &AdapterInf{JuryMsgAll: make(map[string]*MsgSigCollect)}
+		//one msg collect
+		msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
+		msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
+		typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
+		//
+		p.mtx[reqEvt.ReqId].adaInf[msgType] = typeAdaInf
+	} else {
+		//
+		typeAdaInf := p.mtx[reqEvt.ReqId].adaInf[msgType]
+		if _, existCollect := typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)]; !existCollect { //new collect
+			msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
+			msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
+			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
+		} else {
+			if _, exist := typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex]; exist {
+				return false
+			}
+			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
+		}
+	}
+	return true
+}
+
+func (p *Processor) checkJury(reqEvt *AdapterRequestEvent) bool {
+	if _, exist := p.lockArf[reqEvt.ContractId]; !exist {
+		return false
+	}
+	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
+	juryAll := p.lockArf[reqEvt.ContractId]
+	for i := range juryAll {
+		if common.Bytes2Hex(juryAll[i].PublicKey) == pubkeyHex {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Processor) processAdapterRequestEvent(msgType uint32, reqEvt *AdapterRequestEvent) (result *AdapterEvent, err error) {
 	log.Info("processAdapterRequestEvent")
+
+	//if not this contract's jury, just return
+	if !p.checkJury(reqEvt) {
+		localMediators := p.ptn.GetLocalMediators()
+		if len(localMediators) == 0 {
+			return nil, nil
+		} //mediator continue process
+	}
 
 	//check
 	isValid := checkValid(reqEvt)
 	if !isValid {
 		return nil, errors.New("Event invalid")
 	}
-
 	//save
-	p.saveSig(msgType, reqEvt)
+	firstSave := p.saveSig(msgType, reqEvt)
 
-	//todo broadcast
-	//if isMediator || isJury {
-	go p.ptn.AdapterBroadcast(AdapterEvent{AType: AdapterEventType(msgType), Event: reqEvt})
+	//broadcast
+	if firstSave { //first receive, broadcast
+		go p.ptn.AdapterBroadcast(AdapterEvent{AType: AdapterEventType(msgType), Event: reqEvt})
+	}
 
 	return nil, nil
 }
@@ -92,11 +130,12 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	}
 
 	//
-	hash := crypto.Keccak256(consultContent)
+	hash := crypto.Keccak256(consultContent, myAnswer)
 	sig, err := p.ptn.GetKeyStore().SignHashWithPassphrase(accounts.Account{Address: account.Address}, account.Password, hash)
 	if err != nil {
 		return nil, errors.New("AdapterFunRequest SignHashWithPassphrase failed")
 	}
+	log.Debugf("sig: %s", common.Bytes2Hex(sig))
 	//
 	pubKey, err := p.ptn.GetKeyStore().GetPublicKey(account.Address)
 	if err != nil {
@@ -104,12 +143,12 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	}
 	//
 	reqEvt := &AdapterRequestEvent{
-		reqId:       reqId,
-		contractId:  contractId,
-		consultData: consultContent,
-		answer:      myAnswer,
-		sig:         sig,
-		pubkey:      pubKey,
+		ReqId:       reqId,
+		ContractId:  contractId,
+		ConsultData: consultContent,
+		Answer:      myAnswer,
+		Sig:         sig,
+		Pubkey:      pubKey,
 	}
 
 	//todo delete test
