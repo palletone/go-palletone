@@ -24,6 +24,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
@@ -75,6 +76,10 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		return shim.Error(reqStr)
 	}
 	certHolder := args[0]
+	// check addrss
+	if !common.IsValidAddress(certHolder) {
+		return shim.Error(fmt.Sprintf("certificate holder address is invalid"))
+	}
 	// parse issuer
 	issuer, err := stub.GetInvokeAddress()
 	if err != nil {
