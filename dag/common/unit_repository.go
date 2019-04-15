@@ -400,8 +400,12 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
-	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
 
+	txIds := []common.Hash{}
+	for _, tx := range poolTxs {
+		txIds = append(txIds, tx.Tx.Hash())
+	}
+	log.Infof("txpool.GetSortedTxs cost time %s, include txs:[%#x]", time.Since(begin), txIds)
 	// step5. compute minner income: transaction fees + interest
 
 	//交易费用

@@ -714,6 +714,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		}
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
+	log.Debugf("Add Tx[%s] to txpool.", tx.Tx.Hash().String())
 	pool.priority_sorted.Put(tx)
 	pool.all.Store(hash, tx)
 	go pool.addCache(tx)
