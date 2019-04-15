@@ -26,7 +26,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"io/ioutil"
@@ -304,7 +303,6 @@ func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*CertHold
 		if err != nil {
 			return err
 		}
-		log.Debugf(">>>> len(branches)=%d", len(branchCerts))
 		for _, branch := range branchCerts {
 			if branch.IsServer {
 				key = dagConstants.CERT_SERVER_SYMBOL
@@ -312,7 +310,6 @@ func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*CertHold
 				key = dagConstants.CERT_MEMBER_SYMBOL
 			}
 			key += branch.Holder + dagConstants.CERT_SPLIT_CH + branch.CertID
-			log.Debugf(">>>> branch holder=%s, certid=%s", branch.Holder, branch.CertID)
 			if err := stub.PutState(key, t); err != nil {
 				return err
 			}
