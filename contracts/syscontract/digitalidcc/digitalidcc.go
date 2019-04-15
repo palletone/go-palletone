@@ -59,6 +59,8 @@ func (d *DigitalIdentityChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.R
 		return d.getCertBytes(stub, args)
 	case "getCertHolder":
 		return d.getCertHolder(stub, args)
+	case "getRootCAHoler":
+		return d.getRootCAHolder(stub, args)
 	// 添加CRL证书
 	case "addCRL":
 		return d.addCRLCert(stub, args)
@@ -291,6 +293,18 @@ func (d *DigitalIdentityChainCode) getCertHolder(stub shim.ChaincodeStubInterfac
 		return shim.Error(reqStr)
 	}
 	return shim.Success(certInfoJson)
+}
+
+func (d *DigitalIdentityChainCode) getRootCAHolder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 0 {
+		reqStr := fmt.Sprintf("No need params")
+		return shim.Error(reqStr)
+	}
+	val, err := stub.GetState("RootCAHolder")
+	if err != nil {
+		return shim.Error(fmt.Sprintf("get ca holder error"))
+	}
+	return shim.Success(val)
 }
 
 func (d *DigitalIdentityChainCode) getIssuerCRL(stub shim.ChaincodeStubInterface, args []string) pb.Response {
