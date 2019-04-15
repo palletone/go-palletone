@@ -173,7 +173,7 @@ func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
 	}
 	txs, err := rep.dagdb.GetUnitTransactions(hash)
 	if err != nil {
-		log.Error("getChainUnit when GetUnitTransactions failed ", "error", err)
+		log.Error("getChainUnit when GetUnitTransactions failed ", "error", err, "hash", hash.String())
 		return nil, err
 	}
 	// generate unit
