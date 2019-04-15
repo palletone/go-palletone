@@ -127,7 +127,8 @@ func getDockerHostConfig() *docker.HostConfig {
 	}
 	networkMode := viper.GetString(dockerKey("NetworkMode"))
 	if networkMode == "" {
-		networkMode = "host"
+		networkMode = "bridge"
+		//networkMode = "host"
 	}
 	log.Debugf("docker container hostconfig NetworkMode: %s", networkMode)
 	portBindings := make(map[docker.Port][]docker.PortBinding)
