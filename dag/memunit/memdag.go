@@ -22,6 +22,7 @@ package memunit
 
 import (
 	"sync"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -261,6 +262,10 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash) {
 }
 
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
+	defer func(start time.Time) {
+		log.Debugf("MemDag AddUnit cost time: %v", time.Since(start))
+	}(time.Now())
+
 	if unit == nil {
 		return errors.ErrNullPoint
 	}
