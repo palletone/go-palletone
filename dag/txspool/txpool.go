@@ -247,6 +247,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	if inter, ok := pool.outputs.Load(*outpoint); ok {
 		utxo := inter.(*modules.Utxo)
+		log.Debugf("Get UTXO from txpool by Outpoint:%s", outpoint.String())
 		return utxo, nil
 	}
 	log.Debugf("Outpoint[%s] and Utxo not in pool. query from db", outpoint.String())
@@ -636,10 +637,10 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	hash := tx.Tx.Hash()
 	if _, has := pool.all.Load(hash); has {
 		log.Trace("Discarding already known transaction", "hash", hash)
-		return false, fmt.Errorf("known transaction: %x", hash)
+		return false, fmt.Errorf("known transaction: %#x", hash)
 	}
 	if pool.isOrphanInPool(hash) {
-		return false, fmt.Errorf("know orphanTx: %x", hash)
+		return false, fmt.Errorf("know orphanTx: %#x", hash)
 	}
 
 	if ok, err := pool.ValidateOrphanTx(tx.Tx); err != nil {

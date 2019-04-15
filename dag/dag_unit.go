@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/core/types"
+	// "github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -85,9 +85,9 @@ func (dag *Dag) setUnitHeader(pendingUnit *modules.Unit) {
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
-	//defer func(start time.Time) {
-	//	log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
-	//}(time.Now())
+	defer func(start time.Time) {
+		log.Debug("GenerateUnit unit elapsed", "elapsed", time.Since(start))
+	}(time.Now())
 	gasToken := dagconfig.DagConfig.GetGasToken()
 
 	// 1. 判断是否满足生产的若干条件
@@ -146,14 +146,14 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	log.Debugf("Generate new unit[%s],size:%s, parent unit[%s]", sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String())
 
 	//TODO add PostChainEvents
-	go func() {
-		var (
-			events        = make([]interface{}, 0, 1)
-			coalescedLogs []*types.Log
-		)
-		events = append(events, modules.ChainEvent{newUnit, common.Hash{}, nil})
-		dag.PostChainEvents(events, coalescedLogs)
-	}()
+	// go func() {
+	// 	var (
+	// 		events        = make([]interface{}, 0, 1)
+	// 		coalescedLogs []*types.Log
+	// 	)
+	// 	events = append(events, modules.ChainEvent{newUnit, common.Hash{}, nil})
+	// 	dag.PostChainEvents(events, coalescedLogs)
+	// }()
 
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
