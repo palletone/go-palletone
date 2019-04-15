@@ -174,47 +174,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	//======test start======
-
-	//db.Database().OpenTrie(header.Root)
-	//strhash := "0x6ca6de56eaffb9baab65102ee3ed60511b991c6dbfed8facc62da3ee068835ca"
-	//unithash := common.Hash{}
-	//unithash.SetHexString(strhash)
-	//
-	//unit, err := dag.GetUnitByHash(unithash)
-	//if err != nil {
-	//	log.Debug("NewProtocolManager GetUnitByHash", "err", err, "hash", unithash)
-	//	return nil, err
-	//}
-	//unit = unit
-	//var MaxTrieCacheGen = uint16(120)
-	//_, err = trie.NewSecure(unit.Header().Hash(), trie.NewDatabase(db), MaxTrieCacheGen)
-	//if err != nil {
-	//	log.Debug("NewProtocolManager NewSecure", "err", err)
-	//	return nil, err
-	//}
-	//diskdb, _ := ptndb.NewMemDatabase()
-	//triedb := trie.NewDatabase(ptn.unitDb)
-	//if err := triedb.Commit(unit.Hash(), true); err != nil {
-	//	log.Debug("NewProtocolManager triedb.Commit", "err", err)
-	//	return nil, err
-	//}
-	//trdb, err1 := trie.NewSecure(unit.Hash(), trie.NewDatabase(ptn.unitDb), 0)
-	//if err1 != nil {
-	//	log.Debug("NewProtocolManager trie.NewSecure", "err", err1)
-	//	return nil, err1
-	//}
-
-	//node, err1 := triedb.Node(unit.Hash())
-	//if err1 != nil {
-	//	log.Debug("NewProtocolManager triedb.Node", "err", err1)
-	//	return nil, err
-	//}
-	//log.Debug("NewProtocolManager triedb.Node", "node", string(node))
-
-	//var proof light.NodeList
-	//trie.Prove(req.Key, 0, &proof)
-	//======test end======
 	ptn.ApiBackend = &PtnApiBackend{ptn}
 	return ptn, nil
 }
