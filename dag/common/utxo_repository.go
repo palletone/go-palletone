@@ -614,6 +614,7 @@ func (repository *UtxoRepository) ComputeAwards(txs []*modules.TxPoolTransaction
 		addition := new(modules.Addition)
 		//first tx's asset
 		addition.Asset = *txs[0].Tx.Asset()
+		addition.Amount = awards
 		return addition, nil
 	}
 }

@@ -248,7 +248,7 @@ func (p *Processor) runContractReq(reqId common.Hash) error {
 
 	//如果系统合约，直接添加到缓存池
 	//如果用户合约，需要签名，添加到缓存池并广播
-	if isSystemContract(tx) {
+	if tx.IsSystemContract() {
 		req.rstTx = tx
 	} else {
 		account := p.getLocalAccount()
@@ -388,7 +388,7 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 		}
 		log.Debug("AddContractLoop", "enter mtx", addr.String())
 		ctx.valid = false
-		if isSystemContract(ctx.reqTx) && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
+		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
 				if p.runContractReq(ctx.reqTx.RequestHash()) != nil {
 					continue
@@ -434,7 +434,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		return false
 	}
 	log.Debug("CheckContractTxValid", "reqId:", tx.RequestHash().String(), "exec:", execute)
-	if !execute || !isSystemContract(tx) { //不执行合约或者用户合约
+	if !execute || !tx.IsSystemContract() { //不执行合约或者用户合约
 		return true
 	}
 	if !p.checkTxValid(tx) {
@@ -461,7 +461,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 }
 
 func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
-	return isSystemContract(tx)
+	return tx.IsSystemContract()
 }
 
 func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
@@ -539,7 +539,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	if tx == nil {
 		return false
 	}
-	isSysContract := isSystemContract(tx)
+	isSysContract := tx.IsSystemContract()
 	isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
 		isM = false
 		isJ = false
@@ -627,7 +627,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		adaInf: make(map[uint32]*AdapterInf),
 	}
 	ctx := p.mtx[reqId]
-	if !isSystemContract(tx) {
+	if !tx.IsSystemContract() {
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if contractId == (common.Address{}) { //deploy
@@ -656,7 +656,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 			return common.Hash{}, nil, err
 		}
 		tx = ctx.rstTx
-	} else if p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ctx.eleInf) && !isSystemContract(tx) {
+	} else if p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ctx.eleInf) && !tx.IsSystemContract() {
 		go p.runContractReq(reqId)
 	}
 	return reqId, tx, nil
