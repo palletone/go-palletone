@@ -781,18 +781,14 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
 	log.Debugf("Try to save a new unit to db:%s", uHash.String())
-	// if unit.UnitSize == 0 || unit.Size() == 0 {
-	// 	log.Error("Unit is null")
-	// 	return fmt.Errorf("Unit is null")
-	// } //Validator will check unit
 
-	// step10. save unit header
+	// step1. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := rep.dagdb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-	// step5. traverse transactions and save them
+	// step2. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		err := rep.saveTx4Unit(unit, txIndex, tx)
@@ -801,18 +797,17 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		txHashSet = append(txHashSet, tx.Hash())
 	}
-	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
+	// step3. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err := rep.dagdb.SaveBody(uHash, txHashSet); err != nil {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
-
-	// step 9  save txlookupEntry
+	// step4  save txlookupEntry
 	if err := rep.dagdb.SaveTxLookupEntry(unit); err != nil {
 		log.Info("SaveTxLookupEntry", "error", err.Error())
 		return err
 	}
-	//step12+ Special process genesis unit
+	//step5  Special process genesis unit
 	if isGenesis {
 		if err := rep.propdb.SetNewestUnit(unit.Header()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
@@ -824,37 +819,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
-
-	// step1 验证 群签名
-	// if passed == true , don't validate group sign
-	//if !passed {
-	//	if state := rep.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); state ==
-	// 		modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
-	//		return fmt.Errorf("Validate unit's group sign failed, err number=%d", state)
-	//	}
-	//}
-
-	// step2. check unit signature, should be compare to mediator list
-	//if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
-	//	errno := rep.validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
-	//	if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-	//		return fmt.Errorf("Validate unit signature, errno=%d", errno)
-	//	}
-	//}
-	//
-	//// step3. check unit size
-	//if unit.UnitSize != unit.Size() {
-	//	log.Info("Validate size", "error", "Size is invalid")
-	//	return modules.ErrUnit(-1)
-	//}
-	//// log.Info("===dag ValidateTransactions===")
-	//// step4. check transactions in unit
-	//// TODO must recover
-	//_, isSuccess, err := rep.validate.ValidateTransactions(&unit.Txs, isGenesis)
-	//if err != nil || !isSuccess {
-	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	//}
-
+	log.Debugf("saved a new unit to db:%s ", uHash.String())
 	return nil
 }
 
