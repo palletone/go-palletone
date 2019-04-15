@@ -17,7 +17,19 @@ import (
 	"github.com/palletone/digital-identity/client"
 	"crypto/x509"
 	"encoding/pem"
+
+	"encoding/json"
+	"net/http"
+	"bytes"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 )
+
+type CertRpc struct {
+	Jsonrpc string        `json:"jsonrpc"`
+	Methond string        `json:"method"`
+	Params  []interface{} `json:"params"`
+	Id      int           `json:"id"`
+}
 
 type CertINfo struct {
 	//The address as a certificate enrolleid
@@ -39,8 +51,8 @@ type CAGetCertChain struct {
 	RootCertificates []*x509.Certificate
 	// IntermediateCertificates is list of pem encoded intermediate certificates
 	IntermediateCertificates []*pem.Block
-	CAName string
-	Version string
+	CAName                   string
+	Version                  string
 }
 
 func NewCertInfo(address, name, data, ty, affiliation string, ecert bool) *CertINfo {
@@ -66,24 +78,26 @@ func CertInfo2Cainfo(certinfo CertINfo) client.CaGenInfo {
 
 }
 
-
-
 func CertChain2Result(cc client.CAGetCertResponse) CAGetCertChain {
 	return CAGetCertChain{
-		RootCertificates:cc.RootCertificates,
-		IntermediateCertificates:cc.IntermediateCertificates,
-		CAName:cc.CAName,
-		Version:cc.Version,
+		RootCertificates:         cc.RootCertificates,
+		IntermediateCertificates: cc.IntermediateCertificates,
+		CAName:                   cc.CAName,
+		Version:                  cc.Version,
 	}
 }
-func GenCert(certinfo CertINfo) error {
-	cainfo := CertInfo2Cainfo(certinfo)
 
-	err := cainfo.Enrolluser()
-	if err != nil {
-		return err
-	}
-
+func GenCert(certinfo CertINfo) (error) {
+	//	cainfo := CertInfo2Cainfo(certinfo)
+	////发送请求到CA server 注册用户 生成证书
+	//	certpem,err := cainfo.Enrolluser()
+	//	if err != nil {
+	//		return err
+	//	}
+	//	address := cainfo.EnrolmentId
+	//	//将证书byte 用户地址 通过rpc调用进行存储
+	//	rootAddress := syscontract.DigitalIdentityContractAddress.String()
+	//
 	return nil
 }
 
@@ -118,14 +132,55 @@ func GetIndentities() (*client.CAListAllIdentitesResponse, error) {
 }
 
 //获取证书链信息
-func GetCaCertificateChain(caname string) (*CAGetCertChain,error) {
+func GetCaCertificateChain(caname string) (*CAGetCertChain, error) {
 	cainfo := client.CaGenInfo{}
 	certchain, err := cainfo.GetCaCertificateChain(caname)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	cc := CertChain2Result(*certchain)
 
-	return &cc,nil
+	return &cc, nil
+}
+
+func CertRpcReq() error {
+	params := CertRpc{}
+	params.Jsonrpc = "2.0"
+	params.Methond = "ptn_ccinvoketx"
+	params.Id = 1
+	form := "P135UmGibaAahtiBet3hvZm8pDsu5V1yRhK"
+	to := "P135UmGibaAahtiBet3hvZm8pDsu5V1yRhK"
+	amount := "100"
+	fee := "1"
+	ccaddress := syscontract.DigitalIdentityContractAddress.String()
+	//method1 := []string{"P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","100","1","PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"}
+	method2 := []string{"addServerCert", "P135UmGibaAahtiBet3hvZm8pDsu5V1yRhK", "This is test cert byte!"}
+	//method2 := TestAddCertJson{ []string{"addServerCert","P1HrTpdqBmCrNhJMGREu7vtyzmhCiPiztkL","E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\data\\certs\\openssl\\powerca\\certs\\powerca.cert.pem"}}
+	params.Params = append(params.Params, form, to, amount, fee, ccaddress)
+	//params.Params = append(params.Params,str2)
+	params.Params = append(params.Params, method2)
+	reqJson, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	httpReq, err := http.NewRequest("POST", "http://localhost:8545", bytes.NewBuffer(reqJson))
+	if err != nil {
+		return err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(httpReq)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	//_, err = ioutil.ReadAll(resp.Body)
+	//if err != nil {
+	//	return err
+	//}
+	return nil
 }

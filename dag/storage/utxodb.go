@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"reflect"
 )
 
 type UtxoDb struct {
@@ -174,7 +175,8 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey()
-	log.Debugf("Query utxo by outpoint:%s", outpoint.String())
+
+	log.Debugf("DB[%s] Query utxo by outpoint:%s", reflect.TypeOf(utxodb.db).String(), outpoint.String())
 	err := retrieve(utxodb.db, key, utxo)
 	//data, err := utxodb.db.Get(key)
 	if err != nil {

@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"reflect"
 )
 
 //对DAG对象的操作，包括：Unit，Tx等
@@ -179,7 +180,7 @@ func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 		log.Error("Save Header error", err.Error())
 		return err
 	}
-	log.Debugf("Save header for unit: %#x", uHash.Bytes())
+	log.Debugf("DB[%s] Save header for unit: %#x", reflect.TypeOf(dagdb.db).String(), uHash.Bytes())
 	return nil
 }
 
@@ -301,7 +302,7 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
-	log.Debugf("Save body of unit[%s], include txs:%#x", unitHash.String(), txsHash)
+	log.Debugf("DB[%s] Save body of unit[%s], include txs:%#x", reflect.TypeOf(dagdb.db).String(), unitHash.String(), txsHash)
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
 	return StoreBytes(dagdb.db, key, txsHash)
 }
@@ -469,7 +470,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		log.Info("GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
+		log.Info(reflect.TypeOf(dagdb.db).String(), "GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -543,6 +544,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 
 func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
+	log.Debugf("DB[%s] Get Header by unit hash:%s", reflect.TypeOf(dagdb.db).String(), hash.String())
 	header := new(modules.Header)
 	err := retrieve(dagdb.db, key, header)
 	if err != nil {
