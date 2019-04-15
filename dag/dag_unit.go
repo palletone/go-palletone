@@ -57,7 +57,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			dag.propRep.SetNewestUnit(newestUnit.Header())
 		}
 	}
-
+	log.Infof("Start generate unit... index:%d ", chainIndex.Index+1)
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
@@ -117,9 +117,8 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	if !dag.ApplyUnit(newUnit) {
 		return false
 	}
-
-	dag.Memdag.AddUnit(newUnit, txpool)
-	log.Debugf("save unit spent time: %s", time.Since(t0).String())
+	go dag.Memdag.AddUnit(newUnit, txpool)
+	log.Debugf("save newest unit spent time: %s, parent hash:%s", time.Since(t0).String(), newUnit.ParentHash()[0].String())
 	return true
 }
 

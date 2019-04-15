@@ -360,7 +360,6 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
-	log.Debug("Start create unit...")
 	rep.lock.RLock()
 	begin := time.Now()
 
@@ -396,7 +395,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-	log.Debug("Start txpool.GetSortedTxs...")
+	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
@@ -491,7 +490,7 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			a.Addr = *m
 			ads = append(ads, a)
 			continue
-		} else if !tx.Tx.IsSystemContract(){
+		} else if !tx.Tx.IsSystemContract() {
 			a.Addr = *m
 			ads = append(ads, a)
 			continue
@@ -1357,23 +1356,23 @@ func CreateCoinbase(ads []*modules.Addition, t time.Time) (*modules.Transaction,
 	}
 
 	/*
-	// setp1. create P2PKH script
-	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
-	// step. compute total income
-	totalIncome := int64(income) + int64(ComputeRewards())
-	// step2. create payload
-	createT := big.Int{}
-	input := modules.Input{
-		Extra: createT.SetInt64(t.Unix()).Bytes(),
-	}
-	output := modules.Output{
-		Value:    uint64(totalIncome),
-		Asset:    asset,
-		PkScript: script,
-	}
-	payload.Inputs = append(payload.Inputs, &input)
-	payload.Outputs = append(payload.Outputs, &output)
-*/
+		// setp1. create P2PKH script
+		script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
+		// step. compute total income
+		totalIncome := int64(income) + int64(ComputeRewards())
+		// step2. create payload
+		createT := big.Int{}
+		input := modules.Input{
+			Extra: createT.SetInt64(t.Unix()).Bytes(),
+		}
+		output := modules.Output{
+			Value:    uint64(totalIncome),
+			Asset:    asset,
+			PkScript: script,
+		}
+		payload.Inputs = append(payload.Inputs, &input)
+		payload.Outputs = append(payload.Outputs, &output)
+	*/
 
 	// step3. create message
 	msg := &modules.Message{
