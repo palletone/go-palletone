@@ -133,12 +133,12 @@ func (av *AdapterEvent) ToAdapterEventBytes() (*AdapterEventBytes, error) {
 }
 
 type AdapterRequestEvent struct {
-	reqId       common.Hash    `json:"reqId"`
-	contractId  common.Address `json:"contractId"`  //todo delete
-	consultData []byte         `json:"consultdata"` //
-	answer      []byte         `json:"answer"`
-	sig         []byte         `json:"sig"`
-	pubkey      []byte         `json:"pubkey"`
+	ReqId       common.Hash    `json:"reqId"`
+	ContractId  common.Address `json:"contractId"`  //
+	ConsultData []byte         `json:"consultdata"` //
+	Answer      []byte         `json:"Answer"`
+	Sig         []byte         `json:"sig"`
+	Pubkey      []byte         `json:"Pubkey"`
 }
 
 type AdapterEventBytes struct {
