@@ -24,7 +24,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
@@ -143,13 +142,6 @@ func (d *DigitalIdentityChainCode) addCRLCert(stub shim.ChaincodeStubInterface, 
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert parse issuerAddr error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
-	// load crl file
-	//crlPath := args[0]
-	//	//pemBytes, err := loadCert(crlPath)
-	//	//if err != nil {
-	//	//	reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load [%s] error: %s", crlPath, err.Error())
-	//	//	return shim.Error(reqStr)
-	//	//}
 	crlBytes, err := loadCertBytes([]byte(args[0]))
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load bytes to CRL error: %s", err.Error())
@@ -188,7 +180,6 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 	if err != nil {
 		return shim.Error(fmt.Sprintf("get ca holder error"))
 	}
-	log.Debugf(">>>>> get root ca holder:%s", val)
 	if string(val) == args[0] {
 		rootcert, err := GetRootCert(stub)
 		if err != nil {
