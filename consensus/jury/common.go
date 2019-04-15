@@ -399,23 +399,6 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	return false
 }
 
-func isSystemContract(tx *modules.Transaction) bool {
-	for _, msg := range tx.TxMessages {
-		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
-			contractId := msg.Payload.(*modules.ContractInvokeRequestPayload).ContractId
-			log.Debug("isSystemContract", "contract id", contractId, "len", len(contractId))
-			contractAddr := common.NewAddress(contractId, common.ContractHash)
-			return contractAddr.IsSystemContractAddress() //, nil
-
-		} else if msg.App == modules.APP_CONTRACT_TPL_REQUEST {
-			return true //todo  先期将install作为系统合约处理，只有Mediator可以安装，后期在扩展到所有节点
-		} else if msg.App >= modules.APP_CONTRACT_DEPLOY_REQUEST {
-			return false //, nil
-		}
-	}
-	return true //, errors.New("isSystemContract not find contract type")
-}
-
 func printTxInfo(tx *modules.Transaction) {
 	if tx == nil {
 		return

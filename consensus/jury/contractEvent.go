@@ -77,7 +77,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []ElectionInf
 	p.locker.Unlock()
 	log.Debug("contractExecEvent", "add tx req id", reqId)
 
-	if !isSystemContract(tx) { //系统合约在UNIT构建前执行
+	if !tx.IsSystemContract() { //系统合约在UNIT构建前执行
 		go p.runContractReq(reqId)
 	}
 	//broadcast contract request transaction event

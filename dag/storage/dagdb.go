@@ -138,7 +138,7 @@ func (dagdb *DagDb) GetGenesisUnitHash() (common.Hash, error) {
 	return hash, nil
 }
 func (dagdb *DagDb) SaveGenesisUnitHash(hash common.Hash) error {
-	log.Debugf("Save GenesisUnitHash:%x", hash.Bytes())
+	log.Debugf("Save GenesisUnitHash:%#x", hash.Bytes())
 	return dagdb.db.Put(constants.GenesisUnitHash, hash.Bytes())
 
 }
@@ -179,7 +179,7 @@ func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 		log.Error("Save Header error", err.Error())
 		return err
 	}
-	log.Debugf("Save header for unit: %x", uHash.Bytes())
+	log.Debugf("Save header for unit: %#x", uHash.Bytes())
 	return nil
 }
 
@@ -192,7 +192,7 @@ func (dagdb *DagDb) saveHeaderChainIndex(putter ptndb.Putter, h *modules.Header)
 		log.Error("Save Header height index error", err.Error())
 		return err
 	}
-	log.Debugf("Save header number %s for unit: %x", h.Number.String(), uHash.Bytes())
+	log.Debugf("Save header number %s for unit: %#x", h.Number.String(), uHash.Bytes())
 	return nil
 }
 func (dagdb *DagDb) GetHashByNumber(number *modules.ChainIndex) (common.Hash, error) {
@@ -301,7 +301,7 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	// db.Put(append())
-	log.Debugf("Save body of unit[%s], include txs:%x", unitHash.String(), txsHash)
+	log.Debugf("Save body of unit[%s], include txs:%#x", unitHash.String(), txsHash)
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
 	return StoreBytes(dagdb.db, key, txsHash)
 }
