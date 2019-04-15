@@ -38,9 +38,10 @@ import (
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
+	t0 := time.Now()
 	defer func(start time.Time) {
 		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
-	}(time.Now())
+	}(t0)
 
 	gasToken := dagconfig.DagConfig.GetGasToken()
 
@@ -82,7 +83,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Debugf("Generate new unit[%s],size:%s, parent unit[%s]", sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String())
+	log.Debugf("Generate new unit[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
 
 	//TODO add PostChainEvents
 	// go func() {
@@ -111,14 +112,14 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
  */
 func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
-
+	t0 := time.Now()
 	// 2. 更新状态
 	if !dag.ApplyUnit(newUnit) {
 		return false
 	}
 
 	dag.Memdag.AddUnit(newUnit, txpool)
-
+	log.Debugf("save unit spent time: %s", time.Since(t0).String())
 	return true
 }
 

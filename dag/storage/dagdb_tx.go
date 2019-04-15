@@ -230,9 +230,8 @@ func (dagdb *DagDb) GetTransactionOnly(hash common.Hash) (*modules.Transaction, 
 	tx := new(modules.Transaction)
 	key := append(constants.TRANSACTION_PREFIX, hash.Bytes()...)
 	err := retrieve(dagdb.db, key, tx)
-	//data, err := getString(dagdb.db, []byte(key))
 	if err != nil {
-		log.Error("get transaction failed......", "error", err)
+		log.Info("get transaction failed.", "error", err)
 		return nil, err
 	}
 	return tx, nil

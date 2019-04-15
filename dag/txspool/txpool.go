@@ -632,9 +632,11 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return true, nil
 	}
-
 	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
+	if curTx, _ := pool.unit.GetTransactionOnly(hash); curTx != nil {
+		return false, fmt.Errorf("the transactionx: %x has been packaged.", hash)
+	}
 	if _, has := pool.all.Load(hash); has {
 		log.Trace("Discarding already known transaction", "hash", hash)
 		return false, fmt.Errorf("known transaction: %#x", hash)
