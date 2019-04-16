@@ -297,6 +297,9 @@ type ChainIndex struct {
 	Index   uint64  `json:"index"`
 }
 
+func NewChainIndex(assetId AssetId, idx uint64) *ChainIndex {
+	return &ChainIndex{AssetID: assetId, Index: idx}
+}
 func (height *ChainIndex) String() string {
 	return fmt.Sprintf("%s-%d", height.AssetID.GetSymbol(), height.Index)
 }
