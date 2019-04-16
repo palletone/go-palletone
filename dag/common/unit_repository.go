@@ -68,6 +68,7 @@ type IUnitRepository interface {
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	IsTransactionExist(txHash common.Hash) (bool, error)
 	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
@@ -159,6 +160,9 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 }
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
 	return rep.dagdb.IsHeaderExist(uHash)
+}
+func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) (bool, error) {
+	return rep.dagdb.IsTransactionExist(txHash)
 }
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	rep.lock.RLock()
@@ -506,7 +510,7 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 		t := a.Amount * 6 / 10
 		for _, add := range addrs {
 			am := &modules.Addition{
-				Asset:  *tx.TxFee.Asset,
+				Asset: *tx.TxFee.Asset,
 			}
 			am.Amount = t / uint64(nm) //jury fee= all * 0.6/nm
 			am.Addr = add

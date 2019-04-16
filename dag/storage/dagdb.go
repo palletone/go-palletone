@@ -76,6 +76,7 @@ type IDagDb interface {
 	GetPrefix(prefix []byte) map[string][]byte
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
+	IsTransactionExist(txHash common.Hash) (bool, error)
 	//GetUnitFormIndex(number modules.ChainIndex) (*modules.Unit, error)
 	//GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	//GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error)
