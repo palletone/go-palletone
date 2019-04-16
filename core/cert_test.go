@@ -78,8 +78,7 @@ func TestGenCert(t *testing.T) {
 		t.Log(err)
 	}
 	t.Log(string(body))
-	rootAddress := modules.
-	t.Log(rootAddress)
+
 }
 
 //
