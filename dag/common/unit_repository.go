@@ -21,7 +21,6 @@ package common
 
 import (
 	"fmt"
-	"math/big"
 	"reflect"
 	"strings"
 	"time"
@@ -508,6 +507,10 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			continue
 		}
 		t := a.Amount * 6 / 10
+		if t > a.Amount{
+			log.Error("ComputeTxFees", "computer err, t=", t, "a.mount=", a.Amount)
+			continue
+		}
 		for _, add := range addrs {
 			am := &modules.Addition{
 				Asset: *tx.TxFee.Asset,
@@ -1311,47 +1314,20 @@ func CreateCoinbase(ads []*modules.Addition, t time.Time) (*modules.Transaction,
 	if len(ads) != 0 {
 		for _, v := range ads {
 			script := tokenengine.GenerateLockScript(v.Addr)
-			createT := big.Int{}
-			additionalInput := modules.Input{
-				Extra: createT.SetInt64(t.Unix()).Bytes(),
-			}
 			additionalOutput := modules.Output{
 				Value:    v.Amount,
 				Asset:    &v.Asset,
 				PkScript: script,
 			}
-			payload.Inputs = append(payload.Inputs, &additionalInput)
 			payload.Outputs = append(payload.Outputs, &additionalOutput)
 
 			totalIncome += v.Amount
 		}
 	}
-
-	/*
-		// setp1. create P2PKH script
-		script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
-		// step. compute total income
-		totalIncome := int64(income) + int64(ComputeRewards())
-		// step2. create payload
-		createT := big.Int{}
-		input := modules.Input{
-			Extra: createT.SetInt64(t.Unix()).Bytes(),
-		}
-		output := modules.Output{
-			Value:    uint64(totalIncome),
-			Asset:    asset,
-			PkScript: script,
-		}
-		payload.Inputs = append(payload.Inputs, &input)
-		payload.Outputs = append(payload.Outputs, &output)
-	*/
-
-	// step3. create message
 	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: &payload,
 	}
-	// step4. create coinbase
 	coinbase := new(modules.Transaction)
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	return coinbase, totalIncome, nil

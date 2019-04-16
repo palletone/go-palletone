@@ -577,5 +577,11 @@ func TestComputeTxFees(t *testing.T) {
 	if err == nil {
 		outAds := arrangeAdditionFeeList(ads)
 		log.Debug("TestComputeTxFees", "outAds:", outAds)
+		coinbase, rewards, err := CreateCoinbase(outAds, time.Now())
+		if err == nil {
+			log.Debug("TestComputeTxFees", "coinbase", coinbase, "rewards", rewards)
+		}
 	}
+
+
 }
