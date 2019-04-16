@@ -1666,14 +1666,20 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	}
 	pool.mu.RUnlock()
 	// 	去重
-	m := make(map[int]*modules.TxPoolTransaction)
+	m := make(map[common.Hash]*modules.TxPoolTransaction)
+	indexL := make(map[int]common.Hash)
 	for i, tx := range list {
+		hash := tx.Tx.Hash()
 		tx.Index = i
-		m[i] = tx
+		indexL[i] = hash
+		m[hash] = tx
 	}
 	list = make([]*modules.TxPoolTransaction, 0)
-	for i := 0; i < len(m); i++ {
-		if tx, has := m[i]; has {
+
+	for i := 0; i < len(indexL); i++ {
+		hash, _ := indexL[i]
+		if tx, has := m[hash]; has {
+			delete(m, hash)
 			list = append(list, tx)
 			go pool.promoteTx(hash, tx)
 		} else {

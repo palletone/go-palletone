@@ -212,7 +212,6 @@ func (repository *UtxoRepository) GetUtxoByOutpoint(outpoint *modules.OutPoint) 
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
 func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
-	log.Debugf("Try to destroy old Utxo and generate new Utxo by Tx[%s]", txHash.String())
 	// update utxo
 	err := repository.destoryUtxo(payment.Inputs)
 	if err != nil {
