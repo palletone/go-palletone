@@ -475,7 +475,7 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	if !tx.IsContractTx() {
 		return nil
 	}
-	addrs := make([]common.Address, 4)
+	addrs := make([]common.Address, 0)
 	for _, msg := range tx.TxMessages {
 		switch msg.App {
 		case APP_SIGNATURE:
