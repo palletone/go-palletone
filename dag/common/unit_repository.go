@@ -489,11 +489,7 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			Asset:  *tx.TxFee.Asset,
 		}
 
-		if !tx.Tx.IsContractTx() {
-			a.Addr = *m
-			ads = append(ads, a)
-			continue
-		} else if !tx.Tx.IsSystemContract() {
+		if !tx.Tx.IsContractTx() || tx.Tx.IsSystemContract() {
 			a.Addr = *m
 			ads = append(ads, a)
 			continue
@@ -507,7 +503,7 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			continue
 		}
 		t := a.Amount * 6 / 10
-		if t > a.Amount{
+		if t > a.Amount {
 			log.Error("ComputeTxFees", "computer err, t=", t, "a.mount=", a.Amount)
 			continue
 		}
