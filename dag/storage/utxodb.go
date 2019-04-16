@@ -143,8 +143,9 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 
 	//2. soft delete utxo
 	if utxo.IsSpent() {
-		return errors.New("Try to soft delete a deleted utxo.")
+		return errors.New("Try to soft delete a deleted utxo by key:" + outpoint.String())
 	}
+	log.Infof("Try to soft deleted a utxo by key:%s", outpoint.String())
 	key := outpoint.ToKey()
 	utxo.Spend()
 	//log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
