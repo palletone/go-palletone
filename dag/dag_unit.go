@@ -98,7 +98,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
 	}
-
+	log.Debugf("Complete generate unit:%s", sign_unit.String4Log())
 	return sign_unit
 }
 
@@ -117,7 +117,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	if !dag.ApplyUnit(newUnit) {
 		return false
 	}
-	go dag.Memdag.AddUnit(newUnit, txpool)
+	dag.Memdag.AddUnit(newUnit, txpool)
 	log.Debugf("save newest unit spent time: %s, parent hash:%s", time.Since(t0).String(), newUnit.ParentHash()[0].String())
 	return true
 }

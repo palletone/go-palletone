@@ -470,7 +470,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		log.Info(reflect.TypeOf(dagdb.db).String()+": GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
+		log.Error(reflect.TypeOf(dagdb.db).String()+": GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
 		return nil, err
 	}
 	// get transaction by tx'hash.
