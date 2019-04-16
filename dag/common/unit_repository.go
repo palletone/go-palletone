@@ -505,9 +505,12 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 		}
 		t := a.Amount * 6 / 10
 		for _, add := range addrs {
-			a.Amount = t / uint64(nm) //jury fee= all * 0.6/nm
-			a.Addr = add
-			ads = append(ads, a)
+			am := &modules.Addition{
+				Asset:  *tx.TxFee.Asset,
+			}
+			am.Amount = t / uint64(nm) //jury fee= all * 0.6/nm
+			am.Addr = add
+			ads = append(ads, am)
 		}
 		a.Amount = a.Amount - t //mediator fee = all * 0.4
 		a.Addr = *m
