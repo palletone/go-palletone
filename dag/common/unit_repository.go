@@ -410,17 +410,22 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	log.Infof("txpool.GetSortedTxs cost time %s, include txs:[%#x]", time.Since(begin), txIds)
 	// step5. compute minner income: transaction fees + interest
 
-	//交易费用
+	//交易费用--
 	ads, err := ComputeTxFees(mAddr, poolTxs)
 	if err != nil {
-		log.Error("ComputeContractProcessorFees is failed.", "error", err.Error())
+		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error())
 		return nil, err
 	}
-	//保证金利息
+	//保证金利息--
 	addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
 	awardAd, err := rep.ComputeAwardsFees(&addr, poolTxs)
 	if err != nil && awardAd != nil {
 		ads = append(ads, awardAd)
+	}
+	//利息奖励--
+	rewardAd := ComputeRewardsFees(mAddr, poolTxs)
+	if rewardAd != nil {
+		ads = append(ads, rewardAd)
 	}
 
 	outAds := arrangeAdditionFeeList(ads)
@@ -520,6 +525,19 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 		ads = append(ads, a)
 	}
 	return ads, nil
+}
+
+//利息奖励,Mediator
+func ComputeRewardsFees(m *common.Address, txs []*modules.TxPoolTransaction) (*modules.Addition) {
+	if m == nil || len(txs) < 1 {
+		return nil
+	}
+	a := &modules.Addition{
+		Addr:   *m,
+		Amount: ComputeRewards(),
+		Asset:  *txs[0].Tx.Asset(),
+	}
+	return a
 }
 
 //获取保证金利息

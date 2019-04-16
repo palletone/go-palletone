@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkPropCacheRepository_RetrieveDynGlobalProp(b *testing.B) {
@@ -52,5 +53,6 @@ func TestPropCacheRepository_RetrieveGlobalProp(t *testing.T) {
 	propdb := storage.NewPropertyDb(db)
 	cache := freecache.NewCache(10 * 1024 * 1024)
 	rep := NewPropCacheRepository(propdb, cache)
-	rep.RetrieveGlobalProp()
+	_, err := rep.RetrieveGlobalProp()
+	assert.NotNil(t, err)
 }

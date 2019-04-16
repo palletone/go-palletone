@@ -19,7 +19,7 @@ import (
 	"github.com/palletone/digital-identity/client"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"gopkg.in/urfave/cli.v1"
-	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/certficate"
 )
 
 var (
@@ -136,9 +136,16 @@ func enrollUser(ctx *cli.Context) error {
 	affiliation := ctx.Args()[3]
 	ty := "user"
 
-	certinfo := core.NewCertInfo(address, name, data, ty, affiliation, true)
-	err := core.GenCert(*certinfo)
+	certinfo := certficate.NewCertInfo(address, name, data, ty, affiliation, true)
+	cfg, _, err := maybeLoadConfig(ctx)
 	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+	fmt.Println(cfg.Certficate.Immediateca)
+	err = certficate.GenCert(*certinfo,cfg.Certficate)
+
+	if err != nil {
+		fmt.Println("Gen cert errot")
 		return err
 	}
 	fmt.Println(address + "  Registered  certificate  OK")
@@ -154,7 +161,7 @@ func revoke(ctx *cli.Context) error {
 	if len(ctx.Args()) == 1 {
 		address := ctx.Args().First()
 		reason := "Forced to compromise"
-		err := core.RevokeCert(address,reason)
+		err := certficate.RevokeCert(address,reason)
 		if err != nil {
 			return err
 		}
@@ -164,11 +171,11 @@ func revoke(ctx *cli.Context) error {
 	address := ctx.Args().First()
 	reason := ctx.Args()[1]
 
-	err := core.RevokeCert(address, reason)
+	err := certficate.RevokeCert(address, reason)
 	fmt.Println(address + "  Revoked  certificate  OK")
 	if err != nil {
 		return err
-		}
+	}
 
 	return nil
 }
@@ -185,7 +192,7 @@ func getIndentity(ctx *cli.Context) error {
 	address := ctx.Args().First()
 	caname := ctx.Args()[1]
 
-	idtRep, err := core.GetIndentity(address, caname)
+	idtRep, err := certficate.GetIndentity(address, caname)
 	if err != nil {
 		return err
 	}
@@ -194,7 +201,7 @@ func getIndentity(ctx *cli.Context) error {
 }
 
 func getIndentities(ctx *cli.Context) error {
-	idtReps,err := core.GetIndentities()
+	idtReps,err := certficate.GetIndentities()
 	if err != nil {
 		return err
 	}
@@ -209,7 +216,7 @@ func getCaCertificateChain(ctx *cli.Context) error {
 	}
 	caname := ctx.Args().First()
 
-	certchain, err := core.GetCaCertificateChain(caname)
+	certchain, err := certficate.GetCaCertificateChain(caname)
 	if err != nil {
 		return err
 	}

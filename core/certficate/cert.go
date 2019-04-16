@@ -11,18 +11,25 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
-package core
+package certficate
 
 import (
 	"github.com/palletone/digital-identity/client"
 	"crypto/x509"
 	"encoding/pem"
-
-	"encoding/json"
 	"net/http"
 	"bytes"
-	"github.com/palletone/go-palletone/contracts/syscontract"
+
+	"encoding/json"
 )
+
+const (
+	jsonrpc  = "2.0"
+	method = "ptn_ccinvoketx"
+	id = 1
+	amount = "100"
+	fee = "1"
+	)
 
 type CertRpc struct {
 	Jsonrpc string        `json:"jsonrpc"`
@@ -87,17 +94,23 @@ func CertChain2Result(cc client.CAGetCertResponse) CAGetCertChain {
 	}
 }
 
-func GenCert(certinfo CertINfo) (error) {
-	//	cainfo := CertInfo2Cainfo(certinfo)
-	////发送请求到CA server 注册用户 生成证书
-	//	certpem,err := cainfo.Enrolluser()
-	//	if err != nil {
-	//		return err
-	//	}
-	//	address := cainfo.EnrolmentId
-	//	//将证书byte 用户地址 通过rpc调用进行存储
-	//	rootAddress := syscontract.DigitalIdentityContractAddress.String()
-	//
+func GenCert(certinfo CertINfo,cfg CAConfig) error {
+	cainfo := CertInfo2Cainfo(certinfo)
+	//发送请求到CA server 注册用户 生成证书
+	certpem, err := cainfo.Enrolluser()
+	if err != nil {
+		return err
+	}
+	immediateca := cfg.Immediateca
+	address := cainfo.EnrolmentId
+	//将证书byte 用户地址 通过rpc调用进行存储
+	if certpem != nil {
+		err = CertRpcReq(address,immediateca,certpem)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -144,20 +157,21 @@ func GetCaCertificateChain(caname string) (*CAGetCertChain, error) {
 	return &cc, nil
 }
 
-func CertRpcReq() error {
+func CertRpcReq(address string,immediateca string, certbyte []byte) error {
 	params := CertRpc{}
-	params.Jsonrpc = "2.0"
-	params.Methond = "ptn_ccinvoketx"
-	params.Id = 1
-	form := "P135UmGibaAahtiBet3hvZm8pDsu5V1yRhK"
-	to := "P135UmGibaAahtiBet3hvZm8pDsu5V1yRhK"
-	amount := "100"
-	fee := "1"
-	ccaddress := syscontract.DigitalIdentityContractAddress.String()
+	params.Jsonrpc = jsonrpc
+	params.Methond = method
+	params.Id = id
+	from := immediateca
+	to := immediateca
+
+	//amount := amount
+	//fee := fee
+	ccaddress := address
 	//method1 := []string{"P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","100","1","PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"}
-	method2 := []string{"addServerCert", "P135UmGibaAahtiBet3hvZm8pDsu5V1yRhK", "This is test cert byte!"}
+	method2 := []string{"addServerCert", address, string(certbyte)}
 	//method2 := TestAddCertJson{ []string{"addServerCert","P1HrTpdqBmCrNhJMGREu7vtyzmhCiPiztkL","E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\data\\certs\\openssl\\powerca\\certs\\powerca.cert.pem"}}
-	params.Params = append(params.Params, form, to, amount, fee, ccaddress)
+	params.Params = append(params.Params, from, to, amount, fee, ccaddress)
 	//params.Params = append(params.Params,str2)
 	params.Params = append(params.Params, method2)
 	reqJson, err := json.Marshal(params)
@@ -178,9 +192,6 @@ func CertRpcReq() error {
 
 	defer resp.Body.Close()
 
-	//_, err = ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	return err
-	//}
+
 	return nil
 }
