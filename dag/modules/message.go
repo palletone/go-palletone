@@ -333,7 +333,7 @@ type ContractReadSet struct {
 
 //请求合约信息
 type InvokeInfo struct {
-	InvokeAddress common.Address          `json:"invoke_address"` //请求地址
+	InvokeAddress common.Address  `json:"invoke_address"` //请求地址
 	InvokeTokens  []*InvokeTokens `json:"invoke_tokens"`  //请求数量
 	InvokeFees    *AmountAsset    `json:"invoke_fees"`    //请求交易�?
 }
@@ -408,10 +408,12 @@ type ContractDeployPayload struct {
 type ContractInvokePayload struct {
 	ContractId   []byte             `json:"contract_id"` // contract id
 	FunctionName string             `json:"function_name"`
-	Args         [][]byte           `json:"args"`      // contract arguments list
-	ReadSet      []ContractReadSet  `json:"read_set"`  // the set data of read, and value could be any type
-	WriteSet     []ContractWriteSet `json:"write_set"` // the set data of write, and value could be any type
-	Payload      []byte             `json:"payload"`   // the contract execution result
+	Args         [][]byte           `json:"args"`       // contract arguments list
+	ReadSet      []ContractReadSet  `json:"read_set"`   // the set data of read, and value could be any type
+	WriteSet     []ContractWriteSet `json:"write_set"`  // the set data of write, and value could be any type
+	Payload      []byte             `json:"payload"`    // the contract execution result
+	ErrorCode    uint32             `json:"error_code"` //If contract execute error, record the error code
+	ErrorMessage string             `json:"error_message"`
 }
 
 // App: contract_deploy
@@ -432,11 +434,11 @@ type ContractInvokeResult struct {
 	WriteSet     []ContractWriteSet `json:"write_set"`    // the set data of write, and value could be any type
 	Payload      []byte             `json:"payload"`      // the contract execution result
 	TokenPayOut  []*TokenPayOut     `json:"token_payout"` //从合约地址付出Token
-	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结�?
+	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
 	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 }
 
-//用户钱包发起的合约调用申�?
+//用户钱包发起的合约调用申请
 type ContractInstallRequestPayload struct {
 	TplName string `json:"tpl_name"`
 	Path    string `json:"install_path"`
