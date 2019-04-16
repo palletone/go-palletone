@@ -55,7 +55,6 @@ type LesServer interface {
 	Start(srvr *p2p.Server)
 	Stop()
 	Protocols() []p2p.Protocol
-	SetBloomBitsIndexer(bbIndexer *indexer.ChainIndexer)
 }
 
 // PalletOne implements the PalletOne full node service.
@@ -95,10 +94,10 @@ type PalletOne struct {
 	contractPorcessor *jury.Processor
 }
 
-//func (p *PalletOne) AddLesServer(ls LesServer) {
-//	p.lesServer = ls
-//	ls.SetBloomBitsIndexer(p.bloomIndexer)
-//}
+func (p *PalletOne) AddLesServer(ls LesServer) {
+	p.lesServer = ls
+	//ls.SetBloomBitsIndexer(p.bloomIndexer)
+}
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
@@ -183,9 +182,6 @@ func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palle
 	//db, err := ptndb.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
 	//path := ctx.DatabasePath(name)
 	path := dagconfig.DagConfig.DbPath
-
-	//fit dag DefaultConfig
-	//dagconfig.DagConfig.DbPath = path
 
 	log.Debug("Open leveldb path:", "path", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
