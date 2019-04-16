@@ -61,11 +61,11 @@ func TestGenesisUnit(t *testing.T) {
 	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset, -1, common.Hash{})
 
 	log.Debug("Genesis unit struct:")
-	log.Debug("parent units:", gUnit.UnitHeader.ParentsHash)
+	log.Debugf("parent units:%#x", gUnit.UnitHeader.ParentsHash)
 	//log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
-	log.Debug("group_sign:", gUnit.UnitHeader.GroupSign)
-	log.Debug("Root:", gUnit.UnitHeader.TxRoot)
-	log.Debug("Number:", gUnit.UnitHeader.Number.String())
+	log.Debugf("group_sign:%x", gUnit.UnitHeader.GroupSign)
+	log.Debugf("Root:%x", gUnit.UnitHeader.TxRoot)
+	log.Debugf("Number:%s", gUnit.UnitHeader.Number.String())
 
 }
 
@@ -85,7 +85,7 @@ func TestGenGenesisConfigPayload(t *testing.T) {
 		for _, w := range payload.WriteSet {
 			k := w.Key
 			v := w.Value
-			log.Debug(k, v)
+			log.Debug("Key:", k, v)
 		}
 	}
 }
@@ -536,7 +536,7 @@ func TestComputeTxFees(t *testing.T) {
 
 	//1
 	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04},}
+		{0x01}, {0x02}, {0x03}, {0x04}}
 	aId = modules.AssetId{'p', 't', 'n'}
 	tx = creatFeeTx(true, pks, 100, aId)
 	txs = append(txs, tx)
@@ -545,28 +545,28 @@ func TestComputeTxFees(t *testing.T) {
 
 	//2
 	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04},}
+		{0x01}, {0x02}, {0x03}, {0x04}}
 	aId = modules.AssetId{'p', 't', 'n'}
 	tx = creatFeeTx(true, pks, 10, aId)
 	txs = append(txs, tx)
 
 	//3
 	pks = [][]byte{
-		{0x05}, {0x06}, {0x07}, {0x08},}
+		{0x05}, {0x06}, {0x07}, {0x08}}
 	aId = modules.AssetId{'p', 't', 'n'}
 	tx = creatFeeTx(true, pks, 10, aId)
 	txs = append(txs, tx)
 
 	//4
 	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04},}
+		{0x01}, {0x02}, {0x03}, {0x04}}
 	aId = modules.AssetId{'a', 'b', 'c'}
 	tx = creatFeeTx(true, pks, 10, aId)
 	txs = append(txs, tx)
 
 	//5
 	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04},}
+		{0x01}, {0x02}, {0x03}, {0x04}}
 	aId = modules.AssetId{'a', 'b', 'c'}
 	tx = creatFeeTx(true, pks, 10, aId)
 	txs = append(txs, tx)
@@ -582,6 +582,5 @@ func TestComputeTxFees(t *testing.T) {
 			log.Debug("TestComputeTxFees", "coinbase", coinbase, "rewards", rewards)
 		}
 	}
-
 
 }
