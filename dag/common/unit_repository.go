@@ -780,7 +780,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	rep.lock.Lock()
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
-	log.Debugf("Try to save a new unit to db:%s", uHash.String())
+	log.Debugf("Try to save a new unit to db index:%d, hash :%s ", unit.NumberU64(), uHash.String())
 
 	// step1. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
@@ -819,7 +819,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
-	log.Debugf("saved a new unit to db:%s ", uHash.String())
+	log.Debugf("saved a new unit to db index:%d, hash :%s ", unit.NumberU64(), uHash.String())
 	return nil
 }
 
