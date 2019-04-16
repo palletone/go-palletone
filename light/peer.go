@@ -75,7 +75,7 @@ type peer struct {
 	fcClient       *flowcontrol.ClientNode // nil if the peer is server only
 	fcServer       *flowcontrol.ServerNode // nil if the peer is client only
 	fcServerParams *flowcontrol.ServerParams
-	//fcCosts        requestCostTable
+	fcCosts        requestCostTable
 }
 
 func newPeer(version int, network uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -163,16 +163,16 @@ func sendResponse(w p2p.MsgWriter, msgcode, reqID, bv uint64, data interface{}) 
 	return p2p.Send(w, msgcode, resp{reqID, bv, data})
 }
 
-//func (p *peer) GetRequestCost(msgcode uint64, amount int) uint64 {
-//	p.lock.RLock()
-//	defer p.lock.RUnlock()
-//
-//	cost := p.fcCosts[msgcode].baseCost + p.fcCosts[msgcode].reqCost*uint64(amount)
-//	if cost > p.fcServerParams.BufLimit {
-//		cost = p.fcServerParams.BufLimit
-//	}
-//	return cost
-//}
+func (p *peer) GetRequestCost(msgcode uint64, amount int) uint64 {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+
+	cost := p.fcCosts[msgcode].baseCost + p.fcCosts[msgcode].reqCost*uint64(amount)
+	if cost > p.fcServerParams.BufLimit {
+		cost = p.fcServerParams.BufLimit
+	}
+	return cost
+}
 
 // HasBlock checks if the peer has a given block
 func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
@@ -394,104 +394,101 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(td *big.Int, head common.Hash, headNum uint64, genesis common.Hash, server *LesServer) error {
+func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	/*
-		var send keyValueList
-		send = send.add("protocolVersion", uint64(p.version))
-		send = send.add("networkId", p.network)
-		send = send.add("headTd", td)
-		send = send.add("headHash", head)
-		send = send.add("headNum", headNum)
-		send = send.add("genesisHash", genesis)
-		if server != nil {
-			send = send.add("serveHeaders", nil)
-			send = send.add("serveChainSince", uint64(0))
-			send = send.add("serveStateSince", uint64(0))
-			send = send.add("txRelay", nil)
-			send = send.add("flowControl/BL", server.defParams.BufLimit)
-			send = send.add("flowControl/MRR", server.defParams.MinRecharge)
-			list := server.fcCostStats.getCurrentList()
-			send = send.add("flowControl/MRC", list)
-			p.fcCosts = list.decode()
-		} else {
-			p.requestAnnounceType = announceTypeSimple // set to default until "very light" client mode is implemented
-			send = send.add("announceType", p.requestAnnounceType)
-		}
-		recvList, err := p.sendReceiveHandshake(send)
-		if err != nil {
-			return err
-		}
-		recv := recvList.decode()
 
-		var rGenesis, rHash common.Hash
-		var rVersion, rNetwork, rNum uint64
-		var rTd *big.Int
+	var send keyValueList
+	send = send.add("protocolVersion", uint64(p.version))
+	send = send.add("networkId", p.network)
+	send = send.add("headNum", *number)
+	send = send.add("genesisHash", genesis)
+	if server != nil {
+		send = send.add("serveHeaders", nil)
+		send = send.add("serveChainSince", uint64(0))
+		send = send.add("serveStateSince", uint64(0))
+		send = send.add("txRelay", nil)
+		send = send.add("flowControl/BL", server.defParams.BufLimit)
+		send = send.add("flowControl/MRR", server.defParams.MinRecharge)
+		list := server.fcCostStats.getCurrentList()
+		send = send.add("flowControl/MRC", list)
+		p.fcCosts = list.decode()
+	} else {
+		p.requestAnnounceType = announceTypeSimple // set to default until "very light" client mode is implemented
+		send = send.add("announceType", p.requestAnnounceType)
+	}
+	recvList, err := p.sendReceiveHandshake(send)
+	if err != nil {
+		return err
+	}
+	recv := recvList.decode()
 
-		if err := recv.get("protocolVersion", &rVersion); err != nil {
-			return err
-		}
-		if err := recv.get("networkId", &rNetwork); err != nil {
-			return err
-		}
-		if err := recv.get("headTd", &rTd); err != nil {
-			return err
-		}
-		if err := recv.get("headHash", &rHash); err != nil {
-			return err
-		}
-		if err := recv.get("headNum", &rNum); err != nil {
-			return err
-		}
-		if err := recv.get("genesisHash", &rGenesis); err != nil {
-			return err
-		}
+	var rGenesis, rHash common.Hash
+	var rVersion, rNetwork, rNum uint64
+	var rTd *big.Int
 
-		if rGenesis != genesis {
-			return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", rGenesis[:8], genesis[:8])
-		}
-		if rNetwork != p.network {
-			return errResp(ErrNetworkIdMismatch, "%d (!= %d)", rNetwork, p.network)
-		}
-		if int(rVersion) != p.version {
-			return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, p.version)
-		}
-		if server != nil {
-			// until we have a proper peer connectivity API, allow LES connection to other servers
-			//if recv.get("serveStateSince", nil) == nil {
-			//	return errResp(ErrUselessPeer, "wanted client, got server")
-			//}
+	if err := recv.get("protocolVersion", &rVersion); err != nil {
+		return err
+	}
+	if err := recv.get("networkId", &rNetwork); err != nil {
+		return err
+	}
+	if err := recv.get("headTd", &rTd); err != nil {
+		return err
+	}
+	if err := recv.get("headHash", &rHash); err != nil {
+		return err
+	}
+	if err := recv.get("headNum", &rNum); err != nil {
+		return err
+	}
+	if err := recv.get("genesisHash", &rGenesis); err != nil {
+		return err
+	}
 
-			//p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
-		} else {
-			if recv.get("serveChainSince", nil) != nil {
-				return errResp(ErrUselessPeer, "peer cannot serve chain")
-			}
-			if recv.get("serveStateSince", nil) != nil {
-				return errResp(ErrUselessPeer, "peer cannot serve state")
-			}
-			if recv.get("txRelay", nil) != nil {
-				return errResp(ErrUselessPeer, "peer cannot relay transactions")
-			}
-			params := &flowcontrol.ServerParams{}
-			if err := recv.get("flowControl/BL", &params.BufLimit); err != nil {
-				return err
-			}
-			if err := recv.get("flowControl/MRR", &params.MinRecharge); err != nil {
-				return err
-			}
-			var MRC RequestCostList
-			if err := recv.get("flowControl/MRC", &MRC); err != nil {
-				return err
-			}
-			p.fcServerParams = params
-			p.fcServer = flowcontrol.NewServerNode(params)
-			p.fcCosts = MRC.decode()
+	if rGenesis != genesis {
+		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", rGenesis[:8], genesis[:8])
+	}
+	if rNetwork != p.network {
+		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", rNetwork, p.network)
+	}
+	if int(rVersion) != p.version {
+		return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, p.version)
+	}
+	if server != nil {
+		// until we have a proper peer connectivity API, allow LES connection to other servers
+		if recv.get("serveStateSince", nil) == nil {
+			return errResp(ErrUselessPeer, "wanted client, got server")
 		}
 
-		p.headInfo = &announceData{Td: rTd, Hash: rHash, Number: rNum}
-	*/
+		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
+	} else {
+		if recv.get("serveChainSince", nil) != nil {
+			return errResp(ErrUselessPeer, "peer cannot serve chain")
+		}
+		if recv.get("serveStateSince", nil) != nil {
+			return errResp(ErrUselessPeer, "peer cannot serve state")
+		}
+		if recv.get("txRelay", nil) != nil {
+			return errResp(ErrUselessPeer, "peer cannot relay transactions")
+		}
+		params := &flowcontrol.ServerParams{}
+		if err := recv.get("flowControl/BL", &params.BufLimit); err != nil {
+			return err
+		}
+		if err := recv.get("flowControl/MRR", &params.MinRecharge); err != nil {
+			return err
+		}
+		var MRC RequestCostList
+		if err := recv.get("flowControl/MRC", &MRC); err != nil {
+			return err
+		}
+		p.fcServerParams = params
+		p.fcServer = flowcontrol.NewServerNode(params)
+		p.fcCosts = MRC.decode()
+	}
+
+	p.headInfo = &announceData{Td: rTd, Hash: rHash, Number: rNum}
 	return nil
 }
 

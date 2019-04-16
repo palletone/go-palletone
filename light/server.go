@@ -28,19 +28,21 @@ import (
 	//"github.com/ethereum/go-ethereum/les/flowcontrol"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	//"github.com/ethereum/go-ethereum/rlp"
-	//"github.com/palletone/go-palletone/common/ptndb"
+
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
+	"sync"
 )
 
 type LesServer struct {
 	config          *ptn.Config
 	protocolManager *ProtocolManager
 	fcManager       *flowcontrol.ClientManager // nil if our node is client only
-	//fcCostStats     *requestCostStats
-	defParams *flowcontrol.ServerParams
+	fcCostStats     *requestCostStats
+	defParams       *flowcontrol.ServerParams
 	//lesTopics       []discv5.Topic
 	privateKey *ecdsa.PrivateKey
 	quitSync   chan struct{}
@@ -105,6 +107,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 		MinRecharge: 50000,
 	}
 	srv.fcManager = flowcontrol.NewClientManager(uint64(config.LightServ), 10, 1000000000)
+	srv.fcCostStats = newCostStats(ptn.UnitDb())
 	return srv, nil
 }
 
@@ -228,97 +231,97 @@ func linRegFromBytes(data []byte) *linReg {
 	return l
 }
 
-//type requestCostStats struct {
-//	lock  sync.RWMutex
-//	db    ptndb.Database
-//	stats map[uint64]*linReg
-//}
+type requestCostStats struct {
+	lock  sync.RWMutex
+	db    ptndb.Database
+	stats map[uint64]*linReg
+}
 
-//type requestCostStatsRlp []struct {
-//	MsgCode uint64
-//	Data    []byte
-//}
-//
-//var rcStatsKey = []byte("_requestCostStats")
-//
-//func newCostStats(db ethdb.Database) *requestCostStats {
-//	stats := make(map[uint64]*linReg)
-//	for _, code := range reqList {
-//		stats[code] = &linReg{cnt: 100}
-//	}
-//
-//	if db != nil {
-//		data, err := db.Get(rcStatsKey)
-//		var statsRlp requestCostStatsRlp
-//		if err == nil {
-//			err = rlp.DecodeBytes(data, &statsRlp)
-//		}
-//		if err == nil {
-//			for _, r := range statsRlp {
-//				if stats[r.MsgCode] != nil {
-//					if l := linRegFromBytes(r.Data); l != nil {
-//						stats[r.MsgCode] = l
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	return &requestCostStats{
-//		db:    db,
-//		stats: stats,
-//	}
-//}
-//
-//func (s *requestCostStats) store() {
-//	s.lock.Lock()
-//	defer s.lock.Unlock()
-//
-//	statsRlp := make(requestCostStatsRlp, len(reqList))
-//	for i, code := range reqList {
-//		statsRlp[i].MsgCode = code
-//		statsRlp[i].Data = s.stats[code].toBytes()
-//	}
-//
-//	if data, err := rlp.EncodeToBytes(statsRlp); err == nil {
-//		s.db.Put(rcStatsKey, data)
-//	}
-//}
-//
-//func (s *requestCostStats) getCurrentList() RequestCostList {
-//	s.lock.Lock()
-//	defer s.lock.Unlock()
-//
-//	list := make(RequestCostList, len(reqList))
-//	//fmt.Println("RequestCostList")
-//	for idx, code := range reqList {
-//		b, m := s.stats[code].calc()
-//		//fmt.Println(code, s.stats[code].cnt, b/1000000, m/1000000)
-//		if m < 0 {
-//			b += m
-//			m = 0
-//		}
-//		if b < 0 {
-//			b = 0
-//		}
-//
-//		list[idx].MsgCode = code
-//		list[idx].BaseCost = uint64(b * 2)
-//		list[idx].ReqCost = uint64(m * 2)
-//	}
-//	return list
-//}
-//
-//func (s *requestCostStats) update(msgCode, reqCnt, cost uint64) {
-//	s.lock.Lock()
-//	defer s.lock.Unlock()
-//
-//	c, ok := s.stats[msgCode]
-//	if !ok || reqCnt == 0 {
-//		return
-//	}
-//	c.add(float64(reqCnt), float64(cost))
-//}
+type requestCostStatsRlp []struct {
+	MsgCode uint64
+	Data    []byte
+}
+
+var rcStatsKey = []byte("_requestCostStats")
+
+func newCostStats(db ptndb.Database) *requestCostStats {
+	stats := make(map[uint64]*linReg)
+	for _, code := range reqList {
+		stats[code] = &linReg{cnt: 100}
+	}
+
+	if db != nil {
+		data, err := db.Get(rcStatsKey)
+		var statsRlp requestCostStatsRlp
+		if err == nil {
+			err = rlp.DecodeBytes(data, &statsRlp)
+		}
+		if err == nil {
+			for _, r := range statsRlp {
+				if stats[r.MsgCode] != nil {
+					if l := linRegFromBytes(r.Data); l != nil {
+						stats[r.MsgCode] = l
+					}
+				}
+			}
+		}
+	}
+
+	return &requestCostStats{
+		db:    db,
+		stats: stats,
+	}
+}
+
+func (s *requestCostStats) store() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	statsRlp := make(requestCostStatsRlp, len(reqList))
+	for i, code := range reqList {
+		statsRlp[i].MsgCode = code
+		statsRlp[i].Data = s.stats[code].toBytes()
+	}
+
+	if data, err := rlp.EncodeToBytes(statsRlp); err == nil {
+		s.db.Put(rcStatsKey, data)
+	}
+}
+
+func (s *requestCostStats) getCurrentList() RequestCostList {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	list := make(RequestCostList, len(reqList))
+	//fmt.Println("RequestCostList")
+	for idx, code := range reqList {
+		b, m := s.stats[code].calc()
+		//fmt.Println(code, s.stats[code].cnt, b/1000000, m/1000000)
+		if m < 0 {
+			b += m
+			m = 0
+		}
+		if b < 0 {
+			b = 0
+		}
+
+		list[idx].MsgCode = code
+		list[idx].BaseCost = uint64(b * 2)
+		list[idx].ReqCost = uint64(m * 2)
+	}
+	return list
+}
+
+func (s *requestCostStats) update(msgCode, reqCnt, cost uint64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	c, ok := s.stats[msgCode]
+	if !ok || reqCnt == 0 {
+		return
+	}
+	c.add(float64(reqCnt), float64(cost))
+}
 
 func (pm *ProtocolManager) blockLoop() {
 	/*
