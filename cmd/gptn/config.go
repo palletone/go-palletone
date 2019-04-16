@@ -44,7 +44,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
-	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/certficate"
 )
 
 const defaultConfigPath = "./ptn-config.toml"
@@ -128,7 +128,7 @@ type FullConfig struct {
 	P2P            p2p.Config
 	Ada            adaptor.Config
 	Contract       contractcfg.Config
-	Cert           core.CAConfig
+	Certficate     certficate.CAConfig
 }
 
 func loadConfig(file string, cfg *FullConfig) error {
@@ -350,7 +350,7 @@ func DefaultConfig() FullConfig {
 		Log:            log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
 		Contract:       contractcfg.DefaultConfig,
-		Cert:           core.DefaultCAConfig,
+		Certficate:     certficate.DefaultCAConfig,
 	}
 }
 
