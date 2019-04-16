@@ -101,9 +101,13 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 		reward := ComputeRewards()
 		//TODO PTN增发的情况
 
-		mediatorIncome := coinbase.TxMessages[0].Payload.(*modules.PaymentPayload).Outputs[0].Value
-		if mediatorIncome != fee+reward {
-			log.Warnf("Unit has an incorrect coinbase, expect income=%d,actual=%d", fee+reward, mediatorIncome)
+		allIncome := uint64(0)
+		outputs := coinbase.TxMessages[0].Payload.(*modules.PaymentPayload).Outputs
+		for _, output := range outputs{
+			allIncome += output.Value
+		}
+		if allIncome != fee+reward {
+			log.Warnf("Unit has an incorrect coinbase, expect income=%d,actual=%d", fee+reward, allIncome)
 			return TxValidationCode_INVALID_FEE
 		}
 	}
