@@ -41,11 +41,7 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 	defer p.locker.Unlock()
 
 	if _, exist := p.mtx[reqEvt.ReqId]; !exist { //todo how to process
-		p.mtx[reqEvt.ReqId] = &contractTx{
-			tm:     time.Now(),
-			valid:  false,
-			adaInf: make(map[uint32]*AdapterInf),
-		}
+		return true
 	}
 	if p.mtx[reqEvt.ReqId].adaInf == nil {
 		p.mtx[reqEvt.ReqId].adaInf = make(map[uint32]*AdapterInf)
@@ -122,7 +118,7 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-
+	log.Info("AdapterFunRequest")
 	//
 	account := p.getLocalAccount()
 	if account == nil {
@@ -185,7 +181,7 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-
+	log.Info("AdapterFunResult")
 	result, err := p.getRusult(reqId, msgType, consultContent)
 	if err == nil {
 		return result, nil

@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"reflect"
 )
 
 type UtxoDb struct {
@@ -133,22 +134,20 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 
 // Remove the utxo
 func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
-
 	//1. get utxo
 	utxo, err := utxodb.GetUtxoEntry(outpoint)
 	if err != nil {
-		log.Errorf("Try to soft delete an unknown utxo by key:%s", outpoint.String())
+		log.Infof("Try to soft delete an unknown utxo by key:%s", outpoint.String())
 		return err
 	}
 
 	//2. soft delete utxo
 	if utxo.IsSpent() {
-		log.Errorf("Try to soft delete a deleted utxo by key:%s", outpoint.String())
-		return errors.New("Try to soft delete a deleted utxo")
+		return errors.New("Try to soft delete a deleted utxo by key:" + outpoint.String())
 	}
 	key := outpoint.ToKey()
 	utxo.Spend()
-	log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
+	//log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
 	err = StoreBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
@@ -156,10 +155,6 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	//3. Remove index
 	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
-	//if err := utxodb.db.Delete(key); err != nil {
-	//	return err
-	//}
-
 	return nil
 }
 
@@ -174,7 +169,8 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey()
-	log.Debugf("Query utxo by outpoint:%s", outpoint.String())
+
+	log.Debugf("DB[%s] Query utxo by outpoint:%s", reflect.TypeOf(utxodb.db).String(), outpoint.String())
 	err := retrieve(utxodb.db, key, utxo)
 	//data, err := utxodb.db.Get(key)
 	if err != nil {

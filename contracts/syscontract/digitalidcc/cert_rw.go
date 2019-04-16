@@ -267,6 +267,7 @@ func GetX509Cert(certid string, stub shim.ChaincodeStubInterface) (cert *x509.Ce
 	cert, err = x509.ParseCertificate(bytes)
 	return
 }
+
 func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo *CertDBInfo, err error) {
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
@@ -296,6 +297,22 @@ func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*CertHold
 		key := symbol + certHolderInfo[index].Holder + dagConstants.CERT_SPLIT_CH + certHolderInfo[index].CertID
 		if err := stub.PutState(key, t); err != nil {
 			return err
+		}
+		// set all certificates in branch revocation
+		branchCerts, err := QueryBranchCertsGreedy(certHolderInfo[index].Holder, stub)
+		if err != nil {
+			return err
+		}
+		for _, branch := range branchCerts {
+			if branch.IsServer {
+				key = dagConstants.CERT_SERVER_SYMBOL
+			} else {
+				key = dagConstants.CERT_MEMBER_SYMBOL
+			}
+			key += branch.Holder + dagConstants.CERT_SPLIT_CH + branch.CertID
+			if err := stub.PutState(key, t); err != nil {
+				return err
+			}
 		}
 		// update issuer crl bytes
 		key = dagConstants.CRL_BYTES_SYMBOL + issuer
@@ -391,4 +408,27 @@ func GetRootCert(stub shim.ChaincodeStubInterface) (cert *x509.Certificate, err 
 		return nil, err
 	}
 	return cert, nil
+}
+
+func QueryBranchCertsGreedy(issueAddr string, stub shim.ChaincodeStubInterface) (certsInfo []*CertHolderInfo, err error) {
+	key := dagConstants.CERT_ISSUER_SYMBOL + issueAddr + dagConstants.CERT_SPLIT_CH
+	data, err := stub.GetStateByPrefix(key)
+	if err != nil {
+		return nil, err
+	}
+	for _, val := range data {
+		info := CertHolderInfo{}
+		if err := info.SetBytes(val.Value); err != nil {
+			return nil, err
+		}
+		certsInfo = append(certsInfo, &info)
+		if info.IsServer {
+			newCertsInfo, err := QueryBranchCertsGreedy(info.Holder, stub)
+			if err != nil {
+				return nil, err
+			}
+			certsInfo = append(certsInfo, newCertsInfo...)
+		}
+	}
+	return certsInfo, nil
 }

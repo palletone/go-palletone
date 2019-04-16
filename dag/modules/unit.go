@@ -274,6 +274,13 @@ func (unit *Unit) IsEmpty() bool {
 	}
 	return false
 }
+func (unit *Unit) String4Log() string {
+	txs := []common.Hash{}
+	for _, tx := range unit.Txs {
+		txs = append(txs, tx.Hash())
+	}
+	return fmt.Sprintf("Hash:%s,Index:%d,Txs:%x", unit.Hash().String(), unit.NumberU64(), txs)
+}
 
 //type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
@@ -290,6 +297,9 @@ type ChainIndex struct {
 	Index   uint64  `json:"index"`
 }
 
+func NewChainIndex(assetId AssetId, idx uint64) *ChainIndex {
+	return &ChainIndex{AssetID: assetId, Index: idx}
+}
 func (height *ChainIndex) String() string {
 	return fmt.Sprintf("%s-%d", height.AssetID.GetSymbol(), height.Index)
 }

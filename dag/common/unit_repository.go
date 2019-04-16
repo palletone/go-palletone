@@ -21,7 +21,6 @@ package common
 
 import (
 	"fmt"
-	"math/big"
 	"reflect"
 	"strings"
 	"time"
@@ -68,6 +67,7 @@ type IUnitRepository interface {
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	IsTransactionExist(txHash common.Hash) (bool, error)
 	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
@@ -159,6 +159,9 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 }
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
 	return rep.dagdb.IsHeaderExist(uHash)
+}
+func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) (bool, error) {
+	return rep.dagdb.IsTransactionExist(txHash)
 }
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	rep.lock.RLock()
@@ -360,7 +363,6 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
-	log.Debug("Start create unit...")
 	rep.lock.RLock()
 	begin := time.Now()
 
@@ -396,32 +398,33 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-	log.Debug("Start txpool.GetSortedTxs...")
+	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash)
-	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
 
+	txIds := []common.Hash{}
+	for _, tx := range poolTxs {
+		txIds = append(txIds, tx.Tx.Hash())
+	}
+	log.Infof("txpool.GetSortedTxs cost time %s, include txs:[%#x]", time.Since(begin), txIds)
 	// step5. compute minner income: transaction fees + interest
-	fees, err := ComputeFees(poolTxs)
+
+	//交易费用
+	ads, err := ComputeTxFees(mAddr, poolTxs)
 	if err != nil {
-		log.Error("ComputeFees is failed.", "error", err.Error())
+		log.Error("ComputeContractProcessorFees is failed.", "error", err.Error())
 		return nil, err
 	}
-	additions := make(map[common.Address]*modules.Addition)
-	//TODO 附加利息收益
-	//获取保证金利息
-	contractAddition, err := rep.utxoRepository.ComputeAwards(poolTxs, rep.dagdb)
-	if err != nil {
-		log.Error(err.Error())
-		return nil, err
+	//保证金利息
+	addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+	awardAd, err := rep.ComputeAwardsFees(&addr, poolTxs)
+	if err != nil && awardAd != nil {
+		ads = append(ads, awardAd)
 	}
-	if contractAddition != nil {
-		addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-		additions[addr] = contractAddition
-	}
-	//coinbase, err := CreateCoinbase(mAddr, fees+awards, asset, t)
-	coinbase, rewards, err := CreateCoinbase(mAddr, fees, additions, assetId.ToAsset(), t)
+
+	outAds := arrangeAdditionFeeList(ads)
+	coinbase, rewards, err := CreateCoinbase(outAds, t)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -471,6 +474,96 @@ func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
 	}
 	return fee, nil
 }
+
+func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
+	if m == nil {
+		return nil, errors.New("ComputeTxFees param is nil")
+	}
+	ads := make([]*modules.Addition, 0)
+	for _, tx := range txs {
+		if tx.Tx == nil || tx.TxFee == nil {
+			continue
+		}
+		a := &modules.Addition{
+			Amount: tx.TxFee.Amount,
+			Asset:  *tx.TxFee.Asset,
+		}
+
+		if !tx.Tx.IsContractTx() || tx.Tx.IsSystemContract() {
+			a.Addr = *m
+			ads = append(ads, a)
+			continue
+		}
+
+		addrs := tx.Tx.GetContractTxSignatureAddress()
+		nm := len(addrs)
+		if nm <= 0 {
+			a.Addr = *m
+			ads = append(ads, a)
+			continue
+		}
+		t := a.Amount * 6 / 10
+		if t > a.Amount {
+			log.Error("ComputeTxFees", "computer err, t=", t, "a.mount=", a.Amount)
+			continue
+		}
+		for _, add := range addrs {
+			am := &modules.Addition{
+				Asset: *tx.TxFee.Asset,
+			}
+			am.Amount = t / uint64(nm) //jury fee= all * 0.6/nm
+			am.Addr = add
+			ads = append(ads, am)
+		}
+		a.Amount = a.Amount - t //mediator fee = all * 0.4
+		a.Addr = *m
+		ads = append(ads, a)
+	}
+	return ads, nil
+}
+
+//获取保证金利息
+func (rep *UnitRepository) ComputeAwardsFees(addr *common.Address, poolTxs []*modules.TxPoolTransaction) (*modules.Addition, error) {
+	if poolTxs == nil {
+		return nil, errors.New("ComputeAwardsFees param is nil")
+	}
+	awardAd, err := rep.utxoRepository.ComputeAwards(poolTxs, rep.dagdb)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+	if awardAd != nil {
+		awardAd.Addr = *addr
+	}
+	return awardAd, nil
+}
+
+func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
+	if len(ads) <= 0 {
+		return nil
+	}
+	out := make([]*modules.Addition, 0)
+	for _, a := range ads {
+		ok := false
+		b := &modules.Addition{}
+		for _, b = range out {
+			if ok, _ = a.IsEqualStyle(b); ok {
+				break
+			}
+		}
+		if ok {
+			b.Amount += a.Amount
+			continue
+		}
+		out = append(out, a)
+	}
+	if len(out) < 1 {
+		return nil
+	} else {
+		return out
+	}
+}
+
 func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
 	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
@@ -693,19 +786,15 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	rep.lock.Lock()
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
-	log.Debugf("Try to save a new unit to db:%s", uHash.String())
-	// if unit.UnitSize == 0 || unit.Size() == 0 {
-	// 	log.Error("Unit is null")
-	// 	return fmt.Errorf("Unit is null")
-	// } //Validator will check unit
+	log.Debugf("Try to save a new unit to db index:%d, hash :%s ", unit.NumberU64(), uHash.String())
 
-	// step10. save unit header
+	// step1. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := rep.dagdb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-	// step5. traverse transactions and save them
+	// step2. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		err := rep.saveTx4Unit(unit, txIndex, tx)
@@ -714,18 +803,17 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		txHashSet = append(txHashSet, tx.Hash())
 	}
-	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
+	// step3. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err := rep.dagdb.SaveBody(uHash, txHashSet); err != nil {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
-
-	// step 9  save txlookupEntry
+	// step4  save txlookupEntry
 	if err := rep.dagdb.SaveTxLookupEntry(unit); err != nil {
 		log.Info("SaveTxLookupEntry", "error", err.Error())
 		return err
 	}
-	//step12+ Special process genesis unit
+	//step5  Special process genesis unit
 	if isGenesis {
 		if err := rep.propdb.SetNewestUnit(unit.Header()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
@@ -737,37 +825,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
-
-	// step1 验证 群签名
-	// if passed == true , don't validate group sign
-	//if !passed {
-	//	if state := rep.validate.ValidateUnitGroupSign(unit.Header(), isGenesis); state ==
-	// 		modules.UNIT_STATE_INVALID_GROUP_SIGNATURE {
-	//		return fmt.Errorf("Validate unit's group sign failed, err number=%d", state)
-	//	}
-	//}
-
-	// step2. check unit signature, should be compare to mediator list
-	//if dagconfig.DefaultConfig.WhetherValidateUnitSignature {
-	//	errno := rep.validate.ValidateUnitSignature(unit.UnitHeader, isGenesis)
-	//	if int(errno) != modules.UNIT_STATE_VALIDATED && int(errno) != modules.UNIT_STATE_AUTHOR_SIGNATURE_PASSED {
-	//		return fmt.Errorf("Validate unit signature, errno=%d", errno)
-	//	}
-	//}
-	//
-	//// step3. check unit size
-	//if unit.UnitSize != unit.Size() {
-	//	log.Info("Validate size", "error", "Size is invalid")
-	//	return modules.ErrUnit(-1)
-	//}
-	//// log.Info("===dag ValidateTransactions===")
-	//// step4. check transactions in unit
-	//// TODO must recover
-	//_, isSuccess, err := rep.validate.ValidateTransactions(&unit.Txs, isGenesis)
-	//if err != nil || !isSuccess {
-	//	return fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
-	//}
-
+	log.Debugf("saved a new unit to db index:%d, hash :%s ", unit.NumberU64(), uHash.String())
 	return nil
 }
 
@@ -1245,48 +1303,27 @@ To get unit information by its ChainIndex
 创建coinbase交易
 To create coinbase transaction
 */
-
-func CreateCoinbase(addr *common.Address, income uint64, addition map[common.Address]*modules.Addition, asset *modules.Asset, t time.Time) (*modules.Transaction, int64, error) {
-	//创建合约保证金币龄的奖励output
+func CreateCoinbase(ads []*modules.Addition, t time.Time) (*modules.Transaction, uint64, error) {
+	totalIncome := uint64(0)
 	payload := modules.PaymentPayload{}
-	if len(addition) != 0 {
-		for k, v := range addition {
-			script := tokenengine.GenerateLockScript(k)
-			createT := big.Int{}
-			additionalInput := modules.Input{
-				Extra: createT.SetInt64(t.Unix()).Bytes(),
-			}
+
+	if len(ads) != 0 {
+		for _, v := range ads {
+			script := tokenengine.GenerateLockScript(v.Addr)
 			additionalOutput := modules.Output{
 				Value:    v.Amount,
 				Asset:    &v.Asset,
 				PkScript: script,
 			}
-			payload.Inputs = append(payload.Inputs, &additionalInput)
 			payload.Outputs = append(payload.Outputs, &additionalOutput)
+
+			totalIncome += v.Amount
 		}
 	}
-	// setp1. create P2PKH script
-	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
-	// step. compute total income
-	totalIncome := int64(income) + int64(ComputeRewards())
-	// step2. create payload
-	createT := big.Int{}
-	input := modules.Input{
-		Extra: createT.SetInt64(t.Unix()).Bytes(),
-	}
-	output := modules.Output{
-		Value:    uint64(totalIncome),
-		Asset:    asset,
-		PkScript: script,
-	}
-	payload.Inputs = append(payload.Inputs, &input)
-	payload.Outputs = append(payload.Outputs, &output)
-	// step3. create message
 	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: &payload,
 	}
-	// step4. create coinbase
 	coinbase := new(modules.Transaction)
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	return coinbase, totalIncome, nil

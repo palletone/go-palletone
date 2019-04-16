@@ -739,3 +739,5 @@ func (ec *Client) GetTxHashByReqId(ctx context.Context, hex string) (string, err
 	err := ec.c.CallContext(ctx, &result, "dag_getTxHashByReqId", hex)
 	return result, err
 }
+
+

@@ -22,6 +22,7 @@ package memunit
 
 import (
 	"sync"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -261,6 +262,10 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash) {
 }
 
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
+	defer func(start time.Time) {
+		log.Debugf("MemDag AddUnit cost time: %v", time.Since(start))
+	}(time.Now())
+
 	if unit == nil {
 		return errors.ErrNullPoint
 	}
@@ -289,7 +294,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			chain.setLastMainchainUnit(unit)
 			//update txpool's tx status to pending
 			if len(unit.Txs) > 0 {
-				log.Debugf("Update tx[%x] status to pending in txpool", unit.Txs.GetTxIds())
+				log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
 				txpool.SetPendingTxs(unit.Hash(), unit.Txs)
 			}
 			//增加了单元后检查是否满足稳定单元的条件
@@ -346,7 +351,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 		if unit.Hash() != oldLastMainchainUnit.Hash() {
 			txs := unit.Transactions()
 			if len(txs) > 0 {
-				log.Debugf("Reset unit[%x] 's txs status to not pending", unit.UnitHash)
+				log.Debugf("Reset unit[%#x] 's txs status to not pending", unit.UnitHash)
 				txpool.ResetPendingTxs(txs)
 			}
 		}
@@ -356,7 +361,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	newUnstableUnits := chain.getMainChainUnits(token)
 	for _, unit := range newUnstableUnits {
 		if len(unit.Txs) > 0 {
-			log.Debugf("Update tx[%x] status to pending in txpool", unit.Txs.GetTxIds())
+			log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
 			txpool.SetPendingTxs(unit.Hash(), unit.Txs)
 		}
 	}
