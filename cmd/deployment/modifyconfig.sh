@@ -39,7 +39,7 @@ sed -i '/^ListenAddr/c'$newListenAddr'' ptn-config.toml
 newBtcHost="BtcHost=\"localhost:$[$BtcHost+$1]\""
 sed -i '/^BtcHost/c'$newBtcHost'' ptn-config.toml
 
-newContractAddress="ContractAddress=\"127.0.0.1:$[$ContractAddress+$1]\""
+newContractAddress="ContractAddress=\"192.168.152.128:$[$ContractAddress+$1]\""
 sed -i '/^ContractAddress/c'$newContractAddress'' ptn-config.toml
 
 
@@ -216,7 +216,7 @@ function MakeTestNet()
     newBtcHost="BtcHost=\"localhost:$[$BtcHost+$1]\""
     sed -i '/^BtcHost/c'$newBtcHost'' ptn-config.toml
 
-    newContractAddress="ContractAddress=\"127.0.0.1:$[$ContractAddress+$1]\""
+    newContractAddress="ContractAddress=\"192.168.152.128:$[$ContractAddress+$1]\""
     sed -i '/^ContractAddress/c'$newContractAddress'' ptn-config.toml
 
     cd ../

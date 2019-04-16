@@ -30,8 +30,15 @@ const (
 	DefaultDepositAmountForMediator  = "200000000000"
 	DefaultDepositAmountForJury      = "100000000000"
 	DefaultDepositAmountForDeveloper = "80000000000"
-
 	DefaultFoundationAddress = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
+
+	DefaultUccMemory  = "1073741824" //物理内存  1073741824  1G
+	DefaultUccMemorySwap  = "1073741824"//内存交换区，不设置默认为memory的两倍
+	DefaultUccCpuShare  = "1024"//CPU占用率，相对的  CPU 利用率权重，默认为 1024
+	DefaultCpuPeriod  = "50000"// 限制CPU --cpu-period=50000 --cpu-quota=25000
+	DefaultUccCpuQuota  = "25000"//限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
+	DefaultUccCpuSetCpus  = "0-3"//限制使用某些CPUS  "1,3"  "0-3"
+
 	DefaultTokenHolder       = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 
 	DefaultMediator = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"

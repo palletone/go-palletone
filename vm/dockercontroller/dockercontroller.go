@@ -40,6 +40,8 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/comm"
+	"strconv"
 )
 
 var (
@@ -102,8 +104,31 @@ func getDockerClient() (dockerClient, error) {
 	return com.NewDockerClient()
 }
 
+func getInt64FromDb(key string) int64 {
+	//DefaultUccMemory  = "104857600" //物理内存  104857600  100m
+	//DefaultUccMemorySwap  = "104857600"//内存交换区，不设置默认为memory的两倍
+	//DefaultUccCpuShare  = "1024"//CPU占用率，相对的  CPU 利用率权重，默认为 1024
+	//DefaultCpuPeriod  = "50000"// 限制CPU --cpu-period=50000 --cpu-quota=25000
+	//DefaultUccCpuQuota  = "25000"//限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
+	//DefaultUccCpuSetCpus  = "0-3"//限制使用某些CPUS  "1,3"  "0-3"
+	dag,err:= comm.GetCcDagHand()
+	resultStr,_,err := dag.GetConfig(key)
+	if err != nil {
+		log.Infof("dag.GetConfig err: %s",err.Error())
+		return 0
+	}
+	resultInt64,err := strconv.ParseInt(string(resultStr),10,64)
+	if err != nil {
+		log.Infof("strconv.ParseInt err: %s",err.Error())
+		return 0
+	}
+	return resultInt64
+}
+
 //TODO
 func getDockerHostConfig() *docker.HostConfig {
+
+
 	if hostConfig != nil {
 		return hostConfig
 	}
@@ -155,18 +180,18 @@ func getDockerHostConfig() *docker.HostConfig {
 		ReadonlyRootfs:   viper.GetBool(dockerKey("ReadonlyRootfs")),
 		SecurityOpt:      viper.GetStringSlice(dockerKey("SecurityOpt")),
 		CgroupParent:     viper.GetString(dockerKey("CgroupParent")),
-		//Memory:           getInt64("Memory"),
-		MemorySwap:       getInt64("MemorySwap"),
-		Memory:           int64(104857600), //100mB
+		Memory:           getInt64FromDb("UccMemory"),
+		MemorySwap:       getInt64FromDb("UccMemorySwap"),
+		//Memory:           int64(104857600), //100mB
 		//MemorySwap:       int64(20971520),
 		MemorySwappiness: getInt64("MemorySwappiness"),
 		OOMKillDisable:   viper.GetBool(dockerKey("OomKillDisable")),
-		CPUShares:        getInt64("CpuShares"),
+		CPUShares:        getInt64FromDb("UccCpuShare"),
 		CPUSet:           viper.GetString(dockerKey("Cpuset")),
 		CPUSetCPUs:       viper.GetString(dockerKey("CpusetCPUs")),
 		CPUSetMEMs:       viper.GetString(dockerKey("CpusetMEMs")),
-		CPUQuota:         getInt64("CpuQuota"),
-		CPUPeriod:        getInt64("CpuPeriod"),
+		CPUQuota:         getInt64FromDb("UccCpuQuota"),
+		CPUPeriod:        getInt64FromDb("UccCpuPeriod"),
 		BlkioWeight:      getInt64("BlkioWeight"),
 	}
 

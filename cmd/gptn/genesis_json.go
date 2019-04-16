@@ -275,6 +275,12 @@ func createExampleGenesis() *core.Genesis {
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 		DepositPeriod:             core.DefaultDepositPeriod,
+		UccMemory:core.DefaultUccMemory,
+		UccMemorySwap:core.DefaultUccMemorySwap,
+		UccCpuShare:core.DefaultUccCpuShare,
+		UccCpuPeriod:core.DefaultCpuPeriod,
+		UccCpuQuota:core.DefaultUccCpuQuota,
+		UccCpuSetCpus:core.DefaultUccCpuSetCpus,
 	}
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
