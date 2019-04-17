@@ -14,7 +14,7 @@ ${method}         ptn_sendRawTransaction
 *** Test Cases ***
 sendTransInvalid1
     [Tags]    invalidSign1
-    [Template]    setInvalidSend
+    [Template]    InvalidSendTrans
     1    -32000    encodedTx decode is invalid
     e    -32000    encodedTx decode is invalid
     ee    -32000    encodedTx decode is invalid
@@ -24,12 +24,12 @@ sendTransInvalid1
 
 sendTransInvalid2
     [Tags]    invalidSign2
-    [Template]    setInvalidSend
+    [Template]    InvalidSendTrans
     FDEW    -32000    encodedTx is invalid
     fd#fg    -32000    encodedTx is invalid
     %    -32000    encodedTx is invalid
 
 sendTransInvalid3
     [Tags]    invalidSign2
-    [Template]    setInvalidSend
+    [Template]    InvalidSendTrans
     \    -32000    Params is Empty
