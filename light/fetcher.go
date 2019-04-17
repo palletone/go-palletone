@@ -245,7 +245,7 @@ func (f *lightFetcher) unregisterPeer(p *peer) {
 func (f *lightFetcher) announce(p *peer, head *announceData) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	log.Debug("Received new announcement", "number", head.Number, "hash", head.Hash, "reorg", head.ReorgDepth)
+	log.Debug("Received new announcement", "number", head.Number, "hash", head.Hash /*, "reorg", head.ReorgDepth*/)
 
 	fp := f.peers[p]
 	if fp == nil {
@@ -253,20 +253,22 @@ func (f *lightFetcher) announce(p *peer, head *announceData) {
 		return
 	}
 
-	if fp.lastAnnounced != nil && head.Td.Cmp(fp.lastAnnounced.td) <= 0 {
+	if fp.lastAnnounced != nil && head.Number <= fp.lastAnnounced.number {
+		//if fp.lastAnnounced != nil && head.Td.Cmp(fp.lastAnnounced.td) <= 0 {
 		// announced tds should be strictly monotonic
-		log.Debug("Received non-monotonic td", "current", head.Td, "previous", fp.lastAnnounced.td)
+		log.Debug("Received non-monotonic td", "current index", head.Number, "previous", fp.lastAnnounced.td)
 		go f.pm.removePeer(p.id)
 		return
 	}
 
 	n := fp.lastAnnounced
-	for i := uint64(0); i < head.ReorgDepth; i++ {
-		if n == nil {
-			break
-		}
-		n = n.parent
-	}
+	//TODO must recover
+	//for i := uint64(0); i < head.ReorgDepth; i++ {
+	//	if n == nil {
+	//		break
+	//	}
+	//	n = n.parent
+	//}
 	if n != nil {
 		// n is now the reorg common ancestor, add a new branch of nodes
 		// check if the node count is too high to add new nodes
@@ -311,7 +313,7 @@ func (f *lightFetcher) announce(p *peer, head *announceData) {
 				fp.nodeCnt++
 			}
 			n.hash = head.Hash
-			n.td = head.Td
+			//n.td = head.Td
 			fp.nodeByHash[n.hash] = n
 		}
 	}
@@ -320,7 +322,7 @@ func (f *lightFetcher) announce(p *peer, head *announceData) {
 		if fp.root != nil {
 			fp.deleteNode(fp.root)
 		}
-		n = &fetcherTreeNode{hash: head.Hash, number: head.Number, td: head.Td}
+		n = &fetcherTreeNode{hash: head.Hash, number: head.Number /*, td: head.Td*/}
 		fp.root = n
 		fp.nodeCnt++
 		fp.nodeByHash[n.hash] = n

@@ -55,15 +55,15 @@ func (pm *ProtocolManager) needToSync(peerHead blockInfo) bool {
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer) {
 	// Short circuit if no peers are available
-	//if peer == nil {
-	//	return
-	//}
-	//
-	//// Make sure the peer's TD is higher than our own.
-	//if !pm.needToSync(peer.headBlockInfo()) {
-	//	return
-	//}
-	//
+	if peer == nil {
+		return
+	}
+
+	// Make sure the peer's TD is higher than our own.
+	if !pm.needToSync(peer.headBlockInfo()) {
+		return
+	}
+
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	//defer cancel()
 	//pm.blockchain.(*light.LightChain).SyncCht(ctx)

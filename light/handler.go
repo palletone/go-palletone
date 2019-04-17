@@ -198,10 +198,9 @@ func NewProtocolManager(lightSync bool, mode downloader.SyncMode, networkId uint
 	if disableClientRemovePeer {
 		removePeer = func(id string) {}
 	}
-	//lightSync := true
+
 	if lightSync {
 		manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
-		//manager.downloader = downloader.New(downloader.LightSync, chainDb, manager.eventMux, nil, blockchain, removePeer)
 		manager.peers.notify((*downloaderPeerNotify)(manager))
 		manager.fetcher = newLightFetcher(manager)
 	}
