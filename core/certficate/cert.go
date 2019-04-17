@@ -21,6 +21,7 @@ import (
 	"bytes"
 
 	"encoding/json"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 )
 
 const (
@@ -164,15 +165,11 @@ func CertRpcReq(address string,immediateca string, certbyte []byte) error {
 	params.Id = id
 	from := immediateca
 	to := immediateca
+	contractid := syscontract.DigitalIdentityContractAddress.String()
 
-	//amount := amount
-	//fee := fee
-	ccaddress := address
-	//method1 := []string{"P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","100","1","PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"}
 	method2 := []string{"addServerCert", address, string(certbyte)}
-	//method2 := TestAddCertJson{ []string{"addServerCert","P1HrTpdqBmCrNhJMGREu7vtyzmhCiPiztkL","E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\data\\certs\\openssl\\powerca\\certs\\powerca.cert.pem"}}
-	params.Params = append(params.Params, from, to, amount, fee, ccaddress)
-	//params.Params = append(params.Params,str2)
+	params.Params = append(params.Params, from, to, amount, fee, contractid)
+
 	params.Params = append(params.Params, method2)
 	reqJson, err := json.Marshal(params)
 	if err != nil {

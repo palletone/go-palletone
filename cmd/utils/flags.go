@@ -46,6 +46,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/light"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
@@ -1182,10 +1183,10 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 		// 1. new 一个全节点类型的 PalletOne
 		//return ptn.New(ctx, cfg)
 		fullNode, err := ptn.New(ctx, cfg)
-		//if fullNode != nil /* && cfg.LightServ > 0 */ {
-		//	ls, _ := light.NewLesServer(fullNode, cfg)
-		//	fullNode.AddLesServer(ls)
-		//}
+		if fullNode != nil && cfg.LightServ > 0 {
+			ls, _ := light.NewLesServer(fullNode, cfg)
+			fullNode.AddLesServer(ls)
+		}
 		return fullNode, err
 	})
 

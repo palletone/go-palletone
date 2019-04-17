@@ -248,6 +248,7 @@ func (s *PalletOne) UnitDb() ptndb.Database             { return s.unitDb }
 
 func (s *PalletOne) ContractProcessor() *jury.Processor { return s.contractPorcessor }
 func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManager }
+func (s *PalletOne) GetLesServer() LesServer            { return s.lesServer }
 
 func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
@@ -282,20 +283,33 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 // PalletOne protocol implementation.
 func (s *PalletOne) Start(srvr *p2p.Server) error {
 	// Start the bloom bits servicing goroutines
-	s.startBloomHandlers()
+	//s.startBloomHandlers()
 
 	// Start the RPC service
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Figure out a max peers count based on the server limits
-	maxPeers := srvr.MaxPeers
+	//maxPeers := srvr.MaxPeers
 
 	// Start the networking layer and the light server if requested
-	s.protocolManager.Start(srvr, maxPeers)
+	//s.protocolManager.Start(srvr, maxPeers)
 
 	s.contractPorcessor.Start(srvr)
 
 	s.mediatorPlugin.Start(srvr)
+
+	maxPeers := srvr.MaxPeers
+	if s.config.LightServ > 0 {
+		if s.config.LightPeers >= srvr.MaxPeers {
+			return fmt.Errorf("invalid peer config: light peer count (%d) >= total peer count (%d)", s.config.LightPeers, srvr.MaxPeers)
+		}
+		maxPeers -= s.config.LightPeers
+	}
+	// Start the networking layer and the light server if requested
+	s.protocolManager.Start(srvr, maxPeers)
+	if s.lesServer != nil {
+		s.lesServer.Start(srvr)
+	}
 	return nil
 }
 
@@ -315,6 +329,9 @@ func (s *PalletOne) Stop() error {
 	s.mediatorPlugin.Stop()
 
 	s.dag.Close()
+	if s.lesServer != nil {
+		s.lesServer.Stop()
+	}
 
 	return nil
 }

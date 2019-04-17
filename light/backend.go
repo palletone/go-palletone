@@ -59,7 +59,7 @@ type LightEthereum struct {
 	txPool *les.TxPool
 	//blockchain      *light.LightChain
 	protocolManager *ProtocolManager
-	//serverPool      *serverPool
+	serverPool      *serverPool
 	//reqDist         *requestDistributor
 	//retriever       *retrieveManager
 	// DB interfaces
@@ -118,32 +118,25 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightEthereum, error) {
 		//bloomTrieIndexer: light.NewBloomTrieIndexer(chainDb, true),
 	}
 
+	//lptn.relay = NewLesTxRelay(peers, leth.reqDist)
+	//lptn.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
+	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
+	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
+
 	//leth.txPool = NewTxPool(leth.chainConfig, leth.blockchain, leth.relay)
 	//NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
 	gasToken := modules.AssetId{}
 	//txPool := &TxPool{}
-	if lptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, nil,
-		dag, lptn.eventMux, nil, genesis, nil, nil); err != nil {
+	//lesserver := ptn.LesServer()
+	if lptn.protocolManager, err = NewProtocolManager(true, config.SyncMode, config.NetworkId, gasToken, nil,
+		dag, lptn.eventMux, genesis); err != nil {
 		return nil, err
 	}
-	//leth.ApiBackend = &LesApiBackend{leth, nil}
+
 	lptn.ApiBackend = &LesApiBackend{lptn}
 	return lptn, nil
 }
-
-//func lesTopic(genesisHash common.Hash, protocolVersion uint) discv5.Topic {
-//	var name string
-//	switch protocolVersion {
-//	case lpv1:
-//		name = "LES"
-//	case lpv2:
-//		name = "LES2"
-//	default:
-//		panic(nil)
-//	}
-//	return discv5.Topic(name + "@" + common.Bytes2Hex(genesisHash.Bytes()[0:8]))
-//}
 
 type LightDummyAPI struct{}
 

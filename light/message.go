@@ -33,7 +33,7 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		log.Trace("Valid announcement signature")
 	}
 
-	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash, "td", req.Td, "reorg", req.ReorgDepth)
+	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash /*, "td", req.Td, "reorg", req.ReorgDepth*/)
 	if pm.fetcher != nil {
 		//pm.fetcher.announce(p, &req)
 	}
