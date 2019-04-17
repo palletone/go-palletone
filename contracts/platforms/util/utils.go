@@ -182,7 +182,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	hostConfig := &docker.HostConfig{
 		Memory:           int64(1073741824), //1GB
 		CPUShares:        int64(512),
-		CPUQuota:         int64(100000),
+		CPUQuota:         int64(200000),
 		MemorySwap:int64(1073741824), //1GB
 	}
 	container, err := client.CreateContainer(docker.CreateContainerOptions{
