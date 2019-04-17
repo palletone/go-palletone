@@ -89,18 +89,6 @@ func (s *LesServer) Protocols() []p2p.Protocol {
 // Start starts the LES server
 func (s *LesServer) Start(srvr *p2p.Server) {
 	s.protocolManager.Start(s.config.LightPeers)
-	//if srvr.DiscV5 != nil {
-	//	for _, topic := range s.lesTopics {
-	//		topic := topic
-	//		go func() {
-	//			logger := log.New("topic", topic)
-	//			logger.Info("Starting topic registration")
-	//			defer logger.Info("Terminated topic registration")
-	//
-	//			srvr.DiscV5.RegisterTopic(topic, s.quitSync)
-	//		}()
-	//	}
-	//}
 	s.privateKey = srvr.PrivateKey
 	s.protocolManager.blockLoop()
 }
@@ -310,7 +298,7 @@ func (pm *ProtocolManager) blockLoop() {
 					hash := header.Hash()
 					number := header.Number.Index
 					//td := core.GetTd(pm.chainDb, hash, number)
-					if header.Number.Index > lastHead.Number.Index {
+					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
 						//if td != nil && td.Cmp(lastBroadcastTd) > 0 {
 						//	var reorg uint64
 						//	if lastHead != nil {

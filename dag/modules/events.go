@@ -21,7 +21,7 @@ type RemovedLogsEvent struct{ Logs []*Log }
 type ChainEvent struct {
 	Unit *Unit
 	Hash common.Hash
-	Logs []*Log
+	//Logs []*Log
 }
 type ChainSideEvent struct {
 	Unit *Unit
