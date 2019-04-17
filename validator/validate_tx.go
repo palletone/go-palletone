@@ -43,7 +43,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 	}
 	isOrphanTx := false
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
-		//fmt.Printf("-----------ValidateTx , %d\n", tx.TxMessages[0].App)
 		return TxValidationCode_INVALID_MSG
 	}
 
