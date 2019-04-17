@@ -97,7 +97,7 @@ func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, 
 func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
 	key := outpoint.ToKey()
 	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
-	log.Debug("Try to save utxo by key:", "outpoint_key", outpoint.String(), "and index by address:", address.String())
+	//log.Debug("Try to save utxo by key:", "outpoint_key", outpoint.String(), "and index by address:", address.String())
 	err := StoreBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
@@ -174,7 +174,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	err := retrieve(utxodb.db, key, utxo)
 	//data, err := utxodb.db.Get(key)
 	if err != nil {
-		log.Info("get utxo entry failed", "error", err, "Query utxo by outpoint:", outpoint.String())
+		log.Info("get utxo entry failed", "error", err, "outpoint", outpoint.String())
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}
