@@ -31,11 +31,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 )
 
@@ -102,13 +102,13 @@ type TxPoolTransaction struct {
 	Tx *Transaction
 
 	From         []*OutPoint
-	CreationDate time.Time    `json:"creation_date"`
-	Priority_lvl string       `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time `json:"creation_date"`
+	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool // will remove
+	Discarded    bool         // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
 	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
@@ -391,7 +391,7 @@ func (txs Transactions) GetTxIds() []common.Hash {
 
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
-	CertId     []byte // should be big.Int byte
+	CertId     []byte     // should be big.Int byte
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 
@@ -427,7 +427,6 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 			if outAmount+txout.Value > (1<<64 - 1) {
 				return nil, fmt.Errorf("Compute fees: txout total overflow")
 			}
-			log.Debug("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
 			outAmount += txout.Value
 		}
 		if inAmount < outAmount {
@@ -669,7 +668,7 @@ func (tx *Transaction) IsContractTx() bool {
 	return false
 }
 
-func (tx *Transaction) IsSystemContract()bool{
+func (tx *Transaction) IsSystemContract() bool {
 	for _, msg := range tx.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId

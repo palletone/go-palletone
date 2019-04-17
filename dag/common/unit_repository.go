@@ -528,7 +528,7 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 }
 
 //利息奖励,Mediator
-func ComputeRewardsFees(m *common.Address, txs []*modules.TxPoolTransaction) (*modules.Addition) {
+func ComputeRewardsFees(m *common.Address, txs []*modules.TxPoolTransaction) *modules.Addition {
 	if m == nil || len(txs) < 1 {
 		return nil
 	}
@@ -804,8 +804,6 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	rep.lock.Lock()
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
-	log.Debugf("Try to save a new unit to db index:%d, hash :%s ", unit.NumberU64(), uHash.String())
-
 	// step1. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := rep.dagdb.SaveHeader(unit.UnitHeader); err != nil {
@@ -843,7 +841,6 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
-	log.Debugf("saved a new unit to db index:%d, hash :%s ", unit.NumberU64(), uHash.String())
 	return nil
 }
 

@@ -125,7 +125,7 @@ func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount i
 	} else {
 		balance = BytesToUint64(data)
 	}
-	log.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
+	//log.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
 	balance = uint64(int64(balance) + addAmount)
 	return statedb.db.Put(key, Uint64ToBytes(balance))
 }

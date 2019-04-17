@@ -57,7 +57,6 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			dag.propRep.SetNewestUnit(newestUnit.Header())
 		}
 	}
-	log.Infof("Start generate unit... index:%d ", chainIndex.Index+1)
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
@@ -83,7 +82,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Debugf("Generate new unit[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
+	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.NumberU64(), sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
 
 	//TODO add PostChainEvents
 	// go func() {
@@ -98,7 +97,6 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
 	}
-	log.Debugf("Complete generate unit:%s", sign_unit.String4Log())
 	return sign_unit
 }
 
@@ -111,14 +109,16 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
  * @return true if we switched forks as a result of this push.
  */
 func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
-	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
 	t0 := time.Now()
+	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
+
 	// 2. 更新状态
 	if !dag.ApplyUnit(newUnit) {
 		return false
 	}
+
 	dag.Memdag.AddUnit(newUnit, txpool)
-	log.Debugf("save newest unit spent time: %s, parent hash:%s", time.Since(t0).String(), newUnit.ParentHash()[0].String())
+	log.Debugf("save newest unit spent time: %s, index: %d , hash:%s", time.Since(t0).String(), newUnit.NumberU64(), newUnit.UnitHash.String())
 	return true
 }
 
@@ -127,6 +127,9 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) bool {
 	defer func(start time.Time) {
 		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
 	}(time.Now())
+
+	dag.applyLock.Lock()
+	defer dag.applyLock.Unlock()
 
 	// 1. 下一个 unit 和本地 unit 连续性的判断
 	if !dag.validateUnitHeader(nextUnit) {
