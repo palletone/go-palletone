@@ -118,8 +118,6 @@ type ProtocolManager struct {
 	wg *sync.WaitGroup
 }
 
-type producer interface{}
-
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
 func NewProtocolManager(lightSync bool, mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txPool,

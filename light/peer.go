@@ -186,7 +186,9 @@ func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
 // SendAnnounce announces the availability of a number of blocks through
 // a hash notification.
 func (p *peer) SendAnnounce(request announceData) error {
-	return p2p.Send(p.rw, AnnounceMsg, request)
+	//TODO must recover
+	//return p2p.Send(p.rw, AnnounceMsg, request)
+	return nil
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
@@ -459,6 +461,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		// until we have a proper peer connectivity API, allow LES connection to other servers
 		if recv.get("serveStateSince", nil) == nil {
 			return errResp(ErrUselessPeer, "wanted client, got server")
+		}
+		if recv.get("announceType", &p.announceType) != nil {
+			p.announceType = announceTypeSimple
 		}
 
 		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
