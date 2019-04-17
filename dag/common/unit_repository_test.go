@@ -503,7 +503,7 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 			sigs = append(sigs, sigSet)
 		}
 		conSig := &modules.Message{
-			App: modules.APP_CONTRACT_INVOKE,
+			App: modules.APP_CONTRACT_STOP_REQUEST,
 		}
 		msgSig := &modules.Message{
 			App: modules.APP_SIGNATURE,
@@ -536,13 +536,13 @@ func TestComputeTxFees(t *testing.T) {
 
 	//1
 	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04}}
+		{0x01}, {0x02}, {0x03}, {0x04}, {0x05}}
 	aId = modules.AssetId{'p', 't', 'n'}
-	tx = creatFeeTx(true, pks, 100, aId)
+	tx = creatFeeTx(true, pks, 10, aId)
 	txs = append(txs, tx)
 
 	//	log.Info("TestComputeTxFees", "txs:", tx)
-
+/*
 	//2
 	pks = [][]byte{
 		{0x01}, {0x02}, {0x03}, {0x04}}
@@ -570,7 +570,7 @@ func TestComputeTxFees(t *testing.T) {
 	aId = modules.AssetId{'a', 'b', 'c'}
 	tx = creatFeeTx(true, pks, 10, aId)
 	txs = append(txs, tx)
-
+*/
 	//log.Info("TestComputeTxFees", "txs:", txs)
 	ads, err := ComputeTxFees(&m, txs)
 	log.Info("TestComputeTxFees", "txs:", ads)

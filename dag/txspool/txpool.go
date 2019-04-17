@@ -1117,14 +1117,14 @@ func (pool *TxPool) DeleteTx() error {
 		if tx.Confirmed {
 			if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
 				// delete
-				log.Debug("delete the confirmed tx.", "tx_hash", tx.Tx.Hash())
+				log.Debug("delete the confirmed tx.", "tx_hash", hash)
 				pool.DeleteTxByHash(hash)
 				continue
 			}
 		}
 		if tx.CreationDate.Add(pool.config.Lifetime).After(time.Now()) {
 			// delete
-			log.Debug("delete the tx(overtime).", "tx_hash", tx.Tx.Hash())
+			log.Debug("delete the tx(overtime).", "tx_hash", hash)
 			pool.DeleteTxByHash(hash)
 			continue
 		}
@@ -1567,7 +1567,7 @@ func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
 					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{out.Asset.AssetId, out.Asset.UniqueId},
 						PkScript: out.PkScript[:]}
 					pool.outputs.Store(preout, utxo)
-					log.Debugf("add utxo to pool.outputs,outpoint:%s", preout.String())
+					//log.Debugf("add utxo to pool.outputs,outpoint:%s", preout.String())
 				}
 			}
 		}
@@ -1637,8 +1637,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	}
 
 	t2 := time.Now()
-	validated_txs := make([]*modules.TxPoolTransaction, 0)
-
 	//  验证孤儿交易
 	or_list := make(orList, 0)
 	for _, tx := range orphanTxs {
@@ -1659,7 +1657,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			//pool.orphans.Store(tx.Tx.Hash(), tx)
 			list = append(list, tx)
 			total += tx.Tx.Size()
-			validated_txs = append(validated_txs, tx)
 			if total > unit_size {
 				break
 			}
@@ -1686,10 +1683,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		} else {
 			log.Info("rm repeat error", "index", i)
 		}
-	}
-	// rm orphanTx
-	for _, tx := range validated_txs {
-		go pool.RemoveOrphan(tx)
 	}
 	// if time.Since(t2) > time.Second*1 {
 	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
@@ -1843,7 +1836,7 @@ func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
 					pool.outputs.Store(preout, utxo)
 					/*	pool.outputs[preout] = utxo*/
 				}
-				log.Debug(fmt.Sprintf("Stored orphan tx's hash %s (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs())))
+				log.Debugf("Stored orphan tx's hash:[%s] (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs()))
 			}
 		}
 	}

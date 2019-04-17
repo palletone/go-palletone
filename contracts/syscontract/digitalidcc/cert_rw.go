@@ -93,11 +93,11 @@ func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface
 		key = dagConstants.CERT_MEMBER_SYMBOL
 	}
 	key += certInfo.Holder + dagConstants.CERT_SPLIT_CH + certInfo.Cert.SerialNumber.String()
-	recovationTime, _ := time.Time{}.MarshalBinary()
+	revocationTime, _ := time.Time{}.MarshalBinary()
 	if !certInfo.Cert.NotAfter.IsZero() {
-		recovationTime, _ = certInfo.Cert.NotAfter.MarshalBinary()
+		revocationTime, _ = certInfo.Cert.NotAfter.MarshalBinary()
 	}
-	if err := stub.PutState(key, recovationTime); err != nil {
+	if err := stub.PutState(key, revocationTime); err != nil {
 		return err
 	}
 	// put {subject, certid} state
@@ -315,7 +315,8 @@ func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*CertHold
 			}
 		}
 		// update issuer crl bytes
-		key = dagConstants.CRL_BYTES_SYMBOL + issuer
+		key = dagConstants.CRL_BYTES_SYMBOL + issuer +
+			dagConstants.CERT_SPLIT_CH + crl.TBSCertList.ThisUpdate.String() + dagConstants.CERT_SPLIT_CH + crl.TBSCertList.NextUpdate.String()
 		if err := stub.PutState(key, crl.TBSCertList.Raw); err != nil {
 			return err
 		}
@@ -323,15 +324,18 @@ func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*CertHold
 	return nil
 }
 
-func getIssuerCRLBytes(issuer string, stub shim.ChaincodeStubInterface) ([]byte, error) {
+func getIssuerCRLBytes(issuer string, stub shim.ChaincodeStubInterface) ([][]byte, error) {
 	// query server certificates
 	key := dagConstants.CRL_BYTES_SYMBOL + issuer
-	data, err := stub.GetState(key)
+	data, err := stub.GetStateByPrefix(key)
 	if err != nil {
 		return nil, err
 	}
-
-	return data, nil
+	bytes := [][]byte{}
+	for _, val := range data {
+		bytes = append(bytes, val.Value)
+	}
+	return bytes, nil
 }
 
 func GetIntermidateCertChains(cert *x509.Certificate, rootIssuer string, stub shim.ChaincodeStubInterface) (certChains []*x509.Certificate, err error) {

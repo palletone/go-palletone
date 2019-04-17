@@ -499,7 +499,6 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			ads = append(ads, a)
 			continue
 		}
-
 		addrs := tx.Tx.GetContractTxSignatureAddress()
 		nm := len(addrs)
 		if nm <= 0 {
@@ -507,23 +506,28 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			ads = append(ads, a)
 			continue
 		}
-		t := a.Amount * 6 / 10
-		if t > a.Amount {
-			log.Error("ComputeTxFees", "computer err, t=", t, "a.mount=", a.Amount)
+		jAll := a.Amount * 6 / 10       //all jury
+		j := jAll / uint64(nm)          //single jury
+		mAll := a.Amount - j*uint64(nm) //mediator
+
+		if mAll > a.Amount {
+			log.Error("ComputeTxFees", "computer err, mAll=", mAll, "a.mount=", a.Amount)
 			continue
 		}
 		for _, add := range addrs {
 			am := &modules.Addition{
 				Asset: *tx.TxFee.Asset,
 			}
-			am.Amount = t / uint64(nm) //jury fee= all * 0.6/nm
+			am.Amount = j //jury fee= all * 0.6/nm
 			am.Addr = add
+			//log.Info("ComputeTxFees", "i", i, "am.Amount", am.Amount, "nm", nm, "add", add)
 			ads = append(ads, am)
 		}
-		a.Amount = a.Amount - t //mediator fee = all * 0.4
+		a.Amount = mAll //mediator fee = all * 0.4
 		a.Addr = *m
 		ads = append(ads, a)
 	}
+
 	return ads, nil
 }
 
@@ -557,6 +561,8 @@ func (rep *UnitRepository) ComputeAwardsFees(addr *common.Address, poolTxs []*mo
 }
 
 func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
+	allAmount := uint64(0)
+
 	if len(ads) <= 0 {
 		return nil
 	}
