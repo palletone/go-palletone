@@ -77,6 +77,7 @@ type Dag struct {
 	mediatorVoteTally      voteTallys
 	totalVotingStake       uint64
 	mediatorCountHistogram []uint64
+	applyLock              sync.Mutex
 
 	//SPV
 	rmLogsFeed    event.Feed

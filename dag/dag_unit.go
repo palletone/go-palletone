@@ -111,14 +111,19 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
  * @return true if we switched forks as a result of this push.
  */
 func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
-	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
 	t0 := time.Now()
+	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
+
 	// 2. 更新状态
 	if !dag.ApplyUnit(newUnit) {
 		return false
 	}
+
 	dag.Memdag.AddUnit(newUnit, txpool)
-	log.Debugf("save newest unit spent time: %s, parent hash:%s", time.Since(t0).String(), newUnit.ParentHash()[0].String())
+
+	log.Debugf("save newest unit spent time: %s, parent hash:%s", time.Since(t0).String(),
+		newUnit.ParentHash()[0].String())
+
 	return true
 }
 
@@ -127,6 +132,9 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) bool {
 	defer func(start time.Time) {
 		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
 	}(time.Now())
+
+	dag.applyLock.Lock()
+	defer dag.applyLock.Unlock()
 
 	// 1. 下一个 unit 和本地 unit 连续性的判断
 	if !dag.validateUnitHeader(nextUnit) {
