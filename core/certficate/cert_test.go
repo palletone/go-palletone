@@ -19,32 +19,31 @@
  */
 package certficate
 
-
-type TestCertRpc struct {
-	Jsonrpc string `json:"jsonrpc"`
-	Methond string `json:"method"`
-	Params  []interface{} `json:"params"`
-	Id      int    `json:"id"`
-}
-
-
+//type TestCertRpc struct {
+//	Jsonrpc string `json:"jsonrpc"`
+//	Methond string `json:"method"`
+//	Params  []interface{} `json:"params"`
+//	Id      int    `json:"id"`
+//}
+//
+//
 //func TestGenCert(t *testing.T) {
-//	certinfo := NewCertInfo("P1HTX4D6fPUBee2uSFX3rwmVzUXAA8oa", "lkk", "HiPalletone", "user", "gptn.mediator1", true)
+//	certinfo := NewCertInfo("P19Q28wvSycuPEwxc5J4vyxU6inUy1USkD2", "lkk", "HiPalletone", "user", "gptn.mediator1", true)
 //	cainfo := CertInfo2Cainfo(*certinfo)
 //	certpem, err := cainfo.Enrolluser()
 //
-//    t.Log(string(certpem))
+//   t.Log(string(certpem))
 //	params := TestCertRpc{}
 //	params.Jsonrpc = "2.0"
 //	params.Methond = "ptn_ccinvoketx"
 //	params.Id = 1
-//	form := "P1E6sjjWF6hkGFiZy9uWGBb1fTjKdt82yet"
-//	to := "P1E6sjjWF6hkGFiZy9uWGBb1fTjKdt82yet"
+//	form := "P13ZJ4ypNcJnkMt2UaVs4XHjdjyJrwy5sVN"
+//	to := "P13ZJ4ypNcJnkMt2UaVs4XHjdjyJrwy5sVN"
 //	amount := "100"
 //	fee := "1"
 //	contractid := syscontract.DigitalIdentityContractAddress.String()
 //	//method1 := []string{"P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","100","1","PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"}
-//	method2 := []string{"addServerCert","P1HTX4D6fPUBee2uSFX3rwmVzUXAA8oa",string(certpem)}
+//	method2 := []string{"addServerCert","P19Q28wvSycuPEwxc5J4vyxU6inUy1USkD2",string(certpem)}
 //	//method2 := TestAddCertJson{ []string{"addServerCert","P1HrTpdqBmCrNhJMGREu7vtyzmhCiPiztkL","E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\data\\certs\\openssl\\powerca\\certs\\powerca.cert.pem"}}
 //	params.Params = append(params.Params,form,to,amount,fee,contractid)
 //	//params.Params = append(params.Params,str2)
