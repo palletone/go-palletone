@@ -120,7 +120,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 		if err != nil {
 			return err
 		}
-		if revocationTime.IsZero() || revocationTime.String() < time.Now().String() {
+		if revocationTime.IsZero() || revocationTime.Before(time.Now()) {
 			return fmt.Errorf("Has no validate intermidate certificate")
 		}
 	}
@@ -195,7 +195,7 @@ func ValidateCRLIssuerSig(issuerAddr string, crl *pkix.CertificateList, stub shi
 	if err = revocationTime.UnmarshalBinary(val); err != nil {
 		return err
 	}
-	if revocationTime.String() < time.Now().String() {
+	if revocationTime.Before(time.Now()) {
 		return fmt.Errorf("your certificate has been revocation")
 	}
 	// query issuer cert info
