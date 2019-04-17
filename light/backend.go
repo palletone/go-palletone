@@ -123,8 +123,9 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightEthereum, error) {
 	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
 	gasToken := modules.AssetId{}
 	//txPool := &TxPool{}
-	if lptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, nil,
-		dag, lptn.eventMux, nil, genesis, nil, nil); err != nil {
+	//lesserver := ptn.LesServer()
+	if lptn.protocolManager, err = NewProtocolManager(true, config.SyncMode, config.NetworkId, gasToken, nil,
+		dag, lptn.eventMux, genesis); err != nil {
 		return nil, err
 	}
 	//leth.ApiBackend = &LesApiBackend{leth, nil}

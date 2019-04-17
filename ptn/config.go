@@ -43,7 +43,7 @@ var DefaultConfig = Config{
 	SyncMode:      downloader.FastSync,
 	NetworkId:     1,
 	LightServ:     10,
-	LightPeers:    100,
+	LightPeers:    10,
 	DatabaseCache: 768,
 	TrieCache:     256,
 	TrieTimeout:   5 * time.Minute,

@@ -394,7 +394,7 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer) error {
+func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer, headhash common.Hash) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -402,11 +402,12 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	send = send.add("protocolVersion", uint64(p.version))
 	send = send.add("networkId", p.network)
 	send = send.add("headNum", *number)
+	send = send.add("headHash", headhash)
 	send = send.add("genesisHash", genesis)
 	if server != nil {
 		send = send.add("serveHeaders", nil)
-		send = send.add("serveChainSince", uint64(0))
-		send = send.add("serveStateSince", uint64(0))
+		//send = send.add("serveChainSince", uint64(0))
+		//send = send.add("serveStateSince", uint64(0))
 		send = send.add("txRelay", nil)
 		send = send.add("flowControl/BL", server.defParams.BufLimit)
 		send = send.add("flowControl/MRR", server.defParams.MinRecharge)
@@ -424,16 +425,14 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	recv := recvList.decode()
 
 	var rGenesis, rHash common.Hash
-	var rVersion, rNetwork, rNum uint64
+	var rVersion, rNetwork uint64
 	var rTd *big.Int
+	var rNum modules.ChainIndex
 
 	if err := recv.get("protocolVersion", &rVersion); err != nil {
 		return err
 	}
 	if err := recv.get("networkId", &rNetwork); err != nil {
-		return err
-	}
-	if err := recv.get("headTd", &rTd); err != nil {
 		return err
 	}
 	if err := recv.get("headHash", &rHash); err != nil {
@@ -463,12 +462,12 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 
 		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
 	} else {
-		if recv.get("serveChainSince", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot serve chain")
-		}
-		if recv.get("serveStateSince", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot serve state")
-		}
+		//if recv.get("serveChainSince", nil) != nil {
+		//	return errResp(ErrUselessPeer, "peer cannot serve chain")
+		//}
+		//if recv.get("serveStateSince", nil) != nil {
+		//	return errResp(ErrUselessPeer, "peer cannot serve state")
+		//}
 		if recv.get("txRelay", nil) != nil {
 			return errResp(ErrUselessPeer, "peer cannot relay transactions")
 		}
@@ -487,8 +486,8 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fcServer = flowcontrol.NewServerNode(params)
 		p.fcCosts = MRC.decode()
 	}
-
-	p.headInfo = &announceData{Td: rTd, Hash: rHash, Number: rNum}
+	//TODO must modify
+	p.headInfo = &announceData{Td: rTd, Hash: rHash, Number: rNum.Index}
 	return nil
 }
 

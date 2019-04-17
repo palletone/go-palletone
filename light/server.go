@@ -31,7 +31,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
 	"sync"
@@ -52,14 +51,15 @@ type LesServer struct {
 
 func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 	quitSync := make(chan struct{})
-	gasToken := modules.AssetId{}
+	gasToken := config.Dag.GetGasToken()
 	genesis, err := ptn.Dag().GetGenesisUnit()
 	if err != nil {
 		log.Error("PalletOne New", "get genesis err:", err)
 		return nil, err
 	}
-	pm, err := NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.TxPool(),
-		ptn.Dag(), ptn.EventMux(), nil, genesis, nil, nil)
+	//lesserver := ptn.GetLesServer()
+	pm, err := NewProtocolManager(false, config.SyncMode, config.NetworkId, gasToken, ptn.TxPool(),
+		ptn.Dag(), ptn.EventMux(), genesis)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 	//
 	//srv.chtIndexer.Start(eth.BlockChain())
 
-	//pm.server = srv
+	pm.server = srv
 
 	srv.defParams = &flowcontrol.ServerParams{
 		BufLimit:    300000000,
