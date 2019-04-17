@@ -1183,7 +1183,7 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 		// 1. new 一个全节点类型的 PalletOne
 		//return ptn.New(ctx, cfg)
 		fullNode, err := ptn.New(ctx, cfg)
-		if fullNode != nil /* && cfg.LightServ > 0 */ {
+		if fullNode != nil && cfg.LightServ > 0 {
 			ls, _ := light.NewLesServer(fullNode, cfg)
 			fullNode.AddLesServer(ls)
 		}
