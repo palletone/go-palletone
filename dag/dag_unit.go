@@ -82,7 +82,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.NumberU64(), sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
+	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
 
 	//TODO add PostChainEvents
 	// go func() {
