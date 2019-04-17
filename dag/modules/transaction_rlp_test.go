@@ -71,22 +71,22 @@ func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 //}
 
 func TestCompare(t *testing.T) {
-//	a1 := &TestA{A: 1, B: "A1"}
-//	a2 := &TestA{A: 2, B: "A2"}
-//	a3 := &TestA{A: 3, B: "A3", Parent: a1}
-//	a11 := &TestA{A: 1, B: "A1"}
-//	a22 := &TestA{A: 2, B: "A2", Parent: &TestA{}}
-//
-//	assert.True(t, cmp.Equal(a1, a11))
-//	assert.False(t, cmp.Equal(a2, a22))
-//	assert.True(t, cmp.Equal(a3.Parent, a11))
-//	b1 := &TestB{A:[]byte("A1"), B:2 }
-//	bytes, err := rlp.EncodeToBytes(b1)
-//	assert.Nil(t, err)
-//	t.Logf("Rlp data:%x", bytes)
-//	b := &TestB{}
-//	err = rlp.DecodeBytes(bytes, b)
-//	assert.Equal(t, b1, b)
+	//	a1 := &TestA{A: 1, B: "A1"}
+	//	a2 := &TestA{A: 2, B: "A2"}
+	//	a3 := &TestA{A: 3, B: "A3", Parent: a1}
+	//	a11 := &TestA{A: 1, B: "A1"}
+	//	a22 := &TestA{A: 2, B: "A2", Parent: &TestA{}}
+	//
+	//	assert.True(t, cmp.Equal(a1, a11))
+	//	assert.False(t, cmp.Equal(a2, a22))
+	//	assert.True(t, cmp.Equal(a3.Parent, a11))
+	//	b1 := &TestB{A:[]byte("A1"), B:2 }
+	//	bytes, err := rlp.EncodeToBytes(b1)
+	//	assert.Nil(t, err)
+	//	t.Logf("Rlp data:%x", bytes)
+	//	b := &TestB{}
+	//	err = rlp.DecodeBytes(bytes, b)
+	//	assert.Equal(t, b1, b)
 }
 
 func TestInput_RLP(t *testing.T) {
@@ -290,7 +290,14 @@ func newTestContractInvokeResult() *ContractInvokePayload {
 	write1 := ContractWriteSet{false, "Key1", []byte("This is value2")}
 	wset := []ContractWriteSet{write1}
 
-	pay := &ContractInvokePayload{[]byte("ContractId"), "Func1", args, readset, wset, nil}
+	pay := &ContractInvokePayload{
+		ContractId:   []byte("ContractId"),
+		FunctionName: "Func1",
+		Args:         args,
+		ReadSet:      readset,
+		WriteSet:     wset,
+		ErrorCode:    0,
+	}
 
 	return pay
 }

@@ -16,10 +16,9 @@
 
 package light
 
-/*
 import (
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/statistics/metrics"
 )
 
 var (
@@ -110,4 +109,3 @@ func (rw *meteredMsgReadWriter) WriteMsg(msg p2p.Msg) error {
 	// Send the packet to the p2p layer
 	return rw.MsgReadWriter.WriteMsg(msg)
 }
-*/
