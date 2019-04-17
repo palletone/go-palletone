@@ -91,6 +91,7 @@ type dags interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	// GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	HasTransaction(hash common.Hash) bool
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
@@ -632,9 +633,11 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return true, nil
 	}
-
 	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
+	if pool.unit.HasTransaction(hash) {
+		return false, fmt.Errorf("the transactionx: %x has been packaged.", hash)
+	}
 	if _, has := pool.all.Load(hash); has {
 		log.Trace("Discarding already known transaction", "hash", hash)
 		return false, fmt.Errorf("known transaction: %#x", hash)
@@ -714,6 +717,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		}
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
+	log.Debugf("Add Tx[%s] to txpool.", tx.Tx.Hash().String())
 	pool.priority_sorted.Put(tx)
 	pool.all.Store(hash, tx)
 	go pool.addCache(tx)
@@ -1508,6 +1512,9 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transact
 			return err
 		}
 	}
+	if len(txs) > 0 {
+		pool.priority_sorted.Removed()
+	}
 	return nil
 }
 func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction) error {
@@ -1611,6 +1618,9 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			break
 		} else {
 			if !tx.Pending {
+				if pool.unit.HasTransaction(tx.Tx.Hash()) {
+					continue
+				}
 				// add precusorTxs 获取该交易的前驱交易列表
 				p_txs, _ := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 				if len(p_txs) > 0 {
@@ -1657,14 +1667,20 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	}
 	pool.mu.RUnlock()
 	// 	去重
-	m := make(map[int]*modules.TxPoolTransaction)
+	m := make(map[common.Hash]*modules.TxPoolTransaction)
+	indexL := make(map[int]common.Hash)
 	for i, tx := range list {
+		hash := tx.Tx.Hash()
 		tx.Index = i
-		m[i] = tx
+		indexL[i] = hash
+		m[hash] = tx
 	}
 	list = make([]*modules.TxPoolTransaction, 0)
-	for i := 0; i < len(m); i++ {
-		if tx, has := m[i]; has {
+
+	for i := 0; i < len(indexL); i++ {
+		hash, _ := indexL[i]
+		if tx, has := m[hash]; has {
+			delete(m, hash)
 			list = append(list, tx)
 			go pool.promoteTx(hash, tx)
 		} else {
@@ -1677,7 +1693,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	}
 	// if time.Since(t2) > time.Second*1 {
 	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
-	// }
+
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs, orphanTxs map[common.Hash]*modules.TxPoolTransaction) ([]*modules.TxPoolTransaction, error) {

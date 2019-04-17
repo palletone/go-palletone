@@ -31,11 +31,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 var (
@@ -101,13 +102,13 @@ type TxPoolTransaction struct {
 	Tx *Transaction
 
 	From         []*OutPoint
-	CreationDate time.Time    `json:"creation_date"`
-	Priority_lvl string       `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time `json:"creation_date"`
+	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool // will remove
+	Discarded    bool         // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
 	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
@@ -390,7 +391,7 @@ func (txs Transactions) GetTxIds() []common.Hash {
 
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
-	CertId     []byte // should be big.Int byte
+	CertId     []byte     // should be big.Int byte
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 
@@ -426,7 +427,6 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 			if outAmount+txout.Value > (1<<64 - 1) {
 				return nil, fmt.Errorf("Compute fees: txout total overflow")
 			}
-			log.Debug("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
 			outAmount += txout.Value
 		}
 		if inAmount < outAmount {
@@ -474,7 +474,7 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	if !tx.IsContractTx() {
 		return nil
 	}
-	addrs := make([]common.Address, 4)
+	addrs := make([]common.Address, 0)
 	for _, msg := range tx.TxMessages {
 		switch msg.App {
 		case APP_SIGNATURE:
@@ -569,9 +569,8 @@ LOOP:
 	return request
 }
 
-//增发的利息
 type Addition struct {
-	Addr  common.Address
+	Addr   common.Address
 	Asset  Asset
 	Amount uint64
 }
@@ -667,6 +666,23 @@ func (tx *Transaction) IsContractTx() bool {
 		}
 	}
 	return false
+}
+
+func (tx *Transaction) IsSystemContract() bool {
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
+			log.Debug("isSystemContract", "contract id", contractId, "len", len(contractId))
+			contractAddr := common.NewAddress(contractId, common.ContractHash)
+			return contractAddr.IsSystemContractAddress() //, nil
+
+		} else if msg.App == APP_CONTRACT_TPL_REQUEST {
+			return true //todo  先期将install作为系统合约处理，只有Mediator可以安装，后期在扩展到所有节点
+		} else if msg.App >= APP_CONTRACT_DEPLOY_REQUEST {
+			return false //, nil
+		}
+	}
+	return true //, errors.New("isSystemContract not find contract type")
 }
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
@@ -902,4 +918,14 @@ func WriteTxOut(w io.Writer, pver uint32, version int32, to *Output) error {
 		return err
 	}
 	return WriteVarBytes(w, pver, to.PkScript)
+}
+
+func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
+	if b == nil {
+		return false, errors.New("Addition isEqual err, param is nil")
+	}
+	if a.Addr == b.Addr && a.Asset == b.Asset {
+		return true, nil
+	}
+	return false, nil
 }

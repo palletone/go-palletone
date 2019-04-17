@@ -77,6 +77,7 @@ type Dag struct {
 	mediatorVoteTally      voteTallys
 	totalVotingStake       uint64
 	mediatorCountHistogram []uint64
+	applyLock              sync.Mutex
 
 	//SPV
 	rmLogsFeed    event.Feed
@@ -128,6 +129,13 @@ func (d *Dag) HasUnit(hash common.Hash) bool {
 		return false
 	}
 	return u != nil
+}
+func (d *Dag) HasTransaction(hash common.Hash) bool {
+	b, err := d.unstableUnitRep.IsTransactionExist(hash)
+	if err != nil {
+		return false
+	}
+	return b
 }
 
 // confirm unit
@@ -964,7 +972,14 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
 		return nil, fmt.Errorf("Create unit: %s", err.Error())
 	}
-	coinbase, _, err := dagcommon.CreateCoinbase(&addr, 0, nil, &asset, time.Now())
+	ad := &modules.Addition{
+		Addr:   addr,
+		Asset:  asset,
+		Amount: 0,
+	}
+	ads := make([]*modules.Addition, 0)
+	ads = append(ads, ad)
+	coinbase, _, err := dagcommon.CreateCoinbase(ads, time.Now())
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err

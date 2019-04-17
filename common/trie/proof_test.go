@@ -50,6 +50,25 @@ func TestProof(t *testing.T) {
 	}
 }
 
+func TestTwoElementProof(t *testing.T) {
+	trie := new(Trie)
+	updateString(trie, "y", "ying")
+	updateString(trie, "abc", "abcdef")
+	root := trie.Hash()
+
+	proofs, _ := ptndb.NewMemDatabase()
+	if trie.Prove([]byte("abc"), 0, proofs) != nil {
+		t.Fatalf("missing key %x while constructing proof", "abc")
+	}
+	val, err, _ := VerifyProof(root, []byte("abc"), proofs)
+	if err != nil {
+		t.Fatalf("VerifyProof error for key %x: %v\nraw proof: %v", "abc", err, proofs)
+	}
+	if !bytes.Equal(val, []byte("abcdef")) {
+		t.Fatalf("VerifyProof returned wrong value for key %x: got %x, want %x", "abc", val, "abddef")
+	}
+}
+
 func TestOneElementProof(t *testing.T) {
 	trie := new(Trie)
 	updateString(trie, "k", "v")

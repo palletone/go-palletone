@@ -230,19 +230,17 @@ func (dagdb *DagDb) GetTransactionOnly(hash common.Hash) (*modules.Transaction, 
 	tx := new(modules.Transaction)
 	key := append(constants.TRANSACTION_PREFIX, hash.Bytes()...)
 	err := retrieve(dagdb.db, key, tx)
-	//data, err := getString(dagdb.db, []byte(key))
 	if err != nil {
-		log.Error("get transaction failed......", "error", err)
+		log.Warn("get transaction failed.", "tx_hash", hash.String(), "error", err)
 		return nil, err
 	}
 	return tx, nil
 }
 
-//func (dagdb *DagDb) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
-//	key := fmt.Sprintf("%s_%s", string(constants.TxHash2ReqPrefix), hash.String())
-//	str, err := GetString(dagdb.db, key)
-//	return common.HexToHash(str), err
-//}
+func (dagdb *DagDb) IsTransactionExist(hash common.Hash) (bool, error) {
+	key := append(constants.TRANSACTION_PREFIX, hash.Bytes()...)
+	return dagdb.db.Has(key)
+}
 
 func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 	key := append(constants.ReqIdPrefix, reqid.Bytes()...)

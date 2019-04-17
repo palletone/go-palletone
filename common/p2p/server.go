@@ -1027,7 +1027,8 @@ func (srv *Server) PeersInfo() []*PeerInfo {
 	// Gather all the generic and sub-protocol specific infos
 	infos := make([]*PeerInfo, 0, srv.PeerCount())
 	for _, peer := range srv.Peers() {
-		if peer != nil && srv.Protocols[0].Name == peer.Caps()[0].Name {
+		//if peer != nil && srv.Protocols[0].Name == peer.Caps()[0].Name {
+		if peer != nil {
 			infos = append(infos, peer.Info())
 		}
 	}

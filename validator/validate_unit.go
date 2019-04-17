@@ -100,15 +100,8 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	defer func() {
 		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unit.Hash().String(), time.Since(start))
 	}()
-	//  unit's size  should bigger than minimum.
-	if unit.Size() < 125 {
-		log.Debug("Validate size", "error", "size is invalid", "size", unit.Size())
-		return NewValidateError(UNIT_STATE_INVALID_SIZE)
-	}
 
-	// step1. check header.New unit is no group signature yet
-	//TODO must recover
-
+	// step1. check header ---New unit is no group signature yet
 	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
 	if unitHeaderValidateResult != TxValidationCode_VALID &&
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
@@ -125,7 +118,6 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	}
 	// step2. check transactions in unit
 	err := validate.ValidateTransactions(unit.Txs)
-
 	if err != nil {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)
 		log.Debug(msg)
@@ -171,25 +163,6 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	if header.Number == nil {
 		return UNIT_STATE_INVALID_HEADER_NUMBER
 	}
-
-	////Check unit and parent units relationship
-	//if validate.dagquery != nil {
-	//	parentHeader, err := validate.dagquery.GetHeaderByHash(header.ParentsHash[0])
-	//	if err != nil {
-	//		log.Errorf("Get parent header of the header, parent hash[%s] err:%s", header.ParentsHash[0].String(), err.Error())
-	//		return UNIT_STATE_INVALID_HEADER
-	//	}
-	//	if parentHeader.Number.Index+1 != header.Number.Index {
-	//		log.Errorf("Unit[%s] has invalid number %d, parent unit[%s] number is %d", header.Hash().String(), header.Number.Index, parentHeader.Hash().String(), parentHeader.Number.Index)
-	//		return UNIT_STATE_INVALID_HEADER_NUMBER
-	//	}
-	//	if parentHeader.Number.AssetID != header.Number.AssetID {
-	//		log.Errorf("Unit[%s] has invalid asset %s, parent unit[%s] asset is %s", header.Hash().String(), header.Number.AssetID.String(), parentHeader.Hash().String(), parentHeader.Number.AssetID.String())
-	//		return UNIT_STATE_INVALID_HEADER
-	//	}
-	//}
-
-	// TODO 同步过来的unit 没有Authors ，因此无法验证签名有效性。
 	var thisUnitIsNotTransmitted bool
 	if thisUnitIsNotTransmitted {
 		sigState := validate.validateUnitSignature(header)

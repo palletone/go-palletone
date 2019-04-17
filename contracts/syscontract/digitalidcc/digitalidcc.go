@@ -24,7 +24,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
@@ -59,6 +59,8 @@ func (d *DigitalIdentityChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.R
 		return d.getCertBytes(stub, args)
 	case "getCertHolder":
 		return d.getCertHolder(stub, args)
+	case "getRootCAHoler":
+		return d.getRootCAHolder(stub, args)
 	// 添加CRL证书
 	case "addCRL":
 		return d.addCRLCert(stub, args)
@@ -76,6 +78,10 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		return shim.Error(reqStr)
 	}
 	certHolder := args[0]
+	// check addrss
+	if !common.IsValidAddress(certHolder) {
+		return shim.Error(fmt.Sprintf("certificate holder address is invalid"))
+	}
 	// parse issuer
 	issuer, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -143,13 +149,6 @@ func (d *DigitalIdentityChainCode) addCRLCert(stub shim.ChaincodeStubInterface, 
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert parse issuerAddr error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
-	// load crl file
-	//crlPath := args[0]
-	//	//pemBytes, err := loadCert(crlPath)
-	//	//if err != nil {
-	//	//	reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load [%s] error: %s", crlPath, err.Error())
-	//	//	return shim.Error(reqStr)
-	//	//}
 	crlBytes, err := loadCertBytes([]byte(args[0]))
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load bytes to CRL error: %s", err.Error())
@@ -188,7 +187,6 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 	if err != nil {
 		return shim.Error(fmt.Sprintf("get ca holder error"))
 	}
-	log.Debugf(">>>>> get root ca holder:%s", val)
 	if string(val) == args[0] {
 		rootcert, err := GetRootCert(stub)
 		if err != nil {
@@ -295,6 +293,18 @@ func (d *DigitalIdentityChainCode) getCertHolder(stub shim.ChaincodeStubInterfac
 		return shim.Error(reqStr)
 	}
 	return shim.Success(certInfoJson)
+}
+
+func (d *DigitalIdentityChainCode) getRootCAHolder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 0 {
+		reqStr := fmt.Sprintf("No need params")
+		return shim.Error(reqStr)
+	}
+	val, err := stub.GetState("RootCAHolder")
+	if err != nil {
+		return shim.Error(fmt.Sprintf("get ca holder error"))
+	}
+	return shim.Success(val)
 }
 
 func (d *DigitalIdentityChainCode) getIssuerCRL(stub shim.ChaincodeStubInterface, args []string) pb.Response {

@@ -22,6 +22,7 @@ package memunit
 
 import (
 	"sync"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -261,6 +262,10 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash) {
 }
 
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
+	defer func(start time.Time) {
+		log.Debugf("MemDag AddUnit cost time: %v ,index: %d", time.Since(start), unit.NumberU64())
+	}(time.Now())
+
 	if unit == nil {
 		return errors.ErrNullPoint
 	}
@@ -276,7 +281,6 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
-	log.Debugf("Try to add unit[%s] to unstable chain", uHash.String())
 	threshold, _ := chain.ldbPropRep.GetChainThreshold()
 	token := unit.Number().AssetID
 	if _, ok := chain.chainUnits[parentHash]; ok || parentHash == chain.stableUnitHash[token] {
@@ -284,12 +288,11 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		chain.chainUnits[uHash] = unit
 		//add at the end of main chain unit
 		if parentHash == chain.lastMainchainUnit[token].Hash() {
-			log.Debug("This is a new main chain unit")
 			//Add a new unit to main chain
 			chain.setLastMainchainUnit(unit)
 			//update txpool's tx status to pending
 			if len(unit.Txs) > 0 {
-				log.Debugf("Update tx[%x] status to pending in txpool", unit.Txs.GetTxIds())
+				log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
 				txpool.SetPendingTxs(unit.Hash(), unit.Txs)
 			}
 			//增加了单元后检查是否满足稳定单元的条件
@@ -298,7 +301,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 				//这个单元不是稳定单元，需要加入Tempdb
 			}
 		} else { //Fork unit
-			log.Debug("This is a fork unit")
 			if unit.NumberU64() > chain.lastMainchainUnit[token].NumberU64() { //Need switch main chain
 				//switch main chain, build db
 				//如果分支上的确认数大于等于当前主链，则切换主链
@@ -346,7 +348,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 		if unit.Hash() != oldLastMainchainUnit.Hash() {
 			txs := unit.Transactions()
 			if len(txs) > 0 {
-				log.Debugf("Reset unit[%x] 's txs status to not pending", unit.UnitHash)
+				log.Debugf("Reset unit[%#x] 's txs status to not pending", unit.UnitHash)
 				txpool.ResetPendingTxs(txs)
 			}
 		}
@@ -356,7 +358,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	newUnstableUnits := chain.getMainChainUnits(token)
 	for _, unit := range newUnstableUnits {
 		if len(unit.Txs) > 0 {
-			log.Debugf("Update tx[%x] status to pending in txpool", unit.Txs.GetTxIds())
+			log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
 			txpool.SetPendingTxs(unit.Hash(), unit.Txs)
 		}
 	}

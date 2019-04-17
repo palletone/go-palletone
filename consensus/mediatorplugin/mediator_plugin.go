@@ -114,9 +114,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	case Lag:
 		log.Info("Not producing unit because node didn't wake up within 2500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
-		//case NoPrivateKey:
-		//	log.Info("Not producing unit because I don't have the private key for " +
-		//		detail["ScheduledKey"])
+	//case NoPrivateKey:
+	//	log.Info("Not producing unit because I don't have the private key for " +
+	//		detail["ScheduledKey"])
 	case Consecutive:
 		log.Info("Not producing unit because the last unit was generated " +
 			"by the same mediator(" + detail["Mediator"] + ")." +
@@ -138,9 +138,6 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
-	//defer func(start time.Time) {
-	//	log.Debug("maybeProduceUnit unit elapsed", "elapsed", time.Since(start))
-	//}(time.Now())
 	detail := make(map[string]string)
 	dag := mp.dag
 
@@ -237,13 +234,12 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	if mp.groupSigningEnabled {
 		groupPubKey = mp.LocalMediatorPubKey(scheduledMediator)
 	}
-	log.Debugf("starting generate unit spent time:%s", time.Since(nowFine).String())
+
 	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
 	if newUnit == nil || newUnit.IsEmpty() {
 		detail["Msg"] = "The newly produced unit is empty!"
 		return ExceptionProducing, detail
 	}
-	log.Debugf("generate unit spent time: %s", time.Since(nowFine).String())
 
 	unitHash := newUnit.UnitHash
 	detail["Num"] = strconv.FormatUint(newUnit.NumberU64(), 10)

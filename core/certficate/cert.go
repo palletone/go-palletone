@@ -11,13 +11,33 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
-package core
+package certficate
 
 import (
 	"github.com/palletone/digital-identity/client"
 	"crypto/x509"
 	"encoding/pem"
+	"net/http"
+	"bytes"
+
+	"encoding/json"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 )
+
+const (
+	jsonrpc  = "2.0"
+	method = "ptn_ccinvoketx"
+	id = 1
+	amount = "100"
+	fee = "1"
+	)
+
+type CertRpc struct {
+	Jsonrpc string        `json:"jsonrpc"`
+	Methond string        `json:"method"`
+	Params  []interface{} `json:"params"`
+	Id      int           `json:"id"`
+}
 
 type CertINfo struct {
 	//The address as a certificate enrolleid
@@ -39,8 +59,8 @@ type CAGetCertChain struct {
 	RootCertificates []*x509.Certificate
 	// IntermediateCertificates is list of pem encoded intermediate certificates
 	IntermediateCertificates []*pem.Block
-	CAName string
-	Version string
+	CAName                   string
+	Version                  string
 }
 
 func NewCertInfo(address, name, data, ty, affiliation string, ecert bool) *CertINfo {
@@ -66,22 +86,30 @@ func CertInfo2Cainfo(certinfo CertINfo) client.CaGenInfo {
 
 }
 
-
-
 func CertChain2Result(cc client.CAGetCertResponse) CAGetCertChain {
 	return CAGetCertChain{
-		RootCertificates:cc.RootCertificates,
-		IntermediateCertificates:cc.IntermediateCertificates,
-		CAName:cc.CAName,
-		Version:cc.Version,
+		RootCertificates:         cc.RootCertificates,
+		IntermediateCertificates: cc.IntermediateCertificates,
+		CAName:                   cc.CAName,
+		Version:                  cc.Version,
 	}
 }
-func GenCert(certinfo CertINfo) error {
-	cainfo := CertInfo2Cainfo(certinfo)
 
-	err := cainfo.Enrolluser()
+func GenCert(certinfo CertINfo,cfg CAConfig) error {
+	cainfo := CertInfo2Cainfo(certinfo)
+	//发送请求到CA server 注册用户 生成证书
+	certpem, err := cainfo.Enrolluser()
 	if err != nil {
 		return err
+	}
+	immediateca := cfg.Immediateca
+	address := cainfo.EnrolmentId
+	//将证书byte 用户地址 通过rpc调用进行存储
+	if certpem != nil {
+		err = CertRpcReq(address,immediateca,certpem)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -118,14 +146,49 @@ func GetIndentities() (*client.CAListAllIdentitesResponse, error) {
 }
 
 //获取证书链信息
-func GetCaCertificateChain(caname string) (*CAGetCertChain,error) {
+func GetCaCertificateChain(caname string) (*CAGetCertChain, error) {
 	cainfo := client.CaGenInfo{}
 	certchain, err := cainfo.GetCaCertificateChain(caname)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	cc := CertChain2Result(*certchain)
 
-	return &cc,nil
+	return &cc, nil
+}
+
+func CertRpcReq(address string,immediateca string, certbyte []byte) error {
+	params := CertRpc{}
+	params.Jsonrpc = jsonrpc
+	params.Methond = method
+	params.Id = id
+	from := immediateca
+	to := immediateca
+	contractid := syscontract.DigitalIdentityContractAddress.String()
+
+	method2 := []string{"addServerCert", address, string(certbyte)}
+	params.Params = append(params.Params, from, to, amount, fee, contractid)
+
+	params.Params = append(params.Params, method2)
+	reqJson, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	httpReq, err := http.NewRequest("POST", "http://localhost:8545", bytes.NewBuffer(reqJson))
+	if err != nil {
+		return err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(httpReq)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+
+	return nil
 }
