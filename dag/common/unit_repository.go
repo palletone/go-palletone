@@ -416,12 +416,13 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error())
 		return nil, err
 	}
+	// @Jay TODO
 	//保证金利息--
-	addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-	awardAd, err := rep.ComputeAwardsFees(&addr, poolTxs)
-	if err != nil && awardAd != nil {
-		ads = append(ads, awardAd)
-	}
+	//addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+	//awardAd, err := rep.ComputeAwardsFees(&addr, poolTxs)
+	//if err != nil && awardAd != nil {
+	//	ads = append(ads, awardAd)
+	//}
 	//利息奖励--
 	rewardAd := ComputeRewardsFees(mAddr, poolTxs)
 	if rewardAd != nil {
