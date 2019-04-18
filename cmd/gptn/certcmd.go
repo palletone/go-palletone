@@ -141,7 +141,7 @@ func enrollUser(ctx *cli.Context) error {
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}
-	fmt.Println(cfg.Certficate.Immediateca)
+
 	err = certficate.GenCert(*certinfo,cfg.Certficate)
 
 	if err != nil {
@@ -159,19 +159,16 @@ func revoke(ctx *cli.Context) error {
 	}
 
 	if len(ctx.Args()) == 1 {
-		address := ctx.Args().First()
-		reason := "Forced to compromise"
-		err := certficate.RevokeCert(address,reason)
-		if err != nil {
-			return err
-		}
-		fmt.Println(address + "  Revoked  certificate  OK ,Reason is Forced to compromise.")
+		fmt.Println("  Please enter reason for revocation.")
 		return nil
 	}
 	address := ctx.Args().First()
 	reason := ctx.Args()[1]
-
-	err := certficate.RevokeCert(address, reason)
+	cfg, _, err := maybeLoadConfig(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+	err = certficate.RevokeCert(address, reason,cfg.Certficate)
 	fmt.Println(address + "  Revoked  certificate  OK")
 	if err != nil {
 		return err
