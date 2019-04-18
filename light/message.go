@@ -22,6 +22,7 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 
 	var req announceData
 	if err := msg.Decode(&req); err != nil {
+		log.Error("AnnounceMsg", "Decode err", err, "msg", msg)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
@@ -33,10 +34,10 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		log.Trace("Valid announcement signature")
 	}
 
-	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash, "td", req.Td, "reorg", req.ReorgDepth)
-	if pm.fetcher != nil {
-		//pm.fetcher.announce(p, &req)
-	}
+	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash /*, "td", req.Td, "reorg", req.ReorgDepth*/)
+	//if pm.fetcher != nil {
+	//	pm.fetcher.announce(p, &req)
+	//}
 	return nil
 }
 

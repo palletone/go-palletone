@@ -124,23 +124,24 @@ func (p *peer) HeadAndTd() (hash common.Hash, td *big.Int) {
 	defer p.lock.RUnlock()
 
 	copy(hash[:], p.headInfo.Hash[:])
-	return hash, p.headInfo.Td
+	return hash, &big.Int{}
+	//return hash, p.headInfo.Td
 }
 
 func (p *peer) headBlockInfo() blockInfo {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	return blockInfo{Hash: p.headInfo.Hash, Number: p.headInfo.Number, Td: p.headInfo.Td}
+	return blockInfo{Hash: p.headInfo.Hash, Number: p.headInfo.Number /*, Td: p.headInfo.Td*/}
 }
 
 // Td retrieves the current total difficulty of a peer.
-func (p *peer) Td() *big.Int {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-
-	return new(big.Int).Set(p.headInfo.Td)
-}
+//func (p *peer) Td() *big.Int {
+//	p.lock.RLock()
+//	defer p.lock.RUnlock()
+//
+//	return new(big.Int).Set(p.headInfo.Td)
+//}
 
 // waitBefore implements distPeer interface
 func (p *peer) waitBefore(maxCost uint64) (time.Duration, float64) {
@@ -185,7 +186,9 @@ func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
 // SendAnnounce announces the availability of a number of blocks through
 // a hash notification.
 func (p *peer) SendAnnounce(request announceData) error {
-	return p2p.Send(p.rw, AnnounceMsg, request)
+	//TODO must recover
+	//return p2p.Send(p.rw, AnnounceMsg, request)
+	return nil
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
@@ -426,7 +429,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 
 	var rGenesis, rHash common.Hash
 	var rVersion, rNetwork uint64
-	var rTd *big.Int
+	//var rTd *big.Int
 	var rNum modules.ChainIndex
 
 	if err := recv.get("protocolVersion", &rVersion); err != nil {
@@ -459,6 +462,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		if recv.get("serveStateSince", nil) == nil {
 			return errResp(ErrUselessPeer, "wanted client, got server")
 		}
+		if recv.get("announceType", &p.announceType) != nil {
+			p.announceType = announceTypeSimple
+		}
 
 		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
 	} else {
@@ -487,7 +493,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fcCosts = MRC.decode()
 	}
 	//TODO must modify
-	p.headInfo = &announceData{Td: rTd, Hash: rHash, Number: rNum.Index}
+	p.headInfo = &announceData{ /*Td: rTd,*/ Hash: rHash, Number: rNum.Index}
 	return nil
 }
 
@@ -619,13 +625,13 @@ func (ps *peerSet) BestPeer() *peer {
 
 	var (
 		bestPeer *peer
-		bestTd   *big.Int
+		//bestTd   *big.Int
 	)
-	for _, p := range ps.peers {
-		if td := p.Td(); bestPeer == nil || td.Cmp(bestTd) > 0 {
-			bestPeer, bestTd = p, td
-		}
-	}
+	//for _, p := range ps.peers {
+	//	if td := p.Td(); bestPeer == nil || td.Cmp(bestTd) > 0 {
+	//		bestPeer, bestTd = p, td
+	//	}
+	//}
 	return bestPeer
 }
 
