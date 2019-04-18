@@ -322,6 +322,19 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
+				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
+				//data, err := rlp.EncodeToBytes(announce)
+				//if err != nil {
+				//	log.Error("rlp.EncodeToBytes", "err", err)
+				//	return
+				//}
+				//log.Debug("Light Palletone ProtocolManager->handle", "announce bytes", data)
+				//var req announceData
+				//err = rlp.DecodeBytes(data, &req)
+				//if err != nil {
+				//	log.Error("rlp.DecodeBytes", "err", err)
+				//	return
+				//}
 				p.SendAnnounce(announce)
 			case <-stop:
 				return
