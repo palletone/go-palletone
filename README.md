@@ -57,7 +57,7 @@ create accounts; transfer funds; deploy and interact with contracts. For this pa
 the user doesn't care about years-old historical data, so we can fast-sync quickly to the current
 state of the network. To do so:
 
-```
+```bash
 $ mkdir your_dir
 $ gptn --datadir="your_dir" newgenesis path/to/your-genesis.json
 $ gptn --datadir="your_dir" init path/to/your-genesis.json
@@ -103,7 +103,7 @@ First, you'll need to create the genesis state of your networks, which all nodes
 
 You can create a JSON file for the genesis state of a new chain with an existing account or a newly created account named `your-genesis.json` by running this command:
 
-```
+```bash
 $ gptn newgenesis path/to/your-genesis.json
 ```
 
@@ -111,22 +111,29 @@ $ gptn newgenesis path/to/your-genesis.json
 
 First, you'll need to create the mediator parameters of your networks, which all nodes need to be aware of and agree upon. This consists of a TOML file (e.g. call it `palletone.toml`):
 
-```
+```bash
 [MediatorPlugin]
+EnableProducing = true
 EnableStaleProduction = true
+EnableConsecutiveProduction = false
 
 [[MediatorPlugin.Mediators]]
 Address = ""
 Password = ""
 InitPrivKey = ""
 InitPubKey = ""
+```
 
+Get InitPrivKey and InitPubKey with the following command
+
+```bash
 $ gptn mediator initdks
+```
+
 InitPrivKey = private key
 InitPubKey = public key
 
-When gptn --datadir="your_dir" newgenesis will create Address and input your password.
-```
+When running command `gptn --datadir="your_dir" newgenesis` will create Address and input your password.
 
 ##### Customization of the genesis file
 
@@ -137,7 +144,7 @@ If you want to customize the network’s genesis state, edit the newly created y
 
 With the genesis state defined in the above JSON file, you'll need to initialize **every** Gptn node with it prior to starting it up to ensure all blockchain parameters are correctly set:
 
-```
+```bash
 $ gptn init path/to/your-genesis.json
 ```
 
