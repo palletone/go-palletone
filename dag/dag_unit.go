@@ -51,7 +51,8 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// todo 应当在其他地方其他时刻更新该值
 	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
 	if !dag.IsHeaderExist(hash) {
-		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
+		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
+			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
 		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
 		if nil != newestUnit {
 			dag.propRep.SetNewestUnit(newestUnit.Header())
@@ -83,7 +84,8 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Debugf("Generate new unit[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
+	log.Debugf("Generate new unit[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.UnitHash.String(),
+		sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
 
 	//TODO add PostChainEvents
 	// go func() {
@@ -99,6 +101,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		return nil
 	}
 	log.Debugf("Complete generate unit:%s", sign_unit.String4Log())
+
 	return sign_unit
 }
 

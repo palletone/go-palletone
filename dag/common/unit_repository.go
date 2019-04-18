@@ -370,6 +370,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		rep.lock.RUnlock()
 		log.Infof("CreateUnit cost time %s", time.Since(begin))
 	}()
+
 	//if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
 	//	log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
 	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
@@ -528,7 +529,7 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 }
 
 //利息奖励,Mediator
-func ComputeRewardsFees(m *common.Address, txs []*modules.TxPoolTransaction) (*modules.Addition) {
+func ComputeRewardsFees(m *common.Address, txs []*modules.TxPoolTransaction) *modules.Addition {
 	if m == nil || len(txs) < 1 {
 		return nil
 	}
