@@ -112,7 +112,11 @@ type ChaincodeStubInterface interface {
 
 	//retrun local jury's signature
 	SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
-	//return all jury's signature and answer,format:
+	//return all jury's signature and answer,format:[]JuryMsgSig
+	//type JuryMsgSig struct {
+	//	Signature []byte
+	//	Answer    []byte
+	//}
 	RecvJury(msgType uint32, consultContent []byte, timeout uint32) ([]byte, error)
 
 	// DelState records the specified `key` to be deleted in the writeset of
