@@ -16,63 +16,56 @@
 
 package light
 
-type LesApiBackend struct {
-	eth *LightEthereum
-}
+//type LesApiBackend struct {
+//	eth *LightEthereum
+//}
 
-/*
 import (
 	"context"
-	"math/big"
 
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/core"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/eth/gasprice"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/light"
-	//"github.com/palletone/go-palletone/common/params"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 type LesApiBackend struct {
-	eth *LightEthereum
-	gpo *gasprice.Oracle
+	ptn *LightPalletone
+	//gpo *gasprice.Oracle
 }
 
 //func (b *LesApiBackend) ChainConfig() *params.ChainConfig {
 //	return b.eth.chainConfig
 //}
 
-func (b *LesApiBackend) CurrentBlock() *types.Block {
-	return types.NewBlockWithHeader(b.eth.BlockChain().CurrentHeader())
+func (b *LesApiBackend) CurrentBlock() *modules.Unit {
+	return &modules.Unit{}
 }
 
 func (b *LesApiBackend) SetHead(number uint64) {
-	b.eth.protocolManager.downloader.Cancel()
-	b.eth.blockchain.SetHead(number)
+	//b.eth.protocolManager.downloader.Cancel()
+	//b.eth.blockchain.SetHead(number)
 }
 
-func (b *LesApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error) {
-	if blockNr == rpc.LatestBlockNumber || blockNr == rpc.PendingBlockNumber {
-		return b.eth.blockchain.CurrentHeader(), nil
-	}
-
-	return b.eth.blockchain.GetHeaderByNumberOdr(ctx, uint64(blockNr))
+func (b *LesApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error) {
+	return nil, nil
+	//if blockNr == rpc.LatestBlockNumber || blockNr == rpc.PendingBlockNumber {
+	//	return b.eth.blockchain.CurrentHeader(), nil
+	//}
+	//
+	//return b.eth.blockchain.GetHeaderByNumberOdr(ctx, uint64(blockNr))
 }
 
-func (b *LesApiBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error) {
-	header, err := b.HeaderByNumber(ctx, blockNr)
-	if header == nil || err != nil {
-		return nil, err
-	}
-	return b.GetBlock(ctx, header.Hash())
+func (b *LesApiBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Unit, error) {
+	return nil, nil
+	//header, err := b.HeaderByNumber(ctx, blockNr)
+	//if header == nil || err != nil {
+	//	return nil, err
+	//}
+	//return b.GetBlock(ctx, header.Hash())
 }
 
 //func (b *LesApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *types.Header, error) {
@@ -83,8 +76,8 @@ func (b *LesApiBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumb
 //	return light.NewState(ctx, header, b.eth.odr), header, nil
 //}
 
-func (b *LesApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error) {
-	return b.eth.blockchain.GetBlockByHash(ctx, blockHash)
+func (b *LesApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*modules.Unit, error) {
+	return nil, nil
 }
 
 //func (b *LesApiBackend) GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error) {
@@ -95,103 +88,103 @@ func (b *LesApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*t
 //	return light.GetBlockLogs(ctx, b.eth.odr, blockHash, core.GetBlockNumber(b.eth.chainDb, blockHash))
 //}
 
-func (b *LesApiBackend) GetTd(blockHash common.Hash) *big.Int {
-	return b.eth.blockchain.GetTdByHash(blockHash)
-}
+//func (b *LesApiBackend) GetTd(blockHash common.Hash) *big.Int {
+//	return b.eth.blockchain.GetTdByHash(blockHash)
+//}
 
-func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
-	state.SetBalance(msg.From(), math.MaxBig256)
-	context := core.NewEVMContext(msg, header, b.eth.blockchain, nil)
-	return vm.NewEVM(context, state, b.eth.chainConfig, vmCfg), state.Error, nil
-}
+//func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
+//	state.SetBalance(msg.From(), math.MaxBig256)
+//	context := core.NewEVMContext(msg, header, b.eth.blockchain, nil)
+//	return vm.NewEVM(context, state, b.eth.chainConfig, vmCfg), state.Error, nil
+//}
 
-func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
-	return b.eth.txPool.Add(ctx, signedTx)
+func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
+	return nil
+	//return b.eth.txPool.Add(ctx, signedTx)
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
-	b.eth.txPool.RemoveTx(txHash)
+	b.ptn.txPool.RemoveTx(txHash)
 }
 
-func (b *LesApiBackend) GetPoolTransactions() (types.Transactions, error) {
-	return b.eth.txPool.GetTransactions()
+func (b *LesApiBackend) GetPoolTransactions() (modules.Transactions, error) {
+	return b.ptn.txPool.GetTransactions()
 }
 
-func (b *LesApiBackend) GetPoolTransaction(txHash common.Hash) *types.Transaction {
-	return b.eth.txPool.GetTransaction(txHash)
+func (b *LesApiBackend) GetPoolTransaction(txHash common.Hash) *modules.Transaction {
+	return b.ptn.txPool.GetTransaction(txHash)
 }
 
 func (b *LesApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
-	return b.eth.txPool.GetNonce(ctx, addr)
+	return b.ptn.txPool.GetNonce(ctx, addr)
 }
 
 func (b *LesApiBackend) Stats() (pending int, queued int) {
-	return b.eth.txPool.Stats(), 0
+	return b.ptn.txPool.Stats(), 0
 }
 
-func (b *LesApiBackend) TxPoolContent() (map[common.Address]types.Transactions, map[common.Address]types.Transactions) {
-	return b.eth.txPool.Content()
+func (b *LesApiBackend) TxPoolContent() (map[common.Address]modules.Transactions, map[common.Address]modules.Transactions) {
+	return b.ptn.txPool.Content()
 }
 
-func (b *LesApiBackend) SubscribeTxPreEvent(ch chan<- core.TxPreEvent) event.Subscription {
-	return b.eth.txPool.SubscribeTxPreEvent(ch)
+func (b *LesApiBackend) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
+	return b.ptn.txPool.SubscribeTxPreEvent(ch)
 }
 
-func (b *LesApiBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
-	return b.eth.blockchain.SubscribeChainEvent(ch)
+func (b *LesApiBackend) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription {
+	return nil //return b.eth.dag.SubscribeChainEvent(ch)
 }
 
-func (b *LesApiBackend) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription {
-	return b.eth.blockchain.SubscribeChainHeadEvent(ch)
+func (b *LesApiBackend) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
+	return nil //return b.eth.blockchain.SubscribeChainHeadEvent(ch)
 }
 
-func (b *LesApiBackend) SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) event.Subscription {
-	return b.eth.blockchain.SubscribeChainSideEvent(ch)
+func (b *LesApiBackend) SubscribeChainSideEvent(ch chan<- modules.ChainSideEvent) event.Subscription {
+	return nil //return b.eth.blockchain.SubscribeChainSideEvent(ch)
 }
 
-func (b *LesApiBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription {
-	return b.eth.blockchain.SubscribeLogsEvent(ch)
+func (b *LesApiBackend) SubscribeLogsEvent(ch chan<- []*modules.Log) event.Subscription {
+	return nil //return b.eth.blockchain.SubscribeLogsEvent(ch)
 }
 
-func (b *LesApiBackend) SubscribeRemovedLogsEvent(ch chan<- core.RemovedLogsEvent) event.Subscription {
-	return b.eth.blockchain.SubscribeRemovedLogsEvent(ch)
+func (b *LesApiBackend) SubscribeRemovedLogsEvent(ch chan<- modules.RemovedLogsEvent) event.Subscription {
+	return nil //return b.eth.blockchain.SubscribeRemovedLogsEvent(ch)
 }
 
 func (b *LesApiBackend) Downloader() *downloader.Downloader {
-	return b.eth.Downloader()
+	return nil //return b.eth.Downloader()
 }
 
 func (b *LesApiBackend) ProtocolVersion() int {
-	return b.eth.LesVersion() + 10000
+	return b.ptn.LesVersion() + 10000
 }
 
-func (b *LesApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
-	return b.gpo.SuggestPrice(ctx)
-}
+//func (b *LesApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
+//	return b.gpo.SuggestPrice(ctx)
+//}
 
-func (b *LesApiBackend) ChainDb() ethdb.Database {
-	return b.eth.chainDb
+func (b *LesApiBackend) ChainDb() ptndb.Database {
+	return b.ptn.unitDb
 }
 
 func (b *LesApiBackend) EventMux() *event.TypeMux {
-	return b.eth.eventMux
+	return nil //return b.eth.eventMux
 }
 
 func (b *LesApiBackend) AccountManager() *accounts.Manager {
-	return b.eth.accountManager
+	return b.ptn.accountManager
 }
 
-func (b *LesApiBackend) BloomStatus() (uint64, uint64) {
-	if b.eth.bloomIndexer == nil {
-		return 0, 0
-	}
-	sections, _, _ := b.eth.bloomIndexer.Sections()
-	return light.BloomTrieFrequency, sections
-}
+//func (b *LesApiBackend) BloomStatus() (uint64, uint64) {
+//	if b.eth.bloomIndexer == nil {
+//		return 0, 0
+//	}
+//	sections, _, _ := b.eth.bloomIndexer.Sections()
+//	return light.BloomTrieFrequency, sections
+//}
 
 //func (b *LesApiBackend) ServiceFilter(ctx context.Context, session *bloombits.MatcherSession) {
 //	for i := 0; i < bloomFilterThreads; i++ {
 //		go session.Multiplex(bloomRetrievalBatch, bloomRetrievalWait, b.eth.bloomRequests)
 //	}
 //}
-*/

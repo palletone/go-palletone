@@ -574,6 +574,11 @@ func (stub *ChaincodeStub) GetInvokeFees() (*modules.AmountAsset, error) {
 	_, _, invokeFees, _, _, err := stub.GetInvokeParameters()
 	return invokeFees, err
 }
+func (stub *ChaincodeStub) GetContractID() ([]byte, string) {
+	addr := new(common.Address)
+	addr.SetBytes(stub.ContractId)
+	return stub.ContractId, addr.Str()
+}
 
 //获得该合约的Token余额
 func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset) ([]*modules.InvokeTokens, error) {
