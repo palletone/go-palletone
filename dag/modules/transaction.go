@@ -426,9 +426,9 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*A
 			inAmount += utxo.Amount
 			if unitTime > 0 {
 				//计算币龄利息
-				rate := parameter.CurrentDbConfig.TxCoinDayInterest
+				rate := parameter.CurrentSysParameters.TxCoinDayInterest
 				if bytes.Equal(utxo.PkScript, DepositContractLockScript) {
-					rate = parameter.CurrentDbConfig.DepositContractInterest
+					rate = parameter.CurrentSysParameters.DepositContractInterest
 				}
 
 				interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
