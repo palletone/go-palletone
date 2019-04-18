@@ -554,7 +554,7 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 
 		case msg.App >= APP_CONTRACT_TPL_REQUEST, msg.App <= APP_CONTRACT_STOP_REQUEST:
 			if msg.App == APP_CONTRACT_TPL_REQUEST {
-				payload := new(ContractTplRequestPayload)
+				payload := new(ContractInstallRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
 				goto LOOP

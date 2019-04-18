@@ -270,6 +270,8 @@ func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error
 func createExampleGenesis() *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate:               core.DefaultDepositRate,
+		TxCoinYearRate:            core.DefaultTxCoinYearRate,
+		GenerateUnitReward:        core.DefaultGenerateUnitReward,
 		FoundationAddress:         core.DefaultFoundationAddress,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
