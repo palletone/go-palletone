@@ -271,6 +271,12 @@ func GetX509Cert(certid string, stub shim.ChaincodeStubInterface) (cert *x509.Ce
 func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo *CertDBInfo, err error) {
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) <= 0 {
+		return nil, fmt.Errorf("There is no certificate info in ledger")
+	}
 	certDBInfo = &CertDBInfo{}
 	if err := json.Unmarshal(data, certDBInfo); err != nil {
 		return nil, err
