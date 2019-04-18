@@ -29,8 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-//var DbPath string = DefaultDataDir()
-
 var (
 	SConfig      Sconfig
 	DefaultToken = "PTN"
@@ -59,8 +57,6 @@ var DefaultConfig = Config{
 	Token721TxIndex:   true,
 	TextFileHashIndex: false,
 	GasToken:          DefaultToken,
-	//MainToken:                    DefaultToken,
-
 }
 
 //func init() {
@@ -116,8 +112,6 @@ type Config struct {
 
 	SyncPartitionTokens []string
 	syncPartitionTokens []modules.AssetId `toml:"-"`
-
-
 }
 
 type Sconfig struct {

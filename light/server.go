@@ -58,8 +58,8 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 		log.Error("Light PalletOne New", "get genesis err:", err)
 		return nil, err
 	}
-	//lesserver := ptn.GetLesServer()
-	pm, err := NewProtocolManager(false, config.SyncMode, config.NetworkId, gasToken, ptn.TxPool(),
+
+	pm, err := NewProtocolManager(false, newPeerSet(), config.NetworkId, gasToken, ptn.TxPool(),
 		ptn.Dag(), ptn.EventMux(), genesis)
 	if err != nil {
 		log.Error("NewlesServer NewProtocolManager", "err", err)
