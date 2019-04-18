@@ -104,7 +104,7 @@ func getDockerClient() (dockerClient, error) {
 	return com.NewDockerClient()
 }
 
-func getInt64FromDb(key string) int64 {
+func GetInt64FromDb(key string) int64 {
 	//DefaultUccMemory  = "104857600" //物理内存  104857600  100m
 	//DefaultUccMemorySwap  = "104857600"//内存交换区，不设置默认为memory的两倍
 	//DefaultUccCpuShare  = "1024"//CPU占用率，相对的  CPU 利用率权重，默认为 1024
@@ -180,18 +180,18 @@ func getDockerHostConfig() *docker.HostConfig {
 		ReadonlyRootfs:   viper.GetBool(dockerKey("ReadonlyRootfs")),
 		SecurityOpt:      viper.GetStringSlice(dockerKey("SecurityOpt")),
 		CgroupParent:     viper.GetString(dockerKey("CgroupParent")),
-		Memory:           getInt64FromDb("UccMemory"),
-		MemorySwap:       getInt64FromDb("UccMemorySwap"),
+		Memory:           GetInt64FromDb("UccMemory"),
+		MemorySwap:       GetInt64FromDb("UccMemorySwap"),
 		//Memory:           int64(104857600), //100mB
 		//MemorySwap:       int64(20971520),
 		MemorySwappiness: getInt64("MemorySwappiness"),
 		OOMKillDisable:   viper.GetBool(dockerKey("OomKillDisable")),
-		CPUShares:        getInt64FromDb("UccCpuShare"),
+		CPUShares:        GetInt64FromDb("UccCpuShares"),
 		CPUSet:           viper.GetString(dockerKey("Cpuset")),
 		CPUSetCPUs:       viper.GetString(dockerKey("CpusetCPUs")),
 		CPUSetMEMs:       viper.GetString(dockerKey("CpusetMEMs")),
-		CPUQuota:         getInt64FromDb("UccCpuQuota"),
-		CPUPeriod:        getInt64FromDb("UccCpuPeriod"),
+		CPUQuota:         GetInt64FromDb("UccCpuQuota"),
+		CPUPeriod:        GetInt64FromDb("UccCpuPeriod"),
 		BlkioWeight:      getInt64("BlkioWeight"),
 	}
 
