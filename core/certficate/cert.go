@@ -22,7 +22,6 @@ import (
 
 	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"fmt"
 )
 
 const (
@@ -122,7 +121,6 @@ func RevokeCert(address string, reason string,cfg CAConfig) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(crlPem))
 	immediateca := cfg.Immediateca
 	//吊销证书后将crl byte 通过rpc发送请求 添加到合约中
 	if crlPem != nil {
