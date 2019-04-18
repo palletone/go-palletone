@@ -562,8 +562,6 @@ func (rep *UnitRepository) ComputeAwardsFees(addr *common.Address, poolTxs []*mo
 }
 
 func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
-	//allAmount := uint64(0)
-
 	if len(ads) <= 0 {
 		return nil
 	}
