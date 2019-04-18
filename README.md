@@ -17,18 +17,23 @@ Building gptn requires both a Go (version 1.9 or later, newest 1.11 not support)
 You can install them using your favourite package manager.
 Once the dependencies are installed, run
 
-    make gptn
+```bash
+make gptn
+```
 
 or, to build the full suite of utilities:
 
-    make all
+```bash
+make all
+```
 
 but, to build the full suite of utilities in window,you should:
 
-    go get -u github.com/palletone/adaptor
-    go get -u github.com/palletone/btc-adaptor
-    go get -u github.com/palletone/eth-adaptor
-    go build
+```bash
+go get ./...
+go get -u ./...
+go build
+```
 
 ## Executables
 
@@ -54,9 +59,9 @@ state of the network. To do so:
 
 ```
 $ mkdir your_dir
-$ gptn --datadir="your_dir" newgenesis
-$ gptn --datadir="your_dir" init ./ptn-genesis.json
-$ gptn --datadir="your_dir" --configfile="palletone.toml"
+$ gptn --datadir="your_dir" newgenesis path/to/your-genesis.json
+$ gptn --datadir="your_dir" init path/to/your-genesis.json
+$ gptn --datadir="your_dir" --configfile /path/to/your_config.toml
 ```
 
 This command will:
@@ -96,10 +101,10 @@ the official networks need to be manually set up.
 
 First, you'll need to create the genesis state of your networks, which all nodes need to be aware of and agree upon. This consists of a JSON file (e.g. call it `genesis.json`):
 
-You can create a JSON file for the genesis state of a new chain with an existing account or a newly created account named `my-genesis.json` by running this command:
+You can create a JSON file for the genesis state of a new chain with an existing account or a newly created account named `your-genesis.json` by running this command:
 
 ```
-$ gptn newgenesis path/to/my-genesis.json
+$ gptn newgenesis path/to/your-genesis.json
 ```
 
 #### Defining the private mediator parameters
@@ -125,7 +130,7 @@ When gptn --datadir="your_dir" newgenesis will create Address and input your pas
 
 ##### Customization of the genesis file
 
-If you want to customize the network’s genesis state, edit the newly created my-genesis.json file. This allows you to control things such as:
+If you want to customize the network’s genesis state, edit the newly created your-genesis.json file. This allows you to control things such as:
 
 * The initial values of chain parameters
 * Assets and their initial distribution
@@ -133,7 +138,7 @@ If you want to customize the network’s genesis state, edit the newly created m
 With the genesis state defined in the above JSON file, you'll need to initialize **every** Gptn node with it prior to starting it up to ensure all blockchain parameters are correctly set:
 
 ```
-$ gptn init path/to/my-genesis.json
+$ gptn init path/to/your-genesis.json
 ```
 
 ## Contribution
