@@ -20,15 +20,19 @@
 package shim
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	"github.com/palletone/go-palletone/common/log"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 )
@@ -903,11 +907,11 @@ func (handler *Handler) handleMessage(msg *pb.ChaincodeMessage) error {
 }
 
 // 根据证书ID获得证书字节数据
-func (handler *Handler) handleGetCertByID(key string, channelId string, txid string) (certBytes []byte, err error) {
+func (handler *Handler) handleGetCertState(key string, channelId string, txid string) (certBytes []byte, err error) {
 	// Construct payload for PUT_STATE
 	payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_CERT, Payload: payloadBytes, ChannelId: channelId, Txid: txid}
-	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CERT)
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_CERT_STATE, Payload: payloadBytes, ChannelId: channelId, Txid: txid}
+	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CERT_STATE)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 
@@ -922,6 +926,145 @@ func (handler *Handler) handleGetCertByID(key string, channelId string, txid str
 	}
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
+}
+
+// 获得root ca
+func (handler *Handler) handleGetCACert(channelID string, txid string) (caCert *x509.Certificate, err error) {
+	val, err := handler.handleGetCertState("RootCABytes", channelID, txid)
+	if err != nil {
+		return nil, err
+	}
+	bytes, err := modules.LoadCertBytes(val)
+	if err != nil {
+		return nil, err
+	}
+	caCert, err = x509.ParseCertificate(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return caCert, nil
+}
+
+// 获取证书链
+func (handler *Handler) handleGetCertChain(rootIssuer string, cert *x509.Certificate, channelID string, txid string) (intermediates []*x509.Certificate, holders []string, err error) {
+	intermediates = []*x509.Certificate{}
+	holders = []string{}
+	subject := cert.Issuer.String()
+	for {
+		key := dagConstants.CERT_SUBJECT_SYMBOL + subject
+		val, err := handler.handleGetCertState(key, channelID, txid)
+		if err != nil {
+			return nil, nil, err
+		}
+		// query chain done
+		if val == nil {
+			break
+		}
+		// parse certid
+		certID := big.Int{}
+		certID.SetBytes(val)
+		// get cert bytes
+		key = dagConstants.CERT_BYTES_SYMBOL + certID.String()
+		bytes, err := handler.handleGetCertState(key, channelID, txid)
+		if err != nil {
+			return nil, nil, err
+		}
+		certDBInfo := modules.CertBytesInfo{}
+		if err := json.Unmarshal(bytes, &certDBInfo); err != nil {
+			return nil, nil, err
+		}
+		// parse cert
+		newCert, err := x509.ParseCertificate(certDBInfo.Raw)
+		if err != nil {
+			return nil, nil, err
+		}
+		intermediates = append(intermediates, newCert)
+		holders = append(holders, certDBInfo.Holder)
+		subject = newCert.Issuer.String()
+		if subject == rootIssuer {
+			break
+		}
+	}
+	return
+}
+
+// 获取证书的吊销时间
+func (handler *Handler) handleGetCertRevocationTime(key string, channelID string, txid string) (t time.Time, err error) {
+	data, err := handler.handleGetCertState(key, channelID, txid)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if err := t.UnmarshalBinary(data); err != nil {
+		return time.Time{}, err
+	}
+	return t, nil
+}
+
+func (handler *Handler) handlerCheckCertValidation(caller string, key string, channelId string, txid string) (bool, error) {
+	// get cert bytes
+	resBytes, err := handler.handleGetCertState(key, channelId, txid)
+	if err != nil {
+		return false, fmt.Errorf("get certificate bytes by id error(%s)", err.Error())
+	}
+	if len(resBytes) <= 0 {
+		return false, fmt.Errorf("certificate is not exist")
+	}
+	certDBInfo := modules.CertBytesInfo{}
+	if err := json.Unmarshal(resBytes, &certDBInfo); err != nil {
+		return false, fmt.Errorf("certificate bytes error")
+	}
+	// check caller
+	if caller != certDBInfo.Holder {
+		return false, fmt.Errorf("you have no authority to user this certificate")
+	}
+	// parse certificate
+	cert, err := x509.ParseCertificate(certDBInfo.Raw)
+	if err != nil {
+		return false, fmt.Errorf("parse certificate error(%s)", err.Error())
+	}
+	// Validity Period
+	if cert.NotBefore.After(time.Now()) || cert.NotAfter.Before(time.Now()) {
+		return false, fmt.Errorf("certificate has expired")
+	}
+	// check revocation date
+	key = dagConstants.CERT_MEMBER_SYMBOL + caller + dagConstants.CERT_SPLIT_CH + cert.SerialNumber.String()
+	revocation, err := handler.handleGetCertRevocationTime(key, channelId, txid)
+	if err != nil {
+		return false, fmt.Errorf("query certificate revocation time error(%s)", err.Error())
+	}
+	if revocation.Before(time.Now()) {
+		return false, fmt.Errorf("certificate has been revocated at %s", revocation.String())
+	}
+	// check ca state
+	caCert, err := handler.handleGetCACert(channelId, txid)
+	if err != nil {
+		return false, fmt.Errorf("query ca certificate error (%s)", err.Error())
+	}
+	if caCert.NotBefore.After(time.Now()) || caCert.NotAfter.Before(time.Now()) {
+		return false, fmt.Errorf("ca certificate has expired")
+	}
+	// check chain state ( get chain )
+	intermediates, holders, err := handler.handleGetCertChain(caCert.Subject.String(), cert, channelId, txid)
+	if err != nil {
+		return false, fmt.Errorf("get certificate chain error (%s)", err.Error())
+	}
+	for index, c := range intermediates {
+		if c.NotBefore.After(time.Now()) || c.NotAfter.Before(time.Now()) {
+			return false, fmt.Errorf("intermediate certificate (%s) has expired", c.SerialNumber.String())
+		}
+		// check intermediate revocation
+		key = dagConstants.CERT_MEMBER_SYMBOL + holders[index] + dagConstants.CERT_SPLIT_CH + c.SerialNumber.String()
+		tt, err := handler.handleGetCertRevocationTime(key, channelId, txid)
+		if err != nil {
+			return false, fmt.Errorf("get intermediate certificate revocation time error(%s)", err.Error())
+		}
+		if tt.Before(time.Now()) {
+			return false, fmt.Errorf("intermediate certificate (%s) has been revocated", c.SerialNumber.String())
+		}
+	}
+	// check certificate policy
+
+	return true, nil
 }
 
 // filterError filters the errors to allow NoTransitionError and CanceledError to not propagate for cases where embedded Err == nil.

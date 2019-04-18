@@ -24,11 +24,10 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
-	"io/ioutil"
+	dagModules "github.com/palletone/go-palletone/dag/modules"
 	"math/big"
 	"sort"
 	"strconv"
@@ -36,49 +35,11 @@ import (
 	"time"
 )
 
-type CertInfo struct {
-	Issuer string
-	Holder string
-	Nonce  int // 不断加1的数，可以表示当前issuer发布的第几个证书。
-	Cert   *x509.Certificate
-}
-
-type CertDBInfo struct {
-	Holder string
-	Raw    []byte
-}
-
-type CertHolderInfo struct {
-	Holder   string
-	IsServer bool // 是否是中间证书
-	CertID   string
-}
-
-type CertState struct {
-	CertID         string
-	RecovationTime string
-}
-
-func (certHolderInfo *CertHolderInfo) Bytes() []byte {
-	val, err := json.Marshal(certHolderInfo)
-	if err != nil {
-		return nil
-	}
-	return val
-}
-
-func (certHolderInfo *CertHolderInfo) SetBytes(data []byte) error {
-	if err := json.Unmarshal(data, certHolderInfo); err != nil {
-		return err
-	}
-	return nil
-}
-
 // put Cert state to write set
-func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface) error {
+func setCert(certInfo *dagModules.CertRawInfo, isServer bool, stub shim.ChaincodeStubInterface) error {
 	// put {issuer, certid} state
 	key := dagConstants.CERT_ISSUER_SYMBOL + certInfo.Issuer + dagConstants.CERT_SPLIT_CH + strconv.Itoa(certInfo.Nonce)
-	certHolderInfo := CertHolderInfo{
+	certHolderInfo := dagModules.CertHolderInfo{
 		Holder:   certInfo.Holder,
 		IsServer: isServer,
 		CertID:   certInfo.Cert.SerialNumber.String(),
@@ -107,7 +68,7 @@ func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface
 	}
 	// put {certid, Cert bytes} state
 	key = dagConstants.CERT_BYTES_SYMBOL + certInfo.Cert.SerialNumber.String()
-	cerDBInfo := CertDBInfo{
+	cerDBInfo := dagModules.CertBytesInfo{
 		Holder: certInfo.Holder,
 		Raw:    certInfo.Cert.Raw,
 	}
@@ -121,7 +82,7 @@ func setCert(certInfo *CertInfo, isServer bool, stub shim.ChaincodeStubInterface
 	return nil
 }
 
-func getHolderCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCertStates []*CertState, memberCertStates []*CertState, err error) {
+func getHolderCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCertStates []*dagModules.CertState, memberCertStates []*dagModules.CertState, err error) {
 	// query server certificates
 	serverCertStates, err = queryCertsIDs(dagConstants.CERT_SERVER_SYMBOL, addr, stub)
 	if err != nil {
@@ -136,7 +97,7 @@ func getHolderCertIDs(addr string, stub shim.ChaincodeStubInterface) (serverCert
 }
 
 // Return all validated certificate
-func getIssuerCertsInfo(issuer string, stub shim.ChaincodeStubInterface) (certHolderInfo []*CertHolderInfo, err error) {
+func getIssuerCertsInfo(issuer string, stub shim.ChaincodeStubInterface) (certHolderInfo []*dagModules.CertHolderInfo, err error) {
 	// query server certificates
 	prefixKey := dagConstants.CERT_ISSUER_SYMBOL + issuer + dagConstants.CERT_SPLIT_CH
 	KVs, err := stub.GetStateByPrefix(prefixKey)
@@ -144,7 +105,7 @@ func getIssuerCertsInfo(issuer string, stub shim.ChaincodeStubInterface) (certHo
 		return nil, err
 	}
 	for _, data := range KVs {
-		info := CertHolderInfo{}
+		info := dagModules.CertHolderInfo{}
 		if err := info.SetBytes(data.Value); err != nil {
 			return nil, err
 		}
@@ -153,13 +114,13 @@ func getIssuerCertsInfo(issuer string, stub shim.ChaincodeStubInterface) (certHo
 	return certHolderInfo, nil
 }
 
-func queryCertsIDs(symbol string, holder string, stub shim.ChaincodeStubInterface) (certstate []*CertState, err error) {
+func queryCertsIDs(symbol string, holder string, stub shim.ChaincodeStubInterface) (certstate []*dagModules.CertState, err error) {
 	prefixKey := symbol + holder + dagConstants.CERT_SPLIT_CH
 	KVs, err := stub.GetStateByPrefix(prefixKey)
 	if err != nil {
 		return nil, err
 	}
-	certstate = []*CertState{}
+	certstate = []*dagModules.CertState{}
 	var revocationTime time.Time
 	for _, data := range KVs {
 		if err := revocationTime.UnmarshalBinary(data.Value); err != nil {
@@ -169,52 +130,13 @@ func queryCertsIDs(symbol string, holder string, stub shim.ChaincodeStubInterfac
 		if err != nil {
 			return nil, nil
 		}
-		state := CertState{
+		state := dagModules.CertState{
 			CertID:         certid,
 			RecovationTime: revocationTime.String(),
 		}
 		certstate = append(certstate, &state)
 	}
 	return certstate, nil
-}
-
-func loadCert(path string) ([]byte, error) {
-	//加载PEM格式证书到字节数组
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return loadCertBytes(data)
-}
-
-func loadCertBytes(original []byte) ([]byte, error) {
-	certDERBlock, _ := pem.Decode(original)
-	if certDERBlock == nil {
-		return nil, fmt.Errorf("get none Cert info")
-	}
-
-	return certDERBlock.Bytes, nil
-}
-
-func parseNondeFrKey(key string) (nonce int, err error) {
-	ss := strings.Split(key, dagConstants.CERT_SPLIT_CH)
-	if len(ss) != 2 {
-		return -1, fmt.Errorf("get nonce from key error")
-	}
-	nonce, err = strconv.Atoi(ss[1])
-	if err != nil {
-		return -1, err
-	}
-	return nonce, nil
-}
-
-func parseCertIDFrKey(key string) (certId string, err error) {
-	ss := strings.Split(key, dagConstants.CERT_SPLIT_CH)
-	if len(ss) != 2 {
-		return "", fmt.Errorf("get nonce from key error")
-	}
-
-	return ss[1], nil
 }
 
 func queryNonce(prefixSymbol string, issuer string, stub shim.ChaincodeStubInterface) (nonce int, err error) {
@@ -233,7 +155,7 @@ func queryNonce(prefixSymbol string, issuer string, stub shim.ChaincodeStubInter
 	// increasing order
 	sort.Strings(keys)
 	// the last one
-	nonce, err = parseNondeFrKey(keys[len(keys)-1])
+	nonce, err = parseNonceFrKey(keys[len(keys)-1])
 	if err != nil {
 		return -1, err
 	}
@@ -249,11 +171,8 @@ func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []
 	if len(data) <= 0 {
 		return nil, fmt.Errorf("query no cert bytes")
 	}
-	certDBInfo := CertDBInfo{}
+	certDBInfo := dagModules.CertBytesInfo{}
 	if err := json.Unmarshal(data, &certDBInfo); err != nil {
-		return nil, err
-	}
-	if err != nil {
 		return nil, err
 	}
 	return certDBInfo.Raw, nil
@@ -268,7 +187,7 @@ func GetX509Cert(certid string, stub shim.ChaincodeStubInterface) (cert *x509.Ce
 	return
 }
 
-func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo *CertDBInfo, err error) {
+func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo *dagModules.CertBytesInfo, err error) {
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
 	if err != nil {
@@ -277,7 +196,7 @@ func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo 
 	if len(data) <= 0 {
 		return nil, fmt.Errorf("There is no certificate info in ledger")
 	}
-	certDBInfo = &CertDBInfo{}
+	certDBInfo = &dagModules.CertBytesInfo{}
 	if err := json.Unmarshal(data, certDBInfo); err != nil {
 		return nil, err
 	}
@@ -287,7 +206,7 @@ func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo 
 	return certDBInfo, nil
 }
 
-func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*CertHolderInfo, stub shim.ChaincodeStubInterface) error {
+func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*dagModules.CertHolderInfo, stub shim.ChaincodeStubInterface) error {
 	var symbol string = ""
 	for index, revokeCert := range crl.TBSCertList.RevokedCertificates {
 		t, err := revokeCert.RevocationTime.MarshalBinary()
@@ -409,7 +328,7 @@ func GetRootCert(stub shim.ChaincodeStubInterface) (cert *x509.Certificate, err 
 	if err != nil {
 		return nil, err
 	}
-	bytes, err := loadCertBytes(val)
+	bytes, err := dagModules.LoadCertBytes(val)
 	if err != nil {
 		return nil, err
 	}
@@ -420,14 +339,14 @@ func GetRootCert(stub shim.ChaincodeStubInterface) (cert *x509.Certificate, err 
 	return cert, nil
 }
 
-func QueryBranchCertsGreedy(issueAddr string, stub shim.ChaincodeStubInterface) (certsInfo []*CertHolderInfo, err error) {
+func QueryBranchCertsGreedy(issueAddr string, stub shim.ChaincodeStubInterface) (certsInfo []*dagModules.CertHolderInfo, err error) {
 	key := dagConstants.CERT_ISSUER_SYMBOL + issueAddr + dagConstants.CERT_SPLIT_CH
 	data, err := stub.GetStateByPrefix(key)
 	if err != nil {
 		return nil, err
 	}
 	for _, val := range data {
-		info := CertHolderInfo{}
+		info := dagModules.CertHolderInfo{}
 		if err := info.SetBytes(val.Value); err != nil {
 			return nil, err
 		}
@@ -441,4 +360,25 @@ func QueryBranchCertsGreedy(issueAddr string, stub shim.ChaincodeStubInterface) 
 		}
 	}
 	return certsInfo, nil
+}
+
+func parseCertIDFrKey(key string) (certId string, err error) {
+	ss := strings.Split(key, dagConstants.CERT_SPLIT_CH)
+	if len(ss) != 2 {
+		return "", fmt.Errorf("get nonce from key error")
+	}
+
+	return ss[1], nil
+}
+
+func parseNonceFrKey(key string) (nonce int, err error) {
+	ss := strings.Split(key, dagConstants.CERT_SPLIT_CH)
+	if len(ss) != 2 {
+		return -1, fmt.Errorf("get nonce from key error")
+	}
+	nonce, err = strconv.Atoi(ss[1])
+	if err != nil {
+		return -1, err
+	}
+	return nonce, nil
 }
