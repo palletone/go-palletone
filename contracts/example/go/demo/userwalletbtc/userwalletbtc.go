@@ -120,7 +120,7 @@ func giveAlice(txid string, index string, amount string, fee string, prikey stri
 	}
 	//
 	var rawTransactionGenParams adaptor.RawTransactionGenParams
-	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{txid, uint32(vout)})
+	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid, Vout: uint32(vout)})
 	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptor.Output{gWallet.NameAddress["alice"], amountValue - feeValue})
 	//
 	var btcadaptor adaptorbtc.AdaptorBTC
@@ -175,7 +175,7 @@ func aliceSendBTCToMultiSigAddr(txid string, index string, amount string, fee st
 	}
 	//
 	var rawTransactionGenParams adaptor.RawTransactionGenParams
-	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{txid, uint32(vout)})
+	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid, Vout: uint32(vout)})
 	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptor.Output{multiSigAddr, amountValue - feeValue})
 	//
 	var btcadaptor adaptorbtc.AdaptorBTC
@@ -235,7 +235,7 @@ func bobSpendBTCFromMultiAddr(txid string, index string, amount string, fee stri
 	bobAddr := btcadaptor.GetAddress(gWallet.NameKey["bob"])
 	//
 	var rawTransactionGenParams adaptor.RawTransactionGenParams
-	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{txid, uint32(vout)})
+	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid, Vout: uint32(vout)})
 	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptor.Output{bobAddr, amountValue - feeValue})
 	//
 	btcadaptor.Host = gWallet.BtcConfig.Host
