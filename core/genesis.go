@@ -30,8 +30,12 @@ import (
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
-	//年利率
+	//保证金的年利率
 	DepositRate string `json:"depositRate"`
+	//交易币天的年利率
+	TxCoinYearRate string `json:"txCoinYearRate"`
+	//每生产一个单元，奖励多少Dao的PTN
+	GenerateUnitReward string `json:"generateUnitReward"`
 	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	FoundationAddress string `json:"foundationAddress"`
 	//保证金的数量
