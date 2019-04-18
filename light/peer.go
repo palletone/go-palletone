@@ -461,10 +461,10 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	}
 	if server != nil {
 		// until we have a proper peer connectivity API, allow LES connection to other servers
-		if recv.get("serveStateSince", nil) == nil {
-			return errResp(ErrUselessPeer, "wanted client, got server")
-		}
-		if recv.get("announceType", &p.announceType) != nil {
+		//if recv.get("serveStateSince", nil) == nil {
+		//	return errResp(ErrUselessPeer, "wanted client, got server")
+		//}
+		if recv.get("announceType", &p.announceType) == nil {
 			p.announceType = announceTypeSimple
 		}
 		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
@@ -493,7 +493,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fcServer = flowcontrol.NewServerNode(params)
 		p.fcCosts = MRC.decode()
 	}
-
+	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
 	//TODO must modify
 	p.headInfo = &announceData{ /*Td: rTd,*/ Hash: rHash, Number: rNum.Index}
 	return nil
