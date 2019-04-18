@@ -63,15 +63,6 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	}
 
 	resp, err := theChaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout) //theChaincodeSupport.executetimeout
-	log.Infof("----------------3-------------------------------%s\n\n\n\n\n",resp)
-	log.Infof("-----------------3------------------------------%s\n\n\n\n\n",string(resp.Payload))
-	//imgs, err := vm.Client.ListImages(docker.ListImagesOptions{All: false})
-	//if err != nil {
-	//	return err
-	//}
-
-	//TODO 做文章。。。
-
 	if err != nil {
 		// Rollback transaction
 		return nil, nil, errors.WithMessage(err, "failed to execute transaction")

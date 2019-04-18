@@ -59,7 +59,7 @@ func getResourceUses(cc *list.CCInfo)(*docker.Stats,error) {
 		newName := strings.Replace(name, ":", "-", -1)
 		client, err := util.NewDockerClient()
 		if err != nil {
-			log.Infof("-------------------1---------------------%s\n\n", err.Error())
+			log.Infof("util.NewDockerClient err: %s\n", err.Error())
 			return nil,err
 		}
 		//info, err := client.Info()
@@ -69,7 +69,7 @@ func getResourceUses(cc *list.CCInfo)(*docker.Stats,error) {
 		//}
 		con, err := client.InspectContainer(newName)
 		if err != nil {
-			log.Infof("----------------------3--------------%s\n\n", err.Error())
+			log.Infof("client.InspectContainer err: %s\n", err.Error())
 			return nil,err
 		}
 		errC := make(chan error, 1)
@@ -90,7 +90,6 @@ func getResourceUses(cc *list.CCInfo)(*docker.Stats,error) {
 		}
 		err = <-errC
 		if err != nil {
-			log.Infof("----------------------------------------%s\n\n", err.Error())
 			return nil,err
 		}
 		if len(resultStats) == 0 {
