@@ -50,16 +50,21 @@ type Utxo struct {
 	//VoteResult common.Address `json:"vote_info"` //这个字段删掉
 	// flags contains additional info about output such as whether it is spent, and whether is has
 	// been modified since is was loaded.
-	Flags txoFlags
+	Timestamp uint64 `json:"timestamp"` //Unit's Timestamp
+	Flags     txoFlags
 }
 
-func NewUtxo(output *Output, lockTime uint32) *Utxo {
+func NewUtxo(output *Output, lockTime uint32, timestamp int64) *Utxo {
 	return &Utxo{
-		Amount:   output.Value,
-		Asset:    output.Asset,
-		PkScript: output.PkScript,
-		LockTime: lockTime,
+		Amount:    output.Value,
+		Asset:     output.Asset,
+		PkScript:  output.PkScript,
+		LockTime:  lockTime,
+		Timestamp: uint64(timestamp),
 	}
+}
+func (u *Utxo) GetTimestamp() int64 {
+	return int64(u.Timestamp)
 }
 
 type UtxoWithOutPoint struct {
@@ -109,11 +114,12 @@ func (utxo *Utxo) Clone() *Utxo {
 		return nil
 	}
 	return &Utxo{
-		PkScript: utxo.PkScript,
-		Asset:    utxo.Asset,
-		Amount:   utxo.Amount,
-		LockTime: utxo.LockTime,
-		Flags:    utxo.Flags,
+		PkScript:  utxo.PkScript,
+		Asset:     utxo.Asset,
+		Amount:    utxo.Amount,
+		LockTime:  utxo.LockTime,
+		Flags:     utxo.Flags,
+		Timestamp: utxo.Timestamp,
 	}
 }
 func (utxo *Utxo) Flag2Str() string {

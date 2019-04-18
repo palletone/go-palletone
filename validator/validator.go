@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 type Validate struct {
@@ -57,7 +58,7 @@ func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
 }
 
 //逐条验证每一个Tx，并返回总手续费
-func (validate *Validate) validateTransactions(txs modules.Transactions) ValidationCode {
+func (validate *Validate) validateTransactions(txs modules.Transactions, unitTime int64) ValidationCode {
 	fee := uint64(0)
 	needCheckCoinbase := false
 	oldUtxoQuery := validate.utxoquery
@@ -80,13 +81,13 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-		txCode := validate.validateTx(tx, txIndex == 0)
+		txCode, txFee := validate.validateTx(tx, txIndex == 0, unitTime)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 
 			return txCode
 		}
-		txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
+		//txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry, unitTime)
 		fee += txFee.Amount
 
 		for outPoint, utxo := range tx.GetNewUtxos() {
@@ -103,7 +104,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 
 		allIncome := uint64(0)
 		outputs := coinbase.TxMessages[0].Payload.(*modules.PaymentPayload).Outputs
-		for _, output := range outputs{
+		for _, output := range outputs {
 			allIncome += output.Value
 		}
 		if allIncome != fee+reward {
@@ -119,10 +120,10 @@ func (validate *Validate) validateTransactions(txs modules.Transactions) Validat
 check all transactions in one unit
 return all transactions' fee
 */
-func (validate *Validate) ValidateTransactions(txs modules.Transactions) error {
-	code := validate.validateTransactions(txs)
-	return NewValidateError(code)
-}
+//func (validate *Validate) ValidateTransactions(txs modules.Transactions) error {
+//	code := validate.validateTransactions(txs)
+//	return NewValidateError(code)
+//}
 func ComputeRewards() uint64 {
 	var rewards uint64
 	if dagconfig.DagConfig.IsRewardCoin {
@@ -131,7 +132,7 @@ func ComputeRewards() uint64 {
 	return rewards
 }
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool) error {
-	code := validate.validateTx(tx, isCoinbase)
+	code, _ := validate.validateTx(tx, isCoinbase, time.Now().Unix())
 	if code == TxValidationCode_VALID {
 		log.Debugf("Tx[%s] validate pass!", tx.Hash().String())
 		return nil
