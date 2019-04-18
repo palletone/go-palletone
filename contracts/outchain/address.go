@@ -75,6 +75,15 @@ func processAddressMethodBTC(chaincodeID string, outChainAddr *pb.OutChainAddres
 		var btcAdaptor adaptorbtc.AdaptorBTC
 		btcAdaptor.NetID = cfg.Ada.Btc.NetID
 		return btcAdaptor.GetAddressByPubkey(string(outChainAddr.Params))
+	case "GetPubkey":
+		pubkeys, err := ClolletJuryBTCPubkeysTest(chaincodeID)
+		if err != nil {
+			return "", err
+		}
+		if len(pubkeys) == 0 {
+			return "", errors.New("Collect Jury Pubkeys error.")
+		}
+		return pubkeys[0], nil
 	}
 
 	return "", errors.New("Unspport out chain Address method.")

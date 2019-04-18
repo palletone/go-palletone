@@ -29,7 +29,7 @@ type Validator interface {
 	//验证一个交易是否是合法交易
 	ValidateTx(tx *modules.Transaction, isCoinbase bool) error
 	//验证一个Unit中的所有交易是否是合法交易
-	ValidateTransactions(txs modules.Transactions) error
+	//ValidateTransactions(txs modules.Transactions) error
 	//除了群签名外，验证Unit是否是合法Unit,包括其中的所有交易都会逐一验证
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	//验证一个Header是否合法（Mediator签名有效）

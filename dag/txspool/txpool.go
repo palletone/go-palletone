@@ -1750,7 +1750,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 }
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(pool.GetUtxoEntry)
+	return tx.GetTxFee(pool.GetUtxoEntry, time.Now().Unix())
 }
 
 func (pool *TxPool) limitNumberOrphans() error {
