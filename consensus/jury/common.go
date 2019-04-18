@@ -304,8 +304,11 @@ func handleArg1(tx *modules.Transaction, reqArgs [][]byte) ([][]byte, error) {
 
 func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
 	var recvSigMsg *modules.Message
-
-	if local == nil || recv == nil {
+	if local == nil {
+		log.Info("checkAndAddTxSigMsgData, local sig msg not exist")
+		return false, nil
+	}
+	if recv == nil {
 		return false, errors.New("checkAndAddTxSigMsgData param is nil")
 	}
 	if len(local.TxMessages) != len(recv.TxMessages) {
@@ -461,14 +464,15 @@ func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
 
 func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageType) (interface{}, error) {
 	if tx == nil {
-		return modules.APP_UNKNOW, errors.New("getContractTxType get param is nil")
+		return nil, errors.New("getContractTxType get param is nil")
 	}
 	for _, msg := range tx.TxMessages {
 		if msg.App == msgType {
 			return msg.Payload, nil
 		}
 	}
-	return modules.APP_UNKNOW, errors.New("getContractTxContractInfo not find")
+	log.Debug("getContractTxContractInfo", " not find msgType", msgType)
+	return nil, nil
 }
 
 func getElectionSeedData(in common.Hash) ([]byte, error) {
@@ -514,7 +518,7 @@ func electionWeightValue(total uint64) (val uint64) {
 		return 15
 	} else if total > 200 && total <= 500 {
 		return 17
-	}else if total >500{
+	} else if total > 500 {
 		return 20
 	}
 	return 4

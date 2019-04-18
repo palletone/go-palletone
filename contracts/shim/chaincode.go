@@ -606,7 +606,30 @@ func (stub *ChaincodeStub) GetRequesterCert() (certBytes []byte, err error) {
 	certID := big.Int{}
 	certID.SetBytes(stub.args[1])
 	key := dagConstants.CERT_BYTES_SYMBOL + certID.String()
-	return stub.handler.handleGetCertByID(key, stub.ChannelId, stub.TxID)
+	resBytes, err := stub.handler.handleGetCertState(key, stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, err
+	}
+	certDBInfo := modules.CertBytesInfo{}
+	if err := json.Unmarshal(resBytes, &certDBInfo); err != nil {
+		return nil, err
+	}
+	return certDBInfo.Raw, nil
+}
+
+func (stub *ChaincodeStub) IsRequesterCertValidate() (bool, error) {
+	if len(stub.args) <= 1 {
+		return false, fmt.Errorf("args error: has no cert info")
+	}
+	certID := big.Int{}
+	certID.SetBytes(stub.args[1])
+	key := dagConstants.CERT_BYTES_SYMBOL + certID.String()
+	caller, err := stub.GetInvokeAddress()
+	if err != nil {
+		return false, err
+	}
+
+	return stub.handler.handlerCheckCertValidation(caller.String(), key, stub.ChannelId, stub.TxID)
 }
 
 // ------------- Logging Control and Chaincode Loggers ---------------

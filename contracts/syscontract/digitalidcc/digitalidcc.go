@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
+	dagModules "github.com/palletone/go-palletone/dag/modules"
 	"time"
 )
 
@@ -95,7 +96,7 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 	//	reqStr := fmt.Sprintf("DigitalIdentityChainCode load [%s] error: %s", certPath, err.Error())
 	//	return shim.Error(reqStr)
 	//}
-	certBytes, err := loadCertBytes([]byte(args[1]))
+	certBytes, err := dagModules.LoadCertBytes([]byte(args[1]))
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode load cert bytes error:%s", err.Error())
 		return shim.Error(reqStr)
@@ -122,7 +123,7 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode query nonce error: %s", err.Error())
 		return shim.Error(reqStr)
 	}
-	certInfo := CertInfo{
+	certInfo := dagModules.CertRawInfo{
 		Issuer: issuer.String(),
 		Holder: certHolder,
 		Cert:   cert,
@@ -150,7 +151,7 @@ func (d *DigitalIdentityChainCode) addCRLCert(stub shim.ChaincodeStubInterface, 
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert parse issuerAddr error:%s", err.Error())
 		return shim.Error(reqStr)
 	}
-	crlBytes, err := loadCertBytes([]byte(args[0]))
+	crlBytes, err := dagModules.LoadCertBytes([]byte(args[0]))
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert load bytes to CRL error: %s", err.Error())
 		return shim.Error(reqStr)
@@ -187,7 +188,7 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 		reqStr := fmt.Sprintf("Need one args: [holder address]")
 		return shim.Error(reqStr)
 	}
-	serverCertIDs := []*CertState{}
+	serverCertIDs := []*dagModules.CertState{}
 	val, err := stub.GetState("RootCAHolder")
 	if err != nil {
 		return shim.Error(fmt.Sprintf("get ca holder error"))
@@ -197,7 +198,7 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 		if err != nil {
 			return shim.Error(fmt.Sprintf("get root cert error:%s", err.Error()))
 		}
-		rootState := CertState{
+		rootState := dagModules.CertState{
 			CertID:         rootcert.SerialNumber.String(),
 			RecovationTime: rootcert.NotAfter.String(),
 		}
@@ -209,7 +210,7 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 		return shim.Error(reqStr)
 	}
 	serverCertIDs = append(serverCertIDs, newServerCertIDs...)
-	certIDs := map[string][]*CertState{
+	certIDs := map[string][]*dagModules.CertState{
 		"IntermediateCertIDs": serverCertIDs,
 		"MemberCertIDs":       memberCertIDs,
 	}

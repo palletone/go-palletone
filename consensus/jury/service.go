@@ -341,14 +341,6 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 	}
 	if needSignMsg {
 		//没有Contract Payout的情况下，那么需要单独附加Signature Message
-		var sigPayload *modules.SignaturePayload
-		sigs := make([]modules.SignatureSet, 0)
-		for _, v := range tx.TxMessages {
-			if v.App == modules.APP_SIGNATURE {
-				sigPayload = v.Payload.(*modules.SignaturePayload)
-				sigs = append(sigs, sigPayload.Signatures...)
-			}
-		}
 		pubKey, err := ks.GetPublicKey(singer)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
@@ -361,14 +353,20 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 			PubKey:    pubKey,
 			Signature: sig,
 		}
-		sigs = append(sigs, sigSet)
-		msgSig := &modules.Message{
-			App: modules.APP_SIGNATURE,
-			Payload: &modules.SignaturePayload{
-				Signatures: sigs,
-			},
+		SigPayload, err := getContractTxContractInfo(tx, modules.APP_SIGNATURE)
+		if SigPayload != nil {
+			SigPayload.(*modules.SignaturePayload).Signatures = append(SigPayload.(*modules.SignaturePayload).Signatures, sigSet)
+		} else {
+			sigs := make([]modules.SignatureSet, 0)
+			sigs = append(sigs, sigSet)
+			msgSig := &modules.Message{
+				App: modules.APP_SIGNATURE,
+				Payload: &modules.SignaturePayload{
+					Signatures: sigs,
+				},
+			}
+			tx.TxMessages = append(tx.TxMessages, msgSig)
 		}
-		tx.TxMessages = append(tx.TxMessages, msgSig)
 		log.Debug("GenContractSigTransactions", "orgTx.TxId id ok:", tx.Hash())
 	}
 	return tx, nil
@@ -437,7 +435,8 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		return false
 	}
 	log.Debug("CheckContractTxValid", "reqId:", tx.RequestHash().String(), "exec:", execute)
-	if !execute || !tx.IsSystemContract() { //不执行合约或者用户合约
+	if !execute || !tx.IsSystemContract() {
+		//不执行合约或者用户合约
 		return true
 	}
 	if !p.checkTxValid(tx) {
@@ -624,7 +623,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	}
 	reqId := tx.RequestHash()
 	p.mtx[reqId] = &contractTx{
-		reqTx:  tx,
+		reqTx:  tx.GetRequestTx(),
 		tm:     time.Now(),
 		valid:  true,
 		adaInf: make(map[uint32]*AdapterInf),

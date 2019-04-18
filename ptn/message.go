@@ -359,9 +359,9 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	log.Info(fmt.Sprint("Received unit("+unit.UnitHash.TerminalString()+") #", unit.NumberU64(),
+	log.Infof("Received unit("+unit.UnitHash.TerminalString()+") #", unit.NumberU64(),
 		" parent(", unit.ParentHash()[0].TerminalString(), ") @", timestamp.Format("2006-01-02 15:04:05"),
-		" signed by ", unit.Author().Str()))
+		" signed by ", unit.Author().Str())
 
 	latency := time.Now().Sub(timestamp)
 	if latency < -3*time.Second {
@@ -456,13 +456,13 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
 	data := []byte{}
 	if err := msg.Decode(&data); err != nil {
-		log.Debug("ProtocolManager", "NewBlockMsg msg:", msg.String())
+		log.Debug("ProtocolManager", "NewProducedUnitMsg msg:", msg.String())
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
 	var unit modules.Unit
 	if err := json.Unmarshal(data, &unit); err != nil {
-		log.Debug("ProtocolManager", "NewBlockMsg json ummarshal err:", err)
+		log.Debug("ProtocolManager", "NewProducedUnitMsg json ummarshal err:", err)
 		return err
 	}
 
