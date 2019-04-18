@@ -237,7 +237,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		}
 	}
 	// Subscribe events from blockchain
-	//pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
+	// pool.chainHeadSub = pool.unit.SubscribeChainHeadEvent(pool.chainHeadCh)
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
@@ -1455,7 +1455,7 @@ func (pool *TxPool) Stop() {
 	pool.scope.Close()
 	// Unsubscribe subscriptions registered from blockchain
 	// pool.chainHeadSub.Unsubscribe()
-	pool.wg.Wait()
+	// pool.wg.Wait()
 	if pool.journal != nil {
 		pool.journal.close()
 	}
@@ -1614,7 +1614,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		}
 		tx := pool.priority_sorted.Get()
 		if tx == nil {
-			log.Info("Txspool get priority_pricedtx failed.", "error", "tx is null")
+			log.Infof("The task of txspool get priority_pricedtx has been finished,count:%d", len(list))
 			break
 		} else {
 			if !tx.Pending {
@@ -1628,7 +1628,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 						list = append(list, ptx)
 						total += ptx.Tx.Size()
 					}
-
 				}
 				list = append(list, tx)
 				total += tx.Tx.Size()
