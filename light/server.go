@@ -55,13 +55,14 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 	gasToken := config.Dag.GetGasToken()
 	genesis, err := ptn.Dag().GetGenesisUnit()
 	if err != nil {
-		log.Error("PalletOne New", "get genesis err:", err)
+		log.Error("Light PalletOne New", "get genesis err:", err)
 		return nil, err
 	}
 	//lesserver := ptn.GetLesServer()
 	pm, err := NewProtocolManager(false, config.SyncMode, config.NetworkId, gasToken, ptn.TxPool(),
 		ptn.Dag(), ptn.EventMux(), genesis)
 	if err != nil {
+		log.Error("NewlesServer NewProtocolManager", "err", err)
 		return nil, err
 	}
 
@@ -316,6 +317,7 @@ func (pm *ProtocolManager) blockLoop() {
 						)
 
 						for _, p := range peers {
+							log.Debug("Light Palletone", "ProtocolManager->blockLoop p", p)
 							switch p.announceType {
 
 							case announceTypeSimple:

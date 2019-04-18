@@ -273,6 +273,16 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 
 		atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done on any fetcher import
+
+		// setPending txs in txpool
+		for _, u := range blocks {
+			hash := u.Hash()
+			if pm.dag.IsHeaderExist(hash) {
+				continue
+			}
+			pm.txpool.SetPendingTxs(hash, u.Transactions())
+		}
+
 		return pm.dag.InsertDag(blocks, pm.txpool)
 	}
 	return fetcher.New(pm.dag.IsHeaderExist, validatorFn, pm.BroadcastUnit, heighter, inserter, pm.removePeer)
