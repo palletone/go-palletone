@@ -38,10 +38,12 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"strconv"
 )
 
 type Dag struct {
@@ -741,6 +743,24 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 	all, err := d.unstableUtxoRep.GetAddrUtxos(addr, nil)
 
 	return all, err
+}
+
+//TODO Devin 换届后请调用该函数
+func (d *Dag) RefreshSysParameters() {
+	deposit, _, _ := d.unstableStateRep.GetConfig("DepositRate")
+	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
+	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
+	log.Debugf("Load SysParameter DepositContractInterest value:%f", parameter.CurrentSysParameters.DepositContractInterest)
+	txCoinYearRateStr, _, _ := d.unstableStateRep.GetConfig("TxCoinYearRate")
+	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
+	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
+	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
+
+	generateUnitRewardStr, _, _ := d.unstableStateRep.GetConfig("GenerateUnitReward")
+	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
+	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
+	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+
 }
 
 //func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
