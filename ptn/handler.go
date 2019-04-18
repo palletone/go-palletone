@@ -273,6 +273,16 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 
 		atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done on any fetcher import
+
+		// setPending txs in txpool
+		for _, u := range blocks {
+			hash := u.Hash()
+			if pm.dag.IsHeaderExist(hash) {
+				continue
+			}
+			pm.txpool.SetPendingTxs(hash, u.Transactions())
+		}
+
 		return pm.dag.InsertDag(blocks, pm.txpool)
 	}
 	return fetcher.New(pm.dag.IsHeaderExist, validatorFn, pm.BroadcastUnit, heighter, inserter, pm.removePeer)
@@ -414,9 +424,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
 	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
 
-	if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
-		return pm.PartitionHandle(p)
-	}
+	//if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
+	//	return pm.PartitionHandle(p)
+	//}
 	return pm.LocalHandle(p)
 
 }

@@ -41,12 +41,11 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	//"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/les"
 )
 
-type LightEthereum struct {
+type LightPalletone struct {
 	config *ptn.Config
 
 	//odr         *LesOdr
@@ -59,7 +58,7 @@ type LightEthereum struct {
 	txPool *les.TxPool
 	//blockchain      *light.LightChain
 	protocolManager *ProtocolManager
-	//serverPool      *serverPool
+	serverPool      *serverPool
 	//reqDist         *requestDistributor
 	//retriever       *retrieveManager
 	// DB interfaces
@@ -82,7 +81,7 @@ type LightEthereum struct {
 	wg sync.WaitGroup
 }
 
-func New(ctx *node.ServiceContext, config *ptn.Config) (*LightEthereum, error) {
+func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) {
 	chainDb, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
 	if err != nil {
 		return nil, err
@@ -98,9 +97,11 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightEthereum, error) {
 		return nil, err
 	}
 	peers := newPeerSet()
+	gasToken := config.Dag.GetGasToken()
+
 	//quitSync := make(chan struct{})
 
-	lptn := &LightEthereum{
+	lptn := &LightPalletone{
 		config: config,
 		//chainConfig:      chainConfig,
 		unitDb:   chainDb,
@@ -118,32 +119,23 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightEthereum, error) {
 		//bloomTrieIndexer: light.NewBloomTrieIndexer(chainDb, true),
 	}
 
+	//lptn.relay = NewLesTxRelay(peers, leth.reqDist)
+	//lptn.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
+	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
+	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
+
 	//leth.txPool = NewTxPool(leth.chainConfig, leth.blockchain, leth.relay)
 	//NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
-	gasToken := modules.AssetId{}
-	//txPool := &TxPool{}
-	if lptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, nil,
-		dag, lptn.eventMux, nil, genesis, nil, nil); err != nil {
+
+	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
+		dag, lptn.eventMux, genesis); err != nil {
 		return nil, err
 	}
-	//leth.ApiBackend = &LesApiBackend{leth, nil}
+
 	lptn.ApiBackend = &LesApiBackend{lptn}
 	return lptn, nil
 }
-
-//func lesTopic(genesisHash common.Hash, protocolVersion uint) discv5.Topic {
-//	var name string
-//	switch protocolVersion {
-//	case lpv1:
-//		name = "LES"
-//	case lpv2:
-//		name = "LES2"
-//	default:
-//		panic(nil)
-//	}
-//	return discv5.Topic(name + "@" + common.Bytes2Hex(genesisHash.Bytes()[0:8]))
-//}
 
 type LightDummyAPI struct{}
 
@@ -169,7 +161,7 @@ func (s *LightDummyAPI) Mining() bool {
 
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
-func (s *LightEthereum) APIs() []rpc.API {
+func (s *LightPalletone) APIs() []rpc.API {
 	return []rpc.API{}
 	/*
 		return append(ptnapi.GetAPIs(s.ApiBackend), []rpc.API{
@@ -188,7 +180,7 @@ func (s *LightEthereum) APIs() []rpc.API {
 				Version:   "1.0",
 				Service:   filters.NewPublicFilterAPI(s.ApiBackend, true),
 				Public:    true,
-			}, {
+			},{
 				Namespace: "net",
 				Version:   "1.0",
 				Service:   s.netRPCService,
@@ -198,26 +190,27 @@ func (s *LightEthereum) APIs() []rpc.API {
 	*/
 }
 
-//func (s *LightEthereum) ResetWithGenesisBlock(gb *types.Block) {
+//func (s *LightPalletone) ResetWithGenesisBlock(gb *types.Block) {
 //	s.blockchain.ResetWithGenesisBlock(gb)
 //}
 
-//func (s *LightEthereum) BlockChain() *light.LightChain      { return s.blockchain }
-//func (s *LightEthereum) TxPool() *light.TxPool              { return s.txPool }
-//func (s *LightEthereum) Engine() consensus.Engine           { return s.engine }
-func (s *LightEthereum) LesVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
-func (s *LightEthereum) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
-func (s *LightEthereum) EventMux() *event.TypeMux           { return s.eventMux }
+//func (s *LightPalletone) BlockChain() *light.LightChain      { return s.blockchain }
+func (s *LightPalletone) TxPool() *les.TxPool { return s.txPool }
+
+//func (s *LightPalletone) Engine() consensus.Engine           { return s.engine }
+func (s *LightPalletone) LesVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
+func (s *LightPalletone) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
+func (s *LightPalletone) EventMux() *event.TypeMux           { return s.eventMux }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
-func (s *LightEthereum) Protocols() []p2p.Protocol {
+func (s *LightPalletone) Protocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
 // Ethereum protocol implementation.
-func (s *LightEthereum) Start(srvr *p2p.Server) error {
+func (s *LightPalletone) Start(srvr *p2p.Server) error {
 	//s.startBloomHandlers()
 	log.Warn("Light client mode is an experimental feature")
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.networkId)
@@ -230,7 +223,7 @@ func (s *LightEthereum) Start(srvr *p2p.Server) error {
 
 // Stop implements node.Service, terminating all internal goroutines used by the
 // Ethereum protocol.
-func (s *LightEthereum) Stop() error {
+func (s *LightPalletone) Stop() error {
 	//s.odr.Stop()
 	//if s.bloomIndexer != nil {
 	//	s.bloomIndexer.Close()

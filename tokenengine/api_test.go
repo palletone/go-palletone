@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 	"github.com/stretchr/testify/assert"
@@ -64,6 +65,10 @@ func TestGenerateP2CHLockScript(t *testing.T) {
 	assert.Nil(t, err, "Err must nil")
 	assert.Equal(t, addr2.String(), addrStr)
 	t.Logf("get address:%s", addr2.String())
+
+	deposit := syscontract.DepositContractAddress
+	script := GenerateP2CHLockScript(deposit)
+	t.Logf("%x", script)
 }
 func TestDecodeScriptBytes(t *testing.T) {
 	data, _ := hex.DecodeString("21021b11a1d070a173edc33a25ad8382602b2ad9b58670f031059b8866fc8e1b16aeac")

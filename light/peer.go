@@ -124,23 +124,24 @@ func (p *peer) HeadAndTd() (hash common.Hash, td *big.Int) {
 	defer p.lock.RUnlock()
 
 	copy(hash[:], p.headInfo.Hash[:])
-	return hash, p.headInfo.Td
+	return hash, &big.Int{}
+	//return hash, p.headInfo.Td
 }
 
 func (p *peer) headBlockInfo() blockInfo {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	return blockInfo{Hash: p.headInfo.Hash, Number: p.headInfo.Number, Td: p.headInfo.Td}
+	return blockInfo{Hash: p.headInfo.Hash, Number: p.headInfo.Number /*, Td: p.headInfo.Td*/}
 }
 
 // Td retrieves the current total difficulty of a peer.
-func (p *peer) Td() *big.Int {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-
-	return new(big.Int).Set(p.headInfo.Td)
-}
+//func (p *peer) Td() *big.Int {
+//	p.lock.RLock()
+//	defer p.lock.RUnlock()
+//
+//	return new(big.Int).Set(p.headInfo.Td)
+//}
 
 // waitBefore implements distPeer interface
 func (p *peer) waitBefore(maxCost uint64) (time.Duration, float64) {
@@ -394,7 +395,7 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer) error {
+func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer, headhash common.Hash) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -402,7 +403,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	send = send.add("protocolVersion", uint64(p.version))
 	send = send.add("networkId", p.network)
 	send = send.add("headNum", *number)
+	send = send.add("headHash", headhash)
 	send = send.add("genesisHash", genesis)
+
 	if server != nil {
 		send = send.add("serveHeaders", nil)
 		send = send.add("serveChainSince", uint64(0))
@@ -424,8 +427,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	recv := recvList.decode()
 
 	var rGenesis, rHash common.Hash
-	var rVersion, rNetwork, rNum uint64
-	var rTd *big.Int
+	var rVersion, rNetwork uint64
+	//var rTd *big.Int
+	var rNum modules.ChainIndex
 
 	if err := recv.get("protocolVersion", &rVersion); err != nil {
 		return err
@@ -433,9 +437,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	if err := recv.get("networkId", &rNetwork); err != nil {
 		return err
 	}
-	if err := recv.get("headTd", &rTd); err != nil {
-		return err
-	}
+	//if err := recv.get("headTd", &rTd); err != nil {
+	//	return err
+	//}
 	if err := recv.get("headHash", &rHash); err != nil {
 		return err
 	}
@@ -457,10 +461,12 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	}
 	if server != nil {
 		// until we have a proper peer connectivity API, allow LES connection to other servers
-		if recv.get("serveStateSince", nil) == nil {
-			return errResp(ErrUselessPeer, "wanted client, got server")
+		//if recv.get("serveStateSince", nil) == nil {
+		//	return errResp(ErrUselessPeer, "wanted client, got server")
+		//}
+		if recv.get("announceType", &p.announceType) == nil {
+			p.announceType = announceTypeSimple
 		}
-
 		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
 	} else {
 		if recv.get("serveChainSince", nil) != nil {
@@ -487,8 +493,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fcServer = flowcontrol.NewServerNode(params)
 		p.fcCosts = MRC.decode()
 	}
-
-	p.headInfo = &announceData{Td: rTd, Hash: rHash, Number: rNum}
+	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
+	//TODO must modify
+	p.headInfo = &announceData{ /*Td: rTd,*/ Hash: rHash, Number: rNum.Index}
 	return nil
 }
 
@@ -620,13 +627,13 @@ func (ps *peerSet) BestPeer() *peer {
 
 	var (
 		bestPeer *peer
-		bestTd   *big.Int
+		//bestTd   *big.Int
 	)
-	for _, p := range ps.peers {
-		if td := p.Td(); bestPeer == nil || td.Cmp(bestTd) > 0 {
-			bestPeer, bestTd = p, td
-		}
-	}
+	//for _, p := range ps.peers {
+	//	if td := p.Td(); bestPeer == nil || td.Cmp(bestTd) > 0 {
+	//		bestPeer, bestTd = p, td
+	//	}
+	//}
 	return bestPeer
 }
 

@@ -30,8 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/consensus"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -96,6 +94,7 @@ type ProtocolManager struct {
 	odr        *LesOdr
 	server     *LesServer
 	serverPool *serverPool
+	genesis    *modules.Unit
 	//lesTopic   discv5.Topic
 	reqDist   *requestDistributor
 	retriever *retrieveManager
@@ -119,26 +118,25 @@ type ProtocolManager struct {
 	wg *sync.WaitGroup
 }
 
-type producer interface{}
-
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txPool,
-	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
-	contractProc consensus.ContractInf, engine core.ConsensusEngine) (*ProtocolManager, error) {
+func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId, txpool txPool,
+	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		//lightSync:   lightSync,
-		eventMux: mux,
-		assetId:  gasToken,
+		lightSync: lightSync,
+		eventMux:  mux,
+		assetId:   gasToken,
+		genesis:   genesis,
 		//blockchain:  blockchain,
 		//chainConfig: chainConfig,
 		//chainDb:     chainDb,
 		//odr:         odr,
+		dag:       dag,
 		networkId: networkId,
 		txpool:    txpool,
 		//txrelay:     txrelay,
-		peers:     newPeerSet(),
+		peers:     peers, //newPeerSet(),
 		newPeerCh: make(chan *peer),
 		//quitSync:    quitSync,
 		wg:          new(sync.WaitGroup),
@@ -198,10 +196,9 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	if disableClientRemovePeer {
 		removePeer = func(id string) {}
 	}
-	lightSync := true
+
 	if lightSync {
 		manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
-		//manager.downloader = downloader.New(downloader.LightSync, chainDb, manager.eventMux, nil, blockchain, removePeer)
 		manager.peers.notify((*downloaderPeerNotify)(manager))
 		manager.fetcher = newLightFetcher(manager)
 	}
@@ -265,13 +262,28 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("Light Palletone peer connected", "name", p.Name())
 
 	// Execute the LES handshake
+	//var (
+	//	head   = pm.dag.CurrentHeader(pm.assetId)
+	//	number = head.Number
+	//	//td     = pm.blockchain.GetTd(hash, number)
+	//)
+	genesis, err := pm.dag.GetGenesisUnit()
+	if err != nil {
+		if err != nil {
+			log.Error("Light PalletOne New", "get genesis err:", err)
+			return err
+		}
+	}
+
 	var (
-		head   = pm.dag.CurrentHeader(pm.assetId)
-		number = head.Number
-		//td     = pm.blockchain.GetTd(hash, number)
+		number   = &modules.ChainIndex{}
+		headhash = common.Hash{}
 	)
-	genesis, _ := pm.dag.GetGenesisUnit()
-	if err := p.Handshake(number, genesis.Hash(), pm.server); err != nil {
+	if head := pm.dag.CurrentHeader(pm.assetId); head != nil {
+		number = head.Number
+		headhash = head.Hash()
+	}
+	if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
 		log.Debug("Light Palletone handshake failed", "err", err)
 		return err
 	}
@@ -310,6 +322,19 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
+				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
+				//data, err := rlp.EncodeToBytes(announce)
+				//if err != nil {
+				//	log.Error("rlp.EncodeToBytes", "err", err)
+				//	return
+				//}
+				//log.Debug("Light Palletone ProtocolManager->handle", "announce bytes", data)
+				//var req announceData
+				//err = rlp.DecodeBytes(data, &req)
+				//if err != nil {
+				//	log.Error("rlp.DecodeBytes", "err", err)
+				//	return
+				//}
 				p.SendAnnounce(announce)
 			case <-stop:
 				return

@@ -37,127 +37,128 @@ Tx的第一条Msg必须是Payment
 To validate one transaction
 
 */
-func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) ValidationCode {
+func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, unitTime int64) (ValidationCode, *modules.AmountAsset) {
 	if len(tx.TxMessages) == 0 {
-		return TxValidationCode_INVALID_MSG
+		return TxValidationCode_INVALID_MSG, nil
 	}
 	isOrphanTx := false
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
-		return TxValidationCode_INVALID_MSG
+		return TxValidationCode_INVALID_MSG, nil
 	}
-
-	if !validate.validateTxFee(tx) {
-		return TxValidationCode_INVALID_FEE
+	txFeePass, txFee := validate.validateTxFee(tx, unitTime)
+	if !txFeePass {
+		return TxValidationCode_INVALID_FEE, nil
 	}
 	hasRequestMsg := false
 	usedUtxo := make(map[string]bool) //Cached all used utxo in this tx
 	for msgIdx, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
-			return TxValidationCode_UNKNOWN_TX_TYPE
+			return TxValidationCode_UNKNOWN_TX_TYPE, nil
 		}
 		// validate tx size
 		if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
 			log.Debug("Tx size is to big.")
-			return TxValidationCode_NOT_COMPARE_SIZE
+			return TxValidationCode_NOT_COMPARE_SIZE, nil
 		}
 
 		// validate transaction signature
 		if validateTxSignature(tx) == false {
-			return TxValidationCode_BAD_CREATOR_SIGNATURE
+			return TxValidationCode_BAD_CREATOR_SIGNATURE, nil
 		}
 		// validate every type payload
 		switch msg.App {
 		case modules.APP_PAYMENT:
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
-				return TxValidationCode_INVALID_PAYMMENTLOAD
+				return TxValidationCode_INVALID_PAYMMENTLOAD, nil
 			}
 			validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase, usedUtxo)
 			if validateCode != TxValidationCode_VALID {
 				if validateCode == TxValidationCode_ORPHAN {
 					isOrphanTx = true
 				} else {
-					return validateCode
+					return validateCode, nil
 				}
 			}
 		case modules.APP_CONTRACT_TPL:
 			payload, _ := msg.Payload.(*modules.ContractTplPayload)
 			validateCode := validate.validateContractTplPayload(payload)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode
+				return validateCode, nil
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			payload, _ := msg.Payload.(*modules.ContractDeployPayload)
 			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode
+				return validateCode, nil
 			}
 		case modules.APP_CONTRACT_INVOKE:
 			payload, _ := msg.Payload.(*modules.ContractInvokePayload)
 			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode
+				return validateCode, nil
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
-				return TxValidationCode_INVALID_MSG
+				return TxValidationCode_INVALID_MSG, nil
 			}
 			hasRequestMsg = true
 			payload, _ := msg.Payload.(*modules.ContractInstallRequestPayload)
 			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
-				return TxValidationCode_INVALID_CONTRACT
+				return TxValidationCode_INVALID_CONTRACT, nil
 			}
-			return TxValidationCode_VALID
 
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
-				return TxValidationCode_INVALID_MSG
+				return TxValidationCode_INVALID_MSG, nil
 			}
 			hasRequestMsg = true
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
 			if len(payload.TplId) == 0 || payload.Timeout < 0 {
-				return TxValidationCode_INVALID_CONTRACT
+				return TxValidationCode_INVALID_CONTRACT, nil
 			}
 
 			validateCode := validate.validateContractdeploy(payload.TplId)
-			return validateCode
+			if validateCode != TxValidationCode_VALID {
+				return validateCode, nil
+			}
 
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
-				return TxValidationCode_INVALID_MSG
+				return TxValidationCode_INVALID_MSG, nil
 			}
 			hasRequestMsg = true
 			payload, _ := msg.Payload.(*modules.ContractInvokeRequestPayload)
 			if len(payload.ContractId) == 0 {
-				return TxValidationCode_INVALID_CONTRACT
+				return TxValidationCode_INVALID_CONTRACT, nil
 			}
 			// 验证ContractId有效性
 			if len(payload.ContractId) <= 0 {
-				return TxValidationCode_INVALID_CONTRACT
+				return TxValidationCode_INVALID_CONTRACT, nil
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			payload, _ := msg.Payload.(*modules.ContractStopRequestPayload)
 			if len(payload.ContractId) == 0 {
-				return TxValidationCode_INVALID_CONTRACT
+				return TxValidationCode_INVALID_CONTRACT, nil
 			}
 			// 验证ContractId有效性
 			if len(payload.ContractId) <= 0 {
-				return TxValidationCode_INVALID_CONTRACT
+				return TxValidationCode_INVALID_CONTRACT, nil
 			}
 		case modules.APP_CONTRACT_STOP:
 			payload, _ := msg.Payload.(*modules.ContractStopPayload)
 			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode
+				return validateCode, nil
 			}
 		case modules.APP_SIGNATURE:
 			// 签名验证
 			payload, _ := msg.Payload.(*modules.SignaturePayload)
 			validateCode := validate.validateContractSignature(payload.Signatures[:], tx)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode
+				return validateCode, nil
 			}
 
 			//case modules.APP_CONFIG:
@@ -165,31 +166,31 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool) V
 			payload, _ := msg.Payload.(*modules.DataPayload)
 			validateCode := validate.validateDataPayload(payload)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode
+				return validateCode, nil
 			}
 
 		case modules.OP_MEDIATOR_CREATE:
 		case modules.OP_ACCOUNT_UPDATE:
 
 		default:
-			return TxValidationCode_UNKNOWN_TX_TYPE
+			return TxValidationCode_UNKNOWN_TX_TYPE, nil
 		}
 	}
 	if isOrphanTx {
-		return TxValidationCode_ORPHAN
+		return TxValidationCode_ORPHAN, nil
 	}
-	return TxValidationCode_VALID
+	return TxValidationCode_VALID, txFee
 }
 
-func (validate *Validate) validateTxFee(tx *modules.Transaction) bool {
+func (validate *Validate) validateTxFee(tx *modules.Transaction, unitTime int64) (bool, *modules.AmountAsset) {
 	if validate.utxoquery == nil {
 		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
-		return true
+		return true, nil
 	}
-	fee, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
+	fee, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry, unitTime)
 	if err != nil {
 		log.Warn("compute tx fee error: " + err.Error())
-		return false
+		return false, nil
 	}
 	assetId := dagconfig.DagConfig.GetGasToken()
 	minFee := &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}
@@ -198,10 +199,10 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) bool {
 	}
 	if minFee.Amount > 0 { //需要验证最小手续费
 		if fee.Asset.String() != minFee.Asset.String() || fee.Amount < minFee.Amount {
-			return false
+			return false, fee
 		}
 	}
-	return true
+	return true, fee
 }
 
 /**

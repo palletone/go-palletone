@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
+	"time"
 )
 
 type DigitalIdentityChainCode struct {
@@ -159,6 +160,10 @@ func (d *DigitalIdentityChainCode) addCRLCert(stub shim.ChaincodeStubInterface, 
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode addCRLCert parse bytes to CRL error: %s", err.Error())
 		return shim.Error(reqStr)
+	}
+	// check crl expiration date
+	if crl.TBSCertList.ThisUpdate.After(time.Now()) || crl.TBSCertList.NextUpdate.Before(time.Now()) {
+		return shim.Error(fmt.Sprintf("DigitalIdentityChainCode addCRLCert error: crl is expired"))
 	}
 	// check whether the issuer address has authority to revoke certificates in CRL revocation list
 	certHolderInfo, err := ValidateCRLIssuer(issuerAddr.String(), crl, stub)

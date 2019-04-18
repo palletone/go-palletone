@@ -281,7 +281,6 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
-	log.Debugf("Try to add unit[%s] to unstable chain", uHash.String())
 	threshold, _ := chain.ldbPropRep.GetChainThreshold()
 	token := unit.Number().AssetID
 	if _, ok := chain.chainUnits[parentHash]; ok || parentHash == chain.stableUnitHash[token] {
@@ -289,7 +288,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		chain.chainUnits[uHash] = unit
 		//add at the end of main chain unit
 		if parentHash == chain.lastMainchainUnit[token].Hash() {
-			log.Debug("This is a new main chain unit")
 			//Add a new unit to main chain
 			chain.setLastMainchainUnit(unit)
 			//update txpool's tx status to pending
@@ -303,7 +301,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 				//这个单元不是稳定单元，需要加入Tempdb
 			}
 		} else { //Fork unit
-			log.Debug("This is a fork unit")
 			if unit.NumberU64() > chain.lastMainchainUnit[token].NumberU64() { //Need switch main chain
 				//switch main chain, build db
 				//如果分支上的确认数大于等于当前主链，则切换主链

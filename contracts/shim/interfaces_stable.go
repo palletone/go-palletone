@@ -112,7 +112,11 @@ type ChaincodeStubInterface interface {
 
 	//retrun local jury's signature
 	SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
-	//return all jury's signature and answer,format:
+	//return all jury's signature and answer,format:[]JuryMsgSig
+	//type JuryMsgSig struct {
+	//	Signature []byte
+	//	Answer    []byte
+	//}
 	RecvJury(msgType uint32, consultContent []byte, timeout uint32) ([]byte, error)
 
 	// DelState records the specified `key` to be deleted in the writeset of
@@ -141,6 +145,8 @@ type ChaincodeStubInterface interface {
 	GetContractAllState() (states map[string]*modules.ContractStateValue, err error)
 	//获取调用合约所支付的PTN手续费
 	GetInvokeFees() (invokeFees *modules.AmountAsset, err error)
+	//获取合约地址
+	GetContractID() ([]byte, string)
 	//获得某地址的Token余额
 	//如果地址为空则表示当前合约
 	//如果token为空则表示查询所有Token余额

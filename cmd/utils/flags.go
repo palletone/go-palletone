@@ -46,6 +46,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/light"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
@@ -1177,17 +1178,34 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 
 // RegisterPtnService adds an PalletOne client to the stack.
 func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
+	var err error
+	if cfg.SyncMode == downloader.LightSync {
+		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+			return light.New(ctx, cfg)
+		})
+	} else {
+		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+			fullNode, err := ptn.New(ctx, cfg)
+			if fullNode != nil && cfg.LightServ > 0 {
+				ls, _ := light.NewLesServer(fullNode, cfg)
+				fullNode.AddLesServer(ls)
+			}
+			return fullNode, err
+		})
+	}
+
+	//===============
 	// 2. 到stack上增加一个serviceFuncs 函数
-	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		// 1. new 一个全节点类型的 PalletOne
-		//return ptn.New(ctx, cfg)
-		fullNode, err := ptn.New(ctx, cfg)
-		//if fullNode != nil /* && cfg.LightServ > 0 */ {
-		//	ls, _ := light.NewLesServer(fullNode, cfg)
-		//	fullNode.AddLesServer(ls)
-		//}
-		return fullNode, err
-	})
+	//err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+	//	// 1. new 一个全节点类型的 PalletOne
+	//	//return ptn.New(ctx, cfg)
+	//	fullNode, err := ptn.New(ctx, cfg)
+	//	if fullNode != nil && cfg.LightServ > 0 {
+	//		ls, _ := light.NewLesServer(fullNode, cfg)
+	//		fullNode.AddLesServer(ls)
+	//	}
+	//	return fullNode, err
+	//})
 
 	if err != nil {
 		Fatalf("Failed to register the PalletOne service: %v", err)

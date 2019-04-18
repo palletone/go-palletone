@@ -29,14 +29,17 @@ import (
 	"strconv"
 	"time"
 
+	"bytes"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/award"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/parameter"
 )
 
 var (
@@ -44,6 +47,7 @@ var (
 	TX_MAXSIZE  = (256 * 1024)
 	TX_BASESIZE = (100 * 1024) //100kb
 )
+var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
 
 // TxOut defines a bitcoin transaction output.
 type TxOut struct {
@@ -102,13 +106,13 @@ type TxPoolTransaction struct {
 	Tx *Transaction
 
 	From         []*OutPoint
-	CreationDate time.Time    `json:"creation_date"`
-	Priority_lvl string       `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time `json:"creation_date"`
+	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool // will remove
+	Discarded    bool         // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
 	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
@@ -391,12 +395,12 @@ func (txs Transactions) GetTxIds() []common.Hash {
 
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
-	CertId     []byte // should be big.Int byte
+	CertId     []byte     // should be big.Int byte
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
-func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
+func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*PaymentPayload)
 		if !ok {
@@ -420,6 +424,19 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 				return nil, fmt.Errorf("Compute fees: txin total overflow")
 			}
 			inAmount += utxo.Amount
+			if unitTime > 0 {
+				//计算币龄利息
+				rate := parameter.CurrentSysParameters.TxCoinDayInterest
+				if bytes.Equal(utxo.PkScript, DepositContractLockScript) {
+					rate = parameter.CurrentSysParameters.DepositContractInterest
+				}
+
+				interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
+				if interest > 0 {
+					log.Debugf("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
+					inAmount += interest
+				}
+			}
 		}
 
 		for _, txout := range payload.Outputs {
@@ -427,7 +444,6 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 			if outAmount+txout.Value > (1<<64 - 1) {
 				return nil, fmt.Errorf("Compute fees: txout total overflow")
 			}
-			log.Debug("+++++++++++++++++++++ tx_out_amonut ++++++++++++++++++++", "tx_outAmount", txout.Value)
 			outAmount += txout.Value
 		}
 		if inAmount < outAmount {
@@ -669,7 +685,7 @@ func (tx *Transaction) IsContractTx() bool {
 	return false
 }
 
-func (tx *Transaction) IsSystemContract()bool{
+func (tx *Transaction) IsSystemContract() bool {
 	for _, msg := range tx.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId

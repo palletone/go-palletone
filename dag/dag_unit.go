@@ -58,7 +58,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			dag.propRep.SetNewestUnit(newestUnit.Header())
 		}
 	}
-	log.Infof("Start generate unit... index:%d ", chainIndex.Index+1)
+
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
@@ -84,23 +84,22 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Debugf("Generate new unit[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.UnitHash.String(),
-		sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
+	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s], spent time: %s",
+		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
+		newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
 
 	//TODO add PostChainEvents
-	// go func() {
-	// 	var (
-	// 		events        = make([]interface{}, 0, 1)
-	// 		coalescedLogs []*types.Log
-	// 	)
-	// 	events = append(events, modules.ChainEvent{newUnit, common.Hash{}, nil})
-	// 	dag.PostChainEvents(events, coalescedLogs)
-	// }()
+	go func() {
+		var (
+			events = make([]interface{}, 0, 1)
+		)
+		events = append(events, modules.ChainHeadEvent{newUnit})
+		dag.PostChainEvents(events)
+	}()
 
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
 	}
-	log.Debugf("Complete generate unit:%s", sign_unit.String4Log())
 
 	return sign_unit
 }
@@ -123,10 +122,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	}
 
 	dag.Memdag.AddUnit(newUnit, txpool)
-
-	log.Debugf("save newest unit spent time: %s, parent hash:%s", time.Since(t0).String(),
-		newUnit.ParentHash()[0].String())
-
+	log.Debugf("save newest unit spent time: %s, index: %d , hash:%s", time.Since(t0).String(), newUnit.NumberU64(), newUnit.UnitHash.String())
 	return true
 }
 

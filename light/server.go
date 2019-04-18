@@ -52,55 +52,27 @@ type LesServer struct {
 
 func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 	quitSync := make(chan struct{})
-	gasToken := modules.AssetId{}
+	gasToken := config.Dag.GetGasToken()
 	genesis, err := ptn.Dag().GetGenesisUnit()
 	if err != nil {
-		log.Error("PalletOne New", "get genesis err:", err)
-		return nil, err
-	}
-	pm, err := NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.TxPool(),
-		ptn.Dag(), ptn.EventMux(), nil, genesis, nil, nil)
-	if err != nil {
+		log.Error("Light PalletOne New", "get genesis err:", err)
 		return nil, err
 	}
 
-	//lesTopics := make([]discv5.Topic, len(AdvertiseProtocolVersions))
-	//for i, pv := range AdvertiseProtocolVersions {
-	//	lesTopics[i] = lesTopic(eth.BlockChain().Genesis().Hash(), pv)
-	//}
+	pm, err := NewProtocolManager(false, newPeerSet(), config.NetworkId, gasToken, ptn.TxPool(),
+		ptn.Dag(), ptn.EventMux(), genesis)
+	if err != nil {
+		log.Error("NewlesServer NewProtocolManager", "err", err)
+		return nil, err
+	}
 
 	srv := &LesServer{
 		config:          config,
 		protocolManager: pm,
 		quitSync:        quitSync,
-		//lesTopics:        lesTopics,
-		//chtIndexer:       light.NewChtIndexer(eth.ChainDb(), false),
-		//bloomTrieIndexer: light.NewBloomTrieIndexer(eth.ChainDb(), false),
 	}
-	//logger := log.New()
 
-	//chtV1SectionCount, _, _ := srv.chtIndexer.Sections() // indexer still uses LES/1 4k section size for backwards server compatibility
-	//chtV2SectionCount := chtV1SectionCount / (light.CHTFrequencyClient / light.CHTFrequencyServer)
-	//if chtV2SectionCount != 0 {
-	//	// convert to LES/2 section
-	//	chtLastSection := chtV2SectionCount - 1
-	//	// convert last LES/2 section index back to LES/1 index for chtIndexer.SectionHead
-	//	chtLastSectionV1 := (chtLastSection+1)*(light.CHTFrequencyClient/light.CHTFrequencyServer) - 1
-	//	chtSectionHead := srv.chtIndexer.SectionHead(chtLastSectionV1)
-	//	chtRoot := light.GetChtV2Root(pm.chainDb, chtLastSection, chtSectionHead)
-	//	logger.Info("Loaded CHT", "section", chtLastSection, "head", chtSectionHead, "root", chtRoot)
-	//}
-	//bloomTrieSectionCount, _, _ := srv.bloomTrieIndexer.Sections()
-	//if bloomTrieSectionCount != 0 {
-	//	bloomTrieLastSection := bloomTrieSectionCount - 1
-	//	bloomTrieSectionHead := srv.bloomTrieIndexer.SectionHead(bloomTrieLastSection)
-	//	bloomTrieRoot := light.GetBloomTrieRoot(pm.chainDb, bloomTrieLastSection, bloomTrieSectionHead)
-	//	logger.Info("Loaded bloom trie", "section", bloomTrieLastSection, "head", bloomTrieSectionHead, "root", bloomTrieRoot)
-	//}
-	//
-	//srv.chtIndexer.Start(eth.BlockChain())
-
-	//pm.server = srv
+	pm.server = srv
 
 	srv.defParams = &flowcontrol.ServerParams{
 		BufLimit:    300000000,
@@ -118,18 +90,6 @@ func (s *LesServer) Protocols() []p2p.Protocol {
 // Start starts the LES server
 func (s *LesServer) Start(srvr *p2p.Server) {
 	s.protocolManager.Start(s.config.LightPeers)
-	//if srvr.DiscV5 != nil {
-	//	for _, topic := range s.lesTopics {
-	//		topic := topic
-	//		go func() {
-	//			logger := log.New("topic", topic)
-	//			logger.Info("Starting topic registration")
-	//			defer logger.Info("Terminated topic registration")
-	//
-	//			srvr.DiscV5.RegisterTopic(topic, s.quitSync)
-	//		}()
-	//	}
-	//}
 	s.privateKey = srvr.PrivateKey
 	s.protocolManager.blockLoop()
 }
@@ -143,7 +103,7 @@ func (s *LesServer) Stop() {
 	//s.chtIndexer.Close()
 	//// bloom trie indexer is closed by parent bloombits indexer
 	//s.fcCostStats.store()
-	//s.fcManager.Stop()
+	s.fcManager.Stop()
 	go func() {
 		<-s.protocolManager.noMorePeers
 	}()
@@ -324,70 +284,70 @@ func (s *requestCostStats) update(msgCode, reqCnt, cost uint64) {
 }
 
 func (pm *ProtocolManager) blockLoop() {
-	/*
-		pm.wg.Add(1)
-		headCh := make(chan modules.ChainHeadEvent, 10)
-		headSub := pm.blockchain.SubscribeChainHeadEvent(headCh)
-		go func() {
-			var lastHead *modules.Header
-			lastBroadcastTd := common.Big0
-			for {
-				select {
-				case ev := <-headCh:
-					peers := pm.peers.AllPeers()
-					if len(peers) > 0 {
-						header := ev.Block.Header()
-						hash := header.Hash()
-						number := header.Number.Uint64()
-						td := core.GetTd(pm.chainDb, hash, number)
-						if td != nil && td.Cmp(lastBroadcastTd) > 0 {
-							var reorg uint64
-							if lastHead != nil {
-								reorg = lastHead.Number.Uint64() - core.FindCommonAncestor(pm.chainDb, header, lastHead).Number.Uint64()
-							}
-							lastHead = header
-							lastBroadcastTd = td
+	pm.wg.Add(1)
+	headCh := make(chan modules.ChainHeadEvent, 10)
+	headSub := pm.dag.SubscribeChainHeadEvent(headCh)
+	go func() {
+		var lastHead *modules.Header
+		//lastBroadcastTd := common.Big0
+		for {
+			select {
+			case ev := <-headCh:
+				peers := pm.peers.AllPeers()
+				if len(peers) > 0 {
+					header := ev.Unit.Header()
+					hash := header.Hash()
+					number := header.Number.Index
+					//td := core.GetTd(pm.chainDb, hash, number)
+					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
+						//if td != nil && td.Cmp(lastBroadcastTd) > 0 {
+						//	var reorg uint64
+						//	if lastHead != nil {
+						//		reorg = lastHead.Number.Uint64() - core.FindCommonAncestor(pm.chainDb, header, lastHead).Number.Uint64()
+						//	}
+						lastHead = header
+						//lastBroadcastTd = td
 
-							log.Debug("Announcing block to peers", "number", number, "hash", hash, "td", td, "reorg", reorg)
+						log.Debug("Announcing block to peers", "hash", hash, "number", number)
 
-							announce := announceData{Hash: hash, Number: number, Td: td, ReorgDepth: reorg}
-							var (
-								signed         bool
-								signedAnnounce announceData
-							)
+						announce := announceData{Hash: hash, Number: number}
+						var (
+							signed         bool
+							signedAnnounce announceData
+						)
 
-							for _, p := range peers {
-								switch p.announceType {
+						for _, p := range peers {
+							log.Debug("Light Palletone", "ProtocolManager->blockLoop p", p)
+							switch p.announceType {
 
-								case announceTypeSimple:
-									select {
-									case p.announceChn <- announce:
-									default:
-										pm.removePeer(p.id)
-									}
+							case announceTypeSimple:
+								select {
+								case p.announceChn <- announce:
+								default:
+									pm.removePeer(p.id)
+								}
 
-								case announceTypeSigned:
-									if !signed {
-										signedAnnounce = announce
-										signedAnnounce.sign(pm.server.privateKey)
-										signed = true
-									}
+							case announceTypeSigned:
+								if !signed {
+									signedAnnounce = announce
+									signedAnnounce.sign(pm.server.privateKey)
+									signed = true
+								}
 
-									select {
-									case p.announceChn <- signedAnnounce:
-									default:
-										pm.removePeer(p.id)
-									}
+								select {
+								case p.announceChn <- signedAnnounce:
+								default:
+									pm.removePeer(p.id)
 								}
 							}
 						}
 					}
-				case <-pm.quitSync:
-					headSub.Unsubscribe()
-					pm.wg.Done()
-					return
 				}
+			case <-pm.quitSync:
+				headSub.Unsubscribe()
+				pm.wg.Done()
+				return
 			}
-		}()
-	*/
+		}
+	}()
 }

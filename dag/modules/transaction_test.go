@@ -11,6 +11,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 // The values in those tests are from the Transaction Tests
@@ -138,8 +139,10 @@ func newTestTx() *Transaction {
 	pay1s := &PaymentPayload{
 		LockTime: 12345,
 	}
-	output := NewTxOut(1, []byte{0xee, 0xbb}, NewPTNAsset())
+
+	output := NewTxOut(Ptn2Dao(10), []byte{0xee, 0xbb}, NewPTNAsset())
 	pay1s.AddTxOut(output)
+
 	hash := common.HexToHash("095e7baea6a6c7c4c2dfeb977efac326af552d87")
 	input := Input{}
 	input.PreviousOutPoint = NewOutPoint(hash, 0, 1)
@@ -361,3 +364,21 @@ func TestPaymentpayloadInputRlp(t *testing.T) {
 //	//t.Logf("%+v", req)
 //	//assert.Equal(t, tx, req)
 //}
+func TestTransaction_GetTxFee(t *testing.T) {
+	tx := newTestTx()
+	utxoQueryFn := func(outpoint *OutPoint) (*Utxo, error) {
+		t := time.Now().AddDate(0, 0, -1).Unix()
+		return &Utxo{Amount: Ptn2Dao(11), Timestamp: uint64(t)}, nil
+	}
+	fee, err := tx.GetTxFee(utxoQueryFn, time.Now().Unix())
+	assert.Nil(t, err)
+	assert.True(t, fee.Amount > Ptn2Dao(1))
+	t.Log(fee.String())
+	fee2, err := tx.GetTxFee(utxoQueryFn, 0)
+	assert.Nil(t, err)
+	t.Log(fee2.String())
+	assert.Equal(t, fee2.Amount, Ptn2Dao(1))
+}
+func Ptn2Dao(ptn uint64) uint64 {
+	return ptn * 100000000
+}

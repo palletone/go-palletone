@@ -143,12 +143,15 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
-	accounts := make(map[common.Address]*JuryAccount, 0)
+	acs := make(map[common.Address]*JuryAccount, 0)
 	for _, cfg := range cfg.Accounts {
 		account := cfg.configToAccount()
 		if account != nil {
-			addr := account.Address
-			accounts[addr] = account
+			err := ptn.GetKeyStore().Unlock(accounts.Account{Address: account.Address}, account.Password)
+			if err == nil {
+				addr := account.Address
+				acs[addr] = account
+			}
 		}
 	}
 
@@ -169,7 +172,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		dag:      dag,
 		contract: contract,
 		//vrfAct:         va,
-		local:          accounts,
+		local:          acs,
 		locker:         new(sync.Mutex),
 		quit:           make(chan struct{}),
 		mtx:            make(map[common.Hash]*contractTx),
