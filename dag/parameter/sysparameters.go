@@ -20,13 +20,13 @@
 
 package parameter
 
-type DbConfig struct {
+type SysParameters struct {
 	TxCoinDayInterest       float64 //一个币天产生多少利息
 	DepositContractInterest float64 //保证金合约一天产生多少利息
 	GenerateUnitReward      uint64  //每产生一个Unit奖励多少Dao的Token
 }
 
-var CurrentDbConfig = DbConfig{
+var CurrentSysParameters = SysParameters{
 	TxCoinDayInterest:       0.01 / 365,
 	DepositContractInterest: 0.02 / 365,
 	GenerateUnitReward:      100000000,

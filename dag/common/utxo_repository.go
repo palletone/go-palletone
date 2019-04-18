@@ -634,7 +634,7 @@ To compute mediator interest for packaging one unit
 func ComputeRewards() uint64 {
 	var rewards uint64
 	if dagconfig.DagConfig.IsRewardCoin {
-		rewards = parameter.CurrentDbConfig.GenerateUnitReward
+		rewards = parameter.CurrentSysParameters.GenerateUnitReward
 	}
 	return rewards
 }
