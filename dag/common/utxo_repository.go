@@ -32,8 +32,10 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
+	"time"
 )
 
 type UtxoRepository struct {
@@ -64,7 +66,7 @@ type IUtxoRepository interface {
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) *modules.Utxo
-	UpdateUtxo(txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
+	UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
 
 	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
@@ -211,14 +213,14 @@ func (repository *UtxoRepository) GetUtxoByOutpoint(outpoint *modules.OutPoint) 
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
 To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
 */
-func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
+func (repository *UtxoRepository) UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
 	// update utxo
 	err := repository.destoryUtxo(payment.Inputs)
 	if err != nil {
 		return err
 	}
 	// create utxo
-	errs := repository.writeUtxo(txHash, msgIndex, payment.Outputs, payment.LockTime)
+	errs := repository.writeUtxo(unitTime, txHash, msgIndex, payment.Outputs, payment.LockTime)
 	if len(errs) > 0 {
 		log.Error("error occurred on updated utxos, check the log file to find details.")
 		return errors.New("error occurred on updated utxos, check the log file to find details.")
@@ -231,14 +233,15 @@ func (repository *UtxoRepository) UpdateUtxo(txHash common.Hash, payment *module
 /**
 创建UTXO
 */
-func (repository *UtxoRepository) writeUtxo(txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lockTime uint32) []error {
+func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash, msgIndex uint32, txouts []*modules.Output, lockTime uint32) []error {
 	var errs []error
 	for outIndex, txout := range txouts {
 		utxo := &modules.Utxo{
-			Amount:   txout.Value,
-			Asset:    txout.Asset,
-			PkScript: txout.PkScript,
-			LockTime: lockTime,
+			Amount:    txout.Value,
+			Asset:     txout.Asset,
+			PkScript:  txout.PkScript,
+			LockTime:  lockTime,
+			Timestamp: uint64(unitTime),
 		}
 
 		// write to database
@@ -621,7 +624,7 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 
 //计算一笔Tx中包含多少手续费
 func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(repository.utxodb.GetUtxoEntry)
+	return tx.GetTxFee(repository.utxodb.GetUtxoEntry, time.Now().Unix())
 }
 
 /**
@@ -631,7 +634,7 @@ To compute mediator interest for packaging one unit
 func ComputeRewards() uint64 {
 	var rewards uint64
 	if dagconfig.DagConfig.IsRewardCoin {
-		rewards = uint64(modules.DAO)
+		rewards = parameter.CurrentDbConfig.GenerateUnitReward
 	}
 	return rewards
 }

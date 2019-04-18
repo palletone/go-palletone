@@ -1647,13 +1647,18 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		sort.Sort(or_list)
 	}
 	for _, tx := range or_list {
+		txhash := tx.Tx.Hash()
+		if pool.unit.HasTransaction(txhash) {
+			go pool.orphans.Delete(txhash)
+			continue
+		}
 		ok, err := pool.ValidateOrphanTx(tx.Tx)
 		if !ok && err == nil {
 			//  更改孤儿交易的状态
 			tx.Pending = true
 			tx.UnitHash = hash
-			go pool.all.Store(tx.Tx.Hash(), tx)
-			go pool.orphans.Delete(tx.Tx.Hash())
+			go pool.all.Store(txhash, tx)
+			go pool.orphans.Delete(txhash)
 			//pool.orphans.Store(tx.Tx.Hash(), tx)
 			list = append(list, tx)
 			total += tx.Tx.Size()
@@ -1746,7 +1751,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 }
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(pool.GetUtxoEntry)
+	return tx.GetTxFee(pool.GetUtxoEntry, time.Now().Unix())
 }
 
 func (pool *TxPool) limitNumberOrphans() error {

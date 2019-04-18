@@ -1470,7 +1470,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 						return nil, err
 					}
 					if addr.String() == from {
-						allUtxo[op] = modules.NewUtxo(output, pay.LockTime)
+						allUtxo[op] = modules.NewUtxo(output, pay.LockTime, time.Now().Unix())
 					}
 
 				}
