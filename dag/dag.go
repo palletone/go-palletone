@@ -282,6 +282,11 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
 
+		timestamp := time.Unix(u.Timestamp(), 0)
+		log.Infof("InsertDag unit("+u.UnitHash.TerminalString()+") #", u.NumberU64(),
+			" parent(", u.ParentHash()[0].TerminalString(), ") @", timestamp.Format("2006-01-02 15:04:05"),
+			" signed by ", u.Author().Str())
+
 		// append by albert·gou, 利用 unit 更新相关状态
 		d.ApplyUnit(u)
 
@@ -290,8 +295,9 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		if err := d.SaveUnit(u, txpool, false); err != nil {
 			return count, err
 		}
+
 		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
-		log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
+		//log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
 		// events = append(events, modules.ChainEvent{u, common.Hash{}, nil})
 	}

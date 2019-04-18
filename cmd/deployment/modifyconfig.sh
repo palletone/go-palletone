@@ -191,8 +191,8 @@ function ModifyBootstrapNodes()
 
 function MakeTestNet()
 {
-    mkdir -p node_test/palletone/gptn
-    cd node_test
+    mkdir -p node_test$1/palletone/gptn
+    cd node_test$1
     cp ../gptn .
     cp ../node1/palletone/leveldb palletone/. -rf
     dumcpconfig=`./gptn dumpuserconfig`
@@ -222,20 +222,20 @@ function MakeTestNet()
     cd ../
     #addBootstrapNodes $1 0
     newarrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test/ptn-config.toml
-    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test/ptn-config.toml
+    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
+    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
 
     newInitPrivKey="InitPrivKey=\"\""
-    sed -i '/^InitPrivKey/c'$newInitPrivKey'' node_test/ptn-config.toml
+    sed -i '/^InitPrivKey/c'$newInitPrivKey'' node_test$1/ptn-config.toml
 
     newInitPubKey="InitPubKey=\"\""
-    sed -i '/^InitPubKey/c'$newInitPubKey'' node_test/ptn-config.toml
+    sed -i '/^InitPubKey/c'$newInitPubKey'' node_test$1/ptn-config.toml
 
     newAddress="Address=\"\""
-    sed -i '/^Address/c'$newAddress'' node_test/ptn-config.toml
+    sed -i '/^Address/c'$newAddress'' node_test$1/ptn-config.toml
 
     newPassword="Password=\"\""
-    sed -i '/^Password/c'$newPassword'' node_test/ptn-config.toml
+    sed -i '/^Password/c'$newPassword'' node_test$1/ptn-config.toml
 
     echo "===========node-test ok============="
 }

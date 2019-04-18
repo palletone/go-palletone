@@ -225,7 +225,7 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 			{Name: pb.ChaincodeMessage_PAY_OUT_TOKEN.String(), Src: []string{readystate}, Dst: readystate},
 			{Name: pb.ChaincodeMessage_SUPPLY_TOKEN.String(), Src: []string{readystate}, Dst: readystate},
 			{Name: pb.ChaincodeMessage_DEFINE_TOKEN.String(), Src: []string{readystate}, Dst: readystate},
-			{Name: pb.ChaincodeMessage_GET_CERT.String(), Src: []string{readystate}, Dst: readystate},
+			{Name: pb.ChaincodeMessage_GET_CERT_STATE.String(), Src: []string{readystate}, Dst: readystate},
 			{Name: pb.ChaincodeMessage_SEND_JURY.String(), Src: []string{readystate}, Dst: readystate},
 			{Name: pb.ChaincodeMessage_RECV_JURY.String(), Src: []string{readystate}, Dst: readystate},
 		},
@@ -255,7 +255,7 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 			"after_" + pb.ChaincodeMessage_PAY_OUT_TOKEN.String():             func(e *fsm.Event) { v.enterPayOutToken(e) },
 			"after_" + pb.ChaincodeMessage_DEFINE_TOKEN.String():              func(e *fsm.Event) { v.enterDefineToken(e) },
 			"after_" + pb.ChaincodeMessage_SUPPLY_TOKEN.String():              func(e *fsm.Event) { v.enterSupplyToken(e) },
-			"after_" + pb.ChaincodeMessage_GET_CERT.String():                  func(e *fsm.Event) { v.enterGetCertByID(e) },
+			"after_" + pb.ChaincodeMessage_GET_CERT_STATE.String():            func(e *fsm.Event) { v.enterGetCertByID(e) },
 		},
 	)
 
@@ -2182,7 +2182,7 @@ func (handler *Handler) enterGetCertByID(e *fsm.Event) {
 		e.Cancel(errors.New("received unexpected message type"))
 		return
 	}
-	log.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CERT)
+	log.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CERT_STATE)
 	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
 	// is completed before the next one is triggered. The previous state transition is deemed complete only when
 	// the afterGetState function is exited. Interesting bug fix!!

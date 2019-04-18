@@ -51,7 +51,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		return common.Hash{}, nil, err
 	}
 	tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
-	if err != nil {
+	if err != nil ||tpl == nil{
 		errMsg := fmt.Sprintf("getContractTxContractInfo fail, tpl Name[%s]", tplName)
 		return common.Hash{}, nil, errors.New(errMsg)
 	}
