@@ -326,18 +326,18 @@ func (mr *MockIDagMockRecorder) GetTransactionOnly(hash interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionOnly", reflect.TypeOf((*MockIDag)(nil).GetTransactionOnly), hash)
 }
 
-// HasTransaction mocks base method
-func (m *MockIDag) HasTransaction(hash common.Hash) bool {
+// IsTransactionExist mocks base method
+func (m *MockIDag) IsTransactionExist(hash common.Hash) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasTransaction", hash)
+	ret := m.ctrl.Call(m, "IsTransactionExist", hash)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// HasTransaction indicates an expected call of HasTransaction
-func (mr *MockIDagMockRecorder) HasTransaction(hash interface{}) *gomock.Call {
+// IsTransactionExist indicates an expected call of IsTransactionExist
+func (mr *MockIDagMockRecorder) IsTransactionExist(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasTransaction", reflect.TypeOf((*MockIDag)(nil).HasTransaction), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTransactionExist", reflect.TypeOf((*MockIDag)(nil).IsTransactionExist), hash)
 }
 
 // GetTxSearchEntry mocks base method

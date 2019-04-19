@@ -96,7 +96,7 @@ func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 func (ud *UnitDag4Test) GetHeaderByHash(common.Hash) (*modules.Header, error) {
 	return nil, nil
 }
-func (ud *UnitDag4Test) HasTransaction(hash common.Hash) bool {
+func (ud *UnitDag4Test) IsTransactionExist(hash common.Hash) bool {
 	return false
 }
 func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {

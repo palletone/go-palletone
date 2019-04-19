@@ -237,9 +237,14 @@ func (dagdb *DagDb) GetTransactionOnly(hash common.Hash) (*modules.Transaction, 
 	return tx, nil
 }
 
-func (dagdb *DagDb) IsTransactionExist(hash common.Hash) (bool, error) {
+func (dagdb *DagDb) IsTransactionExist(hash common.Hash) bool {
 	key := append(constants.TRANSACTION_PREFIX, hash.Bytes()...)
-	return dagdb.db.Has(key)
+	exist, err := dagdb.db.Has(key)
+	if err != nil {
+		log.Errorf("Check tx is exist throw error:%s", err.Error())
+		return false
+	}
+	return exist
 }
 
 func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {

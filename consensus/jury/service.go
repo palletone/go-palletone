@@ -80,6 +80,7 @@ type iDag interface {
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
+	IsTransactionExist(hash common.Hash) bool
 }
 
 type Juror struct {
@@ -635,7 +636,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		if contractId == (common.Address{}) { //deploy
 			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
 			if ele, ok := p.lockArf[cId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[cId] = []modules.ElectionInf{} //清空
+				p.lockArf[cId] = []modules.ElectionInf{}                       //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}

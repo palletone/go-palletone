@@ -90,7 +90,7 @@ type dags interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	// GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	HasTransaction(hash common.Hash) bool
+	IsTransactionExist(hash common.Hash) bool
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
@@ -635,7 +635,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
-	if pool.unit.HasTransaction(hash) {
+	if pool.unit.IsTransactionExist(hash) {
 		return false, fmt.Errorf("the transactionx: %x has been packaged.", hash)
 	}
 	if _, has := pool.all.Load(hash); has {
@@ -1618,7 +1618,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			break
 		} else {
 			if !tx.Pending {
-				if pool.unit.HasTransaction(tx.Tx.Hash()) {
+				if pool.unit.IsTransactionExist(tx.Tx.Hash()) {
 					continue
 				}
 				// add precusorTxs 获取该交易的前驱交易列表
@@ -1647,7 +1647,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	}
 	for _, tx := range or_list {
 		txhash := tx.Tx.Hash()
-		if pool.unit.HasTransaction(txhash) {
+		if pool.unit.IsTransactionExist(txhash) {
 			go pool.orphans.Delete(txhash)
 			continue
 		}
