@@ -67,7 +67,7 @@ type IUnitRepository interface {
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	IsTransactionExist(txHash common.Hash) (bool, error)
+	IsTransactionExist(txHash common.Hash) bool
 	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
@@ -160,7 +160,7 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
 	return rep.dagdb.IsHeaderExist(uHash)
 }
-func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) (bool, error) {
+func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) bool {
 	return rep.dagdb.IsTransactionExist(txHash)
 }
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
