@@ -285,9 +285,9 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		}
 
 		timestamp := time.Unix(u.Timestamp(), 0)
-		log.Infof("InsertDag unit("+u.UnitHash.TerminalString()+") #", u.NumberU64(),
-			" parent(", u.ParentHash()[0].TerminalString(), ") @", timestamp.Format("2006-01-02 15:04:05"),
-			" signed by ", u.Author().Str())
+		log.Infof("InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
+			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
+			u.Author().Str())
 
 		// append by albert·gou, 利用 unit 更新相关状态
 		d.ApplyUnit(u)
