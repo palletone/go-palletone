@@ -25,7 +25,7 @@ ${result_code}    [a-z0-9]{64}
 transferToken_verifyToken
     [Tags]    normal
     import library    /usr/lib/python2.7/decimal.py
-    import library    ../../utilFunc/createToken.py
+    import library    /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/testcase/utilFunc/createToken.py
     ${GeneAdd}    getGeneAdd    ${host}
     normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
     sleep    2

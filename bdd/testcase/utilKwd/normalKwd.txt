@@ -56,23 +56,22 @@ I_get_the_sendTrans_result
     Should Match Regexp    ${resp.content}['result']    ${sendResult}    msg="result:does't match expression"
     [Return]    ${sendResult}
 
-I_set_CcinvokdePass_params_to_Normal
+I_set_CcinvokePass_params_to_Normal
     [Arguments]    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
-    import library    D:/software/robotscript/createToken.py
     ${geneAdd}    getGeneAdd    ${host}
-    ${ccTokenList}    Create List    createToken    description    ${tokenId}    ${tokenDecimal}    ${tokenAmount}
+    ${ccTokenList}    Create List    createToken    evidence    ${tokenId}    ${tokenDecimal}    ${tokenAmount}
     ...    ${recieverAdd}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${amount}    ${poundage}    ${contractId}
     ...    ${ccTokenList}    1    ${600000}
     [Return]    ${ccList}
 
-I_post_a_CcinvokdePass_request
+I_post_a_CcinvokePass_request
     [Arguments]    ${transList}
-    ${resp}    setPostRequest    ${transList}    ptn_ccinvoketxPass    ${transList}
+    ${resp}    setPostRequest    ${host}    ptn_ccinvoketxPass    ${transList}
     [Return]    ${resp}
 
-I_get_a_CcinvokdePass_result_${result_code}
-    [Arguments]    @{resp}
+I_get_a_CcinvokePass_result
+    [Arguments]    ${resp}    ${result_code}
     log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"
@@ -80,8 +79,13 @@ I_get_a_CcinvokdePass_result_${result_code}
     [Return]    ${ret}
 
 I_set_TransferToken_params_to_Normal
-    [Arguments]    ${tokenId}
-    ${ccList}    Create List    ${tokenId}    ${geneAdd}    ${recieverAdd}    10    1
+    [Arguments]    ${preTokenId}
+    import library    D:/software/robotscript/utilFunc/createToken.py
+    ${geneAdd}    listAccounts
+    ${result}    getBalance    ${geneAdd}
+    ${tokenId}    ${value}    getTokenStarts    ${preTokenId}    ${result}
+    ${type}    Evaluate    type(${result})
+    ${ccList}    Create List    ${tokenId}    ${geneAdd}    ${recieverAdd}    2    1
     ...    description    1    ${6000000}
     [Return]    ${ccList}
 
@@ -90,7 +94,7 @@ I_post_a_TransferToken_request
     ${resp}    setPostRequest    ${host}    ptn_transferToken    @{transList}
     [Return]    ${resp}
 
-I_get_a_TransferToken_result${result_code}
+I_get_a_TransferToken_result
     [Arguments]    @{resp}
     log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
@@ -109,7 +113,7 @@ I_post_a_GetTxByReqId_request
     [Return]    ${resp}
 
 I_get_a_GetTxByReqId_result
-    [Arguments]    @{resp}
+    [Arguments]    ${resp}    ${result_code}
     log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"

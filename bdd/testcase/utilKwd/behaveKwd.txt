@@ -23,16 +23,16 @@ normalSendTrans
 
 normalCcinvokePass
     [Arguments]    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
-    ${ret}    Given I_set_CcinvokdePass_params_to_Normal    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
-    ${resp}    When I_post_a_CcinvokdePass_request    ${ret}
-    ${resultCrt}    Then I_get_a_CcinvokdePass_result${result_code}    ${resp}
+    ${ret}    Given I_set_CcinvokePass_params_to_Normal    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
+    ${resp}    When I_post_a_CcinvokePass_request    ${ret}
+    ${resultCrt}    Then I_get_a_CcinvokePass_result    ${resp}    ${result_code}
     [Return]    ${resultCrt}
 
 normalTransferToken
     [Arguments]    ${result_code}
-    ${ret}    Given I_set_TransferToken_params_to_Normal    ${tokenId}
+    ${ret}    Given I_set_TransferToken_params_to_Normal    ${preTokenId}
     ${resp}    When I_post_a_TransferToken_request    ${ret}
-    ${resultCrt}    Then I_get_a_TransferToken_result${result_code}    ${resp}
+    ${resultCrt}    Then I_get_a_TransferToken_result    ${resp}    ${result_code}
     [Return]    ${resultCrt}
 
 normalGetTxByReqId

@@ -40,5 +40,6 @@ getGeneAdd
 
 countRecieverPTN
     [Arguments]    ${Amount}
-    ${gain}    evaluate    '{:.8f}'.format(${Amount}*0.00000001)
+    ${gain}    evaluate    ${Amount}*0.00000001
+    ${gain}    evaluate    decimal.Decimal('${gain}')    decimal
     [Return]    ${gain}
