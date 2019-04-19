@@ -370,7 +370,7 @@ func (r *ChtRequest) CanSend(peer *peer) bool {
 	peer.lock.RLock()
 	defer peer.lock.RUnlock()
 
-	return peer.headInfo.Number >= les.HelperTrieConfirmations && r.ChtNum <= (peer.headInfo.Number-les.HelperTrieConfirmations)/les.CHTFrequencyClient
+	return peer.headInfo.Number.Index >= les.HelperTrieConfirmations && r.ChtNum <= (peer.headInfo.Number.Index-les.HelperTrieConfirmations)/les.CHTFrequencyClient
 }
 
 // Request sends an ODR request to the LES network (implementation of LesOdrRequest)

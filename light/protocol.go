@@ -130,15 +130,15 @@ type announceBlock struct {
 
 // announceData is the network packet for the block announcements.
 type announceData struct {
-	Hash   common.Hash // Hash of one particular block being announced
-	Number uint64      // Number of one particular block being announced
-	Header *modules.Header
+	Hash   common.Hash        // Hash of one particular block being announced
+	Number modules.ChainIndex // Number of one particular block being announced
+	Header modules.Header
 	Update keyValueList
 }
 
 // sign adds a signature to the block announcement by the given privKey
 func (a *announceData) sign(privKey *ecdsa.PrivateKey) {
-	rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number /*, a.Td*/})
+	rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number.Index /*, a.Td*/})
 	sig, _ := crypto.Sign(crypto.Keccak256(rlp), privKey)
 	a.Update = a.Update.add("sign", sig)
 }
@@ -164,9 +164,9 @@ func (a *announceData) checkSignature(pubKey *ecdsa.PublicKey) error {
 }
 
 type blockInfo struct {
-	Hash   common.Hash // Hash of one particular block being announced
-	Number uint64      // Number of one particular block being announced
-	Td     *big.Int    // Total difficulty of one particular block being announced
+	Hash   common.Hash         // Hash of one particular block being announced
+	Number *modules.ChainIndex // Number of one particular block being announced
+	Td     *big.Int            // Total difficulty of one particular block being announced
 }
 
 // getBlockHeadersData represents a block header query.
