@@ -51,6 +51,7 @@ Send the request for the registration administrator certificate to the fabric ca
 				ArgsUsage: "<address><name><data><affiliation>",
 				Category:  "CERT COMMANDS",
 				Description: `
+gptn cert new <address><name><data><affiliation>
 Send the registered user request to the fabric ca server.
 `,
 			},
@@ -64,6 +65,66 @@ Send the registered user request to the fabric ca server.
 gptn cert revoke <address><reason>
 
 Palletone sends a request to the fabric ca server to cancel the certificate, and CRL files are generated in the MSP directory.
+`,
+			},
+			{
+				Action:    utils.MigrateFlags(getHolderCertIDs),
+				Name:      "holderCertIds",
+				Usage:     "Gets the certificate associated with an address <address>",
+				ArgsUsage: "<address>",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert holdercert <address>
+
+Gets the certificate associated with an address from a digital certificate contract.
+`,
+			},
+			{
+				Action:    utils.MigrateFlags(getIssuerCertsInfo),
+				Name:      "issuerInfo",
+				Usage:     "Gets all certificate ID information issued by an address user <address>",
+				ArgsUsage: "<address>",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert issuerinfo <address>
+
+Gets all certificate ID information issued by an address user from the digital certificate system contract.
+`,
+			},
+			{
+				Action:    utils.MigrateFlags(getCertBytes),
+				Name:      "certBytes",
+				Usage:     "Gets the byte of the certificate <certid>",
+				ArgsUsage: "<certid>",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert certBytes <certid>
+
+Gets the byte of the certificate from the digital certificate contract.
+`,
+			},
+			{
+				Action:    utils.MigrateFlags(getCertHolder),
+				Name:      "getCertHolder",
+				Usage:     "Gets the holder address of the certificate <certid>",
+				ArgsUsage: "<certid>",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert getCertHolder <certid>
+
+Gets the holder address of the certificate from the digital certificate contract.
+`,
+			},
+			{
+				Action:    utils.MigrateFlags(getRootCAHoler),
+				Name:      "rootCAHoler",
+				Usage:     "Gets the holder of the CA certificate ",
+				ArgsUsage: "",
+				Category:  "CERT COMMANDS",
+				Description: `
+gptn cert rootCAHoler 
+
+Gets the holder of the CA certificate from the digital certificate contract.
 `,
 			},
 			{
@@ -142,7 +203,7 @@ func enrollUser(ctx *cli.Context) error {
 		utils.Fatalf("%v", err)
 	}
 
-	err = certficate.GenCert(*certinfo,cfg.Certficate)
+	err = certficate.GenCert(*certinfo, cfg.Certficate)
 
 	if err != nil {
 		fmt.Println("Gen cert errot")
@@ -168,7 +229,7 @@ func revoke(ctx *cli.Context) error {
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}
-	err = certficate.RevokeCert(address, reason,cfg.Certficate)
+	err = certficate.RevokeCert(address, reason, cfg.Certficate)
 	fmt.Println(address + "  Revoked  certificate  OK")
 	if err != nil {
 		return err
@@ -198,7 +259,7 @@ func getIndentity(ctx *cli.Context) error {
 }
 
 func getIndentities(ctx *cli.Context) error {
-	idtReps,err := certficate.GetIndentities()
+	idtReps, err := certficate.GetIndentities()
 	if err != nil {
 		return err
 	}
@@ -218,5 +279,95 @@ func getCaCertificateChain(ctx *cli.Context) error {
 		return err
 	}
 	fmt.Println(certchain)
+	return nil
+}
+
+func getHolderCertIDs(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		fmt.Println("No address to get,Please enter parameters <address>.")
+		return nil
+	}
+	cfg, _, err := maybeLoadConfig(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+	address := ctx.Args().First()
+	result, err := certficate.GetHolderCertIDs(address,cfg.Certficate)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Println(result)
+	return nil
+}
+
+func getCertBytes(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		fmt.Println("No certid to get,Please enter parameters <certid>.")
+		return nil
+	}
+	cfg, _, err := maybeLoadConfig(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+	certId := ctx.Args().First()
+	result, err := certficate.GetCertBytes(certId,cfg.Certficate)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Println(result)
+	return nil
+}
+
+func getCertHolder(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		fmt.Println("No certid to get,Please enter parameters <certid>.")
+		return nil
+	}
+	cfg, _, err := maybeLoadConfig(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+	certId := ctx.Args().First()
+	result, err := certficate.GetCertHolder(certId,cfg.Certficate)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Println(result)
+	return nil
+}
+
+func getRootCAHoler(ctx *cli.Context) error {
+	cfg, _, err := maybeLoadConfig(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+	result, err := certficate.GetRootCAHoler(cfg.Certficate)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Println(result)
+	return nil
+}
+
+func getIssuerCertsInfo(ctx *cli.Context) error {
+	cfg, _, err := maybeLoadConfig(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+	if len(ctx.Args()) == 0 {
+		fmt.Println("No address to get,Please enter parameters <address>.")
+		return nil
+	}
+	address := ctx.Args().First()
+	result, err := certficate.GetIssuerCertsInfo(address,cfg.Certficate)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Println(result)
 	return nil
 }

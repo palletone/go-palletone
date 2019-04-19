@@ -22,21 +22,29 @@ import (
 
 	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"io/ioutil"
 )
 
 const (
-	jsonrpc  = "2.0"
-	method = "ptn_ccinvoketx"
-	id = 1
-	amount = "100"
-	fee = "1"
-	)
+	jsonrpc      = "2.0"
+	invokemethod = "ptn_ccinvoketx"
+	querymethod  = "ptn_ccquery"
+	id           = 1
+	amount       = "100"
+	fee          = "1"
+)
 
 type CertRpc struct {
 	Jsonrpc string        `json:"jsonrpc"`
 	Methond string        `json:"method"`
 	Params  []interface{} `json:"params"`
 	Id      int           `json:"id"`
+}
+
+type FatRpc struct {
+	Jsonrpc string `json:"jsonrpc"`
+	Result  string `json:"result"`
+	Id      int    `json:"id"`
 }
 
 type CertINfo struct {
@@ -95,18 +103,21 @@ func CertChain2Result(cc client.CAGetCertResponse) CAGetCertChain {
 	}
 }
 
-func GenCert(certinfo CertINfo,cfg CAConfig) error {
+func GenCert(certinfo CertINfo, cfg CAConfig) error {
 	cainfo := CertInfo2Cainfo(certinfo)
 	//发送请求到CA server 注册用户 生成证书
 	certpem, err := cainfo.Enrolluser()
 	if err != nil {
 		return err
 	}
-	immediateca := cfg.Immediateca
+	immediateca := cfg.ImmediateCa
 	address := cainfo.EnrolmentId
+	url := cfg.CaUrl
+
 	//将证书byte 用户地址 通过rpc调用进行存储
 	if certpem != nil {
-		err = CertRpcReq(address,immediateca,certpem)
+
+		err = CertRpcReq(address, immediateca, certpem,url)
 		if err != nil {
 			return err
 		}
@@ -115,16 +126,17 @@ func GenCert(certinfo CertINfo,cfg CAConfig) error {
 	return nil
 }
 
-func RevokeCert(address string, reason string,cfg CAConfig) error {
-	caininfo := client.CaGenInfo{EnrolmentId:address}
-	crlPem,err := caininfo.Revoke(address, reason)
+func RevokeCert(address string, reason string, cfg CAConfig) error {
+	caininfo := client.CaGenInfo{EnrolmentId: address}
+	url := cfg.CaUrl
+	crlPem, err := caininfo.Revoke(address, reason)
 	if err != nil {
 		return err
 	}
-	immediateca := cfg.Immediateca
+	immediateca := cfg.ImmediateCa
 	//吊销证书后将crl byte 通过rpc发送请求 添加到合约中
 	if crlPem != nil {
-		err = CrlRpcReq(immediateca,crlPem)
+		err = CrlRpcReq(immediateca, crlPem,url)
 		if err != nil {
 			return err
 		}
@@ -166,32 +178,125 @@ func GetCaCertificateChain(caname string) (*CAGetCertChain, error) {
 	return &cc, nil
 }
 
-func RpcReq(params CertRpc) error {
-	reqJson, err := json.Marshal(params)
+// 获得某地址下关联的证书
+func GetHolderCertIDs(address string, cfg CAConfig) (string, error) {
+	method := "getHolderCertIDs"
+	url := cfg.CaUrl
+	body, err :=QueryRpcReq(method,address,url)
 	if err != nil {
-		return err
+		return "", err
+	}
+	var result FatRpc
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return "", err
 	}
 
-	httpReq, err := http.NewRequest("POST", "http://localhost:8545", bytes.NewBuffer(reqJson))
+	return result.Result, nil
+}
+
+// 获得某地址用户颁发的所有证书ID信息
+func GetIssuerCertsInfo(address string, cfg CAConfig) (string, error) {
+	method := "getIssuerCertsInfo"
+	url := cfg.CaUrl
+	body, err :=QueryRpcReq(method,address,url)
 	if err != nil {
-		return err
+		return "", err
+	}
+	var result FatRpc
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return "", err
+	}
+
+	return result.Result, nil
+}
+
+//获得证书字节
+func GetCertBytes(certid string, cfg CAConfig) (string, error) {
+	method := "getCertBytes"
+	url := cfg.CaUrl
+	body, err :=QueryRpcReq(method,certid,url)
+	if err != nil {
+		return "", err
+	}
+	var result FatRpc
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return "", err
+	}
+
+	return result.Result, nil
+}
+
+// 获取证书的持有者地址
+func GetCertHolder(certid string, cfg CAConfig) (string, error) {
+	method := "getCertHolder"
+	url := cfg.CaUrl
+	body, err :=QueryRpcReq(method,certid,url)
+	if err != nil {
+		return "", err
+	}
+	var result FatRpc
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return "", err
+	}
+
+	return result.Result, nil
+}
+
+// 获取CA证书的持有者
+func GetRootCAHoler(cfg CAConfig) (string, error) {
+	method := "getRootCAHoler"
+	url := cfg.CaUrl
+	body, err :=QueryRpcReq2(method,url)
+	if err != nil {
+		return "", err
+	}
+	var result FatRpc
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return "", err
+	}
+
+	return result.Result, nil
+}
+
+func RpcReq(params CertRpc,url string) ([]byte, error) {
+	reqJson, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(reqJson))
+	if err != nil {
+		return nil, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpClient := &http.Client{}
 	resp, err := httpClient.Do(httpReq)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer resp.Body.Close()
-
-
-	return nil
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
-func CertRpcReq(address string,immediateca string, certbyte []byte) error {
+
+func CertRpcReq(address string, immediateca string, certbyte []byte,url string) error {
 	params := CertRpc{}
 	params.Jsonrpc = jsonrpc
-	params.Methond = method
+	params.Methond = invokemethod
 	params.Id = id
 	from := immediateca
 	to := immediateca
@@ -202,17 +307,17 @@ func CertRpcReq(address string,immediateca string, certbyte []byte) error {
 
 	params.Params = append(params.Params, method2)
 
-	err := RpcReq(params)
-    if err != nil {
-    	return err
+	_, err := RpcReq(params,url)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func CrlRpcReq(immediateca string, crlbyte []byte) error {
+func CrlRpcReq(immediateca string, crlbyte []byte,url string) error {
 	params := CertRpc{}
 	params.Jsonrpc = jsonrpc
-	params.Methond = method
+	params.Methond = invokemethod
 	params.Id = id
 	from := immediateca
 	to := immediateca
@@ -223,9 +328,48 @@ func CrlRpcReq(immediateca string, crlbyte []byte) error {
 
 	params.Params = append(params.Params, method2)
 
-	err := RpcReq(params)
+	_, err := RpcReq(params,url)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+//GetIssuerCertsInfo rpc req
+func QueryRpcReq(data string,method string,url string) ([]byte, error) {
+	params := CertRpc{}
+	params.Jsonrpc = jsonrpc
+	params.Methond = querymethod
+	params.Id = id
+	contractid := syscontract.DigitalIdentityContractAddress.String()
+
+	method2 := []string{data, method}
+	params.Params = append(params.Params, contractid)
+
+	params.Params = append(params.Params, method2)
+
+	body, err := RpcReq(params,url)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
+}
+
+func QueryRpcReq2(method string,url string) ([]byte, error) {
+	params := CertRpc{}
+	params.Jsonrpc = jsonrpc
+	params.Methond = querymethod
+	params.Id = id
+	contractid := syscontract.DigitalIdentityContractAddress.String()
+
+	method2 := []string{method}
+	params.Params = append(params.Params, contractid)
+
+	params.Params = append(params.Params, method2)
+
+	body, err := RpcReq(params,url)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
