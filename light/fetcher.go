@@ -78,7 +78,7 @@ type headerFilterTask struct {
 
 // inject represents a schedules import operation.
 type inject struct {
-	origin string
+	origin *peer
 	header *modules.Header
 }
 
@@ -375,9 +375,9 @@ func (f *LightFetcher) loop() {
 // state.
 func (f *LightFetcher) forgetBlock(hash common.Hash) {
 	if insert := f.queued[hash]; insert != nil {
-		f.queues[insert.origin]--
-		if f.queues[insert.origin] == 0 {
-			delete(f.queues, insert.origin)
+		f.queues[insert.origin.id]--
+		if f.queues[insert.origin.id] == 0 {
+			delete(f.queues, insert.origin.id)
 		}
 		delete(f.queued, hash)
 	}
@@ -386,11 +386,11 @@ func (f *LightFetcher) forgetBlock(hash common.Hash) {
 // insert spawns a new goroutine to run a block insertion into the chain. If the
 // block's number is at the same height as the current import phase, it updates
 // the phase states accordingly.
-func (f *LightFetcher) insert(peer string, header *modules.Header) {
+func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 	hash := header.Hash()
 
 	// Run the import on a new thread
-	log.Debug("Importing propagated block insert DAG", "peer", peer, "number", header.Index(), "hash", hash)
+	log.Debug("Importing propagated block insert DAG", "peer", p.id, "number", header.Index(), "hash", hash)
 	go func() {
 		defer func() { f.done <- hash }()
 
@@ -416,15 +416,17 @@ func (f *LightFetcher) insert(peer string, header *modules.Header) {
 
 		default:
 			// Something went very wrong, drop the peer
-			log.Debug("Propagated block verification failed", "peer", peer, "number", header.Index(), "hash", hash, "err", err)
-			f.dropPeer(peer)
+			log.Debug("Propagated block verification failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
+			f.dropPeer(p.id)
 			return
 		}
+
 		// Run the actual import and log any issues
 		if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
-			log.Debug("Propagated block import failed", "peer", peer, "number", header.Index(), "hash", hash, "err", err)
+			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
 			return
 		}
+		p.headInfo = &announceData{Hash: header.Hash(), Number: header.Number.Index, Header: header}
 		// If import succeeded, broadcast the block
 		go f.broadcastHeader(header, false)
 
@@ -433,41 +435,41 @@ func (f *LightFetcher) insert(peer string, header *modules.Header) {
 
 // enqueue schedules a new future import operation, if the block to be imported
 // has not yet been seen.
-func (f *LightFetcher) enqueue(peer string, header *modules.Header) {
-	log.Debug("Enter LightFetcher enqueue", "peer id", peer, "header index:", header.Index())
+func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
+	log.Debug("Enter LightFetcher enqueue", "peer id", p.id, "header index:", header.Index())
 	defer log.Debug("End LightFetcher enqueue")
 	hash := header.Hash()
 	// Ensure the peer isn't DOSing us
-	count := f.queues[peer] + 1
+	count := f.queues[p.id] + 1
 	if count > blockLimit {
-		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", header.Index(), "hash", hash, "limit", blockLimit)
+		log.Debug("Discarded propagated block, exceeded allowance", "peer", p.id, "number", header.Index(), "hash", hash, "limit", blockLimit)
 		return
 	}
 	// Discard any past or too distant blocks
 	heightChain := int64(f.lightChainHeight(header.Number.AssetID))
 	if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", header.Index(), "heightChain", heightChain, "distance", dist)
+		log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(), "heightChain", heightChain, "distance", dist)
 		return
 	}
 	// Schedule the block for future importing
 	if _, ok := f.queued[hash]; !ok {
 		op := &inject{
-			origin: peer,
+			origin: p,
 			header: header,
 		}
-		f.queues[peer] = count
+		f.queues[p.id] = count
 		f.queued[hash] = op
 		f.queue.Push(op, -float32(header.Index()))
-		log.Debug("Queued propagated block", "peer", peer, "number", header.Index(), "hash", hash, "queued", f.queue.Size())
+		log.Debug("Queued propagated block", "peer", p.id, "number", header.Index(), "hash", hash, "queued", f.queue.Size())
 	}
 }
 
 // Enqueue tries to fill gaps the the fetcher's future import queue.
-func (f *LightFetcher) Enqueue(peer string, header *modules.Header) error {
-	log.Debug("Enter LightFetcher Enqueue", "peer id", peer, "header index:", header.Index())
+func (f *LightFetcher) Enqueue(p *peer, header *modules.Header) error {
+	log.Debug("Enter LightFetcher Enqueue", "peer id", p.id, "header index:", header.Index())
 	defer log.Debug("End LightFetcher Enqueue")
 	op := &inject{
-		origin: peer,
+		origin: p,
 		header: header,
 	}
 	select {

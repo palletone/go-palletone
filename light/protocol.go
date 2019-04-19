@@ -132,7 +132,7 @@ type announceBlock struct {
 type announceData struct {
 	Hash   common.Hash // Hash of one particular block being announced
 	Number uint64      // Number of one particular block being announced
-	Header modules.Header
+	Header *modules.Header
 	Update keyValueList
 }
 

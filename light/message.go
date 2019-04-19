@@ -43,8 +43,9 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 
 	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash, "header", req.Header)
 	if pm.fetcher != nil {
-		pm.fetcher.Enqueue(p.id, &req.Header)
+		pm.fetcher.Enqueue(p, req.Header)
 	}
+	p.headInfo = &req
 	return nil
 }
 
