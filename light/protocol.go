@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // Constants to match up protocol versions and messages
@@ -131,8 +132,7 @@ type announceBlock struct {
 type announceData struct {
 	Hash   common.Hash // Hash of one particular block being announced
 	Number uint64      // Number of one particular block being announced
-	//Td         *big.Int    // Total difficulty of one particular block being announced
-	//ReorgDepth uint64
+	Header modules.Header
 	Update keyValueList
 }
 

@@ -39,7 +39,7 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 			}
 
 			self.BroadcastUnit(event.Unit, true)
-			self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
+			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
 		case <-self.newProducedUnitSub.Err():
 			return

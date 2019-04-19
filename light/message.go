@@ -1,7 +1,7 @@
 package light
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -22,8 +22,14 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	var req announceData
-	if err := msg.Decode(&req); err != nil {
+	var data []byte
+	if err := msg.Decode(&data); err != nil {
 		log.Error("AnnounceMsg", "Decode err", err, "msg", msg)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+
+	if err := json.Unmarshal(data, &req); err != nil {
+		log.Error("AnnounceMsg", "Unmarshal err", err, "data", data)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
@@ -35,10 +41,10 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		log.Trace("Valid announcement signature")
 	}
 
-	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash /*, "td", req.Td, "reorg", req.ReorgDepth*/)
-	//if pm.fetcher != nil {
-	//	pm.fetcher.announce(p, &req)
-	//}
+	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash, "header", req.Header)
+	if pm.fetcher != nil {
+		pm.fetcher.Enqueue(p.id, &req.Header)
+	}
 	return nil
 }
 
@@ -140,14 +146,14 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	p.fcServer.GotReply(resp.ReqID, resp.BV)
-	if pm.fetcher != nil && pm.fetcher.requestedID(resp.ReqID) {
-		pm.fetcher.deliverHeaders(p, resp.ReqID, resp.Headers)
-	} else {
-		err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
-		if err != nil {
-			log.Debug(fmt.Sprint(err))
-		}
-	}
+	//if pm.fetcher != nil && pm.fetcher.requestedID(resp.ReqID) {
+	//	pm.fetcher.deliverHeaders(p, resp.ReqID, resp.Headers)
+	//} else {
+	//	err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
+	//	if err != nil {
+	//		log.Debug(fmt.Sprint(err))
+	//	}
+	//}
 	return nil
 }
 

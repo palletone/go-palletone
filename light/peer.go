@@ -185,7 +185,10 @@ func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
 
 // SendAnnounce announces the availability of a number of blocks through
 // a hash notification.
-func (p *peer) SendAnnounce(request announceData) error {
+//func (p *peer) SendAnnounce(request announceData) error {
+//	return p2p.Send(p.rw, AnnounceMsg, request)
+//}
+func (p *peer) SendRawAnnounce(request []byte /*announceData*/) error {
 	return p2p.Send(p.rw, AnnounceMsg, request)
 }
 

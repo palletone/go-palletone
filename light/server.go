@@ -310,7 +310,7 @@ func (pm *ProtocolManager) blockLoop() {
 
 						log.Debug("Announcing block to peers", "hash", hash, "number", number)
 
-						announce := announceData{Hash: hash, Number: number}
+						announce := announceData{Hash: hash, Number: number, Header: *lastHead}
 						var (
 							signed         bool
 							signedAnnounce announceData

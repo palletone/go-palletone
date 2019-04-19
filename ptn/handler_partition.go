@@ -18,6 +18,7 @@
  */
 package ptn
 
+/*
 import (
 	"errors"
 	"strings"
@@ -215,3 +216,4 @@ func (pm *ProtocolManager) Corss() []string {
 func (pm *ProtocolManager) CorsPeerInfo(protocl string) []string {
 	return nil
 }
+*/

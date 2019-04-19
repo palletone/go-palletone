@@ -25,12 +25,14 @@ import (
 	"net"
 	"sync"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
@@ -100,7 +102,7 @@ type ProtocolManager struct {
 	retriever *retrieveManager
 
 	downloader *downloader.Downloader
-	fetcher    *lightFetcher
+	fetcher    *LightFetcher
 	peers      *peerSet
 	maxPeers   int
 
@@ -197,13 +199,55 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		removePeer = func(id string) {}
 	}
 
-	if lightSync {
+	if manager.lightSync {
 		manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
 		manager.peers.notify((*downloaderPeerNotify)(manager))
-		manager.fetcher = newLightFetcher(manager)
+		manager.fetcher = manager.newLightFetcher()
 	}
 
 	return manager, nil
+}
+
+func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
+	headerVerifierFn := func(header *modules.Header) error {
+		//hash := header.Hash()
+		//log.Debugf("Importing propagated block insert DAG Enter ValidateUnitExceptGroupSig, unit: %s", hash.String())
+		//defer log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s", hash.String())
+		//verr := pm.dag.ValidateUnitExceptGroupSig(unit)
+		//if verr != nil && !validator.IsOrphanError(verr) {
+		//	return dagerrors.ErrFutureBlock
+		//}
+		//TODO must modify
+		return dagerrors.ErrFutureBlock
+	}
+	headerBroadcaster := func(header *modules.Header, propagate bool) {
+		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
+		//pm.BroadcastLocalLightHeader(header)
+	}
+	inserter := func(headers []*modules.Header) (int, error) {
+		// If fast sync is running, deny importing weird blocks
+		//TODO must add lock
+		//if pm.lightSync {
+		//	log.Warn("Discarded lighting sync propagated block", "number", headers[0].Number.Index, "hash", headers[0].Hash())
+		//	return 0, errors.New("fasting sync")
+		//}
+		log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		return pm.dag.InsertLightHeader(headers)
+	}
+	return newLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
+		headerBroadcaster, inserter, pm.removePeer)
+}
+
+func (pm *ProtocolManager) BroadcastLocalLightHeader(header *modules.Header) {
+	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
+	//
+	//hash := header.Hash()
+	//peers := pm.peers.PeersWithoutLightHeader(hash)
+	//for _, peer := range peers {
+	//	peer.SendLightHeader(header)
+	//}
+	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
+	return
 }
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
@@ -335,7 +379,15 @@ func (pm *ProtocolManager) handle(p *peer) error {
 				//	log.Error("rlp.DecodeBytes", "err", err)
 				//	return
 				//}
-				p.SendAnnounce(announce)
+				data, err := json.Marshal(announce)
+				if err != nil {
+					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
+				} else {
+					p.SendRawAnnounce(data)
+				}
+				//if err := p.SendRawAnnounce(announce); err != nil {
+				//	log.Error("Light Palletone ProtocolManager->handle", "SendAnnounce err", err)
+				//}
 			case <-stop:
 				return
 			}

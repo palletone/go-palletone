@@ -142,9 +142,9 @@ func (pm *ProtocolManager) syncer() {
 	defer pm.fetcher.Stop()
 	defer pm.downloader.Terminate()
 
-	pm.lightFetcher.Start()
-	defer pm.lightFetcher.Stop()
-	defer pm.lightdownloader.Terminate()
+	//pm.lightFetcher.Start()
+	//defer pm.lightFetcher.Stop()
+	//defer pm.lightdownloader.Terminate()
 
 	// Wait for different events to fire synchronisation operations
 	forceSync := time.NewTicker(forceSyncCycle)
@@ -186,9 +186,10 @@ func (pm *ProtocolManager) syncall() {
 	if pm.SubProtocols[0].Name != ProtocolName {
 		return
 	}
-	pm.lightsync(peer)
+	//pm.lightsync(peer)
 }
 
+/*
 func (pm *ProtocolManager) lightsync(peer *peer) {
 	if peer == nil {
 		log.Debug("ProtocolManager lightsync peer is nil")
@@ -205,7 +206,7 @@ func (pm *ProtocolManager) lightsync(peer *peer) {
 		pm.lightsynchronise(peer, header.ChainIndex().AssetID)
 	}
 }
-
+*/
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	// Short circuit if no peers are available
@@ -267,6 +268,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	}
 }
 
+/*
 func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.AssetId) {
 	// Short circuit if no peers are available
 	if peer == nil {
@@ -307,7 +309,7 @@ func (pm *ProtocolManager) lightsynchronise(peer *peer, assetId modules.AssetId)
 		go pm.BroadcastLocalLightHeader(head)
 	}
 }
-
+*/
 func (pm *ProtocolManager) getMaxNodes(headers []*modules.Header, assetId modules.AssetId) (*modules.Header, error) {
 	size := len(headers)
 	if size == 0 {
