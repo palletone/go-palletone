@@ -20,6 +20,7 @@ script:
     - cd ../dct
     #- ./deposit_test.sh 4
     - python -m robot.run ../testcase/createTrans
+    - python -m robot.run ../testcase/ccinvoke/ccinvokePass
     - python -m robot.run ../testcase/ccinvoke/transferToken 
 after_success:
     - killall gptn
