@@ -98,7 +98,7 @@ func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) er
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transaction) ([]*modules.Message, error) {
+func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transaction, elf []modules.ElectionInf) ([]*modules.Message, error) {
 	if tx == nil || len(tx.TxMessages) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
@@ -140,6 +140,9 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_DEPLOY_REQUEST TplId(%s) err:%s", req.templateId, err))
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
+				if len(elf) > 0 {
+					payload.EleList = elf
+				}
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload))
 				return msgs, nil
 			}

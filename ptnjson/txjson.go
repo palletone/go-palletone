@@ -58,6 +58,7 @@ type DeployJson struct {
 	Name       string   `json:"name"`
 	Args       [][]byte `json:"args"` // contract arguments list
 	Jury       []string `json:"jury"`
+	EleList    string   `json:"election_list"`
 	ReadSet    string   `json:"read_set"`
 	WriteSet   string   `json:"write_set"`
 }
@@ -84,8 +85,8 @@ type VoteJson struct {
 }
 
 type InvokeRequestJson struct {
-	ContractAddr string `json:"contract_addr"`
-	FunctionName string `json:"function_name"`
+	ContractAddr string   `json:"contract_addr"`
+	FunctionName string   `json:"function_name"`
 	Args         []string `json"arg_set"`
 }
 
@@ -96,16 +97,16 @@ type InstallRequestJson struct {
 }
 
 type DeployRequestJson struct {
-	TplId   string `json:"tpl_id"`
-	TxId    string `json:"tx_id"`
-	Args    []string `json:"arg_set"`
+	TplId   string        `json:"tpl_id"`
+	TxId    string        `json:"tx_id"`
+	Args    []string      `json:"arg_set"`
 	Timeout time.Duration `json:"timeout"`
 }
 
 type StopRequestJson struct {
 	ContractId  string `json:"contract_id"`
 	Txid        string `json:"tx_id"`
-	DeleteImage bool `json:"delete_image"`
+	DeleteImage bool   `json:"delete_image"`
 }
 type DataJson struct {
 	MainData  string `json:"main_data"`
@@ -184,9 +185,11 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	hash.SetBytes(deploy.ContractId[:])
 	djson.ContractId = hash.String()
 	djson.Args = deploy.Args
-	for _, addr := range deploy.Jury {
-		djson.Jury = append(djson.Jury, addr.String())
-	}
+	//for _, addr := range deploy.Jury {
+	//	djson.Jury = append(djson.Jury, addr.String())
+	//}
+	ele, _ := json.Marshal(deploy.EleList)
+	djson.EleList = string(ele)
 	rset, _ := json.Marshal(deploy.ReadSet)
 	djson.ReadSet = string(rset)
 	wset, _ := json.Marshal(deploy.WriteSet)

@@ -1167,8 +1167,8 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	if rep.statedb.SaveContractState(payload.ContractId, "ContractName", payload.Name, version) != nil {
 		return false
 	}
-	// save contract jury list
-	if rep.statedb.SaveContractState(payload.ContractId, "ContractJury", payload.Jury, version) != nil {
+	//save contract election
+	if rep.statedb.SaveContractState(payload.ContractId, "ElectionList", payload.EleList, version) != nil {
 		return false
 	}
 	return true

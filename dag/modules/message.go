@@ -92,6 +92,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 			TemplateId: payload.TemplateId,
 			ContractId: payload.ContractId,
 			Args:       payload.Args,
+			EleList:    payload.EleList,
 			//ExecutionTime: payload.ExecutionTime,
 		}
 		readSet := []ContractReadSet{}
@@ -325,10 +326,18 @@ func (delState DelContractState) SetBytes(b []byte) error {
 	return nil
 }
 
+//node election
+type ElectionInf struct {
+	VData     []byte      `json:"vdata"`      //vrf data, no use
+	AddrHash  common.Hash `json:"addr_hash"`  //common.Address将地址hash后，返回给请求节点
+	Proof     []byte      `json:"proof"`      //vrf proof
+	PublicKey []byte      `json:"public_key"` //alg.PublicKey, rlp not support
+}
+
 type ContractReadSet struct {
-	Key     string
-	Version *StateVersion
-	Value   []byte
+	Key     string        `json:"key"`
+	Version *StateVersion `json:"version"`
+	Value   []byte        `json:"value"`
 }
 
 //请求合约信息
@@ -393,13 +402,14 @@ type ContractTplPayload struct {
 
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId []byte             `json:"template_id"` // contract template id
-	ContractId []byte             `json:"contract_id"` // contract id
-	Name       string             `json:"name"`        // the name for contract
-	Args       [][]byte           `json:"args"`        // contract arguments list
-	Jury       []common.Address   `json:"jury"`        // contract jurors list
-	ReadSet    []ContractReadSet  `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet   []ContractWriteSet `json:"write_set"`   // the set data of write, and value could be any type
+	TemplateId []byte             `json:"template_id"`   // contract template id
+	ContractId []byte             `json:"contract_id"`   // contract id
+	Name       string             `json:"name"`          // the name for contract
+	Args       [][]byte           `json:"args"`          // contract arguments list
+	EleList    []ElectionInf      `json:"election_list"` // contract jurors list
+	ReadSet    []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
+	//Jury       []common.Address   `json:"jury"`          // contract jurors list
 }
 
 // Contract invoke message
@@ -443,8 +453,6 @@ type ContractInstallRequestPayload struct {
 	TplName string `json:"tpl_name"`
 	Path    string `json:"install_path"`
 	Version string `json:"tpl_version"`
-}
-type ContractTplRequestPayload struct {
 }
 
 type ContractDeployRequestPayload struct {
@@ -515,16 +523,15 @@ func NewContractTplPayload(templateId []byte, name string, path string, version 
 }
 
 func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte, excutiontime time.Duration,
-	jury []common.Address, readset []ContractReadSet, writeset []ContractWriteSet) *ContractDeployPayload {
+	jury []common.Address, elf []ElectionInf, readset []ContractReadSet, writeset []ContractWriteSet) *ContractDeployPayload {
 	return &ContractDeployPayload{
 		TemplateId: templateid,
 		ContractId: contractid,
 		Name:       name,
 		Args:       args,
-		//ExecutionTime: excutiontime,
-		Jury:     jury,
-		ReadSet:  readset,
-		WriteSet: writeset,
+		EleList:    elf,
+		ReadSet:    readset,
+		WriteSet:   writeset,
 	}
 }
 
@@ -545,6 +552,19 @@ func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte,
 		//TokenSupply:   tokenSupply,
 		//TokenDefine:   tokenDefine,
 	}
+}
+
+func (a *ElectionInf) Equal(b *ElectionInf) bool {
+	if b == nil {
+		return false
+	}
+	if !bytes.Equal(a.VData, b.VData) || !bytes.Equal(a.Proof, b.Proof) || !bytes.Equal(a.PublicKey, b.PublicKey) {
+		return false
+	}
+	if !bytes.Equal(a.AddrHash[:], b.AddrHash[:]) {
+		return false
+	}
+	return true
 }
 
 func (a *ContractReadSet) Equal(b *ContractReadSet) bool {
@@ -602,9 +622,18 @@ func (a *ContractDeployPayload) Equal(b *ContractDeployPayload) bool {
 	} else {
 		return false
 	}
-	if len(a.Jury) == len(b.Jury) {
-		for i := 0; i < len(a.Jury); i++ {
-			if !a.Jury[i].Equal(b.Jury[i]) {
+	//if len(a.Jury) == len(b.Jury) {
+	//	for i := 0; i < len(a.Jury); i++ {
+	//		if !a.Jury[i].Equal(b.Jury[i]) {
+	//			return false
+	//		}
+	//	}
+	//} else {
+	//	return false
+	//}
+	if len(a.EleList) == len(b.EleList) {
+		for i := 0; i < len(a.EleList); i++ {
+			if !a.EleList[i].Equal(&b.EleList[i]) {
 				return false
 			}
 		}

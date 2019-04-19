@@ -58,7 +58,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	return nil
 }
 
-func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []ElectionInf) error {
+func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.ElectionInf) error {
 	reqId := tx.RequestHash()
 	if _, ok := p.mtx[reqId]; ok {
 		return nil
@@ -78,7 +78,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []ElectionInf
 	log.Debug("contractExecEvent", "add tx req id", reqId)
 
 	if !tx.IsSystemContract() { //系统合约在UNIT构建前执行
-		go p.runContractReq(reqId)
+		go p.runContractReq(reqId, ele)
 	}
 	//broadcast contract request transaction event
 	event := &ContractEvent{
@@ -90,13 +90,13 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []ElectionInf
 	return nil
 }
 
-func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []ElectionInf) error {
+func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.ElectionInf) error {
 	reqId := tx.RequestHash()
 	if _, ok := p.mtx[reqId]; !ok {
 		log.Debug("contractSigEvent", "local not find reqId,create it", reqId.String())
 		p.locker.Lock()
 		p.mtx[reqId] = &contractTx{
-			reqTx:  tx.GetRequestTx(), 
+			reqTx:  tx.GetRequestTx(),
 			eleInf: ele,
 			tm:     time.Now(),
 			valid:  true,
@@ -105,7 +105,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []ElectionInf)
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
 		p.locker.Unlock()
 
-		go p.runContractReq(reqId)
+		go p.runContractReq(reqId, ele)
 		return nil
 	}
 	ctx := p.mtx[reqId]
