@@ -35,6 +35,8 @@ before_install:
  
 install: 
     - python -V
+    - whereis python
+    - which python
     - sudo -H pip install --upgrade pip
     - sudo -H pip install robotframework==2.8.5
     - sudo -H pip install requests
