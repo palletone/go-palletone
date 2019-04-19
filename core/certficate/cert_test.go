@@ -18,7 +18,7 @@
  *
  */
 package certficate
-
+//
 //type TestCertRpc struct {
 //	Jsonrpc string `json:"jsonrpc"`
 //	Methond string `json:"method"`
@@ -28,22 +28,72 @@ package certficate
 //
 //
 //func TestGenCert(t *testing.T) {
-//	certinfo := NewCertInfo("P19Q28wvSycuPEwxc5J4vyxU6inUy1USkD2", "lkk", "HiPalletone", "user", "gptn.mediator1", true)
-//	cainfo := CertInfo2Cainfo(*certinfo)
-//	certpem, err := cainfo.Enrolluser()
 //
-//   t.Log(string(certpem))
+//	certinfo := NewCertInfo("P15dtShJp7FpdgxCqT6RwZGKdfSSdkRk7GQ", "lkk", "HiPalletone", "user", "gptn.mediator1", true)
+//	cainfo := CertInfo2Cainfo(*certinfo)
+//	//发送请求到CA server 注册用户 生成证书
+//	certpem, err := cainfo.Enrolluser()
+//	if err != nil {
+//		t.Log(err)
+//	}
+//	err = CertRpcReq("P15dtShJp7FpdgxCqT6RwZGKdfSSdkRk7GQ","P1CdJcmn4J7tUwbJpUNpML4XQ3F2nckJgiX",certpem,"http://localhost:8545")
+//	t.Log(err)
+//
+//	}
+
+//
+//func TestRPC(t *testing.T) {
+//	params := TestCertRpc{}
+//	params.Jsonrpc = "2.0"
+//  params.Methond = "wallet_getBalance"
+//	params.Params = []string{"P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD"}
+//	params.Id = 1
+//
+//	reqJson, err := json.Marshal(params)
+//	if err != nil {
+//		  t.Log(err)
+//	}
+//  t.Log(string(reqJson))
+//	httpReq, err := http.NewRequest("POST", "http://123.126.106.82:38545", bytes.NewBuffer(reqJson))
+//	if err != nil {
+//		t.Log(err)
+//	}
+//	httpReq.Header.Set("Content-Type", "application/json")
+//	httpClient := &http.Client{}
+//	resp, err := httpClient.Do(httpReq)
+//	if err != nil {
+//		t.Log(err)
+//	}
+//
+//	defer resp.Body.Close()
+//
+//	body, err := ioutil.ReadAll(resp.Body)
+//	if err != nil {
+//		t.Log(err)
+//	}
+//	t.Log(string(body))
+//}
+
+//func TestCertCRL(t *testing.T) {
+//	address := "P1KE4okveuNPmfrHCZQy7cgTczv9VG7npPQ"
+//	reason := "no resaon"
+//	certinfo := NewCertInfo(address, "lkk", "HiPalletone", "user", "gptn.mediator1", true)
+//	cainfo := CertInfo2Cainfo(*certinfo)
+//	crlPem,err := cainfo.Revoke(address, reason)
+//	t.Log(err)
+//
+//   t.Log(string(crlPem))
 //	params := TestCertRpc{}
 //	params.Jsonrpc = "2.0"
 //	params.Methond = "ptn_ccinvoketx"
 //	params.Id = 1
-//	form := "P13ZJ4ypNcJnkMt2UaVs4XHjdjyJrwy5sVN"
-//	to := "P13ZJ4ypNcJnkMt2UaVs4XHjdjyJrwy5sVN"
+//	form := "P1CdJcmn4J7tUwbJpUNpML4XQ3F2nckJgiX"
+//	to := "P1CdJcmn4J7tUwbJpUNpML4XQ3F2nckJgiX"
 //	amount := "100"
 //	fee := "1"
 //	contractid := syscontract.DigitalIdentityContractAddress.String()
 //	//method1 := []string{"P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","100","1","PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"}
-//	method2 := []string{"addServerCert","P19Q28wvSycuPEwxc5J4vyxU6inUy1USkD2",string(certpem)}
+//	method2 := []string{"addCRL",string(crlPem)}
 //	//method2 := TestAddCertJson{ []string{"addServerCert","P1HrTpdqBmCrNhJMGREu7vtyzmhCiPiztkL","E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\data\\certs\\openssl\\powerca\\certs\\powerca.cert.pem"}}
 //	params.Params = append(params.Params,form,to,amount,fee,contractid)
 //	//params.Params = append(params.Params,str2)
@@ -73,20 +123,28 @@ package certficate
 //	t.Log(string(body))
 //	}
 
+//func TestQueryCert(t *testing.T) {
+//	//address := "P13pnwkoUmWCxcW6xmLfhpiPHJbWaztSaYg"
+//	//certinfo := NewCertInfo(address, "lkk", "HiPalletone", "user", "gptn.mediator1", true)
+//	//cainfo := CertInfo2Cainfo(*certinfo)
 //
-//func TestRPC(t *testing.T) {
 //	params := TestCertRpc{}
 //	params.Jsonrpc = "2.0"
-//   params.Methond = "wallet_getBalance"
-//	params.Params = []string{"P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD"}
+//	params.Methond = "ptn_ccquery"
 //	params.Id = 1
-//
+//	contractid := syscontract.DigitalIdentityContractAddress.String()
+//	//method1 := []string{"P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","P15UfoQzo93aSM3R2rDVHemiDJoMKRSLoaD","100","1","PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"}
+//	method2 := []string{"getRootCAHoler"}
+//	//method2 := TestAddCertJson{ []string{"addServerCert","P1HrTpdqBmCrNhJMGREu7vtyzmhCiPiztkL","E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\data\\certs\\openssl\\powerca\\certs\\powerca.cert.pem"}}
+//	params.Params = append(params.Params,contractid)
+//	//params.Params = append(params.Params,str2)
+//	params.Params = append(params.Params,method2)
 //	reqJson, err := json.Marshal(params)
 //	if err != nil {
-//		  t.Log(err)
+//		t.Log(err)
 //	}
-//   t.Log(string(reqJson))
-//	httpReq, err := http.NewRequest("POST", "http://123.126.106.82:38545", bytes.NewBuffer(reqJson))
+//	t.Log(string(reqJson))
+//	httpReq, err := http.NewRequest("POST", "http://localhost:8545", bytes.NewBuffer(reqJson))
 //	if err != nil {
 //		t.Log(err)
 //	}
@@ -103,5 +161,7 @@ package certficate
 //	if err != nil {
 //		t.Log(err)
 //	}
-//	t.Log(string(body))
-//}
+//	var result FatRpc
+//	json.Unmarshal(body,&result)
+//	t.Log(result.Result)
+//	}

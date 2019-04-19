@@ -26,7 +26,7 @@ type SysParameters struct {
 	GenerateUnitReward      uint64  //每产生一个Unit奖励多少Dao的Token
 }
 
-var CurrentSysParameters = SysParameters{
+var CurrentSysParameters = &SysParameters{
 	TxCoinDayInterest:       0.01 / 365,
 	DepositContractInterest: 0.02 / 365,
 	GenerateUnitReward:      100000000,

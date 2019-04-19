@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/accounts"
 	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type vrfAccount struct {
@@ -214,7 +215,7 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 	if proof != nil {
 		rstEvt := &ElectionResultEvent{
 			ReqId: reqEvt.ReqId,
-			Ele:   ElectionInf{AddrHash: addrHash, Proof: proof, PublicKey: pubKey},
+			Ele:   modules.ElectionInf{AddrHash: addrHash, Proof: proof, PublicKey: pubKey},
 		}
 		log.Debug("ProcessElectionRequestEvent", "ok, reqId", reqEvt.ReqId.String())
 		evt := &ElectionEvent{EType: ELECTION_EVENT_RESULT, Event: rstEvt}
@@ -278,7 +279,7 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 	p.locker.Lock()
 	p.mel[reqId] = &electionVrf{
 		eChan: make(chan bool, 1),
-		eInf:  make([]ElectionInf, 0),
+		eInf:  make([]modules.ElectionInf, 0),
 		req:   true,
 		tm:    time.Now(),
 	}

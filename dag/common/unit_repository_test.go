@@ -136,7 +136,7 @@ func TestSaveUnit(t *testing.T) {
 		},
 	}
 	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
-		"testDeploy", nil, 10, nil, readSet, writeSet)
+		"testDeploy", nil, 10, nil, nil, readSet, writeSet)
 
 	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),
@@ -440,7 +440,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		Name:       "testdeploy",
 		Args:       [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
 		//ExecutionTime: et,
-		Jury:     []common.Address{addr},
+		//Jury:     []common.Address{addr},
 		ReadSet:  readSet,
 		WriteSet: writeSet,
 	}
@@ -542,35 +542,35 @@ func TestComputeTxFees(t *testing.T) {
 	txs = append(txs, tx)
 
 	//	log.Info("TestComputeTxFees", "txs:", tx)
-/*
-	//2
-	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04}}
-	aId = modules.AssetId{'p', 't', 'n'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
+	/*
+		//2
+		pks = [][]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}}
+		aId = modules.AssetId{'p', 't', 'n'}
+		tx = creatFeeTx(true, pks, 10, aId)
+		txs = append(txs, tx)
 
-	//3
-	pks = [][]byte{
-		{0x05}, {0x06}, {0x07}, {0x08}}
-	aId = modules.AssetId{'p', 't', 'n'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
+		//3
+		pks = [][]byte{
+			{0x05}, {0x06}, {0x07}, {0x08}}
+		aId = modules.AssetId{'p', 't', 'n'}
+		tx = creatFeeTx(true, pks, 10, aId)
+		txs = append(txs, tx)
 
-	//4
-	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04}}
-	aId = modules.AssetId{'a', 'b', 'c'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
+		//4
+		pks = [][]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}}
+		aId = modules.AssetId{'a', 'b', 'c'}
+		tx = creatFeeTx(true, pks, 10, aId)
+		txs = append(txs, tx)
 
-	//5
-	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04}}
-	aId = modules.AssetId{'a', 'b', 'c'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
-*/
+		//5
+		pks = [][]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}}
+		aId = modules.AssetId{'a', 'b', 'c'}
+		tx = creatFeeTx(true, pks, 10, aId)
+		txs = append(txs, tx)
+	*/
 	//log.Info("TestComputeTxFees", "txs:", txs)
 	ads, err := ComputeTxFees(&m, txs)
 	log.Info("TestComputeTxFees", "txs:", ads)

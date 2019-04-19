@@ -226,7 +226,9 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		log.Error("getTxSimulator err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
-	usrccName := templateCC.Name //+ "_" + txId
+	btxId, err := hex.DecodeString(txId)
+	depId := common.NewAddress(btxId[:20], common.ContractHash)
+	usrccName := depId.String()+":"+templateCC.Name //+ "_" + txId
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -245,8 +247,6 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		log.Error("deployUserCC err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
-	btxId, err := hex.DecodeString(txId)
-	depId := common.NewAddress(btxId[:20], common.ContractHash)
 	cc := &cclist.CCInfo{
 		Id:      depId[:],
 		Name:    usrccName,
@@ -333,6 +333,8 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
 	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 	//}
+	//TODO
+	getRT(cc)
 	fmt.Println("Invoke result:==========================================================", unit)
 	return unit, nil
 }

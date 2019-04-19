@@ -20,7 +20,6 @@
 package modules
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/palletone/go-palletone/common"
@@ -151,7 +150,7 @@ func (gp *GlobalProperty) IsPrecedingMediator(add common.Address) bool {
 
 func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 	if index < 0 || index > gp.ActiveMediatorsCount()-1 {
-		log.Error(fmt.Sprintf("%v is out of the bounds of active mediator list!", index))
+		log.Errorf("%v is out of the bounds of active mediator list!", index)
 	}
 
 	meds := gp.GetActiveMediators()

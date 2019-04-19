@@ -98,7 +98,7 @@ func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) er
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transaction) ([]*modules.Message, error) {
+func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transaction, elf []modules.ElectionInf) ([]*modules.Message, error) {
 	if tx == nil || len(tx.TxMessages) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
@@ -140,6 +140,9 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_DEPLOY_REQUEST TplId(%s) err:%s", req.templateId, err))
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
+				if len(elf) > 0 {
+					payload.EleList = elf
+				}
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload))
 				return msgs, nil
 			}
@@ -304,8 +307,11 @@ func handleArg1(tx *modules.Transaction, reqArgs [][]byte) ([][]byte, error) {
 
 func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transaction) (bool, error) {
 	var recvSigMsg *modules.Message
-
-	if local == nil || recv == nil {
+	if local == nil {
+		log.Info("checkAndAddTxSigMsgData, local sig msg not exist")
+		return false, nil
+	}
+	if recv == nil {
 		return false, errors.New("checkAndAddTxSigMsgData param is nil")
 	}
 	if len(local.TxMessages) != len(recv.TxMessages) {
@@ -461,14 +467,15 @@ func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
 
 func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageType) (interface{}, error) {
 	if tx == nil {
-		return modules.APP_UNKNOW, errors.New("getContractTxType get param is nil")
+		return nil, errors.New("getContractTxType get param is nil")
 	}
 	for _, msg := range tx.TxMessages {
 		if msg.App == msgType {
 			return msg.Payload, nil
 		}
 	}
-	return modules.APP_UNKNOW, errors.New("getContractTxContractInfo not find")
+	log.Debug("getContractTxContractInfo", " not find msgType", msgType)
+	return nil, nil
 }
 
 func getElectionSeedData(in common.Hash) ([]byte, error) {
@@ -514,7 +521,7 @@ func electionWeightValue(total uint64) (val uint64) {
 		return 15
 	} else if total > 200 && total <= 500 {
 		return 17
-	}else if total >500{
+	} else if total > 500 {
 		return 20
 	}
 	return 4

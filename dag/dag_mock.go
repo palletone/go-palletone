@@ -1133,3 +1133,15 @@ func (mr *MockIDagMockRecorder) ValidateUnitExceptGroupSig(unit interface{}) *go
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnitExceptGroupSig", reflect.TypeOf((*MockIDag)(nil).ValidateUnitExceptGroupSig), unit)
 }
+
+// RefreshSysParameters mocks base method
+func (m *MockIDag) RefreshSysParameters() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RefreshSysParameters")
+}
+
+// RefreshSysParameters indicates an expected call of RefreshSysParameters
+func (mr *MockIDagMockRecorder) RefreshSysParameters() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshSysParameters", reflect.TypeOf((*MockIDag)(nil).RefreshSysParameters))
+}
