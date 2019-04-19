@@ -146,23 +146,21 @@ func (a *announceData) sign(privKey *ecdsa.PrivateKey) {
 // checkSignature verifies if the block announcement has a valid signature by the given pubKey
 func (a *announceData) checkSignature(pubKey *ecdsa.PublicKey) error {
 	return nil
-	/*
-		var sig []byte
-		if err := a.Update.decode().get("sign", &sig); err != nil {
-			return err
-		}
-		rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number, a.Td})
-		recPubkey, err := secp256k1.RecoverPubkey(crypto.Keccak256(rlp), sig)
-		if err != nil {
-			return err
-		}
-		pbytes := elliptic.Marshal(pubKey.Curve, pubKey.X, pubKey.Y)
-		if bytes.Equal(pbytes, recPubkey) {
-			return nil
-		} else {
-			return errors.New("Wrong signature")
-		}
-	*/
+	//var sig []byte
+	//if err := a.Update.decode().get("sign", &sig); err != nil {
+	//	return err
+	//}
+	//rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number})
+	//recPubkey, err := secp256k1.RecoverPubkey(crypto.Keccak256(rlp), sig)
+	//if err != nil {
+	//	return err
+	//}
+	//pbytes := elliptic.Marshal(pubKey.Curve, pubKey.X, pubKey.Y)
+	//if bytes.Equal(pbytes, recPubkey) {
+	//	return nil
+	//} else {
+	//	return errors.New("Wrong signature")
+	//}
 }
 
 type blockInfo struct {

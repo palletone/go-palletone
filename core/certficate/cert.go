@@ -115,11 +115,19 @@ func GenCert(certinfo CertINfo,cfg CAConfig) error {
 	return nil
 }
 
-func RevokeCert(address string, reason string) error {
-	caininfo := client.CaGenInfo{}
-	err := caininfo.Revoke(address, reason)
+func RevokeCert(address string, reason string,cfg CAConfig) error {
+	caininfo := client.CaGenInfo{EnrolmentId:address}
+	crlPem,err := caininfo.Revoke(address, reason)
 	if err != nil {
 		return err
+	}
+	immediateca := cfg.Immediateca
+	//吊销证书后将crl byte 通过rpc发送请求 添加到合约中
+	if crlPem != nil {
+		err = CrlRpcReq(immediateca,crlPem)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -158,19 +166,7 @@ func GetCaCertificateChain(caname string) (*CAGetCertChain, error) {
 	return &cc, nil
 }
 
-func CertRpcReq(address string,immediateca string, certbyte []byte) error {
-	params := CertRpc{}
-	params.Jsonrpc = jsonrpc
-	params.Methond = method
-	params.Id = id
-	from := immediateca
-	to := immediateca
-	contractid := syscontract.DigitalIdentityContractAddress.String()
-
-	method2 := []string{"addServerCert", address, string(certbyte)}
-	params.Params = append(params.Params, from, to, amount, fee, contractid)
-
-	params.Params = append(params.Params, method2)
+func RpcReq(params CertRpc) error {
 	reqJson, err := json.Marshal(params)
 	if err != nil {
 		return err
@@ -190,5 +186,46 @@ func CertRpcReq(address string,immediateca string, certbyte []byte) error {
 	defer resp.Body.Close()
 
 
+	return nil
+}
+func CertRpcReq(address string,immediateca string, certbyte []byte) error {
+	params := CertRpc{}
+	params.Jsonrpc = jsonrpc
+	params.Methond = method
+	params.Id = id
+	from := immediateca
+	to := immediateca
+	contractid := syscontract.DigitalIdentityContractAddress.String()
+
+	method2 := []string{"addServerCert", address, string(certbyte)}
+	params.Params = append(params.Params, from, to, amount, fee, contractid)
+
+	params.Params = append(params.Params, method2)
+
+	err := RpcReq(params)
+    if err != nil {
+    	return err
+	}
+	return nil
+}
+
+func CrlRpcReq(immediateca string, crlbyte []byte) error {
+	params := CertRpc{}
+	params.Jsonrpc = jsonrpc
+	params.Methond = method
+	params.Id = id
+	from := immediateca
+	to := immediateca
+	contractid := syscontract.DigitalIdentityContractAddress.String()
+
+	method2 := []string{"addCRL", string(crlbyte)}
+	params.Params = append(params.Params, from, to, amount, fee, contractid)
+
+	params.Params = append(params.Params, method2)
+
+	err := RpcReq(params)
+	if err != nil {
+		return err
+	}
 	return nil
 }

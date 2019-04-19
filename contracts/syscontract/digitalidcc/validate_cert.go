@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
+	dagModules "github.com/palletone/go-palletone/dag/modules"
 	"math/big"
 	"time"
 )
@@ -43,13 +44,13 @@ func ValidateCert(issuer string, cert *x509.Certificate, stub shim.ChaincodeStub
 	return nil
 }
 
-func ValidateCRLIssuer(issuer string, crl *pkix.CertificateList, stub shim.ChaincodeStubInterface) (certHolder []*CertHolderInfo, err error) {
+func ValidateCRLIssuer(issuer string, crl *pkix.CertificateList, stub shim.ChaincodeStubInterface) (certHolder []*dagModules.CertHolderInfo, err error) {
 	// check issuer identity
 	certsInfo, err := getIssuerCertsInfo(issuer, stub)
 	if err != nil {
 		return nil, err
 	}
-	certHolder = []*CertHolderInfo{}
+	certHolder = []*dagModules.CertHolderInfo{}
 	for _, revokeCert := range crl.TBSCertList.RevokedCertificates {
 		hasHolder := false
 		for _, holder := range certsInfo {
@@ -120,7 +121,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 		if err != nil {
 			return err
 		}
-		if revocationTime.IsZero() || revocationTime.String() < time.Now().String() {
+		if revocationTime.IsZero() || revocationTime.Before(time.Now()) {
 			return fmt.Errorf("Has no validate intermidate certificate")
 		}
 	}
@@ -195,7 +196,7 @@ func ValidateCRLIssuerSig(issuerAddr string, crl *pkix.CertificateList, stub shi
 	if err = revocationTime.UnmarshalBinary(val); err != nil {
 		return err
 	}
-	if revocationTime.String() < time.Now().String() {
+	if revocationTime.Before(time.Now()) {
 		return fmt.Errorf("your certificate has been revocation")
 	}
 	// query issuer cert info

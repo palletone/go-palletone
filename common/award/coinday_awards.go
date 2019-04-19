@@ -8,7 +8,7 @@ import (
 )
 
 //计算币龄所得奖励
-func CalculateAwardsForDepositContractNodes(coinDays uint64,yearRateStr string) uint64 {
+func CalculateAwardsForDepositContractNodes(coinDays uint64, yearRateStr string) uint64 {
 	coinDayFloat64 := float64(coinDays)
 	fmt.Println("coinDayFloat64=", coinDayFloat64)
 	//TODO
@@ -42,12 +42,23 @@ func GetCoinDay(amount uint64, lastModifyTime time.Time, endTime time.Time) uint
 	return coinDays
 }
 
+//计算币天的利息
+func GetCoinDayInterest(receiveTime, spendTime int64, amount uint64, interestRate float64) uint64 {
+	holdSecond := spendTime - receiveTime
+	if spendTime == 0 || receiveTime == 0 || holdSecond <= 0 {
+		return 0
+	}
+	holdDays := holdSecond / 86400 //24*60*60
+	return uint64(float64(uint64(holdDays)*amount) * interestRate)
+
+}
+
 //直接获取持币的奖励
-func GetAwardsWithCoins(coinAmount uint64, lastModifyTime int64,yearRateStr string) uint64 {
+func GetAwardsWithCoins(coinAmount uint64, lastModifyTime int64, yearRateStr string) uint64 {
 	//获取币龄
 	startTime := time.Unix(lastModifyTime, 0).UTC()
 	coinDays := GetCoinDay(coinAmount, startTime, time.Now().UTC())
 	//计算币龄所得奖励
-	awards := CalculateAwardsForDepositContractNodes(coinDays,yearRateStr)
+	awards := CalculateAwardsForDepositContractNodes(coinDays, yearRateStr)
 	return awards
 }

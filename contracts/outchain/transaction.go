@@ -56,6 +56,16 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
 		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		return btcAdaptor.SignTransaction(&signTransactionParams)
+	case "SendTransactionHttp":
+		var sendTransactionParams adaptor.SendTransactionHttpParams
+		err := json.Unmarshal(outChainTX.Params, &sendTransactionParams)
+		if err != nil {
+			return "", fmt.Errorf("SendTransactionHttp params error : %s", err.Error())
+		}
+
+		var btcAdaptor adaptorbtc.AdaptorBTC
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		return btcAdaptor.SendTransactionHttp(&sendTransactionParams)
 	case "SignTxSend":
 		var signTxSendParams adaptor.SignTxSendParams
 		err := json.Unmarshal(outChainTX.Params, &signTxSendParams)
@@ -104,6 +114,16 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
 		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		return btcAdaptor.GetTransactionByHash(&getTransactionByHashParams)
+	case "GetTransactionHttp":
+		var getTransactionByHashParams adaptor.GetTransactionHttpParams
+		err := json.Unmarshal(outChainTX.Params, &getTransactionByHashParams)
+		if err != nil {
+			return "", fmt.Errorf("GetTransactionHttp params error : %s", err.Error())
+		}
+
+		var btcAdaptor adaptorbtc.AdaptorBTC
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		return btcAdaptor.GetTransactionHttp(&getTransactionByHashParams)
 	case "GetTransactions":
 		var getTransactions adaptor.GetTransactionsParams
 		err := json.Unmarshal(outChainTX.Params, &getTransactions)
@@ -118,6 +138,26 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
 		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		return btcAdaptor.GetTransactions(&getTransactions)
+	case "RawTransactionGen":
+		var rawTransaction adaptor.RawTransactionGenParams
+		err := json.Unmarshal(outChainTX.Params, &rawTransaction)
+		if err != nil {
+			return "", fmt.Errorf("RawTransactionGen params error : %s", err.Error())
+		}
+
+		var btcAdaptor adaptorbtc.AdaptorBTC
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		return btcAdaptor.RawTransactionGen(&rawTransaction)
+	case "VerifyMessage":
+		var verifyMessage adaptor.VerifyMessageParams
+		err := json.Unmarshal(outChainTX.Params, &verifyMessage)
+		if err != nil {
+			return "", fmt.Errorf("VerifyMessage params error : %s", err.Error())
+		}
+
+		var btcAdaptor adaptorbtc.AdaptorBTC
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		return btcAdaptor.VerifyMessage(&verifyMessage)
 	}
 
 	return "", errors.New("Unspport out chain Transaction method.")

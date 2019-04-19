@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 func marshalOrPanic(pb proto.Message) []byte {
@@ -154,6 +155,8 @@ func peerServerInit(jury core.IAdapterJury) error {
 	if peerAddress == "" {
 		peerAddress = "0.0.0.0:21726"
 	}
+	//TODO peer
+	log.Infof("peerServerInit listen tcp == %s",peerAddress)
 	lis, err := net.Listen("tcp", peerAddress)
 	if err != nil {
 		return err

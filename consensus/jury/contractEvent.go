@@ -67,7 +67,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []ElectionInf
 
 	p.locker.Lock()
 	p.mtx[reqId] = &contractTx{
-		reqTx:  tx,
+		reqTx:  tx.GetRequestTx(),
 		rstTx:  nil,
 		eleInf: ele,
 		tm:     time.Now(),
@@ -96,7 +96,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []ElectionInf)
 		log.Debug("contractSigEvent", "local not find reqId,create it", reqId.String())
 		p.locker.Lock()
 		p.mtx[reqId] = &contractTx{
-			reqTx:  tx, //todo 只截取请求部分
+			reqTx:  tx.GetRequestTx(), 
 			eleInf: ele,
 			tm:     time.Now(),
 			valid:  true,
@@ -134,7 +134,7 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 	if _, ok := p.mtx[reqId]; !ok {
 		log.Debug("contractCommitEvent", "local not find reqId,create it", reqId.String())
 		p.mtx[reqId] = &contractTx{
-			reqTx:  tx,
+			reqTx:  tx.GetRequestTx(),
 			tm:     time.Now(),
 			valid:  true,
 			adaInf: make(map[uint32]*AdapterInf),

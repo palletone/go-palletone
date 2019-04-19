@@ -149,4 +149,5 @@ type IDag interface {
 	UpdateSysParams() error
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
+	RefreshSysParameters()
 }

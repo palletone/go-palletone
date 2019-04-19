@@ -405,10 +405,11 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	send = send.add("headNum", *number)
 	send = send.add("headHash", headhash)
 	send = send.add("genesisHash", genesis)
+
 	if server != nil {
 		send = send.add("serveHeaders", nil)
-		//send = send.add("serveChainSince", uint64(0))
-		//send = send.add("serveStateSince", uint64(0))
+		send = send.add("serveChainSince", uint64(0))
+		send = send.add("serveStateSince", uint64(0))
 		send = send.add("txRelay", nil)
 		send = send.add("flowControl/BL", server.defParams.BufLimit)
 		send = send.add("flowControl/MRR", server.defParams.MinRecharge)
@@ -436,6 +437,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	if err := recv.get("networkId", &rNetwork); err != nil {
 		return err
 	}
+	//if err := recv.get("headTd", &rTd); err != nil {
+	//	return err
+	//}
 	if err := recv.get("headHash", &rHash); err != nil {
 		return err
 	}
@@ -457,18 +461,20 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	}
 	if server != nil {
 		// until we have a proper peer connectivity API, allow LES connection to other servers
-		if recv.get("serveStateSince", nil) == nil {
-			return errResp(ErrUselessPeer, "wanted client, got server")
+		//if recv.get("serveStateSince", nil) == nil {
+		//	return errResp(ErrUselessPeer, "wanted client, got server")
+		//}
+		if recv.get("announceType", &p.announceType) == nil {
+			p.announceType = announceTypeSimple
 		}
-
 		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
 	} else {
-		//if recv.get("serveChainSince", nil) != nil {
-		//	return errResp(ErrUselessPeer, "peer cannot serve chain")
-		//}
-		//if recv.get("serveStateSince", nil) != nil {
-		//	return errResp(ErrUselessPeer, "peer cannot serve state")
-		//}
+		if recv.get("serveChainSince", nil) != nil {
+			return errResp(ErrUselessPeer, "peer cannot serve chain")
+		}
+		if recv.get("serveStateSince", nil) != nil {
+			return errResp(ErrUselessPeer, "peer cannot serve state")
+		}
 		if recv.get("txRelay", nil) != nil {
 			return errResp(ErrUselessPeer, "peer cannot relay transactions")
 		}
@@ -487,6 +493,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fcServer = flowcontrol.NewServerNode(params)
 		p.fcCosts = MRC.decode()
 	}
+	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
 	//TODO must modify
 	p.headInfo = &announceData{ /*Td: rTd,*/ Hash: rHash, Number: rNum.Index}
 	return nil

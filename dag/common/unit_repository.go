@@ -370,6 +370,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		rep.lock.RUnlock()
 		log.Infof("CreateUnit cost time %s", time.Since(begin))
 	}()
+
 	//if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
 	//	log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
 	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
@@ -416,14 +417,15 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error())
 		return nil, err
 	}
+	// @Jay TODO
 	//保证金利息--
-	addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-	awardAd, err := rep.ComputeAwardsFees(&addr, poolTxs)
-	if err != nil && awardAd != nil {
-		ads = append(ads, awardAd)
-	}
+	//addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+	//awardAd, err := rep.ComputeAwardsFees(&addr, poolTxs)
+	//if err != nil && awardAd != nil {
+	//	ads = append(ads, awardAd)
+	//}
 	//利息奖励--
-	rewardAd := ComputeRewardsFees(mAddr, poolTxs)
+	rewardAd := ComputeRewardsFees(mAddr, assetId.ToAsset())
 	if rewardAd != nil {
 		ads = append(ads, rewardAd)
 	}
@@ -472,13 +474,14 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	//units = append(units, unit)
 	return unit, nil
 }
-func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
-	fee := uint64(0)
-	for _, tx := range txs {
-		fee += tx.TxFee.Amount
-	}
-	return fee, nil
-}
+
+//func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
+//	fee := uint64(0)
+//	for _, tx := range txs {
+//		fee += tx.TxFee.Amount
+//	}
+//	return fee, nil
+//}
 
 func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
 	if m == nil {
@@ -499,7 +502,6 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			ads = append(ads, a)
 			continue
 		}
-
 		addrs := tx.Tx.GetContractTxSignatureAddress()
 		nm := len(addrs)
 		if nm <= 0 {
@@ -507,36 +509,39 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			ads = append(ads, a)
 			continue
 		}
-		t := a.Amount * 6 / 10
-		if t > a.Amount {
-			log.Error("ComputeTxFees", "computer err, t=", t, "a.mount=", a.Amount)
+		jAll := a.Amount * 6 / 10       //all jury
+		j := jAll / uint64(nm)          //single jury
+		mAll := a.Amount - j*uint64(nm) //mediator
+
+		if mAll > a.Amount {
+			log.Error("ComputeTxFees", "computer err, mAll=", mAll, "a.mount=", a.Amount)
 			continue
 		}
 		for _, add := range addrs {
 			am := &modules.Addition{
 				Asset: *tx.TxFee.Asset,
 			}
-			am.Amount = t / uint64(nm) //jury fee= all * 0.6/nm
+			am.Amount = j //jury fee= all * 0.6/nm
 			am.Addr = add
+			//log.Info("ComputeTxFees", "i", i, "am.Amount", am.Amount, "nm", nm, "add", add)
 			ads = append(ads, am)
 		}
-		a.Amount = a.Amount - t //mediator fee = all * 0.4
+		a.Amount = mAll //mediator fee = all * 0.4
 		a.Addr = *m
 		ads = append(ads, a)
 	}
+
 	return ads, nil
 }
 
 //利息奖励,Mediator
-func ComputeRewardsFees(m *common.Address, txs []*modules.TxPoolTransaction) *modules.Addition {
-	if m == nil || len(txs) < 1 {
-		return nil
-	}
+func ComputeRewardsFees(m *common.Address, asset *modules.Asset) *modules.Addition {
 	a := &modules.Addition{
 		Addr:   *m,
 		Amount: ComputeRewards(),
-		Asset:  *txs[0].Tx.Asset(),
+		Asset:  *asset,
 	}
+
 	return a
 }
 
@@ -861,7 +866,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		// handle different messages
 		switch msg.App {
 		case modules.APP_PAYMENT:
-			if ok := rep.savePaymentPayload(txHash, msg.Payload.(*modules.PaymentPayload), uint32(msgIndex)); ok != true {
+			if ok := rep.savePaymentPayload(unit.Timestamp(), txHash, msg.Payload.(*modules.PaymentPayload), uint32(msgIndex)); ok != true {
 				return fmt.Errorf("Save payment payload error.")
 			}
 		case modules.APP_CONTRACT_TPL:
@@ -1014,13 +1019,13 @@ func getExtradata(tx *modules.Transaction) string {
 保存PaymentPayload
 save PaymentPayload data
 */
-func (rep *UnitRepository) savePaymentPayload(txHash common.Hash, msg *modules.PaymentPayload, msgIndex uint32) bool {
+func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash, msg *modules.PaymentPayload, msgIndex uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
 	// save utxo
-	err := rep.utxoRepository.UpdateUtxo(txHash, msg, msgIndex)
+	err := rep.utxoRepository.UpdateUtxo(unitTime, txHash, msg, msgIndex)
 	if err != nil {
 		log.Error("Update utxo failed.", "error", err)
 		return false

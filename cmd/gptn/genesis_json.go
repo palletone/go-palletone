@@ -270,11 +270,23 @@ func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error
 func createExampleGenesis() *core.Genesis {
 	SystemConfig := core.SystemConfig{
 		DepositRate:               core.DefaultDepositRate,
+		TxCoinYearRate:            core.DefaultTxCoinYearRate,
+		GenerateUnitReward:        core.DefaultGenerateUnitReward,
 		FoundationAddress:         core.DefaultFoundationAddress,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 		DepositPeriod:             core.DefaultDepositPeriod,
+		UccMemory:core.DefaultUccMemory,
+		UccMemorySwap:core.DefaultUccMemorySwap,
+		UccCpuShares:core.DefaultUccCpuShares,
+		UccCpuPeriod:core.DefaultCpuPeriod,
+		UccCpuQuota:core.DefaultUccCpuQuota,
+		UccCpuSetCpus:core.DefaultUccCpuSetCpus,
+		TempUccMemory:core.DefaultTempUccMemory,
+		TempUccMemorySwap:core.DefaultTempUccMemorySwap,
+		TempUccCpuShares:core.DefaultTempUccCpuShares,
+		TempUccCpuQuota:core.DefaultTempUccCpuQuota,
 	}
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址

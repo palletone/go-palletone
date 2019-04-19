@@ -46,7 +46,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 
 	utxoQuery := &mockUtxoQuery{}
 	validate := NewValidate(nil, utxoQuery, nil)
-	code := validate.validateTransactions(txs)
+	code := validate.validateTransactions(txs, time.Now().Unix())
 	assert.Equal(t, code, TxValidationCode_VALID)
 }
 

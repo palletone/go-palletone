@@ -51,12 +51,14 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// todo 应当在其他地方其他时刻更新该值
 	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
 	if !dag.IsHeaderExist(hash) {
-		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
+		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
+			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
 		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
 		if nil != newestUnit {
 			dag.propRep.SetNewestUnit(newestUnit.Header())
 		}
 	}
+
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.CreateUnit(&producer, txpool, when)
 	if err != nil {
@@ -82,21 +84,23 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s], spent time: %s", sign_unit.NumberU64(), sign_unit.UnitHash.String(), sign_unit.UnitSize.String(), newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
+	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s], spent time: %s",
+		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
+		newUnit.UnitHeader.ParentsHash[0].String(), time.Since(t0).String())
 
 	//TODO add PostChainEvents
-	// go func() {
-	// 	var (
-	// 		events        = make([]interface{}, 0, 1)
-	// 		coalescedLogs []*types.Log
-	// 	)
-	// 	events = append(events, modules.ChainEvent{newUnit, common.Hash{}, nil})
-	// 	dag.PostChainEvents(events, coalescedLogs)
-	// }()
+	go func() {
+		var (
+			events = make([]interface{}, 0, 1)
+		)
+		events = append(events, modules.ChainHeadEvent{newUnit})
+		dag.PostChainEvents(events)
+	}()
 
 	if !dag.PushUnit(sign_unit, txpool) {
 		return nil
 	}
+
 	return sign_unit
 }
 

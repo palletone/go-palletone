@@ -55,7 +55,7 @@ const (
 	ChaincodeMessage_DEFINE_TOKEN              ChaincodeMessage_Type = 27
 	ChaincodeMessage_SUPPLY_TOKEN              ChaincodeMessage_Type = 28
 	ChaincodeMessage_GET_TIMESTAMP             ChaincodeMessage_Type = 29
-	ChaincodeMessage_GET_CERT                  ChaincodeMessage_Type = 30
+	ChaincodeMessage_GET_CERT_STATE            ChaincodeMessage_Type = 30
 	ChaincodeMessage_SEND_JURY                 ChaincodeMessage_Type = 31
 	ChaincodeMessage_RECV_JURY                 ChaincodeMessage_Type = 32
 )

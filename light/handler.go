@@ -118,11 +118,9 @@ type ProtocolManager struct {
 	wg *sync.WaitGroup
 }
 
-type producer interface{}
-
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
-func NewProtocolManager(lightSync bool, mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txPool,
+func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId, txpool txPool,
 	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
@@ -138,7 +136,7 @@ func NewProtocolManager(lightSync bool, mode downloader.SyncMode, networkId uint
 		networkId: networkId,
 		txpool:    txpool,
 		//txrelay:     txrelay,
-		peers:     newPeerSet(),
+		peers:     peers, //newPeerSet(),
 		newPeerCh: make(chan *peer),
 		//quitSync:    quitSync,
 		wg:          new(sync.WaitGroup),
@@ -324,6 +322,19 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
+				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
+				//data, err := rlp.EncodeToBytes(announce)
+				//if err != nil {
+				//	log.Error("rlp.EncodeToBytes", "err", err)
+				//	return
+				//}
+				//log.Debug("Light Palletone ProtocolManager->handle", "announce bytes", data)
+				//var req announceData
+				//err = rlp.DecodeBytes(data, &req)
+				//if err != nil {
+				//	log.Error("rlp.DecodeBytes", "err", err)
+				//	return
+				//}
 				p.SendAnnounce(announce)
 			case <-stop:
 				return
