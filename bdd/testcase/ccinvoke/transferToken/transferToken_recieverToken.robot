@@ -11,7 +11,7 @@ ${host}           http://localhost:8545/
 ${geneAdd}        P17XYSQ4qBKeWF9qicEdG5ZzfvTZQke4Ys9
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
-${tokenId}        QA002
+${tokenId}        QA001
 ${tokenDecimal}    1
 ${tokenAmount}    2500
 ${amount}         2000
@@ -27,8 +27,8 @@ ${result_code}    [a-z0-9]{64}
 transferToken_recieverToken
     [Tags]    normal
     ${GeneAdd}    getGeneAdd    ${host}
-    normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
-    sleep    2
+    #normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
+    #sleep    2
     ${PTN1}    ${result1}    normalGetBalance    ${recieverAdd}
     ${strResult}    Evaluate    str(${result1['result']})
     ${key}    getTokenId    ${tokenId}    ${result1['result']}
