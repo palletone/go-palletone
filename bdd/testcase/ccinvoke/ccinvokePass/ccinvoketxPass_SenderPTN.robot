@@ -20,7 +20,7 @@ ${poundage}       1
 
 *** Test Cases ***
 Ccinvoke SenderPTN
-    import library    /usr/lib/python2.7/decimal.py
+    import library    /opt/python/2.7.15/lib/python2.7/decimal.py
     ${log}    getGeneAdd    ${host}
     ${PTN1}    ${result}    normalGetBalance    ${log}
     normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
