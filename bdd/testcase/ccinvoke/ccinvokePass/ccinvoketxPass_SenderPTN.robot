@@ -1,10 +1,11 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           /opt/python/2.7.15/lib/python2.7/decimal.py
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
-Library           ../../../../Python2.7/Lib/decimal.py
+
 
 *** Variables ***
 ${host}           http://localhost:8545/
@@ -20,7 +21,6 @@ ${poundage}       1
 
 *** Test Cases ***
 Ccinvoke SenderPTN
-    import library    /opt/python/2.7.15/lib/python2.7/decimal.py
     ${log}    getGeneAdd    ${host}
     ${PTN1}    ${result}    normalGetBalance    ${log}
     normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}

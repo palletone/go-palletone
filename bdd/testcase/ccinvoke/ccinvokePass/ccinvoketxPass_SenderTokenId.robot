@@ -1,6 +1,8 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           /opt/python/2.7.15/lib/python2.7/decimal.py
+Library           ../../utilFunc/createToken.py
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
@@ -11,7 +13,7 @@ ${geneAdd}        P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 ${result_code}    [a-z0-9]{64}
-${tokenId}        QA006
+${tokenId}        QA002
 ${tokenDecimal}    1
 ${tokenAmount}    25000
 ${amount}         2000
@@ -19,8 +21,6 @@ ${poundage}       1
 
 *** Test Cases ***
 Ccinvoke SenderTokenId
-    import library    /opt/python/2.7.15/lib/python2.7/decimal.py
-    import library    /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/testcase/utilFunc/createToken.py
     ${log}    getGeneAdd    ${host}
     ${PTN1}    ${result1}    normalGetBalance    ${log}
     normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}

@@ -1,6 +1,7 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           /opt/python/2.7.15/lib/python2.7/decimal.py
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
@@ -20,7 +21,6 @@ ${gain}           2000
 
 *** Test Cases ***
 Ccinvoke RecieverPTN
-    import library    /opt/python/2.7.15/lib/python2.7/decimal.py
     ${PTN1}    ${result}    normalGetBalance    ${recieverAdd}
     normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    1
     ${gain1}    countRecieverPTN    ${gain}

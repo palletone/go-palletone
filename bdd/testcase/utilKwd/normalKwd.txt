@@ -80,7 +80,6 @@ I_get_a_CcinvokePass_result
 
 I_set_TransferToken_params_to_Normal
     [Arguments]    ${preTokenId}
-    import library    D:/software/robotscript/utilFunc/createToken.py
     ${geneAdd}    listAccounts
     ${result}    getBalance    ${geneAdd}
     ${tokenId}    ${value}    getTokenStarts    ${preTokenId}    ${result}

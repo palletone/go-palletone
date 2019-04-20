@@ -1,6 +1,8 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           /opt/python/2.7.15/lib/python2.7/decimal.py
+Library           ../../utilFunc/createToken.py
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
@@ -10,8 +12,8 @@ ${host}           http://localhost:8545/
 ${geneAdd}        P18h3HCoFZyUsmKtMRbYqrQWdbnkiyDPNWF
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
 ${tokenId}        QA004
-${tokenDecimal}    2
-${tokenAmount}    25000
+${tokenDecimal}    1
+${tokenAmount}    2500
 ${amount}         2000
 ${poundage}       1
 ${senderAmount}    2
@@ -20,13 +22,10 @@ ${evidence}       evidence
 ${unlocktime}     ${6000000}
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 ${result_code}    [a-z0-9]{64}
-${temp}    ${EMPTY}
 
 *** Test Cases ***
-transferToken_verifyToken
+transferToken_verifyToken&PTN
     [Tags]    normal
-    import library    /opt/python/2.7.15/lib/python2.7/decimal.py
-    import library    /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/testcase/utilFunc/createToken.py
     ${GeneAdd}    getGeneAdd    ${host}
     ${PTN1}    ${result1}    normalGetBalance    ${GeneAdd}
     ${key}    getTokenId    ${tokenId}    ${result1['result']}

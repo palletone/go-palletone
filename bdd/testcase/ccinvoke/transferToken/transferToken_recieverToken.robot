@@ -1,6 +1,7 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           ../../utilFunc/createToken.py
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
@@ -10,9 +11,9 @@ ${host}           http://localhost:8545/
 ${geneAdd}        P17XYSQ4qBKeWF9qicEdG5ZzfvTZQke4Ys9
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
-${tokenId}        QA003
-${tokenDecimal}    2
-${tokenAmount}    25000
+${tokenId}        QA002
+${tokenDecimal}    1
+${tokenAmount}    2500
 ${amount}         2000
 ${poundage}       1
 ${senderAmount}    2
@@ -25,7 +26,6 @@ ${result_code}    [a-z0-9]{64}
 *** Test Cases ***
 transferToken_recieverToken
     [Tags]    normal
-    import library    /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/testcase/utilFunc/createToken.py
     ${GeneAdd}    getGeneAdd    ${host}
     normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
     sleep    2

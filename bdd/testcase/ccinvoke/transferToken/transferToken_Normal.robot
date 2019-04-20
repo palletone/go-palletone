@@ -1,6 +1,7 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           ../../utilFunc/createToken.py
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
@@ -16,5 +17,4 @@ ${preTokenId}     QA001
 *** Test Cases ***
 transferToken_Nomal
     [Tags]    normal
-    [Template]    normalTransferToken
-    ${result_code}
+    normalTransferToken    ${result_code}
