@@ -9,7 +9,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 ${host}           http://localhost:8545/
 ${geneAdd}        P18h3HCoFZyUsmKtMRbYqrQWdbnkiyDPNWF
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
-${tokenId}        QA003
+${tokenId}        QA004
 ${tokenDecimal}    2
 ${tokenAmount}    25000
 ${amount}         2000
@@ -20,6 +20,7 @@ ${evidence}       evidence
 ${unlocktime}     ${6000000}
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 ${result_code}    [a-z0-9]{64}
+${temp}    ${EMPTY}
 
 *** Test Cases ***
 transferToken_verifyToken
@@ -27,8 +28,6 @@ transferToken_verifyToken
     import library    /usr/lib/python2.7/decimal.py
     import library    /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/testcase/utilFunc/createToken.py
     ${GeneAdd}    getGeneAdd    ${host}
-    normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
-    sleep    2
     ${PTN1}    ${result1}    normalGetBalance    ${GeneAdd}
     ${key}    getTokenId    ${tokenId}    ${result1['result']}
     ${item}    Get From Dictionary    ${result1['result']}    ${key}
@@ -36,10 +35,10 @@ transferToken_verifyToken
     ...    ${evidence}    ${unlocktime}
     sleep    2
     ${item}    Evaluate    ${item}-${senderAmount}
-    ${PTN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${pdg}')    decimal
+    ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${pdg}')    decimal
     ${GeneAdd2}    getGeneAdd    ${host}
     ${PTN2}    ${result2}    normalGetBalance    ${GeneAdd2}
     ${key}    getTokenId    ${tokenId}    ${result2['result']}
     ${item2}    Get From Dictionary    ${result2['result']}    ${key}
     Should Be Equal As Numbers    ${item2}    ${item}
-    Should Be Equal As Numbers    ${PTN2}    ${PTN}
+    Should Be Equal As Strings    ${PTN2}    ${PTN'}

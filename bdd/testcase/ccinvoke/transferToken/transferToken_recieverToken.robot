@@ -10,7 +10,7 @@ ${host}           http://localhost:8545/
 ${geneAdd}        P17XYSQ4qBKeWF9qicEdG5ZzfvTZQke4Ys9
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
-${tokenId}        QA002
+${tokenId}        QA003
 ${tokenDecimal}    2
 ${tokenAmount}    25000
 ${amount}         2000
