@@ -180,6 +180,7 @@ func aliceSendBTCToMultiSigAddr(txid string, index string, amount string, fee st
 	//
 	var btcadaptor adaptorbtc.AdaptorBTC
 	btcadaptor.NetID = gWallet.BtcConfig.NetID
+	aliceAddr := btcadaptor.GetAddress(gWallet.NameKey["alice"])
 	btcadaptor.Host = gWallet.BtcConfig.Host
 	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
 	btcadaptor.RPCPasswd = gWallet.BtcConfig.RPCPasswd
@@ -201,6 +202,7 @@ func aliceSendBTCToMultiSigAddr(txid string, index string, amount string, fee st
 	//
 	var signTxSendParams adaptor.SignTxSendParams
 	signTxSendParams.TransactionHex = rawTransactionGenResult.Rawtx
+	signTxSendParams.FromAddr = aliceAddr
 	signTxSendParams.Privkeys = append(signTxSendParams.Privkeys, gWallet.NameKey["alice"])
 	sendReuslt, err := btcadaptor.SignTxSend(&signTxSendParams)
 	if err != nil {
@@ -259,7 +261,7 @@ func bobSpendBTCFromMultiAddr(txid string, index string, amount string, fee stri
 	//
 	var signTxParams adaptor.SignTransactionParams
 	signTxParams.TransactionHex = rawTransactionGenResult.Rawtx
-	signTxParams.RedeemHex = redeem
+	signTxParams.RedeemHex = append(signTxParams.RedeemHex, redeem)
 	signTxParams.Privkeys = append(signTxParams.Privkeys, gWallet.NameKey["bob"])
 	signReuslt, err := btcadaptor.SignTransaction(&signTxParams)
 	if err != nil {

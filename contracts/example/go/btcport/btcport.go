@@ -94,6 +94,34 @@ type CreateMultiSigResult struct {
 	Addresses    []string `json:"addresses"`
 }
 
+func creatMulti(juryMsg []JuryMsgSig, stub shim.ChaincodeStubInterface) ([]byte, error) {
+	//
+	var answers []string
+	for i := range juryMsg {
+		answers = append(answers, string(juryMsg[i].Answer))
+	}
+	a := sort.StringSlice(answers[0:])
+	sort.Sort(a)
+	//
+	createMultiSigParams := BTCAddress_createMultiSig{Method: "CreateMultiSigAddress"}
+	createMultiSigParams.M = 3
+	createMultiSigParams.N = 4
+	for i := range answers {
+		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, string(answers[i]))
+	}
+	creteMultiReqBytes, err := json.Marshal(createMultiSigParams)
+	if err != nil {
+		return nil, err
+	}
+	createMultiResult, err := stub.OutChainAddress("btc", creteMultiReqBytes)
+	if err != nil {
+		return nil, errors.New("OutChainAddress CreateMultiSigAddress failed: " + err.Error())
+	}
+	log.Debugf("OutChainAddress CreateMultiSigAddress createMultiResult ==== ===== %s", string(createMultiResult))
+
+	return nil, nil
+}
+
 const symbolsDeposit = "createMultiResult"
 const symbolsDepositAddr = "btc_multsigAddr"
 const symbolsDepositRedeem = "btc_redeem"
@@ -144,34 +172,17 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	if len(juryMsg) != 4 {
 		return shim.Success([]byte("RecvJury result's len not enough"))
 	}
+
 	//
-	var answers []string
-	for i := range juryMsg {
-		answers = append(answers, string(juryMsg[i].Answer))
-	}
-	a := sort.StringSlice(answers[0:])
-	sort.Sort(a)
-	//
-	createMultiSigParams := BTCAddress_createMultiSig{Method: "CreateMultiSigAddress"}
-	createMultiSigParams.M = 3
-	createMultiSigParams.N = 4
-	for i := range answers {
-		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, string(answers[i]))
-	}
-	creteMultiReqBytes, err := json.Marshal(createMultiSigParams)
+	createMultiResult, err := creatMulti(juryMsg, stub)
 	if err != nil {
-		return shim.Error(err.Error())
+		return shim.Success([]byte("creatMulti failed" + err.Error()))
 	}
-	createMultiResult, err := stub.OutChainAddress("btc", creteMultiReqBytes)
-	if err != nil {
-		return shim.Error("OutChainAddress CreateMultiSigAddress failed: " + err.Error())
-	}
-	fmt.Println("OutChainAddress CreateMultiSigAddress createMultiResult ==== ===== ", string(createMultiResult))
 
 	var createResult CreateMultiSigResult
-	err = json.Unmarshal(result, &createResult)
+	err = json.Unmarshal(createMultiResult, &createResult)
 	if err != nil {
-		return shim.Error(string(result))
+		return shim.Success([]byte("creatMulti result Unmarshal failed" + err.Error()))
 	}
 
 	// Write the state to the ledger
@@ -192,7 +203,7 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 
 func _setBTCTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
-	if len(args) < 4 {
+	if len(args) < 1 {
 		return shim.Error("need 1 args (AssetStr)")
 	}
 	asset, _, err := dm.String2AssetId(args[0])
@@ -561,9 +572,10 @@ func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub s
 //refer to the struct SignTransactionParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member.
 type BTCTransaction_signTransaction struct { //SignTransactionParams
-	Method         string `json:"method"`
-	TransactionHex string `json:"transactionhex"`
-	RedeemHex      string `json:"redeemhex"`
+	Method           string   `json:"method"`
+	TransactionHex   string   `json:"transactionhex"`
+	InputRedeemIndex []int    `json:"inputredeemindex"`
+	RedeemHex        []string `json:"redeemhex"`
 }
 
 //refert to the struct SignTransactionResult in "github.com/palletone/adaptor/AdaptorBTC.go",
@@ -572,14 +584,15 @@ type SignTransactionResult struct {
 	TransactionHex string `json:"transactionhex"`
 }
 
-func signTx(rawTx, redeemHex string, stub shim.ChaincodeStubInterface) (string, error) {
+func signTx(rawTx string, inputRedeemIndex []int, redeemHex []string, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	rawTxGen := BTCTransaction_signTransaction{Method: "SignTransaction"}
-	rawTxGen.TransactionHex = rawTx
-	rawTxGen.RedeemHex = redeemHex
+	signTx := BTCTransaction_signTransaction{Method: "SignTransaction"}
+	signTx.TransactionHex = rawTx
+	signTx.InputRedeemIndex = inputRedeemIndex
+	signTx.RedeemHex = redeemHex
 
 	//
-	reqBytes, err := json.Marshal(rawTxGen)
+	reqBytes, err := json.Marshal(signTx)
 	if err != nil {
 		return "", err
 	}
@@ -604,7 +617,8 @@ type BTCTransaction_mergeTransaction struct {
 	Method               string   `json:"method"`
 	UserTransactionHex   string   `json:"usertransactionhex"`
 	MergeTransactionHexs []string `json:"mergetransactionhexs"`
-	RedeemHex            string   `json:"redeemhex"`
+	InputRedeemIndex     []int    `json:"inputredeemindex"`
+	RedeemHex            []string `json:"redeemhex"`
 }
 
 //refert to the struct MergeTransactionResult in "github.com/palletone/adaptor/AdaptorBTC.go",
@@ -613,10 +627,11 @@ type MergeTransactionResult struct {
 	TransactionHex string `json:"transactionhex"`
 }
 
-func mergeTx(rawTx, redeemHex string, juryMsg []JuryMsgSig, stub shim.ChaincodeStubInterface) (string, error) {
+func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg []JuryMsgSig, stub shim.ChaincodeStubInterface) (string, error) {
 	//
 	mergeTx := BTCTransaction_mergeTransaction{Method: "MergeTransaction"}
 	mergeTx.UserTransactionHex = rawTx
+	mergeTx.InputRedeemIndex = inputRedeemIndex
 	mergeTx.RedeemHex = redeemHex
 
 	//
@@ -743,8 +758,8 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if btcTokenAsset == nil {
 		return shim.Error("need call setBTCTokenAsset()")
 	}
-	//todo contractAddr
-	contractAddr := ""
+	//contractAddr
+	_, contractAddr := stub.GetContractID()
 
 	//check token
 	invokeTokens, err := stub.GetInvokeTokens()
@@ -777,8 +792,12 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	redeemHex := common.Bytes2Hex(result)
 
+	inputRedeemIndex := []int{}
+	for i := len(selUnspnds); i > 0; i-- {
+		inputRedeemIndex = append(inputRedeemIndex, 0)
+	}
 	// 签名交易
-	rawTxSign, err := signTx(rawTx, redeemHex, stub)
+	rawTxSign, err := signTx(rawTx, inputRedeemIndex, []string{redeemHex}, stub)
 	//协商交易
 	sendResult, err := stub.SendJury(2, []byte(rawTx), []byte(rawTxSign)) //todo 封装重构
 	if err != nil {
@@ -803,7 +822,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	// 合并交易
-	tx, err := mergeTx(rawTx, redeemHex, juryMsg, stub)
+	tx, err := mergeTx(rawTx, inputRedeemIndex, []string{redeemHex}, juryMsg, stub)
 	if err != nil {
 		return shim.Success([]byte("mergeTx failed: " + err.Error()))
 	}
