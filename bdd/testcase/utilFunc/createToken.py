@@ -5,13 +5,13 @@ import random
 import re
 
 class createToken(object):
-    #global temp
+    #global tempToken
 
     def __init__(self):
         self.domain = 'http://localhost:8545/'
         self.headers = {'Content-Type':'application/json'}
-		self.temp = ''
-        self.tempvalue = ''	
+        self.tempToken = ''
+        self.tempValue = ''
 
     def runTest(self):
         pass
@@ -50,19 +50,16 @@ class createToken(object):
     def getTokenId(self, nickname, dict):
         for key in dict.keys():
             if re.search(r'^'+nickname, key):
-                #global temp
-                self.temp = key
-                print key
-        return self.temp
+                self.tempToken = key
+        return self.tempToken
 
     def getTokenStarts(self, nickname, dict):
         for key in dict.keys():
             if key.startswith(nickname):
-                #global temp,tempvalue
-                self.temp = key
-                self.tempvalue = dict[key]
-                print temp,tempvalue
-        return self.temp,self.tempvalue
+                self.tempToken = key
+                self.tempValue = dict[key]
+                #print self.tempToken,self.tempvalue
+        return self.tempToken,self.tempValue
 
     def ccinvoketxPass1(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
         data = {
@@ -169,5 +166,5 @@ class createToken(object):
                 return result
 
 if __name__ == '__main__':
-    #pass
-    createToken().getTokenIdFromTokens('P1HhWxfQLMgb5TfE56GASURCuitX2XL397G','QA003')
+    pass
+    #createToken().getTokenIdFromTokens('P1HhWxfQLMgb5TfE56GASURCuitX2XL397G','QA003')
