@@ -25,7 +25,7 @@ ${temp}    ${EMPTY}
 *** Test Cases ***
 transferToken_verifyToken
     [Tags]    normal
-    import library    /usr/lib/python2.7/decimal.py
+    import library    /opt/python/2.7.15/lib/python2.7/decimal.py
     import library    /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/testcase/utilFunc/createToken.py
     ${GeneAdd}    getGeneAdd    ${host}
     ${PTN1}    ${result1}    normalGetBalance    ${GeneAdd}
