@@ -11,7 +11,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 ${host}           http://localhost:8545/
 ${geneAdd}        P18h3HCoFZyUsmKtMRbYqrQWdbnkiyDPNWF
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
-${tokenId}        QA001
+${preTokenId}     QA003
 ${tokenDecimal}    1
 ${tokenAmount}    2500
 ${amount}         2000
@@ -24,21 +24,21 @@ ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 ${result_code}    [a-z0-9]{64}
 
 *** Test Cases ***
-transferToken_verifyToken&PTN
+transferToken_Token&PTN
     [Tags]    normal
-	${GeneAdd}    getGeneAdd    ${host}
-	sleep    2
-    ${PTN1}    ${result1}    normalGetBalance    ${GeneAdd}
-    ${key}    getTokenId    ${tokenId}    ${result1['result']}
-    ${item}    Get From Dictionary    ${result1['result']}    ${key}
+    ${GeneAdd}    getGeneAdd    ${host}
+    sleep    2
+    ${result1}    getBalance    ${GeneAdd}
+    ${key}    ${item}    getTokenStarts    ${preTokenId}    ${result1}
+    ${PTN1}    Get From Dictionary    ${result1}    PTN
     ${tokenResult}    transferToken    ${key}    ${GeneAdd}    ${recieverAdd}    ${senderAmount}    ${pdg}
     ...    ${evidence}    ${unlocktime}
     sleep    2
     ${item}    Evaluate    ${item}-${senderAmount}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${pdg}')    decimal
     ${GeneAdd2}    getGeneAdd    ${host}
-    ${PTN2}    ${result2}    normalGetBalance    ${GeneAdd2}
-    ${key}    getTokenId    ${tokenId}    ${result2['result']}
-    ${item2}    Get From Dictionary    ${result2['result']}    ${key}
+    ${result2}    getBalance    ${GeneAdd}
+    ${key}    ${item2}    getTokenStarts    ${preTokenId}    ${result2}
+    ${PTN2}    Get From Dictionary    ${result2}    PTN
     Should Be Equal As Numbers    ${item2}    ${item}
     Should Be Equal As Strings    ${PTN2}    ${PTN'}
