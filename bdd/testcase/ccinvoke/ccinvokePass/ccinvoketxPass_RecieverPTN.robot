@@ -2,6 +2,7 @@
 Library           RequestsLibrary
 Library           Collections
 Library           /opt/python/2.7.15/lib/python2.7/decimal.py
+Library           ../../utilFunc/createToken.py
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt

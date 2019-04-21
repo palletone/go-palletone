@@ -5,7 +5,6 @@ import random
 import re
 
 class createToken(object):
-    #global tempToken
 
     def __init__(self):
         self.domain = 'http://localhost:8545/'
@@ -61,7 +60,7 @@ class createToken(object):
                 #print self.tempToken,self.tempvalue
         return self.tempToken,self.tempValue
 
-    def ccinvoketxPass1(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
+    def ccinvoketxPass(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
         data = {
                 "jsonrpc":"2.0",
                 "method":"ptn_ccinvoketxPass",
@@ -106,7 +105,7 @@ class createToken(object):
                 print n
             return n
 
-    def ccinvoketxPass(self,*params):
+    def ccinvoketx(self,*params):
         geneAdd = self.listAccounts()
         n = self.paramGroups(geneAdd,13,*params)
         #'''

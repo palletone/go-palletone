@@ -20,7 +20,6 @@ ${senderAmount}    2
 ${pdg}            1
 ${evidence}       evidence
 ${unlocktime}     ${6000000}
-${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 ${result_code}    [a-z0-9]{64}
 
 *** Test Cases ***

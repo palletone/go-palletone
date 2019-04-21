@@ -1,6 +1,7 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           ../../utilFunc/createToken.py
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt

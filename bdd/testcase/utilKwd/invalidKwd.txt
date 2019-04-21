@@ -69,7 +69,6 @@ I_set_CcinvokePass_params
 
 I_post_CcinvokePass_request
     [Arguments]    @{transList}
-    import library    /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/testcase/utilFunc/createToken.py
     ${resp}    setPostRequest    ${host}    ptn_ccinvoketxPass    @{transList}
     [Return]    ${resp}
 
