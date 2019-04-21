@@ -630,13 +630,13 @@ func (ps *peerSet) BestPeer() *peer {
 
 	var (
 		bestPeer *peer
-		//bestTd   *big.Int
+		bestTd   uint64
 	)
-	//for _, p := range ps.peers {
-	//	if td := p.Td(); bestPeer == nil || td.Cmp(bestTd) > 0 {
-	//		bestPeer, bestTd = p, td
-	//	}
-	//}
+	for _, p := range ps.peers {
+		if number := p.headInfo.Number; bestPeer == nil || number.Index > bestTd {
+			bestPeer, bestTd = p, number.Index
+		}
+	}
 	return bestPeer
 }
 

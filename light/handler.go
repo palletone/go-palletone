@@ -611,67 +611,43 @@ type peerConnection struct {
 	peer    *peer
 }
 
-func (pc *peerConnection) Head() (common.Hash, *big.Int) {
+//Head(modules.AssetId) (common.Hash, *modules.ChainIndex)
+//RequestHeadersByHash(common.Hash, int, int, bool) error
+//RequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error
+//RequestDagHeadersByHash(common.Hash, int, int, bool) error
+//RequestLeafNodes() error
+
+func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	return common.Hash{}, nil
 	// return pc.peer.HeadAndTd()
 }
 
 func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	return nil
-	//reqID := genReqID()
-	//rq := &distReq{
-	//	getCost: func(dp distPeer) uint64 {
-	//		peer := dp.(*peer)
-	//		return peer.GetRequestCost(GetBlockHeadersMsg, amount)
-	//	},
-	//	canSend: func(dp distPeer) bool {
-	//		return dp.(*peer) == pc.peer
-	//	},
-	//	request: func(dp distPeer) func() {
-	//		peer := dp.(*peer)
-	//		cost := peer.GetRequestCost(GetBlockHeadersMsg, amount)
-	//		peer.fcServer.QueueRequest(reqID, cost)
-	//		return func() { peer.RequestHeadersByHash(reqID, cost, origin, amount, skip, reverse) }
-	//	},
-	//}
-	//_, ok := <-pc.manager.reqDist.queue(rq)
-	//if !ok {
-	//	return ErrNoPeers
-	//}
-	//return nil
 }
 
-func (pc *peerConnection) RequestHeadersByNumber(origin uint64, amount int, skip int, reverse bool) error {
-	//reqID := genReqID()
-	//rq := &distReq{
-	//	getCost: func(dp distPeer) uint64 {
-	//		peer := dp.(*peer)
-	//		return peer.GetRequestCost(GetBlockHeadersMsg, amount)
-	//	},
-	//	canSend: func(dp distPeer) bool {
-	//		return dp.(*peer) == pc.peer
-	//	},
-	//	request: func(dp distPeer) func() {
-	//		peer := dp.(*peer)
-	//		cost := peer.GetRequestCost(GetBlockHeadersMsg, amount)
-	//		peer.fcServer.QueueRequest(reqID, cost)
-	//		return func() { peer.RequestHeadersByNumber(reqID, cost, origin, amount, skip, reverse) }
-	//	},
-	//}
-	//_, ok := <-pc.manager.reqDist.queue(rq)
-	//if !ok {
-	//	return ErrNoPeers
-	//}
+func (pc *peerConnection) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
+	return nil
+}
+func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
+	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
 	return nil
 }
 
+func (p *peerConnection) RequestLeafNodes() error {
+	//GetLeafNodes
+	log.Debug("Fetching leaf nodes")
+	return nil
+	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
+}
+
 func (d *downloaderPeerNotify) registerPeer(p *peer) {
-	//pm := (*ProtocolManager)(d)
-	//pc := &peerConnection{
-	//	manager: pm,
-	//	peer:    p,
-	//}
-	//pm.downloader.RegisterLightPeer(p.id, ethVersion, pc)
+	pm := (*ProtocolManager)(d)
+	pc := &peerConnection{
+		manager: pm,
+		peer:    p,
+	}
+	pm.downloader.RegisterLightPeer(p.id, ethVersion, pc)
 }
 
 func (d *downloaderPeerNotify) unregisterPeer(p *peer) {

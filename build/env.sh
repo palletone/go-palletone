@@ -30,7 +30,7 @@ if [ ! -d "$adafullpath" ]; then
 	go get -u $ada
 else
 	echo "adaptor exist"
-	git -C $adafullpath  pull
+#	git -C $adafullpath  pull
 fi
 
 
@@ -39,7 +39,7 @@ if [ ! -d "$btcfullpath" ]; then
 	go get -u $btc
 else
 	echo "btc exist"
-	git -C $btcfullpath pull
+#	git -C $btcfullpath pull
 fi
 
 
@@ -48,7 +48,7 @@ if [ ! -d "$ethfullpath" ]; then
 	go get -u $eth
 else
 	echo "eth exist"
-	git -C $ethfullpath  pull
+#	git -C $ethfullpath  pull
 fi
 
 
@@ -57,7 +57,7 @@ if [ ! -d "$difullpath" ]; then
 	go get -u $di
 else
 	echo "di exist"
-	git -C $difullpath  pull
+#	git -C $difullpath  pull
 fi
 
 
