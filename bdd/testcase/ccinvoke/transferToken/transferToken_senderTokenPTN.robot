@@ -11,7 +11,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 ${host}           http://localhost:8545/
 ${geneAdd}        P18h3HCoFZyUsmKtMRbYqrQWdbnkiyDPNWF
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
-${tokenId}        QA003
+${tokenId}        QA001
 ${tokenDecimal}    1
 ${tokenAmount}    2500
 ${amount}         2000
@@ -27,6 +27,7 @@ ${result_code}    [a-z0-9]{64}
 transferToken_verifyToken&PTN
     [Tags]    normal
 	${GeneAdd}    getGeneAdd    ${host}
+	sleep    2
     ${PTN1}    ${result1}    normalGetBalance    ${GeneAdd}
     ${key}    getTokenId    ${tokenId}    ${result1['result']}
     ${item}    Get From Dictionary    ${result1['result']}    ${key}

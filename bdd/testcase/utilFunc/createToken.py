@@ -73,38 +73,6 @@ class createToken(object):
         result1 = json.loads(response.content)
         return result1
 
-
-    def listAccounts(self):
-        data = {
-            "jsonrpc": "2.0",
-            "method": "personal_listAccounts",
-            "params":
-                [],
-            "id": 1
-        }
-        data = json.dumps(data)
-        response = requests.post(url=self.domain, data=data, headers=self.headers)
-        result1 = json.loads(response.content)
-        print result1['result'][0]
-        return result1['result'][0]
-
-    def paramGroups(self,dynamic,number,*params):
-        if len(params) < number:
-            paramsList = []
-            paramsList.append(dynamic)
-            print  paramsList
-            for n in params:
-                # paramsList.append(n)
-                print n
-            paramsList.extend(n)
-            print paramsList
-            return paramsList
-        else:
-            for n in params:
-                # paramsList.append(n)
-                print n
-            return n
-
     def ccinvoketx(self,*params):
         geneAdd = self.listAccounts()
         n = self.paramGroups(geneAdd,13,*params)
@@ -163,6 +131,38 @@ class createToken(object):
             else:
                 print 'transferToken Result: ' + str(result) + '\n'
                 return result
+
+
+    def listAccounts(self):
+        data = {
+            "jsonrpc": "2.0",
+            "method": "personal_listAccounts",
+            "params":
+                [],
+            "id": 1
+        }
+        data = json.dumps(data)
+        response = requests.post(url=self.domain, data=data, headers=self.headers)
+        result1 = json.loads(response.content)
+        print result1['result'][0]
+        return result1['result'][0]
+
+    def paramGroups(self,dynamic,number,*params):
+        if len(params) < number:
+            paramsList = []
+            paramsList.append(dynamic)
+            print  paramsList
+            for n in params:
+                # paramsList.append(n)
+                print n
+            paramsList.extend(n)
+            print paramsList
+            return paramsList
+        else:
+            for n in params:
+                # paramsList.append(n)
+                print n
+            return n
 
 if __name__ == '__main__':
     pass
