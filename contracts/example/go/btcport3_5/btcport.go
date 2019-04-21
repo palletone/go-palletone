@@ -94,20 +94,17 @@ type CreateMultiSigResult struct {
 	Addresses    []string `json:"addresses"`
 }
 
-func creatMulti(juryMsg []JuryMsgSig, stub shim.ChaincodeStubInterface) ([]byte, error) {
+func creatMulti(userPubkey string, juryPubkeys []string, stub shim.ChaincodeStubInterface) ([]byte, error) {
 	//
-	var answers []string
-	for i := range juryMsg {
-		answers = append(answers, string(juryMsg[i].Answer))
-	}
-	a := sort.StringSlice(answers[0:])
+	a := sort.StringSlice(juryPubkeys[0:])
 	sort.Sort(a)
 	//
 	createMultiSigParams := BTCAddress_createMultiSig{Method: "CreateMultiSigAddress"}
 	createMultiSigParams.M = 3
-	createMultiSigParams.N = 4
-	for i := range answers {
-		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, string(answers[i]))
+	createMultiSigParams.N = 5
+	createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, userPubkey)
+	for i := range juryPubkeys {
+		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, juryPubkeys[i])
 	}
 	creteMultiReqBytes, err := json.Marshal(createMultiSigParams)
 	if err != nil {
@@ -123,6 +120,7 @@ func creatMulti(juryMsg []JuryMsgSig, stub shim.ChaincodeStubInterface) ([]byte,
 }
 
 const symbolsDeposit = "createMultiResult"
+const symbolsJuryPubkeys = "juryPubkeys"
 const symbolsDepositAddr = "btc_multsigAddr"
 const symbolsDepositRedeem = "btc_redeem"
 
@@ -174,31 +172,24 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	}
 
 	//
-	createMultiResult, err := creatMulti(juryMsg, stub)
-	if err != nil {
-		return shim.Success([]byte("creatMulti failed" + err.Error()))
+	var pubkeys []string
+	for i := range juryMsg {
+		pubkeys = append(pubkeys, string(juryMsg[i].Answer))
 	}
+	a := sort.StringSlice(pubkeys[0:])
+	sort.Sort(a)
 
-	var createResult CreateMultiSigResult
-	err = json.Unmarshal(createMultiResult, &createResult)
+	pubkeysJson, err := json.Marshal(pubkeys)
 	if err != nil {
-		return shim.Success([]byte("creatMulti result Unmarshal failed" + err.Error()))
+		return shim.Error("pubkeys Marshal failed: " + err.Error())
 	}
 
 	// Write the state to the ledger
-	err = stub.PutState(symbolsDeposit, createMultiResult)
+	err = stub.PutState(symbolsJuryPubkeys, pubkeysJson)
 	if err != nil {
-		return shim.Error("write " + symbolsDeposit + " failed: " + err.Error())
+		return shim.Error("write " + symbolsJuryPubkeys + " failed: " + err.Error())
 	}
-	err = stub.PutState(symbolsDepositAddr, []byte(createResult.P2ShAddress))
-	if err != nil {
-		return shim.Error("write " + symbolsDepositAddr + " failed: " + err.Error())
-	}
-	err = stub.PutState(symbolsDepositRedeem, []byte(createResult.RedeemScript))
-	if err != nil {
-		return shim.Error("write " + symbolsDepositRedeem + " failed: " + err.Error())
-	}
-	return shim.Success(createMultiResult)
+	return shim.Success(pubkeysJson)
 }
 
 func _setBTCTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Response {
@@ -228,11 +219,43 @@ func getBTCTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
 }
 
 func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	result, _ := stub.GetState(symbolsDepositAddr)
-	if len(result) == 0 {
+	//params check
+	if len(args) < 1 {
+		return shim.Error("need 1 args (BTCPubkey)")
+	}
+	userPubkey := args[0]
+	//
+	pubkeysJson, _ := stub.GetState(symbolsJuryPubkeys)
+	if len(pubkeysJson) == 0 {
 		return shim.Error("DepsoitAddr is empty")
 	}
-	return shim.Success(result)
+	var pubkeys []string
+	err := json.Unmarshal(pubkeysJson, &pubkeys)
+	if err != nil {
+		return shim.Error("pubkeys Unmarshal failed")
+	}
+	if len(pubkeys) != 4 {
+		return shim.Error("pubkeys' length is not 4")
+	}
+
+	createMultiResult, err := creatMulti(userPubkey, pubkeys, stub)
+	if err != nil {
+		return shim.Success([]byte("creatMulti failed: " + err.Error()))
+	}
+
+	var createResult CreateMultiSigResult
+	err = json.Unmarshal(createMultiResult, &createResult)
+	if err != nil {
+		return shim.Success([]byte("creatMulti result Unmarshal failed" + err.Error()))
+	}
+
+	// Write the state to the ledger
+	err = stub.PutState(symbolsDeposit, createMultiResult)
+	if err != nil {
+		return shim.Error("write " + symbolsDeposit + " failed: " + err.Error())
+	}
+	//
+	return shim.Success(createMultiResult)
 }
 
 //refer to the struct GetTransactionHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
@@ -373,7 +396,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//
-	btcAmount, btcAddr, err, outputs := getDepositBTCInfo(btcTxHash, stub)
+	btcAmount, btcAddr, err, outputs := getDepositBTCInfo(btcTxHash, stub) //todo getutxo
 	if err != nil {
 		jsonResp := "{\"Error\":\"Have get token\"}"
 		return shim.Success([]byte(jsonResp))

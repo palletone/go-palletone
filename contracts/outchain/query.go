@@ -57,6 +57,17 @@ func processQueryMethodBTC(chaincodeID string, outChainAddr *pb.OutChainQuery,
 		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
 		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		return btcAdaptor.GetBalance(&getBalanceParams)
+	case "GetUTXOHttp":
+		var getUTXOHttpParams adaptor.GetUTXOHttpParams
+		err := json.Unmarshal(outChainAddr.Params, &getUTXOHttpParams)
+		if err != nil {
+			return "", fmt.Errorf("GetUTXOHttp params error : %s", err.Error())
+		}
+		log.Debug(modName, "GetUTXOHttp Address ==== ==== ", getUTXOHttpParams.Address)
+
+		var btcAdaptor adaptorbtc.AdaptorBTC
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		return btcAdaptor.GetUTXOHttp(&getUTXOHttpParams)
 	}
 	return "", errors.New("Unspport out chain Query method.")
 }
