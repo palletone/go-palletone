@@ -63,10 +63,13 @@ func (a *Address) GetType() AddressType {
 
 //如果是合约地址，那么是不是一个系统合约地址？
 func (a *Address) IsSystemContractAddress() bool {
+	return IsSystemContractAddress(a.Bytes())
+}
+func IsSystemContractAddress(addr []byte) bool {
 	bb := make([]byte, 20)
 	bb[18] = 0xff
 	bb[19] = 0xff
-	return bytes.Compare(a.Bytes(), bb) < 0
+	return bytes.Compare(addr, bb) < 0
 }
 func NewAddress(hash160 []byte, ty AddressType) Address {
 	newBytes := make([]byte, 21)

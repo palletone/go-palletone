@@ -20,6 +20,6 @@ invalidParams1
     [Tags]    invalidParams
     ${crtList1}    Given I set Params which is less than required
     ${resp1}    When I post a crtTrans request    ${crtList1}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp1}
+    Then I get a code and a message    ${resp1}    ${error_code}    ${error_message}
 
 *** Keywords ***

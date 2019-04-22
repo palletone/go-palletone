@@ -1,22 +1,7 @@
 *** Keywords ***
-I set senderAddr to ${i}
-    [Arguments]    ${i}
-    @{transList}    Create List    ${i}    P1MhaR76qdVPJMJhUYMhfzdEoVndvmEWMUX    10    2
-    [Return]    @{transList}
-
-I set recieverAddr to ${i}
-    [Arguments]    ${i}
-    @{transList}    Create List    P1FRZ2AVgCd2TwS5SYDy1ehe8YaXYn86J7U    ${i}    10    2
-    [Return]    @{transList}
-
-I set Amount to ${i}
-    [Arguments]    @{transList}
-    @{transList}    Create List    P122EGDTLmfaMCF5YTkre8Zd9urLV2y2coy    P1MhaR76qdVPJMJhUYMhfzdEoVndvmEWMUX    ${i}    2
-    [Return]    @{transList}
-
-I set Poundage to ${i}
-    [Arguments]    ${i}
-    @{transList}    Create List    P122EGDTLmfaMCF5YTkre8Zd9urLV2y2coy    P1MhaR76qdVPJMJhUYMhfzdEoVndvmEWMUX    10    ${i}
+I set crtTrans params
+    [Arguments]    ${senderAdd}    ${recieverAdd}    ${Amount}    ${poundage}
+    @{transList}    Create List    ${senderAdd}    ${recieverAdd}    ${Amount}    ${poundage}
     [Return]    @{transList}
 
 I set Params which is less than required
@@ -27,40 +12,26 @@ I set Params which is more than required
     @{transList}    Create List    P1FRZ2AVgCd2TwS5SYDy1ehe8YaXYn86J7U    P1MhaR76qdVPJMJhUYMhfzdEoVndvmEWMUX    10    2    4
     [Return]    @{transList}
 
-I get a code ${error_code} and a message ${error_message}
-    [Arguments]    ${resp}
-    assertInvalid    ${resp}    ${error_code}    ${error_message}
+I get a code and a message
+    [Arguments]    ${resp}    ${error_code}    ${error_message}
+    assertBalanceInvalid    ${resp}    ${error_code}    ${error_message}
 
-I set signTrans result to ${i}
-    [Arguments]    ${i}
-    @{transList}    Create List    ${i}    ALL    1
+I set signTrans result
+    [Arguments]    ${i}    ${range}    ${pwd}
+    @{transList}    Create List    ${i}    ${range}    ${pwd}
     [Return]    @{transList}
 
-I set signTrans password to Empty
+I set signTrans password
     [Arguments]    ${crtResult}
     @{transList}    Create List    ${crtResult}    ALL
     [Return]    @{transList}
 
-I set signTrans password to ${i}
-    [Arguments]    ${crtResult}    ${i}
-    @{transList}    Create List    ${crtResult}    ALL    ${i}
-    [Return]    @{transList}
-
-I set signTrans to blank list
-    @{transList}    Create List    ${Empty}    ALL    ${Empty}
-    [Return]    @{transList}
-
-I set signTrans to empty list
-    [Arguments]    ${i}
-    @{transList}    Create List    ${Empty}    ALL    ${i}
-    [Return]    @{transList}
-
 I post a signTrans request
-    [Arguments]    @{transList}
-    ${resp}    setPostRequest    ${host}    ${method}    @{transList}
+    [Arguments]    ${transList}
+    ${resp}    setPostRequest    ${host}    ${method}    ${transList}
     [Return]    ${resp}
 
-I set sendTrans result to ${i}
+I set sendTrans result
     [Arguments]    ${i}
     @{transList}    Create List    ${i}
     [Return]    @{transList}
@@ -70,17 +41,40 @@ I post a sendTrans request
     ${resp}    setPostRequest    ${host}    ${method}    @{transList}
     [Return]    ${resp}
 
-I set getBalance params to ${i}
+I set getBalance params
     [Arguments]    ${i}
     @{transList}    Create List    ${i}
     [Return]    @{transList}
 
 I post a getBalance request
-    [Arguments]    @{transList}
-    ${resp}    setPostRequest    ${host}    ${method}    @{transList}
+    [Arguments]    ${transList}
+    ${resp}    setPostRequest    ${host}    ${method}    ${transList}
     [Return]    ${resp}
 
-I get a Getbalance code ${error_code} and a message ${error_message}
-    [Arguments]    @{resp}
+I get a Getbalance code and a message
+    [Arguments]    ${resp}    ${error_code}    ${error_message}
     log    ${resp.content}
+    assertBalanceInvalid    ${resp}    ${error_code}    ${error_message}
+
+I_set_CcinvokePass_params
+    [Arguments]    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}
+    ...    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${recieverAdd1}    ${pwd}
+    ...    ${expiredTime}
+    #${geneAdd}    getGeneAdd    ${host}
+    ${ccTokenList}    Create List    ${tokenType}    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}
+    ...    ${recieverAdd1}
+    ${ccList}    Create List    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}
+    ...    ${ccTokenList}    ${pwd}    ${expiredTime}
+    [Return]    ${ccList}
+
+I_post_CcinvokePass_request
+    [Arguments]    @{transList}
+    ${resp}    setPostRequest    ${host}    ptn_ccinvoketxPass    @{transList}
+    [Return]    ${resp}
+
+I_get_the_CcinvokePass_result
+    [Arguments]    ${resp}    ${error_code}    ${error_message}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
     assertInvalid    ${resp}    ${error_code}    ${error_message}

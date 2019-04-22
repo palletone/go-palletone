@@ -44,6 +44,7 @@ import (
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
 	"sync"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type IUnitRepository interface {
@@ -1170,9 +1171,16 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		return false
 	}
 	//save contract election
-	if rep.statedb.SaveContractState(payload.ContractId, "ElectionList", payload.EleList, version) != nil {
+	eleBytes, err := rlp.EncodeToBytes(payload.EleList)
+	if err == nil {
+		log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
+		if rep.statedb.SaveContractState(payload.ContractId, "ElectionList", eleBytes, version) != nil {
+			return false
+		}
+	}else {
 		return false
 	}
+
 	return true
 }
 

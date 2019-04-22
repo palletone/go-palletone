@@ -14,25 +14,25 @@ ${method}         ptn_signRawTransaction
 *** Test Cases ***
 signTransInvalid1
     [Tags]    invalidSign1
-    [Template]    setInvalidSign
-    1    -32000    Params decode is invalid
-    e    -32000    Params decode is invalid
-    ee    -32000    Params decode is invalid
-    eee    -32000    Params decode is invalid
-    eeee    -32000    Params decode is invalid
-    2476876584    -32000    Params decode is invalid
+    [Template]    InvalidSignTrans
+    1    ALL    1    -32000    Params decode is invalid
+    e    ALL    1    -32000    Params decode is invalid
+    ee    ALL    1    -32000    Params decode is invalid
+    eee    ALL    1    -32000    Params decode is invalid
+    eeee    ALL    1    -32000    Params decode is invalid
+    2476876584    ALL    1    -32000    Params decode is invalid
 
 signTransInvalid2
     [Tags]    invalidSign2
-    [Template]    setInvalidSign
-    @    -32000    Params is invalid
-    FDEW    -32000    Params is invalid
-    fd#fg    -32000    Params is invalid
-    %    -32000    Params is invalid
+    [Template]    InvalidSignTrans
+    @    ALL    1    -32000    Params is invalid
+    FDEW    ALL    1    -32000    Params is invalid
+    fd#fg    ALL    1    -32000    Params is invalid
+    %    ALL    1    -32000    Params is invalid
 
 signTransInvalid3
     [Tags]    invalidSign2
-    [Template]    setInvalidSign
-    ${Empty}    -32000    Params is empty
+    [Template]    InvalidSignTrans
+    ${Empty}    ALL    1    -32000    Params is empty
 
 *** Keywords ***

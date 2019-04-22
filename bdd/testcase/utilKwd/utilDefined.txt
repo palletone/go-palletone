@@ -16,19 +16,14 @@ assertInvalid
 
 assertBalanceInvalid
     [Arguments]    ${resp}    ${error_code}    ${error_message}
-    #Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
-    #Should Contain    ${resp.content}['id']    1    msg="id:failed"
-    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    ${jsonRes}    To Json    ${jsonRes}
-    ${strResult}    Evaluate    str(${jsonRes['error']})
-    [Return]    ${resp.content}['error']
+    #${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    #${jsonRes}    To Json    ${jsonRes}
+    #${strResult}    Evaluate    str(${jsonRes['error']})
+    Should Contain    ${resp.content}['error']['code']    ${error_code}    msg="error_code:failed"
+    Should Contain    ${resp.content}['error']['message']    ${error_message}    msg="error_message:failed"
+    [Return]    ${resp}
 
-geneNickname
-    ${nickname}    evaluate    random.randint(100,999)    random
-    ${nickname}    evaluate    'qa'+str(${nickname})
-    [Return]    ${nickname}
-
-getTokenId
+geneTokenId
     ${nickname}    evaluate    random.randint(100,999)    random
     ${nickname}    evaluate    'qa'+str(${nickname})
     [Return]    ${nickname}
@@ -37,6 +32,14 @@ getGeneAdd
     [Arguments]    ${host}
     ${list}    Create List    ${EMPTY}
     ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
-    log    ${resp.content}['result']
-    ${log}    evaluate    str(${resp.content}['result'][0])
-    [Return]    ${log}
+    log    ${resp.content}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    #${log}    evaluate    str(${resp.content}['result'][0])
+    [Return]    ${jsonRes['result'][0]}
+
+countRecieverPTN
+    [Arguments]    ${Amount}
+    ${quantity}    evaluate    ${Amount}*0.00000001
+    ${quantity}    evaluate    decimal.Decimal('${quantity}')    decimal
+    [Return]    ${quantity}

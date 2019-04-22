@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (
@@ -80,6 +81,7 @@ type iDag interface {
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 }
 
@@ -636,14 +638,19 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		if contractId == (common.Address{}) { //deploy
 			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
 			if ele, ok := p.lockArf[cId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[cId] = []modules.ElectionInf{}                       //清空
+				p.lockArf[cId] = []modules.ElectionInf{} //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}
 			}
 			ctx.eleInf = p.lockArf[cId]
 		} else { //invoke,stop
-			ctx.eleInf = p.lockArf[contractId]
+			ele, err := p.getContractElectionList(contractId)
+			if err != nil {
+				return common.Hash{}, nil, err
+			}
+			ctx.eleInf = ele
+			//ctx.eleInf = p.lockArf[contractId]
 		}
 	}
 	if isLocalInstall {
@@ -699,4 +706,20 @@ func (p *Processor) getLocalAccount() *JuryAccount {
 		break
 	}
 	return account
+}
+
+func (p *Processor) getContractElectionList(contractId common.Address) ([]modules.ElectionInf, error) {
+	eleByte, _, err := p.dag.GetContractState(contractId[:], "ElectionList")
+	if err != nil {
+		return nil, err
+	}
+	var ele []modules.ElectionInf
+	err = rlp.DecodeBytes(eleByte, &ele)
+	if err != nil {
+		errs := fmt.Sprintf("getContractElectionList, GetContractState fail, contractId:%v", contractId)
+		log.Debug(errs)
+		return nil, errors.New(errs)
+	}
+	log.Debug("getContractElectionList", "contractId", contractId, "ElectionInf", ele)
+	return ele, nil
 }
