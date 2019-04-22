@@ -5,15 +5,16 @@
 package dag
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	core "github.com/palletone/go-palletone/core"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
+	"reflect"
+	"time"
+
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 // MockIDag is a mock of IDag interface
@@ -327,11 +328,12 @@ func (mr *MockIDagMockRecorder) GetTransactionOnly(hash interface{}) *gomock.Cal
 }
 
 // IsTransactionExist mocks base method
-func (m *MockIDag) IsTransactionExist(hash common.Hash) bool {
+func (m *MockIDag) IsTransactionExist(hash common.Hash) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsTransactionExist", hash)
 	ret0, _ := ret[0].(bool)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // IsTransactionExist indicates an expected call of IsTransactionExist
