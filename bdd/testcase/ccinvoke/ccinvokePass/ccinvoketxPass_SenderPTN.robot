@@ -13,7 +13,7 @@ ${geneAdd}        P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 ${result_code}    [a-z0-9]{64}
-${tokenId}        QA004
+${tokenId}        QA001
 ${tokenDecimal}    1
 ${tokenAmount}    25000
 ${amount}         2000
