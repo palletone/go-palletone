@@ -60,7 +60,7 @@ func (pm *ProtocolManager) syncer() {
 }
 
 func (pm *ProtocolManager) needToSync(peerHead blockInfo) bool {
-	return false
+	return true
 	//head := pm.blockchain.CurrentHeader()
 	//currentTd := core.GetTd(pm.chainDb, head.Hash(), head.Number.Uint64())
 	//return currentTd != nil && peerHead.Td.Cmp(currentTd) > 0
