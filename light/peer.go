@@ -21,7 +21,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -119,13 +118,12 @@ func (p *peer) Head() (hash common.Hash) {
 	return hash
 }
 
-func (p *peer) HeadAndTd() (hash common.Hash, td *big.Int) {
+func (p *peer) HeadAndTd() (hash common.Hash, number *modules.ChainIndex) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
 	copy(hash[:], p.headInfo.Hash[:])
-	return hash, &big.Int{}
-	//return hash, p.headInfo.Td
+	return hash, &p.headInfo.Number
 }
 
 func (p *peer) headBlockInfo() blockInfo {
@@ -193,7 +191,7 @@ func (p *peer) SendRawAnnounce(request []byte /*announceData*/) error {
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
-func (p *peer) SendBlockHeaders(reqID, bv uint64, headers []*modules.Header) error {
+func (p *peer) SendUnitHeaders(reqID, bv uint64, headers []*modules.Header) error {
 	return sendResponse(p.rw, BlockHeadersMsg, reqID, bv, headers)
 }
 
@@ -251,7 +249,8 @@ func (p *peer) RequestHeadersByHash(reqID, cost uint64, origin common.Hash, amou
 // specified header query, based on the number of an origin block.
 func (p *peer) RequestHeadersByNumber(reqID, cost, origin uint64, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "fromnum", origin, "skip", skip, "reverse", reverse)
-	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	return nil
+	//return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
