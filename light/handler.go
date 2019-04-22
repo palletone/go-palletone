@@ -222,7 +222,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
 		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
-		//pm.BroadcastLocalLightHeader(header)
+		pm.BroadcastLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -238,15 +238,25 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		headerBroadcaster, inserter, pm.removePeer)
 }
 
-func (pm *ProtocolManager) BroadcastLocalLightHeader(header *modules.Header) {
+func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
-	//
-	//hash := header.Hash()
-	//peers := pm.peers.PeersWithoutLightHeader(hash)
-	//for _, peer := range peers {
-	//	peer.SendLightHeader(header)
-	//}
-	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
+	peers := pm.peers.PeersWithoutHeader(header.Hash())
+	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
+	for _, p := range peers {
+		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
+		switch p.announceType {
+
+		case announceTypeSimple:
+			select {
+			case p.announceChn <- announce:
+			default:
+				pm.removePeer(p.id)
+			}
+		case announceTypeSigned:
+
+		}
+	}
+	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
 	return
 }
 
@@ -367,27 +377,13 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			select {
 			case announce := <-p.announceChn:
 				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
-				//data, err := rlp.EncodeToBytes(announce)
-				//if err != nil {
-				//	log.Error("rlp.EncodeToBytes", "err", err)
-				//	return
-				//}
-				//log.Debug("Light Palletone ProtocolManager->handle", "announce bytes", data)
-				//var req announceData
-				//err = rlp.DecodeBytes(data, &req)
-				//if err != nil {
-				//	log.Error("rlp.DecodeBytes", "err", err)
-				//	return
-				//}
 				data, err := json.Marshal(announce)
 				if err != nil {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
 				} else {
+					p.SetHead(&announce)
 					p.SendRawAnnounce(data)
 				}
-				//if err := p.SendRawAnnounce(announce); err != nil {
-				//	log.Error("Light Palletone ProtocolManager->handle", "SendAnnounce err", err)
-				//}
 			case <-stop:
 				return
 			}
@@ -619,7 +615,7 @@ type peerConnection struct {
 
 func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	//return common.Hash{}, nil
-	return pc.peer.HeadAndTd()
+	return pc.peer.HeadAndNumber()
 }
 
 func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
