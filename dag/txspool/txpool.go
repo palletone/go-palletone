@@ -1115,14 +1115,14 @@ func (pool *TxPool) DeleteTx() error {
 			continue
 		}
 		if tx.Confirmed {
-			if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
+			if tx.CreationDate.Add(pool.config.Removetime).Before(time.Now()) {
 				// delete
 				log.Debug("delete the confirmed tx.", "tx_hash", hash)
 				pool.DeleteTxByHash(hash)
 				continue
 			}
 		}
-		if tx.CreationDate.Add(pool.config.Lifetime).After(time.Now()) {
+		if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
 			// delete
 			log.Debug("delete the tx(overtime).", "tx_hash", hash)
 			pool.DeleteTxByHash(hash)

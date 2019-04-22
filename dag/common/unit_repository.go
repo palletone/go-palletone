@@ -67,7 +67,7 @@ type IUnitRepository interface {
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	IsTransactionExist(txHash common.Hash) bool
+	IsTransactionExist(txHash common.Hash) (bool, error)
 	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
@@ -160,7 +160,7 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
 	return rep.dagdb.IsHeaderExist(uHash)
 }
-func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) bool {
+func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) (bool, error) {
 	return rep.dagdb.IsTransactionExist(txHash)
 }
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
@@ -793,6 +793,7 @@ func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.
 		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
+
 	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
 	if err != nil {
 		return common.Address{}, err
@@ -822,6 +823,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		if err != nil {
 			return err
 		}
+		log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
 		txHashSet = append(txHashSet, tx.Hash())
 	}
 	// step3. save unit body, the value only save txs' hash set, and the key is merkle root

@@ -38,12 +38,6 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	// save transaction
 	txHash := tx.Hash()
 	log.Debugf("Try to save tx[%s]", txHash.String())
-	//bytes, err := json.Marshal(tx)
-	//if err != nil {
-	//	return err
-	//}
-
-	//str := *(*string)(unsafe.Pointer(&bytes))
 	//Save tx to db
 	key := append(constants.TRANSACTION_PREFIX, txHash.Bytes()...)
 	err := StoreBytes(dagdb.db, key, tx)
@@ -57,37 +51,6 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 			log.Error("SaveReqIdByTx is failed,", "error", err)
 		}
 	}
-	//Save Address to tx
-
-	//key0 := string(constants.TRANSACTION_PREFIX) + txHash.String()
-	//if err := StoreString(dagdb.db, key0, str); err != nil {
-	//	return err
-	//}
-	//key1 := string(constants.Transaction_Index) + txHash.String()
-	//if err := StoreString(dagdb.db, key1, str); err != nil {
-	//	return err
-	//}
-	//dagdb.updateAddrTransactions(tx, txHash)
-	//// store output by addr
-	//for i, msg := range tx.TxMessages {
-	//	if msg.App >= modules.APP_CONTRACT_TPL_REQUEST && msg.App <= modules.APP_CONTRACT_STOP_REQUEST {
-	//		if err := dagdb.saveReqIdByTx(tx); err != nil {
-	//			log.Error("SaveReqIdByTx is failed,", "error", err)
-	//		}
-	//		continue
-	//	}
-	//	payload, ok := msg.Payload.(*modules.PaymentPayload)
-	//	if ok {
-	//		for _, output := range payload.Outputs {
-	//			//  pkscript to addr
-	//			addr, err := tokenengine.GetAddressFromScript(output.PkScript[:])
-	//			if err != nil {
-	//				log.Error("GetAddressFromScript is failed,", "error", err)
-	//			}
-	//			dagdb.saveOutputByAddr(addr.String(), txHash, i, output)
-	//		}
-	//	}
-	//}
 	return nil
 }
 func (dagdb *DagDb) saveReqIdByTx(tx *modules.Transaction) error {
