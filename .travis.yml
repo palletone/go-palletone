@@ -8,7 +8,7 @@ go:
 script:
     - go build ./cmd/gptn
     - make gptn
-    - $GOPATH/bin/goveralls -service=travis-ci
+    #- $GOPATH/bin/goveralls -service=travis-ci
     - cp gptn bdd/node
     - cd bdd/node
     - pwd
@@ -18,8 +18,11 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
-    - ./deposit_test.sh 4
+    #- sudo find / -name "decimal.py"
+    #- ./deposit_test.sh 4
     - python -m robot.run ../testcase/createTrans
+    #- python -m robot.run ../testcase/ccinvoke/ccinvokePass
+    #- python -m robot.run ../testcase/ccinvoke/transferToken 
 after_success:
     - killall gptn
 after_failure:
@@ -35,6 +38,8 @@ before_install:
  
 install: 
     - python -V
+    - whereis python
+    - which python
     - sudo -H pip install --upgrade pip
     - sudo -H pip install robotframework==2.8.5
     - sudo -H pip install requests

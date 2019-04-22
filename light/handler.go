@@ -397,7 +397,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			log.Debug("Light Palletone message handling failed", "err", err)
+			log.Debug("Light PalletOne message handling failed", "err", err)
 			return err
 		}
 	}
@@ -618,17 +618,18 @@ type peerConnection struct {
 //RequestLeafNodes() error
 
 func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
-	return common.Hash{}, nil
-	// return pc.peer.HeadAndTd()
+	//return common.Hash{}, nil
+	return pc.peer.HeadAndTd()
 }
 
 func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	log.Debug("peerConnection batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
+	log.Debug("peerConnection batch of headers by hash", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
 	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 func (pc *peerConnection) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
-	return nil
+	log.Debug("peerConnection batch of headers by number", "count", amount, "from origin", origin, "skip", skip, "reverse", reverse)
+	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
