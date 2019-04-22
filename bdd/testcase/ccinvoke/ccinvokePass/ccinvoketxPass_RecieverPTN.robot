@@ -22,11 +22,11 @@ ${gain}           2000
 
 *** Test Cases ***
 Ccinvoke RecieverPTN
-	${PTN1}    ${result}    normalGetBalance    ${recieverAdd}
-    sleep    2
+    ${PTN1}    ${result}    normalGetBalance    ${recieverAdd}
     normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    1
     ${gain1}    countRecieverPTN    ${gain}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${gain1}')    decimal
-    sleep    4
+    sleep    2
     ${PTN2}    ${result}    normalGetBalance    ${recieverAdd}
+    sleep    2
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}

@@ -20,5 +20,5 @@ ${poundage}       1
 
 *** Test Cases ***
 CcinvokePass normal
-    [Template]    normalCcinvokePass
-    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
+    normalCcinvokePass    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
+    sleep    2
