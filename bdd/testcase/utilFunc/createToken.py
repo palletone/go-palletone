@@ -3,6 +3,7 @@ import requests
 import json
 import random
 import re
+from time import sleep
 
 class createToken(object):
 
@@ -35,10 +36,8 @@ class createToken(object):
 
     def getTokenIdFromTokens(self,address,preToken):
         result = self.getBalance(address)
-        tokenId = self.getTokenStarts(preToken,result)
-
-        print result
-        return str(tokenId)
+        tokenId,value = self.getTokenStarts(preToken,result)
+        return key,value
 
     def geneNickname(self):
         nickname = "qa"+str(random.randint(100,999))
@@ -48,7 +47,7 @@ class createToken(object):
 
     def getTokenId(self, nickname, dict):
         for key in dict.keys():
-            if re.search(r'^'+nickname, key):
+            if key.startswith(nickname):
                 self.tempToken = key
         return self.tempToken
 
@@ -58,6 +57,8 @@ class createToken(object):
                 self.tempToken = key
                 self.tempValue = dict[key]
                 #print self.tempToken,self.tempvalue
+            else:
+                self.tempValue = 0
         return self.tempToken,self.tempValue
 
     def ccinvoketxPass(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
