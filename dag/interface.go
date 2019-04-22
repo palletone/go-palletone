@@ -60,7 +60,7 @@ type IDag interface {
 	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	IsTransactionExist(hash common.Hash) bool
+	IsTransactionExist(hash common.Hash) (bool, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 
 	// InsertHeaderDag inserts a batch of headers into the local chain.

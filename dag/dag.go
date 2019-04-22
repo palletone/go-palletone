@@ -132,9 +132,8 @@ func (d *Dag) HasUnit(hash common.Hash) bool {
 	}
 	return u != nil
 }
-func (d *Dag) IsTransactionExist(hash common.Hash) bool {
+func (d *Dag) IsTransactionExist(hash common.Hash) (bool, error) {
 	return d.unstableUnitRep.IsTransactionExist(hash)
-
 }
 
 // confirm unit
