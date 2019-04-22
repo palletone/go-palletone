@@ -19,6 +19,6 @@ invalidParams2
     [Tags]    invalidParams
     ${crtList2}    Given I set Params which is more than required
     ${resp2}    When I_post_a_crtTrans_request    ${crtList2}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp2}
+    Then I get a code and a message    ${resp2}    ${error_code}    ${error_message}
 
 *** Keywords ***
