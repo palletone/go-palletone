@@ -80,7 +80,7 @@ type iDag interface {
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	IsTransactionExist(hash common.Hash) bool
+	IsTransactionExist(hash common.Hash) (bool, error)
 }
 
 type Juror struct {

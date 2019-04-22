@@ -126,6 +126,8 @@ const symbolsDeposit = "createMultiResult"
 const symbolsDepositAddr = "btc_multsigAddr"
 const symbolsDepositRedeem = "btc_redeem"
 
+const symbolsBTCAsset = "btc_asset"
+
 const symbolsTx = "tx_"
 const symbolsUnspend = "unspend_"
 const symbolsSpent = "spent_"
@@ -210,15 +212,15 @@ func _setBTCTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Respo
 	if err != nil {
 		return shim.Success([]byte("AssetStr invalid"))
 	}
-	err = stub.PutState("btc_token_asset", asset.Bytes())
+	err = stub.PutState(symbolsBTCAsset, asset.Bytes())
 	if err != nil {
-		return shim.Error("write btc_token_asset failed: " + err.Error())
+		return shim.Error("write symbolsBTCAsset failed: " + err.Error())
 	}
 	return shim.Success([]byte("Success"))
 }
 
 func getBTCTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
-	result, _ := stub.GetState(symbolsDepositAddr)
+	result, _ := stub.GetState(symbolsBTCAsset)
 	if len(result) == 0 {
 		return nil
 	}
@@ -723,7 +725,7 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 			log.Debugf("DelState txhash unspend failed err: %s", err.Error())
 			return errors.New("DelState txhash unspend failed")
 		}
-		err = stub.PutState(symbolsSpent+txHash+selUnspnds[i].Txid+sep+strconv.Itoa(int(selUnspnds[i].Vout)),
+		err = stub.PutState(symbolsSpent+selUnspnds[i].Txid+sep+strconv.Itoa(int(selUnspnds[i].Vout)),
 			[]byte(Int64ToBytes(selUnspnds[i].Value)))
 		if err != nil {
 			log.Debugf("PutState txhash spent failed err: %s", err.Error())
@@ -731,10 +733,12 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 		}
 	}
 
-	err := stub.PutState(symbolsUnspend+txHash+sep+strconv.Itoa(1), []byte(Int64ToBytes(totalAmount-btcTokenAmount)))
-	if err != nil {
-		log.Debugf("PutState txhash unspend failed err: %s", err.Error())
-		return errors.New("PutState txhash unspend failed")
+	if totalAmount > btcTokenAmount {
+		err := stub.PutState(symbolsUnspend+txHash+sep+strconv.Itoa(1), []byte(Int64ToBytes(totalAmount-btcTokenAmount)))
+		if err != nil {
+			log.Debugf("PutState txhash unspend failed err: %s", err.Error())
+			return errors.New("PutState txhash unspend failed")
+		}
 	}
 
 	return nil
@@ -790,7 +794,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if len(result) == 0 {
 		return shim.Error("DepsoitRedeem is empty")
 	}
-	redeemHex := common.Bytes2Hex(result)
+	redeemHex := string(result)
 
 	inputRedeemIndex := []int{}
 	for i := len(selUnspnds); i > 0; i-- {

@@ -47,6 +47,6 @@ type IStateQuery interface {
 }
 type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	IsTransactionExist(hash common.Hash) bool
+	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 }
