@@ -3,7 +3,7 @@ normalCrtTrans
     [Arguments]    ${result_code}
     ${ret}    Given I_set_crtTrans_params_to_Normal
     ${resp}    When I_post_a_crtTrans_request    ${ret}
-    ${resultCrt}    Then I_get_a_crtTrans_result${result_code}    ${resp}
+    ${resultCrt}    Then I_get_a_crtTrans_result    ${resp}
     [Return]    ${resultCrt}
 
 normalSignTrans
@@ -11,7 +11,7 @@ normalSignTrans
     ${resultCrt}    normalCrtTrans    ${result_code}
     ${signList}    Given I_set_signTrans_input_to_Normal    ${resultCrt}
     ${resp}    When I_post_a_signtTrans_request    ${signList}
-    ${hex}    Then I_get_the_signTrans_hex${result_hex}_txid${result_txid}    ${resp}
+    ${hex}    Then I_get_signTrans_hex_and_txid    ${resp}
     [Return]    ${hex}
 
 normalSendTrans
@@ -21,18 +21,18 @@ normalSendTrans
     ${result}    Then I_get_the_sendTrans_result    ${resp2}
     [Return]    ${result}
 
-normalCcinvokdePass
-    [Arguments]    ${result_code}
-    ${ret}    Given I_set_CcinvokdePass_params_to_Normal
-    ${resp}    When I_post_a_CcinvokdePass_request    ${ret}
-    ${resultCrt}    Then I_get_a_CcinvokdePass_result${result_code}    ${resp}
+normalCcinvokePass
+    [Arguments]    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
+    ${ret}    Given I_set_CcinvokePass_params_to_Normal    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
+    ${resp}    When I_post_a_CcinvokePass_request    ${ret}
+    ${resultCrt}    Then I_get_a_CcinvokePass_result    ${resp}    ${result_code}
     [Return]    ${resultCrt}
 
 normalTransferToken
     [Arguments]    ${result_code}
-    ${ret}    Given I_set_TransferToken_params_to_Normal    ${tokenId}
+    ${ret}    Given I_set_TransferToken_params_to_Normal    ${preTokenId}
     ${resp}    When I_post_a_TransferToken_request    ${ret}
-    ${resultCrt}    Then I_get_a_TransferToken_result${result_code}    ${resp}
+    ${resultCrt}    Then I_get_a_TransferToken_result    ${resp}    ${result_code}
     [Return]    ${resultCrt}
 
 normalGetTxByReqId
@@ -49,63 +49,50 @@ normalGetBalance
     ${ptn}    ${result}    Then I_get_a_getBalance_result    ${resp}
     [Return]    ${ptn}    ${result}
 
-setInvalidSender
-    [Arguments]    ${i}    ${error_code}    ${error_message}
-    ${result}    Given I set senderAddr to ${i}    ${i}
+InvalidCrtTrans
+    [Arguments]    ${senderAdd}    ${recieverAdd}    ${Amount}    ${poundage}    ${error_code}    ${error_message}
+    ${result}    Given I set crtTrans params    ${senderAdd}    ${recieverAdd}    ${Amount}    ${poundage}
     ${resp}    When I post a crtTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
+    Then I get a code and a message    ${resp}    ${error_code}    ${error_message}
 
-setInvalidReciever
-    [Arguments]    ${i}    ${error_code}    ${error_message}
-    ${result}    Given I set recieverAddr to ${i}    ${i}
-    ${resp}    When I post a crtTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
-
-setInvalidAmount
-    [Arguments]    ${i}    ${error_code}    ${error_message}
-    ${result}    Given I set Amount to ${i}    ${i}
-    ${resp}    When I post a crtTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
-
-setInvalidPoundage
-    [Arguments]    ${i}    ${error_code}    ${error_message}
-    ${result}    Given I set Poundage to ${i}    ${i}
-    ${resp}    When I post a crtTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
-
-setInvalidSign
-    [Arguments]    ${i}    ${error_code}    ${error_message}
-    ${result}    Given I set signTrans result to ${i}    ${i}
+InvalidSignTrans
+    [Arguments]    ${crtResult}    ${range}    ${pwd}    ${error_code}    ${error_message}
+    ${result}    Given I set signTrans result    ${crtResult}    ${range}    ${pwd}
     ${resp}    When I post a signTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
+    Then I get a code and a message    ${resp}    ${error_code}    ${error_message}
 
 setInvalidSignPass
     [Arguments]    ${crtResult}    ${i}    ${error_code}    ${error_message}
-    ${result}    Given I set signTrans password to ${i}    ${crtResult}    ${i}
+    ${result}    Given I set signTrans password    ${crtResult}    ${i}
     ${resp}    When I post a signTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
+    Then I get a code and a message    ${resp}
 
 setCrtInvalidSign
     [Arguments]    ${i}    ${error_code}    ${error_message}
     ${crtResult}    normalCrtTrans    ${result_code}
-    ${result}    Given I set signTrans password to ${i}    ${crtResult}    ${i}
+    ${result}    Given I set signTrans password    ${crtResult}    ${i}
     ${resp}    When I post a signTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
+    Then I get a code and a message    ${resp}
 
-setEmptySign
-    [Arguments]    ${i}
-    ${result}    Given I set signTrans to empty list    ${i}
-    ${resp}    When I post a signTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
-
-setInvalidSend
+InvalidSendTrans
     [Arguments]    ${i}    ${error_code}    ${error_message}
-    ${result}    Given I set sendTrans result to ${i}    ${i}
+    ${result}    Given I set sendTrans result    ${i}
     ${resp}    When I post a sendTrans request    ${result}
-    Then I get a code ${error_code} and a message ${error_message}    ${resp}
+    Then I get a code and a message    ${resp}    ${error_code}    ${error_message}
 
 invalidGetbalance
     [Arguments]    ${i}    ${error_code}    ${error_message}
-    ${result}    Given I set getBalance params to ${i}    ${i}
+    ${result}    Given I set getBalance params    ${i}
     ${resp}    When I post a getBalance request    ${result}
-    Then I get a Getbalance code ${error_code} and a message ${error_message}    ${resp}
+    Then I get a Getbalance code and a message    ${resp}    ${error_code}    ${error_message}
+
+InvalidCcinvoke
+    [Arguments]    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}
+    ...    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${recieverAdd1}    ${pwd}    ${expiredTime}
+    ...    ${error_code}    ${error_message}    ${senderAdd}=P1HhWxfQLMgb5TfE56GASURCuitX2XL397G
+    ${ret}    Given I_set_CcinvokePass_params    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}
+    ...    ${tokenType}    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${recieverAdd1}
+    ...    ${pwd}    ${expiredTime}
+    ${resp}    When I_post_CcinvokePass_request    ${ret}
+    ${resultCrt}    Then I_get_the_CcinvokePass_result    ${resp}    ${error_code}    ${error_message}
+    [Return]    ${resultCrt}
