@@ -7,7 +7,6 @@ Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
-
 *** Variables ***
 ${host}           http://localhost:8545/
 ${geneAdd}        P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv
