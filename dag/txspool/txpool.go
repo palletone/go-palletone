@@ -604,11 +604,11 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 
 	txpool_tx.CreationDate = time.Now()
 	// 孤兒交易和非孤兒的交易費分开计算。
-	if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
-		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
-	} else {
+	if ok, err := txpool.ValidateOrphanTx(tx); ok || err != nil {
 		// 孤兒交易的交易费暂时设置20dao, 以便计算优先级
 		txpool_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
+	} else {
+		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 	}
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
 
@@ -635,8 +635,8 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
-	if has, err := pool.unit.IsTransactionExist(hash); has {
-		return false, fmt.Errorf("the transactionx: %x has been packaged. error:%s", hash, err.Error())
+	if has, _ := pool.unit.IsTransactionExist(hash); has {
+		return false, fmt.Errorf("the transactionx: %s has been packaged. error:%s", hash.String())
 	}
 	if _, has := pool.all.Load(hash); has {
 		log.Trace("Discarding already known transaction", "hash", hash)
