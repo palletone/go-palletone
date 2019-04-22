@@ -1,10 +1,13 @@
 package light
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -22,8 +25,14 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	var req announceData
-	if err := msg.Decode(&req); err != nil {
+	var data []byte
+	if err := msg.Decode(&data); err != nil {
 		log.Error("AnnounceMsg", "Decode err", err, "msg", msg)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+
+	if err := json.Unmarshal(data, &req); err != nil {
+		log.Error("AnnounceMsg", "Unmarshal err", err, "data", data)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
@@ -35,94 +44,129 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		log.Trace("Valid announcement signature")
 	}
 
-	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash /*, "td", req.Td, "reorg", req.ReorgDepth*/)
-	//if pm.fetcher != nil {
-	//	pm.fetcher.announce(p, &req)
-	//}
+	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash, "header", req.Header)
+	if pm.fetcher != nil {
+		pm.fetcher.Enqueue(p, &req.Header)
+	}
+	p.headInfo = &req
 	return nil
 }
 
 func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
-	log.Trace("Received block header request")
-	return nil
 	// Decode the complex header query
-	//var req struct {
-	//	ReqID uint64
-	//	Query getBlockHeadersData
-	//}
-	//if err := msg.Decode(&req); err != nil {
-	//	return errResp(ErrDecode, "%v: %v", msg, err)
-	//}
-	//
-	//query := req.Query
-	//if reject(query.Amount, MaxHeaderFetch) {
-	//	return errResp(ErrRequestRejected, "")
-	//}
-	//
-	//hashMode := query.Origin.Hash != (common.Hash{})
-	//
-	//// Gather headers until the fetch or network limits is reached
-	//var (
-	//	bytes   common.StorageSize
-	//	headers []*types.Header
-	//	unknown bool
-	//)
-	//for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit {
-	//	// Retrieve the next header satisfying the query
-	//	var origin *types.Header
-	//	if hashMode {
-	//		origin = pm.blockchain.GetHeaderByHash(query.Origin.Hash)
-	//	} else {
-	//		origin = pm.blockchain.GetHeaderByNumber(query.Origin.Number)
-	//	}
-	//	if origin == nil {
-	//		break
-	//	}
-	//	number := origin.Number.Uint64()
-	//	headers = append(headers, origin)
-	//	bytes += estHeaderRlpSize
-	//
-	//	// Advance to the next header of the query
-	//	switch {
-	//	case query.Origin.Hash != (common.Hash{}) && query.Reverse:
-	//		// Hash based traversal towards the genesis block
-	//		for i := 0; i < int(query.Skip)+1; i++ {
-	//			if header := pm.blockchain.GetHeader(query.Origin.Hash, number); header != nil {
-	//				query.Origin.Hash = header.ParentHash
-	//				number--
-	//			} else {
-	//				unknown = true
-	//				break
-	//			}
-	//		}
-	//	case query.Origin.Hash != (common.Hash{}) && !query.Reverse:
-	//		// Hash based traversal towards the leaf block
-	//		if header := pm.blockchain.GetHeaderByNumber(origin.Number.Uint64() + query.Skip + 1); header != nil {
-	//			if pm.blockchain.GetBlockHashesFromHash(header.Hash(), query.Skip+1)[query.Skip] == query.Origin.Hash {
-	//				query.Origin.Hash = header.Hash()
-	//			} else {
-	//				unknown = true
-	//			}
-	//		} else {
-	//			unknown = true
-	//		}
-	//	case query.Reverse:
-	//		// Number based traversal towards the genesis block
-	//		if query.Origin.Number >= query.Skip+1 {
-	//			query.Origin.Number -= query.Skip + 1
-	//		} else {
-	//			unknown = true
-	//		}
-	//
-	//	case !query.Reverse:
-	//		// Number based traversal towards the leaf block
-	//		query.Origin.Number += query.Skip + 1
-	//	}
-	//}
-	//
-	//bv, rcost := p.fcClient.RequestProcessed(costs.baseCost + query.Amount*costs.reqCost)
-	//pm.server.fcCostStats.update(msg.Code, query.Amount, rcost)
-	//return p.SendBlockHeaders(req.ReqID, bv, headers)
+	log.Debug("===Enter Light GetBlockHeadersMsg===")
+	defer log.Debug("===End Ligth GetBlockHeadersMsg===")
+
+	var query getBlockHeadersData
+	if err := msg.Decode(&query); err != nil {
+		log.Info("GetBlockHeadersMsg Decode", "err:", err, "msg:", msg)
+		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+
+	log.Debug("ProtocolManager", "GetBlockHeadersMsg getBlockHeadersData:", query)
+
+	hashMode := query.Origin.Hash != (common.Hash{})
+	log.Debug("ProtocolManager", "GetBlockHeadersMsg hashMode:", hashMode)
+	// Gather headers until the fetch or network limits is reached
+	var (
+		bytes   common.StorageSize
+		headers []*modules.Header
+		unknown bool
+	)
+
+	for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit && len(headers) < downloader.MaxHeaderFetch {
+		// Retrieve the next header satisfying the query
+		var origin *modules.Header
+		if hashMode {
+			origin, _ = pm.dag.GetHeaderByHash(query.Origin.Hash)
+		} else {
+			log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number.Index)
+			origin, _ = pm.dag.GetHeaderByNumber(&query.Origin.Number)
+		}
+
+		if origin == nil {
+			break
+		}
+		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.Number.Index)
+
+		number := origin.Number.Index
+		headers = append(headers, origin)
+		bytes += estHeaderRlpSize
+
+		// Advance to the next header of the query
+		switch {
+		case hashMode && query.Reverse:
+			// Hash based traversal towards the genesis block
+			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the genesis block")
+			for i := 0; i < int(query.Skip)+1; i++ {
+				if header, err := pm.dag.GetHeaderByHash(query.Origin.Hash); err == nil && header != nil {
+					if number != 0 {
+						query.Origin.Hash = header.ParentsHash[0]
+					}
+					number--
+				} else {
+					//log.Info("========GetBlockHeadersMsg========", "number", number, "err:", err)
+					unknown = true
+					break
+				}
+			}
+		case hashMode && !query.Reverse:
+			// Hash based traversal towards the leaf block
+			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the leaf block")
+			var (
+				current = origin.Number.Index
+				next    = current + query.Skip + 1
+				index   = origin.Number
+			)
+			log.Debug("ProtocolManager", "GetBlockHeadersMsg next", next, "current:", current)
+			if next <= current {
+				infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
+				log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+				unknown = true
+			} else {
+				index.Index = next
+				log.Debug("ProtocolManager", "GetBlockHeadersMsg index.Index:", index.Index)
+				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
+					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
+					log.Debug("ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs), "header.index:", header.Number.Index, "header.hash:", header.Hash().String(), "query.Skip+1", query.Skip+1)
+					if len(hashs) > int(query.Skip) && (hashs[query.Skip] == query.Origin.Hash) {
+						query.Origin.Hash = header.Hash()
+					} else {
+						log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetUnitHashesFromHash not equal origin hash.", "")
+						log.Debug("ProtocolManager", "GetBlockHeadersMsg header.Hash()", header.Hash(), "query.Skip+1:", query.Skip+1, "query.Origin.Hash:", query.Origin.Hash)
+						//log.Debug("ProtocolManager", "GetBlockHeadersMsg pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip]:", pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip])
+						unknown = true
+					}
+				} else {
+					log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetHeaderByNumber not found. Index:", index.Index)
+					unknown = true
+				}
+			}
+		case query.Reverse:
+			// Number based traversal towards the genesis block
+			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Number based towards the genesis block")
+			if query.Origin.Number.Index >= query.Skip+1 {
+				query.Origin.Number.Index -= query.Skip + 1
+			} else {
+				log.Info("ProtocolManager", "GetBlockHeadersMsg query.Reverse", "unknown is true")
+				unknown = true
+			}
+
+		case !query.Reverse:
+			// Number based traversal towards the leaf block
+			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Number based towards the leaf block")
+			query.Origin.Number.Index += query.Skip + 1
+		}
+	}
+	start := uint64(0)
+	end := uint64(0)
+	number := len(headers)
+	if number > 0 {
+		start = uint64(headers[0].Number.Index)
+		end = uint64(headers[number-1].Number.Index)
+	}
+	log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", len(headers), "start:", start, "end:", end, " getBlockHeadersData:", query)
+	return p.SendUnitHeaders(0, 0, headers)
 }
 
 func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
@@ -139,15 +183,19 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	if err := msg.Decode(&resp); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	p.fcServer.GotReply(resp.ReqID, resp.BV)
-	if pm.fetcher != nil && pm.fetcher.requestedID(resp.ReqID) {
-		pm.fetcher.deliverHeaders(p, resp.ReqID, resp.Headers)
-	} else {
-		err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
-		if err != nil {
-			log.Debug(fmt.Sprint(err))
-		}
+	err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
+	if err != nil {
+		log.Debug(fmt.Sprint(err))
 	}
+	//p.fcServer.GotReply(resp.ReqID, resp.BV)
+	//if pm.fetcher != nil && pm.fetcher.requestedID(resp.ReqID) {
+	//	pm.fetcher.deliverHeaders(p, resp.ReqID, resp.Headers)
+	//} else {
+	//	err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
+	//	if err != nil {
+	//		log.Debug(fmt.Sprint(err))
+	//	}
+	//}
 	return nil
 }
 

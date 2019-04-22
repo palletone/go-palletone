@@ -90,7 +90,7 @@ type dags interface {
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	// GetTransaction(hash common.Hash) (*modules.Transaction, common.Hash, uint64, uint64, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	HasTransaction(hash common.Hash) bool
+	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
@@ -604,11 +604,11 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 
 	txpool_tx.CreationDate = time.Now()
 	// 孤兒交易和非孤兒的交易費分开计算。
-	if ok, err := txpool.ValidateOrphanTx(tx); !ok && err == nil {
-		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
-	} else {
+	if ok, err := txpool.ValidateOrphanTx(tx); ok || err != nil {
 		// 孤兒交易的交易费暂时设置20dao, 以便计算优先级
 		txpool_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
+	} else {
+		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
 	}
 	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
 
@@ -635,8 +635,8 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
-	if pool.unit.HasTransaction(hash) {
-		return false, fmt.Errorf("the transactionx: %x has been packaged.", hash)
+	if has, _ := pool.unit.IsTransactionExist(hash); has {
+		return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
 	}
 	if _, has := pool.all.Load(hash); has {
 		log.Trace("Discarding already known transaction", "hash", hash)
@@ -1115,14 +1115,14 @@ func (pool *TxPool) DeleteTx() error {
 			continue
 		}
 		if tx.Confirmed {
-			if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
+			if tx.CreationDate.Add(pool.config.Removetime).Before(time.Now()) {
 				// delete
 				log.Debug("delete the confirmed tx.", "tx_hash", hash)
 				pool.DeleteTxByHash(hash)
 				continue
 			}
 		}
-		if tx.CreationDate.Add(pool.config.Lifetime).After(time.Now()) {
+		if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
 			// delete
 			log.Debug("delete the tx(overtime).", "tx_hash", hash)
 			pool.DeleteTxByHash(hash)
@@ -1618,7 +1618,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			break
 		} else {
 			if !tx.Pending {
-				if pool.unit.HasTransaction(tx.Tx.Hash()) {
+				if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
 					continue
 				}
 				// add precusorTxs 获取该交易的前驱交易列表
@@ -1647,7 +1647,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	}
 	for _, tx := range or_list {
 		txhash := tx.Tx.Hash()
-		if pool.unit.HasTransaction(txhash) {
+		if has, _ := pool.unit.IsTransactionExist(txhash); has {
 			go pool.orphans.Delete(txhash)
 			continue
 		}

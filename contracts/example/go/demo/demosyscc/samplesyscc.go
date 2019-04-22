@@ -688,9 +688,10 @@ func checkBalanceForWithdrawBTC(withdrawBTCReqTx *WithdrawBTCReqTX, stub *shim.C
 //refer to the struct SignTxSendParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member.
 type BTCTransaction_signTxSend struct { //SignTxSendParams
-	Method         string `json:"method"`
-	TransactionHex string `json:"transactionhex"`
-	RedeemHex      string `json:"redeemhex"`
+	Method           string   `json:"method"`
+	TransactionHex   string   `json:"transactionhex"`
+	InputRedeemIndex []int    `json:"inputredeemindex"`
+	RedeemHex        []string `json:"redeemhex"`
 }
 
 func withdrawBTC(args *[]string, stub *shim.ChaincodeStubInterface) pb.Response {
@@ -729,7 +730,7 @@ func withdrawBTC(args *[]string, stub *shim.ChaincodeStubInterface) pb.Response 
 	}
 
 	//
-	btcTX := BTCTransaction_signTxSend{"SignTxSend", transactionhex, string(btc_redeem)}
+	btcTX := BTCTransaction_signTxSend{"SignTxSend", transactionhex, []int{0}, []string{string(btc_redeem)}}
 	reqBytes, err := json.Marshal(btcTX)
 	if err != nil {
 		return shim.Error(err.Error())

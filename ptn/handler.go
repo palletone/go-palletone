@@ -39,7 +39,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-	"github.com/palletone/go-palletone/ptn/lps"
+	//"github.com/palletone/go-palletone/ptn/lps"
 	"github.com/palletone/go-palletone/validator"
 )
 
@@ -84,9 +84,9 @@ type ProtocolManager struct {
 	fetcher    *fetcher.Fetcher
 	peers      *peerSet
 
-	lightdownloader *downloader.Downloader
-	lightFetcher    *lps.LightFetcher
-	lightPeers      *peerSet
+	//lightdownloader *downloader.Downloader
+	//lightFetcher    *lps.LightFetcher
+	//lightPeers      *peerSet
 
 	SubProtocols []p2p.Protocol
 
@@ -153,11 +153,11 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		networkId: networkId,
 		dag:       dag,
 		//protocolName: protocolName,
-		txpool:       txpool,
-		eventMux:     mux,
-		consEngine:   engine,
-		peers:        newPeerSet(),
-		lightPeers:   newPeerSet(),
+		txpool:     txpool,
+		eventMux:   mux,
+		consEngine: engine,
+		peers:      newPeerSet(),
+		//lightPeers:   newPeerSet(),
 		newPeerCh:    make(chan *peer),
 		noMorePeers:  make(chan struct{}),
 		txsyncCh:     make(chan *txsync),
@@ -221,15 +221,15 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 				}
 				return nil
 			},
-			Corss: func() []string {
-				return manager.Corss()
-			},
-			CorsPeerInfo: func(protocl string, id discover.NodeID) interface{} {
-				if p := manager.lightPeers.Peer(id.TerminalString()); p != nil {
-					return p.Info(protocl)
-				}
-				return nil
-			},
+			//Corss: func() []string {
+			//	return manager.Corss()
+			//},
+			//CorsPeerInfo: func(protocl string, id discover.NodeID) interface{} {
+			//	if p := manager.lightPeers.Peer(id.TerminalString()); p != nil {
+			//		return p.Info(protocl)
+			//	}
+			//	return nil
+			//},
 		})
 	}
 	if len(manager.SubProtocols) == 0 {
@@ -240,8 +240,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
 	manager.fetcher = manager.newFetcher()
 
-	manager.lightdownloader = downloader.New(downloader.LightSync, manager.eventMux, nil, nil, dag, txpool)
-	manager.lightFetcher = manager.newLightFetcher()
+	//manager.lightdownloader = downloader.New(downloader.LightSync, manager.eventMux, nil, nil, dag, txpool)
+	//manager.lightFetcher = manager.newLightFetcher()
 	return manager, nil
 }
 
@@ -298,7 +298,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 
 	// Unregister the peer from the downloader and PalletOne peer set
 	pm.downloader.UnregisterPeer(id)
-	pm.lightdownloader.UnregisterPeer(id)
+	//pm.lightdownloader.UnregisterPeer(id)
 	if err := pm.peers.Unregister(id); err != nil {
 		log.Error("Peer removal failed", "peer", id, "err", err)
 	}
@@ -406,7 +406,7 @@ func (pm *ProtocolManager) Stop() {
 	// sessions which are already established but not added to pm.peers yet
 	// will exit when they try to register.
 	pm.peers.Close()
-	pm.lightPeers.Close()
+	//pm.lightPeers.Close()
 
 	// Wait for all peer handler goroutines and the loops to come down.
 	pm.wg.Wait()
@@ -471,9 +471,9 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		return err
 	}
 
-	if err := pm.lightdownloader.RegisterLightPeer(p.id, p.version, p); err != nil {
-		return err
-	}
+	//if err := pm.lightdownloader.RegisterLightPeer(p.id, p.version, p); err != nil {
+	//	return err
+	//}
 
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.

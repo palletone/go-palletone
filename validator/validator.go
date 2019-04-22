@@ -191,7 +191,7 @@ func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 			log.Warnf("Validate DagQuery doesn't set, cannot check tx[%s] is exist or not", txHash.String())
 			return false
 		}
-		if tx, err := validate.dagquery.GetTransactionOnly(txHash); err == nil && tx != nil {
+		if has, _ := validate.dagquery.IsTransactionExist(txHash); has {
 			log.Debug("checkTxIsExist transactions exist in dag", "txHash", txHash.String())
 			return true
 		}

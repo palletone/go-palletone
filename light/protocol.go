@@ -19,13 +19,10 @@ package light
 
 import (
 	"crypto/ecdsa"
-	"fmt"
-	"io"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // Constants to match up protocol versions and messages
@@ -129,16 +126,15 @@ type announceBlock struct {
 
 // announceData is the network packet for the block announcements.
 type announceData struct {
-	Hash   common.Hash // Hash of one particular block being announced
-	Number uint64      // Number of one particular block being announced
-	//Td         *big.Int    // Total difficulty of one particular block being announced
-	//ReorgDepth uint64
+	Hash   common.Hash        // Hash of one particular block being announced
+	Number modules.ChainIndex // Number of one particular block being announced
+	Header modules.Header
 	Update keyValueList
 }
 
 // sign adds a signature to the block announcement by the given privKey
 func (a *announceData) sign(privKey *ecdsa.PrivateKey) {
-	rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number /*, a.Td*/})
+	rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number.Index /*, a.Td*/})
 	sig, _ := crypto.Sign(crypto.Keccak256(rlp), privKey)
 	a.Update = a.Update.add("sign", sig)
 }
@@ -164,9 +160,9 @@ func (a *announceData) checkSignature(pubKey *ecdsa.PublicKey) error {
 }
 
 type blockInfo struct {
-	Hash   common.Hash // Hash of one particular block being announced
-	Number uint64      // Number of one particular block being announced
-	Td     *big.Int    // Total difficulty of one particular block being announced
+	Hash   common.Hash         // Hash of one particular block being announced
+	Number *modules.ChainIndex // Number of one particular block being announced
+	//Td     *big.Int            // Total difficulty of one particular block being announced
 }
 
 // getBlockHeadersData represents a block header query.
@@ -179,39 +175,39 @@ type getBlockHeadersData struct {
 
 // hashOrNumber is a combined field for specifying an origin block.
 type hashOrNumber struct {
-	Hash   common.Hash // Block hash from which to retrieve headers (excludes Number)
-	Number uint64      // Block hash from which to retrieve headers (excludes Hash)
+	Hash   common.Hash        // Block hash from which to retrieve headers (excludes Number)
+	Number modules.ChainIndex // Block hash from which to retrieve headers (excludes Hash)
 }
 
 // EncodeRLP is a specialized encoder for hashOrNumber to encode only one of the
 // two contained union fields.
-func (hn *hashOrNumber) EncodeRLP(w io.Writer) error {
-	if hn.Hash == (common.Hash{}) {
-		return rlp.Encode(w, hn.Number)
-	}
-	if hn.Number != 0 {
-		return fmt.Errorf("both origin hash (%x) and number (%d) provided", hn.Hash, hn.Number)
-	}
-	return rlp.Encode(w, hn.Hash)
-}
-
-// DecodeRLP is a specialized decoder for hashOrNumber to decode the contents
-// into either a block hash or a block number.
-func (hn *hashOrNumber) DecodeRLP(s *rlp.Stream) error {
-	_, size, _ := s.Kind()
-	origin, err := s.Raw()
-	if err == nil {
-		switch {
-		case size == 32:
-			err = rlp.DecodeBytes(origin, &hn.Hash)
-		case size <= 8:
-			err = rlp.DecodeBytes(origin, &hn.Number)
-		default:
-			err = fmt.Errorf("invalid input size %d for origin", size)
-		}
-	}
-	return err
-}
+//func (hn *hashOrNumber) EncodeRLP(w io.Writer) error {
+//	if hn.Hash == (common.Hash{}) {
+//		return rlp.Encode(w, hn.Number)
+//	}
+//	if hn.Number != 0 {
+//		return fmt.Errorf("both origin hash (%x) and number (%d) provided", hn.Hash, hn.Number)
+//	}
+//	return rlp.Encode(w, hn.Hash)
+//}
+//
+//// DecodeRLP is a specialized decoder for hashOrNumber to decode the contents
+//// into either a block hash or a block number.
+//func (hn *hashOrNumber) DecodeRLP(s *rlp.Stream) error {
+//	_, size, _ := s.Kind()
+//	origin, err := s.Raw()
+//	if err == nil {
+//		switch {
+//		case size == 32:
+//			err = rlp.DecodeBytes(origin, &hn.Hash)
+//		case size <= 8:
+//			err = rlp.DecodeBytes(origin, &hn.Number)
+//		default:
+//			err = fmt.Errorf("invalid input size %d for origin", size)
+//		}
+//	}
+//	return err
+//}
 
 // CodeData is the network response packet for a node data retrieval.
 type CodeData []struct {

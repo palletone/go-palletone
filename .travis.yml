@@ -18,10 +18,17 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
+<<<<<<< HEAD
     - sudo find / -name "decimal.py"
     - ./deposit_test.sh 4
     - python -m robot.run ../testcase/createTrans
     - python -m robot.run ../testcase/ccinvoke/ccinvokePass
+=======
+    #- sudo find / -name "decimal.py"
+    - ./deposit_test.sh 4
+    #- python -m robot.run ../testcase/createTrans
+    #- python -m robot.run ../testcase/ccinvoke/ccinvokePass
+>>>>>>> master
     #- python -m robot.run ../testcase/ccinvoke/transferToken 
 after_success:
     - killall gptn

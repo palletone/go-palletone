@@ -21,7 +21,6 @@
 package dag
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -79,7 +78,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	sign_unit, err1 := dagcommon.GetUnitWithSig(newUnit, ks, producer)
 	if err1 != nil {
-		log.Debug(fmt.Sprintf("GetUnitWithSig error: %v", err))
+		log.Debugf("GetUnitWithSig error: %v", err)
 		return nil
 	}
 

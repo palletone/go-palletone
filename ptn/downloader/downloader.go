@@ -622,7 +622,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	if count > limit {
 		count = limit
 	}
-	log.Debug("Downloader", "findAncestor RequestHeadersByNumber false from:", from, "count:", count)
+	log.Debug("Downloader", "findAncestor RequestHeadersByNumber from:", from, "count:", count)
 	index := &modules.ChainIndex{
 		AssetID: assetId,
 		IsMain:  true,

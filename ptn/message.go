@@ -359,9 +359,9 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	log.Infof("Received unit("+unit.UnitHash.TerminalString()+") #", unit.NumberU64(),
-		" parent(", unit.ParentHash()[0].TerminalString(), ") @", timestamp.Format("2006-01-02 15:04:05"),
-		" signed by ", unit.Author().Str())
+	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unit.UnitHash.TerminalString(),
+		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
+		unit.Author().Str())
 
 	latency := time.Now().Sub(timestamp)
 	if latency < -3*time.Second {

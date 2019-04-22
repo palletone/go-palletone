@@ -130,8 +130,7 @@ Get InitPrivKey and InitPubKey with the following command
 $ gptn mediator initdks
 ```
 
-InitPrivKey = private key
-InitPubKey = public key
+InitPrivKey = private key, InitPubKey = public key
 
 When running command `gptn --datadir="your_dir" newgenesis` will create Address and input your password.
 

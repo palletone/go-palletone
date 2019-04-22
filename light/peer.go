@@ -21,7 +21,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -119,20 +118,19 @@ func (p *peer) Head() (hash common.Hash) {
 	return hash
 }
 
-func (p *peer) HeadAndTd() (hash common.Hash, td *big.Int) {
+func (p *peer) HeadAndTd() (hash common.Hash, number *modules.ChainIndex) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
 	copy(hash[:], p.headInfo.Hash[:])
-	return hash, &big.Int{}
-	//return hash, p.headInfo.Td
+	return hash, &p.headInfo.Number
 }
 
 func (p *peer) headBlockInfo() blockInfo {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	return blockInfo{Hash: p.headInfo.Hash, Number: p.headInfo.Number /*, Td: p.headInfo.Td*/}
+	return blockInfo{Hash: p.headInfo.Hash, Number: &p.headInfo.Number /*, Td: p.headInfo.Td*/}
 }
 
 // Td retrieves the current total difficulty of a peer.
@@ -185,12 +183,15 @@ func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
 
 // SendAnnounce announces the availability of a number of blocks through
 // a hash notification.
-func (p *peer) SendAnnounce(request announceData) error {
+//func (p *peer) SendAnnounce(request announceData) error {
+//	return p2p.Send(p.rw, AnnounceMsg, request)
+//}
+func (p *peer) SendRawAnnounce(request []byte /*announceData*/) error {
 	return p2p.Send(p.rw, AnnounceMsg, request)
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
-func (p *peer) SendBlockHeaders(reqID, bv uint64, headers []*modules.Header) error {
+func (p *peer) SendUnitHeaders(reqID, bv uint64, headers []*modules.Header) error {
 	return sendResponse(p.rw, BlockHeadersMsg, reqID, bv, headers)
 }
 
@@ -248,7 +249,8 @@ func (p *peer) RequestHeadersByHash(reqID, cost uint64, origin common.Hash, amou
 // specified header query, based on the number of an origin block.
 func (p *peer) RequestHeadersByNumber(reqID, cost, origin uint64, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "fromnum", origin, "skip", skip, "reverse", reverse)
-	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	return nil
+	//return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
@@ -495,7 +497,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	}
 	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
 	//TODO must modify
-	p.headInfo = &announceData{ /*Td: rTd,*/ Hash: rHash, Number: rNum.Index}
+	p.headInfo = &announceData{Hash: rHash, Number: rNum}
 	return nil
 }
 
@@ -627,13 +629,13 @@ func (ps *peerSet) BestPeer() *peer {
 
 	var (
 		bestPeer *peer
-		//bestTd   *big.Int
+		bestTd   uint64
 	)
-	//for _, p := range ps.peers {
-	//	if td := p.Td(); bestPeer == nil || td.Cmp(bestTd) > 0 {
-	//		bestPeer, bestTd = p, td
-	//	}
-	//}
+	for _, p := range ps.peers {
+		if number := p.headInfo.Number; bestPeer == nil || number.Index > bestTd {
+			bestPeer, bestTd = p, number.Index
+		}
+	}
 	return bestPeer
 }
 

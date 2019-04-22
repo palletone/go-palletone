@@ -44,6 +44,7 @@ import (
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
 	"sync"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type IUnitRepository interface {
@@ -793,6 +794,7 @@ func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.
 		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
+
 	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
 	if err != nil {
 		return common.Address{}, err
@@ -822,6 +824,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		if err != nil {
 			return err
 		}
+		log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
 		txHashSet = append(txHashSet, tx.Hash())
 	}
 	// step3. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -1167,10 +1170,17 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	if rep.statedb.SaveContractState(payload.ContractId, "ContractName", payload.Name, version) != nil {
 		return false
 	}
-	// save contract jury list
-	if rep.statedb.SaveContractState(payload.ContractId, "ContractJury", payload.Jury, version) != nil {
+	//save contract election
+	eleBytes, err := rlp.EncodeToBytes(payload.EleList)
+	if err == nil {
+		log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
+		if rep.statedb.SaveContractState(payload.ContractId, "ElectionList", eleBytes, version) != nil {
+			return false
+		}
+	}else {
 		return false
 	}
+
 	return true
 }
 

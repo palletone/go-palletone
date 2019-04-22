@@ -36,6 +36,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -136,7 +137,7 @@ func TestSaveUnit(t *testing.T) {
 		},
 	}
 	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
-		"testDeploy", nil, 10, nil, readSet, writeSet)
+		"testDeploy", nil, 10, nil, nil, readSet, writeSet)
 
 	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),
@@ -440,7 +441,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		Name:       "testdeploy",
 		Args:       [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
 		//ExecutionTime: et,
-		Jury:     []common.Address{addr},
+		//Jury:     []common.Address{addr},
 		ReadSet:  readSet,
 		WriteSet: writeSet,
 	}
@@ -542,35 +543,35 @@ func TestComputeTxFees(t *testing.T) {
 	txs = append(txs, tx)
 
 	//	log.Info("TestComputeTxFees", "txs:", tx)
-/*
-	//2
-	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04}}
-	aId = modules.AssetId{'p', 't', 'n'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
+	/*
+		//2
+		pks = [][]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}}
+		aId = modules.AssetId{'p', 't', 'n'}
+		tx = creatFeeTx(true, pks, 10, aId)
+		txs = append(txs, tx)
 
-	//3
-	pks = [][]byte{
-		{0x05}, {0x06}, {0x07}, {0x08}}
-	aId = modules.AssetId{'p', 't', 'n'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
+		//3
+		pks = [][]byte{
+			{0x05}, {0x06}, {0x07}, {0x08}}
+		aId = modules.AssetId{'p', 't', 'n'}
+		tx = creatFeeTx(true, pks, 10, aId)
+		txs = append(txs, tx)
 
-	//4
-	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04}}
-	aId = modules.AssetId{'a', 'b', 'c'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
+		//4
+		pks = [][]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}}
+		aId = modules.AssetId{'a', 'b', 'c'}
+		tx = creatFeeTx(true, pks, 10, aId)
+		txs = append(txs, tx)
 
-	//5
-	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04}}
-	aId = modules.AssetId{'a', 'b', 'c'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
-*/
+		//5
+		pks = [][]byte{
+			{0x01}, {0x02}, {0x03}, {0x04}}
+		aId = modules.AssetId{'a', 'b', 'c'}
+		tx = creatFeeTx(true, pks, 10, aId)
+		txs = append(txs, tx)
+	*/
 	//log.Info("TestComputeTxFees", "txs:", txs)
 	ads, err := ComputeTxFees(&m, txs)
 	log.Info("TestComputeTxFees", "txs:", ads)
@@ -582,5 +583,36 @@ func TestComputeTxFees(t *testing.T) {
 			log.Debug("TestComputeTxFees", "coinbase", coinbase, "rewards", rewards)
 		}
 	}
+}
 
+func TestContractStateVrf(t *testing.T) {
+	contractId := []byte("TestContractVrf")
+	eleW := []modules.ElectionInf{
+		{
+			Proof:     []byte("abc"),
+			PublicKey: []byte("def"),
+		},
+	}
+	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	log.Debug("TestContractStateVrf", "ElectionInf", eleW)
+
+	db, _ := ptndb.NewMemDatabase()
+	statedb := storage.NewStateDb(db)
+	eleW_bytes, _ := rlp.EncodeToBytes(eleW)
+	//write
+	if statedb.SaveContractState(contractId, "ElectionList", eleW_bytes, ver) != nil {
+		log.Debug("TestContractStateVrf, SaveContractState fail")
+		return
+	}
+
+	//read
+	eleByte, _, err := statedb.GetContractState(contractId, "ElectionList")
+	if err != nil {
+		log.Debug("TestContractStateVrf, GetContractState fail", "error", err)
+		return
+	}
+	var eler []modules.ElectionInf
+	err1 := rlp.DecodeBytes(eleByte, &eler)
+	log.Infof("%v", err1)
+	log.Infof("%v", eler)
 }
