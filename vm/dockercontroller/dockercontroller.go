@@ -592,14 +592,14 @@ func (vm *DockerVM) GetVMName(ccid ccintf.CCID, format func(string) (string, err
 }
 func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	name := ccid.GetName()
-
-	if ccid.NetworkID != "" && ccid.PeerID != "" {
-		name = fmt.Sprintf("%s-%s-%s", ccid.NetworkID, ccid.PeerID, name)
-	} else if ccid.NetworkID != "" {
-		name = fmt.Sprintf("%s-%s", ccid.NetworkID, name)
-	} else if ccid.PeerID != "" {
-		name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
-	}
+	//
+	//if ccid.NetworkID != "" && ccid.PeerID != "" {
+	//	name = fmt.Sprintf("%s-%s-%s", ccid.NetworkID, ccid.PeerID, name)
+	//} else if ccid.NetworkID != "" {
+	//	name = fmt.Sprintf("%s-%s", ccid.NetworkID, name)
+	//} else if ccid.PeerID != "" {
+	//	name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
+	//}
 	name = name +":"+ contractcfg.GetConfig().ContractAddress
 	// replace any invalid characters with "-" (either in network id, peer id, or in the
 	// entire name returned by any format function)
