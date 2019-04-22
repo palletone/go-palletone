@@ -228,7 +228,8 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	}
 	btxId, err := hex.DecodeString(txId)
 	depId := common.NewAddress(btxId[:20], common.ContractHash)
-	usrccName := depId.String()+":"+templateCC.Name //+ "_" + txId
+	//usrccName := depId.String()+":"+templateCC.Name //+ "_" + txId
+	usrccName := depId.String()
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -237,7 +238,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		Enabled:  true,
 	}
 	chaincodeID := &pb.ChaincodeID{
-		Name:    usrcc.Name,
+		Name:    usrccName,
 		Path:    usrcc.Path,
 		Version: usrcc.Version,
 	}

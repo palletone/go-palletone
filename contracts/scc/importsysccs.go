@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/digitalidcc"
+	"github.com/palletone/go-palletone/contracts/syscontract/partitioncc"
 	"github.com/palletone/go-palletone/contracts/syscontract/prc20"
 	"github.com/palletone/go-palletone/contracts/syscontract/prc721"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
@@ -117,6 +118,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &digitalidcc.DigitalIdentityChainCode{},
+	},
+	{
+		Id:        syscontract.PartitionContractAddress.Bytes21(),
+		Enabled:   true,
+		Name:      "partition_manager_sycc",
+		Path:      ".",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &partitioncc.PartitionMgr{},
 	},
 	{
 		Id:        syscontract.TestContractAddress.Bytes21(),
