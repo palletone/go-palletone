@@ -36,6 +36,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -582,5 +583,36 @@ func TestComputeTxFees(t *testing.T) {
 			log.Debug("TestComputeTxFees", "coinbase", coinbase, "rewards", rewards)
 		}
 	}
+}
 
+func TestContractStateVrf(t *testing.T) {
+	contractId := []byte("TestContractVrf")
+	eleW := []modules.ElectionInf{
+		{
+			Proof:     []byte("abc"),
+			PublicKey: []byte("def"),
+		},
+	}
+	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	log.Debug("TestContractStateVrf", "ElectionInf", eleW)
+
+	db, _ := ptndb.NewMemDatabase()
+	statedb := storage.NewStateDb(db)
+	eleW_bytes, _ := rlp.EncodeToBytes(eleW)
+	//write
+	if statedb.SaveContractState(contractId, "ElectionList", eleW_bytes, ver) != nil {
+		log.Debug("TestContractStateVrf, SaveContractState fail")
+		return
+	}
+
+	//read
+	eleByte, _, err := statedb.GetContractState(contractId, "ElectionList")
+	if err != nil {
+		log.Debug("TestContractStateVrf, GetContractState fail", "error", err)
+		return
+	}
+	var eler []modules.ElectionInf
+	err1 := rlp.DecodeBytes(eleByte, &eler)
+	log.Infof("%v", err1)
+	log.Infof("%v", eler)
 }
