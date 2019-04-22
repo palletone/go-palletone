@@ -498,7 +498,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	}
 	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
 	//TODO must modify
-	p.headInfo = &announceData{ /*Td: rTd,*/ Hash: rHash, Number: rNum}
+	p.headInfo = &announceData{Hash: rHash, Number: rNum}
 	return nil
 }
 

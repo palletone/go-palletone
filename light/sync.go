@@ -83,5 +83,5 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	//pm.blockchain.(*light.LightChain).SyncCht(ctx)
 	//
 	//pm.downloader.Synchronise(peer.id, peer.Head(), peer.Td(), downloader.LightSync)
-	pm.downloader.Synchronise(peer.id, peer.Head(), peer.headInfo.Number.Index, downloader.LightSync, peer.headInfo.Header.Number.AssetID)
+	pm.downloader.Synchronise(peer.id, peer.Head(), peer.headInfo.Number.Index, downloader.LightSync, peer.headInfo.Number.AssetID)
 }
