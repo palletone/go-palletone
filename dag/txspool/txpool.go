@@ -250,7 +250,7 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 		log.Debugf("Get UTXO from txpool by Outpoint:%s", outpoint.String())
 		return utxo, nil
 	}
-	log.Debugf("Outpoint[%s] and Utxo not in pool. query from db", outpoint.String())
+	//log.Debugf("Outpoint[%s] and Utxo not in pool. query from db", outpoint.String())
 	return pool.unit.GetUtxoEntry(outpoint)
 }
 
@@ -677,7 +677,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		return false, err
 	}
 
-	log.Debug("fetch utxoview info:", "utxoinfo", utxoview)
 	// Check the transaction if it exists in the main chain and is not already fully spent.
 	preout := modules.OutPoint{TxHash: hash}
 	for i, msgcopy := range msgs {
@@ -696,7 +695,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 			}
 		}
 	}
-	log.Debug("add output utxoview info: ", "utxoinfo", utxoview.entries[preout])
 
 	// If the transaction pool is full, discard underpriced transactions
 	length := pool.AllLength()
@@ -720,7 +718,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	log.Debugf("Add Tx[%s] to txpool.", tx.Tx.Hash().String())
 	pool.priority_sorted.Put(tx)
 	pool.all.Store(hash, tx)
-	go pool.addCache(tx)
+	pool.addCache(tx)
 	go pool.journalTx(tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
@@ -900,7 +898,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	p_tx := TxtoTxpoolTx(pool, tx)
 	err = pool.checkPoolDoubleSpend(p_tx)
 	if err != nil {
-		log.Info("txpool check PoolDoubleSpend", "error", err)
+		log.Info("txpool check PoolDoubleSpend", "error", err, "p_tx", txHash.String())
 		return nil, nil, err
 	}
 	_, err1 := pool.add(p_tx, !pool.config.NoLocals)
@@ -1302,7 +1300,7 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
 func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
 	if tx, ok := pool.outpoints.Load(*outPoint); ok {
 		str := fmt.Sprintf("output %v already spent by "+
-			"transaction %x in the memory pool",
+			"transaction %x in the txpool",
 			outPoint, tx.(*modules.TxPoolTransaction).Tx.Hash())
 		return true, errors.New(str)
 	}
@@ -1625,8 +1623,10 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 				p_txs, _ := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 				if len(p_txs) > 0 {
 					for _, ptx := range p_txs {
-						list = append(list, ptx)
-						total += ptx.Tx.Size()
+						if has, _ := pool.unit.IsTransactionExist(ptx.Tx.Hash()); !has {
+							list = append(list, ptx)
+							total += ptx.Tx.Size()
+						}
 					}
 				}
 				list = append(list, tx)
@@ -1677,15 +1677,12 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 		m[hash] = tx
 	}
 	list = make([]*modules.TxPoolTransaction, 0)
-
 	for i := 0; i < len(indexL); i++ {
 		hash, _ := indexL[i]
 		if tx, has := m[hash]; has {
 			delete(m, hash)
 			list = append(list, tx)
 			go pool.promoteTx(hash, tx)
-		} else {
-			log.Info("rm repeat error", "index", i)
 		}
 	}
 	// if time.Since(t2) > time.Second*1 {
