@@ -150,4 +150,6 @@ type IDag interface {
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	RefreshSysParameters()
+	GetPartitionChains() ([]*modules.PartitionChain, error)
+	GetMainChain() (*modules.MainChain, error)
 }
