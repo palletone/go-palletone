@@ -218,8 +218,10 @@ func (pay *PaymentPayload) IsCoinbase() bool {
 	if len(pay.Inputs) == 0 {
 		return true
 	}
-	if pay.Inputs[0].PreviousOutPoint == nil {
-		return true
+	for _, input := range pay.Inputs {
+		if input.PreviousOutPoint == nil {
+			return true
+		}
 	}
 	return false
 }

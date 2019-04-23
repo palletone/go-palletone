@@ -22,6 +22,7 @@ package partitioncc
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -29,30 +30,7 @@ import (
 	"strconv"
 )
 
-const symbolsKey = "symbol_"
-
 type PartitionMgr struct {
-}
-
-//作为主链，我会维护我上面支持的分区
-type PartitionChain struct {
-	GenesisHash    string
-	GenesisHeight  uint64
-	ForkUnitHash   string
-	ForkUnitHeight uint64
-	GasToken       dm.AssetId
-	Status         byte     //Active:1 ,Terminated:0,Suspended:2
-	SyncModel      byte     //Push:1 , Pull:2, Push+Pull:3
-	Peers          []string // IP:port format string
-}
-
-//作为一个分区，我会维护我链接到的主链
-type MainChain struct {
-	GenesisHash string
-	Status      byte //Active:1 ,Terminated:0,Suspended:2
-	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
-	GasToken    dm.AssetId
-	Peers       []string // IP:port format string
 }
 
 func (p *PartitionMgr) Init(stub shim.ChaincodeStubInterface) pb.Response {
@@ -83,15 +61,15 @@ const PartitionChainPrefix = "PC"
 const MainChainKey = "MainChain"
 const ErrorForbiddenAccess = "Forbidden access"
 
-func getPartitionChains(stub shim.ChaincodeStubInterface) ([]*PartitionChain, error) {
+func getPartitionChains(stub shim.ChaincodeStubInterface) ([]*dm.PartitionChain, error) {
 	list, err := stub.GetStateByPrefix(PartitionChainPrefix)
 	if err != nil {
 		return nil, err
 	}
-	chains := []*PartitionChain{}
+	chains := []*dm.PartitionChain{}
 	for _, kv := range list {
 		data := kv.Value
-		var partitionChain *PartitionChain
+		var partitionChain *dm.PartitionChain
 		err = json.Unmarshal(data, &partitionChain)
 		if err != nil {
 			return nil, err
@@ -101,7 +79,7 @@ func getPartitionChains(stub shim.ChaincodeStubInterface) ([]*PartitionChain, er
 
 	return chains, nil
 }
-func addPartitionChain(stub shim.ChaincodeStubInterface, chain *PartitionChain) error {
+func addPartitionChain(stub shim.ChaincodeStubInterface, chain *dm.PartitionChain) error {
 	key := PartitionChainPrefix + chain.GasToken.String()
 	value, err := json.Marshal(chain)
 	if err != nil {
@@ -109,15 +87,15 @@ func addPartitionChain(stub shim.ChaincodeStubInterface, chain *PartitionChain) 
 	}
 	return stub.PutState(key, value)
 }
-func buildPartitionChain(args []string) (*PartitionChain, error) {
+func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
 	if len(args) < 8 {
 		return nil, errors.New("need 8 args (GenesisHash,GenesisHeight,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,[Peers])")
 	}
 	var err error
-	partitionChain := &PartitionChain{}
-	partitionChain.GenesisHash = args[0]
+	partitionChain := &dm.PartitionChain{}
+	partitionChain.GenesisHash = common.HexToHash(args[0])
 	partitionChain.GenesisHeight, _ = strconv.ParseUint(args[1], 10, 64)
-	partitionChain.ForkUnitHash = args[2]
+	partitionChain.ForkUnitHash = common.HexToHash(args[2])
 	partitionChain.ForkUnitHeight, _ = strconv.ParseUint(args[3], 10, 64)
 	partitionChain.GasToken, _, err = dm.String2AssetId(args[4])
 	if err != nil {
@@ -183,13 +161,13 @@ func updatePartition(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 
 	return shim.Success(nil)
 }
-func buildMainChain(args []string) (*MainChain, error) {
+func buildMainChain(args []string) (*dm.MainChain, error) {
 	if len(args) < 5 {
 		return nil, errors.New("need 5 args (GenesisHash,GasToken,Status,SyncModel,[Peers])")
 	}
 	var err error
-	mainChain := &MainChain{}
-	mainChain.GenesisHash = args[0]
+	mainChain := &dm.MainChain{}
+	mainChain.GenesisHash = common.HexToHash(args[0])
 	mainChain.GasToken, _, err = dm.String2AssetId(args[1])
 	if err != nil {
 		return nil, err
@@ -229,7 +207,7 @@ func getMainChain(stub shim.ChaincodeStubInterface) pb.Response {
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	var mainChain *MainChain
+	var mainChain *dm.MainChain
 	err = json.Unmarshal(data, &mainChain)
 	if err != nil {
 		return shim.Error(err.Error())
