@@ -20,8 +20,6 @@ package storage
 
 import (
 	"bytes"
-	"fmt"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -45,12 +43,12 @@ func StoreMediator(db ptndb.Database, med *core.Mediator) error {
 }
 
 func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.MediatorInfo) error {
-	//log.Debug(fmt.Sprintf("Store Mediator %v:", mi.AddStr))
+	//log.Debugf("Store Mediator %v:", mi.AddStr)
 	//add := core.StrToMedAdd(mi.AddStr)
 
 	err := StoreBytes(db, mediatorKey(add), mi)
 	if err != nil {
-		log.Error(fmt.Sprintf("Store mediator error:%s", err))
+		log.Errorf("Store mediator error:%v", err.Error())
 		return err
 	}
 
@@ -62,7 +60,7 @@ func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*modules.M
 
 	err := retrieve(db, mediatorKey(address), mi)
 	if err != nil {
-		log.Error(fmt.Sprintf("Retrieve mediator error: %s", err))
+		log.Errorf("Retrieve mediator error: %v", err.Error())
 		return nil, err
 	}
 
@@ -90,7 +88,7 @@ func GetMediatorCount(db ptndb.Database) int {
 func IsMediator(db ptndb.Database, address common.Address) bool {
 	has, err := db.Has(mediatorKey(address))
 	if err != nil {
-		log.Debug(fmt.Sprintf("Error in determining if it is a mediator: %s", err))
+		log.Debugf("Error in determining if it is a mediator: %v", err.Error())
 	}
 
 	return has
@@ -106,7 +104,7 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 			continue
 		}
 
-		//log.Debug(fmt.Sprintf("Get Mediator's key : %s", key))
+		//log.Debugf("Get Mediator's key : %s", key))
 		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
 
 		result[common.BytesToAddress(addB)] = true
@@ -134,7 +132,7 @@ func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 		mi := modules.NewMediatorInfo()
 		err := rlp.DecodeBytes(value, mi)
 		if err != nil {
-			log.Debug(fmt.Sprintf("Error in Decoding Bytes to MediatorInfo: %s", err))
+			log.Debugf("Error in Decoding Bytes to MediatorInfo: %v", err.Error())
 		}
 
 		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)

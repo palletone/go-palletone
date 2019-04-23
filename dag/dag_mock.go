@@ -5,16 +5,15 @@
 package dag
 
 import (
-	"reflect"
-	"time"
-
-	"github.com/golang/mock/gomock"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	gomock "github.com/golang/mock/gomock"
+	common "github.com/palletone/go-palletone/common"
+	event "github.com/palletone/go-palletone/common/event"
+	discover "github.com/palletone/go-palletone/common/p2p/discover"
+	core "github.com/palletone/go-palletone/core"
+	modules "github.com/palletone/go-palletone/dag/modules"
+	txspool "github.com/palletone/go-palletone/dag/txspool"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -1146,4 +1145,34 @@ func (m *MockIDag) RefreshSysParameters() {
 func (mr *MockIDagMockRecorder) RefreshSysParameters() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshSysParameters", reflect.TypeOf((*MockIDag)(nil).RefreshSysParameters))
+}
+
+// GetPartitionChains mocks base method
+func (m *MockIDag) GetPartitionChains() ([]*modules.PartitionChain, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPartitionChains")
+	ret0, _ := ret[0].([]*modules.PartitionChain)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPartitionChains indicates an expected call of GetPartitionChains
+func (mr *MockIDagMockRecorder) GetPartitionChains() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartitionChains", reflect.TypeOf((*MockIDag)(nil).GetPartitionChains))
+}
+
+// GetMainChain mocks base method
+func (m *MockIDag) GetMainChain() (*modules.MainChain, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMainChain")
+	ret0, _ := ret[0].(*modules.MainChain)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMainChain indicates an expected call of GetMainChain
+func (mr *MockIDagMockRecorder) GetMainChain() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMainChain", reflect.TypeOf((*MockIDag)(nil).GetMainChain))
 }

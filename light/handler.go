@@ -180,7 +180,7 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 				}
 			},
 			NodeInfo: func() interface{} {
-				return manager.NodeInfo()
+				return manager.NodeInfo(genesis.Hash())
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
 				if p := manager.peers.Peer(fmt.Sprintf("%x", id[:8])); p != nil {
@@ -222,7 +222,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
 		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
-		//pm.BroadcastLocalLightHeader(header)
+		pm.BroadcastLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -238,15 +238,25 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		headerBroadcaster, inserter, pm.removePeer)
 }
 
-func (pm *ProtocolManager) BroadcastLocalLightHeader(header *modules.Header) {
+func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
-	//
-	//hash := header.Hash()
-	//peers := pm.peers.PeersWithoutLightHeader(hash)
-	//for _, peer := range peers {
-	//	peer.SendLightHeader(header)
-	//}
-	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", hash, "recipients", len(peers))
+	peers := pm.peers.PeersWithoutHeader(header.Hash())
+	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
+	for _, p := range peers {
+		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
+		switch p.announceType {
+
+		case announceTypeSimple:
+			select {
+			case p.announceChn <- announce:
+			default:
+				pm.removePeer(p.id)
+			}
+		case announceTypeSigned:
+
+		}
+	}
+	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
 	return
 }
 
@@ -367,27 +377,14 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			select {
 			case announce := <-p.announceChn:
 				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
-				//data, err := rlp.EncodeToBytes(announce)
-				//if err != nil {
-				//	log.Error("rlp.EncodeToBytes", "err", err)
-				//	return
-				//}
-				//log.Debug("Light Palletone ProtocolManager->handle", "announce bytes", data)
-				//var req announceData
-				//err = rlp.DecodeBytes(data, &req)
-				//if err != nil {
-				//	log.Error("rlp.DecodeBytes", "err", err)
-				//	return
-				//}
 				data, err := json.Marshal(announce)
 				if err != nil {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
 				} else {
+					//p.SetHead(&announce)
+					p.headInfo = &announce
 					p.SendRawAnnounce(data)
 				}
-				//if err := p.SendRawAnnounce(announce); err != nil {
-				//	log.Error("Light Palletone ProtocolManager->handle", "SendAnnounce err", err)
-				//}
 			case <-stop:
 				return
 			}
@@ -397,7 +394,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			log.Debug("Light Palletone message handling failed", "err", err)
+			log.Debug("Light PalletOne message handling failed", "err", err)
 			return err
 		}
 	}
@@ -584,23 +581,29 @@ func (pm *ProtocolManager) txStatus(hashes []common.Hash) []txStatus {
 // known about the host peer.
 type NodeInfo struct {
 	Network uint64      `json:"network"` // Palletone network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	Number  uint64      `json:"number"`  // Total difficulty of the host's blockchain
+	Index   uint64      `json:"number"`  // Total difficulty of the host's blockchain
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block
-	//Genesis    common.Hash         `json:"genesis"`    // SHA3 hash of the host's genesis block
+	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	//Config     *params.ChainConfig `json:"config"`     // Chain configuration for the fork rules
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo() *NodeInfo {
-	//head := self.blockchain.CurrentHeader()
-	//hash := head.Hash()
+func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
+	header := self.dag.CurrentHeader(self.assetId)
+	var (
+		index = uint64(0)
+		hash  = common.Hash{}
+	)
+	if header != nil {
+		index = header.Number.Index
+		hash = header.Hash()
+	}
 
 	return &NodeInfo{
 		Network: self.networkId,
-		Number:  uint64(0),
-		//Genesis:    self.blockchain.Genesis().Hash(),
-		//Config:     self.blockchain.Config(),
-		//Head: hash,
+		Index:   index,
+		Genesis: genesisHash,
+		Head:    hash,
 	}
 }
 
@@ -618,17 +621,18 @@ type peerConnection struct {
 //RequestLeafNodes() error
 
 func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
-	return common.Hash{}, nil
-	// return pc.peer.HeadAndTd()
+	//return common.Hash{}, nil
+	return pc.peer.HeadAndNumber()
 }
 
 func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	log.Debug("peerConnection batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
+	log.Debug("peerConnection batch of headers by hash", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
 	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 func (pc *peerConnection) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
-	return nil
+	log.Debug("peerConnection batch of headers by number", "count", amount, "from origin", origin, "skip", skip, "reverse", reverse)
+	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)

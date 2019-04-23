@@ -598,7 +598,6 @@ func (vm *DockerVM) GetVMName(ccid ccintf.CCID, format func(string) (string, err
 }
 func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	name := ccid.GetName()
-
 	//if ccid.NetworkID != "" && ccid.PeerID != "" {
 	//	name = fmt.Sprintf("%s-%s-%s", ccid.NetworkID, ccid.PeerID, name)
 	//} else if ccid.NetworkID != "" {

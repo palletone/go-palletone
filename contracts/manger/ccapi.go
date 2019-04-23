@@ -341,10 +341,6 @@ if err != nil {
 	//unit.ExecutionTime = duration
 	requstId := common.HexToHash(txid)
 	unit.RequestId = requstId
-	if err != nil {
-		log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
-		return nil, err
-	}
 	log.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
 	//type ContractInvokeResult struct {
 	//	ContractId   []byte             `json:"contract_id"` // contract id

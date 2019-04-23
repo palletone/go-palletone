@@ -165,7 +165,16 @@ func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent 
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
+	if p.mtx[reqId].adaInf == nil {
+		return nil, errors.New("Not exist adaInf")
+	}
 	adaInf := p.mtx[reqId].adaInf[msgType]
+	if _, exist := p.mtx[reqId].adaInf[msgType]; !exist {
+		return nil, errors.New("Not exist adaInf of msgType")
+	}
+	if _, exist := adaInf.JuryMsgAll[string(consultContent)]; !exist {
+		return nil, errors.New("Not exist consultContent")
+	}
 	if len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig) >= p.contractSigNum {
 		var juryMsgSigAll []JuryMsgSig
 		for _, juryMsgSig := range adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig {

@@ -89,7 +89,7 @@ func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error 
 }
 
 func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
-	log.Debug("Save dynamic global property to db.")
+	log.Debugf("Save dynamic global property to db.")
 	return StoreDynGlobalProp(propdb.db, dgp)
 }
 

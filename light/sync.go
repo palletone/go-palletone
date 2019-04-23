@@ -60,7 +60,7 @@ func (pm *ProtocolManager) syncer() {
 }
 
 func (pm *ProtocolManager) needToSync(peerHead blockInfo) bool {
-	return false
+	return true
 	//head := pm.blockchain.CurrentHeader()
 	//currentTd := core.GetTd(pm.chainDb, head.Hash(), head.Number.Uint64())
 	//return currentTd != nil && peerHead.Td.Cmp(currentTd) > 0
@@ -83,5 +83,6 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	//pm.blockchain.(*light.LightChain).SyncCht(ctx)
 	//
 	//pm.downloader.Synchronise(peer.id, peer.Head(), peer.Td(), downloader.LightSync)
-	pm.downloader.Synchronise(peer.id, peer.Head(), peer.headInfo.Number.Index, downloader.LightSync, peer.headInfo.Number.AssetID)
+	headhash, number := peer.HeadAndNumber()
+	pm.downloader.Synchronise(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID)
 }

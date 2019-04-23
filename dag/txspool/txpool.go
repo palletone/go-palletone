@@ -636,7 +636,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
 	if has, _ := pool.unit.IsTransactionExist(hash); has {
-		return false, fmt.Errorf("the transactionx: %s has been packaged. error:%s", hash.String())
+		return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
 	}
 	if _, has := pool.all.Load(hash); has {
 		log.Trace("Discarding already known transaction", "hash", hash)

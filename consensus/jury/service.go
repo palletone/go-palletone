@@ -121,7 +121,7 @@ type contractTx struct {
 }
 
 type Processor struct {
-	name      string //no user
+	name      string //no use
 	ptn       PalletOne
 	dag       iDag
 	validator validator.Validator
@@ -133,7 +133,7 @@ type Processor struct {
 	quit      chan struct{}
 	locker    *sync.Mutex
 	//vrfAct    vrfAccount
-
+	errMsgEnable      bool //package contract execution error information into the transaction
 	electionNum       int
 	contractSigNum    int
 	contractExecFeed  event.Feed
@@ -184,6 +184,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		electionNum:    cfg.ElectionNum,
 		contractSigNum: cfg.ContractSigNum,
 		validator:      validator,
+		errMsgEnable:   false,
 	}
 
 	log.Info("NewContractProcessor ok", "local address:", p.local, "electionNum", p.electionNum)
@@ -241,7 +242,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	if req == nil {
 		return errors.New("runContractReq param is nil")
 	}
-	msgs, err := runContractCmd(p.dag, p.contract, req.reqTx, elf)
+	msgs, err := runContractCmd(p.dag, p.contract, req.reqTx, elf, p.errMsgEnable)
 	if err != nil {
 		log.Error("runContractReq", "runContractCmd reqTx", req.reqTx.RequestHash().String(), "error", err.Error())
 		return err
@@ -457,7 +458,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		log.Error("CheckContractTxValid, nodeContractExecutable false")
 		return false
 	}
-	msgs, err := runContractCmd(p.dag, p.contract, tx, nil) // long time ...
+	msgs, err := runContractCmd(p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
 		log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
 		return false
