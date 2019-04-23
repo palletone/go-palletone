@@ -11,7 +11,7 @@ ${host}           http://localhost:8545/
 ${geneAdd}        P17XYSQ4qBKeWF9qicEdG5ZzfvTZQke4Ys9
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
-${preTokenId}     QA007
+${preTokenId}     QA010
 ${tokenDecimal}    1
 ${tokenAmount}    25000
 ${amount}         2000
@@ -27,12 +27,14 @@ transferToken_recieverToken
     [Tags]    normal
     ${GeneAdd}    getGeneAdd    ${host}
     normalCcinvokePass    ${result_code}    ${preTokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
-    sleep    2
+    sleep    3
     ${resultGene}    getBalance    ${GeneAdd}
-    ${key}    getTokenId    ${preTokenId}    ${resultGene}
     ${result1}    getBalance    ${recieverAdd}
-    #${strResult}    Evaluate    str(${result1)
-    ${item}    Get From Dictionary    ${result1}    ${key}
+    ${key}    getTokenId    ${preTokenId}    ${resultGene}
+    ${item}    Set Variable    0
+    #${item}    Get From Dictionary    ${result1}    ${key}
+    #${item1}    Run Keyword If    ${item}==''    Set Variable    0
+    #ELSE    Get From Dictionary    ${result1}    ${key}
     ${tokenResult}    transferToken    ${key}    ${GeneAdd}    ${recieverAdd}    ${senderAmount}    ${pdg}
     ...    ${evidence}    ${unlocktime}
     sleep    2
