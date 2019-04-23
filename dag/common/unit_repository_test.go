@@ -120,7 +120,7 @@ func TestSaveUnit(t *testing.T) {
 	header.Authors = *auth
 	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
 		"TestContractTpl", "./contract", "1.1.1", 1024,
-		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159})
+		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159}, modules.ContractError{})
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
 		Height:  &modules.ChainIndex{},
@@ -137,7 +137,7 @@ func TestSaveUnit(t *testing.T) {
 		},
 	}
 	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
-		"testDeploy", nil, 10, nil, nil, readSet, writeSet)
+		"testDeploy", nil,  nil,  readSet, writeSet, modules.ContractError{})
 
 	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),

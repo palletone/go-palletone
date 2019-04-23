@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type IDag interface {
@@ -150,4 +151,9 @@ type IDag interface {
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	RefreshSysParameters()
+
+	SaveChaincode(contractId common.Address,cc *list.CCInfo) error
+	GetChaincodes(contractId common.Address) (*list.CCInfo,error)
+	GetPartitionChains() ([]*modules.PartitionChain, error)
+	GetMainChain() (*modules.MainChain, error)
 }

@@ -232,7 +232,7 @@ func TestContractTplPayload_Rlp(t *testing.T) {
 
 func newTestContractTpl() *ContractTplPayload {
 	pay := &ContractTplPayload{}
-	pay = NewContractTplPayload([]byte("1"), "test", "test", "test", 123, []byte("test"))
+	pay = NewContractTplPayload([]byte("1"), "test", "test", "test", 123, []byte("test"), ContractError{})
 
 	return pay
 }
@@ -296,7 +296,6 @@ func newTestContractInvokeResult() *ContractInvokePayload {
 		Args:         args,
 		ReadSet:      readset,
 		WriteSet:     wset,
-		ErrorCode:    0,
 	}
 
 	return pay

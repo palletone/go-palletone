@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type Dag struct {
@@ -573,6 +574,15 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	}
 	return dag, nil
 }
+
+func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo,error) {
+	return d.propRep.GetChaincodes(contractId)
+}
+
+func (d *Dag) SaveChaincode(contractId common.Address,cc *list.CCInfo) error {
+	return d.propRep.SaveChaincode(contractId,cc)
+}
+
 
 // Get Contract Api
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
@@ -1162,6 +1172,10 @@ func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, err
 	return nil, nil
 }
 func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
+	header := d.CurrentHeader(assetId)
+	if header != nil {
+		return header.Number.Index
+	}
 	return uint64(0)
 }
 func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
@@ -1234,6 +1248,12 @@ func (bc *Dag) PostChainEvents(events []interface{}) {
 			//	bc.chainSideFeed.Send(ev)
 		}
 	}
+}
+func (bc *Dag) GetPartitionChains() ([]*modules.PartitionChain, error) {
+	return bc.unstableStateRep.GetPartitionChains()
+}
+func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
+	return bc.unstableStateRep.GetMainChain()
 }
 
 // SubscribeChainSideEvent registers a subscription of ChainSideEvent.

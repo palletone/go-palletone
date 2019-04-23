@@ -95,7 +95,7 @@ func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainI
 	scc := e.s.IsSysCC(chaincodeName)
 	res, ccevent, err = e.s.Execute(contractid, ctxt, chainID, chaincodeName, version, txid, scc, signedProp, prop, cis, timeout)
 	if err != nil {
-		return nil, nil, err
+		return res, nil, err
 	}
 
 	if res.Status >= shim.ERRORTHRESHOLD {
@@ -141,7 +141,7 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 	res, ccevent, err = e.callChaincode(contractid, ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid.Name, txsim, tmout)
 	if err != nil {
 		log.Errorf("[%s][%s] failed to invoke chaincode %s, error: %+v", chainID, shorttxid(txid), cid, err)
-		return nil, nil, nil, err
+		return res, nil, nil, err
 	}
 
 	if txsim != nil {
@@ -238,13 +238,13 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 
 			resp := &pb.ProposalResponse{
 				Payload:  nil,
-				Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}
+				Response: &pb.Response{Status: 500, Message: res.Message}}
 			return resp, nil, errors.New("Chaincode Error:" + res.Message)
 		}
 	} else {
 		log.Error("simulateProposal response is nil")
 		return &pb.ProposalResponse{
-			Payload: nil, Response: &pb.Response{Status: 500, Message: "Chaincode Error"}}, nil, errors.New("Chaincode Error:" + res.Message)
+			Payload: nil, Response: &pb.Response{Status: 500, Message: "simulateProposal response is nil"}}, nil, errors.New("Chaincode Error:simulateProposal response is nil" )
 	}
 
 	//2 -- endorse and get a marshalled ProposalResponse message
@@ -258,19 +258,13 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
-	//log.Debugf("unit:%#v", unit)
-	//fmt.Printf("==unit=> %#v\n", unit.ContractId)
-	//fmt.Printf("==unit=> %#v\n", unit.Payload)
-	//fmt.Printf("==unit=> %s\n", unit.Args)
-	//fmt.Println("==unit=> ", unit.FunctionName)
-	//fmt.Printf("==unit=> %#v\n", unit.ReadSet)
-	for i := 0; i < len(unit.WriteSet); i++ {
-		fmt.Printf("==unit=> %v\n", unit.WriteSet[i].IsDelete)
-		fmt.Printf("==unit=> %s\n", unit.WriteSet[i].Key)
-		fmt.Printf("==unit=> %s\n", unit.WriteSet[i].Value)
-		fmt.Println()
-		fmt.Println()
-	}
+	//for i := 0; i < len(unit.WriteSet); i++ {
+	//	fmt.Printf("==unit=> %v\n", unit.WriteSet[i].IsDelete)
+	//	fmt.Printf("==unit=> %s\n", unit.WriteSet[i].Key)
+	//	fmt.Printf("==unit=> %s\n", unit.WriteSet[i].Value)
+	//	fmt.Println()
+	//	fmt.Println()
+	//}
 	//fmt.Println("===")
 	//if len(unit.TokenPayOut) > 0 {
 	//	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0])

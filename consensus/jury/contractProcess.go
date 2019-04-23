@@ -68,11 +68,7 @@ type ContractInvokeReq struct {
 }
 
 func (req ContractInvokeReq) do(v contracts.ContractInf) (interface{}, error) {
-	payload, err := v.Invoke(req.chainID, req.deployId, req.txid, req.args, req.timeout)
-	if err != nil {
-		return nil, err
-	}
-	return payload, nil
+	return v.Invoke(req.chainID, req.deployId, req.txid, req.args, req.timeout)
 }
 
 type ContractStopReq struct {
