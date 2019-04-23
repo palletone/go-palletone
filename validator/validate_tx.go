@@ -21,6 +21,7 @@
 package validator
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -50,6 +51,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 		return TxValidationCode_INVALID_FEE, nil
 	}
 	hasRequestMsg := false
+	isSysContractCall := false
 	usedUtxo := make(map[string]bool) //Cached all used utxo in this tx
 	for msgIdx, msg := range tx.TxMessages {
 		// check message type and payload
@@ -80,6 +82,10 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 				} else {
 					return validateCode, nil
 				}
+			}
+			//检查一个Tx是否包含了发币的Payment，如果有，那么检查是否是系统合约调用的结果
+			if msgIdx != 0 && payment.IsCoinbase() && !isSysContractCall {
+				return TxValidationCode_INVALID_COINBASE, nil
 			}
 		case modules.APP_CONTRACT_TPL:
 			payload, _ := msg.Payload.(*modules.ContractTplPayload)
@@ -137,6 +143,10 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 			// 验证ContractId有效性
 			if len(payload.ContractId) <= 0 {
 				return TxValidationCode_INVALID_CONTRACT, nil
+			}
+			contractId := payload.ContractId
+			if common.IsSystemContractAddress(contractId) {
+				isSysContractCall = true
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			payload, _ := msg.Payload.(*modules.ContractStopRequestPayload)
