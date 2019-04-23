@@ -54,6 +54,8 @@ type IStateRepository interface {
 	GetJuryCandidateList() ([]common.Address, error)
 	IsJury(address common.Address) bool
 	UpdateSysParams(ver *modules.StateVersion) error
+	GetPartitionChains() ([]*modules.PartitionChain, error)
+	GetMainChain() (*modules.MainChain, error)
 }
 
 type StateRepository struct {
@@ -135,4 +137,10 @@ func (rep *StateRepository) IsJury(address common.Address) bool {
 
 func (rep *StateRepository) UpdateSysParams(ver *modules.StateVersion) error {
 	return rep.statedb.UpdateSysParams(ver)
+}
+func (rep *StateRepository) GetPartitionChains() ([]*modules.PartitionChain, error) {
+	return rep.statedb.GetPartitionChains()
+}
+func (rep *StateRepository) GetMainChain() (*modules.MainChain, error) {
+	return rep.statedb.GetMainChain()
 }

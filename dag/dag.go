@@ -1235,6 +1235,12 @@ func (bc *Dag) PostChainEvents(events []interface{}) {
 		}
 	}
 }
+func (bc *Dag) GetPartitionChains() ([]*modules.PartitionChain, error) {
+	return bc.unstableStateRep.GetPartitionChains()
+}
+func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
+	return bc.unstableStateRep.GetMainChain()
+}
 
 // SubscribeChainSideEvent registers a subscription of ChainSideEvent.
 //func (bc *Dag) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {

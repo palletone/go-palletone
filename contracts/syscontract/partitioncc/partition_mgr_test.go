@@ -120,9 +120,9 @@ func TestUpdatePartition(t *testing.T) {
 	t.Log(string(result2.Payload))
 }
 
-func newTestPartition() *PartitionChain {
-	return &PartitionChain{
-		GenesisHash:   "1111111",
+func newTestPartition() *modules.PartitionChain {
+	return &modules.PartitionChain{
+		GenesisHash:   common.HexToHash("1111111"),
 		GenesisHeight: 0,
 		GasToken:      modules.PTNCOIN,
 		Status:        1,
