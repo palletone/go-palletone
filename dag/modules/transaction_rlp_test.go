@@ -232,7 +232,7 @@ func TestContractTplPayload_Rlp(t *testing.T) {
 
 func newTestContractTpl() *ContractTplPayload {
 	pay := &ContractTplPayload{}
-	pay = NewContractTplPayload([]byte("1"), "test", "test", "test", 123, []byte("test"))
+	pay = NewContractTplPayload([]byte("1"), "test", "test", "test", 123, []byte("test"), nil)
 
 	return pay
 }
