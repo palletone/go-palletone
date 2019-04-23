@@ -31,8 +31,8 @@ type ChainParameters struct {
 	// 区块链维护事件之间的间隔，以秒为单元。 interval in sections between unit maintenance events
 	MaintenanceInterval uint32 `json:"maintenanceInterval"`
 
-	// 在维护时跳过的verifiedUnitInterval数量。 number of verifiedUnitInterval to skip at maintenance time
-	//	MaintenanceSkipSlots uint8
+	// 在维护时跳过的MediatorInterval数量。 number of MediatorInterval to skip at maintenance time
+	MaintenanceSkipSlots uint8
 
 	// 活跃mediator的最大数量。maximum number of active mediators
 	MaximumMediatorCount uint8 `json:"maxMediatorCount"`
@@ -42,6 +42,7 @@ func NewChainParams() (c ChainParameters) {
 	c.CurrentFees = newFeeSchedule()
 	c.MediatorInterval = DefaultMediatorInterval
 	c.MaintenanceInterval = DefaultMaintenanceInterval
+	c.MaintenanceSkipSlots = DefaultMaintenanceSkipSlots
 	c.MaximumMediatorCount = DefaultMaxMediatorCount
 
 	return
