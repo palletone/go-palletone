@@ -34,7 +34,7 @@ before_build:
   - go get github.com/golang/mock/gomock
   - go install github.com/golang/mock/mockgen
 build_script:
-  - C:\gopath\bin\mockgen.exe -source=".\dag\interface.go" -destination=".\dag\ag_mock.go" -package="dag" -self_package="github.com/palletone/go-palletone/dag"
+  - C:\gopath\bin\mockgen.exe -source=".\dag\interface.go" -destination=".\dag\dag_mock.go" -package="dag" -self_package="github.com/palletone/go-palletone/dag"
   - go run build\ci.go install
 
 after_build:
