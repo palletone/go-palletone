@@ -180,7 +180,7 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 				}
 			},
 			NodeInfo: func() interface{} {
-				return manager.NodeInfo()
+				return manager.NodeInfo(genesis.Hash())
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
 				if p := manager.peers.Peer(fmt.Sprintf("%x", id[:8])); p != nil {
@@ -222,7 +222,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
 		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
-		//pm.BroadcastLightHeader(header)
+		pm.BroadcastLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -581,23 +581,29 @@ func (pm *ProtocolManager) txStatus(hashes []common.Hash) []txStatus {
 // known about the host peer.
 type NodeInfo struct {
 	Network uint64      `json:"network"` // Palletone network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	Number  uint64      `json:"number"`  // Total difficulty of the host's blockchain
+	Index   uint64      `json:"number"`  // Total difficulty of the host's blockchain
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block
-	//Genesis    common.Hash         `json:"genesis"`    // SHA3 hash of the host's genesis block
+	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	//Config     *params.ChainConfig `json:"config"`     // Chain configuration for the fork rules
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo() *NodeInfo {
-	//head := self.blockchain.CurrentHeader()
-	//hash := head.Hash()
+func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
+	header := self.dag.CurrentHeader(self.assetId)
+	var (
+		index = uint64(0)
+		hash  = common.Hash{}
+	)
+	if header != nil {
+		index = header.Number.Index
+		hash = header.Hash()
+	}
 
 	return &NodeInfo{
 		Network: self.networkId,
-		Number:  uint64(0),
-		//Genesis:    self.blockchain.Genesis().Hash(),
-		//Config:     self.blockchain.Config(),
-		//Head: hash,
+		Index:   index,
+		Genesis: genesisHash,
+		Head:    hash,
 	}
 }
 
