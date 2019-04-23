@@ -21,19 +21,18 @@
 package validator
 
 import (
+	"crypto/ecdsa"
+	"encoding/hex"
+	"fmt"
 	"log"
 	"testing"
 
-	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/stretchr/testify/assert"
-
-	"crypto/ecdsa"
-	"fmt"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/stretchr/testify/assert"
 )
 
 func getAccount() (*ecdsa.PrivateKey, []byte, common.Address) {

@@ -22,6 +22,7 @@ package dag
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -43,7 +44,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"strconv"
 )
 
 type Dag struct {
