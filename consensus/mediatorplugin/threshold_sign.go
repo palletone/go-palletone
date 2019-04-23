@@ -37,11 +37,11 @@ import (
 func (mp *MediatorPlugin) startVSSProtocol() {
 	dag := mp.dag
 	if !mp.productionEnabled && !dag.IsSynced() {
-		log.Debug("we're not synced")
+		log.Debugf("we're not synced")
 		return
 	}
 
-	log.Debug("Start completing the VSS protocol.")
+	log.Debugf("Start completing the VSS protocol.")
 	go mp.BroadcastVSSDeals()
 }
 
@@ -62,7 +62,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 	for localMed, dkg := range mp.activeDKGs {
 		deals, err := dkg.Deals()
 		if err != nil {
-			log.Debug(err.Error())
+			log.Debugf(err.Error())
 			continue
 		}
 
@@ -94,7 +94,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 
 	dkgr, err := mp.getLocalActiveDKG(localMed)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return err
 	}
 
@@ -102,7 +102,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return err
 	}
 
@@ -113,7 +113,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 
 	if resp.Response.Status != vss.StatusApproval {
 		err = fmt.Errorf("DKG: own deal gave a complaint: %v", localMed.String())
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return err
 	}
 
@@ -163,7 +163,7 @@ func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) 
 func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) {
 	dkgr, err := mp.getLocalActiveDKG(localMed)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return
 	}
 
@@ -177,7 +177,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 	processResp := func(resp *dkg.Response) bool {
 		jstf, err := dkgr.ProcessResponse(resp)
 		if err != nil {
-			log.Debug(err.Error())
+			log.Debugf(err.Error())
 			return false
 		}
 
@@ -361,7 +361,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		// 1.如果单元没有群公钥， 则跳过群签名
 		_, err := newUnit.GroupPubKey()
 		if err != nil {
-			log.Debug(err.Error())
+			log.Debugf(err.Error())
 			return
 		}
 
@@ -383,13 +383,13 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 3. 群签名
 	dks, err := dkgr.DistKeyShare()
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return
 	}
 
 	sigShare, err := tbls.Sign(mp.suite, dks.PriShare(), unitHash[:])
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return
 	}
 
@@ -412,7 +412,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	newUnit, err := dag.GetUnitByHash(newUnitHash)
 	if newUnit == nil || err != nil {
 		err = fmt.Errorf("fail to get unit by hash in dag: %v", newUnitHash.TerminalString())
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return err
 	}
 
@@ -423,7 +423,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
 		err = fmt.Errorf("the mediator(%v)'s toTBLSRecoverBuf has not initialized yet", localMed.Str())
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return err
 	}
 
@@ -432,7 +432,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	if !ok {
 		err = fmt.Errorf("the unit(%v) has already recovered the group signature",
 			newUnitHash.TerminalString())
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return err
 	}
 
@@ -483,7 +483,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		unit, err := dag.GetUnitByHash(unitHash)
 		if unit == nil || err != nil {
 			err = fmt.Errorf("fail to get unit by hash in dag: %v", unitHash.TerminalString())
-			log.Debug(err.Error())
+			log.Debugf(err.Error())
 			return
 		}
 
@@ -513,7 +513,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	dks, err := dkgr.DistKeyShare()
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return
 	}
 
@@ -522,7 +522,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
 	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), threshold, mSize)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return
 	}
 

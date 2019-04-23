@@ -103,14 +103,13 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 		log.Info("Generated unit(" + detail["Hash"] + ") #" + detail["Num"] + " parent(" + detail["ParentHash"] +
 			") @" + detail["Timestamp"] + " signed by " + detail["Mediator"])
 	case NotSynced:
-		log.Info("Not producing unit because production is disabled until we receive a recent unit." +
+		log.Infof("Not producing unit because production is disabled until we receive a recent unit." +
 			" Disable this check with --staleProduce option.")
 	case NotTimeYet:
-		log.Debug("Not producing unit because next slot time is " + detail["NextTime"] +
-			" , but now is " + detail["Now"])
+		log.Debugf("Not producing unit because next slot time is %v , but now is %v",
+			detail["NextTime"], detail["Now"])
 	case NotMyTurn:
-		log.Debug("Not producing unit because current scheduled mediator is " +
-			detail["ScheduledMediator"])
+		log.Debugf("Not producing unit because current scheduled mediator is %v", detail["ScheduledMediator"])
 	case Lag:
 		log.Info("Not producing unit because node didn't wake up within 2500ms of the slot time." +
 			" Scheduled Time is: " + detail["ScheduledTime"] + ", but now is " + detail["Now"])
@@ -227,7 +226,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	//execute contract
 	// todo 待优化
 	if err := mp.ptn.ContractProcessor().AddContractLoop(mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
-		log.Debug("MaybeProduceUnit", "RunContractLoop err:", err.Error())
+		log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())
 	}
 
 	var groupPubKey []byte = nil

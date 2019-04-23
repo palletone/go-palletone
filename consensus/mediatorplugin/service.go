@@ -215,7 +215,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 	dag := mp.dag
 	if !mp.productionEnabled && !dag.IsSynced() {
-		log.Debug("we're not synced")
+		log.Debugf("we're not synced")
 		return
 	}
 
@@ -233,7 +233,7 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
-			log.Debug(err.Error())
+			log.Debugf(err.Error())
 			continue
 		}
 
@@ -253,7 +253,7 @@ func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) Start(server *p2p.Server) error {
-	log.Debug("mediator plugin startup begin")
+	log.Debugf("mediator plugin startup begin")
 	mp.srvr = server
 
 	// 1. 解锁本地控制的mediator账户
@@ -269,7 +269,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		go mp.startVSSProtocol()
 	}
 
-	log.Debug("mediator plugin startup end")
+	log.Debugf("mediator plugin startup end")
 	return nil
 }
 
@@ -314,14 +314,14 @@ func (mp *MediatorPlugin) Stop() error {
 	mp.sigShareScope.Close()
 	mp.groupSigScope.Close()
 
-	log.Debug("mediator plugin stopped")
+	log.Debugf("mediator plugin stopped")
 	return nil
 }
 
 // 匿名函数的好处之一：能在匿名函数内部直接使用本函数之外的变量;
 // 函数使用外部变量的特性称之为闭包； 例如，以下匿名方法就直接使用cfg变量
 func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
-	log.Debug("Register Mediator Plugin Service...")
+	log.Debugf("Register Mediator Plugin Service...")
 
 	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve ptn service
@@ -336,12 +336,12 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	})
 
 	if err != nil {
-		log.Debug("failed to register the Mediator Plugin service: %v", err)
+		log.Debugf("failed to register the Mediator Plugin service: %v", err)
 	}
 }
 
 func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, error) {
-	log.Debug("mediator plugin initialize begin")
+	log.Debugf("mediator plugin initialize begin")
 
 	if ptn == nil || dag == nil || cfg == nil {
 		err := "pointer parameters of NewMediatorPlugin are nil!"
@@ -390,7 +390,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		mp.initTBLSBuf()
 	}
 
-	log.Debug("mediator plugin initialize end")
+	log.Debugf("mediator plugin initialize end")
 	return &mp, nil
 }
 

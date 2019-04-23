@@ -87,7 +87,7 @@ func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
 	dkgr, err := mp.getLocalActiveDKG(add)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return pubKey
 	}
 
