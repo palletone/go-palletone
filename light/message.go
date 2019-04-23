@@ -48,7 +48,7 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 	if pm.fetcher != nil {
 		pm.fetcher.Enqueue(p, &req.Header)
 	}
-	p.headInfo = &req
+	//p.headInfo = &req
 	return nil
 }
 
