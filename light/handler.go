@@ -222,7 +222,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
 		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
-		pm.BroadcastLightHeader(header)
+		//pm.BroadcastLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -381,7 +381,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 				if err != nil {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
 				} else {
-					p.SetHead(&announce)
+					//p.SetHead(&announce)
+					p.headInfo = &announce
 					p.SendRawAnnounce(data)
 				}
 			case <-stop:
