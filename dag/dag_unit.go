@@ -115,7 +115,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
 
 	// 2. 更新状态
-	if !dag.ApplyUnit(newUnit) {
+	if err := dag.ApplyUnit(newUnit); err != nil {
 		return false
 	}
 
@@ -125,7 +125,7 @@ func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
 }
 
 // ApplyUnit, 运用下一个 unit 更新整个区块链状态
-func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) bool {
+func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) error {
 	defer func(start time.Time) {
 		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
 	}(time.Now())
@@ -134,13 +134,13 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) bool {
 	defer dag.applyLock.Unlock()
 
 	// 1. 下一个 unit 和本地 unit 连续性的判断
-	if !dag.validateUnitHeader(nextUnit) {
-		return false
+	if err := dag.validateUnitHeader(nextUnit); err != nil {
+		return err
 	}
 
 	// 2. 验证 unit 的 mediator 调度
-	if !dag.validateMediatorSchedule(nextUnit) {
-		return false
+	if err := dag.validateMediatorSchedule(nextUnit); err != nil {
+		return err
 	}
 
 	// todo 5. 运用Unit中的交易
@@ -164,5 +164,5 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) bool {
 	// 8. 洗牌
 	dag.updateMediatorSchedule()
 
-	return true
+	return nil
 }

@@ -51,46 +51,51 @@ func (dag *Dag) validateUnit(unit *modules.Unit) error {
 	return nil
 }
 
-func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) bool {
+func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) error {
 	pHash := nextUnit.ParentHash()[0]
 	headHash, idx, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
 	if pHash != headHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
-		log.Debugf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
+		errStr := fmt.Sprintf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
 			nextUnit.UnitHash.TerminalString(), pHash.TerminalString(), headHash.TerminalString())
-		return false
+		log.Debugf(errStr)
+		return fmt.Errorf(errStr)
 	}
 
 	if idx.Index+1 != nextUnit.NumberU64() {
-		log.Debugf("invalidated unit(%v)'s height number!, last height:%d, next unit height:%d",
+		errStr := fmt.Sprintf("invalidated unit(%v)'s height number!, last height:%d, next unit height:%d",
 			nextUnit.UnitHash.TerminalString(), idx.Index, nextUnit.NumberU64())
-		return false
+		log.Debugf(errStr)
+		return fmt.Errorf(errStr)
 	}
 
-	return true
+	return nil
 }
 
-func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) bool {
+func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) error {
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	ts, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
 	if ts >= nextUnit.Timestamp() {
-		log.Debug("invalidated unit's timestamp!")
-		return false
+		errStr := "invalidated unit's timestamp"
+		log.Debugf(errStr)
+		return fmt.Errorf(errStr)
 	}
 
 	slotNum := dag.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
 	if slotNum <= 0 {
-		log.Debug("invalidated unit's slot!")
-		return false
+		errStr := "invalidated unit's slot"
+		log.Debugf(errStr)
+		return fmt.Errorf(errStr)
 	}
 
 	scheduledMediator := dag.GetScheduledMediator(slotNum)
 	if !scheduledMediator.Equal(nextUnit.Author()) {
-		log.Debugf("mediator(%v) produced unit at wrong time!", nextUnit.Author().Str())
-		return false
+		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", nextUnit.Author().Str())
+		log.Debugf(errStr)
+		return fmt.Errorf(errStr)
 	}
 
-	return true
+	return nil
 }
 
 func (d *Dag) Close() {
