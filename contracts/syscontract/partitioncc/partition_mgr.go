@@ -92,7 +92,7 @@ func getPartitionChains(stub shim.ChaincodeStubInterface) ([]*PartitionChain, er
 	for _, kv := range list {
 		data := kv.Value
 		var partitionChain *PartitionChain
-		err = json.Unmarshal(data, partitionChain)
+		err = json.Unmarshal(data, &partitionChain)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func buildPartitionChain(args []string) (*PartitionChain, error) {
 	partitionChain.SyncModel = args[6][0] - '0'
 	if len(args[7]) > 0 {
 		peers := []string{}
-		err = json.Unmarshal([]byte(args[7]), peers)
+		err = json.Unmarshal([]byte(args[7]), &peers)
 		if err != nil {
 			return nil, err
 		}
@@ -198,7 +198,7 @@ func buildMainChain(args []string) (*MainChain, error) {
 	mainChain.SyncModel = args[3][0] - '0'
 	if len(args[4]) > 0 {
 		peers := []string{}
-		err = json.Unmarshal([]byte(args[4]), peers)
+		err = json.Unmarshal([]byte(args[4]), &peers)
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +230,7 @@ func getMainChain(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(err.Error())
 	}
 	var mainChain *MainChain
-	err = json.Unmarshal(data, mainChain)
+	err = json.Unmarshal(data, &mainChain)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
