@@ -22,6 +22,7 @@ package dag
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -43,7 +44,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"strconv"
 )
 
 type Dag struct {
@@ -286,7 +286,9 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			u.Author().Str())
 
 		// append by albert·gou, 利用 unit 更新相关状态
-		d.ApplyUnit(u)
+		if err := d.ApplyUnit(u); err != nil {
+			return count, err
+		}
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
