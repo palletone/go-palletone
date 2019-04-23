@@ -248,13 +248,14 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 		}
 		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
 		switch p.announceType {
-
-		case announceTypeSimple:
+		case announceTypeNone:
 			select {
 			case p.announceChn <- announce:
 			default:
 				pm.removePeer(p.id)
 			}
+		case announceTypeSimple:
+
 		case announceTypeSigned:
 
 		}
@@ -658,7 +659,7 @@ func (d *downloaderPeerNotify) registerPeer(p *peer) {
 		manager: pm,
 		peer:    p,
 	}
-	pm.downloader.RegisterLightPeer(p.id, ethVersion, pc)
+	pm.downloader.RegisterLightPeer(p.id, p.version, pc)
 }
 
 func (d *downloaderPeerNotify) unregisterPeer(p *peer) {
