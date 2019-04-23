@@ -18,7 +18,7 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
-    #- sudo find / -name "decimal.py"
+    - sudo find / -name "decimal.py"
     - ./deposit_test.sh 4
     - python -m robot.run ../testcase/createTrans
     - python -m robot.run ../testcase/ccinvoke/ccinvokePass
