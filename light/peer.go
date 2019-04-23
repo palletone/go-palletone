@@ -509,9 +509,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fcCosts = MRC.decode()
 	}
 	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
-	//TODO must modify
-	//p.headInfo = &announceData{Hash: rHash, Number: rNum}
-	p.SetHead(&announceData{Hash: rHash, Number: rNum})
+	p.headInfo = &announceData{Hash: rHash, Number: rNum}
+	//data := &announceData{Hash: rHash, Number: rNum}
+	//p.SetHead(data)
 	return nil
 }
 
