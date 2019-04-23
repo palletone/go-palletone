@@ -198,7 +198,7 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 		println("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
-		log.Info(fmt.Sprintf("Launching unit production for %v mediators.", len(mp.mediators)))
+		log.Infof("Launching unit production for %v mediators.", len(mp.mediators))
 
 		if mp.productionEnabled {
 			dag := mp.dag
@@ -336,7 +336,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	})
 
 	if err != nil {
-		log.Debug(fmt.Sprintf("failed to register the Mediator Plugin service: %v", err))
+		log.Debug("failed to register the Mediator Plugin service: %v", err)
 	}
 }
 
@@ -359,11 +359,11 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		}
 
 		addr := medAcc.Address
-		log.Debug(fmt.Sprintf("this node control mediator account address: %v", addr.Str()))
+		log.Debugf("this node control mediator account address: %v", addr.Str())
 
 		msm[addr] = medAcc
 	}
-	log.Debug(fmt.Sprintf("This node controls %v mediators.", len(msm)))
+	log.Debug("This node controls %v mediators.", len(msm))
 
 	mp := MediatorPlugin{
 		ptn:  ptn,
