@@ -212,7 +212,7 @@ func (s *LightPalletone) Protocols() []p2p.Protocol {
 // Ethereum protocol implementation.
 func (s *LightPalletone) Start(srvr *p2p.Server) error {
 	//s.startBloomHandlers()
-	log.Warn("Light client mode is an experimental feature")
+	log.Debug("Light client mode is an experimental feature")
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.networkId)
 	// clients are searching for the first advertised protocol in the list
 	//protocolVersion := AdvertiseProtocolVersions[0]
