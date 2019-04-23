@@ -31,7 +31,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
@@ -42,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/comm"
 	"strconv"
+	"github.com/fsouza/go-dockerclient"
 )
 
 var (
@@ -352,7 +352,13 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			//}
 		} else {
 			log.Errorf("start-could not recreate container <%s> with image id <%s>, because of %s", containerID, imageID, err)
-			return err
+			// start container with HostConfig was deprecated since v1.10 and removed in v1.2
+			err = client.StartContainer(containerID, nil)
+			if err != nil {
+				log.Errorf("start-could not start container: %s", err)
+				return err
+			}
+			return nil
 		}
 	}
 
@@ -593,14 +599,14 @@ func (vm *DockerVM) GetVMName(ccid ccintf.CCID, format func(string) (string, err
 func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	name := ccid.GetName()
 
-	if ccid.NetworkID != "" && ccid.PeerID != "" {
-		name = fmt.Sprintf("%s-%s-%s", ccid.NetworkID, ccid.PeerID, name)
-	} else if ccid.NetworkID != "" {
-		name = fmt.Sprintf("%s-%s", ccid.NetworkID, name)
-	} else if ccid.PeerID != "" {
-		name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
-	}
-	name = name +":"+ contractcfg.GetConfig().ContractAddress
+	//if ccid.NetworkID != "" && ccid.PeerID != "" {
+	//	name = fmt.Sprintf("%s-%s-%s", ccid.NetworkID, ccid.PeerID, name)
+	//} else if ccid.NetworkID != "" {
+	//	name = fmt.Sprintf("%s-%s", ccid.NetworkID, name)
+	//} else if ccid.PeerID != "" {
+	//	name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
+	//}
+	name =  contractcfg.GetConfig().ContractAddress+":"+ name
 	// replace any invalid characters with "-" (either in network id, peer id, or in the
 	// entire name returned by any format function)
 	name = vmRegExp.ReplaceAllString(name, "-")

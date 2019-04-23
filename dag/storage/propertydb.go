@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/contracts/list"
 )
 
 // modified by Yiran
@@ -48,6 +49,9 @@ type IPropertyDb interface {
 	GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
+
+	SaveChaincode(contractId common.Address,cc *list.CCInfo) error
+	GetChaincodes(contractId common.Address) (*list.CCInfo,error)
 }
 
 // modified by Yiran
@@ -140,4 +144,39 @@ func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *module
 		return common.Hash{}, nil, 0, err
 	}
 	return data.Hash, data.Index, int64(data.Timestamp), nil
+}
+func (db *PropertyDb) SaveChaincode(contractId common.Address,cc *list.CCInfo) error {
+	//先看一下是否已存在相应的channel
+	//data := make(map[string][]common.Address)
+	//err := retrieve(db.db, []byte(channel), data)
+	//if err != nil {
+	//	//新的通道
+	//	log.Debugf("------------------%s\n",err.Error())
+	//	log.Debugf("Save new chaincode in new channel: %s", channel)
+	//	data[channel] = append(data[channel],contractId)
+	//	return StoreBytes(db.db,[]byte(channel),data)
+	//}else {
+	//	//在已有的增加chaincode
+	//	//判断是否重复
+	//	for _,v := range data[channel] {
+	//		if v.Equal(contractId) {
+	//			return fmt.Errorf("chaincode repeat in channel %s",channel)
+	//		}
+	//	}
+	//	log.Debugf("Save new chaincode in channel: %s", channel)
+	//	data[channel] = append(data[channel],contractId)
+	//	return StoreBytes(db.db,[]byte(channel),data)
+	//}
+	log.Debugf("Save chaincodes with contractid %s", contractId.String())
+	return StoreBytes(db.db,contractId.Bytes21(),cc)
+}
+func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo,error) {
+	log.Debugf("Get chaincodes with contractid %s", contractId.String())
+	cc := &list.CCInfo{}
+	err := retrieve(db.db,contractId.Bytes21(), cc)
+	if err != nil {
+		log.Warnf("Cannot retrieve chaincodes by contractid %s", contractId.String())
+		return nil,err
+	}
+	return cc,nil
 }
