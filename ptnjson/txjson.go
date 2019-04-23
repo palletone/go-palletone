@@ -214,9 +214,6 @@ func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
 	sjson := new(StopJson)
 	hash := common.BytesToHash(stop.ContractId[:])
 	sjson.ContractId = hash.String()
-	for _, addr := range stop.Jury {
-		sjson.Jury = append(sjson.Jury, addr.String())
-	}
 	rset, _ := json.Marshal(stop.ReadSet)
 	sjson.ReadSet = string(rset)
 	wset, _ := json.Marshal(stop.WriteSet)
