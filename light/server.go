@@ -308,7 +308,7 @@ func (pm *ProtocolManager) blockLoop() {
 						lastHead = header
 						//lastBroadcastTd = td
 
-						log.Debug("Announcing block to peers", "hash", hash, "number", number)
+						log.Debug("Announcing block to peers", "number", number, "hash", hash)
 
 						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
 						var (
@@ -317,7 +317,7 @@ func (pm *ProtocolManager) blockLoop() {
 						)
 
 						for _, p := range peers {
-							log.Debug("Light Palletone", "ProtocolManager->blockLoop p", p)
+							log.Debug("Light Palletone", "ProtocolManager->blockLoop p.announceType", p.announceType)
 							switch p.announceType {
 
 							case announceTypeSimple:

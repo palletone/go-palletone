@@ -266,10 +266,10 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	}
 	inserter := func(blocks modules.Units) (int, error) {
 		// If fast sync is running, deny importing weird blocks
-		if atomic.LoadUint32(&pm.fastSync) == 1 {
-			log.Warn("Discarded bad propagated block", "number", blocks[0].Number().Index, "hash", blocks[0].Hash())
-			return 0, errors.New("fasting sync")
-		}
+		//if atomic.LoadUint32(&pm.fastSync) == 1 {
+		//	log.Warn("Discarded bad propagated block", "number", blocks[0].Number().Index, "hash", blocks[0].Hash())
+		//	return 0, errors.New("fasting sync")
+		//}
 		log.Debug("Fetcher", "manager.dag.InsertDag index:", blocks[0].Number().Index, "hash", blocks[0].Hash())
 
 		atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done on any fetcher import

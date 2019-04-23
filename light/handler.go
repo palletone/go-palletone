@@ -243,6 +243,9 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 	peers := pm.peers.PeersWithoutHeader(header.Hash())
 	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
 	for _, p := range peers {
+		if p == nil {
+			continue
+		}
 		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
 		switch p.announceType {
 
@@ -377,7 +380,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			select {
 			case announce := <-p.announceChn:
 				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
-				data, err := json.Marshal(announce)
+				data, err := json.Marshal(announce.Header)
 				if err != nil {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
 				} else {
@@ -590,6 +593,7 @@ type NodeInfo struct {
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	header := self.dag.CurrentHeader(self.assetId)
+
 	var (
 		index = uint64(0)
 		hash  = common.Hash{}
@@ -597,6 +601,8 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	if header != nil {
 		index = header.Number.Index
 		hash = header.Hash()
+	} else {
+		log.Debug("Light PalletOne NodeInfo header is nil")
 	}
 
 	return &NodeInfo{

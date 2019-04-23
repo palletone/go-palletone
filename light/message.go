@@ -31,7 +31,7 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
-	if err := json.Unmarshal(data, &req); err != nil {
+	if err := json.Unmarshal(data, &req.Header); err != nil {
 		log.Error("AnnounceMsg", "Unmarshal err", err, "data", data)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
@@ -44,11 +44,10 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		log.Trace("Valid announcement signature")
 	}
 
-	log.Trace("Announce message content", "number", req.Number, "hash", req.Hash, "header", req.Header)
+	log.Trace("Announce message content", "header", req.Header)
 	if pm.fetcher != nil {
 		pm.fetcher.Enqueue(p, &req.Header)
 	}
-	//p.headInfo = &req
 	return nil
 }
 
