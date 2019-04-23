@@ -519,7 +519,7 @@ func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
 	}
 }
 
-func NewContractTplPayload(templateId []byte, name string, path string, version string, memory uint16, bytecode []byte, err *ContractError) *ContractTplPayload {
+func NewContractTplPayload(templateId []byte, name string, path string, version string, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
 	return &ContractTplPayload{
 		TemplateId: templateId,
 		Name:       name,
@@ -527,12 +527,12 @@ func NewContractTplPayload(templateId []byte, name string, path string, version 
 		Version:    version,
 		Memory:     memory,
 		Bytecode:   bytecode,
-		ErrMsg:     *err,
+		ErrMsg:     err,
 	}
 }
 
 func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte,
-	elf []ElectionInf, readset []ContractReadSet, writeset []ContractWriteSet, err *ContractError) *ContractDeployPayload {
+	elf []ElectionInf, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractDeployPayload {
 	return &ContractDeployPayload{
 		TemplateId: templateid,
 		ContractId: contractid,
@@ -541,7 +541,7 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 		EleList:    elf,
 		ReadSet:    readset,
 		WriteSet:   writeset,
-		ErrMsg:     *err,
+		ErrMsg:     err,
 	}
 }
 
@@ -549,7 +549,7 @@ func NewContractDeployPayload(templateid []byte, contractid []byte, name string,
 //	TokenSupply   []*modules.TokenSupply     `json:"token_supply"`   //增发Token请求产生的结�?
 //	TokenDefine   *modules.TokenDefine       `json:"token_define"`   //定义新Token
 func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte, excutiontime time.Duration,
-	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte, err *ContractError) *ContractInvokePayload {
+	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte, err ContractError) *ContractInvokePayload {
 	return &ContractInvokePayload{
 		ContractId:   contractid,
 		FunctionName: funcName,
@@ -562,16 +562,16 @@ func NewContractInvokePayload(contractid []byte, funcName string, args [][]byte,
 		//TokenPayOut:   tokenPayOut,
 		//TokenSupply:   tokenSupply,
 		//TokenDefine:   tokenDefine,
-		ErrMsg: *err,
+		ErrMsg: err,
 	}
 }
 
-func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet, err *ContractError) *ContractStopPayload {
+func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractStopPayload {
 	return &ContractStopPayload{
 		ContractId: contractid,
 		ReadSet:    readset,
 		WriteSet:   writeset,
-		ErrMsg:     *err,
+		ErrMsg:     err,
 	}
 }
 

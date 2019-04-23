@@ -317,24 +317,8 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//unit.ExecutionTime = duration
 	requstId := common.HexToHash(txid)
 	unit.RequestId = requstId
-	if err != nil {
-		log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
-		return nil, err
-	}
 	log.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
-	//type ContractInvokeResult struct {
-	//	ContractId   []byte             `json:"contract_id"` // contract id
-	//	RequestId    common.Hash        `json:"request_id"`
-	//	FunctionName string             `json:"function_name"`
-	//	Args         [][]byte           `json:"args"`         // contract arguments list
-	//	ReadSet      []ContractReadSet  `json:"read_set"`     // the set data of read, and value could be any type
-	//	WriteSet     []ContractWriteSet `json:"write_set"`    // the set data of write, and value could be any type
-	//	Payload      []byte             `json:"payload"`      // the contract execution result
-	//	TokenPayOut  []*TokenPayOut     `json:"token_payout"` //从合约地址付出Token
-	//	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
-	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
-	//}
-	//TODO
+
 	getRT(cc)
 	fmt.Println("Invoke result:==========================================================", unit)
 	return unit, nil

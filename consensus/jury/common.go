@@ -98,7 +98,7 @@ func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) er
 }
 
 func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq interface{}, errMsg string) (*modules.Message) {
-	err := &modules.ContractError{
+	err := modules.ContractError{
 		Code:    500, //todo
 		Message: errMsg,
 	}
@@ -215,7 +215,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, nil)
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
