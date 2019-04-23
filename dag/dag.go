@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type Dag struct {
@@ -573,6 +574,15 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	}
 	return dag, nil
 }
+
+func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo,error) {
+	return d.propRep.GetChaincodes(contractId)
+}
+
+func (d *Dag) SaveChaincode(contractId common.Address,cc *list.CCInfo) error {
+	return d.propRep.SaveChaincode(contractId,cc)
+}
+
 
 // Get Contract Api
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {

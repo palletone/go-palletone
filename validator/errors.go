@@ -54,7 +54,7 @@ const (
 	TxValidationCode_INVALID_PAYMMENTLOAD         ValidationCode = 26
 	TxValidationCode_INVALID_PAYMMENT_INPUT       ValidationCode = 27
 	TxValidationCode_INVALID_PAYMMENT_OUTPUT      ValidationCode = 28
-	TxValidationCode_INVALID_PAYMMENT_LOCKTIME    ValidationCode = 29
+	TxValidationCode_INVALID_COINBASE             ValidationCode = 29
 	TxValidationCode_INVALID_OUTPOINT             ValidationCode = 30
 	TxValidationCode_INVALID_AMOUNT               ValidationCode = 31
 	TxValidationCode_INVALID_ASSET                ValidationCode = 32
@@ -109,7 +109,7 @@ var validationCode_name = map[int32]string{
 	26:  "INVALID_PAYMMENTLOAD",
 	27:  "INVALID_PAYMMENT_INPUT",
 	28:  "INVALID_PAYMMENT_OUTPUT",
-	29:  "INVALID_PAYMMENT_LOCKTIME",
+	29:  "INVALID_PAYMMENT_COINBASE",
 	30:  "INVALID_OUTPOINT",
 	31:  "INVALID_AMOUNT",
 	32:  "INVALID_ASSET",

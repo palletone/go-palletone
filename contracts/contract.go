@@ -157,5 +157,5 @@ func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImag
 		log.Error("initFlag == 0")
 		return nil, errors.New("contract not initialized")
 	}
-	return cc.Stop(deployId, chainID, deployId, txid, deleteImage)
+	return cc.Stop(c.dag,deployId, chainID, deployId, txid, deleteImage)
 }

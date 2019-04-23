@@ -1146,3 +1146,33 @@ func (mr *MockIDagMockRecorder) RefreshSysParameters() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshSysParameters", reflect.TypeOf((*MockIDag)(nil).RefreshSysParameters))
 }
+
+// GetPartitionChains mocks base method
+func (m *MockIDag) GetPartitionChains() ([]*modules.PartitionChain, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPartitionChains")
+	ret0, _ := ret[0].([]*modules.PartitionChain)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPartitionChains indicates an expected call of GetPartitionChains
+func (mr *MockIDagMockRecorder) GetPartitionChains() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartitionChains", reflect.TypeOf((*MockIDag)(nil).GetPartitionChains))
+}
+
+// GetMainChain mocks base method
+func (m *MockIDag) GetMainChain() (*modules.MainChain, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMainChain")
+	ret0, _ := ret[0].(*modules.MainChain)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMainChain indicates an expected call of GetMainChain
+func (mr *MockIDagMockRecorder) GetMainChain() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMainChain", reflect.TypeOf((*MockIDag)(nil).GetMainChain))
+}

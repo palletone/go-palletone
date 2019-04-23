@@ -19,8 +19,6 @@
 package ptn
 
 import (
-	"fmt"
-
 	"encoding/json"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -239,7 +237,7 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 	//dstId := node.ID.TerminalString()
 	//peer := pm.peers.Peer(dstId)
 	//if peer == nil {
-	//	log.Debug(fmt.Sprintf("peer not exist: %v", node.String()))
+	//	log.Debugf("peer not exist: %v", node.String())
 	//}
 
 	// comment by Albert·Gou
@@ -300,7 +298,7 @@ func (pm *ProtocolManager) GetPeer(node *discover.Node) (p *peer, self bool) {
 
 	p = pm.peers.Peer(id.TerminalString())
 	if p == nil && !self {
-		log.Debug(fmt.Sprintf("the Peer is not exist: %v", node.String()))
+		log.Debugf("the Peer is not exist: %v", node.String())
 	}
 
 	return
