@@ -363,7 +363,7 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 
 		msm[addr] = medAcc
 	}
-	log.Debug("This node controls %v mediators.", len(msm))
+	log.Debugf("This node controls %v mediators.", len(msm))
 
 	mp := MediatorPlugin{
 		ptn:  ptn,
