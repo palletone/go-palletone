@@ -484,29 +484,29 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		}
 		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
 	} else {
-		if recv.get("serveChainSince", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot serve chain")
-		}
-		if recv.get("serveStateSince", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot serve state")
-		}
-		if recv.get("txRelay", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot relay transactions")
-		}
-		params := &flowcontrol.ServerParams{}
-		if err := recv.get("flowControl/BL", &params.BufLimit); err != nil {
-			return err
-		}
-		if err := recv.get("flowControl/MRR", &params.MinRecharge); err != nil {
-			return err
-		}
-		var MRC RequestCostList
-		if err := recv.get("flowControl/MRC", &MRC); err != nil {
-			return err
-		}
-		p.fcServerParams = params
-		p.fcServer = flowcontrol.NewServerNode(params)
-		p.fcCosts = MRC.decode()
+		//if recv.get("serveChainSince", nil) != nil {
+		//	return errResp(ErrUselessPeer, "peer cannot serve chain")
+		//}
+		//if recv.get("serveStateSince", nil) != nil {
+		//	return errResp(ErrUselessPeer, "peer cannot serve state")
+		//}
+		//if recv.get("txRelay", nil) != nil {
+		//	return errResp(ErrUselessPeer, "peer cannot relay transactions")
+		//}
+		//params := &flowcontrol.ServerParams{}
+		//if err := recv.get("flowControl/BL", &params.BufLimit); err != nil {
+		//	return err
+		//}
+		//if err := recv.get("flowControl/MRR", &params.MinRecharge); err != nil {
+		//	return err
+		//}
+		//var MRC RequestCostList
+		//if err := recv.get("flowControl/MRC", &MRC); err != nil {
+		//	return err
+		//}
+		//p.fcServerParams = params
+		//p.fcServer = flowcontrol.NewServerNode(params)
+		//p.fcCosts = MRC.decode()
 	}
 	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
 	p.headInfo = &announceData{Hash: rHash, Number: rNum}
