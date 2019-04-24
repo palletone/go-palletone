@@ -81,6 +81,12 @@ type DynamicGlobalProperty struct {
 	LastIrreversibleUnitNum uint64
 	//NewestUnit     map[AssetId]*UnitProperty
 	//LastStableUnit map[AssetId]*UnitProperty
+
+	// If MaintenanceFlag is true, then the head unit is a maintenance unit.
+	// This means GetTimeSlot(1) - HeadBlockTime() will have a gap due to maintenance duration.
+	//
+	// This flag answers the question, "Was maintenance performed in the last call to ApplyUnit()?"
+	MaintenanceFlag bool
 }
 type UnitProperty struct {
 	Hash      common.Hash // 最近的单元hash
@@ -105,6 +111,8 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 		LastIrreversibleUnitNum: 0,
 		//NewestUnit:     map[AssetId]*UnitProperty{},
 		//LastStableUnit: map[AssetId]*UnitProperty{},
+
+		MaintenanceFlag: false,
 	}
 }
 
@@ -114,8 +122,6 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 //func (gdp *DynamicGlobalProperty) SetLastStableUnit(header *Header) {
 //	gdp.LastStableUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Time}
 //}
-
-const TERMINTERVAL = 50 //DEBUG:50, DEPLOY:15000
 
 func (gp *GlobalProperty) ActiveMediatorsCount() int {
 	return len(gp.ActiveMediators)

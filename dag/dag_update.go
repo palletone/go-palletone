@@ -64,7 +64,7 @@ func (dag *Dag) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
 	//dgp.HeadUnitNum = unit.NumberU64()
 	//dgp.HeadUnitHash = unit.Hash()
 	//dgp.HeadUnitTime = unit.Timestamp()
-	//dgp.SetNewestUnit(unit.Header())
+	dag.propRep.SetNewestUnit(unit.Header())
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
@@ -213,4 +213,15 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	// 6. 清理中间处理缓存数据
 	dag.mediatorVoteTally = nil
 	dag.mediatorCountHistogram = nil
+}
+
+func (dag *Dag) updateMaintenanceFlag(newMaintenanceFlag bool) {
+	log.Debugf("update maintenance flag: %v", newMaintenanceFlag)
+	dgp := dag.GetDynGlobalProp()
+
+	dgp.MaintenanceFlag = newMaintenanceFlag
+
+	dag.SaveDynGlobalProp(dgp, false)
+
+	return
 }
