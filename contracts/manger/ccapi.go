@@ -259,10 +259,10 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		if err != nil {
 			log.Error("Deploy", "SetChaincode fail, chainId", setChainId, "name", cc.Name)
 		}
-	}else {
-		err = saveChaincode(idag,setChainId,depId,cc)
+	} else {
+		err = saveChaincode(idag, setChainId, depId, cc)
 		if err != nil {
-			log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", setChainId, "name", cc.Name,"error",err.Error())
+			log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", setChainId, "name", cc.Name, "error", err.Error())
 		}
 	}
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, cc.Name, cc.Id, args, timeout)
@@ -273,14 +273,14 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	return cc.Id, unit, err
 }
 
-func getChaincode(dag dag.IDag,contractId common.Address) (*cclist.CCInfo,error) {
+func getChaincode(dag dag.IDag, contractId common.Address) (*cclist.CCInfo, error) {
 	log.Infof("===========enter getChaincode")
 	return dag.GetChaincodes(contractId)
 }
 
-func saveChaincode(dag dag.IDag,channel string,contractId common.Address,chaincode *cclist.CCInfo) error {
+func saveChaincode(dag dag.IDag, channel string, contractId common.Address, chaincode *cclist.CCInfo) error {
 	log.Infof("===========enter saveChaincodeSet")
-	err := dag.SaveChaincode(contractId,chaincode)
+	err := dag.SaveChaincode(contractId, chaincode)
 	if err != nil {
 		return err
 	}
@@ -297,17 +297,17 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
-address := common.Address{}
-address.SetBytes(deployId)
-cc := &cclist.CCInfo{}
-var err error
+	address := common.Address{}
+	address.SetBytes(deployId)
+	cc := &cclist.CCInfo{}
+	var err error
 	if address.IsSystemContractAddress() {
 		cc, err = cclist.GetChaincode(chainID, deployId)
 		if err != nil {
 			return nil, err
 		}
-	}else {
-		cc,err = getChaincode(idag,address)
+	} else {
+		cc, err = getChaincode(idag, address)
 		if err != nil {
 			return nil, err
 		}
@@ -326,14 +326,14 @@ var err error
 	es := NewEndorserServer(mksupt)
 
 	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name:cc.Name },
+		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
 		Type:        pb.ChaincodeSpec_GOLANG,
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
 		Path:    "", //no use
 		Name:    cc.Name,
-		Version:cc.Version,
+		Version: cc.Version,
 	}
 
 	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
@@ -370,7 +370,7 @@ var err error
 	return unit, nil
 }
 
-func Stop(idag dag.IDag,contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
+func Stop(idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
 	log.Infof("enter ccapi.go Stop")
 	defer log.Infof("exit ccapi.go Stop")
 	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
@@ -387,7 +387,7 @@ func Stop(idag dag.IDag,contractid []byte, chainID string, deployId []byte, txid
 	//}
 	address := common.Address{}
 	address.SetBytes(deployId)
-	cc,err := getChaincode(idag,address)
+	cc, err := getChaincode(idag, address)
 	if err != nil {
 		return nil, err
 	}
