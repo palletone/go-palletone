@@ -594,6 +594,8 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 		if errIgnore != nil {
 			log.Debugf("stop failed: %+v", errIgnore)
 		}
+		//TODO
+		return chaincodeSupport.launchAndWaitForRegister(ctxt, cccid, cds , launcher )
 	}
 	return err
 }

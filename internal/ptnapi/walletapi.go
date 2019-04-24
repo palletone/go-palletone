@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"math/rand"
 	"strconv"
 	"time"
@@ -386,8 +387,8 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		}
 	}
 	//const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var duration *uint64 
-    const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var duration *uint64
+	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
 	if duration == nil {
 		d = 300 * time.Second
@@ -795,7 +796,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	return submitTransaction(ctx, s.b, stx)
 }
 
-func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string) (string, error) {
+func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)
@@ -812,12 +813,20 @@ func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, d
 	if fee <= 0 {
 		return "", fmt.Errorf("fee is ZERO ")
 	}
+
+	intCertID := new(big.Int)
+	if len(certID) > 0 {
+		if _, ok := intCertID.SetString(certID, 10); !ok {
+			return "", fmt.Errorf("certid is invalid")
+		}
+		log.Info("-----Ccinvoketx:", "certificate serial number", certID)
+	}
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, intCertID, contractAddr, args, 0)
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 
 	return hex.EncodeToString(reqId[:]), err

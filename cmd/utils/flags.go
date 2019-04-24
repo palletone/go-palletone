@@ -1186,10 +1186,10 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 			fullNode, err := ptn.New(ctx, cfg)
-			if fullNode != nil && cfg.LightServ > 0 {
-				ls, _ := light.NewLesServer(fullNode, cfg)
-				fullNode.AddLesServer(ls)
-			}
+			//if fullNode != nil && cfg.LightServ > 0 {
+			//	ls, _ := light.NewLesServer(fullNode, cfg)
+			//	fullNode.AddLesServer(ls)
+			//}
 			return fullNode, err
 		})
 	}

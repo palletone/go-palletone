@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -150,4 +151,10 @@ type IDag interface {
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	RefreshSysParameters()
+
+	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
+	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetPartitionChains() ([]*modules.PartitionChain, error)
+	GetMainChain() (*modules.MainChain, error)
+	GetCoinYearRate() float64
 }

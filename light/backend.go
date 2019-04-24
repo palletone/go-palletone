@@ -162,32 +162,27 @@ func (s *LightDummyAPI) Mining() bool {
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *LightPalletone) APIs() []rpc.API {
-	return []rpc.API{}
-	/*
-		return append(ptnapi.GetAPIs(s.ApiBackend), []rpc.API{
-			{
-				Namespace: "eth",
-				Version:   "1.0",
-				Service:   &LightDummyAPI{},
-				Public:    true,
-			}, {
-				Namespace: "eth",
-				Version:   "1.0",
-				Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
-				Public:    true,
-			}, {
-				Namespace: "eth",
-				Version:   "1.0",
-				Service:   filters.NewPublicFilterAPI(s.ApiBackend, true),
-				Public:    true,
-			},{
-				Namespace: "net",
-				Version:   "1.0",
-				Service:   s.netRPCService,
-				Public:    true,
-			},
-		}...)
-	*/
+	//return []rpc.API{}
+
+	return append(ptnapi.GetAPIs(s.ApiBackend), []rpc.API{
+		{
+			Namespace: "ptn",
+			Version:   "1.0",
+			Service:   &LightDummyAPI{},
+			Public:    true,
+		}, {
+			Namespace: "ptn",
+			Version:   "1.0",
+			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
+			Public:    true,
+		}, {
+			Namespace: "net",
+			Version:   "1.0",
+			Service:   s.netRPCService,
+			Public:    true,
+		},
+	}...)
+
 }
 
 //func (s *LightPalletone) ResetWithGenesisBlock(gb *types.Block) {
@@ -212,7 +207,7 @@ func (s *LightPalletone) Protocols() []p2p.Protocol {
 // Ethereum protocol implementation.
 func (s *LightPalletone) Start(srvr *p2p.Server) error {
 	//s.startBloomHandlers()
-	log.Warn("Light client mode is an experimental feature")
+	log.Debug("Light client mode is an experimental feature")
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.networkId)
 	// clients are searching for the first advertised protocol in the list
 	//protocolVersion := AdvertiseProtocolVersions[0]

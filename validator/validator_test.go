@@ -22,6 +22,9 @@ package validator
 
 import (
 	"encoding/hex"
+	"testing"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core"
@@ -29,8 +32,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestValidate_ValidateUnitTxs(t *testing.T) {

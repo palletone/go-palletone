@@ -93,4 +93,7 @@ type IStateDb interface {
 	IsInJuryCandidateList(address common.Address) bool
 
 	UpdateSysParams(ver *modules.StateVersion) error
+
+	GetPartitionChains() ([]*modules.PartitionChain, error)
+	GetMainChain() (*modules.MainChain, error)
 }

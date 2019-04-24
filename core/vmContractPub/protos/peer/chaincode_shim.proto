@@ -61,9 +61,9 @@ message ChaincodeMessage {
         DEFINE_TOKEN=27;
         SUPPLY_TOKEN=28;
         GET_TIMESTAMP = 29;
-        GET_CERT = 30;
-        SEND_JURY = 31;
-        RECV_JURY = 32;
+        SEND_JURY = 30;
+        RECV_JURY = 31;
+        GET_CERT_STATE = 32;
     }
 
     Type type = 1;
@@ -158,6 +158,11 @@ message OutChainQuery {
     string OutChainName = 1;
     bytes params = 2;
     string collection = 3;
+}
+
+message GetCertState {
+    string key = 1;
+    string collection = 2;
 }
 
 message SendJury {

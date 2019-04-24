@@ -20,7 +20,6 @@
 package dag
 
 import (
-	"fmt"
 	"sort"
 	"time"
 
@@ -35,12 +34,12 @@ import (
 func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	missedUnits := dag.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
-		log.Debug("Trying to push double-produced unit onto current unit?!")
+		log.Errorf("Trying to push double-produced unit onto current unit?!")
 		return 0
 	}
 
 	missedUnits--
-	log.Debug(fmt.Sprintf("the count of missed units: %v", missedUnits))
+	log.Debugf("the count of missed units: %v", missedUnits)
 
 	aSize := dag.ActiveMediatorsCount()
 	if missedUnits < uint32(aSize) {
@@ -59,6 +58,7 @@ func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 
 // UpdateDynGlobalProp, update global dynamic data
 func (dag *Dag) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
+	log.Debugf("update global dynamic data")
 	dgp := dag.GetDynGlobalProp()
 
 	//dgp.HeadUnitNum = unit.NumberU64()
@@ -68,7 +68,7 @@ func (dag *Dag) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
-	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled<<(missedUnits+1) + 1
+	dgp.RecentSlotsFilled = (dgp.RecentSlotsFilled << (missedUnits + 1)) + 1
 	dgp.CurrentASlot += missedUnits + 1
 
 	dag.SaveDynGlobalProp(dgp, false)
@@ -82,6 +82,7 @@ func (dag *Dag) updateMediatorSchedule() {
 	ms := dag.GetMediatorSchl()
 
 	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
+		log.Debugf("Shuffle the scheduling order of mediators")
 		dag.SaveMediatorSchl(ms, false)
 
 		dgp.IsShuffledSchedule = true
@@ -96,8 +97,11 @@ func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
 	signingMediator := newUnit.Author()
 	med := dag.GetMediator(signingMediator)
 
-	med.LastConfirmedUnitNum = uint32(newUnit.NumberU64())
+	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
+	med.LastConfirmedUnitNum = lastConfirmedUnitNum
 	dag.SaveMediator(med, false)
+
+	log.Debugf("the LastConfirmedUnitNum of mediator(&v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
 }
 
 func (dag *Dag) updateLastIrreversibleUnit() {
@@ -121,6 +125,7 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 
 	// 4. 更新
 	dag.updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum)
+	log.Debugf("new last irreversible unit number is: %v", newLastIrreversibleUnitNum)
 }
 
 func (dag *Dag) updateLastIrreversibleUnitNum( /*hash common.Hash, */ newLastIrreversibleUnitNum uint64) {
@@ -158,10 +163,11 @@ func (dag *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUp
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dgp := dag.GetDynGlobalProp()
 
-	// 1. 判断是否进入维护周期. Are we at the maintenance interval?
+	// 1. 判断是否进入维护周期
 	if dgp.NextMaintenanceTime > uint32(nextUnit.Timestamp()) {
 		return
 	}
+	log.Debugf("We are at the maintenance interval")
 
 	// 2. 对每个账户的各种投票信息进行初步统计
 	dag.performAccountMaintenance()
@@ -202,6 +208,7 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.SaveDynGlobalProp(dgp, false)
+	log.Debugf("nextMaintenanceTime: %v", nextMaintenanceTime)
 
 	// 6. 清理中间处理缓存数据
 	dag.mediatorVoteTally = nil

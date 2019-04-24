@@ -31,8 +31,8 @@ import (
 )
 
 const (
-	forceSyncCycle      = 10 * time.Second // Time interval to force syncs, even if few peers are available
-	minDesiredPeerCount = 5                // Amount of peers desired to start syncing
+	forceSyncCycle      = 5 * time.Second // Time interval to force syncs, even if few peers are available
+	minDesiredPeerCount = 5               //5                // Amount of peers desired to start syncing
 
 	// This is the target size for the packs of transactions sent by txsyncLoop.
 	// A pack can get larger than this if a single transactions exceeds this size.
@@ -233,6 +233,10 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	}
 
 	if index >= pindex && pindex > 0 && err == nil {
+		if atomic.LoadUint32(&pm.fastSync) == 1 {
+			log.Debug("Fast sync complete, auto disabling")
+			atomic.StoreUint32(&pm.fastSync, 0)
+		}
 		atomic.StoreUint32(&pm.acceptTxs, 1)
 		log.Debug("Do not need synchronise", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
 		return

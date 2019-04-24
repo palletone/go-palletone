@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -31,7 +32,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/comm"
 	"strconv"
+	"github.com/fsouza/go-dockerclient"
 )
 
 var (
@@ -111,15 +112,15 @@ func GetInt64FromDb(key string) int64 {
 	//DefaultCpuPeriod  = "50000"// 限制CPU --cpu-period=50000 --cpu-quota=25000
 	//DefaultUccCpuQuota  = "25000"//限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
 	//DefaultUccCpuSetCpus  = "0-3"//限制使用某些CPUS  "1,3"  "0-3"
-	dag,err:= comm.GetCcDagHand()
-	resultStr,_,err := dag.GetConfig(key)
+	dag, err := comm.GetCcDagHand()
+	resultStr, _, err := dag.GetConfig(key)
 	if err != nil {
-		log.Infof("dag.GetConfig err: %s",err.Error())
+		log.Infof("dag.GetConfig err: %s", err.Error())
 		return 0
 	}
-	resultInt64,err := strconv.ParseInt(string(resultStr),10,64)
+	resultInt64, err := strconv.ParseInt(string(resultStr), 10, 64)
 	if err != nil {
-		log.Infof("strconv.ParseInt err: %s",err.Error())
+		log.Infof("strconv.ParseInt err: %s", err.Error())
 		return 0
 	}
 	return resultInt64
@@ -127,7 +128,6 @@ func GetInt64FromDb(key string) int64 {
 
 //TODO
 func getDockerHostConfig() *docker.HostConfig {
-
 
 	if hostConfig != nil {
 		return hostConfig
@@ -157,31 +157,31 @@ func getDockerHostConfig() *docker.HostConfig {
 	}
 	log.Debugf("docker container hostconfig NetworkMode: %s", networkMode)
 	portBindings := make(map[docker.Port][]docker.PortBinding)
-	hosts := strings.Split(contractcfg.GetConfig().ContractAddress,":")
+	hosts := strings.Split(contractcfg.GetConfig().ContractAddress, ":")
 
 	portBinding := docker.PortBinding{
-		HostIP:hosts[0],
-		HostPort:hosts[1],
+		HostIP:   hosts[0],
+		HostPort: hosts[1],
 	}
 	portBindings[docker.Port(hosts[1]+"/tcp")] = []docker.PortBinding{portBinding}
 	hostConfig = &docker.HostConfig{
-		CapAdd:  viper.GetStringSlice(dockerKey("CapAdd")),
-		CapDrop: viper.GetStringSlice(dockerKey("CapDrop")),
-		PortBindings:portBindings,
-		DNS:         viper.GetStringSlice(dockerKey("Dns")),
-		DNSSearch:   viper.GetStringSlice(dockerKey("DnsSearch")),
-		ExtraHosts:  viper.GetStringSlice(dockerKey("ExtraHosts")),
-		NetworkMode: networkMode,
-		IpcMode:     viper.GetString(dockerKey("IpcMode")),
-		PidMode:     viper.GetString(dockerKey("PidMode")),
-		UTSMode:     viper.GetString(dockerKey("UTSMode")),
-		LogConfig:   logConfig,
+		CapAdd:       viper.GetStringSlice(dockerKey("CapAdd")),
+		CapDrop:      viper.GetStringSlice(dockerKey("CapDrop")),
+		PortBindings: portBindings,
+		DNS:          viper.GetStringSlice(dockerKey("Dns")),
+		DNSSearch:    viper.GetStringSlice(dockerKey("DnsSearch")),
+		ExtraHosts:   viper.GetStringSlice(dockerKey("ExtraHosts")),
+		NetworkMode:  networkMode,
+		IpcMode:      viper.GetString(dockerKey("IpcMode")),
+		PidMode:      viper.GetString(dockerKey("PidMode")),
+		UTSMode:      viper.GetString(dockerKey("UTSMode")),
+		LogConfig:    logConfig,
 
-		ReadonlyRootfs:   viper.GetBool(dockerKey("ReadonlyRootfs")),
-		SecurityOpt:      viper.GetStringSlice(dockerKey("SecurityOpt")),
-		CgroupParent:     viper.GetString(dockerKey("CgroupParent")),
-		Memory:           GetInt64FromDb("UccMemory"),
-		MemorySwap:       GetInt64FromDb("UccMemorySwap"),
+		ReadonlyRootfs: viper.GetBool(dockerKey("ReadonlyRootfs")),
+		SecurityOpt:    viper.GetStringSlice(dockerKey("SecurityOpt")),
+		CgroupParent:   viper.GetString(dockerKey("CgroupParent")),
+		Memory:         GetInt64FromDb("UccMemory"),
+		MemorySwap:     GetInt64FromDb("UccMemorySwap"),
 		//Memory:           int64(104857600), //100mB
 		//MemorySwap:       int64(20971520),
 		MemorySwappiness: getInt64("MemorySwappiness"),
@@ -352,7 +352,13 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			//}
 		} else {
 			log.Errorf("start-could not recreate container <%s> with image id <%s>, because of %s", containerID, imageID, err)
-			return err
+			// start container with HostConfig was deprecated since v1.10 and removed in v1.2
+			err = client.StartContainer(containerID, nil)
+			if err != nil {
+				log.Errorf("start-could not start container: %s", err)
+				return err
+			}
+			return nil
 		}
 	}
 
@@ -592,15 +598,14 @@ func (vm *DockerVM) GetVMName(ccid ccintf.CCID, format func(string) (string, err
 }
 func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	name := ccid.GetName()
-
-	if ccid.NetworkID != "" && ccid.PeerID != "" {
-		name = fmt.Sprintf("%s-%s-%s", ccid.NetworkID, ccid.PeerID, name)
-	} else if ccid.NetworkID != "" {
-		name = fmt.Sprintf("%s-%s", ccid.NetworkID, name)
-	} else if ccid.PeerID != "" {
-		name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
-	}
-	name = name +":"+ contractcfg.GetConfig().ContractAddress
+	//if ccid.NetworkID != "" && ccid.PeerID != "" {
+	//	name = fmt.Sprintf("%s-%s-%s", ccid.NetworkID, ccid.PeerID, name)
+	//} else if ccid.NetworkID != "" {
+	//	name = fmt.Sprintf("%s-%s", ccid.NetworkID, name)
+	//} else if ccid.PeerID != "" {
+	//	name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
+	//}
+	name = contractcfg.GetConfig().ContractAddress + ":" + name
 	// replace any invalid characters with "-" (either in network id, peer id, or in the
 	// entire name returned by any format function)
 	name = vmRegExp.ReplaceAllString(name, "-")

@@ -58,7 +58,7 @@ type ChainIndexJson struct {
 	Index   uint64 `json:"index"`
 }
 
-func ConvertUnit2Json(unit *modules.Unit) *UnitJson {
+func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc) *UnitJson {
 	json := &UnitJson{
 		UnitHash:   unit.Hash(),
 		UnitSize:   unit.Size(),
@@ -67,8 +67,8 @@ func ConvertUnit2Json(unit *modules.Unit) *UnitJson {
 	}
 
 	for _, tx := range unit.Txs {
-		txjson := ConvertTx2Json(tx, nil)
-		json.Txs = append(json.Txs, &txjson)
+		txjson := ConvertTx2FullJson(tx, utxoQuery)
+		json.Txs = append(json.Txs, txjson)
 	}
 	return json
 }

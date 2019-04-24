@@ -112,10 +112,10 @@ type ChaincodeStubInterface interface {
 
 	//retrun local jury's signature
 	SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
-	//return all jury's signature and answer,format:[]JuryMsgSig
-	//type JuryMsgSig struct {
-	//	Signature []byte
-	//	Answer    []byte
+	//return all jury's Address and Address,format:[]JuryMsgAddr
+	//type JuryMsgAddr struct {
+	//	Address string
+	//	Address  []byte
 	//}
 	RecvJury(msgType uint32, consultContent []byte, timeout uint32) ([]byte, error)
 
@@ -164,7 +164,7 @@ type ChaincodeStubInterface interface {
 	// 根据证书ID获得证书字节数据
 	GetRequesterCert() (certBytes []byte, err error)
 	// 验证证书是否合法, error返回的是不合法的原因
-	IsRequesterCertValidate() (bool, error)
+	IsRequesterCertValid() (bool, error)
 
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys

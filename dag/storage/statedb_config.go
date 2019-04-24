@@ -23,6 +23,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -50,4 +51,28 @@ func (statedb *StateDb) GetConfig(name string) ([]byte, *modules.StateVersion, e
 func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
 	assetId := dagconfig.DagConfig.GetGasToken()
 	return &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}, nil
+}
+func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) {
+	id := syscontract.PartitionContractAddress.Bytes21()
+	rows, err := statedb.GetContractStatesByPrefix(id, "PC")
+	if err != nil {
+		return nil, err
+	}
+	result := []*modules.PartitionChain{}
+	for _, v := range rows {
+		partition := &modules.PartitionChain{}
+		json.Unmarshal(v.Value, &partition)
+		result = append(result, partition)
+	}
+	return result, nil
+}
+func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
+	id := syscontract.PartitionContractAddress.Bytes21()
+	data, _, err := statedb.GetContractState(id, "MainChain")
+	if err != nil {
+		return nil, err
+	}
+	mainChain := &modules.MainChain{}
+	json.Unmarshal(data, &mainChain)
+	return mainChain, nil
 }

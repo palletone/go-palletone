@@ -22,6 +22,7 @@ package dag
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
@@ -47,7 +48,7 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 	}
 }
 
-func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64,
+func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	txPool txspool.ITxPool) (*modules.Transaction, error) {
 	// 条件判断
 	if daoFee == 0 {
@@ -121,11 +122,15 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 
 	// 5. 构建Transaction
+	certIDBytes := []byte{}
+	if certID != nil {
+		certIDBytes = certID.Bytes()
+	}
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
+		CertId:     certIDBytes,
 	}
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
-
 	return tx, nil
 }
 
@@ -313,13 +318,13 @@ func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 	return uint64(size * float64(pricePerKByte) / 1024)
 }
 
-func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
+func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
 	if msg.App == modules.APP_DATA {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
-	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, txPool)
+	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, certID, txPool)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -353,7 +358,7 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 
 	// 2. 组装 tx
 	fee := dag.CurrentFeeSchedule().MediatorCreateFee
-	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, msg, txPool)
+	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, nil, msg, txPool)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -375,7 +380,7 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address,
 
 	// 2. 组装 tx
 	fee := dag.CurrentFeeSchedule().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, msg, txPool)
+	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, txPool)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -397,7 +402,7 @@ func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMedi
 
 	// 2. 组装 tx
 	fee := dag.CurrentFeeSchedule().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, msg, txPool)
+	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, nil, msg, txPool)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -413,7 +418,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 
 	// 如果没有文本，或者文本为空
 	if text == nil || *text == "" {
-		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee, txPool)
+		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee, nil, txPool)
 	} else {
 		// 1. 组装 message
 		msg := &modules.Message{
@@ -422,7 +427,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 		}
 
 		// 2. 创建 tx
-		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, msg, txPool)
+		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg, txPool)
 	}
 
 	if err != nil {

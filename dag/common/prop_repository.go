@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"time"
+	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type PropRepository struct {
@@ -49,6 +50,17 @@ type IPropRepository interface {
 	UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty) bool
 	GetSlotTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, slotNum uint32) time.Time
 	GetSlotAtTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, when time.Time) uint32
+
+	SaveChaincode(contractId common.Address,cc *list.CCInfo) error
+	GetChaincodes(contractId common.Address) (*list.CCInfo,error)
+}
+
+func (pRep *PropRepository) GetChaincodes(contractId common.Address) (*list.CCInfo,error) {
+	return pRep.db.GetChaincodes(contractId)
+}
+
+func (pRep *PropRepository) SaveChaincode(contractId common.Address,cc *list.CCInfo) error {
+	return pRep.db.SaveChaincode(contractId,cc)
 }
 
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {

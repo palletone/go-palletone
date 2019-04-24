@@ -18,7 +18,7 @@ type CCInfo struct {
 	Version string
 
 	SysCC  bool
-	Enable bool
+	//Enable bool
 }
 
 type chain struct {

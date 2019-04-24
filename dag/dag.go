@@ -22,6 +22,7 @@ package dag
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -32,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -43,7 +45,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"strconv"
 )
 
 type Dag struct {
@@ -286,7 +287,10 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			u.Author().Str())
 
 		// append by albert·gou, 利用 unit 更新相关状态
-		d.ApplyUnit(u)
+		if err := d.ApplyUnit(u); err != nil {
+			//return count, err
+			return count, nil
+		}
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
 		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
@@ -570,6 +574,14 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 		//utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil
+}
+
+func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
+	return d.propRep.GetChaincodes(contractId)
+}
+
+func (d *Dag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
+	return d.propRep.SaveChaincode(contractId, cc)
 }
 
 // Get Contract Api
@@ -1160,6 +1172,10 @@ func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, err
 	return nil, nil
 }
 func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
+	header := d.CurrentHeader(assetId)
+	if header != nil {
+		return header.Number.Index
+	}
 	return uint64(0)
 }
 func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
@@ -1232,6 +1248,21 @@ func (bc *Dag) PostChainEvents(events []interface{}) {
 			//	bc.chainSideFeed.Send(ev)
 		}
 	}
+}
+func (bc *Dag) GetPartitionChains() ([]*modules.PartitionChain, error) {
+	return bc.unstableStateRep.GetPartitionChains()
+}
+func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
+	return bc.unstableStateRep.GetMainChain()
+}
+func (d *Dag) GetCoinYearRate() float64 {
+	data, _, err := d.GetConfig("TxCoinYearRate")
+	if err != nil {
+		log.Warn("Cannot read system config by key :TxCoinYearRate")
+		return 0
+	}
+	rate, _ := strconv.ParseFloat(string(data), 64)
+	return rate
 }
 
 // SubscribeChainSideEvent registers a subscription of ChainSideEvent.

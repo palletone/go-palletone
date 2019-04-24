@@ -191,7 +191,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 此处应该判断scheduledMediator的签名公钥对应的私钥在本节点是否存在
 	ks := mp.ptn.GetKeyStore()
-	//err := ks.Unlock(accounts.Account{Address: scheduledMediator}, med.Password)
+	//err := ks.TimedUnlock(accounts.Account{Address: scheduledMediator}, med.Password, time.Second)
 	//if err != nil {
 	//	detail["ScheduledKey"] = scheduledMediator.Str()
 	//	return NoPrivateKey, detail

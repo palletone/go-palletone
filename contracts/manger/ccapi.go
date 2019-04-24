@@ -114,7 +114,7 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 	for _, ccinf := range cclist {
 		ci.Name = ccinf.Name
 		ci.Path = ccinf.Path
-		ci.Enable = ccinf.Enabled
+		//ci.Enable = ccinf.Enabled
 		ci.SysCC = true
 		scclist = append(scclist, ci)
 	}
@@ -228,7 +228,8 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 	}
 	btxId, err := hex.DecodeString(txId)
 	depId := common.NewAddress(btxId[:20], common.ContractHash)
-	usrccName := depId.String()+":"+templateCC.Name //+ "_" + txId
+	usrccName := depId.String() //+ "_" + txId
+	//usrccName := templateCC.Name //+ "_" + txId
 	usrcc := &ucc.UserChaincode{
 		Name:     usrccName,
 		Path:     templateCC.Path,
@@ -237,7 +238,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		Enabled:  true,
 	}
 	chaincodeID := &pb.ChaincodeID{
-		Name:    usrcc.Name,
+		Name:    usrccName,
 		Path:    usrcc.Path,
 		Version: usrcc.Version,
 	}
@@ -248,24 +249,42 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	cc := &cclist.CCInfo{
-		Id:      depId[:],
+		Id:      depId.Bytes21(),
 		Name:    usrccName,
-		Path:    templateCC.Path,
-		Version: templateCC.Version,
+		Version: usrcc.Version,
 		SysCC:   false,
-		Enable:  true,
 	}
-	err = cclist.SetChaincode(setChainId, 0, cc)
-	if err != nil {
-		log.Error("Deploy", "SetChaincode fail, chainId", setChainId, "name", cc.Name)
+	if depId.IsSystemContractAddress() {
+		err = cclist.SetChaincode(setChainId, 0, cc)
+		if err != nil {
+			log.Error("Deploy", "SetChaincode fail, chainId", setChainId, "name", cc.Name)
+		}
+	} else {
+		err = saveChaincode(idag, setChainId, depId, cc)
+		if err != nil {
+			log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", setChainId, "name", cc.Name, "error", err.Error())
+		}
 	}
-
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, cc.Name, cc.Id, args, timeout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
 	return cc.Id, unit, err
+}
+
+func getChaincode(dag dag.IDag, contractId common.Address) (*cclist.CCInfo, error) {
+	log.Infof("===========enter getChaincode")
+	return dag.GetChaincodes(contractId)
+}
+
+func saveChaincode(dag dag.IDag, channel string, contractId common.Address, chaincode *cclist.CCInfo) error {
+	log.Infof("===========enter saveChaincodeSet")
+	err := dag.SaveChaincode(contractId, chaincode)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //timeout:ms
@@ -278,18 +297,34 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
-	cc, err := cclist.GetChaincode(chainID, deployId)
-	if err != nil {
-		return nil, err
+	address := common.Address{}
+	address.SetBytes(deployId)
+	cc := &cclist.CCInfo{}
+	var err error
+	if address.IsSystemContractAddress() {
+		cc, err = cclist.GetChaincode(chainID, deployId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cc, err = getChaincode(idag, address)
+		if err != nil {
+			return nil, err
+		}
 	}
-	if cc.Name == "" {
-		errstr := fmt.Sprintf("chainCode[%v] not deplay!!", deployId)
-		return nil, errors.New(errstr)
-	}
+	//cc, err := cclist.GetChaincode(chainID, deployId)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if cc.Name == "" {
+	//	errstr := fmt.Sprintf("chainCode[%v] not deplay!!", deployId)
+	//	return nil, errors.New(errstr)
+	//}
 
-	log.Infof("Invoke [%s][%s]", chainID, cc.Name)
+	log.Infof("Invoke [%s][%s]", chainID, address.String())
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
+
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
 		Type:        pb.ChaincodeSpec_GOLANG,
@@ -316,10 +351,6 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//unit.ExecutionTime = duration
 	requstId := common.HexToHash(txid)
 	unit.RequestId = requstId
-	if err != nil {
-		log.Errorf("Txid[%s] is not a valid Hash,error:%s", txid, err)
-		return nil, err
-	}
 	log.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
 	//type ContractInvokeResult struct {
 	//	ContractId   []byte             `json:"contract_id"` // contract id
@@ -334,12 +365,12 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
 	//}
 	//TODO
-	getRT(cc)
+	//getRT(name)
 	fmt.Println("Invoke result:==========================================================", unit)
 	return unit, nil
 }
 
-func Stop(contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
+func Stop(idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
 	log.Infof("enter ccapi.go Stop")
 	defer log.Infof("exit ccapi.go Stop")
 	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
@@ -350,7 +381,13 @@ func Stop(contractid []byte, chainID string, deployId []byte, txid string, delet
 	if txid == "" {
 		return nil, errors.New("input param txid is nil")
 	}
-	cc, err := cclist.GetChaincode(chainID, deployId)
+	//cc, err := cclist.GetChaincode(chainID, deployId)
+	//if err != nil {
+	//	return nil, err
+	//}
+	address := common.Address{}
+	address.SetBytes(deployId)
+	cc, err := getChaincode(idag, address)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +447,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 		Path:    ccPath,
 		Version: ccVersion,
 		SysCC:   false,
-		Enable:  true,
+		//Enable:  true,
 	}
 	err = cclist.SetChaincode(setChainId, 0, cc)
 	if err != nil {

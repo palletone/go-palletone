@@ -19,8 +19,6 @@
 package storage
 
 import (
-	"fmt"
-
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -34,7 +32,7 @@ var (
 func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
 	err := StoreBytes(db, MediatorSchlDBKey, ms)
 	if err != nil {
-		log.Error(fmt.Sprintf("Store mediator schedule error: %s", err))
+		log.Errorf("Store mediator schedule error: %v", err.Error())
 	}
 
 	return err
@@ -44,7 +42,7 @@ func RetrieveMediatorSchl(db ptndb.Database) (*modules.MediatorSchedule, error) 
 	ms := new(modules.MediatorSchedule)
 	err := retrieve(db, MediatorSchlDBKey, ms)
 	if err != nil {
-		log.Error(fmt.Sprintf("Retrieve mediator schedule error: %s", err))
+		log.Errorf("Retrieve mediator schedule error: %v", err.Error())
 	}
 
 	return ms, err

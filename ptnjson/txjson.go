@@ -44,6 +44,13 @@ type TxJson struct {
 	InvokeRequest  *InvokeRequestJson  `json:"invoke_request"`
 	StopRequest    *StopRequestJson    `json:"stop_request"`
 }
+type TxWithUnitInfoJson struct {
+	*TxJson
+	UnitHash   string    `json:"unit_hash"`
+	UnitHeight uint64    `json:"unit_height"`
+	Timestamp  time.Time `json:"timestamp"`
+	TxIndex    uint64    `json:"tx_index"`
+}
 type TplJson struct {
 	TemplateId string `json:"template_id"`
 	Name       string `json:"name"`
@@ -113,8 +120,20 @@ type DataJson struct {
 	ExtraData string `json:"extra_data"`
 }
 
-func ConvertTx2Json(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) TxJson {
-	txjson := TxJson{TxHash: tx.Hash().String(), TxSize: float64(tx.Size())}
+func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxWithUnitInfoJson {
+	txjson := &TxWithUnitInfoJson{
+		UnitHash:   tx.UnitHash.String(),
+		UnitHeight: tx.UnitIndex,
+		Timestamp:  time.Unix(int64(tx.Timestamp), 0),
+		TxIndex:    tx.TxIndex,
+	}
+	txjson.TxJson = ConvertTx2FullJson(tx.Transaction, utxoQuery)
+	return txjson
+}
+func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) *TxJson {
+	txjson := &TxJson{}
+	txjson.TxHash = tx.Hash().String()
+	txjson.TxSize = float64(tx.Size())
 	for _, m := range tx.TxMessages {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
@@ -214,9 +233,6 @@ func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
 	sjson := new(StopJson)
 	hash := common.BytesToHash(stop.ContractId[:])
 	sjson.ContractId = hash.String()
-	for _, addr := range stop.Jury {
-		sjson.Jury = append(sjson.Jury, addr.String())
-	}
 	rset, _ := json.Marshal(stop.ReadSet)
 	sjson.ReadSet = string(rset)
 	wset, _ := json.Marshal(stop.WriteSet)

@@ -68,9 +68,9 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 
-type JuryMsgSig struct {
-	Signature []byte
-	Answer    []byte
+type JuryMsgAddr struct {
+	Address string
+	Answer  []byte
 }
 
 //Method:GetPubkey, return pubkey string
@@ -94,7 +94,7 @@ type CreateMultiSigResult struct {
 	Addresses    []string `json:"addresses"`
 }
 
-func creatMulti(juryMsg []JuryMsgSig, stub shim.ChaincodeStubInterface) ([]byte, error) {
+func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) ([]byte, error) {
 	//
 	var answers []string
 	for i := range juryMsg {
@@ -159,13 +159,13 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Success([]byte("SendJury getPubkey failed"))
 	}
 	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(1, []byte("getPubkey"), 5)
+	recvResult, err := stub.RecvJury(1, []byte("getPubkey"), 2)
 	if err != nil {
 		log.Debugf("RecvJury getPubkey err: %s", err.Error())
 		return shim.Success([]byte("RecvJury failed"))
 	}
 	log.Debugf("recvResult: %s", string(recvResult))
-	var juryMsg []JuryMsgSig
+	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
@@ -629,7 +629,7 @@ type MergeTransactionResult struct {
 	TransactionHex string `json:"transactionhex"`
 }
 
-func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg []JuryMsgSig, stub shim.ChaincodeStubInterface) (string, error) {
+func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) (string, error) {
 	//
 	mergeTx := BTCTransaction_mergeTransaction{Method: "MergeTransaction"}
 	mergeTx.UserTransactionHex = rawTx
@@ -809,13 +809,13 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("SendJury rawTx failed"))
 	}
 	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 5)
+	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 2)
 	if err != nil {
 		log.Debugf("RecvJury rawTx err: %s", err.Error())
 		return shim.Success([]byte("RecvJury rawTx failed"))
 	}
 	log.Debugf("recvResult: %s", string(recvResult))
-	var juryMsg []JuryMsgSig
+	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))

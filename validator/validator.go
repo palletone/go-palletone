@@ -22,11 +22,11 @@ package validator
 
 import (
 	"sync"
+	"time"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 type Validate struct {

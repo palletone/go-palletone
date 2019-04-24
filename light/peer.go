@@ -109,6 +109,12 @@ func (p *peer) Info() *ptn.PeerInfo {
 	}
 }
 
+func (p *peer) SetHead(headInfo *announceData) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.headInfo = headInfo
+}
+
 // Head retrieves a copy of the current head (most recent) hash of the peer.
 func (p *peer) Head() (hash common.Hash) {
 	p.lock.RLock()
@@ -118,7 +124,14 @@ func (p *peer) Head() (hash common.Hash) {
 	return hash
 }
 
-func (p *peer) HeadAndTd() (hash common.Hash, number *modules.ChainIndex) {
+func (p *peer) AssetID() (hash modules.AssetId) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+
+	return p.headInfo.Number.AssetID
+}
+
+func (p *peer) HeadAndNumber() (hash common.Hash, number *modules.ChainIndex) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -466,38 +479,39 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		//if recv.get("serveStateSince", nil) == nil {
 		//	return errResp(ErrUselessPeer, "wanted client, got server")
 		//}
-		if recv.get("announceType", &p.announceType) == nil {
+		if recv.get("announceType", &p.announceType) != nil {
 			p.announceType = announceTypeSimple
 		}
 		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
 	} else {
-		if recv.get("serveChainSince", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot serve chain")
-		}
-		if recv.get("serveStateSince", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot serve state")
-		}
-		if recv.get("txRelay", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot relay transactions")
-		}
-		params := &flowcontrol.ServerParams{}
-		if err := recv.get("flowControl/BL", &params.BufLimit); err != nil {
-			return err
-		}
-		if err := recv.get("flowControl/MRR", &params.MinRecharge); err != nil {
-			return err
-		}
-		var MRC RequestCostList
-		if err := recv.get("flowControl/MRC", &MRC); err != nil {
-			return err
-		}
-		p.fcServerParams = params
-		p.fcServer = flowcontrol.NewServerNode(params)
-		p.fcCosts = MRC.decode()
+		//if recv.get("serveChainSince", nil) != nil {
+		//	return errResp(ErrUselessPeer, "peer cannot serve chain")
+		//}
+		//if recv.get("serveStateSince", nil) != nil {
+		//	return errResp(ErrUselessPeer, "peer cannot serve state")
+		//}
+		//if recv.get("txRelay", nil) != nil {
+		//	return errResp(ErrUselessPeer, "peer cannot relay transactions")
+		//}
+		//params := &flowcontrol.ServerParams{}
+		//if err := recv.get("flowControl/BL", &params.BufLimit); err != nil {
+		//	return err
+		//}
+		//if err := recv.get("flowControl/MRR", &params.MinRecharge); err != nil {
+		//	return err
+		//}
+		//var MRC RequestCostList
+		//if err := recv.get("flowControl/MRC", &MRC); err != nil {
+		//	return err
+		//}
+		//p.fcServerParams = params
+		//p.fcServer = flowcontrol.NewServerNode(params)
+		//p.fcCosts = MRC.decode()
 	}
 	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
-	//TODO must modify
 	p.headInfo = &announceData{Hash: rHash, Number: rNum}
+	//data := &announceData{Hash: rHash, Number: rNum}
+	//p.SetHead(data)
 	return nil
 }
 
@@ -649,6 +663,21 @@ func (ps *peerSet) AllPeers() []*peer {
 	for _, peer := range ps.peers {
 		list[i] = peer
 		i++
+	}
+	return list
+}
+
+func (ps *peerSet) PeersWithoutHeader(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, len(ps.peers))
+	i := 0
+	for _, peer := range ps.peers {
+		if peer.Head().String() != hash.String() {
+			list[i] = peer
+			i++
+		}
 	}
 	return list
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/martinlindhe/base36"
 
 	"bytes"
+	"encoding/json"
 	"strings"
 )
 
@@ -163,4 +164,20 @@ func SetIdTypeByHex(id string) (AssetId, error) {
 	var id_type AssetId
 	copy(id_type[0:], bytes)
 	return id_type, nil
+}
+func (assetId *AssetId) MarshalJSON() ([]byte, error) {
+	return json.Marshal(assetId.String())
+}
+func (assetId *AssetId) UnmarshalJSON(data []byte) error {
+	var str string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+	a, _, err := String2AssetId(str)
+	if err != nil {
+		return err
+	}
+	assetId.SetBytes(a.Bytes())
+	return nil
 }
