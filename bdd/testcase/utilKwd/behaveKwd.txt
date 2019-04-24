@@ -87,12 +87,12 @@ invalidGetbalance
     Then I get a Getbalance code and a message    ${resp}    ${error_code}    ${error_message}
 
 InvalidCcinvoke
-    [Arguments]    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}
-    ...    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${recieverAdd1}    ${pwd}    ${expiredTime}
-    ...    ${error_code}    ${error_message}    ${senderAdd}=P1HhWxfQLMgb5TfE56GASURCuitX2XL397G
-    ${ret}    Given I_set_CcinvokePass_params    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}
-    ...    ${tokenType}    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${recieverAdd1}
-    ...    ${pwd}    ${expiredTime}
+    [Arguments]    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}    ${evidence}
+    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${error_code}    ${error_message}
+    ...    ${senderAdd}    ${recieverAdd}    ${recieverAdd1}
+    ${ret}    Given I_set_CcinvokePass_params    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}
+    ...    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${senderAdd}
+    ...    ${recieverAdd}    ${recieverAdd1}
     ${resp}    When I_post_CcinvokePass_request    ${ret}
     ${resultCrt}    Then I_get_the_CcinvokePass_result    ${resp}    ${error_code}    ${error_message}
     [Return]    ${resultCrt}
