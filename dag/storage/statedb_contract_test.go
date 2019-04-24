@@ -43,7 +43,7 @@ func TestGetContractState(t *testing.T) {
 	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code"), NeedApprovalCount: 10}
 	err := statedb.SaveContract(contract)
 	assert.Nil(t, err, "save contract to statedb fail")
-	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	ws := modules.NewWriteSet("name", []byte("TestName1"))
 	err = statedb.SaveContractState(id, ws, version)
 	assert.Nil(t, err, "Save contract state fail")
@@ -79,7 +79,7 @@ func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 	mediatorList := []*modules.MediatorRegisterInfo{mediator1, mediator2}
 	mediatorListBytes, err := json.Marshal(mediatorList)
 	assert.Nil(t, err, "json marshal error: ")
-	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	ws := modules.NewWriteSet("MediatorList", mediatorListBytes)
 
 	err = statedb.SaveContractState(contractId, ws, version)
@@ -130,7 +130,7 @@ func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 }
 
 func TestStateDb_GetSysParamWithoutVote(t *testing.T) {
-	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
 	modifies := []*modules.FoundModify{}
@@ -175,7 +175,7 @@ func TestStateDb_GetSysParamsWithVotes(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
 	infoByte, _ := json.Marshal(sysTokenIDInfo)
-	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	err := statedb.SaveSysConfig("sysParams", infoByte, version)
 	if err != nil {
 		t.Error(err.Error())
@@ -190,7 +190,7 @@ func TestStateDb_GetSysParamsWithVotes(t *testing.T) {
 }
 
 func TestStateDb_UpdateSysParams(t *testing.T) {
-	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
 

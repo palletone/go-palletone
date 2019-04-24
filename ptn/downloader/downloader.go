@@ -625,7 +625,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	log.Debug("Downloader", "findAncestor RequestHeadersByNumber from:", from, "count:", count)
 	index := &modules.ChainIndex{
 		AssetID: assetId,
-		IsMain:  true,
+		//IsMain:  true,
 		Index:   uint64(from),
 	}
 
@@ -800,7 +800,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 
 		index := &modules.ChainIndex{
 			AssetID: assetId,
-			IsMain:  true,
+			//IsMain:  true,
 		}
 
 		if skeleton {

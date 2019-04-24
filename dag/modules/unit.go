@@ -151,7 +151,7 @@ func (h *Header) Size() common.StorageSize {
 func CopyChainIndex(index *ChainIndex) *ChainIndex {
 	cop := new(ChainIndex)
 	cop.AssetID = index.AssetID
-	cop.IsMain = index.IsMain
+	//cop.IsMain = index.IsMain
 	cop.Index = index.Index
 	return cop
 }
@@ -293,7 +293,7 @@ type TxPoolTxs []*TxPoolTransaction
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
 	AssetID AssetId `json:"asset_id"`
-	IsMain  bool    `json:"is_main"`
+	//IsMain  bool    `json:"is_main"`
 	Index   uint64  `json:"index"`
 }
 

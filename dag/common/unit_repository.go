@@ -299,7 +299,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	gUnit := &modules.Unit{}
 
 	// genesis unit height
-	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId, IsMain: true, Index: uint64(parentUnitHeight + 1)}
+	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId,  Index: uint64(parentUnitHeight + 1)}
 
 	// transactions merkle root
 	root := core.DeriveSha(txs)
@@ -383,11 +383,11 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	// step2. compute chain height
 	// get current world_state index.
 	index := uint64(1)
-	isMain := true
+	//isMain := true
 	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
 	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
-		chainIndex = &modules.ChainIndex{AssetID: assetId, IsMain: isMain, Index: index + 1}
+		chainIndex = &modules.ChainIndex{AssetID: assetId,  Index: index + 1}
 		log.Error("GetCurrentChainIndex is failed.", "error", err)
 	} else {
 		chainIndex.Index += 1

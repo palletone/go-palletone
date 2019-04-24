@@ -591,7 +591,7 @@ func TestContractStateVrf(t *testing.T) {
 			PublicKey: []byte("def"),
 		},
 	}
-	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	log.Debug("TestContractStateVrf", "ElectionInf", eleW)
 
 	db, _ := ptndb.NewMemDatabase()

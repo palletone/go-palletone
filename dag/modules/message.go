@@ -251,10 +251,10 @@ type ContractStateValue struct {
 func (version *StateVersion) String() string {
 
 	return fmt.Sprintf(
-		"StateVersion[AssetId:{%#x}, Height:{%d},IsMain:%t,TxIdx:{%d}]",
+		"StateVersion[AssetId:{%#x}, Height:{%d},TxIdx:{%d}]",
 		version.Height.AssetID,
 		version.Height.Index,
-		version.Height.IsMain,
+		//version.Height.IsMain,
 		version.TxIndex)
 }
 
@@ -276,16 +276,16 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 	return true
 }
 
-//16+8+1+4=29
+//16+8+4=28
 func (version *StateVersion) Bytes() []byte {
 	idx := make([]byte, 8)
 	littleEndian.PutUint64(idx, version.Height.Index)
 	b := append(version.Height.AssetID.Bytes(), idx...)
-	if version.Height.IsMain {
-		b = append(b, byte(1))
-	} else {
-		b = append(b, byte(0))
-	}
+	//if version.Height.IsMain {
+	//	b = append(b, byte(1))
+	//} else {
+	//	b = append(b, byte(0))
+	//}
 	txIdx := make([]byte, 4)
 	littleEndian.PutUint32(txIdx, version.TxIndex)
 	b = append(b, txIdx...)
@@ -295,9 +295,9 @@ func (version *StateVersion) SetBytes(b []byte) {
 	asset := AssetId{}
 	asset.SetBytes(b[:15])
 	heightIdx := littleEndian.Uint64(b[16:24])
-	isMain := b[24]
-	txIdx := littleEndian.Uint32(b[25:])
-	cidx := &ChainIndex{AssetID: asset, Index: heightIdx, IsMain: isMain == byte(1)}
+	//isMain := b[24]
+	txIdx := littleEndian.Uint32(b[24:])
+	cidx := &ChainIndex{AssetID: asset, Index: heightIdx}
 	version.Height = cidx
 	version.TxIndex = txIdx
 }

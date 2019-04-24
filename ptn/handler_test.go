@@ -308,7 +308,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 			if origin, _ := pm.dag.GetUnitByNumber(&tt.query.Origin.Number); origin != nil {
 				index := &modules.ChainIndex{
 					AssetID: modules.PTNCOIN,
-					IsMain:  true,
+					//IsMain:  true,
 					Index:   uint64(0),
 				}
 				tt.query.Origin.Hash, tt.query.Origin.Number = origin.Hash(), *index

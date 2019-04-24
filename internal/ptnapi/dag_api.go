@@ -91,7 +91,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		return ""
 	}
 	number.Index = uint64(index)
-	number.IsMain = true
+	//number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
@@ -146,7 +146,7 @@ func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition str
 		return ""
 	}
 	number.Index = uint64(index)
-	number.IsMain = true
+	//number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
