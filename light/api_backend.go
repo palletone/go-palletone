@@ -290,14 +290,14 @@ func (b *LesApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.
 //GetCanonicalHash(number uint64) (common.Hash, error)
 
 // get transaction interface
-func (b *LesApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error) {
+func (b *LesApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJson, error) {
 	return nil, nil
 }
 
 func (b *LesApiBackend) GetUnitTxsHashHex(hash common.Hash) ([]string, error) {
 	return nil, nil
 }
-func (b *LesApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson, error) {
+func (b *LesApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
 	return nil, nil
 }
 func (b *LesApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
@@ -372,7 +372,7 @@ func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount,
 func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
 	return
 }
-func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return
 }
 func (b *LesApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
