@@ -22,6 +22,8 @@ package modules
 
 import (
 	"encoding/json"
+	"fmt"
+	"math/big"
 	"strconv"
 
 	"github.com/palletone/go-palletone/dag/errors"
@@ -103,6 +105,7 @@ type idxContractStopPayload struct {
 
 type txJsonTemp struct {
 	MsgCount int
+	CertId   string
 	Payment  []*idxPaymentPayload
 	//Config                  []*idxConfigPayload
 	Text                    []*idxTextPayload
@@ -122,7 +125,8 @@ type txJsonTemp struct {
 }
 
 func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
-	temp := &txJsonTemp{MsgCount: len(tx.TxMessages)}
+	intCertID := new(big.Int).SetBytes(tx.CertId)
+	temp := &txJsonTemp{MsgCount: len(tx.TxMessages), CertId: intCertID.String()}
 	for idx, msg := range tx.TxMessages {
 		if msg.App == APP_PAYMENT {
 			temp.Payment = append(temp.Payment, &idxPaymentPayload{Index: idx, PaymentPayload: msg.Payload.(*PaymentPayload)})
@@ -178,6 +182,13 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 }
 
 func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
+	if len(temp.CertId) > 0 {
+		intCertID, _ := new(big.Int).SetString(temp.CertId, 10)
+		if intCertID == nil {
+			return fmt.Errorf("certid is invalid")
+		}
+		tx.CertId = intCertID.Bytes()
+	}
 	tx.TxMessages = make([]*Message, temp.MsgCount)
 	processed := 0
 	for _, p := range temp.Payment {

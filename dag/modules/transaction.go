@@ -395,7 +395,7 @@ func (txs Transactions) GetTxIds() []common.Hash {
 
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
-	CertId     []byte     // should be big.Int byte
+	CertId     []byte     `json:"cert_id"` // should be big.Int byte
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 
@@ -507,6 +507,7 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
 	request := &Transaction{}
+	request.CertId = tx.CertId
 	for _, msg := range tx.TxMessages {
 		switch {
 		case msg.App < APP_CONTRACT_TPL_REQUEST:

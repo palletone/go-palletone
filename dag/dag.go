@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -44,7 +45,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type Dag struct {
@@ -288,7 +288,8 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 
 		// append by albert·gou, 利用 unit 更新相关状态
 		if err := d.ApplyUnit(u); err != nil {
-			return count, err
+			//return count, err
+			return count, nil
 		}
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
@@ -575,14 +576,13 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	return dag, nil
 }
 
-func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo,error) {
+func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
 	return d.propRep.GetChaincodes(contractId)
 }
 
-func (d *Dag) SaveChaincode(contractId common.Address,cc *list.CCInfo) error {
-	return d.propRep.SaveChaincode(contractId,cc)
+func (d *Dag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
+	return d.propRep.SaveChaincode(contractId, cc)
 }
-
 
 // Get Contract Api
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {

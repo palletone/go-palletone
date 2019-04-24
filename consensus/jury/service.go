@@ -19,6 +19,7 @@
 package jury
 
 import (
+	"math/big"
 	"sync"
 	"time"
 
@@ -74,7 +75,7 @@ type iDag interface {
 	GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
-	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
+	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
@@ -129,7 +130,7 @@ type Processor struct {
 	local     map[common.Address]*JuryAccount          //[]common.Address //local jury account addr
 	mtx       map[common.Hash]*contractTx              //all contract buffer
 	mel       map[common.Hash]*electionVrf             //election vrf inform
-	lockArf   map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
+	lockVrf   map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
 	quit      chan struct{}
 	locker    *sync.Mutex
 	//vrfAct    vrfAccount
@@ -180,7 +181,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		quit:           make(chan struct{}),
 		mtx:            make(map[common.Hash]*contractTx),
 		mel:            make(map[common.Hash]*electionVrf),
-		lockArf:        make(map[common.Address][]modules.ElectionInf),
+		lockVrf:        make(map[common.Address][]modules.ElectionInf),
 		electionNum:    cfg.ElectionNum,
 		contractSigNum: cfg.ContractSigNum,
 		validator:      validator,
@@ -496,7 +497,6 @@ func (p *Processor) isValidateElection(reqId []byte, ele []modules.ElectionInf, 
 	}
 	etor.weight = electionWeightValue(etor.total)
 	for i, e := range ele {
-		isMatch := false
 		isVerify := false
 		//检查地址hash是否在本地
 		if checkExit && !isExit {
@@ -518,13 +518,6 @@ func (p *Processor) isValidateElection(reqId []byte, ele []modules.ElectionInf, 
 			log.Error("isValidateElection", "not active Jury, addrHash is", e.AddrHash)
 			return false
 		}
-
-		isMatch = true
-		if !isMatch {
-			log.Info("isValidateElection", "index", i, "address does not match public key, reqId", reqId)
-			return false
-		}
-
 		//验证proof是否通过
 		isVerify, err := etor.verifyVrf(e.Proof, conversionElectionSeedData(reqId), e.PublicKey)
 		if err != nil || !isVerify {
@@ -610,13 +603,12 @@ func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, d
 	return p.signAndExecute(common.BytesToAddress(tx.RequestHash().Bytes()), from, tx, isLocalInstall)
 }
 
-func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
+func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.TxPool())
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
 	log.Debug("createContractTxReq", "contractId", contractId, "tx:", tx)
-
 	return p.signAndExecute(contractId, from, tx, isLocalInstall)
 }
 
@@ -638,13 +630,13 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if contractId == (common.Address{}) { //deploy
 			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
-			if ele, ok := p.lockArf[cId]; !ok || len(ele) < p.electionNum {
-				p.lockArf[cId] = []modules.ElectionInf{} //清空
+			if ele, ok := p.lockVrf[cId]; !ok || len(ele) < p.electionNum {
+				p.lockVrf[cId] = []modules.ElectionInf{} //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}
 			}
-			ctx.eleInf = p.lockArf[cId]
+			ctx.eleInf = p.lockVrf[cId]
 		} else { //invoke,stop
 			ele, err := p.getContractElectionList(contractId)
 			if err != nil {
@@ -670,6 +662,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	} else if p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ctx.eleInf) && !tx.IsSystemContract() {
 		go p.runContractReq(reqId, ctx.eleInf)
 	}
+
 	return reqId, tx, nil
 }
 

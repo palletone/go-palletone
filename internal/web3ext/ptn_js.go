@@ -103,14 +103,14 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinvoketx',
         	call: 'ptn_ccinvoketx',
-        	params: 6, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null, null,null, null, null]
+        	params: 7, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid
+			inputFormatter: [null, null, null,null, null, null, null]
 		}),
         new web3._extend.Method({
 			name: 'ccinvoketxPass',
 			call: 'ptn_ccinvoketxPass',
-			params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration
-			inputFormatter: [null, null, null,null, null, null, null, null]
+			params: 9, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration, certid
+			inputFormatter: [null, null, null,null, null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvokeToken',
@@ -145,8 +145,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'depositContractInvoke',
         	call: 'ptn_depositContractInvoke',
-        	params: 5, //from, to, daoAmount, daoFee,param[]string
-			inputFormatter: [null, null, null, null, null]
+        	params: 6, //from, to, daoAmount, daoFee,param[]string, certid
+			inputFormatter: [null, null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'depositContractQuery',

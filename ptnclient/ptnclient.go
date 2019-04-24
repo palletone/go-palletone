@@ -700,8 +700,8 @@ func (ec *Client) EncodeTx(ctx context.Context, jsonStr string) (string, error) 
 	err := ec.c.CallContext(ctx, &result, "ptn_encodeTx", jsonStr)
 	return result, err
 }
-func (ec *Client) GetUnitTransactions(ctx context.Context, hashHex string) ([]*ptnjson.TransactionJson, error) {
-	result := make([]*ptnjson.TransactionJson, 0)
+func (ec *Client) GetUnitTransactions(ctx context.Context, hashHex string) ([]*ptnjson.TxSummaryJson, error) {
+	result := make([]*ptnjson.TxSummaryJson, 0)
 	err := ec.c.CallContext(ctx, &result, "dag_getUnitTxsInfo", hashHex)
 	return result, err
 }
@@ -713,8 +713,8 @@ func (ec *Client) GetUnitTxsHash(ctx context.Context, hashHex string) ([]string,
 }
 
 // GetTransactionByHash
-func (ec *Client) GetTransactionByHash(ctx context.Context, hashHex string) (*ptnjson.TransactionJson, error) {
-	result := new(ptnjson.TransactionJson)
+func (ec *Client) GetTransactionByHash(ctx context.Context, hashHex string) (*ptnjson.TxSummaryJson, error) {
+	result := new(ptnjson.TxSummaryJson)
 	err := ec.c.CallContext(ctx, &result, "dag_getTxByHash", hashHex)
 	return result, err
 }
@@ -739,5 +739,3 @@ func (ec *Client) GetTxHashByReqId(ctx context.Context, hex string) (string, err
 	err := ec.c.CallContext(ctx, &result, "dag_getTxHashByReqId", hex)
 	return result, err
 }
-
-
