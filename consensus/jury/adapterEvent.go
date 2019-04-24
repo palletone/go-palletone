@@ -74,11 +74,11 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 }
 
 func (p *Processor) checkJury(reqEvt *AdapterRequestEvent) bool {
-	if _, exist := p.lockArf[reqEvt.ContractId]; !exist {
+	if _, exist := p.lockVrf[reqEvt.ContractId]; !exist {
 		return false
 	}
 	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
-	juryAll := p.lockArf[reqEvt.ContractId]
+	juryAll := p.lockVrf[reqEvt.ContractId]
 	for i := range juryAll {
 		if common.Bytes2Hex(juryAll[i].PublicKey) == pubkeyHex {
 			return true
