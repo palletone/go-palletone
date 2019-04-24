@@ -53,6 +53,10 @@ type JuryMsgSig struct {
 	Signature []byte
 	Answer    []byte
 }
+type JuryMsgAddr struct {
+	Address string
+	Answer  []byte
+}
 
 //contract
 type ContractEvent struct {

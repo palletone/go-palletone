@@ -68,9 +68,9 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 
-type JuryMsgSig struct {
-	Signature []byte
-	Answer    []byte
+type JuryMsgAddr struct {
+	Address string
+	Answer  []byte
 }
 
 //Method:GetPubkey, return pubkey string
@@ -163,7 +163,7 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Success([]byte("RecvJury failed"))
 	}
 	log.Debugf("recvResult: %s", string(recvResult))
-	var juryMsg []JuryMsgSig
+	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
@@ -637,7 +637,7 @@ type MergeTransactionResult struct {
 	TransactionHex string `json:"transactionhex"`
 }
 
-func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg []JuryMsgSig, stub shim.ChaincodeStubInterface) (string, error) {
+func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) (string, error) {
 	//
 	mergeTx := BTCTransaction_mergeTransaction{Method: "MergeTransaction"}
 	mergeTx.UserTransactionHex = rawTx
@@ -831,7 +831,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("RecvJury rawTx failed"))
 	}
 	log.Debugf("recvResult: %s", string(recvResult))
-	var juryMsg []JuryMsgSig
+	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
