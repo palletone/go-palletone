@@ -596,3 +596,7 @@ func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
 	return b.ptn.dag.GetFileInfo([]byte(filehash))
 }
+
+func (s *PtnApiBackend) ProofTransaction(txhash common.Hash) (string, error) {
+	return "", nil
+}

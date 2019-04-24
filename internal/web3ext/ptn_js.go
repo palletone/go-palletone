@@ -142,8 +142,6 @@ web3._extend({
         	params: 0, //
 			inputFormatter: []
 		}),
-
-
 		new web3._extend.Method({
 			name: 'depositContractInvoke',
         	call: 'ptn_depositContractInvoke',
@@ -208,6 +206,11 @@ web3._extend({
 			name: 'election',
 			call: 'ptn_election',
 			params: 1,			
+		}),
+		new web3._extend.Method({
+			name: 'proofTransaction',
+			call: 'ptn_proofTransaction',
+			params: 1
 		}),
 	],
 
