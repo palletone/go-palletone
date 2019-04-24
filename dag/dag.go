@@ -1172,6 +1172,10 @@ func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, err
 	return nil, nil
 }
 func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
+	header := d.CurrentHeader(assetId)
+	if header != nil {
+		return header.Number.Index
+	}
 	return uint64(0)
 }
 func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {

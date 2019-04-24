@@ -254,16 +254,17 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		Version: usrcc.Version,
 		SysCC:   false,
 	}
-	//err = cclist.SetChaincode(setChainId, 0, cc)
-	//if err != nil {
-	//	log.Error("Deploy", "SetChaincode fail, chainId", setChainId, "name", cc.Name)
-	//}
-	//chainID + set
-	err = saveChaincode(idag,setChainId,depId,cc)
-	if err != nil {
-		log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", setChainId, "name", cc.Name,"error",err.Error())
+	if depId.IsSystemContractAddress() {
+		err = cclist.SetChaincode(setChainId, 0, cc)
+		if err != nil {
+			log.Error("Deploy", "SetChaincode fail, chainId", setChainId, "name", cc.Name)
+		}
+	}else {
+		err = saveChaincode(idag,setChainId,depId,cc)
+		if err != nil {
+			log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", setChainId, "name", cc.Name,"error",err.Error())
+		}
 	}
-
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, cc.Name, cc.Id, args, timeout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
@@ -298,10 +299,19 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	creator := []byte("palletone")
 address := common.Address{}
 address.SetBytes(deployId)
-ccinfo,err := getChaincode(idag,address)
-if err != nil {
-	return nil, err
-}
+cc := &cclist.CCInfo{}
+var err error
+	if address.IsSystemContractAddress() {
+		cc, err = cclist.GetChaincode(chainID, deployId)
+		if err != nil {
+			return nil, err
+		}
+	}else {
+		cc,err = getChaincode(idag,address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	//cc, err := cclist.GetChaincode(chainID, deployId)
 	//if err != nil {
 	//	return nil, err
@@ -316,14 +326,14 @@ if err != nil {
 	es := NewEndorserServer(mksupt)
 
 	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name:ccinfo.Name },
+		ChaincodeId: &pb.ChaincodeID{Name:cc.Name },
 		Type:        pb.ChaincodeSpec_GOLANG,
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
 		Path:    "", //no use
-		Name:    ccinfo.Name,
-		Version:ccinfo.Version,
+		Name:    cc.Name,
+		Version:cc.Version,
 	}
 
 	sprop, prop, err := signedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
