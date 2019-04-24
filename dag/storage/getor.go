@@ -20,9 +20,9 @@
 package storage
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -68,11 +68,11 @@ func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
 	}
 	verBytes := data[:29]
 	objData := data[29:]
-	c_data := make([]byte, 0)
-	err := rlp.DecodeBytes(objData, &c_data)
+	//c_data := make([]byte, 0)
+	//err := rlp.DecodeBytes(objData, &c_data)
 	version := &modules.StateVersion{}
 	version.SetBytes(verBytes)
-	return c_data, version, err
+	return objData, version, nil
 }
 
 // get string

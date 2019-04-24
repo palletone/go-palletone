@@ -291,13 +291,3 @@ func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 		return nil, nil
 	}
 }
-
-func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
-	//SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion)
-	id := syscontract.SysConfigContractAddress.Bytes21()
-	err := statedb.SaveContractState(id, key, val, ver)
-	if err != nil {
-		return err
-	}
-	return nil
-}

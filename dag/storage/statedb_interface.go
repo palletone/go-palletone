@@ -29,11 +29,9 @@ import (
 type IStateDb interface {
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetPrefix(prefix []byte) map[string][]byte
-	//SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error
-	//SaveAssetInfo(assetInfo *modules.AssetInfo) error
-	//GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error)
+	//Contract statedb
 	SaveContract(contract *modules.Contract) error
-	SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error
+	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
@@ -62,8 +60,11 @@ type IStateDb interface {
 	GetContractStopReq(reqId []byte) (*modules.ContractStopRequestPayload, error)
 	GetContractSignature(reqId []byte) (*modules.SignaturePayload, error)
 	/* Account_Info */
-	RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
-	StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
+	UpdateAccountState(address common.Address, write *modules.ContractWriteSet, version *modules.StateVersion) error
+	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
+	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
+	//RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
+	//StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
 	GetAccountBalance(address common.Address) uint64
 	GetMinFee() (*modules.AmountAsset, error)
@@ -87,7 +88,7 @@ type IStateDb interface {
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
-	UpdateAccountInfo(account common.Address, accountUpdateOp *modules.AccountUpdateOperation) error
+	//UpdateAccountInfo(account common.Address, accountUpdateOp *modules.AccountUpdateOperation) error
 
 	GetJuryCandidateList() ([]common.Address, error)
 	IsInJuryCandidateList(address common.Address) bool

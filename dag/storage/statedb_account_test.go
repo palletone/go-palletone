@@ -33,26 +33,22 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	//l := log.NewTestLog()
 	statedb := NewStateDb(db)
-	vote := make(map[common.Address]bool)
+	//vote := make(map[common.Address]bool)
 	addr, _ := common.StringToAddress("P173mPBwP1kXmfpg4p7rzZ5XRsGN1G1WQC8")
 	// store
-	infoooo := new(modules.AccountInfo)
-	infobase := new(modules.AccountInfoBase)
-	//infobase.PtnBalance = 12345
-	infoooo.AccountInfoBase = infobase
-	infoooo.VotedMediators = vote
-	statedb.StoreAccountInfo(addr, infoooo)
+	key := "Name"
+	devin := []byte("Devin Zeng")
+	version := &modules.StateVersion{TxIndex: 2, Height: modules.NewChainIndex(modules.PTNCOIN, 123)}
+	writeSet := &modules.ContractWriteSet{IsDelete: false, Key: key, Value: devin}
+	statedb.UpdateAccountState(addr, writeSet, version)
 
-	// retrieve
-	info, err := statedb.RetrieveAccountInfo(addr)
-	if assert.Nil(t, err) {
-		t.Logf("success  error:%v", err)
-	}
-	//info.PtnBalance = 12345
-	info.VotedMediators[addr] = true
-
-	info2, err := statedb.RetrieveAccountInfo(addr)
-	assert.NotNil(t, info2)
+	state, err := statedb.GetAccountState(addr, key)
+	assert.Nil(t, err)
+	assert.Equal(t, state.Value, devin)
+	allState, err := statedb.GetAllAccountStates(addr)
+	assert.Nil(t, err)
+	assert.Equal(t, len(allState), 1)
+	assert.Equal(t, allState[key].Value, devin)
 	//assert.Equal(t, info.PtnBalance, info2.PtnBalance)
 }
 

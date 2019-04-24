@@ -374,7 +374,7 @@ func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address,
 	}
 
 	msg := &modules.Message{
-		App:     modules.OP_ACCOUNT_UPDATE,
+		App:     modules.APP_ACCOUNT_UPDATE,
 		Payload: accountUpdateOp,
 	}
 
@@ -396,7 +396,7 @@ func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMedi
 	}
 
 	msg := &modules.Message{
-		App:     modules.OP_ACCOUNT_UPDATE,
+		App:     modules.APP_ACCOUNT_UPDATE,
 		Payload: accountUpdateOp,
 	}
 

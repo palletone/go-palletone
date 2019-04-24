@@ -43,7 +43,7 @@ const (
 	//APP_CONFIG
 	APP_DATA
 	OP_MEDIATOR_CREATE
-	OP_ACCOUNT_UPDATE
+	APP_ACCOUNT_UPDATE
 
 	APP_UNKNOW = 99
 
@@ -198,6 +198,9 @@ type ContractWriteSet struct {
 	//Value interface{}
 }
 
+func NewWriteSet(key string, value []byte) *ContractWriteSet {
+	return &ContractWriteSet{Key: key, Value: value, IsDelete: false}
+}
 func ToPayloadMapValueBytes(data interface{}) []byte {
 	b, err := rlp.EncodeToBytes(data)
 	if err != nil {
@@ -309,24 +312,24 @@ const (
 	FIELD_TPL_Version   = "TplVersion"
 )
 
-type DelContractState struct {
-	IsDelete bool
-}
-
-func (delState DelContractState) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(delState)
-	if err != nil {
-		return nil
-	}
-	return data
-}
-
-func (delState DelContractState) SetBytes(b []byte) error {
-	if err := rlp.DecodeBytes(b, &delState); err != nil {
-		return err
-	}
-	return nil
-}
+//type DelContractState struct {
+//	IsDelete bool
+//}
+//
+//func (delState DelContractState) Bytes() []byte {
+//	data, err := rlp.EncodeToBytes(delState)
+//	if err != nil {
+//		return nil
+//	}
+//	return data
+//}
+//
+//func (delState DelContractState) SetBytes(b []byte) error {
+//	if err := rlp.DecodeBytes(b, &delState); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 type ContractError struct {
 	Code    uint32 `json:"error_code"`    // error code
@@ -501,6 +504,12 @@ type DataPayload struct {
 	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
 }
+
+//一个地址对应的个人StateDB空间
+type AccountStateUpdatePayload struct {
+	WriteSet []ContractWriteSet `json:"write_set"`
+}
+
 type FileInfo struct {
 	UnitHash    common.Hash `json:"unit_hash"`
 	UintHeight  uint64      `json:"unit_index"`

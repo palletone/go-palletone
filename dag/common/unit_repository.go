@@ -43,8 +43,8 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
-	"sync"
 	"github.com/ethereum/go-ethereum/rlp"
+	"sync"
 )
 
 type IUnitRepository interface {
@@ -772,17 +772,18 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 	return contractInvokePayloads, nil
 }
 
-func (rep *UnitRepository) UpdateAccountInfo(msg *modules.Message, account common.Address) error {
-	accountUpdateOp, ok := msg.Payload.(*modules.AccountUpdateOperation)
+func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account common.Address, index *modules.ChainIndex, txIdx uint32) error {
+	accountUpdateOp, ok := msg.Payload.(*modules.AccountStateUpdatePayload)
 	if !ok {
-		return errors.New("not a valid mediator Count Set payload")
+		return errors.New("not a valid AccountStateUpdatePayload")
 	}
-
-	err := rep.statedb.UpdateAccountInfo(account, accountUpdateOp)
-	if err != nil {
-		return err
+	version := &modules.StateVersion{TxIndex: txIdx, Height: index}
+	for _, ws := range accountUpdateOp.WriteSet {
+		err := rep.statedb.UpdateAccountState(account, &ws, version)
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
@@ -895,8 +896,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			if !rep.MediatorCreateApply(msg) {
 				return fmt.Errorf("apply Mediator Creating Operation error")
 			}
-		case modules.OP_ACCOUNT_UPDATE:
-			if err := rep.UpdateAccountInfo(msg, requester); err != nil {
+		case modules.APP_ACCOUNT_UPDATE:
+			if err := rep.updateAccountInfo(msg, requester, unit.UnitHeader.Number, uint32(txIndex)); err != nil {
 				return fmt.Errorf("apply Account Updating Operation error")
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
@@ -1110,32 +1111,14 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 	if ok == false {
 		return false
 	}
-	// save contract state
-	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
-	for _, ws := range payload.WriteSet {
-		version := &modules.StateVersion{
-			Height:  height,
-			TxIndex: txIndex,
-		}
-		//user just want to update it's statedb
-
-		// if payload.ContractId == nil || len(payload.ContractId) == 0 {
-		// 	addr, _ := getRequesterAddress(tx)
-		// 	// contractid
-		// 	rep.statedb.SaveContractState(addr, ws.Key, ws.Value, version)
-		// }
-		//@jay
-		// contractId is never nil.
-		if payload.ContractId != nil {
-			//addr, _ := getRequesterAddress(tx)
-			// contractid
-			rep.statedb.SaveContractState(payload.ContractId, ws.Key, ws.Value, version)
-		}
-
-		// save new state to database
-		// if rep.updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
-		// 	continue
-		// }
+	version := &modules.StateVersion{
+		Height:  height,
+		TxIndex: txIndex,
+	}
+	err := rep.statedb.SaveContractStates(payload.ContractId, payload.WriteSet, version)
+	if err != nil {
+		log.Errorf("Tx[%s]Write contract state error:%s", tx.Hash().String(), err.Error())
+		return false
 	}
 	return true
 }
@@ -1153,30 +1136,31 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	}
 
 	// save contract state
-	// key: [CONTRACT_STATE_PREFIX][contract id]_[field name]_[state version]
 	version := &modules.StateVersion{
 		Height:  height,
 		TxIndex: txIndex,
 	}
-	for _, ws := range payload.WriteSet {
-		// save new state to database
-		if rep.updateState(payload.ContractId, ws.Key, version, ws.Value) != true {
-			continue
-		}
+	err := rep.statedb.SaveContractStates(payload.ContractId, payload.WriteSet, version)
+	if err != nil {
+		log.Errorf("save contract[%x] init writeset error:%s", payload.ContractId, err.Error())
+		return false
 	}
 	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
 	// save contract name
-	if rep.statedb.SaveContractState(payload.ContractId, "ContractName", payload.Name, version) != nil {
+	write := &modules.ContractWriteSet{Key: "ContractName", Value: []byte(payload.Name)}
+	if rep.statedb.SaveContractState(payload.ContractId, write, version) != nil {
 		return false
 	}
 	//save contract election
 	eleBytes, err := rlp.EncodeToBytes(payload.EleList)
 	if err == nil {
 		log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
-		if rep.statedb.SaveContractState(payload.ContractId, "ElectionList", eleBytes, version) != nil {
+		writeElectionList := &modules.ContractWriteSet{Key: "ElectionList", Value: eleBytes}
+
+		if rep.statedb.SaveContractState(payload.ContractId, writeElectionList, version) != nil {
 			return false
 		}
-	}else {
+	} else {
 		return false
 	}
 
@@ -1395,37 +1379,6 @@ To Sign transaction
 //	}
 //	return &sig, nil
 //}
-
-/**
-保存contract state
-To save contract state
-*/
-func (rep *UnitRepository) updateState(contractID []byte, key string, version *modules.StateVersion, val interface{}) bool {
-	delState, isDel := val.(modules.DelContractState)
-	if isDel {
-		if delState.IsDelete == false {
-			return true
-		}
-		// delete old state from database
-		rep.deleteContractState(contractID, key)
-
-	} else {
-		// delete old state from database
-		rep.deleteContractState(contractID, key)
-		// insert new state
-		key := fmt.Sprintf("%s%s^*^%s^*^%s",
-			constants.CONTRACT_STATE_PREFIX,
-			hexutil.Encode(contractID[:]),
-			key,
-			version.String())
-		// addr := common.NewAddress(contractID, common.ContractHash)
-		if err := rep.statedb.SaveContractState(contractID, key, val, version); err != nil {
-			log.Error("Save state", "error", err.Error())
-			return false
-		}
-	}
-	return true
-}
 
 func IsGenesis(hash common.Hash) bool {
 	genHash := common.HexToHash(dagconfig.DagConfig.GenesisHash)
