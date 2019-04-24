@@ -530,17 +530,17 @@ func (mr *MockChaincodeStubInterfaceMockRecorder) GetRequesterCert() *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequesterCert", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetRequesterCert))
 }
 
-// IsRequesterCertValidate mocks base method
-func (m *MockChaincodeStubInterface) IsRequesterCertValidate() (bool, error) {
+// IsRequesterCertValid mocks base method
+func (m *MockChaincodeStubInterface) IsRequesterCertValid() (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRequesterCertValidate")
+	ret := m.ctrl.Call(m, "IsRequesterCertValid")
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// IsRequesterCertValidate indicates an expected call of IsRequesterCertValidate
-func (mr *MockChaincodeStubInterfaceMockRecorder) IsRequesterCertValidate() *gomock.Call {
+// IsRequesterCertValid indicates an expected call of IsRequesterCertValid
+func (mr *MockChaincodeStubInterfaceMockRecorder) IsRequesterCertValid() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRequesterCertValidate", reflect.TypeOf((*MockChaincodeStubInterface)(nil).IsRequesterCertValidate))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRequesterCertValid", reflect.TypeOf((*MockChaincodeStubInterface)(nil).IsRequesterCertValid))
 }
