@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -217,8 +218,10 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg.MediatorPlugin.Mediators = mediators
 
 	// 修改默认的Jury配置
-	cfg.Jury.Accounts[0].Address = mediators[0].Address
-	cfg.Jury.Accounts[0].Password = mediators[0].Password
+	if len(mediators) > 0 {
+		cfg.Jury.Accounts[0].Address = mediators[0].Address
+		cfg.Jury.Accounts[0].Password = mediators[0].Password
+	}
 
 	err = makeConfigFile(cfg, configPath)
 	if err != nil {
@@ -277,16 +280,16 @@ func createExampleGenesis() *core.Genesis {
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 		DepositPeriod:             core.DefaultDepositPeriod,
-		UccMemory:core.DefaultUccMemory,
-		UccMemorySwap:core.DefaultUccMemorySwap,
-		UccCpuShares:core.DefaultUccCpuShares,
-		UccCpuPeriod:core.DefaultCpuPeriod,
-		UccCpuQuota:core.DefaultUccCpuQuota,
-		UccCpuSetCpus:core.DefaultUccCpuSetCpus,
-		TempUccMemory:core.DefaultTempUccMemory,
-		TempUccMemorySwap:core.DefaultTempUccMemorySwap,
-		TempUccCpuShares:core.DefaultTempUccCpuShares,
-		TempUccCpuQuota:core.DefaultTempUccCpuQuota,
+		UccMemory:                 core.DefaultUccMemory,
+		UccMemorySwap:             core.DefaultUccMemorySwap,
+		UccCpuShares:              core.DefaultUccCpuShares,
+		UccCpuPeriod:              core.DefaultCpuPeriod,
+		UccCpuQuota:               core.DefaultUccCpuQuota,
+		UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
+		TempUccMemory:             core.DefaultTempUccMemory,
+		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
+		TempUccCpuShares:          core.DefaultTempUccCpuShares,
+		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
 	}
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
