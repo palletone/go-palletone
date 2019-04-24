@@ -54,6 +54,7 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 		msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
 		msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
 		typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
+		log.Debugf("Create msgType saved,from %s", pubkeyHex)
 		//
 		p.mtx[reqEvt.ReqId].adaInf[msgType] = typeAdaInf
 	} else {
@@ -63,11 +64,14 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 			msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
 			msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
 			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
+			log.Debugf("Create ConsultData saved,from %s", pubkeyHex)
 		} else {
 			if _, exist := typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex]; exist {
+				log.Debugf("Have saved,from %s", pubkeyHex)
 				return false
 			}
 			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
+			log.Debugf("First saved,from %s", pubkeyHex)
 		}
 	}
 	return true
@@ -166,13 +170,16 @@ func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent 
 	defer p.locker.Unlock()
 
 	if p.mtx[reqId].adaInf == nil {
+		log.Debugf("Not exist adaInf")
 		return nil, errors.New("Not exist adaInf")
 	}
 	adaInf := p.mtx[reqId].adaInf[msgType]
 	if _, exist := p.mtx[reqId].adaInf[msgType]; !exist {
+		log.Debugf("Not exist adaInf of msgType")
 		return nil, errors.New("Not exist adaInf of msgType")
 	}
 	if _, exist := adaInf.JuryMsgAll[string(consultContent)]; !exist {
+		log.Debugf("Not exist consultContent")
 		return nil, errors.New("Not exist consultContent")
 	}
 	if len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig) >= p.contractSigNum {
@@ -183,6 +190,7 @@ func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent 
 		result, err := json.Marshal(juryMsgSigAll)
 		return result, err
 	}
+	log.Debugf("Not enough %d", len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig))
 
 	return nil, errors.New("Not enough")
 }
