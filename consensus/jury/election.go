@@ -255,7 +255,7 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	if ok {
 		p.locker.Lock()
 		mel.eInf = append(mel.eInf, rstEvt.Ele)
-		p.lockArf[contractId] = append(p.lockArf[contractId], rstEvt.Ele) //add lock vrf election info
+		p.lockVrf[contractId] = append(p.lockVrf[contractId], rstEvt.Ele) //add lock vrf election info
 		p.locker.Unlock()
 		if len(mel.eInf) >= p.electionNum {
 			//通知接收数量达到要求

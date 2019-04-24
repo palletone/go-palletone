@@ -636,9 +636,9 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	return rsp, err
 }
 
-func (s *PublicBlockChainAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
+func (s *PublicBlockChainAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string, certID string) (string, error) {
 	log.Info("---enter DepositContractInvoke---")
-	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
+	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param, certID)
 	return rsp.ReqId, err
 }
 func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
@@ -646,7 +646,7 @@ func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []
 	return s.Ccquery(ctx, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
 }
 
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string) (*ContractDeployRsp, error) {
+func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, certID string) (*ContractDeployRsp, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)
@@ -661,13 +661,19 @@ func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmoun
 	log.Info("-----Ccinvoketx:", "amount", amount)
 	log.Info("-----Ccinvoketx:", "fee", fee)
 	log.Info("-----Ccinvoketx:", "param len", len(param))
-
+	intCertID := new(big.Int)
+	if len(certID) > 0 {
+		if _, ok := intCertID.SetString(certID, 10); !ok {
+			return &ContractDeployRsp{}, fmt.Errorf("certid is invalid")
+		}
+		log.Debugf("-----Ccinvoketx:", "certificate serial number", certID)
+	}
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, intCertID, contractAddr, args, 0)
 	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractDeployRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
@@ -727,7 +733,7 @@ func (s *PublicBlockChainAPI) unlockKS(addr common.Address, password string, dur
 	}
 	return nil
 }
-func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, password string, duration *uint64) (string, error) {
+func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)
@@ -735,12 +741,19 @@ func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoA
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
 	fee, _ := strconv.ParseUint(daoFee, 10, 64)
 
-	log.Info("-----Ccinvoketx:", "contractId", contractAddr.String())
-	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
-	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
-	log.Info("-----Ccinvoketx:", "amount", amount)
-	log.Info("-----Ccinvoketx:", "fee", fee)
+	log.Info("-----CcinvoketxPass:", "contractId", contractAddr.String())
+	log.Info("-----CcinvoketxPass:", "fromAddr", fromAddr.String())
+	log.Info("-----CcinvoketxPass:", "toAddr", toAddr.String())
+	log.Info("-----CcinvoketxPass:", "amount", amount)
+	log.Info("-----CcinvoketxPass:", "fee", fee)
 
+	intCertID := new(big.Int)
+	if len(certID) > 0 {
+		if _, ok := intCertID.SetString(certID, 10); !ok {
+			return "", fmt.Errorf("certid is invalid")
+		}
+		log.Info("-----CcinvoketxPass:", "certificate serial number", certID)
+	}
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
@@ -753,7 +766,7 @@ func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoA
 		return "", err
 	}
 
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, contractAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, intCertID, contractAddr, args, 0)
 	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 
 	return hex.EncodeToString(reqId[:]), err
@@ -814,6 +827,10 @@ func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) *JuryList {
 	}
 
 	return jlist
+}
+
+func (s *PublicBlockChainAPI) ProofTransaction(ctx context.Context, txhash common.Hash) (string, error) {
+	return s.b.ProofTransaction(txhash)
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM

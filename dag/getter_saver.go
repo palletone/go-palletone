@@ -283,10 +283,12 @@ func (d *Dag) JuryCount() int {
 
 func (d *Dag) GetActiveJuries() []common.Address {
 	return nil
+
 	//return d.unstableStateRep.GetJuryCandidateList()
 }
 
 func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
+
 	return d.unstableStateRep.IsJury(addr)
 }
