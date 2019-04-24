@@ -740,7 +740,6 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 				sk := t.Field(k).Name
 				digitalWriteSets = append(digitalWriteSets,
 					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
-				log.Debugf(">>>> save digital contract state, key:%s", sk)
 			}
 			digitalConfByte, _ := json.Marshal(genesisConf.DigitalIdentityConfig)
 			digitalWriteSets = append(digitalWriteSets, modules.ContractWriteSet{Key: "digitalConf", Value: []byte(digitalConfByte)})

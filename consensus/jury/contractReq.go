@@ -21,6 +21,7 @@ package jury
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -46,12 +47,12 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			Version: version,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, msgReq, true)
+	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
 	tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
-	if err != nil ||tpl == nil{
+	if err != nil || tpl == nil {
 		errMsg := fmt.Sprintf("getContractTxContractInfo fail, tpl Name[%s]", tplName)
 		return common.Hash{}, nil, errors.New(errMsg)
 	}
@@ -75,7 +76,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			Timeout: uint32(timeout),
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, false)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -87,7 +88,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	return reqId, contractId[:], err
 }
 
-func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
+func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
 		log.Error("ContractInvokeReq", "param is error")
 		return common.Hash{}, errors.New("ContractInvokeReq request param is error")
@@ -103,7 +104,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 			Timeout:      timeout,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, certID, msgReq, false)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -155,7 +156,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 			DeleteImage: deleteImage,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, nil, msgReq, false)
 	if err != nil {
 		return common.Hash{}, err
 	}

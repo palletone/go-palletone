@@ -24,36 +24,56 @@ import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+
+	"time"
 	"unsafe"
 )
 
-type TransactionJson struct {
-	TxHash     string       `json:"txhash"`
-	UnitHash   string       `json:"unithash"`
+type TxSummaryJson struct {
+	TxHash string `json:"tx_hash"`
+
 	TxSize     float64      `json:"tx_size"`
 	Payment    *PaymentJson `json:"payment"`
-	TxMessages string       `json:"txmessages"`
+	TxMessages string       `json:"tx_messages"`
+	UnitHash   string       `json:"unit_hash"`
+	UnitHeight uint64       `json:"unit_height"`
+	Timestamp  time.Time    `json:"timestamp"`
+	TxIndex    uint64       `json:"tx_index"`
 }
 type MessageJson struct {
 	messages []string
 }
 
-func ConvertTx02Json(tx *modules.Transaction, hash common.Hash) *TransactionJson {
-	var hexHash string
+func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
+
 	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	if hash != (common.Hash{}) {
-		hexHash = hash.String()
-	}
-	payment := ConvertPayment2Json(pay)
-	return &TransactionJson{
+	payment := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
+	return &TxSummaryJson{
 		TxHash:     tx.Hash().String(),
-		UnitHash:   hexHash,
+		UnitHash:   tx.UnitHash.String(),
+		UnitHeight: tx.UnitIndex,
+		Timestamp:  time.Unix(int64(tx.Timestamp), 0),
+		TxIndex:    tx.TxIndex,
 		TxSize:     float64(tx.Size()),
 		Payment:    payment,
 		TxMessages: ConvertMegs2Json(tx.TxMessages),
 	}
 }
+func ConvertTx2SummaryJson(tx *modules.Transaction, unitHash common.Hash, unitHeigth uint64, unitTimestamp int64, txIndex uint64, utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
 
+	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	payment := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
+	return &TxSummaryJson{
+		TxHash:     tx.Hash().String(),
+		UnitHash:   unitHash.String(),
+		UnitHeight: unitHeigth,
+		Timestamp:  time.Unix(int64(unitTimestamp), 0),
+		TxIndex:    txIndex,
+		TxSize:     float64(tx.Size()),
+		Payment:    payment,
+		TxMessages: ConvertMegs2Json(tx.TxMessages),
+	}
+}
 func ConvertMegs2Json(msgs []*modules.Message) string {
 	data, err := json.Marshal(msgs)
 	if err != nil {

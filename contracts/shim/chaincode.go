@@ -614,12 +614,18 @@ func (stub *ChaincodeStub) GetRequesterCert() (certBytes []byte, err error) {
 	if len(stub.args) <= 1 {
 		return nil, fmt.Errorf("args error: has no cert info")
 	}
-	certID := big.Int{}
-	certID.SetBytes(stub.args[1])
-	key := dagConstants.CERT_BYTES_SYMBOL + certID.String()
+	// query cert bytes
+	intCertID := new(big.Int).SetBytes(stub.args[1])
+	if intCertID == nil {
+		return nil, fmt.Errorf("certid bytes error")
+	}
+	key := dagConstants.CERT_BYTES_SYMBOL + intCertID.String()
 	resBytes, err := stub.handler.handleGetCertState(key, stub.ChannelId, stub.TxID)
 	if err != nil {
 		return nil, err
+	}
+	if len(resBytes) <= 0 {
+		return nil, fmt.Errorf("query no cert bytes")
 	}
 	certDBInfo := modules.CertBytesInfo{}
 	if err := json.Unmarshal(resBytes, &certDBInfo); err != nil {
@@ -628,19 +634,16 @@ func (stub *ChaincodeStub) GetRequesterCert() (certBytes []byte, err error) {
 	return certDBInfo.Raw, nil
 }
 
-func (stub *ChaincodeStub) IsRequesterCertValidate() (bool, error) {
+func (stub *ChaincodeStub) IsRequesterCertValid() (bool, error) {
 	if len(stub.args) <= 1 {
 		return false, fmt.Errorf("args error: has no cert info")
 	}
-	certID := big.Int{}
-	certID.SetBytes(stub.args[1])
-	key := dagConstants.CERT_BYTES_SYMBOL + certID.String()
 	caller, err := stub.GetInvokeAddress()
 	if err != nil {
 		return false, err
 	}
 
-	return stub.handler.handlerCheckCertValidation(caller.String(), key, stub.ChannelId, stub.TxID)
+	return stub.handler.handlerCheckCertValidation(caller.String(), stub.args[1], stub.ChannelId, stub.TxID)
 }
 
 // ------------- Logging Control and Chaincode Loggers ---------------

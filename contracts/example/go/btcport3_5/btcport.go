@@ -157,7 +157,7 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Success([]byte("SendJury getPubkey failed"))
 	}
 	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(1, []byte("getPubkey"), 5)
+	recvResult, err := stub.RecvJury(1, []byte("getPubkey"), 2)
 	if err != nil {
 		log.Debugf("RecvJury getPubkey err: %s", err.Error())
 		return shim.Success([]byte("RecvJury failed"))
@@ -825,7 +825,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("SendJury rawTx failed"))
 	}
 	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 5)
+	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 2)
 	if err != nil {
 		log.Debugf("RecvJury rawTx err: %s", err.Error())
 		return shim.Success([]byte("RecvJury rawTx failed"))
