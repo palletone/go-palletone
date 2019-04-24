@@ -358,6 +358,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return err
 	}
 
+	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
 	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unit.UnitHash.TerminalString(),
 		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
@@ -368,7 +369,9 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
 			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
 		log.Debugf(errStr)
+
 		return fmt.Errorf(errStr)
+		//return nil
 	}
 
 	var temptxs modules.Transactions
@@ -456,14 +459,16 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated new produced unit
 	data := []byte{}
 	if err := msg.Decode(&data); err != nil {
-		log.Debug("ProtocolManager", "NewProducedUnitMsg msg:", msg.String())
-		return errResp(ErrDecode, "%v: %v", msg, err)
+		errStr := fmt.Sprintf("NewProducedUnitMsg: %v, err: %v", msg, err)
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
 	}
 
 	var unit modules.Unit
 	if err := json.Unmarshal(data, &unit); err != nil {
-		log.Debug("ProtocolManager", "NewProducedUnitMsg json ummarshal err:", err)
-		return err
+		errStr := fmt.Sprintf("NewProducedUnitMsg json ummarshal err: %v", err)
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
 	}
 
 	timestamp := time.Unix(unit.Timestamp(), 0)
@@ -472,7 +477,7 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
 			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
 		log.Debugf(errStr)
-		return fmt.Errorf(errStr)
+		//return fmt.Errorf(errStr)
 	}
 
 	pm.producer.AddToTBLSSignBufs(&unit)
@@ -482,9 +487,11 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	var sigShare mp.SigShareEvent
 	if err := msg.Decode(&sigShare); err != nil {
-		log.Info("===SigShareMsg===", "err:", err)
-		return errResp(ErrDecode, "%v: %v", msg, err)
+		errStr := fmt.Sprintf("SigShareMsg: %v, err: %v", msg, err)
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
 	}
+
 	pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 	return nil
 }
@@ -496,8 +503,9 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 
 	var deal mp.VSSDealEvent
 	if err := msg.Decode(&deal); err != nil {
-		log.Info("===VSSDealMsg===", "err:", err)
-		return errResp(ErrDecode, "%v: %v", msg, err)
+		errStr := fmt.Sprintf("VSSDealMsg: %v, err: %v", msg, err)
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
 	}
 	pm.producer.ProcessVSSDeal(&deal)
 
@@ -508,15 +516,18 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 	//	pm.peers.MarkVss(vssmsg.NodeId)
 	//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
 	//}
+
 	return nil
 }
 
 func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 	var resp mp.VSSResponseEvent
 	if err := msg.Decode(&resp); err != nil {
-		log.Info("===VSSResponseMsg===", "err:", err)
-		return errResp(ErrDecode, "%v: %v", msg, err)
+		errStr := fmt.Sprintf("VSSResponseMsg: %v, err: %v", msg, err)
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
 	}
+
 	go pm.producer.AddToResponseBuf(&resp)
 	return nil
 }
@@ -525,9 +536,11 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	var gSign mp.GroupSigEvent
 	if err := msg.Decode(&gSign); err != nil {
-		log.Info("===GroupSigMsg===", "err:", err)
-		return errResp(ErrDecode, "%v: %v", msg, err)
+		errStr := fmt.Sprintf("GroupSigMsg: %v, err: %v", msg, err)
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
 	}
+
 	pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 	return nil
 }
