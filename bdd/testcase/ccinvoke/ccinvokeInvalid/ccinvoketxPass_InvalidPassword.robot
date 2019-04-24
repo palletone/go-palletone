@@ -1,4 +1,5 @@
 *** Settings ***
+Suite Setup       getlistAccounts
 Force Tags        invalidAdd
 Default Tags      invalidAdd
 Library           RequestsLibrary
@@ -16,11 +17,11 @@ ${method}         ptn_ccinvoketxPass
 *** Test Cases ***
 Scenario: invalidPassword
     [Template]    InvalidCcinvoke
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    2    ${6000}    -32000
-    ...    could not decrypt key with given passphrase
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    ${EMPTY}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    2    ${6000}    -32000
-    ...    could not decrypt key with given passphrase
+    200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    2    ${6000}    -32000    could not decrypt key with given passphrase    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    ${EMPTY}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    2    ${6000}    -32000    could not decrypt key with given passphrase    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
 
 *** Keywords ***

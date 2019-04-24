@@ -1,4 +1,5 @@
 *** Settings ***
+Suite Setup       getlistAccounts
 Force Tags        invalidAdd
 Default Tags      invalidAdd
 Library           RequestsLibrary
@@ -16,20 +17,20 @@ ${method}         ptn_ccinvoketxPass
 *** Test Cases ***
 Scenario: invalidContractId
     [Template]    InvalidCcinvoke
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    2    {EMPTY}    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    ContractInvokeReq request param is error
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    2    $    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    ContractInvokeReq request param is error
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG4    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    ContractInvokeReq request param is error
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG433    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    ContractInvokeReq request param is error
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG54    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    ContractInvokeReq request param is error
+    200    2    {EMPTY}    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    ContractInvokeReq request param is error    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    2    $    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    ContractInvokeReq request param is error    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG4    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    ContractInvokeReq request param is error    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG433    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    ContractInvokeReq request param is error    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG54    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    ContractInvokeReq request param is error    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
 
 *** Keywords ***

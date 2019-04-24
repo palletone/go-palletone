@@ -1,4 +1,5 @@
 *** Settings ***
+Suite Setup       getlistAccounts
 Force Tags        invalidAdd
 Default Tags      invalidAdd
 Library           RequestsLibrary
@@ -16,29 +17,29 @@ ${method}         ptn_ccinvoketxPass
 *** Test Cases ***
 Scenario: invalidPoundage
     [Template]    InvalidCcinvoke
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    ${EMPTY}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    transaction fee cannot be 0
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    0    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    transaction fee cannot be 0
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    -3    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    transaction fee cannot be 0
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    -0.3    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    transaction fee cannot be 0
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    0.5    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    transaction fee cannot be 0
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    a    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    transaction fee cannot be 0
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    ${SPACE}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    transaction fee cannot be 0
-    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    200    $    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence
-    ...    2    1000    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    1    ${6000}    -32000
-    ...    transaction fee cannot be 0
+    200    ${EMPTY}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    transaction fee cannot be 0    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    0    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    transaction fee cannot be 0    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    -3    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    transaction fee cannot be 0    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    -0.3    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    transaction fee cannot be 0    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    0.5    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    transaction fee cannot be 0    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    a    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    transaction fee cannot be 0    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    ${SPACE}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    transaction fee cannot be 0    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
+    200    $    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
+    ...    1000    1    ${6000}    -32000    transaction fee cannot be 0    ${listAccounts[0]}
+    ...    ${listAccounts[1]}    ${listAccounts[1]}
 
 *** Keywords ***
