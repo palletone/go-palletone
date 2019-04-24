@@ -461,14 +461,18 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 	if err := msg.Decode(&data); err != nil {
 		errStr := fmt.Sprintf("NewProducedUnitMsg: %v, err: %v", msg, err)
 		log.Debugf(errStr)
+
 		//return fmt.Errorf(errStr)
+		return nil
 	}
 
 	var unit modules.Unit
 	if err := json.Unmarshal(data, &unit); err != nil {
 		errStr := fmt.Sprintf("NewProducedUnitMsg json ummarshal err: %v", err)
 		log.Debugf(errStr)
+
 		//return fmt.Errorf(errStr)
+		return nil
 	}
 
 	timestamp := time.Unix(unit.Timestamp(), 0)
@@ -477,7 +481,9 @@ func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
 			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
 		log.Debugf(errStr)
-		//return fmt.Errorf(errStr)
+
+		return fmt.Errorf(errStr)
+		//return nil
 	}
 
 	pm.producer.AddToTBLSSignBufs(&unit)
@@ -489,7 +495,9 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	if err := msg.Decode(&sigShare); err != nil {
 		errStr := fmt.Sprintf("SigShareMsg: %v, err: %v", msg, err)
 		log.Debugf(errStr)
+
 		//return fmt.Errorf(errStr)
+		return nil
 	}
 
 	pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
@@ -505,7 +513,9 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 	if err := msg.Decode(&deal); err != nil {
 		errStr := fmt.Sprintf("VSSDealMsg: %v, err: %v", msg, err)
 		log.Debugf(errStr)
+
 		//return fmt.Errorf(errStr)
+		return nil
 	}
 	pm.producer.ProcessVSSDeal(&deal)
 
@@ -525,7 +535,9 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 	if err := msg.Decode(&resp); err != nil {
 		errStr := fmt.Sprintf("VSSResponseMsg: %v, err: %v", msg, err)
 		log.Debugf(errStr)
+
 		//return fmt.Errorf(errStr)
+		return nil
 	}
 
 	go pm.producer.AddToResponseBuf(&resp)
@@ -538,7 +550,9 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	if err := msg.Decode(&gSign); err != nil {
 		errStr := fmt.Sprintf("GroupSigMsg: %v, err: %v", msg, err)
 		log.Debugf(errStr)
+
 		//return fmt.Errorf(errStr)
+		return nil
 	}
 
 	pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
