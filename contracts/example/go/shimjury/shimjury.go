@@ -70,6 +70,10 @@ func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	result, err := stub.RecvJury(1, []byte("hello"), 5)
 	if err != nil {
 		log.Debugf("result err: %s", err.Error())
+		err = stub.PutState("result", []byte(err.Error()))
+		if err != nil {
+			return shim.Error("PutState: " + string(result))
+		}
 	} else {
 		log.Debugf("result: %s", string(result))
 		var juryMsg []JuryMsgSig
@@ -77,7 +81,10 @@ func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Unmarshal result failed: " + string(result))
 		}
-		stub.PutState("result", result)
+		err = stub.PutState("result", result)
+		if err != nil {
+			return shim.Error("PutState: " + string(result))
+		}
 		return shim.Success([]byte("")) //test
 	}
 	return shim.Success([]byte("RecvJury failed"))
