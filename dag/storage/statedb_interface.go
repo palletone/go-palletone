@@ -27,12 +27,19 @@ import (
 )
 
 type IStateDb interface {
-	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	//Contract statedb
 	SaveContract(contract *modules.Contract) error
+	GetContract(id []byte) (*modules.Contract, error)
+
 	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
+
+
 	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
 	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
 	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
@@ -43,15 +50,11 @@ type IStateDb interface {
 	SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error
 	SaveContractSignature(reqid []byte, sig *modules.SignaturePayload) error
 
-	DeleteState(key []byte) error
+	//DeleteState(key []byte) error
 	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
-	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetTplAllState(id []byte) []*modules.ContractReadSet
 	//GetContractAllState() []*modules.ContractReadSet
-	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
-	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
-	GetContract(id []byte) (*modules.Contract, error)
 	GetContractDeploy(reqId []byte) (*modules.ContractDeployPayload, error)
 	GetContractDeployReq(reqid []byte) (*modules.ContractDeployRequestPayload, error)
 	GetContractInvoke(reqId []byte) (*modules.ContractInvokePayload, error)
@@ -60,7 +63,8 @@ type IStateDb interface {
 	GetContractStopReq(reqId []byte) (*modules.ContractStopRequestPayload, error)
 	GetContractSignature(reqId []byte) (*modules.SignaturePayload, error)
 	/* Account_Info */
-	UpdateAccountState(address common.Address, write *modules.ContractWriteSet, version *modules.StateVersion) error
+	SaveAccountState(address common.Address, write *modules.ContractWriteSet, version *modules.StateVersion) error
+	SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
 	//RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)

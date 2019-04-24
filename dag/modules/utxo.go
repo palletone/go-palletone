@@ -67,6 +67,10 @@ func NewUtxo(output *Output, lockTime uint32, timestamp int64) *Utxo {
 func (u *Utxo) GetTimestamp() int64 {
 	return int64(u.Timestamp)
 }
+func (u *Utxo) Bytes() []byte {
+	data,_:=	rlp.EncodeToBytes(u)
+	return data
+}
 func (utxo *Utxo) GetCoinDays() uint64 {
 	if utxo.Timestamp == 0 {
 		return 0

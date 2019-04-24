@@ -66,7 +66,7 @@ func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, v
 	key := getContractStateKey(id, field)
 
 	log.Debug(fmt.Sprintf("Try to save contract state with key:%s, version:%x", field, version.Bytes()))
-	if err := StoreBytesWithVersion(db, key, version, value); err != nil {
+	if err := storeBytesWithVersion(db, key, version, value); err != nil {
 		log.Error("Save contract state error", err.Error())
 		return err
 	}
@@ -79,7 +79,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 		if write.IsDelete {
 			batch.Delete(key)
 		} else {
-			if err := StoreBytesWithVersion(batch, key, version, write.Value); err != nil {
+			if err := storeBytesWithVersion(batch, key, version, write.Value); err != nil {
 				return err
 			}
 		}

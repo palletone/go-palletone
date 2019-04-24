@@ -44,7 +44,7 @@ func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.State
 获取配置信息
 get config information
 */
-func (statedb *StateDb) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+func (statedb *StateDb) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
 	id := syscontract.SysConfigContractAddress.Bytes21()
 	return statedb.GetContractState(id, name)
 }

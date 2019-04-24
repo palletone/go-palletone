@@ -26,13 +26,11 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -778,11 +776,9 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 		return errors.New("not a valid AccountStateUpdatePayload")
 	}
 	version := &modules.StateVersion{TxIndex: txIdx, Height: index}
-	for _, ws := range accountUpdateOp.WriteSet {
-		err := rep.statedb.UpdateAccountState(account, &ws, version)
-		if err != nil {
-			return err
-		}
+	err := rep.statedb.SaveAccountStates(account, accountUpdateOp.WriteSet, version)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -1346,19 +1342,19 @@ func CreateCoinbase(ads []*modules.Addition, t time.Time) (*modules.Transaction,
 删除合约状态
 To delete contract state
 */
-func (rep *UnitRepository) deleteContractState(contractID []byte, field string) {
-	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
-		constants.CONTRACT_STATE_PREFIX,
-		hexutil.Encode(contractID[:]),
-		field)
-	data := rep.statedb.GetPrefix([]byte(oldKeyPrefix))
-	for k := range data {
-		if err := rep.statedb.DeleteState([]byte(k)); err != nil {
-			log.Error("Delete contract state", "error", err.Error())
-			continue
-		}
-	}
-}
+//func (rep *UnitRepository) deleteContractState(contractID []byte, field string) {
+//	oldKeyPrefix := fmt.Sprintf("%s%s^*^%s",
+//		constants.CONTRACT_STATE_PREFIX,
+//		hexutil.Encode(contractID[:]),
+//		field)
+//	data := rep.statedb.GetPrefix([]byte(oldKeyPrefix))
+//	for k := range data {
+//		if err := rep.statedb.DeleteState([]byte(k)); err != nil {
+//			log.Error("Delete contract state", "error", err.Error())
+//			continue
+//		}
+//	}
+//}
 
 /**
 签名交易

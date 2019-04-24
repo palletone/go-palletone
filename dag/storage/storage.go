@@ -24,7 +24,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // value will serialize to rlp encoding bytes
@@ -85,33 +84,7 @@ func GetBytes(db ptndb.Database, key []byte) ([]byte, error) {
 	return val, nil
 }
 
-func StoreBytesWithVersion(db ptndb.Putter, key []byte, version *modules.StateVersion, val []byte) error {
-	//val, err := rlp.EncodeToBytes(value)
-	//if err != nil {
-	//	return err
-	//}
-	v := append(version.Bytes(), val...)
-	//
-	//_, err = db.Get(key)
-	//if err != nil {
-	//	if err.Error() == errors.ErrNotFound.Error() {
-	//		//	if err == errors.New("not found") {
-	//		if err := db.Put(key, v); err != nil {
-	//			return err
-	//		}
-	//	} else {
-	//		return err
-	//	}
-	//} else {
-	//	if err = db.Delete(key); err != nil {
-	//		return err
-	//	}
-	if err := db.Put(key, v); err != nil {
-		return err
-	}
-	//}
-	return nil
-}
+
 
 func StoreString(db ptndb.Putter, key, value string) error {
 	return db.Put(util.ToByte(key), util.ToByte(value))

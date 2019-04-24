@@ -76,7 +76,7 @@ func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *
 	return rep.statedb.GetContractState(id, field)
 }
 func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	return rep.statedb.GetConfig(name)
+	return rep.statedb.GetSysConfig(name)
 }
 func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesById(id)

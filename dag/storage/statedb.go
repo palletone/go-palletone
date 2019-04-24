@@ -21,16 +21,19 @@
 package storage
 
 import (
+	"errors"
+
 	"github.com/palletone/go-palletone/common/ptndb"
 
 	"github.com/palletone/go-palletone/dag/modules"
 
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
-	"strings"
 )
 
 //保存了对合约写集、Config、Asset信息
@@ -40,6 +43,32 @@ type StateDb struct {
 
 func NewStateDb(db ptndb.Database) *StateDb {
 	return &StateDb{db: db}
+}
+func storeBytesWithVersion(db ptndb.Putter, key []byte, version *modules.StateVersion, val []byte) error {
+	v := append(version.Bytes(), val...)
+	if err := db.Put(key, v); err != nil {
+		return err
+	}
+	return nil
+}
+func retrieveWithVersion(db ptndb.Database, key []byte) ([]byte, *modules.StateVersion, error) {
+	data, err := db.Get(key)
+	if err != nil {
+		return nil, nil, err
+	}
+	return splitValueAndVersion(data)
+}
+
+//将Statedb里的Value分割为Version和用户数据
+func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
+	if len(data) < 28 {
+		return nil, nil, errors.New("the data is irregular.")
+	}
+	verBytes := data[:28]
+	objData := data[28:]
+	version := &modules.StateVersion{}
+	version.SetBytes(verBytes)
+	return objData, version, nil
 }
 
 // ######################### SAVE IMPL START ###########################
@@ -95,31 +124,6 @@ func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.M
 func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
 	return RetrieveMediator(statedb.db, address)
 }
-
-//func (statedb *StateDb) SaveChainIndex(index *modules.ChainIndex) error {
-//	bytes, err := rlp.EncodeToBytes(index)
-//	if err != nil {
-//		return err
-//	}
-//	key := constants.CURRENTCHAININDEX_PREFIX + index.AssetID.String()
-//	if err := statedb.db.Put([]byte(key), bytes); err != nil {
-//		return err
-//	}
-//	return nil
-//}
-//func (statedb *StateDb) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
-//	// get current chainIndex
-//	key := constants.CURRENTCHAININDEX_PREFIX + assetId.String()
-//	bytes, err := statedb.db.Get([]byte(key))
-//	if err != nil {
-//		return nil, err
-//	}
-//	chainIndex := new(modules.ChainIndex)
-//	if err := rlp.DecodeBytes(bytes, &chainIndex); err != nil {
-//		return nil, err
-//	}
-//	return chainIndex, nil
-//}
 
 func (statedb *StateDb) GetMediatorCount() int {
 	return GetMediatorCount(statedb.db)
@@ -224,7 +228,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 	if info == nil {
 		return nil
 	}
-	foundAddr, _, err := statedb.GetConfig("FoundationAddress")
+	foundAddr, _, err := statedb.GetSysConfig("FoundationAddress")
 	if err != nil {
 		return err
 	}
@@ -255,7 +259,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 }
 
 func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error) {
-	val, _, err := statedb.GetConfig("sysParam")
+	val, _, err := statedb.GetSysConfig("sysParam")
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +278,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error)
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
-	val, _, err := statedb.GetConfig("sysParams")
+	val, _, err := statedb.GetSysConfig("sysParams")
 	if err != nil {
 		return nil, err
 	}

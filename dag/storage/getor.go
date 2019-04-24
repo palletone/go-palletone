@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
@@ -53,27 +52,7 @@ func retrieve(db ptndb.Database, key []byte, v interface{}) error {
 
 	return nil
 }
-func retrieveWithVersion(db ptndb.Database, key []byte) ([]byte, *modules.StateVersion, error) {
-	data, err := db.Get(key)
-	if err != nil {
-		return nil, nil, err
-	}
-	return splitValueAndVersion(data)
-}
 
-//将Statedb里的Value分割为Version和用户数据
-func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
-	if len(data) <= 29 {
-		return nil, nil, errors.New("the data is irregular.")
-	}
-	verBytes := data[:29]
-	objData := data[29:]
-	//c_data := make([]byte, 0)
-	//err := rlp.DecodeBytes(objData, &c_data)
-	version := &modules.StateVersion{}
-	version.SetBytes(verBytes)
-	return objData, version, nil
-}
 
 // get string
 func getString(db ptndb.Database, key []byte) (string, error) {

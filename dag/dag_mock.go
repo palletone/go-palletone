@@ -496,7 +496,7 @@ func (m *MockIDag) GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	return ret0, ret1, ret2
 }
 
-// GetConfig indicates an expected call of GetConfig
+// GetSysConfig indicates an expected call of GetSysConfig
 func (mr *MockIDagMockRecorder) GetConfig(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockIDag)(nil).GetConfig), name)

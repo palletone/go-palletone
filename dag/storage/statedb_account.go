@@ -55,16 +55,16 @@ func (acc *accountInfo) accountToInfo() *modules.AccountInfo {
 	return ai
 }
 
-func infoToAccount(ai *modules.AccountInfo) *accountInfo {
-	acc := newAccountInfo()
-	acc.AccountInfoBase = ai.AccountInfoBase
-
-	for med, _ := range ai.VotedMediators {
-		acc.VotedMediators = append(acc.VotedMediators, med)
-	}
-
-	return acc
-}
+//func infoToAccount(ai *modules.AccountInfo) *accountInfo {
+//	acc := newAccountInfo()
+//	acc.AccountInfoBase = ai.AccountInfoBase
+//
+//	for med, _ := range ai.VotedMediators {
+//		acc.VotedMediators = append(acc.VotedMediators, med)
+//	}
+//
+//	return acc
+//}
 
 func accountKey(address common.Address) []byte {
 	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
@@ -172,16 +172,35 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 
 	return result
 }
-func (statedb *StateDb) UpdateAccountState(address common.Address, write *modules.ContractWriteSet, version *modules.StateVersion) error {
+func (statedb *StateDb) SaveAccountState(address common.Address, write *modules.ContractWriteSet, version *modules.StateVersion) error {
 	key := accountKey(address)
 	key = append(key, []byte(write.Key)...)
 	if write.IsDelete {
 		err := statedb.db.Delete(key)
 		return err
 	}
-	return StoreBytesWithVersion(statedb.db, key, version, write.Value)
+	return storeBytesWithVersion(statedb.db, key, version, write.Value)
 
 }
+func (statedb *StateDb)	SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error{
+	batch:=statedb.db.NewBatch()
+	keyPrefix := accountKey(address)
+	for _,write:=range writeset{
+		key:=[]byte{}
+		key=append(key,keyPrefix...)
+		key = append(key, []byte(write.Key)...)
+		if write.IsDelete {
+			err := batch.Delete(key)
+			return err
+		}
+		err:= storeBytesWithVersion(batch, key, version, write.Value)
+		if err!=nil{
+			return err
+		}
+	}
+	return batch.Write()
+}
+
 func (statedb *StateDb) GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error) {
 	key := accountKey(address)
 	data := getprefix(statedb.db, key)

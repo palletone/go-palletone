@@ -26,13 +26,14 @@ import (
 
 	//"github.com/palletone/go-palletone/common/crypto"
 	"encoding/json"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func TestGetContractState(t *testing.T) {
@@ -194,17 +195,20 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
 
-	sysParam, _, err := statedb.GetConfig("sysParam")
-	if err != nil {
-		t.Log(err.Error())
-	}
+	sysParam, _, err := statedb.GetSysConfig("sysParam")
+	// if err != nil {
+	// 	t.Log(err.Error())
+	// }
+	assert.NotNil(t,err)
 	if sysParam == nil {
 		t.Log("update sysParam success")
 	} else {
 		t.Logf("%#v\n", sysParam)
 		t.Error("update sysParam fail")
 	}
-	sysParams, _, err := statedb.GetConfig("sysParams")
+	sysParams, _, err := statedb.GetSysConfig("sysParams")
+	assert.NotNil(t,err)
+
 	if err != nil {
 		t.Log(err.Error())
 	}
@@ -270,17 +274,17 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	val1, _, err := statedb.GetConfig("key1")
+	val1, _, err := statedb.GetSysConfig("key1")
 	if err != nil {
 		t.Error(err.Error())
 	}
 	t.Logf("key1=%s\n", val1)
-	val2, _, err := statedb.GetConfig("key2")
+	val2, _, err := statedb.GetSysConfig("key2")
 	if err != nil {
 		t.Error(err.Error())
 	}
 	t.Logf("key2=%s\n", val1)
-	depositAmountForMediator, _, err := statedb.GetConfig("DepositAmountForMediator")
+	depositAmountForMediator, _, err := statedb.GetSysConfig("DepositAmountForMediator")
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -294,23 +298,23 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	t.Logf("第一次============换届之后，已经更改系统参数\n\n")
 
 	//
-	val1, _, err = statedb.GetConfig("key1")
+	val1, _, err = statedb.GetSysConfig("key1")
 	if err != nil {
 		t.Error(err.Error())
 	}
 	t.Logf("key1=%s\n", val1)
-	val2, _, err = statedb.GetConfig("key2")
+	val2, _, err = statedb.GetSysConfig("key2")
 	if err != nil {
 		t.Error(err.Error())
 	}
 	t.Logf("key2=%s\n", val2)
-	depositAmountForMediator, _, err = statedb.GetConfig("DepositAmountForMediator")
+	depositAmountForMediator, _, err = statedb.GetSysConfig("DepositAmountForMediator")
 	if err != nil {
 		t.Error(err.Error())
 	}
 	t.Logf("DepositAmountForMediator=%s\n", depositAmountForMediator)
 
-	sysParam, _, err = statedb.GetConfig("sysParam")
+	sysParam, _, err = statedb.GetSysConfig("sysParam")
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -322,7 +326,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	} else {
 		t.Log("update sysParams success")
 	}
-	sysParams, _, err = statedb.GetConfig("sysParams")
+	sysParams, _, err = statedb.GetSysConfig("sysParams")
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -358,28 +362,28 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	}
 	t.Logf("第二次============换届之后，已经更改系统参数\n\n")
 
-	val1, _, err = statedb.GetConfig("key1")
+	val1, _, err = statedb.GetSysConfig("key1")
 	if err != nil {
 		t.Error(err.Error())
 	}
 	t.Logf("key1=%s\n", val1)
-	val2, _, err = statedb.GetConfig("key2")
+	val2, _, err = statedb.GetSysConfig("key2")
 	if err != nil {
 		t.Error(err.Error())
 	}
 	t.Logf("key2=%s\n", val2)
-	sysParam, _, err = statedb.GetConfig("sysParam")
+	sysParam, _, err = statedb.GetSysConfig("sysParam")
 	if err != nil {
 		t.Error(err.Error())
 	}
-	if sysParam == nil {
-		t.Log("update sysParam success")
-	} else if len(sysParam) > 0 {
-		t.Logf("%#v\n", sysParam)
-		t.Error("update sysParam fail")
-	} else {
-		t.Log("update sysParams success")
-	}
+	// if sysParam == nil {
+	// 	t.Log("update sysParam success")
+	// } else if len(sysParam) > 0 {
+	// 	t.Logf("%#v\n", sysParam)
+	// 	t.Error("update sysParam fail")
+	// } else {
+	// 	t.Log("update sysParams success")
+	// }
 
 	t.Logf("第三次============换届之前，还没有更改系统参数")
 	//更新
