@@ -152,6 +152,8 @@ type Backend interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 
 	GetFileInfo(filehash string) ([]*modules.FileInfo, error)
+
+	ProofTransaction(txhash common.Hash) (string, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

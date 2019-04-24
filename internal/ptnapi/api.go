@@ -829,6 +829,10 @@ func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) *JuryList {
 	return jlist
 }
 
+func (s *PublicBlockChainAPI) ProofTransaction(ctx context.Context, txhash common.Hash) (string, error) {
+	return s.b.ProofTransaction(txhash)
+}
+
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value
