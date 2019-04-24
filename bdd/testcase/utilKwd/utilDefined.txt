@@ -38,6 +38,15 @@ getGeneAdd
     #${log}    evaluate    str(${resp.content}['result'][0])
     [Return]    ${jsonRes['result'][0]}
 
+getlistAccounts
+    ${list}    Create List    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
+    log    ${resp.content}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    Set Suite Variable    ${listAccounts}    ${jsonRes['result']}
+    [Return]    ${listAccounts}
+
 countRecieverPTN
     [Arguments]    ${Amount}
     ${quantity}    evaluate    ${Amount}*0.00000001

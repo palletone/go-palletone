@@ -55,9 +55,9 @@ func (p *ShimJury) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 
-type JuryMsgSig struct {
-	Signature []byte
-	Answer    []byte
+type JuryMsgAddr struct {
+	Address string
+	Answer  []byte
 }
 
 func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
@@ -76,7 +76,7 @@ func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		}
 	} else {
 		log.Debugf("result: %s", string(result))
-		var juryMsg []JuryMsgSig
+		var juryMsg []JuryMsgAddr
 		err := json.Unmarshal(result, &juryMsg)
 		if err != nil {
 			return shim.Error("Unmarshal result failed: " + string(result))
@@ -107,7 +107,7 @@ func test2(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("RecvJury failed"))
 	} else {
 		log.Debugf("result: #%v\n", result)
-		var juryMsg []JuryMsgSig
+		var juryMsg []JuryMsgAddr
 		err := json.Unmarshal(result, &juryMsg)
 		if err != nil {
 			return shim.Error("Unmarshal result failed: " + string(result))
