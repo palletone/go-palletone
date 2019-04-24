@@ -261,7 +261,8 @@ func bobSpendBTCFromMultiAddr(txid string, index string, amount string, fee stri
 	//
 	var signTxParams adaptor.SignTransactionParams
 	signTxParams.TransactionHex = rawTransactionGenResult.Rawtx
-	signTxParams.RedeemHex = append(signTxParams.RedeemHex, redeem)
+	//signTxParams.RedeemHex = append(signTxParams.RedeemHex, redeem)
+	signTxParams.RedeemHex = signTxParams.RedeemHex + redeem
 	signTxParams.Privkeys = append(signTxParams.Privkeys, gWallet.NameKey["bob"])
 	signReuslt, err := btcadaptor.SignTransaction(&signTxParams)
 	if err != nil {

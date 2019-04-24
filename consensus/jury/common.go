@@ -97,7 +97,7 @@ func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) er
 	return errors.New("checkAndAddSigSet add sig fail")
 }
 
-func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq interface{}, errMsg string) (*modules.Message) {
+func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq interface{}, errMsg string) *modules.Message {
 	err := modules.ContractError{
 		Code:    500, //todo
 		Message: errMsg,
@@ -215,7 +215,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -333,20 +333,10 @@ func handleArg1(tx *modules.Transaction, reqArgs [][]byte) ([][]byte, error) {
 	if len(reqArgs) <= 1 {
 		return nil, fmt.Errorf("handlemsg1 req args error")
 	}
-	certInfo := modules.CertInfo{}
-	if len(tx.CertId) > 0 {
-		certInfo.NeedCert = true
-		certInfo.Certid = tx.CertId
-	} else {
-		certInfo.NeedCert = false
-	}
-	val, err := json.Marshal(certInfo)
-	if err != nil {
-		return nil, err
-	}
+
 	newReqArgs := [][]byte{}
 	newReqArgs = append(newReqArgs, reqArgs[0])
-	newReqArgs = append(newReqArgs, val)
+	newReqArgs = append(newReqArgs, tx.CertId)
 	newReqArgs = append(newReqArgs, reqArgs[1:]...)
 	return newReqArgs, nil
 }

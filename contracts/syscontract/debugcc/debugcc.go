@@ -46,6 +46,8 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return d.getbalance(stub, args)
 	case "getRequesterCert":
 		return d.getRequesterCert(stub, args)
+	case "checkRequesterCert":
+		return d.checkRequesterCert(stub, args)
 	case "ForfeitureDeposit":
 	case "getRootCABytes":
 		return d.getRootCABytes(stub, args)
@@ -76,18 +78,24 @@ func (d *DebugChainCode) getbalance(stub shim.ChaincodeStubInterface, args []str
 }
 
 func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 1 {
-		reqStr := fmt.Sprintf("Need one args: [requester cert id]")
-		return shim.Error(reqStr)
-	}
 	certBytes, err := stub.GetRequesterCert()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-
 	b, e := json.Marshal(certBytes)
 	if e != nil {
 		return shim.Error(e.Error())
+	}
+	return shim.Success(b)
+}
+
+func (d *DebugChainCode) checkRequesterCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	isValid, err := stub.IsRequesterCertValid()
+	b := []byte{}
+	if isValid {
+		b, _ = json.Marshal(fmt.Sprintf("Requester cert is valid"))
+	} else {
+		b, _ = json.Marshal(fmt.Sprintf("Requester cert is invalid, because %s", err.Error()))
 	}
 	return shim.Success(b)
 }
