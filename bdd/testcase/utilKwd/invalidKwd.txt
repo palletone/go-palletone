@@ -57,10 +57,9 @@ I get a Getbalance code and a message
     assertBalanceInvalid    ${resp}    ${error_code}    ${error_message}
 
 I_set_CcinvokePass_params
-    [Arguments]    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}
-    ...    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${recieverAdd1}    ${pwd}
-    ...    ${expiredTime}
-    #${geneAdd}    getGeneAdd    ${host}
+    [Arguments]    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}    ${evidence}
+    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${senderAdd}    ${recieverAdd}
+    ...    ${recieverAdd1}
     ${ccTokenList}    Create List    ${tokenType}    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}
     ...    ${recieverAdd1}
     ${ccList}    Create List    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}
