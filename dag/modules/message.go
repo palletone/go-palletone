@@ -817,8 +817,3 @@ type SysVoteResult struct {
 	SelectOption string
 	Num          uint64
 }
-
-type CertInfo struct {
-	NeedCert bool
-	Certid   []byte // should be big.Int byte
-}

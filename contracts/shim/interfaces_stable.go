@@ -164,7 +164,7 @@ type ChaincodeStubInterface interface {
 	// 根据证书ID获得证书字节数据
 	GetRequesterCert() (certBytes []byte, err error)
 	// 验证证书是否合法, error返回的是不合法的原因
-	IsRequesterCertValidate() (bool, error)
+	IsRequesterCertValid() (bool, error)
 
 	// GetStateByRange returns a range iterator over a set of keys in the
 	// ledger. The iterator can be used to iterate over all keys

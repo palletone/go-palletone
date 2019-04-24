@@ -19,6 +19,7 @@
 package jury
 
 import (
+	"math/big"
 	"sync"
 	"time"
 
@@ -74,7 +75,7 @@ type iDag interface {
 	GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
-	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
+	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
@@ -602,13 +603,12 @@ func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, d
 	return p.signAndExecute(common.BytesToAddress(tx.RequestHash().Bytes()), from, tx, isLocalInstall)
 }
 
-func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
+func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.TxPool())
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
 	log.Debug("createContractTxReq", "contractId", contractId, "tx:", tx)
-
 	return p.signAndExecute(contractId, from, tx, isLocalInstall)
 }
 
@@ -662,6 +662,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	} else if p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ctx.eleInf) && !tx.IsSystemContract() {
 		go p.runContractReq(reqId, ctx.eleInf)
 	}
+
 	return reqId, tx, nil
 }
 

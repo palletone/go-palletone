@@ -536,8 +536,8 @@ func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount,
 func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
-	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
+func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddress, args, timeout)
