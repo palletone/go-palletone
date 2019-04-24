@@ -67,9 +67,13 @@ func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error("SendJury failed")
 	}
 	log.Debugf("sendresult: %s", common.Bytes2Hex(sendresult))
-	result, err := stub.RecvJury(1, []byte("hello"), 5)
+	result, err := stub.RecvJury(1, []byte("hello"), 2)
 	if err != nil {
 		log.Debugf("result err: %s", err.Error())
+		err = stub.PutState("result", []byte(err.Error()))
+		if err != nil {
+			return shim.Error("PutState: " + string(result))
+		}
 	} else {
 		log.Debugf("result: %s", string(result))
 		var juryMsg []JuryMsgSig
@@ -77,7 +81,10 @@ func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Unmarshal result failed: " + string(result))
 		}
-		stub.PutState("result", result)
+		err = stub.PutState("result", result)
+		if err != nil {
+			return shim.Error("PutState: " + string(result))
+		}
 		return shim.Success([]byte("")) //test
 	}
 	return shim.Success([]byte("RecvJury failed"))
@@ -93,7 +100,7 @@ func test1(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte("RecvJury failed"))
 }
 func test2(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	result, err := stub.RecvJury(1, []byte("hello"), 5)
+	result, err := stub.RecvJury(1, []byte("hello"), 2)
 	if err != nil {
 		log.Debugf("result err: %s", err.Error())
 		stub.PutState("result2", []byte(err.Error()))

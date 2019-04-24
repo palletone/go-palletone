@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -30,41 +31,34 @@ import (
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
-	//保证金的年利率
-	DepositRate string `json:"depositRate"`
-	//交易币天的年利率
-	TxCoinYearRate string `json:"txCoinYearRate"`
-	//每生产一个单元，奖励多少Dao的PTN
-	GenerateUnitReward string `json:"generateUnitReward"`
-	//基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
-	FoundationAddress string `json:"foundationAddress"`
-	//保证金的数量
-	DepositAmountForMediator  string `json:"depositAmountForMediator"`
+	TxCoinYearRate     string `json:"txCoinYearRate"`     //交易币天的年利率
+	GenerateUnitReward string `json:"generateUnitReward"` //每生产一个单元，奖励多少Dao的PTN
+	FoundationAddress  string `json:"foundationAddress"`  //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
+
+	DepositRate               string `json:"depositRate"`              //保证金的年利率
+	DepositAmountForMediator  string `json:"depositAmountForMediator"` //保证金的数量
 	DepositAmountForJury      string `json:"depositAmountForJury"`
 	DepositAmountForDeveloper string `json:"depositAmountForDeveloper"`
-	//保证金周期
-	DepositPeriod string `json:"depositPeriod"`
+	DepositPeriod             string `json:"depositPeriod"` //保证金周期
 
 	//对启动用户合约容器的相关资源的限制
-	UccMemory string `json:"ucc_memory"`  //物理内存  104857600  100m
-	UccMemorySwap string `json:"ucc_memory_swap"` //内存交换区，不设置默认为memory的两倍
-	UccCpuShares string `json:"ucc_cpu_shares"` //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	UccCpuQuota string `json:"ucc_cpu_quota"`  // 限制CPU --cpu-period=50000 --cpu-quota=25000
-	UccCpuPeriod string `json:"ucc_cpu_period"`  //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
+	UccMemory     string `json:"ucc_memory"`       //物理内存  104857600  100m
+	UccMemorySwap string `json:"ucc_memory_swap"`  //内存交换区，不设置默认为memory的两倍
+	UccCpuShares  string `json:"ucc_cpu_shares"`   //CPU占用率，相对的  CPU 利用率权重，默认为 1024
+	UccCpuQuota   string `json:"ucc_cpu_quota"`    // 限制CPU --cpu-period=50000 --cpu-quota=25000
+	UccCpuPeriod  string `json:"ucc_cpu_period"`   //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
 	UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
 
 	//对中间容器的相关资源限制
-	TempUccMemory string `json"temp_ucc_memory"`
+	TempUccMemory     string `json"temp_ucc_memory"`
 	TempUccMemorySwap string `json"temp_ucc_memory_swap"`
-	TempUccCpuShares string `json"temp_ucc_cpu_shares"`
-	TempUccCpuQuota string `json"temp_ucc_cpu_quota"`
+	TempUccCpuShares  string `json"temp_ucc_cpu_shares"`
+	TempUccCpuQuota   string `json"temp_ucc_cpu_quota"`
 }
 
 type DigitalIdentityConfig struct {
-	// ROOT CA的持有者
-	RootCAHolder string `json:"rootCAHolder"`
-	// ROOT CA证书内容
-	RootCABytes string `json:"rootCABytes"`
+	RootCAHolder string `json:"rootCAHolder"` // ROOT CA的持有者
+	RootCABytes  string `json:"rootCABytes"`  // ROOT CA证书内容
 }
 
 type Genesis struct {
