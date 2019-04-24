@@ -101,9 +101,9 @@ type Backend interface {
 	//GetCanonicalHash(number uint64) (common.Hash, error)
 
 	// get transaction interface
-	GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error)
+	GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJson, error)
 	GetUnitTxsHashHex(hash common.Hash) ([]string, error)
-	GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson, error)
+	GetTxByHash(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error)
 	GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error)
 
 	//TODO wangjiyou
