@@ -276,12 +276,7 @@ func TestRLPXFrameFake(t *testing.T) {
 		EgressMAC:  hash,
 	})
 
-	golden := unhex(`
-00828ddae471818bb0bfa6b551d1cb42
-01010101010101010101010101010101
-ba628a4ba590cb43f7848f41c4382885
-01010101010101010101010101010101
-`)
+	golden := unhex(`ee4bdf598434add487b2845159762028010101010101010101010101010101012ad9100d3c2ac6652fa799328a635bc201010101010101010101010101010101`)
 
 	// Check WriteMsg. This puts a message into the buffer.
 	if err := Send(rw, 8, []uint{1, 2, 3, 4}); err != nil {
