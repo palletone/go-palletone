@@ -11,7 +11,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 ${host}           http://localhost:8545/
 ${geneAdd}        P18h3HCoFZyUsmKtMRbYqrQWdbnkiyDPNWF
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
-${preTokenId}     QA007
+${preTokenId}     QA004
 ${tokenDecimal}    1
 ${tokenAmount}    25000
 ${amount}         2000

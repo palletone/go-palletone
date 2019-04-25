@@ -11,7 +11,7 @@ ${host}           http://localhost:8545/
 ${geneAdd}        P17XYSQ4qBKeWF9qicEdG5ZzfvTZQke4Ys9
 ${recieverAdd}    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw
 ${contractId}     PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
-${preTokenId}     QA010
+${preTokenId}     QA002
 ${tokenDecimal}    1
 ${tokenAmount}    25000
 ${amount}         2000
@@ -37,7 +37,7 @@ transferToken_recieverToken
     #ELSE    Get From Dictionary    ${result1}    ${key}
     ${tokenResult}    transferToken    ${key}    ${GeneAdd}    ${recieverAdd}    ${senderAmount}    ${pdg}
     ...    ${evidence}    ${unlocktime}
-    sleep    2
+    sleep    3
     ${item1}    Evaluate    ${item}+${senderAmount}
     ${result2}    getBalance    ${recieverAdd}
     ${key2}    getTokenId    ${preTokenId}    ${result2}
