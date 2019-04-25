@@ -26,6 +26,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -366,49 +367,41 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 	return tx, fee, nil
 }
 
-func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address,
-	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenVoteMediatorTx(mediator common.Address, rawtx *modules.Transaction) (*modules.Transaction, error) {
 	// 1. 组装 message
-	accountUpdateOp := &modules.AccountUpdateOperation{
-		VotingMediator: &mediator,
-	}
-
+	accountUpdate := &modules.AccountStateUpdatePayload{}
+	writeVote := modules.NewWriteSet(constants.VOTE_MEDIATOR, []byte(mediator.String()))
+	accountUpdate.WriteSet = []modules.ContractWriteSet{*writeVote}
 	msg := &modules.Message{
 		App:     modules.APP_ACCOUNT_UPDATE,
-		Payload: accountUpdateOp,
+		Payload: accountUpdate,
 	}
-
 	// 2. 组装 tx
-	fee := dag.CurrentFeeSchedule().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, txPool)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return tx, fee, nil
+	rawtx.TxMessages = append(rawtx.TxMessages, msg)
+	return rawtx, nil
 }
 
-func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
-	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	// 1. 组装 message
-	accountUpdateOp := &modules.AccountUpdateOperation{
-		DesiredMediatorCount: &desiredMediatorCount,
-	}
-
-	msg := &modules.Message{
-		App:     modules.APP_ACCOUNT_UPDATE,
-		Payload: accountUpdateOp,
-	}
-
-	// 2. 组装 tx
-	fee := dag.CurrentFeeSchedule().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, nil, msg, txPool)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return tx, fee, nil
-}
+//func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
+//	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+//	// 1. 组装 message
+//	accountUpdateOp := &modules.AccountUpdateOperation{
+//		DesiredMediatorCount: &desiredMediatorCount,
+//	}
+//
+//	msg := &modules.Message{
+//		App:     modules.APP_ACCOUNT_UPDATE,
+//		Payload: accountUpdateOp,
+//	}
+//
+//	// 2. 组装 tx
+//	fee := dag.CurrentFeeSchedule().AccountUpdateFee
+//	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, nil, msg, txPool)
+//	if err != nil {
+//		return nil, 0, err
+//	}
+//
+//	return tx, fee, nil
+//}
 
 func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {

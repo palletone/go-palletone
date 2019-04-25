@@ -87,7 +87,6 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	//producer := new(mediatorplugin.MediatorPlugin)
 	index0 := &modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
 		0,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
