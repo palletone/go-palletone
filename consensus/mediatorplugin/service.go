@@ -66,7 +66,7 @@ type iDag interface {
 
 	IsActiveMediator(add common.Address) bool
 	IsSynced() bool
-
+	LookupAccount() map[common.Address]*modules.AccountInfo
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 

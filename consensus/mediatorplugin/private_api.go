@@ -162,8 +162,8 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 	}
 
 	// 判断是否已经投过该mediator
-	voted := a.dag.GetAccountInfo(voter).VotedMediators
-	if voted[mediator] {
+	voted := a.dag.GetAccountInfo(voter).VotedMediator
+	if voted == mediator {
 		return nil, fmt.Errorf("account %v was already voting for mediator %v", voterStr, mediatorStr)
 	}
 

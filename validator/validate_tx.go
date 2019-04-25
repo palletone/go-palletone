@@ -245,11 +245,6 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_SIGNATURE {
 			return true
 		}
-
-		//case *modules.ConfigPayload:
-		//	if app == modules.APP_CONFIG {
-		//		return true
-		//	}
 	case *modules.DataPayload:
 		if app == modules.APP_DATA {
 			return true
@@ -258,7 +253,7 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.OP_MEDIATOR_CREATE {
 			return true
 		}
-	case *modules.AccountUpdateOperation:
+	case *modules.AccountStateUpdatePayload:
 		if app == modules.APP_ACCOUNT_UPDATE {
 			return true
 		}

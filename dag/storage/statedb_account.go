@@ -22,9 +22,6 @@ package storage
 
 import (
 	"bytes"
-
-	"fmt"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -32,28 +29,28 @@ import (
 )
 
 // only for serialization(storage)
-type accountInfo struct {
-	*modules.AccountInfoBase
-	VotedMediators []common.Address
-}
-
-func newAccountInfo() *accountInfo {
-	return &accountInfo{
-		AccountInfoBase: modules.NewAccountInfoBase(),
-		VotedMediators:  make([]common.Address, 0),
-	}
-}
-
-func (acc *accountInfo) accountToInfo() *modules.AccountInfo {
-	ai := modules.NewAccountInfo()
-	ai.AccountInfoBase = acc.AccountInfoBase
-
-	for _, med := range acc.VotedMediators {
-		ai.VotedMediators[med] = true
-	}
-
-	return ai
-}
+//type accountInfo struct {
+//	*modules.AccountInfoBase
+//	VotedMediators []common.Address
+//}
+//
+//func newAccountInfo() *accountInfo {
+//	return &accountInfo{
+//		AccountInfoBase: modules.NewAccountInfoBase(),
+//		VotedMediators:  make([]common.Address, 0),
+//	}
+//}
+//
+//func (acc *accountInfo) accountToInfo() *modules.AccountInfo {
+//	ai := modules.NewAccountInfo()
+//	ai.AccountInfoBase = acc.AccountInfoBase
+//
+//	for _, med := range acc.VotedMediators {
+//		ai.VotedMediators[med] = true
+//	}
+//
+//	return ai
+//}
 
 //func infoToAccount(ai *modules.AccountInfo) *accountInfo {
 //	acc := newAccountInfo()
@@ -143,31 +140,26 @@ func (statedb *StateDb) GetAccountBalance(address common.Address) uint64 {
 
 func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo {
 	result := make(map[common.Address]*modules.AccountInfo)
-
-	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_INFO_PREFIX)
+	//rows:=getprefix(statedb.db,constants.ACCOUNT_PTN_BALANCE_PREFIX)
+	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_PTN_BALANCE_PREFIX)
 	for iter.Next() {
 		key := iter.Key()
 		if key == nil {
 			continue
 		}
-
-		addB := bytes.TrimPrefix(key, constants.ACCOUNT_INFO_PREFIX)
+		addB := bytes.TrimPrefix(key, constants.ACCOUNT_PTN_BALANCE_PREFIX)
 		add := common.BytesToAddress(addB)
-
-		value := iter.Value()
-		if value == nil {
-			continue
+		balance := BytesToUint64(iter.Value())
+		acc := &modules.AccountInfo{Balance: balance}
+		//get address vote mediator
+		acckey := append(constants.ACCOUNT_INFO_PREFIX, addB...)
+		acckey = append(acckey, []byte(constants.VOTE_MEDIATOR)...)
+		data, _, err := retrieveWithVersion(statedb.db, acckey)
+		if err == nil {
+			acc.VotedMediator = common.BytesToAddress(data)
 		}
-
-		acc := newAccountInfo()
-		err := rlp.DecodeBytes(value, acc)
-		if err != nil {
-			log.Debug(fmt.Sprintln("Error in Decoding Bytes to AccountInfo: ", err,
-				"\nkey: ", key, "\naddress: ", add.Str(), "\nvalue: ", value))
-			continue
-		}
-
-		result[add] = acc.accountToInfo()
+		log.Debugf("Found account[%s] balance:%d,vote mediator:%s", add.String(), balance, acc.VotedMediator.String())
+		result[add] = acc
 	}
 
 	return result
@@ -182,19 +174,21 @@ func (statedb *StateDb) SaveAccountState(address common.Address, write *modules.
 	return storeBytesWithVersion(statedb.db, key, version, write.Value)
 
 }
-func (statedb *StateDb)	SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error{
-	batch:=statedb.db.NewBatch()
+func (statedb *StateDb) SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error {
+	batch := statedb.db.NewBatch()
 	keyPrefix := accountKey(address)
-	for _,write:=range writeset{
-		key:=[]byte{}
-		key=append(key,keyPrefix...)
+	for _, write := range writeset {
+		key := []byte{}
+		key = append(key, keyPrefix...)
 		key = append(key, []byte(write.Key)...)
 		if write.IsDelete {
+			log.Infof("Account[%s] try to delete account state by key:%s", address.String(), write.Key)
 			err := batch.Delete(key)
 			return err
 		}
-		err:= storeBytesWithVersion(batch, key, version, write.Value)
-		if err!=nil{
+		log.Debugf("Account[%s] try to set account state key:%s,value:%s", address.String(), write.Key, string(write.Value))
+		err := storeBytesWithVersion(batch, key, version, write.Value)
+		if err != nil {
 			return err
 		}
 	}

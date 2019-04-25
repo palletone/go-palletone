@@ -548,7 +548,7 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
 			} else if msg.App == APP_ACCOUNT_UPDATE {
-				payload := new(AccountUpdateOperation)
+				payload := new(AccountStateUpdatePayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
 			}

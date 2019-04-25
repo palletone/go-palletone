@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -250,11 +251,9 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	return nodes
 }
 
-const AccountStateKey_VotingMediator = "VotingMediator"
-
 func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
 	accountInfo := &modules.AccountInfo{}
-	data, err := d.unstableStateRep.GetAccountState(addr, AccountStateKey_VotingMediator)
+	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTE_MEDIATOR)
 	if err != nil {
 		log.Warn(err.Error())
 		return accountInfo
@@ -264,7 +263,7 @@ func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
 	for _, m := range addrList {
 		a, e := common.StringToAddress(m)
 		if e == nil {
-			accountInfo.VotedMediators[a] = true
+			accountInfo.VotedMediator = a
 		}
 	}
 	return accountInfo
