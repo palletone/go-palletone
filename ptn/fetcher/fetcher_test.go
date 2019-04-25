@@ -41,7 +41,7 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
 
 	header.Number.AssetID = modules.PTNCOIN
-	header.Number.IsMain = true
+	//header.Number.IsMain = true
 	header.Number.Index = 0
 	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 	header.GroupSign = []byte{}
@@ -91,7 +91,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 	for i := 0; i < number; i++ {
 		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{})
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
-		header.Number.IsMain = par.UnitHeader.Number.IsMain
+		//header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
 		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 		header.GroupSign = []byte{}
@@ -405,7 +405,7 @@ func testSequentialAnnouncements(t *testing.T, protocol int) {
 	for i := len(hashes) - 2; i >= 0; i-- {
 		chain := &modules.ChainIndex{
 			AssetID: modules.PTNCOIN,
-			IsMain:  true,
+			//IsMain:  true,
 			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
@@ -442,7 +442,7 @@ func testConcurrentAnnouncements(t *testing.T, protocol int) {
 	for i := len(hashes) - 2; i >= 0; i-- {
 		chain := &modules.ChainIndex{
 			AssetID: modules.PTNCOIN,
-			IsMain:  true,
+			//IsMain:  true,
 			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("first", hashes[i], chain, time.Now().Add(-arriveTimeout), firstHeaderWrapper, firstBodyFetcher)
@@ -477,7 +477,7 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 		if i != skip {
 			chain := &modules.ChainIndex{
 				AssetID: modules.PTNCOIN,
-				IsMain:  true,
+				//IsMain:  true,
 				Index:   uint64(len(hashes) - i - 1),
 			}
 			tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
@@ -487,7 +487,7 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 	// Finally announce the skipped entry and check full import
 	chainskip := &modules.ChainIndex{
 		AssetID: modules.PTNCOIN,
-		IsMain:  true,
+		//IsMain:  true,
 		Index:   uint64(len(hashes) - skip - 1),
 	}
 	tester.fetcher.Notify("valid", hashes[skip], chainskip, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
@@ -515,7 +515,7 @@ func testQueueGapFill(t *testing.T, protocol int) {
 		if i != skip {
 			chain := &modules.ChainIndex{
 				AssetID: modules.PTNCOIN,
-				IsMain:  true,
+				//IsMain:  true,
 				Index:   uint64(len(hashes) - i - 1),
 			}
 			tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
@@ -553,7 +553,7 @@ func testImportDeduplication(t *testing.T, protocol int) {
 	// Announce the duplicating block, wait for retrieval, and also propagate directly
 	chain := &modules.ChainIndex{
 		AssetID: modules.PTNCOIN,
-		IsMain:  true,
+		//IsMain:  true,
 		Index:   1,
 	}
 	tester.fetcher.Notify("valid", hashes[0], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)
@@ -597,7 +597,7 @@ func testEmptyBlockShortCircuit(t *testing.T, protocol int) {
 	for i := len(hashes) - 2; i >= 0; i-- {
 		chain := &modules.ChainIndex{
 			AssetID: modules.PTNCOIN,
-			IsMain:  true,
+			//IsMain:  true,
 			Index:   uint64(len(hashes) - i - 1),
 		}
 		tester.fetcher.Notify("valid", hashes[i], chain, time.Now().Add(-arriveTimeout), headerFetcher, bodyFetcher)

@@ -66,7 +66,7 @@ type iDag interface {
 
 	IsActiveMediator(add common.Address) bool
 	IsSynced() bool
-
+	LookupAccount() map[common.Address]*modules.AccountInfo
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
@@ -79,10 +79,11 @@ type iDag interface {
 	IsIrreversibleUnit(hash common.Hash) bool
 
 	CurrentFeeSchedule() core.FeeSchedule
+	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GenVoteMediatorTx(voter, mediator common.Address, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-
+	GenVoteMediatorTx(mediator common.Address, rawtx *modules.Transaction) (*modules.Transaction, error)
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool
 
@@ -101,8 +102,8 @@ type iDag interface {
 	MediatorParticipationRate() uint32
 
 	GetAccountInfo(addr common.Address) *modules.AccountInfo
-	GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
-		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	//GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
+	//	txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetChainParameters() core.ChainParameters
 }
 

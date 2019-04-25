@@ -106,7 +106,7 @@ func TestCopyHeader(t *testing.T) {
 		GroupSign:   w,
 		GroupPubKey: w,
 		TxRoot:      common.Hash{},
-		Number:      &ChainIndex{AssetID: assetID, IsMain: true, Index: 0},
+		Number:      &ChainIndex{AssetID: assetID, Index: 0},
 	}
 
 	newH := CopyHeader(&h)
@@ -168,7 +168,7 @@ func TestHeaderPointer(t *testing.T) {
 	index := new(ChainIndex)
 	index.AssetID = PTNCOIN
 	index.Index = 1
-	index.IsMain = true
+	//index.IsMain = true
 	h.Number = index
 
 	h1 := CopyHeader(h)

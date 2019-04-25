@@ -137,7 +137,7 @@ func TestSaveUnit(t *testing.T) {
 		},
 	}
 	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
-		"testDeploy", nil,  nil,  readSet, writeSet, modules.ContractError{})
+		"testDeploy", nil, nil, readSet, writeSet, modules.ContractError{})
 
 	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),
@@ -149,10 +149,8 @@ func TestSaveUnit(t *testing.T) {
 				Value: modules.ToPayloadMapValueBytes("Alice"),
 			},
 			{
-				Key: "age",
-				Value: modules.ToPayloadMapValueBytes(modules.DelContractState{
-					IsDelete: true,
-				}),
+				Key:      "age",
+				IsDelete: true,
 			},
 		},
 	}
@@ -593,14 +591,15 @@ func TestContractStateVrf(t *testing.T) {
 			PublicKey: []byte("def"),
 		},
 	}
-	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	log.Debug("TestContractStateVrf", "ElectionInf", eleW)
 
 	db, _ := ptndb.NewMemDatabase()
 	statedb := storage.NewStateDb(db)
 	eleW_bytes, _ := rlp.EncodeToBytes(eleW)
 	//write
-	if statedb.SaveContractState(contractId, "ElectionList", eleW_bytes, ver) != nil {
+	ws := modules.NewWriteSet("ElectionList", eleW_bytes)
+	if statedb.SaveContractState(contractId, ws, ver) != nil {
 		log.Debug("TestContractStateVrf, SaveContractState fail")
 		return
 	}

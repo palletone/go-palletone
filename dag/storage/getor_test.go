@@ -58,7 +58,7 @@ func TestGetCurrentChainIndex(t *testing.T) {
 		value := prefix_db.Value()
 		chain_index := new(modules.ChainIndex)
 		err := rlp.DecodeBytes(value, &chain_index)
-		fmt.Println("value:", err, chain_index.String(), chain_index.AssetID, chain_index.Index, chain_index.IsMain)
+		fmt.Println("value:", err, chain_index.String(), chain_index.AssetID, chain_index.Index)
 
 	}
 }

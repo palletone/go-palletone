@@ -367,12 +367,12 @@ func testIteratorContinueAfterError(t *testing.T, memonly bool) {
 // Similar to the test above, this one checks that failure to create nodeIterator at a
 // certain key prefix behaves correctly when Next is called. The expectation is that Next
 // should retry seeking before returning true for the first time.
-func TestIteratorContinueAfterSeekErrorDisk(t *testing.T) {
-	testIteratorContinueAfterSeekError(t, false)
-}
-func TestIteratorContinueAfterSeekErrorMemonly(t *testing.T) {
-	testIteratorContinueAfterSeekError(t, true)
-}
+//func TestIteratorContinueAfterSeekErrorDisk(t *testing.T) {
+//	testIteratorContinueAfterSeekError(t, false)
+//}
+//func TestIteratorContinueAfterSeekErrorMemonly(t *testing.T) {
+//	testIteratorContinueAfterSeekError(t, true)
+//}
 
 func testIteratorContinueAfterSeekError(t *testing.T, memonly bool) {
 	// Commit test trie to db, then remove the node containing "bars".

@@ -29,20 +29,20 @@ import (
 )
 
 type TxJson struct {
-	TxHash         string              `json:"tx_hash"`
-	TxSize         float64             `json:"tx_size"`
-	Payment        *PaymentJson        `json:"payment"`
-	Vote           *VoteJson           `json:"vote"`
-	Data           *DataJson           `json:"data"`
-	ContractTpl    *TplJson            `json:"contract_tpl"`
-	Deploy         *DeployJson         `json:"contract_deploy"`
-	Invoke         *InvokeJson         `json:"contract_invoke"`
-	Stop           *StopJson           `json:"contract_stop"`
-	Signature      *SignatureJson      `json:"signature"`
-	InstallRequest *InstallRequestJson `json:"install_request"`
-	DeployRequest  *DeployRequestJson  `json:"deploy_request"`
-	InvokeRequest  *InvokeRequestJson  `json:"invoke_request"`
-	StopRequest    *StopRequestJson    `json:"stop_request"`
+	TxHash             string              `json:"tx_hash"`
+	TxSize             float64             `json:"tx_size"`
+	Payment            *PaymentJson        `json:"payment"`
+	AccountStateUpdate *AccountStateJson   `json:"account_state_update"`
+	Data               *DataJson           `json:"data"`
+	ContractTpl        *TplJson            `json:"contract_tpl"`
+	Deploy             *DeployJson         `json:"contract_deploy"`
+	Invoke             *InvokeJson         `json:"contract_invoke"`
+	Stop               *StopJson           `json:"contract_stop"`
+	Signature          *SignatureJson      `json:"signature"`
+	InstallRequest     *InstallRequestJson `json:"install_request"`
+	DeployRequest      *DeployRequestJson  `json:"deploy_request"`
+	InvokeRequest      *InvokeRequestJson  `json:"invoke_request"`
+	StopRequest        *StopRequestJson    `json:"stop_request"`
 }
 type TxWithUnitInfoJson struct {
 	*TxJson
@@ -87,10 +87,6 @@ type SignatureJson struct {
 	Signatures []string `json:"signature_set"` // the array of signature
 }
 
-type VoteJson struct {
-	Content string `json:"vote_content"`
-}
-
 type InvokeRequestJson struct {
 	ContractAddr string   `json:"contract_addr"`
 	FunctionName string   `json:"function_name"`
@@ -118,6 +114,9 @@ type StopRequestJson struct {
 type DataJson struct {
 	MainData  string `json:"main_data"`
 	ExtraData string `json:"extra_data"`
+}
+type AccountStateJson struct {
+	WriteSet string `json:"write_set"`
 }
 
 func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxWithUnitInfoJson {
@@ -174,6 +173,9 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 		} else if m.App == modules.APP_SIGNATURE {
 			sig := m.Payload.(*modules.SignaturePayload)
 			txjson.Signature = convertSig2Json(sig)
+		} else if m.App == modules.APP_ACCOUNT_UPDATE {
+			acc := m.Payload.(*modules.AccountStateUpdatePayload)
+			txjson.AccountStateUpdate = convertAccountState2Json(acc)
 		}
 	}
 	return txjson
@@ -286,4 +288,10 @@ func convertStopRequest2Json(req *modules.ContractStopRequestPayload) *StopReque
 	reqJson.Txid = req.Txid
 
 	return reqJson
+}
+func convertAccountState2Json(accountState *modules.AccountStateUpdatePayload) *AccountStateJson {
+	jsonAcc := &AccountStateJson{}
+	writeSet, _ := json.Marshal(accountState.WriteSet)
+	jsonAcc.WriteSet = string(writeSet)
+	return jsonAcc
 }

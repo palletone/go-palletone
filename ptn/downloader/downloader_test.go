@@ -72,7 +72,7 @@ type downloadTester struct {
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
-	header.Number.IsMain = true
+	//header.Number.IsMain = true
 	header.Number.Index = 0
 	//
 	header.Time = time.Now().Unix()
@@ -124,7 +124,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modu
 	for i := 0; i < number; i++ {
 		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{seed})
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
-		header.Number.IsMain = par.UnitHeader.Number.IsMain
+		//header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
 		//
 		header.Time = time.Now().Unix()
@@ -667,7 +667,7 @@ func (dlp *downloadTesterPeer) Head(assetId modules.AssetId) (common.Hash, *modu
 	defer dlp.dl.lock.RUnlock()
 	index := &modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		0,
 	}
 	return dlp.dl.peerHashes[dlp.id][0], index
@@ -692,7 +692,7 @@ func (dlp *downloadTesterPeer) RequestHeadersByHash(origin common.Hash, amount i
 	dlp.dl.lock.RUnlock()
 	chainIndex := &modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		number,
 	}
 	// Use the absolute header fetcher to satisfy the query

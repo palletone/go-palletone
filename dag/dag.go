@@ -980,7 +980,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	// compute height
 	height := &modules.ChainIndex{
 		AssetID: currentUnit.UnitHeader.Number.AssetID,
-		IsMain:  currentUnit.UnitHeader.Number.IsMain,
+		//IsMain:  currentUnit.UnitHeader.Number.IsMain,
 		Index:   currentUnit.UnitHeader.Number.Index + 1,
 	}
 	//
