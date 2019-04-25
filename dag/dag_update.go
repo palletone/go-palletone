@@ -161,8 +161,6 @@ func (dag *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUp
 }
 
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
-	dgp := dag.GetDynGlobalProp()
-
 	log.Debugf("We are at the maintenance interval")
 
 	// 对每个账户的各种投票信息进行初步统计
@@ -174,10 +172,24 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
 	go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
 
+	// 更新要修改的区块链参数
+	dag.updateChainParameters()
+
 	// 计算并更新下一次维护时间
+	dag.updateNextMaintenanceTime(nextUnit)
+
+	// 清理中间处理缓存数据
+	dag.mediatorVoteTally = nil
+	dag.mediatorCountHistogram = nil
+}
+
+func (dag *Dag) updateNextMaintenanceTime(nextUnit *modules.Unit) {
+	dgp := dag.GetDynGlobalProp()
 	gp := dag.GetGlobalProp()
+
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
+
 	if nextUnit.NumberU64() == 1 {
 		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
 	} else {
@@ -204,19 +216,18 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.SaveDynGlobalProp(dgp, false)
-	log.Debugf("nextMaintenanceTime: %v", nextMaintenanceTime)
 
-	// 清理中间处理缓存数据
-	dag.mediatorVoteTally = nil
-	dag.mediatorCountHistogram = nil
+	time := time.Unix(int64(nextMaintenanceTime), 0)
+	log.Debugf("nextMaintenanceTime: %v", time.Format("2006-01-02 15:04:05"))
+
+	return
 }
 
 func (dag *Dag) updateMaintenanceFlag(newMaintenanceFlag bool) {
 	log.Debugf("update maintenance flag: %v", newMaintenanceFlag)
+
 	dgp := dag.GetDynGlobalProp()
-
 	dgp.MaintenanceFlag = newMaintenanceFlag
-
 	dag.SaveDynGlobalProp(dgp, false)
 
 	return
