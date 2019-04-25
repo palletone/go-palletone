@@ -87,7 +87,6 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	//producer := new(mediatorplugin.MediatorPlugin)
 	index0 := &modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
 		0,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
@@ -362,7 +361,7 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 func unitForTest(index int) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
-	header.Number.IsMain = true
+	//header.Number.IsMain = true
 	header.Number.Index = uint64(index)
 	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 	header.GroupSign = []byte{}
@@ -378,7 +377,7 @@ func unitForTest(index int) *modules.Unit {
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
 	header.Number.AssetID = modules.PTNCOIN
-	header.Number.IsMain = true
+	//header.Number.IsMain = true
 	header.Number.Index = 0
 	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 	header.GroupSign = []byte{}
@@ -401,7 +400,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 	for i := 0; i < number; i++ {
 		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{})
 		header.Number.AssetID = par.UnitHeader.Number.AssetID
-		header.Number.IsMain = par.UnitHeader.Number.IsMain
+		//header.Number.IsMain = par.UnitHeader.Number.IsMain
 		header.Number.Index = par.UnitHeader.Number.Index + 1
 		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
 		header.GroupSign = []byte{}

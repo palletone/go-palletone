@@ -25,8 +25,8 @@ import (
 	"fmt"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/math"
+	"golang.org/x/crypto/sha3"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -40,7 +40,7 @@ var (
 
 // Keccak256 calculates and returns the Keccak256 hash of the input data.
 func Keccak256(data ...[]byte) []byte {
-	d := sha3.NewKeccak256()
+	d := sha3.New256()
 	for _, b := range data {
 		d.Write(b)
 	}
@@ -50,7 +50,7 @@ func Keccak256(data ...[]byte) []byte {
 // Keccak256Hash calculates and returns the Keccak256 hash of the input data,
 // converting it to an internal Hash data structure.
 func Keccak256Hash(data ...[]byte) (h common.Hash) {
-	d := sha3.NewKeccak256()
+	d := sha3.New256()
 	for _, b := range data {
 		d.Write(b)
 	}
@@ -59,13 +59,13 @@ func Keccak256Hash(data ...[]byte) (h common.Hash) {
 }
 
 // Keccak512 calculates and returns the Keccak512 hash of the input data.
-func Keccak512(data ...[]byte) []byte {
-	d := sha3.NewKeccak512()
-	for _, b := range data {
-		d.Write(b)
-	}
-	return d.Sum(nil)
-}
+//func Keccak512(data ...[]byte) []byte {
+//	d := sha3.NewKeccak512()
+//	for _, b := range data {
+//		d.Write(b)
+//	}
+//	return d.Sum(nil)
+//}
 
 // Creates an ethereum address given the bytes and the nonce
 //func CreateAddress(b common.Address, nonce uint64) common.Address {

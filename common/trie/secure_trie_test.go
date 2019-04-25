@@ -88,7 +88,7 @@ func TestSecureDelete(t *testing.T) {
 		}
 	}
 	hash := trie.Hash()
-	exp := common.HexToHash("29b235a58c3c25ab83010c327d5932bcf05324b7d6b1185e650798034783ca9d")
+	exp := common.HexToHash("f4809d6b8b7fb94f7b32b3eff913f32a774ed57e5d2a1d8572eb5160ecc9f2b0")
 	if hash != exp {
 		t.Errorf("expected %x got %x", exp, hash)
 	}

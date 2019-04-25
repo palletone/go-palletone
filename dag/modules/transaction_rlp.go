@@ -131,8 +131,8 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			var mediatorCreateOp MediatorCreateOperation
 			rlp.DecodeBytes(m.Data, &mediatorCreateOp)
 			m1.Payload = &mediatorCreateOp
-		} else if m.App == OP_ACCOUNT_UPDATE {
-			var accountUpdateOp AccountUpdateOperation
+		} else if m.App == APP_ACCOUNT_UPDATE {
+			var accountUpdateOp AccountStateUpdatePayload
 			rlp.DecodeBytes(m.Data, &accountUpdateOp)
 			m1.Payload = &accountUpdateOp
 		} else {

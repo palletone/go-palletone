@@ -54,7 +54,7 @@ type HeaderJson struct {
 }
 type ChainIndexJson struct {
 	AssetID string `json:"asset_id"`
-	IsMain  bool   `json:"is_main"`
+	//IsMain  bool   `json:"is_main"`
 	Index   uint64 `json:"index"`
 }
 
@@ -86,7 +86,7 @@ func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	}
 	json.Number = ChainIndexJson{
 		AssetID: header.Number.AssetID.String(),
-		IsMain:  header.Number.IsMain,
+		//IsMain:  header.Number.IsMain,
 		Index:   header.Number.Index,
 	}
 	return json
