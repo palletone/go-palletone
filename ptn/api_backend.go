@@ -601,6 +601,11 @@ func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 	return b.ptn.dag.GetFileInfo([]byte(filehash))
 }
 
-func (s *PtnApiBackend) ProofTransaction(txhash common.Hash) (string, error) {
+//SPV
+func (s *PtnApiBackend) ProofTransaction(tx string) (string, error) {
 	return "", nil
+}
+
+func (b *PtnApiBackend) ValidationPath(tx string) ([]byte, error) {
+	return nil, nil
 }

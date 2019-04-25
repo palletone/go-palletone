@@ -118,6 +118,8 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg *sync.WaitGroup
+	//SPV
+	spvTxChn chan reqSpvData
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -143,6 +145,7 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		//quitSync:    quitSync,
 		wg:          new(sync.WaitGroup),
 		noMorePeers: make(chan struct{}),
+		spvTxChn:    make(chan reqSpvData, 50),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -269,11 +272,22 @@ func (pm *ProtocolManager) removePeer(id string) {
 	pm.peers.Unregister(id)
 }
 
+//func (pm *ProtocolManager) loopProof() {
+//	for {
+//		select {
+//		case pm.announceChn <- announce:
+//		case <-pm.quitSync:
+//			return
+//		}
+//	}
+//}
+
 func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	if pm.lightSync {
 		go pm.syncer()
+
 	} else {
 		go func() {
 			for range pm.newPeerCh {

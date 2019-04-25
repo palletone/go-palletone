@@ -212,6 +212,11 @@ web3._extend({
 			call: 'ptn_proofTransaction',
 			params: 1
 		}),
+		new web3._extend.Method({
+			name: 'validationPath',
+			call: 'ptn_validationPath',
+			params: 1
+		}),
 	],
 
 	properties: [

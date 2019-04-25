@@ -829,8 +829,13 @@ func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) *JuryList {
 	return jlist
 }
 
-func (s *PublicBlockChainAPI) ProofTransaction(ctx context.Context, txhash common.Hash) (string, error) {
-	return s.b.ProofTransaction(txhash)
+//SPV
+func (s *PublicBlockChainAPI) ProofTransaction(ctx context.Context, tx string) (string, error) {
+	return s.b.ProofTransaction(tx)
+}
+
+func (s *PublicBlockChainAPI) ValidationPath(ctx context.Context, tx string) ([]byte, error) {
+	return s.b.ValidationPath(tx)
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM

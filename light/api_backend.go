@@ -27,7 +27,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -180,11 +179,6 @@ func (b *LesApiBackend) EventMux() *event.TypeMux {
 
 func (b *LesApiBackend) AccountManager() *accounts.Manager {
 	return b.ptn.accountManager
-}
-
-func (b *LesApiBackend) ProofTransaction(txhash common.Hash) (string, error) {
-	log.Debug("=====================LesApiBackend->ProofTransction=====================")
-	return "LesApiBackend", nil
 }
 
 //func (b *LesApiBackend) BloomStatus() (uint64, uint64) {
@@ -396,7 +390,7 @@ func (b *LesApiBackend) ContractQuery(contractId []byte, txid string, args [][]b
 }
 
 func (b *LesApiBackend) Dag() dag.IDag {
-	return nil
+	return b.Dag()
 }
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
@@ -414,4 +408,13 @@ func (b *LesApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 
 func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
 	return nil, nil
+}
+
+//SPV
+func (b *LesApiBackend) ProofTransaction(tx string) (string, error) {
+	b.ptn.ProtocolManager()
+	return "LesApiBackend-ProofTransaction", nil
+}
+func (b *LesApiBackend) ValidationPath(tx string) ([]byte, error) {
+	return []byte("lll"), nil
 }
