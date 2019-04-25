@@ -188,7 +188,7 @@ func newHeader(txs modules.Transactions) *modules.Header {
 	sign, _ := crypto.Sign(headerHash[:], privKey)
 	header.Authors = modules.Authentifier{PubKey: pubKey, Signature: sign}
 	header.Time = time.Now().Unix()
-	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), true, 1}
+	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
 	return header
 }
 func TestValidate_ValidateHeader(t *testing.T) {

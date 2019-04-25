@@ -667,7 +667,7 @@ func (dlp *downloadTesterPeer) Head(assetId modules.AssetId) (common.Hash, *modu
 	defer dlp.dl.lock.RUnlock()
 	index := &modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		0,
 	}
 	return dlp.dl.peerHashes[dlp.id][0], index
@@ -692,7 +692,7 @@ func (dlp *downloadTesterPeer) RequestHeadersByHash(origin common.Hash, amount i
 	dlp.dl.lock.RUnlock()
 	chainIndex := &modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		number,
 	}
 	// Use the absolute header fetcher to satisfy the query
