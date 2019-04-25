@@ -40,9 +40,9 @@ import (
 	// "github.com/palletone/go-palletone/common/crypto/secp256k1"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/snappy"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -257,10 +257,10 @@ func (h *encHandshake) secrets(auth, authResp []byte) (secrets, error) {
 	}
 
 	// setup sha3 instances for the MACs
-	mac1 := sha3.NewKeccak256()
+	mac1 := sha3.New256()
 	mac1.Write(xor(s.MAC, h.respNonce))
 	mac1.Write(auth)
-	mac2 := sha3.NewKeccak256()
+	mac2 := sha3.New256()
 	mac2.Write(xor(s.MAC, h.initNonce))
 	mac2.Write(authResp)
 	if h.initiator {

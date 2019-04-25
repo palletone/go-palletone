@@ -21,9 +21,9 @@ import (
 	"hash"
 	"sync"
 
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+	"golang.org/x/crypto/sha3"
 )
 
 type hasher struct {
@@ -37,7 +37,7 @@ type hasher struct {
 // hashers live in a global db.
 var hasherPool = sync.Pool{
 	New: func() interface{} {
-		return &hasher{tmp: new(bytes.Buffer), sha: sha3.NewKeccak256()}
+		return &hasher{tmp: new(bytes.Buffer), sha: sha3.New256()}
 	},
 }
 
