@@ -123,7 +123,7 @@ func (s *RwSetTxSimulator) GetTimestamp(contractid []byte, ns string, rangeNumbe
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	header := s.dag.CurrentHeader(gasToken)
 	timeIndex := header.Number.Index / uint64(rangeNumber) * uint64(rangeNumber)
-	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, IsMain: true, Index: timeIndex})
+	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, Index: timeIndex})
 	if err != nil {
 		return nil, errors.New("GetHeaderByNumber failed" + err.Error())
 	}

@@ -33,8 +33,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/crypto/ecies"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"golang.org/x/crypto/sha3"
 )
 
 func TestSharedSecret(t *testing.T) {
@@ -276,12 +276,7 @@ func TestRLPXFrameFake(t *testing.T) {
 		EgressMAC:  hash,
 	})
 
-	golden := unhex(`
-00828ddae471818bb0bfa6b551d1cb42
-01010101010101010101010101010101
-ba628a4ba590cb43f7848f41c4382885
-01010101010101010101010101010101
-`)
+	golden := unhex(`ee4bdf598434add487b2845159762028010101010101010101010101010101012ad9100d3c2ac6652fa799328a635bc201010101010101010101010101010101`)
 
 	// Check WriteMsg. This puts a message into the buffer.
 	if err := Send(rw, 8, []uint{1, 2, 3, 4}); err != nil {
@@ -335,8 +330,8 @@ func TestRLPXFrameRW(t *testing.T) {
 	s1 := secrets{
 		AES:        aesSecret,
 		MAC:        macSecret,
-		EgressMAC:  sha3.NewKeccak256(),
-		IngressMAC: sha3.NewKeccak256(),
+		EgressMAC:  sha3.New256(),
+		IngressMAC: sha3.New256(),
 	}
 	s1.EgressMAC.Write(egressMACinit)
 	s1.IngressMAC.Write(ingressMACinit)
@@ -345,8 +340,8 @@ func TestRLPXFrameRW(t *testing.T) {
 	s2 := secrets{
 		AES:        aesSecret,
 		MAC:        macSecret,
-		EgressMAC:  sha3.NewKeccak256(),
-		IngressMAC: sha3.NewKeccak256(),
+		EgressMAC:  sha3.New256(),
+		IngressMAC: sha3.New256(),
 	}
 	s2.EgressMAC.Write(ingressMACinit)
 	s2.IngressMAC.Write(egressMACinit)

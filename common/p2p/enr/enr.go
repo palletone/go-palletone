@@ -35,9 +35,9 @@ import (
 	"io"
 	"sort"
 
-	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/crypto"
+	"golang.org/x/crypto/sha3"
 )
 
 const SizeLimit = 300 // maximum encoded size of a node record in bytes
@@ -242,7 +242,7 @@ func (r *Record) signAndEncode(privkey *ecdsa.PrivateKey) error {
 	list = r.appendPairs(list)
 
 	// Sign the tail of the list.
-	h := sha3.NewKeccak256()
+	h := sha3.New256()
 	rlp.Encode(h, list[1:])
 	sig, err := crypto.Sign(h.Sum(nil), privkey)
 	if err != nil {
@@ -280,7 +280,7 @@ func (r *Record) verifySignature() error {
 	// Verify the signature.
 	list := make([]interface{}, 0, len(r.pairs)*2+1)
 	list = r.appendPairs(list)
-	h := sha3.NewKeccak256()
+	h := sha3.New256()
 	rlp.Encode(h, list)
 	if !crypto.VerifySignature(entry, h.Sum(nil), r.signature) {
 		return errInvalidSig

@@ -56,7 +56,7 @@ type idxMediatorCreateOperation struct {
 
 type idxAccountUpdateOperation struct {
 	Index int
-	*AccountUpdateOperation
+	*AccountStateUpdatePayload
 }
 
 //install
@@ -171,9 +171,9 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 		} else if msg.App == OP_MEDIATOR_CREATE {
 			temp.MediatorCreateOperation = append(temp.MediatorCreateOperation,
 				&idxMediatorCreateOperation{Index: idx, MediatorCreateOperation: msg.Payload.(*MediatorCreateOperation)})
-		} else if msg.App == OP_ACCOUNT_UPDATE {
+		} else if msg.App == APP_ACCOUNT_UPDATE {
 			temp.AccountUpdateOperation = append(temp.AccountUpdateOperation,
-				&idxAccountUpdateOperation{Index: idx, AccountUpdateOperation: msg.Payload.(*AccountUpdateOperation)})
+				&idxAccountUpdateOperation{Index: idx, AccountStateUpdatePayload: msg.Payload.(*AccountStateUpdatePayload)})
 		} else {
 			return nil, errors.New("Unsupport APP" + strconv.Itoa(int(msg.App)) + " please edit transaction_json.go")
 		}
@@ -248,7 +248,7 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 		processed++
 	}
 	for _, p := range temp.AccountUpdateOperation {
-		tx.TxMessages[p.Index] = NewMessage(OP_ACCOUNT_UPDATE, p.AccountUpdateOperation)
+		tx.TxMessages[p.Index] = NewMessage(APP_ACCOUNT_UPDATE, p.AccountStateUpdatePayload)
 		processed++
 	}
 	if processed < temp.MsgCount {

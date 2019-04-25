@@ -88,11 +88,11 @@ invalidGetbalance
 
 InvalidCcinvoke
     [Arguments]    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}    ${evidence}
-    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${error_code}    ${error_message}
-    ...    ${senderAdd}    ${recieverAdd}    ${recieverAdd1}
+    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${certiId}    ${error_code}
+    ...    ${error_message}    ${senderAdd}    ${recieverAdd}    ${recieverAdd1}
     ${ret}    Given I_set_CcinvokePass_params    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}
-    ...    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${senderAdd}
-    ...    ${recieverAdd}    ${recieverAdd1}
+    ...    ${evidence}    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${certiId}
+    ...    ${senderAdd}    ${recieverAdd}    ${recieverAdd1}
     ${resp}    When I_post_CcinvokePass_request    ${ret}
     ${resultCrt}    Then I_get_the_CcinvokePass_result    ${resp}    ${error_code}    ${error_message}
     [Return]    ${resultCrt}

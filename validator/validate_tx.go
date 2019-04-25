@@ -180,7 +180,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 			}
 
 		case modules.OP_MEDIATOR_CREATE:
-		case modules.OP_ACCOUNT_UPDATE:
+		case modules.APP_ACCOUNT_UPDATE:
 
 		default:
 			return TxValidationCode_UNKNOWN_TX_TYPE, nil
@@ -245,11 +245,6 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.APP_SIGNATURE {
 			return true
 		}
-
-		//case *modules.ConfigPayload:
-		//	if app == modules.APP_CONFIG {
-		//		return true
-		//	}
 	case *modules.DataPayload:
 		if app == modules.APP_DATA {
 			return true
@@ -258,8 +253,8 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		if app == modules.OP_MEDIATOR_CREATE {
 			return true
 		}
-	case *modules.AccountUpdateOperation:
-		if app == modules.OP_ACCOUNT_UPDATE {
+	case *modules.AccountStateUpdatePayload:
+		if app == modules.APP_ACCOUNT_UPDATE {
 			return true
 		}
 	case *modules.ContractDeployRequestPayload:
