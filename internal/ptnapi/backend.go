@@ -153,7 +153,9 @@ type Backend interface {
 
 	GetFileInfo(filehash string) ([]*modules.FileInfo, error)
 
-	ProofTransaction(txhash common.Hash) (string, error)
+	//SPV
+	ProofTransaction(tx string) (string, error)
+	ValidationPath(tx string) ([]byte, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
