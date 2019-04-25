@@ -145,8 +145,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'depositContractInvoke',
         	call: 'ptn_depositContractInvoke',
-        	params: 6, //from, to, daoAmount, daoFee,param[]string, certid
-			inputFormatter: [null, null, null, null, null, null]
+        	params: 5, //from, to, daoAmount, daoFee,param[]string
+			inputFormatter: [null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'depositContractQuery',
