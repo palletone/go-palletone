@@ -214,5 +214,7 @@ func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
 func (dag *Dag) updateChainParameters() {
 	log.Debugf("update chain parameters")
 
+	dag.UpdateSysParams()
+
 	return
 }

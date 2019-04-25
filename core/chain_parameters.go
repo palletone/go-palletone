@@ -32,7 +32,7 @@ type ChainParameters struct {
 	MaintenanceInterval uint32 `json:"maintenanceInterval"`
 
 	// 在维护时跳过的MediatorInterval数量。 number of MediatorInterval to skip at maintenance time
-	MaintenanceSkipSlots uint8
+	MaintenanceSkipSlots uint8 `json:"maintenanceSkipSlots"`
 
 	// 活跃mediator的最大数量。maximum number of active mediators
 	MaximumMediatorCount uint8 `json:"maxMediatorCount"`
