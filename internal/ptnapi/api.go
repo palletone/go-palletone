@@ -636,9 +636,9 @@ func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmoun
 	return rsp, err
 }
 
-func (s *PublicBlockChainAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string, certID string) (string, error) {
+func (s *PublicBlockChainAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
 	log.Info("---enter DepositContractInvoke---")
-	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param, certID)
+	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param, "")
 	return rsp.ReqId, err
 }
 func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
@@ -829,8 +829,13 @@ func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) *JuryList {
 	return jlist
 }
 
-func (s *PublicBlockChainAPI) ProofTransaction(ctx context.Context, txhash common.Hash) (string, error) {
-	return s.b.ProofTransaction(txhash)
+//SPV
+func (s *PublicBlockChainAPI) ProofTransaction(ctx context.Context, tx string) (string, error) {
+	return s.b.ProofTransaction(tx)
+}
+
+func (s *PublicBlockChainAPI) ValidationPath(ctx context.Context, tx string) ([]byte, error) {
+	return s.b.ValidationPath(tx)
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM

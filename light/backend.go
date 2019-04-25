@@ -189,8 +189,8 @@ func (s *LightPalletone) APIs() []rpc.API {
 //	s.blockchain.ResetWithGenesisBlock(gb)
 //}
 
-//func (s *LightPalletone) BlockChain() *light.LightChain      { return s.blockchain }
-func (s *LightPalletone) TxPool() *les.TxPool { return s.txPool }
+func (s *LightPalletone) ProtocolManager() *ProtocolManager { return s.protocolManager }
+func (s *LightPalletone) TxPool() *les.TxPool               { return s.txPool }
 
 //func (s *LightPalletone) Engine() consensus.Engine           { return s.engine }
 func (s *LightPalletone) LesVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
@@ -241,3 +241,8 @@ func (s *LightPalletone) Stop() error {
 
 	return nil
 }
+
+//func (s *LightPalletone) ProofTx(tx string) error {
+//
+//	return nil
+//}

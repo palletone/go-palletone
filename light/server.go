@@ -300,14 +300,7 @@ func (pm *ProtocolManager) blockLoop() {
 					number := header.Number.Index
 					//td := core.GetTd(pm.chainDb, hash, number)
 					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
-						//if td != nil && td.Cmp(lastBroadcastTd) > 0 {
-						//	var reorg uint64
-						//	if lastHead != nil {
-						//		reorg = lastHead.Number.Uint64() - core.FindCommonAncestor(pm.chainDb, header, lastHead).Number.Uint64()
-						//	}
 						lastHead = header
-						//lastBroadcastTd = td
-
 						log.Debug("Announcing block to peers", "number", number, "hash", hash)
 
 						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
