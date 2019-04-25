@@ -58,12 +58,12 @@ I get a Getbalance code and a message
 
 I_set_CcinvokePass_params
     [Arguments]    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}    ${evidence}
-    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${senderAdd}    ${recieverAdd}
-    ...    ${recieverAdd1}
+    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${certiId}    ${senderAdd}
+    ...    ${recieverAdd}    ${recieverAdd1}
     ${ccTokenList}    Create List    ${tokenType}    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}
     ...    ${recieverAdd1}
     ${ccList}    Create List    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}
-    ...    ${ccTokenList}    ${pwd}    ${expiredTime}
+    ...    ${ccTokenList}    ${pwd}    ${expiredTime}    ${certiId}
     [Return]    ${ccList}
 
 I_post_CcinvokePass_request
