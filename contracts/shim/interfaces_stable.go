@@ -112,10 +112,10 @@ type ChaincodeStubInterface interface {
 
 	//retrun local jury's signature
 	SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
-	//return all jury's signature and answer,format:[]JuryMsgSig
-	//type JuryMsgSig struct {
-	//	Signature []byte
-	//	Answer    []byte
+	//return all jury's Address and Address,format:[]JuryMsgAddr
+	//type JuryMsgAddr struct {
+	//	Address string
+	//	Address  []byte
 	//}
 	RecvJury(msgType uint32, consultContent []byte, timeout uint32) ([]byte, error)
 

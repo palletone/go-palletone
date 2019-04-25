@@ -183,11 +183,12 @@ func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent 
 		return nil, errors.New("Not exist consultContent")
 	}
 	if len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig) >= p.contractSigNum {
-		var juryMsgSigAll []JuryMsgSig
-		for _, juryMsgSig := range adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig {
-			juryMsgSigAll = append(juryMsgSigAll, juryMsgSig)
+		var juryMsgAddrAll []JuryMsgAddr
+		for pubkey, juryMsgSig := range adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig {
+			addr := crypto.PubkeyBytesToAddress(common.Hex2Bytes(pubkey))
+			juryMsgAddrAll = append(juryMsgAddrAll, JuryMsgAddr{addr.String(), juryMsgSig.Answer})
 		}
-		result, err := json.Marshal(juryMsgSigAll)
+		result, err := json.Marshal(juryMsgAddrAll)
 		return result, err
 	}
 	log.Debugf("Not enough %d", len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig))

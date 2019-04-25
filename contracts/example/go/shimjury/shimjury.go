@@ -55,9 +55,9 @@ func (p *ShimJury) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 
-type JuryMsgSig struct {
-	Signature []byte
-	Answer    []byte
+type JuryMsgAddr struct {
+	Address string
+	Answer  []byte
 }
 
 func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
@@ -67,7 +67,7 @@ func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error("SendJury failed")
 	}
 	log.Debugf("sendresult: %s", common.Bytes2Hex(sendresult))
-	result, err := stub.RecvJury(1, []byte("hello"), 5)
+	result, err := stub.RecvJury(1, []byte("hello"), 2)
 	if err != nil {
 		log.Debugf("result err: %s", err.Error())
 		err = stub.PutState("result", []byte(err.Error()))
@@ -76,7 +76,7 @@ func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		}
 	} else {
 		log.Debugf("result: %s", string(result))
-		var juryMsg []JuryMsgSig
+		var juryMsg []JuryMsgAddr
 		err := json.Unmarshal(result, &juryMsg)
 		if err != nil {
 			return shim.Error("Unmarshal result failed: " + string(result))
@@ -100,14 +100,14 @@ func test1(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte("RecvJury failed"))
 }
 func test2(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	result, err := stub.RecvJury(1, []byte("hello"), 5)
+	result, err := stub.RecvJury(1, []byte("hello"), 2)
 	if err != nil {
 		log.Debugf("result err: %s", err.Error())
 		stub.PutState("result2", []byte(err.Error()))
 		return shim.Success([]byte("RecvJury failed"))
 	} else {
 		log.Debugf("result: #%v\n", result)
-		var juryMsg []JuryMsgSig
+		var juryMsg []JuryMsgAddr
 		err := json.Unmarshal(result, &juryMsg)
 		if err != nil {
 			return shim.Error("Unmarshal result failed: " + string(result))

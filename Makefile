@@ -31,6 +31,8 @@ swarm:
 all:
 	build/env.sh go run build/ci.go install
 
+golang-baseimage: 
+	docker build -t palletone/goimg vm/baseimages/platforms/golang/
 docker:
 	@mkdir -p $(BUILD_DIR)/images/gptn
 	@cat images/gptn/Dockerfile.in \
