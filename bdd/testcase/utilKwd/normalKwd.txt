@@ -62,7 +62,7 @@ I_set_CcinvokePass_params_to_Normal
     ${ccTokenList}    Create List    createToken    evidence    ${tokenId}    ${tokenDecimal}    ${tokenAmount}
     ...    ${recieverAdd}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${amount}    ${poundage}    ${contractId}
-    ...    ${ccTokenList}    1    ${600000}
+    ...    ${ccTokenList}    1    ${600000}    ${EMPTY}
     [Return]    ${ccList}
 
 I_post_a_CcinvokePass_request

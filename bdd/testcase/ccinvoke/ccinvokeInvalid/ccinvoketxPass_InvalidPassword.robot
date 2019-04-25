@@ -18,10 +18,10 @@ ${method}         ptn_ccinvoketxPass
 Scenario: invalidPassword
     [Template]    InvalidCcinvoke
     200    2    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
-    ...    1000    2    ${6000}    -32000    could not decrypt key with given passphrase    ${listAccounts[0]}
+    ...    1000    2    ${6000}    ${Empty}    -32000    could not decrypt key with given passphrase    ${listAccounts[0]}
     ...    ${listAccounts[1]}    ${listAccounts[1]}
     200    ${EMPTY}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    createToken    QA666    evidence    2
-    ...    1000    2    ${6000}    -32000    could not decrypt key with given passphrase    ${listAccounts[0]}
+    ...    1000    2    ${6000}    ${Empty}    -32000    could not decrypt key with given passphrase    ${listAccounts[0]}
     ...    ${listAccounts[1]}    ${listAccounts[1]}
 
 *** Keywords ***
