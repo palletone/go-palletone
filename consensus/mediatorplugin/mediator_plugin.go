@@ -20,7 +20,6 @@
 package mediatorplugin
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -31,21 +30,16 @@ import (
 	"github.com/palletone/go-palletone/core"
 )
 
-var (
-	errTerminated = errors.New("terminated")
-)
-
-func newChainBanner(dag iDag) {
-	fmt.Printf("\n" +
+func (mp *MediatorPlugin) newChainBanner() {
+	log.Infof("\n" +
 		"*   ------- NEW CHAIN -------   *\n" +
 		"*   - Welcome to PalletOne! -   *\n" +
 		"*   -------------------------   *\n" +
 		"\n")
 
-	if dag.GetSlotAtTime(time.Now()) > 200 {
-		fmt.Printf("Your genesis seems to have an old timestamp\n" +
-			"Please consider using the --genesistime option to give your genesis a recent timestamp\n" +
-			"\n")
+	if mp.dag.GetSlotAtTime(time.Now()) > 200 {
+		log.Debugf("Your genesis seems to have an old timestamp. " +
+			"Please consider using the --genesistime option to give your genesis a recent timestamp.")
 	}
 }
 

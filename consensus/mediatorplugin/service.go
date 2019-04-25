@@ -195,15 +195,14 @@ func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	// 1. 判断是否满足生产unit的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
-		println("No mediators configured! Please add mediator and private keys to configuration.")
+		log.Debugf("No mediators configured! Please add mediator and private keys to configuration.")
 	} else {
 		// 2. 开启循环生产计划
 		log.Infof("Launching unit production for %v mediators.", len(mp.mediators))
 
 		if mp.productionEnabled {
-			dag := mp.dag
-			if dag.HeadUnitNum() == 0 {
-				newChainBanner(dag)
+			if mp.dag.HeadUnitNum() == 0 {
+				mp.newChainBanner()
 			}
 		}
 
