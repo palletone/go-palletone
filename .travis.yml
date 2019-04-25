@@ -19,7 +19,11 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     #- sudo find / -name "decimal.py"
+<<<<<<< HEAD
     #- ./deposit_test.sh 4
+=======
+    - ./deposit_test.sh 4
+>>>>>>> master
     - python -m robot.run ../testcase/createTrans
     - python -m robot.run ../testcase/ccinvoke
     #- python -m robot.run ../testcase/ccinvoke/transferToken 
