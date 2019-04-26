@@ -156,11 +156,11 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
 
 	//配置测试的基金会地址及密码
-	account, _, err = createExampleAccount(ctx)
-	if err != nil {
-		return err
-	}
-	genesisState.SystemConfig.FoundationAddress = account
+	//account, _, err = createExampleAccount(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//genesisState.SystemConfig.FoundationAddress = account
 
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(genesisState, "", "  ")

@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	"github.com/dedis/kyber"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
@@ -41,7 +42,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (
@@ -185,7 +185,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		electionNum:    cfg.ElectionNum,
 		contractSigNum: cfg.ContractSigNum,
 		validator:      validator,
-		errMsgEnable:   false,
+		errMsgEnable:   true,
 	}
 
 	log.Info("NewContractProcessor ok", "local address:", p.local, "electionNum", p.electionNum)
@@ -634,7 +634,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		if contractId == (common.Address{}) { //deploy
 			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
 			if ele, ok := p.lockVrf[cId]; !ok || len(ele) < p.electionNum {
-				p.lockVrf[cId] = []modules.ElectionInf{} //清空
+				p.lockVrf[cId] = []modules.ElectionInf{}                       //清空
 				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 					return common.Hash{}, nil, err
 				}

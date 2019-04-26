@@ -79,6 +79,8 @@ type InvokeJson struct {
 	ReadSet      string   `json:"read_set"`  // the set data of read, and value could be any type
 	WriteSet     string   `json:"write_set"` // the set data of write, and value could be any type
 	Payload      []byte   `json:"payload"`   // the contract execution result
+	ErrorCode    uint32   `json:"error_code"`
+	ErrorMessage string   `json:"error_message"`
 }
 type StopJson struct {
 	ContractId string   `json:"contract_id"`
@@ -237,6 +239,10 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	wset, _ := json.Marshal(invoke.WriteSet)
 	injson.WriteSet = string(wset)
 	injson.Payload = invoke.Payload
+	//if invoke.ErrMsg!=nil{
+	injson.ErrorCode = invoke.ErrMsg.Code
+	injson.ErrorMessage = invoke.ErrMsg.Message
+	//}
 	return injson
 }
 func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
