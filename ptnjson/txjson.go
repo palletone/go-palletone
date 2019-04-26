@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -52,12 +53,13 @@ type TxWithUnitInfoJson struct {
 	TxIndex    uint64    `json:"tx_index"`
 }
 type TplJson struct {
-	TemplateId string `json:"template_id"`
-	Name       string `json:"name"`
-	Path       string `json:"path"`
-	Version    string `json:"version"`
-	Memory     uint16 `json:"memory"`
-	Bytecode   []byte `json:"bytecode"` // contract bytecode
+	TemplateId   string `json:"template_id"`
+	Name         string `json:"name"`
+	Path         string `json:"path"`
+	Version      string `json:"version"`
+	Memory       uint16 `json:"memory"`
+	Bytecode     []byte `json:"bytecode"`      // contract bytecode
+	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
 }
 type DeployJson struct {
 	TemplateId string   `json:"template_id"`
@@ -188,12 +190,13 @@ func ConvertJson2Tx(json *TxJson) *modules.Transaction {
 }
 func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson := new(TplJson)
-	hash := common.BytesToHash(tpl.TemplateId[:])
-	tpljson.TemplateId = hash.String()
+	//hash := common.BytesToHash(tpl.TemplateId[:])
+	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
 	tpljson.Name = tpl.Name
 	tpljson.Path = tpl.Path
 	tpljson.Version = tpl.Version
 	tpljson.Bytecode = tpl.Bytecode[:]
+	tpljson.BytecodeSize = len(tpl.Bytecode[:])
 	tpljson.Memory = tpl.Memory
 	return tpljson
 }

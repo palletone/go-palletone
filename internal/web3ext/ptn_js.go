@@ -76,60 +76,14 @@ web3._extend({
 			params: 2,
 			inputFormatter: [web3._extend.formatters.inputBlockNumberFormatter, web3._extend.utils.toHex]
 		}),
-		new web3._extend.Method({
-			name: 'ccinvoke',
-			call: 'ptn_ccinvoke',
-			params: 3,
-			inputFormatter: [null,null,null]
-		}),
+		
 		new web3._extend.Method({
 			name: 'transferToken',
 			call: 'ptn_transferToken',
 			params: 8,
 			inputFormatter: [null,null,null,null,null,null,null,null]
 		}),
-		new web3._extend.Method({
-			name: 'ccinstalltx',
-        	call: 'ptn_ccinstalltx',
-        	params: 7, //from, to , daoAmount, daoFee , tplName, path, version
-			inputFormatter: [null, null, null,null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccdeploytx',
-        	call: 'ptn_ccdeploytx',
-        	params: 6, //from, to , daoAmount, daoFee , templateId , args  
-			inputFormatter: [null, null, null,null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccinvoketx',
-        	call: 'ptn_ccinvoketx',
-        	params: 7, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid
-			inputFormatter: [null, null, null,null, null, null, null]
-		}),
-        new web3._extend.Method({
-			name: 'ccinvoketxPass',
-			call: 'ptn_ccinvoketxPass',
-			params: 9, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration, certid
-			inputFormatter: [null, null, null,null, null, null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccinvokeToken',
-        	call: 'ptn_ccinvokeToken',
-        	params: 9, //from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null, null,null, null, null,null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccquery',
-			call: 'ptn_ccquery',
-			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
-			inputFormatter: [null,null]
-		}),
-		new web3._extend.Method({
-			name: 'ccstoptx',
-        	call: 'ptn_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
-		}),
+		
 		new web3._extend.Method({
 			name: 'setJuryAccount',
         	call: 'ptn_setJuryAccount',
@@ -142,18 +96,7 @@ web3._extend({
         	params: 0, //
 			inputFormatter: []
 		}),
-		new web3._extend.Method({
-			name: 'depositContractInvoke',
-        	call: 'ptn_depositContractInvoke',
-        	params: 5, //from, to, daoAmount, daoFee,param[]string
-			inputFormatter: [null, null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'depositContractQuery',
-        	call: 'ptn_depositContractQuery',
-        	params: 1, //param[]string
-			inputFormatter: [null]
-		}),
+		
 		new web3._extend.Method({
 			name: 'transferPtn',
 			call: 'ptn_transferPtn',
