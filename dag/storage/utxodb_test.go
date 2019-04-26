@@ -26,9 +26,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/dag/constants"
+
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetUtxos(t *testing.T) {
@@ -57,28 +57,31 @@ func TestGetUtxos(t *testing.T) {
 		log.Debugf("key:%s", key.ToKey())
 		log.Debugf("utxo value:%s", u)
 	}
-	result := utxodb.GetPrefix(constants.UTXO_PREFIX)
-	for key, b := range result {
-		log.Debugf("result::%s", key)
-		utxo := new(modules.Utxo)
-		err := rlp.DecodeBytes(b, utxo)
-		if err != nil {
-			log.Errorf("utxo error:%s ", err)
-		}
-	}
-
-	result1 := utxodb.GetPrefix(constants.AddrOutPoint_Prefix)
-	for key, b := range result1 {
-		log.Debugf("result:", key)
-		out := new(modules.OutPoint)
-		rlp.DecodeBytes(b, out)
-		log.Debugf("outpoint ", err, out)
-		if utxo_byte, err := db.Get(out.ToKey()); err != nil {
-			log.Errorf("get utxo from outpoint error:%s", err)
-		} else {
-			utxo := new(modules.Utxo)
-			err := rlp.DecodeBytes(utxo_byte, utxo)
-			log.Errorf("get utxo by outpoint :%s,%s", err, utxo)
-		}
-	}
+	queryUtxo,err:=utxodb.GetUtxoEntry(key)
+	assert.Nil(t,err)
+	assert.Equal(t,utxo.Bytes(),queryUtxo.Bytes())
+	//result := utxodb.GetPrefix(constants.UTXO_PREFIX)
+	//for key, b := range result {
+	//	log.Debugf("result::%s", key)
+	//	utxo := new(modules.Utxo)
+	//	err := rlp.DecodeBytes(b, utxo)
+	//	if err != nil {
+	//		log.Errorf("utxo error:%s ", err)
+	//	}
+	//}
+	//
+	//result1 := utxodb.GetPrefix(constants.AddrOutPoint_Prefix)
+	//for key, b := range result1 {
+	//	log.Debugf("result:", key)
+	//	out := new(modules.OutPoint)
+	//	rlp.DecodeBytes(b, out)
+	//	log.Debugf("outpoint ", err, out)
+	//	if utxo_byte, err := db.Get(out.ToKey()); err != nil {
+	//		log.Errorf("get utxo from outpoint error:%s", err)
+	//	} else {
+	//		utxo := new(modules.Utxo)
+	//		err := rlp.DecodeBytes(utxo_byte, utxo)
+	//		log.Errorf("get utxo by outpoint :%s,%s", err, utxo)
+	//	}
+	//}
 }

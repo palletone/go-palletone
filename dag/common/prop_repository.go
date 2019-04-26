@@ -20,14 +20,15 @@
 package common
 
 import (
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"time"
-	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type PropRepository struct {
@@ -47,20 +48,21 @@ type IPropRepository interface {
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
-	UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty) bool
+	UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty,
+		dgp *modules.DynamicGlobalProperty) bool
 	GetSlotTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, slotNum uint32) time.Time
 	GetSlotAtTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, when time.Time) uint32
 
-	SaveChaincode(contractId common.Address,cc *list.CCInfo) error
-	GetChaincodes(contractId common.Address) (*list.CCInfo,error)
+	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
+	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
 }
 
-func (pRep *PropRepository) GetChaincodes(contractId common.Address) (*list.CCInfo,error) {
+func (pRep *PropRepository) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
 	return pRep.db.GetChaincodes(contractId)
 }
 
-func (pRep *PropRepository) SaveChaincode(contractId common.Address,cc *list.CCInfo) error {
-	return pRep.db.SaveChaincode(contractId,cc)
+func (pRep *PropRepository) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
+	return pRep.db.SaveChaincode(contractId, cc)
 }
 
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
@@ -175,7 +177,8 @@ If slotNum == 0, return time.Unix(0,0).
 如果slotNum == N 且 N > 0，则返回大于UnitTime的第N个单元验证间隔的对齐时间
 If slotNum == N for N > 0, return the Nth next unit-interval-aligned time greater than head_block_time().
 */
-func (pRep *PropRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, slotNum uint32) time.Time {
+func (pRep *PropRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty,
+	slotNum uint32) time.Time {
 	if slotNum == 0 {
 		return time.Unix(0, 0)
 	}
@@ -196,24 +199,27 @@ func (pRep *PropRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *modules
 	// 最近的unit的绝对slot
 	var unitAbsSlot = ts / int64(interval)
 	// 最近的时间槽起始时间
-	unitSlotTime := time.Unix(unitAbsSlot*int64(interval), 0)
+	headSlotTime := time.Unix(unitAbsSlot*int64(interval), 0)
 
-	// 在此处添加区块链网络参数修改维护的所需要的slot
+	// 添加区块链网络参数修改维护时所需跳过的slot
+	if dgp.MaintenanceFlag {
+		slotNum += uint32(gp.ChainParameters.MaintenanceSkipSlots)
+	}
 
-	/**
-	如果是维护周期的话，加上维护间隔时间
-	如果不是，就直接加上unit的slot时间
-	*/
-	// "slot 1" is UnitSlotTime,
-	// plus maintenance interval if last uint is a maintenance Unit
-	// plus Unit interval if last uint is not a maintenance Unit
-	return unitSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
+	// 如果是维护周期的话，加上维护间隔时间
+	// 如果不是，就直接加上unit的slot时间
+	// "slot 0" is headSlotTime
+	// "slot 1" is headSlotTime,
+	// plus maintenance interval if head uint is a maintenance Unit
+	// plus Unit interval if head uint is not a maintenance Unit
+	return headSlotTime.Add(time.Second * time.Duration(slotNum) * time.Duration(interval))
 }
 
 /**
 获取在给定时间或之前出现的最近一个slot。 Get the last slot which occurs AT or BEFORE the given time.
 */
-func (pRep *PropRepository) GetSlotAtTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, when time.Time) uint32 {
+func (pRep *PropRepository) GetSlotAtTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty,
+	when time.Time) uint32 {
 	/**
 	返回值是所有满足 GetSlotTime（N）<= when 中最大的N
 	The return value is the greatest value N such that GetSlotTime( N ) <= when.

@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -91,7 +92,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		return ""
 	}
 	number.Index = uint64(index)
-	number.IsMain = true
+	//number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
@@ -146,7 +147,7 @@ func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition str
 		return ""
 	}
 	number.Index = uint64(index)
-	number.IsMain = true
+	//number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
@@ -350,15 +351,17 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 //}
 
 func (s *PublicDagAPI) HeadUnitHash() string {
-	return "unknown" //s.b.Dag().HeadUnitHash().TerminalString()
+	return s.b.Dag().HeadUnitHash().TerminalString()
+	//return "unknown"
 }
 
 func (s *PublicDagAPI) HeadUnitTime() string {
-	//time := time.Unix(s.b.Dag().HeadUnitTime(), 0)
-	//return time.Format("2006-01-02 15:04:05 -0700 MST")
-	return "1972-0-0"
+	time := time.Unix(s.b.Dag().HeadUnitTime(), 0)
+	return time.Format("2006-01-02 15:04:05 -0700 MST")
+	//return "1972-0-0"
 }
 
 func (s *PublicDagAPI) HeadUnitNum() uint64 {
-	return uint64(0) //s.b.Dag().HeadUnitNum()
+	return s.b.Dag().HeadUnitNum()
+	//return uint64(0)
 }

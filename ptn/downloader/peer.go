@@ -168,7 +168,7 @@ func (p *peerConnection) FetchHeaders(from uint64, count int, assetId modules.As
 
 	index := &modules.ChainIndex{
 		AssetID: assetId,
-		IsMain:  true,
+		//IsMain:  true,
 		Index:   from,
 	}
 

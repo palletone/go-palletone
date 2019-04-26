@@ -24,25 +24,26 @@ import (
 	"encoding/json"
 	"time"
 
+	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type TxJson struct {
-	TxHash         string              `json:"tx_hash"`
-	TxSize         float64             `json:"tx_size"`
-	Payment        *PaymentJson        `json:"payment"`
-	Vote           *VoteJson           `json:"vote"`
-	Data           *DataJson           `json:"data"`
-	ContractTpl    *TplJson            `json:"contract_tpl"`
-	Deploy         *DeployJson         `json:"contract_deploy"`
-	Invoke         *InvokeJson         `json:"contract_invoke"`
-	Stop           *StopJson           `json:"contract_stop"`
-	Signature      *SignatureJson      `json:"signature"`
-	InstallRequest *InstallRequestJson `json:"install_request"`
-	DeployRequest  *DeployRequestJson  `json:"deploy_request"`
-	InvokeRequest  *InvokeRequestJson  `json:"invoke_request"`
-	StopRequest    *StopRequestJson    `json:"stop_request"`
+	TxHash             string              `json:"tx_hash"`
+	TxSize             float64             `json:"tx_size"`
+	Payment            *PaymentJson        `json:"payment"`
+	AccountStateUpdate *AccountStateJson   `json:"account_state_update"`
+	Data               *DataJson           `json:"data"`
+	ContractTpl        *TplJson            `json:"contract_tpl"`
+	Deploy             *DeployJson         `json:"contract_deploy"`
+	Invoke             *InvokeJson         `json:"contract_invoke"`
+	Stop               *StopJson           `json:"contract_stop"`
+	Signature          *SignatureJson      `json:"signature"`
+	InstallRequest     *InstallRequestJson `json:"install_request"`
+	DeployRequest      *DeployRequestJson  `json:"deploy_request"`
+	InvokeRequest      *InvokeRequestJson  `json:"invoke_request"`
+	StopRequest        *StopRequestJson    `json:"stop_request"`
 }
 type TxWithUnitInfoJson struct {
 	*TxJson
@@ -58,6 +59,8 @@ type TplJson struct {
 	Version    string `json:"version"`
 	Memory     uint16 `json:"memory"`
 	Bytecode   []byte `json:"bytecode"` // contract bytecode
+	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
+	AddrHash   string `json:"addr_hash"`
 }
 type DeployJson struct {
 	TemplateId string   `json:"template_id"`
@@ -76,6 +79,8 @@ type InvokeJson struct {
 	ReadSet      string   `json:"read_set"`  // the set data of read, and value could be any type
 	WriteSet     string   `json:"write_set"` // the set data of write, and value could be any type
 	Payload      []byte   `json:"payload"`   // the contract execution result
+	ErrorCode    uint32   `json:"error_code"`
+	ErrorMessage string   `json:"error_message"`
 }
 type StopJson struct {
 	ContractId string   `json:"contract_id"`
@@ -85,10 +90,6 @@ type StopJson struct {
 }
 type SignatureJson struct {
 	Signatures []string `json:"signature_set"` // the array of signature
-}
-
-type VoteJson struct {
-	Content string `json:"vote_content"`
 }
 
 type InvokeRequestJson struct {
@@ -118,6 +119,9 @@ type StopRequestJson struct {
 type DataJson struct {
 	MainData  string `json:"main_data"`
 	ExtraData string `json:"extra_data"`
+}
+type AccountStateJson struct {
+	WriteSet string `json:"write_set"`
 }
 
 func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxWithUnitInfoJson {
@@ -174,6 +178,9 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 		} else if m.App == modules.APP_SIGNATURE {
 			sig := m.Payload.(*modules.SignaturePayload)
 			txjson.Signature = convertSig2Json(sig)
+		} else if m.App == modules.APP_ACCOUNT_UPDATE {
+			acc := m.Payload.(*modules.AccountStateUpdatePayload)
+			txjson.AccountStateUpdate = convertAccountState2Json(acc)
 		}
 	}
 	return txjson
@@ -186,13 +193,18 @@ func ConvertJson2Tx(json *TxJson) *modules.Transaction {
 }
 func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson := new(TplJson)
-	hash := common.BytesToHash(tpl.TemplateId[:])
-	tpljson.TemplateId = hash.String()
+	//hash := common.BytesToHash(tpl.TemplateId[:])
+	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
 	tpljson.Name = tpl.Name
 	tpljson.Path = tpl.Path
 	tpljson.Version = tpl.Version
-	tpljson.Bytecode = tpl.Bytecode[:]
+	tpljson.Bytecode = tpl.ByteCode[:]
+	tpljson.BytecodeSize = len(tpl.ByteCode[:])
 	tpljson.Memory = tpl.Memory
+
+	ah, _ := json.Marshal(tpl.AddrHash)
+	tpljson.AddrHash = string(ah)
+
 	return tpljson
 }
 func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
@@ -227,6 +239,10 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	wset, _ := json.Marshal(invoke.WriteSet)
 	injson.WriteSet = string(wset)
 	injson.Payload = invoke.Payload
+	//if invoke.ErrMsg!=nil{
+	injson.ErrorCode = invoke.ErrMsg.Code
+	injson.ErrorMessage = invoke.ErrMsg.Message
+	//}
 	return injson
 }
 func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
@@ -286,4 +302,10 @@ func convertStopRequest2Json(req *modules.ContractStopRequestPayload) *StopReque
 	reqJson.Txid = req.Txid
 
 	return reqJson
+}
+func convertAccountState2Json(accountState *modules.AccountStateUpdatePayload) *AccountStateJson {
+	jsonAcc := &AccountStateJson{}
+	writeSet, _ := json.Marshal(accountState.WriteSet)
+	jsonAcc.WriteSet = string(writeSet)
+	return jsonAcc
 }

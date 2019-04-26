@@ -20,11 +20,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"sync"
 	"time"
 
-	"sync/atomic"
-
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
+	"sync/atomic"
 	//"github.com/palletone/go-palletone/ptn/lps"
 	"github.com/palletone/go-palletone/validator"
 )
@@ -70,10 +71,10 @@ type ProtocolManager struct {
 	networkId uint64
 	srvr      *p2p.Server
 	//protocolName string
-	mainAssetId modules.AssetId
-
-	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
-	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
+	mainAssetId   modules.AssetId
+	receivedCache palletcache.ICache
+	fastSync      uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
+	acceptTxs     uint32 // Flag whether we're considered synchronised (enables transaction processing)
 
 	lightSync uint32 //Flag whether light sync is enabled
 
@@ -158,14 +159,15 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		consEngine: engine,
 		peers:      newPeerSet(),
 		//lightPeers:   newPeerSet(),
-		newPeerCh:    make(chan *peer),
-		noMorePeers:  make(chan struct{}),
-		txsyncCh:     make(chan *txsync),
-		quitSync:     make(chan struct{}),
-		genesis:      genesis,
-		producer:     producer,
-		contractProc: contractProc,
-		lightSync:    uint32(1),
+		newPeerCh:     make(chan *peer),
+		noMorePeers:   make(chan struct{}),
+		txsyncCh:      make(chan *txsync),
+		quitSync:      make(chan struct{}),
+		genesis:       genesis,
+		producer:      producer,
+		contractProc:  contractProc,
+		lightSync:     uint32(1),
+		receivedCache: freecache.NewCache(5 * 1024 * 1024),
 	}
 	symbol, _, _, _, _ := gasToken.ParseAssetId()
 	protocolName := symbol
@@ -244,6 +246,13 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	//manager.lightFetcher = manager.newLightFetcher()
 	return manager, nil
 }
+func (pm *ProtocolManager) IsExistInCache(id []byte) bool {
+	_, err := pm.receivedCache.Get(id)
+	if err != nil { //Not exist, add it!
+		pm.receivedCache.Set(id, nil, 60*5)
+	}
+	return err == nil
+}
 
 func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	validatorFn := func(unit *modules.Unit) error {
@@ -253,9 +262,9 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		defer log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s", hash.String())
 		verr := pm.dag.ValidateUnitExceptGroupSig(unit)
 		if verr != nil && !validator.IsOrphanError(verr) {
-			return dagerrors.ErrFutureBlock
+			return verr
 		}
-		return nil
+		return dagerrors.ErrFutureBlock
 	}
 	heighter := func(assetId modules.AssetId) uint64 {
 		unit := pm.dag.GetCurrentUnit(assetId)

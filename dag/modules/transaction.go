@@ -547,8 +547,8 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(MediatorCreateOperation)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == OP_ACCOUNT_UPDATE {
-				payload := new(AccountUpdateOperation)
+			} else if msg.App == APP_ACCOUNT_UPDATE {
+				payload := new(AccountStateUpdatePayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
 			}

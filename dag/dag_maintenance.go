@@ -62,6 +62,7 @@ func (vts voteTallys) Swap(i, j int) {
 
 // 获取账户相关投票数据的直方图
 func (dag *Dag) performAccountMaintenance() {
+	log.Debugf("Tally account voting mediators and setting mediators' count")
 	// 1. 初始化数据
 	dag.totalVotingStake = 0
 
@@ -73,6 +74,16 @@ func (dag *Dag) performAccountMaintenance() {
 	maxMediatorCount := dag.GetChainParameters().MaximumMediatorCount
 	dag.mediatorCountHistogram = make([]uint64, maxMediatorCount/2+1)
 
+	// 2. 遍历所有账户
+	allAccount := dag.LookupAccount()
+	mediatorVoteCount := make(map[common.Address]uint64)
+	for _, info := range allAccount {
+		//votingStake := dag.unstableStateRep.GetAccountBalance(addr)
+		// 累加投票数量
+		mediatorVoteCount[info.VotedMediator] += info.Balance
+		dag.totalVotingStake += info.Balance
+	}
+
 	index := 0
 	for mediator, _ := range mediators {
 		// 建立 mediator 地址和index 的映射关系
@@ -80,52 +91,57 @@ func (dag *Dag) performAccountMaintenance() {
 
 		// 初始化 mediator 的投票数据
 		voteTally := newVoteTally(mediator)
+		count := mediatorVoteCount[mediator]
+		voteTally.votedCount = count
 		dag.mediatorVoteTally[index] = voteTally
 
 		index++
 	}
 
-	minFn := func(x, y int) int {
-		if x < y {
-			return x
-		}
-		return y
-	}
+	//minFn := func(x, y int) int {
+	//	if x < y {
+	//		return x
+	//	}
+	//	return y
+	//}
 
 	// 2. 遍历所有账户
-	allAccount := dag.LookupAccount()
-	for addr, info := range allAccount {
-		votingStake := dag.unstableStateRep.GetAccountBalance(addr)
+	//allAccount := dag.LookupAccount()
+	//mediatorVoteCount := make(map[common.Address]uint64)
+	//for _, info := range allAccount {
+	//votingStake := dag.unstableStateRep.GetAccountBalance(addr)
+	// 累加投票数量
+	//dag.mediatorVoteTally[index].votedCount += info.Balance
+	//mediatorVoteCount[info.VotedMediator] += info.Balance
+	//// 遍历该账户投票的mediator
+	//for med, _ := range info.VotedMediators {
+	//	index, ok := mediatorIndex[med]
+	//
+	//	// if they somehow managed to specify an illegal mediator index, ignore it.
+	//	if !ok {
+	//		continue
+	//	}
+	//
+	//	// 累加投票数量
+	//	dag.mediatorVoteTally[index].votedCount += votingStake
+	//}
+	//
+	//// 统计该账户设置的活跃mediator数量
+	//desiredMediatorCount := info.DesiredMediatorCount
+	//if desiredMediatorCount <= maxMediatorCount {
+	//	offset := minFn(int(desiredMediatorCount/2), len(dag.mediatorCountHistogram)-1)
+	//
+	//	// votes for a number greater than MaximumMediatorCount
+	//	// are turned into votes for MaximumMediatorCount.
+	//	//
+	//	// in particular, this takes care of the case where a
+	//	// member was voting for a high number, then the
+	//	// parameter was lowered.
+	//	dag.mediatorCountHistogram[offset] += votingStake
+	//}
 
-		// 遍历该账户投票的mediator
-		for med, _ := range info.VotedMediators {
-			index, ok := mediatorIndex[med]
-
-			// if they somehow managed to specify an illegal mediator index, ignore it.
-			if !ok {
-				continue
-			}
-
-			// 累加投票数量
-			dag.mediatorVoteTally[index].votedCount += votingStake
-		}
-
-		// 统计该账户设置的活跃mediator数量
-		desiredMediatorCount := info.DesiredMediatorCount
-		if desiredMediatorCount <= maxMediatorCount {
-			offset := minFn(int(desiredMediatorCount/2), len(dag.mediatorCountHistogram)-1)
-
-			// votes for a number greater than MaximumMediatorCount
-			// are turned into votes for MaximumMediatorCount.
-			//
-			// in particular, this takes care of the case where a
-			// member was voting for a high number, then the
-			// parameter was lowered.
-			dag.mediatorCountHistogram[offset] += votingStake
-		}
-
-		dag.totalVotingStake += votingStake
-	}
+	//	dag.totalVotingStake += info.Balance
+	//}
 }
 
 func (dag *Dag) updateActiveMediators() bool {
@@ -208,4 +224,12 @@ func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
 	}
 
 	return false
+}
+
+func (dag *Dag) updateChainParameters() {
+	log.Debugf("update chain parameters")
+
+	dag.UpdateSysParams()
+
+	return
 }

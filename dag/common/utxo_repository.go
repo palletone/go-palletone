@@ -20,16 +20,13 @@ package common
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"unsafe"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	award2 "github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
@@ -64,7 +61,7 @@ type IUtxoRepository interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
-	ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
+	//ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
 
@@ -102,92 +99,92 @@ func (repository *UtxoRepository) SaveUtxoEntity(outpoint *modules.OutPoint, utx
 根据用户地址、选择的资产类型、转账金额、手续费返回utxo
 Return utxo struct and his total amount according to user's address, asset type
 */
-func (repository *UtxoRepository) ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
-
-	if dagconfig.DagConfig.UtxoIndex {
-		return repository.readUtxosByIndex(addr, asset)
-	} else {
-		return repository.readUtxosFrAll(addr, asset)
-	}
-}
+//func (repository *UtxoRepository) ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
+//
+//	if dagconfig.DagConfig.UtxoIndex {
+//		return repository.readUtxosByIndex(addr, asset)
+//	} else {
+//		return repository.readUtxosFrAll(addr, asset)
+//	}
+//}
 
 /**
 根据UTXO索引数据库读取UTXO信息
 To get utxo info by utxo index db
 */
-func (repository *UtxoRepository) readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
-	// step1. read outpoint from utxo index
-	utxoIndex := modules.UtxoIndex{
-		AccountAddr: addr,
-		Asset:       &asset,
-	}
-	key := utxoIndex.AssetKey()
-	data := repository.utxodb.GetPrefix([]byte(key))
-	if data == nil {
-		return nil, 0
-	}
-	// step2. get utxo
-	vout := map[modules.OutPoint]*modules.Utxo{}
-	balance := uint64(0)
-	for k := range data {
-		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
-			continue
-		}
-		utxo, err := repository.utxodb.GetUtxoEntry(utxoIndex.OutPoint)
-		if err != nil {
-			log.Error("Get utxo error by outpoint", "error:", err.Error())
-			continue
-		}
-		//var utxo modules.Utxo
-		//if err := rlp.DecodeBytes([]byte(udata), &utxo); err != nil {
-		//	log.Error("Decode utxo data :", "error:", err.Error())
-		//	continue
-		//}
-		vout[*utxoIndex.OutPoint] = utxo
-		balance += utxo.Amount
-	}
-	return vout, balance
-}
+//func (repository *UtxoRepository) readUtxosByIndex(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
+//	// step1. read outpoint from utxo index
+//	utxoIndex := modules.UtxoIndex{
+//		AccountAddr: addr,
+//		Asset:       &asset,
+//	}
+//	key := utxoIndex.AssetKey()
+//	data := repository.utxodb.GetPrefix([]byte(key))
+//	if data == nil {
+//		return nil, 0
+//	}
+//	// step2. get utxo
+//	vout := map[modules.OutPoint]*modules.Utxo{}
+//	balance := uint64(0)
+//	for k := range data {
+//		if err := utxoIndex.QueryFields([]byte(k)); err != nil {
+//			continue
+//		}
+//		utxo, err := repository.utxodb.GetUtxoEntry(utxoIndex.OutPoint)
+//		if err != nil {
+//			log.Error("Get utxo error by outpoint", "error:", err.Error())
+//			continue
+//		}
+//		//var utxo modules.Utxo
+//		//if err := rlp.DecodeBytes([]byte(udata), &utxo); err != nil {
+//		//	log.Error("Decode utxo data :", "error:", err.Error())
+//		//	continue
+//		//}
+//		vout[*utxoIndex.OutPoint] = utxo
+//		balance += utxo.Amount
+//	}
+//	return vout, balance
+//}
 
 /**
 扫描UTXO全表，获取对应账户的指定token可用的utxo列表
 To get utxo info by scanning all utxos.
 */
-func (repository *UtxoRepository) readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
-	// key: [UTXO_PREFIX][addr]_[asset]_[msgindex]_[out index]
-	data := repository.utxodb.GetPrefix(constants.UTXO_PREFIX)
-	if data == nil {
-		return nil, 0
-	}
-
-	// value: utxo rlp bytes
-	vout := map[modules.OutPoint]*modules.Utxo{}
-	var balance uint64
-	balance = 0
-	for k, v := range data {
-		var utxo modules.Utxo
-		if err := rlp.DecodeBytes([]byte(v), &utxo); err != nil {
-			log.Error("Decode utxo data :", "error:", err.Error())
-			continue
-		}
-		// check asset
-		if strings.Compare(asset.AssetId.String(), utxo.Asset.AssetId.String()) != 0 ||
-			strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 {
-			continue
-		}
-		// get addr
-		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
-		// check address
-		if strings.Compare(sAddr.String(), addr.String()) != 0 {
-			continue
-		}
-		outpoint := modules.KeyToOutpoint([]byte(k))
-		vout[*outpoint] = &utxo
-		balance += utxo.Amount
-	}
-
-	return vout, balance
-}
+//func (repository *UtxoRepository) readUtxosFrAll(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64) {
+//	// key: [UTXO_PREFIX][addr]_[asset]_[msgindex]_[out index]
+//	data := repository.utxodb.GetPrefix(constants.UTXO_PREFIX)
+//	if data == nil {
+//		return nil, 0
+//	}
+//
+//	// value: utxo rlp bytes
+//	vout := map[modules.OutPoint]*modules.Utxo{}
+//	var balance uint64
+//	balance = 0
+//	for k, v := range data {
+//		var utxo modules.Utxo
+//		if err := rlp.DecodeBytes([]byte(v), &utxo); err != nil {
+//			log.Error("Decode utxo data :", "error:", err.Error())
+//			continue
+//		}
+//		// check asset
+//		if strings.Compare(asset.AssetId.String(), utxo.Asset.AssetId.String()) != 0 ||
+//			strings.Compare(asset.UniqueId.String(), utxo.Asset.UniqueId.String()) != 0 {
+//			continue
+//		}
+//		// get addr
+//		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+//		// check address
+//		if strings.Compare(sAddr.String(), addr.String()) != 0 {
+//			continue
+//		}
+//		outpoint := modules.KeyToOutpoint([]byte(k))
+//		vout[*outpoint] = &utxo
+//		balance += utxo.Amount
+//	}
+//
+//	return vout, balance
+//}
 
 /**
 获取某个input对应的utxo信息
@@ -330,67 +327,67 @@ get asset infomation from leveldb by assetid ( Asset struct type )
 获得某个账户下面的余额信息
 To get balance by wallet address and his/her chosen asset type
 */
-func (repository *UtxoRepository) WalletBalance(addr common.Address, asset modules.Asset) uint64 {
-	if dagconfig.DagConfig.UtxoIndex {
-		return repository.walletBalanceByIndex(addr, asset)
-	} else {
-		return repository.walletBalanceFrAll(addr, asset)
-	}
-}
+//func (repository *UtxoRepository) WalletBalance(addr common.Address, asset modules.Asset) uint64 {
+//	if dagconfig.DagConfig.UtxoIndex {
+//		return repository.walletBalanceByIndex(addr, asset)
+//	} else {
+//		return repository.walletBalanceFrAll(addr, asset)
+//	}
+//}
 
 /**
 通过索引数据库获得账户余额
 To get balance by utxo index db
 */
-func (repository *UtxoRepository) walletBalanceByIndex(addr common.Address, asset modules.Asset) uint64 {
-	balance := uint64(0)
-
-	utxoIndex := modules.UtxoIndex{
-		AccountAddr: addr,
-		Asset:       &asset,
-	}
-	preKey := utxoIndex.AssetKey()
-
-	if data := repository.utxodb.GetPrefix([]byte(preKey)); data != nil {
-		for _, v := range data {
-			var utxoIndexVal modules.UtxoIndexValue
-			if err := rlp.DecodeBytes(v, &utxoIndexVal); err != nil {
-				log.Error("Decode utxo data error:", err)
-				continue
-			}
-			balance += utxoIndexVal.Amount
-		}
-	}
-
-	return balance
-
-}
-
-/**
-通过查询全表获得账户余额
-To get balance by query all utxo table
-*/
-func (repository *UtxoRepository) walletBalanceFrAll(addr common.Address, asset modules.Asset) uint64 {
-	balance := uint64(0)
-
-	preKey := fmt.Sprintf("%s", constants.UTXO_PREFIX)
-
-	if data := repository.utxodb.GetPrefix([]byte(preKey)); data != nil {
-		for _, v := range data {
-			var utxo modules.Utxo
-			if err := rlp.DecodeBytes(v, &utxo); err != nil {
-				log.Error("Decode utxo data error:", err)
-				continue
-			}
-			if !checkUtxo(&addr, &asset, &utxo) {
-				continue
-			}
-			balance += utxo.Amount
-		}
-	}
-
-	return balance
-}
+//func (repository *UtxoRepository) walletBalanceByIndex(addr common.Address, asset modules.Asset) uint64 {
+//	balance := uint64(0)
+//
+//	utxoIndex := modules.UtxoIndex{
+//		AccountAddr: addr,
+//		Asset:       &asset,
+//	}
+//	preKey := utxoIndex.AssetKey()
+//
+//	if data := repository.utxodb.GetPrefix([]byte(preKey)); data != nil {
+//		for _, v := range data {
+//			var utxoIndexVal modules.UtxoIndexValue
+//			if err := rlp.DecodeBytes(v, &utxoIndexVal); err != nil {
+//				log.Error("Decode utxo data error:", err)
+//				continue
+//			}
+//			balance += utxoIndexVal.Amount
+//		}
+//	}
+//
+//	return balance
+//
+//}
+//
+///**
+//通过查询全表获得账户余额
+//To get balance by query all utxo table
+//*/
+//func (repository *UtxoRepository) walletBalanceFrAll(addr common.Address, asset modules.Asset) uint64 {
+//	balance := uint64(0)
+//
+//	preKey := fmt.Sprintf("%s", constants.UTXO_PREFIX)
+//
+//	if data := repository.utxodb.GetPrefix([]byte(preKey)); data != nil {
+//		for _, v := range data {
+//			var utxo modules.Utxo
+//			if err := rlp.DecodeBytes(v, &utxo); err != nil {
+//				log.Error("Decode utxo data error:", err)
+//				continue
+//			}
+//			if !checkUtxo(&addr, &asset, &utxo) {
+//				continue
+//			}
+//			balance += utxo.Amount
+//		}
+//	}
+//
+//	return balance
+//}
 
 /**
 根据payload中的inputs获得对应的UTXO map
@@ -609,7 +606,7 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				//header, _ := dagdb.GetHeaderByHash(unitHash)
 				//3.通过单元获取头部信息中的时间戳
 				timestamp := int64(txlookup.Timestamp)
-				depositRate, _, err := repository.statedb.GetConfig("DepositRate")
+				depositRate, _, err := repository.statedb.GetSysConfig("DepositRate")
 				if err != nil {
 					return 0, err
 				}

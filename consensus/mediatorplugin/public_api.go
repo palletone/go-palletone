@@ -87,7 +87,7 @@ func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
 	dkgr, err := mp.getLocalActiveDKG(add)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return pubKey
 	}
 
@@ -120,7 +120,23 @@ func (a *PublicMediatorAPI) List() []string {
 
 	return addStrs
 }
+func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
+	mediatorVoteCount := make(map[string]uint64)
+	mas := a.dag.GetMediators()
 
+	for address, _ := range mas {
+		mediatorVoteCount[address.String()] = 0
+	}
+	accounts := a.dag.LookupAccount()
+	for _, info := range accounts {
+		ma := info.VotedMediator.String()
+		count, ok := mediatorVoteCount[ma]
+		if ok {
+			mediatorVoteCount[ma] = count + info.Balance
+		}
+	}
+	return mediatorVoteCount
+}
 func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.dag.ActiveMediators()
@@ -152,25 +168,26 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 		return nil, err
 	}
 
-	medMap := a.dag.GetAccountInfo(addr).VotedMediators
-	mediators := make([]string, 0, len(medMap))
-
-	for med, _ := range medMap {
-		mediators = append(mediators, med.Str())
-	}
-
-	return mediators, nil
+	medMap := a.dag.GetAccountInfo(addr).VotedMediator
+	return []string{medMap.String()}, nil
+	//mediators := make([]string, 0, len(medMap))
+	//
+	//for med, _ := range medMap {
+	//	mediators = append(mediators, med.Str())
+	//}
+	//
+	//return mediators, nil
 }
 
-func (a *PublicMediatorAPI) GetDesiredCount(addStr string) (uint8, error) {
-	addr, err := common.StringToAddress(addStr)
-	if err != nil {
-		return 0, err
-	}
-
-	desiredCount := a.dag.GetAccountInfo(addr).DesiredMediatorCount
-	return desiredCount, nil
-}
+//func (a *PublicMediatorAPI) GetDesiredCount(addStr string) (uint8, error) {
+//	addr, err := common.StringToAddress(addStr)
+//	if err != nil {
+//		return 0, err
+//	}
+//
+//	desiredCount := a.dag.GetAccountInfo(addr).DesiredMediatorCount
+//	return desiredCount, nil
+//}
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 	dgp := a.dag.GetDynGlobalProp()

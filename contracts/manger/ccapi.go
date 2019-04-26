@@ -163,7 +163,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 			log.Error("getUserCCPayload err:", "error", err)
 			return nil, err
 		}
-		payloadUnit.Bytecode = paylod
+		payloadUnit.ByteCode = paylod
 	}
 	log.Info("user contract template id", "byte:", payloadUnit.TemplateId, " string:", hex.EncodeToString(payloadUnit.TemplateId))
 	//type ContractTplPayload struct {

@@ -140,6 +140,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					ccName:    reqPay.TplName,
 					ccPath:    reqPay.Path,
 					ccVersion: reqPay.Version,
+					addrHash:  reqPay.AddrHash,
 				}
 				installResult, err := ContractProcess(contract, req)
 				if err != nil {
@@ -152,6 +153,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_TPL_REQUEST txid(%s) err:%s", req.ccName, err))
 				}
 				payload := installResult.(*modules.ContractTplPayload)
+				payload.AddrHash = req.addrHash
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_TPL, payload))
 				return msgs, nil
 			}
@@ -215,7 +217,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -407,11 +409,20 @@ func (p *Processor) checkTxIsExist(tx *modules.Transaction) bool {
 	return true
 }
 
+func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
+	id, err := p.dag.GetTxHashByReqId(reqId)
+	if err == nil && id != (common.Hash{}) {
+		return true
+	}
+	return false
+}
+
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Errorf("Validate tx[%s] throw an error:%s", tx.Hash().String(), err.Error())
 	}
+
 	return err == nil
 }
 
