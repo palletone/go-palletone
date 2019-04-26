@@ -82,7 +82,7 @@ func (dag *Dag) updateMediatorSchedule() {
 	ms := dag.GetMediatorSchl()
 
 	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
-		log.Debugf("Shuffle the scheduling order of mediators")
+		log.Debugf("shuffle the scheduling order of mediators")
 		dag.SaveMediatorSchl(ms, false)
 
 		dgp.IsShuffledSchedule = true
@@ -101,7 +101,7 @@ func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
 	med.LastConfirmedUnitNum = lastConfirmedUnitNum
 	dag.SaveMediator(med, false)
 
-	log.Debugf("the LastConfirmedUnitNum of mediator(&v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
+	log.Debugf("the LastConfirmedUnitNum of mediator(%v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
 }
 
 func (dag *Dag) updateLastIrreversibleUnit() {

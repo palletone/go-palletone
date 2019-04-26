@@ -116,6 +116,8 @@ type MediatorPlugin struct {
 	// 标记是否主程序启动时，就开启unit生产功能
 	producingEnabled bool
 	stopProduce      chan struct{}
+	// wait group is used for graceful shutdowns during producing unit
+	wg sync.WaitGroup
 
 	// Enable Unit production, even if the chain is stale.
 	// 新开启一条链时，第一个运行的节点必须设为true，否则整个链无法启动
@@ -313,6 +315,8 @@ func (mp *MediatorPlugin) Stop() error {
 	mp.vssResponseScope.Close()
 	mp.sigShareScope.Close()
 	mp.groupSigScope.Close()
+
+	mp.wg.Wait()
 
 	log.Debugf("mediator plugin stopped")
 	return nil

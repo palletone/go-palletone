@@ -88,6 +88,9 @@ const (
 )
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
+	mp.wg.Add(1)
+	defer mp.wg.Done()
+
 	// 1. 尝试生产unit
 	result, detail := mp.maybeProduceUnit()
 
