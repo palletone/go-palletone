@@ -142,3 +142,27 @@ I_get_a_getBalance_result
     ...    ELSE    Set Variable    ${jsonRes['result']['PTN']}
     log    ${PTN}
     [Return]    ${PTN}    ${jsonRes}
+
+
+I_set_TransferToken_params_to_Normal
+    [Arguments]    ${preTokenId}
+    ${geneAdd}    listAccounts
+    ${result}    getBalance    ${geneAdd}
+    ${tokenId}    ${value}    getTokenStarts    ${preTokenId}    ${result}
+    ${type}    Evaluate    type(${result})
+    ${ccList}    Create List    ${tokenId}    ${geneAdd}    ${recieverAdd}    2    1
+    ...    description    1    ${6000000}
+    [Return]    ${ccList}
+	
+I_post_a_TransferToken_request
+    [Arguments]    @{transList}
+    ${resp}    setPostRequest    ${host}    ptn_transferToken    @{transList}
+    [Return]    ${resp}
+
+I_get_a_TransferToken_result
+    [Arguments]    @{resp}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${ret}    Should Match Regexp    ${resp.content}['error']['code']    ${result_code}    msg="result:does't match Result expression"
+    [Return]    ${ret}
