@@ -410,7 +410,7 @@ func (chain *MemDag) setLastMainchainUnit(unit *modules.Unit) {
 		chain.lastMainchainUnit = make(map[modules.AssetId]*modules.Unit)
 	}
 	chain.lastMainchainUnit[token] = unit
-	chain.ldbPropRep.SetNewestUnit(unit.Header())
+	//chain.ldbPropRep.SetNewestUnit(unit.Header())
 }
 
 //设置最新的稳定单元，并更新PropDB

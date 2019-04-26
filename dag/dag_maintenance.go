@@ -62,6 +62,7 @@ func (vts voteTallys) Swap(i, j int) {
 
 // 获取账户相关投票数据的直方图
 func (dag *Dag) performAccountMaintenance() {
+	log.Debugf("Tally account voting mediators and setting mediators' count")
 	// 1. 初始化数据
 	dag.totalVotingStake = 0
 
@@ -223,4 +224,12 @@ func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
 	}
 
 	return false
+}
+
+func (dag *Dag) updateChainParameters() {
+	log.Debugf("update chain parameters")
+
+	dag.UpdateSysParams()
+
+	return
 }
