@@ -339,11 +339,6 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	return h != nil
 }
 func (d *Dag) IsHeaderExist(hash common.Hash) bool {
-	//if unit, err := d.unstableUnitRep.getChainUnit(hash); err == nil && unit != nil {
-	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
-	//	return true
-	//}
-	//return false
 	exist, _ := d.unstableUnitRep.IsHeaderExist(hash)
 	return exist
 }

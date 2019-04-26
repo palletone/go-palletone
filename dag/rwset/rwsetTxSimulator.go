@@ -193,6 +193,10 @@ func (s *RwSetTxSimulator) CheckDone() error {
 	}
 	return nil
 }
+func (s *RwSetTxSimulator) Close() {
+	s.dag.Close()
+	return
+}
 
 func decomposeVersionedValue(versionedValue *VersionedValue) ([]byte, *Version) {
 	var value []byte
