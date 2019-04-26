@@ -374,7 +374,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 	//payCopy.Serialize(&wbuf)
 	//binary.Write(&wbuf, binary.LittleEndian, hashType)
 	//return wire.DoubleSha256(wbuf.Bytes())
-	data, _ := rlp.EncodeToBytes(txCopy)
+	data, _ := rlp.EncodeToBytes(&txCopy)
 	hash, _ := crypto.Hash(data)
 	return hash
 
