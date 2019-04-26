@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -41,21 +40,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
 	}(t0)
 
-	gasToken := dagconfig.DagConfig.GetGasToken()
-
 	// 1. 判断是否满足生产的若干条件
-
-	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
-	// todo 应当在其他地方其他时刻更新该值
-	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
-	if !dag.IsHeaderExist(hash) {
-		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
-			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
-		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
-		if nil != newestUnit {
-			dag.propRep.SetNewestUnit(newestUnit.Header())
-		}
-	}
 
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.CreateUnit(&producer, txpool, when)
