@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -667,22 +668,22 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		}
 
 		// Quickly validate the header and propagate the block if it passes
-		//switch err := f.verifyUnit(block); err {
-		//case nil:
-		//	// All ok, quickly propagate to our peers
-		//	propBroadcastOutTimer.UpdateSince(block.ReceivedAt)
-		//	log.Debug("===Importing propagated block insert DAG verifyUnit is nil===")
-		//	go f.broadcastBlock(block, true)
-		//
-		//case dagerrors.ErrFutureBlock:
-		//// Weird future block, don't fail, but neither propagate
-		//
-		//default:
-		//	// Something went very wrong, drop the peer
-		//	log.Debug("Propagated block verification failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
-		//	f.dropPeer(peer)
-		//	return
-		//}
+		switch err := f.verifyUnit(block); err {
+		case nil:
+			// All ok, quickly propagate to our peers
+			propBroadcastOutTimer.UpdateSince(block.ReceivedAt)
+			log.Debug("===Importing propagated block insert DAG verifyUnit is nil===")
+			go f.broadcastBlock(block, true)
+
+		case dagerrors.ErrFutureBlock:
+		// Weird future block, don't fail, but neither propagate
+
+		default:
+			// Something went very wrong, drop the peer
+			log.Debug("Propagated block verification failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
+			f.dropPeer(peer)
+			return
+		}
 		// Run the actual import and log any issues
 		if _, err := f.insertChain(modules.Units{block}); err != nil {
 			log.Debug("Propagated block import failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)

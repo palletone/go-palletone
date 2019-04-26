@@ -253,9 +253,9 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		defer log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s", hash.String())
 		verr := pm.dag.ValidateUnitExceptGroupSig(unit)
 		if verr != nil && !validator.IsOrphanError(verr) {
-			return dagerrors.ErrFutureBlock
+			return verr
 		}
-		return nil
+		return dagerrors.ErrFutureBlock
 	}
 	heighter := func(assetId modules.AssetId) uint64 {
 		unit := pm.dag.GetCurrentUnit(assetId)
