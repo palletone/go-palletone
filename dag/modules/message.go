@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 
 	"bytes"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -250,10 +251,9 @@ type ContractStateValue struct {
 func (version *StateVersion) String() string {
 
 	return fmt.Sprintf(
-		"StateVersion[AssetId:{%#x}, Height:{%d},TxIdx:{%d}]",
-		version.Height.AssetID,
+		"StateVersion[AssetId:{%s}, Height:{%d},TxIdx:{%d}]",
+		version.Height.AssetID.String(),
 		version.Height.Index,
-		//version.Height.IsMain,
 		version.TxIndex)
 }
 
@@ -275,30 +275,19 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 	return true
 }
 
-//16+8+4=28
+//(16+8)+4=28
 func (version *StateVersion) Bytes() []byte {
-	idx := make([]byte, 8)
-	littleEndian.PutUint64(idx, version.Height.Index)
-	b := append(version.Height.AssetID.Bytes(), idx...)
-	//if version.Height.IsMain {
-	//	b = append(b, byte(1))
-	//} else {
-	//	b = append(b, byte(0))
-	//}
+	b := version.Height.Bytes()
 	txIdx := make([]byte, 4)
 	littleEndian.PutUint32(txIdx, version.TxIndex)
 	b = append(b, txIdx...)
 	return b[:]
 }
 func (version *StateVersion) SetBytes(b []byte) {
-	asset := AssetId{}
-	asset.SetBytes(b[:15])
-	heightIdx := littleEndian.Uint64(b[16:24])
-	//isMain := b[24]
-	txIdx := littleEndian.Uint32(b[24:])
-	cidx := &ChainIndex{AssetID: asset, Index: heightIdx}
+	cidx := &ChainIndex{}
+	cidx.SetBytes(b[:24])
 	version.Height = cidx
-	version.TxIndex = txIdx
+	version.TxIndex = littleEndian.Uint32(b[24:])
 }
 
 const (
