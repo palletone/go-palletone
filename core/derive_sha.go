@@ -18,8 +18,8 @@ package core
 
 import (
 	"bytes"
-	"github.com/palletone/go-palletone/common"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/trie"
 )
 
@@ -37,4 +37,15 @@ func DeriveSha(list DerivableList) common.Hash {
 		trie.Update(keybuf.Bytes(), list.GetRlp(i))
 	}
 	return trie.Hash()
+}
+
+func GetTrieInfo(list DerivableList) (*trie.Trie, common.Hash) {
+	keybuf := new(bytes.Buffer)
+	trie := new(trie.Trie)
+	for i := 0; i < list.Len(); i++ {
+		keybuf.Reset()
+		rlp.Encode(keybuf, uint(i))
+		trie.Update(keybuf.Bytes(), list.GetRlp(i))
+	}
+	return trie, trie.Hash()
 }
