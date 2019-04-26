@@ -357,10 +357,14 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err, "data", string(data))
 		return err
 	}
-
+	unitHash := unit.Hash()
+	if pm.IsExistInCache(unitHash.Bytes()) {
+		log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
+		return nil
+	}
 	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unit.UnitHash.TerminalString(),
+	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
 		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 		unit.Author().Str())
 
@@ -433,7 +437,11 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
-
+		txHash := tx.Hash()
+		if pm.IsExistInCache(txHash.Bytes()) {
+			log.Debugf("Received tx(%s) again, ignore it", txHash.String())
+			return nil
+		}
 		if tx.IsContractTx() {
 			if pm.contractProc.IsSystemContractTx(tx) {
 				continue
