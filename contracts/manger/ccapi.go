@@ -256,6 +256,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 		Id:      depId.Bytes21(),
 		Name:    usrccName,
 		Path: usrcc.Path,
+		TempleId:templateId,
 		Version: usrcc.Version,
 		SysCC:   false,
 	}
@@ -531,7 +532,6 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 		},
 		ChaincodeId: &pb.ChaincodeID{},
 	}
-	var chaincodeData []byte
 	//test
 	address := common.Address{}
 	address.SetBytes(deployId)
@@ -557,6 +557,11 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 		Version: usrcc.Version,
 	}
 	spec.ChaincodeId = chaincodeID
+	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(spec, chainID, cc.TempleId)
+	if err != nil {
+		log.Error("Deploy", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
+		return nil, err
+	}
 	err = ucc.DeployUserCC(chaincodeData, spec, setChainId, usrcc, txId, txsim, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)

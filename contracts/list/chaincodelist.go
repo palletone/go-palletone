@@ -16,7 +16,7 @@ type CCInfo struct {
 	Name    string
 	Path    string
 	Version string
-
+	TempleId []byte
 	SysCC  bool
 	//Enable bool
 }
