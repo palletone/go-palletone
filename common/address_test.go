@@ -47,7 +47,8 @@ func TestAddressNotValidate(t *testing.T) {
 
 }
 func TestHexToAddrString(t *testing.T) {
-
+	adds := HexToAddress("0x00000000000000000000000000000000000095271C")
+	t.Logf("Test %s", adds.String())
 	addr := HexToAddress("0x00000000000000000000000000000000000000011C")
 	t.Logf("0x1 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
 	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
@@ -67,7 +68,7 @@ func TestHexToAddrString(t *testing.T) {
 	t.Logf("0x8 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
 	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
 
-	addr = HexToAddress("0x00000000000000000000000000000000000095271C")
+	addr = HexToAddress("0x00000000000000000000000000000000000000091C")
 	t.Logf("0x9 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
 

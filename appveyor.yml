@@ -32,8 +32,12 @@ before_build:
   - go get -u github.com/palletone/eth-adaptor
   - go get -u github.com/palletone/digital-identity/...
   - go get github.com/golang/mock/gomock
+  - cd C:\gopath\src\github.com\golang\mock
+  - git checkout 442550a
   - go install github.com/golang/mock/mockgen
+  - cd C:\gopath\src\github.com\palletone\go-palletone
 build_script:
+
   - C:\gopath\bin\mockgen.exe -source=".\dag\interface.go" -destination=".\dag\dag_mock.go" -package="dag" -self_package="github.com/palletone/go-palletone/dag"
   - go run build\ci.go install
 
