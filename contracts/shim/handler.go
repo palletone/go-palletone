@@ -945,6 +945,18 @@ func (handler *Handler) handleGetCACert(channelID string, txid string) (caCert *
 	return caCert, nil
 }
 
+// 获取root ca holder
+func (handler *Handler) handleGetCAHolder(channelID string, txid string) (caHolder string, err error) {
+	val, err := handler.handleGetCertState("RootCAHolder", channelID, txid)
+	if err != nil {
+		return "", err
+	}
+	if len(val) <= 0 {
+		return "", fmt.Errorf("query no ca holder")
+	}
+	return string(val), nil
+}
+
 // 获取证书链
 func (handler *Handler) handleGetCertChain(rootIssuer string, cert *x509.Certificate, channelID string, txid string) (intermediates []*x509.Certificate, holders []string, err error) {
 	intermediates = []*x509.Certificate{}
@@ -994,13 +1006,40 @@ func (handler *Handler) handleGetCertRevocationTime(key string, channelID string
 	if err != nil {
 		return time.Time{}, err
 	}
+	if len(data) <= 0 {
+		return t, fmt.Errorf("have no time")
+	}
+	t = time.Time{}
 	if err := t.UnmarshalBinary(data); err != nil {
 		return time.Time{}, err
 	}
 	return t, nil
 }
 
-func (handler *Handler) handlerCheckCertValidation(caller string, key string, channelId string, txid string) (bool, error) {
+func (handler *Handler) handlerCheckCertValidation(caller string, certID []byte, channelId string, txid string) (bool, error) {
+	intCertID := new(big.Int).SetBytes(certID)
+	key := dagConstants.CERT_BYTES_SYMBOL + intCertID.String()
+
+	// get root ca holder
+	caHolder, err := handler.handleGetCAHolder(channelId, txid)
+	if err != nil {
+		return false, fmt.Errorf("get ca holder error(%s)", err.Error())
+	}
+	// check ca state
+	caCert, err := handler.handleGetCACert(channelId, txid)
+	if err != nil {
+		return false, fmt.Errorf("query ca certificate error (%s)", err.Error())
+	}
+	if caCert.NotBefore.After(time.Now()) || caCert.NotAfter.Before(time.Now()) {
+		return false, fmt.Errorf("ca certificate has expired")
+	}
+	// caller is ca holder
+	if (caHolder == caller && caCert.SerialNumber.String() != intCertID.String()) || (intCertID.String() == caCert.SerialNumber.String() && caHolder != caller) {
+		return false, fmt.Errorf("you have no authority to call this certificate")
+	} else if caller == caHolder && caCert.SerialNumber.String() == intCertID.String() {
+		return true, nil
+	}
+
 	// get cert bytes
 	resBytes, err := handler.handleGetCertState(key, channelId, txid)
 	if err != nil {
@@ -1015,33 +1054,29 @@ func (handler *Handler) handlerCheckCertValidation(caller string, key string, ch
 	}
 	// check caller
 	if caller != certDBInfo.Holder {
-		return false, fmt.Errorf("you have no authority to user this certificate")
+		return false, fmt.Errorf("you have no authority to use this certificate")
 	}
 	// parse certificate
 	cert, err := x509.ParseCertificate(certDBInfo.Raw)
 	if err != nil {
 		return false, fmt.Errorf("parse certificate error(%s)", err.Error())
 	}
-	// Validity Period
-	if cert.NotBefore.After(time.Now()) || cert.NotAfter.Before(time.Now()) {
-		return false, fmt.Errorf("certificate has expired")
-	}
-	// check revocation date
-	key = dagConstants.CERT_MEMBER_SYMBOL + caller + dagConstants.CERT_SPLIT_CH + cert.SerialNumber.String()
+	// check revocation date, only user certificate could be used in contract
+	key = dagConstants.CERT_SERVER_SYMBOL + caller + dagConstants.CERT_SPLIT_CH + cert.SerialNumber.String()
 	revocation, err := handler.handleGetCertRevocationTime(key, channelId, txid)
 	if err != nil {
-		return false, fmt.Errorf("query certificate revocation time error(%s)", err.Error())
+		key = dagConstants.CERT_SERVER_SYMBOL + caller + dagConstants.CERT_SPLIT_CH + cert.SerialNumber.String()
+		revocation, err = handler.handleGetCertRevocationTime(key, channelId, txid)
+		if err != nil {
+			return false, fmt.Errorf("certificate is not existing")
+		}
 	}
 	if revocation.Before(time.Now()) {
 		return false, fmt.Errorf("certificate has been revocated at %s", revocation.String())
 	}
-	// check ca state
-	caCert, err := handler.handleGetCACert(channelId, txid)
-	if err != nil {
-		return false, fmt.Errorf("query ca certificate error (%s)", err.Error())
-	}
-	if caCert.NotBefore.After(time.Now()) || caCert.NotAfter.Before(time.Now()) {
-		return false, fmt.Errorf("ca certificate has expired")
+	// Validity Period
+	if cert.NotBefore.After(time.Now()) || cert.NotAfter.Before(time.Now()) {
+		return false, fmt.Errorf("certificate has expired")
 	}
 	// check chain state ( get chain )
 	intermediates, holders, err := handler.handleGetCertChain(caCert.Subject.String(), cert, channelId, txid)
@@ -1053,7 +1088,7 @@ func (handler *Handler) handlerCheckCertValidation(caller string, key string, ch
 			return false, fmt.Errorf("intermediate certificate (%s) has expired", c.SerialNumber.String())
 		}
 		// check intermediate revocation
-		key = dagConstants.CERT_MEMBER_SYMBOL + holders[index] + dagConstants.CERT_SPLIT_CH + c.SerialNumber.String()
+		key = dagConstants.CERT_SERVER_SYMBOL + holders[index] + dagConstants.CERT_SPLIT_CH + c.SerialNumber.String()
 		tt, err := handler.handleGetCertRevocationTime(key, channelId, txid)
 		if err != nil {
 			return false, fmt.Errorf("get intermediate certificate revocation time error(%s)", err.Error())

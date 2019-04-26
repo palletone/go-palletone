@@ -328,15 +328,19 @@ func (b *PtnApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Uni
 	return unit
 }
 
-func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TransactionJson, error) {
+func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJson, error) {
+	header, err := b.ptn.dag.GetHeaderByHash(hash)
+	if err != nil {
+		return nil, err
+	}
 	txs, err := b.ptn.dag.GetUnitTransactions(hash)
 	if err != nil {
 		return nil, err
 	}
-	txs_json := make([]*ptnjson.TransactionJson, 0)
+	txs_json := make([]*ptnjson.TxSummaryJson, 0)
 
-	for _, tx := range txs {
-		txs_json = append(txs_json, ptnjson.ConvertTx02Json(tx, hash))
+	for txIdx, tx := range txs {
+		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time, uint64(txIdx), b.ptn.dag.GetUtxoEntry))
 	}
 	return txs_json, nil
 }
@@ -353,12 +357,12 @@ func (b *PtnApiBackend) GetUnitTxsHashHex(hash common.Hash) ([]string, error) {
 	return hexs, nil
 }
 
-func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TransactionJson, error) {
+func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
 	tx, err := b.ptn.dag.GetTransaction(hash)
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertTx02Json(tx.Transaction, tx.UnitHash), nil
+	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry), nil
 }
 
 func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
@@ -531,13 +535,13 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 
 //
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId common.Hash, tplId []byte, err error) {
-	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true)
+	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true, nil)
 }
 func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
-	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
+func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddress, args, timeout)
@@ -573,7 +577,7 @@ func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	txjson := ptnjson.ConvertTx2Json(tx, nil)
+	txjson := ptnjson.ConvertTx2FullJson(tx, nil)
 	json, err := json.Marshal(txjson)
 	return string(json), err
 }
@@ -595,4 +599,13 @@ func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 
 func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
 	return b.ptn.dag.GetFileInfo([]byte(filehash))
+}
+
+//SPV
+func (s *PtnApiBackend) ProofTransaction(tx string) (string, error) {
+	return "", nil
+}
+
+func (b *PtnApiBackend) ValidationPath(tx string) ([]byte, error) {
+	return nil, nil
 }

@@ -40,10 +40,9 @@ const (
 	APP_CONTRACT_STOP
 	APP_SIGNATURE
 
-	//APP_CONFIG
 	APP_DATA
 	OP_MEDIATOR_CREATE
-	OP_ACCOUNT_UPDATE
+	APP_ACCOUNT_UPDATE
 
 	APP_UNKNOW = 99
 
@@ -198,6 +197,9 @@ type ContractWriteSet struct {
 	//Value interface{}
 }
 
+func NewWriteSet(key string, value []byte) *ContractWriteSet {
+	return &ContractWriteSet{Key: key, Value: value, IsDelete: false}
+}
 func ToPayloadMapValueBytes(data interface{}) []byte {
 	b, err := rlp.EncodeToBytes(data)
 	if err != nil {
@@ -248,10 +250,10 @@ type ContractStateValue struct {
 func (version *StateVersion) String() string {
 
 	return fmt.Sprintf(
-		"StateVersion[AssetId:{%#x}, Height:{%d},IsMain:%t,TxIdx:{%d}]",
+		"StateVersion[AssetId:{%#x}, Height:{%d},TxIdx:{%d}]",
 		version.Height.AssetID,
 		version.Height.Index,
-		version.Height.IsMain,
+		//version.Height.IsMain,
 		version.TxIndex)
 }
 
@@ -273,16 +275,16 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 	return true
 }
 
-//16+8+1+4=29
+//16+8+4=28
 func (version *StateVersion) Bytes() []byte {
 	idx := make([]byte, 8)
 	littleEndian.PutUint64(idx, version.Height.Index)
 	b := append(version.Height.AssetID.Bytes(), idx...)
-	if version.Height.IsMain {
-		b = append(b, byte(1))
-	} else {
-		b = append(b, byte(0))
-	}
+	//if version.Height.IsMain {
+	//	b = append(b, byte(1))
+	//} else {
+	//	b = append(b, byte(0))
+	//}
 	txIdx := make([]byte, 4)
 	littleEndian.PutUint32(txIdx, version.TxIndex)
 	b = append(b, txIdx...)
@@ -292,9 +294,9 @@ func (version *StateVersion) SetBytes(b []byte) {
 	asset := AssetId{}
 	asset.SetBytes(b[:15])
 	heightIdx := littleEndian.Uint64(b[16:24])
-	isMain := b[24]
-	txIdx := littleEndian.Uint32(b[25:])
-	cidx := &ChainIndex{AssetID: asset, Index: heightIdx, IsMain: isMain == byte(1)}
+	//isMain := b[24]
+	txIdx := littleEndian.Uint32(b[24:])
+	cidx := &ChainIndex{AssetID: asset, Index: heightIdx}
 	version.Height = cidx
 	version.TxIndex = txIdx
 }
@@ -307,26 +309,27 @@ const (
 	FIELD_SPLIT_STR     = "^*^"
 	FIELD_GENESIS_ASSET = "GenesisAsset"
 	FIELD_TPL_Version   = "TplVersion"
+	FIELD_TPL_Addrs     = "TplAddrHash"
 )
 
-type DelContractState struct {
-	IsDelete bool
-}
-
-func (delState DelContractState) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(delState)
-	if err != nil {
-		return nil
-	}
-	return data
-}
-
-func (delState DelContractState) SetBytes(b []byte) error {
-	if err := rlp.DecodeBytes(b, &delState); err != nil {
-		return err
-	}
-	return nil
-}
+//type DelContractState struct {
+//	IsDelete bool
+//}
+//
+//func (delState DelContractState) Bytes() []byte {
+//	data, err := rlp.EncodeToBytes(delState)
+//	if err != nil {
+//		return nil
+//	}
+//	return data
+//}
+//
+//func (delState DelContractState) SetBytes(b []byte) error {
+//	if err := rlp.DecodeBytes(b, &delState); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 type ContractError struct {
 	Code    uint32 `json:"error_code"`    // error code
@@ -335,7 +338,7 @@ type ContractError struct {
 
 //node election
 type ElectionInf struct {
-	VData     []byte      `json:"vdata"`      //vrf data, no use
+	Etype     byte        `json:"etype"`      //vrf type, if set to 1, it is the assignation node
 	AddrHash  common.Hash `json:"addr_hash"`  //common.Address将地址hash后，返回给请求节点
 	Proof     []byte      `json:"proof"`      //vrf proof
 	PublicKey []byte      `json:"public_key"` //alg.PublicKey, rlp not support
@@ -404,7 +407,8 @@ type ContractTplPayload struct {
 	Path       string        `json:"path"`           // contract template execute path
 	Version    string        `json:"version"`        // contract template version
 	Memory     uint16        `json:"memory"`         // contract template bytecode memory size(Byte), use to compute transaction fee
-	Bytecode   []byte        `json:"byte_code"`      // contract bytecode
+	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
+	AddrHash   []common.Hash `json:"addr_hash"`      //contract template installs the specified address for deployment and execution
 	ErrMsg     ContractError `json:"contract_error"` // contract error message
 }
 
@@ -458,9 +462,10 @@ type ContractInvokeResult struct {
 
 //用户钱包发起的合约调用申请
 type ContractInstallRequestPayload struct {
-	TplName string `json:"tpl_name"`
-	Path    string `json:"install_path"`
-	Version string `json:"tpl_version"`
+	TplName  string        `json:"tpl_name"`
+	Path     string        `json:"install_path"`
+	Version  string        `json:"tpl_version"`
+	AddrHash []common.Hash `json:"addr_hash"`
 }
 
 type ContractDeployRequestPayload struct {
@@ -501,6 +506,12 @@ type DataPayload struct {
 	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
 }
+
+//一个地址对应的个人StateDB空间
+type AccountStateUpdatePayload struct {
+	WriteSet []ContractWriteSet `json:"write_set"`
+}
+
 type FileInfo struct {
 	UnitHash    common.Hash `json:"unit_hash"`
 	UintHeight  uint64      `json:"unit_index"`
@@ -526,7 +537,7 @@ func NewContractTplPayload(templateId []byte, name string, path string, version 
 		Path:       path,
 		Version:    version,
 		Memory:     memory,
-		Bytecode:   bytecode,
+		ByteCode:   bytecode,
 		ErrMsg:     err,
 	}
 }
@@ -579,7 +590,7 @@ func (a *ElectionInf) Equal(b *ElectionInf) bool {
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.VData, b.VData) || !bytes.Equal(a.Proof, b.Proof) || !bytes.Equal(a.PublicKey, b.PublicKey) {
+	if !bytes.Equal(a.Proof, b.Proof) || !bytes.Equal(a.PublicKey, b.PublicKey) {
 		return false
 	}
 	if !bytes.Equal(a.AddrHash[:], b.AddrHash[:]) {
@@ -621,7 +632,7 @@ func (a *ContractTplPayload) Equal(b *ContractTplPayload) bool {
 		return false
 	}
 	if bytes.Equal(a.TemplateId, b.TemplateId) && strings.EqualFold(a.Name, b.Name) && strings.EqualFold(a.Path, b.Path) &&
-		strings.EqualFold(a.Version, b.Version) && a.Memory == b.Memory && bytes.Equal(a.Bytecode, b.Bytecode) {
+		strings.EqualFold(a.Version, b.Version) && a.Memory == b.Memory && bytes.Equal(a.ByteCode, b.ByteCode) {
 		return true
 	}
 	return false
@@ -816,9 +827,4 @@ type SysSupportResult struct {
 type SysVoteResult struct {
 	SelectOption string
 	Num          uint64
-}
-
-type CertInfo struct {
-	NeedCert bool
-	Certid   []byte // should be big.Int byte
 }

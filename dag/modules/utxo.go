@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
+	"time"
 )
 
 var DAO uint64 = 100000000
@@ -65,6 +66,19 @@ func NewUtxo(output *Output, lockTime uint32, timestamp int64) *Utxo {
 }
 func (u *Utxo) GetTimestamp() int64 {
 	return int64(u.Timestamp)
+}
+func (u *Utxo) Bytes() []byte {
+	data,_:=	rlp.EncodeToBytes(u)
+	return data
+}
+func (utxo *Utxo) GetCoinDays() uint64 {
+	if utxo.Timestamp == 0 {
+		return 0
+	}
+	holdSecond := time.Now().Unix() - utxo.GetTimestamp()
+
+	holdDays := holdSecond / 86400 //24*60*60
+	return uint64(holdDays) * utxo.Amount
 }
 
 type UtxoWithOutPoint struct {

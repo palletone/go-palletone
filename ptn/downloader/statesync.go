@@ -23,10 +23,10 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/dag/state"
+	"golang.org/x/crypto/sha3"
 )
 
 // stateReq represents a batch of state fetch requests grouped together into
@@ -238,7 +238,7 @@ func newStateSync(d *Downloader, root common.Hash) *stateSync {
 	return &stateSync{
 		d:       d,
 		sched:   state.NewStateSync(root /*, d.stateDB*/),
-		keccak:  sha3.NewKeccak256(),
+		keccak:  sha3.New256(),
 		tasks:   make(map[common.Hash]*stateTask),
 		deliver: make(chan *stateReq),
 		cancel:  make(chan struct{}),

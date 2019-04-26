@@ -47,11 +47,11 @@ func TestUpdateUtxo(t *testing.T) {
 	rep.UpdateUtxo(time.Now().Unix(), common.Hash{}, &modules.PaymentPayload{}, uint32(0))
 }
 
-func TestReadUtxos(t *testing.T) {
-	rep := mockUtxoRepository()
-	utxos, totalAmount := rep.ReadUtxos(common.Address{}, modules.Asset{})
-	log.Println(utxos, totalAmount)
-}
+//func TestReadUtxos(t *testing.T) {
+//	rep := mockUtxoRepository()
+//	utxos, totalAmount := rep.ReadUtxos(common.Address{}, modules.Asset{})
+//	log.Println(utxos, totalAmount)
+//}
 
 func TestGetUxto(t *testing.T) {
 	dagconfig.DagConfig.DbPath = getTempDir(t)

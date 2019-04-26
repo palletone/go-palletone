@@ -30,12 +30,21 @@ import (
 )
 
 //var CONF_PREFIX = append(constants.CONTRACT_STATE_PREFIX, scc.SysConfigContractAddress.Bytes()...)
+func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
+	//SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion)
+	id := syscontract.SysConfigContractAddress.Bytes21()
+	err := saveContractState(statedb.db, id, key, val, ver)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 /**
 获取配置信息
 get config information
 */
-func (statedb *StateDb) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+func (statedb *StateDb) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
 	id := syscontract.SysConfigContractAddress.Bytes21()
 	return statedb.GetContractState(id, name)
 }

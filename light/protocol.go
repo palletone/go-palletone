@@ -59,8 +59,8 @@ const (
 	BlockBodiesMsg     = 0x05
 	GetReceiptsMsg     = 0x06
 	ReceiptsMsg        = 0x07
-	GetProofsV1Msg     = 0x08
-	ProofsV1Msg        = 0x09
+	GetProofsMsg       = 0x08
+	ProofsMsg          = 0x09
 	GetCodeMsg         = 0x0a
 	CodeMsg            = 0x0b
 	SendTxMsg          = 0x0c

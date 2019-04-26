@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -44,7 +45,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type Dag struct {
@@ -288,7 +288,8 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 
 		// append by albert·gou, 利用 unit 更新相关状态
 		if err := d.ApplyUnit(u); err != nil {
-			return count, err
+			//return count, err
+			return count, nil
 		}
 
 		// todo 应当和本地生产的unit统一接口，而不是直接存储
@@ -338,10 +339,12 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	h, _ := d.GetHeaderByHash(hash)
 	return h != nil
 }
+
 func (d *Dag) IsHeaderExist(hash common.Hash) bool {
 	exist, _ := d.unstableUnitRep.IsHeaderExist(hash)
 	return exist
 }
+
 func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	unit := d.CurrentUnit(token)
 	if unit != nil {
@@ -506,6 +509,18 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		Memdag:           unstableChain,
 		PartitionMemDag:  partitionMemdag,
 	}
+
+	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
+	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
+	if !dag.IsHeaderExist(hash) {
+		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
+			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
+		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
+		if nil != newestUnit {
+			dag.propRep.SetNewestUnit(newestUnit.Header())
+		}
+	}
+
 	return dag, nil
 }
 
@@ -570,14 +585,13 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	return dag, nil
 }
 
-func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo,error) {
+func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
 	return d.propRep.GetChaincodes(contractId)
 }
 
-func (d *Dag) SaveChaincode(contractId common.Address,cc *list.CCInfo) error {
-	return d.propRep.SaveChaincode(contractId,cc)
+func (d *Dag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
+	return d.propRep.SaveChaincode(contractId, cc)
 }
-
 
 // Get Contract Api
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
@@ -975,8 +989,8 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	// compute height
 	height := &modules.ChainIndex{
 		AssetID: currentUnit.UnitHeader.Number.AssetID,
-		IsMain:  currentUnit.UnitHeader.Number.IsMain,
-		Index:   currentUnit.UnitHeader.Number.Index + 1,
+		//IsMain:  currentUnit.UnitHeader.Number.IsMain,
+		Index: currentUnit.UnitHeader.Number.Index + 1,
 	}
 	//
 	unitHeader := modules.Header{
@@ -1249,6 +1263,15 @@ func (bc *Dag) GetPartitionChains() ([]*modules.PartitionChain, error) {
 }
 func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
 	return bc.unstableStateRep.GetMainChain()
+}
+func (d *Dag) GetCoinYearRate() float64 {
+	data, _, err := d.GetConfig("TxCoinYearRate")
+	if err != nil {
+		log.Warn("Cannot read system config by key :TxCoinYearRate")
+		return 0
+	}
+	rate, _ := strconv.ParseFloat(string(data), 64)
+	return rate
 }
 
 // SubscribeChainSideEvent registers a subscription of ChainSideEvent.

@@ -22,6 +22,8 @@ package modules
 
 import (
 	"encoding/json"
+	"fmt"
+	"math/big"
 	"strconv"
 
 	"github.com/palletone/go-palletone/dag/errors"
@@ -54,7 +56,7 @@ type idxMediatorCreateOperation struct {
 
 type idxAccountUpdateOperation struct {
 	Index int
-	*AccountUpdateOperation
+	*AccountStateUpdatePayload
 }
 
 //install
@@ -103,6 +105,7 @@ type idxContractStopPayload struct {
 
 type txJsonTemp struct {
 	MsgCount int
+	CertId   string
 	Payment  []*idxPaymentPayload
 	//Config                  []*idxConfigPayload
 	Text                    []*idxTextPayload
@@ -122,7 +125,8 @@ type txJsonTemp struct {
 }
 
 func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
-	temp := &txJsonTemp{MsgCount: len(tx.TxMessages)}
+	intCertID := new(big.Int).SetBytes(tx.CertId)
+	temp := &txJsonTemp{MsgCount: len(tx.TxMessages), CertId: intCertID.String()}
 	for idx, msg := range tx.TxMessages {
 		if msg.App == APP_PAYMENT {
 			temp.Payment = append(temp.Payment, &idxPaymentPayload{Index: idx, PaymentPayload: msg.Payload.(*PaymentPayload)})
@@ -167,9 +171,9 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 		} else if msg.App == OP_MEDIATOR_CREATE {
 			temp.MediatorCreateOperation = append(temp.MediatorCreateOperation,
 				&idxMediatorCreateOperation{Index: idx, MediatorCreateOperation: msg.Payload.(*MediatorCreateOperation)})
-		} else if msg.App == OP_ACCOUNT_UPDATE {
+		} else if msg.App == APP_ACCOUNT_UPDATE {
 			temp.AccountUpdateOperation = append(temp.AccountUpdateOperation,
-				&idxAccountUpdateOperation{Index: idx, AccountUpdateOperation: msg.Payload.(*AccountUpdateOperation)})
+				&idxAccountUpdateOperation{Index: idx, AccountStateUpdatePayload: msg.Payload.(*AccountStateUpdatePayload)})
 		} else {
 			return nil, errors.New("Unsupport APP" + strconv.Itoa(int(msg.App)) + " please edit transaction_json.go")
 		}
@@ -178,6 +182,13 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 }
 
 func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
+	if len(temp.CertId) > 0 {
+		intCertID, _ := new(big.Int).SetString(temp.CertId, 10)
+		if intCertID == nil {
+			return fmt.Errorf("certid is invalid")
+		}
+		tx.CertId = intCertID.Bytes()
+	}
 	tx.TxMessages = make([]*Message, temp.MsgCount)
 	processed := 0
 	for _, p := range temp.Payment {
@@ -237,7 +248,7 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 		processed++
 	}
 	for _, p := range temp.AccountUpdateOperation {
-		tx.TxMessages[p.Index] = NewMessage(OP_ACCOUNT_UPDATE, p.AccountUpdateOperation)
+		tx.TxMessages[p.Index] = NewMessage(APP_ACCOUNT_UPDATE, p.AccountStateUpdatePayload)
 		processed++
 	}
 	if processed < temp.MsgCount {

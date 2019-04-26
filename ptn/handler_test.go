@@ -84,88 +84,88 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 	limit := uint64(downloader.MaxHeaderFetch)
 	index := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		0,
 	}
 	index0 := &modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit / 2,
 	}
 	index1 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit/2 + 1,
 	}
 	index2 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit/2 + 2,
 	}
 	index21 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit/2 - 1,
 	}
 	index22 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit/2 - 2,
 	}
 	index4 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit/2 + 4,
 	}
 	index8 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit/2 + 8,
 	}
 	index24 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit/2 - 4,
 	}
 	index28 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		limit/2 - 8,
 	}
 	index44 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		4,
 	}
 	i := pm.dag.CurrentUnit(modules.PTNCOIN).Number()
 	jia1 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		i.Index + 1,
 	}
 	in1 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		i.Index - 1,
 	}
 	in4 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		i.Index - 4,
 	}
 	i1 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		1,
 	}
 	i2 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		2,
 	}
 	i3 := modules.ChainIndex{
 		modules.PTNCOIN,
-		true,
+
 		3,
 	}
 	head, _ := pm.dag.GetHeaderByNumber(index0)
@@ -308,8 +308,8 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 			if origin, _ := pm.dag.GetUnitByNumber(&tt.query.Origin.Number); origin != nil {
 				index := &modules.ChainIndex{
 					AssetID: modules.PTNCOIN,
-					IsMain:  true,
-					Index:   uint64(0),
+					//IsMain:  true,
+					Index: uint64(0),
 				}
 				tt.query.Origin.Hash, tt.query.Origin.Number = origin.Hash(), *index
 				p2p.Send(peer.app, 0x03, tt.query)

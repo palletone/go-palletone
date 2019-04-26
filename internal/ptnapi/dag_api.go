@@ -73,7 +73,7 @@ func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) stri
 		log.Info("PublicBlockChainAPI", "GetUnitByHash GetUnitByHash is nil hash:", hash)
 		return "GetUnitByHash nil"
 	}
-	jsonUnit := ptnjson.ConvertUnit2Json(unit)
+	jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetUtxoEntry)
 	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
@@ -92,7 +92,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		return ""
 	}
 	number.Index = uint64(index)
-	number.IsMain = true
+	//number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
@@ -104,7 +104,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
 		return "GetUnitByNumber nil"
 	}
-	jsonUnit := ptnjson.ConvertUnit2Json(unit)
+	jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetUtxoEntry)
 	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
@@ -147,7 +147,7 @@ func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition str
 		return ""
 	}
 	number.Index = uint64(index)
-	number.IsMain = true
+	//number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
@@ -352,13 +352,16 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 
 func (s *PublicDagAPI) HeadUnitHash() string {
 	return s.b.Dag().HeadUnitHash().TerminalString()
+	//return "unknown"
 }
 
 func (s *PublicDagAPI) HeadUnitTime() string {
 	time := time.Unix(s.b.Dag().HeadUnitTime(), 0)
 	return time.Format("2006-01-02 15:04:05 -0700 MST")
+	//return "1972-0-0"
 }
 
 func (s *PublicDagAPI) HeadUnitNum() uint64 {
 	return s.b.Dag().HeadUnitNum()
+	//return uint64(0)
 }

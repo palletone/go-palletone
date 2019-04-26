@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/common"
 )
 
 type ContractResp struct {
@@ -40,6 +41,7 @@ type ContractInstallReq struct {
 	ccName    string
 	ccPath    string
 	ccVersion string
+	addrHash  []common.Hash
 }
 
 func (req ContractInstallReq) do(v contracts.ContractInf) (interface{}, error) {

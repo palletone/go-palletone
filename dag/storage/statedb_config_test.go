@@ -23,10 +23,13 @@ package storage
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func MockStateMemDb() IStateDb {
+func MockStateMemDb() *StateDb {
 	db, _ := ptndb.NewMemDatabase()
 	//l := log.NewTestLog()
 	//db, _ := ptndb.NewLDBDatabase("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb", 0, 0)
@@ -40,7 +43,15 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	fmt.Println("Connect to db error.")
 	//	return
 	//}
-	//db := MockStateMemDb()
+	db := MockStateMemDb()
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
+	err := db.SaveSysConfig("key1", nil, version)
+	assert.Nil(t, err)
+	data, version, err := db.GetSysConfig("key1")
+	assert.Nil(t, err)
+	t.Log(data)
+	// assert.Nil(t, data)
+	assert.NotNil(t, version)
 	//confs := []modules.ContractWriteSet{}
 	//aid := modules.AssetId{}
 	//aid.SetBytes([]byte("1111111111111111222222222222222222"))
@@ -64,7 +75,7 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	logger.Println(err)
 	//}
 	//
-	//data := db.GetConfig([]byte("MediatorCandidates"))
+	//data := db.GetSysConfig([]byte("MediatorCandidates"))
 	//var mList []core.MediatorInfo
 	//fmt.Println(data)
 	//if err := rlp.DecodeBytes(data, &mList); err != nil {
@@ -72,7 +83,7 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	return
 	//}
 	//// todo get ActiveMediators
-	//bNum := db.GetConfig([]byte("ActiveMediators"))
+	//bNum := db.GetSysConfig([]byte("ActiveMediators"))
 	//var mNum uint16
 	//if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
 	//	logger.Println("Check unit signature", "error", err.Error())
@@ -84,7 +95,7 @@ func TestSaveAndGetConfig(t *testing.T) {
 	//	return
 	//}
 	// todo get GenesisAsset
-	// genesisAsset, _, err := db.GetConfig([]byte(modules.FIELD_GENESIS_ASSET))
+	// genesisAsset, _, err := db.GetSysConfig([]byte(modules.FIELD_GENESIS_ASSET))
 	// if !assert.NotNil(t, err) {
 	// 	log.Error("getConfig is failed", "error", err)
 	// 	return

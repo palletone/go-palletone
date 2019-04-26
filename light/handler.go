@@ -118,6 +118,8 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg *sync.WaitGroup
+	//SPV
+	//spvTxChn chan reqSpvData
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -143,6 +145,7 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		//quitSync:    quitSync,
 		wg:          new(sync.WaitGroup),
 		noMorePeers: make(chan struct{}),
+		//spvTxChn:    make(chan reqSpvData, 50),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -274,6 +277,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 	if pm.lightSync {
 		go pm.syncer()
+
 	} else {
 		go func() {
 			for range pm.newPeerCh {
@@ -404,7 +408,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 }
 
-var reqList = []uint64{GetBlockHeadersMsg, GetBlockBodiesMsg, GetCodeMsg, GetReceiptsMsg, GetProofsV1Msg, SendTxMsg, SendTxV2Msg, GetTxStatusMsg, GetHeaderProofsMsg, GetProofsV2Msg, GetHelperTrieProofsMsg}
+var reqList = []uint64{GetBlockHeadersMsg, GetBlockBodiesMsg, GetCodeMsg, GetReceiptsMsg, GetProofsMsg, SendTxMsg, SendTxV2Msg, GetTxStatusMsg, GetHeaderProofsMsg, GetProofsV2Msg, GetHelperTrieProofsMsg}
 
 // handleMsg is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
@@ -470,14 +474,14 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case CodeMsg:
 		return nil //pm.CodeMsg(msg, p)
 
-	case GetProofsV1Msg:
-		return nil //pm.GetProofsMsg(msg, p)
+	case GetProofsMsg:
+		return pm.GetProofsMsg(msg, p)
 
 	case GetProofsV2Msg:
 		log.Trace("Received les/2 proofs request")
 
-	case ProofsV1Msg:
-		return nil //pm.ProofsMsg(msg, p)
+	case ProofsMsg:
+		return pm.ProofsMsg(msg, p)
 
 	case ProofsV2Msg:
 		log.Trace("Received les/2 proofs response")

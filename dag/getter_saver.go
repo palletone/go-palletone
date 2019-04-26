@@ -24,11 +24,13 @@ import (
 	"fmt"
 	"time"
 
+	"encoding/json"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -250,11 +252,20 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 }
 
 func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
-	accountInfo, err := d.unstableStateRep.RetrieveAccountInfo(addr)
+	accountInfo := &modules.AccountInfo{}
+	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTE_MEDIATOR)
 	if err != nil {
-		accountInfo = modules.NewAccountInfo()
+		log.Warn(err.Error())
+		return accountInfo
 	}
-
+	addrList := []string{}
+	json.Unmarshal(data.Value, &addrList)
+	for _, m := range addrList {
+		a, e := common.StringToAddress(m)
+		if e == nil {
+			accountInfo.VotedMediator = a
+		}
+	}
 	return accountInfo
 }
 
@@ -283,10 +294,12 @@ func (d *Dag) JuryCount() int {
 
 func (d *Dag) GetActiveJuries() []common.Address {
 	return nil
+
 	//return d.unstableStateRep.GetJuryCandidateList()
 }
 
 func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
+
 	return d.unstableStateRep.IsJury(addr)
 }

@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"golang.org/x/crypto/sha3"
 )
 
 func init() {
@@ -45,8 +45,8 @@ func newTestTransport(id discover.NodeID, fd net.Conn) transport {
 	wrapped.rw = newRLPXFrameRW(fd, secrets{
 		MAC:        zero16,
 		AES:        zero16,
-		IngressMAC: sha3.NewKeccak256(),
-		EgressMAC:  sha3.NewKeccak256(),
+		IngressMAC: sha3.New256(),
+		EgressMAC:  sha3.New256(),
 	})
 	return &testTransport{id: id, rlpx: wrapped}
 }

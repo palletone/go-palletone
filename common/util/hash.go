@@ -25,9 +25,9 @@ import (
 	"crypto/sha512"
 	"fmt"
 
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto/sha3"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+	"golang.org/x/crypto/sha3"
 )
 
 func Sha1(data []byte) string {
@@ -52,7 +52,7 @@ func Md5(data []byte) string {
 }
 
 func rlpHash(x interface{}) (h common.Hash) {
-	hw := sha3.NewKeccak256()
+	hw := sha3.New256()
 	rlp.Encode(hw, x)
 	hw.Sum(h[:0])
 	return h

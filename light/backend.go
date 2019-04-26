@@ -162,40 +162,35 @@ func (s *LightDummyAPI) Mining() bool {
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *LightPalletone) APIs() []rpc.API {
-	return []rpc.API{}
-	/*
-		return append(ptnapi.GetAPIs(s.ApiBackend), []rpc.API{
-			{
-				Namespace: "eth",
-				Version:   "1.0",
-				Service:   &LightDummyAPI{},
-				Public:    true,
-			}, {
-				Namespace: "eth",
-				Version:   "1.0",
-				Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
-				Public:    true,
-			}, {
-				Namespace: "eth",
-				Version:   "1.0",
-				Service:   filters.NewPublicFilterAPI(s.ApiBackend, true),
-				Public:    true,
-			},{
-				Namespace: "net",
-				Version:   "1.0",
-				Service:   s.netRPCService,
-				Public:    true,
-			},
-		}...)
-	*/
+	//return []rpc.API{}
+
+	return append(ptnapi.GetAPIs(s.ApiBackend), []rpc.API{
+		{
+			Namespace: "ptn",
+			Version:   "1.0",
+			Service:   &LightDummyAPI{},
+			Public:    true,
+		}, {
+			Namespace: "ptn",
+			Version:   "1.0",
+			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
+			Public:    true,
+		}, {
+			Namespace: "net",
+			Version:   "1.0",
+			Service:   s.netRPCService,
+			Public:    true,
+		},
+	}...)
+
 }
 
 //func (s *LightPalletone) ResetWithGenesisBlock(gb *types.Block) {
 //	s.blockchain.ResetWithGenesisBlock(gb)
 //}
 
-//func (s *LightPalletone) BlockChain() *light.LightChain      { return s.blockchain }
-func (s *LightPalletone) TxPool() *les.TxPool { return s.txPool }
+func (s *LightPalletone) ProtocolManager() *ProtocolManager { return s.protocolManager }
+func (s *LightPalletone) TxPool() *les.TxPool               { return s.txPool }
 
 //func (s *LightPalletone) Engine() consensus.Engine           { return s.engine }
 func (s *LightPalletone) LesVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
@@ -246,3 +241,8 @@ func (s *LightPalletone) Stop() error {
 
 	return nil
 }
+
+//func (s *LightPalletone) ProofTx(tx string) error {
+//
+//	return nil
+//}

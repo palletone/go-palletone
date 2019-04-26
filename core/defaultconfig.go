@@ -32,22 +32,21 @@ const (
 	DefaultDepositAmountForMediator  = "200000000000"
 	DefaultDepositAmountForJury      = "100000000000"
 	DefaultDepositAmountForDeveloper = "80000000000"
-	DefaultFoundationAddress = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
+	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
-	DefaultUccMemory  = "1073741824" //物理内存  1073741824  1G
-	DefaultUccMemorySwap  = "1073741824"//内存交换区，不设置默认为memory的两倍
-	DefaultUccCpuShares  = "1024"//CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	DefaultCpuPeriod  = "50000"// 限制CPU --cpu-period=50000 --cpu-quota=25000
-	DefaultUccCpuQuota  = "25000"//限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
-	DefaultUccCpuSetCpus  = "0-3"//限制使用某些CPUS  "1,3"  "0-3"
+	DefaultUccMemory     = "1073741824" //物理内存  1073741824  1G
+	DefaultUccMemorySwap = "1073741824" //内存交换区，不设置默认为memory的两倍
+	DefaultUccCpuShares  = "1024"       //CPU占用率，相对的  CPU 利用率权重，默认为 1024
+	DefaultCpuPeriod     = "50000"      // 限制CPU --cpu-period=50000 --cpu-quota=25000
+	DefaultUccCpuQuota   = "25000"      //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
+	DefaultUccCpuSetCpus = "0-3"        //限制使用某些CPUS  "1,3"  "0-3"
 
-	DefaultTempUccMemory  = "1073741824" //物理内存  1073741824  1G
-	DefaultTempUccMemorySwap  = "1073741824"//内存交换区，不设置默认为memory的两倍 1073741824  1G
-	DefaultTempUccCpuShares  = "512"//CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	DefaultTempUccCpuQuota  = "200000"//限制CPU 200%上限
+	DefaultTempUccMemory     = "1073741824" //物理内存  1073741824  1G
+	DefaultTempUccMemorySwap = "1073741824" //内存交换区，不设置默认为memory的两倍 1073741824  1G
+	DefaultTempUccCpuShares  = "512"        //CPU占用率，相对的  CPU 利用率权重，默认为 1024
+	DefaultTempUccCpuQuota   = "200000"     //限制CPU 200%上限
 
-
-	DefaultTokenHolder       = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	DefaultTokenHolder = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 
 	DefaultMediator = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
 	DefaultNodeInfo = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
@@ -114,8 +113,9 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMediatorInterval    = 3       //5 /* seconds */
-	DefaultMaintenanceInterval = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
+	DefaultMediatorInterval     = 3       //5 /* seconds */
+	DefaultMaintenanceInterval  = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
+	DefaultMaintenanceSkipSlots = 3       // number of slots to skip for maintenance interval
 
 	DefaultMediatorCreateFee        = 5000
 	DefaultAccountUpdateFee         = 20

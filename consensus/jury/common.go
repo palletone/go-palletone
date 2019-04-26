@@ -97,7 +97,7 @@ func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) er
 	return errors.New("checkAndAddSigSet add sig fail")
 }
 
-func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq interface{}, errMsg string) (*modules.Message) {
+func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq interface{}, errMsg string) *modules.Message {
 	err := modules.ContractError{
 		Code:    500, //todo
 		Message: errMsg,
@@ -140,6 +140,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					ccName:    reqPay.TplName,
 					ccPath:    reqPay.Path,
 					ccVersion: reqPay.Version,
+					addrHash:  reqPay.AddrHash,
 				}
 				installResult, err := ContractProcess(contract, req)
 				if err != nil {
@@ -152,6 +153,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_TPL_REQUEST txid(%s) err:%s", req.ccName, err))
 				}
 				payload := installResult.(*modules.ContractTplPayload)
+				payload.AddrHash = req.addrHash
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_TPL, payload))
 				return msgs, nil
 			}
@@ -333,20 +335,10 @@ func handleArg1(tx *modules.Transaction, reqArgs [][]byte) ([][]byte, error) {
 	if len(reqArgs) <= 1 {
 		return nil, fmt.Errorf("handlemsg1 req args error")
 	}
-	certInfo := modules.CertInfo{}
-	if len(tx.CertId) > 0 {
-		certInfo.NeedCert = true
-		certInfo.Certid = tx.CertId
-	} else {
-		certInfo.NeedCert = false
-	}
-	val, err := json.Marshal(certInfo)
-	if err != nil {
-		return nil, err
-	}
+
 	newReqArgs := [][]byte{}
 	newReqArgs = append(newReqArgs, reqArgs[0])
-	newReqArgs = append(newReqArgs, val)
+	newReqArgs = append(newReqArgs, tx.CertId)
 	newReqArgs = append(newReqArgs, reqArgs[1:]...)
 	return newReqArgs, nil
 }
@@ -417,11 +409,20 @@ func (p *Processor) checkTxIsExist(tx *modules.Transaction) bool {
 	return true
 }
 
+func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
+	id, err := p.dag.GetTxHashByReqId(reqId)
+	if err == nil && id != (common.Hash{}) {
+		return true
+	}
+	return false
+}
+
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Errorf("Validate tx[%s] throw an error:%s", tx.Hash().String(), err.Error())
 	}
+
 	return err == nil
 }
 
