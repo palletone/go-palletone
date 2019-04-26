@@ -64,7 +64,7 @@ class createToken(object):
     def ccinvoketxPass(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
         data = {
                 "jsonrpc":"2.0",
-                "method":"ptn_ccinvoketxPass",
+                "method":"contract_ccinvoketxPass",
                 "params":
                     [senderAddr,recieverAddr,str(senderAmount),str(poundage),contractId,[method,evidence,nickname,str(decimalAccuracy),str(tokenPoundage),senderAddr]],
                 "id":1
@@ -80,7 +80,7 @@ class createToken(object):
         #'''
         data = {
                 "jsonrpc":"2.0",
-                "method":"ptn_ccinvoketxPass",
+                "method":"contract_ccinvoketxPass",
                 "params":
                     n,
                 "id":1
@@ -96,7 +96,7 @@ class createToken(object):
         print self.nickname
         data = {
             "jsonrpc": "2.0",
-            "method": "ptn_ccinvoketx",
+            "method": "contract_ccinvoketx",
             "params":
                 [senderAddr, recieverAddr, str(senderAmount), str(poundage), "PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43",
                  ["supplyToken", self.nickname, str(tokenAmount)]],

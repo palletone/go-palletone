@@ -5565,21 +5565,21 @@ var methods = function () {
 //Contract
     var ccinstall = new Method({
         name: 'ccinstall',
-        call: 'ptn_ccinstall',
+        call: 'contract_ccinstall',
         params: 3, //ccName string, ccPath string, ccVersion string
         inputFormatter: [null, null, null],
     });
 
     var ccdeploy = new Method({
         name: 'ccdeploy',
-        call: 'ptn_ccdeploy',
+        call: 'contract_ccdeploy',
         params: 3, //templateId string, txid string, args []string ---->["init", "a", "1", "b", 10]
         inputFormatter: [null, null, null],
     });
 
     var ccstop = new Method({
         name: 'ccstop',
-        call: 'ptn_ccstop',
+        call: 'contract_ccstop',
         params: 2, //deployIdstring, txid string, deleteImage bool
         inputFormatter: [null, null]
     });
