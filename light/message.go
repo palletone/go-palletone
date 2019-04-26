@@ -3,10 +3,13 @@ package light
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -198,6 +201,58 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
+	log.Trace("Received proofs request")
+	// Decode the retrieval message
+	var reqs []ProofReq
+	if err := msg.Decode(&reqs); err != nil {
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+
+	var proofs proofsData
+	for _, req := range reqs {
+		log.Debug("Light PalletOne ProtocolManager GetProofsMsg", "req", req)
+		//Get txRootHash and indexer in tx array and validation path
+		//pm.dag.gettx
+		//core.GetTrieInfo()
+		tx, err := pm.dag.GetTransaction(req.BHash)
+		if err != nil {
+			return err
+		}
+		unit, err := pm.dag.GetUnitByHash(tx.UnitHash)
+		if err != nil {
+			return err
+		}
+		trie, trieRootHash := core.GetTrieInfo(unit.Txs)
+		log.Debug("Light PalletOne ProtocolManager GetProofsMsg", "unit TxRoot", unit.UnitHeader.TxRoot, "trieRootHash", trieRootHash)
+		var proof les.NodeList
+		trie.Prove(req.Key, 0, &proof)
+		proofs = append(proofs, proof)
+	}
+	return p.SendProofs(0, 0, proofs)
+}
+
+func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
+	if pm.odr == nil {
+		return errResp(ErrUnexpectedResponse, "")
+	}
+
+	log.Trace("Received proofs response")
+	var resp []les.NodeList
+	if err := msg.Decode(&resp); err != nil {
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+	log.Debug("Light PalletOne ProtocolManager ProofsMsg", "resp", resp)
+	//val, err, _ := trie.VerifyProof(root, []byte("abc"), resp)
+	//if err != nil {
+	//	log.Errorf("VerifyProof error for key %x: %v\nraw proof: %v", "abc", err, proofs)
+	//}
+	//if !bytes.Equal(val, []byte("abcdef")) {
+	//	log.Errorf("VerifyProof returned wrong value for key %x: got %x, want %x", "abc", val, "abddef")
+	//}
+	return nil
+}
+
 /*
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	log.Trace("Received block bodies request")
@@ -374,7 +429,7 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 	return p.SendProofs(req.ReqID, bv, proofs)
 }
 
-func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
+func (pm *ProtocolManager) ProofsV1Msg(msg p2p.Msg, p *peer) error {
 	if pm.odr == nil {
 		return errResp(ErrUnexpectedResponse, "")
 	}

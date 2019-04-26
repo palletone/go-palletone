@@ -216,7 +216,9 @@ func (p *peer) SendReceiptsRLP(reqID, bv uint64, receipts []rlp.RawValue) error 
 
 // SendProofs sends a batch of legacy LES/1 merkle proofs, corresponding to the ones requested.
 func (p *peer) SendProofs(reqID, bv uint64, proofs proofsData) error {
-	return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
+	log.Debug("Light PalleOne SendProofs", "len", len(proofs))
+	return p2p.Send(p.rw, ProofsMsg, proofs)
+	//return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
 }
 
 // SendProofsV2 sends a batch of merkle proofs, corresponding to the ones requested.
@@ -278,14 +280,7 @@ func (p *peer) RequestReceipts(reqID, cost uint64, hashes []common.Hash) error {
 // RequestProofs fetches a batch of merkle proofs from a remote node.
 func (p *peer) RequestProofs(reqID, cost uint64, reqs []ProofReq) error {
 	log.Debug("Fetching batch of proofs", "count", len(reqs))
-	switch p.version {
-	case lpv1:
-		return sendRequest(p.rw, GetProofsV1Msg, reqID, cost, reqs)
-	case lpv2:
-		return sendRequest(p.rw, GetProofsV2Msg, reqID, cost, reqs)
-	default:
-		panic(nil)
-	}
+	return p2p.Send(p.rw, GetProofsMsg, reqs)
 }
 
 // RequestHelperTrieProofs fetches a batch of HelperTrie merkle proofs from a remote node.
