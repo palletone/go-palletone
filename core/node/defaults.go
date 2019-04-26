@@ -33,11 +33,11 @@ var DefaultConfig = Config{
 	DataDir:          DefaultDataDir(),
 	HTTPHost:         DefaultHTTPHost,
 	HTTPPort:         DefaultHTTPPort,
-	HTTPModules:      []string{"net", "web3", "wallet", "dag", "personal", "mediator"},
+	HTTPModules:      []string{"net", "web3", "wallet", "dag", "personal", "mediator", "contract"},
 	HTTPVirtualHosts: []string{"localhost"},
 	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
-	WSModules:        []string{"net", "web3", "dag", "mediator"},
+	WSModules:        []string{"net", "web3", "dag", "mediator", "contract"},
 }
 
 // DefaultDataDir is the default data directory to use for the databases and other
