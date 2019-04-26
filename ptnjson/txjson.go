@@ -53,13 +53,14 @@ type TxWithUnitInfoJson struct {
 	TxIndex    uint64    `json:"tx_index"`
 }
 type TplJson struct {
-	TemplateId   string `json:"template_id"`
-	Name         string `json:"name"`
-	Path         string `json:"path"`
-	Version      string `json:"version"`
-	Memory       uint16 `json:"memory"`
-	Bytecode     []byte `json:"bytecode"`      // contract bytecode
+	TemplateId string `json:"template_id"`
+	Name       string `json:"name"`
+	Path       string `json:"path"`
+	Version    string `json:"version"`
+	Memory     uint16 `json:"memory"`
+	Bytecode   []byte `json:"bytecode"` // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
+	AddrHash   string `json:"addr_hash"`
 }
 type DeployJson struct {
 	TemplateId string   `json:"template_id"`
@@ -195,9 +196,13 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson.Name = tpl.Name
 	tpljson.Path = tpl.Path
 	tpljson.Version = tpl.Version
-	tpljson.Bytecode = tpl.Bytecode[:]
-	tpljson.BytecodeSize = len(tpl.Bytecode[:])
+	tpljson.Bytecode = tpl.ByteCode[:]
+	tpljson.BytecodeSize = len(tpl.ByteCode[:])
 	tpljson.Memory = tpl.Memory
+
+	ah, _ := json.Marshal(tpl.AddrHash)
+	tpljson.AddrHash = string(ah)
+
 	return tpljson
 }
 func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
