@@ -57,14 +57,12 @@ class createToken(object):
                 self.tempToken = key
                 self.tempValue = dict[key]
                 #print self.tempToken,self.tempvalue
-            else:
-                self.tempValue = 0
         return self.tempToken,self.tempValue
 
     def ccinvoketxPass(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
         data = {
                 "jsonrpc":"2.0",
-                "method":"contract_ccinvoketxPass",
+                "method":"ptn_ccinvoketxPass",
                 "params":
                     [senderAddr,recieverAddr,str(senderAmount),str(poundage),contractId,[method,evidence,nickname,str(decimalAccuracy),str(tokenPoundage),senderAddr]],
                 "id":1
@@ -80,7 +78,7 @@ class createToken(object):
         #'''
         data = {
                 "jsonrpc":"2.0",
-                "method":"contract_ccinvoketxPass",
+                "method":"ptn_ccinvoketxPass",
                 "params":
                     n,
                 "id":1
@@ -96,7 +94,7 @@ class createToken(object):
         print self.nickname
         data = {
             "jsonrpc": "2.0",
-            "method": "contract_ccinvoketx",
+            "method": "ptn_ccinvoketx",
             "params":
                 [senderAddr, recieverAddr, str(senderAmount), str(poundage), "PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43",
                  ["supplyToken", self.nickname, str(tokenAmount)]],
@@ -147,6 +145,20 @@ class createToken(object):
         result1 = json.loads(response.content)
         print result1['result'][0]
         return result1['result'][0]
+
+    def personalListAccounts(self):
+        data = {
+            "jsonrpc": "2.0",
+            "method": "personal_listAccounts",
+            "params":
+                [],
+            "id": 1
+        }
+        data = json.dumps(data)
+        response = requests.post(url=self.domain, data=data, headers=self.headers)
+        result1 = json.loads(response.content)
+        print result1['result']
+        return result1['result']
 
     def paramGroups(self,dynamic,number,*params):
         if len(params) < number:
