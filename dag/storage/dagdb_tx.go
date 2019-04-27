@@ -204,7 +204,7 @@ func (dagdb *DagDb) IsTransactionExist(hash common.Hash) (bool, error) {
 	key := append(constants.TRANSACTION_PREFIX, hash.Bytes()...)
 	exist, err := dagdb.db.Has(key)
 	if err != nil {
-		log.Errorf("Check tx is exist throw error:%s", err.Error())
+		log.Warnf("Check tx is exist throw error:%s", err.Error())
 		return false, err
 	}
 	return exist, nil

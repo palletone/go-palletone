@@ -27,8 +27,8 @@ import (
 
 const (
 	jsonrpc      = "2.0"
-	invokemethod = "ptn_ccinvoketx"
-	querymethod  = "ptn_ccquery"
+	invokemethod = "contract_ccinvoketx"
+	querymethod  = "contract_ccquery"
 	id           = 1
 	amount       = "100"
 	fee          = "1"

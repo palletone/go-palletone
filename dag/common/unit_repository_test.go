@@ -360,7 +360,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 	// TODO test ContractTplPayload
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: []byte("contract_template0000"),
-		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
+		ByteCode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
 		Name:       "TestContractTpl",
 		Path:       "./contract",
 	}

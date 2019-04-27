@@ -20,8 +20,9 @@
 package manger
 
 import (
-	"golang.org/x/net/context"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/common/log"
@@ -49,7 +50,7 @@ func (s *SupportImpl) IsSysCCAndNotInvokableExternal(name string) bool {
 // a client may obtain more than one such simulator; they are made unique
 // by way of the supplied txid
 func (s *SupportImpl) GetTxSimulator(idag dag.IDag, chainid string, txid string) (rwset.TxSimulator, error) {
-	return rwM.NewTxSimulator(idag, chainid, txid)
+	return rwM.NewTxSimulator(idag, chainid, txid, true)
 }
 
 //IsSysCC returns true if the name matches a system chaincode's

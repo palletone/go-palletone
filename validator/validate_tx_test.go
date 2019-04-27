@@ -67,25 +67,25 @@ func TestValidate_ValidateTx_MsgCodeIncorrect(t *testing.T) {
 
 var hash1 = common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac")
 
-func TestValidate_ValidateTx_IncorrectFee(t *testing.T) {
-	tx := &modules.Transaction{}
-	outPoint := &modules.OutPoint{hash1, 0, 1}
-	pay1 := newTestPayment(outPoint, 2000)
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
-	signTx(tx, outPoint)
-	utxoq := &testutxoQuery{}
-	validat := NewValidate(nil, utxoq, nil)
-	err := validat.ValidateTx(tx, false)
-	assert.NotNil(t, err)
-	t.Log(err)
+// func TestValidate_ValidateTx_IncorrectFee(t *testing.T) {
+// 	tx := &modules.Transaction{}
+// 	outPoint := &modules.OutPoint{hash1, 0, 1}
+// 	pay1 := newTestPayment(outPoint, 2000)
+// 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+// 	signTx(tx, outPoint)
+// 	utxoq := &testutxoQuery{}
+// 	validat := NewValidate(nil, utxoq, nil)
+// 	err := validat.ValidateTx(tx, false)
+// 	assert.NotNil(t, err)
+// 	t.Log(err)
 
-	pay1.Outputs[0].Value = 999
-	signTx(tx, outPoint)
-	err = validat.ValidateTx(tx, false)
-	assert.Nil(t, err)
-	t.Log(err)
+// 	pay1.Outputs[0].Value = 999
+// 	signTx(tx, outPoint)
+// 	err = validat.ValidateTx(tx, false)
+// 	assert.Nil(t, err)
+// 	t.Log(err)
 
-}
+// }
 
 func signTx(tx *modules.Transaction, outPoint *modules.OutPoint) {
 	privKey, _, addr := getAccount()

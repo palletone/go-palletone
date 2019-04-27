@@ -25,39 +25,74 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
+	"sync"
 )
 
 type RwSetTxMgr struct {
-	//rwLock            	sync.RWMutex
 	name      string
 	baseTxSim map[string]TxSimulator
+	closed    bool
+	rwLock    sync.RWMutex
+	wg        sync.WaitGroup
 }
 
 func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
-	return &RwSetTxMgr{name, make(map[string]TxSimulator)}, nil
+	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator)}, nil
 }
 
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
-func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string) (TxSimulator, error) {
+func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string, is_sys bool) (TxSimulator, error) {
 	log.Debugf("constructing new tx simulator")
 	hash := common.HexToHash(txid)
-	if _, ok := m.baseTxSim[chainid]; ok {
-		if m.baseTxSim[chainid].(*RwSetTxSimulator).txid == hash {
-			log.Infof("chainid[%s] , txid[%s]already exit", chainid, txid)
-			return m.baseTxSim[chainid], nil
+	if is_sys {
+		m.rwLock.RLock()
+		ts, ok := m.baseTxSim[chainid]
+		m.rwLock.RUnlock()
+		if ok {
+			if ts.(*RwSetTxSimulator).txid == hash {
+				log.Infof("chainid[%s] , txid[%s]already exit, return.", chainid, txid)
+				return ts, nil
+			}
 		}
 	}
-
 	t := NewBasedTxSimulator(idag, hash)
 	if t == nil {
 		return nil, errors.New("NewBaseTxSimulator is failed.")
 	}
+	m.rwLock.Lock()
 	m.baseTxSim[chainid] = t
+	m.wg.Add(1)
+	m.rwLock.Unlock()
 	log.Infof("creat new rwSetTx")
 
 	return t, nil
 }
-
-func init() {
-
+func (m *RwSetTxMgr) CloseTxSimulator(chainid string) error {
+	m.rwLock.Lock()
+	defer m.rwLock.Unlock()
+	if ts, ok := m.baseTxSim[chainid]; ok {
+		if ts.CheckDone() != nil {
+			return errors.New("this txsimulator isnot done.")
+		}
+		delete(m.baseTxSim, chainid)
+		m.wg.Done()
+	}
+	return nil
+}
+func (m *RwSetTxMgr) Close() {
+	m.rwLock.Lock()
+	if m.closed {
+		return
+	}
+	for _, ts := range m.baseTxSim {
+		if ts.CheckDone() == nil {
+			continue
+		}
+		// todo
+		//ts.Done()
+	}
+	m.wg.Wait()
+	m.closed = true
+	m.rwLock.Unlock()
+	return
 }
