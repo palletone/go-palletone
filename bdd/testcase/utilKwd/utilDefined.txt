@@ -1,5 +1,4 @@
 *** Settings ***
-Library           ../../utilFunc/createToken.py
 
 *** Keywords ***
 setPostRequest
