@@ -96,3 +96,10 @@ InvalidCcinvoke
     ${resp}    When I_post_CcinvokePass_request    ${ret}
     ${resultCrt}    Then I_get_the_CcinvokePass_result    ${resp}    ${error_code}    ${error_message}
     [Return]    ${resultCrt}
+
+InvalidTransferToken
+    [Arguments]    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}    ${error_code}    ${error_message}    ${senderAdd}    ${recieverAdd}
+    ${ret}    Given I_set_TransferToken_params    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}    ${senderAdd}    ${recieverAdd}
+    ${resp}    When I_post_TransferToken_request    ${ret}
+    ${resultCrt}    Then I_get_the_TransferToken_result    ${resp}    ${error_code}    ${error_message}
+    [Return]    ${resultCrt}
