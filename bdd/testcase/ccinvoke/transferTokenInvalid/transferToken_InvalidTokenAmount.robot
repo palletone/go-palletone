@@ -21,7 +21,7 @@ Scenario: InvalidTokenAmount
     ${tokenId}    100000000    1    description    1    ${6000000}    -32000
     ...    Select token utxo err    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    -0.00000001    1    description    1    ${6000000}    -32000
-    ...    INVALID_AMOUNT    ${listAccounts[0]}    ${listAccounts[1]}
+    ...    INVALID_PAYMMENT_INPUT    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    %    1    description    1    ${6000000}    -32602
     ...    invalid argument 3: Error decoding string    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    j    1    description    1    ${6000000}    -32602

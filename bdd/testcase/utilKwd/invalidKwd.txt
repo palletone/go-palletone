@@ -68,7 +68,7 @@ I_set_CcinvokePass_params
 
 I_post_CcinvokePass_request
     [Arguments]    @{transList}
-    ${resp}    setPostRequest    ${host}    contract_ccinvoketxPass    @{transList}
+    ${resp}    setPostRequest    ${host}    ptn_ccinvoketxPass    @{transList}
     [Return]    ${resp}
 
 I_get_the_CcinvokePass_result

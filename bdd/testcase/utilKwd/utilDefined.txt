@@ -1,3 +1,6 @@
+*** Settings ***
+Library           ../../utilFunc/createToken.py
+
 *** Keywords ***
 setPostRequest
     [Arguments]    ${host}    ${method}    ${transList}
