@@ -98,7 +98,8 @@ type iDag interface {
 	IsConsecutiveMediator(nextMediator common.Address) bool
 	MediatorParticipationRate() uint32
 
-	GetAccountInfo(addr common.Address) *modules.AccountInfo
+	GetAccountVotedMediator(addr common.Address) common.Address
+	//GetAccountInfo(addr common.Address) *modules.AccountInfo
 	//GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
 	//	txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetChainParameters() core.ChainParameters

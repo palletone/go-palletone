@@ -170,8 +170,11 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 		return nil, err
 	}
 
-	medMap := a.dag.GetAccountInfo(addr).VotedMediator
-	return []string{medMap.String()}, nil
+	voted := a.dag.GetAccountVotedMediator(addr)
+	return []string{voted.String()}, nil
+
+	//medMap := a.dag.GetAccountInfo(addr).VotedMediator
+	//return []string{medMap.String()}, nil
 	//mediators := make([]string, 0, len(medMap))
 	//
 	//for med, _ := range medMap {
