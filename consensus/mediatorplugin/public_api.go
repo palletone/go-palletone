@@ -120,6 +120,7 @@ func (a *PublicMediatorAPI) List() []string {
 
 	return addStrs
 }
+
 func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
 	mediatorVoteCount := make(map[string]uint64)
 	mas := a.dag.GetMediators()
@@ -137,6 +138,7 @@ func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
 	}
 	return mediatorVoteCount
 }
+
 func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.dag.ActiveMediators()

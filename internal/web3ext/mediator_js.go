@@ -67,16 +67,16 @@ web3._extend({
 			call: 'mediator_stopProduce',
 			params: 0,
 		}),
-		
+		new web3._extend.Method({
+			name: 'listVoteResult',
+			call: 'mediator_listVoteResult',
+			params: 0,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({
 			name: 'list',
 			getter: 'mediator_list'
-		}),
-		new web3._extend.Property({
-			name: 'listVoteResult',
-			getter: 'mediator_listVoteResult'
 		}),
 	]
 });
