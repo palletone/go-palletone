@@ -69,16 +69,14 @@ func (dag *Dag) performAccountMaintenance() {
 	mediators := dag.GetMediators()
 	mediatorCount := len(mediators)
 	dag.mediatorVoteTally = make([]*voteTally, mediatorCount, mediatorCount)
-	mediatorIndex := make(map[common.Address]int, mediatorCount)
 
-	maxMediatorCount := dag.GetChainParameters().MaximumMediatorCount
-	dag.mediatorCountHistogram = make([]uint64, maxMediatorCount/2+1)
+	//maxMediatorCount := dag.GetChainParameters().MaximumMediatorCount
+	//dag.mediatorCountHistogram = make([]uint64, maxMediatorCount/2+1)
 
 	// 2. 遍历所有账户
 	allAccount := dag.LookupAccount()
 	mediatorVoteCount := make(map[common.Address]uint64)
 	for _, info := range allAccount {
-		//votingStake := dag.unstableStateRep.GetAccountBalance(addr)
 		// 累加投票数量
 		mediatorVoteCount[info.VotedMediator] += info.Balance
 		dag.totalVotingStake += info.Balance
@@ -86,13 +84,9 @@ func (dag *Dag) performAccountMaintenance() {
 
 	index := 0
 	for mediator, _ := range mediators {
-		// 建立 mediator 地址和index 的映射关系
-		mediatorIndex[mediator] = index
-
 		// 初始化 mediator 的投票数据
 		voteTally := newVoteTally(mediator)
-		count := mediatorVoteCount[mediator]
-		voteTally.votedCount = count
+		voteTally.votedCount = mediatorVoteCount[mediator]
 		dag.mediatorVoteTally[index] = voteTally
 
 		index++
