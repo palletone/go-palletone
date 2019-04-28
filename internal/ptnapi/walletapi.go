@@ -1061,7 +1061,7 @@ func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from 
 		return common.Hash{}, err
 	}
 	txJson, _ := json.Marshal(rawTx)
-	log.Debugf("SignedTx:%s", string(txJson))
+	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
 	//4.
 	return submitTransaction(ctx, s.b, rawTx)
 }

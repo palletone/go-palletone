@@ -191,6 +191,25 @@ func Debugf(format string, ctx ...interface{}) {
 	Logger.Debug(fmt.Sprintf(format, ctx...))
 }
 
+type GetString func() string
+
+func DebugDynamic(getStr GetString) {
+	if Logger == nil {
+		InitLogger()
+	}
+	if LogConfig.LoggerLvl == "DEBUG" {
+		Logger.Debug(getStr())
+	}
+}
+func InfoDynamic(getStr GetString) {
+	if Logger == nil {
+		InitLogger()
+	}
+	if LogConfig.LoggerLvl == "DEBUG" || LogConfig.LoggerLvl == "INFO" {
+		Logger.Info(getStr())
+	}
+}
+
 // Info
 func Info(msg string, ctx ...interface{}) {
 	if Logger == nil {
