@@ -100,8 +100,8 @@ func creatMulti(userPubkey string, juryPubkeys []string, stub shim.ChaincodeStub
 	sort.Sort(a)
 	//
 	createMultiSigParams := BTCAddress_createMultiSig{Method: "CreateMultiSigAddress"}
-	createMultiSigParams.M = 3
-	createMultiSigParams.N = 5
+	createMultiSigParams.M = 2 //mod
+	createMultiSigParams.N = 3 //mod
 	createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, userPubkey)
 	for i := range juryPubkeys {
 		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, juryPubkeys[i])
@@ -169,7 +169,7 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
 	}
 	//stub.PutState("recvResult", recvResult)
-	if len(juryMsg) != 4 {
+	if len(juryMsg) != 2 { //mod
 		return shim.Success([]byte("RecvJury result's len not enough"))
 	}
 
@@ -251,8 +251,9 @@ func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 		log.Debugf("pubkeys Unmarshal failed")
 		return shim.Success([]byte("pubkeys Unmarshal failed"))
 	}
-	if len(pubkeys) != 4 {
-		return shim.Success([]byte("pubkeys' length is not 4")) //mod
+	if len(pubkeys) != 2 { //mod
+		log.Debugf("pubkeys' length is not 2")
+		return shim.Success([]byte("pubkeys' length is not 2")) //mod
 	}
 
 	createMultiResult, err := creatMulti(userPubkey, pubkeys, stub)
@@ -280,7 +281,7 @@ func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 		log.Debugf("PutState symbolsMultiAddr failed err: %s", err.Error())
 		return shim.Error("PutState symbolsMultiAddr failed")
 	}
-	err = stub.PutState(symbolsRedeem+createResult.P2ShAddress, []byte(createResult.P2ShAddress))
+	err = stub.PutState(symbolsRedeem+createResult.P2ShAddress, []byte(createResult.RedeemScript))
 	if err != nil {
 		log.Debugf("PutState symbolsRedeem failed err: %s", err.Error())
 		return shim.Error("PutState symbolsRedeem failed")
@@ -669,16 +670,12 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	sort.Sort(a)
 	//
 	var result MergeTransactionResult
-	array := [][3]int{{1, 2, 3}, {1, 2, 4}, {1, 3, 4}, {2, 3, 4}}
-	num := 4
-	if len(answers) == 3 {
-		num = 1
-	}
+	array := [][3]int{{1, 2}}
+	num := 1
 	for i := 0; i < num; i++ {
 		mergeTx.MergeTransactionHexs = []string{}
 		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]]))
 		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][2]]))
 		//
 		reqBytes, err := json.Marshal(mergeTx)
 		if err != nil {
@@ -853,7 +850,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
 	}
 	//stub.PutState("recvResult", recvResult)
-	if len(juryMsg) < 3 {
+	if len(juryMsg) < 2 { //mod
 		return shim.Success([]byte("RecvJury result's len not enough"))
 	}
 

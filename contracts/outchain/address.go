@@ -56,8 +56,6 @@ func processAddressMethodBTC(chaincodeID string, outChainAddr *pb.OutChainAddres
 			for i := 0; i < needJuryPubkeys; i++ {
 				createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, pubkeys[i])
 			}
-		} else {
-			return "", errors.New("params N error or Jury Pubkeys be set.")
 		}
 
 		log.Debug(modName, "CreateMultiSigAddress PublicKeys ==== ==== ", createMultiSigParams.PublicKeys)
