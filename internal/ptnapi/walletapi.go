@@ -319,11 +319,11 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		sh := common.BytesToHash(hashforsign)
 		inputjson[index].HashForSign = sh.String()
 	}
-	bytetxjson, err := json.Marshal(mtx)
-	if err != nil {
-		return "", err
-	}
-	mtxbt, err := rlp.EncodeToBytes(bytetxjson)
+	//bytetxjson, err := json.Marshal(mtx)
+	//if err != nil {
+	//	return "", err
+	//}
+	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
@@ -960,6 +960,12 @@ func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duratio
 		return errors.New("get addr by outpoint is err")
 	}
 	return nil
+}
+
+func (s *PublicWalletAPI) TransferPtn(ctx context.Context, from string, to string,
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
+	gasToken := dagconfig.DagConfig.GasToken
+	return s.TransferToken(ctx, gasToken, from, to, amount, fee, Extra, password, duration)
 }
 
 func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,

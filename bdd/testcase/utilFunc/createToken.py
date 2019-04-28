@@ -114,7 +114,7 @@ class createToken(object):
     def transferToken(self,tokenId,senderAddr,recieverAddr,senderAmount,poundage,evidence,unlocktime):
             data = {
                 "jsonrpc": "2.0",
-                "method": "ptn_transferToken",
+                "method": "wallet_transferToken",
                 "params": [
                     tokenId,senderAddr,recieverAddr,senderAmount,poundage,evidence,"1",unlocktime
                 ],

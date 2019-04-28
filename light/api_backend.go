@@ -390,7 +390,8 @@ func (b *LesApiBackend) ContractQuery(contractId []byte, txid string, args [][]b
 }
 
 func (b *LesApiBackend) Dag() dag.IDag {
-	return b.Dag()
+	//return b.Dag()
+	return nil
 }
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
