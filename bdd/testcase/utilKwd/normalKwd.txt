@@ -90,7 +90,7 @@ I_set_TransferToken_params_to_Normal
 
 I_post_a_TransferToken_request
     [Arguments]    @{transList}
-    ${resp}    setPostRequest    ${host}    ptn_transferToken    @{transList}
+    ${resp}    setPostRequest    ${host}    wallet_transferToken    @{transList}
     [Return]    ${resp}
 
 I_get_a_TransferToken_result
@@ -156,7 +156,7 @@ I_set_TransferToken_params_to_Normal
 	
 I_post_a_TransferToken_request
     [Arguments]    @{transList}
-    ${resp}    setPostRequest    ${host}    ptn_transferToken    @{transList}
+    ${resp}    setPostRequest    ${host}    wallet_transferToken    @{transList}
     [Return]    ${resp}
 
 I_get_a_TransferToken_result
