@@ -1330,7 +1330,7 @@ func (handler *Handler) handleGetTimestamp(msg *pb.ChaincodeMessage) {
 			//glh
 			//res, err = txContext.txsimulator.GetPrivateData(chaincodeID, getTimestamp.Collection, getTimestamp.Key)
 		} else {
-			res, err = txContext.txsimulator.GetTimestamp(msg.ContractId, chaincodeID, getTimestamp.RangeNumber)
+			res, err = txContext.txsimulator.GetTimestamp(chaincodeID, getTimestamp.RangeNumber)
 			//glh
 			//res, err = txContext.txsimulator.GetState(chaincodeID, getTimestamp.Key)
 		}
@@ -1596,8 +1596,8 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 
 			// Execute the chaincode... this CANNOT be an init at least for now
 			response, execErr := handler.chaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)
-			log.Infof("----------------2-------------------------------%s\n\n\n\n\n",response)
-			log.Infof("-----------------2------------------------------%s\n\n\n\n\n",string(response.Payload))
+			log.Infof("----------------2-------------------------------%s\n\n\n\n\n", response)
+			log.Infof("-----------------2------------------------------%s\n\n\n\n\n", string(response.Payload))
 			//payload is marshalled and send to the calling chaincode's shim which unmarshals and
 			//sends it to chaincode
 			res = nil

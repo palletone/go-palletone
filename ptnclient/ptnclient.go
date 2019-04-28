@@ -428,7 +428,7 @@ func (ec *Client) GetPtnTestCoin(ctx context.Context, from string, to string, am
 
 func (ec *Client) TransferToken(ctx context.Context, asset string, from string, to string, amount uint64, fee uint64, password string, extra string, duration *uint64) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "ptn_transferToken", asset, from, to, amount, fee, extra, password, duration)
+	err := ec.c.CallContext(ctx, &result, "wallet_transferToken", asset, from, to, amount, fee, extra, password, duration)
 	return result, err
 }
 

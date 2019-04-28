@@ -63,17 +63,17 @@ const Wallet_JS = `
 			call: 'wallet_getPtnTestCoin',
 			params: 5
 		}),
-		new web3._extend.Method({
-			name: 'ccinvoketx',
-			call: 'wallet_ccinvoketx',
-			params: 7, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid
-			inputFormatter: [null, null, null,null, null, null, null]
-		}),
+		
 		new web3._extend.Method({
 			name: 'transferToken',
 			call: 'wallet_transferToken',
 			params: 8,
 			inputFormatter: [null,null,null,null,null,null,null,null]
+		}),
+		new web3._extend.Method({
+			name: 'transferPtn',
+			call: 'wallet_transferPtn',
+			params: 1,
 		}),
 		new web3._extend.Method({
 			name: 'createProofTransaction',
@@ -92,19 +92,7 @@ const Wallet_JS = `
 			call: 'wallet_getFileInfoByFileHash',
 			params: 1,
 			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'ccquery',
-			call: 'wallet_ccquery',
-			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
-			inputFormatter: [null,null]
-		}),
-		new web3._extend.Method({
-			name: 'ccstoptx',
-        	call: 'wallet_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
-		}),
+		}),		
  	]
  });
  `

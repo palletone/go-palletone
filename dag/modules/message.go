@@ -56,6 +56,10 @@ const (
 	// 添加别的msg类型，需要添加到OP_MEDIATOR_CREATE 与 APP_UNKNOW之间
 )
 
+func (mt MessageType) IsRequest() bool {
+	return mt > 99
+}
+
 // key: message.UnitHash(message+timestamp)
 type Message struct {
 	App     MessageType `json:"app"`     // message type

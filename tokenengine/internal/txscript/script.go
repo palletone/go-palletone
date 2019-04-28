@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -316,17 +317,23 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 
 	txCopy := tx.Clone()
 	payCopy := txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
-	for i := range payCopy.Inputs {
-		if i == idx {
-			// UnparseScript cannot fail here because removeOpcode
-			// above only returns a valid script.
-			sigScript, _ := unparseScript(script)
-			payCopy.Inputs[idx].SignatureScript = sigScript
-		} else {
-			payCopy.Inputs[i].SignatureScript = nil
+
+	for mIdx, mCopy := range txCopy.TxMessages {
+		if mCopy.App == modules.APP_PAYMENT {
+			pay := txCopy.TxMessages[mIdx].Payload.(*modules.PaymentPayload)
+
+			for i := range pay.Inputs {
+				if i == idx && mIdx == msgIdx {
+					// UnparseScript cannot fail here because removeOpcode
+					// above only returns a valid script.
+					sigScript, _ := unparseScript(script)
+					pay.Inputs[idx].SignatureScript = sigScript
+				} else {
+					pay.Inputs[i].SignatureScript = nil
+				}
+			}
 		}
 	}
-
 	switch hashType & sigHashMask {
 	case SigHashNone:
 		payCopy.Outputs = payCopy.Outputs[0:0] // Empty slice.
@@ -374,7 +381,10 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 	//payCopy.Serialize(&wbuf)
 	//binary.Write(&wbuf, binary.LittleEndian, hashType)
 	//return wire.DoubleSha256(wbuf.Bytes())
-	data, _ := rlp.EncodeToBytes(&txCopy)
+	data, err := rlp.EncodeToBytes(&txCopy)
+	if err != nil {
+		log.Error("Rlp encode tx error:" + err.Error())
+	}
 	hash, _ := crypto.Hash(data)
 	return hash
 

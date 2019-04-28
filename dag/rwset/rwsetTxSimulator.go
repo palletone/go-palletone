@@ -115,7 +115,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 }
 
 // GetState implements method in interface `ledger.TxSimulator`
-func (s *RwSetTxSimulator) GetTimestamp(contractid []byte, ns string, rangeNumber uint32) ([]byte, error) {
+func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, error) {
 	//testValue := []byte("abc")
 	if err := s.CheckDone(); err != nil {
 		return nil, err
