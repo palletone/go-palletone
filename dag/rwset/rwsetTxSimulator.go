@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"runtime"
 )
 
 type RwSetTxSimulator struct {
@@ -188,13 +189,36 @@ func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]
 }
 
 func (s *RwSetTxSimulator) CheckDone() error {
-	if s.doneInvoked {
+	if !s.doneInvoked {
 		return errors.New("This instance should not be used after calling Done()")
 	}
 	return nil
 }
+func (h *RwSetTxSimulator) Done() {
+	if h.doneInvoked {
+		return
+	}
+	h.doneInvoked = true
+	h.Close()
+}
 func (s *RwSetTxSimulator) Close() {
 	s.dag.Close()
+	runtime.SetFinalizer(s, func(item *RwSetTxSimulator) {
+		if len(item.txid) > 0 || item.txid != (common.Hash{}) {
+			log.Infof("free txid[%s]", item.txid.String())
+			for _, b := range item.txid {
+				common.Free(&b)
+			}
+		}
+		if item.chainIndex != nil {
+			for _, b := range item.chainIndex.AssetID.Bytes() {
+				common.Free(&b)
+			}
+			//common.Free(byte(&item.chainIndex.Index))
+		}
+
+	})
+
 	return
 }
 
@@ -206,14 +230,6 @@ func decomposeVersionedValue(versionedValue *VersionedValue) ([]byte, *Version) 
 		ver = versionedValue.Version
 	}
 	return value, ver
-}
-
-func (h *RwSetTxSimulator) Done() {
-	if h.doneInvoked {
-		return
-	}
-	//todo
-	h.doneInvoked = true
 }
 
 func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
