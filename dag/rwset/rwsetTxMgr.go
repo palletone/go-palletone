@@ -67,12 +67,14 @@ func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string, 
 
 	return t, nil
 }
+
+// 每次产块结束后，需要关闭该chainId的txsimulator.
 func (m *RwSetTxMgr) CloseTxSimulator(chainid string) error {
 	m.rwLock.Lock()
 	defer m.rwLock.Unlock()
 	if ts, ok := m.baseTxSim[chainid]; ok {
 		if ts.CheckDone() != nil {
-			return errors.New("this txsimulator isnot done.")
+			return errors.New("this txsimulator is not done.")
 		}
 		delete(m.baseTxSim, chainid)
 		m.wg.Done()
@@ -89,9 +91,11 @@ func (m *RwSetTxMgr) Close() {
 			continue
 		}
 		// todo
+		// 等待tx simulator 被执行完成。
 		//ts.Done()
 	}
 	m.wg.Wait()
+	m.baseTxSim = make(map[string]TxSimulator)
 	m.closed = true
 	m.rwLock.Unlock()
 	return
