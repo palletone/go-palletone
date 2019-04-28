@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/util"
@@ -299,4 +300,17 @@ func newTestContractInvokeResult() *ContractInvokePayload {
 	}
 
 	return pay
+}
+func TestTx2PaymentsEncode(t *testing.T) {
+	txJson := `{"MsgCount":2,"CertId":"0","Payment":[{"Index":0,"inputs":[{"signature_script":"QRcoSpiaiw98xkVvzp04bLyHq/lEp7IYWBPba4TUrxgHN0/J3Q2enhy5VQrVGQtmHsCDeEKUJZBjh4uJpC4pXUgBIQMhq9yD5ZKi12o4h3gf3LZaASW00W/8tHMjyIzsHiSLYw==","extra":null,"pre_outpoint":{"txhash":"0x186d49c976e3af3f0c1e7fbd17b869d09b8cf0d337f022cbbca12f91f42d637c","message_index":0,"out_index":0}}],"outputs":[{"value":"99999999899999999","pk_script":"dqkUL2JmJDF5IQYe2Dq1ZPqSu4qre1mIrA==","asset":"PTN"}],"lock_time":0},{"Index":1,"inputs":[{"signature_script":"QU6OnHuw5myuTvVUgUK/gQ784qM90uduHTx3heIvNZhNNg2VHoFir8mftoARHJusuKhBw9P8nZkk0zU5D8zsZ4MBIQMhq9yD5ZKi12o4h3gf3LZaASW00W/8tHMjyIzsHiSLYw==","extra":null,"pre_outpoint":{"txhash":"0x186d49c976e3af3f0c1e7fbd17b869d09b8cf0d337f022cbbca12f91f42d637c","message_index":3,"out_index":0}}],"outputs":[{"value":"100000000","pk_script":"FAAAAAAAAAAAAAAAAAAAAAAAAAACyA==","asset":"BTC+80844NCQLQHLTAWJAG1"},{"value":"2099999900000000","pk_script":"dqkUL2JmJDF5IQYe2Dq1ZPqSu4qre1mIrA==","asset":"BTC+80844NCQLQHLTAWJAG1"}],"lock_time":0}],"Text":null,"MediatorCreateOperation":null,"AccountUpdateOperation":null,"Signature":null,"ContractInstallRequest":null,"ContractDeployRequest":null,"ContractInvokeRequest":null,"ContractStopRequest":null,"ContractTpl":null,"ContractDeploy":null,"ContractInvoke":null,"ContractStop":null}`
+	tx := &Transaction{}
+	json.Unmarshal([]byte(txJson), tx)
+	t.Logf("%#v", tx)
+	rlpData, err := rlp.EncodeToBytes(tx)
+	assert.Nil(t, err)
+	t.Logf("Rlpdata:%x", rlpData)
+	tx2 := &Transaction{}
+	err = rlp.DecodeBytes(rlpData, tx2)
+	assert.Nil(t, err)
+	t.Logf("%#v", tx2)
 }

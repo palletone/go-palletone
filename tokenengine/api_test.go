@@ -76,8 +76,7 @@ func TestDecodeScriptBytes(t *testing.T) {
 	str, _ := txscript.DisasmString(data)
 	t.Log(str)
 }
-func TestSignAndVerifyATx(t *testing.T) {
-
+func TestSignAndVerify2PaymentTx(t *testing.T) {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
 	privKey, _ := crypto.ToECDSA(privKeyBytes)
 	pubKey := privKey.PublicKey
@@ -92,22 +91,22 @@ func TestSignAndVerifyATx(t *testing.T) {
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
-	payment := &modules.PaymentPayload{}
+	pay1 := &modules.PaymentPayload{}
 	utxoTxId := common.HexToHash("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
-	payment.AddTxIn(txIn)
+	pay1.AddTxIn(txIn)
 	asset0 := &modules.Asset{}
-	payment.AddTxOut(modules.NewTxOut(1, lockScript, asset0))
-	payment2 := &modules.PaymentPayload{}
+	pay1.AddTxOut(modules.NewTxOut(1, lockScript, asset0))
+	pay2 := &modules.PaymentPayload{}
 	utxoTxId2 := common.HexToHash("1651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint2 := modules.NewOutPoint(utxoTxId2, 1, 1)
 	txIn2 := modules.NewTxIn(outPoint2, []byte{})
-	payment2.AddTxIn(txIn2)
+	pay2.AddTxIn(txIn2)
 	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
-	payment2.AddTxOut(modules.NewTxOut(1, lockScript, asset1))
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment2))
+	pay2.AddTxOut(modules.NewTxOut(1, lockScript, asset1))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pay1))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pay2))
 
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_DATA, &modules.DataPayload{MainData: []byte("Hello PalletOne")}))
 
@@ -157,6 +156,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 
 }
+
 func TestHashNone1Payment(t *testing.T) {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
 	privKey, _ := crypto.ToECDSA(privKeyBytes)
@@ -453,6 +453,17 @@ func Test1(t *testing.T) {
 	err := rlp.DecodeBytes(rlpData, tx)
 	assert.Nil(t, err)
 	lockScript, _ := hex.DecodeString("76a914381db54b7e5d5d4f4fb1cd63cb5a94d5e839810488ac")
+	err = ScriptValidate(lockScript, nil, tx, 0, 0)
+	assert.Nil(t, err)
+}
+func TestValidate2PaymentTx(t *testing.T) {
+	rlpData, _ := hex.DecodeString("f90206f90203f8de80b8dbf8d9f88cf88ab8644117284a989a8b0f7cc6456fce9d386cbc87abf944a7b2185813db6b84d4af1807374fc9dd0d9e9e1cb9550ad5190b661ec083784294259063878b89a42e295d4801210321abdc83e592a2d76a3887781fdcb65a0125b4d16ffcb47323c88cec1e248b6380a0186d49c976e3af3f0c1e7fbd17b869d09b8cf0d337f022cbbca12f91f42d637c8080f848f846880163457857941eff9976a9142f626624317921061ed83ab564fa92bb8aab7b5988ace290400082bb080000000000000000000000900000000000000000000000000000000080f9012080b9011cf90119f88cf88ab864414e8e9c7bb0e66cae4ef5548142bf810efce2a33dd2e76e1d3c7785e22f35984d360d951e8162afc99fb680111c9bacb8a841c3d3fc9d9924d335390fccec678301210321abdc83e592a2d76a3887781fdcb65a0125b4d16ffcb47323c88cec1e248b6380a0186d49c976e3af3f0c1e7fbd17b869d09b8cf0d337f022cbbca12f91f42d637c0380f888f83f8405f5e10096140000000000000000000000000000000000000002c8e29040003bd008356bcc6508989fabf553a19000000000000000000000000000000000f845870775f054115f009976a9142f626624317921061ed83ab564fa92bb8aab7b5988ace29040003bd008356bcc6508989fabf553a1900000000000000000000000000000000080")
+	hash := crypto.Keccak256(rlpData)
+	t.Logf("Hash:%x", hash)
+	tx := &modules.Transaction{}
+	err := rlp.DecodeBytes(rlpData, tx)
+	assert.Nil(t, err)
+	lockScript, _ := hex.DecodeString("76a9142f626624317921061ed83ab564fa92bb8aab7b5988ac")
 	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	assert.Nil(t, err)
 }

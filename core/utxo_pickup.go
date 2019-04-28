@@ -88,11 +88,11 @@ func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 				log.Debugf("Pickup count[%d] utxos, each amount:%s to match wanted amount:%d", len(taken_lutxo), logPickedAmt, amount)
 				return taken_lutxo, change, nil
 			}
-			}
 		}
-    if accum < amount && len(greaters) == 0{
-			return nil, 0, errors.New("Amount Not Enough to pay")
-		}
+	}
+	if accum < amount && len(greaters) == 0 {
+		return nil, 0, errors.New("Amount Not Enough to pay")
+	}
 	var min_greater UtxoInterface
 	min_greater = find_min(greaters)
 	change = min_greater.GetAmount() - amount
