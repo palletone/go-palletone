@@ -339,15 +339,12 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	h, _ := d.GetHeaderByHash(hash)
 	return h != nil
 }
+
 func (d *Dag) IsHeaderExist(hash common.Hash) bool {
-	//if unit, err := d.unstableUnitRep.getChainUnit(hash); err == nil && unit != nil {
-	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
-	//	return true
-	//}
-	//return false
 	exist, _ := d.unstableUnitRep.IsHeaderExist(hash)
 	return exist
 }
+
 func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	unit := d.CurrentUnit(token)
 	if unit != nil {
@@ -512,6 +509,18 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		Memdag:           unstableChain,
 		PartitionMemDag:  partitionMemdag,
 	}
+
+	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
+	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
+	if !dag.IsHeaderExist(hash) {
+		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
+			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
+		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
+		if nil != newestUnit {
+			dag.propRep.SetNewestUnit(newestUnit.Header())
+		}
+	}
+
 	return dag, nil
 }
 
@@ -981,7 +990,7 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	height := &modules.ChainIndex{
 		AssetID: currentUnit.UnitHeader.Number.AssetID,
 		//IsMain:  currentUnit.UnitHeader.Number.IsMain,
-		Index:   currentUnit.UnitHeader.Number.Index + 1,
+		Index: currentUnit.UnitHeader.Number.Index + 1,
 	}
 	//
 	unitHeader := modules.Header{

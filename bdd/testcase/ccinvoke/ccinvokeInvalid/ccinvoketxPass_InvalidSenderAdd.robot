@@ -12,7 +12,7 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_ccinvoketxPass
+${method}         contract_ccinvoketxPass
 
 *** Test Cases ***
 Scenario: invalidSenderAdd

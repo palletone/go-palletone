@@ -1182,7 +1182,7 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 		TxIndex: txIndex,
 	}
 	// step2. save contract template bytecode data
-	if err := rep.statedb.SaveContractTemplate(payload.TemplateId, payload.Bytecode, version.Bytes()); err != nil {
+	if err := rep.statedb.SaveContractTemplate(payload.TemplateId, payload.ByteCode, version.Bytes()); err != nil {
 		log.Error("SaveContractTemplate", "error", err.Error())
 		return false
 	}
@@ -1202,6 +1202,14 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 	if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Version, payload.Version, version); err != nil {
 		log.Error("SaveContractTemplateState when save version", "error", err.Error())
 		return false
+	}
+	
+	addrHashBytes, err := rlp.EncodeToBytes(payload.AddrHash)
+	if err == nil {
+		if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Addrs, addrHashBytes, version); err != nil {
+			log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
+			return false
+		}
 	}
 	return true
 }

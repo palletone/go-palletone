@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
@@ -41,21 +40,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
 	}(t0)
 
-	gasToken := dagconfig.DagConfig.GetGasToken()
-
 	// 1. 判断是否满足生产的若干条件
-
-	//检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
-	// todo 应当在其他地方其他时刻更新该值
-	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
-	if !dag.IsHeaderExist(hash) {
-		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
-			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
-		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
-		if nil != newestUnit {
-			dag.propRep.SetNewestUnit(newestUnit.Header())
-		}
-	}
 
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.CreateUnit(&producer, txpool, when)
@@ -133,35 +118,42 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) error {
 	dag.applyLock.Lock()
 	defer dag.applyLock.Unlock()
 
-	// 1. 下一个 unit 和本地 unit 连续性的判断
+	// 下一个 unit 和本地 unit 连续性的判断
 	if err := dag.validateUnitHeader(nextUnit); err != nil {
 		return err
 	}
 
-	// 2. 验证 unit 的 mediator 调度
+	// 验证 unit 的 mediator 调度
 	if err := dag.validateMediatorSchedule(nextUnit); err != nil {
 		return err
 	}
 
-	// todo 5. 运用Unit中的交易
+	// todo 运用Unit中的交易
 
-	// 3. 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
+	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
 	missed := dag.updateMediatorMissedUnits(nextUnit)
 
-	// 4. 更新全局动态属性值
+	// 更新全局动态属性值
 	dag.updateDynGlobalProp(nextUnit, missed)
-	dag.propRep.SetNewestUnit(nextUnit.Header())
 
-	// 5. 更新 mediator 的相关数据
+	// 更新 mediator 的相关数据
 	dag.updateSigningMediator(nextUnit)
 
-	// 6. 更新最新不可逆区块高度
+	// 更新最新不可逆区块高度
 	dag.updateLastIrreversibleUnit()
 
-	// 7. 判断是否到了维护周期，并维护
-	dag.performChainMaintenance(nextUnit)
+	// 判断是否到了链维护周期，并维护
+	maintenanceNeeded := !(dag.GetDynGlobalProp().NextMaintenanceTime > uint32(nextUnit.Timestamp()))
+	if maintenanceNeeded {
+		dag.performChainMaintenance(nextUnit)
+	}
 
-	// 8. 洗牌
+	// 更新链维护周期标志
+	// n.b., updateMaintenanceFlag() happens this late because GetSlotTime() / GetSlotAtTime() is needed above
+	// 由于前面的操作需要调用 GetSlotTime() / GetSlotAtTime() 这两个方法，所以在最后才更新链维护周期标志
+	dag.updateMaintenanceFlag(maintenanceNeeded)
+
+	// 洗牌
 	dag.updateMediatorSchedule()
 
 	return nil

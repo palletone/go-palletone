@@ -303,12 +303,16 @@ func NewChainIndex(assetId AssetId, idx uint64) *ChainIndex {
 func (height *ChainIndex) String() string {
 	return fmt.Sprintf("%s-%d", height.AssetID.GetSymbol(), height.Index)
 }
+//Index 8Bytes + AssetID 16Bytes
 func (height *ChainIndex) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(height)
-	if err != nil {
-		return nil
-	}
-	return data[:]
+	idx := make([]byte, 8)
+	littleEndian.PutUint64(idx, height.Index)
+	return append(idx,height.AssetID.Bytes()...)
+}
+
+func (height *ChainIndex)SetBytes(data []byte){
+	height.Index=littleEndian.Uint64(data[:8])
+	height.AssetID.SetBytes(data[8:])
 }
 
 //type Author struct {

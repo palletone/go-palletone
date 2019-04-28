@@ -1,3 +1,5 @@
+*** Settings ***
+
 *** Keywords ***
 setPostRequest
     [Arguments]    ${host}    ${method}    ${transList}
@@ -46,6 +48,13 @@ getlistAccounts
     ${jsonRes}    To Json    ${jsonRes}
     Set Suite Variable    ${listAccounts}    ${jsonRes['result']}
     [Return]    ${listAccounts}
+
+preTransToken
+    ${listAccounts}    getlistAccounts
+    ${result}    getBalance    ${listAccounts[0]}
+    ${tokenId}    ${value}    getTokenStarts    QA001    ${result}
+    Set Suite Variable    ${tokenId}    ${tokenId}
+    [Return]    ${listAccounts}    ${tokenId}
 
 countRecieverPTN
     [Arguments]    ${Amount}

@@ -1,6 +1,7 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           ../../utilFunc/createToken.py
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 Resource          ../../utilKwd/normalKwd.txt
@@ -20,10 +21,10 @@ ${sendResult}     [a-z0-9]*
 *** Test Cases ***
 sendTransNormal
     [Tags]    normal
-    #Author:Miho
     ${PTN1}    ${result1}    normalGetBalance    ${recieverAdd}
     ${result11}    Evaluate    ${PTN1}+${givenAmount}
     ${sendResult}    normalSendTrans
-    Sleep    3
+    Sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
+    Sleep    1
     Should Be Equal As Strings    ${result11}    ${PTN2}
