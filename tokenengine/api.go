@@ -185,7 +185,19 @@ func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 //validate this transaction and input index script can unlock the utxo.
 func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, inputIndex int) error {
 	acc := &account{}
-	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, tx, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, acc)
+	txCopy := tx
+	if tx.IsContractTx() {
+		isRequestMsg := false
+		for idx, msg := range tx.TxMessages {
+			if msg.App.IsRequest() {
+				isRequestMsg = true
+			}
+			if idx == msgIdx && !isRequestMsg {
+				txCopy = tx.GetRequestTx()
+			}
+		}
+	}
+	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex, txscript.StandardVerifyFlags, nil, acc)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
@@ -232,6 +244,7 @@ func (a *account) Sign(address common.Address, digest []byte) ([]byte, error) {
 	return a.signFn(address, digest)
 }
 func (a *account) Verify(pubKey, signature, digest []byte) (bool, error) {
+	log.Debugf("Pubkey:%x,Signature:%x,hash:%x", pubKey, signature, digest)
 	return crypto.VerifySignature(pubKey, digest, signature), nil
 }
 func (a *account) GetPubKey(address common.Address) ([]byte, error) {
