@@ -21,10 +21,11 @@
 package dag
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
-	"encoding/json"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -302,4 +303,11 @@ func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
 
 	return d.unstableStateRep.IsJury(addr)
+}
+
+func (d *Dag) getActiveMediatorCount() int {
+	activeMediatorCountStr, _, _ := d.stableStateRep.GetConfig("ActiveMediatorCount")
+	activeMediatorCount, _ := strconv.ParseUint(string(activeMediatorCountStr), 10, 16)
+
+	return int(activeMediatorCount)
 }

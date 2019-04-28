@@ -290,7 +290,7 @@ func createExampleGenesis() *core.Genesis {
 		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
 		TempUccCpuShares:          core.DefaultTempUccCpuShares,
 		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
-		ActiveMediatorCount: core.DefaultMediatorCount,
+		ActiveMediatorCount:       core.DefaultMediatorCount,
 	}
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
