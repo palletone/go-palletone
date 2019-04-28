@@ -66,8 +66,6 @@ type LightPalletone struct {
 	// DB interfaces
 	unitDb ptndb.Database // Block chain database
 
-	//validation *Validation
-
 	ApiBackend *LesApiBackend
 
 	eventMux *event.TypeMux
@@ -112,7 +110,6 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) 
 		shutdownChan: make(chan bool),
 		networkId:    config.NetworkId,
 		dag:          dag,
-		//validation:   NewValidation(),
 	}
 
 	//lptn.relay = NewLesTxRelay(peers, leth.reqDist)
@@ -234,7 +231,6 @@ func (s *LightPalletone) Stop() error {
 	time.Sleep(time.Millisecond * 200)
 	s.unitDb.Close()
 	close(s.shutdownChan)
-
 	return nil
 }
 
