@@ -230,6 +230,7 @@ func (dag *Dag) updateChainParameters() {
 	log.Debugf("update chain parameters")
 
 	dag.UpdateSysParams()
+	dag.RefreshSysParameters()
 
 	return
 }

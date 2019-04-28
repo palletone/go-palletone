@@ -239,6 +239,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
 		TempUccCpuShares:          core.DefaultTempUccCpuShares,
 		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+		ActiveMediatorCount: core.DefaultMediatorCount,
 	}
 
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
@@ -285,6 +286,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
 		TempUccCpuShares:          core.DefaultTempUccCpuShares,
 		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+		ActiveMediatorCount: core.DefaultMediatorCount,
 	}
 
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
