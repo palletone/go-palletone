@@ -110,7 +110,7 @@ func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
 	return &PublicMediatorAPI{mp}
 }
 
-func (a *PublicMediatorAPI) List() []string {
+func (a *PublicMediatorAPI) GetList() []string {
 	addStrs := make([]string, 0)
 	mas := a.dag.GetMediators()
 
