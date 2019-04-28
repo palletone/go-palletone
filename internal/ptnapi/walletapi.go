@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"math/rand"
-
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -1109,41 +1107,41 @@ func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash st
 
 //contract command
 //install
-func (s *PublicWalletAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
-	log.Info("CcInstall:" + ccname + ":" + ccpath + "_" + ccversion)
-
-	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion)
-	return hexutil.Bytes(templateId), err
-}
-func (s *PublicWalletAPI) Ccquery(ctx context.Context, deployId string, param []string) (string, error) {
-	contractId, _ := common.StringToAddress(deployId)
-	log.Info("-----Ccquery:", "contractId", contractId.String())
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d],value[%s]\n", i, arg)
-	}
-	//参数前面加入msg0和msg1,这里为空
-	var fullArgs [][]byte
-	msgArg := []byte("query has no msg0")
-	msgArg1 := []byte("query has no msg1")
-	fullArgs = append(fullArgs, msgArg)
-	fullArgs = append(fullArgs, msgArg1)
-	fullArgs = append(fullArgs, args...)
-
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
-
-	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
-	if err != nil {
-		return "", err
-	}
-	return string(rsp), nil
-}
-
-func (s *PublicWalletAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("Ccstop:" + deployId + ":" + txid + "_")
-	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
-	err := s.b.ContractStop(depId, txid, false)
-	return err
-}
+//func (s *PublicWalletAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
+//	log.Info("CcInstall:" + ccname + ":" + ccpath + "_" + ccversion)
+//
+//	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion)
+//	return hexutil.Bytes(templateId), err
+//}
+//func (s *PublicWalletAPI) Ccquery(ctx context.Context, deployId string, param []string) (string, error) {
+//	contractId, _ := common.StringToAddress(deployId)
+//	log.Info("-----Ccquery:", "contractId", contractId.String())
+//	args := make([][]byte, len(param))
+//	for i, arg := range param {
+//		args[i] = []byte(arg)
+//		fmt.Printf("index[%d],value[%s]\n", i, arg)
+//	}
+//	//参数前面加入msg0和msg1,这里为空
+//	var fullArgs [][]byte
+//	msgArg := []byte("query has no msg0")
+//	msgArg1 := []byte("query has no msg1")
+//	fullArgs = append(fullArgs, msgArg)
+//	fullArgs = append(fullArgs, msgArg1)
+//	fullArgs = append(fullArgs, args...)
+//
+//	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+//
+//	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
+//	if err != nil {
+//		return "", err
+//	}
+//	return string(rsp), nil
+//}
+//
+//func (s *PublicWalletAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
+//	depId, _ := hex.DecodeString(deployId)
+//	log.Info("Ccstop:" + deployId + ":" + txid + "_")
+//	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
+//	err := s.b.ContractStop(depId, txid, false)
+//	return err
+//}
