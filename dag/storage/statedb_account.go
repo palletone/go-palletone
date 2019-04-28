@@ -158,7 +158,8 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		if err == nil {
 			acc.VotedMediator = common.BytesToAddress(data)
 		}
-		log.Debugf("Found account[%s] balance:%d,vote mediator:%s", add.String(), balance, acc.VotedMediator.String())
+		log.Debugf("Found account[%s] balance:%d,vote mediator:%s", add.String(),
+			balance, acc.VotedMediator.String())
 		result[add] = acc
 	}
 

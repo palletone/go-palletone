@@ -21,7 +21,6 @@
 package dag
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -256,17 +255,19 @@ func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
 	accountInfo := &modules.AccountInfo{}
 	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTE_MEDIATOR)
 	if err != nil {
-		log.Warn(err.Error())
+		log.Debugf(err.Error())
 		return accountInfo
 	}
-	addrList := []string{}
-	json.Unmarshal(data.Value, &addrList)
-	for _, m := range addrList {
-		a, e := common.StringToAddress(m)
-		if e == nil {
-			accountInfo.VotedMediator = a
-		}
-	}
+	//addrList := []string{}
+	//json.Unmarshal(data.Value, &addrList)
+	//for _, m := range addrList {
+	//	a, e := common.StringToAddress(m)
+	//	if e == nil {
+	//		accountInfo.VotedMediator = a
+	//	}
+	//}
+	accountInfo.VotedMediator = common.BytesToAddress(data.Value)
+
 	return accountInfo
 }
 

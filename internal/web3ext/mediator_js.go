@@ -23,7 +23,7 @@ web3._extend({
 	property: 'mediator',
 	methods: [
 		new web3._extend.Method({
-			name: 'listAllMediators',
+			name: 'listAll',
 			call: 'mediator_getList',
 			params: 0,
 		}),
