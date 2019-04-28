@@ -762,18 +762,19 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 	return all, err
 }
 
-//TODO Devin 换届后请调用该函数
 func (d *Dag) RefreshSysParameters() {
-	deposit, _, _ := d.unstableStateRep.GetConfig("DepositRate")
+	deposit, _, _ := d.stableStateRep.GetConfig("DepositRate")
 	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
 	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
-	log.Debugf("Load SysParameter DepositContractInterest value:%f", parameter.CurrentSysParameters.DepositContractInterest)
-	txCoinYearRateStr, _, _ := d.unstableStateRep.GetConfig("TxCoinYearRate")
+	log.Debugf("Load SysParameter DepositContractInterest value:%f",
+		parameter.CurrentSysParameters.DepositContractInterest)
+
+	txCoinYearRateStr, _, _ := d.stableStateRep.GetConfig("TxCoinYearRate")
 	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
 	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
 	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
 
-	generateUnitRewardStr, _, _ := d.unstableStateRep.GetConfig("GenerateUnitReward")
+	generateUnitRewardStr, _, _ := d.stableStateRep.GetConfig("GenerateUnitReward")
 	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
