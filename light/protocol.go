@@ -22,7 +22,9 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/light/les"
 )
 
 // Constants to match up protocol versions and messages
@@ -216,8 +218,56 @@ type CodeData []struct {
 
 type proofsData [][]rlp.RawValue
 
+type proofsRespData struct {
+	txhash     common.Hash
+	headerhash common.Hash //header hash
+	txroothash common.Hash
+	key        []byte       //tx index
+	pathData   les.NodeList //txs path
+}
+
 //type txStatus struct {
 //	Status core.TxStatus
 //	Lookup *core.TxLookupEntry `rlp:"nil"`
 //	Error  string
 //}
+
+func (p *proofsRespData) encode() ([][]byte, error) {
+	resp := [][]byte{}
+	resp = append(resp, p.txhash.Bytes())
+	resp = append(resp, p.headerhash.Bytes())
+	resp = append(resp, p.txroothash.Bytes())
+	resp = append(resp, p.key)
+	path, err := rlp.EncodeToBytes(p.pathData)
+	if err != nil {
+		log.Debug("+++++++++++++++++++++++++++++++++++++", "err", err, "pathdata", p.pathData)
+		return nil, err
+	}
+	resp = append(resp, path)
+	//data, err1 := rlp.EncodeToBytes(resp)
+	//if err1 != nil {
+	//	log.Debug("+++++++++++++++++++++++++++++++++++++", "err", err1, "resp", resp)
+	//}
+	return resp, nil
+}
+
+/*
+	txhash     common.Hash
+	headerhash common.Hash //header hash
+	txroothash common.Hash
+	key        []byte       //tx index
+	pathData   les.NodeList //txs path
+*/
+func (p *proofsRespData) decode(data [][]byte) error {
+
+	p.txhash.SetBytes(data[0])
+	p.headerhash.SetBytes(data[1])
+	p.txroothash.SetBytes(data[2])
+	p.key = data[3]
+
+	if err := rlp.DecodeBytes(data[4], &p.pathData); err != nil {
+		log.Debug("rlp.DecodeBytes pathData", "err", err, "data", data[4])
+		return err
+	}
+	return nil
+}

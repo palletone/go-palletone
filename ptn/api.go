@@ -21,7 +21,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	// mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/shopspring/decimal"
 )
@@ -106,6 +106,6 @@ type TransferPtnArgs struct {
 	Text   *string         `json:"text"`
 }
 
-func (api *PublicPalletOneAPI) TransferPtn(args TransferPtnArgs) (*mp.TxExecuteResult, error) {
-	return api.p.TransferPtn(args.From, args.To, args.Amount, args.Text)
-}
+// func (api *PublicPalletOneAPI) TransferPtn(args TransferPtnArgs) (*mp.TxExecuteResult, error) {
+// 	return api.p.TransferPtn(args.From, args.To, args.Amount, args.Text)
+// }
