@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -374,7 +375,10 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 	//payCopy.Serialize(&wbuf)
 	//binary.Write(&wbuf, binary.LittleEndian, hashType)
 	//return wire.DoubleSha256(wbuf.Bytes())
-	data, _ := rlp.EncodeToBytes(&txCopy)
+	data, err := rlp.EncodeToBytes(&txCopy)
+	if err != nil {
+		log.Error("Rlp encode tx error:" + err.Error())
+	}
 	hash, _ := crypto.Hash(data)
 	return hash
 
