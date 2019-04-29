@@ -276,6 +276,9 @@ func (b *LesApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, erro
 func (b *LesApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
+	return nil, nil
+}
 
 // get state
 //GetHeadUnitHash() (common.Hash, error)

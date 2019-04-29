@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	dagcom "github.com/palletone/go-palletone/dag/common"
@@ -162,22 +161,18 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 	}
 
 	// 判断是否已经投过该mediator
-	voted := a.dag.GetAccountInfo(voter).VotedMediator
+	//voted := a.dag.GetAccountInfo(voter).VotedMediator
+	voted := a.dag.GetAccountVotedMediator(voter)
 	if voted == mediator {
 		return nil, fmt.Errorf("account %v was already voting for mediator %v", voterStr, mediatorStr)
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.dag.GenTransferPtnTx(voter, voter, 0, nil, a.ptn.TxPool())
+	tx, fee, err := a.dag.GenVoteMediatorTx(voter, mediator, a.ptn.TxPool())
 	if err != nil {
 		return nil, err
 	}
-	//附加投票Message
-	tx, err = a.dag.GenVoteMediatorTx(mediator, tx)
-	if err != nil {
-		log.Error("Append VoteMediator data fail")
-		return nil, err
-	}
+
 	// 2. 签名和发送交易
 	err = a.ptn.SignAndSendTransaction(voter, tx)
 	if err != nil {

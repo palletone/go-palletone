@@ -54,6 +54,8 @@ type SystemConfig struct {
 	TempUccMemorySwap string `json"temp_ucc_memory_swap"`
 	TempUccCpuShares  string `json"temp_ucc_cpu_shares"`
 	TempUccCpuQuota   string `json"temp_ucc_cpu_quota"`
+
+	ActiveMediatorCount string `json:"activeMediatorCount"`
 }
 
 type DigitalIdentityConfig struct {

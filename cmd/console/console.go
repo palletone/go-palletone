@@ -208,10 +208,10 @@ func (c *Console) init(preload []string) error {
 			//	return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
 			//}
 			//obj.Set("getPtnTestCoin", bridge.GetPtnTestCoin)
-			if _, err = c.jsre.Run(`jptn.transferToken = ptn.transferToken;`); err != nil {
-				return fmt.Errorf("ptn.transferToken: %v", err)
-			}
-			obj.Set("transferToken", bridge.TransferToken)
+			// if _, err = c.jsre.Run(`jptn.transferToken = ptn.transferToken;`); err != nil {
+			// 	return fmt.Errorf("ptn.transferToken: %v", err)
+			// }
+			// obj.Set("transferToken", bridge.TransferToken)
 		}
 		wallet, perr := c.jsre.Get("wallet")
 		if perr != nil {
@@ -222,6 +222,10 @@ func (c *Console) init(preload []string) error {
 				return fmt.Errorf("wallet.transferToken: %v", err)
 			}
 			obj.Set("transferToken", bridge.TransferToken)
+			if _, err = c.jsre.Run(`jptn.transferPTN = wallet.transferPTN;`); err != nil {
+				return fmt.Errorf("wallet.transferPtn: %v", err)
+			}
+			obj.Set("transferPTN", bridge.TransferGasToken)
 		}
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.

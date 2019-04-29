@@ -83,20 +83,22 @@ func TestNewTxMgr(t *testing.T) {
 	simulator.dag = dag
 	mockUnit := getCurrentUnit()
 	dag.EXPECT().GetCurrentUnit(gomock.Any()).Return(mockUnit).AnyTimes()
+	tx := createTx()
+	asid, _ := modules.NewAssetId("12345", modules.AssetType_FungibleToken, 0, tx.RequestHash().Bytes(), modules.UniqueIdType_Null)
 
 	rwm, err := NewRwSetMgr("test")
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
-	ptn_chain := modules.PTNCOIN.String()
-	tx := createTx()
-	ts, err1 := rwm.NewTxSimulator(dag, ptn_chain, tx.Hash().String(), true)
+	chain_id := asid.String()
+	log.Println("chainId:", chain_id)
+	ts, err1 := rwm.NewTxSimulator(dag, chain_id, tx.Hash().String(), true)
 	if err1 != nil {
 		t.Fatal(err1)
 		return
 	}
-	asid, _ := modules.NewAssetId("12345", modules.AssetType_FungibleToken, 0, tx.RequestHash().Bytes(), modules.UniqueIdType_Null)
+
 	addr := common.HexToAddress("P19s57FnXFNg5Aa5HExw681qycqsHXys29L")
 	token := &modules.FungibleToken{Name: "測試", Symbol: "test", Decimals: 0, TotalSupply: 1, SupplyAddress: addr.String()}
 	define, _ := json.Marshal(token)
@@ -119,7 +121,11 @@ func TestNewTxMgr(t *testing.T) {
 	for assid, amount := range amounts {
 		log.Printf("asstid:%s ,amount:%d", assid.String(), amount)
 	}
+	// done && close
+	dag.EXPECT().Close().Return().AnyTimes()
 	ts.Done()
+	// txsimulator 执行结束后关闭它
+	assert.Nil(t, rwm.CloseTxSimulator(chain_id))
 }
 func getCurrentUnit() *modules.Unit {
 	txs := modules.Transactions{createTx()}
