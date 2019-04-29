@@ -222,10 +222,10 @@ func (c *Console) init(preload []string) error {
 				return fmt.Errorf("wallet.transferToken: %v", err)
 			}
 			obj.Set("transferToken", bridge.TransferToken)
-			if _, err = c.jsre.Run(`jptn.transferPtn = wallet.transferPtn;`); err != nil {
+			if _, err = c.jsre.Run(`jptn.transferPTN = wallet.transferPTN;`); err != nil {
 				return fmt.Errorf("wallet.transferPtn: %v", err)
 			}
-			obj.Set("transferPtn", bridge.TransferGasToken)
+			obj.Set("transferPTN", bridge.TransferGasToken)
 		}
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
