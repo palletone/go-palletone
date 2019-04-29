@@ -209,9 +209,8 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 	if err := msg.Decode(&reqs); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	//var resps []proofsRespData
 
-	//var proofs proofsData
+	var datas [][][]byte
 	for _, req := range reqs {
 		log.Debug("Light PalletOne ProtocolManager GetProofsMsg", "req", req)
 		//Get txRootHash and indexer in tx array and validation path
@@ -257,31 +256,30 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("====", "err", err)
 		}
 		log.Debug("", "data", data)
-		return p.SendRawProofs(0, 0, data)
+		datas = append(datas, data)
 	}
-	return nil
+	return p.SendRawProofs(0, 0, datas)
 }
 
 func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
-	//if pm.odr == nil {
-	//	return errResp(ErrUnexpectedResponse, "")
-	//}
-
 	log.Trace("Received proofs response")
-	data := [][]byte{}
-	resp := new(proofsRespData)
+	datas := [][][]byte{}
+
 	//var resp []les.NodeList
-	if err := msg.Decode(&data); err != nil {
+	if err := msg.Decode(&datas); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	if err := resp.decode(data); err != nil {
-		log.Debug("Light PalletOne ProtocolManager ProofsMsg", "err", err)
-		return err
+	for _, data := range datas {
+		resp := new(proofsRespData)
+		if err := resp.decode(data); err != nil {
+			log.Debug("Light PalletOne ProtocolManager ProofsMsg", "err", err)
+			return err
+		}
+		log.Debug("Light PalletOne ProtocolManager ProofsMsg", "resp.key", resp.key)
+		pm.validation.AddSpvResp(resp)
 	}
 
-	log.Debug("Light PalletOne ProtocolManager ProofsMsg", "resp.key", resp.key)
-
-	//pm.validation.AddSpvResp(resps)
+	//
 	//val, err, _ := trie.VerifyProof(root, []byte("abc"), resp)
 	//if err != nil {
 	//	log.Errorf("VerifyProof error for key %x: %v\nraw proof: %v", "abc", err, proofs)

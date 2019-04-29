@@ -189,7 +189,7 @@ func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]
 }
 
 func (s *RwSetTxSimulator) CheckDone() error {
-	if !s.doneInvoked {
+	if s.doneInvoked {
 		return errors.New("This instance should not be used after calling Done()")
 	}
 	return nil

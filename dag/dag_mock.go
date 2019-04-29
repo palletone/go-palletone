@@ -5,16 +5,16 @@
 package dag
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	list "github.com/palletone/go-palletone/contracts/list"
-	core "github.com/palletone/go-palletone/core"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"reflect"
+	"time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -325,6 +325,21 @@ func (m *MockIDag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, e
 func (mr *MockIDagMockRecorder) GetTransactionOnly(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionOnly", reflect.TypeOf((*MockIDag)(nil).GetTransactionOnly), hash)
+}
+
+// GetTxByReqId mocks base method
+func (m *MockIDag) GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxByReqId", reqid)
+	ret0, _ := ret[0].(*modules.TransactionWithUnitInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxByReqId indicates an expected call of GetTxByReqId
+func (mr *MockIDagMockRecorder) GetTxByReqId(reqid interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxByReqId), reqid)
 }
 
 // IsTransactionExist mocks base method

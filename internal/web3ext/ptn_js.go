@@ -140,6 +140,11 @@ web3._extend({
 			params: 1,			
 		}),
 		new web3._extend.Method({
+			name: 'getRlpTx',
+			call: 'ptn_getRlpTx',
+			params: 1
+		}),
+		new web3._extend.Method({
 			name: 'proofTransaction',
 			call: 'ptn_proofTransaction',
 			params: 1
