@@ -415,7 +415,7 @@ func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 }
 
 //SPV
-func (b *LesApiBackend) ProofTransaction(tx string) (string, error) {
+func (b *LesApiBackend) ProofTransactionByHash(tx string) (string, error) {
 	return b.ptn.ProtocolManager().ReqProof(tx), nil
 
 }

@@ -73,7 +73,7 @@ func ValidateCRLIssuer(issuer string, crl *pkix.CertificateList, stub shim.Chain
 
 func checkExists(cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
 	// check root ca
-	rootCert, err := GetRootCert(stub)
+	rootCert, err := GetRootCACert(stub)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 		return err
 	}
 	// check in intermediate certificate
-	rootCert, err := GetRootCert(stub)
+	rootCert, err := GetRootCACert(stub)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 // To validate certificate chain signature
 func ValidateCertChain(cert *x509.Certificate, stub shim.ChaincodeStubInterface) error {
 	// query root ca cert bytes
-	rootCert, err := GetRootCert(stub)
+	rootCert, err := GetRootCACert(stub)
 	if err != nil {
 		return err
 	}
@@ -172,7 +172,7 @@ func ValidateCRLIssuerSig(issuerAddr string, crl *pkix.CertificateList, stub shi
 		return err
 	}
 	if issuerAddr == string(caHolder) {
-		rootCert, err := GetRootCert(stub)
+		rootCert, err := GetRootCACert(stub)
 		if err != nil {
 			return err
 		}

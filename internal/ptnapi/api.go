@@ -525,8 +525,8 @@ func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) *JuryList {
 }
 
 //SPV
-func (s *PublicBlockChainAPI) ProofTransaction(ctx context.Context, tx string) (string, error) {
-	return s.b.ProofTransaction(tx)
+func (s *PublicBlockChainAPI) ProofTransactionByHash(ctx context.Context, tx string) (string, error) {
+	return s.b.ProofTransactionByHash(tx)
 }
 
 func (s *PublicBlockChainAPI) ValidationPath(ctx context.Context, tx string) ([]byte, error) {

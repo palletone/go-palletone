@@ -608,7 +608,7 @@ func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 }
 
 //SPV
-func (s *PtnApiBackend) ProofTransaction(tx string) (string, error) {
+func (s *PtnApiBackend) ProofTransactionByHash(tx string) (string, error) {
 	return "", nil
 }
 
