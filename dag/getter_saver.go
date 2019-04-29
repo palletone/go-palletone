@@ -22,9 +22,9 @@ package dag
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
-	"encoding/json"
 	"github.com/dedis/kyber"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -251,23 +251,35 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	return nodes
 }
 
-func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
-	accountInfo := &modules.AccountInfo{}
+func (d *Dag) GetAccountVotedMediator(addr common.Address) common.Address {
 	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTE_MEDIATOR)
 	if err != nil {
-		log.Warn(err.Error())
-		return accountInfo
+		log.Debugf(err.Error())
+		return common.Address{}
 	}
-	addrList := []string{}
-	json.Unmarshal(data.Value, &addrList)
-	for _, m := range addrList {
-		a, e := common.StringToAddress(m)
-		if e == nil {
-			accountInfo.VotedMediator = a
-		}
-	}
-	return accountInfo
+
+	return common.BytesToAddress(data.Value)
 }
+
+//func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
+//	accountInfo := &modules.AccountInfo{}
+//	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTE_MEDIATOR)
+//	if err != nil {
+//		log.Debugf(err.Error())
+//		return accountInfo
+//	}
+//	//addrList := []string{}
+//	//json.Unmarshal(data.Value, &addrList)
+//	//for _, m := range addrList {
+//	//	a, e := common.StringToAddress(m)
+//	//	if e == nil {
+//	//		accountInfo.VotedMediator = a
+//	//	}
+//	//}
+//	accountInfo.VotedMediator = common.BytesToAddress(data.Value)
+//
+//	return accountInfo
+//}
 
 func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return d.unstableStateRep.LookupAccount()
@@ -302,4 +314,11 @@ func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
 
 	return d.unstableStateRep.IsJury(addr)
+}
+
+func (d *Dag) getActiveMediatorCount() int {
+	activeMediatorCountStr, _, _ := d.stableStateRep.GetConfig("ActiveMediatorCount")
+	activeMediatorCount, _ := strconv.ParseUint(string(activeMediatorCountStr), 10, 16)
+
+	return int(activeMediatorCount)
 }

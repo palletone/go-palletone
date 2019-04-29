@@ -163,6 +163,9 @@ func (dag *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUp
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	log.Debugf("We are at the maintenance interval")
 
+	// 更新要修改的区块链参数
+	dag.updateChainParameters()
+
 	// 对每个账户的各种投票信息进行初步统计
 	dag.performAccountMaintenance()
 
@@ -172,15 +175,12 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
 	go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
 
-	// 更新要修改的区块链参数
-	dag.updateChainParameters()
-
 	// 计算并更新下一次维护时间
 	dag.updateNextMaintenanceTime(nextUnit)
 
 	// 清理中间处理缓存数据
 	dag.mediatorVoteTally = nil
-	dag.mediatorCountHistogram = nil
+	//dag.mediatorCountHistogram = nil
 }
 
 func (dag *Dag) updateNextMaintenanceTime(nextUnit *modules.Unit) {

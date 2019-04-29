@@ -110,7 +110,7 @@ func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
 	return &PublicMediatorAPI{mp}
 }
 
-func (a *PublicMediatorAPI) List() []string {
+func (a *PublicMediatorAPI) GetList() []string {
 	addStrs := make([]string, 0)
 	mas := a.dag.GetMediators()
 
@@ -120,6 +120,7 @@ func (a *PublicMediatorAPI) List() []string {
 
 	return addStrs
 }
+
 func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
 	mediatorVoteCount := make(map[string]uint64)
 	mas := a.dag.GetMediators()
@@ -137,6 +138,7 @@ func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
 	}
 	return mediatorVoteCount
 }
+
 func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.dag.ActiveMediators()
@@ -168,8 +170,11 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 		return nil, err
 	}
 
-	medMap := a.dag.GetAccountInfo(addr).VotedMediator
-	return []string{medMap.String()}, nil
+	voted := a.dag.GetAccountVotedMediator(addr)
+	return []string{voted.String()}, nil
+
+	//medMap := a.dag.GetAccountInfo(addr).VotedMediator
+	//return []string{medMap.String()}, nil
 	//mediators := make([]string, 0, len(medMap))
 	//
 	//for med, _ := range medMap {

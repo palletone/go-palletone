@@ -297,7 +297,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	gUnit := &modules.Unit{}
 
 	// genesis unit height
-	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId,  Index: uint64(parentUnitHeight + 1)}
+	chainIndex := &modules.ChainIndex{AssetID: asset.AssetId, Index: uint64(parentUnitHeight + 1)}
 
 	// transactions merkle root
 	root := core.DeriveSha(txs)
@@ -385,7 +385,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
 	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
-		chainIndex = &modules.ChainIndex{AssetID: assetId,  Index: index + 1}
+		chainIndex = &modules.ChainIndex{AssetID: assetId, Index: index + 1}
 		log.Error("GetCurrentChainIndex is failed.", "error", err)
 	} else {
 		chainIndex.Index += 1
@@ -770,7 +770,8 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 	return contractInvokePayloads, nil
 }
 
-func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account common.Address, index *modules.ChainIndex, txIdx uint32) error {
+func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account common.Address,
+	index *modules.ChainIndex, txIdx uint32) error {
 	accountUpdateOp, ok := msg.Payload.(*modules.AccountStateUpdatePayload)
 	if !ok {
 		return errors.New("not a valid AccountStateUpdatePayload")
@@ -1203,7 +1204,7 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 		log.Error("SaveContractTemplateState when save version", "error", err.Error())
 		return false
 	}
-	
+
 	addrHashBytes, err := rlp.EncodeToBytes(payload.AddrHash)
 	if err == nil {
 		if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Addrs, addrHashBytes, version); err != nil {
