@@ -25,7 +25,9 @@ import (
 	"time"
 
 	"encoding/hex"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -51,16 +53,17 @@ type TxWithUnitInfoJson struct {
 	UnitHeight uint64    `json:"unit_height"`
 	Timestamp  time.Time `json:"timestamp"`
 	TxIndex    uint64    `json:"tx_index"`
+	RlpTx      []byte    `json:"rlp_tx"`
 }
 type TplJson struct {
-	TemplateId string `json:"template_id"`
-	Name       string `json:"name"`
-	Path       string `json:"path"`
-	Version    string `json:"version"`
-	Memory     uint16 `json:"memory"`
-	Bytecode   []byte `json:"bytecode"` // contract bytecode
+	TemplateId   string `json:"template_id"`
+	Name         string `json:"name"`
+	Path         string `json:"path"`
+	Version      string `json:"version"`
+	Memory       uint16 `json:"memory"`
+	Bytecode     []byte `json:"bytecode"`      // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
-	AddrHash   string `json:"addr_hash"`
+	AddrHash     string `json:"addr_hash"`
 }
 type DeployJson struct {
 	TemplateId string   `json:"template_id"`
@@ -132,6 +135,13 @@ func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQue
 		TxIndex:    tx.TxIndex,
 	}
 	txjson.TxJson = ConvertTx2FullJson(tx.Transaction, utxoQuery)
+
+	txjson.RlpTx, _ = rlp.EncodeToBytes(tx.Transaction)
+
+	txx := &modules.Transaction{}
+	rlp.DecodeBytes(txjson.RlpTx, &txx)
+	log.Debug("=========ConvertTxWithUnitInfo2FullJson=======", "txhash", txx.Hash(), "rlptx", string(txjson.RlpTx))
+
 	return txjson
 }
 func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) *TxJson {

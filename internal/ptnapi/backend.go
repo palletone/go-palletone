@@ -157,6 +157,7 @@ type Backend interface {
 	//SPV
 	//getRlpTx(txhash string)
 	ProofTransactionByHash(txhash string) (string, error)
+	ProofTransactionByRlptx(rlptx string) (string, error)
 	ValidationPath(tx string) ([]byte, error)
 }
 

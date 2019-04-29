@@ -612,6 +612,10 @@ func (s *PtnApiBackend) ProofTransactionByHash(tx string) (string, error) {
 	return "", nil
 }
 
+func (s *PtnApiBackend) ProofTransactionByRlptx(rlptx string) (string, error) {
+	return "", nil
+}
+
 func (b *PtnApiBackend) ValidationPath(tx string) ([]byte, error) {
 	return nil, nil
 }

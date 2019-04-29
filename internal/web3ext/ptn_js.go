@@ -150,6 +150,11 @@ web3._extend({
 			params: 1
 		}),
 		new web3._extend.Method({
+			name: 'proofTransactionByRlptx',
+			call: 'ptn_proofTransactionByRlptx',
+			params: 1
+		}),
+		new web3._extend.Method({
 			name: 'validationPath',
 			call: 'ptn_validationPath',
 			params: 1
