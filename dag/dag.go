@@ -525,6 +525,17 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
 		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
 		if nil != newestUnit {
+			// todo 待删除 处理临时prop没有回滚的问题
+			dgp := dag.GetDynGlobalProp()
+
+			interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
+			time, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
+			dgp.CurrentASlot = dgp.CurrentASlot - uint64(uint8(time-newestUnit.Timestamp())/interval)
+			//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
+
+			dag.SaveDynGlobalProp(dgp, false)
+			//----------
+
 			dag.propRep.SetNewestUnit(newestUnit.Header())
 		}
 	}
