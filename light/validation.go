@@ -6,7 +6,6 @@ import (
 	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/light/les"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 	"sync"
 	"time"
@@ -25,15 +24,21 @@ type proofReq struct {
 	txhash common.Hash // Hash of the block being announced
 	time   time.Time   // Timestamp of the announcement
 	step   chan int    //0:ok   1:err  2:timeout
+	valid  *Validation
 }
 
 func (req *proofReq) Wait() int {
-	return <-req.step
-}
-
-type proofResp struct {
-	txhash common.Hash
-	resp   []les.NodeList
+	timeout := time.NewTicker(spvReqTimeout)
+	defer timeout.Stop()
+	for {
+		select {
+		case result := <-req.step:
+			return result
+		case <-timeout.C:
+			req.valid.forgetHash(req.txhash)
+			return 2
+		}
+	}
 }
 
 type Validation struct {
@@ -56,7 +61,7 @@ func NewValidation(dag dag.IDag) *Validation {
 }
 
 func (v *Validation) Start() {
-	go v.loop()
+	//go v.loop()
 }
 
 // Stop terminates the announcement based synchroniser, canceling all pending
@@ -65,53 +70,51 @@ func (v *Validation) Stop() {
 	close(v.quit)
 }
 
-func (v *Validation) loop() {
-	completeTimer := time.NewTimer(0)
-	for {
-		// Import any queued blocks that could potentially fit
-		//var height uint64
-		for !v.queue.Empty() {
-			op := v.queue.PopItem().(*proofResp)
-			v.process(op)
+//func (v *Validation) loop() {
+//	completeTimer := time.NewTimer(0)
+//	for {
+//		//v.preqLock.Unlock()
+//		//for hash, req := range v.preq {
+//		//	if time.Since(req.time) > fetchTimeout {
+//		//		v.forgetHash(hash)
+//		//	}
+//		//}
+//		//v.preqLock.RUnlock()
+//
+//		select {
+//		case <-v.quit:
+//			// loop terminating, abort all operations
+//			return
+//		case <-completeTimer.C:
+//		}
+//	}
+//}
 
-		}
-		select {
-		case <-v.quit:
-			// loop terminating, abort all operations
-			return
-		case <-completeTimer.C:
-		}
-	}
-
+func (v *Validation) forgetHash(txhash common.Hash) {
+	v.preqLock.Lock()
+	delete(v.preq, txhash)
+	v.preqLock.Unlock()
 }
 
-func (v *Validation) forgetHash(hash common.Hash) {
-	//send channel step   0:ok   1:err  2:timeout
-	//delete(v.preq,hash)
-}
-
-func (v *Validation) process(op *proofResp) {
-	go func() {
-		//check hash.Is it exsit in preq queue.yes,save local leveldb and notice console.no,notice console
-		//for hash, req := range v.preq {
-		//	if time.Since(req.time) > fetchTimeout {
-		//		v.forgetHash(hash)
-		//	}
-		//}
-	}()
-}
+//
+//func (v *Validation) process(op *proofResp) {
+//	go func() {
+//		//check hash.Is it exsit in preq queue.yes,save local leveldb and notice console.no,notice console
+//		v.preqLock.Unlock()
+//		for hash, req := range v.preq {
+//			if time.Since(req.time) > fetchTimeout {
+//				v.forgetHash(hash)
+//			}
+//		}
+//		v.preqLock.RUnlock()
+//	}()
+//}
 
 func (v *Validation) Check(resp *proofsRespData) (int, error) {
-	v.preqLock.RLock()
-	vreq, ok := v.preq[resp.txhash]
-	if !ok {
-		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.txhash)
-		return 0, errors.New("Key is not exist")
-	}
-	v.preqLock.RUnlock()
+
 	header, err := v.dag.GetHeaderByHash(resp.headerhash)
 	if err != nil {
-		log.Debug("===========")
+		log.Debug("Light PalletOne", "Validation->Check GetHeaderByHash err", err, "header hash", resp.headerhash)
 		return 0, err
 	}
 	if header.TxRoot.String() != resp.txroothash.String() {
@@ -124,13 +127,24 @@ func (v *Validation) Check(resp *proofsRespData) (int, error) {
 		log.Debug("Light PalletOne", "Validation->Check VerifyProof err", err)
 		return 0, err
 	}
-	vreq.step <- 0
 	return 0, nil
 }
 
-func (v *Validation) AddSpvResp(resp *proofsRespData) (*proofReq, error) {
-	v.Check(resp)
-	return nil, nil
+func (v *Validation) AddSpvResp(resp *proofsRespData) error {
+	v.preqLock.RLock()
+	vreq, ok := v.preq[resp.txhash]
+	if !ok {
+		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.txhash)
+		return errors.New("Key is not exist")
+	}
+	v.preqLock.RUnlock()
+	_, err := v.Check(resp)
+	if err != nil {
+		vreq.step <- 1
+		return err
+	}
+	vreq.step <- 0
+	return nil
 }
 
 func (v *Validation) AddSpvReq(strhash string) (*proofReq, error) {
