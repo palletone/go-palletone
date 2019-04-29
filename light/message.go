@@ -239,7 +239,7 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 		rlp.Encode(keybuf, uint(index))
 
 		resp := new(proofsRespData)
-		//resp := proofsRespData{}
+		resp.index = req.Index
 		resp.txhash = req.BHash
 		resp.headerhash = unit.Hash()
 		resp.txroothash = trieRootHash

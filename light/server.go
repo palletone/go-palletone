@@ -31,7 +31,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
@@ -346,23 +345,28 @@ func (pm *ProtocolManager) blockLoop() {
 	}()
 }
 
-func (pm *ProtocolManager) ReqProof(strhash string) error {
+func (pm *ProtocolManager) ReqProof(strhash string) string {
 	peers := pm.peers.AllPeers()
 	vreq, err := pm.validation.AddSpvReq(strhash)
 	if err != nil {
-		return err
+		return err.Error()
 	}
 
 	var req ProofReq
 	req.BHash = vreq.txhash
 	req.FromLevel = uint(0)
+	req.Index = vreq.strindex
 	for _, p := range peers {
 		p.RequestProofs(0, 0, []ProofReq{req})
 	}
 
 	result := vreq.Wait()
 	if result == 0 {
-		return nil
+		return "OK"
+	} else if result == 1 {
+		return "error"
+	} else if result == 2 {
+		return "timeout"
 	}
-	return errors.New("error")
+	return "errors"
 }

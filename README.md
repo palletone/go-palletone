@@ -6,6 +6,9 @@ Official golang implementation of the palletone protocol.
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/47ccb5f4718d4e80963f70159c16c913)](https://app.codacy.com/app/palletonedev/go-palletone?utm_source=github.com&utm_medium=referral&utm_content=palletone/go-palletone&utm_campaign=badger)
 [![Coverage Status](https://coveralls.io/repos/github/palletone/go-palletone/badge.svg?branch=master)](https://coveralls.io/github/palletone/go-palletone?branch=master)
 [![Build status](https://ci.appveyor.com/api/projects/status/odogyg1g23w4gagn?svg=true)](https://ci.appveyor.com/project/palletonedev/go-palletone)
+[![Code Count](https://tokei.rs/b1/github/palletone/go-palletone)](https://github.com/palletone/go-palletone).
+
+[![version](https://img.shields.io/github/tag/palletone/go-palletone.svg)](https://github.com/palletone/go-palletone/releases/latest)
 
 ## Building the source
 

@@ -7,6 +7,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/errors"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -21,10 +22,17 @@ const (
 )
 
 type proofReq struct {
-	txhash common.Hash // Hash of the block being announced
-	time   time.Time   // Timestamp of the announcement
-	step   chan int    //0:ok   1:err  2:timeout
-	valid  *Validation
+	strindex string
+	txhash   common.Hash // Hash of the block being announced
+	time     time.Time   // Timestamp of the announcement
+	step     chan int    //0:ok   1:err  2:timeout
+	valid    *Validation
+}
+
+func NewProofReq(txhash common.Hash, valid *Validation) *proofReq {
+	t := time.Now().UnixNano()
+	str := strconv.FormatInt(t, 10)
+	return &proofReq{strindex: str + txhash.String(), txhash: txhash, time: time.Now(), step: make(chan int), valid: valid}
 }
 
 func (req *proofReq) Wait() int {
@@ -35,28 +43,28 @@ func (req *proofReq) Wait() int {
 		case result := <-req.step:
 			return result
 		case <-timeout.C:
-			req.valid.forgetHash(req.txhash)
+			req.valid.forgetHash(req.strindex)
 			return 2
 		}
 	}
 }
 
 type Validation struct {
-	preq     map[common.Hash]*proofReq //key:txhash  request queue
+	preq     map[string]*proofReq //key:txhash  request queue
 	preqLock sync.RWMutex
 
 	queue *prque.Prque //recv validation path
 	dag   dag.IDag
 
-	quit chan struct{}
+	//quit chan struct{}
 }
 
 func NewValidation(dag dag.IDag) *Validation {
 	return &Validation{
-		preq:  make(map[common.Hash]*proofReq),
+		preq:  make(map[string]*proofReq),
 		queue: prque.New(),
-		quit:  make(chan struct{}),
-		dag:   dag,
+		//quit:  make(chan struct{}),
+		dag: dag,
 	}
 }
 
@@ -67,48 +75,14 @@ func (v *Validation) Start() {
 // Stop terminates the announcement based synchroniser, canceling all pending
 // operations.
 func (v *Validation) Stop() {
-	close(v.quit)
+	//close(v.quit)
 }
 
-//func (v *Validation) loop() {
-//	completeTimer := time.NewTimer(0)
-//	for {
-//		//v.preqLock.Unlock()
-//		//for hash, req := range v.preq {
-//		//	if time.Since(req.time) > fetchTimeout {
-//		//		v.forgetHash(hash)
-//		//	}
-//		//}
-//		//v.preqLock.RUnlock()
-//
-//		select {
-//		case <-v.quit:
-//			// loop terminating, abort all operations
-//			return
-//		case <-completeTimer.C:
-//		}
-//	}
-//}
-
-func (v *Validation) forgetHash(txhash common.Hash) {
+func (v *Validation) forgetHash(index string) {
 	v.preqLock.Lock()
-	delete(v.preq, txhash)
+	delete(v.preq, index)
 	v.preqLock.Unlock()
 }
-
-//
-//func (v *Validation) process(op *proofResp) {
-//	go func() {
-//		//check hash.Is it exsit in preq queue.yes,save local leveldb and notice console.no,notice console
-//		v.preqLock.Unlock()
-//		for hash, req := range v.preq {
-//			if time.Since(req.time) > fetchTimeout {
-//				v.forgetHash(hash)
-//			}
-//		}
-//		v.preqLock.RUnlock()
-//	}()
-//}
 
 func (v *Validation) Check(resp *proofsRespData) (int, error) {
 
@@ -132,9 +106,12 @@ func (v *Validation) Check(resp *proofsRespData) (int, error) {
 
 func (v *Validation) AddSpvResp(resp *proofsRespData) error {
 	v.preqLock.RLock()
-	vreq, ok := v.preq[resp.txhash]
+	vreq, ok := v.preq[resp.index]
 	if !ok {
-		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.txhash)
+		v.preqLock.RUnlock()
+
+		vreq.step <- 1
+		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.index)
 		return errors.New("Key is not exist")
 	}
 	v.preqLock.RUnlock()
@@ -151,65 +128,18 @@ func (v *Validation) AddSpvReq(strhash string) (*proofReq, error) {
 	hash := common.Hash{}
 	hash.SetHexString(strhash)
 	log.Debug("Light PalletOne ProtocolManager ReqProof", "strhash", strhash, "common hash", hash.String())
-	req := &proofReq{txhash: hash, time: time.Now(), step: make(chan int)}
 
-	v.preqLock.RLock()
-	if _, ok := v.preq[hash]; ok {
-		v.preqLock.RUnlock()
-		return nil, errors.New("Key is exist")
-	}
-	v.preqLock.RUnlock()
+	//TODO add limit console visit times
+	//v.preqLock.RLock()
+	//if _, ok := v.preq[hash]; ok {
+	//	v.preqLock.RUnlock()
+	//	return nil, errors.New("Key is exist")
+	//}
+	//v.preqLock.RUnlock()
 
+	req := NewProofReq(hash, v)
 	v.preqLock.Lock()
-	v.preq[hash] = req
+	v.preq[req.strindex] = req
 	v.preqLock.Unlock()
 	return req, nil
 }
-
-/*
-func convert() {
-	str := `{
-	"tx_hash": "0x162c55f36093da2ae4009521cdf80c5a9686c0662967e1cdc6e76fc2b55b270c",
-	"tx_size": 302,
-	"payment": {
-		"inputs": [{
-			"txid": "0x997e5eccf274fd6c612f508b7edfc5901cee88e7115ff9802cb9be0ba192759e",
-			"message_index": 0,
-			"out_index": 0,
-			"unlock_script": "5b98e83534080e9bd4d07d8a963d237661af438c940428af737248e30b58eab3185396e52f6bbd4dc7ce9075ea5657a5e2c884a06efbe83f8f9ae2e5f1f0377d01 031e976a58bb67b150a5df910715cd7c2dd4511c79f197832789f1601b6cbcef06",
-			"from_address": "P17GojddWTJr1wJbQqkRS3E3vtisfrxtQhp"
-		}],
-		"outputs": [{
-			"amount": 9900000000,
-			"asset": "PTN",
-			"to_address": "P1M1wwyGiBQAda5T25Rcuywnyxi2bxAZCWk",
-			"lock_script": "OP_DUP OP_HASH160 db90623dea2c87bff041811eeb2a501ceba6e98d OP_EQUALVERIFY OP_CHECKSIG"
-		}, {
-			"amount": 99999990099999980,
-			"asset": "PTN",
-			"to_address": "P17GojddWTJr1wJbQqkRS3E3vtisfrxtQhp",
-			"lock_script": "OP_DUP OP_HASH160 44ce01ae3f3d921cb77f9713c270096fb3292b59 OP_EQUALVERIFY OP_CHECKSIG"
-		}],
-		"locktime": 0
-	},
-	"account_state_update": null,
-	"data": null,
-	"contract_tpl": null,
-	"contract_deploy": null,
-	"contract_invoke": null,
-	"contract_stop": null,
-	"signature": null,
-	"install_request": null,
-	"deploy_request": null,
-	"invoke_request": null,
-	"stop_request": null
-}`
-}
-*/
-//
-//tx := modules.Transaction{}
-//if err := json.Unmarshal([]byte(str), &tx); err != nil {
-//	log.Error("Light PalletOne ProtocolManager ReqProof", "Unmarshal err:", err)
-//	return err
-//}
-//log.Debug("Light PalletOne ProtocolManager ReqProof", "tx.Hash()", tx.Hash().String(), "tx_hash", "0x162c55f36093da2ae4009521cdf80c5a9686c0662967e1cdc6e76fc2b55b270c")

@@ -224,6 +224,7 @@ type proofsRespData struct {
 	txroothash common.Hash
 	key        []byte       //tx index
 	pathData   les.NodeList //txs path
+	index      string
 }
 
 //type txStatus struct {
@@ -240,24 +241,14 @@ func (p *proofsRespData) encode() ([][]byte, error) {
 	resp = append(resp, p.key)
 	path, err := rlp.EncodeToBytes(p.pathData)
 	if err != nil {
-		log.Debug("+++++++++++++++++++++++++++++++++++++", "err", err, "pathdata", p.pathData)
+		log.Debug("proofsRespData encode", "err", err, "pathdata", p.pathData)
 		return nil, err
 	}
 	resp = append(resp, path)
-	//data, err1 := rlp.EncodeToBytes(resp)
-	//if err1 != nil {
-	//	log.Debug("+++++++++++++++++++++++++++++++++++++", "err", err1, "resp", resp)
-	//}
+	resp = append(resp, []byte(p.index))
 	return resp, nil
 }
 
-/*
-	txhash     common.Hash
-	headerhash common.Hash //header hash
-	txroothash common.Hash
-	key        []byte       //tx index
-	pathData   les.NodeList //txs path
-*/
 func (p *proofsRespData) decode(data [][]byte) error {
 
 	p.txhash.SetBytes(data[0])
@@ -266,8 +257,9 @@ func (p *proofsRespData) decode(data [][]byte) error {
 	p.key = data[3]
 
 	if err := rlp.DecodeBytes(data[4], &p.pathData); err != nil {
-		log.Debug("rlp.DecodeBytes pathData", "err", err, "data", data[4])
+		log.Debug("proofsRespData decode rlp.DecodeBytes pathData", "err", err, "data", data[4])
 		return err
 	}
+	p.index = string(data[5])
 	return nil
 }
