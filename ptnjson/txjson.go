@@ -22,6 +22,7 @@ package ptnjson
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"encoding/hex"
@@ -75,10 +76,10 @@ type DeployJson struct {
 type InvokeJson struct {
 	ContractId   string   `json:"contract_id"` // contract id
 	FunctionName string   `json:"function_name"`
-	Args         [][]byte `json:"args"`      // contract arguments list
+	Args         []string `json:"args"`      // contract arguments list
 	ReadSet      string   `json:"read_set"`  // the set data of read, and value could be any type
 	WriteSet     string   `json:"write_set"` // the set data of write, and value could be any type
-	Payload      []byte   `json:"payload"`   // the contract execution result
+	Payload      string   `json:"payload"`   // the contract execution result
 	ErrorCode    uint32   `json:"error_code"`
 	ErrorMessage string   `json:"error_message"`
 }
@@ -233,12 +234,15 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	injson.ContractId = hash.String()
 	injson.FunctionName = invoke.FunctionName
 
-	injson.Args = invoke.Args
+	injson.Args =[]string{}
+	for _,arg:=range invoke.Args{
+		injson.Args=append(injson.Args,string( arg))
+	}
 	rset, _ := json.Marshal(invoke.ReadSet)
 	injson.ReadSet = string(rset)
 	wset, _ := json.Marshal(invoke.WriteSet)
 	injson.WriteSet = string(wset)
-	injson.Payload = invoke.Payload
+	injson.Payload = string(invoke.Payload)
 	//if invoke.ErrMsg!=nil{
 	injson.ErrorCode = invoke.ErrMsg.Code
 	injson.ErrorMessage = invoke.ErrMsg.Message
@@ -258,8 +262,8 @@ func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
 func convertSig2Json(sig *modules.SignaturePayload) *SignatureJson {
 	sigjson := new(SignatureJson)
 	for _, sig := range sig.Signatures {
-		set, _ := json.Marshal(sig)
-		sigjson.Signatures = append(sigjson.Signatures, string(set))
+		set := fmt.Sprintf("pubkey:%x,signature:%x",sig.PubKey,sig.Signature)
+		sigjson.Signatures = append(sigjson.Signatures, set)
 	}
 	return sigjson
 }
