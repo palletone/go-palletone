@@ -184,6 +184,7 @@ type ProofReq struct {
 	BHash       common.Hash
 	AccKey, Key []byte
 	FromLevel   uint
+	Index       string
 }
 
 // ODR request type for state/storage trie entries, see LesOdrRequest interface

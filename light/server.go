@@ -355,6 +355,7 @@ func (pm *ProtocolManager) ReqProof(strhash string) string {
 	var req ProofReq
 	req.BHash = vreq.txhash
 	req.FromLevel = uint(0)
+	req.Index = vreq.strindex
 	for _, p := range peers {
 		p.RequestProofs(0, 0, []ProofReq{req})
 	}

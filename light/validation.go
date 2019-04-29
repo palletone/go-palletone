@@ -7,6 +7,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/errors"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -21,14 +22,17 @@ const (
 )
 
 type proofReq struct {
-	txhash common.Hash // Hash of the block being announced
-	time   time.Time   // Timestamp of the announcement
-	step   chan int    //0:ok   1:err  2:timeout
-	valid  *Validation
+	strindex string
+	txhash   common.Hash // Hash of the block being announced
+	time     time.Time   // Timestamp of the announcement
+	step     chan int    //0:ok   1:err  2:timeout
+	valid    *Validation
 }
 
 func NewProofReq(txhash common.Hash, valid *Validation) *proofReq {
-	return &proofReq{txhash: txhash, time: time.Now(), step: make(chan int), valid: valid}
+	t := time.Now().UnixNano()
+	str := strconv.FormatInt(t, 10)
+	return &proofReq{strindex: str + txhash.String(), txhash: txhash, time: time.Now(), step: make(chan int), valid: valid}
 }
 
 func (req *proofReq) Wait() int {
@@ -39,14 +43,14 @@ func (req *proofReq) Wait() int {
 		case result := <-req.step:
 			return result
 		case <-timeout.C:
-			req.valid.forgetHash(req.txhash)
+			req.valid.forgetHash(req.strindex)
 			return 2
 		}
 	}
 }
 
 type Validation struct {
-	preq     map[common.Hash]*proofReq //key:txhash  request queue
+	preq     map[string]*proofReq //key:txhash  request queue
 	preqLock sync.RWMutex
 
 	queue *prque.Prque //recv validation path
@@ -57,7 +61,7 @@ type Validation struct {
 
 func NewValidation(dag dag.IDag) *Validation {
 	return &Validation{
-		preq:  make(map[common.Hash]*proofReq),
+		preq:  make(map[string]*proofReq),
 		queue: prque.New(),
 		//quit:  make(chan struct{}),
 		dag: dag,
@@ -74,9 +78,9 @@ func (v *Validation) Stop() {
 	//close(v.quit)
 }
 
-func (v *Validation) forgetHash(txhash common.Hash) {
+func (v *Validation) forgetHash(index string) {
 	v.preqLock.Lock()
-	delete(v.preq, txhash)
+	delete(v.preq, index)
 	v.preqLock.Unlock()
 }
 
@@ -102,9 +106,12 @@ func (v *Validation) Check(resp *proofsRespData) (int, error) {
 
 func (v *Validation) AddSpvResp(resp *proofsRespData) error {
 	v.preqLock.RLock()
-	vreq, ok := v.preq[resp.txhash]
+	vreq, ok := v.preq[resp.index]
 	if !ok {
-		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.txhash)
+		v.preqLock.RUnlock()
+
+		vreq.step <- 1
+		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.index)
 		return errors.New("Key is not exist")
 	}
 	v.preqLock.RUnlock()
@@ -122,15 +129,17 @@ func (v *Validation) AddSpvReq(strhash string) (*proofReq, error) {
 	hash.SetHexString(strhash)
 	log.Debug("Light PalletOne ProtocolManager ReqProof", "strhash", strhash, "common hash", hash.String())
 
-	v.preqLock.RLock()
-	if _, ok := v.preq[hash]; ok {
-		v.preqLock.RUnlock()
-		return nil, errors.New("Key is exist")
-	}
-	v.preqLock.RUnlock()
+	//TODO add limit console visit times
+	//v.preqLock.RLock()
+	//if _, ok := v.preq[hash]; ok {
+	//	v.preqLock.RUnlock()
+	//	return nil, errors.New("Key is exist")
+	//}
+	//v.preqLock.RUnlock()
+
 	req := NewProofReq(hash, v)
 	v.preqLock.Lock()
-	v.preq[hash] = req
+	v.preq[req.strindex] = req
 	v.preqLock.Unlock()
 	return req, nil
 }
