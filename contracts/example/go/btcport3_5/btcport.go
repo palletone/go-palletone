@@ -394,7 +394,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	//
 	multiAddrByte, _ := stub.GetState(symbolsMultiAddr + invokeAddr.String())
-	if len(multiAddrByte) != 0 {
+	if len(multiAddrByte) == 0 {
 		jsonResp := "{\"Error\":\"You need call getDepositAddr for get your deposit address\"}"
 		return shim.Success([]byte(jsonResp))
 	}

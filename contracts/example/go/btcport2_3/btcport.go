@@ -51,9 +51,9 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return _initDepositAddr(args, stub)
 	case "setBTCTokenAsset":
 		return _setBTCTokenAsset(args, stub)
-	case "getDepositAddr":
-		return _getDepositAddr(args, stub)
-	case "_getBTCToken":
+	case "setDepositAddr":
+		return _setDepositAddr(args, stub)
+	case "getBTCToken":
 		return _getBTCToken(args, stub)
 	case "withdrawBTC":
 		return _withdrawBTC(args, stub)
@@ -220,7 +220,7 @@ func getBTCTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
 	return asset
 }
 
-func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _setDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 1 {
 		return shim.Error("need 1 args (BTCPubkey)")
@@ -395,7 +395,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	//
 	multiAddrByte, _ := stub.GetState(symbolsMultiAddr + invokeAddr.String())
-	if len(multiAddrByte) != 0 {
+	if len(multiAddrByte) == 0 {
 		jsonResp := "{\"Error\":\"You need call getDepositAddr for get your deposit address\"}"
 		return shim.Success([]byte(jsonResp))
 	}
@@ -409,7 +409,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	btcAmount := uint64(0)
 	for i := range getUTXOResult.UTXOs {
-		if getUTXOResult.UTXOs[i].Confirms < 6 {
+		if getUTXOResult.UTXOs[i].Confirms < 1 { //
 			continue
 		}
 		txIDVout := getUTXOResult.UTXOs[i].TxID + sep + strconv.Itoa(int(getUTXOResult.UTXOs[i].Vout))
