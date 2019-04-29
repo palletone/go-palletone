@@ -23,8 +23,8 @@ web3._extend({
 	property: 'mediator',
 	methods: [
 		new web3._extend.Method({
-			name: 'getActives',
-			call: 'mediator_getActives',
+			name: 'listAll',
+			call: 'mediator_getList',
 			params: 0,
 		}),
 		new web3._extend.Method({
@@ -67,16 +67,26 @@ web3._extend({
 			call: 'mediator_stopProduce',
 			params: 0,
 		}),
-		
+		new web3._extend.Method({
+			name: 'listVoteResult',
+			call: 'mediator_listVoteResult',
+			params: 0,
+		}),
+		//new web3._extend.Method({
+		//	name: 'setDesiredCount',
+		//	call: 'mediator_setDesiredCount',
+		//	params: 2,
+		//}),
+		//new web3._extend.Method({
+		//	name: 'getDesiredCount',
+		//	call: 'mediator_getDesiredCount',
+		//	params: 1,
+		//}),
 	],
 	properties: [
 		new web3._extend.Property({
-			name: 'list',
-			getter: 'mediator_list'
-		}),
-		new web3._extend.Property({
-			name: 'listVoteResult',
-			getter: 'mediator_listVoteResult'
+			name: 'listActives',
+			getter: 'mediator_getActives'
 		}),
 	]
 });

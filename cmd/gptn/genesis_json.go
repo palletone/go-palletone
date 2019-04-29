@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -290,6 +291,7 @@ func createExampleGenesis() *core.Genesis {
 		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
 		TempUccCpuShares:          core.DefaultTempUccCpuShares,
 		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
 	}
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
