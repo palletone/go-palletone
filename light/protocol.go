@@ -216,8 +216,6 @@ type CodeData []struct {
 	Value []byte
 }
 
-type proofsData [][]rlp.RawValue
-
 type proofsRespData struct {
 	txhash     common.Hash
 	headerhash common.Hash //header hash

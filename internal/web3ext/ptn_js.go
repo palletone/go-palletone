@@ -145,8 +145,8 @@ web3._extend({
 			params: 1
 		}),
 		new web3._extend.Method({
-			name: 'proofTransaction',
-			call: 'ptn_proofTransaction',
+			name: 'proofTransactionByHash',
+			call: 'ptn_proofTransactionByHash',
 			params: 1
 		}),
 		new web3._extend.Method({
