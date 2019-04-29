@@ -19,6 +19,8 @@ const (
 	spvMaxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
 	spvHashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
 	spvReqLimit      = 64                     // Maximum number of unique blocks a peer may have delivered
+	ERRSPVOTHERS     = 1
+	ERRSPVTIMEOUT    = 2
 )
 
 type proofReq struct {
@@ -44,7 +46,7 @@ func (req *proofReq) Wait() int {
 			return result
 		case <-timeout.C:
 			req.valid.forgetHash(req.strindex)
-			return 2
+			return ERRSPVTIMEOUT
 		}
 	}
 }
@@ -110,14 +112,14 @@ func (v *Validation) AddSpvResp(resp *proofsRespData) error {
 	if !ok {
 		v.preqLock.RUnlock()
 
-		vreq.step <- 1
+		vreq.step <- ERRSPVOTHERS
 		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.index)
 		return errors.New("Key is not exist")
 	}
 	v.preqLock.RUnlock()
 	_, err := v.Check(resp)
 	if err != nil {
-		vreq.step <- 1
+		vreq.step <- ERRSPVOTHERS
 		return err
 	}
 	vreq.step <- 0
