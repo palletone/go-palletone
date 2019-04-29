@@ -3,6 +3,7 @@ package light
 import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/trie"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/light/les"
@@ -100,36 +101,33 @@ func (v *Validation) process(op *proofResp) {
 	}()
 }
 
-func (v *Validation) Check(resp proofsRespData) (int, error) {
+func (v *Validation) Check(resp *proofsRespData) (int, error) {
 	v.preqLock.RLock()
 	if _, ok := v.preq[resp.txhash]; !ok {
+		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.txhash)
 		return 0, errors.New("Key is not exist")
 	}
 	v.preqLock.RUnlock()
-	/*header*/ _, err := v.dag.GetHeaderByHash(resp.headerhash)
+	header, err := v.dag.GetHeaderByHash(resp.headerhash)
 	if err != nil {
 		log.Debug("===========")
 		return 0, err
 	}
-
-	//proofs := resp.pathData
-	//if len(proofs) != 1 {
-	//	return 0, errInvalidEntryCount
-	//}
-	//nodeSet := proofs.NodeSet()
-	//trie.VerifyProof(header.TxRoot, resp.key, nodeSet)
-	//if err != nil {
-	//	log.Errorf("VerifyProof error for key %x: %v\nraw proof: %v", resp.key, err, proofs)
-	//	return 0, err
-	//}
-	log.Debug("+++++++++++Validation->Check++++++++++", "resp", resp)
+	if header.TxRoot.String() != resp.txroothash.String() {
+		return 0, errors.New("txroothash not equal")
+	}
+	log.Debug("Light PalletOne", "key", resp.key, "proof", resp.pathData)
+	nodeSet := resp.pathData.NodeSet()
+	_, err, _ = trie.VerifyProof(header.TxRoot, resp.key, nodeSet)
+	if err != nil {
+		log.Debug("Light PalletOne", "Validation->Check VerifyProof err", err)
+		return 0, err
+	}
 	return 0, nil
 }
 
-func (v *Validation) AddSpvResp(resps []proofsRespData) (*proofReq, error) {
-	for _, resp := range resps {
-		v.Check(resp)
-	}
+func (v *Validation) AddSpvResp(resp *proofsRespData) (*proofReq, error) {
+	v.Check(resp)
 	return nil, nil
 }
 
