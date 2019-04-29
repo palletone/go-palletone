@@ -357,7 +357,7 @@ func (b *bridge) TransferGasToken(call otto.FunctionCall) (response otto.Value) 
 		duration = call.Argument(6)
 	}
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jptn.transferPtn", nil, from, to, amount, fee, extra, passwd, duration)
+	val, err := call.Otto.Call("jptn.transferPTN", nil, from, to, amount, fee, extra, passwd, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}
