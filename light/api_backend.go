@@ -276,6 +276,9 @@ func (b *LesApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, erro
 func (b *LesApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
+	return nil, nil
+}
 
 // get state
 //GetHeadUnitHash() (common.Hash, error)
@@ -390,7 +393,8 @@ func (b *LesApiBackend) ContractQuery(contractId []byte, txid string, args [][]b
 }
 
 func (b *LesApiBackend) Dag() dag.IDag {
-	return b.Dag()
+	//return b.Dag()
+	return nil
 }
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
@@ -411,9 +415,9 @@ func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 }
 
 //SPV
-func (b *LesApiBackend) ProofTransaction(tx string) (string, error) {
-	b.ptn.ProtocolManager().ReqProof(tx)
-	return "LesApiBackend-ProofTransaction", nil
+func (b *LesApiBackend) ProofTransactionByHash(tx string) (string, error) {
+	return b.ptn.ProtocolManager().ReqProof(tx), nil
+
 }
 func (b *LesApiBackend) ValidationPath(tx string) ([]byte, error) {
 	return []byte("lll"), nil

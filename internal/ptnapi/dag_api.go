@@ -242,7 +242,16 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 		return string(result_json), nil
 	}
 }
-
+func (s *PublicDagAPI) GetTxByReqId(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetTxByReqId(hash); err != nil {
+		return "transaction_info:null", err
+	} else {
+		info := NewPublicReturnInfo("transaction_info", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
 func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)
 	item, err := s.b.GetTxSearchEntry(hash)
@@ -351,17 +360,28 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 //}
 
 func (s *PublicDagAPI) HeadUnitHash() string {
-	return s.b.Dag().HeadUnitHash().TerminalString()
-	//return "unknown"
+	dag := s.b.Dag()
+	if dag != nil {
+		return dag.HeadUnitHash().String()
+	}
+
+	return "unknown"
 }
 
 func (s *PublicDagAPI) HeadUnitTime() string {
-	time := time.Unix(s.b.Dag().HeadUnitTime(), 0)
-	return time.Format("2006-01-02 15:04:05 -0700 MST")
-	//return "1972-0-0"
+	dag := s.b.Dag()
+	if dag != nil {
+		time := time.Unix(dag.HeadUnitTime(), 0)
+		return time.Format("2006-01-02 15:04:05 -0700 MST")
+	}
+
+	return "1972-0-0"
 }
 
 func (s *PublicDagAPI) HeadUnitNum() uint64 {
-	return s.b.Dag().HeadUnitNum()
-	//return uint64(0)
+	dag := s.b.Dag()
+	if dag != nil {
+		return dag.HeadUnitNum()
+	}
+	return uint64(0)
 }

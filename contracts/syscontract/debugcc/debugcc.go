@@ -42,6 +42,10 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	switch funcName {
 	case "add":
 		return d.add(stub, args)
+	case "testAddBalance":
+		return d.addBalance(stub, args)
+	case "testGetBalance":
+		return d.getBalance(stub, args)
 	case "getbalance":
 		return d.getbalance(stub, args)
 	case "getRequesterCert":
@@ -110,4 +114,21 @@ func (d *DebugChainCode) getRootCABytes(stub shim.ChaincodeStubInterface, args [
 		return shim.Error(e.Error())
 	}
 	return shim.Success(b)
+}
+func (d *DebugChainCode) addBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	account := args[0]
+	amt, _ := strconv.Atoi(args[1])
+	balanceB, _ := stub.GetState(account)
+	balance, _ := strconv.Atoi(string(balanceB))
+	balance = balance + amt
+	str := strconv.Itoa(balance)
+	stub.PutState(account, []byte(str))
+	return shim.Success([]byte(str))
+}
+func (d *DebugChainCode) getBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	account := args[0]
+
+	balanceB, _ := stub.GetState(account)
+
+	return shim.Success(balanceB)
 }

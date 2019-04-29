@@ -69,16 +69,14 @@ func (dag *Dag) performAccountMaintenance() {
 	mediators := dag.GetMediators()
 	mediatorCount := len(mediators)
 	dag.mediatorVoteTally = make([]*voteTally, mediatorCount, mediatorCount)
-	mediatorIndex := make(map[common.Address]int, mediatorCount)
 
-	maxMediatorCount := dag.GetChainParameters().MaximumMediatorCount
-	dag.mediatorCountHistogram = make([]uint64, maxMediatorCount/2+1)
+	//maxMediatorCount := dag.GetChainParameters().MaximumMediatorCount
+	//dag.mediatorCountHistogram = make([]uint64, maxMediatorCount/2+1)
 
 	// 2. 遍历所有账户
 	allAccount := dag.LookupAccount()
 	mediatorVoteCount := make(map[common.Address]uint64)
 	for _, info := range allAccount {
-		//votingStake := dag.unstableStateRep.GetAccountBalance(addr)
 		// 累加投票数量
 		mediatorVoteCount[info.VotedMediator] += info.Balance
 		dag.totalVotingStake += info.Balance
@@ -86,13 +84,9 @@ func (dag *Dag) performAccountMaintenance() {
 
 	index := 0
 	for mediator, _ := range mediators {
-		// 建立 mediator 地址和index 的映射关系
-		mediatorIndex[mediator] = index
-
 		// 初始化 mediator 的投票数据
 		voteTally := newVoteTally(mediator)
-		count := mediatorVoteCount[mediator]
-		voteTally.votedCount = count
+		voteTally.votedCount = mediatorVoteCount[mediator]
 		dag.mediatorVoteTally[index] = voteTally
 
 		index++
@@ -146,24 +140,24 @@ func (dag *Dag) performAccountMaintenance() {
 
 func (dag *Dag) updateActiveMediators() bool {
 	// 1. 统计出活跃mediator数量n
-	stakeTarget := (dag.totalVotingStake - dag.mediatorCountHistogram[0]) / 2
-
-	// accounts that vote for 0 or 1 mediator do not get to express an opinion on
-	// the number of mediators to have (they abstain and are non-voting accounts)
-
-	mediatorCountIndex := 0
-	if stakeTarget > 0 {
-		var stakeTally uint64 = 0
-		upperLimit := len(dag.mediatorCountHistogram) - 1
-		for mediatorCountIndex < upperLimit {
-			mediatorCountIndex++
-			stakeTally += dag.mediatorCountHistogram[mediatorCountIndex]
-
-			if stakeTally > stakeTarget {
-				break
-			}
-		}
-	}
+	//stakeTarget := (dag.totalVotingStake - dag.mediatorCountHistogram[0]) / 2
+	//
+	//// accounts that vote for 0 or 1 mediator do not get to express an opinion on
+	//// the number of mediators to have (they abstain and are non-voting accounts)
+	//
+	//mediatorCountIndex := 0
+	//if stakeTarget > 0 {
+	//	var stakeTally uint64 = 0
+	//	upperLimit := len(dag.mediatorCountHistogram) - 1
+	//	for mediatorCountIndex < upperLimit {
+	//		mediatorCountIndex++
+	//		stakeTally += dag.mediatorCountHistogram[mediatorCountIndex]
+	//
+	//		if stakeTally > stakeTarget {
+	//			break
+	//		}
+	//	}
+	//}
 
 	maxFn := func(x, y int) int {
 		if x > y {
@@ -173,13 +167,19 @@ func (dag *Dag) updateActiveMediators() bool {
 	}
 
 	gp := dag.GetGlobalProp()
+	// 保证活跃mediator的总数必须大于MinimumMediatorCount
 	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
-	mediatorCount := maxFn(mediatorCountIndex*2+1, int(minMediatorCount))
+	//mediatorCount := maxFn(mediatorCountIndex*2+1, int(minMediatorCount))
+
+	countInSystem := dag.getActiveMediatorCount()
+	mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
 
 	mediatorLen := dag.mediatorVoteTally.Len()
 	if mediatorLen < mediatorCount {
+		//log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
+		//	" the minimum mediator count is %v", mediatorCountIndex*2+1, mediatorLen, minMediatorCount)
 		log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
-			" the minimum mediator count is %v", mediatorCount, mediatorLen, minMediatorCount)
+			" the minimum mediator count is %v", countInSystem, mediatorLen, minMediatorCount)
 		// 保证活跃mediator的总数为奇数
 		mediatorCount = (mediatorLen-1)/2*2 + 1
 	}
@@ -230,6 +230,7 @@ func (dag *Dag) updateChainParameters() {
 	log.Debugf("update chain parameters")
 
 	dag.UpdateSysParams()
+	dag.RefreshSysParameters()
 
 	return
 }

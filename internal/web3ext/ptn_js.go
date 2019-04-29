@@ -78,13 +78,6 @@ web3._extend({
 		}),
 		
 		new web3._extend.Method({
-			name: 'transferToken',
-			call: 'ptn_transferToken',
-			params: 8,
-			inputFormatter: [null,null,null,null,null,null,null,null]
-		}),
-		
-		new web3._extend.Method({
 			name: 'setJuryAccount',
         	call: 'ptn_setJuryAccount',
         	params: 2, //address, password string
@@ -97,11 +90,7 @@ web3._extend({
 			inputFormatter: []
 		}),
 		
-		new web3._extend.Method({
-			name: 'transferPtn',
-			call: 'ptn_transferPtn',
-			params: 1,
-		}),
+
 		new web3._extend.Method({
 			name: 'cmdCreateTransaction',
 			call: 'ptn_cmdCreateTransaction',
@@ -151,8 +140,13 @@ web3._extend({
 			params: 1,			
 		}),
 		new web3._extend.Method({
-			name: 'proofTransaction',
-			call: 'ptn_proofTransaction',
+			name: 'getRlpTx',
+			call: 'ptn_getRlpTx',
+			params: 1
+		}),
+		new web3._extend.Method({
+			name: 'proofTransactionByHash',
+			call: 'ptn_proofTransactionByHash',
 			params: 1
 		}),
 		new web3._extend.Method({

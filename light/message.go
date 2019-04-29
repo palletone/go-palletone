@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"bytes"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -209,7 +210,7 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 
-	var proofs proofsData
+	var datas [][][]byte
 	for _, req := range reqs {
 		log.Debug("Light PalletOne ProtocolManager GetProofsMsg", "req", req)
 		//Get txRootHash and indexer in tx array and validation path
@@ -223,26 +224,62 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 		if err != nil {
 			return err
 		}
-		trie, trieRootHash := core.GetTrieInfo(unit.Txs)
+		index := 0
+		for _, tx := range unit.Txs {
+			if tx.Hash() == req.BHash {
+				break
+			}
+			index++
+		}
+
+		tri, trieRootHash := core.GetTrieInfo(unit.Txs)
 		log.Debug("Light PalletOne ProtocolManager GetProofsMsg", "unit TxRoot", unit.UnitHeader.TxRoot, "trieRootHash", trieRootHash)
-		var proof les.NodeList
-		trie.Prove(req.Key, 0, &proof)
-		proofs = append(proofs, proof)
+		//var proof les.NodeList
+		keybuf := new(bytes.Buffer)
+		rlp.Encode(keybuf, uint(index))
+
+		resp := new(proofsRespData)
+		resp.index = req.Index
+		resp.txhash = req.BHash
+		resp.headerhash = unit.Hash()
+		resp.txroothash = trieRootHash
+		resp.key = keybuf.Bytes()
+
+		if err := tri.Prove(resp.key, 0, &resp.pathData); err != nil {
+			log.Debug("Light PalletOne", "Prove err", err, "key", resp.key, "level", req.FromLevel, "proof", resp.pathData)
+		}
+		log.Debug("Light PalletOne", "key", resp.key, "level", req.FromLevel, "proof", resp.pathData)
+		log.Debugf("Light PalletOne GetProofsMsg recv %x", resp)
+
+		data, err := resp.encode()
+		if err != nil {
+			log.Debug("====", "err", err)
+		}
+		log.Debug("", "data", data)
+		datas = append(datas, data)
 	}
-	return p.SendProofs(0, 0, proofs)
+	return p.SendRawProofs(0, 0, datas)
 }
 
 func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
-	if pm.odr == nil {
-		return errResp(ErrUnexpectedResponse, "")
-	}
-
 	log.Trace("Received proofs response")
-	var resp []les.NodeList
-	if err := msg.Decode(&resp); err != nil {
+	datas := [][][]byte{}
+
+	//var resp []les.NodeList
+	if err := msg.Decode(&datas); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	log.Debug("Light PalletOne ProtocolManager ProofsMsg", "resp", resp)
+	for _, data := range datas {
+		resp := new(proofsRespData)
+		if err := resp.decode(data); err != nil {
+			log.Debug("Light PalletOne ProtocolManager ProofsMsg", "err", err)
+			return err
+		}
+		log.Debug("Light PalletOne ProtocolManager ProofsMsg", "resp.key", resp.key)
+		pm.validation.AddSpvResp(resp)
+	}
+
+	//
 	//val, err, _ := trie.VerifyProof(root, []byte("abc"), resp)
 	//if err != nil {
 	//	log.Errorf("VerifyProof error for key %x: %v\nraw proof: %v", "abc", err, proofs)
@@ -250,6 +287,7 @@ func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
 	//if !bytes.Equal(val, []byte("abcdef")) {
 	//	log.Errorf("VerifyProof returned wrong value for key %x: got %x, want %x", "abc", val, "abddef")
 	//}
+
 	return nil
 }
 

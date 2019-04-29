@@ -317,17 +317,23 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 
 	txCopy := tx.Clone()
 	payCopy := txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
-	for i := range payCopy.Inputs {
-		if i == idx {
-			// UnparseScript cannot fail here because removeOpcode
-			// above only returns a valid script.
-			sigScript, _ := unparseScript(script)
-			payCopy.Inputs[idx].SignatureScript = sigScript
-		} else {
-			payCopy.Inputs[i].SignatureScript = nil
+
+	for mIdx, mCopy := range txCopy.TxMessages {
+		if mCopy.App == modules.APP_PAYMENT {
+			pay := txCopy.TxMessages[mIdx].Payload.(*modules.PaymentPayload)
+
+			for i := range pay.Inputs {
+				if i == idx && mIdx == msgIdx {
+					// UnparseScript cannot fail here because removeOpcode
+					// above only returns a valid script.
+					sigScript, _ := unparseScript(script)
+					pay.Inputs[idx].SignatureScript = sigScript
+				} else {
+					pay.Inputs[i].SignatureScript = nil
+				}
+			}
 		}
 	}
-
 	switch hashType & sigHashMask {
 	case SigHashNone:
 		payCopy.Outputs = payCopy.Outputs[0:0] // Empty slice.

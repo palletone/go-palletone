@@ -194,7 +194,7 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 		return shim.Error(fmt.Sprintf("get ca holder error"))
 	}
 	if string(val) == args[0] {
-		rootcert, err := GetRootCert(stub)
+		rootcert, err := GetRootCACert(stub)
 		if err != nil {
 			return shim.Error(fmt.Sprintf("get root cert error:%s", err.Error()))
 		}
@@ -218,7 +218,7 @@ func (d *DigitalIdentityChainCode) getAddressCertIDs(stub shim.ChaincodeStubInte
 	//return json
 	cerIDsJson, err := json.Marshal(certIDs)
 	if err != nil {
-		return shim.Success([]byte(err.Error()))
+		return shim.Error(fmt.Sprintf("marshal certids error:%s", err.Error()))
 	}
 	return shim.Success(cerIDsJson)
 }
@@ -237,7 +237,7 @@ func (d *DigitalIdentityChainCode) getIssuerCertsInfo(stub shim.ChaincodeStubInt
 	//return json
 	cerIDsJson, err := json.Marshal(issuerCertInfo)
 	if err != nil {
-		return shim.Success([]byte(err.Error()))
+		return shim.Error(fmt.Sprintf("marshal issuer cert info error:%s", err.Error()))
 	}
 	return shim.Success(cerIDsJson)
 }
@@ -278,7 +278,7 @@ func (d *DigitalIdentityChainCode) getCertBytes(stub shim.ChaincodeStubInterface
 	certInfoJson, err := json.Marshal(certInfoMap)
 	if err != nil {
 		reqStr := fmt.Sprintf("Get Cert byts error: %s", err.Error())
-		return shim.Success([]byte(reqStr))
+		return shim.Error(reqStr)
 	}
 	return shim.Success(certInfoJson)
 }
@@ -288,12 +288,27 @@ func (d *DigitalIdentityChainCode) getCertHolder(stub shim.ChaincodeStubInterfac
 		reqStr := fmt.Sprintf("Need one args: [certificate serial number]")
 		return shim.Error(reqStr)
 	}
-	data, err := GetCertDBInfo(args[0], stub)
+	caCert, err := GetRootCACert(stub)
 	if err != nil {
-		reqStr := fmt.Sprintf("Get Cert holder error: %s", err.Error())
-		return shim.Error(reqStr)
+		return shim.Error(fmt.Sprintf("query ca certificate error:%s", err.Error()))
 	}
-	certInfoJson, err := json.Marshal(data.Holder)
+
+	var certHolder string
+	if caCert.SerialNumber.String() == args[0] {
+		data, err := stub.GetState("RootCAHolder")
+		if err != nil {
+			return shim.Error(fmt.Sprintf("query ca certificate holder error:%s", err.Error()))
+		}
+		certHolder = string(data)
+	} else {
+		data, err := GetCertDBInfo(args[0], stub)
+		if err != nil {
+			reqStr := fmt.Sprintf("Get Cert holder error: %s", err.Error())
+			return shim.Error(reqStr)
+		}
+		certHolder = data.Holder
+	}
+	certInfoJson, err := json.Marshal(certHolder)
 	if err != nil {
 		reqStr := fmt.Sprintf("Get Cert holder error: %s", err.Error())
 		return shim.Error(reqStr)
@@ -308,7 +323,7 @@ func (d *DigitalIdentityChainCode) getRootCAHolder(stub shim.ChaincodeStubInterf
 	}
 	val, err := stub.GetState("RootCAHolder")
 	if err != nil {
-		return shim.Error(fmt.Sprintf("get ca holder error"))
+		return shim.Error(fmt.Sprintf("get ca holder error:%s", err.Error()))
 	}
 	return shim.Success(val)
 }
@@ -327,7 +342,7 @@ func (d *DigitalIdentityChainCode) getIssuerCRL(stub shim.ChaincodeStubInterface
 	//return json
 	crlBytesJson, err := json.Marshal(crlInfo)
 	if err != nil {
-		return shim.Success([]byte(err.Error()))
+		return shim.Error(fmt.Sprintf("marshal crl info error:%s", err.Error()))
 	}
 	return shim.Success(crlBytesJson)
 }

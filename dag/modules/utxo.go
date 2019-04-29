@@ -68,7 +68,7 @@ func (u *Utxo) GetTimestamp() int64 {
 	return int64(u.Timestamp)
 }
 func (u *Utxo) Bytes() []byte {
-	data,_:=	rlp.EncodeToBytes(u)
+	data, _ := rlp.EncodeToBytes(u)
 	return data
 }
 func (utxo *Utxo) GetCoinDays() uint64 {
@@ -82,15 +82,19 @@ func (utxo *Utxo) GetCoinDays() uint64 {
 }
 
 type UtxoWithOutPoint struct {
-	Utxo
+	*Utxo
 	OutPoint
 }
 
+func NewUtxoWithOutPoint(utxo *Utxo, o OutPoint) *UtxoWithOutPoint {
+	uto := &UtxoWithOutPoint{Utxo: utxo, OutPoint: o}
+	return uto
+}
 func (u *UtxoWithOutPoint) GetAmount() uint64 {
 	return u.Amount
 }
 func (u *UtxoWithOutPoint) Set(utxo *Utxo, o *OutPoint) {
-	u.Utxo = *utxo
+	u.Utxo = utxo
 	u.OutPoint = *o
 }
 
