@@ -130,6 +130,8 @@ type IDag interface {
 	// SaveReqIdByTx
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error)
+
 	//SaveReqIdByTx(tx *modules.Transaction) error
 
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)

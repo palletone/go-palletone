@@ -241,7 +241,16 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 		return string(result_json), nil
 	}
 }
-
+func (s *PublicDagAPI) GetTxByReqId(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetTxByReqId(hash); err != nil {
+		return "transaction_info:null", err
+	} else {
+		info := NewPublicReturnInfo("transaction_info", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
 func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)
 	item, err := s.b.GetTxSearchEntry(hash)

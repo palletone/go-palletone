@@ -380,6 +380,14 @@ func (d *Dag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
 func (d *Dag) GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error) {
 	return d.unstableUnitRep.GetTransaction(hash)
 }
+func (d *Dag) GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error) {
+	hash, err := d.unstableUnitRep.GetTxHashByReqId(reqid)
+	if err != nil {
+		return nil, err
+	}
+	return d.unstableUnitRep.GetTransaction(hash)
+}
+
 func (d *Dag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return d.unstableUnitRep.GetTransactionOnly(hash)
 }
