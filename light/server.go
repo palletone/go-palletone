@@ -31,6 +31,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
@@ -359,9 +360,9 @@ func (pm *ProtocolManager) ReqProof(strhash string) error {
 		p.RequestProofs(0, 0, []ProofReq{req})
 	}
 
-	//resp := vreq.Wait()
-
-	//pm.validation.Check()
-
-	return nil
+	result := vreq.Wait()
+	if result == 0 {
+		return nil
+	}
+	return errors.New("error")
 }

@@ -262,10 +262,6 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 }
 
 func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
-	//if pm.odr == nil {
-	//	return errResp(ErrUnexpectedResponse, "")
-	//}
-
 	log.Trace("Received proofs response")
 	datas := [][][]byte{}
 
