@@ -78,9 +78,7 @@ type Dag struct {
 
 	// append by albert·gou 用于account 各种投票数据统计
 	mediatorVoteTally voteTallys
-	totalVotingStake  uint64
-	//mediatorCountHistogram []uint64
-	applyLock sync.Mutex
+	applyLock         sync.Mutex
 
 	//SPV
 	rmLogsFeed    event.Feed
