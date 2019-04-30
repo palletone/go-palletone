@@ -1,66 +1,65 @@
 package manger
 
 import (
-	"github.com/fsouza/go-dockerclient"
 	"fmt"
-	"strings"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/vm/common"
+	"strings"
 )
 
 type UccInterface interface {
-	GetCPUUsageTotalUsage(cc *list.CCInfo) (uint64,error)
-	GetMemoryStatsLimit(cc *list.CCInfo) (uint64,error)
-	GetMemoryStatsUsage(cc *list.CCInfo) (uint64,error)
+	GetCPUUsageTotalUsage(cc *list.CCInfo) (uint64, error)
+	GetMemoryStatsLimit(cc *list.CCInfo) (uint64, error)
+	GetMemoryStatsUsage(cc *list.CCInfo) (uint64, error)
 }
 
 //type Resource struct {
 //
 //}
 
-func getRT(cc *list.CCInfo){
+func getRT(cc *list.CCInfo) {
 	//r := &Resource{}
-	cupusage,_ := GetCPUUsageTotalUsage(cc)
-	log.Infof("================================================%d\n\n",cupusage)
-	limit,_ := GetMemoryStatsLimit(cc)
-	log.Infof("================================================%d\n\n",limit)
-	usage,_ := GetMemoryStatsUsage(cc)
-	log.Infof("================================================%d\n\n",usage)
+	cupusage, _ := GetCPUUsageTotalUsage(cc)
+	log.Infof("================================================%d\n\n", cupusage)
+	limit, _ := GetMemoryStatsLimit(cc)
+	log.Infof("================================================%d\n\n", limit)
+	usage, _ := GetMemoryStatsUsage(cc)
+	log.Infof("================================================%d\n\n", usage)
 }
 
-func GetCPUUsageTotalUsage(cc *list.CCInfo)(uint64,error) {
-
-stats,err := getResourceUses(cc)
-if err != nil {
-	return uint64(0),nil
-}
-return stats.CPUStats.CPUUsage.TotalUsage,nil
-}
-func GetMemoryStatsLimit(cc *list.CCInfo)(uint64,error) {
-	stats,err := getResourceUses(cc)
+func GetCPUUsageTotalUsage(cc *list.CCInfo) (uint64, error) {
+	stats, err := getResourceUses(cc)
 	if err != nil {
-		return uint64(0),nil
+		return uint64(0), nil
 	}
-	return stats.MemoryStats.Limit,nil
+	return stats.CPUStats.CPUUsage.TotalUsage, nil
 }
-func  GetMemoryStatsUsage(cc *list.CCInfo)(uint64,error) {
-	stats,err := getResourceUses(cc)
+func GetMemoryStatsLimit(cc *list.CCInfo) (uint64, error) {
+	stats, err := getResourceUses(cc)
 	if err != nil {
-		return uint64(0),nil
+		return uint64(0), nil
 	}
-	return stats.MemoryStats.Usage,nil
+	return stats.MemoryStats.Limit, nil
+}
+func GetMemoryStatsUsage(cc *list.CCInfo) (uint64, error) {
+	stats, err := getResourceUses(cc)
+	if err != nil {
+		return uint64(0), nil
+	}
+	return stats.MemoryStats.Usage, nil
 }
 
-func getResourceUses(cc *list.CCInfo)(*docker.Stats,error) {
+func getResourceUses(cc *list.CCInfo) (*docker.Stats, error) {
 	if !cc.SysCC {
 		name := fmt.Sprintf("%s:%s:%s", cc.Name, cc.Version, contractcfg.GetConfig().ContractAddress)
 		newName := strings.Replace(name, ":", "-", -1)
 		client, err := util.NewDockerClient()
 		if err != nil {
 			log.Infof("util.NewDockerClient err: %s\n", err.Error())
-			return nil,err
+			return nil, err
 		}
 		//info, err := client.Info()
 		//if err != nil {
@@ -70,7 +69,7 @@ func getResourceUses(cc *list.CCInfo)(*docker.Stats,error) {
 		con, err := client.InspectContainer(newName)
 		if err != nil {
 			log.Infof("client.InspectContainer err: %s\n", err.Error())
-			return nil,err
+			return nil, err
 		}
 		errC := make(chan error, 1)
 		statsC := make(chan *docker.Stats)
@@ -90,13 +89,13 @@ func getResourceUses(cc *list.CCInfo)(*docker.Stats,error) {
 		}
 		err = <-errC
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
 		if len(resultStats) == 0 {
-			return nil,fmt.Errorf("get container stats error")
+			return nil, fmt.Errorf("get container stats error")
 		} else {
 			stats := resultStats[0]
-				return stats,nil
+			return stats, nil
 			//log.Infof("----------------------------------------%#v\n\n", stats)
 			//log.Infof("----------------------------------------%#v\n\n", stats.Read)
 			//log.Infof("-------------------stats.CPUStats.CPUUsage.PercpuUsage---------------------%d\n\n", stats.CPUStats.CPUUsage.PercpuUsage)
@@ -110,5 +109,5 @@ func getResourceUses(cc *list.CCInfo)(*docker.Stats,error) {
 			//log.Infof("----------------------stats.MemoryStats.Usage------------------%d\n\n", stats.MemoryStats.Usage)
 		}
 	}
-	return nil,fmt.Errorf("get container stats error")
+	return nil, fmt.Errorf("get container stats error")
 }

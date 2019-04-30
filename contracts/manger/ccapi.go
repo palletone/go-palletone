@@ -265,7 +265,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 			log.Error("Deploy", "SetChaincode fail, chainId", setChainId, "name", cc.Name)
 		}
 	} else {
-		err = saveChaincode(idag, setChainId, depId, cc)
+		err = saveChaincode(idag, depId, cc)
 		if err != nil {
 			log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", setChainId, "name", cc.Name, "error", err.Error())
 		}
@@ -279,12 +279,10 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 }
 
 func getChaincode(dag dag.IDag, contractId common.Address) (*cclist.CCInfo, error) {
-	log.Infof("===========enter getChaincode")
 	return dag.GetChaincodes(contractId)
 }
 
-func saveChaincode(dag dag.IDag, channel string, contractId common.Address, chaincode *cclist.CCInfo) error {
-	log.Infof("===========enter saveChaincodeSet")
+func saveChaincode(dag dag.IDag, contractId common.Address, chaincode *cclist.CCInfo) error {
 	err := dag.SaveChaincode(contractId, chaincode)
 	if err != nil {
 		return err
@@ -386,10 +384,6 @@ func Stop(idag dag.IDag, contractid []byte, chainID string, deployId []byte, txi
 	if txid == "" {
 		return nil, errors.New("input param txid is nil")
 	}
-	//cc, err := cclist.GetChaincode(chainID, deployId)
-	//if err != nil {
-	//	return nil, err
-	//}
 	address := common.Address{}
 	address.SetBytes(deployId)
 	cc, err := getChaincode(idag, address)
@@ -397,10 +391,6 @@ func Stop(idag dag.IDag, contractid []byte, chainID string, deployId []byte, txi
 		return nil, err
 	}
 	stopResult, err := StopByName(contractid, setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
-	if err == nil {
-		//TODO 删除数据库对应的信息
-		cclist.DelChaincode(chainID, cc.Name, cc.Version)
-	}
 	return stopResult, err
 }
 
