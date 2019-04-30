@@ -123,19 +123,15 @@ func (a *PublicMediatorAPI) GetList() []string {
 
 func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
 	mediatorVoteCount := make(map[string]uint64)
-	mas := a.dag.GetMediators()
 
-	for address, _ := range mas {
+	for address, _ := range a.dag.GetMediators() {
 		mediatorVoteCount[address.String()] = 0
 	}
-	accounts := a.dag.LookupAccount()
-	for _, info := range accounts {
-		ma := info.VotedMediator.String()
-		count, ok := mediatorVoteCount[ma]
-		if ok {
-			mediatorVoteCount[ma] = count + info.Balance
-		}
+
+	for med, stake := range a.dag.MediatorVotedResults() {
+		mediatorVoteCount[med.String()] = stake
 	}
+
 	return mediatorVoteCount
 }
 

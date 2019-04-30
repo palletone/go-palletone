@@ -162,12 +162,6 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 			return nil, fmt.Errorf("%v is not mediator", mediatorStr)
 		}
 
-		// 判断是否已经投过该mediator
-		//voted := a.dag.GetAccountVotedMediator(voter)
-		//if voted == mediator {
-		//	return nil, fmt.Errorf("account %v was already voting for mediator %v", voterStr, mediatorStr)
-		//}
-
 		mediators = append(mediators, mediator)
 	}
 

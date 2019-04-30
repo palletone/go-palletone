@@ -101,6 +101,7 @@ type iDag interface {
 
 	GetAccountVotedMediators(addr common.Address) []common.Address
 	GetChainParameters() core.ChainParameters
+	MediatorVotedResults() map[common.Address]uint64
 }
 
 type MediatorPlugin struct {

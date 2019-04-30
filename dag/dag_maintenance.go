@@ -63,13 +63,26 @@ func (vts voteTallys) Swap(i, j int) {
 // 获取账户相关投票数据的直方图
 func (dag *Dag) performAccountMaintenance() {
 	log.Debugf("Tally account voting mediators and setting mediators' count")
-	// 1. 初始化数据
+	// 初始化数据
 	mediators := dag.GetMediators()
 	dag.mediatorVoteTally = make([]*voteTally, 0, len(mediators))
 
-	// 2. 遍历所有账户
-	allAccount := dag.LookupAccount()
+	// 遍历所有账户
+	mediatorVoteCount := dag.MediatorVotedResults()
+
+	// 初始化 mediator 的投票数据
+	for mediator, _ := range mediators {
+
+		voteTally := newVoteTally(mediator)
+		voteTally.votedCount = mediatorVoteCount[mediator]
+		dag.mediatorVoteTally = append(dag.mediatorVoteTally, voteTally)
+	}
+}
+
+func (dag *Dag) MediatorVotedResults() map[common.Address]uint64 {
 	mediatorVoteCount := make(map[common.Address]uint64)
+
+	allAccount := dag.LookupAccount()
 	for _, info := range allAccount {
 		// 遍历该账户投票的mediator
 		for _, med := range info.VotedMediators {
@@ -78,12 +91,7 @@ func (dag *Dag) performAccountMaintenance() {
 		}
 	}
 
-	for mediator, _ := range mediators {
-		// 初始化 mediator 的投票数据
-		voteTally := newVoteTally(mediator)
-		voteTally.votedCount = mediatorVoteCount[mediator]
-		dag.mediatorVoteTally = append(dag.mediatorVoteTally, voteTally)
-	}
+	return mediatorVoteCount
 }
 
 func (dag *Dag) updateActiveMediators() bool {
