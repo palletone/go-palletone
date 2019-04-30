@@ -80,7 +80,8 @@ type iDag interface {
 
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GenVoteMediatorTx(voter, mediator common.Address, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GenVoteMediatorTx(voter common.Address, mediators []common.Address,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool
 
@@ -99,9 +100,6 @@ type iDag interface {
 	MediatorParticipationRate() uint32
 
 	GetAccountVotedMediator(addr common.Address) common.Address
-	//GetAccountInfo(addr common.Address) *modules.AccountInfo
-	//GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
-	//	txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetChainParameters() core.ChainParameters
 }
 

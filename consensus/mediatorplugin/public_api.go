@@ -173,8 +173,6 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	voted := a.dag.GetAccountVotedMediator(addr)
 	return []string{voted.String()}, nil
 
-	//medMap := a.dag.GetAccountInfo(addr).VotedMediator
-	//return []string{medMap.String()}, nil
 	//mediators := make([]string, 0, len(medMap))
 	//
 	//for med, _ := range medMap {
@@ -183,16 +181,6 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	//
 	//return mediators, nil
 }
-
-//func (a *PublicMediatorAPI) GetDesiredCount(addStr string) (uint8, error) {
-//	addr, err := common.StringToAddress(addStr)
-//	if err != nil {
-//		return 0, err
-//	}
-//
-//	desiredCount := a.dag.GetAccountInfo(addr).DesiredMediatorCount
-//	return desiredCount, nil
-//}
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 	dgp := a.dag.GetDynGlobalProp()
