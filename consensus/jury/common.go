@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -125,7 +126,7 @@ func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq inte
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transaction, elf []modules.ElectionInf, errMsgEnable bool) ([]*modules.Message, error) {
+func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract, tx *modules.Transaction, elf []modules.ElectionInf, errMsgEnable bool) ([]*modules.Message, error) {
 	if tx == nil || len(tx.TxMessages) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
@@ -142,7 +143,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					ccVersion: reqPay.Version,
 					addrHash:  reqPay.AddrHash,
 				}
-				installResult, err := ContractProcess(contract, req)
+				installResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
 					if errMsgEnable {
@@ -168,7 +169,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout),
 				}
-				deployResult, err := ContractProcess(contract, req)
+				deployResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
 					if errMsgEnable {
@@ -206,7 +207,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, err
 				}
 				req.args = newFullArgs
-				invokeResult, err := ContractProcess(contract, req)
+				invokeResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess", "ContractProcess error", err.Error())
 					if errMsgEnable {
@@ -217,7 +218,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -251,7 +252,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					txid:        tx.RequestHash().String(),
 					deleteImage: reqPay.DeleteImage,
 				}
-				stopResult, err := ContractProcess(contract, req)
+				stopResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
 					if errMsgEnable {
