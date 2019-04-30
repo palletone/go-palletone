@@ -530,7 +530,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 			interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
 			time, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
-			dgp.CurrentASlot = dgp.CurrentASlot - uint64(uint8(time-newestUnit.Timestamp())/interval)
+			dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
 			//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
 
 			dag.SaveDynGlobalProp(dgp, false)
