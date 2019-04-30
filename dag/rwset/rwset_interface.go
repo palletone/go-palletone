@@ -2,8 +2,15 @@ package rwset
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 )
+
+type TxManager interface {
+	Close()
+	CloseTxSimulator(chainid, txid string) error
+	NewTxSimulator(idag dag.IDag, chainid string, txid string, is_sys bool) (TxSimulator, error)
+}
 
 type TxSimulator interface {
 	GetConfig(name string) ([]byte, error)
