@@ -529,6 +529,10 @@ func (s *PublicBlockChainAPI) ProofTransactionByHash(ctx context.Context, tx str
 	return s.b.ProofTransactionByHash(tx)
 }
 
+func (s *PublicBlockChainAPI) ProofTransactionByRlptx(ctx context.Context, rlptx string) (string, error) {
+	return s.b.ProofTransactionByRlptx(rlptx)
+}
+
 func (s *PublicBlockChainAPI) ValidationPath(ctx context.Context, tx string) ([]byte, error) {
 	return s.b.ValidationPath(tx)
 }

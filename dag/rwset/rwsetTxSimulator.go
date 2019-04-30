@@ -35,6 +35,7 @@ type RwSetTxSimulator struct {
 	chainIndex              *modules.ChainIndex
 	txid                    common.Hash
 	rwsetBuilder            *RWSetBuilder
+	write_cache             map[string][]byte
 	dag                     dag.IDag
 	writePerformed          bool
 	pvtdataQueriesPerformed bool
@@ -52,7 +53,7 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	unit := idag.GetCurrentUnit(gasToken)
 	cIndex := unit.Header().Number
 	log.Debugf("constructing new tx simulator txid = [%s]", hash.String())
-	return &RwSetTxSimulator{cIndex, hash, rwsetBuilder, idag, false, false, false}
+	return &RwSetTxSimulator{chainIndex: cIndex, txid: hash, rwsetBuilder: rwsetBuilder, write_cache: make(map[string][]byte), dag: idag}
 }
 
 func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
@@ -69,7 +70,12 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	//TODO Devin
+	if value, has := s.write_cache[key]; has {
+		if s.rwsetBuilder != nil {
+			s.rwsetBuilder.AddToReadSet(ns, key, nil)
+		}
+		return value, nil
+	}
 	val, ver, err := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if err != nil {
@@ -78,7 +84,6 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
 	}
-	//val, ver := decomposeVersionedValue(versionedValue)
 	if s.rwsetBuilder != nil {
 		s.rwsetBuilder.AddToReadSet(ns, key, ver)
 	}
@@ -145,6 +150,7 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 	}
 	//todo ValidateKeyValue
 	s.rwsetBuilder.AddToWriteSet(ns, key, value)
+	s.write_cache[key] = value
 	return nil
 }
 
@@ -198,8 +204,8 @@ func (h *RwSetTxSimulator) Done() {
 	if h.doneInvoked {
 		return
 	}
-	h.doneInvoked = true
 	h.Close()
+	h.doneInvoked = true
 }
 func (s *RwSetTxSimulator) Close() {
 	s.dag.Close()

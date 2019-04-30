@@ -345,9 +345,41 @@ func (pm *ProtocolManager) blockLoop() {
 	}()
 }
 
-func (pm *ProtocolManager) ReqProof(strhash string) string {
+func (pm *ProtocolManager) ReqProofByTxHash(strhash string) string {
 	peers := pm.peers.AllPeers()
 	vreq, err := pm.validation.AddSpvReq(strhash)
+	if err != nil {
+		return err.Error()
+	}
+
+	var req ProofReq
+	req.BHash = vreq.txhash
+	req.FromLevel = uint(0)
+	req.Index = vreq.strindex
+	for _, p := range peers {
+		p.RequestProofs(0, 0, []ProofReq{req})
+	}
+
+	result := vreq.Wait()
+	if result == 0 {
+		return "OK"
+	} else if result == 1 {
+		return "error"
+	} else if result == 2 {
+		return "timeout"
+	}
+	return "errors"
+}
+
+func (pm *ProtocolManager) ReqProofByRlptx(rlptx string) string {
+	log.Debug("===========ReqProofByRlptx===========", "", rlptx)
+	tx := &modules.Transaction{}
+	if err := rlp.DecodeBytes([]byte(rlptx), &tx); err != nil {
+		return err.Error()
+	}
+
+	peers := pm.peers.AllPeers()
+	vreq, err := pm.validation.AddSpvReq(tx.Hash().String())
 	if err != nil {
 		return err.Error()
 	}
