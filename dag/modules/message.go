@@ -204,17 +204,18 @@ type ContractWriteSet struct {
 	//Value interface{}
 }
 type tempWriteSet struct {
-	IsDelete bool `json:"is_delete"`
-	Key      string `json:"key"`
-	ValueString    string `json:"value_string"`
-	ValueHex string `json:"value_hex"`
+	IsDelete    bool   `json:"is_delete"`
+	Key         string `json:"key"`
+	ValueString string `json:"value_string"`
+	ValueHex    string `json:"value_hex"`
 }
+
 func (w *ContractWriteSet) MarshalJSON() ([]byte, error) {
-	temp:=&tempWriteSet{
-		Key:w.Key,
-		IsDelete:w.IsDelete,
-		ValueHex:hexutil.Encode( w.Value),
-		ValueString:string(w.Value),
+	temp := &tempWriteSet{
+		Key:         w.Key,
+		IsDelete:    w.IsDelete,
+		ValueHex:    hexutil.Encode(w.Value),
+		ValueString: string(w.Value),
 	}
 
 	return json.Marshal(temp)
@@ -226,13 +227,11 @@ func (w *ContractWriteSet) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	w.IsDelete=temp.IsDelete
-	w.Key=temp.Key
-	w.Value,_=hexutil.Decode(temp.ValueHex)
+	w.IsDelete = temp.IsDelete
+	w.Key = temp.Key
+	w.Value, _ = hexutil.Decode(temp.ValueHex)
 	return nil
 }
-
-
 
 func NewWriteSet(key string, value []byte) *ContractWriteSet {
 	return &ContractWriteSet{Key: key, Value: value, IsDelete: false}
@@ -285,7 +284,12 @@ type ContractStateValue struct {
 }
 
 func (version *StateVersion) String() string {
-
+	if version == nil {
+		return `null`
+	}
+	if version.Height == nil {
+		return fmt.Sprintf(`StateVersion[AssetId:{null}, Height:{null},TxIdx:{%d}]`, version.TxIndex)
+	}
 	return fmt.Sprintf(
 		"StateVersion[AssetId:{%s}, Height:{%d},TxIdx:{%d}]",
 		version.Height.AssetID.String(),
@@ -374,18 +378,19 @@ type ContractReadSet struct {
 	Version *StateVersion `json:"version"`
 	Value   []byte        `json:"value"`
 }
-type tempReadSet struct{
-	Key string `json:"key"`
-	Version string  `json:"version"`
-	ValueString string   `json:"value_string"`
-	ValueHex string   `json:"value_hex"`
+type tempReadSet struct {
+	Key         string `json:"key"`
+	Version     string `json:"version"`
+	ValueString string `json:"value_string"`
+	ValueHex    string `json:"value_hex"`
 }
+
 func (r *ContractReadSet) MarshalJSON() ([]byte, error) {
-	temp:=&tempReadSet{
-		Key:r.Key,
-		Version:r.Version.String(),
-		ValueHex:hexutil.Encode( r.Value),
-		ValueString:string(r.Value),
+	temp := &tempReadSet{
+		Key:         r.Key,
+		Version:     r.Version.String(),
+		ValueHex:    hexutil.Encode(r.Value),
+		ValueString: string(r.Value),
 	}
 
 	return json.Marshal(temp)
@@ -397,8 +402,8 @@ func (r *ContractReadSet) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	r.Key=temp.Key
-	r.Value,_=hexutil.Decode(temp.ValueHex)
+	r.Key = temp.Key
+	r.Value, _ = hexutil.Decode(temp.ValueHex)
 	return nil
 
 }
