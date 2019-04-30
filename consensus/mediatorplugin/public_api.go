@@ -170,16 +170,15 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 		return nil, err
 	}
 
-	voted := a.dag.GetAccountVotedMediator(addr)
-	return []string{voted.String()}, nil
+	voted := a.dag.GetAccountVotedMediators(addr)
 
-	//mediators := make([]string, 0, len(medMap))
-	//
-	//for med, _ := range medMap {
-	//	mediators = append(mediators, med.Str())
-	//}
-	//
-	//return mediators, nil
+	mediators := make([]string, 0, len(voted))
+
+	for _, med := range voted {
+		mediators = append(mediators, med.Str())
+	}
+
+	return mediators, nil
 }
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {

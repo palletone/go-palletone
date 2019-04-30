@@ -99,7 +99,7 @@ type iDag interface {
 	IsConsecutiveMediator(nextMediator common.Address) bool
 	MediatorParticipationRate() uint32
 
-	GetAccountVotedMediator(addr common.Address) common.Address
+	GetAccountVotedMediators(addr common.Address) []common.Address
 	GetChainParameters() core.ChainParameters
 }
 

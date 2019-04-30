@@ -153,7 +153,7 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		acc := &modules.AccountInfo{Balance: balance}
 		//get address vote mediator
 		acckey := append(constants.ACCOUNT_INFO_PREFIX, addB...)
-		acckey = append(acckey, []byte(constants.VOTE_MEDIATOR)...)
+		acckey = append(acckey, []byte(constants.VOTED_MEDIATORS)...)
 		data, _, err := retrieveWithVersion(statedb.db, acckey)
 		if err == nil {
 			acc.VotedMediator = common.BytesToAddress(data)
