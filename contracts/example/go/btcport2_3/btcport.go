@@ -62,6 +62,8 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return put(args, stub)
 	case "get":
 		return get(args, stub)
+	case "getAsset":
+		return getAsset(stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -199,11 +201,7 @@ func _setBTCTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Respo
 	if len(args) < 1 {
 		return shim.Error("need 1 args (AssetStr)")
 	}
-	asset, _, err := dm.String2AssetId(args[0])
-	if err != nil {
-		return shim.Success([]byte("AssetStr invalid"))
-	}
-	err = stub.PutState(symbolsBTCAsset, asset.Bytes())
+	err := stub.PutState(symbolsBTCAsset, []byte(args[0]))
 	if err != nil {
 		return shim.Error("write symbolsBTCAsset failed: " + err.Error())
 	}
@@ -215,8 +213,9 @@ func getBTCTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
 	if len(result) == 0 {
 		return nil
 	}
-	asset := new(dm.Asset)
-	asset.SetBytes(result)
+	asset, _ := dm.StringToAsset(string(result))
+	log.Debugf("resultHex %s, asset: %s", common.Bytes2Hex(result), asset.String())
+
 	return asset
 }
 
@@ -344,7 +343,7 @@ func BytesToInt64(buf []byte) int64 {
 
 //refer to the struct GetUTXOHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member.
-type BTCTransaction_GetUTXOHttp struct {
+type BTCQuery_GetUTXOHttp struct {
 	Method  string `json:"method"`
 	Address string `json:"address"`
 	Txid    string `json:"txid"`
@@ -363,7 +362,7 @@ type UTXO struct {
 
 func getAddrUTXO(btcAddr string, stub shim.ChaincodeStubInterface) (*GetUTXOHttpResult, error) {
 	//
-	getUTXO := BTCTransaction_GetUTXOHttp{Method: "GetUTXOHttp"}
+	getUTXO := BTCQuery_GetUTXOHttp{Method: "GetUTXOHttp"}
 	getUTXO.Address = btcAddr
 
 	//
@@ -371,7 +370,7 @@ func getAddrUTXO(btcAddr string, stub shim.ChaincodeStubInterface) (*GetUTXOHttp
 	if err != nil {
 		return nil, err
 	}
-	verifyResultByte, err := stub.OutChainTransaction("btc", reqBytes)
+	verifyResultByte, err := stub.OutChainQuery("btc", reqBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -441,6 +440,8 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if btcTokenAsset == nil {
 		return shim.Error("need call setBTCTokenAsset()")
 	}
+	log.Debugf("btcAmount: %d, asset: %s", btcAmount, btcTokenAsset.String())
+
 	invokeTokens := new(dm.InvokeTokens)
 	invokeTokens.Amount = btcAmount
 	invokeTokens.Asset = btcTokenAsset
@@ -899,6 +900,11 @@ func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	result, _ := stub.GetState("result")
 	return shim.Success(result)
+}
+
+func getAsset(stub shim.ChaincodeStubInterface) pb.Response {
+	asset := getBTCTokenAsset(stub)
+	return shim.Success([]byte(asset.String()))
 }
 
 func main() {

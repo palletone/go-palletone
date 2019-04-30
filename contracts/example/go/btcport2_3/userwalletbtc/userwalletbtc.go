@@ -180,7 +180,9 @@ func checkTxAmount(txid string, index int, txAmount float64) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("==== ==== The input tx start ==== ====")
 	fmt.Println(result)
+	fmt.Println("==== ==== The input tx end ==== ====")
 
 	var txResult adaptor.GetTransactionHttpResult
 	err = json.Unmarshal([]byte(result), &txResult)
@@ -233,7 +235,9 @@ func aliceSendBTCToMultiSigAddr(txid string, index string, txAmount string, fee 
 		fmt.Println(err.Error())
 		return err
 	} else {
+		fmt.Println("==== ==== Raw tx start ==== ====")
 		fmt.Println(rawResult)
+		fmt.Println("==== ==== Raw tx end ==== ====")
 	}
 	//
 	var rawTransactionGenResult adaptor.RawTransactionGenResult
@@ -285,6 +289,11 @@ func spendBTCFromMultiAddr(txid string, index string, txAmount string, fee strin
 		return errors.New("Fee is Invalid.")
 	}
 
+	err = checkTxAmount(txid, vout, amountValue)
+	if err != nil {
+		return err
+	}
+
 	//
 	var btcadaptor adaptorbtc.AdaptorBTC
 	btcadaptor.NetID = gWallet.BtcConfig.NetID
@@ -302,7 +311,9 @@ func spendBTCFromMultiAddr(txid string, index string, txAmount string, fee strin
 	if err != nil {
 		return err
 	} else {
+		fmt.Println("==== ==== Raw tx start ==== ====")
 		fmt.Println(rawResult)
+		fmt.Println("==== ==== Raw tx end ==== ====")
 	}
 	//
 	var rawTransactionGenResult adaptor.RawTransactionGenResult
@@ -321,7 +332,9 @@ func spendBTCFromMultiAddr(txid string, index string, txAmount string, fee strin
 	if err != nil {
 		return err
 	} else {
+		fmt.Println("==== ==== Signed tx start ==== ====")
 		fmt.Println(signReuslt)
+		fmt.Println("==== ==== Signed tx end ==== ====")
 	}
 	var signTxResult adaptor.SignTransactionResult
 	err = json.Unmarshal([]byte(signReuslt), &signTxResult)
