@@ -17,12 +17,14 @@
 package modules
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 
 	"bytes"
@@ -201,6 +203,36 @@ type ContractWriteSet struct {
 	Value    []byte
 	//Value interface{}
 }
+type tempWriteSet struct {
+	IsDelete bool `json:"is_delete"`
+	Key      string `json:"key"`
+	ValueString    string `json:"value_string"`
+	ValueHex string `json:"value_hex"`
+}
+func (w *ContractWriteSet) MarshalJSON() ([]byte, error) {
+	temp:=&tempWriteSet{
+		Key:w.Key,
+		IsDelete:w.IsDelete,
+		ValueHex:hexutil.Encode( w.Value),
+		ValueString:string(w.Value),
+	}
+
+	return json.Marshal(temp)
+}
+
+func (w *ContractWriteSet) UnmarshalJSON(data []byte) error {
+	temp := &tempWriteSet{}
+	err := json.Unmarshal([]byte(data), temp)
+	if err != nil {
+		return err
+	}
+	w.IsDelete=temp.IsDelete
+	w.Key=temp.Key
+	w.Value,_=hexutil.Decode(temp.ValueHex)
+	return nil
+}
+
+
 
 func NewWriteSet(key string, value []byte) *ContractWriteSet {
 	return &ContractWriteSet{Key: key, Value: value, IsDelete: false}
@@ -341,6 +373,34 @@ type ContractReadSet struct {
 	Key     string        `json:"key"`
 	Version *StateVersion `json:"version"`
 	Value   []byte        `json:"value"`
+}
+type tempReadSet struct{
+	Key string `json:"key"`
+	Version string  `json:"version"`
+	ValueString string   `json:"value_string"`
+	ValueHex string   `json:"value_hex"`
+}
+func (r *ContractReadSet) MarshalJSON() ([]byte, error) {
+	temp:=&tempReadSet{
+		Key:r.Key,
+		Version:r.Version.String(),
+		ValueHex:hexutil.Encode( r.Value),
+		ValueString:string(r.Value),
+	}
+
+	return json.Marshal(temp)
+}
+
+func (r *ContractReadSet) UnmarshalJSON(data []byte) error {
+	temp := &tempReadSet{}
+	err := json.Unmarshal([]byte(data), temp)
+	if err != nil {
+		return err
+	}
+	r.Key=temp.Key
+	r.Value,_=hexutil.Decode(temp.ValueHex)
+	return nil
+
 }
 
 //请求合约信息

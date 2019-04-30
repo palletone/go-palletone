@@ -125,7 +125,7 @@ func TestNewTxMgr(t *testing.T) {
 	dag.EXPECT().Close().Return().AnyTimes()
 	ts.Done()
 	// txsimulator 执行结束后关闭它
-	assert.Nil(t, rwm.CloseTxSimulator(chain_id))
+	assert.Nil(t, rwm.CloseTxSimulator(chain_id, tx.Hash().String()))
 }
 func getCurrentUnit() *modules.Unit {
 	txs := modules.Transactions{createTx()}
