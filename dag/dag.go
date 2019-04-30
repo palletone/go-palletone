@@ -530,7 +530,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 			interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
 			time, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
-			dgp.CurrentASlot = dgp.CurrentASlot - uint64(uint8(time-newestUnit.Timestamp())/interval)
+			dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
 			//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
 
 			dag.SaveDynGlobalProp(dgp, false)
@@ -1298,3 +1298,7 @@ func (d *Dag) GetCoinYearRate() float64 {
 //func (bc *Dag) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {
 //	return bc.scope.Track(bc.chainSideFeed.Subscribe(ch))
 //}
+
+func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return d.stableUnitRep.GetTxRequesterAddress(tx)
+}

@@ -878,7 +878,7 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	case <-time.After(setTimeout):
 		log.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
 		err = errors.New("timeout expired while executing transaction")
-	}
+}
 
 	//our responsibility to delete transaction context if sendExecuteMessage succeeded
 	chrte.handler.deleteTxContext(msg.ChannelId, msg.Txid)

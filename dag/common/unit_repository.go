@@ -91,6 +91,7 @@ type IUnitRepository interface {
 	GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 }
 type UnitRepository struct {
 	dagdb storage.IDagDb
@@ -785,7 +786,7 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 }
 
 //Get who send this transaction
-func (rep *UnitRepository) getRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	msg0 := tx.TxMessages[0]
 	if msg0.App != modules.APP_PAYMENT {
 		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
@@ -854,7 +855,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	var requester common.Address
 	var err error
 	if txIndex > 0 { //coinbase don't have requester
-		requester, err = rep.getRequesterAddress(tx)
+		requester, err = rep.GetTxRequesterAddress(tx)
 		if err != nil {
 			return err
 		}
@@ -1204,14 +1205,11 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 		log.Error("SaveContractTemplateState when save version", "error", err.Error())
 		return false
 	}
-
-	addrHashBytes, err := rlp.EncodeToBytes(payload.AddrHash)
-	if err == nil {
-		if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Addrs, addrHashBytes, version); err != nil {
-			log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
-			return false
-		}
+	if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Addrs, payload.AddrHash, version); err != nil {
+		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
+		return false
 	}
+
 	return true
 }
 

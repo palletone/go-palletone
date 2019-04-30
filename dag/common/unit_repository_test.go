@@ -37,6 +37,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -614,4 +615,33 @@ func TestContractStateVrf(t *testing.T) {
 	err1 := rlp.DecodeBytes(eleByte, &eler)
 	log.Infof("%v", err1)
 	log.Infof("%v", eler)
+}
+
+func TestContractRlpEncode(t *testing.T) {
+	ads := []string{"P1QFTh1Xq2JpfTbu9bfaMfWh2sR1nHrMV8z", "P1NHVBFRkooh8HD9SvtvU3bpbeVmuGKPPuF",
+		"P1PpgjUC7Nkxgi5KdKCGx2tMu6F5wfPGrVX", "P1MBXJypFCsQpafDGi9ivEooR8QiYmxq4qw"}
+
+	addrs := make([]common.Hash, 0)
+	for _, s := range ads {
+		a, _ := common.StringToAddress(s)
+		addrs = append(addrs, util.RlpHash(a))
+	}
+	log.Debug("TestContractRlpEncode", "addrHash", addrs)
+
+	addrBytes, err := rlp.EncodeToBytes(addrs)
+	if err != nil {
+		log.Debug("TestContractRlpEncode", "EncodeToBytes err", err)
+		return
+	}
+	log.Debug("TestContractRlpEncode", "EncodeToBytes", addrBytes)
+
+	var addh []common.Hash
+	//addh := make([]common.Hash, 4)
+	err = rlp.DecodeBytes(addrBytes, &addh)
+	if err != nil {
+		log.Debug("TestContractRlpEncode", "DecodeBytes err", err)
+		return
+	}
+
+	log.Debug("TestContractRlpEncode", "addh", addh)
 }
