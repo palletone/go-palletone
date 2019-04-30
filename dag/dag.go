@@ -1298,3 +1298,7 @@ func (d *Dag) GetCoinYearRate() float64 {
 //func (bc *Dag) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {
 //	return bc.scope.Track(bc.chainSideFeed.Subscribe(ch))
 //}
+
+func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return d.stableUnitRep.GetTxRequesterAddress(tx)
+}

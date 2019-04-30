@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool, addrs []common.Hash) (reqId common.Hash, TplId []byte, err error) {
+func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool, addrs []common.Address) (reqId common.Hash, TplId []byte, err error) {
 	if from == (common.Address{}) || to == (common.Address{}) || tplName == "" || path == "" || version == "" {
 		log.Error("ContractInstallReq", "param is error")
 		return common.Hash{}, nil, errors.New("ContractInstallReq request param is error")
@@ -41,12 +41,12 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		log.Error("ContractInstallReq", "len(tplName)", len(tplName), "len(path)", len(path), "len(version)", len(version), "len(addrs)", len(addrs))
 		return common.Hash{}, nil, errors.New("ContractInstallReq request param len overflow")
 	}
-
-	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version)
 	addrHash := make([]common.Hash, 0)
 	for _, addr := range addrs {
 		addrHash = append(addrHash, util.RlpHash(addr))
 	}
+	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version, "addrHash", addrHash)
+
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_TPL_REQUEST,
 		Payload: &modules.ContractInstallRequestPayload{

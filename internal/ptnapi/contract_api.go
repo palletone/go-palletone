@@ -148,7 +148,18 @@ func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount
 	log.Info("-----Ccinstalltx:", "path", path)
 	log.Info("-----Ccinstalltx:", "version", version)
 
-	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version)
+	//ads := []string{"P1QFTh1Xq2JpfTbu9bfaMfWh2sR1nHrMV8z", "P1NHVBFRkooh8HD9SvtvU3bpbeVmuGKPPuF",
+	//	"P1PpgjUC7Nkxgi5KdKCGx2tMu6F5wfPGrVX", "P1MBXJypFCsQpafDGi9ivEooR8QiYmxq4qw"}
+	var ads []string
+
+	addrs := make([]common.Address, 0)
+	for _, s := range ads {
+		a, _ := common.StringToAddress(s)
+		addrs = append(addrs, a)
+	}
+	log.Debug("Ccinstalltx", "addrHash", addrs)
+
+	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version, addrs)
 	sReqId := hex.EncodeToString(reqId[:])
 	sTplId := hex.EncodeToString(tplId)
 	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)
