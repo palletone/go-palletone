@@ -36,7 +36,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 		return errors.New("ProcessContractEvent param is nil")
 	}
 
-	if !p.checkTxIsExist(event.Tx) {
+	if p.checkTxIsExist(event.Tx) {
 		return errors.New("ProcessContractEvent event Tx is exist")
 	}
 	//p.checkTxReqIdIsExist(event.Tx.RequestHash())
