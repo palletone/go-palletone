@@ -22,7 +22,6 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/vm/common"
 	"github.com/fsouza/go-dockerclient"
 	"strings"
 	"math/rand"
@@ -481,36 +480,42 @@ func StopByName(contractid []byte, chainID string, txid string, ccName string, c
 	return stopResult, nil
 }
 
-//
-func GoStart(){
-	log.Infof("===========================000000000000000000000000000000000000000000000000000000000")
-	//获取所有容器
-	client, err := util.NewDockerClient()
-	if err != nil {
-		log.Infof("util.NewDockerClient err: %s\n", err.Error())
-	}
+func GetAllContainers(client *docker.Client){
 	cons,err := client.ListContainers(docker.ListContainersOptions{All:true})
 	if err != nil {
 		log.Infof("client.ListContainers err: %s\n", err.Error())
+		return
 	}
-	for i,v :=range cons {
-		log.Infof("--------------------------%d,=======================%s,%s,%s",i,v.ID,v.Status,v.Names[0])
-		if strings.Contains(v.Names[0][1:],"PC") && strings.Contains(v.Status,"Exited") {
-			dag,err := db.GetCcDagHand()
-			if err != nil {
-				log.Infof("db.GetCcDagHand err: %s",err.Error())
+	if len(cons) > 0 {
+		for _,v :=range cons {
+			//log.Infof("--------------------------%d,=======================%s,%s,%s",i,v.ID,v.Status,v.Names[0])
+			if strings.Contains(v.Names[0][1:],"PC") && strings.Contains(v.Status,"Exited") {
+				dag,err := db.GetCcDagHand()
+				if err != nil {
+					log.Infof("db.GetCcDagHand err: %s",err.Error())
+					return
+				}
+				name := v.Names[0][17:52]
+				contractAddr, err := common.StringToAddress(name)
+				if err != nil {
+					log.Infof("common.StringToAddress err: %s",err.Error())
+					return
+				}
+				txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+				//log.Infof("==============需要重启====容器名称为-->%s,---->%s",name, hex.EncodeToString(contractAddr.Bytes21()))
+				_,err = StartChaincodeContainert(dag,"palletone",contractAddr.Bytes21(),txid)
+				if err != nil {
+					log.Infof("startChaincodeContainert err: %s",err.Error())
+					return
+				}
 			}
-			name := v.Names[0][17:52]
-			contractAddr, _ := common.StringToAddress(name)
-			txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
-			log.Infof("==============需要重启====容器名称为-->%s,---->%s",name, hex.EncodeToString(contractAddr.Bytes21()))
-			StartChaincodeContainert(dag,"palletone",contractAddr.Bytes21(),txid)
 		}
+	}else {
+		log.Infof("no containers")
+		return
 	}
-	//判断是否已停止
-	//停止则返回名称
-	//StartChaincodeContainer(idag dag.IDag, chainID string, deployId []byte, txId string)
 }
+
 func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, txId string)([]byte,error){
 	_,err := Stop(idag , deployId , chainID , deployId , txId , false)
 	if err !=  nil {
@@ -577,6 +582,6 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 }
 
 func StartChaincodeContainer(idag dag.IDag, chainID string, deployId []byte, txId string)([]byte,error){
-	GoStart()
+	//GoStart()
 	return nil,nil
 }
