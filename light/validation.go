@@ -93,6 +93,7 @@ func (v *Validation) Check(resp *proofsRespData) (int, error) {
 		log.Debug("Light PalletOne", "Validation->Check GetHeaderByHash err", err, "header hash", resp.headerhash)
 		return 0, err
 	}
+	//TODO recover
 	//if header.TxRoot.String() != resp.txroothash.String() {
 	//	return 0, errors.New("txroothash not equal")
 	//}

@@ -373,18 +373,6 @@ func (pm *ProtocolManager) ReqProofByTxHash(strhash string) string {
 
 func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
 	log.Debug("===========ReqProofByRlptx===========", "", rlptx)
-	/*
-			txhash     common.Hash
-		headerhash common.Hash //header hash
-		txroothash common.Hash
-		key        []byte       //tx index
-		pathData   les.NodeList //txs path
-		index      string
-		==================
-			headerhash []byte       `json:"header_hash"`
-			triekey    []byte       `json:"trie_key"`
-			triepath   les.NodeList `json:"trie_path"`
-	*/
 	resp := proofsRespData{}
 	resp.headerhash.SetBytes(rlptx[0])
 	resp.key = rlptx[1]
