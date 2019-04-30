@@ -26,9 +26,7 @@ import (
 	"time"
 
 	"encoding/hex"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -54,7 +52,6 @@ type TxWithUnitInfoJson struct {
 	UnitHeight uint64    `json:"unit_height"`
 	Timestamp  time.Time `json:"timestamp"`
 	TxIndex    uint64    `json:"tx_index"`
-	RlpTx      []byte    `json:"rlp_tx"`
 }
 type TplJson struct {
 	TemplateId   string `json:"template_id"`
@@ -136,12 +133,6 @@ func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQue
 		TxIndex:    tx.TxIndex,
 	}
 	txjson.TxJson = ConvertTx2FullJson(tx.Transaction, utxoQuery)
-
-	txjson.RlpTx, _ = rlp.EncodeToBytes(tx.Transaction)
-
-	txx := &modules.Transaction{}
-	rlp.DecodeBytes(txjson.RlpTx, &txx)
-	log.Debug("=========ConvertTxWithUnitInfo2FullJson=======", "txhash", txx.Hash(), "rlptx", string(txjson.RlpTx))
 
 	return txjson
 }
@@ -244,9 +235,9 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	injson.ContractId = hash.String()
 	injson.FunctionName = invoke.FunctionName
 
-	injson.Args =[]string{}
-	for _,arg:=range invoke.Args{
-		injson.Args=append(injson.Args,string( arg))
+	injson.Args = []string{}
+	for _, arg := range invoke.Args {
+		injson.Args = append(injson.Args, string(arg))
 	}
 	rset, _ := json.Marshal(invoke.ReadSet)
 	injson.ReadSet = string(rset)
@@ -272,7 +263,7 @@ func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
 func convertSig2Json(sig *modules.SignaturePayload) *SignatureJson {
 	sigjson := new(SignatureJson)
 	for _, sig := range sig.Signatures {
-		set := fmt.Sprintf("pubkey:%x,signature:%x",sig.PubKey,sig.Signature)
+		set := fmt.Sprintf("pubkey:%x,signature:%x", sig.PubKey, sig.Signature)
 		sigjson.Signatures = append(sigjson.Signatures, set)
 	}
 	return sigjson
