@@ -155,9 +155,9 @@ type Backend interface {
 	GetFileInfo(filehash string) ([]*modules.FileInfo, error)
 
 	//SPV
-	GetProofTxInfoByHash(txhash string) ([]byte, error)
+	GetProofTxInfoByHash(txhash string) ([][]byte, error)
 	ProofTransactionByHash(txhash string) (string, error)
-	ProofTransactionByRlptx(rlptx string) (string, error)
+	ProofTransactionByRlptx(rlptx [][]byte) (string, error)
 	ValidationPath(tx string) ([]byte, error)
 }
 

@@ -620,16 +620,16 @@ type proofTxInfo struct {
 	triepath   les.NodeList `json:"trie_path"`
 }
 
-func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([]byte, error) {
+func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error) {
 	txhash := common.Hash{}
 	txhash.SetHexString(strtxhash)
 	tx, err := s.Dag().GetTransaction(txhash)
 	if err != nil {
-		return []byte("Have not this transaction"), err
+		return [][]byte{[]byte("Have not this transaction")}, err
 	}
 	unit, err := s.Dag().GetUnitByHash(tx.UnitHash)
 	if err != nil {
-		return []byte("Have not exsit Unit"), err
+		return [][]byte{[]byte("Have not exsit Unit")}, err
 	}
 	index := 0
 	for _, tx := range unit.Txs {
@@ -649,22 +649,36 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([]byte, error) {
 	//pathdata := les.NodeList{}
 	if err := tri.Prove(info.triekey, 0, &info.triepath); err != nil {
 		log.Debug("Light PalletOne", "GetProofTxInfoByHash err", err, "key", info.triekey, "proof", info.triepath)
-		return []byte(fmt.Sprintf("Get Trie err %v", err)), err
+		return [][]byte{[]byte(fmt.Sprintf("Get Trie err %v", err))}, err
 	}
 
 	if trieRootHash.String() != unit.UnitHeader.TxRoot.String() {
 		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()", trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
-		return []byte("trie root hash is not equal"), errors.New("hash not equal")
+		return [][]byte{[]byte("trie root hash is not equal")}, errors.New("hash not equal")
 	}
+	/*
+		headerhash []byte       `json:"header_hash"`
+		triekey    []byte       `json:"trie_key"`
+		triepath   les.NodeList `json:"trie_path"`
+	*/
+	data := [][]byte{}
+	data = append(data, info.headerhash)
+	data = append(data, info.triekey)
 
-	return rlp.EncodeToBytes(info)
+	path, err := rlp.EncodeToBytes(info.triepath)
+	if err != nil {
+		return nil, err
+	}
+	data = append(data, path)
+
+	return data, nil
 }
 
 func (s *PtnApiBackend) ProofTransactionByHash(tx string) (string, error) {
 	return "", nil
 }
 
-func (s *PtnApiBackend) ProofTransactionByRlptx(rlptx string) (string, error) {
+func (s *PtnApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) {
 	return "", nil
 }
 

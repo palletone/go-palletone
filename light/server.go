@@ -371,28 +371,30 @@ func (pm *ProtocolManager) ReqProofByTxHash(strhash string) string {
 	return "errors"
 }
 
-func (pm *ProtocolManager) ReqProofByRlptx(rlptx string) string {
+func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
 	log.Debug("===========ReqProofByRlptx===========", "", rlptx)
-	tx := &modules.Transaction{}
-	if err := rlp.DecodeBytes([]byte(rlptx), &tx); err != nil {
+	/*
+			txhash     common.Hash
+		headerhash common.Hash //header hash
+		txroothash common.Hash
+		key        []byte       //tx index
+		pathData   les.NodeList //txs path
+		index      string
+		==================
+			headerhash []byte       `json:"header_hash"`
+			triekey    []byte       `json:"trie_key"`
+			triepath   les.NodeList `json:"trie_path"`
+	*/
+	resp := proofsRespData{}
+	resp.headerhash.SetBytes(rlptx[0])
+	resp.key = rlptx[1]
+	if err := rlp.DecodeBytes(rlptx[2], &resp.pathData); err != nil {
 		return err.Error()
 	}
-
-	peers := pm.peers.AllPeers()
-	vreq, err := pm.validation.AddSpvReq(tx.Hash().String())
+	result, err := pm.validation.Check(&resp)
 	if err != nil {
 		return err.Error()
 	}
-
-	var req ProofReq
-	req.BHash = vreq.txhash
-	req.FromLevel = uint(0)
-	req.Index = vreq.strindex
-	for _, p := range peers {
-		p.RequestProofs(0, 0, []ProofReq{req})
-	}
-
-	result := vreq.Wait()
 	if result == 0 {
 		return "OK"
 	} else if result == 1 {
