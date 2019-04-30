@@ -87,7 +87,6 @@ func (v *Validation) forgetHash(index string) {
 }
 
 func (v *Validation) Check(resp *proofsRespData) (int, error) {
-
 	header, err := v.dag.GetHeaderByHash(resp.headerhash)
 	if err != nil {
 		log.Debug("Light PalletOne", "Validation->Check GetHeaderByHash err", err, "header hash", resp.headerhash)

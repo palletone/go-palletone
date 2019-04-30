@@ -140,8 +140,8 @@ web3._extend({
 			params: 1,			
 		}),
 		new web3._extend.Method({
-			name: 'getRlpTx',
-			call: 'ptn_getRlpTx',
+			name: 'getProofTxInfoByHash',
+			call: 'ptn_getProofTxInfoByHash',
 			params: 1
 		}),
 		new web3._extend.Method({

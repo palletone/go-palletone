@@ -525,8 +525,12 @@ func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) *JuryList {
 }
 
 //SPV
-func (s *PublicBlockChainAPI) ProofTransactionByHash(ctx context.Context, tx string) (string, error) {
-	return s.b.ProofTransactionByHash(tx)
+func (s *PublicBlockChainAPI) GetProofTxInfoByHash(ctx context.Context, txhash string) ([]byte, error) {
+	return s.b.GetProofTxInfoByHash(txhash)
+}
+
+func (s *PublicBlockChainAPI) ProofTransactionByHash(ctx context.Context, txhash string) (string, error) {
+	return s.b.ProofTransactionByHash(txhash)
 }
 
 func (s *PublicBlockChainAPI) ProofTransactionByRlptx(ctx context.Context, rlptx string) (string, error) {

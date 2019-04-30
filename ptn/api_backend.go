@@ -35,9 +35,14 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 
+	"bytes"
+	"fmt"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -608,6 +613,53 @@ func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 }
 
 //SPV
+//`json:"unit_hash"`
+type proofTxInfo struct {
+	headerhash []byte       `json:"header_hash"`
+	triekey    []byte       `json:"trie_key"`
+	triepath   les.NodeList `json:"trie_path"`
+}
+
+func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([]byte, error) {
+	txhash := common.Hash{}
+	txhash.SetHexString(strtxhash)
+	tx, err := s.Dag().GetTransaction(txhash)
+	if err != nil {
+		return []byte("Have not this transaction"), err
+	}
+	unit, err := s.Dag().GetUnitByHash(tx.UnitHash)
+	if err != nil {
+		return []byte("Have not exsit Unit"), err
+	}
+	index := 0
+	for _, tx := range unit.Txs {
+		if tx.Hash() == txhash {
+			break
+		}
+		index++
+	}
+
+	info := proofTxInfo{}
+	info.headerhash = unit.UnitHeader.Hash().Bytes()
+	keybuf := new(bytes.Buffer)
+	rlp.Encode(keybuf, uint(index))
+	//key := keybuf.Bytes()
+	info.triekey = keybuf.Bytes()
+	tri, trieRootHash := core.GetTrieInfo(unit.Txs)
+	//pathdata := les.NodeList{}
+	if err := tri.Prove(info.triekey, 0, &info.triepath); err != nil {
+		log.Debug("Light PalletOne", "GetProofTxInfoByHash err", err, "key", info.triekey, "proof", info.triepath)
+		return []byte(fmt.Sprintf("Get Trie err %v", err)), err
+	}
+
+	if trieRootHash.String() != unit.UnitHeader.TxRoot.String() {
+		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()", trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
+		return []byte("trie root hash is not equal"), errors.New("hash not equal")
+	}
+
+	return rlp.EncodeToBytes(info)
+}
+
 func (s *PtnApiBackend) ProofTransactionByHash(tx string) (string, error) {
 	return "", nil
 }

@@ -415,9 +415,12 @@ func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 }
 
 //SPV
+func (b *LesApiBackend) GetProofTxInfoByHash(txhash string) ([]byte, error) {
+	return nil, nil
+}
+
 func (b *LesApiBackend) ProofTransactionByHash(tx string) (string, error) {
 	return b.ptn.ProtocolManager().ReqProofByTxHash(tx), nil
-
 }
 
 func (b *LesApiBackend) ProofTransactionByRlptx(rlptx string) (string, error) {
@@ -425,5 +428,5 @@ func (b *LesApiBackend) ProofTransactionByRlptx(rlptx string) (string, error) {
 }
 
 func (b *LesApiBackend) ValidationPath(tx string) ([]byte, error) {
-	return []byte("lll"), nil
+	return nil, nil
 }
