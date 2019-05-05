@@ -129,3 +129,7 @@ func Init() {
 		log.Error("fail!")
 	}
 }
+
+func init() {
+	RwM, _ = NewRwSetMgr("default")
+}
