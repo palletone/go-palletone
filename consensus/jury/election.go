@@ -229,7 +229,8 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	//收集vrf地址并添加缓存
 	//检查缓存地址数量
 	if _, ok := p.mtx[rstEvt.ReqId]; !ok {
-		return errors.New("ProcessElectionResultEvent, reqHash not find")
+		log.Debug("processElectionResultEvent","This node does not need to process the election message. ReqId", rstEvt.ReqId)
+		return nil	
 	}
 	mel := p.mel[rstEvt.ReqId]
 	if mel.eChan == nil {

@@ -105,6 +105,7 @@ func (m *RwSetTxMgr) CloseTxSimulator(chainid, txid string) error {
 }
 func (m *RwSetTxMgr) Close() {
 	m.rwLock.Lock()
+	defer m.rwLock.Unlock()
 	if m.closed {
 		return
 	}
@@ -118,7 +119,6 @@ func (m *RwSetTxMgr) Close() {
 	//m.wg.Wait()
 	m.baseTxSim = make(map[string]TxSimulator)
 	m.closed = true
-	m.rwLock.Unlock()
 	return
 }
 
