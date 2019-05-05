@@ -44,7 +44,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/vm/common"
-	"runtime"
 )
 
 const (
@@ -390,9 +389,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 		go pm.ceBroadcastLoop()
 	}
-	if runtime.GOOS == "linux" {
-		go pm.dockerLoop()
-	}
+	//if runtime.GOOS == "linux" {
+	//	go pm.dockerLoop()
+	//}
 }
 
 func (pm *ProtocolManager) Stop() {
