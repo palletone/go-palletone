@@ -35,12 +35,12 @@ type RwSetTxMgr struct {
 	name      string
 	baseTxSim map[string]TxSimulator
 	closed    bool
-	rwLock    sync.RWMutex
+	rwLock    *sync.RWMutex
 	wg        sync.WaitGroup
 }
 
 func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
-	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator)}, nil
+	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator), rwLock: new(sync.RWMutex)}, nil
 }
 
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
@@ -128,4 +128,8 @@ func Init() {
 	if err != nil {
 		log.Error("fail!")
 	}
+}
+
+func init() {
+	RwM, _ = NewRwSetMgr("default")
 }

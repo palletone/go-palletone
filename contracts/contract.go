@@ -145,7 +145,9 @@ func (c *Contract) Invoke(rwM rwset.TxManager, chainID string, deployId []byte, 
 		return nil, errors.New("contract not initialized")
 	}
 	//depId := common.NewAddress(deployId[:20], common.ContractHash)
-	return cc.Invoke(rwM, c.dag, chainID, deployId, txid, args, timeout)
+	result, err := cc.Invoke(rwM, c.dag, chainID, deployId, txid, args, timeout)
+	log.Infof("contract cc.Invoke is ok, result:[%v] err:[%v]", result, err)
+	return result, err
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
