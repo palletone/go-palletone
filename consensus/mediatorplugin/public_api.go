@@ -121,7 +121,7 @@ func (a *PublicMediatorAPI) GetList() []string {
 	return addStrs
 }
 
-func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
+func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 	mediatorVoteCount := make(map[string]uint64)
 
 	for address, _ := range a.dag.GetMediators() {
@@ -167,7 +167,6 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	}
 
 	voted := a.dag.GetAccountVotedMediators(addr)
-
 	mediators := make([]string, 0, len(voted))
 
 	for _, med := range voted {

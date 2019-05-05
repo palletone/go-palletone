@@ -260,7 +260,7 @@ func (d *Dag) GetAccountVotedMediators(addr common.Address) []common.Address {
 	}
 
 	votedMediators := make([]common.Address, 0)
-	err = rlp.DecodeBytes(data.Value, votedMediators)
+	err = rlp.DecodeBytes(data.Value, &votedMediators)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil

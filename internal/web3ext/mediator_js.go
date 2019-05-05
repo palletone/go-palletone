@@ -68,8 +68,8 @@ web3._extend({
 			params: 0,
 		}),
 		new web3._extend.Method({
-			name: 'listVoteResult',
-			call: 'mediator_listVoteResult',
+			name: 'listVoteResults',
+			call: 'mediator_listVoteResults',
 			params: 0,
 		}),
 		//new web3._extend.Method({
