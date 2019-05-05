@@ -125,9 +125,6 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 	return scclist, count, err
 }
 
-func GetUsrCCList() {
-}
-
 //install but not into db
 func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
 	log.Infof("enter ccapi.go Install")
@@ -178,7 +175,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	//	Memory     uint16 `json:"memory"`      // contract template bytecode memory size(Byte), use to compute transaction fee
 	//	Bytecode   []byte `json:"bytecode"`    // contract bytecode
 	//}
-	fmt.Println("Install result:==========================================================", payloadUnit)
+	//fmt.Println("Install result:==========================================================", payloadUnit)
 	return payloadUnit, nil
 }
 

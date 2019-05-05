@@ -22,12 +22,15 @@ import (
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/common"
+	"time"
 )
 
 const (
 	DefaultContractSigNum = 2
 	DefaultElectionNum    = 2
 	DefaultPassword       = "password"
+
+	ContractElectionTimeOut = 5*time.Second //second
 )
 
 var (
@@ -53,7 +56,7 @@ type Config struct {
 
 func (aConf *AccountConf) configToAccount() *JuryAccount {
 	addr, _ := common.StringToAddress(aConf.Address)
-	if addr != (common.Address{}){
+	if addr != (common.Address{}) {
 		medAcc := &JuryAccount{
 			addr,
 			aConf.Password,
