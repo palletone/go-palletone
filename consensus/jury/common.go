@@ -218,7 +218,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -522,7 +522,7 @@ func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageT
 			return msg.Payload, nil
 		}
 	}
-	log.Debug("getContractTxContractInfo", " not find msgType", msgType)
+	log.Debug("getContractTxContractInfo", "reqId", tx.RequestHash(), " not find msgType", msgType)
 	return nil, nil
 }
 

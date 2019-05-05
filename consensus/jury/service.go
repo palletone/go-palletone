@@ -24,7 +24,7 @@ import (
 	"time"
 	"fmt"
 	"bytes"
-	
+
 	"github.com/dedis/kyber"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -508,7 +508,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		//检查地址hash是否在本地
 		if checkExit && !isExit {
 			for addr, _ := range p.local {
-				log.Debug("isValidateElection", "local addr", addr, "hash",util.RlpHash(addr).Bytes(), "Hash:",util.RlpHash(addr))
+				log.Debug("isValidateElection", "local addr", addr, "hash", util.RlpHash(addr).Bytes(), "Hash:", util.RlpHash(addr))
 				log.Debug("isValidateElection", "addrHash", e.AddrHash, "ADDRHASH", e.AddrHash.Bytes())
 				if bytes.Equal(e.AddrHash.Bytes(), util.RlpHash(addr).Bytes()) {
 					isExit = true
@@ -561,17 +561,19 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	if tx == nil {
 		return false
 	}
+	reqId := tx.RequestHash()
+
 	isSysContract := tx.IsSystemContract()
 	isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
 		isM = false
 		isJ = false
 		for addr, _ := range p.local {
 			if p.ptn.IsLocalActiveMediator(addr) {
-				log.Debug("contractEventExecutable", "is Mediator, addr:", addr.String())
+				//log.Debug("contractEventExecutable", "is Mediator, addr:", addr.String())
 				isM = true
 			}
 			if true == p.isLocalActiveJury(addr) {
-				log.Debug("contractEventExecutable", "is Jury, addr:", addr.String())
+				//log.Debug("contractEventExecutable", "is Jury, addr:", addr.String())
 				isJ = true
 			}
 		}
@@ -581,35 +583,35 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	switch event {
 	case CONTRACT_EVENT_EXEC:
 		if isSysContract && isMediator {
-			log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Mediator, true:tx requestId", tx.RequestHash())
+			log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Mediator, true:tx requestId", reqId)
 			return true
 		} else if !isSysContract && isJury {
 			if p.isValidateElection(tx, ele, true) {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, true:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, true:tx requestId", reqId)
 				return true
 			} else {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, isValidateElection fail, false:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, isValidateElection fail, false:tx requestId", reqId)
 			}
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
 			if p.isValidateElection(tx, ele, false) {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, true:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, true:tx requestId", reqId)
 				return true
 			} else {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, isValidateElection fail, false:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, isValidateElection fail, false:tx requestId", reqId)
 			}
 		}
 	case CONTRACT_EVENT_COMMIT:
 		if isMediator {
 			if isSysContract {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, sysContract, true:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, sysContract, true:tx requestId", reqId)
 				return true
 			} else if !isSysContract && p.isValidateElection(tx, ele, false) {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, userContract, true:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, userContract, true:tx requestId", reqId)
 				return true
 			} else {
-				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, isValidateElection fail, false:tx requestId", tx.RequestHash())
+				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, isValidateElection fail, false:tx requestId", reqId)
 			}
 		}
 	}
@@ -653,13 +655,6 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if contractId == (common.Address{}) { //deploy
 			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
-			//if ele, ok := p.lockVrf[cId]; !ok || len(ele) < p.electionNum {
-			//	p.lockVrf[cId] = []modules.ElectionInf{} //清空
-			//	if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
-			//		return common.Hash{}, nil, err
-			//	}
-			//}
-			//ctx.eleInf = p.lockVrf[cId]
 			elist, err := p.genContractElectionList(tx, cId)
 			if err != nil {
 				return common.Hash{}, nil, err
@@ -671,7 +666,6 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 				return common.Hash{}, nil, err
 			}
 			ctx.eleInf = elist
-			//ctx.eleInf = p.lockArf[contractId]
 		}
 	}
 	if isLocalInstall {
@@ -800,7 +794,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{}                 //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}

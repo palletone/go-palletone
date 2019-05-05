@@ -26,11 +26,16 @@ import (
 )
 
 const (
-	DefaultContractSigNum = 2
-	DefaultElectionNum    = 2
-	DefaultPassword       = "password"
-
-	ContractElectionTimeOut = 5*time.Second //second
+	DefaultContractSigNum   = 2
+	DefaultElectionNum      = 2
+	DefaultPassword         = "password"
+	ContractElectionTimeOut = 5 * time.Second //second
+	MaxLengthTplName        = 64              //合约模板名字长度
+	MaxLengthTplPath        = 512             //合约模板文件路径长度
+	MaxLengthTplVersion     = 12              //合约模板版本号长度
+	MaxNumberTplEleAddrHash = 5               //合约模板指定节点地址hash数量
+	MaxLengthTplId          = 128             //合约模板Id长度
+	MaxNumberArgs           = 32              //合约请求参数数量
 )
 
 var (
