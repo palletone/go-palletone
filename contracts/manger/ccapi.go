@@ -22,6 +22,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 var debugX bool = true
@@ -178,7 +179,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	return payloadUnit, nil
 }
 
-func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("enter Deploy", "chainID", chainID, "templateId", hex.EncodeToString(templateId), "txId", txId)
 	defer log.Info("exit Deploy", "txId", txId)
 
@@ -221,7 +222,7 @@ func Deploy(idag dag.IDag, chainID string, templateId []byte, txId string, args 
 			return nil, nil, err
 		}
 	}
-	txsim, err := mksupt.GetTxSimulator(idag, chainID, txId)
+	txsim, err := mksupt.GetTxSimulator(rwM, idag, chainID, txId)
 	if err != nil {
 		log.Error("getTxSimulator err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
@@ -290,7 +291,7 @@ func saveChaincode(dag dag.IDag, channel string, contractId common.Address, chai
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	log.Infof("enter ccapi.go Invoke")
 	defer log.Infof("exit ccapi.go Invoke")
 	log.Infof("chainID[%s]-deployId[%s]-txid[%s]", chainID, hex.EncodeToString(deployId), txid)
@@ -341,7 +342,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 		log.Errorf("signedEndorserProposa error[%v]", err)
 		return nil, err
 	}
-	rsp, unit, err := es.ProcessProposal(idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
+	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	if err != nil {
 		log.Errorf("ProcessProposal error[%v]", err)
 		return nil, err
@@ -370,7 +371,7 @@ func Invoke(idag dag.IDag, chainID string, deployId []byte, txid string, args []
 	return unit, nil
 }
 
-func Stop(idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
+func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
 	log.Infof("enter ccapi.go Stop")
 	defer log.Infof("exit ccapi.go Stop")
 	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
@@ -395,10 +396,11 @@ func Stop(idag dag.IDag, contractid []byte, chainID string, deployId []byte, txi
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}
+	//rwM.CloseTxSimulator(setChainId, txid)
 	return stopResult, err
 }
 
-func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *md.ContractDeployPayload, e error) {
+func DeployByName(rwM rwset.TxManager, idag dag.IDag, chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *md.ContractDeployPayload, e error) {
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -415,7 +417,7 @@ func DeployByName(idag dag.IDag, chainID string, txid string, ccName string, ccP
 	if err != nil {
 		return nil, nil, errors.New("crypto.GetRandomNonce error")
 	}
-	txsim, err := mksupt.GetTxSimulator(idag, chainID, txid)
+	txsim, err := mksupt.GetTxSimulator(rwM, idag, chainID, txid)
 	if err != nil {
 		return nil, nil, errors.New("GetTxSimulator error")
 	}

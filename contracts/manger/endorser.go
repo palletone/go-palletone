@@ -51,7 +51,7 @@ type Support interface {
 	IsSysCCAndNotInvokableExternal(name string) bool
 	// GetTxSimulator returns the transaction simulator ,they are made unique
 	// by way of the supplied txid
-	GetTxSimulator(idag dag.IDag, chainid string, txid string) (rwset.TxSimulator, error)
+	GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, chainid string, txid string) (rwset.TxSimulator, error)
 
 	IsSysCC(name string) bool
 
@@ -202,7 +202,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
+func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
 	var txsim rwset.TxSimulator
 
 	//addr := util.ExtractRemoteAddress(ctx)
@@ -217,7 +217,7 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 	}
 	txid := result.txid
 	if chainID != "" {
-		if txsim, err = e.s.GetTxSimulator(idag, chainID, txid); err != nil {
+		if txsim, err = e.s.GetTxSimulator(rwM, idag, chainID, txid); err != nil {
 			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 		}
 		//defer txsim.Done()
@@ -244,7 +244,7 @@ func (e *Endorser) ProcessProposal(idag dag.IDag, deployId []byte, ctx context.C
 	} else {
 		log.Error("simulateProposal response is nil")
 		return &pb.ProposalResponse{
-			Payload: nil, Response: &pb.Response{Status: 500, Message: "simulateProposal response is nil"}}, nil, errors.New("Chaincode Error:simulateProposal response is nil" )
+			Payload: nil, Response: &pb.Response{Status: 500, Message: "simulateProposal response is nil"}}, nil, errors.New("Chaincode Error:simulateProposal response is nil")
 	}
 
 	//2 -- endorse and get a marshalled ProposalResponse message

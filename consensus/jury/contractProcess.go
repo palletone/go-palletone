@@ -21,10 +21,11 @@ package jury
 import (
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 type ContractResp struct {
@@ -33,7 +34,7 @@ type ContractResp struct {
 }
 
 type ContractReqInf interface {
-	do(v contracts.ContractInf) (interface{}, error)
+	do(rwM rwset.TxManager, v contracts.ContractInf) (interface{}, error)
 }
 
 type ContractInstallReq struct {
@@ -44,7 +45,7 @@ type ContractInstallReq struct {
 	addrHash  []common.Hash
 }
 
-func (req ContractInstallReq) do(v contracts.ContractInf) (interface{}, error) {
+func (req ContractInstallReq) do(rwM rwset.TxManager, v contracts.ContractInf) (interface{}, error) {
 	return v.Install(req.chainID, req.ccName, req.ccPath, req.ccVersion)
 }
 
@@ -56,8 +57,8 @@ type ContractDeployReq struct {
 	timeout    time.Duration
 }
 
-func (req ContractDeployReq) do(v contracts.ContractInf) (interface{}, error) {
-	_, payload, err := v.Deploy(req.chainID, req.templateId, req.txid, req.args, req.timeout)
+func (req ContractDeployReq) do(rwM rwset.TxManager, v contracts.ContractInf) (interface{}, error) {
+	_, payload, err := v.Deploy(rwM, req.chainID, req.templateId, req.txid, req.args, req.timeout)
 	return payload, err
 }
 
@@ -69,8 +70,8 @@ type ContractInvokeReq struct {
 	timeout  time.Duration
 }
 
-func (req ContractInvokeReq) do(v contracts.ContractInf) (interface{}, error) {
-	return v.Invoke(req.chainID, req.deployId, req.txid, req.args, req.timeout)
+func (req ContractInvokeReq) do(rwM rwset.TxManager, v contracts.ContractInf) (interface{}, error) {
+	return v.Invoke(rwM, req.chainID, req.deployId, req.txid, req.args, req.timeout)
 }
 
 type ContractStopReq struct {
@@ -80,15 +81,15 @@ type ContractStopReq struct {
 	deleteImage bool
 }
 
-func (req ContractStopReq) do(v contracts.ContractInf) (interface{}, error) {
-	return v.Stop(req.chainID, req.deployId, req.txid, req.deleteImage)
+func (req ContractStopReq) do(rwM rwset.TxManager, v contracts.ContractInf) (interface{}, error) {
+	return v.Stop(rwM, req.chainID, req.deployId, req.txid, req.deleteImage)
 }
 
-func ContractProcess(contract *contracts.Contract, req ContractReqInf) (interface{}, error) {
+func ContractProcess(rwM rwset.TxManager, contract *contracts.Contract, req ContractReqInf) (interface{}, error) {
 	if contract == nil || req == nil {
 		log.Error("ContractProcess", "param is nil,", "err")
 		return nil, errors.New("ContractProcess param is nil")
 	}
 
-	return req.do(contract)
+	return req.do(rwM, contract)
 }

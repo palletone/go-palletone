@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
@@ -234,7 +235,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	if req == nil {
 		return errors.New("runContractReq param is nil")
 	}
-	msgs, err := runContractCmd(p.dag, p.contract, req.reqTx, elf, p.errMsgEnable)
+	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, req.reqTx, elf, p.errMsgEnable)
 	if err != nil {
 		log.Error("runContractReq", "runContractCmd reqTx", req.reqTx.RequestHash().String(), "error", err.Error())
 		return err
@@ -377,21 +378,26 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 
 	return sign, nil
 }
-func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
+func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
 	//log.Debug("AddContractLoop", "loop", addr.String())
+	setChainId := "palletone"
 	for _, ctx := range p.mtx {
 		if false == ctx.valid || ctx.reqTx == nil {
 			continue
+		}
+		reqhash := ctx.reqTx.RequestHash()
+		if !ctx.reqTx.IsSystemContract() {
+			defer rwM.CloseTxSimulator(setChainId, reqhash.String())
 		}
 		log.Debug("AddContractLoop", "enter mtx", addr.String())
 		ctx.valid = false
 		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
-				if p.checkTxReqIdIsExist(ctx.reqTx.RequestHash()) {
-					log.Debug("AddContractLoop", "checkTxReqIdIsExist ok, reqId", ctx.reqTx.RequestHash())
+				if p.checkTxReqIdIsExist(reqhash) {
+					log.Debug("AddContractLoop ,checkTxReqIdIsExist is ok", "reqId", reqhash.String())
 					continue
 				}
-				if p.runContractReq(ctx.reqTx.RequestHash(), nil) != nil {
+				if p.runContractReq(reqhash, nil) != nil {
 					continue
 				}
 			}
@@ -425,10 +431,11 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 		}
 		log.Debug("AddContractLoop", "Tx reqId", tx.RequestHash().String(), "Tx hash", tx.Hash().String())
 	}
+	rwM.Close()
 	return nil
 }
 
-func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) bool {
+func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transaction, execute bool) bool {
 	if tx == nil {
 		log.Error("CheckContractTxValid, param is nil")
 		return false
@@ -453,7 +460,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		log.Error("CheckContractTxValid, nodeContractExecutable false")
 		return false
 	}
-	msgs, err := runContractCmd(p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
+	msgs, err := runContractCmd(rwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
 		log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
 		return false
@@ -793,7 +800,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                 //清空
 		if err := p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}

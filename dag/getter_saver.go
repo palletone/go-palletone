@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/dedis/kyber"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -251,35 +252,22 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	return nodes
 }
 
-func (d *Dag) GetAccountVotedMediator(addr common.Address) common.Address {
-	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTE_MEDIATOR)
+func (d *Dag) GetAccountVotedMediators(addr common.Address) []common.Address {
+	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTED_MEDIATORS)
 	if err != nil {
 		log.Debugf(err.Error())
-		return common.Address{}
+		return nil
 	}
 
-	return common.BytesToAddress(data.Value)
-}
+	votedMediators := make([]common.Address, 0)
+	err = rlp.DecodeBytes(data.Value, votedMediators)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil
+	}
 
-//func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
-//	accountInfo := &modules.AccountInfo{}
-//	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTE_MEDIATOR)
-//	if err != nil {
-//		log.Debugf(err.Error())
-//		return accountInfo
-//	}
-//	//addrList := []string{}
-//	//json.Unmarshal(data.Value, &addrList)
-//	//for _, m := range addrList {
-//	//	a, e := common.StringToAddress(m)
-//	//	if e == nil {
-//	//		accountInfo.VotedMediator = a
-//	//	}
-//	//}
-//	accountInfo.VotedMediator = common.BytesToAddress(data.Value)
-//
-//	return accountInfo
-//}
+	return votedMediators
+}
 
 func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return d.unstableStateRep.LookupAccount()

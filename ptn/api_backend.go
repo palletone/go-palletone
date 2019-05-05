@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/light/les"
@@ -508,14 +509,14 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	log.Debugf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
 
 	//depid, _, err := cc.Deploy("palletone", templateId, txid, args, timeout)
-	depid, _, err := b.ptn.contract.Deploy("palletone", templateId, txid, args, timeout)
+	depid, _, err := b.ptn.contract.Deploy(rwset.RwM, "palletone", templateId, txid, args, timeout)
 	return depid, err
 }
 
 func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
-	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
+	unit, err := b.ptn.contract.Invoke(rwset.RwM, "palletone", deployId, txid, args, timeout)
 	//todo print rwset
 	if err != nil {
 		return nil, err
@@ -528,7 +529,7 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 
 func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
 	//contractAddr := common.HexToAddress(hex.EncodeToString(contractId))
-	rsp, err := b.ptn.contract.Invoke("palletone", contractId, txid, args, timeout)
+	rsp, err := b.ptn.contract.Invoke(rwset.RwM, "palletone", contractId, txid, args, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -541,7 +542,7 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	log.Debugf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
-	_, err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
+	_, err := b.ptn.contract.Stop(rwset.RwM, "palletone", deployId, txid, deleteImage)
 	return err
 }
 
