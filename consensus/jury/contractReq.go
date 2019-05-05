@@ -37,8 +37,8 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		log.Error("ContractInstallReq", "param is error")
 		return common.Hash{}, nil, errors.New("ContractInstallReq request param is error")
 	}
-	if len(tplName) > 64 || len(path) > 512 || len(version) > 32 || len(addrs) > 5 {
-		log.Error("ContractInstallReq", "len(tplName)", len(tplName), "len(path)", len(path), "len(version)", len(version), "len(addrs)", len(addrs))
+	if len(tplName) > MaxLengthTplName || len(path) > MaxLengthTplPath || len(version) > MaxLengthTplVersion || len(addrs) > MaxNumberTplEleAddrHash {
+		log.Error("ContractInstallReq", "request param len overflow，len(tplName)", len(tplName), "len(path)", len(path), "len(version)", len(version), "len(addrs)", len(addrs))
 		return common.Hash{}, nil, errors.New("ContractInstallReq request param len overflow")
 	}
 	addrHash := make([]common.Hash, 0)
@@ -62,10 +62,11 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	}
 	tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
 	if err != nil || tpl == nil {
-		errMsg := fmt.Sprintf("getContractTxContractInfo fail, tpl Name[%s]", tplName)
+		errMsg := fmt.Sprintf("getContractTxContractInfo fail, tpl Name[%s], reqId[%s]", tplName, reqId.Bytes())
 		return common.Hash{}, nil, errors.New(errMsg)
 	}
 	templateId := tpl.(*modules.ContractTplPayload).TemplateId
+	log.Info("ContractInstallReq", "ok, reqId", reqId.Bytes(), "templateId", templateId)
 
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, true)
@@ -77,12 +78,10 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		log.Error("ContractDeployReq", "param is error")
 		return common.Hash{}, nil, errors.New("ContractDeployReq request param is error")
 	}
-	if len(templateId) > 128 || len(args) > 32 {
+	if len(templateId) > MaxLengthTplId || len(args) > MaxNumberArgs {
 		log.Error("ContractDeployReq", "len(templateId)", len(templateId), "len(args)", len(args))
 		return common.Hash{}, nil, errors.New("ContractDeployReq request param len overflow")
 	}
-
-	log.Debug("ContractDeployReq", "enter, templateId ", templateId)
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
@@ -96,7 +95,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		return common.Hash{}, nil, err
 	}
 	contractId := common.BytesToAddress(reqId.Bytes()).Bytes()
-	log.Debug("ContractDeployReq", "enter, templateId ", templateId, "contractId", contractId)
+	log.Info("ContractDeployReq", "ok, reqId", reqId.Bytes(), "templateId ", templateId, "contractId", contractId)
 
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
@@ -108,12 +107,10 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		log.Error("ContractInvokeReq", "param is error")
 		return common.Hash{}, errors.New("ContractInvokeReq request param is error")
 	}
-	if len(args) > 64 {
+	if len(args) > MaxNumberArgs {
 		log.Error("ContractInvokeReq", "len(args)", len(args))
 		return common.Hash{}, errors.New("ContractInvokeReq request param len overflow")
 	}
-
-	log.Debug("ContractInvokeReq", "enter, contractId ", contractId)
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
@@ -127,6 +124,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	if err != nil {
 		return common.Hash{}, err
 	}
+	log.Info("ContractInvokeReq", "ok, reqId", reqId.Bytes(), "contractId", contractId.Bytes())
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
@@ -137,8 +135,6 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 		log.Error("ContractInvokeReqToken", "param is error")
 		return common.Hash{}, errors.New("ContractInvokeReqToken request param is error")
 	}
-
-	log.Debug("ContractInvokeReqToken", "enter, contractId ", contractId)
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
@@ -152,6 +148,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 	if err != nil {
 		return common.Hash{}, err
 	}
+	log.Info("ContractInvokeReqToken", "ok, reqId", reqId, "contractId", contractId.Bytes())
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
@@ -166,8 +163,6 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	if err != nil {
 		return common.Hash{}, errors.New("ContractStopReq, GetRandomNonce error")
 	}
-
-	log.Debug("ContractStopReq", "enter, contractId ", contractId, "txId", hex.EncodeToString(randNum))
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
 		Payload: &modules.ContractStopRequestPayload{
@@ -180,6 +175,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	if err != nil {
 		return common.Hash{}, err
 	}
+	log.Info("ContractStopReq", "ok, reqId", reqId.Bytes(), "contractId ", contractId, "txId", hex.EncodeToString(randNum))
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil

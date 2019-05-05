@@ -159,6 +159,12 @@ web3._extend({
 			call: 'ptn_validationPath',
 			params: 1
 		}),
+		new web3._extend.Method({
+			name: 'ccstartChaincodeContainer',
+			call: 'ptn_ccstartChaincodeContainer',
+			params: 2,
+			inputFormatter: [null,null]
+		}),
 	],
 
 	properties: [

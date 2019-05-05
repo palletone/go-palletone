@@ -229,8 +229,8 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	//收集vrf地址并添加缓存
 	//检查缓存地址数量
 	if _, ok := p.mtx[rstEvt.ReqId]; !ok {
-		log.Debug("processElectionResultEvent","This node does not need to process the election message. ReqId", rstEvt.ReqId)
-		return nil	
+		log.Debug("processElectionResultEvent", "This node does not need to process the election message. ReqId", rstEvt.ReqId)
+		return nil
 	}
 	mel := p.mel[rstEvt.ReqId]
 	if mel.eChan == nil {
@@ -268,8 +268,6 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 }
 
 func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) error {
-	//return nil //todo
-
 	if reqId == (common.Hash{}) {
 		return errors.New("ElectionRequest param is nil")
 	}
@@ -289,7 +287,7 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 		ReqId: reqId,
 		//Data:  ele.seedData,
 	}
-	log.Debug("ElectionRequest", "reqId", reqId.String(), "seedData", seedData)
+	log.Debug("ElectionRequest", "reqId", reqId, "seedData", seedData)
 	go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_REQUEST, Event: reqEvent})
 
 	//超时等待选举结果

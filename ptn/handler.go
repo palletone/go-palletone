@@ -41,7 +41,9 @@ import (
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"sync/atomic"
 	//"github.com/palletone/go-palletone/ptn/lps"
+	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/vm/common"
 )
 
 const (
@@ -98,10 +100,11 @@ type ProtocolManager struct {
 	dag dag.IDag
 
 	// channels for fetcher, syncer, txsyncLoop
-	newPeerCh   chan *peer
-	txsyncCh    chan *txsync
-	quitSync    chan struct{}
-	noMorePeers chan struct{}
+	newPeerCh      chan *peer
+	txsyncCh       chan *txsync
+	quitSync       chan struct{}
+	dockerQuitSync chan struct{}
+	noMorePeers    chan struct{}
 
 	//consensus test for p2p
 	consEngine core.ConsensusEngine
@@ -386,6 +389,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 		go pm.ceBroadcastLoop()
 	}
+	go pm.dockerLoop()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -420,6 +424,8 @@ func (pm *ProtocolManager) Stop() {
 	// Wait for all peer handler goroutines and the loops to come down.
 	pm.wg.Wait()
 
+	//stop dockerLoop
+	pm.dockerQuitSync <- struct{}{}
 	log.Info("PalletOne protocol stopped")
 }
 
@@ -740,6 +746,23 @@ func (self *ProtocolManager) ceBroadcastLoop() {
 			// Err() channel will be closed when unsubscribing.
 		case <-self.ceSub.Err():
 			return
+		}
+	}
+}
+
+func (self *ProtocolManager) dockerLoop() {
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Infof("util.NewDockerClient err: %s\n", err.Error())
+	}
+	for {
+		select {
+		case <-self.dockerQuitSync:
+			log.Infof("quit from docker loop")
+			return
+		case <-time.After(time.Duration(30) * time.Second):
+			log.Infof("each 30 second to get all containers")
+			manger.GetAllContainers(client)
 		}
 	}
 }
