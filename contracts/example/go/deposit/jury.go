@@ -22,7 +22,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -83,12 +82,12 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			isJury = true
 			//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 			endTime := balance.LastModifyTime * 1800
-			depositRate,err := stub.GetSystemConfig("DepositRate")
+			depositRate, err := stub.GetSystemConfig("DepositRate")
 			if err != nil {
-				log.Error("stub.GetSystemConfig err:","error",err)
+				log.Error("stub.GetSystemConfig err:", "error", err)
 				return shim.Error(err.Error())
 			}
-			awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
+			awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 			balance.TotalAmount += awards
 
 		}
@@ -120,73 +119,6 @@ func juryApplyCashback(stub shim.ChaincodeStubInterface, args []string) peer.Res
 	if err != nil {
 		log.Error("ApplyCashbackList err:", "error", err)
 		return shim.Error(err.Error())
-	}
-	return shim.Success([]byte("ok"))
-}
-
-//基金会处理
-func handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	//地址，申请时间，是否同意
-	if len(args) != 3 {
-		log.Error("Args need three parameters.")
-		return shim.Error("Args need three parameters.")
-	}
-	//基金会地址
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("Stub.GetInvokeAddress err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	//判断没收请求地址是否是基金会地址
-	foundationAddress, err := stub.GetSystemConfig("FoundationAddress")
-	if err != nil {
-		//fmt.Println(err.Error())
-		log.Error("Stub.GetSystemConfig with FoundationAddress err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
-	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
-	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
-		log.Error("Please use foundation address.")
-		return shim.Error("Please use foundation address.")
-	}
-	//获取一下该用户下的账簿情况
-	addr := args[0]
-	balance, err := GetDepositBalance(stub, addr)
-	if err != nil {
-		log.Error("Stub.GetDepositBalance err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	//判断没收节点账户是否为空
-	if balance == nil {
-		log.Error("Balance is nil.")
-		return shim.Error("Balance is nil.")
-	}
-	//获取申请时间戳
-	strTime := args[1]
-	applyTime, err := strconv.ParseInt(strTime, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseInt err", "error", err)
-		return shim.Error(err.Error())
-	}
-	isOk := args[2]
-	if strings.Compare(isOk, "ok") == 0 {
-		//对余额处理
-		err = handleJury(stub, addr, applyTime, balance)
-		if err != nil {
-			log.Error("handleJury err", "error", err)
-			return shim.Error(err.Error())
-		}
-	} else if strings.Compare(isOk, "no") == 0 {
-		//移除提取申请列表
-		err = moveAndPutStateFromCashbackList(stub, addr, applyTime)
-		if err != nil {
-			log.Error("moveAndPutStateFromCashbackList err", "error", err)
-			return shim.Error(err.Error())
-		}
-	} else {
-		log.Error("Please enter ok or no.")
-		return shim.Error("Please enter ok or no.")
 	}
 	return shim.Success([]byte("ok"))
 }
@@ -242,38 +174,6 @@ func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime
 	if err != nil {
 		log.Error("HandleJuryDepositCashback err:", "error", err)
 		return err
-	}
-	return nil
-}
-
-//对Jury退保证金的处理
-func handleJuryDepositCashback(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
-	depositAmountsForJuryStr, err := stub.GetSystemConfig("DepositAmountForJury")
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
-		return err
-	}
-	//转换
-	depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return err
-	}
-	log.Info("Stub.GetSystemConfig with DepositAmountForJury:", "value", depositAmountsForJury)
-	if balance.TotalAmount >= depositAmountsForJury {
-		//已在列表中
-		err := handleJuryFromList(stub, cashbackAddr, cashbackValue, balance)
-		if err != nil {
-			log.Error("HandleJuryFromList err:", "error", err)
-			return err
-		}
-	} else {
-		////TODO 不在列表中,没有奖励，直接退
-		err := handleCommonJuryOrDev(stub, cashbackAddr, cashbackValue, balance)
-		if err != nil {
-			log.Error("HandleCommonJuryOrDev err:", "error", err)
-			return err
-		}
 	}
 	return nil
 }
