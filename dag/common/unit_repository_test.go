@@ -37,6 +37,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -137,7 +138,7 @@ func TestSaveUnit(t *testing.T) {
 		},
 	}
 	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
-		"testDeploy", nil,  nil,  readSet, writeSet, modules.ContractError{})
+		"testDeploy", nil, nil, readSet, writeSet, modules.ContractError{})
 
 	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),
@@ -149,10 +150,8 @@ func TestSaveUnit(t *testing.T) {
 				Value: modules.ToPayloadMapValueBytes("Alice"),
 			},
 			{
-				Key: "age",
-				Value: modules.ToPayloadMapValueBytes(modules.DelContractState{
-					IsDelete: true,
-				}),
+				Key:      "age",
+				IsDelete: true,
 			},
 		},
 	}
@@ -362,7 +361,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 	// TODO test ContractTplPayload
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: []byte("contract_template0000"),
-		Bytecode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
+		ByteCode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
 		Name:       "TestContractTpl",
 		Path:       "./contract",
 	}
@@ -593,14 +592,15 @@ func TestContractStateVrf(t *testing.T) {
 			PublicKey: []byte("def"),
 		},
 	}
-	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1}
+	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	log.Debug("TestContractStateVrf", "ElectionInf", eleW)
 
 	db, _ := ptndb.NewMemDatabase()
 	statedb := storage.NewStateDb(db)
 	eleW_bytes, _ := rlp.EncodeToBytes(eleW)
 	//write
-	if statedb.SaveContractState(contractId, "ElectionList", eleW_bytes, ver) != nil {
+	ws := modules.NewWriteSet("ElectionList", eleW_bytes)
+	if statedb.SaveContractState(contractId, ws, ver) != nil {
 		log.Debug("TestContractStateVrf, SaveContractState fail")
 		return
 	}
@@ -615,4 +615,33 @@ func TestContractStateVrf(t *testing.T) {
 	err1 := rlp.DecodeBytes(eleByte, &eler)
 	log.Infof("%v", err1)
 	log.Infof("%v", eler)
+}
+
+func TestContractRlpEncode(t *testing.T) {
+	ads := []string{"P1QFTh1Xq2JpfTbu9bfaMfWh2sR1nHrMV8z", "P1NHVBFRkooh8HD9SvtvU3bpbeVmuGKPPuF",
+		"P1PpgjUC7Nkxgi5KdKCGx2tMu6F5wfPGrVX", "P1MBXJypFCsQpafDGi9ivEooR8QiYmxq4qw"}
+
+	addrs := make([]common.Hash, 0)
+	for _, s := range ads {
+		a, _ := common.StringToAddress(s)
+		addrs = append(addrs, util.RlpHash(a))
+	}
+	log.Debug("TestContractRlpEncode", "addrHash", addrs)
+
+	addrBytes, err := rlp.EncodeToBytes(addrs)
+	if err != nil {
+		log.Debug("TestContractRlpEncode", "EncodeToBytes err", err)
+		return
+	}
+	log.Debug("TestContractRlpEncode", "EncodeToBytes", addrBytes)
+
+	var addh []common.Hash
+	//addh := make([]common.Hash, 4)
+	err = rlp.DecodeBytes(addrBytes, &addh)
+	if err != nil {
+		log.Debug("TestContractRlpEncode", "DecodeBytes err", err)
+		return
+	}
+
+	log.Debug("TestContractRlpEncode", "addh", addh)
 }

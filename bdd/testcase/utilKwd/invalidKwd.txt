@@ -58,20 +58,39 @@ I get a Getbalance code and a message
 
 I_set_CcinvokePass_params
     [Arguments]    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}    ${evidence}
-    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${senderAdd}    ${recieverAdd}
-    ...    ${recieverAdd1}
+    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${certiId}    ${senderAdd}
+    ...    ${recieverAdd}    ${recieverAdd1}
     ${ccTokenList}    Create List    ${tokenType}    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}
     ...    ${recieverAdd1}
     ${ccList}    Create List    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}
-    ...    ${ccTokenList}    ${pwd}    ${expiredTime}
+    ...    ${ccTokenList}    ${pwd}    ${expiredTime}    ${certiId}
     [Return]    ${ccList}
 
 I_post_CcinvokePass_request
     [Arguments]    @{transList}
-    ${resp}    setPostRequest    ${host}    ptn_ccinvoketxPass    @{transList}
+    ${resp}    setPostRequest    ${host}    contract_ccinvoketxPass    @{transList}
     [Return]    ${resp}
 
 I_get_the_CcinvokePass_result
+    [Arguments]    ${resp}    ${error_code}    ${error_message}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    assertInvalid    ${resp}    ${error_code}    ${error_message}
+
+I_set_TransferToken_params
+    [Arguments]    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}
+    ...    ${senderAdd}    ${recieverAdd}
+    ${ccList}    Create List    ${tokenId}    ${senderAdd}    ${recieverAdd}    ${tokenAmount}    ${tokenFee}
+    ...    ${desc}    ${pwd}    ${locktime}
+    [Return]    ${ccList}
+
+I_post_TransferToken_request
+    [Arguments]    ${transList}
+    ${resp}    setPostRequest    ${host}    wallet_transferToken    ${transList}
+    [Return]    ${resp}
+
+I_get_the_TransferToken_result
     [Arguments]    ${resp}    ${error_code}    ${error_message}
     log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"

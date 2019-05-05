@@ -118,17 +118,17 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	fungible.Symbol = strings.ToUpper(args[1])
 	if fungible.Symbol == "PTN" {
 		jsonResp := "{\"Error\":\"Can't use PTN\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 	if len(fungible.Symbol) > 5 {
 		jsonResp := "{\"Error\":\"Symbol must less than 5 characters\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 	//decimals
 	decimals, _ := strconv.ParseUint(args[2], 10, 64)
 	if decimals > 18 {
 		jsonResp := "{\"Error\":\"Can't big than 18\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 	fungible.Decimals = byte(decimals)
 	//total supply
@@ -139,7 +139,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	if totalSupply == 0 {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 	fungible.TotalSupply = totalSupply
 	//address of supply
@@ -151,7 +151,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	tkInfo := getSymbols(stub, fungible.Symbol)
 	if tkInfo != nil {
 		jsonResp := "{\"Error\":\"The symbol have been used\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 
 	//convert to json
@@ -187,7 +187,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 
-	return shim.Success(createJson) //test
+	return shim.Success(createJson)
 }
 
 func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
@@ -202,7 +202,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
 		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 
 	//supply amount
@@ -213,11 +213,11 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	if supplyAmount == 0 {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 	if math.MaxInt64-tkInfo.TotalSupply < supplyAmount {
 		jsonResp := "{\"Error\":\"Too big, overflow\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 
 	//get invoke address
@@ -229,7 +229,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check supply address
 	if invokeAddr.String() != tkInfo.SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 
 	//call SupplyToken
@@ -248,7 +248,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
 		return shim.Error(jsonResp)
 	}
-	return shim.Success([]byte("")) //test
+	return shim.Success([]byte(""))
 }
 
 type TokenIDInfo struct {
@@ -272,7 +272,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
 		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Success([]byte(jsonResp))
+		return shim.Error(jsonResp)
 	}
 
 	//token
@@ -282,9 +282,9 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//return json
 	tkJson, err := json.Marshal(tkID)
 	if err != nil {
-		return shim.Success([]byte(err.Error()))
+		return shim.Error(err.Error())
 	}
-	return shim.Success(tkJson) //test
+	return shim.Success(tkJson)
 }
 
 func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
@@ -301,7 +301,7 @@ func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//return json
 	tksJson, err := json.Marshal(tkIDs)
 	if err != nil {
-		return shim.Success([]byte(err.Error()))
+		return shim.Error(err.Error())
 	}
-	return shim.Success(tksJson) //test
+	return shim.Success(tksJson)
 }

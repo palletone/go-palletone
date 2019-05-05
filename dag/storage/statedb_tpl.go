@@ -23,8 +23,8 @@ package storage
 import (
 	"strings"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -89,8 +89,8 @@ func (statedb *StateDb) GetTplState(id []byte, field string) (*modules.StateVers
 	}
 	for _, v := range data {
 		var version modules.StateVersion
-		version.SetBytes(v[:29])
-		return &version, v[29:]
+		version.SetBytes(v[:28])
+		return &version, v[28:]
 	}
 
 	return nil, nil

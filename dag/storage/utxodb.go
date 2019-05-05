@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"reflect"
 )
 
 type UtxoDb struct {
@@ -42,7 +41,7 @@ func NewUtxoDb(db ptndb.Database) *UtxoDb {
 }
 
 type IUtxoDb interface {
-	GetPrefix(prefix []byte) map[string][]byte
+	//GetPrefix(prefix []byte) map[string][]byte
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
@@ -82,7 +81,7 @@ func (utxodb *UtxoDb) deleteUtxoOutpoint(address common.Address, outpoint *modul
 	return utxodb.db.Delete(key)
 }
 func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, error) {
-	data := db.GetPrefix(append(constants.AddrOutPoint_Prefix, address.Bytes()...))
+	data := getprefix(db.db, append(constants.AddrOutPoint_Prefix, address.Bytes()...))
 	outpoints := make([]modules.OutPoint, 0)
 	for _, b := range data {
 		out := new(modules.OutPoint)
@@ -170,11 +169,11 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey()
 
-	log.Debugf("DB[%s] Query utxo by outpoint:%s", reflect.TypeOf(utxodb.db).String(), outpoint.String())
+	//log.Debugf("DB[%s] Query utxo by outpoint:%s", reflect.TypeOf(utxodb.db).String(), outpoint.String())
 	err := retrieve(utxodb.db, key, utxo)
 	//data, err := utxodb.db.Get(key)
 	if err != nil {
-		log.Info("get utxo entry failed", "error", err, "outpoint", outpoint.String())
+		log.Error("get utxo entry failed", "error", err, "outpoint", outpoint.String())
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}
@@ -233,7 +232,7 @@ func (db *UtxoDb) GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[m
 func (db *UtxoDb) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	view := make(map[modules.OutPoint]*modules.Utxo, 0)
 
-	items := db.GetPrefix(constants.UTXO_PREFIX)
+	items := getprefix(db.db, constants.UTXO_PREFIX)
 	var err error
 	for key, itme := range items {
 		utxo := new(modules.Utxo)
@@ -250,8 +249,8 @@ func (db *UtxoDb) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 }
 
 // get prefix: return maps
-func (db *UtxoDb) GetPrefix(prefix []byte) map[string][]byte {
-	return getprefix(db.db, prefix)
-}
+//func (db *UtxoDb) GetPrefix(prefix []byte) map[string][]byte {
+//	return getprefix(db.db, prefix)
+//}
 
 // ###################### GET IMPL END ######################

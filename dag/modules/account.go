@@ -22,42 +22,8 @@ package modules
 
 import "github.com/palletone/go-palletone/common"
 
-//一个账户（地址）的状态信息
-//Include:
-// personal account P1*
-//P2SH account P3*
-//Contract account PC*
-type AccountInfoBase struct {
-	//AccountName string
-
-	//当前账户的PTN余额，Devin:因为操作太频繁，转移到AccountBalance上了
-	//PtnBalance uint64
-
-	// 本账户期望的活跃mediator数量
-	DesiredMediatorCount uint8
-}
-
-func NewAccountInfoBase() *AccountInfoBase {
-	return &AccountInfoBase{
-		//PtnBalance:         0,
-		DesiredMediatorCount: 0,
-	}
-}
-
 type AccountInfo struct {
-	*AccountInfoBase
+	Balance uint64
 	//当前账户投票的Mediator
-	VotedMediators map[common.Address]bool
-}
-
-func NewAccountInfo() *AccountInfo {
-	return &AccountInfo{
-		AccountInfoBase: NewAccountInfoBase(),
-		VotedMediators:  make(map[common.Address]bool),
-	}
-}
-
-type AccountUpdateOperation struct {
-	DesiredMediatorCount *uint8          `json:"desiredMediatorCount"`
-	VotingMediator       *common.Address `json:"votingMediator"`
+	VotedMediators []common.Address
 }

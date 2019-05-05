@@ -63,6 +63,7 @@ type IDag interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
+	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header) (int, error)
@@ -122,8 +123,7 @@ type IDag interface {
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() time.Duration
-	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
-		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 
 	QueryDbByKey(key []byte) ([]byte, error)
 	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
@@ -131,6 +131,8 @@ type IDag interface {
 	// SaveReqIdByTx
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error)
+
 	//SaveReqIdByTx(tx *modules.Transaction) error
 
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)

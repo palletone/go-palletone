@@ -74,6 +74,11 @@ web3._extend({
             params: 1,  
             // inputFormatter: [null]
         }),   
+ 		new web3._extend.Method({   
+            name: 'getTxByReqId', 
+            call: 'dag_getTxByReqId',   
+            params: 1,
+        }),   
         new web3._extend.Method({   
             name: 'getTxSearchEntry',  
             call: 'dag_getTxSearchEntry',   

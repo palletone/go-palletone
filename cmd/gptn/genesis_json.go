@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -156,11 +157,11 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
 
 	//配置测试的基金会地址及密码
-	account, _, err = createExampleAccount(ctx)
-	if err != nil {
-		return err
-	}
-	genesisState.SystemConfig.FoundationAddress = account
+	//account, _, err = createExampleAccount(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//genesisState.SystemConfig.FoundationAddress = account
 
 	var genesisJson []byte
 	genesisJson, err = json.MarshalIndent(genesisState, "", "  ")
@@ -290,6 +291,7 @@ func createExampleGenesis() *core.Genesis {
 		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
 		TempUccCpuShares:          core.DefaultTempUccCpuShares,
 		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
 	}
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址

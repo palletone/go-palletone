@@ -17,15 +17,18 @@
 package modules
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 
 	"bytes"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -40,10 +43,9 @@ const (
 	APP_CONTRACT_STOP
 	APP_SIGNATURE
 
-	//APP_CONFIG
 	APP_DATA
 	OP_MEDIATOR_CREATE
-	OP_ACCOUNT_UPDATE
+	APP_ACCOUNT_UPDATE
 
 	APP_UNKNOW = 99
 
@@ -55,6 +57,10 @@ const (
 	// 添加別的request需要添加在 APP_CONTRACT_TPL_REQUEST 与 APP_CONTRACT_STOP_REQUEST 之间
 	// 添加别的msg类型，需要添加到OP_MEDIATOR_CREATE 与 APP_UNKNOW之间
 )
+
+func (mt MessageType) IsRequest() bool {
+	return mt > 99
+}
 
 // key: message.UnitHash(message+timestamp)
 type Message struct {
@@ -197,7 +203,39 @@ type ContractWriteSet struct {
 	Value    []byte
 	//Value interface{}
 }
+type tempWriteSet struct {
+	IsDelete    bool   `json:"is_delete"`
+	Key         string `json:"key"`
+	ValueString string `json:"value_string"`
+	ValueHex    string `json:"value_hex"`
+}
 
+func (w *ContractWriteSet) MarshalJSON() ([]byte, error) {
+	temp := &tempWriteSet{
+		Key:         w.Key,
+		IsDelete:    w.IsDelete,
+		ValueHex:    hexutil.Encode(w.Value),
+		ValueString: string(w.Value),
+	}
+
+	return json.Marshal(temp)
+}
+
+func (w *ContractWriteSet) UnmarshalJSON(data []byte) error {
+	temp := &tempWriteSet{}
+	err := json.Unmarshal([]byte(data), temp)
+	if err != nil {
+		return err
+	}
+	w.IsDelete = temp.IsDelete
+	w.Key = temp.Key
+	w.Value, _ = hexutil.Decode(temp.ValueHex)
+	return nil
+}
+
+func NewWriteSet(key string, value []byte) *ContractWriteSet {
+	return &ContractWriteSet{Key: key, Value: value, IsDelete: false}
+}
 func ToPayloadMapValueBytes(data interface{}) []byte {
 	b, err := rlp.EncodeToBytes(data)
 	if err != nil {
@@ -246,12 +284,16 @@ type ContractStateValue struct {
 }
 
 func (version *StateVersion) String() string {
-
+	if version == nil {
+		return `null`
+	}
+	if version.Height == nil {
+		return fmt.Sprintf(`StateVersion[AssetId:{null}, Height:{null},TxIdx:{%d}]`, version.TxIndex)
+	}
 	return fmt.Sprintf(
-		"StateVersion[AssetId:{%#x}, Height:{%d},IsMain:%t,TxIdx:{%d}]",
-		version.Height.AssetID,
+		"StateVersion[AssetId:{%s}, Height:{%d},TxIdx:{%d}]",
+		version.Height.AssetID.String(),
 		version.Height.Index,
-		version.Height.IsMain,
 		version.TxIndex)
 }
 
@@ -273,30 +315,19 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 	return true
 }
 
-//16+8+1+4=29
+//(16+8)+4=28
 func (version *StateVersion) Bytes() []byte {
-	idx := make([]byte, 8)
-	littleEndian.PutUint64(idx, version.Height.Index)
-	b := append(version.Height.AssetID.Bytes(), idx...)
-	if version.Height.IsMain {
-		b = append(b, byte(1))
-	} else {
-		b = append(b, byte(0))
-	}
+	b := version.Height.Bytes()
 	txIdx := make([]byte, 4)
 	littleEndian.PutUint32(txIdx, version.TxIndex)
 	b = append(b, txIdx...)
 	return b[:]
 }
 func (version *StateVersion) SetBytes(b []byte) {
-	asset := AssetId{}
-	asset.SetBytes(b[:15])
-	heightIdx := littleEndian.Uint64(b[16:24])
-	isMain := b[24]
-	txIdx := littleEndian.Uint32(b[25:])
-	cidx := &ChainIndex{AssetID: asset, Index: heightIdx, IsMain: isMain == byte(1)}
+	cidx := &ChainIndex{}
+	cidx.SetBytes(b[:24])
 	version.Height = cidx
-	version.TxIndex = txIdx
+	version.TxIndex = littleEndian.Uint32(b[24:])
 }
 
 const (
@@ -307,26 +338,27 @@ const (
 	FIELD_SPLIT_STR     = "^*^"
 	FIELD_GENESIS_ASSET = "GenesisAsset"
 	FIELD_TPL_Version   = "TplVersion"
+	FIELD_TPL_Addrs     = "TplAddrHash"
 )
 
-type DelContractState struct {
-	IsDelete bool
-}
-
-func (delState DelContractState) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(delState)
-	if err != nil {
-		return nil
-	}
-	return data
-}
-
-func (delState DelContractState) SetBytes(b []byte) error {
-	if err := rlp.DecodeBytes(b, &delState); err != nil {
-		return err
-	}
-	return nil
-}
+//type DelContractState struct {
+//	IsDelete bool
+//}
+//
+//func (delState DelContractState) Bytes() []byte {
+//	data, err := rlp.EncodeToBytes(delState)
+//	if err != nil {
+//		return nil
+//	}
+//	return data
+//}
+//
+//func (delState DelContractState) SetBytes(b []byte) error {
+//	if err := rlp.DecodeBytes(b, &delState); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 type ContractError struct {
 	Code    uint32 `json:"error_code"`    // error code
@@ -335,7 +367,7 @@ type ContractError struct {
 
 //node election
 type ElectionInf struct {
-	VData     []byte      `json:"vdata"`      //vrf data, no use
+	Etype     byte        `json:"etype"`      //vrf type, if set to 1, it is the assignation node
 	AddrHash  common.Hash `json:"addr_hash"`  //common.Address将地址hash后，返回给请求节点
 	Proof     []byte      `json:"proof"`      //vrf proof
 	PublicKey []byte      `json:"public_key"` //alg.PublicKey, rlp not support
@@ -345,6 +377,35 @@ type ContractReadSet struct {
 	Key     string        `json:"key"`
 	Version *StateVersion `json:"version"`
 	Value   []byte        `json:"value"`
+}
+type tempReadSet struct {
+	Key         string `json:"key"`
+	Version     string `json:"version"`
+	ValueString string `json:"value_string"`
+	ValueHex    string `json:"value_hex"`
+}
+
+func (r *ContractReadSet) MarshalJSON() ([]byte, error) {
+	temp := &tempReadSet{
+		Key:         r.Key,
+		Version:     r.Version.String(),
+		ValueHex:    hexutil.Encode(r.Value),
+		ValueString: string(r.Value),
+	}
+
+	return json.Marshal(temp)
+}
+
+func (r *ContractReadSet) UnmarshalJSON(data []byte) error {
+	temp := &tempReadSet{}
+	err := json.Unmarshal([]byte(data), temp)
+	if err != nil {
+		return err
+	}
+	r.Key = temp.Key
+	r.Value, _ = hexutil.Decode(temp.ValueHex)
+	return nil
+
 }
 
 //请求合约信息
@@ -404,7 +465,8 @@ type ContractTplPayload struct {
 	Path       string        `json:"path"`           // contract template execute path
 	Version    string        `json:"version"`        // contract template version
 	Memory     uint16        `json:"memory"`         // contract template bytecode memory size(Byte), use to compute transaction fee
-	Bytecode   []byte        `json:"byte_code"`      // contract bytecode
+	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
+	AddrHash   []common.Hash `json:"addr_hash"`      //contract template installs the specified address for deployment and execution
 	ErrMsg     ContractError `json:"contract_error"` // contract error message
 }
 
@@ -458,9 +520,10 @@ type ContractInvokeResult struct {
 
 //用户钱包发起的合约调用申请
 type ContractInstallRequestPayload struct {
-	TplName string `json:"tpl_name"`
-	Path    string `json:"install_path"`
-	Version string `json:"tpl_version"`
+	TplName  string        `json:"tpl_name"`
+	Path     string        `json:"install_path"`
+	Version  string        `json:"tpl_version"`
+	AddrHash []common.Hash `json:"addr_hash"`
 }
 
 type ContractDeployRequestPayload struct {
@@ -501,6 +564,12 @@ type DataPayload struct {
 	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
 }
+
+//一个地址对应的个人StateDB空间
+type AccountStateUpdatePayload struct {
+	WriteSet []ContractWriteSet `json:"write_set"`
+}
+
 type FileInfo struct {
 	UnitHash    common.Hash `json:"unit_hash"`
 	UintHeight  uint64      `json:"unit_index"`
@@ -526,7 +595,7 @@ func NewContractTplPayload(templateId []byte, name string, path string, version 
 		Path:       path,
 		Version:    version,
 		Memory:     memory,
-		Bytecode:   bytecode,
+		ByteCode:   bytecode,
 		ErrMsg:     err,
 	}
 }
@@ -579,7 +648,7 @@ func (a *ElectionInf) Equal(b *ElectionInf) bool {
 	if b == nil {
 		return false
 	}
-	if !bytes.Equal(a.VData, b.VData) || !bytes.Equal(a.Proof, b.Proof) || !bytes.Equal(a.PublicKey, b.PublicKey) {
+	if !bytes.Equal(a.Proof, b.Proof) || !bytes.Equal(a.PublicKey, b.PublicKey) {
 		return false
 	}
 	if !bytes.Equal(a.AddrHash[:], b.AddrHash[:]) {
@@ -621,7 +690,7 @@ func (a *ContractTplPayload) Equal(b *ContractTplPayload) bool {
 		return false
 	}
 	if bytes.Equal(a.TemplateId, b.TemplateId) && strings.EqualFold(a.Name, b.Name) && strings.EqualFold(a.Path, b.Path) &&
-		strings.EqualFold(a.Version, b.Version) && a.Memory == b.Memory && bytes.Equal(a.Bytecode, b.Bytecode) {
+		strings.EqualFold(a.Version, b.Version) && a.Memory == b.Memory && bytes.Equal(a.ByteCode, b.ByteCode) {
 		return true
 	}
 	return false

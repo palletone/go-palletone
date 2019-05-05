@@ -672,6 +672,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		case nil:
 			// All ok, quickly propagate to our peers
 			propBroadcastOutTimer.UpdateSince(block.ReceivedAt)
+			log.Debug("===Importing propagated block insert DAG verifyUnit is nil===")
 			go f.broadcastBlock(block, true)
 
 		case dagerrors.ErrFutureBlock:
@@ -690,6 +691,7 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		}
 		// If import succeeded, broadcast the block
 		propAnnounceOutTimer.UpdateSince(block.ReceivedAt)
+		log.Debug("Fetcher insertChain ok,start broadcastBlock")
 		go f.broadcastBlock(block, false /*, noBroadcastMediator*/)
 
 		// Invoke the testing hook if needed

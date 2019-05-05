@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -91,7 +92,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		return ""
 	}
 	number.Index = uint64(index)
-	number.IsMain = true
+	//number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
@@ -146,7 +147,7 @@ func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition str
 		return ""
 	}
 	number.Index = uint64(index)
-	number.IsMain = true
+	//number.IsMain = true
 
 	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
 	//asset := modules.NewPTNAsset()
@@ -241,7 +242,16 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 		return string(result_json), nil
 	}
 }
-
+func (s *PublicDagAPI) GetTxByReqId(ctx context.Context, hashHex string) (string, error) {
+	hash := common.HexToHash(hashHex)
+	if item, err := s.b.GetTxByReqId(hash); err != nil {
+		return "transaction_info:null", err
+	} else {
+		info := NewPublicReturnInfo("transaction_info", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
 func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)
 	item, err := s.b.GetTxSearchEntry(hash)
@@ -350,15 +360,28 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 //}
 
 func (s *PublicDagAPI) HeadUnitHash() string {
-	return "unknown" //s.b.Dag().HeadUnitHash().TerminalString()
+	dag := s.b.Dag()
+	if dag != nil {
+		return dag.HeadUnitHash().String()
+	}
+
+	return "unknown"
 }
 
 func (s *PublicDagAPI) HeadUnitTime() string {
-	//time := time.Unix(s.b.Dag().HeadUnitTime(), 0)
-	//return time.Format("2006-01-02 15:04:05 -0700 MST")
+	dag := s.b.Dag()
+	if dag != nil {
+		time := time.Unix(dag.HeadUnitTime(), 0)
+		return time.Format("2006-01-02 15:04:05 -0700 MST")
+	}
+
 	return "1972-0-0"
 }
 
 func (s *PublicDagAPI) HeadUnitNum() uint64 {
-	return uint64(0) //s.b.Dag().HeadUnitNum()
+	dag := s.b.Dag()
+	if dag != nil {
+		return dag.HeadUnitNum()
+	}
+	return uint64(0)
 }

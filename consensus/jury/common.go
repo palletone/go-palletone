@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -125,7 +126,7 @@ func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq inte
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transaction, elf []modules.ElectionInf, errMsgEnable bool) ([]*modules.Message, error) {
+func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract, tx *modules.Transaction, elf []modules.ElectionInf, errMsgEnable bool) ([]*modules.Message, error) {
 	if tx == nil || len(tx.TxMessages) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
@@ -140,8 +141,9 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					ccName:    reqPay.TplName,
 					ccPath:    reqPay.Path,
 					ccVersion: reqPay.Version,
+					addrHash:  reqPay.AddrHash,
 				}
-				installResult, err := ContractProcess(contract, req)
+				installResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
 					if errMsgEnable {
@@ -152,6 +154,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_TPL_REQUEST txid(%s) err:%s", req.ccName, err))
 				}
 				payload := installResult.(*modules.ContractTplPayload)
+				payload.AddrHash = req.addrHash
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_TPL, payload))
 				return msgs, nil
 			}
@@ -166,7 +169,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout),
 				}
-				deployResult, err := ContractProcess(contract, req)
+				deployResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
 					if errMsgEnable {
@@ -204,7 +207,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					return nil, err
 				}
 				req.args = newFullArgs
-				invokeResult, err := ContractProcess(contract, req)
+				invokeResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess", "ContractProcess error", err.Error())
 					if errMsgEnable {
@@ -249,7 +252,7 @@ func runContractCmd(dag iDag, contract *contracts.Contract, tx *modules.Transact
 					txid:        tx.RequestHash().String(),
 					deleteImage: reqPay.DeleteImage,
 				}
-				stopResult, err := ContractProcess(contract, req)
+				stopResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
 					if errMsgEnable {
@@ -407,11 +410,20 @@ func (p *Processor) checkTxIsExist(tx *modules.Transaction) bool {
 	return true
 }
 
+func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
+	id, err := p.dag.GetTxHashByReqId(reqId)
+	if err == nil && id != (common.Hash{}) {
+		return true
+	}
+	return false
+}
+
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Errorf("Validate tx[%s] throw an error:%s", tx.Hash().String(), err.Error())
 	}
+
 	return err == nil
 }
 

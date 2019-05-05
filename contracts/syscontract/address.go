@@ -45,10 +45,11 @@ var (
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
 	DigitalIdentityContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000081C")
 	//9分区管理合约
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRxVdGDZ
 	PartitionContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000091C")
 	//15测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf
 	TestContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000F1C")
-
+	//PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 	TestRunContractAddress = common.HexToAddress("0x00000000000000000000000000000000000095271C")
 )

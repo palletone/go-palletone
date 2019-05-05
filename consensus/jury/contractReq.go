@@ -32,19 +32,28 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool) (reqId common.Hash, TplId []byte, err error) {
+func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool, addrs []common.Address) (reqId common.Hash, TplId []byte, err error) {
 	if from == (common.Address{}) || to == (common.Address{}) || tplName == "" || path == "" || version == "" {
 		log.Error("ContractInstallReq", "param is error")
 		return common.Hash{}, nil, errors.New("ContractInstallReq request param is error")
 	}
+	if len(tplName) > 64 || len(path) > 512 || len(version) > 32 || len(addrs) > 5 {
+		log.Error("ContractInstallReq", "len(tplName)", len(tplName), "len(path)", len(path), "len(version)", len(version), "len(addrs)", len(addrs))
+		return common.Hash{}, nil, errors.New("ContractInstallReq request param len overflow")
+	}
+	addrHash := make([]common.Hash, 0)
+	for _, addr := range addrs {
+		addrHash = append(addrHash, util.RlpHash(addr))
+	}
+	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version, "addrHash", addrHash)
 
-	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version)
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_TPL_REQUEST,
 		Payload: &modules.ContractInstallRequestPayload{
-			TplName: tplName,
-			Path:    path,
-			Version: version,
+			TplName:  tplName,
+			Path:     path,
+			Version:  version,
+			AddrHash: addrHash,
 		},
 	}
 	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)
@@ -68,6 +77,12 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		log.Error("ContractDeployReq", "param is error")
 		return common.Hash{}, nil, errors.New("ContractDeployReq request param is error")
 	}
+	if len(templateId) > 128 || len(args) > 32 {
+		log.Error("ContractDeployReq", "len(templateId)", len(templateId), "len(args)", len(args))
+		return common.Hash{}, nil, errors.New("ContractDeployReq request param len overflow")
+	}
+
+	log.Debug("ContractDeployReq", "enter, templateId ", templateId)
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
@@ -92,6 +107,10 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
 		log.Error("ContractInvokeReq", "param is error")
 		return common.Hash{}, errors.New("ContractInvokeReq request param is error")
+	}
+	if len(args) > 64 {
+		log.Error("ContractInvokeReq", "len(args)", len(args))
+		return common.Hash{}, errors.New("ContractInvokeReq request param len overflow")
 	}
 
 	log.Debug("ContractInvokeReq", "enter, contractId ", contractId)
@@ -145,8 +164,9 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	}
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
-		return common.Hash{}, errors.New("GetRandomNonce error")
+		return common.Hash{}, errors.New("ContractStopReq, GetRandomNonce error")
 	}
+
 	log.Debug("ContractStopReq", "enter, contractId ", contractId, "txId", hex.EncodeToString(randNum))
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,

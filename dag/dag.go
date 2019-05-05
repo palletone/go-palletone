@@ -77,10 +77,8 @@ type Dag struct {
 	activeMediatorsUpdatedScope event.SubscriptionScope
 
 	// append by albert·gou 用于account 各种投票数据统计
-	mediatorVoteTally      voteTallys
-	totalVotingStake       uint64
-	mediatorCountHistogram []uint64
-	applyLock              sync.Mutex
+	mediatorVoteTally voteTallys
+	applyLock         sync.Mutex
 
 	//SPV
 	rmLogsFeed    event.Feed
@@ -339,15 +337,12 @@ func (d *Dag) HasHeader(hash common.Hash, number uint64) bool {
 	h, _ := d.GetHeaderByHash(hash)
 	return h != nil
 }
+
 func (d *Dag) IsHeaderExist(hash common.Hash) bool {
-	//if unit, err := d.unstableUnitRep.getChainUnit(hash); err == nil && unit != nil {
-	//	log.Debug("hash is exsit in leveldb ", "index:", unit.Header().Number.Index, "hash", hash.String())
-	//	return true
-	//}
-	//return false
 	exist, _ := d.unstableUnitRep.IsHeaderExist(hash)
 	return exist
 }
+
 func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	unit := d.CurrentUnit(token)
 	if unit != nil {
@@ -383,6 +378,14 @@ func (d *Dag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
 func (d *Dag) GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error) {
 	return d.unstableUnitRep.GetTransaction(hash)
 }
+func (d *Dag) GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error) {
+	hash, err := d.unstableUnitRep.GetTxHashByReqId(reqid)
+	if err != nil {
+		return nil, err
+	}
+	return d.unstableUnitRep.GetTransaction(hash)
+}
+
 func (d *Dag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return d.unstableUnitRep.GetTransactionOnly(hash)
 }
@@ -512,6 +515,29 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		Memdag:           unstableChain,
 		PartitionMemDag:  partitionMemdag,
 	}
+
+	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
+	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
+	if !dag.IsHeaderExist(hash) {
+		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
+			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
+		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
+		if nil != newestUnit {
+			// todo 待删除 处理临时prop没有回滚的问题
+			dgp := dag.GetDynGlobalProp()
+
+			interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
+			time, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
+			dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
+			//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
+
+			dag.SaveDynGlobalProp(dgp, false)
+			//----------
+
+			dag.propRep.SetNewestUnit(newestUnit.Header())
+		}
+	}
+
 	return dag, nil
 }
 
@@ -753,18 +779,19 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 	return all, err
 }
 
-//TODO Devin 换届后请调用该函数
 func (d *Dag) RefreshSysParameters() {
-	deposit, _, _ := d.unstableStateRep.GetConfig("DepositRate")
+	deposit, _, _ := d.stableStateRep.GetConfig("DepositRate")
 	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
 	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
-	log.Debugf("Load SysParameter DepositContractInterest value:%f", parameter.CurrentSysParameters.DepositContractInterest)
-	txCoinYearRateStr, _, _ := d.unstableStateRep.GetConfig("TxCoinYearRate")
+	log.Debugf("Load SysParameter DepositContractInterest value:%f",
+		parameter.CurrentSysParameters.DepositContractInterest)
+
+	txCoinYearRateStr, _, _ := d.stableStateRep.GetConfig("TxCoinYearRate")
 	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
 	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
 	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
 
-	generateUnitRewardStr, _, _ := d.unstableStateRep.GetConfig("GenerateUnitReward")
+	generateUnitRewardStr, _, _ := d.stableStateRep.GetConfig("GenerateUnitReward")
 	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
@@ -980,8 +1007,8 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 	// compute height
 	height := &modules.ChainIndex{
 		AssetID: currentUnit.UnitHeader.Number.AssetID,
-		IsMain:  currentUnit.UnitHeader.Number.IsMain,
-		Index:   currentUnit.UnitHeader.Number.Index + 1,
+		//IsMain:  currentUnit.UnitHeader.Number.IsMain,
+		Index: currentUnit.UnitHeader.Number.Index + 1,
 	}
 	//
 	unitHeader := modules.Header{
@@ -1269,3 +1296,7 @@ func (d *Dag) GetCoinYearRate() float64 {
 //func (bc *Dag) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {
 //	return bc.scope.Track(bc.chainSideFeed.Subscribe(ch))
 //}
+
+func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return d.stableUnitRep.GetTxRequesterAddress(tx)
+}

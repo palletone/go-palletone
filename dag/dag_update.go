@@ -64,7 +64,7 @@ func (dag *Dag) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
 	//dgp.HeadUnitNum = unit.NumberU64()
 	//dgp.HeadUnitHash = unit.Hash()
 	//dgp.HeadUnitTime = unit.Timestamp()
-	//dgp.SetNewestUnit(unit.Header())
+	dag.propRep.SetNewestUnit(unit.Header())
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
@@ -82,7 +82,7 @@ func (dag *Dag) updateMediatorSchedule() {
 	ms := dag.GetMediatorSchl()
 
 	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
-		log.Debugf("Shuffle the scheduling order of mediators")
+		log.Debugf("shuffle the scheduling order of mediators")
 		dag.SaveMediatorSchl(ms, false)
 
 		dgp.IsShuffledSchedule = true
@@ -101,7 +101,7 @@ func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
 	med.LastConfirmedUnitNum = lastConfirmedUnitNum
 	dag.SaveMediator(med, false)
 
-	log.Debugf("the LastConfirmedUnitNum of mediator(&v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
+	log.Debugf("the LastConfirmedUnitNum of mediator(%v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
 }
 
 func (dag *Dag) updateLastIrreversibleUnit() {
@@ -161,27 +161,34 @@ func (dag *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUp
 }
 
 func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
-	dgp := dag.GetDynGlobalProp()
-
-	// 1. 判断是否进入维护周期
-	if dgp.NextMaintenanceTime > uint32(nextUnit.Timestamp()) {
-		return
-	}
 	log.Debugf("We are at the maintenance interval")
 
-	// 2. 对每个账户的各种投票信息进行初步统计
+	// 更新要修改的区块链参数
+	dag.updateChainParameters()
+
+	// 对每个账户的各种投票信息进行初步统计
 	dag.performAccountMaintenance()
 
-	// 3. 统计投票并更新活跃 mediator 列表
+	// 统计投票并更新活跃 mediator 列表
 	isChanged := dag.updateActiveMediators()
 
-	// 4. 发送更新活跃 mediator 事件，以方便其他模块做相应处理
+	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
 	go dag.activeMediatorsUpdatedFeed.Send(ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
 
-	// 5. 计算并更新下一次维护时间
+	// 计算并更新下一次维护时间
+	dag.updateNextMaintenanceTime(nextUnit)
+
+	// 清理中间处理缓存数据
+	dag.mediatorVoteTally = nil
+}
+
+func (dag *Dag) updateNextMaintenanceTime(nextUnit *modules.Unit) {
+	dgp := dag.GetDynGlobalProp()
 	gp := dag.GetGlobalProp()
+
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
+
 	if nextUnit.NumberU64() == 1 {
 		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
 	} else {
@@ -208,9 +215,19 @@ func (dag *Dag) performChainMaintenance(nextUnit *modules.Unit) {
 	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.SaveDynGlobalProp(dgp, false)
-	log.Debugf("nextMaintenanceTime: %v", nextMaintenanceTime)
 
-	// 6. 清理中间处理缓存数据
-	dag.mediatorVoteTally = nil
-	dag.mediatorCountHistogram = nil
+	time := time.Unix(int64(nextMaintenanceTime), 0)
+	log.Debugf("nextMaintenanceTime: %v", time.Format("2006-01-02 15:04:05"))
+
+	return
+}
+
+func (dag *Dag) updateMaintenanceFlag(newMaintenanceFlag bool) {
+	log.Debugf("update maintenance flag: %v", newMaintenanceFlag)
+
+	dgp := dag.GetDynGlobalProp()
+	dgp.MaintenanceFlag = newMaintenanceFlag
+	dag.SaveDynGlobalProp(dgp, false)
+
+	return
 }

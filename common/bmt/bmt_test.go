@@ -28,7 +28,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palletone/go-palletone/common/crypto/sha3"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -38,7 +38,7 @@ const (
 // TestRefHasher tests that the RefHasher computes the expected BMT hash for
 // all data lengths between 0 and 256 bytes
 func TestRefHasher(t *testing.T) {
-	hashFunc := sha3.NewKeccak256
+	hashFunc := sha3.New256
 
 	sha3 := func(data ...[]byte) []byte {
 		h := hashFunc()
@@ -211,7 +211,7 @@ func testHasher(f func(BaseHasher, []byte, int, int) error) error {
 	tdata := testDataReader(4128)
 	data := make([]byte, 4128)
 	tdata.Read(data)
-	hasher := sha3.NewKeccak256
+	hasher := sha3.New256
 	size := hasher().Size()
 	counts := []int{1, 2, 3, 4, 5, 8, 16, 32, 64, 128}
 
@@ -238,7 +238,7 @@ func TestHasherReuseWithRelease(t *testing.T) {
 }
 
 func testHasherReuse(i int, t *testing.T) {
-	hasher := sha3.NewKeccak256
+	hasher := sha3.New256
 	pool := NewTreePool(hasher, 128, i)
 	defer pool.Drain(0)
 	bmt := New(pool)
@@ -257,7 +257,7 @@ func testHasherReuse(i int, t *testing.T) {
 }
 
 func TestHasherConcurrency(t *testing.T) {
-	hasher := sha3.NewKeccak256
+	hasher := sha3.New256
 	pool := NewTreePool(hasher, 128, maxproccnt)
 	defer pool.Drain(0)
 	wg := sync.WaitGroup{}
@@ -378,7 +378,7 @@ func benchmarkBMTBaseline(n int, t *testing.B) {
 	tdata := testDataReader(64)
 	data := make([]byte, 64)
 	tdata.Read(data)
-	hasher := sha3.NewKeccak256
+	hasher := sha3.New256
 
 	t.ReportAllocs()
 	t.ResetTimer()
@@ -408,7 +408,7 @@ func benchmarkHasher(n int, t *testing.B) {
 	tdata.Read(data)
 
 	size := 1
-	hasher := sha3.NewKeccak256
+	hasher := sha3.New256
 	segmentCount := 128
 	pool := NewTreePool(hasher, segmentCount, size)
 	bmt := New(pool)
@@ -427,7 +427,7 @@ func benchmarkHasherReuse(poolsize, n int, t *testing.B) {
 	data := make([]byte, n)
 	tdata.Read(data)
 
-	hasher := sha3.NewKeccak256
+	hasher := sha3.New256
 	segmentCount := 128
 	pool := NewTreePool(hasher, segmentCount, poolsize)
 	cycles := 200
@@ -454,7 +454,7 @@ func benchmarkSHA3(n int, t *testing.B) {
 	data := make([]byte, n)
 	tdata := testDataReader(n)
 	tdata.Read(data)
-	hasher := sha3.NewKeccak256
+	hasher := sha3.New256
 	h := hasher()
 
 	t.ReportAllocs()
@@ -470,7 +470,7 @@ func benchmarkRefHasher(n int, t *testing.B) {
 	data := make([]byte, n)
 	tdata := testDataReader(n)
 	tdata.Read(data)
-	hasher := sha3.NewKeccak256
+	hasher := sha3.New256
 	rbmt := NewRefHasher(hasher, 128)
 
 	t.ReportAllocs()

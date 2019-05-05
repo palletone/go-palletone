@@ -151,7 +151,7 @@ func (h *Header) Size() common.StorageSize {
 func CopyChainIndex(index *ChainIndex) *ChainIndex {
 	cop := new(ChainIndex)
 	cop.AssetID = index.AssetID
-	cop.IsMain = index.IsMain
+	//cop.IsMain = index.IsMain
 	cop.Index = index.Index
 	return cop
 }
@@ -293,7 +293,7 @@ type TxPoolTxs []*TxPoolTransaction
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
 	AssetID AssetId `json:"asset_id"`
-	IsMain  bool    `json:"is_main"`
+	//IsMain  bool    `json:"is_main"`
 	Index   uint64  `json:"index"`
 }
 
@@ -303,12 +303,16 @@ func NewChainIndex(assetId AssetId, idx uint64) *ChainIndex {
 func (height *ChainIndex) String() string {
 	return fmt.Sprintf("%s-%d", height.AssetID.GetSymbol(), height.Index)
 }
+//Index 8Bytes + AssetID 16Bytes
 func (height *ChainIndex) Bytes() []byte {
-	data, err := rlp.EncodeToBytes(height)
-	if err != nil {
-		return nil
-	}
-	return data[:]
+	idx := make([]byte, 8)
+	littleEndian.PutUint64(idx, height.Index)
+	return append(idx,height.AssetID.Bytes()...)
+}
+
+func (height *ChainIndex)SetBytes(data []byte){
+	height.Index=littleEndian.Uint64(data[:8])
+	height.AssetID.SetBytes(data[8:])
 }
 
 //type Author struct {

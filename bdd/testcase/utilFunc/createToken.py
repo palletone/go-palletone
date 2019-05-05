@@ -57,8 +57,6 @@ class createToken(object):
                 self.tempToken = key
                 self.tempValue = dict[key]
                 #print self.tempToken,self.tempvalue
-            else:
-                self.tempValue = 0
         return self.tempToken,self.tempValue
 
     def ccinvoketxPass(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
@@ -116,7 +114,7 @@ class createToken(object):
     def transferToken(self,tokenId,senderAddr,recieverAddr,senderAmount,poundage,evidence,unlocktime):
             data = {
                 "jsonrpc": "2.0",
-                "method": "ptn_transferToken",
+                "method": "wallet_transferToken",
                 "params": [
                     tokenId,senderAddr,recieverAddr,senderAmount,poundage,evidence,"1",unlocktime
                 ],
@@ -147,6 +145,20 @@ class createToken(object):
         result1 = json.loads(response.content)
         print result1['result'][0]
         return result1['result'][0]
+
+    def personalListAccounts(self):
+        data = {
+            "jsonrpc": "2.0",
+            "method": "personal_listAccounts",
+            "params":
+                [],
+            "id": 1
+        }
+        data = json.dumps(data)
+        response = requests.post(url=self.domain, data=data, headers=self.headers)
+        result1 = json.loads(response.content)
+        print result1['result']
+        return result1['result']
 
     def paramGroups(self,dynamic,number,*params):
         if len(params) < number:

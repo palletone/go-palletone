@@ -25,39 +25,107 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
+	"sync"
 )
 
+var RwM *RwSetTxMgr
+var ChainId = "palletone"
+
 type RwSetTxMgr struct {
-	//rwLock            	sync.RWMutex
 	name      string
 	baseTxSim map[string]TxSimulator
+	closed    bool
+	rwLock    sync.RWMutex
+	wg        sync.WaitGroup
 }
 
 func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
-	return &RwSetTxMgr{name, make(map[string]TxSimulator)}, nil
+	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator)}, nil
 }
 
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
-func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string) (TxSimulator, error) {
+func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string, is_sys bool) (TxSimulator, error) {
 	log.Debugf("constructing new tx simulator")
 	hash := common.HexToHash(txid)
-	if _, ok := m.baseTxSim[chainid]; ok {
-		if m.baseTxSim[chainid].(*RwSetTxSimulator).txid == hash {
-			log.Infof("chainid[%s] , txid[%s]already exit", chainid, txid)
-			return m.baseTxSim[chainid], nil
+	if !is_sys { // 用户合约
+		m.rwLock.RLock()
+		ts, ok := m.baseTxSim[chainid+txid]
+		m.rwLock.RUnlock()
+		if ok {
+			if ts.(*RwSetTxSimulator).txid == hash {
+				log.Infof("chainid[%s] , txid[%s]already exit, don't create user txsimulator again.", chainid, txid)
+				return ts, nil
+			}
 		}
-	}
+		// new txsimulator
+		t0 := NewBasedTxSimulator(idag, hash)
+		m.rwLock.Lock()
+		m.baseTxSim[chainid+txid] = t0
+		m.wg.Add(1)
+		m.rwLock.Unlock()
+		log.Infof("create user rwSetTx [%s]", hash.String())
+		return t0, nil
+	} else {
+		m.rwLock.RLock()
+		ts, ok := m.baseTxSim[chainid]
+		m.rwLock.RUnlock()
+		if ok {
+			log.Infof("chainid[%s] , txid[%s]already exit, don't create sys txsimulator again.", chainid, txid)
+			return ts, nil
+		}
+		t := NewBasedTxSimulator(idag, hash)
+		if t == nil {
+			return nil, errors.New("NewBaseTxSimulator is failed.")
+		}
+		m.rwLock.Lock()
+		m.baseTxSim[chainid] = t
+		m.wg.Add(1)
+		m.rwLock.Unlock()
+		log.Infof("creat sys rwSetTx [%s]", hash.String())
 
-	t := NewBasedTxSimulator(idag, hash)
-	if t == nil {
-		return nil, errors.New("NewBaseTxSimulator is failed.")
+		return t, nil
 	}
-	m.baseTxSim[chainid] = t
-	log.Infof("creat new rwSetTx")
-
-	return t, nil
 }
 
-func init() {
+// 每次产块结束后，需要关闭该chainId的txsimulator.
+func (m *RwSetTxMgr) CloseTxSimulator(chainid, txid string) error {
+	m.rwLock.Lock()
+	defer m.rwLock.Unlock()
+	if ts, ok := m.baseTxSim[chainid+txid]; ok {
+		ts.Done()
+		delete(m.baseTxSim, chainid+txid)
+		m.wg.Done()
+	}
+	if ts, ok := m.baseTxSim[chainid]; ok {
+		ts.Done()
+		delete(m.baseTxSim, chainid)
+		m.wg.Done()
+	}
+	return nil
+}
+func (m *RwSetTxMgr) Close() {
+	m.rwLock.Lock()
+	if m.closed {
+		return
+	}
+	for _, ts := range m.baseTxSim {
+		if ts.CheckDone() != nil {
+			continue
+		}
+		// 等待tx simulator 被执行完成。
+		// ts.Done()
+	}
+	//m.wg.Wait()
+	m.baseTxSim = make(map[string]TxSimulator)
+	m.closed = true
+	m.rwLock.Unlock()
+	return
+}
 
+func Init() {
+	var err error
+	RwM, err = NewRwSetMgr("default")
+	if err != nil {
+		log.Error("fail!")
+	}
 }

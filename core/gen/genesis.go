@@ -17,22 +17,20 @@
 package gen
 
 import (
+	"crypto/ecdsa"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-
-	//asset2 "github.com/palletone/go-palletone/dag/asset"
 	dagCommon "github.com/palletone/go-palletone/dag/common"
-
-	"crypto/ecdsa"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -229,16 +227,17 @@ func DefaultGenesisBlock() *core.Genesis {
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 		DepositPeriod:             core.DefaultDepositPeriod,
-		UccMemory:core.DefaultUccMemory,
-		UccMemorySwap:core.DefaultUccMemorySwap,
-		UccCpuShares:core.DefaultUccCpuShares,
-		UccCpuPeriod:core.DefaultCpuPeriod,
-		UccCpuQuota:core.DefaultUccCpuQuota,
-		UccCpuSetCpus:core.DefaultUccCpuSetCpus,
-		TempUccMemory:core.DefaultTempUccMemory,
-		TempUccMemorySwap:core.DefaultTempUccMemorySwap,
-		TempUccCpuShares:core.DefaultTempUccCpuShares,
-		TempUccCpuQuota:core.DefaultTempUccCpuQuota,
+		UccMemory:                 core.DefaultUccMemory,
+		UccMemorySwap:             core.DefaultUccMemorySwap,
+		UccCpuShares:              core.DefaultUccCpuShares,
+		UccCpuPeriod:              core.DefaultCpuPeriod,
+		UccCpuQuota:               core.DefaultUccCpuQuota,
+		UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
+		TempUccMemory:             core.DefaultTempUccMemory,
+		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
+		TempUccCpuShares:          core.DefaultTempUccCpuShares,
+		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
 	}
 
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
@@ -275,16 +274,17 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
 		DepositPeriod:             core.DefaultDepositPeriod,
-		UccMemory:core.DefaultUccMemory,
-		UccMemorySwap:core.DefaultUccMemorySwap,
-		UccCpuShares:core.DefaultUccCpuShares,
-		UccCpuPeriod:core.DefaultCpuPeriod,
-		UccCpuQuota:core.DefaultUccCpuQuota,
-		UccCpuSetCpus:core.DefaultUccCpuSetCpus,
-		TempUccMemory:core.DefaultTempUccMemory,
-		TempUccMemorySwap:core.DefaultTempUccMemorySwap,
-		TempUccCpuShares:core.DefaultTempUccCpuShares,
-		TempUccCpuQuota:core.DefaultTempUccCpuQuota,
+		UccMemory:                 core.DefaultUccMemory,
+		UccMemorySwap:             core.DefaultUccMemorySwap,
+		UccCpuShares:              core.DefaultUccCpuShares,
+		UccCpuPeriod:              core.DefaultCpuPeriod,
+		UccCpuQuota:               core.DefaultUccCpuQuota,
+		UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
+		TempUccMemory:             core.DefaultTempUccMemory,
+		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
+		TempUccCpuShares:          core.DefaultTempUccCpuShares,
+		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
 	}
 
 	DigitalIdentityConfig := core.DigitalIdentityConfig{

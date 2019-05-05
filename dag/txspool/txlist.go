@@ -142,7 +142,6 @@ func (l *txPrioritiedList) Removed() {
 		}
 	}
 	sort.Sort(*l.items)
-	//heap.Init(l.items)
 }
 
 func (l *txPrioritiedList) Cap(threshold float64) []*modules.TxPoolTransaction {

@@ -571,12 +571,12 @@ func (s *PublicBlockChainAPI) Ccstop(ctx context.Context, deployId string, txid 
 	err := s.b.ContractStop(depId, txid, false)
 	return err
 }
-func (s *PublicBlockChainAPI) CcstartChaincodeContainer(ctx context.Context, deployId string, txid string) (string,error) {
+func (s *PublicBlockChainAPI) CcstartChaincodeContainer(ctx context.Context, deployId string, txid string) (string, error) {
 	depId, _ := hex.DecodeString(deployId)
 	log.Info("CcstartChaincodeContainer:" + deployId + ":" + txid + "_")
 	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
-	deplo1,err := s.b.ContractStartChaincodeContainer(depId,txid)
-	return string(deplo1),err
+	deplo1, err := s.b.ContractStartChaincodeContainer(depId, txid)
+	return string(deplo1), err
 }
 
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
@@ -584,222 +584,6 @@ func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string,
 }
 func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {
 	return s.b.EncodeTx(json)
-}
-
-func (s *PublicBlockChainAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version string) (*ContractInstallRsp, error) {
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
-
-	//templateName, _ := hex.DecodeString(tplName)
-
-	log.Info("-----Ccinstalltx:", "fromAddr", fromAddr.String())
-	log.Info("-----Ccinstalltx:", "toAddr", toAddr.String())
-	log.Info("-----Ccinstalltx:", "amount", amount)
-	log.Info("-----Ccinstalltx:", "fee", fee)
-	log.Info("-----Ccinstalltx:", "tplName", tplName)
-	log.Info("-----Ccinstalltx:", "path", path)
-	log.Info("-----Ccinstalltx:", "version", version)
-
-	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version)
-	sReqId := hex.EncodeToString(reqId[:])
-	sTplId := hex.EncodeToString(tplId)
-	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)
-
-	rsp := &ContractInstallRsp{
-		ReqId: sReqId,
-		TplId: sTplId,
-	}
-
-	return rsp, err
-}
-func (s *PublicBlockChainAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount, daoFee, tplId string, param []string) (*ContractDeployRsp, error) {
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
-	templateId, _ := hex.DecodeString(tplId)
-
-	log.Info("-----Ccdeploytx:", "fromAddr", fromAddr.String())
-	log.Info("-----Ccdeploytx:", "toAddr", toAddr.String())
-	log.Info("-----Ccdeploytx:", "amount", amount)
-	log.Info("-----Ccdeploytx:", "fee", fee)
-	log.Info("-----Ccdeploytx:", "tplId", templateId)
-
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d], value[%s]\n", i, arg)
-	}
-	reqId, depId, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
-	addDepId := common.NewAddress(depId, common.ContractHash)
-	sReqId := hex.EncodeToString(reqId[:])
-	log.Info("-----Ccdeploytx:", "reqId", sReqId, "depId", addDepId.String())
-	rsp := &ContractDeployRsp{
-		ReqId:      sReqId,
-		ContractId: addDepId.String(),
-	}
-	return rsp, err
-}
-
-func (s *PublicBlockChainAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
-	log.Info("---enter DepositContractInvoke---")
-	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param, "")
-	return rsp.ReqId, err
-}
-func (s *PublicBlockChainAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
-	log.Info("---enter DepositContractQuery---")
-	return s.Ccquery(ctx, "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM", param)
-}
-
-func (s *PublicBlockChainAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, certID string) (*ContractDeployRsp, error) {
-	contractAddr, _ := common.StringToAddress(deployId)
-
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
-
-	log.Info("-----Ccinvoketx:", "contractId", contractAddr.String())
-	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
-	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
-	log.Info("-----Ccinvoketx:", "daoAmount", daoAmount)
-	log.Info("-----Ccinvoketx:", "amount", amount)
-	log.Info("-----Ccinvoketx:", "fee", fee)
-	log.Info("-----Ccinvoketx:", "param len", len(param))
-	intCertID := new(big.Int)
-	if len(certID) > 0 {
-		if _, ok := intCertID.SetString(certID, 10); !ok {
-			return &ContractDeployRsp{}, fmt.Errorf("certid is invalid")
-		}
-		log.Debugf("-----Ccinvoketx:", "certificate serial number", certID)
-	}
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d], value[%s]\n", i, arg)
-	}
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, intCertID, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
-	rsp1 := &ContractDeployRsp{
-		ReqId:      hex.EncodeToString(reqId[:]),
-		ContractId: deployId,
-	}
-	return rsp1, err
-}
-
-func (s *PublicBlockChainAPI) CcinvokeToken(ctx context.Context, from, to, toToken, daoAmount, daoFee, assetToken, amountToken, deployId string, param []string) (*ContractDeployRsp, error) {
-	contractAddr, _ := common.StringToAddress(deployId)
-
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	toAddrToken, _ := common.StringToAddress(toToken)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
-	amountOfToken, _ := strconv.ParseUint(amountToken, 10, 64)
-
-	log.Info("-----CcinvokeToken:", "contractId", contractAddr.String())
-	log.Info("-----CcinvokeToken:", "fromAddr", fromAddr.String())
-	log.Info("-----CcinvokeToken:", "toAddr", toAddr.String())
-	log.Info("-----CcinvokeToken:", "amount", amount)
-	log.Info("-----CcinvokeToken:", "fee", fee)
-	log.Info("-----CcinvokeToken:", "toAddrToken", toAddrToken.String())
-	log.Info("-----CcinvokeToken:", "amountVote", amountOfToken)
-	log.Info("-----CcinvokeToken:", "param len", len(param))
-
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d], value[%s]\n", i, arg)
-	}
-	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, amount, fee, amountOfToken, assetToken, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
-	rsp1 := &ContractDeployRsp{
-		ReqId:      hex.EncodeToString(reqId[:]),
-		ContractId: deployId,
-	}
-	return rsp1, err
-}
-
-func (s *PublicBlockChainAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return errors.New("unlock duration too large")
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
-	ks := s.b.GetKeyStore()
-	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
-	if err != nil {
-		errors.New("get addr by outpoint is err")
-		return err
-	}
-	return nil
-}
-func (s *PublicBlockChainAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
-	contractAddr, _ := common.StringToAddress(deployId)
-
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
-
-	log.Info("-----CcinvoketxPass:", "contractId", contractAddr.String())
-	log.Info("-----CcinvoketxPass:", "fromAddr", fromAddr.String())
-	log.Info("-----CcinvoketxPass:", "toAddr", toAddr.String())
-	log.Info("-----CcinvoketxPass:", "amount", amount)
-	log.Info("-----CcinvoketxPass:", "fee", fee)
-
-	intCertID := new(big.Int)
-	if len(certID) > 0 {
-		if _, ok := intCertID.SetString(certID, 10); !ok {
-			return "", fmt.Errorf("certid is invalid")
-		}
-		log.Info("-----CcinvoketxPass:", "certificate serial number", certID)
-	}
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		fmt.Printf("index[%d], value[%s]\n", i, arg)
-	}
-
-	//2.
-	err := s.unlockKS(fromAddr, password, duration)
-	if err != nil {
-		return "", err
-	}
-
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, intCertID, contractAddr, args, 0)
-	log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
-
-	return hex.EncodeToString(reqId[:]), err
-}
-
-func (s *PublicBlockChainAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, deleteImage string) (string, error) {
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
-	contractAddr, _ := common.StringToAddress(contractId)
-	//TODO delImg 为 true 时，目前是会删除基础镜像的
-	delImg := true
-	if del, _ := strconv.Atoi(deleteImage); del <= 0 {
-		delImg = false
-	}
-	log.Info("-----Ccstoptx:", "fromAddr", fromAddr.String())
-	log.Info("-----Ccstoptx:", "toAddr", toAddr.String())
-	log.Info("-----Ccstoptx:", "amount", amount)
-	log.Info("-----Ccstoptx:", "fee", fee)
-	log.Info("-----Ccstoptx:", "contractId", contractAddr)
-	log.Info("-----Ccstoptx:", "delImg", delImg)
-
-	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
-	log.Info("-----Ccstoptx:" + hex.EncodeToString(reqId[:]))
-	return hex.EncodeToString(reqId[:]), err
 }
 
 func (s *PublicBlockChainAPI) Election(ctx context.Context, sid string) (string, error) {
@@ -837,8 +621,16 @@ func (s *PublicBlockChainAPI) GetJuryAccount(ctx context.Context) *JuryList {
 }
 
 //SPV
-func (s *PublicBlockChainAPI) ProofTransaction(ctx context.Context, tx string) (string, error) {
-	return s.b.ProofTransaction(tx)
+func (s *PublicBlockChainAPI) GetProofTxInfoByHash(ctx context.Context, txhash string) ([][]byte, error) {
+	return s.b.GetProofTxInfoByHash(txhash)
+}
+
+func (s *PublicBlockChainAPI) ProofTransactionByHash(ctx context.Context, txhash string) (string, error) {
+	return s.b.ProofTransactionByHash(txhash)
+}
+
+func (s *PublicBlockChainAPI) ProofTransactionByRlptx(ctx context.Context, rlptx [][]byte) (string, error) {
+	return s.b.ProofTransactionByRlptx(rlptx)
 }
 
 func (s *PublicBlockChainAPI) ValidationPath(ctx context.Context, tx string) ([]byte, error) {
@@ -1467,7 +1259,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 type GetUtxoEntry func(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 
 func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*modules.TxPoolTransaction,
-	from string, asset string) (core.Utxos, error) {
+	from string, asset string) (map[modules.OutPoint]*modules.Utxo, error) {
 	tokenAsset, err := modules.StringToAsset(asset)
 	if err != nil {
 		return nil, err
@@ -1515,12 +1307,12 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 	for _, used := range inputsOutpoint {
 		delete(allUtxo, used)
 	}
-	vaildutxos := core.Utxos{}
-	for k, v := range allUtxo {
-		json := ptnjson.ConvertUtxo2Json(&k, v)
-		vaildutxos = append(vaildutxos, json)
-	}
-	return vaildutxos, nil
+	//vaildutxos := core.Utxos{}
+	//for k, v := range allUtxo {
+	//	json := modules.NewUtxoWithOutPoint( v,k)
+	//	vaildutxos = append(vaildutxos, json)
+	//}
+	return allUtxo, nil
 }
 func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
@@ -1567,7 +1359,8 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 		return "", fmt.Errorf("fee is invalid")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
-	taken_utxo, change, err := core.Select_utxo_Greedy(resultUtxo, daoAmount)
+	allutxos, _ := convertUtxoMap2Utxos(resultUtxo)
+	taken_utxo, change, err := core.Select_utxo_Greedy(allutxos, daoAmount)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
@@ -1575,8 +1368,8 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	var inputs []ptnjson.TransactionInput
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
-		utxo := u.(*ptnjson.UtxoJson)
-		input.Txid = utxo.TxHash
+		utxo := u.(*modules.UtxoWithOutPoint)
+		input.Txid = utxo.TxHash.String()
 		input.MessageIndex = utxo.MessageIndex
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
@@ -1591,60 +1384,14 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	fmt.Println(result)
 	return result, nil
 }
-
-func createTokenTx(fromAddr, toAddr common.Address, amountToken uint64, feePTN uint64,
-	utxosPTN core.Utxos, utxosToken core.Utxos, asset *modules.Asset) (*modules.Transaction, error) {
-	if len(utxosPTN) == 0 {
-		return nil, fmt.Errorf("No PTN utxo")
+func convertUtxoMap2Utxos(maps map[modules.OutPoint]*modules.Utxo) (core.Utxos, *modules.Asset) {
+	utxos := core.Utxos{}
+	asset := &modules.Asset{}
+	for k, v := range maps {
+		utxos = append(utxos, modules.NewUtxoWithOutPoint(v, k))
+		asset = v.Asset
 	}
-	if len(utxosToken) == 0 {
-		return nil, fmt.Errorf("No token utxo")
-	}
-	//PTN
-	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxosPTN, feePTN+1)
-	if err != nil {
-		return nil, fmt.Errorf("Select PTN utxo err")
-	}
-	//ptn payment
-	payPTN := &modules.PaymentPayload{}
-	//ptn inputs
-	for _, u := range utxosPTNTaken {
-		utxo := u.(*ptnjson.UtxoJson)
-		txHash := common.HexToHash(utxo.TxHash)
-		prevOut := modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
-		txInput := modules.NewTxIn(prevOut, []byte{})
-		payPTN.AddTxIn(txInput)
-	}
-	//ptn outputs
-	assetId := dagconfig.DagConfig.GetGasToken()
-	payPTN.AddTxOut(modules.NewTxOut(change+1, tokenengine.GenerateLockScript(fromAddr), assetId.ToAsset()))
-
-	//Token
-	utxosTkTaken, change, err := core.Select_utxo_Greedy(utxosToken, amountToken)
-	if err != nil {
-		return nil, fmt.Errorf("Select token utxo err")
-	}
-	//token payment
-	payToken := &modules.PaymentPayload{}
-	//ptn inputs
-	for _, u := range utxosTkTaken {
-		utxo := u.(*ptnjson.UtxoJson)
-		txHash := common.HexToHash(utxo.TxHash)
-		prevOut := modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
-		txInput := modules.NewTxIn(prevOut, []byte{})
-		payToken.AddTxIn(txInput)
-	}
-	//token outputs
-	payToken.AddTxOut(modules.NewTxOut(amountToken, tokenengine.GenerateLockScript(toAddr), asset))
-	if change > 0 {
-		payToken.AddTxOut(modules.NewTxOut(change, tokenengine.GenerateLockScript(fromAddr), asset))
-	}
-
-	//tx
-	tx := &modules.Transaction{}
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payPTN))
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payToken))
-	return tx, nil
+	return utxos, asset
 }
 
 //sign raw tx
@@ -1722,167 +1469,167 @@ func (s *PublicTransactionPoolAPI) unlockKS(addr common.Address, password string
 	return nil
 }
 
-func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset string, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
-	//
-	tokenAsset, err := modules.StringToAsset(asset)
-	if err != nil {
-		fmt.Println(err.Error())
-		return common.Hash{}, err
-	}
-	if !fee.IsPositive() {
-		return common.Hash{}, fmt.Errorf("fee is ZERO ")
-	}
-	//
-	fromAddr, err := common.StringToAddress(from)
-	if err != nil {
-		fmt.Println(err.Error())
-		return common.Hash{}, err
-	}
-	toAddr, err := common.StringToAddress(to)
-	if err != nil {
-		fmt.Println(err.Error())
-		return common.Hash{}, err
-	}
-	//all utxos
-	dbUtxos, err := s.b.GetAddrRawUtxos(from)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	poolTxs, err := s.b.GetPoolTxsByAddr(from)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, asset)
-	if err != nil {
-		return common.Hash{}, fmt.Errorf("Select utxo err")
-	}
-	utxosGasToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, dagconfig.DagConfig.GasToken)
-	if err != nil {
-		return common.Hash{}, fmt.Errorf("Select utxo err")
-	}
-	//
-	////ptn utxos and token utxos
-	//utxosPTN := core.Utxos{}
-	//utxosToken := core.Utxos{}
-	//ptn := dagconfig.DagConfig.GasToken
-	//dagOutpoint_token := []modules.OutPoint{}
-	//dagOutpoint_ptn := []modules.OutPoint{}
-	//for _, json := range utxoJsons {
-	//	//utxos = append(utxos, &json)
-	//	if json.Asset == asset {
-	//		utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
-	//		dagOutpoint_token = append(dagOutpoint_token, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
-	//	}
-	//	if json.Asset == ptn {
-	//		utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
-	//		dagOutpoint_ptn = append(dagOutpoint_ptn, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
-	//	}
-	//}
-	//
-	//
-	//
-	//}
-	//else{
-	//ptn utxos and token utxos
-	/*for _, json := range utxoJsons {
-		if json.Asset == ptn {
-			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
-				MessageIndex:   json.MessageIndex,
-				OutIndex:       json.OutIndex,
-				Amount:         json.Amount,
-				Asset:          json.Asset,
-				PkScriptHex:    json.PkScriptHex,
-				PkScriptString: json.PkScriptString,
-				LockTime:       json.LockTime})
-		} else {
-			if json.Asset == asset {
-				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
-					MessageIndex:   json.MessageIndex,
-					OutIndex:       json.OutIndex,
-					Amount:         json.Amount,
-					Asset:          json.Asset,
-					PkScriptHex:    json.PkScriptHex,
-					PkScriptString: json.PkScriptString,
-					LockTime:       json.LockTime})
-			}
-		}
-	}*/
-	// }
-	//1.
-	tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
-	feeAmount := ptnjson.Ptn2Dao(fee)
-	tx, err := createTokenTx(fromAddr, toAddr, tokenAmount, feeAmount, utxosGasToken, utxosToken, tokenAsset)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	if Extra != "" {
-		textPayload := new(modules.DataPayload)
-		textPayload.MainData = []byte(asset)
-		textPayload.ExtraData = []byte(Extra)
-		tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
-	}
-
-	//lockscript
-	getPubKeyFn := func(addr common.Address) ([]byte, error) {
-		//TODO use keystore
-		ks := s.b.GetKeyStore()
-		return ks.GetPublicKey(addr)
-	}
-	//sign tx
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		ks := s.b.GetKeyStore()
-		return ks.SignHash(addr, hash)
-	}
-	//raw inputs
-	var rawInputs []ptnjson.RawTxInput
-	PkScript := tokenengine.GenerateLockScript(fromAddr)
-	PkScriptHex := trimx(hexutil.Encode(PkScript))
-	for _, msg := range tx.TxMessages {
-		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
-			continue
-		}
-		for _, txin := range payload.Inputs {
-			/*inpoint := modules.OutPoint{
-				TxHash:       txin.PreviousOutPoint.TxHash,
-				OutIndex:     txin.PreviousOutPoint.OutIndex,
-				MessageIndex: txin.PreviousOutPoint.MessageIndex,
-			}
-			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
-			if eerr != nil {
-				return common.Hash{}, err
-			}*/
-			TxHash := trimx(txin.PreviousOutPoint.TxHash.String())
-			OutIndex := txin.PreviousOutPoint.OutIndex
-			MessageIndex := txin.PreviousOutPoint.MessageIndex
-			input := ptnjson.RawTxInput{TxHash, OutIndex, MessageIndex, PkScriptHex, ""}
-			rawInputs = append(rawInputs, input)
-			/*addr, err := tokenengine.GetAddressFromScript(hexutil.MustDecode(PkScriptHex))
-			if err != nil {
-				return common.Hash{}, err
-				//fmt.Println("get addr by outpoint is err")
-			}*/
-			/*TxHash := trimx(uvu.TxHash)
-			PkScriptHex := trimx(uvu.PkScriptHex)
-			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
-			rawInputs = append(rawInputs, input)*/
-		}
-	}
-	//2.
-	err = s.unlockKS(fromAddr, password, duration)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	//3.
-	err = signTokenTx(tx, rawInputs, "ALL", getPubKeyFn, getSignFn)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	//4.
-	return submitTransaction(ctx, s.b, tx)
-}
+//func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset string, from string, to string,
+//	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
+//	//
+//	tokenAsset, err := modules.StringToAsset(asset)
+//	if err != nil {
+//		fmt.Println(err.Error())
+//		return common.Hash{}, err
+//	}
+//	if !fee.IsPositive() {
+//		return common.Hash{}, fmt.Errorf("fee is ZERO ")
+//	}
+//	//
+//	fromAddr, err := common.StringToAddress(from)
+//	if err != nil {
+//		fmt.Println(err.Error())
+//		return common.Hash{}, err
+//	}
+//	toAddr, err := common.StringToAddress(to)
+//	if err != nil {
+//		fmt.Println(err.Error())
+//		return common.Hash{}, err
+//	}
+//	//all utxos
+//	dbUtxos, err := s.b.GetAddrRawUtxos(from)
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//
+//	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, asset)
+//	if err != nil {
+//		return common.Hash{}, fmt.Errorf("Select utxo err")
+//	}
+//	utxosGasToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, dagconfig.DagConfig.GasToken)
+//	if err != nil {
+//		return common.Hash{}, fmt.Errorf("Select utxo err")
+//	}
+//	//
+//	////ptn utxos and token utxos
+//	//utxosPTN := core.Utxos{}
+//	//utxosToken := core.Utxos{}
+//	//ptn := dagconfig.DagConfig.GasToken
+//	//dagOutpoint_token := []modules.OutPoint{}
+//	//dagOutpoint_ptn := []modules.OutPoint{}
+//	//for _, json := range utxoJsons {
+//	//	//utxos = append(utxos, &json)
+//	//	if json.Asset == asset {
+//	//		utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+//	//		dagOutpoint_token = append(dagOutpoint_token, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
+//	//	}
+//	//	if json.Asset == ptn {
+//	//		utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+//	//		dagOutpoint_ptn = append(dagOutpoint_ptn, modules.OutPoint{TxHash: common.HexToHash(json.TxHash), MessageIndex: json.MessageIndex, OutIndex: json.OutIndex})
+//	//	}
+//	//}
+//	//
+//	//
+//	//
+//	//}
+//	//else{
+//	//ptn utxos and token utxos
+//	/*for _, json := range utxoJsons {
+//		if json.Asset == ptn {
+//			utxosPTN = append(utxosPTN, &ptnjson.UtxoJson{TxHash: json.TxHash,
+//				MessageIndex:   json.MessageIndex,
+//				OutIndex:       json.OutIndex,
+//				Amount:         json.Amount,
+//				Asset:          json.Asset,
+//				PkScriptHex:    json.PkScriptHex,
+//				PkScriptString: json.PkScriptString,
+//				LockTime:       json.LockTime})
+//		} else {
+//			if json.Asset == asset {
+//				utxosToken = append(utxosToken, &ptnjson.UtxoJson{TxHash: json.TxHash,
+//					MessageIndex:   json.MessageIndex,
+//					OutIndex:       json.OutIndex,
+//					Amount:         json.Amount,
+//					Asset:          json.Asset,
+//					PkScriptHex:    json.PkScriptHex,
+//					PkScriptString: json.PkScriptString,
+//					LockTime:       json.LockTime})
+//			}
+//		}
+//	}*/
+//	// }
+//	//1.
+//	tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
+//	feeAmount := ptnjson.Ptn2Dao(fee)
+//	tx, usedUtxos, err := createTokenTx(fromAddr, toAddr, tokenAmount, feeAmount, utxosGasToken, utxosToken, tokenAsset)
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//	if Extra != "" {
+//		textPayload := new(modules.DataPayload)
+//		textPayload.MainData = []byte(asset)
+//		textPayload.ExtraData = []byte(Extra)
+//		tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
+//	}
+//
+//	//lockscript
+//	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+//		//TODO use keystore
+//		ks := s.b.GetKeyStore()
+//		return ks.GetPublicKey(addr)
+//	}
+//	//sign tx
+//	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+//		ks := s.b.GetKeyStore()
+//		return ks.SignHash(addr, hash)
+//	}
+//	//raw inputs
+//	var rawInputs []ptnjson.RawTxInput
+//	PkScript := tokenengine.GenerateLockScript(fromAddr)
+//	PkScriptHex := trimx(hexutil.Encode(PkScript))
+//	for _, msg := range tx.TxMessages {
+//		payload, ok := msg.Payload.(*modules.PaymentPayload)
+//		if ok == false {
+//			continue
+//		}
+//		for _, txin := range payload.Inputs {
+//			/*inpoint := modules.OutPoint{
+//				TxHash:       txin.PreviousOutPoint.TxHash,
+//				OutIndex:     txin.PreviousOutPoint.OutIndex,
+//				MessageIndex: txin.PreviousOutPoint.MessageIndex,
+//			}
+//			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
+//			if eerr != nil {
+//				return common.Hash{}, err
+//			}*/
+//			TxHash := trimx(txin.PreviousOutPoint.TxHash.String())
+//			OutIndex := txin.PreviousOutPoint.OutIndex
+//			MessageIndex := txin.PreviousOutPoint.MessageIndex
+//			input := ptnjson.RawTxInput{TxHash, OutIndex, MessageIndex, PkScriptHex, ""}
+//			rawInputs = append(rawInputs, input)
+//			/*addr, err := tokenengine.GetAddressFromScript(hexutil.MustDecode(PkScriptHex))
+//			if err != nil {
+//				return common.Hash{}, err
+//				//fmt.Println("get addr by outpoint is err")
+//			}*/
+//			/*TxHash := trimx(uvu.TxHash)
+//			PkScriptHex := trimx(uvu.PkScriptHex)
+//			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+//			rawInputs = append(rawInputs, input)*/
+//		}
+//	}
+//	//2.
+//	err = s.unlockKS(fromAddr, password, duration)
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//	//3.
+//	err = signTokenTx(tx, rawInputs, "ALL", getPubKeyFn, getSignFn)
+//	if err != nil {
+//		return common.Hash{}, err
+//	}
+//	//4.
+//	return submitTransaction(ctx, s.b, tx)
+//}
 
 //create raw transction
 /*

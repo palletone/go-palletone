@@ -87,7 +87,7 @@ func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
 	dkgr, err := mp.getLocalActiveDKG(add)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 		return pubKey
 	}
 
@@ -110,7 +110,7 @@ func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
 	return &PublicMediatorAPI{mp}
 }
 
-func (a *PublicMediatorAPI) List() []string {
+func (a *PublicMediatorAPI) GetList() []string {
 	addStrs := make([]string, 0)
 	mas := a.dag.GetMediators()
 
@@ -119,6 +119,20 @@ func (a *PublicMediatorAPI) List() []string {
 	}
 
 	return addStrs
+}
+
+func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
+	mediatorVoteCount := make(map[string]uint64)
+
+	for address, _ := range a.dag.GetMediators() {
+		mediatorVoteCount[address.String()] = 0
+	}
+
+	for med, stake := range a.dag.MediatorVotedResults() {
+		mediatorVoteCount[med.String()] = stake
+	}
+
+	return mediatorVoteCount
 }
 
 func (a *PublicMediatorAPI) GetActives() []string {
@@ -152,24 +166,15 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 		return nil, err
 	}
 
-	medMap := a.dag.GetAccountInfo(addr).VotedMediators
-	mediators := make([]string, 0, len(medMap))
+	voted := a.dag.GetAccountVotedMediators(addr)
 
-	for med, _ := range medMap {
+	mediators := make([]string, 0, len(voted))
+
+	for _, med := range voted {
 		mediators = append(mediators, med.Str())
 	}
 
 	return mediators, nil
-}
-
-func (a *PublicMediatorAPI) GetDesiredCount(addStr string) (uint8, error) {
-	addr, err := common.StringToAddress(addStr)
-	if err != nil {
-		return 0, err
-	}
-
-	desiredCount := a.dag.GetAccountInfo(addr).DesiredMediatorCount
-	return desiredCount, nil
 }
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {

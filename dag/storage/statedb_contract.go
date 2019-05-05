@@ -46,13 +46,12 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	contractTemp = modules.ContractToTemp(contract)
 	return StoreBytes(statedb.db, prefix, contractTemp)
 }
-func (statedb *StateDb) SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	bytes, err := rlp.EncodeToBytes(value)
-	if err != nil {
-
-		return err
+func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.ContractWriteSet, version *modules.StateVersion) error {
+	key := getContractStateKey(contractId, ws.Key)
+	if ws.IsDelete {
+		return statedb.db.Delete(key)
 	}
-	return saveContractState(statedb.db, id, name, bytes, version)
+	return saveContractState(statedb.db, contractId, ws.Key, ws.Value, version)
 }
 func getContractStateKey(id []byte, field string) []byte {
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
@@ -67,7 +66,7 @@ func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, v
 	key := getContractStateKey(id, field)
 
 	log.Debug(fmt.Sprintf("Try to save contract state with key:%s, version:%x", field, version.Bytes()))
-	if err := StoreBytesWithVersion(db, key, version, value); err != nil {
+	if err := storeBytesWithVersion(db, key, version, value); err != nil {
 		log.Error("Save contract state error", err.Error())
 		return err
 	}
@@ -80,7 +79,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 		if write.IsDelete {
 			batch.Delete(key)
 		} else {
-			if err := StoreBytesWithVersion(batch, key, version, write.Value); err != nil {
+			if err := storeBytesWithVersion(batch, key, version, write.Value); err != nil {
 				return err
 			}
 		}
@@ -147,7 +146,8 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 }
 
 func (statedb *StateDb) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	return statedb.SaveContractState(id, name, value, version)
+	b, _ := rlp.EncodeToBytes(value)
+	return saveContractState(statedb.db, id, name, b, version)
 }
 
 /**

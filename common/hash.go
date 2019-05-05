@@ -25,7 +25,7 @@ import (
 	"reflect"
 	// "strings"
 	"crypto/sha256"
-	// "github.com/palletone/go-palletone/common/crypto/sha3"
+	// "golang.org/x/crypto/sha3"
 	"github.com/palletone/go-palletone/common/hexutil"
 
 	"strings"

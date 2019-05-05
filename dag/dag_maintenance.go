@@ -62,93 +62,40 @@ func (vts voteTallys) Swap(i, j int) {
 
 // 获取账户相关投票数据的直方图
 func (dag *Dag) performAccountMaintenance() {
-	// 1. 初始化数据
-	dag.totalVotingStake = 0
-
+	log.Debugf("Tally account voting mediators and setting mediators' count")
+	// 初始化数据
 	mediators := dag.GetMediators()
-	mediatorCount := len(mediators)
-	dag.mediatorVoteTally = make([]*voteTally, mediatorCount, mediatorCount)
-	mediatorIndex := make(map[common.Address]int, mediatorCount)
+	dag.mediatorVoteTally = make([]*voteTally, 0, len(mediators))
 
-	maxMediatorCount := dag.GetChainParameters().MaximumMediatorCount
-	dag.mediatorCountHistogram = make([]uint64, maxMediatorCount/2+1)
+	// 遍历所有账户
+	mediatorVoteCount := dag.MediatorVotedResults()
 
-	index := 0
+	// 初始化 mediator 的投票数据
 	for mediator, _ := range mediators {
-		// 建立 mediator 地址和index 的映射关系
-		mediatorIndex[mediator] = index
 
-		// 初始化 mediator 的投票数据
 		voteTally := newVoteTally(mediator)
-		dag.mediatorVoteTally[index] = voteTally
-
-		index++
+		voteTally.votedCount = mediatorVoteCount[mediator]
+		dag.mediatorVoteTally = append(dag.mediatorVoteTally, voteTally)
 	}
+}
 
-	minFn := func(x, y int) int {
-		if x < y {
-			return x
-		}
-		return y
-	}
+func (dag *Dag) MediatorVotedResults() map[common.Address]uint64 {
+	mediatorVoteCount := make(map[common.Address]uint64)
 
-	// 2. 遍历所有账户
 	allAccount := dag.LookupAccount()
-	for addr, info := range allAccount {
-		votingStake := dag.unstableStateRep.GetAccountBalance(addr)
-
+	for _, info := range allAccount {
 		// 遍历该账户投票的mediator
-		for med, _ := range info.VotedMediators {
-			index, ok := mediatorIndex[med]
-
-			// if they somehow managed to specify an illegal mediator index, ignore it.
-			if !ok {
-				continue
-			}
-
+		for _, med := range info.VotedMediators {
 			// 累加投票数量
-			dag.mediatorVoteTally[index].votedCount += votingStake
+			mediatorVoteCount[med] += info.Balance
 		}
-
-		// 统计该账户设置的活跃mediator数量
-		desiredMediatorCount := info.DesiredMediatorCount
-		if desiredMediatorCount <= maxMediatorCount {
-			offset := minFn(int(desiredMediatorCount/2), len(dag.mediatorCountHistogram)-1)
-
-			// votes for a number greater than MaximumMediatorCount
-			// are turned into votes for MaximumMediatorCount.
-			//
-			// in particular, this takes care of the case where a
-			// member was voting for a high number, then the
-			// parameter was lowered.
-			dag.mediatorCountHistogram[offset] += votingStake
-		}
-
-		dag.totalVotingStake += votingStake
 	}
+
+	return mediatorVoteCount
 }
 
 func (dag *Dag) updateActiveMediators() bool {
 	// 1. 统计出活跃mediator数量n
-	stakeTarget := (dag.totalVotingStake - dag.mediatorCountHistogram[0]) / 2
-
-	// accounts that vote for 0 or 1 mediator do not get to express an opinion on
-	// the number of mediators to have (they abstain and are non-voting accounts)
-
-	mediatorCountIndex := 0
-	if stakeTarget > 0 {
-		var stakeTally uint64 = 0
-		upperLimit := len(dag.mediatorCountHistogram) - 1
-		for mediatorCountIndex < upperLimit {
-			mediatorCountIndex++
-			stakeTally += dag.mediatorCountHistogram[mediatorCountIndex]
-
-			if stakeTally > stakeTarget {
-				break
-			}
-		}
-	}
-
 	maxFn := func(x, y int) int {
 		if x > y {
 			return x
@@ -157,13 +104,16 @@ func (dag *Dag) updateActiveMediators() bool {
 	}
 
 	gp := dag.GetGlobalProp()
+
+	// 保证活跃mediator的总数必须大于MinimumMediatorCount
 	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
-	mediatorCount := maxFn(mediatorCountIndex*2+1, int(minMediatorCount))
+	countInSystem := dag.getActiveMediatorCount()
+	mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
 
 	mediatorLen := dag.mediatorVoteTally.Len()
 	if mediatorLen < mediatorCount {
 		log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
-			" the minimum mediator count is %v", mediatorCount, mediatorLen, minMediatorCount)
+			" the minimum mediator count is %v", countInSystem, mediatorLen, minMediatorCount)
 		// 保证活跃mediator的总数为奇数
 		mediatorCount = (mediatorLen-1)/2*2 + 1
 	}
@@ -208,4 +158,13 @@ func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
 	}
 
 	return false
+}
+
+func (dag *Dag) updateChainParameters() {
+	log.Debugf("update chain parameters")
+
+	dag.UpdateSysParams()
+	dag.RefreshSysParameters()
+
+	return
 }

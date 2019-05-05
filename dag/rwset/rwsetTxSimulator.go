@@ -28,12 +28,14 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"runtime"
 )
 
 type RwSetTxSimulator struct {
 	chainIndex              *modules.ChainIndex
 	txid                    common.Hash
 	rwsetBuilder            *RWSetBuilder
+	write_cache             map[string][]byte
 	dag                     dag.IDag
 	writePerformed          bool
 	pvtdataQueriesPerformed bool
@@ -51,7 +53,7 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	unit := idag.GetCurrentUnit(gasToken)
 	cIndex := unit.Header().Number
 	log.Debugf("constructing new tx simulator txid = [%s]", hash.String())
-	return &RwSetTxSimulator{cIndex, hash, rwsetBuilder, idag, false, false, false}
+	return &RwSetTxSimulator{chainIndex: cIndex, txid: hash, rwsetBuilder: rwsetBuilder, write_cache: make(map[string][]byte), dag: idag}
 }
 
 func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
@@ -68,7 +70,12 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	//TODO Devin
+	if value, has := s.write_cache[key]; has {
+		if s.rwsetBuilder != nil {
+			s.rwsetBuilder.AddToReadSet(ns, key, nil)
+		}
+		return value, nil
+	}
 	val, ver, err := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if err != nil {
@@ -77,7 +84,6 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
 	}
-	//val, ver := decomposeVersionedValue(versionedValue)
 	if s.rwsetBuilder != nil {
 		s.rwsetBuilder.AddToReadSet(ns, key, ver)
 	}
@@ -115,7 +121,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 }
 
 // GetState implements method in interface `ledger.TxSimulator`
-func (s *RwSetTxSimulator) GetTimestamp(contractid []byte, ns string, rangeNumber uint32) ([]byte, error) {
+func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, error) {
 	//testValue := []byte("abc")
 	if err := s.CheckDone(); err != nil {
 		return nil, err
@@ -123,7 +129,7 @@ func (s *RwSetTxSimulator) GetTimestamp(contractid []byte, ns string, rangeNumbe
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	header := s.dag.CurrentHeader(gasToken)
 	timeIndex := header.Number.Index / uint64(rangeNumber) * uint64(rangeNumber)
-	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, IsMain: true, Index: timeIndex})
+	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, Index: timeIndex})
 	if err != nil {
 		return nil, errors.New("GetHeaderByNumber failed" + err.Error())
 	}
@@ -144,6 +150,7 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 	}
 	//todo ValidateKeyValue
 	s.rwsetBuilder.AddToWriteSet(ns, key, value)
+	s.write_cache[key] = value
 	return nil
 }
 
@@ -193,6 +200,32 @@ func (s *RwSetTxSimulator) CheckDone() error {
 	}
 	return nil
 }
+func (h *RwSetTxSimulator) Done() {
+	if h.doneInvoked {
+		return
+	}
+	h.Close()
+	h.doneInvoked = true
+}
+func (s *RwSetTxSimulator) Close() {
+	s.dag.Close()
+	runtime.SetFinalizer(s, func(item *RwSetTxSimulator) {
+		if len(item.txid) > 0 || item.txid != (common.Hash{}) {
+			log.Infof("free txid[%s]", item.txid.String())
+			for _, b := range item.txid {
+				common.Free(&b)
+			}
+		}
+		if item.chainIndex != nil {
+			for _, b := range item.chainIndex.AssetID.Bytes() {
+				common.Free(&b)
+			}
+			//common.Free(byte(&item.chainIndex.Index))
+		}
+
+	})
+	return
+}
 
 func decomposeVersionedValue(versionedValue *VersionedValue) ([]byte, *Version) {
 	var value []byte
@@ -202,14 +235,6 @@ func decomposeVersionedValue(versionedValue *VersionedValue) ([]byte, *Version) 
 		ver = versionedValue.Version
 	}
 	return value, ver
-}
-
-func (h *RwSetTxSimulator) Done() {
-	if h.doneInvoked {
-		return
-	}
-	//todo
-	h.doneInvoked = true
 }
 
 func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {

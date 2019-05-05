@@ -30,8 +30,8 @@ type TxHistoryJson struct {
 	TxHash  string       `json:"tx_hash"`
 	TxSize  float64      `json:"tx_size"`
 	Payment *PaymentJson `json:"payment"`
-	Vote    *VoteJson    `json:"vote"`
-	Data    *DataJson    `json:"data"`
+
+	Data *DataJson `json:"data"`
 	//InstallRequest *InstallRequestJson `json:"install_request"`
 	//DeployRequest  *DeployRequestJson  `json:"deploy_request"`
 	InvokeRequest *InvokeRequestJson `json:"invoke_request"`
