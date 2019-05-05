@@ -518,8 +518,6 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 	}
 	log.Info("enter Deploy", "chainID", chainID, "templateId", hex.EncodeToString(deployId), "txId", txId)
 	defer log.Info("exit Deploy", "txId", txId)
-
-	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(50) * time.Second
 	if chainID != "" {
@@ -539,7 +537,6 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 	if err != nil {
 		return nil, err
 	}
-	txsim, err := mksupt.GetTxSimulator(nil, idag, chainID, txId)
 	if err != nil {
 		log.Error("getTxSimulator err:", "error", err)
 		return nil, errors.WithMessage(err, "GetTxSimulator error")
@@ -562,17 +559,11 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 		log.Error("Deploy", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
 		return nil, err
 	}
-	err = ucc.DeployUserCC(chaincodeData, spec, setChainId, usrcc, txId, txsim, setTimeOut)
+	err = ucc.DeployUserCC(chaincodeData, spec, setChainId, usrcc, txId, nil, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
 		return nil, errors.WithMessage(err, "Deploy fail")
 	}
-	unit, err := RwTxResult2DagDeployUnit(txsim, deployId, cc.Name, cc.Id, [][]byte{}, setTimeOut)
-	if err != nil {
-		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
-		return nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
-	}
-	fmt.Println("Invoke result:==========================================================", unit)
 	return cc.Id, err
 }
 
