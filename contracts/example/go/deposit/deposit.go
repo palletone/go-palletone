@@ -22,6 +22,7 @@ package deposit
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -30,16 +31,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/palletone/go-palletone/common"
 )
 
 var (
-	//isLoad                     bool
-	//depositAmountsForJury      uint64
-	//depositAmountsForMediator  uint64
-	//depositAmountsForDeveloper uint64
-	//depositPeriod              int
-	//foundationAddress          string
+//isLoad                     bool
+//depositAmountsForJury      uint64
+//depositAmountsForMediator  uint64
+//depositAmountsForDeveloper uint64
+//depositPeriod              int
+//foundationAddress          string
 )
 
 type DepositChaincode struct {
@@ -201,7 +201,23 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Success([]byte("[]"))
 		}
 		return shim.Success(list)
+		//查看是否申请Mediator通过
+	case "IsSelected":
+		mediatorRegisterInfo, err := GetAgreeForBecomeMediatorList(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if mediatorRegisterInfo == nil {
+			return shim.Error("list is nil")
+		}
+		for _, m := range mediatorRegisterInfo {
+			if args[0] == m.Address {
+				return shim.Success([]byte("had pass"))
+			}
+		}
+		return shim.Error("no pass")
 	}
+
 	return shim.Error("Please enter validate function name.")
 }
 
@@ -369,7 +385,7 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 	applyTimeStr := args[1]
 	isOk := args[2]
 	//获取一下该用户下的账簿情况
-	balance, err := GetDepositBalance(stub,addr)
+	balance, err := GetDepositBalance(stub, addr)
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -428,7 +444,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	//	return shim.Success([]byte("Forfeiture too many."))
 	//}
 	forfeiture.ForfeitureAddress = forfeitureAddr
-	fees,err := stub.GetInvokeFees()
+	fees, err := stub.GetInvokeFees()
 	if err != nil {
 		log.Error("stub.GetInvokeFees err:", "error", err)
 		return shim.Error(err.Error())
@@ -483,7 +499,7 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 		return isInMediatorInfolist(addr, candidateList)
 
 	} else if strings.Compare(role, "Jury") == 0 {
-		candidateList, err := GetCandidateList(stub,"JuryList")
+		candidateList, err := GetCandidateList(stub, "JuryList")
 		if err != nil {
 			return false
 		}
@@ -492,7 +508,7 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 		}
 		return isInCandidateList(addr, candidateList)
 	} else if strings.Compare(role, "Developer") == 0 {
-		candidateList, err := GetCandidateList(stub,"DeveloperList")
+		candidateList, err := GetCandidateList(stub, "DeveloperList")
 		if err != nil {
 			return false
 		}
@@ -702,12 +718,12 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	//计算一部分的利息
 	//获取币龄
 	endTime := balance.LastModifyTime * 1800
-	depositRate,err := stub.GetSystemConfig("DepositRate")
+	depositRate, err := stub.GetSystemConfig("DepositRate")
 	if err != nil {
-		log.Error("stub.GetSystemConfig err:","error",err)
+		log.Error("stub.GetSystemConfig err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//fmt.Println("awards ", awards)
 	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	//加上利息奖励
@@ -731,12 +747,12 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 	}
 	//计算当前币龄奖励
 	endTime := balance.LastModifyTime * 1800
-	depositRate,err := stub.GetSystemConfig("DepositRate")
+	depositRate, err := stub.GetSystemConfig("DepositRate")
 	if err != nil {
-		log.Error("stub.GetSystemConfig err:","error",err)
+		log.Error("stub.GetSystemConfig err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime,depositRate)
+	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//fmt.Println("awards ", awards)
 	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
 	//加上利息奖励
