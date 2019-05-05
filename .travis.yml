@@ -21,7 +21,10 @@ script:
     #- sudo find / -name "decimal.py"
     #- ./deposit_test.sh 4
     - python -m robot.run ../testcase/createTrans
-    #- python -m robot.run ../testcase/ccinvoke
+    - python -m robot.run ../testcase/ccinvoke/ccinvokeInvalid
+    - python -m robot.run ../testcase/ccinvoke/ccinvokePass
+    - python -m robot.run ../testcase/ccinvoke/transferToken
+    - python -m robot.run ../testcase/ccinvoke/transferTokenInvalid    
 
     
 after_success:
