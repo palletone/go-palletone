@@ -24,6 +24,7 @@ import (
 	"time"
 
 	//"github.com/palletone/go-palletone/common/log"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
@@ -109,6 +110,26 @@ func TestLogError(t *testing.T) {
 	//log := NewTestLog()
 	Errorf("test error", err)
 	Errorf("test error2", "test222", err)
+}
+func TestLogDynamic(t *testing.T) {
+	LogConfig.LoggerLvl = "DEBUG"
+	i := 0
+	j := 0
+	DebugDynamic(func() string { i++; return "debug called" })
+	InfoDynamic(func() string {
+		j++
+		return "info called"
+	})
+	assert.Equal(t, i, 1)
+	assert.Equal(t, j, 1)
+	LogConfig.LoggerLvl = "INFO"
+	DebugDynamic(func() string { i++; return "debug called" })
+	InfoDynamic(func() string {
+		j++
+		return "info called"
+	})
+	assert.Equal(t, i, 1)
+	assert.Equal(t, j, 2)
 }
 
 // func TestMain(m *testing.M) {

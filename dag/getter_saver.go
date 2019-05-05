@@ -22,10 +22,11 @@ package dag
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
-	"encoding/json"
 	"github.com/dedis/kyber"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -251,22 +252,21 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	return nodes
 }
 
-func (d *Dag) GetAccountInfo(addr common.Address) *modules.AccountInfo {
-	accountInfo := &modules.AccountInfo{}
-	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTE_MEDIATOR)
+func (d *Dag) GetAccountVotedMediators(addr common.Address) []common.Address {
+	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTED_MEDIATORS)
 	if err != nil {
-		log.Warn(err.Error())
-		return accountInfo
+		log.Debugf(err.Error())
+		return nil
 	}
-	addrList := []string{}
-	json.Unmarshal(data.Value, &addrList)
-	for _, m := range addrList {
-		a, e := common.StringToAddress(m)
-		if e == nil {
-			accountInfo.VotedMediator = a
-		}
+
+	votedMediators := make([]common.Address, 0)
+	err = rlp.DecodeBytes(data.Value, votedMediators)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil
 	}
-	return accountInfo
+
+	return votedMediators
 }
 
 func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
@@ -302,4 +302,11 @@ func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
 
 	return d.unstableStateRep.IsJury(addr)
+}
+
+func (d *Dag) getActiveMediatorCount() int {
+	activeMediatorCountStr, _, _ := d.stableStateRep.GetConfig("ActiveMediatorCount")
+	activeMediatorCount, _ := strconv.ParseUint(string(activeMediatorCountStr), 10, 16)
+
+	return int(activeMediatorCount)
 }

@@ -706,7 +706,7 @@ func (tx *Transaction) IsSystemContract() bool {
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
 func (tx *Transaction) IsNewContractInvokeRequest() bool {
 	lastMsg := tx.TxMessages[len(tx.TxMessages)-1]
-	return lastMsg.App >= 100
+	return lastMsg.App.IsRequest()
 
 }
 

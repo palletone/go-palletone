@@ -110,7 +110,7 @@ func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
 	return &PublicMediatorAPI{mp}
 }
 
-func (a *PublicMediatorAPI) List() []string {
+func (a *PublicMediatorAPI) GetList() []string {
 	addStrs := make([]string, 0)
 	mas := a.dag.GetMediators()
 
@@ -120,23 +120,21 @@ func (a *PublicMediatorAPI) List() []string {
 
 	return addStrs
 }
+
 func (a *PublicMediatorAPI) ListVoteResult() map[string]uint64 {
 	mediatorVoteCount := make(map[string]uint64)
-	mas := a.dag.GetMediators()
 
-	for address, _ := range mas {
+	for address, _ := range a.dag.GetMediators() {
 		mediatorVoteCount[address.String()] = 0
 	}
-	accounts := a.dag.LookupAccount()
-	for _, info := range accounts {
-		ma := info.VotedMediator.String()
-		count, ok := mediatorVoteCount[ma]
-		if ok {
-			mediatorVoteCount[ma] = count + info.Balance
-		}
+
+	for med, stake := range a.dag.MediatorVotedResults() {
+		mediatorVoteCount[med.String()] = stake
 	}
+
 	return mediatorVoteCount
 }
+
 func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.dag.ActiveMediators()
@@ -168,26 +166,16 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 		return nil, err
 	}
 
-	medMap := a.dag.GetAccountInfo(addr).VotedMediator
-	return []string{medMap.String()}, nil
-	//mediators := make([]string, 0, len(medMap))
-	//
-	//for med, _ := range medMap {
-	//	mediators = append(mediators, med.Str())
-	//}
-	//
-	//return mediators, nil
-}
+	voted := a.dag.GetAccountVotedMediators(addr)
 
-//func (a *PublicMediatorAPI) GetDesiredCount(addStr string) (uint8, error) {
-//	addr, err := common.StringToAddress(addStr)
-//	if err != nil {
-//		return 0, err
-//	}
-//
-//	desiredCount := a.dag.GetAccountInfo(addr).DesiredMediatorCount
-//	return desiredCount, nil
-//}
+	mediators := make([]string, 0, len(voted))
+
+	for _, med := range voted {
+		mediators = append(mediators, med.Str())
+	}
+
+	return mediators, nil
+}
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 	dgp := a.dag.GetDynGlobalProp()

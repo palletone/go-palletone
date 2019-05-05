@@ -78,12 +78,10 @@ type iDag interface {
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
 
-	CurrentFeeSchedule() core.FeeSchedule
-	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GenVoteMediatorTx(mediator common.Address, rawtx *modules.Transaction) (*modules.Transaction, error)
+	GenVoteMediatorTx(voter common.Address, mediators []common.Address,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool
 
@@ -101,10 +99,9 @@ type iDag interface {
 	IsConsecutiveMediator(nextMediator common.Address) bool
 	MediatorParticipationRate() uint32
 
-	GetAccountInfo(addr common.Address) *modules.AccountInfo
-	//GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
-	//	txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GetAccountVotedMediators(addr common.Address) []common.Address
 	GetChainParameters() core.ChainParameters
+	MediatorVotedResults() map[common.Address]uint64
 }
 
 type MediatorPlugin struct {

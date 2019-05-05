@@ -22,9 +22,9 @@ import (
 	"math/big"
 	"sync"
 	"time"
-
 	"fmt"
-
+	"bytes"
+	
 	"github.com/dedis/kyber"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
@@ -83,6 +84,8 @@ type iDag interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 }
 
@@ -159,23 +162,12 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		}
 	}
 
-	//c := elliptic.P256()
-	//key, err := ecdsa.GenerateKey(c, rand.Reader)
-	//if err != nil {
-	//	return nil, errors.New("NewContractProcessor, GenerateKey fail")
-	//}
-	//va := vrfAccount{
-	//	priKey: key,
-	//	pubKey: &key.PublicKey,
-	//}
-
 	validator := validator.NewValidate(dag, dag, nil)
 	p := &Processor{
-		name:     "contractProcessor",
-		ptn:      ptn,
-		dag:      dag,
-		contract: contract,
-		//vrfAct:         va,
+		name:           "contractProcessor",
+		ptn:            ptn,
+		dag:            dag,
+		contract:       contract,
 		local:          acs,
 		locker:         new(sync.Mutex),
 		quit:           make(chan struct{}),
@@ -243,7 +235,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	if req == nil {
 		return errors.New("runContractReq param is nil")
 	}
-	msgs, err := runContractCmd(p.dag, p.contract, req.reqTx, elf, p.errMsgEnable)
+	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, req.reqTx, elf, p.errMsgEnable)
 	if err != nil {
 		log.Error("runContractReq", "runContractCmd reqTx", req.reqTx.RequestHash().String(), "error", err.Error())
 		return err
@@ -386,21 +378,26 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 
 	return sign, nil
 }
-func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
+func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {
 	//log.Debug("AddContractLoop", "loop", addr.String())
+	setChainId := "palletone"
 	for _, ctx := range p.mtx {
 		if false == ctx.valid || ctx.reqTx == nil {
 			continue
+		}
+		reqhash := ctx.reqTx.RequestHash()
+		if !ctx.reqTx.IsSystemContract() {
+			defer rwM.CloseTxSimulator(setChainId, reqhash.String())
 		}
 		log.Debug("AddContractLoop", "enter mtx", addr.String())
 		ctx.valid = false
 		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
-				if p.checkTxReqIdIsExist(ctx.reqTx.RequestHash()) {
-					log.Debug("AddContractLoop", "checkTxReqIdIsExist ok, reqId", ctx.reqTx.RequestHash())
+				if p.checkTxReqIdIsExist(reqhash) {
+					log.Debug("AddContractLoop ,checkTxReqIdIsExist is ok", "reqId", reqhash.String())
 					continue
 				}
-				if p.runContractReq(ctx.reqTx.RequestHash(), nil) != nil {
+				if p.runContractReq(reqhash, nil) != nil {
 					continue
 				}
 			}
@@ -434,10 +431,11 @@ func (p *Processor) AddContractLoop(txpool txspool.ITxPool, addr common.Address,
 		}
 		log.Debug("AddContractLoop", "Tx reqId", tx.RequestHash().String(), "Tx hash", tx.Hash().String())
 	}
+	rwM.Close()
 	return nil
 }
 
-func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) bool {
+func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transaction, execute bool) bool {
 	if tx == nil {
 		log.Error("CheckContractTxValid, param is nil")
 		return false
@@ -462,7 +460,7 @@ func (p *Processor) CheckContractTxValid(tx *modules.Transaction, execute bool) 
 		log.Error("CheckContractTxValid, nodeContractExecutable false")
 		return false
 	}
-	msgs, err := runContractCmd(p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
+	msgs, err := runContractCmd(rwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
 		log.Error("CheckContractTxValid runContractCmd", "error", err.Error())
 		return false
@@ -488,9 +486,15 @@ func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
 	return false
 }
 
-func (p *Processor) isValidateElection(reqId []byte, ele []modules.ElectionInf, checkExit bool) bool {
+func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.ElectionInf, checkExit bool) bool {
 	if len(ele) < p.electionNum {
 		log.Info("isValidateElection, ElectionInf number not enough ", "len(ele)=", len(ele), "set electionNum=", p.electionNum)
+		return false
+	}
+	reqId := tx.ContractIdBytes()
+	reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+	if err != nil {
+		log.Error("isValidateElection", "GetTxRequesterAddress fail, reqId", reqId, "err", err)
 		return false
 	}
 	isExit := false
@@ -504,10 +508,26 @@ func (p *Processor) isValidateElection(reqId []byte, ele []modules.ElectionInf, 
 		//检查地址hash是否在本地
 		if checkExit && !isExit {
 			for addr, _ := range p.local {
-				if e.AddrHash == util.RlpHash(addr) {
+				log.Debug("isValidateElection", "local addr", addr, "hash",util.RlpHash(addr).Bytes(), "Hash:",util.RlpHash(addr))
+				log.Debug("isValidateElection", "addrHash", e.AddrHash, "ADDRHASH", e.AddrHash.Bytes())
+				if bytes.Equal(e.AddrHash.Bytes(), util.RlpHash(addr).Bytes()) {
 					isExit = true
 					break
 				}
+			}
+		}
+		//检查指定节点模式下，是否为jjh请求地址
+		if e.Etype == 1 {
+			jjhAd, _, err := p.dag.GetConfig("FoundationAddress")
+			if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
+				log.Debug("isValidateElection", "e.Etype == 1, ok, reqId", reqId)
+				continue
+			} else {
+				log.Debug("isValidateElection", "e.Etype == 1, but not jjh request addr, reqId", reqId)
+				log.Debug("isValidateElection", "reqAddr", reqAddr[:], "jjh", jjhAd)
+
+				continue //todo test
+				//return false
 			}
 		}
 		//检查地址与pubKey是否匹配:获取当前pubKey下的Addr，将地址hash后与输入比较
@@ -564,7 +584,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Mediator, true:tx requestId", tx.RequestHash())
 			return true
 		} else if !isSysContract && isJury {
-			if p.isValidateElection(tx.ContractIdBytes(), ele, true) {
+			if p.isValidateElection(tx, ele, true) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_EXEC, Jury, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
@@ -573,7 +593,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			if p.isValidateElection(tx.ContractIdBytes(), ele, false) {
+			if p.isValidateElection(tx, ele, false) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_SIG, Jury, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
@@ -585,7 +605,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			if isSysContract {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, sysContract, true:tx requestId", tx.RequestHash())
 				return true
-			} else if !isSysContract && p.isValidateElection(tx.ContractIdBytes(), ele, false) {
+			} else if !isSysContract && p.isValidateElection(tx, ele, false) {
 				log.Debug("contractEventExecutable", "CONTRACT_EVENT_COMMIT, Mediator, userContract, true:tx requestId", tx.RequestHash())
 				return true
 			} else {
@@ -633,19 +653,24 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
 		if contractId == (common.Address{}) { //deploy
 			cId := common.NewAddress(common.BytesToAddress(reqId.Bytes()).Bytes(), common.ContractHash)
-			if ele, ok := p.lockVrf[cId]; !ok || len(ele) < p.electionNum {
-				p.lockVrf[cId] = []modules.ElectionInf{}                       //清空
-				if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
-					return common.Hash{}, nil, err
-				}
-			}
-			ctx.eleInf = p.lockVrf[cId]
-		} else { //invoke,stop
-			ele, err := p.getContractElectionList(contractId)
+			//if ele, ok := p.lockVrf[cId]; !ok || len(ele) < p.electionNum {
+			//	p.lockVrf[cId] = []modules.ElectionInf{} //清空
+			//	if err = p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
+			//		return common.Hash{}, nil, err
+			//	}
+			//}
+			//ctx.eleInf = p.lockVrf[cId]
+			elist, err := p.genContractElectionList(tx, cId)
 			if err != nil {
 				return common.Hash{}, nil, err
 			}
-			ctx.eleInf = ele
+			ctx.eleInf = elist
+		} else { //invoke,stop
+			elist, err := p.getContractElectionList(contractId)
+			if err != nil {
+				return common.Hash{}, nil, err
+			}
+			ctx.eleInf = elist
 			//ctx.eleInf = p.lockArf[contractId]
 		}
 	}
@@ -732,6 +757,7 @@ func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
 	var addh []common.Hash
 	err = rlp.DecodeBytes(addrBytes, &addh)
 	if err != nil {
+		log.Debug("getTemplateAddrHash", "err", err)
 		errs := fmt.Sprintf("getTemplateAddrHash, DecodeBytes fail, templateId:%v", tplId)
 		log.Debug(errs)
 		return nil, errors.New(errs)
@@ -741,26 +767,60 @@ func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
 }
 
 func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId common.Address) ([]modules.ElectionInf, error) {
+	if tx == nil {
+		return nil, errors.New("genContractElectionList, param is nil")
+	}
 	reqId := tx.RequestHash()
 	payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY_REQUEST)
 	if err != nil {
+		return nil, errors.New("genContractElectionList, getContractTxContractInfo fail")
 	}
+	num := 0
+	eles := make([]modules.ElectionInf, 0)
 	tplId := payload.(*modules.ContractDeployRequestPayload).TplId
 
-	//数据库中查找合约模板绑定的地址
+	//find the address of the contract template binding in the dag
 	addrHash, err := p.getTemplateAddrHash(tplId)
-
-	if (len(addrHash) > p.electionNum) {
+	if err != nil {
+		log.Debug("genContractElectionList", "getTemplateAddrHash fail,templateId", tplId, "err", err)
 	}
-
-	//通过vrf选取地址
+	if len(addrHash) >= p.electionNum {
+		num = p.electionNum
+	} else {
+		num = len(addrHash)
+	}
+	//add election node form template install assignation
+	for i := 0; i < num; i++ {
+		e := modules.ElectionInf{Etype: 1, AddrHash: addrHash[i]}
+		eles = append(eles, e)
+	}
+	if len(eles) >= p.electionNum {
+		log.Debug("genContractElectionList", "all from dag, ele:", eles)
+		return eles, nil
+	}
+	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                 //清空
 		if err := p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
-		return p.lockVrf[contractId], nil
 	}
-
+	for _, e := range p.lockVrf[contractId] {
+		isExist := false
+		for _, a := range eles {
+			if e.AddrHash == a.AddrHash {
+				isExist = true
+				break
+			}
+		}
+		if isExist {
+			continue
+		}
+		eles = append(eles, e)
+		if len(eles) >= p.electionNum {
+			log.Debug("genContractElectionList", "ele:", eles)
+			return eles, nil
+		}
+	}
 	return nil, nil
 }

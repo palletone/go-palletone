@@ -22,95 +22,18 @@ package storage
 
 import (
 	"bytes"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// only for serialization(storage)
-//type accountInfo struct {
-//	*modules.AccountInfoBase
-//	VotedMediators []common.Address
-//}
-//
-//func newAccountInfo() *accountInfo {
-//	return &accountInfo{
-//		AccountInfoBase: modules.NewAccountInfoBase(),
-//		VotedMediators:  make([]common.Address, 0),
-//	}
-//}
-//
-//func (acc *accountInfo) accountToInfo() *modules.AccountInfo {
-//	ai := modules.NewAccountInfo()
-//	ai.AccountInfoBase = acc.AccountInfoBase
-//
-//	for _, med := range acc.VotedMediators {
-//		ai.VotedMediators[med] = true
-//	}
-//
-//	return ai
-//}
-
-//func infoToAccount(ai *modules.AccountInfo) *accountInfo {
-//	acc := newAccountInfo()
-//	acc.AccountInfoBase = ai.AccountInfoBase
-//
-//	for med, _ := range ai.VotedMediators {
-//		acc.VotedMediators = append(acc.VotedMediators, med)
-//	}
-//
-//	return acc
-//}
-
 func accountKey(address common.Address) []byte {
 	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
 
 	return key
 }
-
-//func (statedb *StateDb) RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error) {
-//	acc := newAccountInfo()
-//
-//	err := retrieve(statedb.db, accountKey(address), acc)
-//	if err != nil {
-//		log.Debugf("Get account[%s] info throw an error:%s", address.String(), err.Error())
-//		return nil, err
-//	}
-//
-//	return acc.accountToInfo(), nil
-//}
-//
-//func (statedb *StateDb) StoreAccountInfo(address common.Address, info *modules.AccountInfo) error {
-//	err := StoreBytes(statedb.db, accountKey(address), infoToAccount(info))
-//	if err != nil {
-//		log.Debugf("Save account info throw an error:%s", err)
-//	}
-//
-//	return err
-//}
-
-//func (statedb *StateDb) UpdateAccountInfo(account common.Address,
-//	accountUpdateOp *modules.AccountUpdateOperation) error {
-//	accountInfo, err := statedb.RetrieveAccountInfo(account)
-//	if accountInfo == nil || err != nil {
-//		accountInfo = modules.NewAccountInfo()
-//	}
-//
-//	if accountUpdateOp.DesiredMediatorCount != nil {
-//		mediatorCountSet := *accountUpdateOp.DesiredMediatorCount
-//		accountInfo.DesiredMediatorCount = mediatorCountSet
-//		log.Debugf("Try to update DesiredMediatorCount(%v) for account(%v)", mediatorCountSet, account.Str())
-//	}
-//
-//	if accountUpdateOp.VotingMediator != nil {
-//		mediator := *accountUpdateOp.VotingMediator
-//		accountInfo.VotedMediators[mediator] = true
-//		log.Debugf("Try to save voted mediator(%v) for account(%v)", mediator.Str(), account.Str())
-//	}
-//
-//	return statedb.StoreAccountInfo(account, accountInfo)
-//}
 
 func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount int64) error {
 	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
@@ -140,25 +63,29 @@ func (statedb *StateDb) GetAccountBalance(address common.Address) uint64 {
 
 func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo {
 	result := make(map[common.Address]*modules.AccountInfo)
-	//rows:=getprefix(statedb.db,constants.ACCOUNT_PTN_BALANCE_PREFIX)
+
 	iter := statedb.db.NewIteratorWithPrefix(constants.ACCOUNT_PTN_BALANCE_PREFIX)
 	for iter.Next() {
 		key := iter.Key()
-		if key == nil {
-			continue
-		}
+		balance := BytesToUint64(iter.Value())
+
 		addB := bytes.TrimPrefix(key, constants.ACCOUNT_PTN_BALANCE_PREFIX)
 		add := common.BytesToAddress(addB)
-		balance := BytesToUint64(iter.Value())
+
 		acc := &modules.AccountInfo{Balance: balance}
+
 		//get address vote mediator
-		acckey := append(constants.ACCOUNT_INFO_PREFIX, addB...)
-		acckey = append(acckey, []byte(constants.VOTE_MEDIATOR)...)
-		data, _, err := retrieveWithVersion(statedb.db, acckey)
+		accKey := append(accountKey(add), []byte(constants.VOTED_MEDIATORS)...)
+		data, _, err := retrieveWithVersion(statedb.db, accKey)
 		if err == nil {
-			acc.VotedMediator = common.BytesToAddress(data)
+			votedMediators := make([]common.Address, 0)
+			err = rlp.DecodeBytes(data, votedMediators)
+			if err == nil {
+				acc.VotedMediators = votedMediators
+			}
 		}
-		log.Debugf("Found account[%s] balance:%d,vote mediator:%s", add.String(), balance, acc.VotedMediator.String())
+
+		log.Debugf("Found account[%v] balance:%v,vote mediator:%v", add.String(), balance, acc.VotedMediators)
 		result[add] = acc
 	}
 

@@ -11,15 +11,15 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_transferToken
+${method}         wallet_transferToken
 
 *** Test Cases ***
 Scenario: InvalidTokenAmount
     [Template]    InvalidTransferToken
     ${tokenId}    -2.1    1    description    1    ${6000000}    -32000
-    ...    Select token utxo err    ${listAccounts[0]}    ${listAccounts[1]}
+    ...    Select utxo err    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    100000000    1    description    1    ${6000000}    -32000
-    ...    Select token utxo err    ${listAccounts[0]}    ${listAccounts[1]}
+    ...    Select utxo err    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    -0.00000001    1    description    1    ${6000000}    -32000
     ...    INVALID_PAYMMENT_INPUT    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    %    1    description    1    ${6000000}    -32602

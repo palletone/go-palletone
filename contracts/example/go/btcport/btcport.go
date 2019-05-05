@@ -208,11 +208,7 @@ func _setBTCTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Respo
 	if len(args) < 1 {
 		return shim.Error("need 1 args (AssetStr)")
 	}
-	asset, _, err := dm.String2AssetId(args[0])
-	if err != nil {
-		return shim.Success([]byte("AssetStr invalid"))
-	}
-	err = stub.PutState(symbolsBTCAsset, asset.Bytes())
+	err := stub.PutState(symbolsBTCAsset, []byte(args[0]))
 	if err != nil {
 		return shim.Error("write symbolsBTCAsset failed: " + err.Error())
 	}
@@ -224,8 +220,9 @@ func getBTCTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
 	if len(result) == 0 {
 		return nil
 	}
-	asset := new(dm.Asset)
-	asset.SetBytes(result)
+	asset, _ := dm.StringToAsset(string(result))
+	log.Debugf("resultHex %s, asset: %s", common.Bytes2Hex(result), asset.String())
+
 	return asset
 }
 

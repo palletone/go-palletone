@@ -11,13 +11,13 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_transferToken
+${method}         wallet_transferToken
 
 *** Test Cases ***
 Scenario: InvalidTokenFee
     [Template]    InvalidTransferToken
     ${tokenId}    2    100000000000    description    1    ${6000000}    -32000
-    ...    Select PTN utxo err    ${listAccounts[0]}    ${listAccounts[1]}
+    ...    Select utxo err    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    2    -1.00000001    description    1    ${6000000}    -32000
     ...    fee is ZERO    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    2    -0.00000001    description    1    ${6000000}    -32000

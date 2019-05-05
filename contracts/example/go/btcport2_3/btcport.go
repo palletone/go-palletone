@@ -62,6 +62,8 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return put(args, stub)
 	case "get":
 		return get(args, stub)
+	case "getAsset":
+		return getAsset(stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -100,8 +102,8 @@ func creatMulti(userPubkey string, juryPubkeys []string, stub shim.ChaincodeStub
 	sort.Sort(a)
 	//
 	createMultiSigParams := BTCAddress_createMultiSig{Method: "CreateMultiSigAddress"}
-	createMultiSigParams.M = 3
-	createMultiSigParams.N = 5
+	createMultiSigParams.M = 2 //mod
+	createMultiSigParams.N = 3 //mod
 	createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, userPubkey)
 	for i := range juryPubkeys {
 		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, juryPubkeys[i])
@@ -169,7 +171,7 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
 	}
 	//stub.PutState("recvResult", recvResult)
-	if len(juryMsg) != 4 {
+	if len(juryMsg) != 2 { //mod
 		return shim.Success([]byte("RecvJury result's len not enough"))
 	}
 
@@ -248,8 +250,9 @@ func _setDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 		log.Debugf("pubkeys Unmarshal failed")
 		return shim.Success([]byte("pubkeys Unmarshal failed"))
 	}
-	if len(pubkeys) != 4 {
-		return shim.Success([]byte("pubkeys' length is not 4")) //mod
+	if len(pubkeys) != 2 { //mod
+		log.Debugf("pubkeys' length is not 2")
+		return shim.Success([]byte("pubkeys' length is not 2")) //mod
 	}
 
 	createMultiResult, err := creatMulti(userPubkey, pubkeys, stub)
@@ -405,7 +408,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	btcAmount := uint64(0)
 	for i := range getUTXOResult.UTXOs {
-		if getUTXOResult.UTXOs[i].Confirms < 6 {
+		if getUTXOResult.UTXOs[i].Confirms < 1 { //
 			continue
 		}
 		txIDVout := getUTXOResult.UTXOs[i].TxID + sep + strconv.Itoa(int(getUTXOResult.UTXOs[i].Vout))
@@ -668,16 +671,12 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	sort.Sort(a)
 	//
 	var result MergeTransactionResult
-	array := [][3]int{{1, 2, 3}, {1, 2, 4}, {1, 3, 4}, {2, 3, 4}}
-	num := 4
-	if len(answers) == 3 {
-		num = 1
-	}
+	array := [][3]int{{1, 2}}
+	num := 1
 	for i := 0; i < num; i++ {
 		mergeTx.MergeTransactionHexs = []string{}
 		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]]))
 		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][2]]))
 		//
 		reqBytes, err := json.Marshal(mergeTx)
 		if err != nil {
@@ -852,7 +851,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
 	}
 	//stub.PutState("recvResult", recvResult)
-	if len(juryMsg) < 3 {
+	if len(juryMsg) < 2 { //mod
 		return shim.Success([]byte("RecvJury result's len not enough"))
 	}
 
@@ -901,6 +900,11 @@ func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	result, _ := stub.GetState("result")
 	return shim.Success(result)
+}
+
+func getAsset(stub shim.ChaincodeStubInterface) pb.Response {
+	asset := getBTCTokenAsset(stub)
+	return shim.Success([]byte(asset.String()))
 }
 
 func main() {

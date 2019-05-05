@@ -35,9 +35,15 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 
+	"bytes"
+	"fmt"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -364,7 +370,13 @@ func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TxWithUnitInfoJs
 	}
 	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry), nil
 }
-
+func (b *PtnApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
+	tx, err := b.ptn.dag.GetTxByReqId(hash)
+	if err != nil {
+		return nil, err
+	}
+	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry), nil
+}
 func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
 	entry, err := b.ptn.dag.GetTxSearchEntry(hash)
 	return ptnjson.ConvertTxEntry2Json(entry), err
@@ -496,14 +508,14 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	log.Debugf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
 
 	//depid, _, err := cc.Deploy("palletone", templateId, txid, args, timeout)
-	depid, _, err := b.ptn.contract.Deploy("palletone", templateId, txid, args, timeout)
+	depid, _, err := b.ptn.contract.Deploy(rwset.RwM, "palletone", templateId, txid, args, timeout)
 	return depid, err
 }
 
 func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
-	unit, err := b.ptn.contract.Invoke("palletone", deployId, txid, args, timeout)
+	unit, err := b.ptn.contract.Invoke(rwset.RwM, "palletone", deployId, txid, args, timeout)
 	//todo print rwset
 	if err != nil {
 		return nil, err
@@ -516,7 +528,7 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 
 func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
 	//contractAddr := common.HexToAddress(hex.EncodeToString(contractId))
-	rsp, err := b.ptn.contract.Invoke("palletone", contractId, txid, args, timeout)
+	rsp, err := b.ptn.contract.Invoke(rwset.RwM, "palletone", contractId, txid, args, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -529,13 +541,13 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	log.Debugf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 
 	//err := cc.Stop("palletone", deployId, txid, deleteImage)
-	_, err := b.ptn.contract.Stop("palletone", deployId, txid, deleteImage)
+	_, err := b.ptn.contract.Stop(rwset.RwM, "palletone", deployId, txid, deleteImage)
 	return err
 }
 
 //
-func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId common.Hash, tplId []byte, err error) {
-	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true, nil)
+func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
+	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true, addrs)
 }
 func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
@@ -602,7 +614,72 @@ func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 }
 
 //SPV
-func (s *PtnApiBackend) ProofTransaction(tx string) (string, error) {
+//`json:"unit_hash"`
+type proofTxInfo struct {
+	headerhash []byte       `json:"header_hash"`
+	triekey    []byte       `json:"trie_key"`
+	triepath   les.NodeList `json:"trie_path"`
+}
+
+func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error) {
+	txhash := common.Hash{}
+	txhash.SetHexString(strtxhash)
+	tx, err := s.Dag().GetTransaction(txhash)
+	if err != nil {
+		return [][]byte{[]byte("Have not this transaction")}, err
+	}
+	unit, err := s.Dag().GetUnitByHash(tx.UnitHash)
+	if err != nil {
+		return [][]byte{[]byte("Have not exsit Unit")}, err
+	}
+	index := 0
+	for _, tx := range unit.Txs {
+		if tx.Hash() == txhash {
+			break
+		}
+		index++
+	}
+
+	info := proofTxInfo{}
+	info.headerhash = unit.UnitHeader.Hash().Bytes()
+	keybuf := new(bytes.Buffer)
+	rlp.Encode(keybuf, uint(index))
+	//key := keybuf.Bytes()
+	info.triekey = keybuf.Bytes()
+	tri, trieRootHash := core.GetTrieInfo(unit.Txs)
+	//pathdata := les.NodeList{}
+	if err := tri.Prove(info.triekey, 0, &info.triepath); err != nil {
+		log.Debug("Light PalletOne", "GetProofTxInfoByHash err", err, "key", info.triekey, "proof", info.triepath)
+		return [][]byte{[]byte(fmt.Sprintf("Get Trie err %v", err))}, err
+	}
+
+	if trieRootHash.String() != unit.UnitHeader.TxRoot.String() {
+		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()", trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
+		return [][]byte{[]byte("trie root hash is not equal")}, errors.New("hash not equal")
+	}
+	/*
+		headerhash []byte       `json:"header_hash"`
+		triekey    []byte       `json:"trie_key"`
+		triepath   les.NodeList `json:"trie_path"`
+	*/
+	data := [][]byte{}
+	data = append(data, info.headerhash)
+	data = append(data, info.triekey)
+
+	path, err := rlp.EncodeToBytes(info.triepath)
+	if err != nil {
+		return nil, err
+	}
+	data = append(data, path)
+
+	return data, nil
+}
+
+func (s *PtnApiBackend) ProofTransactionByHash(tx string) (string, error) {
+	return "", nil
+}
+
+func (s *PtnApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) {
 	return "", nil
 }
 

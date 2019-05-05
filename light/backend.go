@@ -66,9 +66,6 @@ type LightPalletone struct {
 	// DB interfaces
 	unitDb ptndb.Database // Block chain database
 
-	//bloomRequests                              chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
-	//bloomIndexer, chtIndexer, bloomTrieIndexer *core.ChainIndexer
-
 	ApiBackend *LesApiBackend
 
 	eventMux *event.TypeMux
@@ -113,10 +110,6 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) 
 		shutdownChan: make(chan bool),
 		networkId:    config.NetworkId,
 		dag:          dag,
-		//bloomRequests:    make(chan chan *bloombits.Retrieval),
-		//bloomIndexer:     eth.NewBloomIndexer(chainDb, light.BloomTrieFrequency),
-		//chtIndexer:       light.NewChtIndexer(chainDb, true),
-		//bloomTrieIndexer: light.NewBloomTrieIndexer(chainDb, true),
 	}
 
 	//lptn.relay = NewLesTxRelay(peers, leth.reqDist)
@@ -238,7 +231,6 @@ func (s *LightPalletone) Stop() error {
 	time.Sleep(time.Millisecond * 200)
 	s.unitDb.Close()
 	close(s.shutdownChan)
-
 	return nil
 }
 

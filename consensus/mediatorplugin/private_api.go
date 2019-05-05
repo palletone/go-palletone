@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	dagcom "github.com/palletone/go-palletone/dag/common"
@@ -139,16 +138,11 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxExecuteResult, error) {
 	// 参数检查
 	voter, err := common.StringToAddress(voterStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid account address: %v", voterStr)
-	}
-
-	mediator, err := common.StringToAddress(mediatorStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", mediatorStr)
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
@@ -156,28 +150,27 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
 	//}
 
-	// 判断是否是mediator
-	if !a.dag.IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator", mediatorStr)
-	}
+	mediators := make([]common.Address, 0, len(mediatorStrs))
+	for _, mediatorStr := range mediatorStrs {
+		mediator, err := common.StringToAddress(mediatorStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid account address: %v", mediatorStr)
+		}
 
-	// 判断是否已经投过该mediator
-	voted := a.dag.GetAccountInfo(voter).VotedMediator
-	if voted == mediator {
-		return nil, fmt.Errorf("account %v was already voting for mediator %v", voterStr, mediatorStr)
+		// 判断是否是mediator
+		if !a.dag.IsMediator(mediator) {
+			return nil, fmt.Errorf("%v is not mediator", mediatorStr)
+		}
+
+		mediators = append(mediators, mediator)
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.dag.GenTransferPtnTx(voter, voter, 0, nil, a.ptn.TxPool())
+	tx, fee, err := a.dag.GenVoteMediatorTx(voter, mediators, a.ptn.TxPool())
 	if err != nil {
 		return nil, err
 	}
-	//附加投票Message
-	tx, err = a.dag.GenVoteMediatorTx(mediator, tx)
-	if err != nil {
-		log.Error("Append VoteMediator data fail")
-		return nil, err
-	}
+
 	// 2. 签名和发送交易
 	err = a.ptn.SignAndSendTransaction(voter, tx)
 	if err != nil {
@@ -186,7 +179,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 
 	// 5. 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account %v vote mediator %v", voterStr, mediatorStr)
+	res.TxContent = fmt.Sprintf("Account %v vote mediator %v", voterStr, mediatorStrs)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
@@ -194,51 +187,3 @@ func (a *PrivateMediatorAPI) Vote(voterStr, mediatorStr string) (*TxExecuteResul
 
 	return res, nil
 }
-
-//func (a *PrivateMediatorAPI) SetDesiredCount(accountStr string,
-//	desiredMediatorCount uint8) (*TxExecuteResult, error) {
-//	// 参数检查
-//	account, err := common.StringToAddress(accountStr)
-//	if err != nil {
-//		return nil, fmt.Errorf("invalid account address: %v", accountStr)
-//	}
-//
-//	maxMediatorCount := a.dag.GetChainParameters().MaximumMediatorCount
-//	if desiredMediatorCount > maxMediatorCount {
-//		return nil, fmt.Errorf("the max number of allowed active mediators is: %v", maxMediatorCount)
-//	}
-//
-//	// 判断本节点是否同步完成，数据是否最新
-//	//if !a.dag.IsSynced() {
-//	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
-//	//}
-//
-//	// 判断账户是否已经设置此数量
-//	ai := a.dag.GetAccountInfo(account)
-//	if ai.DesiredMediatorCount == desiredMediatorCount {
-//		return nil, fmt.Errorf("account %v was already setting desired mediator count %v",
-//			accountStr, desiredMediatorCount)
-//	}
-//
-//	// 1. 创建交易
-//	tx, fee, err := a.dag.GenSetDesiredMediatorCountTx(account, desiredMediatorCount, a.ptn.TxPool())
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	// 2. 签名和发送交易
-//	err = a.ptn.SignAndSendTransaction(account, tx)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	// 5. 返回执行结果
-//	res := &TxExecuteResult{}
-//	res.TxContent = fmt.Sprintf("Account %v set desired mediator count %v", accountStr, desiredMediatorCount)
-//	res.TxHash = tx.Hash()
-//	res.TxSize = tx.Size().TerminalString()
-//	res.TxFee = fmt.Sprintf("%vdao", fee)
-//	res.Warning = DefaultResult
-//
-//	return res, nil
-//}

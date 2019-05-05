@@ -22,6 +22,7 @@ package ptnjson
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"encoding/hex"
@@ -32,7 +33,7 @@ import (
 type TxJson struct {
 	TxHash             string              `json:"tx_hash"`
 	TxSize             float64             `json:"tx_size"`
-	Payment            *PaymentJson        `json:"payment"`
+	Payment            []*PaymentJson      `json:"payment"`
 	AccountStateUpdate *AccountStateJson   `json:"account_state_update"`
 	Data               *DataJson           `json:"data"`
 	ContractTpl        *TplJson            `json:"contract_tpl"`
@@ -53,14 +54,14 @@ type TxWithUnitInfoJson struct {
 	TxIndex    uint64    `json:"tx_index"`
 }
 type TplJson struct {
-	TemplateId string `json:"template_id"`
-	Name       string `json:"name"`
-	Path       string `json:"path"`
-	Version    string `json:"version"`
-	Memory     uint16 `json:"memory"`
-	Bytecode   []byte `json:"bytecode"` // contract bytecode
+	TemplateId   string `json:"template_id"`
+	Name         string `json:"name"`
+	Path         string `json:"path"`
+	Version      string `json:"version"`
+	Memory       uint16 `json:"memory"`
+	Bytecode     []byte `json:"bytecode"`      // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
-	AddrHash   string `json:"addr_hash"`
+	AddrHash     string `json:"addr_hash"`
 }
 type DeployJson struct {
 	TemplateId string   `json:"template_id"`
@@ -75,10 +76,10 @@ type DeployJson struct {
 type InvokeJson struct {
 	ContractId   string   `json:"contract_id"` // contract id
 	FunctionName string   `json:"function_name"`
-	Args         [][]byte `json:"args"`      // contract arguments list
+	Args         []string `json:"args"`      // contract arguments list
 	ReadSet      string   `json:"read_set"`  // the set data of read, and value could be any type
 	WriteSet     string   `json:"write_set"` // the set data of write, and value could be any type
-	Payload      []byte   `json:"payload"`   // the contract execution result
+	Payload      string   `json:"payload"`   // the contract execution result
 	ErrorCode    uint32   `json:"error_code"`
 	ErrorMessage string   `json:"error_message"`
 }
@@ -132,10 +133,12 @@ func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQue
 		TxIndex:    tx.TxIndex,
 	}
 	txjson.TxJson = ConvertTx2FullJson(tx.Transaction, utxoQuery)
+
 	return txjson
 }
 func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) *TxJson {
 	txjson := &TxJson{}
+	txjson.Payment = []*PaymentJson{}
 	txjson.TxHash = tx.Hash().String()
 	txjson.TxSize = float64(tx.Size())
 	for _, m := range tx.TxMessages {
@@ -143,10 +146,10 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 			pay := m.Payload.(*modules.PaymentPayload)
 			if utxoQuery == nil {
 				payJson := ConvertPayment2Json(pay)
-				txjson.Payment = payJson
+				txjson.Payment = append(txjson.Payment, payJson)
 			} else {
 				payJson := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
-				txjson.Payment = payJson
+				txjson.Payment = append(txjson.Payment, payJson)
 			}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
@@ -187,8 +190,10 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 }
 func ConvertJson2Tx(json *TxJson) *modules.Transaction {
 	tx := &modules.Transaction{}
-	pay := ConvertJson2Payment(json.Payment)
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+	for _, payjson := range json.Payment {
+		pay := ConvertJson2Payment(payjson)
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+	}
 	return tx
 }
 func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
@@ -233,12 +238,15 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	injson.ContractId = hash.String()
 	injson.FunctionName = invoke.FunctionName
 
-	injson.Args = invoke.Args
+	injson.Args = []string{}
+	for _, arg := range invoke.Args {
+		injson.Args = append(injson.Args, string(arg))
+	}
 	rset, _ := json.Marshal(invoke.ReadSet)
 	injson.ReadSet = string(rset)
 	wset, _ := json.Marshal(invoke.WriteSet)
 	injson.WriteSet = string(wset)
-	injson.Payload = invoke.Payload
+	injson.Payload = string(invoke.Payload)
 	//if invoke.ErrMsg!=nil{
 	injson.ErrorCode = invoke.ErrMsg.Code
 	injson.ErrorMessage = invoke.ErrMsg.Message
@@ -258,8 +266,8 @@ func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
 func convertSig2Json(sig *modules.SignaturePayload) *SignatureJson {
 	sigjson := new(SignatureJson)
 	for _, sig := range sig.Signatures {
-		set, _ := json.Marshal(sig)
-		sigjson.Signatures = append(sigjson.Signatures, string(set))
+		set := fmt.Sprintf("pubkey:%x,signature:%x", sig.PubKey, sig.Signature)
+		sigjson.Signatures = append(sigjson.Signatures, set)
 	}
 	return sigjson
 }

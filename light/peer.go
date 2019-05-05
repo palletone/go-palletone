@@ -215,11 +215,22 @@ func (p *peer) SendReceiptsRLP(reqID, bv uint64, receipts []rlp.RawValue) error 
 }
 
 // SendProofs sends a batch of legacy LES/1 merkle proofs, corresponding to the ones requested.
-func (p *peer) SendProofs(reqID, bv uint64, proofs proofsData) error {
-	log.Debug("Light PalleOne SendProofs", "len", len(proofs))
+func (p *peer) SendRawProofs(reqID, bv uint64, proofs [][][]byte) error {
+	//log.Debug("Light PalleOne SendProofs", "len", len(proofs))
 	return p2p.Send(p.rw, ProofsMsg, proofs)
 	//return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
 }
+func (p *peer) SendProofs(reqID, bv uint64, proof proofsRespData) error {
+	//log.Debug("Light PalleOne SendProofs", "len", len(proofs))
+	return p2p.Send(p.rw, ProofsMsg, proof)
+	//return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
+}
+
+//func (p *peer) SendProofs(reqID, bv uint64, proofs []proofsRespData) error {
+//	log.Debug("Light PalleOne SendProofs", "len", len(proofs))
+//	return p2p.Send(p.rw, ProofsMsg, proofs)
+//	//return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
+//}
 
 // SendProofsV2 sends a batch of merkle proofs, corresponding to the ones requested.
 func (p *peer) SendProofsV2(reqID, bv uint64, proofs les.NodeList) error {

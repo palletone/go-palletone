@@ -276,6 +276,9 @@ func (b *LesApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, erro
 func (b *LesApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
+	return nil, nil
+}
 
 // get state
 //GetHeadUnitHash() (common.Hash, error)
@@ -360,7 +363,7 @@ func (b *LesApiBackend) EncodeTx(jsonStr string) (string, error) {
 	return "", nil
 }
 
-func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId common.Hash, tplId []byte, err error) {
+func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
 	return
 }
 func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
@@ -390,7 +393,8 @@ func (b *LesApiBackend) ContractQuery(contractId []byte, txid string, args [][]b
 }
 
 func (b *LesApiBackend) Dag() dag.IDag {
-	return b.Dag()
+	//return b.Dag()
+	return nil
 }
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
@@ -411,10 +415,18 @@ func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 }
 
 //SPV
-func (b *LesApiBackend) ProofTransaction(tx string) (string, error) {
-	b.ptn.ProtocolManager().ReqProof(tx)
-	return "LesApiBackend-ProofTransaction", nil
+func (b *LesApiBackend) GetProofTxInfoByHash(txhash string) ([][]byte, error) {
+	return nil, nil
 }
+
+func (b *LesApiBackend) ProofTransactionByHash(tx string) (string, error) {
+	return b.ptn.ProtocolManager().ReqProofByTxHash(tx), nil
+}
+
+func (b *LesApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) {
+	return b.ptn.ProtocolManager().ReqProofByRlptx(rlptx), nil
+}
+
 func (b *LesApiBackend) ValidationPath(tx string) ([]byte, error) {
-	return []byte("lll"), nil
+	return nil, nil
 }
