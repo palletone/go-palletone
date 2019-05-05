@@ -29,81 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-// 根据最新 unit 计算出生产该 unit 的 mediator 缺失的 unit 个数，
-// 并更新到 mediator的相应字段中，返回数量
-func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
-	missedUnits := dag.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
-	if missedUnits == 0 {
-		log.Errorf("Trying to push double-produced unit onto current unit?!")
-		return 0
-	}
-
-	missedUnits--
-	log.Debugf("the count of missed units: %v", missedUnits)
-
-	aSize := dag.ActiveMediatorsCount()
-	if missedUnits < uint32(aSize) {
-		var i uint32
-		for i = 0; i < missedUnits; i++ {
-			mediatorMissed := dag.GetScheduledMediator(i + 1)
-
-			med := dag.GetMediator(mediatorMissed)
-			med.TotalMissed++
-			dag.SaveMediator(med, false)
-		}
-	}
-
-	return uint64(missedUnits)
-}
-
-// UpdateDynGlobalProp, update global dynamic data
-func (dag *Dag) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
-	log.Debugf("update global dynamic data")
-	dgp := dag.GetDynGlobalProp()
-
-	//dgp.HeadUnitNum = unit.NumberU64()
-	//dgp.HeadUnitHash = unit.Hash()
-	//dgp.HeadUnitTime = unit.Timestamp()
-	dag.propRep.SetNewestUnit(unit.Header())
-
-	dgp.LastMediator = unit.Author()
-	dgp.IsShuffledSchedule = false
-	dgp.RecentSlotsFilled = (dgp.RecentSlotsFilled << (missedUnits + 1)) + 1
-	dgp.CurrentASlot += missedUnits + 1
-
-	dag.SaveDynGlobalProp(dgp, false)
-
-	return
-}
-
-func (dag *Dag) updateMediatorSchedule() {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
-	ms := dag.GetMediatorSchl()
-
-	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
-		log.Debugf("shuffle the scheduling order of mediators")
-		dag.SaveMediatorSchl(ms, false)
-
-		dgp.IsShuffledSchedule = true
-		dag.SaveDynGlobalProp(dgp, false)
-	}
-
-	return
-}
-
-func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
-	// 1. 更新 签名mediator 的LastConfirmedUnitNum
-	signingMediator := newUnit.Author()
-	med := dag.GetMediator(signingMediator)
-
-	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
-	med.LastConfirmedUnitNum = lastConfirmedUnitNum
-	dag.SaveMediator(med, false)
-
-	log.Debugf("the LastConfirmedUnitNum of mediator(%v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
-}
-
 func (dag *Dag) updateLastIrreversibleUnit() {
 	aSize := dag.ActiveMediatorsCount()
 	lastConfirmedUnitNums := make([]int, 0, aSize)
@@ -131,9 +56,9 @@ func (dag *Dag) updateLastIrreversibleUnit() {
 func (dag *Dag) updateLastIrreversibleUnitNum( /*hash common.Hash, */ newLastIrreversibleUnitNum uint64) {
 	dgp := dag.GetDynGlobalProp()
 	token := dagconfig.DagConfig.GetGasToken()
-	_, index, _ := dag.propRep.GetLastStableUnit(token)
+	_, index, _ := dag.stablePropRep.GetLastStableUnit(token)
 	if newLastIrreversibleUnitNum > index.Index {
-		//dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
+		//dag.stablePropRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
 		dgp.LastIrreversibleUnitNum = newLastIrreversibleUnitNum
 		dag.SaveDynGlobalProp(dgp, false)
 	}

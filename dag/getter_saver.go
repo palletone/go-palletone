@@ -37,17 +37,17 @@ import (
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
-	gp, _ := d.propRep.RetrieveGlobalProp()
+	gp, _ := d.stablePropRep.RetrieveGlobalProp()
 	return gp
 }
 
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	dgp, _ := d.propRep.RetrieveDynGlobalProp()
+	dgp, _ := d.stablePropRep.RetrieveDynGlobalProp()
 	return dgp
 }
 
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
-	ms, _ := d.propRep.RetrieveMediatorSchl()
+	ms, _ := d.stablePropRep.RetrieveMediatorSchl()
 	return ms
 }
 
@@ -56,7 +56,7 @@ func (d *Dag) SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) {
 		// todo 更新缓存
 	}
 
-	d.propRep.StoreGlobalProp(gp)
+	d.stablePropRep.StoreGlobalProp(gp)
 	return
 }
 
@@ -65,7 +65,7 @@ func (d *Dag) SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bo
 		// todo 更新缓存
 	}
 
-	d.propRep.StoreDynGlobalProp(dgp)
+	d.stablePropRep.StoreDynGlobalProp(dgp)
 	return
 }
 
@@ -74,7 +74,7 @@ func (d *Dag) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) {
 		// todo 更新缓存
 	}
 
-	d.propRep.StoreMediatorSchl(ms)
+	d.stablePropRep.StoreMediatorSchl(ms)
 	return
 }
 
@@ -163,26 +163,26 @@ func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
 }
 
 func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
-	return dag.propRep.GetSlotAtTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), when)
+	return dag.stablePropRep.GetSlotAtTime(when)
 }
 
 func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
-	return dag.propRep.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
+	return dag.stablePropRep.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
 }
 
 func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
-	return dag.propRep.GetScheduledMediator(slotNum)
+	return dag.stablePropRep.GetScheduledMediator(slotNum)
 }
 
 func (dag *Dag) HeadUnitTime() int64 {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	t, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
+	t, _ := dag.stablePropRep.GetNewestUnitTimestamp(gasToken)
 	return t
 }
 
 func (dag *Dag) HeadUnitNum() uint64 {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	_, idx, _ := dag.propRep.GetNewestUnit(gasToken)
+	_, idx, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	return idx.Index
 }
 
@@ -192,7 +192,7 @@ func (dag *Dag) LastMaintenanceTime() int64 {
 
 func (dag *Dag) HeadUnitHash() common.Hash {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	hash, _, _ := dag.propRep.GetNewestUnit(gasToken)
+	hash, _, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	return hash
 }
 

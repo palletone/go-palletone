@@ -34,28 +34,34 @@ import (
 )
 
 type MemDag struct {
-	token             modules.AssetId
-	stableUnitHash    map[modules.AssetId]common.Hash
-	stableUnitHeight  map[modules.AssetId]uint64
-	lastMainchainUnit map[modules.AssetId]*modules.Unit
-	orphanUnits       map[common.Hash]*modules.Unit
-	chainUnits        map[common.Hash]*modules.Unit
-	tempdbunitRep     common2.IUnitRepository
-	tempUtxoRep       common2.IUtxoRepository
-	tempStateRep      common2.IStateRepository
+	token              modules.AssetId
+	stableUnitHash     map[modules.AssetId]common.Hash
+	stableUnitHeight   map[modules.AssetId]uint64
+	lastMainchainUnit  map[modules.AssetId]*modules.Unit
+	orphanUnits        map[common.Hash]*modules.Unit
+	chainUnits         map[common.Hash]*modules.Unit
+	tempdbunitRep      common2.IUnitRepository
+	tempUtxoRep        common2.IUtxoRepository
+	tempStateRep       common2.IStateRepository
+	tempPropRep        common2.IPropRepository
+	tempUnitProduceRep common2.IUnitProduceRepository
+
 	ldbunitRep        common2.IUnitRepository
 	ldbPropRep        common2.IPropRepository
+	ldbUnitProduceRep common2.IUnitProduceRepository
 	tempdb            *Tempdb
 	saveHeaderOnly    bool
 	lock              sync.RWMutex
 }
 
-func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository) *MemDag {
+func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository, stableStateRep common2.IStateRepository) *MemDag {
 	tempdb, _ := NewTempdb(db)
 	trep := common2.NewUnitRepository4Db(tempdb)
 	tutxoRep := common2.NewUtxoRepository4Db(tempdb)
 	tstateRep := common2.NewStateRepository4Db(tempdb)
-
+	tpropRep := common2.NewPropRepository4Db(tempdb)
+	tempUnitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
+	ldbUnitProduceRep := common2.NewUnitProduceRepository(stableUnitRep, propRep, stableStateRep)
 	stablehash, stbIndex, err := propRep.GetLastStableUnit(token)
 	if err != nil {
 		log.Errorf("Cannot retrieve last stable unit from db for token:%s, you forget 'gptn init'??", token.String())
@@ -70,37 +76,27 @@ func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, st
 	stable_unit_height[token] = stbIndex.Index
 	last_mainchain_unit[token] = stableUnit
 	return &MemDag{
-		token:             token,
-		ldbunitRep:        stableUnitRep,
-		ldbPropRep:        propRep,
-		tempdbunitRep:     trep,
-		tempUtxoRep:       tutxoRep,
-		tempStateRep:      tstateRep,
-		tempdb:            tempdb,
-		orphanUnits:       make(map[common.Hash]*modules.Unit),
-		chainUnits:        make(map[common.Hash]*modules.Unit),
-		stableUnitHash:    stable_unit_hash,
-		stableUnitHeight:  stable_unit_height,
-		lastMainchainUnit: last_mainchain_unit,
-		saveHeaderOnly:    saveHeaderOnly,
+		token:              token,
+		ldbunitRep:         stableUnitRep,
+		ldbPropRep:         propRep,
+		ldbUnitProduceRep:  ldbUnitProduceRep,
+		tempdbunitRep:      trep,
+		tempUtxoRep:        tutxoRep,
+		tempStateRep:       tstateRep,
+		tempPropRep:        tpropRep,
+		tempUnitProduceRep: tempUnitProduceRep,
+		tempdb:             tempdb,
+		orphanUnits:        make(map[common.Hash]*modules.Unit),
+		chainUnits:         make(map[common.Hash]*modules.Unit),
+		stableUnitHash:     stable_unit_hash,
+		stableUnitHeight:   stable_unit_height,
+		lastMainchainUnit:  last_mainchain_unit,
+		saveHeaderOnly:     saveHeaderOnly,
 	}
 }
 
-//func (chain *MemDag) Init(stablehash common.Hash, stableHeight uint64) {
-//	chain.stableUnitHash = stablehash
-//	chain.stableUnitHeight = stableHeight
-//	chain.tempdb.Clear()
-//	chain.lastMainchainUnit, _ = chain.ldbunitRep.GetUnit(stablehash)
-//
-//	for k := range chain.orphanUnits {
-//		delete(chain.orphanUnits, k)
-//	}
-//	for k := range chain.chainUnits {
-//		delete(chain.chainUnits, k)
-//	}
-//}
-func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository) {
-	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep
+func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository) {
+	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep, chain.tempPropRep
 }
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error {
 	chain.lock.Lock()
@@ -160,7 +156,8 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 		chain.ldbunitRep.SaveHeader(unit.Header())
 	} else {
 		//Save stable unit to ldb
-		chain.ldbunitRep.SaveUnit(unit, false)
+		//chain.ldbunitRep.SaveUnit(unit, false)
+		chain.ldbUnitProduceRep.PushUnit(unit)
 		//txpool flag tx as packaged
 		if len(unit.Txs) > 0 {
 			log.Debugf("Set tx[%x] status to confirm", unit.Txs.GetTxIds())
@@ -243,7 +240,9 @@ func (chain *MemDag) saveUnit2TempDb(unit *modules.Unit) {
 	if chain.saveHeaderOnly {
 		chain.tempdbunitRep.SaveHeader(unit.Header())
 	} else {
-		chain.tempdbunitRep.SaveUnit(unit, false)
+		//chain.tempdbunitRep.SaveUnit(unit, false)
+		chain.ldbUnitProduceRep.PushUnit(unit)
+
 	}
 }
 

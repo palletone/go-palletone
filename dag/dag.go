@@ -55,14 +55,16 @@ type Dag struct {
 	unstableUnitRep  dagcommon.IUnitRepository
 	unstableUtxoRep  dagcommon.IUtxoRepository
 	unstableStateRep dagcommon.IStateRepository
+	unstablePropRep  dagcommon.IPropRepository
 
 	stableUnitRep  dagcommon.IUnitRepository
 	stableUtxoRep  dagcommon.IUtxoRepository
 	stableStateRep dagcommon.IStateRepository
+	stablePropRep  dagcommon.IPropRepository
 
-	propRep       dagcommon.IPropRepository
-	validate      validator.Validator
-	ChainHeadFeed *event.Feed
+	statleUnitProduceRep dagcommon.IUnitProduceRepository
+	validate             validator.Validator
+	ChainHeadFeed        *event.Feed
 
 	Mutex           sync.RWMutex
 	Memdag          memunit.IMemDag                     // memory unit
@@ -285,7 +287,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			u.Author().Str())
 
 		// append by albert·gou, 利用 unit 更新相关状态
-		if err := d.ApplyUnit(u); err != nil {
+		if err := d.statleUnitProduceRep.ApplyUnit(u); err != nil {
 			//return count, err
 			return count, nil
 		}
@@ -489,35 +491,38 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
-	//hash, idx, _ := propRep.GetLastStableUnit(modules.PTNCOIN)
+	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
+	//hash, idx, _ := stablePropRep.GetLastStableUnit(modules.PTNCOIN)
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	unstableChain := memunit.NewMemDag(gasToken, false, db, unitRep, propRep)
-	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
+	unstableChain := memunit.NewMemDag(gasToken, false, db, unitRep, propRep, stateRep)
+	tunitRep, tutxoRep, tstateRep, tpropRep := unstableChain.GetUnstableRepositories()
 	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
 	partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
 	for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
-		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)
+		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, stateRep)
 	}
 
 	dag := &Dag{
 		//Cache:            freecache.NewCache(200 * 1024 * 1024),
-		Db:               db,
-		unstableUnitRep:  tunitRep,
-		unstableUtxoRep:  tutxoRep,
-		propRep:          propRep,
-		unstableStateRep: tstateRep,
-		stableUnitRep:    unitRep,
-		stableUtxoRep:    utxoRep,
-		stableStateRep:   stateRep,
-		validate:         validate,
-		ChainHeadFeed:    new(event.Feed),
-		Mutex:            *mutex,
-		Memdag:           unstableChain,
-		PartitionMemDag:  partitionMemdag,
+		Db:                   db,
+		unstableUnitRep:      tunitRep,
+		unstableUtxoRep:      tutxoRep,
+		unstableStateRep:     tstateRep,
+		unstablePropRep:      tpropRep,
+		stablePropRep:        propRep,
+		stableUnitRep:        unitRep,
+		stableUtxoRep:        utxoRep,
+		stableStateRep:       stateRep,
+		statleUnitProduceRep: statleUnitProduceRep,
+		validate:             validate,
+		ChainHeadFeed:        new(event.Feed),
+		Mutex:                *mutex,
+		Memdag:               unstableChain,
+		PartitionMemDag:      partitionMemdag,
 	}
 
 	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
-	hash, chainIndex, _ := dag.propRep.GetNewestUnit(gasToken)
+	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	if !dag.IsHeaderExist(hash) {
 		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
 			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
@@ -527,14 +532,14 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 			dgp := dag.GetDynGlobalProp()
 
 			interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
-			time, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
+			time, _ := dag.stablePropRep.GetNewestUnitTimestamp(gasToken)
 			dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
 			//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
 
 			dag.SaveDynGlobalProp(dgp, false)
 			//----------
 
-			dag.propRep.SetNewestUnit(newestUnit.Header())
+			dag.stablePropRep.SetNewestUnit(newestUnit.Header())
 		}
 	}
 
@@ -554,16 +559,21 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
+	stateRep := dagcommon.NewStateRepository(stateDb)
+
+	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
 	dag := &Dag{
 		//Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		stableUnitRep: unitRep,
-		stableUtxoRep: utxoRep,
-		propRep:       propRep,
-		validate:      validate,
-		ChainHeadFeed: new(event.Feed),
-		Mutex:         *mutex,
+		Db:                   db,
+		stableUnitRep:        unitRep,
+		stableUtxoRep:        utxoRep,
+		stablePropRep:        propRep,
+		stableStateRep:       stateRep,
+		statleUnitProduceRep: statleUnitProduceRep,
+		validate:             validate,
+		ChainHeadFeed:        new(event.Feed),
+		Mutex:                *mutex,
 		//Memdag:        memunit.NewMemDag(dagDb, stateDb, unstableUnitRep),
 		//utxos_cache: make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
@@ -580,34 +590,41 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 	propRep := dagcommon.NewPropRepository(propDb)
+	stateRep := dagcommon.NewStateRepository(stateDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
+
 	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
-	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep)
-	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep, stateRep)
+	tunitRep, tutxoRep, tstateRep, tpropRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{
 		//Cache:            freecache.NewCache(200 * 1024 * 1024),
-		Db:               db,
-		stableUnitRep:    unitRep,
-		stableUtxoRep:    utxoRep,
-		validate:         validate,
-		ChainHeadFeed:    new(event.Feed),
-		Mutex:            *mutex,
-		Memdag:           unstableChain,
-		unstableUnitRep:  tunitRep,
-		unstableUtxoRep:  tutxoRep,
-		unstableStateRep: tstateRep,
+		Db:                   db,
+		stableUnitRep:        unitRep,
+		stableUtxoRep:        utxoRep,
+		stableStateRep:       stateRep,
+		stablePropRep:        propRep,
+		statleUnitProduceRep: statleUnitProduceRep,
+		validate:             validate,
+		ChainHeadFeed:        new(event.Feed),
+		Mutex:                *mutex,
+		Memdag:               unstableChain,
+		unstableUnitRep:      tunitRep,
+		unstableUtxoRep:      tutxoRep,
+		unstableStateRep:     tstateRep,
+		unstablePropRep:      tpropRep,
 		//utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil
 }
 
 func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
-	return d.propRep.GetChaincodes(contractId)
+	return d.stablePropRep.GetChaincodes(contractId)
 }
 
 func (d *Dag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
-	return d.propRep.SaveChaincode(contractId, cc)
+	return d.stablePropRep.SaveChaincode(contractId, cc)
 }
 
 // Get Contract Api
