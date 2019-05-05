@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -381,7 +382,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	var temptxs modules.Transactions
 	for _, tx := range unit.Txs {
 		if tx.IsContractTx() {
-			if !pm.contractProc.CheckContractTxValid(tx, true) {
+			if !pm.contractProc.CheckContractTxValid(rwset.RwM, tx, true) {
 				log.Debug("NewBlockMsg,CheckContractTxValid is false.", "reqHash", tx.RequestHash().String())
 				//return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
 				continue

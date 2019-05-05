@@ -78,9 +78,7 @@ type Dag struct {
 
 	// append by albert·gou 用于account 各种投票数据统计
 	mediatorVoteTally voteTallys
-	totalVotingStake  uint64
-	//mediatorCountHistogram []uint64
-	applyLock sync.Mutex
+	applyLock         sync.Mutex
 
 	//SPV
 	rmLogsFeed    event.Feed
@@ -530,7 +528,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 
 			interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
 			time, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
-			dgp.CurrentASlot = dgp.CurrentASlot - uint64(uint8(time-newestUnit.Timestamp())/interval)
+			dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
 			//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
 
 			dag.SaveDynGlobalProp(dgp, false)
@@ -1298,3 +1296,7 @@ func (d *Dag) GetCoinYearRate() float64 {
 //func (bc *Dag) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {
 //	return bc.scope.Track(bc.chainSideFeed.Subscribe(ch))
 //}
+
+func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return d.stableUnitRep.GetTxRequesterAddress(tx)
+}

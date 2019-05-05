@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -367,12 +368,20 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 	return tx, fee, nil
 }
 
-func (dag *Dag) GenVoteMediatorTx(voter, mediator common.Address,
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators []common.Address,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
-	accountUpdate := &modules.AccountStateUpdatePayload{}
-	writeVote := modules.NewWriteSet(constants.VOTE_MEDIATOR, mediator.Bytes21())
-	accountUpdate.WriteSet = []modules.ContractWriteSet{*writeVote}
+	msb, _ := rlp.EncodeToBytes(mediators)
+
+	writeVote := modules.ContractWriteSet{
+		false,
+		constants.VOTED_MEDIATORS,
+		msb,
+	}
+
+	accountUpdate := &modules.AccountStateUpdatePayload{
+		[]modules.ContractWriteSet{writeVote},
+	}
 
 	msg := &modules.Message{
 		App:     modules.APP_ACCOUNT_UPDATE,

@@ -224,7 +224,6 @@ func (s *RwSetTxSimulator) Close() {
 		}
 
 	})
-
 	return
 }
 

@@ -43,6 +43,7 @@ func (req *proofReq) Wait() int {
 	for {
 		select {
 		case result := <-req.step:
+			req.valid.forgetHash(req.strindex)
 			return result
 		case <-timeout.C:
 			req.valid.forgetHash(req.strindex)
@@ -87,15 +88,15 @@ func (v *Validation) forgetHash(index string) {
 }
 
 func (v *Validation) Check(resp *proofsRespData) (int, error) {
-
 	header, err := v.dag.GetHeaderByHash(resp.headerhash)
 	if err != nil {
 		log.Debug("Light PalletOne", "Validation->Check GetHeaderByHash err", err, "header hash", resp.headerhash)
 		return 0, err
 	}
-	if header.TxRoot.String() != resp.txroothash.String() {
-		return 0, errors.New("txroothash not equal")
-	}
+	//TODO recover
+	//if header.TxRoot.String() != resp.txroothash.String() {
+	//	return 0, errors.New("txroothash not equal")
+	//}
 	log.Debug("Light PalletOne", "key", resp.key, "proof", resp.pathData)
 	nodeSet := resp.pathData.NodeSet()
 	_, err, _ = trie.VerifyProof(header.TxRoot, resp.key, nodeSet)

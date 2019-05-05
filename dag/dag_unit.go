@@ -123,9 +123,12 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) error {
 		return err
 	}
 
+	// todo 待删除 处理临时prop没有回滚的问题
+	skip := false
 	// 验证 unit 的 mediator 调度
 	if err := dag.validateMediatorSchedule(nextUnit); err != nil {
-		return err
+		//return err
+		skip = true
 	}
 
 	// todo 运用Unit中的交易
@@ -153,8 +156,10 @@ func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) error {
 	// 由于前面的操作需要调用 GetSlotTime() / GetSlotAtTime() 这两个方法，所以在最后才更新链维护周期标志
 	dag.updateMaintenanceFlag(maintenanceNeeded)
 
-	// 洗牌
-	dag.updateMediatorSchedule()
+	if !skip {
+		// 洗牌
+		dag.updateMediatorSchedule()
+	}
 
 	return nil
 }

@@ -49,7 +49,7 @@ func (s *SupportImpl) IsSysCCAndNotInvokableExternal(name string) bool {
 // GetTxSimulator returns the transaction simulator for the specified ledger
 // a client may obtain more than one such simulator; they are made unique
 // by way of the supplied txid
-func (s *SupportImpl) GetTxSimulator(idag dag.IDag, chainid string, txid string) (rwset.TxSimulator, error) {
+func (s *SupportImpl) GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, chainid string, txid string) (rwset.TxSimulator, error) {
 	return rwM.NewTxSimulator(idag, chainid, txid, true)
 }
 
@@ -124,7 +124,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			Version: val.GetVersion(),
 		}
 		invoke.ReadSet = append(invoke.ReadSet, rd)
-		log.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[1], val.GetKey(), *val.GetVersion())
+		log.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[2], val.GetKey(), val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := md.ContractWriteSet{
@@ -133,7 +133,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			IsDelete: val.GetIsDelete(),
 		}
 		invoke.WriteSet = append(invoke.WriteSet, rd)
-		log.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[1], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		log.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[2], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return invoke, nil
@@ -163,7 +163,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 			Version: val.GetVersion(),
 		}
 		deploy.ReadSet = append(deploy.ReadSet, rd)
-		log.Info("RwTxResult2DagDeployUnit", "ReadSet: idx", idx, "fun", args[1], "key", val.GetKey(), "val", *val.GetVersion())
+		log.Info("RwTxResult2DagDeployUnit", "ReadSet: idx", idx, "fun", args[2], "key", val.GetKey(), "val", *val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := md.ContractWriteSet{
@@ -172,18 +172,8 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 			IsDelete: val.GetIsDelete(),
 		}
 		deploy.WriteSet = append(deploy.WriteSet, rd)
-		log.Info("RwTxResult2DagDeployUnit", "WriteSet: idx", idx, "fun", args[1], "key", val.GetKey(), "val", val.GetValue(), "delete", val.GetIsDelete())
+		log.Info("RwTxResult2DagDeployUnit", "WriteSet: idx", idx, "fun", args[2], "key", val.GetKey(), "val", val.GetValue(), "delete", val.GetIsDelete())
 	}
 
 	return deploy, nil
-}
-
-var rwM *rwset.RwSetTxMgr
-
-func init() {
-	var err error
-	rwM, err = rwset.NewRwSetMgr("default")
-	if err != nil {
-		log.Error("fail!")
-	}
 }

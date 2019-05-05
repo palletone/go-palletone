@@ -33,7 +33,7 @@ import (
 type TxJson struct {
 	TxHash             string              `json:"tx_hash"`
 	TxSize             float64             `json:"tx_size"`
-	Payment            *PaymentJson        `json:"payment"`
+	Payment            []*PaymentJson      `json:"payment"`
 	AccountStateUpdate *AccountStateJson   `json:"account_state_update"`
 	Data               *DataJson           `json:"data"`
 	ContractTpl        *TplJson            `json:"contract_tpl"`
@@ -138,6 +138,7 @@ func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQue
 }
 func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) *TxJson {
 	txjson := &TxJson{}
+	txjson.Payment = []*PaymentJson{}
 	txjson.TxHash = tx.Hash().String()
 	txjson.TxSize = float64(tx.Size())
 	for _, m := range tx.TxMessages {
@@ -145,10 +146,10 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 			pay := m.Payload.(*modules.PaymentPayload)
 			if utxoQuery == nil {
 				payJson := ConvertPayment2Json(pay)
-				txjson.Payment = payJson
+				txjson.Payment = append(txjson.Payment, payJson)
 			} else {
 				payJson := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
-				txjson.Payment = payJson
+				txjson.Payment = append(txjson.Payment, payJson)
 			}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
@@ -189,8 +190,10 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 }
 func ConvertJson2Tx(json *TxJson) *modules.Transaction {
 	tx := &modules.Transaction{}
-	pay := ConvertJson2Payment(json.Payment)
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+	for _, payjson := range json.Payment {
+		pay := ConvertJson2Payment(payjson)
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+	}
 	return tx
 }
 func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {

@@ -28,6 +28,9 @@ import (
 	"sync"
 )
 
+var RwM *RwSetTxMgr
+var ChainId = "palletone"
+
 type RwSetTxMgr struct {
 	name      string
 	baseTxSim map[string]TxSimulator
@@ -88,11 +91,13 @@ func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string, 
 func (m *RwSetTxMgr) CloseTxSimulator(chainid, txid string) error {
 	m.rwLock.Lock()
 	defer m.rwLock.Unlock()
-	if _, ok := m.baseTxSim[chainid+txid]; ok {
+	if ts, ok := m.baseTxSim[chainid+txid]; ok {
+		ts.Done()
 		delete(m.baseTxSim, chainid+txid)
 		m.wg.Done()
 	}
-	if _, ok := m.baseTxSim[chainid]; ok {
+	if ts, ok := m.baseTxSim[chainid]; ok {
+		ts.Done()
 		delete(m.baseTxSim, chainid)
 		m.wg.Done()
 	}
@@ -107,13 +112,20 @@ func (m *RwSetTxMgr) Close() {
 		if ts.CheckDone() != nil {
 			continue
 		}
-		// todo
 		// 等待tx simulator 被执行完成。
-		//ts.Done()
+		// ts.Done()
 	}
-	m.wg.Wait()
+	//m.wg.Wait()
 	m.baseTxSim = make(map[string]TxSimulator)
 	m.closed = true
 	m.rwLock.Unlock()
 	return
+}
+
+func Init() {
+	var err error
+	RwM, err = NewRwSetMgr("default")
+	if err != nil {
+		log.Error("fail!")
+	}
 }

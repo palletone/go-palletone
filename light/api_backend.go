@@ -363,7 +363,7 @@ func (b *LesApiBackend) EncodeTx(jsonStr string) (string, error) {
 	return "", nil
 }
 
-func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string) (reqId common.Hash, tplId []byte, err error) {
+func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
 	return
 }
 func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
@@ -415,15 +415,18 @@ func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 }
 
 //SPV
-func (b *LesApiBackend) ProofTransactionByHash(tx string) (string, error) {
-	return b.ptn.ProtocolManager().ReqProofByTxHash(tx), nil
-
+func (b *LesApiBackend) GetProofTxInfoByHash(txhash string) ([][]byte, error) {
+	return nil, nil
 }
 
-func (b *LesApiBackend) ProofTransactionByRlptx(rlptx string) (string, error) {
+func (b *LesApiBackend) ProofTransactionByHash(tx string) (string, error) {
+	return b.ptn.ProtocolManager().ReqProofByTxHash(tx), nil
+}
+
+func (b *LesApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) {
 	return b.ptn.ProtocolManager().ReqProofByRlptx(rlptx), nil
 }
 
 func (b *LesApiBackend) ValidationPath(tx string) ([]byte, error) {
-	return []byte("lll"), nil
+	return nil, nil
 }

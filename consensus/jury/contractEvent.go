@@ -35,9 +35,13 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	if event == nil || len(event.Tx.TxMessages) < 1 {
 		return errors.New("ProcessContractEvent param is nil")
 	}
-	//if !p.checkTxIsExist(event.Tx) {
-	//	return errors.New("ProcessContractEvent event Tx is exist")
+
+	//if p.checkTxIsExist(event.Tx) {
+	//	err := fmt.Sprintf("ProcessContractEvent, event Tx is exist, reqId:%v, txId:%v", event.Tx.RequestHash().Bytes(), event.Tx.Hash().Bytes())
+	//	return errors.New(err)
 	//}
+	//p.checkTxReqIdIsExist(event.Tx.RequestHash())
+
 	if !p.checkTxValid(event.Tx) {
 		return errors.New("ProcessContractEvent event Tx is invalid")
 	}

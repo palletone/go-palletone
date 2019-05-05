@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"sync/atomic"
 	"time"
 )
@@ -43,11 +44,11 @@ type Contract struct {
 type ContractInf interface {
 	Close() error
 	Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error)
-	Deploy(chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
+	Deploy(rwM rwset.TxManager, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokePayload, error)
-	Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
+	Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
-	Stop(chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error)
+	Stop(rwM rwset.TxManager, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error)
 }
 
 //var (
@@ -121,7 +122,7 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 // The contract deployment timeout is specified according to the configuration of server.The default is 40 seconds.
 // The interface returns the contract deployment ID (there is a different return ID for each deployment)
 // and the deployment unit
-func (c *Contract) Deploy(chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+func (c *Contract) Deploy(rwM rwset.TxManager, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("===========================enter contract.go Deploy==============================")
 	defer log.Info("===========================exit contract.go Deploy==============================")
 	atomic.LoadInt32(&initFlag)
@@ -129,13 +130,13 @@ func (c *Contract) Deploy(chainID string, templateId []byte, txId string, args [
 		log.Error("initFlag == 0")
 		return nil, nil, errors.New("Contract not initialized")
 	}
-	return cc.Deploy(c.dag, chainID, templateId, txId, args, timeout)
+	return cc.Deploy(rwM, c.dag, chainID, templateId, txId, args, timeout)
 }
 
 // Invoke 合约invoke调用，根据指定合约调用参数执行已经部署的合约，函数返回合约调用单元。
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
-func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+func (c *Contract) Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	log.Info("===========================enter contract.go Invoke==============================")
 	defer log.Info("===========================exit contract.go Invoke==============================")
 	atomic.LoadInt32(&initFlag)
@@ -144,12 +145,12 @@ func (c *Contract) Invoke(chainID string, deployId []byte, txid string, args [][
 		return nil, errors.New("contract not initialized")
 	}
 	//depId := common.NewAddress(deployId[:20], common.ContractHash)
-	return cc.Invoke(c.dag, chainID, deployId, txid, args, timeout)
+	return cc.Invoke(rwM, c.dag, chainID, deployId, txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
 //Stop the specified contract. The image file can be deleted according to requirements.
-func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
+func (c *Contract) Stop(rwM rwset.TxManager, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
 	log.Info("===========================enter contract.go Stop==============================")
 	defer log.Info("===========================exit contract.go Stop==============================")
 	atomic.LoadInt32(&initFlag)
@@ -157,5 +158,5 @@ func (c *Contract) Stop(chainID string, deployId []byte, txid string, deleteImag
 		log.Error("initFlag == 0")
 		return nil, errors.New("contract not initialized")
 	}
-	return cc.Stop(c.dag,deployId, chainID, deployId, txid, deleteImage)
+	return cc.Stop(rwM, c.dag, deployId, chainID, deployId, txid, deleteImage)
 }

@@ -51,9 +51,9 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return _initDepositAddr(args, stub)
 	case "setBTCTokenAsset":
 		return _setBTCTokenAsset(args, stub)
-	case "getDepositAddr":
-		return _getDepositAddr(args, stub)
-	case "_getBTCToken":
+	case "setDepositAddr":
+		return _setDepositAddr(args, stub)
+	case "getBTCToken":
 		return _getBTCToken(args, stub)
 	case "withdrawBTC":
 		return _withdrawBTC(args, stub)
@@ -199,11 +199,7 @@ func _setBTCTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Respo
 	if len(args) < 1 {
 		return shim.Error("need 1 args (AssetStr)")
 	}
-	asset, _, err := dm.String2AssetId(args[0])
-	if err != nil {
-		return shim.Success([]byte("AssetStr invalid"))
-	}
-	err = stub.PutState(symbolsBTCAsset, asset.Bytes())
+	err := stub.PutState(symbolsBTCAsset, []byte(args[0]))
 	if err != nil {
 		return shim.Error("write symbolsBTCAsset failed: " + err.Error())
 	}
@@ -215,12 +211,13 @@ func getBTCTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
 	if len(result) == 0 {
 		return nil
 	}
-	asset := new(dm.Asset)
-	asset.SetBytes(result)
+	asset, _ := dm.StringToAsset(string(result))
+	log.Debugf("resultHex %s, asset: %s", common.Bytes2Hex(result), asset.String())
+
 	return asset
 }
 
-func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _setDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 1 {
 		return shim.Error("need 1 args (BTCPubkey)")
@@ -280,7 +277,7 @@ func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 		log.Debugf("PutState symbolsMultiAddr failed err: %s", err.Error())
 		return shim.Error("PutState symbolsMultiAddr failed")
 	}
-	err = stub.PutState(symbolsRedeem+createResult.P2ShAddress, []byte(createResult.P2ShAddress))
+	err = stub.PutState(symbolsRedeem+createResult.P2ShAddress, []byte(createResult.RedeemScript))
 	if err != nil {
 		log.Debugf("PutState symbolsRedeem failed err: %s", err.Error())
 		return shim.Error("PutState symbolsRedeem failed")
@@ -343,7 +340,7 @@ func BytesToInt64(buf []byte) int64 {
 
 //refer to the struct GetUTXOHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
 //add 'method' member.
-type BTCTransaction_GetUTXOHttp struct {
+type BTCQuery_GetUTXOHttp struct {
 	Method  string `json:"method"`
 	Address string `json:"address"`
 	Txid    string `json:"txid"`
@@ -362,7 +359,7 @@ type UTXO struct {
 
 func getAddrUTXO(btcAddr string, stub shim.ChaincodeStubInterface) (*GetUTXOHttpResult, error) {
 	//
-	getUTXO := BTCTransaction_GetUTXOHttp{Method: "GetUTXOHttp"}
+	getUTXO := BTCQuery_GetUTXOHttp{Method: "GetUTXOHttp"}
 	getUTXO.Address = btcAddr
 
 	//
@@ -370,7 +367,7 @@ func getAddrUTXO(btcAddr string, stub shim.ChaincodeStubInterface) (*GetUTXOHttp
 	if err != nil {
 		return nil, err
 	}
-	verifyResultByte, err := stub.OutChainTransaction("btc", reqBytes)
+	verifyResultByte, err := stub.OutChainQuery("btc", reqBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -440,6 +437,8 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if btcTokenAsset == nil {
 		return shim.Error("need call setBTCTokenAsset()")
 	}
+	log.Debugf("btcAmount: %d, asset: %s", btcAmount, btcTokenAsset.String())
+
 	invokeTokens := new(dm.InvokeTokens)
 	invokeTokens.Amount = btcAmount
 	invokeTokens.Asset = btcTokenAsset
