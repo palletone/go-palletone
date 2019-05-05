@@ -66,8 +66,7 @@ type IStateDb interface {
 	SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
-	//RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
-	//StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
+
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
 	GetAccountBalance(address common.Address) uint64
 	GetMinFee() (*modules.AmountAsset, error)

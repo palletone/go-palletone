@@ -371,7 +371,10 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators []common.Address,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
-	msb, _ := rlp.EncodeToBytes(mediators)
+	msb, err := rlp.EncodeToBytes(mediators)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	writeVote := modules.ContractWriteSet{
 		false,
@@ -397,28 +400,6 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators []common.Addre
 
 	return tx, fee, nil
 }
-
-//func (dag *Dag) GenSetDesiredMediatorCountTx(account common.Address, desiredMediatorCount uint8,
-//	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-//	// 1. 组装 message
-//	accountUpdateOp := &modules.AccountUpdateOperation{
-//		DesiredMediatorCount: &desiredMediatorCount,
-//	}
-//
-//	msg := &modules.Message{
-//		App:     modules.APP_ACCOUNT_UPDATE,
-//		Payload: accountUpdateOp,
-//	}
-//
-//	// 2. 组装 tx
-//	fee := dag.CurrentFeeSchedule().AccountUpdateFee
-//	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, nil, msg, txPool)
-//	if err != nil {
-//		return nil, 0, err
-//	}
-//
-//	return tx, fee, nil
-//}
 
 func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
