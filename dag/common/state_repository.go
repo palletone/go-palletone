@@ -40,7 +40,6 @@ type IStateRepository interface {
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
 
-	//RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
 	GetAccountBalance(address common.Address) uint64
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
@@ -68,19 +67,24 @@ type StateRepository struct {
 func NewStateRepository(statedb storage.IStateDb) *StateRepository {
 	return &StateRepository{statedb: statedb}
 }
+
 func NewStateRepository4Db(db ptndb.Database) *StateRepository {
 	statedb := storage.NewStateDb(db)
 	return &StateRepository{statedb: statedb}
 }
+
 func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return rep.statedb.GetContractState(id, field)
 }
+
 func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 	return rep.statedb.GetSysConfig(name)
 }
+
 func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesById(id)
 }
+
 func (rep *StateRepository) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesByPrefix(id, prefix)
 }
@@ -88,37 +92,43 @@ func (rep *StateRepository) GetContractStatesByPrefix(id []byte, prefix string) 
 func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
 }
+
 func (rep *StateRepository) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
 	return rep.statedb.GetContractTpl(templateID)
 }
+
 func (rep *StateRepository) RetrieveMediator(address common.Address) (*core.Mediator, error) {
 	return rep.statedb.RetrieveMediator(address)
 }
+
 func (rep *StateRepository) StoreMediator(med *core.Mediator) error {
 	return rep.statedb.StoreMediator(med)
 }
+
 func (rep *StateRepository) GetMediators() map[common.Address]bool {
 	return rep.statedb.GetMediators()
 }
+
 func (rep *StateRepository) GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error) {
 	return rep.statedb.GetApprovedMediatorList()
 }
+
 func (rep *StateRepository) IsApprovedMediator(address common.Address) bool {
 	return rep.statedb.IsApprovedMediator(address)
 }
+
 func (rep *StateRepository) IsMediator(address common.Address) bool {
 	return rep.statedb.IsMediator(address)
 }
 
-//func (rep *StateRepository) RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error) {
-//	return rep.statedb.RetrieveAccountInfo(address)
-//}
 func (rep *StateRepository) GetAccountBalance(address common.Address) uint64 {
 	return rep.statedb.GetAccountBalance(address)
 }
+
 func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return rep.statedb.LookupAccount()
 }
+
 func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return rep.statedb.RetrieveMediatorInfo(address)
 }
@@ -126,6 +136,7 @@ func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modul
 func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
 	return rep.statedb.GetContractDeploy(tempId[:])
 }
+
 func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
 	return rep.statedb.GetMinFee()
 }
@@ -141,15 +152,19 @@ func (rep *StateRepository) IsJury(address common.Address) bool {
 func (rep *StateRepository) UpdateSysParams(ver *modules.StateVersion) error {
 	return rep.statedb.UpdateSysParams(ver)
 }
+
 func (rep *StateRepository) GetPartitionChains() ([]*modules.PartitionChain, error) {
 	return rep.statedb.GetPartitionChains()
 }
+
 func (rep *StateRepository) GetMainChain() (*modules.MainChain, error) {
 	return rep.statedb.GetMainChain()
 }
+
 func (rep *StateRepository) GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetAllAccountStates(address)
 }
+
 func (rep *StateRepository) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error) {
 	return rep.statedb.GetAccountState(address, statekey)
 }

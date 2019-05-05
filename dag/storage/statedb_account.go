@@ -38,13 +38,15 @@ func accountKey(address common.Address) []byte {
 func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount int64) error {
 	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
 	balance := uint64(0)
+
 	data, err := statedb.db.Get(key)
 	if err != nil {
 		// 第一次更新时， 数据库没有该账户的相关数据
-		log.Debugf("Account balance for [%s] don't exist,create it first", address.String())
+		log.Debugf("Account balance for [%s] don't exist, create it first", address.String())
 	} else {
 		balance = BytesToUint64(data)
 	}
+
 	//log.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
 	balance = uint64(int64(balance) + addAmount)
 	return statedb.db.Put(key, Uint64ToBytes(balance))
@@ -79,10 +81,14 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		data, _, err := retrieveWithVersion(statedb.db, accKey)
 		if err == nil {
 			votedMediators := make([]common.Address, 0)
-			err = rlp.DecodeBytes(data, votedMediators)
+			err = rlp.DecodeBytes(data, &votedMediators)
 			if err == nil {
 				acc.VotedMediators = votedMediators
+			} else {
+				log.Debugf(err.Error())
 			}
+		} else {
+			log.Debugf(err.Error())
 		}
 
 		log.Debugf("Found account[%v] balance:%v,vote mediator:%v", add.String(), balance, acc.VotedMediators)
@@ -91,34 +97,46 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 
 	return result
 }
-func (statedb *StateDb) SaveAccountState(address common.Address, write *modules.ContractWriteSet, version *modules.StateVersion) error {
-	key := accountKey(address)
-	key = append(key, []byte(write.Key)...)
-	if write.IsDelete {
-		err := statedb.db.Delete(key)
-		return err
-	}
-	return storeBytesWithVersion(statedb.db, key, version, write.Value)
 
+func (statedb *StateDb) SaveAccountState(address common.Address, write *modules.ContractWriteSet,
+	version *modules.StateVersion) error {
+	key := append(accountKey(address), []byte(write.Key)...)
+	var err error
+
+	if write.IsDelete {
+		err = statedb.db.Delete(key)
+	} else {
+		err = storeBytesWithVersion(statedb.db, key, version, write.Value)
+	}
+
+	if err != nil {
+		log.Debugf(err.Error())
+	}
+	return err
 }
-func (statedb *StateDb) SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error {
+
+func (statedb *StateDb) SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet,
+	version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
-	keyPrefix := accountKey(address)
+
 	for _, write := range writeset {
-		key := []byte{}
-		key = append(key, keyPrefix...)
-		key = append(key, []byte(write.Key)...)
+		key := append(accountKey(address), []byte(write.Key)...)
 		if write.IsDelete {
 			log.Infof("Account[%s] try to delete account state by key:%s", address.String(), write.Key)
 			err := batch.Delete(key)
-			return err
-		}
-		log.Debugf("Account[%s] try to set account state key:%s,value:%s", address.String(), write.Key, string(write.Value))
-		err := storeBytesWithVersion(batch, key, version, write.Value)
-		if err != nil {
-			return err
+			if err != nil {
+				log.Debugf(err.Error())
+			}
+		} else {
+			log.Debugf("Account[%s] try to set account state key:%s,value:%s", address.String(),
+				write.Key, string(write.Value))
+			err := storeBytesWithVersion(batch, key, version, write.Value)
+			if err != nil {
+				log.Debugf(err.Error())
+			}
 		}
 	}
+
 	return batch.Write()
 }
 
@@ -140,12 +158,15 @@ func (statedb *StateDb) GetAllAccountStates(address common.Address) (map[string]
 	}
 	return result, err
 }
+
 func (statedb *StateDb) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error) {
-	key := accountKey(address)
-	key = append(key, []byte(statekey)...)
+	key := append(accountKey(address), []byte(statekey)...)
+
 	data, version, err := retrieveWithVersion(statedb.db, key)
 	if err != nil {
+		log.Debugf(err.Error())
 		return nil, err
 	}
+
 	return &modules.ContractStateValue{Value: data, Version: version}, nil
 }

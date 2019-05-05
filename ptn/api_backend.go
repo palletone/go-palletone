@@ -69,6 +69,7 @@ func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
 
 func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
 	text *string) (*mp.TxExecuteResult, error) {
+	log.Debug("================PtnApiBackend->TransferPtn====================")
 	return b.ptn.TransferPtn(from, to, amount, text)
 }
 
@@ -545,6 +546,11 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	return err
 }
 
+func (b *PtnApiBackend) ContractStartChaincodeContainer(deployId []byte, txid string) ( []byte, error) {
+	log.Debugf("======>ContractStartChaincodeContainer:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
+	return b.ptn.contract.StartChaincodeContainer("palletone", deployId, txid)
+}
+
 //
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true, addrs)
@@ -644,10 +650,10 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error)
 	info.headerhash = unit.UnitHeader.Hash().Bytes()
 	keybuf := new(bytes.Buffer)
 	rlp.Encode(keybuf, uint(index))
-	//key := keybuf.Bytes()
 	info.triekey = keybuf.Bytes()
+
 	tri, trieRootHash := core.GetTrieInfo(unit.Txs)
-	//pathdata := les.NodeList{}
+
 	if err := tri.Prove(info.triekey, 0, &info.triepath); err != nil {
 		log.Debug("Light PalletOne", "GetProofTxInfoByHash err", err, "key", info.triekey, "proof", info.triepath)
 		return [][]byte{[]byte(fmt.Sprintf("Get Trie err %v", err))}, err
@@ -657,11 +663,7 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error)
 		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()", trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
 		return [][]byte{[]byte("trie root hash is not equal")}, errors.New("hash not equal")
 	}
-	/*
-		headerhash []byte       `json:"header_hash"`
-		triekey    []byte       `json:"trie_key"`
-		triepath   les.NodeList `json:"trie_path"`
-	*/
+
 	data := [][]byte{}
 	data = append(data, info.headerhash)
 	data = append(data, info.triekey)

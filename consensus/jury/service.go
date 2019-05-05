@@ -801,7 +801,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
 		p.lockVrf[contractId] = []modules.ElectionInf{}                 //清空
-		if err := p.ElectionRequest(reqId, time.Second*5); err != nil { //todo ,Single-threaded timeout wait mode
+		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
 	}

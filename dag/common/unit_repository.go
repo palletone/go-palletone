@@ -777,11 +777,13 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 	if !ok {
 		return errors.New("not a valid AccountStateUpdatePayload")
 	}
+
 	version := &modules.StateVersion{TxIndex: txIdx, Height: index}
 	err := rep.statedb.SaveAccountStates(account, accountUpdateOp.WriteSet, version)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 

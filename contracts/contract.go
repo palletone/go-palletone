@@ -48,6 +48,7 @@ type ContractInf interface {
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokePayload, error)
 	Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
+	StartChaincodeContainer(chainID string, templateId []byte, txId string) (deployId []byte, e error)
 	Stop(rwM rwset.TxManager, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error)
 }
 
@@ -161,4 +162,15 @@ func (c *Contract) Stop(rwM rwset.TxManager, chainID string, deployId []byte, tx
 		return nil, errors.New("contract not initialized")
 	}
 	return cc.Stop(rwM, c.dag, deployId, chainID, deployId, txid, deleteImage)
+}
+
+func (c *Contract) StartChaincodeContainer(chainID string, templateId []byte, txId string) (deployId []byte, e error) {
+	log.Info("===========================enter contract.go StartChaincodeContainer==============================")
+	defer log.Info("===========================exit contract.go StartChaincodeContainer==============================")
+	atomic.LoadInt32(&initFlag)
+	if initFlag == 0 {
+		log.Error("initFlag == 0")
+		return nil, errors.New("Contract not initialized")
+	}
+	return cc.StartChaincodeContainer(c.dag, chainID, templateId, txId)
 }

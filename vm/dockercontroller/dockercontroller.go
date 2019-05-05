@@ -293,7 +293,10 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	//stop,force remove if necessary
 	log.Debugf("Cleanup container %s", containerID)
 	//停止容器
-	//vm.stopInternal(ctxt, client, containerID, 0, false, false)
+	//err = vm.stopInternal(ctxt, client, containerID, 0, false, false)
+	//if err != nil {
+	//	return err
+	//}
 	//创建容器
 	log.Debugf("Start container %s", containerID)
 	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
@@ -352,13 +355,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			//}
 		} else {
 			log.Errorf("start-could not recreate container <%s> with image id <%s>, because of %s", containerID, imageID, err)
-			// start container with HostConfig was deprecated since v1.10 and removed in v1.2
-			err = client.StartContainer(containerID, nil)
-			if err != nil {
-				log.Errorf("start-could not start container: %s", err)
-				return err
-			}
-			return nil
+			return err
 		}
 	}
 
