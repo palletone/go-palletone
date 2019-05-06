@@ -18,10 +18,8 @@ Scenario: InvalidTokenAmount
     [Template]    InvalidTransferToken
     ${tokenId}    -2.1    1    description    1    ${6000000}    -32000
     ...    Select utxo err    ${listAccounts[0]}    ${listAccounts[1]}
-    ${tokenId}    100000000    1    description    1    ${6000000}    -32000
+    ${tokenId}    10000000000    1    description    1    ${6000000}    -32000
     ...    Select utxo err    ${listAccounts[0]}    ${listAccounts[1]}
-    ${tokenId}    -0.00000001    1    description    1    ${6000000}    -32000
-    ...    INVALID_PAYMMENT_INPUT    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    %    1    description    1    ${6000000}    -32602
     ...    invalid argument 3: Error decoding string    ${listAccounts[0]}    ${listAccounts[1]}
     ${tokenId}    j    1    description    1    ${6000000}    -32602
