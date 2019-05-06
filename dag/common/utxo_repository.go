@@ -71,7 +71,7 @@ type IUtxoRepository interface {
 	//WalletBalance(addr common.Address, asset modules.Asset) uint64
 	ComputeAwards(txs []*modules.TxPoolTransaction, dagdb storage.IDagDb) (*modules.Addition, error)
 	ComputeTxAward(tx *modules.Transaction, dagdb storage.IDagDb) (uint64, error)
-
+	ClearUtxo() error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 }
@@ -93,6 +93,9 @@ func (repository *UtxoRepository) SaveUtxoView(view map[modules.OutPoint]*module
 }
 func (repository *UtxoRepository) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
 	return repository.utxodb.SaveUtxoEntity(outpoint, utxo)
+}
+func (repository *UtxoRepository) ClearUtxo() error {
+	return repository.utxodb.ClearUtxo()
 }
 
 /**
