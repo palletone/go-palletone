@@ -19,11 +19,11 @@
 package jury
 
 import (
+	"bytes"
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
-	"fmt"
-	"bytes"
 
 	"github.com/dedis/kyber"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -518,7 +518,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		}
 		//检查指定节点模式下，是否为jjh请求地址
 		if e.Etype == 1 {
-			jjhAd, _, err := p.dag.GetConfig("FoundationAddress")
+			jjhAd, _, err := p.dag.GetConfig(modules.FoundationAddress)
 			if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
 				log.Debug("isValidateElection", "e.Etype == 1, ok, reqId", reqId)
 				continue
@@ -794,7 +794,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
