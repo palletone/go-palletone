@@ -210,9 +210,9 @@ func (p *peer) SendCode(reqID, bv uint64, data [][]byte) error {
 
 // SendReceiptsRLP sends a batch of transaction receipts, corresponding to the
 // ones requested from an already RLP encoded format.
-func (p *peer) SendReceiptsRLP(reqID, bv uint64, receipts []rlp.RawValue) error {
-	return sendResponse(p.rw, ReceiptsMsg, reqID, bv, receipts)
-}
+//func (p *peer) SendReceiptsRLP(reqID, bv uint64, receipts []rlp.RawValue) error {
+//	return sendResponse(p.rw, ReceiptsMsg, reqID, bv, receipts)
+//}
 
 // SendProofs sends a batch of legacy LES/1 merkle proofs, corresponding to the ones requested.
 func (p *peer) SendRawProofs(reqID, bv uint64, proofs [][][]byte) error {
@@ -283,10 +283,10 @@ func (p *peer) RequestBodies(reqID, cost uint64, hashes []common.Hash) error {
 //}
 
 // RequestReceipts fetches a batch of transaction receipts from a remote node.
-func (p *peer) RequestReceipts(reqID, cost uint64, hashes []common.Hash) error {
-	log.Debug("Fetching batch of receipts", "count", len(hashes))
-	return sendRequest(p.rw, GetReceiptsMsg, reqID, cost, hashes)
-}
+//func (p *peer) RequestReceipts(reqID, cost uint64, hashes []common.Hash) error {
+//	log.Debug("Fetching batch of receipts", "count", len(hashes))
+//	return sendRequest(p.rw, GetReceiptsMsg, reqID, cost, hashes)
+//}
 
 // RequestProofs fetches a batch of merkle proofs from a remote node.
 func (p *peer) RequestProofs(reqID, cost uint64, reqs []ProofReq) error {

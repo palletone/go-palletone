@@ -643,8 +643,8 @@ func (s *PublicBlockChainAPI) ProofTransactionByRlptx(ctx context.Context, rlptx
 	return s.b.ProofTransactionByRlptx(rlptx)
 }
 
-func (s *PublicBlockChainAPI) ValidationPath(ctx context.Context, tx string) ([]byte, error) {
-	return s.b.ValidationPath(tx)
+func (s *PublicBlockChainAPI) SyncUTXOByAddr(ctx context.Context, addr string) string {
+	return s.b.SyncUTXOByAddr(addr)
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM

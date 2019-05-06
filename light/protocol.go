@@ -59,8 +59,8 @@ const (
 	BlockHeadersMsg    = 0x03
 	GetBlockBodiesMsg  = 0x04
 	BlockBodiesMsg     = 0x05
-	GetReceiptsMsg     = 0x06
-	ReceiptsMsg        = 0x07
+	GetUTXOsMsg     = 0x06
+	UTXOsMsg        = 0x07
 	GetProofsMsg       = 0x08
 	ProofsMsg          = 0x09
 	GetCodeMsg         = 0x0a

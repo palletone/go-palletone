@@ -434,6 +434,6 @@ func (b *LesApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 	return b.ptn.ProtocolManager().ReqProofByRlptx(rlptx), nil
 }
 
-func (b *LesApiBackend) ValidationPath(tx string) ([]byte, error) {
-	return nil, nil
+func (b *LesApiBackend) SyncUTXOByAddr(addr string) string{
+	return b.ptn.ProtocolManager().SyncUTXOByAddr(addr)
 }

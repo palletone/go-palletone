@@ -689,6 +689,6 @@ func (s *PtnApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 	return "", nil
 }
 
-func (b *PtnApiBackend) ValidationPath(tx string) ([]byte, error) {
-	return nil, nil
+func (b *PtnApiBackend) SyncUTXOByAddr(addr string) string {
+	return "Error"
 }

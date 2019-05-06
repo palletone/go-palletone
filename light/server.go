@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
 	"sync"
+	"github.com/palletone/go-palletone/common"
 )
 
 type LesServer struct {
@@ -391,4 +392,14 @@ func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
 		return "timeout"
 	}
 	return "errors"
+}
+
+func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return err.Error()
+	}
+	address = address
+	//random select peer to download GetAddrUtxos(addr)
+	return "OK"
 }

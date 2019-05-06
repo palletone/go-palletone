@@ -12,6 +12,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -312,6 +313,16 @@ func (pm *ProtocolManager) SendTxMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+
+func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
+	if pm.server==nil{
+		return errors.New("this node can not service download utxo server")
+	}
+	return nil
+}
+func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
+	return nil
+}
 /*
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	log.Trace("Received block bodies request")
