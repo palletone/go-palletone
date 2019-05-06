@@ -526,8 +526,8 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 				log.Debug("isValidateElection", "e.Etype == 1, but not jjh request addr, reqId", reqId)
 				log.Debug("isValidateElection", "reqAddr", reqAddr[:], "jjh", jjhAd)
 
-				continue //todo test
-				//return false
+				//continue //todo test
+				return false
 			}
 		}
 		//检查地址与pubKey是否匹配:获取当前pubKey下的Addr，将地址hash后与输入比较
