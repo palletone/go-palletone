@@ -127,9 +127,9 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 
 //install but not into db
 func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
-	log.Infof("enter ccapi.go Install")
-	defer log.Infof("exit ccapi.go Install")
-	log.Infof("chainID[%s]-name[%s]-path[%s]-version[%s]", chainID, ccName, ccPath, ccVersion)
+	log.Info("Install enter", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion)
+	defer log.Info("Install exit", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion)
+
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
@@ -180,8 +180,8 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 }
 
 func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
-	log.Info("enter Deploy", "chainID", chainID, "templateId", hex.EncodeToString(templateId), "txId", txId)
-	defer log.Info("exit Deploy", "txId", txId)
+	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
+	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
 
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
@@ -292,9 +292,8 @@ func saveChaincode(dag dag.IDag, contractId common.Address, chaincode *cclist.CC
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
-	log.Infof("enter ccapi.go Invoke")
-	defer log.Infof("exit ccapi.go Invoke")
-	log.Infof("chainID[%s]-deployId[%s]-txid[%s]", chainID, hex.EncodeToString(deployId), txid)
+	log.Info("Invoke enter", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
+	defer log.Info("Invoke exit", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
@@ -313,16 +312,6 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 			return nil, err
 		}
 	}
-	//cc, err := cclist.GetChaincode(chainID, deployId)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if cc.Name == "" {
-	//	errstr := fmt.Sprintf("chainCode[%v] not deplay!!", deployId)
-	//	return nil, errors.New(errstr)
-	//}
-
-	log.Infof("Invoke [%s][%s]", chainID, address.String())
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
 
@@ -353,28 +342,13 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	requstId := common.HexToHash(txid)
 	unit.RequestId = requstId
 	log.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
-	//type ContractInvokeResult struct {
-	//	ContractId   []byte             `json:"contract_id"` // contract id
-	//	RequestId    common.Hash        `json:"request_id"`
-	//	FunctionName string             `json:"function_name"`
-	//	Args         [][]byte           `json:"args"`         // contract arguments list
-	//	ReadSet      []ContractReadSet  `json:"read_set"`     // the set data of read, and value could be any type
-	//	WriteSet     []ContractWriteSet `json:"write_set"`    // the set data of write, and value could be any type
-	//	Payload      []byte             `json:"payload"`      // the contract execution result
-	//	TokenPayOut  []*TokenPayOut     `json:"token_payout"` //从合约地址付出Token
-	//	TokenSupply  []*TokenSupply     `json:"token_supply"` //增发Token请求产生的结果
-	//	TokenDefine  *TokenDefine       `json:"token_define"` //定义新Token
-	//}
-	//TODO
-	//getRT(name)
-	fmt.Println("Invoke result:==========================================================", unit)
 	return unit, nil
 }
 
 func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
-	log.Infof("enter ccapi.go Stop")
-	defer log.Infof("exit ccapi.go Stop")
-	log.Infof("deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
+	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
+	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
+
 	setChainId := "palletone"
 	if chainID != "" {
 		setChainId = chainID
@@ -392,7 +366,6 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}
-	//rwM.CloseTxSimulator(setChainId, txid)
 	return stopResult, err
 }
 

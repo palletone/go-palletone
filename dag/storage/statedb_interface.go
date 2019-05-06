@@ -66,8 +66,7 @@ type IStateDb interface {
 	SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
-	//RetrieveAccountInfo(address common.Address) (*modules.AccountInfo, error)
-	//StoreAccountInfo(address common.Address, info *modules.AccountInfo) error
+
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
 	GetAccountBalance(address common.Address) uint64
 	GetMinFee() (*modules.AmountAsset, error)
@@ -91,7 +90,6 @@ type IStateDb interface {
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
-	//UpdateAccountInfo(account common.Address, accountUpdateOp *modules.AccountUpdateOperation) error
 
 	GetJuryCandidateList() ([]common.Address, error)
 	IsInJuryCandidateList(address common.Address) bool
