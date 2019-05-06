@@ -8,10 +8,10 @@ import (
 )
 
 type TxPoolTxJson struct {
-	TxHash     string       `json:"txhash"`
-	UnitHash   string       `json:"unithash"`
+	TxHash     string       `json:"tx_hash"`
+	UnitHash   string       `json:"unit_hash"`
 	Payment    *PaymentJson `json:"payment"`
-	TxMessages string       `json:"txmessages"`
+	TxMessages string       `json:"tx_messages"`
 
 	Froms        []*OutPointJson `json:"froms"`
 	CreationDate time.Time       `json:"creation_date"`
@@ -22,11 +22,38 @@ type TxPoolTxJson struct {
 	Index        int             `json:"index"` // index 是该tx在优先级堆中的位置
 	Extra        []byte          `json:"extra"`
 }
+type TxPoolPendingJson struct {
+	TxHash       string    `json:"tx_hash"`
+	Fee          uint64    `json:"fee"`
+	Asset        string    `json:"asset"`
+	CreationDate time.Time `json:"creation_date"`
+	Amount       uint64    `json:"amount"`
+}
 type TxSerachEntryJson struct {
 	UnitHash  string `json:"unit_hash"`
 	AssetId   string `json:"asset_id"`
 	UnitIndex uint64 `json:"unit_index"`
 	TxIndex   uint64 `json:"tx_index"`
+}
+
+func ConvertTxPoolTx2PendingJson(tx *modules.TxPoolTransaction) *TxPoolPendingJson {
+	if tx == nil {
+		return nil
+	}
+	if tx.Tx == nil {
+		return nil
+	}
+	pay := new(modules.PaymentPayload)
+	var amount uint64
+	if len(tx.Tx.Messages()) > 0 {
+		pay = tx.Tx.Messages()[0].Payload.(*modules.PaymentPayload)
+
+		for _, out := range pay.Outputs {
+			amount += out.Value
+		}
+	}
+	txfee := tx.TxFee.Amount
+	return &TxPoolPendingJson{TxHash: tx.Tx.Hash().String(), CreationDate: tx.CreationDate, Fee: txfee, Asset: tx.TxFee.Asset.String(), Amount: amount}
 }
 
 func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPoolTxJson {

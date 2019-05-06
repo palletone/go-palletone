@@ -182,9 +182,19 @@ func (s *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
 		"orphans": hexutil.Uint(orphans),
 	}
 }
-func (s *PublicTxPoolAPI) Pending() map[common.Hash]*modules.Transaction {
-	pending, _ := s.b.TxPoolContent()
-	return pending
+func (s *PublicTxPoolAPI) Queue() map[common.Hash]*modules.Transaction {
+	_, queue := s.b.TxPoolContent()
+	return queue
+}
+
+func (s *PublicTxPoolAPI) Pending() ([]*ptnjson.TxPoolPendingJson, error) {
+	queue, err := s.b.Queued()
+	pending := make([]*ptnjson.TxPoolPendingJson, 0)
+	for _, tx := range queue {
+		item := ptnjson.ConvertTxPoolTx2PendingJson(tx)
+		pending = append(pending, item)
+	}
+	return pending, err
 }
 
 /*

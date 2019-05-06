@@ -179,6 +179,9 @@ func (b *PtnApiBackend) Stats() (int, int, int) {
 func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
 	return b.ptn.TxPool().Content()
 }
+func (b *PtnApiBackend) Queued() ([]*modules.TxPoolTransaction, error) {
+	return b.ptn.TxPool().Queued()
+}
 
 func (b *PtnApiBackend) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return b.ptn.TxPool().SubscribeTxPreEvent(ch)
@@ -547,7 +550,7 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	return err
 }
 
-func (b *PtnApiBackend) ContractStartChaincodeContainer(deployId []byte, txid string) ( []byte, error) {
+func (b *PtnApiBackend) ContractStartChaincodeContainer(deployId []byte, txid string) ([]byte, error) {
 	log.Debugf("======>ContractStartChaincodeContainer:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	return b.ptn.contract.StartChaincodeContainer("palletone", deployId, txid)
 }

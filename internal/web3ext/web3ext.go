@@ -235,6 +235,10 @@ web3._extend({
 			name: 'pending',
 			getter: 'txpool_pending'
 		}),
+		new web3._extend.Property({
+			name: 'queue',
+			getter: 'txpool_queue'
+		}),
 	]
 });
 `
