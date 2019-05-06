@@ -155,10 +155,25 @@ func (m *MockITxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, e
 	return ret0, ret1
 }
 
-// Pending indicates an expected call of Pending
+// Queued indicates an expected call of Queued
 func (mr *MockITxPoolMockRecorder) Pending() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Pending", reflect.TypeOf((*MockITxPool)(nil).Pending))
+}
+
+// Queued mocks base method
+func (m *MockITxPool) Queued() ([]*modules.TxPoolTransaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Queued")
+	ret0, _ := ret[0].([]*modules.TxPoolTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Queued indicates an expected call of Queued
+func (mr *MockITxPoolMockRecorder) Queued() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Queued", reflect.TypeOf((*MockITxPool)(nil).Queued))
 }
 
 // SetPendingTxs mocks base method

@@ -228,6 +228,12 @@ func (p *testTxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, er
 	//}
 	return batches, nil
 }
+func (p *testTxPool) Queued() ([]*modules.TxPoolTransaction, error) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	batches := make([]*modules.TxPoolTransaction, 0)
+	return batches, nil
+}
 
 func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return p.txFeed.Subscribe(ch)

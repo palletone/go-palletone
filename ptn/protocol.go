@@ -150,6 +150,7 @@ type txPool interface {
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
+	Queued() ([]*modules.TxPoolTransaction, error)
 	SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error
 	ResetPendingTxs(txs []*modules.Transaction) error
 	// SubscribeTxPreEvent should return an event subscription of
