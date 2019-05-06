@@ -5,7 +5,7 @@
 listAccounts=`./node1/gptn --exec 'personal.listAccounts' attach node1/palletone/gptn.ipc`
 
 key=`echo $listAccounts`
-#echo $key
+echo $key
 
 list=`echo $key | jq ''`;
 
@@ -20,7 +20,7 @@ do
 	account0=`echo $list|jq ".[1]"`
 	another=`echo $list|jq ".[$index]"`
 	./transfertoken.sh $account0 $another
-	sleep 3 
+	sleep 8 
 	fi
 	#echo $list | jq ".[$index]";
 done
@@ -51,14 +51,22 @@ mdi_02=`echo ${mediatorAddr_02//\"/}`
 #mdiatorAddr_03=`echo $list | jq ".[4]"`
 #mdi_03=`echo ${mediatorAddr_03//\"/}`
 
-juryAddr_01=`echo $list | jq ".[5]"`
+juryAddr_01=`echo $list | jq ".[4]"`
 jury_01=`echo ${juryAddr_01//\"/}`
 
-developerAddr_01=`echo $list | jq ".[6]"`
+developerAddr_01=`echo $list | jq ".[5]"`
 developer_01=`echo ${developerAddr_01//\"/}`
 
-anotherAddr=`echo $list | jq ".[4]"`
+anotherAddr=`echo $list | jq ".[6]"`
 another=`echo ${anotherAddr//\"/}`
+
+echo $mdi_01
+echo $found
+echo "000"
+echo $mdi_02
+echo $jury_01
+echo $developer_01
+echo $another
 
 #robot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found --test Business_01 ./deposit_test_cases/DepositContractTest.robot
 #robot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found -v anotherAddr:$another --test Business_02 ./deposit_test_cases/DepositContractTest.robot
@@ -66,6 +74,6 @@ another=`echo ${anotherAddr//\"/}`
 pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v anotherAddr:$another ./deposit_test_cases/DepositContractTest.robot
 
 
-./test_case_teardown.sh
+#./test_case_teardown.sh
 
-killall gptn
+#killall gptn
