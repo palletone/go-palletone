@@ -95,6 +95,9 @@ func (b *LesApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*m
 func (b *LesApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return nil
 }
+func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
+	return nil, nil
+}
 
 //func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
 //	state.SetBalance(msg.From(), math.MaxBig256)
@@ -434,6 +437,6 @@ func (b *LesApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 	return b.ptn.ProtocolManager().ReqProofByRlptx(rlptx), nil
 }
 
-func (b *LesApiBackend) SyncUTXOByAddr(addr string) string{
+func (b *LesApiBackend) SyncUTXOByAddr(addr string) string {
 	return b.ptn.ProtocolManager().SyncUTXOByAddr(addr)
 }

@@ -18,16 +18,23 @@
  *
  */
 
-package dag
+package ptnjson
 
 import (
-	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (dag *Dag) ClearUtxo(addr common.Address) error {
-	return dag.stableUtxoRep.ClearUtxo()
+type ConfigJson struct {
+	Key      string `json:"key"`
+	Value    string `json:"value"`
+	ValueHex string `json:"value_hex"`
 }
-func (dag *Dag) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
-	return dag.stableUtxoRep.SaveUtxoView(view)
+
+func ConvertAllSysConfigToJson(configs map[string]*modules.ContractStateValue) []*ConfigJson {
+	result := []*ConfigJson{}
+	for k, v := range configs {
+		result = append(result, &ConfigJson{Key: k, Value: string(v.Value), ValueHex: hexutil.Encode(v.Value)})
+	}
+	return result
 }

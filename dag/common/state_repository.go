@@ -31,6 +31,7 @@ import (
 type IStateRepository interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	GetAllConfig() (map[string]*modules.ContractStateValue, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
@@ -80,7 +81,9 @@ func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *
 func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 	return rep.statedb.GetSysConfig(name)
 }
-
+func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
+	return rep.statedb.GetAllSysConfig()
+}
 func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesById(id)
 }
