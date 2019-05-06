@@ -74,10 +74,10 @@ type Config struct {
 	// EncoderConfig sets options for the chosen encoder. See
 	// zapcore.EncoderConfig for details.
 	EncoderConfig zapcore.EncoderConfig `json:"encoderConfig" yaml:"encoderConfig"`
-	// OutputPaths is a list of paths to write logging output to. See Open for
-	// details.
+	// OutputPaths is a list of URLs or file paths to write logging output to.
+	// See Open for details.
 	OutputPaths []string `json:"outputPaths" yaml:"outputPaths"`
-	// ErrorOutputPaths is a list of paths to write internal logger errors to.
+	// ErrorOutputPaths is a list of URLs to write internal logger errors to.
 	// The default is standard error.
 	//
 	// Note that this setting only affects internal errors; for sample code that
@@ -86,9 +86,6 @@ type Config struct {
 	ErrorOutputPaths []string `json:"errorOutputPaths" yaml:"errorOutputPaths"`
 	// InitialFields is a collection of fields to add to the root logger.
 	InitialFields map[string]interface{} `json:"initialFields" yaml:"initialFields"`
-
-	//open modules log
-	OpenModule []string
 }
 
 // NewProductionEncoderConfig returns an opinionated EncoderConfig for

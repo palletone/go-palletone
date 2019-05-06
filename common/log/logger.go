@@ -114,17 +114,17 @@ func initLogger() {
 		log.Fatal("init logger error: ", err)
 	}
 	// add openModule
-	if strings.Contains(LogConfig.OpenModule[0], ",") {
-		arr := strings.Split(LogConfig.OpenModule[0], ",")
-		LogConfig.OpenModule[0] = ""
-		LogConfig.OpenModule = append(LogConfig.OpenModule, arr...)
-		LogConfig.OpenModule = append(LogConfig.OpenModule, defaultLogModule...)
-	} else {
-		if !(len(LogConfig.OpenModule) == 1 && LogConfig.OpenModule[0] == "all") {
-			LogConfig.OpenModule = append(LogConfig.OpenModule, defaultLogModule...)
-		}
-	}
-	l.SetOpenModule(LogConfig.OpenModule)
+	//if strings.Contains(LogConfig.OpenModule[0], ",") {
+	//	arr := strings.Split(LogConfig.OpenModule[0], ",")
+	//	LogConfig.OpenModule[0] = ""
+	//	LogConfig.OpenModule = append(LogConfig.OpenModule, arr...)
+	//	LogConfig.OpenModule = append(LogConfig.OpenModule, defaultLogModule...)
+	//} else {
+	//	if !(len(LogConfig.OpenModule) == 1 && LogConfig.OpenModule[0] == "all") {
+	//		LogConfig.OpenModule = append(LogConfig.OpenModule, defaultLogModule...)
+	//	}
+	//}
+	//l.SetOpenModule(LogConfig.OpenModule)
 	l = l.WithOptions(zap.AddCallerSkip(1))
 	if LogConfig.RotationMaxSize > 0 {
 		includeStdout, filePath := getOutputPath(LogConfig.OutputPaths)
