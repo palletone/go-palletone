@@ -226,12 +226,6 @@ func (p *peer) SendProofs(reqID, bv uint64, proof proofsRespData) error {
 	//return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
 }
 
-//func (p *peer) SendProofs(reqID, bv uint64, proofs []proofsRespData) error {
-//	log.Debug("Light PalleOne SendProofs", "len", len(proofs))
-//	return p2p.Send(p.rw, ProofsMsg, proofs)
-//	//return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
-//}
-
 // SendProofsV2 sends a batch of merkle proofs, corresponding to the ones requested.
 func (p *peer) SendProofsV2(reqID, bv uint64, proofs les.NodeList) error {
 	return sendResponse(p.rw, ProofsV2Msg, reqID, bv, proofs)
@@ -273,6 +267,11 @@ func (p *peer) RequestHeadersByNumber(reqID, cost uint64, origin modules.ChainIn
 func (p *peer) RequestBodies(reqID, cost uint64, hashes []common.Hash) error {
 	log.Debug("Fetching batch of block bodies", "count", len(hashes))
 	return sendRequest(p.rw, GetBlockBodiesMsg, reqID, cost, hashes)
+}
+
+func (p *peer) RequestUTXOs(reqID, cost uint64, addr string) error {
+	log.Debug("Fetching batch of utxos", "addr", addr)
+	return p2p.Send(p.rw, GetUTXOsMsg, addr)
 }
 
 // RequestCode fetches a batch of arbitrary data from a node's known state

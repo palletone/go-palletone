@@ -261,3 +261,9 @@ func (p *proofsRespData) decode(data [][]byte) error {
 	p.index = string(data[5])
 	return nil
 }
+
+
+type utxosRespData struct {
+	addr  string
+	index string
+}
