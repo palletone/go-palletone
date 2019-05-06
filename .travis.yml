@@ -19,10 +19,13 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     #- sudo find / -name "decimal.py"
-    - ./deposit_test.sh 4
-    - python -m robot.run ../testcase/createTrans
-    - python -m robot.run ../testcase/ccinvoke
+    #- ./deposit_test.sh 4
+    #- python -m robot.run ../testcase/createTrans
+    #- python -m robot.run ../testcase/ccinvoke
     #- python -m robot.run ../testcase/ccinvoke/transferToken
+    - python -m robot.run ../DigitalIdentityCert/issueCerts
+    - python -m robot.run ../DigitalIdentityCert/useCerts
+    - python -m robot.run ../DigitalIdentityCert/revokeCert
   
     
 after_success:
