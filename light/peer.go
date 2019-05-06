@@ -208,11 +208,11 @@ func (p *peer) SendCode(reqID, bv uint64, data [][]byte) error {
 	return sendResponse(p.rw, CodeMsg, reqID, bv, data)
 }
 
-// SendReceiptsRLP sends a batch of transaction receipts, corresponding to the
-// ones requested from an already RLP encoded format.
-//func (p *peer) SendReceiptsRLP(reqID, bv uint64, receipts []rlp.RawValue) error {
-//	return sendResponse(p.rw, ReceiptsMsg, reqID, bv, receipts)
-//}
+func (p *peer) SendUTXOs(reqID, bv uint64, utxos utxosRespData) error {
+	//log.Debug("Light PalleOne SendProofs", "len", len(proofs))
+	return p2p.Send(p.rw, UTXOsMsg, utxos)
+	//return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
+}
 
 // SendProofs sends a batch of legacy LES/1 merkle proofs, corresponding to the ones requested.
 func (p *peer) SendRawProofs(reqID, bv uint64, proofs [][][]byte) error {
