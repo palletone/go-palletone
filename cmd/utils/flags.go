@@ -1024,9 +1024,9 @@ func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConso
 	if ctx.GlobalIsSet(LogEncodingFlag.Name) {
 		cfg.Encoding = ctx.GlobalString(LogEncodingFlag.Name)
 	}
-	if temp := ctx.GlobalString(LogOpenModuleFlag.Name); temp != "" {
-		cfg.OpenModule = strings.Split(temp, ",")
-	}
+	//if temp := ctx.GlobalString(LogOpenModuleFlag.Name); temp != "" {
+	//	cfg.OpenModule = strings.Split(temp, ",")
+	//}
 
 	// 3. 重新计算log.ErrPath的路径
 	if temp := ctx.GlobalString(LogErrPathFlag.Name); temp != "" {

@@ -21,12 +21,10 @@
 package zapcore
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
 
 	"go.uber.org/zap/internal/bufferpool"
 	"go.uber.org/zap/internal/exit"
@@ -96,62 +94,6 @@ func (ec EntryCaller) FullPath() string {
 	caller := buf.String()
 	buf.Free()
 	return caller
-}
-
-//
-func (ec EntryCaller) TrimmedRootPath() string {
-	if !ec.Defined {
-		return "undefined"
-	}
-	buf := bufferpool.Get()
-	buf.AppendString(ec.File)
-	buf.AppendByte(':')
-	buf.AppendInt(int64(ec.Line))
-	caller := buf.String()
-	buf.Free()
-
-	substr := "go-palletone"
-	count := strings.Count(caller, substr)
-	if count <1 {
-		return ""
-	}
-	index := strings.LastIndex(caller, substr)
-	last := Substr(caller, index+len(substr), len(caller)-index-len(substr))
-	arr := strings.Split(last, "/")
-	if len(arr) < 3 {
-		return ""
-	}
-	return arr[1]
-}
-
-func Substr(str string, start, length int) string {
-	rs := []rune(str)
-	rl := len(rs)
-	end := 0
-
-	if start < 0 {
-		start = rl - 1 + start
-	}
-	end = start + length
-
-	if start > end {
-		start, end = end, start
-	}
-
-	if start < 0 {
-		start = 0
-	}
-	if start > rl {
-		start = rl
-	}
-	if end < 0 {
-		end = 0
-	}
-	if end > rl {
-		end = rl
-	}
-
-	return string(rs[start:end])
 }
 
 // TrimmedPath returns a package/file:line description of the caller,
@@ -247,11 +189,6 @@ func (ce *CheckedEntry) reset() {
 	ce.cores = ce.cores[:0]
 }
 
-type jsonFiled struct {
-	Key   string      `json:"key"`
-	Value interface{} `json:"value"`
-}
-
 // Write writes the entry to the stored Cores, returns any errors, and returns
 // the CheckedEntry reference to a pool for immediate re-use. Finally, it
 // executes any required CheckWriteAction.
@@ -282,15 +219,6 @@ func (ce *CheckedEntry) Write(fields ...Field) {
 			fmt.Fprintf(ce.ErrorOutput, "%v write error: %v\n", time.Now(), err)
 			ce.ErrorOutput.Sync()
 		}
-		var fs string
-		data, _ := json.Marshal(fields)
-
-		fs = *(*string)(unsafe.Pointer(&data))
-		if ce.Entry.Level >= ErrorLevel {
-			fmt.Fprintf(ce.ErrorOutput, "%v  %v  %v  %v  %v\n \n", ce.Time,ce.Level.String(), ce.Stack , ce.Message, fs)
-			ce.ErrorOutput.Sync()
-		}
-
 	}
 
 	should, msg := ce.should, ce.Message

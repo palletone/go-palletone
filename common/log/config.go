@@ -21,21 +21,21 @@ package log
 var DefaultConfig = Config{
 	OutputPaths:      []string{LogStdout, "./log/all.log"},
 	ErrorOutputPaths: []string{LogStderr, "./log/error.log"},
-	OpenModule:       []string{"all"},
-	LoggerLvl:        "DEBUG",
-	Encoding:         "console",
-	Development:      true,
-	RotationMaxSize:  500,
-	RotationMaxAge:   28,
+	//OpenModule:       []string{"all"},
+	LoggerLvl:       "DEBUG",
+	Encoding:        "console",
+	Development:     true,
+	RotationMaxSize: 500,
+	RotationMaxAge:  28,
 }
 
 type Config struct {
 	OutputPaths      []string `json:"outputPaths" yaml:"outputPaths"`           // output file path
 	ErrorOutputPaths []string `json:"errorOutputPaths" yaml:"errorOutputPaths"` // error file path
-	OpenModule       []string // open module
-	LoggerLvl        string   `json:"level" yaml:"level"`       // log level
-	Encoding         string   `json:"encoding" yaml:"encoding"` // encoding
-	Development      bool     `json:"development" yaml:"development"`
-	RotationMaxSize  int      `json:"rotation_max_size" yaml:"rotation_max_size"`
-	RotationMaxAge   int      `json:"rotation_max_age" yaml:"rotation_max_age"`
+	//OpenModule       []string // open module
+	LoggerLvl       string `json:"level" yaml:"level"`       // log level
+	Encoding        string `json:"encoding" yaml:"encoding"` // encoding
+	Development     bool   `json:"development" yaml:"development"`
+	RotationMaxSize int    `json:"rotation_max_size" yaml:"rotation_max_size"`
+	RotationMaxAge  int    `json:"rotation_max_age" yaml:"rotation_max_age"`
 }

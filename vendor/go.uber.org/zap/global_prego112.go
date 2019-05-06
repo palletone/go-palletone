@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Uber Technologies, Inc.
+// Copyright (c) 2019 Uber Technologies, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,39 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package zapcore
+// See #682 for more information.
+// +build !go1.12
 
-import (
-	"testing"
+package zap
 
-	"go.uber.org/zap/internal/ztest"
-)
-
-func BenchmarkMultiWriteSyncer(b *testing.B) {
-	b.Run("2", func(b *testing.B) {
-		w := NewMultiWriteSyncer(
-			&ztest.Discarder{},
-			&ztest.Discarder{},
-		)
-		b.ResetTimer()
-		b.RunParallel(func(pb *testing.PB) {
-			for pb.Next() {
-				w.Write([]byte("foobarbazbabble"))
-			}
-		})
-	})
-	b.Run("4", func(b *testing.B) {
-		w := NewMultiWriteSyncer(
-			&ztest.Discarder{},
-			&ztest.Discarder{},
-			&ztest.Discarder{},
-			&ztest.Discarder{},
-		)
-		b.ResetTimer()
-		b.RunParallel(func(pb *testing.PB) {
-			for pb.Next() {
-				w.Write([]byte("foobarbazbabble"))
-			}
-		})
-	})
-}
+const _stdLogDefaultDepth = 2
