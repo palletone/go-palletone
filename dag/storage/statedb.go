@@ -144,7 +144,7 @@ func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 //xiaozhi
 func (statedb *StateDb) GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
-	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), "MediatorList")
+	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
 		return nil, fmt.Errorf("mediator candidate list is nil.")
 	}
@@ -171,7 +171,7 @@ func (statedb *StateDb) IsApprovedMediator(address common.Address) bool {
 
 func (statedb *StateDb) GetJuryCandidateList() ([]common.Address, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
-	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), "JuryList")
+	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.JuryList)
 	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
@@ -228,7 +228,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 	if info == nil {
 		return nil
 	}
-	foundAddr, _, err := statedb.GetSysConfig("FoundationAddress")
+	foundAddr, _, err := statedb.GetSysConfig(modules.FoundationAddress)
 	if err != nil {
 		return err
 	}

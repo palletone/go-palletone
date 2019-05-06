@@ -21,12 +21,13 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"time"
 )
 
 func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	depositAmountsForDeveloperStr, err := stub.GetSystemConfig("DepositAmountForDeveloper")
+	depositAmountsForDeveloperStr, err := stub.GetSystemConfig(DepositAmountForDeveloper)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
 		return shim.Error(err.Error())
@@ -63,8 +64,8 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		balance = &DepositBalance{}
 		if invokeTokens.Amount >= depositAmountsForDeveloper {
 			//加入列表
-			//addList("Developer", invokeAddr, stub)
-			err = addCandaditeList(invokeAddr, stub, "DeveloperList")
+			//addList(Developer, invokeAddr, stub)
+			err = addCandaditeList(invokeAddr, stub, DeveloperList)
 			if err != nil {
 				log.Error("AddCandaditeList err:", "error", err)
 				return shim.Error(err.Error())
@@ -80,7 +81,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 			isDeveloper = true
 			//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 			endTime := balance.LastModifyTime * 1800
-			depositRate, err := stub.GetSystemConfig("DepositRate")
+			depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 			if err != nil {
 				log.Error("stub.GetSystemConfig err:", "error", err)
 				return shim.Error(err.Error())
@@ -95,8 +96,8 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 	if !isDeveloper {
 		//判断交了保证金后是否超过了Developer
 		if balance.TotalAmount >= depositAmountsForDeveloper {
-			//addList("Developer", invokeAddr, stub)
-			err = addCandaditeList(invokeAddr, stub, "DeveloperList")
+			//addList(Developer, invokeAddr, stub)
+			err = addCandaditeList(invokeAddr, stub, DeveloperList)
 			if err != nil {
 				log.Error("AddCandaditeList err:", "error", err)
 				return shim.Error(err.Error())
@@ -113,7 +114,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 }
 
 func developerApplyCashback(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	err := applyCashbackList("Developer", stub, args)
+	err := applyCashbackList(Developer, stub, args)
 	if err != nil {
 		log.Error("ApplyCashbackList err:", "error", err)
 		return shim.Error(err.Error())
@@ -158,7 +159,7 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 		return err
 	}
 	//更新列表
-	err = stub.PutState("ListForCashback", listForCashbackByte)
+	err = stub.PutState(ListForCashback, listForCashbackByte)
 	if err != nil {
 		log.Error("Stub.PutState err:", "error", err)
 		return err
@@ -178,7 +179,7 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 
 //Developer已在列表中
 func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
-	depositPeriod, err := stub.GetSystemConfig("DepositPeriod")
+	depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositPeriod err:", "error", err)
 		return err
@@ -201,7 +202,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr stri
 		//判断是否已到期
 		if endTime-startTime >= day {
 			//退出全部，即删除cashback，利息计算好了
-			err = cashbackAllDeposit("Developer", stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
+			err = cashbackAllDeposit(Developer, stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
 			if err != nil {
 				return err
 			}
@@ -211,8 +212,8 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr stri
 		}
 	} else {
 		//TODO 退出一部分，且退出该部分金额后还在列表中，还没有计算利息
-		//d.addListForCashback("Developer", stub, cashbackAddr, invokeTokens)
-		err = cashbackSomeDeposit("Developer", stub, cashbackAddr, cashbackValue, balance)
+		//d.addListForCashback(Developer, stub, cashbackAddr, invokeTokens)
+		err = cashbackSomeDeposit(Developer, stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
 			log.Error("CashbackSomeDeposit err:", "error", err)
 			return err

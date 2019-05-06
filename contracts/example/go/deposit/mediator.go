@@ -76,7 +76,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		}
 		becomeList = append(becomeList, &mediatorInfo)
 	}
-	err = marshalAndPutStateForMediatorList(stub, "ListForApplyBecomeMediator", becomeList)
+	err = marshalAndPutStateForMediatorList(stub, ListForApplyBecomeMediator, becomeList)
 	if err != nil {
 		log.Error("MarshalAndPutStateForMediatorList err:", "error", err)
 		return shim.Error(err.Error())
@@ -197,7 +197,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		}
 		quitList = append(quitList, mediator)
 	}
-	err = marshalAndPutStateForMediatorList(stub, "ListForApplyQuitMediator", quitList)
+	err = marshalAndPutStateForMediatorList(stub, ListForApplyQuitMediator, quitList)
 	if err != nil {
 		log.Error("MarshalAndPutStateForMediatorList err:", "error", err)
 		return shim.Error(err.Error())
@@ -209,7 +209,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeAddr string) error {
 	//计算币龄收益
 	endTime := balance.LastModifyTime * 1800
-	depositRate, err := stub.GetSystemConfig("DepositRate")
+	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
@@ -249,7 +249,7 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 	}
 	//移除
 	candidateList, _ = moveMediatorFromList(nodeAddr, candidateList)
-	err = marshalAndPutStateForMediatorList(stub, "MediatorList", candidateList)
+	err = marshalAndPutStateForMediatorList(stub, modules.MediatorList, candidateList)
 	if err != nil {
 		log.Error("MarshalAndPutStateForMediatorList err:", "error", err)
 		return err
@@ -259,7 +259,7 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 
 //mediator 交付保证金：
 func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")
+	depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositAmountForMediator err:", "error", err)
 		return shim.Error(err.Error())
@@ -342,7 +342,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	} else {
 		//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		endTime := balance.LastModifyTime * 1800
-		depositRate, err := stub.GetSystemConfig("DepositRate")
+		depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 		if err != nil {
 			log.Error("stub.GetSystemConfig err:", "error", err)
 			return shim.Error(err.Error())
@@ -379,7 +379,7 @@ func addCandidateListAndPutStateForMediator(stub shim.ChaincodeStubInterface, me
 		}
 		candidateList = append(candidateList, mediator)
 	}
-	err = marshalAndPutStateForMediatorList(stub, "MediatorList", candidateList)
+	err = marshalAndPutStateForMediatorList(stub, modules.MediatorList, candidateList)
 	if err != nil {
 		log.Error("MarshalAndPutStateForMediatorList err:", "error", err)
 		return err
@@ -390,7 +390,7 @@ func addCandidateListAndPutStateForMediator(stub shim.ChaincodeStubInterface, me
 //申请提取保证金
 func mediatorApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("Start entering mediatorApplyCashback func.")
-	err := applyCashbackList("Mediator", stub, args)
+	err := applyCashbackList(Mediator, stub, args)
 	if err != nil {
 		log.Error("ApplyCashbackList err:", "error", err)
 		return shim.Error(err.Error())
@@ -400,7 +400,7 @@ func mediatorApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.R
 }
 
 func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64, balance *DepositBalance) error {
-	depositPeriod, err := stub.GetSystemConfig("DepositPeriod")
+	depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositPeriod err:", "error", err)
 		return err
@@ -411,7 +411,7 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, apply
 		return err
 	}
 	log.Info("Stub.GetSystemConfig with DepositPeriod:", "value", day)
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")
+	depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositAmountForMediator err:", "error", err)
 		return err
@@ -459,7 +459,7 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, apply
 		return err
 	}
 	//更新列表
-	err = stub.PutState("ListForCashback", listForCashbackByte)
+	err = stub.PutState(ListForCashback, listForCashbackByte)
 	if err != nil {
 		log.Error("Stub.PutState err:", "error", err)
 		return err
@@ -491,7 +491,7 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, apply
 		return fmt.Errorf("%s", "Can not cashback some.")
 	} else {
 		//TODO 这是只退一部分钱，剩下余额还是在规定范围之内
-		err = cashbackSomeDeposit("Mediator", stub, cashbackAddr, cashbackNode, balance)
+		err = cashbackSomeDeposit(Mediator, stub, cashbackAddr, cashbackNode, balance)
 		if err != nil {
 			log.Error("CashbackSomeDeposit err:", "error", err)
 			return err
