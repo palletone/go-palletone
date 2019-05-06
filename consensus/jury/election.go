@@ -287,7 +287,7 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 		ReqId: reqId,
 		//Data:  ele.seedData,
 	}
-	log.Debug("ElectionRequest", "reqId", reqId, "seedData", seedData)
+	log.Debug("ElectionRequest", "reqId", reqId.Bytes(), "seedData", seedData)
 	go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_REQUEST, Event: reqEvent})
 
 	//超时等待选举结果
