@@ -98,10 +98,10 @@ func (d *DebugChainCode) checkRequesterCert(stub shim.ChaincodeStubInterface, ar
 	b := []byte{}
 	if isValid {
 		b, _ = json.Marshal(fmt.Sprintf("Requester cert is valid"))
+		return shim.Success(b)
 	} else {
-		b, _ = json.Marshal(fmt.Sprintf("Requester cert is invalid, because %s", err.Error()))
+		return shim.Error(fmt.Sprintf("Requester cert is invalid, because %s", err.Error()))
 	}
-	return shim.Success(b)
 }
 
 func (d *DebugChainCode) getRootCABytes(stub shim.ChaincodeStubInterface, args []string) pb.Response {
