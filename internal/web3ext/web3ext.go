@@ -139,8 +139,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinstalltx',
         	call: 'contract_ccinstalltx',
-        	params: 7, //from, to , daoAmount, daoFee , tplName, path, version
-			inputFormatter: [null, null, null,null, null, null, null]
+        	params: 8, //from, to , daoAmount, daoFee , tplName, path, version
+			inputFormatter: [null, null, null,null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccdeploytx',
@@ -234,6 +234,10 @@ web3._extend({
 		new web3._extend.Property({
 			name: 'pending',
 			getter: 'txpool_pending'
+		}),
+		new web3._extend.Property({
+			name: 'queue',
+			getter: 'txpool_queue'
 		}),
 	]
 });

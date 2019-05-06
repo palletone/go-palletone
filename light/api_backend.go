@@ -131,6 +131,9 @@ func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.Transaction, m
 	return nil, nil
 	//return b.ptn.txPool.Content()
 }
+func (b *LesApiBackend) Queued() ([]*modules.TxPoolTransaction, error) {
+	return nil, nil
+}
 
 func (b *LesApiBackend) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return b.ptn.txPool.SubscribeTxPreEvent(ch)
