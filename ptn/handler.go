@@ -428,7 +428,8 @@ func (pm *ProtocolManager) Stop() {
 	pm.wg.Wait()
 
 	//stop dockerLoop
-	pm.dockerQuitSync <- struct{}{}
+	//pm.dockerQuitSync <- struct{}{}
+	close(pm.dockerQuitSync)
 	log.Info("PalletOne protocol stopped")
 }
 
