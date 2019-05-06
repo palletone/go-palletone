@@ -316,7 +316,7 @@ func (pm *ProtocolManager) SendTxMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
 	if pm.server==nil{
-		return errors.New("this node can not service download utxo server")
+		return errors.New("this node can not service with download utxo server")
 	}
 
 	var addr string
@@ -333,13 +333,17 @@ func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
 		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos err",err,"addr:",addr)
 		return err
 	}
-
+	respdata:=utxosRespData{}
 	for _,utxo:=range utxos{
-		utxo.Bytes()
+		respdata.utxos = append(respdata.utxos,utxo.Bytes())
 	}
-	return nil
+	respdata.addr = addr
+	return p.SendUTXOs(0, 0, respdata)
 }
 func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
+	//pm.server !=nil{
+	//	
+	//}
 	return nil
 }
 /*
