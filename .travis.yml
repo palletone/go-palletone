@@ -23,9 +23,9 @@ script:
     #- python -m robot.run ../testcase/createTrans
     #- python -m robot.run ../testcase/ccinvoke
     #- python -m robot.run ../testcase/ccinvoke/transferToken
-    - python -m robot.run ../DigitalIdentityCert/issueCerts
-    - python -m robot.run ../DigitalIdentityCert/useCerts
-    - python -m robot.run ../DigitalIdentityCert/revokeCert
+    - python -m robot.run ../DigitalIdentityCert/step1-IssueCerts
+    - python -m robot.run ../DigitalIdentityCert/step2-useCerts
+    - python -m robot.run ../DigitalIdentityCert/step3-revokeCert
   
     
 after_success:
