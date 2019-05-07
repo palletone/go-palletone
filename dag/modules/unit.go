@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
+	"bytes"
 )
 
 // validate unit state
@@ -294,7 +295,7 @@ type TxPoolTxs []*TxPoolTransaction
 type ChainIndex struct {
 	AssetID AssetId `json:"asset_id"`
 	//IsMain  bool    `json:"is_main"`
-	Index   uint64  `json:"index"`
+	Index uint64 `json:"index"`
 }
 
 func NewChainIndex(assetId AssetId, idx uint64) *ChainIndex {
@@ -303,16 +304,30 @@ func NewChainIndex(assetId AssetId, idx uint64) *ChainIndex {
 func (height *ChainIndex) String() string {
 	return fmt.Sprintf("%s-%d", height.AssetID.GetSymbol(), height.Index)
 }
+
 //Index 8Bytes + AssetID 16Bytes
 func (height *ChainIndex) Bytes() []byte {
 	idx := make([]byte, 8)
 	littleEndian.PutUint64(idx, height.Index)
-	return append(idx,height.AssetID.Bytes()...)
+	return append(idx, height.AssetID.Bytes()...)
 }
 
-func (height *ChainIndex)SetBytes(data []byte){
-	height.Index=littleEndian.Uint64(data[:8])
+func (height *ChainIndex) SetBytes(data []byte) {
+	height.Index = littleEndian.Uint64(data[:8])
 	height.AssetID.SetBytes(data[8:])
+}
+
+func (height *ChainIndex) Equal(in *ChainIndex) bool {
+	if in == nil {
+		return false
+	}
+	if !bytes.Equal(height.AssetID[:], in.AssetID[:]) {
+		return false
+	}
+	if height.Index != in.Index {
+		return false
+	}
+	return true
 }
 
 //type Author struct {

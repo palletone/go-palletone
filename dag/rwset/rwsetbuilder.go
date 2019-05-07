@@ -48,6 +48,13 @@ func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *modules.Stat
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.readMap == nil {
 		nsPubRwBuilder.readMap = make(map[string]*KVRead)
+	} else {
+		for _, kvread := range nsPubRwBuilder.readMap {
+			if kvread != nil {
+				version = kvread.version
+				break
+			}
+		}
 	}
 	// ReadSet
 	nsPubRwBuilder.readMap[key] = NewKVRead(key, version)

@@ -106,13 +106,13 @@ type TxPoolTransaction struct {
 	Tx *Transaction
 
 	From         []*OutPoint
-	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time    `json:"creation_date"`
+	Priority_lvl string       `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool         // will remove
+	Discarded    bool // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
 	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
@@ -186,6 +186,8 @@ func (tx *Transaction) Hash() common.Hash {
 	//	return v
 	//}
 	//func (tx *Transaction) Hash_old() common.Hash {
+	tx.Illegal = false
+
 	v := util.RlpHash(tx)
 	return v
 }
@@ -396,6 +398,7 @@ func (txs Transactions) GetTxIds() []common.Hash {
 type Transaction struct {
 	TxMessages []*Message `json:"messages"`
 	CertId     []byte     `json:"cert_id"` // should be big.Int byte
+	Illegal    bool       `json:"Illegal"` // not hash, 1:no valid, 0:ok
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 
