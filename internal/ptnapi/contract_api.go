@@ -50,7 +50,7 @@ func NewPublicContractAPI(b Backend) *PublicContractAPI {
 func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
 	log.Info("CcInstall:" + ccname + ":" + ccpath + "_" + ccversion)
 
-	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion)
+	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion, "Descrition ...", "ABI file content", "go")
 	return hexutil.Bytes(templateId), err
 }
 
@@ -164,7 +164,7 @@ func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount
 	}
 	log.Debug("-----Ccinstalltx:", "addrHash", addrs, "len", len(addrs))
 
-	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version, addrs)
+	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version, "Description...", "ABI ...", "go", addrs)
 	sReqId := hex.EncodeToString(reqId[:])
 	sTplId := hex.EncodeToString(tplId)
 	log.Info("-----Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)

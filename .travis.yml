@@ -1,9 +1,9 @@
 os: linux
 dist: xenial
 sudo: required
-language: 
+language:
     - go
-go: 
+go:
     - 1.10.8
 script:
     - go build ./cmd/gptn
@@ -23,13 +23,14 @@ script:
     - python -m robot.run ../testcase/createTrans
     - python -m robot.run ../testcase/ccinvoke
     #- python -m robot.run ../testcase/ccinvoke/transferToken
-  
-    
+    - python -m robot.run ../DigitalIdentityCert
+
+
 after_success:
     - killall gptn
 after_failure:
     - killall gptn
-    
+
 before_install:
     - go get github.com/mattn/goveralls
     - go get -u github.com/palletone/adaptor
@@ -37,8 +38,8 @@ before_install:
     - go get -u github.com/palletone/eth-adaptor
     - go get -u github.com/palletone/digital-identity/...
     - source ./gomockgen.sh
- 
-install: 
+
+install:
     - python -V
     - whereis python
     - which python
@@ -46,8 +47,8 @@ install:
     - sudo -H pip install robotframework==2.8.5
     - sudo -H pip install requests
     - sudo -H pip install robotframework-requests
-    - sudo -H pip install demjson 
-    - sudo -H pip install pexpect 
+    - sudo -H pip install demjson
+    - sudo -H pip install pexpect
     - sudo -H apt-get install expect
     #- sudo -H apt-get install jq tcl tk
 

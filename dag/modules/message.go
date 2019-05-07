@@ -342,9 +342,33 @@ func (version *StateVersion) SetBytes(b []byte) {
 	version.TxIndex = littleEndian.Uint32(b[24:])
 }
 
+func (version *StateVersion) Equal(in *StateVersion) bool {
+	if in == nil {
+		return false
+	}
+	if version.Height != nil {
+		if in.Height == nil {
+			return false
+		}
+		if !version.Height.Equal(in.Height) {
+			return false
+		}
+	} else if in.Height != nil {
+		return false
+	}
+
+	if version.TxIndex != in.TxIndex {
+		return false
+	}
+	return true
+}
+
 const (
 	FIELD_TPL_BYTECODE  = "TplBytecode"
 	FIELD_TPL_NAME      = "TplName"
+	FIELD_TPL_DESC      = "TplDescription"
+	FIELD_TPL_ABI       = "TplAbi"
+	FIELD_TPL_Language  = "TplLanguage"
 	FIELD_TPL_PATH      = "TplPath"
 	FIELD_TPL_Memory    = "TplMemory"
 	FIELD_SPLIT_STR     = "^*^"
@@ -465,14 +489,14 @@ type TokenPayOut struct {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId []byte        `json:"template_id"`    // contract template id
-	Name       string        `json:"name"`           // contract template name
-	Path       string        `json:"path"`           // contract template execute path
-	Version    string        `json:"version"`        // contract template version
-	Memory     uint16        `json:"memory"`         // contract template bytecode memory size(Byte), use to compute transaction fee
-	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
-	AddrHash   []common.Hash `json:"addr_hash"`      //contract template installs the specified address for deployment and execution
-	ErrMsg     ContractError `json:"contract_error"` // contract error message
+	TemplateId []byte `json:"template_id"` // contract template id
+	//Name       string        `json:"name"`           // contract template name
+	//Path       string        `json:"path"`           // contract template execute path
+	//Version    string        `json:"version"`        // contract template version
+	Memory   uint16 `json:"memory"`    // contract template bytecode memory size(Byte), use to compute transaction fee
+	ByteCode []byte `json:"byte_code"` // contract bytecode
+	//AddrHash   []common.Hash `json:"addr_hash"`      //contract template installs the specified address for deployment and execution
+	ErrMsg ContractError `json:"contract_error"` // contract error message
 }
 
 // App: contract_deploy
@@ -525,10 +549,13 @@ type ContractInvokeResult struct {
 
 //用户钱包发起的合约调用申请
 type ContractInstallRequestPayload struct {
-	TplName  string        `json:"tpl_name"`
-	Path     string        `json:"install_path"`
-	Version  string        `json:"tpl_version"`
-	AddrHash []common.Hash `json:"addr_hash"`
+	TplName        string        `json:"tpl_name"`
+	TplDescription string        `json:"tpl_description"`
+	Path           string        `json:"install_path"`
+	Version        string        `json:"tpl_version"`
+	Abi            string        `json:"abi"`
+	Language       string        `json:"language"`
+	AddrHash       []common.Hash `json:"addr_hash"`
 }
 
 type ContractDeployRequestPayload struct {
@@ -593,15 +620,15 @@ func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
 	}
 }
 
-func NewContractTplPayload(templateId []byte, name string, path string, version string, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
+func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
 	return &ContractTplPayload{
 		TemplateId: templateId,
-		Name:       name,
-		Path:       path,
-		Version:    version,
-		Memory:     memory,
-		ByteCode:   bytecode,
-		ErrMsg:     err,
+		//Name:       name,
+		//Path:       path,
+		//Version:    version,
+		Memory:   memory,
+		ByteCode: bytecode,
+		ErrMsg:   err,
 	}
 }
 
@@ -694,8 +721,12 @@ func (a *ContractTplPayload) Equal(b *ContractTplPayload) bool {
 	if b == nil {
 		return false
 	}
-	if bytes.Equal(a.TemplateId, b.TemplateId) && strings.EqualFold(a.Name, b.Name) && strings.EqualFold(a.Path, b.Path) &&
-		strings.EqualFold(a.Version, b.Version) && a.Memory == b.Memory && bytes.Equal(a.ByteCode, b.ByteCode) {
+	if bytes.Equal(a.TemplateId, b.TemplateId) &&
+		//strings.EqualFold(a.Name, b.Name) &&
+		//strings.EqualFold(a.Path, b.Path) &&
+		//strings.EqualFold(a.Version, b.Version) &&
+		a.Memory == b.Memory &&
+		bytes.Equal(a.ByteCode, b.ByteCode) {
 		return true
 	}
 	return false
@@ -770,14 +801,18 @@ func (a *ContractInvokePayload) Equal(b *ContractInvokePayload) bool {
 	}
 	if len(a.ReadSet) == len(b.ReadSet) {
 		for i := 0; i < len(a.ReadSet); i++ {
-			a.ReadSet[i].Equal(&b.ReadSet[i])
+			if !a.ReadSet[i].Equal(&b.ReadSet[i]) {
+				return false
+			}
 		}
 	} else {
 		return false
 	}
 	if len(a.WriteSet) == len(b.WriteSet) {
 		for i := 0; i < len(a.WriteSet); i++ {
-			a.WriteSet[i].Equal(&b.WriteSet[i])
+			if !a.WriteSet[i].Equal(&b.WriteSet[i]) {
+				return false
+			}
 		}
 	} else {
 		return false
