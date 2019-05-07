@@ -21,7 +21,7 @@ power uses debug contract to test getRequesterCert without error
     Log    "power uses debug contract to test getRequesterCert without error"
     ${args}=    Create List    ${getRequesterCertMethod}
     ${params}=    Create List    ${powerCertHolder}    ${powerCertHolder}    1    1    ${debugContractAddr}
-    ...    ${args}    ${caCertID}
+    ...    ${args}    ${powerCertID}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    getRequesterCert
     Dictionary Should Contain Key    ${respJson}    result
 

@@ -21,7 +21,7 @@ user uses debug contract to test getRequesterCert without error
     Log    "user uses debug contract to test getRequesterCert without error"
     ${args}=    Create List    ${getRequesterCertMethod}
     ${params}=    Create List    ${userCertHolder}    ${userCertHolder}    1    1    ${debugContractAddr}
-    ...    ${args}    ${caCertID}
+    ...    ${args}    ${userCertID}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    getRequesterCert
     Dictionary Should Contain Key    ${respJson}    result
 
