@@ -44,7 +44,7 @@ func (t *SimpleChaincode) payout(stub shim.ChaincodeStubInterface, args []string
 	to_address := args[0]
 	asset, _ := modules.StringToAsset(args[1])
 	amt, _ := strconv.Atoi(args[2])
-	amtToken := &modules.AmountAsset{Amount: uint64(amt), Asset: asset}
+	amtToken := &modules.InvokeTokens{Amount: uint64(amt), Asset: asset}
 	stub.PayOutToken(to_address, amtToken, 0)
 	fmt.Println("Payout token" + amtToken.String() + " to address " + to_address)
 	return shim.Success(nil)
