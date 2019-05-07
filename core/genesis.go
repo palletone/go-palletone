@@ -107,6 +107,30 @@ func NewMediatorInfoBase() *MediatorInfoBase {
 	}
 }
 
+func (mib *MediatorInfoBase) Validate() error {
+	_, err := StrToMedAdd(mib.AddStr)
+	if err != nil {
+		return err
+	}
+
+	_, err = StrToPoint(mib.InitPubKey)
+	if err != nil {
+		return err
+	}
+
+	node, err := StrToMedNode(mib.Node)
+	if err != nil {
+		return err
+	}
+
+	err = node.ValidateComplete()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type InitialMediator struct {
 	*MediatorInfoBase
 }

@@ -143,6 +143,30 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	return nil
 }
 
+func (dag *Dag) InitStateDB(genesis *core.Genesis) error {
+	// Create initial mediators
+	for _, imc := range genesis.InitialMediatorCandidates {
+		err := imc.Validate()
+		if err != nil {
+			log.Debugf(err.Error())
+			panic(err.Error())
+		}
+
+		mi := modules.NewMediatorInfo()
+		mi.MediatorInfoBase = imc.MediatorInfoBase
+		mi.ApplyTime = mi.ApplyTime / 1800
+
+		addr, _ := common.StringToAddress(mi.AddStr)
+		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
+		if err != nil {
+			log.Debugf(err.Error())
+			panic(err.Error())
+		}
+	}
+
+	return nil
+}
+
 func (dag *Dag) IsSynced() bool {
 	gp := dag.GetGlobalProp()
 	dgp := dag.GetDynGlobalProp()

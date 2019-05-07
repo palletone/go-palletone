@@ -554,16 +554,18 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
 	propRep := dagcommon.NewPropRepository(propDb)
+	stateRep := dagcommon.NewStateRepository(stateDb)
 
 	dag := &Dag{
 		//Cache:         freecache.NewCache(200 * 1024 * 1024),
-		Db:            db,
-		stableUnitRep: unitRep,
-		stableUtxoRep: utxoRep,
-		propRep:       propRep,
-		validate:      validate,
-		ChainHeadFeed: new(event.Feed),
-		Mutex:         *mutex,
+		Db:             db,
+		stableUnitRep:  unitRep,
+		stableUtxoRep:  utxoRep,
+		stableStateRep: stateRep,
+		propRep:        propRep,
+		validate:       validate,
+		ChainHeadFeed:  new(event.Feed),
+		Mutex:          *mutex,
 		//Memdag:        memunit.NewMemDag(dagDb, stateDb, unstableUnitRep),
 		//utxos_cache: make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}

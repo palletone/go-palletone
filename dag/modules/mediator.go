@@ -87,27 +87,3 @@ func (mco *MediatorCreateOperation) FeePayer() common.Address {
 
 	return addr
 }
-
-func (mco *MediatorCreateOperation) Validate() error {
-	_, err := core.StrToMedAdd(mco.AddStr)
-	if err != nil {
-		return err
-	}
-
-	_, err = core.StrToPoint(mco.InitPubKey)
-	if err != nil {
-		return err
-	}
-
-	node, err := core.StrToMedNode(mco.Node)
-	if err != nil {
-		return err
-	}
-
-	err = node.ValidateComplete()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
