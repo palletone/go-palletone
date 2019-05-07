@@ -115,7 +115,7 @@ func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
 }
 func hasPermission(stub shim.ChaincodeStubInterface) bool {
 	requester, _, _, _, _, _ := stub.GetInvokeParameters()
-	foundationAddress, _ := stub.GetSystemConfig("FoundationAddress")
+	foundationAddress, _ := stub.GetSystemConfig(dm.FoundationAddress)
 	return foundationAddress == requester.String()
 }
 func registerPartition(args []string, stub shim.ChaincodeStubInterface) pb.Response {

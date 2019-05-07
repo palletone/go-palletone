@@ -101,7 +101,7 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 		log.Error("json.Marshal err:", "error", err)
 		return err
 	}
-	err = stub.PutState("ListForCashback", listForCashbackByte)
+	err = stub.PutState(ListForCashback, listForCashbackByte)
 	if err != nil {
 		log.Error("stub.PutState err:", "error", err)
 		return err
@@ -160,8 +160,8 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		log.Error("balance is not enough")
 		return fmt.Errorf("%s", "balance is not enough")
 	}
-	if strings.Compare(role, "Mediator") == 0 {
-		depositAmountsForMediatorStr, err := stub.GetSystemConfig("DepositAmountForMediator")
+	if strings.Compare(role, Mediator) == 0 {
+		depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
 		if err != nil {
 			log.Error("Stub.GetSystemConfig with DepositAmountForMediator err:", "error", err)
 			return err
@@ -214,7 +214,7 @@ func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackA
 		return err
 	}
 	//更新列表
-	err = stub.PutState("ListForCashback", listForCashbackByte)
+	err = stub.PutState(ListForCashback, listForCashbackByte)
 	if err != nil {
 		log.Error("Stub.PutState err:", "error", err)
 		return err
@@ -231,7 +231,7 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		return err
 	}
 	endTime := balance.LastModifyTime * 1800
-	depositRate, err := stub.GetSystemConfig("DepositRate")
+	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
@@ -243,9 +243,9 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 	//减去提取部分
 	balance.TotalAmount -= cashbackValue.CashbackTokens.Amount
 	//TODO 如果推出后低于保证金，则退出列表
-	if role == "Jury" {
+	if role == Jury {
 		//如果推出后低于保证金，则退出列表
-		depositAmountsForJuryStr, err := stub.GetSystemConfig("DepositAmountForJury")
+		depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
 		if err != nil {
 			log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
 			return err
@@ -259,15 +259,15 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		log.Info("Stub.GetSystemConfig with DepositAmountForJury:", "value", depositAmountsForJury)
 		if balance.TotalAmount < depositAmountsForJury {
 			//handleMember("Jury", cashbackAddr, stub)
-			err = moveCandidate("JuryList", cashbackAddr, stub)
+			err = moveCandidate(modules.JuryList, cashbackAddr, stub)
 			if err != nil {
 				log.Error("moveCandidate err:", "error", err)
 				return err
 			}
 		}
-	} else if role == "Developer" {
+	} else if role == Developer {
 		//如果推出后低于保证金，则退出列表
-		depositAmountsForDeveloperStr, err := stub.GetSystemConfig("DepositAmountForDeveloper")
+		depositAmountsForDeveloperStr, err := stub.GetSystemConfig(DepositAmountForDeveloper)
 		if err != nil {
 			log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
 			return err
@@ -280,8 +280,8 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		}
 		log.Info("Stub.GetSystemConfig with DepositAmountForDeveloper:", "value", depositAmountsForDeveloper)
 		if balance.TotalAmount < depositAmountsForDeveloper {
-			//handleMember("Developer", cashbackAddr, stub)
-			err = moveCandidate("DeveloperList", cashbackAddr, stub)
+			//handleMember(Developer, cashbackAddr, stub)
+			err = moveCandidate(DeveloperList, cashbackAddr, stub)
 			if err != nil {
 				log.Error("moveCandidate err:", "error", err)
 				return err
@@ -308,7 +308,7 @@ func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackA
 	////计算币龄收益
 	//awards := award.CalculateAwardsForDepositContractNodes(coinDays)
 	endTime := balance.LastModifyTime * 1800
-	depositRate, err := stub.GetSystemConfig("DepositRate")
+	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
@@ -442,17 +442,17 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 }
 
 func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
-	return GetList(stub, "MediatorList")
+	return GetList(stub, modules.MediatorList)
 }
 func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
-	return GetList(stub, "ListForApplyBecomeMediator")
+	return GetList(stub, ListForApplyBecomeMediator)
 }
 func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
-	return GetList(stub, "ListForApplyQuitMediator")
+	return GetList(stub, ListForApplyQuitMediator)
 }
 
 func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
-	return GetList(stub, "ListForAgreeBecomeMediator")
+	return GetList(stub, ListForAgreeBecomeMediator)
 
 }
 
@@ -476,7 +476,7 @@ func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*MediatorRegi
 }
 
 func GetListForForfeiture(stub shim.ChaincodeStubInterface) ([]*Forfeiture, error) {
-	listByte, err := stub.GetState("ListForForfeiture")
+	listByte, err := stub.GetState(ListForForfeiture)
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +495,7 @@ func GetListForForfeiture(stub shim.ChaincodeStubInterface) ([]*Forfeiture, erro
 }
 
 func GetListForCashback(stub shim.ChaincodeStubInterface) ([]*Cashback, error) {
-	listByte, err := stub.GetState("ListForCashback")
+	listByte, err := stub.GetState(ListForCashback)
 	if err != nil {
 		return nil, err
 	}
@@ -534,7 +534,7 @@ func GetDepositBalance(stub shim.ChaincodeStubInterface, nodeAddr string) (*Depo
 
 //获取候选列表信息
 func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]common.Address, error) {
-	if strings.Compare(role, "MediatorList") == 0 {
+	if strings.Compare(role, modules.MediatorList) == 0 {
 		candidateListByte, err := stub.GetState(role)
 		if err != nil {
 			return nil, err
@@ -665,7 +665,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 		log.Error("Json.Marshal err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	err = stub.PutState("ListForForfeiture", listForForfeitureByte)
+	err = stub.PutState(ListForForfeiture, listForForfeitureByte)
 	if err != nil {
 		log.Error("Stub.PutState err:", "error", err)
 		return shim.Error(err.Error())
@@ -675,7 +675,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 }
 
 func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr string) bool {
-	if strings.Compare(role, "Mediator") == 0 {
+	if strings.Compare(role, Mediator) == 0 {
 		candidateList, err := GetCandidateListForMediator(stub)
 		if err != nil {
 			return false
@@ -685,8 +685,8 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 		}
 		return isInMediatorInfolist(addr, candidateList)
 
-	} else if strings.Compare(role, "Jury") == 0 {
-		candidateList, err := GetCandidateList(stub, "JuryList")
+	} else if strings.Compare(role, Jury) == 0 {
+		candidateList, err := GetCandidateList(stub, modules.JuryList)
 		if err != nil {
 			return false
 		}
@@ -694,8 +694,8 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 			return false
 		}
 		return isInCandidateList(addr, candidateList)
-	} else if strings.Compare(role, "Developer") == 0 {
-		candidateList, err := GetCandidateList(stub, "DeveloperList")
+	} else if strings.Compare(role, Developer) == 0 {
+		candidateList, err := GetCandidateList(stub, DeveloperList)
 		if err != nil {
 			return false
 		}
@@ -767,7 +767,7 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	//计算一部分的利息
 	//获取币龄
 	endTime := balance.LastModifyTime * 1800
-	depositRate, err := stub.GetSystemConfig("DepositRate")
+	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return shim.Error(err.Error())
@@ -796,7 +796,7 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 	}
 	//计算当前币龄奖励
 	endTime := balance.LastModifyTime * 1800
-	depositRate, err := stub.GetSystemConfig("DepositRate")
+	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return shim.Error(err.Error())

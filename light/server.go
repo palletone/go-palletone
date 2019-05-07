@@ -36,6 +36,8 @@ import (
 	"github.com/palletone/go-palletone/ptn"
 	"sync"
 	"github.com/palletone/go-palletone/common"
+	"math/rand"
+	"time"
 )
 
 type LesServer struct {
@@ -395,11 +397,15 @@ func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
 }
 
 func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
-	address, err := common.StringToAddress(addr)
+	_, err := common.StringToAddress(addr)
 	if err != nil {
 		return err.Error()
 	}
-	address = address
 	//random select peer to download GetAddrUtxos(addr)
+	rand.Seed(time.Now().UnixNano())
+	peers :=pm.peers.AllPeers()
+	x := rand.Intn(len(peers))
+	p := peers[x]
+	p.RequestUTXOs(0,0,addr)
 	return "OK"
 }

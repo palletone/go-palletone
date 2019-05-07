@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type DepositChaincode struct {
@@ -87,7 +88,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return d.handleForForfeitureApplication(stub, args)
 	//获取提取保证金申请列表
 	case "GetListForCashbackApplication":
-		list, err := stub.GetState("ListForCashback")
+		list, err := stub.GetState(ListForCashback)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -97,7 +98,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(list)
 		//获取没收保证金申请列表
 	case "GetListForForfeitureApplication":
-		list, err := stub.GetState("ListForForfeiture")
+		list, err := stub.GetState(ListForForfeiture)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -107,7 +108,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(list)
 		//获取Mediator候选列表
 	case "GetListForMediatorCandidate":
-		list, err := stub.GetState("MediatorList")
+		list, err := stub.GetState(modules.MediatorList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -117,7 +118,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(list)
 		//获取Jury候选列表
 	case "GetListForJuryCandidate":
-		list, err := stub.GetState("JuryList")
+		list, err := stub.GetState(modules.JuryList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -127,7 +128,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(list)
 		//获取Contract Developer候选列表
 	case "GetListForDeveloperCandidate":
-		list, err := stub.GetState("DeveloperList")
+		list, err := stub.GetState(DeveloperList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -151,7 +152,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//获取Mediator申请加入列表
 	case "GetBecomeMediatorApplyList":
 		log.Info("Enter DepositChaincode Contract GetBecomeMediatorApplyList Invoke")
-		list, err := stub.GetState("ListForApplyBecomeMediator")
+		list, err := stub.GetState(ListForApplyBecomeMediator)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -162,7 +163,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//获取已同意的mediator列表
 	case "GetAgreeForBecomeMediatorList":
 		log.Info("Enter DepositChaincode Contract GetAgreeForBecomeMediatorList Invoke")
-		list, err := stub.GetState("ListForAgreeBecomeMediator")
+		list, err := stub.GetState(ListForAgreeBecomeMediator)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -172,7 +173,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(list)
 		//获取Mediator申请退出列表
 	case "GetQuitMediatorApplyList":
-		list, err := stub.GetState("ListForApplyQuitMediator")
+		list, err := stub.GetState(ListForApplyQuitMediator)
 		if err != nil {
 			return shim.Error(err.Error())
 		}

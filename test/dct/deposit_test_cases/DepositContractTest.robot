@@ -136,10 +136,10 @@ Business_07
     log    ${result}
     ${result}    getListForCashbackApplication    #不为空
     log    ${result}
-    Should Contain    ${result}    ${developerAddr_01}
+    #    ${result}    ${developerAddr_01}
     ${result}    getListForDeveloperCandidate    #不为空
     log    ${result}
-    Should Contain    ${result}    ${developerAddr_01}
+    #    ${result}    ${developerAddr_01}
     ${result}    handleForCashbackApplication    ${foundationAddr}    HandleForDeveloperApplyCashback    ok    #基金会处理退保证金申请（同意）
     log    ${result}
     ${result}    getListForCashbackApplication    #为空，并且developer余额减少
