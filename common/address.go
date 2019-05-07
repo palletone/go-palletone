@@ -194,7 +194,14 @@ func (a *Address) SetBytes(b []byte) {
 }
 
 // Set string `s` to a. If s is larger than len(a) it will panic
-func (a *Address) SetString(s string) { a.SetBytes([]byte(s)) }
+func (a *Address) SetString(s string) error {
+	b, err := StringToAddress(s)
+	if err != nil {
+		return err
+	}
+	a.Set(b)
+	return nil
+}
 
 // Sets a to other
 func (a *Address) Set(other Address) {
@@ -215,7 +222,12 @@ func (a *Address) UnmarshalText(input []byte) error {
 
 // UnmarshalJSON parses a hash in hex syntax.
 func (a *Address) UnmarshalJSON(input []byte) error {
-	return hexutil.UnmarshalFixedJSON(addressT, input, a[:])
+	addrStr := string(input[1 : len(input)-1])
+	return a.SetString(addrStr)
+}
+func (addr Address) MarshalJSON() ([]byte, error) {
+	str := addr.String()
+	return json.Marshal(str)
 }
 
 //YiRan
