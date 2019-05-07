@@ -1223,57 +1223,19 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 To save contract template code
 */
 func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex uint32, installReq *modules.ContractInstallRequestPayload, tpl *modules.ContractTplPayload) bool {
-	//var pl interface{}
-	//pl = msg.Payload
-	//payload, ok := pl.(*modules.ContractTplPayload)
-	//if ok == false {
-	//	log.Error("saveContractTpl", "error", "payload is not ContractTplPayload type")
-	//	return false
-	//}
 
-	// step1. generate version for every contract template
-	version := &modules.StateVersion{
-		Height:  height,
-		TxIndex: txIndex,
-	}
-	// step2. save contract template bytecode data
-	if err := rep.statedb.SaveContractTemplate(tpl.TemplateId, tpl.ByteCode, version.Bytes()); err != nil {
-		log.Error("SaveContractTemplate", "error", err.Error())
+	template:=modules.NewContractTemplate(installReq,tpl)
+	err:= rep.statedb.SaveContractTpl(template)
+	if err!=nil{
+		log.Errorf("Save contract template fail,error:%s",err.Error())
 		return false
 	}
-	// step3. save contract template name, path, Memory
-	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_NAME, installReq.TplName, version); err != nil {
-		log.Error("SaveContractTemplateState when save name", "error", err.Error())
+	err= rep.statedb.SaveContractTplCode(tpl.TemplateId,tpl.ByteCode)
+	if err!=nil{
+		log.Errorf("Save contract code fail,error:%s",err.Error())
 		return false
 	}
-	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_PATH, installReq.Path, version); err != nil {
-		log.Error("SaveContractTemplateState when save path", "error", err.Error())
-		return false
-	}
-	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_Memory, tpl.Memory, version); err != nil {
-		log.Error("SaveContractTemplateState when save memory", "error", err.Error())
-		return false
-	}
-	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_Version, installReq.Version, version); err != nil {
-		log.Error("SaveContractTemplateState when save version", "error", err.Error())
-		return false
-	}
-	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_Addrs, installReq.AddrHash, version); err != nil {
-		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
-		return false
-	}
-	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_DESC, installReq.TplDescription, version); err != nil {
-		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
-		return false
-	}
-	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_ABI, installReq.Abi, version); err != nil {
-		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
-		return false
-	}
-	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_Language, installReq.Language, version); err != nil {
-		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
-		return false
-	}
+
 	return true
 }
 

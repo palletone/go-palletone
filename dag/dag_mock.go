@@ -743,21 +743,33 @@ func (mr *MockIDagMockRecorder) GetAssetTxHistory(asset interface{}) *gomock.Cal
 }
 
 // GetContractTpl mocks base method
-func (m *MockIDag) GetContractTpl(templateID []byte) (*modules.StateVersion, []byte, string, string, string) {
+func (m *MockIDag) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetContractTpl", templateID)
-	ret0, _ := ret[0].(*modules.StateVersion)
-	ret1, _ := ret[1].([]byte)
-	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(string)
-	ret4, _ := ret[4].(string)
-	return ret0, ret1, ret2, ret3, ret4
+	ret := m.ctrl.Call(m, "GetContractTpl", tplId)
+	ret0, _ := ret[0].(*modules.ContractTemplate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetContractTpl indicates an expected call of GetContractTpl
-func (mr *MockIDagMockRecorder) GetContractTpl(templateID interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GetContractTpl(tplId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractTpl", reflect.TypeOf((*MockIDag)(nil).GetContractTpl), templateID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractTpl", reflect.TypeOf((*MockIDag)(nil).GetContractTpl), tplId)
+}
+
+// GetContractTplCode mocks base method
+func (m *MockIDag) GetContractTplCode(tplId []byte) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContractTplCode", tplId)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContractTplCode indicates an expected call of GetContractTplCode
+func (mr *MockIDagMockRecorder) GetContractTplCode(tplId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractTplCode", reflect.TypeOf((*MockIDag)(nil).GetContractTplCode), tplId)
 }
 
 // GetContract mocks base method
