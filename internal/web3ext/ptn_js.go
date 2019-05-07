@@ -181,8 +181,8 @@ web3._extend({
 			}
 		}),
 	new web3._extend.Property({
-			name: 'allSysConfig',
-			getter: 'ptn_getAllSysConfig'
+			name: 'listSysConfig',
+			getter: 'ptn_listSysConfig'
 		}),
 	]
 });
