@@ -55,7 +55,7 @@ const (
 	APP_CONTRACT_STOP_REQUEST   = 103
 	// 为了兼容起见:
 	// 添加別的request需要添加在 APP_CONTRACT_TPL_REQUEST 与 APP_CONTRACT_STOP_REQUEST 之间
-	// 添加别的msg类型，需要添加到OP_MEDIATOR_CREATE 与 APP_UNKNOW之间
+	// 添加别的msg类型，需要添加到 APP_ACCOUNT_UPDATE 与 APP_UNKNOW之间
 )
 
 const (
