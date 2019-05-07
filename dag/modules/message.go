@@ -342,6 +342,27 @@ func (version *StateVersion) SetBytes(b []byte) {
 	version.TxIndex = littleEndian.Uint32(b[24:])
 }
 
+func (version *StateVersion) Equal(in *StateVersion) bool {
+	if in == nil {
+		return false
+	}
+	if version.Height != nil {
+		if in.Height == nil {
+			return false
+		}
+		if !version.Height.Equal(in.Height) {
+			return false
+		}
+	} else if in.Height != nil {
+		return false
+	}
+
+	if version.TxIndex != in.TxIndex {
+		return false
+	}
+	return true
+}
+
 const (
 	FIELD_TPL_BYTECODE  = "TplBytecode"
 	FIELD_TPL_NAME      = "TplName"
