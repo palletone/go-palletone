@@ -519,7 +519,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("Node is not exist in the become list.")
 	}
 	//var mediatorList []*MediatorInfo
-	mediator := &MediatorRegisterInfo{}
+	mediator := &modules.MediatorApplyInfo{}
 	//不同意，移除申请列表
 	if strings.Compare(isOk, No) == 0 {
 		log.Info("foundation is not agree with application.")
@@ -536,7 +536,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		}
 		if agreeList == nil {
 			log.Info("Stub.GetAgreeForBecomeMediatorList: list is nil")
-			agreeList = []*MediatorRegisterInfo{mediator}
+			agreeList = []*modules.MediatorApplyInfo{mediator}
 		} else {
 			isExist := isInMediatorInfolist(mediator.Address, agreeList)
 			if isExist {

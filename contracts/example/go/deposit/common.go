@@ -441,22 +441,22 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 	return
 }
 
-func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*modules.MediatorApplyInfo, error) {
 	return GetList(stub, modules.MediatorList)
 }
-func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*modules.MediatorApplyInfo, error) {
 	return GetList(stub, ListForApplyBecomeMediator)
 }
-func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*modules.MediatorApplyInfo, error) {
 	return GetList(stub, ListForApplyQuitMediator)
 }
 
-func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*modules.MediatorApplyInfo, error) {
 	return GetList(stub, ListForAgreeBecomeMediator)
 
 }
 
-func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*MediatorRegisterInfo, error) {
+func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*modules.MediatorApplyInfo, error) {
 	listByte, err := stub.GetState(typeList)
 	if err != nil {
 		return nil, err
@@ -464,7 +464,7 @@ func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*MediatorRegi
 	if listByte == nil {
 		return nil, nil
 	}
-	var list []*MediatorRegisterInfo
+	var list []*modules.MediatorApplyInfo
 	err = json.Unmarshal(listByte, &list)
 	if err != nil {
 		return nil, err
@@ -542,7 +542,7 @@ func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]common.A
 		if candidateListByte == nil {
 			return nil, nil
 		}
-		var candiateList []*MediatorRegisterInfo
+		var candiateList []*modules.MediatorApplyInfo
 		err = json.Unmarshal(candidateListByte, &candiateList)
 		if err != nil {
 			return nil, err

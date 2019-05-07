@@ -85,7 +85,7 @@ type iDag interface {
 	GetMediators() map[common.Address]bool
 	IsMediator(address common.Address) bool
 
-	GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error)
+	GetApprovedMediatorList() ([]*modules.MediatorApplyInfo, error)
 	IsApprovedMediator(address common.Address) bool
 
 	GetDynGlobalProp() *modules.DynamicGlobalProperty

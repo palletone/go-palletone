@@ -86,7 +86,7 @@ type IStateDb interface {
 	GetMediators() map[common.Address]bool
 	LookupMediator() map[common.Address]*core.Mediator
 
-	GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error)
+	GetApprovedMediatorList() ([]*modules.MediatorApplyInfo, error)
 	IsApprovedMediator(address common.Address) bool
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo

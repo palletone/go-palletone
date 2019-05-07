@@ -1256,6 +1256,7 @@ func (rep *UnitRepository) saveContractInvokeReq(reqid []byte, msg *modules.Mess
 		log.Error("saveContractInvokeReq", "error", "payload is not the ContractInvokeReq type.")
 		return false
 	}
+
 	err := rep.statedb.SaveContractInvokeReq(reqid[:], invoke)
 	if err != nil {
 		log.Info("save contract invoke req payload failed,", "error", err)
