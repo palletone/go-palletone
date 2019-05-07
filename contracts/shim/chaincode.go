@@ -619,13 +619,22 @@ func (stub *ChaincodeStub) GetRequesterCert() (certBytes []byte, err error) {
 	if intCertID == nil {
 		return nil, fmt.Errorf("certid bytes error")
 	}
+	// check ca state
+	caCert, err := stub.handler.handleGetCACert(stub.ChannelId, stub.TxID)
+	if err != nil {
+		return nil, fmt.Errorf("query ca certificate error (%s)", err.Error())
+	}
+	if caCert.SerialNumber.String() == intCertID.String() {
+		return caCert.Raw, nil
+	}
+	// other certs
 	key := dagConstants.CERT_BYTES_SYMBOL + intCertID.String()
 	resBytes, err := stub.handler.handleGetCertState(key, stub.ChannelId, stub.TxID)
 	if err != nil {
 		return nil, err
 	}
 	if len(resBytes) <= 0 {
-		return nil, fmt.Errorf("query no cert bytes")
+		return nil, fmt.Errorf("query no cert bytes for certid(%s)", intCertID.String())
 	}
 	certDBInfo := modules.CertBytesInfo{}
 	if err := json.Unmarshal(resBytes, &certDBInfo); err != nil {
