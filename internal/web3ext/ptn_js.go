@@ -180,6 +180,10 @@ web3._extend({
 				return formatted;
 			}
 		}),
+	new web3._extend.Property({
+			name: 'allSysConfig',
+			getter: 'ptn_getAllSysConfig'
+		}),
 	]
 });
 `

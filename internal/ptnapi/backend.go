@@ -124,7 +124,7 @@ type Backend interface {
 
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
-
+	GetAllSysConfig() ([]*ptnjson.ConfigJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
@@ -160,7 +160,7 @@ type Backend interface {
 	GetProofTxInfoByHash(txhash string) ([][]byte, error)
 	ProofTransactionByHash(txhash string) (string, error)
 	ProofTransactionByRlptx(rlptx [][]byte) (string, error)
-	SyncUTXOByAddr(addr string) (string)
+	SyncUTXOByAddr(addr string) string
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

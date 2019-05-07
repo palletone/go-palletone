@@ -28,6 +28,7 @@ import (
 
 type IStateDb interface {
 	GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
+	GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	//Contract statedb
 	SaveContract(contract *modules.Contract) error

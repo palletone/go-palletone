@@ -302,6 +302,11 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr st
 
 	return result, err
 }
+func (s *PublicBlockChainAPI) GetAllSysConfig(ctx context.Context) ([]*ptnjson.ConfigJson, error) {
+
+	result, err := s.b.GetAllSysConfig()
+	return result, err
+}
 
 //func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
 //	result, err := s.b.WalletTokens(address)
