@@ -628,7 +628,8 @@ func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, d
 	return p.signAndExecute(common.BytesToAddress(tx.RequestHash().Bytes()), from, tx, isLocalInstall)
 }
 
-func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
+func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.TxPool())
 	if err != nil {
 		return common.Hash{}, nil, err

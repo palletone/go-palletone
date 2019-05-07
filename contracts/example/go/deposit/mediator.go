@@ -44,7 +44,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	mediatorInfo := MediatorRegisterInfo{
 		Address: invokeAddr.String(),
 		Content: content,
-		Time:    time.Now().UTC().Unix() / 1800,
+		Time:    time.Now().Unix() / 1800,
 	}
 	//获取同意列表，判断是否已经申请过了
 	agreeList, err := GetAgreeForBecomeMediatorList(stub)

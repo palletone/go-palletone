@@ -429,13 +429,6 @@ type InvokeTokens struct {
 	Address string `json:"address"` //接收地址
 }
 
-//申请成为Mediator
-type MediatorRegisterInfo struct {
-	Address string `json:"address"`
-	Content string `json:"content"`
-	Time    int64  `json:"time"`
-}
-
 //金额和资�?
 type AmountAsset struct {
 	Amount uint64 `json:"amount"`

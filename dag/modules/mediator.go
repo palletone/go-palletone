@@ -31,10 +31,17 @@ type MediatorInfo struct {
 	*core.MediatorInfoExpand
 }
 
+//申请成为Mediator
+type MediatorRegisterInfo struct {
+	Address string `json:"address"`
+	Content string `json:"content"`
+	Time    int64  `json:"time"`
+}
+
 func NewMediatorInfo() *MediatorInfo {
 	return &MediatorInfo{
 		MediatorInfoBase:   core.NewMediatorInfoBase(),
-		MediatorInfoExpand: core.NewMediatorBase(),
+		MediatorInfoExpand: core.NewMediatorInfoExpand(),
 	}
 }
 

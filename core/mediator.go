@@ -52,7 +52,7 @@ type MediatorInfoExpand struct {
 	TotalVotes           uint64
 }
 
-func NewMediatorBase() *MediatorInfoExpand {
+func NewMediatorInfoExpand() *MediatorInfoExpand {
 	return &MediatorInfoExpand{
 		Url:                  "",
 		TotalMissed:          0,
@@ -63,7 +63,7 @@ func NewMediatorBase() *MediatorInfoExpand {
 
 func NewMediator() *Mediator {
 	return &Mediator{
-		MediatorInfoExpand: NewMediatorBase(),
+		MediatorInfoExpand: NewMediatorInfoExpand(),
 	}
 }
 
