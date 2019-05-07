@@ -34,6 +34,7 @@ type TxJson struct {
 	TxHash             string              `json:"tx_hash"`
 	TxSize             float64             `json:"tx_size"`
 	Payment            []*PaymentJson      `json:"payment"`
+	Fee                uint64              `json:"fee"`
 	AccountStateUpdate *AccountStateJson   `json:"account_state_update"`
 	Data               *DataJson           `json:"data"`
 	ContractTpl        *TplJson            `json:"contract_tpl"`
@@ -184,6 +185,12 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 		} else if m.App == modules.APP_ACCOUNT_UPDATE {
 			acc := m.Payload.(*modules.AccountStateUpdatePayload)
 			txjson.AccountStateUpdate = convertAccountState2Json(acc)
+		}
+	}
+	if utxoQuery != nil {
+		fee, err := tx.GetTxFee(utxoQuery, time.Now().Unix())
+		if err == nil {
+			txjson.Fee = fee.Amount
 		}
 	}
 	return txjson
