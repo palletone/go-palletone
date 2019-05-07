@@ -46,15 +46,13 @@ type Mediator struct {
 }
 
 type MediatorInfoExpand struct {
-	Url                  string
-	TotalMissed          uint64
-	LastConfirmedUnitNum uint32
-	TotalVotes           uint64
+	TotalMissed          uint64 `json:"totalMissed"`
+	LastConfirmedUnitNum uint32 `json:"lastConfirmedUnitNum"`
+	TotalVotes           uint64 `json:"totalVotes"`
 }
 
 func NewMediatorInfoExpand() *MediatorInfoExpand {
 	return &MediatorInfoExpand{
-		Url:                  "",
 		TotalMissed:          0,
 		LastConfirmedUnitNum: 0,
 		TotalVotes:           0,

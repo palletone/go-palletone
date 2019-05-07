@@ -21,26 +21,38 @@
 package modules
 
 import (
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 )
 
+//申请成为Mediator
+type MediatorApplyInfo struct {
+	Url       string `json:"url"`
+	Content   string `json:"content"`
+	ApplyTime int64  `json:"applyTime"`
+}
+
+func NewMediatorApplyInfo() *MediatorApplyInfo {
+	return &MediatorApplyInfo{
+		Url:       "",
+		Content:   "",
+		ApplyTime: time.Now().Unix(),
+	}
+}
+
 // only for serialization(storage)
 type MediatorInfo struct {
 	*core.MediatorInfoBase
+	*MediatorApplyInfo
 	*core.MediatorInfoExpand
-}
-
-//申请成为Mediator
-type MediatorRegisterInfo struct {
-	Address string `json:"address"`
-	Content string `json:"content"`
-	Time    int64  `json:"time"`
 }
 
 func NewMediatorInfo() *MediatorInfo {
 	return &MediatorInfo{
 		MediatorInfoBase:   core.NewMediatorInfoBase(),
+		MediatorApplyInfo:  NewMediatorApplyInfo(),
 		MediatorInfoExpand: core.NewMediatorInfoExpand(),
 	}
 }
@@ -67,7 +79,7 @@ func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 
 type MediatorCreateOperation struct {
 	*core.MediatorInfoBase
-	Url string `json:"url"`
+	*MediatorApplyInfo
 }
 
 func (mco *MediatorCreateOperation) FeePayer() common.Address {
