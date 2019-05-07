@@ -341,9 +341,14 @@ func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
 	return p.SendUTXOs(0, 0, respdata)
 }
 func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
-	//pm.server !=nil{
-	//	
-	//}
+	if pm.server!=nil {
+		return errors.New("this is server node")
+	}
+	respdata:=utxosRespData{}
+	if err := msg.Decode(&respdata); err != nil {
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+
 	return nil
 }
 /*
