@@ -56,8 +56,7 @@ func createUnit() (*modules.Unit, error) {
 	outputs = append(outputs, out)
 	payment := modules.NewPaymentPayload(inputs, outputs)
 	msg0 := modules.NewMessage(modules.APP_PAYMENT, payment)
-	tplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
-		"TestContractTpl", "./contract", "1.1.1", 1024,
+	tplPayload := modules.NewContractTplPayload([]byte("contract_template0000"), 1024,
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159}, modules.ContractError{})
 	// new msg
 	msg := modules.NewMessage(modules.APP_CONTRACT_TPL, tplPayload)

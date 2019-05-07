@@ -458,6 +458,11 @@ type InvokeTokens struct {
 	Address string `json:"address"` //接收地址
 }
 
+func (i *InvokeTokens) String() string {
+	data, _ := json.Marshal(i)
+	return string(data)
+}
+
 //金额和资�?
 type AmountAsset struct {
 	Amount uint64 `json:"amount"`
