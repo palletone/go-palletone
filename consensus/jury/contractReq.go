@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, local bool, addrs []common.Address) (reqId common.Hash, TplId []byte, err error) {
+func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, local bool, addrs []common.Address) (reqId common.Hash, TplId []byte, err error) {
 	if from == (common.Address{}) || to == (common.Address{}) || tplName == "" || path == "" || version == "" {
 		log.Error("ContractInstallReq", "param is error")
 		return common.Hash{}, nil, errors.New("ContractInstallReq request param is error")
@@ -50,10 +50,13 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_TPL_REQUEST,
 		Payload: &modules.ContractInstallRequestPayload{
-			TplName:  tplName,
-			Path:     path,
-			Version:  version,
-			AddrHash: addrHash,
+			TplName:        tplName,
+			Path:           path,
+			Version:        version,
+			AddrHash:       addrHash,
+			TplDescription: description,
+			Abi:            abi,
+			Language:       language,
 		},
 	}
 	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)

@@ -55,14 +55,14 @@ type TxWithUnitInfoJson struct {
 	TxIndex    uint64    `json:"tx_index"`
 }
 type TplJson struct {
-	TemplateId   string `json:"template_id"`
-	Name         string `json:"name"`
-	Path         string `json:"path"`
-	Version      string `json:"version"`
+	TemplateId string `json:"template_id"`
+	//Name         string `json:"name"`
+	//Path         string `json:"path"`
+	//Version      string `json:"version"`
 	Memory       uint16 `json:"memory"`
 	Bytecode     []byte `json:"bytecode"`      // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
-	AddrHash     string `json:"addr_hash"`
+	//AddrHash     string `json:"addr_hash"`
 	ErrorCode    uint32 `json:"error_code"`
 	ErrorMessage string `json:"error_message"`
 }
