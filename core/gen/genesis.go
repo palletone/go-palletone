@@ -174,8 +174,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	}
 
 	// step4, generate inital mediator info payload
-	initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
-	tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
+	//initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
+	//tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
 
 	// tx.CreationDate = tx.CreateDate()
 	//tx.TxHash = tx.Hash()

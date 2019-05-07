@@ -72,7 +72,7 @@ func NewStateRepository(statedb storage.IStateDb) *StateRepository {
 
 func NewStateRepository4Db(db ptndb.Database) *StateRepository {
 	statedb := storage.NewStateDb(db)
-	return &StateRepository{statedb: statedb}
+	return NewStateRepository(statedb)
 }
 
 func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {

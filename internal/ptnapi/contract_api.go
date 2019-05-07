@@ -208,6 +208,7 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
 	log.Info("---enter DepositContractInvoke---")
 	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(), param, "")
+
 	return rsp.ReqId, err
 }
 func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {

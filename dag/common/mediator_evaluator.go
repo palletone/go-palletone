@@ -30,30 +30,30 @@ func MediatorCreateEvaluate(op *modules.MediatorCreateOperation) bool {
 }
 
 // Create initial mediators
-func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
-	result := make([]*modules.Message, 0)
-
-	for _, mi := range genesisConf.InitialMediatorCandidates {
-		mco := &modules.MediatorCreateOperation{
-			MediatorInfoBase: mi.MediatorInfoBase,
-			Url:              "",
-		}
-
-		err := mco.Validate()
-		if err != nil {
-			panic(err.Error())
-		}
-
-		msg := &modules.Message{
-			App:     modules.OP_MEDIATOR_CREATE,
-			Payload: mco,
-		}
-
-		result = append(result, msg)
-	}
-
-	return result
-}
+//func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
+//	result := make([]*modules.Message, 0)
+//
+//	for _, mi := range genesisConf.InitialMediatorCandidates {
+//		mco := &modules.MediatorCreateOperation{
+//			MediatorInfoBase: mi.MediatorInfoBase,
+//			Url:              "",
+//		}
+//
+//		err := mco.Validate()
+//		if err != nil {
+//			panic(err.Error())
+//		}
+//
+//		msg := &modules.Message{
+//			App:     modules.OP_MEDIATOR_CREATE,
+//			Payload: mco,
+//		}
+//
+//		result = append(result, msg)
+//	}
+//
+//	return result
+//}
 
 func (unitOp *UnitRepository) MediatorCreateApply(msg *modules.Message) bool {
 	var payload interface{}
