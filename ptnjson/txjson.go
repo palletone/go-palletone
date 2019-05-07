@@ -107,9 +107,12 @@ type InvokeRequestJson struct {
 }
 
 type InstallRequestJson struct {
-	TplName string `json:"tpl_name"`
-	Path    string `json:"path"`
-	Version string `json:"version"`
+	TplName        string `json:"tpl_name"`
+	TplDescription string `json:"tpl_description"`
+	Path           string `json:"path"`
+	Version        string `json:"version"`
+	Abi            string `json:"abi"`
+	Language       string `json:"language"`
 }
 
 type DeployRequestJson struct {
@@ -213,15 +216,15 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson := new(TplJson)
 	//hash := common.BytesToHash(tpl.TemplateId[:])
 	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
-	tpljson.Name = tpl.Name
-	tpljson.Path = tpl.Path
-	tpljson.Version = tpl.Version
+	//tpljson.Name = tpl.Name
+	//tpljson.Path = tpl.Path
+	//tpljson.Version = tpl.Version
 	tpljson.Bytecode = tpl.ByteCode[:]
 	tpljson.BytecodeSize = len(tpl.ByteCode[:])
 	tpljson.Memory = tpl.Memory
 
-	ah, _ := json.Marshal(tpl.AddrHash)
-	tpljson.AddrHash = string(ah)
+	//ah, _ := json.Marshal(tpl.AddrHash)
+	//tpljson.AddrHash = string(ah)
 	tpljson.ErrorCode = tpl.ErrMsg.Code
 	tpljson.ErrorMessage = tpl.ErrMsg.Message
 	return tpljson
@@ -306,6 +309,9 @@ func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *Ins
 	reqJson.TplName = req.TplName
 	reqJson.Path = req.Path
 	reqJson.Version = req.Version
+	reqJson.Abi = req.Abi
+	reqJson.Language = req.Language
+	reqJson.TplDescription = req.TplDescription
 	return reqJson
 }
 

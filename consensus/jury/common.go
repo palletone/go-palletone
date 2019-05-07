@@ -105,8 +105,8 @@ func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq inte
 	}
 	switch reqType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
-		req := contractReq.(ContractInstallReq)
-		payload := modules.NewContractTplPayload(nil, req.ccName, req.ccPath, req.ccVersion, 0, nil, err)
+		//req := contractReq.(ContractInstallReq)
+		payload := modules.NewContractTplPayload(nil, 0, nil, err)
 		return modules.NewMessage(modules.APP_CONTRACT_TPL, payload)
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
 		req := contractReq.(ContractDeployReq)
@@ -137,11 +137,14 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				msgs := []*modules.Message{}
 				reqPay := msg.Payload.(*modules.ContractInstallRequestPayload)
 				req := ContractInstallReq{
-					chainID:   "palletone",
-					ccName:    reqPay.TplName,
-					ccPath:    reqPay.Path,
-					ccVersion: reqPay.Version,
-					addrHash:  reqPay.AddrHash,
+					chainID:       "palletone",
+					ccName:        reqPay.TplName,
+					ccPath:        reqPay.Path,
+					ccVersion:     reqPay.Version,
+					addrHash:      reqPay.AddrHash,
+					ccDescription: reqPay.TplDescription,
+					ccAbi:         reqPay.Abi,
+					ccLanguage:    reqPay.Language,
 				}
 				installResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
@@ -154,7 +157,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_TPL_REQUEST txid(%s) err:%s", req.ccName, err))
 				}
 				payload := installResult.(*modules.ContractTplPayload)
-				payload.AddrHash = req.addrHash
+				//payload.AddrHash = req.addrHash
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_TPL, payload))
 				return msgs, nil
 			}
@@ -218,7 +221,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.FunctionName, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}

@@ -336,9 +336,9 @@ func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 		return nil, err
 	}
 
-	utxos, err:= b.ptn.dag.GetAddrUtxos(address)
-	if err!=nil{
-		return nil,err
+	utxos, err := b.ptn.dag.GetAddrUtxos(address)
+	if err != nil {
+		return nil, err
 	}
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
@@ -362,7 +362,7 @@ func (b *LesApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHi
 }
 
 //contract control
-func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error) {
+func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error) {
 	return nil, nil
 }
 func (b *LesApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error) {

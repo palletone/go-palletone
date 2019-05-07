@@ -50,7 +50,7 @@ func NewPublicContractAPI(b Backend) *PublicContractAPI {
 func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
 	log.Info("CcInstall:" + ccname + ":" + ccpath + "_" + ccversion)
 
-	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion)
+	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion, "Descrition ...", "ABI file content", "go")
 	return hexutil.Bytes(templateId), err
 }
 

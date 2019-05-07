@@ -38,15 +38,18 @@ type ContractReqInf interface {
 }
 
 type ContractInstallReq struct {
-	chainID   string
-	ccName    string
-	ccPath    string
-	ccVersion string
-	addrHash  []common.Hash
+	chainID       string
+	ccName        string
+	ccPath        string
+	ccVersion     string
+	ccLanguage    string
+	ccAbi         string
+	ccDescription string
+	addrHash      []common.Hash
 }
 
 func (req ContractInstallReq) do(rwM rwset.TxManager, v contracts.ContractInf) (interface{}, error) {
-	return v.Install(req.chainID, req.ccName, req.ccPath, req.ccVersion)
+	return v.Install(req.chainID, req.ccName, req.ccPath, req.ccVersion, req.ccDescription, req.ccAbi, req.ccLanguage)
 }
 
 type ContractDeployReq struct {
