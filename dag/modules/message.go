@@ -65,6 +65,11 @@ const (
 	DepositRate       = "DepositRate"
 )
 
+const (
+	SysParam  = "sysParam"
+	SysParams = "sysParams"
+)
+
 func (mt MessageType) IsRequest() bool {
 	return mt > 99
 }

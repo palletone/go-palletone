@@ -822,7 +822,7 @@ func (handler *Handler) handleGetContractAllState(channelId, txid string, contra
 		//Success response
 		log.Debugf("[%s]Received %s. Successfully get tokens of pay to contract ", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
 		states := make(map[string]*modules.ContractStateValue)
-		err = json.Unmarshal(responseMsg.Payload, states)
+		err = json.Unmarshal(responseMsg.Payload, &states)
 		if err != nil {
 			return nil, err
 		}
