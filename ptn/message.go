@@ -378,7 +378,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return fmt.Errorf(errStr)
 		//return nil
 	}
-
+	rwset.Init()
 	var temptxs modules.Transactions
 	for _, tx := range unit.Txs {
 		if tx.IsContractTx() {
@@ -387,9 +387,11 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 				//return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
 				continue
 			}
+			//rwset.RwM.CloseTxSimulator(rwset.ChainId, tx.RequestHash().String())
 		}
 		temptxs = append(temptxs, tx)
 	}
+	rwset.RwM.Close()
 	unit.Txs = temptxs
 
 	unit.ReceivedAt = msg.ReceivedAt
