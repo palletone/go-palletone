@@ -808,14 +808,18 @@ func (a *ContractInvokePayload) Equal(b *ContractInvokePayload) bool {
 	}
 	if len(a.ReadSet) == len(b.ReadSet) {
 		for i := 0; i < len(a.ReadSet); i++ {
-			a.ReadSet[i].Equal(&b.ReadSet[i])
+			if !a.ReadSet[i].Equal(&b.ReadSet[i]) {
+				return false
+			}
 		}
 	} else {
 		return false
 	}
 	if len(a.WriteSet) == len(b.WriteSet) {
 		for i := 0; i < len(a.WriteSet); i++ {
-			a.WriteSet[i].Equal(&b.WriteSet[i])
+			if !a.WriteSet[i].Equal(&b.WriteSet[i]) {
+				return false
+			}
 		}
 	} else {
 		return false

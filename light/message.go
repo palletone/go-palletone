@@ -342,7 +342,6 @@ func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
 		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos err",err,"respdata:",respdata)
 		return err
 	}
-
 	log.Debug("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos respdata.addr:",respdata.addr,"datas",datas)
 	return p.SendRawUTXOs(0, 0, datas)
 }
@@ -350,12 +349,13 @@ func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
 	if pm.server!=nil {
 		return errors.New("this is server node")
 	}
-	var datas [][]byte
+	var datas lpsutxo
 	respdata:=NewUtxosRespData()
 	if err := msg.Decode(&datas); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 
+	log.Debug("Light PalletOne","ProtocolManager->UTXOsMsg respdata",datas)
 	if err:=respdata.decode(datas);err!=nil{
 		log.Error("Light PalletOne","ProtocolManager->UTXOsMsg respdata.decode err",err,"datas:",datas)
 		return err

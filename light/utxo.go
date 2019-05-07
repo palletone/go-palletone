@@ -9,7 +9,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/rlp"
+	"encoding/json"
 )
 
 const (
@@ -26,8 +26,8 @@ const (
 )
 
 type lpsutxo struct {
-	outpoint modules.OutPoint
-	utxo modules.Utxo
+	addr  []byte    `json:"addr"`
+	utxos [][][]byte  `json:"utxos"`
 }
 
 type utxosRespData struct {
@@ -39,29 +39,39 @@ func NewUtxosRespData()*utxosRespData  {
 	return &utxosRespData{utxos:make(map[modules.OutPoint]*modules.Utxo)}
 }
 
-func (u *utxosRespData)encode()([][]byte,error){
-	var datas [][]byte
-	datas = append(datas,[]byte(u.addr))
+func (u *utxosRespData)encode()(lpsutxo,error){
+	var datas lpsutxo
+	datas.addr = []byte(u.addr)
 	for outpoint,utxo:=range u.utxos{
-		lu :=lpsutxo{outpoint:outpoint,utxo:*utxo}
-		data,err:=rlp.EncodeToBytes(lu)
-		if err!=nil{
-			return nil,err
-		}
-		datas = append(datas,data)
-	}
+		var data [][]byte
+		d1,err:=json.Marshal(outpoint)
+		if err!=nil{return datas,err}
+		log.Debug("Light PalletOne","utxosRespData encode outpoint",string(d1))
+		data = append(data,d1)
 
+		d2,err:=json.Marshal(utxo)
+		if err!=nil{return datas,err}
+		log.Debug("Light PalletOne","utxosRespData encode utxo",string(d2))
+		data = append(data,d2)
+		datas.utxos = append(datas.utxos,data)
+	}
 	return datas,nil
+	//return json.Marshal(datas)
 }
 
-func (u *utxosRespData)decode(datas [][]byte)error{
-	u.addr = string(datas[0])
-	for _,datalus:= range datas[1:]{
-		lu :=lpsutxo{}
-		if err:=rlp.DecodeBytes(datalus,&lu);err!=nil{
-			return err
-		}
-		u.utxos[lu.outpoint] = &lu.utxo
+func (u *utxosRespData)decode(datas lpsutxo)error{
+	//var datas lpsutxo
+	//if err:=json.Unmarshal(respdata,&datas);err!=nil{return err}
+
+	u.addr = string(datas.addr)
+	for _,utxos:=range datas.utxos{
+		var outpoint modules.OutPoint
+		var utxo *modules.Utxo
+		log.Debug("Light PalletOne","utxosRespData decode outpoint",string(utxos[0]))
+		log.Debug("Light PalletOne","utxosRespData decode utxo",string(utxos[1]))
+		if err:=json.Unmarshal(utxos[0],&outpoint);err!=nil{return err}
+		if err:=json.Unmarshal(utxos[1],&utxo);err!=nil{return err}
+		u.utxos[outpoint] = utxo
 	}
 	return nil
 }
