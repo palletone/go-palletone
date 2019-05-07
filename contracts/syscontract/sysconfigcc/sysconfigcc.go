@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptnjson"
 	"sort"
 	"strconv"
 	"time"
@@ -51,7 +52,13 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 			jsonResp := "{\"Error\":\"getAllSysParamsConf err: " + err.Error() + "\"}"
 			return shim.Error(jsonResp)
 		}
-		return shim.Success(resultByte)
+		resut := ptnjson.ConvertAllSysConfigToJson(resultByte)
+		res, err := json.Marshal(resut)
+		if err != nil {
+			jsonResp := "{\"Error\":\"getAllSysParamsConf err: " + err.Error() + "\"}"
+			return shim.Error(jsonResp)
+		}
+		return shim.Success(res)
 	case "getSysParamValByKey":
 		log.Info("Start getSysParamValByKey Invoke")
 		resultByte, err := s.getSysParamValByKey(stub, args)
@@ -70,7 +77,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Success(resultByte)
 	case "getWithoutVoteResult":
 		log.Info("Start getWithoutVoteResult Invoke")
-		resultByte, err := stub.GetState(sysParam)
+		resultByte, err := stub.GetState(modules.SysParam)
 		if err != nil {
 			jsonResp := "{\"Error\":\"getWithoutVoteResult err: " + err.Error() + "\"}"
 			return shim.Success([]byte(jsonResp))
@@ -403,8 +410,8 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 	return []byte("NodesVote success."), nil
 }
 
-func (s *SysConfigChainCode) getAllSysParamsConf(stub shim.ChaincodeStubInterface) ([]byte, error) {
-	sysVal, err := stub.GetState("sysConf")
+func (s *SysConfigChainCode) getAllSysParamsConf(stub shim.ChaincodeStubInterface) (map[string]*modules.ContractStateValue, error) {
+	sysVal, err := stub.GetContractAllState()
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +479,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	modify := &modules.FoundModify{}
 	modify.Key = args[0]
 	modify.Value = args[1]
-	resultBytes, err := stub.GetState(sysParam)
+	resultBytes, err := stub.GetState(modules.SysParam)
 	if err != nil {
 		return nil, err
 	}
@@ -487,7 +494,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		modifies = append(modifies, modify)
 	}
 	modifyByte, err := json.Marshal(modifies)
-	err = stub.PutState(sysParam, modifyByte)
+	err = stub.PutState(modules.SysParam, modifyByte)
 	if err != nil {
 		return nil, err
 	}
@@ -513,7 +520,7 @@ func getSymbols(stub shim.ChaincodeStubInterface) *SysTokenInfo {
 	tkInfo := SysTokenInfo{}
 	//TODO
 	//tkInfoBytes, _ := stub.GetState(symbolsKey + assetID)
-	tkInfoBytes, _ := stub.GetState(sysParams)
+	tkInfoBytes, _ := stub.GetState(modules.SysParams)
 	if len(tkInfoBytes) == 0 {
 		return nil
 	}
@@ -529,7 +536,7 @@ func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(sysParams, val)
+	err = stub.PutState(modules.SysParams, val)
 	return err
 }
 

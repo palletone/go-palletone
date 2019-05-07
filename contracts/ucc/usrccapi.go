@@ -75,6 +75,7 @@ func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, 
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, cdDeploymentSpec, timeout)
 	if err != nil {
 		log.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
+		return err
 	}
 	log.Debugf("user chaincode chainID[%s]-name[%s]-path[%s]-version[%s] deployed", chainID, usrcc.Name, usrcc.Path, usrcc.Version)
 	return nil

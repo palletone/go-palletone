@@ -220,7 +220,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 			}
 		}
 		//将基金会当前单独修改的制为nil
-		err = statedb.SaveSysConfig("sysParam", nil, version)
+		err = statedb.SaveSysConfig(modules.SysParam, nil, version)
 		if err != nil {
 			return err
 		}
@@ -228,13 +228,13 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 	if info == nil {
 		return nil
 	}
-	foundAddr, _, err := statedb.GetSysConfig(modules.FoundationAddress)
-	if err != nil {
-		return err
-	}
-	if info.CreateAddr != string(foundAddr) {
-		return fmt.Errorf("only foundation can call this function")
-	}
+	//foundAddr, _, err := statedb.GetSysConfig(modules.FoundationAddress)
+	//if err != nil {
+	//	return err
+	//}
+	//if info.CreateAddr != string(foundAddr) {
+	//	return fmt.Errorf("only foundation can call this function")
+	//}
 	if !info.IsVoteEnd {
 		return nil
 	}
@@ -251,7 +251,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 		}
 	}
 	//将基金会当前投票修改的制为nil
-	err = statedb.SaveSysConfig("sysParams", nil, version)
+	err = statedb.SaveSysConfig(modules.SysParams, nil, version)
 	if err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 }
 
 func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error) {
-	val, _, err := statedb.GetSysConfig("sysParam")
+	val, _, err := statedb.GetSysConfig(modules.SysParam)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error)
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
-	val, _, err := statedb.GetSysConfig("sysParams")
+	val, _, err := statedb.GetSysConfig(modules.SysParams)
 	if err != nil {
 		return nil, err
 	}

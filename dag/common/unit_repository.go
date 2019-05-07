@@ -730,7 +730,6 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 			}
 			sysConfByte, _ := json.Marshal(genesisConf.SystemConfig)
 			writeSets = append(writeSets, modules.ContractWriteSet{Key: "sysConf", Value: []byte(sysConfByte)})
-
 		} else if strings.Compare(tt.Field(i).Name, "DigitalIdentityConfig") == 0 {
 			// 2019.4.12
 			t := reflect.TypeOf(genesisConf.DigitalIdentityConfig)

@@ -21,6 +21,7 @@
 package common
 
 import (
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -115,4 +116,17 @@ func TestAddrValidate(t *testing.T) {
 	if addr.Less(raddr) {
 		t.Fail()
 	}
+}
+func TestAddresses_MarshalJson(t *testing.T) {
+	addr1, _ := StringToAddress("P124gB1bXHDTXmox58g4hd4u13HV3e5vKie")
+	addr1Json, _ := json.Marshal(addr1)
+	t.Log(string(addr1Json))
+	addr11 := Address{}
+	err := json.Unmarshal(addr1Json, &addr11)
+	assert.Nil(t, err)
+	t.Log(addr11.String())
+	addr2, _ := StringToAddress("P1LWaK3KBCuPVsXUPHXkMZr2Cm5tZquRDK8")
+	addrList := []Address{addr1, addr2}
+	addrListStr, _ := json.Marshal(addrList)
+	t.Log(string(addrListStr))
 }

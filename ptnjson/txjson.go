@@ -63,16 +63,20 @@ type TplJson struct {
 	Bytecode     []byte `json:"bytecode"`      // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
 	AddrHash     string `json:"addr_hash"`
+	ErrorCode    uint32 `json:"error_code"`
+	ErrorMessage string `json:"error_message"`
 }
 type DeployJson struct {
-	TemplateId string   `json:"template_id"`
-	ContractId string   `json:"contract_id"`
-	Name       string   `json:"name"`
-	Args       [][]byte `json:"args"` // contract arguments list
-	Jury       []string `json:"jury"`
-	EleList    string   `json:"election_list"`
-	ReadSet    string   `json:"read_set"`
-	WriteSet   string   `json:"write_set"`
+	TemplateId   string   `json:"template_id"`
+	ContractId   string   `json:"contract_id"`
+	Name         string   `json:"name"`
+	Args         [][]byte `json:"args"` // contract arguments list
+	Jury         []string `json:"jury"`
+	EleList      string   `json:"election_list"`
+	ReadSet      string   `json:"read_set"`
+	WriteSet     string   `json:"write_set"`
+	ErrorCode    uint32   `json:"error_code"`
+	ErrorMessage string   `json:"error_message"`
 }
 type InvokeJson struct {
 	ContractId   string   `json:"contract_id"` // contract id
@@ -85,10 +89,12 @@ type InvokeJson struct {
 	ErrorMessage string   `json:"error_message"`
 }
 type StopJson struct {
-	ContractId string   `json:"contract_id"`
-	Jury       []string `json:"jury"`
-	ReadSet    string   `json:"read_set"`
-	WriteSet   string   `json:"write_set"`
+	ContractId   string   `json:"contract_id"`
+	Jury         []string `json:"jury"`
+	ReadSet      string   `json:"read_set"`
+	WriteSet     string   `json:"write_set"`
+	ErrorCode    uint32   `json:"error_code"`
+	ErrorMessage string   `json:"error_message"`
 }
 type SignatureJson struct {
 	Signatures []string `json:"signature_set"` // the array of signature
@@ -216,7 +222,8 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 
 	ah, _ := json.Marshal(tpl.AddrHash)
 	tpljson.AddrHash = string(ah)
-
+	tpljson.ErrorCode = tpl.ErrMsg.Code
+	tpljson.ErrorMessage = tpl.ErrMsg.Message
 	return tpljson
 }
 func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
@@ -237,6 +244,8 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson.ReadSet = string(rset)
 	wset, _ := json.Marshal(deploy.WriteSet)
 	djson.WriteSet = string(wset)
+	djson.ErrorCode = deploy.ErrMsg.Code
+	djson.ErrorMessage = deploy.ErrMsg.Message
 	return djson
 }
 func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
@@ -254,10 +263,9 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	wset, _ := json.Marshal(invoke.WriteSet)
 	injson.WriteSet = string(wset)
 	injson.Payload = string(invoke.Payload)
-	//if invoke.ErrMsg!=nil{
 	injson.ErrorCode = invoke.ErrMsg.Code
 	injson.ErrorMessage = invoke.ErrMsg.Message
-	//}
+
 	return injson
 }
 func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
@@ -268,6 +276,8 @@ func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
 	sjson.ReadSet = string(rset)
 	wset, _ := json.Marshal(stop.WriteSet)
 	sjson.WriteSet = string(wset)
+	sjson.ErrorCode = stop.ErrMsg.Code
+	sjson.ErrorMessage = stop.ErrMsg.Message
 	return sjson
 }
 func convertSig2Json(sig *modules.SignaturePayload) *SignatureJson {
