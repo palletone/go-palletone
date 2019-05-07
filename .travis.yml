@@ -23,7 +23,7 @@ script:
     #- python -m robot.run ../testcase/createTrans
     #- python -m robot.run ../testcase/ccinvoke
     #- python -m robot.run ../testcase/ccinvoke/transferToken
-    - python -m robot.run ../DigitalIdentityCert/step1-IssueCerts ../DigitalIdentityCert/step2-useCerts ../DigitalIdentityCert/step3-revokeCert
+    - python -m robot.run ../DigitalIdentityCert
     #- python -m robot.run ../DigitalIdentityCert/step2-useCerts
     #- python -m robot.run ../DigitalIdentityCert/step3-revokeCert
   
