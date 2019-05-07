@@ -21,12 +21,13 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"time"
 )
 
 func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	depositAmountsForJuryStr, err := stub.GetSystemConfig("DepositAmountForJury")
+	depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
 		return shim.Error(err.Error())
@@ -66,7 +67,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		if invokeTokens.Amount >= depositAmountsForJury {
 			//加入列表
 			//addList("Jury", invokeAddr, stub)
-			err = addCandaditeList(invokeAddr, stub, "JuryList")
+			err = addCandaditeList(invokeAddr, stub, modules.JuryList)
 			if err != nil {
 				log.Error("AddCandaditeList err:", "error", err)
 				return shim.Error(err.Error())
@@ -82,7 +83,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			isJury = true
 			//TODO 再次交付保证金时，先计算当前余额的币龄奖励
 			endTime := balance.LastModifyTime * 1800
-			depositRate, err := stub.GetSystemConfig("DepositRate")
+			depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 			if err != nil {
 				log.Error("stub.GetSystemConfig err:", "error", err)
 				return shim.Error(err.Error())
@@ -98,7 +99,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		//判断交了保证金后是否超过了jury
 		if balance.TotalAmount >= depositAmountsForJury {
 			//addList("Jury", invokeAddr, stub)
-			err = addCandaditeList(invokeAddr, stub, "JuryList")
+			err = addCandaditeList(invokeAddr, stub, modules.JuryList)
 			if err != nil {
 				log.Error("AddCandaditeList err:", "error", err)
 				return shim.Error(err.Error())
@@ -115,7 +116,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 }
 
 func juryApplyCashback(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	err := applyCashbackList("Jury", stub, args)
+	err := applyCashbackList(Jury, stub, args)
 	if err != nil {
 		log.Error("ApplyCashbackList err:", "error", err)
 		return shim.Error(err.Error())
@@ -160,7 +161,7 @@ func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime
 		return err
 	}
 	//更新列表
-	err = stub.PutState("ListForCashback", listForCashbackByte)
+	err = stub.PutState(ListForCashback, listForCashbackByte)
 	if err != nil {
 		log.Error("Stub.PutState err:", "error", err)
 		return err
@@ -180,7 +181,7 @@ func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime
 
 //Jury已在列表中
 func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
-	depositPeriod, err := stub.GetSystemConfig("DepositPeriod")
+	depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositPeriod err:", "error", err)
 		return err
@@ -203,7 +204,7 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr string, c
 		//判断是否已到期
 		if endTime-startTime >= day {
 			//退出全部，即删除cashback，利息计算好了
-			err = cashbackAllDeposit("Jury", stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
+			err = cashbackAllDeposit(Jury, stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
 			if err != nil {
 				return err
 			}
@@ -214,7 +215,7 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr string, c
 	} else {
 		//TODO 退出一部分，且退出该部分金额后还在列表中，还没有计算利息
 		//d.addListForCashback("Jury", stub, cashbackAddr, invokeTokens)
-		err = cashbackSomeDeposit("Jury", stub, cashbackAddr, cashbackValue, balance)
+		err = cashbackSomeDeposit(Jury, stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
 			log.Error("CashbackSomeDeposit err:", "error", err)
 			return err

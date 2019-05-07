@@ -16,6 +16,24 @@ package deposit
 
 import "github.com/palletone/go-palletone/dag/modules"
 
+const (
+	ListForCashback            = "ListForCashback"
+	ListForForfeiture          = "ListForForfeiture"
+	DeveloperList              = "DeveloperList"
+	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
+	ListForAgreeBecomeMediator = "ListForAgreeBecomeMediator"
+	ListForApplyQuitMediator   = "ListForApplyQuitMediator"
+	DepositAmountForMediator   = "DepositAmountForMediator"
+	DepositAmountForJury       = "DepositAmountForJury"
+	DepositAmountForDeveloper  = "DepositAmountForDeveloper"
+	DepositPeriod              = "DepositPeriod"
+	Developer                  = "Developer"
+	Jury                       = "Jury"
+	Mediator                   = "Mediator"
+	Ok                         = "ok"
+	No                         = "no"
+)
+
 //申请成为Mediator
 type MediatorRegisterInfo struct {
 	Address string `json:"address"`

@@ -409,7 +409,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 }
 
-var reqList = []uint64{GetBlockHeadersMsg, GetBlockBodiesMsg, GetCodeMsg, GetReceiptsMsg, GetProofsMsg, SendTxMsg, SendTxV2Msg, GetTxStatusMsg, GetHeaderProofsMsg, GetProofsV2Msg, GetHelperTrieProofsMsg}
+var reqList = []uint64{GetBlockHeadersMsg, GetBlockBodiesMsg, GetCodeMsg, GetUTXOsMsg, GetProofsMsg, SendTxMsg, SendTxV2Msg, GetTxStatusMsg, GetHeaderProofsMsg, GetProofsV2Msg, GetHelperTrieProofsMsg}
 
 // handleMsg is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
@@ -480,6 +480,14 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case GetProofsV2Msg:
 		log.Trace("Received les/2 proofs request")
+
+	case GetUTXOsMsg:
+		log.Debug("Received les GetUTXOsMsg")
+		return pm.GetUTXOsMsg(msg,p)
+
+	case UTXOsMsg:
+		log.Debug("Received les UTXOsMsg")
+		return pm.UTXOsMsg(msg,p)
 
 	case ProofsMsg:
 		return pm.ProofsMsg(msg, p)

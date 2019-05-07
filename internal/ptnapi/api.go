@@ -302,6 +302,11 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr st
 
 	return result, err
 }
+func (s *PublicBlockChainAPI) GetAllSysConfig(ctx context.Context) ([]*ptnjson.ConfigJson, error) {
+
+	result, err := s.b.GetAllSysConfig()
+	return result, err
+}
 
 //func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
 //	result, err := s.b.WalletTokens(address)
@@ -643,8 +648,8 @@ func (s *PublicBlockChainAPI) ProofTransactionByRlptx(ctx context.Context, rlptx
 	return s.b.ProofTransactionByRlptx(rlptx)
 }
 
-func (s *PublicBlockChainAPI) ValidationPath(ctx context.Context, tx string) ([]byte, error) {
-	return s.b.ValidationPath(tx)
+func (s *PublicBlockChainAPI) SyncUTXOByAddr(ctx context.Context, addr string) string {
+	return s.b.SyncUTXOByAddr(addr)
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM

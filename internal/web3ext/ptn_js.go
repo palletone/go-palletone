@@ -155,8 +155,8 @@ web3._extend({
 			params: 1
 		}),
 		new web3._extend.Method({
-			name: 'validationPath',
-			call: 'ptn_validationPath',
+			name: 'syncUTXOByAddr',
+			call: 'ptn_syncUTXOByAddr',
 			params: 1
 		}),
 		new web3._extend.Method({
@@ -179,6 +179,10 @@ web3._extend({
 				}
 				return formatted;
 			}
+		}),
+	new web3._extend.Property({
+			name: 'allSysConfig',
+			getter: 'ptn_getAllSysConfig'
 		}),
 	]
 });

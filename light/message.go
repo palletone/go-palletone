@@ -12,6 +12,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -312,6 +313,39 @@ func (pm *ProtocolManager) SendTxMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+
+func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
+	if pm.server==nil{
+		return errors.New("this node can not service with download utxo server")
+	}
+
+	var addr string
+	if err := msg.Decode(&addr); err != nil {
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg addr err",err,"addr:",addr)
+		return err
+	}
+	utxos,err:=pm.dag.GetAddrUtxos(address)
+	if err!=nil{
+		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos err",err,"addr:",addr)
+		return err
+	}
+	respdata:=utxosRespData{}
+	for _,utxo:=range utxos{
+		respdata.utxos = append(respdata.utxos,utxo.Bytes())
+	}
+	respdata.addr = addr
+	return p.SendUTXOs(0, 0, respdata)
+}
+func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
+	//pm.server !=nil{
+	//	
+	//}
+	return nil
+}
 /*
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	log.Trace("Received block bodies request")
