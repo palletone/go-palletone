@@ -52,6 +52,7 @@ type IUtxoDb interface {
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 	DeleteUtxo(outpoint *modules.OutPoint) error
+	ClearUtxo() error
 }
 
 // ###################### UTXO index for Address ######################
@@ -246,6 +247,17 @@ func (db *UtxoDb) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	}
 
 	return view, err
+}
+func (db *UtxoDb) ClearUtxo() error {
+	iter := db.db.NewIterator()
+	for iter.Next() {
+		key := iter.Key()
+		err := db.db.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // get prefix: return maps

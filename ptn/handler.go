@@ -163,15 +163,16 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		consEngine: engine,
 		peers:      newPeerSet(),
 		//lightPeers:   newPeerSet(),
-		newPeerCh:     make(chan *peer),
-		noMorePeers:   make(chan struct{}),
-		txsyncCh:      make(chan *txsync),
-		quitSync:      make(chan struct{}),
-		genesis:       genesis,
-		producer:      producer,
-		contractProc:  contractProc,
-		lightSync:     uint32(1),
-		receivedCache: freecache.NewCache(5 * 1024 * 1024),
+		newPeerCh:      make(chan *peer),
+		noMorePeers:    make(chan struct{}),
+		txsyncCh:       make(chan *txsync),
+		quitSync:       make(chan struct{}),
+		dockerQuitSync: make(chan struct{}),
+		genesis:        genesis,
+		producer:       producer,
+		contractProc:   contractProc,
+		lightSync:      uint32(1),
+		receivedCache:  freecache.NewCache(5 * 1024 * 1024),
 	}
 	symbol, _, _, _, _ := gasToken.ParseAssetId()
 	protocolName := symbol
@@ -428,7 +429,8 @@ func (pm *ProtocolManager) Stop() {
 	pm.wg.Wait()
 
 	//stop dockerLoop
-	pm.dockerQuitSync <- struct{}{}
+	//pm.dockerQuitSync <- struct{}{}
+	close(pm.dockerQuitSync)
 	log.Info("PalletOne protocol stopped")
 }
 

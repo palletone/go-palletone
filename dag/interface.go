@@ -81,6 +81,7 @@ type IDag interface {
 	GetGenesisUnit() (*modules.Unit, error)
 
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	GetAllConfig() (map[string]*modules.ContractStateValue, error)
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -144,6 +145,8 @@ type IDag interface {
 	GetLightChainHeight(assetId modules.AssetId) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	GetAllLeafNodes() ([]*modules.Header, error)
+	ClearUtxo(addr common.Address) error
+	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 
 	HeadUnitTime() int64
 	HeadUnitNum() uint64
