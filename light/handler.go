@@ -120,6 +120,7 @@ type ProtocolManager struct {
 	wg *sync.WaitGroup
 	//SPV
 	validation *Validation
+	utxosync *UtxosSync
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -146,6 +147,7 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		wg:          new(sync.WaitGroup),
 		noMorePeers: make(chan struct{}),
 		validation:  NewValidation(dag),
+		utxosync: NewUtxosSync(dag),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle

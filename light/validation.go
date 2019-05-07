@@ -113,7 +113,7 @@ func (v *Validation) AddSpvResp(resp *proofsRespData) error {
 	if !ok {
 		v.preqLock.RUnlock()
 
-		vreq.step <- ERRSPVOTHERS
+		//vreq.step <- ERRSPVOTHERS
 		log.Debug("Light PalletOne", "Validation->Check key is not exist.key", resp.index)
 		return errors.New("Key is not exist")
 	}
