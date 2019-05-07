@@ -36,8 +36,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 func mockUnitRepository() *UnitRepository {
@@ -120,7 +120,7 @@ func TestSaveUnit(t *testing.T) {
 
 	header.Authors = *auth
 	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
-		"TestContractTpl", "./contract", "1.1.1", 1024,
+		1024,
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159}, modules.ContractError{})
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
@@ -362,8 +362,8 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 	contractTplPayload := modules.ContractTplPayload{
 		TemplateId: []byte("contract_template0000"),
 		ByteCode:   []byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159},
-		Name:       "TestContractTpl",
-		Path:       "./contract",
+		//Name:       "TestContractTpl",
+		//Path:       "./contract",
 	}
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
