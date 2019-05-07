@@ -27,6 +27,7 @@ import (
 	award2 "github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
@@ -593,7 +594,7 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 			return 0, nil
 		}
 		addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
-		if addr.String() == "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM" {
+		if addr.Equal(syscontract.DepositContractAddress) {
 			awards := uint64(0)
 			//对每一笔input输入进行计算奖励
 			for _, txin := range payload.Inputs {

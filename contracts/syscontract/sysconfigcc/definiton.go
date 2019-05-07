@@ -5,9 +5,6 @@ import (
 	"time"
 )
 
-const sysParam = "sysParam"
-const sysParams = "sysParams"
-
 //one topic
 type SysVoteTopic struct {
 	TopicTitle    string

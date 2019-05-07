@@ -74,6 +74,6 @@ echo $another
 pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v anotherAddr:$another ./deposit_test_cases/DepositContractTest.robot
 
 
-#./test_case_teardown.sh
+./test_case_teardown.sh
 
-#killall gptn
+killall gptn

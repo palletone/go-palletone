@@ -501,12 +501,12 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 }
 
 //contract control
-func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string) (TemplateId []byte, err error) {
+func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) ([]byte, error) {
 	//tempid := []byte{0x1, 0x2, 0x3}
 	log.Debugf("======>ContractInstall:name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
 
 	//payload, err := cc.Install("palletone", ccName, ccPath, ccVersion)
-	payload, err := b.ptn.contract.Install("palletone", ccName, ccPath, ccVersion)
+	payload, err := b.ptn.contract.Install("palletone", ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 
 	return payload.TemplateId, err
 }
@@ -560,8 +560,8 @@ func (b *PtnApiBackend) ContractStartChaincodeContainer(deployId []byte, txid st
 }
 
 //
-func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
-	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, true, addrs)
+func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
+	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, description, abi, language, true, addrs)
 }
 func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)

@@ -43,7 +43,7 @@ type Contract struct {
 
 type ContractInf interface {
 	Close() error
-	Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error)
+	Install(chainID string, ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error)
 	Deploy(rwM rwset.TxManager, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
 	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokePayload, error)
 	Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
@@ -104,7 +104,7 @@ func (c *Contract) Close() error {
 // Contract installation, packaging the specified contract path file,
 // and forming a contract template unit together with the contract name and version
 // Chain code ID for multiple chains
-func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string) (payload *md.ContractTplPayload, err error) {
+func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error) {
 	log.Info("===========================enter contract.go Install==============================")
 	defer log.Info("===========================exit contract.go Install==============================")
 	atomic.LoadInt32(&initFlag)
@@ -112,7 +112,7 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 		log.Error("initFlag == 0")
 		return nil, errors.New("Contract not initialized")
 	}
-	return cc.Install(c.dag, chainID, ccName, ccPath, ccVersion)
+	return cc.Install(c.dag, chainID, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 }
 
 // Deploy 将指定的合约模板部署到本地，生成对应Docker镜像及启动带有初始化合约参数的容器，用于合约的执行。

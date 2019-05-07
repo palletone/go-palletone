@@ -328,23 +328,44 @@ func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
 		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg addr err",err,"addr:",addr)
 		return err
 	}
+	respdata:=NewUtxosRespData()
 	utxos,err:=pm.dag.GetAddrUtxos(address)
 	if err!=nil{
 		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos err",err,"addr:",addr)
 		return err
 	}
-	respdata:=utxosRespData{}
-	for _,utxo:=range utxos{
-		respdata.utxos = append(respdata.utxos,utxo.Bytes())
-	}
 	respdata.addr = addr
-	return p.SendUTXOs(0, 0, respdata)
+	respdata.utxos = utxos
+
+	datas,err:=respdata.encode()
+	if err!=nil{
+		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos err",err,"respdata:",respdata)
+		return err
+	}
+
+	log.Debug("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos respdata.addr:",respdata.addr,"datas",datas)
+	return p.SendRawUTXOs(0, 0, datas)
 }
 func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
-	//pm.server !=nil{
-	//	
+	if pm.server!=nil {
+		return errors.New("this is server node")
+	}
+	var datas [][]byte
+	respdata:=NewUtxosRespData()
+	if err := msg.Decode(&datas); err != nil {
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+
+	if err:=respdata.decode(datas);err!=nil{
+		log.Error("Light PalletOne","ProtocolManager->UTXOsMsg respdata.decode err",err,"datas:",datas)
+		return err
+	}
+
+	//if err:=json.Unmarshal(data,&respdata);err!=nil{
+	//	log.Error("Light PalletOne","ProtocolManager->UTXOsMsg  err",err,"data:",data)
+	//	return err
 	//}
-	return nil
+	return pm.utxosync.SaveUtxoView(respdata)
 }
 /*
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {

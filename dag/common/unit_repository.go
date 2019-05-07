@@ -41,7 +41,9 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/rlp"
+
 	"sync"
 )
 
@@ -483,6 +485,54 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 //	return fee, nil
 //}
 
+func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []modules.ContractReadSet) bool {
+	for _, rd := range readSet {
+		_, v, err := dag.GetContractState(contractId, rd.Key)
+		if err != nil {
+			log.Debug("checkReadSetValid", "GetContractState fail, contractId", contractId)
+			return false
+		}
+		if v != nil && !v.Equal(rd.Version) {
+			return false
+		}
+	}
+	return true
+}
+
+func MarkTxIllegal(dag storage.IStateDb, txs []*modules.Transaction) (error) {
+	for _, tx := range txs {
+		if !tx.IsContractTx() {
+			continue
+		}
+		if tx.IsSystemContract() {
+			continue
+		}
+		var readSet []modules.ContractReadSet
+		var contractId []byte
+
+		valid := true
+		for _, msg := range tx.TxMessages {
+			switch msg.App {
+			case modules.APP_CONTRACT_DEPLOY:
+				payload := msg.Payload.(*modules.ContractDeployPayload)
+				readSet = payload.ReadSet
+				contractId = payload.ContractId
+			case modules.APP_CONTRACT_INVOKE:
+				payload := msg.Payload.(*modules.ContractInvokePayload)
+				readSet = payload.ReadSet
+				contractId = payload.ContractId
+			case modules.APP_CONTRACT_STOP:
+				payload := msg.Payload.(*modules.ContractStopPayload)
+				readSet = payload.ReadSet
+				contractId = payload.ContractId
+			}
+		}
+		valid = checkReadSetValid(dag, contractId, readSet)
+		tx.Illegal = !valid
+	}
+	return nil
+}
+
 func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
 	if m == nil {
 		return nil, errors.New("ComputeTxFees param is nil")
@@ -730,7 +780,6 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 			}
 			sysConfByte, _ := json.Marshal(genesisConf.SystemConfig)
 			writeSets = append(writeSets, modules.ContractWriteSet{Key: "sysConf", Value: []byte(sysConfByte)})
-
 		} else if strings.Compare(tt.Field(i).Name, "DigitalIdentityConfig") == 0 {
 			// 2019.4.12
 			t := reflect.TypeOf(genesisConf.DigitalIdentityConfig)
@@ -865,6 +914,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	txHash := tx.Hash()
 	reqId := tx.RequestHash().Bytes()
 	// traverse messages
+	var installReq *modules.ContractInstallRequestPayload
 	for msgIndex, msg := range tx.TxMessages {
 		// handle different messages
 		switch msg.App {
@@ -873,7 +923,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("Save payment payload error.")
 			}
 		case modules.APP_CONTRACT_TPL:
-			if ok := rep.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+			tpl := msg.Payload.(*modules.ContractTplPayload)
+			if ok := rep.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), installReq, tpl); ok != true {
 				return fmt.Errorf("Save contract template error.")
 			}
 		case modules.APP_CONTRACT_DEPLOY:
@@ -901,7 +952,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("apply Account Updating Operation error")
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
-			// todo
+			installReq = msg.Payload.(*modules.ContractInstallRequestPayload)
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			if ok := rep.saveContractDeployReq(reqId, msg); !ok {
 				return fmt.Errorf("save contract of deploy request failed.")
@@ -1171,14 +1222,14 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 保存合约模板代码
 To save contract template code
 */
-func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
-	var pl interface{}
-	pl = msg.Payload
-	payload, ok := pl.(*modules.ContractTplPayload)
-	if ok == false {
-		log.Error("saveContractTpl", "error", "payload is not ContractTplPayload type")
-		return false
-	}
+func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex uint32, installReq *modules.ContractInstallRequestPayload, tpl *modules.ContractTplPayload) bool {
+	//var pl interface{}
+	//pl = msg.Payload
+	//payload, ok := pl.(*modules.ContractTplPayload)
+	//if ok == false {
+	//	log.Error("saveContractTpl", "error", "payload is not ContractTplPayload type")
+	//	return false
+	//}
 
 	// step1. generate version for every contract template
 	version := &modules.StateVersion{
@@ -1186,32 +1237,43 @@ func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex u
 		TxIndex: txIndex,
 	}
 	// step2. save contract template bytecode data
-	if err := rep.statedb.SaveContractTemplate(payload.TemplateId, payload.ByteCode, version.Bytes()); err != nil {
+	if err := rep.statedb.SaveContractTemplate(tpl.TemplateId, tpl.ByteCode, version.Bytes()); err != nil {
 		log.Error("SaveContractTemplate", "error", err.Error())
 		return false
 	}
 	// step3. save contract template name, path, Memory
-	if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_NAME, payload.Name, version); err != nil {
+	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_NAME, installReq.TplName, version); err != nil {
 		log.Error("SaveContractTemplateState when save name", "error", err.Error())
 		return false
 	}
-	if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_PATH, payload.Path, version); err != nil {
+	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_PATH, installReq.Path, version); err != nil {
 		log.Error("SaveContractTemplateState when save path", "error", err.Error())
 		return false
 	}
-	if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Memory, payload.Memory, version); err != nil {
+	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_Memory, tpl.Memory, version); err != nil {
 		log.Error("SaveContractTemplateState when save memory", "error", err.Error())
 		return false
 	}
-	if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Version, payload.Version, version); err != nil {
+	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_Version, installReq.Version, version); err != nil {
 		log.Error("SaveContractTemplateState when save version", "error", err.Error())
 		return false
 	}
-	if err := rep.statedb.SaveContractTemplateState(payload.TemplateId, modules.FIELD_TPL_Addrs, payload.AddrHash, version); err != nil {
+	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_Addrs, installReq.AddrHash, version); err != nil {
 		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
 		return false
 	}
-
+	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_DESC, installReq.TplDescription, version); err != nil {
+		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
+		return false
+	}
+	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_ABI, installReq.Abi, version); err != nil {
+		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
+		return false
+	}
+	if err := rep.statedb.SaveContractTemplateState(tpl.TemplateId, modules.FIELD_TPL_Language, installReq.Language, version); err != nil {
+		log.Error("SaveContractTemplateState when save addrHash", "error", err.Error())
+		return false
+	}
 	return true
 }
 
