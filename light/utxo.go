@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"encoding/json"
+	"github.com/palletone/go-palletone/common"
 )
 
 const (
@@ -77,19 +78,6 @@ func (u *utxosRespData)decode(arrs [][][]byte)error{
 		u.utxos[outpoint] = utxo
 	}
 	return nil
-
-
-	//u.addr = string(datas.addr)
-	//for _,utxos:=range datas.utxos{
-	//	var outpoint modules.OutPoint
-	//	var utxo *modules.Utxo
-	//	log.Debug("Light PalletOne","utxosRespData decode outpoint",string(utxos[0]))
-	//	log.Debug("Light PalletOne","utxosRespData decode utxo",string(utxos[1]))
-	//	if err:=json.Unmarshal(utxos[0],&outpoint);err!=nil{return err}
-	//	if err:=json.Unmarshal(utxos[1],&utxo);err!=nil{return err}
-	//	u.utxos[outpoint] = utxo
-	//}
-	//return nil
 }
 
 
@@ -168,6 +156,16 @@ func (u *UtxosSync)SaveUtxoView(respdata *utxosRespData)error{
 	}
 	u.lock.RUnlock()
 
+	address, err := common.StringToAddress(respdata.addr)
+	if err != nil {
+		log.Debug("Light PalletOne","SaveUtxoView err:",err,"addr",respdata.addr)
+		return err
+	}
+
+	if err:=u.dag.ClearUtxo(address);err!=nil{
+		log.Debug("Light PalletOne","SaveUtxoView ClearUtxo err:",err,"addr",respdata.addr)
+		return err
+	}
 	if err:=u.dag.SaveUtxoView(respdata.utxos);err!=nil{
 		log.Debug("Light PalletOne", "SaveUtxoView key err",err,"addr:", respdata.addr)
 		return err
