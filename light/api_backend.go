@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -106,8 +107,7 @@ func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
 //}
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return nil
-	//return b.eth.txPool.Add(ctx, signedTx)
+	return b.ptn.txPool.AddLocal(txspool.TxtoTxpoolTx(b.ptn.txPool, signedTx))
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
@@ -226,7 +226,12 @@ func (b *LesApiBackend) AccountManager() *accounts.Manager {
 //SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
 //SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
 func (b *LesApiBackend) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
-	return nil
+	units := b.ptn.dag.GetUnstableUnits()
+	result := make([]*ptnjson.UnitSummaryJson, len(units))
+	for i, unit := range units {
+		result[i] = ptnjson.ConvertUnit2SummaryJson(unit)
+	}
+	return result
 }
 
 // TxPool API
@@ -281,10 +286,10 @@ func (b *LesApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Uni
 	return nil
 }
 func (b *LesApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
-	return nil, nil
+	return b.ptn.dag.GetHeaderByHash(hash)
 }
 func (b *LesApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	return nil, nil
+	return b.ptn.dag.GetHeaderByNumber(number)
 }
 func (b *LesApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
 	return nil, nil
@@ -355,7 +360,16 @@ func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modu
 	return nil, nil
 }
 func (b *LesApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
-	return nil, nil
+	utxos, err := b.ptn.dag.GetAllUtxos()
+	if err != nil {
+		return nil, err
+	}
+	result := []*ptnjson.UtxoJson{}
+	for o, u := range utxos {
+		ujson := ptnjson.ConvertUtxo2Json(&o, u)
+		result = append(result, ujson)
+	}
+	return result, nil
 }
 
 func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {
