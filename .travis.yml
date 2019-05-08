@@ -11,18 +11,15 @@ script:
     #- $GOPATH/bin/goveralls -service=travis-ci
     - cp gptn bdd/node
     - cd bdd/node
-    - pwd
     - chmod +x gptn
     - python init.py
     - nohup ./gptn &
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
-    #- sudo find / -name "decimal.py"
     - ./deposit_test.sh 4
     - python -m robot.run ../testcase/createTrans
     - python -m robot.run ../testcase/ccinvoke
-    #- python -m robot.run ../testcase/ccinvoke/transferToken
     - python -m robot.run ../DigitalIdentityCert
 
 

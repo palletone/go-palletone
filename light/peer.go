@@ -208,7 +208,7 @@ func (p *peer) SendCode(reqID, bv uint64, data [][]byte) error {
 	return sendResponse(p.rw, CodeMsg, reqID, bv, data)
 }
 
-func (p *peer) SendRawUTXOs(reqID, bv uint64, utxos lpsutxo) error {
+func (p *peer) SendRawUTXOs(reqID, bv uint64, utxos [][][]byte) error {
 	return p2p.Send(p.rw, UTXOsMsg, utxos)
 }
 

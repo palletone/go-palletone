@@ -35,7 +35,7 @@ func TestSimpleSignHash(t *testing.T) {
 	}
 }
 func TestSignHash(t *testing.T) {
-	text := "{\"payload\":[{\"inputs\":[{\"txid\":\"0x6cbab00351b1dcd4833242247cc8058a45af3a36eedd30196941e65dd507ea4e\",\"message_index\":0,\"out_index\":0,\"hash\":\"0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470\",\"signature\":\"\"}],\"outputs\":[{\"amount\":10000000000,\"asset\":\"PTN+8000000000000\",\"to_address\":\"P1sn5uKz2SBvhcRKtQGEqrpGB7mkf73btd\"},{\"amount\":99999989000000000,\"asset\":\"PTN+8000000000000\",\"to_address\":\"P1H4uUec5di1wCm8pKGLPxhXM6s7xVutKs9\"}]}],\"invoke_request\":{\"ContractAddress\":\"\",\"FunctionName\":\"\",\"Args\":null}}"
+	text := "{\"payload\":[{\"inputs\":[{\"txid\":\"0x6cbab00351b1dcd4833242247cc8058a45af3a36eedd30196941e65dd507ea4e\",\"message_index\":0,\"out_index\":0,\"hash\":\"0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470\",\"signature\":\"\"}],\"outputs\":[{\"amount\":10000000000,\"asset\":\"PTN+8000000000000\",\"to_address\":\"P1sn5uKz2SBvhcRKtQGEqrpGB7mkf73btd\"},{\"amount\":99999989000000000,\"asset\":\"PTN+8000000000000\",\"to_address\":\"P1H4uUec5di1wCm8pKGLPxhXM6s7xVutKs9\"}]}],\"invoke_request\":{\"ContractAddress\":\"\",\"Args\":null}}"
 	var RawTxjsonGenParams walletjson.TxJson
 	err := json.Unmarshal([]byte(text), &RawTxjsonGenParams)
 	if err != nil {

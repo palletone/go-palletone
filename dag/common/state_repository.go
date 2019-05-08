@@ -36,7 +36,8 @@ type IStateRepository interface {
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
 	GetContract(id []byte) (*modules.Contract, error)
-	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
+	GetContractTplCode(tplId []byte) ([]byte,error)
 	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
@@ -97,8 +98,11 @@ func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
 }
 
-func (rep *StateRepository) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
-	return rep.statedb.GetContractTpl(templateID)
+func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate,error){
+	return rep.statedb.GetContractTpl(tplId)
+}
+func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte,error){
+	return rep.statedb.GetContractTplCode(tplId)
 }
 
 func (rep *StateRepository) RetrieveMediator(address common.Address) (*core.Mediator, error) {

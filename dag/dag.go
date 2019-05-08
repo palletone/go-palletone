@@ -1069,9 +1069,14 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
 	return d.stableUnitRep.GetGenesisUnit()
 }
-func (d *Dag) GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string) {
-	return d.unstableStateRep.GetContractTpl(templateID)
+func (d *Dag) GetContractTpl(tplId []byte) (*modules.ContractTemplate,error){
+	return d.unstableStateRep.GetContractTpl(tplId)
 }
+
+func (d *Dag)GetContractTplCode(tplId []byte) ([]byte,error){
+	return d.unstableStateRep.GetContractTplCode(tplId)
+}
+
 
 func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, error) {
 	currentUnit := d.CurrentUnit(token)

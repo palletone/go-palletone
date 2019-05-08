@@ -155,7 +155,7 @@ func (m *MockITxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, e
 	return ret0, ret1
 }
 
-// Queued indicates an expected call of Queued
+// Pending indicates an expected call of Pending
 func (mr *MockITxPoolMockRecorder) Pending() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Pending", reflect.TypeOf((*MockITxPool)(nil).Pending))

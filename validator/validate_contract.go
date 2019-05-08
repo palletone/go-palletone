@@ -55,8 +55,8 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	// to check template whether existing or not
 	stateDb := validate.statequery
 	if stateDb != nil {
-		stateVersion, bytecode, name, path, tplV := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
-		if stateVersion == nil && bytecode == nil && name == "" && path == "" && tplV == "" {
+		tpl,err:= validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
+		if err!=nil ||tpl.TplName==""{
 			return TxValidationCode_INVALID_CONTRACT_TEMPLATE
 		}
 	}
