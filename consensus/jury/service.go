@@ -249,6 +249,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	//如果系统合约，直接添加到缓存池
 	//如果用户合约，需要签名，添加到缓存池并广播
 	if tx.IsSystemContract() {
+		log.Debug("tx isSystemContract, set req.rstTx")
 		req.rstTx = tx
 	} else {
 		account := p.getLocalAccount()
@@ -390,21 +391,25 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			defer rwM.CloseTxSimulator(setChainId, reqhash.String())
 		}
 		log.Debug("AddContractLoop", "enter mtx", addr.String())
-		ctx.valid = false
+
 		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
+				ctx.valid = false
 				if p.checkTxReqIdIsExist(reqhash) {
 					log.Debug("AddContractLoop ,checkTxReqIdIsExist is ok", "reqId", reqhash.String())
 					continue
 				}
-				if p.runContractReq(reqhash, nil) != nil {
+				if err := p.runContractReq(reqhash, nil); err != nil {
+					log.Errorf("runContractReq error:%s", err.Error())
 					continue
 				}
 			}
 		}
 		if ctx.rstTx == nil {
+			log.Error("ctx.rstTx == nil")
 			continue
 		}
+		ctx.valid = false
 		tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
 		if err != nil {
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
@@ -424,7 +429,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		//	log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
 		//	continue
 		//}
-
+		log.Debug("Start add contract to txpool")
 		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil {
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
@@ -794,7 +799,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
