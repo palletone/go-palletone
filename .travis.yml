@@ -3,6 +3,11 @@ dist: xenial
 sudo: required
 language:
     - go
+env:
+    global:
+        - 'SFTP_USER=[user]'
+        - 'SFTP_PASSWORD=[password]'
+        - 'SFTP_KEY=[base64-encoded-rsa-key]'
 go:
     - 1.10.8
 script:
@@ -19,16 +24,18 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     #- sudo find / -name "decimal.py"
-    - ./deposit_test.sh 4
-    - python -m robot.run ../testcase/createTrans
-    - python -m robot.run ../testcase/ccinvoke
+#    - ./deposit_test.sh 4
+#    - python -m robot.run ../testcase/createTrans
+#    - python -m robot.run ../testcase/ccinvoke
     #- python -m robot.run ../testcase/ccinvoke/transferToken
-    - python -m robot.run ../DigitalIdentityCert
+    - python -m robot.run ../DigitalIdentityCert -d bdd/logs/DigitalIdentityCert.log.html
 
 after_success:
     - killall gptn
+    - curl –u ftpuser:123456 -T bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141/pub
 after_failure:
     - killall gptn
+    - curl –u ftpuser:123456 -T bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141/pub
 
 before_install:
     - go get github.com/mattn/goveralls
