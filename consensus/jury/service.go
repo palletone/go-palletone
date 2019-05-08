@@ -390,9 +390,9 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			defer rwM.CloseTxSimulator(setChainId, reqhash.String())
 		}
 		log.Debug("AddContractLoop", "enter mtx", addr.String())
-		ctx.valid = false
 		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
+				ctx.valid = false
 				if p.checkTxReqIdIsExist(reqhash) {
 					log.Debug("AddContractLoop ,checkTxReqIdIsExist is ok", "reqId", reqhash.String())
 					continue
@@ -405,6 +405,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		if ctx.rstTx == nil {
 			continue
 		}
+		ctx.valid = false
 		tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
 		if err != nil {
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
@@ -794,7 +795,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
