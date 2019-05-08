@@ -434,7 +434,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 				} else {
 					//p.SetHead(&announce)
 					p.headInfo = &announce
-					p.SendRawAnnounce(data)
+					if !p.fullnode{p.SendRawAnnounce(data)}
 				}
 			case <-stop:
 				return

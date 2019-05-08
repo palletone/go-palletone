@@ -37,26 +37,26 @@ const (
 
 //申请提保证金
 type Cashback struct {
-	CashbackAddress string                `json:"cashback_address"` //请求地址
-	CashbackTokens  *modules.InvokeTokens `json:"cashback_tokens"`  //请求数量
-	Role            string                `json:"role"`             //请求角色
-	CashbackTime    int64                 `json:"cashback_time"`    //请求时间
+	CashbackAddress string               `json:"cashback_address"` //请求地址
+	CashbackTokens  *modules.AmountAsset `json:"cashback_tokens"`  //请求数量
+	Role            string               `json:"role"`             //请求角色
+	CashbackTime    int64                `json:"cashback_time"`    //请求时间
 }
 
 //申请没收保证金
 type Forfeiture struct {
-	ApplyAddress      string                `json:"apply_address"`      //谁发起的
-	ForfeitureAddress string                `json:"forfeiture_address"` //没收节点地址
-	ApplyTokens       *modules.InvokeTokens `json:"apply_tokens"`       //没收数量
-	ForfeitureRole    string                `json:"forfeiture_role"`    //没收角色
+	ApplyAddress      string               `json:"apply_address"`      //谁发起的
+	ForfeitureAddress string               `json:"forfeiture_address"` //没收节点地址
+	ApplyTokens       *modules.AmountAsset `json:"apply_tokens"`       //没收数量
+	ForfeitureRole    string               `json:"forfeiture_role"`    //没收角色
 	//Extra             string        `json:"extra"`              //备注
 	ApplyTime int64 `json:"apply_time"` //请求时间
 }
 
 //交易的内容
 type PayValue struct {
-	PayTokens *modules.InvokeTokens `json:"pay_tokens"` //数量和资产
-	PayTime   int64                 `json:"pay_time"`   //发生时间
+	PayTokens *modules.AmountAsset `json:"pay_tokens"` //数量和资产
+	PayTime   int64                `json:"pay_time"`   //发生时间
 	//PayExtra  string        `json:"pay_extra"`  //额外内容
 }
 

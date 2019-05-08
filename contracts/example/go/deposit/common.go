@@ -33,7 +33,7 @@ import (
 func updateForPayValue(balance *DepositBalance, invokeTokens *modules.InvokeTokens) {
 	balance.TotalAmount += invokeTokens.Amount
 	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
-	payTokens := &modules.InvokeTokens{}
+	payTokens := &modules.AmountAsset{}
 	payValue := &PayValue{PayTokens: payTokens}
 	payValue.PayTokens.Amount = invokeTokens.Amount
 	payValue.PayTokens.Asset = invokeTokens.Asset
@@ -71,7 +71,7 @@ func marshalAndPutStateForBalance(stub shim.ChaincodeStubInterface, nodeAddr str
 }
 
 //加入申请提取列表
-func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr string, invokeTokens *modules.InvokeTokens) error {
+func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr string, invokeTokens *modules.AmountAsset) error {
 	//先获取申请列表
 	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
@@ -142,7 +142,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		return err
 	}
 	//asset := modules.NewPTNAsset()
-	invokeTokens := &modules.InvokeTokens{
+	invokeTokens := &modules.AmountAsset{
 		Amount: ptnAccount,
 		Asset:  fees.Asset,
 	}
@@ -300,7 +300,7 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 }
 
 //处理申请提保证金请求并移除列表
-func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr string, invokeTokens *modules.InvokeTokens, balance *DepositBalance) error {
+func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr string, invokeTokens *modules.AmountAsset, balance *DepositBalance) error {
 	//计算保证金全部利息
 	//获取币龄
 	//endTime := time.Now().UTC()
@@ -636,7 +636,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 		log.Error("stub.GetInvokeFees err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	invokeTokens := &modules.InvokeTokens{
+	invokeTokens := &modules.AmountAsset{
 		Amount: ptnAccount,
 		Asset:  fees.Asset,
 	}
@@ -729,7 +729,7 @@ func isInForfeiturelist(addr string, list []*Forfeiture) bool {
 }
 
 //处理申请没收请求并移除列表
-func (d *DepositChaincode) forfeitureAllDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, invokeTokens *modules.InvokeTokens) error {
+func (d *DepositChaincode) forfeitureAllDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, invokeTokens *modules.AmountAsset) error {
 	//TODO 没收保证金是否需要计算利息
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(foundationAddr, invokeTokens, 0)

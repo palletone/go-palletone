@@ -1224,15 +1224,15 @@ To save contract template code
 */
 func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex uint32, installReq *modules.ContractInstallRequestPayload, tpl *modules.ContractTplPayload) bool {
 
-	template:=modules.NewContractTemplate(installReq,tpl)
-	err:= rep.statedb.SaveContractTpl(template)
-	if err!=nil{
-		log.Errorf("Save contract template fail,error:%s",err.Error())
+	template := modules.NewContractTemplate(installReq, tpl)
+	err := rep.statedb.SaveContractTpl(template)
+	if err != nil {
+		log.Errorf("Save contract template fail,error:%s", err.Error())
 		return false
 	}
-	err= rep.statedb.SaveContractTplCode(tpl.TemplateId,tpl.ByteCode)
-	if err!=nil{
-		log.Errorf("Save contract code fail,error:%s",err.Error())
+	err = rep.statedb.SaveContractTplCode(tpl.TemplateId, tpl.ByteCode)
+	if err != nil {
+		log.Errorf("Save contract code fail,error:%s", err.Error())
 		return false
 	}
 
