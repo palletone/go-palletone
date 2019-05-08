@@ -513,12 +513,12 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 	}
 	isOk := args[0]
 	addr := args[1]
-	//isExist := isInMediatorInfolist(addr, becomeList)
-	//if !isExist {
-	//	log.Error("Node is not exist in the become list.")
-	//	return shim.Error("Node is not exist in the become list.")
-	//}
-	//var mediatorList []*MediatorInfo
+	isExist := isInMediatorInfolist(addr, becomeList)
+	if !isExist {
+		log.Error("Node is not exist in the become list.")
+		return shim.Error("Node is not exist in the become list.")
+	}
+
 	mediator := &modules.MediatorApplyInfo{}
 	//不同意，移除申请列表
 	if strings.Compare(isOk, No) == 0 {
@@ -538,11 +538,11 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			log.Info("Stub.GetAgreeForBecomeMediatorList: list is nil")
 			agreeList = []*modules.MediatorApplyInfo{mediator}
 		} else {
-			//isExist := isInMediatorInfolist(mediator.Address, agreeList)
-			//if isExist {
-			//	log.Error("Node is exist in the agree list.")
-			//	return shim.Error("Node is exist in the agree list.")
-			//}
+			isExist := isInMediatorInfolist(mediator.Address, agreeList)
+			if isExist {
+				log.Error("Node is exist in the agree list.")
+				return shim.Error("Node is exist in the agree list.")
+			}
 			agreeList = append(agreeList, mediator)
 		}
 		err = marshalAndPutStateForMediatorList(stub, ListForAgreeBecomeMediator, agreeList)
@@ -602,12 +602,12 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 	//
 	isOk := args[0]
 	addr := args[1]
-	//isExist := isInMediatorInfolist(addr, quitList)
-	//if !isExist {
-	//	log.Error("Node is not exist in the quit list.")
-	//	return shim.Error("Node is not exist in the quit list.")
-	//}
-	//var mediatorList []*MediatorInfo
+	isExist := isInMediatorInfolist(addr, quitList)
+	if !isExist {
+		log.Error("Node is not exist in the quit list.")
+		return shim.Error("Node is not exist in the quit list.")
+	}
+
 	//不同意，移除申请列表
 	if strings.Compare(isOk, No) == 0 {
 		log.Info("foundation is not agree with application.")
@@ -641,11 +641,11 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 			log.Error("Stub.GetAgreeForBecomeMediatorList err: list is nil")
 			shim.Error("Stub.GetAgreeForBecomeMediatorList err: list is nil")
 		}
-		//isExist = isInMediatorInfolist(addr, agreeList)
-		//if !isExist {
-		//	log.Error("Node is not exist in the agree list.")
-		//	shim.Error("Node is not exist in the agree list.")
-		//}
+		isExist = isInMediatorInfolist(addr, agreeList)
+		if !isExist {
+			log.Error("Node is not exist in the agree list.")
+			shim.Error("Node is not exist in the agree list.")
+		}
 		//移除
 		agreeList, _ = moveMediatorFromList(addr, agreeList)
 		err = marshalAndPutStateForMediatorList(stub, ListForAgreeBecomeMediator, agreeList)
