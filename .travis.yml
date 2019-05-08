@@ -19,7 +19,7 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     #- sudo find / -name "decimal.py"
-    #- ./deposit_test.sh 4
+    - ./deposit_test.sh 4
     - python -m robot.run ../testcase/createTrans
     - python -m robot.run ../testcase/ccinvoke
     #- python -m robot.run ../testcase/ccinvoke/transferToken
@@ -62,7 +62,3 @@ notifications:
             - elva1087penny@163.com
         on_success: always # default: change
         on_failure: always
-
-cache:
-    directories:
-        - $HOME/.m2
