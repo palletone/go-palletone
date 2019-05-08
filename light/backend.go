@@ -123,11 +123,11 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) 
 	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
 	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
 
-	//leth.txPool = NewTxPool(leth.chainConfig, leth.blockchain, leth.relay)
+	lptn.txPool =  txspool.NewTxPool(config.TxPool, lptn.dag)
 	//NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
 
-	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
+	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, lptn.txPool,
 		dag, lptn.eventMux, genesis); err != nil {
 		return nil, err
 	}

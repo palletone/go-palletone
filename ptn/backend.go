@@ -134,11 +134,11 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	pool := txspool.NewTxPool(config.TxPool, ptn.dag)
-	ptn.txPool = pool
+	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
+
 
 	//Test for P2P
-	ptn.engine = consensus.New(dag, pool)
+	ptn.engine = consensus.New(dag, ptn.txPool)
 
 	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, dag, &config.MediatorPlugin)
 	if err != nil {
