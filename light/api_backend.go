@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -106,7 +107,7 @@ func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
 //}
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.Add(ctx, signedTx)
+	return b.ptn.txPool.AddLocal(txspool.TxtoTxpoolTx(b.ptn.txPool, signedTx))
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
