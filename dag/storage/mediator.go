@@ -45,9 +45,9 @@ func StoreMediator(db ptndb.Database, med *core.Mediator) error {
 func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.MediatorInfo) error {
 	//log.Debugf("Store Mediator %v:", mi.AddStr)
 
-	err := StoreBytes(db, mediatorKey(add), mi)
+	err := storeToJson(db, mediatorKey(add), mi)
 	if err != nil {
-		log.Errorf("Store mediator error:%v", err.Error())
+		log.Debugf("Store mediator error:%v", err.Error())
 		return err
 	}
 
@@ -57,7 +57,7 @@ func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.Mediat
 func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*modules.MediatorInfo, error) {
 	mi := modules.NewMediatorInfo()
 
-	err := retrieve(db, mediatorKey(address), mi)
+	err := readFromJson(db, mediatorKey(address), mi)
 	if err != nil {
 		log.Errorf("Retrieve mediator error: %v", err.Error())
 		return nil, err

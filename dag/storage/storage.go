@@ -20,6 +20,8 @@
 package storage
 
 import (
+	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -42,6 +44,23 @@ func Store(db ptndb.Database, key string, value interface{}) error {
 //	}
 //	return err
 //}
+
+func storeToJson(db ptndb.Putter, key []byte, value interface{}) error {
+	val, err := json.Marshal(value)
+	if err != nil {
+		log.Debugf("json marshal err: %v", err.Error())
+		return err
+	}
+
+	err = db.Put(key, val)
+	if err != nil {
+		log.Debugf("DB put err: %v", err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func StoreBytes(db ptndb.Putter, key []byte, value interface{}) error {
 	val, err := rlp.EncodeToBytes(value)
 	if err != nil {
@@ -83,8 +102,6 @@ func GetBytes(db ptndb.Database, key []byte) ([]byte, error) {
 	log.Debug("storage GetBytes", "key:", string(key), "value:", string(val))
 	return val, nil
 }
-
-
 
 func StoreString(db ptndb.Putter, key, value string) error {
 	return db.Put(util.ToByte(key), util.ToByte(value))
