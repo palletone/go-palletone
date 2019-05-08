@@ -40,15 +40,14 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	//"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/internal/ptnapi"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/ptnjson"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/internal/ptnapi"
+	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 )
 
 type LightPalletone struct {
@@ -60,7 +59,7 @@ type LightPalletone struct {
 	// Channel for shutting down the service
 	shutdownChan chan bool
 	// Handlers
-	peers  *peerSet
+	peers *peerSet
 	//txPool *les.TxPool
 	txPool *txspool.TxPool
 	//blockchain      *light.LightChain
@@ -190,7 +189,7 @@ func (s *LightPalletone) APIs() []rpc.API {
 //}
 
 func (s *LightPalletone) ProtocolManager() *ProtocolManager { return s.protocolManager }
-func (s *LightPalletone) TxPool() *txspool.TxPool               { return s.txPool }
+func (s *LightPalletone) TxPool() *txspool.TxPool           { return s.txPool }
 
 //func (s *LightPalletone) Engine() consensus.Engine           { return s.engine }
 func (s *LightPalletone) LesVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
@@ -302,7 +301,8 @@ func (p *LightPalletone) SignAndSendTransaction(addr common.Address, tx *modules
 }
 
 // @author Albert·Gou
-func (p *LightPalletone) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
+func (p *LightPalletone) TransferPtn(from, to string, amount decimal.Decimal,
+	text *string) (*ptnapi.TxExecuteResult, error) {
 	// 参数检查
 	if from == to {
 		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
@@ -345,13 +345,13 @@ func (p *LightPalletone) TransferPtn(from, to string, amount decimal.Decimal, te
 		textStr = *text
 	}
 
-	res := &mp.TxExecuteResult{}
+	res := &ptnapi.TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Account(%s) transfer %vPTN to account(%s) with message: '%s'",
 		from, amount, to, textStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = mp.DefaultResult
+	res.Warning = ptnapi.DefaultResult
 
 	return res, nil
 }
