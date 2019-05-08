@@ -29,10 +29,10 @@ script:
 after_success:
     - killall gptn
     - curl –u ftpuser:123456 -T ../logs/DigitalIdentityCert.log.html ftp://98.142.130.141/pub
+
 after_failure:
     - killall gptn
     - curl –u ftpuser:123456 -T ../logs/DigitalIdentityCert.log.html ftp://98.142.130.141/pub
-    #- find . -type f \( -path "./.*" -o -path "./log.html" \) -prune -o -name "*" -print -exec curl --ftp-create-dirs -T {} ftp://98.142.130.141/pub --user ftpuser:123456 \;
 
 before_install:
     - go get github.com/mattn/goveralls
