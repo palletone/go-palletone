@@ -203,11 +203,11 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if mediatorRegisterInfo == nil {
 			return shim.Success([]byte("list is nil"))
 		}
-		for _, m := range mediatorRegisterInfo {
-			if args[0] == m.Address {
-				return shim.Success([]byte("had pass"))
-			}
-		}
+		//for _, m := range mediatorRegisterInfo {
+		//	if args[0] == m.Address {
+		//		return shim.Success([]byte("had pass"))
+		//	}
+		//}
 		return shim.Success([]byte("no pass"))
 	}
 

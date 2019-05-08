@@ -548,13 +548,13 @@ func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]common.A
 			return nil, err
 		}
 		var candidateListStr []common.Address
-		for i := range candiateList {
-			adrr, err := common.StringToAddress(candiateList[i].Address)
-			if err != nil {
-				return nil, err
-			}
-			candidateListStr = append(candidateListStr, adrr)
-		}
+		//for i := range candiateList {
+		//	adrr, err := common.StringToAddress(candiateList[i].Address)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	candidateListStr = append(candidateListStr, adrr)
+		//}
 		return candidateListStr, err
 	}
 	candidateListByte, err := stub.GetState(role)
@@ -683,7 +683,7 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 		if candidateList == nil {
 			return false
 		}
-		return isInMediatorInfolist(addr, candidateList)
+		//return isInMediatorInfolist(addr, candidateList)
 
 	} else if strings.Compare(role, Jury) == 0 {
 		candidateList, err := GetCandidateList(stub, modules.JuryList)
@@ -706,6 +706,7 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 	} else {
 		return false
 	}
+	return false
 }
 
 func isInCandidateList(addr string, list []common.Address) bool {
