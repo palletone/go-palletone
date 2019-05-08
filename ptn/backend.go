@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"sync"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -256,6 +257,10 @@ func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
 }
 func (s *PalletOne) ContractBroadcast(event jury.ContractEvent, local bool) {
+	log.DebugDynamic(func() string {
+		txJson, _ := json.Marshal(event.Tx)
+		return fmt.Sprintf("contract broadcast tx:%s", string(txJson))
+	})
 	s.protocolManager.ContractBroadcast(event, local)
 }
 func (s *PalletOne) ElectionBroadcast(event jury.ElectionEvent) {
