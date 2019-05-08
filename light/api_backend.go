@@ -110,23 +110,27 @@ func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
-	b.ptn.txPool.RemoveTx(txHash)
+	//b.ptn.txPool.RemoveTx(txHash)
 }
 
 func (b *LesApiBackend) GetPoolTransactions() (modules.Transactions, error) {
-	return b.ptn.txPool.GetTransactions()
+	//return b.ptn.txPool.GetTransactions()
+	return nil, nil
 }
 
 func (b *LesApiBackend) GetPoolTransaction(txHash common.Hash) *modules.Transaction {
-	return b.ptn.txPool.GetTransaction(txHash)
+	//return b.ptn.txPool.GetTransaction(txHash)
+	return nil
 }
 
 func (b *LesApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
-	return b.ptn.txPool.GetNonce(ctx, addr)
+	//return b.ptn.txPool.GetNonce(ctx, addr)
+	return uint64(0), nil
 }
 
 func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
-	return b.ptn.txPool.Stats(), 0, 0
+	//return b.ptn.txPool.Stats(), 0, 0
+	return 0, 0, 0
 }
 
 func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
@@ -436,7 +440,7 @@ func (b *LesApiBackend) Dag() dag.IDag {
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
-	return nil, nil
+	return b.ptn.TransferPtn(from, to, amount, text)
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
 	return nil

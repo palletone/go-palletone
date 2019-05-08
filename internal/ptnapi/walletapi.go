@@ -88,8 +88,8 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	var inputs []ptnjson.TransactionInput
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
-		utxo := u.(*ptnjson.UtxoJson)
-		input.Txid = utxo.TxHash
+		utxo := u.(*modules.UtxoWithOutPoint)
+		input.Txid = utxo.TxHash.String()
 		input.MessageIndex = utxo.MessageIndex
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
@@ -310,20 +310,28 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	}
 	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
 	//mtx.TxHash = mtx.Hash()
-	// sign mtx
-	for index, input := range inputjson {
-		hashforsign, err := tokenengine.CalcSignatureHash(mtx, tokenengine.SigHashAll, int(input.MessageIndex), int(input.OutIndex), nil)
-		if err != nil {
-			return "", err
+	//sign mtx
+	mtxtmp := mtx
+	for msgindex, msg := range mtxtmp.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+		       continue
 		}
-		sh := common.BytesToHash(hashforsign)
-		inputjson[index].HashForSign = sh.String()
+		for inputindex, _:= range payload.Inputs {
+            hashforsign, err := tokenengine.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex,inputindex, nil)
+			if err != nil {
+				return "", err
+			}
+			payloadtmp := mtx.TxMessages[msgindex].Payload.(*modules.PaymentPayload)
+            payloadtmp.Inputs[inputindex].SignatureScript = hashforsign
+		}
+    }
+
+	bytetxjson, err := json.Marshal(mtx)
+	if err != nil {
+		return "", err
 	}
-	//bytetxjson, err := json.Marshal(mtx)
-	//if err != nil {
-	//	return "", err
-	//}
-	mtxbt, err := rlp.EncodeToBytes(mtx)
+	mtxbt, err := rlp.EncodeToBytes(bytetxjson)
 	if err != nil {
 		return "", err
 	}
