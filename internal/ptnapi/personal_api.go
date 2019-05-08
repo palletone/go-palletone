@@ -331,7 +331,7 @@ func (s *PrivateAccountAPI) SignAndSendTransaction(ctx context.Context, args Sen
 
 // appended by albert·gou
 func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal, text *string,
-	password string) (*mp.TxExecuteResult, error) {
+	password string) (*ptnapi.TxExecuteResult, error) {
 	// 参数检查
 	fromAdd, err := common.StringToAddress(from)
 	if err != nil {

@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
@@ -43,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -72,7 +72,7 @@ func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
 }
 
 func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
-	text *string) (*mp.TxExecuteResult, error) {
+	text *string) (*ptnapi.TxExecuteResult, error) {
 	return b.ptn.TransferPtn(from, to, amount, text)
 }
 

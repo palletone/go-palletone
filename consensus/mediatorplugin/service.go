@@ -45,10 +45,6 @@ import (
 type PalletOne interface {
 	GetKeyStore() *keystore.KeyStore
 	TxPool() txspool.ITxPool
-
-	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
-	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
-
 	ContractProcessor() *jury.Processor
 }
 
@@ -57,6 +53,7 @@ type iDag interface {
 	GetSlotAtTime(when time.Time) uint32
 	GetSlotTime(slotNum uint32) time.Time
 	HeadUnitTime() int64
+
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetActiveMediatorInitPubs() []kyber.Point
 	ActiveMediatorsCount() int
@@ -66,7 +63,6 @@ type iDag interface {
 
 	IsActiveMediator(add common.Address) bool
 	IsSynced() bool
-	LookupAccount() map[common.Address]*modules.AccountInfo
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
@@ -78,19 +74,6 @@ type iDag interface {
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
 
-	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
-		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GenVoteMediatorTx(voter common.Address, mediators []common.Address,
-		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GetMediators() map[common.Address]bool
-	IsMediator(address common.Address) bool
-
-	GetApprovedMediatorList() ([]*modules.MediatorApplyInfo, error)
-	IsApprovedMediator(address common.Address) bool
-
-	GetDynGlobalProp() *modules.DynamicGlobalProperty
-	GetMediatorInfo(address common.Address) *modules.MediatorInfo
-
 	PrecedingThreshold() int
 	PrecedingMediatorsCount() int
 	UnitIrreversibleTime() time.Duration
@@ -98,10 +81,6 @@ type iDag interface {
 
 	IsConsecutiveMediator(nextMediator common.Address) bool
 	MediatorParticipationRate() uint32
-
-	GetAccountVotedMediators(addr common.Address) []common.Address
-	GetChainParameters() core.ChainParameters
-	MediatorVotedResults() map[common.Address]uint64
 }
 
 type MediatorPlugin struct {

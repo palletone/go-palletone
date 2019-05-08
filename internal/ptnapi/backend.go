@@ -26,12 +26,12 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -146,9 +146,10 @@ type Backend interface {
 
 	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 
+	TxPool() txspool.ITxPool
 	Dag() dag.IDag
-	//SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
-	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error)
+	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
+	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*TxExecuteResult, error)
 	GetKeyStore() *keystore.KeyStore
 
 	// get tx hash by req id
@@ -219,6 +220,18 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Namespace: "contract",
 			Version:   "1.0",
 			Service:   NewPublicContractAPI(apiBackend),
+			Public:    true,
+		},
+		{
+			Namespace: "mediator",
+			Version:   "1.0",
+			Service:   NewPrivateMediatorAPI(apiBackend),
+			Public:    false,
+		},
+		{
+			Namespace: "mediator",
+			Version:   "1.0",
+			Service:   NewPublicMediatorAPI(apiBackend),
 			Public:    true,
 		},
 	}

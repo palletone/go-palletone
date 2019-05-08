@@ -405,7 +405,7 @@ func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Tran
 }
 
 // @author Albert·Gou
-func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
+func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*ptnapi.TxExecuteResult, error) {
 	// 参数检查
 	if from == to {
 		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
@@ -448,7 +448,7 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *s
 		textStr = *text
 	}
 
-	res := &mp.TxExecuteResult{}
+	res := &ptnapi.TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Account(%s) transfer %vPTN to account(%s) with message: '%s'",
 		from, amount, to, textStr)
 	res.TxHash = tx.Hash()
