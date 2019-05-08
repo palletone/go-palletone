@@ -32,17 +32,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/comm"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	com "github.com/palletone/go-palletone/vm/common"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/contracts/comm"
 	"strconv"
-	"github.com/fsouza/go-dockerclient"
 )
 
 var (
