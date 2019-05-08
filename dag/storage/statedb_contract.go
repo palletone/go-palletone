@@ -145,10 +145,10 @@ func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interfa
 	return val, nil
 }
 
-func (statedb *StateDb) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
-	b, _ := rlp.EncodeToBytes(value)
-	return saveContractState(statedb.db, id, name, b, version)
-}
+//func (statedb *StateDb) SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error {
+//	b, _ := rlp.EncodeToBytes(value)
+//	return saveContractState(statedb.db, id, name, b, version)
+//}
 
 /**
 获取合约（或模板）所有属性

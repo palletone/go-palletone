@@ -104,7 +104,8 @@ type IDag interface {
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error)
 
-	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
+	GetContractTplCode(tplId []byte) ([]byte,error)
 	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	//WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)

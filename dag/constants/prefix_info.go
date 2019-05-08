@@ -38,7 +38,7 @@ var (
 	OutPointAddr_Prefix         = []byte("pa")  // outpoint addr
 	CONTRACT_STATE_PREFIX       = []byte("cs")
 	CONTRACT_TPL                = []byte("ct")
-	CONTRACT_TPL_REQ            = []byte("ctq")
+	CONTRACT_TPL_CODE            = []byte("code")
 	CONTRACT_DEPLOY             = []byte("cdy")
 	CONTRACT_DEPLOY_REQ         = []byte("cdr")
 	CONTRACT_STOP               = []byte("csp")
