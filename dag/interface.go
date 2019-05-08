@@ -169,7 +169,7 @@ type IDag interface {
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
-	MediatorVotedResults() map[common.Address]uint64
+	MediatorVotedResults() map[string]uint64
 	ActiveMediators() map[common.Address]bool
 	GetAccountVotedMediators(addr common.Address) []common.Address
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
