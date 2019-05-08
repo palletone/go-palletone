@@ -59,9 +59,13 @@ func (b *PtnApiBackend) Dag() dag.IDag {
 	return b.ptn.dag
 }
 
-//func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
-//	return b.ptn.SignAndSendTransaction(addr, tx)
-//}
+func (b *PtnApiBackend) TxPool() txspool.ITxPool {
+	return b.ptn.txPool
+}
+
+func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
+	return b.ptn.SignAndSendTransaction(addr, tx)
+}
 
 func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
 	return b.ptn.GetKeyStore()

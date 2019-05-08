@@ -104,8 +104,8 @@ type IDag interface {
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error)
 
-	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
-	GetContractTplCode(tplId []byte) ([]byte,error)
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContractTplCode(tplId []byte) ([]byte, error)
 	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	//WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
@@ -163,4 +163,16 @@ type IDag interface {
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 	GetCoinYearRate() float64
+
+	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GenVoteMediatorTx(voter common.Address, mediators []common.Address,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	IsMediator(address common.Address) bool
+	GetMediators() map[common.Address]bool
+	MediatorVotedResults() map[common.Address]uint64
+	ActiveMediators() map[common.Address]bool
+	GetAccountVotedMediators(addr common.Address) []common.Address
+	GetDynGlobalProp() *modules.DynamicGlobalProperty
+	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 }

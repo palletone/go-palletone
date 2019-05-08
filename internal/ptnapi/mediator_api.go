@@ -16,10 +16,11 @@
  * @date 2018/11/05
  */
 
-package mediatorplugin
+package ptnapi
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -28,30 +29,94 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
+type PublicMediatorAPI struct {
+	Backend
+}
+
+func NewPublicMediatorAPI(b Backend) *PublicMediatorAPI {
+	return &PublicMediatorAPI{b}
+}
+
+func (a *PublicMediatorAPI) GetList() []string {
+	addStrs := make([]string, 0)
+	mas := a.Dag().GetMediators()
+
+	for address, _ := range mas {
+		addStrs = append(addStrs, address.Str())
+	}
+
+	return addStrs
+}
+
+func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
+	mediatorVoteCount := make(map[string]uint64)
+
+	for address, _ := range a.Dag().GetMediators() {
+		mediatorVoteCount[address.String()] = 0
+	}
+
+	for med, stake := range a.Dag().MediatorVotedResults() {
+		mediatorVoteCount[med.String()] = stake
+	}
+
+	return mediatorVoteCount
+}
+
+func (a *PublicMediatorAPI) GetActives() []string {
+	addStrs := make([]string, 0)
+	ms := a.Dag().ActiveMediators()
+
+	for medAdd, _ := range ms {
+		addStrs = append(addStrs, medAdd.Str())
+	}
+
+	return addStrs
+}
+
+func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
+	addr, err := common.StringToAddress(addStr)
+	if err != nil {
+		return nil, err
+	}
+
+	voted := a.Dag().GetAccountVotedMediators(addr)
+	mediators := make([]string, 0, len(voted))
+
+	for _, med := range voted {
+		mediators = append(mediators, med.Str())
+	}
+
+	return mediators, nil
+}
+
+func (a *PublicMediatorAPI) GetNextUpdateTime() string {
+	dgp := a.Dag().GetDynGlobalProp()
+	time := time.Unix(int64(dgp.NextMaintenanceTime), 0)
+
+	return time.Format("2006-01-02 15:04:05")
+}
+
+func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error) {
+	mediator, err := common.StringToAddress(addStr)
+	if err != nil {
+		return nil, err
+	}
+
+	if !a.Dag().IsMediator(mediator) {
+		return nil, fmt.Errorf("%v is not mediator", mediator.Str())
+	}
+
+	return a.Dag().GetMediatorInfo(mediator), nil
+}
+
 const DefaultResult = "Transaction executed locally, but may not be confirmed by the network yet!"
 
 type PrivateMediatorAPI struct {
-	*MediatorPlugin
+	Backend
 }
 
-func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
-	return &PrivateMediatorAPI{mp}
-}
-
-func (a *PrivateMediatorAPI) StartProduce() {
-	if !a.producingEnabled {
-		a.producingEnabled = true
-		go a.ScheduleProductionLoop()
-	}
-}
-
-func (a *PrivateMediatorAPI) StopProduce() {
-	if a.producingEnabled {
-		a.producingEnabled = false
-		go func() {
-			a.stopProduce <- struct{}{}
-		}()
-	}
+func NewPrivateMediatorAPI(b Backend) *PrivateMediatorAPI {
+	return &PrivateMediatorAPI{b}
 }
 
 // 交易执行结果
@@ -60,8 +125,8 @@ type TxExecuteResult struct {
 	TxHash    common.Hash `json:"txHash"`
 	TxSize    string      `json:"txSize"`
 	TxFee     string      `json:"txFee"`
-	Tip       string      `json:"tip"`
-	Warning   string      `json:"warning"`
+	//Tip       string      `json:"tip"`
+	Warning string `json:"warning"`
 }
 
 // 创建 mediator 所需的参数, 至少包含普通账户地址
@@ -75,16 +140,16 @@ func (args *MediatorCreateArgs) setDefaults(node *discover.Node) (initPrivKey st
 		initPrivKey, args.InitPubKey = core.CreateInitDKS()
 	}
 
-	if args.Node == "" {
-		args.Node = node.String()
-	}
+	//if args.Node == "" {
+	//	args.Node = node.String()
+	//}
 
 	return
 }
 
 func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, error) {
 	// 参数补全
-	initPrivKey := args.setDefaults(a.srvr.Self())
+	//initPrivKey := args.setDefaults(a.srvr.Self())
 
 	// 参数验证
 	err := args.Validate()
@@ -100,7 +165,7 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 
 	addr := args.FeePayer()
 	// 判断是否已经是mediator
-	if a.dag.IsMediator(addr) {
+	if a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
 
@@ -110,13 +175,13 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.dag.GenMediatorCreateTx(addr, args.MediatorCreateOperation, a.ptn.TxPool())
+	tx, fee, err := a.Dag().GenMediatorCreateTx(addr, args.MediatorCreateOperation, a.TxPool())
 	if err != nil {
 		return nil, err
 	}
 
 	// 2. 签名和发送交易
-	err = a.ptn.SignAndSendTransaction(addr, tx)
+	err = a.SignAndSendTransaction(addr, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -130,10 +195,10 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 
-	if initPrivKey != "" {
-		res.Tip = "Your initial private key is: " + initPrivKey + " , initial public key is: " +
-			args.InitPubKey + " , please keep in mind!"
-	}
+	//if initPrivKey != "" {
+	//	res.Tip = "Your initial private key is: " + initPrivKey + " , initial public key is: " +
+	//		args.InitPubKey + " , please keep in mind!"
+	//}
 
 	return res, nil
 }
@@ -158,7 +223,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 		}
 
 		// 判断是否是mediator
-		if !a.dag.IsMediator(mediator) {
+		if !a.Dag().IsMediator(mediator) {
 			return nil, fmt.Errorf("%v is not mediator", mediatorStr)
 		}
 
@@ -166,13 +231,13 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.dag.GenVoteMediatorTx(voter, mediators, a.ptn.TxPool())
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mediators, a.TxPool())
 	if err != nil {
 		return nil, err
 	}
 
 	// 2. 签名和发送交易
-	err = a.ptn.SignAndSendTransaction(voter, tx)
+	err = a.SignAndSendTransaction(voter, tx)
 	if err != nil {
 		return nil, err
 	}
