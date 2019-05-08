@@ -493,7 +493,7 @@ func (handler *Handler) handleGetTokenBalance(address string, token *modules.Ass
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
-func (handler *Handler) handlePayOutToken(collection string, addr string, invokeTokens *modules.InvokeTokens, lockTime uint32, contractid []byte, channelId string, txid string) error {
+func (handler *Handler) handlePayOutToken(collection string, addr string, invokeTokens *modules.AmountAsset, lockTime uint32, contractid []byte, channelId string, txid string) error {
 	// Construct payload for PAY_OUT_TOKEN
 	//TODO Devin
 	payloadBytes, _ := proto.Marshal(&pb.PayOutToken{Asset: invokeTokens.Asset.Bytes(), Amount: invokeTokens.Amount, Address: addr, Locktime: lockTime})
