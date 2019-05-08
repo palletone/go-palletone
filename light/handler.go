@@ -53,6 +53,7 @@ const (
 	MaxTxStatus              = 256 // Amount of transactions to queried per request
 
 	disableClientRemovePeer = false
+	txChanSize = 4096
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -81,7 +82,37 @@ type BlockChain interface {
 
 type txPool interface {
 	AddRemotes(txs []*modules.Transaction) []error
-	//Status(hashes []common.Hash) []core.TxStatus
+	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
+
+	//Stop()
+	//AddLocal(tx *modules.TxPoolTransaction) error
+	//AddLocals(txs []*modules.TxPoolTransaction) []error
+	//AllHashs() []*common.Hash
+	//AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
+	//Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
+	//Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
+	//GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
+	//Stats() (int, int, int)
+	//GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
+	//SendStoredTxs(hashs []common.Hash) error
+	//DiscardTxs(hashs []common.Hash) error
+	////DiscardTx(hash common.Hash) error
+	//GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	//AddRemote(tx *modules.Transaction) error
+	////AddRemotes([]*modules.Transaction) []error
+	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
+	//// Pending should return pending transactions.
+	//// The slice should be modifiable by the caller.
+	//Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
+	//Queued() ([]*modules.TxPoolTransaction, error)
+	//SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error
+	//ResetPendingTxs(txs []*modules.Transaction) error
+	//// SubscribeTxPreEvent should return an event subscription of
+	//// TxPreEvent and send events to the given channel.
+	//SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
+	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
+	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
+	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
 
 type ProtocolManager struct {
@@ -118,6 +149,9 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg *sync.WaitGroup
+
+	txCh     chan modules.TxPreEvent
+	txSub    event.Subscription
 	//SPV
 	validation *Validation
 	utxosync *UtxosSync
@@ -155,7 +189,7 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(protocolVersions))
 	for _, version := range protocolVersions {
 		// Compatible, initialize the sub-protocol
-		version := version // Closure for the run
+		//version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    "lps",
 			Version: version,
@@ -280,13 +314,18 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	if pm.lightSync {
 		go pm.syncer()
 
+		pm.validation.Start()
 	} else {
 		go func() {
 			for range pm.newPeerCh {
 			}
 		}()
 	}
-	pm.validation.Start()
+
+	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
+	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	// 启动广播的goroutine
+	go pm.txBroadcastLoop()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -309,6 +348,7 @@ func (pm *ProtocolManager) Stop() {
 	// Wait for any process action
 	pm.wg.Wait()
 	pm.validation.Stop()
+	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 	log.Info("Light Palletone protocol stopped")
 }
 
@@ -537,6 +577,29 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	return nil
 }
 
+func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {
+	// Broadcast transaction to a batch of peers not knowing about it
+	peers:=pm.peers.AllPeers()
+	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
+	for _, peer := range peers {
+		peer.SendTxs(0,0,modules.Transactions{tx})
+	}
+	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
+}
+
+func (self *ProtocolManager) txBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.txCh:
+			log.Debug("=====ProtocolManager=====", "txBroadcastLoop event.Tx", event.Tx)
+			self.BroadcastTx(event.Tx.Hash(), event.Tx)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.txSub.Err():
+			return
+		}
+	}
+}
 /*
 // getAccount retrieves an account from the state based at root.
 func (pm *ProtocolManager) getAccount(statedb *state.StateDB, root, hash common.Hash) (state.Account, error) {
