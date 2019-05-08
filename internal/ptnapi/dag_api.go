@@ -60,6 +60,46 @@ func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (st
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
+func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) string {
+	hash := common.Hash{}
+	if err := hash.SetHexString(condition); err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
+		return ""
+	}
+	header, err := s.b.GetHeaderByHash(hash)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetHeaderByHash err:", err, "hash", hash.String())
+	}
+	headerJson := ptnjson.ConvertUnitHeader2Json(header)
+	info := NewPublicReturnInfo("header", headerJson)
+	content, err := json.Marshal(info)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetHeaderByHash Marshal err:", err, "hash", hash.String())
+		return "Marshal err"
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) string {
+	number := &modules.ChainIndex{}
+	index, err := strconv.ParseInt(condition, 10, 64)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetHeaderByNumber strconv.ParseInt err:", err, "condition:", condition)
+		return ""
+	}
+	number.Index = uint64(index)
+	number.AssetID = dagconfig.DagConfig.GetGasToken()
+	header, err := s.b.GetHeaderByNumber(number)
+	headerJson := ptnjson.ConvertUnitHeader2Json(header)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetHeaderByNumber err:", err, "number", number.String())
+	}
+	info := NewPublicReturnInfo("header", headerJson)
+	content, err := json.Marshal(info)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetHeaderByNumber Marshal err:", err, "number", number.String())
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
 
 func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {
 	log.Info("PublicDagAPI", "GetUnitByHash condition:", condition)
@@ -92,10 +132,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		return ""
 	}
 	number.Index = uint64(index)
-	//number.IsMain = true
 
-	//number.AssetID, _ = modules.SetIdTypeByHex(dagconfig.DefaultConfig.PtnAssetHex) //modules.PTNCOIN
-	//asset := modules.NewPTNAsset()
 	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
 
