@@ -153,7 +153,6 @@ func TestGetRequestTx(t *testing.T) {
 	//
 	//invoke_req.ContractId = []byte("test_contact_invoke_request")
 	//invoke_req.ContractId = []byte("test_contract_id")
-	//invoke_req.FunctionName = "test_func_name"
 	//invoke_req.Args = make([][]byte, 0)
 	//invoke_req.Timeout = 10 * time.Second
 	//msg1.Payload = invoke_req

@@ -36,7 +36,7 @@ type TxJson struct {
 	Payment            []*PaymentJson      `json:"payment"`
 	Fee                uint64              `json:"fee"`
 	AccountStateUpdate *AccountStateJson   `json:"account_state_update"`
-	Data               []*DataJson           `json:"data"`
+	Data               []*DataJson         `json:"data"`
 	ContractTpl        *TplJson            `json:"contract_tpl"`
 	Deploy             *DeployJson         `json:"contract_deploy"`
 	Invoke             *InvokeJson         `json:"contract_invoke"`
@@ -55,7 +55,7 @@ type TxWithUnitInfoJson struct {
 	TxIndex    uint64    `json:"tx_index"`
 }
 type TplJson struct {
-	Number int  `json:"number"`
+	Number     int    `json:"number"`
 	TemplateId string `json:"template_id"`
 	//Name         string `json:"name"`
 	//Path         string `json:"path"`
@@ -68,7 +68,7 @@ type TplJson struct {
 	ErrorMessage string `json:"error_message"`
 }
 type DeployJson struct {
-	Number int  `json:"number"`
+	Number       int      `json:"number"`
 	TemplateId   string   `json:"template_id"`
 	ContractId   string   `json:"contract_id"`
 	Name         string   `json:"name"`
@@ -81,18 +81,17 @@ type DeployJson struct {
 	ErrorMessage string   `json:"error_message"`
 }
 type InvokeJson struct {
-	Number int  `json:"number"`
+	Number       int      `json:"number"`
 	ContractId   string   `json:"contract_id"` // contract id
-	FunctionName string   `json:"function_name"`
-	Args         []string `json:"args"`      // contract arguments list
-	ReadSet      string   `json:"read_set"`  // the set data of read, and value could be any type
-	WriteSet     string   `json:"write_set"` // the set data of write, and value could be any type
-	Payload      string   `json:"payload"`   // the contract execution result
+	Args         []string `json:"args"`        // contract arguments list
+	ReadSet      string   `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet     string   `json:"write_set"`   // the set data of write, and value could be any type
+	Payload      string   `json:"payload"`     // the contract execution result
 	ErrorCode    uint32   `json:"error_code"`
 	ErrorMessage string   `json:"error_message"`
 }
 type StopJson struct {
-	Number int  `json:"number"`
+	Number       int      `json:"number"`
 	ContractId   string   `json:"contract_id"`
 	Jury         []string `json:"jury"`
 	ReadSet      string   `json:"read_set"`
@@ -101,19 +100,18 @@ type StopJson struct {
 	ErrorMessage string   `json:"error_message"`
 }
 type SignatureJson struct {
-	Number int  `json:"number"`
+	Number     int      `json:"number"`
 	Signatures []string `json:"signature_set"` // the array of signature
 }
 
 type InvokeRequestJson struct {
-	Number int  `json:"number"`
+	Number       int      `json:"number"`
 	ContractAddr string   `json:"contract_addr"`
-	FunctionName string   `json:"function_name"`
 	Args         []string `json"arg_set"`
 }
 
 type InstallRequestJson struct {
-	Number int  `json:"number"`
+	Number         int    `json:"number"`
 	TplName        string `json:"tpl_name"`
 	TplDescription string `json:"tpl_description"`
 	Path           string `json:"path"`
@@ -123,7 +121,7 @@ type InstallRequestJson struct {
 }
 
 type DeployRequestJson struct {
-	Number int  `json:"number"`
+	Number  int           `json:"number"`
 	TplId   string        `json:"tpl_id"`
 	TxId    string        `json:"tx_id"`
 	Args    []string      `json:"arg_set"`
@@ -131,18 +129,18 @@ type DeployRequestJson struct {
 }
 
 type StopRequestJson struct {
-	Number int  `json:"number"`
+	Number      int    `json:"number"`
 	ContractId  string `json:"contract_id"`
 	Txid        string `json:"tx_id"`
 	DeleteImage bool   `json:"delete_image"`
 }
 type DataJson struct {
-	Number int  `json:"number"`
+	Number    int    `json:"number"`
 	MainData  string `json:"main_data"`
 	ExtraData string `json:"extra_data"`
 }
 type AccountStateJson struct {
-	Number int  `json:"number"`
+	Number   int    `json:"number"`
 	WriteSet string `json:"write_set"`
 }
 
@@ -160,7 +158,7 @@ func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQue
 func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) *TxJson {
 	txjson := &TxJson{}
 	txjson.Payment = []*PaymentJson{}
-	txjson.Data=[]*DataJson{}
+	txjson.Data = []*DataJson{}
 	txjson.TxHash = tx.Hash().String()
 	txjson.TxSize = float64(tx.Size())
 	for i, m := range tx.TxMessages {
@@ -168,58 +166,58 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 			pay := m.Payload.(*modules.PaymentPayload)
 			if utxoQuery == nil {
 				payJson := ConvertPayment2Json(pay)
-				payJson.Number=i
+				payJson.Number = i
 				txjson.Payment = append(txjson.Payment, payJson)
 			} else {
 				payJson := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
-				payJson.Number=i
+				payJson.Number = i
 				txjson.Payment = append(txjson.Payment, payJson)
 			}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
-			dataJson:=&DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData)}
-			dataJson.Number=i
-			txjson.Data =append(txjson.Data, dataJson)
+			dataJson := &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData)}
+			dataJson.Number = i
+			txjson.Data = append(txjson.Data, dataJson)
 		} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {
 			req := m.Payload.(*modules.ContractInstallRequestPayload)
 			txjson.InstallRequest = convertInstallRequest2Json(req)
-			txjson.InstallRequest.Number=i
+			txjson.InstallRequest.Number = i
 		} else if m.App == modules.APP_CONTRACT_DEPLOY_REQUEST {
 			req := m.Payload.(*modules.ContractDeployRequestPayload)
 			txjson.DeployRequest = convertDeployRequest2Json(req)
-			txjson.DeployRequest.Number=i
+			txjson.DeployRequest.Number = i
 		} else if m.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			req := m.Payload.(*modules.ContractInvokeRequestPayload)
 			txjson.InvokeRequest = convertInvokeRequest2Json(req)
-			txjson.InvokeRequest.Number=i
+			txjson.InvokeRequest.Number = i
 		} else if m.App == modules.APP_CONTRACT_STOP_REQUEST {
 			req := m.Payload.(*modules.ContractStopRequestPayload)
 			txjson.StopRequest = convertStopRequest2Json(req)
-			txjson.StopRequest.Number=i
+			txjson.StopRequest.Number = i
 		} else if m.App == modules.APP_CONTRACT_TPL {
 			tpl := m.Payload.(*modules.ContractTplPayload)
 			txjson.ContractTpl = convertTpl2Json(tpl)
-			txjson.ContractTpl .Number=i
+			txjson.ContractTpl.Number = i
 		} else if m.App == modules.APP_CONTRACT_DEPLOY {
 			deploy := m.Payload.(*modules.ContractDeployPayload)
 			txjson.Deploy = convertDeploy2Json(deploy)
-			txjson.Deploy .Number=i
+			txjson.Deploy.Number = i
 		} else if m.App == modules.APP_CONTRACT_INVOKE {
 			invoke := m.Payload.(*modules.ContractInvokePayload)
 			txjson.Invoke = convertInvoke2Json(invoke)
-			txjson.Invoke .Number=i
+			txjson.Invoke.Number = i
 		} else if m.App == modules.APP_CONTRACT_STOP {
 			stop := m.Payload.(*modules.ContractStopPayload)
 			txjson.Stop = convertStop2Json(stop)
-			txjson.Stop .Number=i
+			txjson.Stop.Number = i
 		} else if m.App == modules.APP_SIGNATURE {
 			sig := m.Payload.(*modules.SignaturePayload)
 			txjson.Signature = convertSig2Json(sig)
-			txjson.Signature.Number=i
+			txjson.Signature.Number = i
 		} else if m.App == modules.APP_ACCOUNT_UPDATE {
 			acc := m.Payload.(*modules.AccountStateUpdatePayload)
 			txjson.AccountStateUpdate = convertAccountState2Json(acc)
-			txjson.AccountStateUpdate.Number=i
+			txjson.AccountStateUpdate.Number = i
 		}
 	}
 	if utxoQuery != nil {
@@ -281,8 +279,6 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	injson := new(InvokeJson)
 	hash := common.BytesToHash(invoke.ContractId[:])
 	injson.ContractId = hash.String()
-	injson.FunctionName = invoke.FunctionName
-
 	injson.Args = []string{}
 	for _, arg := range invoke.Args {
 		injson.Args = append(injson.Args, string(arg))
@@ -322,7 +318,6 @@ func convertInvokeRequest2Json(req *modules.ContractInvokeRequestPayload) *Invok
 	addr := common.NewAddress(req.ContractId[:], common.ContractHash)
 	reqJson := &InvokeRequestJson{}
 	reqJson.ContractAddr = addr.String()
-	reqJson.FunctionName = req.FunctionName
 	reqJson.Args = []string{}
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))

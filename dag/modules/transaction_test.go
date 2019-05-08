@@ -163,7 +163,7 @@ func newTestTx() *Transaction {
 	//txmsg2 := NewTransaction(
 	//	[]*Message{msg, msg},
 	//)
-	req := &ContractInvokeRequestPayload{ContractId: []byte{123}, FunctionName: "TestFun", Args: [][]byte{{0x11}, {0x22}}, Timeout: 300}
+	req := &ContractInvokeRequestPayload{ContractId: []byte{123}, Args: [][]byte{{0x11}, {0x22}}, Timeout: 300}
 	msg3 := &Message{App: APP_CONTRACT_INVOKE_REQUEST, Payload: req}
 	tx := newTransaction(
 		[]*Message{msg, msg2, msg3},
@@ -259,9 +259,6 @@ func TestTransactionEncode(t *testing.T) {
 	}
 	if len(result.Args) == 0 {
 		t.Error("ContractInvokeRequestPayload Args decode error.")
-	}
-	if result.FunctionName == "" {
-		t.Error("ContractInvokeRequestPayload FunctionName decode error.")
 	}
 	if len(result.ContractId) == 0 {
 		t.Error("ContractInvokeRequestPayload ContractId decode error.")
