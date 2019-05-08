@@ -40,8 +40,11 @@ type IStateDb interface {
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 
-	SaveContractTemplate(templateId []byte, bytecode []byte, version []byte) error
-	SaveContractTemplateState(id []byte, name string, value interface{}, version *modules.StateVersion) error
+	SaveContractTpl(tpl *modules.ContractTemplate) error
+	SaveContractTplCode(tplId []byte,byteCode []byte) error
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
+	GetContractTplCode(tplId []byte) ([]byte,error)
+
 	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
 	SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error
 	SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error
@@ -50,11 +53,7 @@ type IStateDb interface {
 	SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error
 	SaveContractSignature(reqid []byte, sig *modules.SignaturePayload) error
 
-	//DeleteState(key []byte) error
-	GetContractTpl(templateID []byte) (version *modules.StateVersion, bytecode []byte, name string, path string, tplVersion string)
-	GetTplAllState(id []byte) []*modules.ContractReadSet
-	//GetContractAllState() []*modules.ContractReadSet
-	GetTplState(id []byte, field string) (*modules.StateVersion, []byte)
+
 	GetContractDeploy(reqId []byte) (*modules.ContractDeployPayload, error)
 	GetContractDeployReq(reqid []byte) (*modules.ContractDeployRequestPayload, error)
 	GetContractInvoke(reqId []byte) (*modules.ContractInvokePayload, error)

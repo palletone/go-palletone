@@ -31,6 +31,7 @@ type PaymentJson struct {
 	Inputs   []*InputJson  `json:"inputs"`
 	Outputs  []*OutputJson `json:"outputs"`
 	LockTime uint32        `json:"locktime"`
+	Number int  `json:"number"`
 }
 type InputJson struct {
 	TxHash       string `json:"txid"`          // reference Utxo struct key field
