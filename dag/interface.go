@@ -162,4 +162,6 @@ type IDag interface {
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 	GetCoinYearRate() float64
+
+	RefreshAddrTxIndex() error
 }
