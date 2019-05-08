@@ -2,4 +2,4 @@
 
 rm -rf node1
 rm gptn
-rm log/*
+#rm log/*

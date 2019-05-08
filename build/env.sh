@@ -6,7 +6,6 @@ if [ ! -f "build/env.sh" ]; then
     echo "$0 must be run from the root of the repository."
     exit 2
 fi
-
 ada=github.com/palletone/adaptor
 btc=github.com/palletone/btc-adaptor
 eth=github.com/palletone/eth-adaptor

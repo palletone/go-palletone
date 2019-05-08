@@ -32,6 +32,7 @@ const (
 	Mediator                   = "Mediator"
 	Ok                         = "ok"
 	No                         = "no"
+	DTimeDuration              = 1800
 )
 
 //申请提保证金
@@ -63,7 +64,7 @@ type PayValue struct {
 type DepositBalance struct {
 	TotalAmount      uint64        `json:"total_amount"`      //保证金总量
 	LastModifyTime   int64         `json:"last_modify_time"`  //最后一次改变，主要来计算币龄收益
-	EnterTime        int64         `json:"enter_time"`        //这是加入列表时的时间
+	EnterTime        string        `json:"enter_time"`        //这是加入列表时的时间
 	PayValues        []*PayValue   `json:"pay_values"`        //交付的历史记录
 	CashbackValues   []*Cashback   `json:"cashback_values"`   //退款的历史记录
 	ForfeitureValues []*Forfeiture `json:"forfeiture_values"` //被没收的历史记录

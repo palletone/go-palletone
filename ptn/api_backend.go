@@ -73,7 +73,6 @@ func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
 
 func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
 	text *string) (*mp.TxExecuteResult, error) {
-	log.Debug("================PtnApiBackend->TransferPtn====================")
 	return b.ptn.TransferPtn(from, to, amount, text)
 }
 

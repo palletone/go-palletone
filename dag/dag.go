@@ -177,19 +177,6 @@ func (d *Dag) GetUnstableUnits() []*modules.Unit {
 	return result
 }
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
-	//if d.Memdag.Exists(hash) {
-	//	unit, err := d.Memdag.getChainUnit(hash)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	return unit.UnitHeader, nil
-	//}
-	//height, err := d.GetUnitNumber(hash)
-	//if err != nil {
-	//	log.Debug("GetHeaderByHash when GetUnitNumber", "error", err.Error())
-	//	return nil
-	//}
-	// get unit header
 	uHeader, err := d.unstableUnitRep.GetHeaderByHash(hash)
 	if err != nil {
 		log.Debug("Current unit when get unit header", "error", err.Error())
@@ -199,28 +186,11 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 }
 
 func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	//Query memdag first
-	//hash, err := d.Memdag.GetHashByNumber(number)
-	//if err == nil { //Exist
-	//	unit, err := d.Memdag.getChainUnit(hash)
-	//	if err != nil {
-	//		log.Errorf("Number[%s] is exist in memdag, but cannot query unit by hash: %s", number.String(), hash.String())
-	//		return nil, err
-	//	}
-	//	return unit.UnitHeader, nil
-	//}
 	uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
 	if err1 != nil {
 		log.Info("getChainUnit when GetHeaderByNumber failed ", "error:", err1, "hash", number.String())
-		//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
 		return nil, err1
 	}
-	//uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
-	//if err1 != nil {
-	//	log.Debug("GetUnit when GetHeaderByHash failed ", "error:", err1, "hash", number.String())
-	//	//log.Info("index info:", "height", number, "index", number.Index, "asset", number.AssetID, "ismain", number.IsMain)
-	//	return nil, err1
-	//}
 	return uHeader, nil
 }
 
@@ -1069,14 +1039,13 @@ func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error)
 func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
 	return d.stableUnitRep.GetGenesisUnit()
 }
-func (d *Dag) GetContractTpl(tplId []byte) (*modules.ContractTemplate,error){
+func (d *Dag) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return d.unstableStateRep.GetContractTpl(tplId)
 }
 
-func (d *Dag)GetContractTplCode(tplId []byte) ([]byte,error){
+func (d *Dag) GetContractTplCode(tplId []byte) ([]byte, error) {
 	return d.unstableStateRep.GetContractTplCode(tplId)
 }
-
 
 func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, error) {
 	currentUnit := d.CurrentUnit(token)

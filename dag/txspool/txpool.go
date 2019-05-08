@@ -848,7 +848,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
-
+	log.Debugf("Try to add tx[%s] to txpool local:%t", tx.Tx.Hash().String(), local)
 	// Try to inject the transaction and update any state
 	replace, err := pool.add(tx, local)
 	if err != nil {

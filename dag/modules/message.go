@@ -362,17 +362,8 @@ func (version *StateVersion) Equal(in *StateVersion) bool {
 }
 
 const (
-	FIELD_TPL_BYTECODE  = "TplBytecode"
-	FIELD_TPL_NAME      = "TplName"
-	FIELD_TPL_DESC      = "TplDescription"
-	FIELD_TPL_ABI       = "TplAbi"
-	FIELD_TPL_Language  = "TplLanguage"
-	FIELD_TPL_PATH      = "TplPath"
-	FIELD_TPL_Memory    = "TplMemory"
 	FIELD_SPLIT_STR     = "^*^"
 	FIELD_GENESIS_ASSET = "GenesisAsset"
-	FIELD_TPL_Version   = "TplVersion"
-	FIELD_TPL_Addrs     = "TplAddrHash"
 )
 
 //type DelContractState struct {

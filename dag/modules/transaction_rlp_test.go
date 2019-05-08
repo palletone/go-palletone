@@ -261,7 +261,7 @@ func newTestContractInvokeReq() *TestContractInvokeRequestPayload {
 	a := []byte("AAAA")
 	b := []byte("BBBBBBBBBBB")
 	args := [][]byte{a, b, nil}
-	pay := &TestContractInvokeRequestPayload{[]byte("ContractId"), "Func1", args, 3}
+	pay := &TestContractInvokeRequestPayload{[]byte("ContractId"),  args, 3}
 
 	return pay
 }

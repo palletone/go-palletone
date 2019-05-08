@@ -18,14 +18,15 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
-	"strings"
-	"time"
 )
 
 //申请加入  参数： jsonString
@@ -44,7 +45,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	mediatorInfo := modules.MediatorApplyInfo{
 		Address:   invokeAddr.String(),
 		Content:   content,
-		ApplyTime: time.Now().Unix() / 1800,
+		ApplyTime: time.Now().Unix() / DTimeDuration,
 	}
 	//获取同意列表，判断是否已经申请过了
 	agreeList, err := GetAgreeForBecomeMediatorList(stub)
@@ -180,7 +181,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 			break
 		}
 	}
-	mediator.ApplyTime = time.Now().UTC().Unix() / 1800
+	mediator.ApplyTime = time.Now().Unix() / DTimeDuration
 	//获取列表
 	quitList, err := GetQuitMediatorApplyList(stub)
 	if err != nil {
@@ -209,7 +210,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 
 func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeAddr string) error {
 	//计算币龄收益
-	endTime := balance.LastModifyTime * 1800
+	endTime := balance.LastModifyTime * DTimeDuration
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
@@ -338,11 +339,11 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 		balance = &DepositBalance{}
 		//处理数据
-		balance.EnterTime = time.Now().UTC().Unix() / 1800
+		balance.EnterTime = strconv.FormatInt(time.Now().UTC().Unix()/DTimeDuration, 10)
 		updateForPayValue(balance, invokeTokens)
 	} else {
 		//TODO 再次交付保证金时，先计算当前余额的币龄奖励
-		endTime := balance.LastModifyTime * 1800
+		endTime := balance.LastModifyTime * DTimeDuration
 		depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 		if err != nil {
 			log.Error("stub.GetSystemConfig err:", "error", err)
@@ -471,7 +472,8 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr string, apply
 	//判断是否全部退
 	if result == 0 {
 		//加入候选列表的时的时间
-		startTime := time.Unix(balance.EnterTime*1800, 0).UTC().YearDay()
+		ent, err := strconv.ParseInt(balance.EnterTime, 10, 64)
+		startTime := time.Unix(ent*DTimeDuration, 0).UTC().YearDay()
 		//当前时间
 		endTime := time.Now().UTC().YearDay()
 		//判断是否已超过规定周期

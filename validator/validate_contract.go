@@ -20,7 +20,10 @@
 
 package validator
 
-import "github.com/palletone/go-palletone/dag/modules"
+import (
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
+)
 
 /**
 对unit中某个交易的读写集进行验证
@@ -55,8 +58,9 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	// to check template whether existing or not
 	stateDb := validate.statequery
 	if stateDb != nil {
-		tpl,err:= validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
-		if err!=nil ||tpl.TplName==""{
+		tpl, _ := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
+		if tpl != nil {
+			log.Errorf("Contract template[%x] already exist!", contractTplPayload.TemplateId)
 			return TxValidationCode_INVALID_CONTRACT_TEMPLATE
 		}
 	}
