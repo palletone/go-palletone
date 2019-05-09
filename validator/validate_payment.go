@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"math"
@@ -96,13 +97,16 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			}
 			totalInput += utxo.Amount
 			// check SignatureScript
-			var redeemScript []byte
-			if contractId := tx.InvokeContractId(); contractId != nil {
-				if !common.IsSystemContractAddress(contractId) {
-					jury, err := validate.statequery.GetContractJury(contractId)
+
+			pickJuryFn := func(contractAddr common.Address) ([]byte, error) {
+				log.Debugf("Try to pickup jury for address:%s", contractAddr.String())
+				var redeemScript []byte
+
+				if !contractAddr.IsSystemContractAddress() {
+					jury, err := validate.statequery.GetContractJury(contractAddr.Bytes())
 					if err != nil {
-						log.Errorf("Cannot get contract[%x] jury", contractId)
-						return TxValidationCode_INVALID_CONTRACT
+						log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
+						return nil, errors.New("Cannot get contract jury")
 					}
 					redeemScript, _ = generateJuryRedeemScript(jury)
 					log.DebugDynamic(func() string {
@@ -110,9 +114,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 						return "Generate RedeemScript: " + redeemStr
 					})
 				}
-			}
-			pickJuryFn := func(contractAddr common.Address) ([]byte, error) {
-				log.Debugf("Try to pickup jury for address:%s", contractAddr.String())
+
 				return redeemScript, nil
 			}
 			err = tokenengine.ScriptValidate(utxo.PkScript, pickJuryFn, txForSign, msgIdx, inputIdx)
