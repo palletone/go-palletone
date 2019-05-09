@@ -24,10 +24,10 @@ func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
 // Block header query, collect the requested headers and reply
 func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 	log.Trace("Received announce message")
-	if p.requestAnnounceType == announceTypeNone {
-		log.Debug("Light Palletone ProtocolManager->AnnounceMsg", "p.requestAnnounceType", p.requestAnnounceType)
-		return nil //errResp(ErrUnexpectedResponse, "")
-	}
+	//if p.requestAnnounceType == announceTypeNone {
+	//	log.Debug("Light Palletone ProtocolManager->AnnounceMsg", "p.requestAnnounceType", p.requestAnnounceType)
+	//	return nil //errResp(ErrUnexpectedResponse, "")
+	//}
 
 	var req announceData
 	var data []byte
@@ -293,7 +293,7 @@ func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
 }
 
 func (pm *ProtocolManager) SendTxMsg(msg p2p.Msg, p *peer) error {
-	if pm.txpool == nil {
+	if pm.lightSync == true {
 		return errResp(ErrRequestRejected, "")
 	}
 	// Transactions arrived, parse all of them and deliver to the pool
@@ -342,14 +342,14 @@ func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
 		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos err",err,"respdata:",respdata)
 		return err
 	}
-	log.Debug("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos respdata.addr:",respdata.addr,"datas",datas)
+	log.Debug("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos respdata.addr:",respdata.addr,"len(datas)",len(datas),"datas",datas)
 	return p.SendRawUTXOs(0, 0, datas)
 }
 func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
 	if pm.server!=nil {
 		return errors.New("this is server node")
 	}
-	var datas lpsutxo
+	var datas [][][]byte
 	respdata:=NewUtxosRespData()
 	if err := msg.Decode(&datas); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)

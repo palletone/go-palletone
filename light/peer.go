@@ -76,6 +76,7 @@ type peer struct {
 	fcServer       *flowcontrol.ServerNode // nil if the peer is client only
 	fcServerParams *flowcontrol.ServerParams
 	fcCosts        requestCostTable
+	fullnode       bool
 }
 
 func newPeer(version int, network uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -208,7 +209,7 @@ func (p *peer) SendCode(reqID, bv uint64, data [][]byte) error {
 	return sendResponse(p.rw, CodeMsg, reqID, bv, data)
 }
 
-func (p *peer) SendRawUTXOs(reqID, bv uint64, utxos lpsutxo) error {
+func (p *peer) SendRawUTXOs(reqID, bv uint64, utxos [][][]byte) error {
 	return p2p.Send(p.rw, UTXOsMsg, utxos)
 }
 
@@ -422,6 +423,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		send = send.add("flowControl/MRR", server.defParams.MinRecharge)
 		list := server.fcCostStats.getCurrentList()
 		send = send.add("flowControl/MRC", list)
+		send = send.add("fullnode", nil)
 		p.fcCosts = list.decode()
 	} else {
 		p.requestAnnounceType = announceTypeSimple // set to default until "very light" client mode is implemented
@@ -497,7 +499,15 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fcServer = flowcontrol.NewServerNode(params)
 		p.fcCosts = MRC.decode()
 	}
-	log.Debug("Light Palletone peer->Handshake", "p.announceType", p.announceType)
+
+	if err := recv.get("fullnode", nil); err != nil {
+		p.fullnode = false
+		log.Debug("Light Palletone peer->Handshake peer is light node")
+	}else {
+		p.fullnode = true
+		log.Debug("Light Palletone peer->Handshake peer is full node")
+	}
+	//
 	p.headInfo = &announceData{Hash: rHash, Number: rNum}
 	//data := &announceData{Hash: rHash, Number: rNum}
 	//p.SetHead(data)

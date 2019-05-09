@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -106,28 +107,31 @@ func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
 //}
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return nil
-	//return b.eth.txPool.Add(ctx, signedTx)
+	return b.ptn.txPool.AddLocal(txspool.TxtoTxpoolTx(b.ptn.txPool, signedTx))
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
-	b.ptn.txPool.RemoveTx(txHash)
+	//b.ptn.txPool.RemoveTx(txHash)
 }
 
 func (b *LesApiBackend) GetPoolTransactions() (modules.Transactions, error) {
-	return b.ptn.txPool.GetTransactions()
+	//return b.ptn.txPool.GetTransactions()
+	return nil, nil
 }
 
 func (b *LesApiBackend) GetPoolTransaction(txHash common.Hash) *modules.Transaction {
-	return b.ptn.txPool.GetTransaction(txHash)
+	//return b.ptn.txPool.GetTransaction(txHash)
+	return nil
 }
 
 func (b *LesApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
-	return b.ptn.txPool.GetNonce(ctx, addr)
+	//return b.ptn.txPool.GetNonce(ctx, addr)
+	return uint64(0), nil
 }
 
 func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
-	return b.ptn.txPool.Stats(), 0, 0
+	//return b.ptn.txPool.Stats(), 0, 0
+	return 0, 0, 0
 }
 
 func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
@@ -222,7 +226,12 @@ func (b *LesApiBackend) AccountManager() *accounts.Manager {
 //SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
 //SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
 func (b *LesApiBackend) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
-	return nil
+	units := b.ptn.dag.GetUnstableUnits()
+	result := make([]*ptnjson.UnitSummaryJson, len(units))
+	for i, unit := range units {
+		result[i] = ptnjson.ConvertUnit2SummaryJson(unit)
+	}
+	return result
 }
 
 // TxPool API
@@ -277,10 +286,10 @@ func (b *LesApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Uni
 	return nil
 }
 func (b *LesApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
-	return nil, nil
+	return b.ptn.dag.GetHeaderByHash(hash)
 }
 func (b *LesApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	return nil, nil
+	return b.ptn.dag.GetHeaderByNumber(number)
 }
 func (b *LesApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
 	return nil, nil
@@ -351,7 +360,16 @@ func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modu
 	return nil, nil
 }
 func (b *LesApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
-	return nil, nil
+	utxos, err := b.ptn.dag.GetAllUtxos()
+	if err != nil {
+		return nil, err
+	}
+	result := []*ptnjson.UtxoJson{}
+	for o, u := range utxos {
+		ujson := ptnjson.ConvertUtxo2Json(&o, u)
+		result = append(result, ujson)
+	}
+	return result, nil
 }
 
 func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {
@@ -423,7 +441,7 @@ func (b *LesApiBackend) Dag() dag.IDag {
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
-	return nil, nil
+	return b.ptn.TransferPtn(from, to, amount, text)
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
 	return nil

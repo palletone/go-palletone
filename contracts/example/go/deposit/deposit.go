@@ -21,6 +21,7 @@
 package deposit
 
 import (
+	"encoding/json"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -147,6 +148,18 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		if string(balance) == "" {
 			return shim.Success([]byte("balance is nil"))
+		}
+		depositB := &DepositBalance{}
+		err = json.Unmarshal(balance, depositB)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if depositB.EnterTime != "" {
+			depositB.EnterTime = timeFormat(depositB.EnterTime)
+		}
+		balance, err = json.Marshal(depositB)
+		if err != nil {
+			return shim.Error(err.Error())
 		}
 		return shim.Success(balance)
 		//获取Mediator申请加入列表

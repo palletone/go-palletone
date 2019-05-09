@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"encoding/json"
+	"github.com/palletone/go-palletone/common"
 )
 
 const (
@@ -39,38 +40,41 @@ func NewUtxosRespData()*utxosRespData  {
 	return &utxosRespData{utxos:make(map[modules.OutPoint]*modules.Utxo)}
 }
 
-func (u *utxosRespData)encode()(lpsutxo,error){
-	var datas lpsutxo
-	datas.addr = []byte(u.addr)
+func (u *utxosRespData)encode()([][][]byte,error){
+	//var datas lpsutxo
+	//datas.addr = []byte(u.addr)
+	var addrarr [][]byte
+	var arrs [][][]byte
+	addrarr = append(addrarr,[]byte(u.addr))
+	arrs = append(arrs,addrarr)
+
+
 	for outpoint,utxo:=range u.utxos{
 		var data [][]byte
 		d1,err:=json.Marshal(outpoint)
-		if err!=nil{return datas,err}
+		if err!=nil{return arrs,err}
 		log.Debug("Light PalletOne","utxosRespData encode outpoint",string(d1))
 		data = append(data,d1)
 
 		d2,err:=json.Marshal(utxo)
-		if err!=nil{return datas,err}
+		if err!=nil{return arrs,err}
 		log.Debug("Light PalletOne","utxosRespData encode utxo",string(d2))
 		data = append(data,d2)
-		datas.utxos = append(datas.utxos,data)
+		arrs = append(arrs,data)
 	}
-	return datas,nil
-	//return json.Marshal(datas)
+	return arrs,nil
 }
 
-func (u *utxosRespData)decode(datas lpsutxo)error{
-	//var datas lpsutxo
-	//if err:=json.Unmarshal(respdata,&datas);err!=nil{return err}
+func (u *utxosRespData)decode(arrs [][][]byte)error{
+	u.addr = string(arrs[0][0])
 
-	u.addr = string(datas.addr)
-	for _,utxos:=range datas.utxos{
+	for _,arr :=range arrs[1:]{
 		var outpoint modules.OutPoint
 		var utxo *modules.Utxo
-		log.Debug("Light PalletOne","utxosRespData decode outpoint",string(utxos[0]))
-		log.Debug("Light PalletOne","utxosRespData decode utxo",string(utxos[1]))
-		if err:=json.Unmarshal(utxos[0],&outpoint);err!=nil{return err}
-		if err:=json.Unmarshal(utxos[1],&utxo);err!=nil{return err}
+		log.Debug("Light PalletOne","utxosRespData decode outpoint",string(arr[0]))
+		log.Debug("Light PalletOne","utxosRespData decode utxo",string(arr[1]))
+		if err:=json.Unmarshal(arr[0],&outpoint);err!=nil{return err}
+		if err:=json.Unmarshal(arr[1],&utxo);err!=nil{return err}
 		u.utxos[outpoint] = utxo
 	}
 	return nil
@@ -152,6 +156,16 @@ func (u *UtxosSync)SaveUtxoView(respdata *utxosRespData)error{
 	}
 	u.lock.RUnlock()
 
+	address, err := common.StringToAddress(respdata.addr)
+	if err != nil {
+		log.Debug("Light PalletOne","SaveUtxoView err:",err,"addr",respdata.addr)
+		return err
+	}
+
+	if err:=u.dag.ClearUtxo(address);err!=nil{
+		log.Debug("Light PalletOne","SaveUtxoView ClearUtxo err:",err,"addr",respdata.addr)
+		return err
+	}
 	if err:=u.dag.SaveUtxoView(respdata.utxos);err!=nil{
 		log.Debug("Light PalletOne", "SaveUtxoView key err",err,"addr:", respdata.addr)
 		return err

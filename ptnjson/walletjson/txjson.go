@@ -20,8 +20,6 @@
 
 package walletjson
 
-import ()
-
 type PaymentJson struct {
 	Inputs  []InputJson  `json:"inputs"`
 	Outputs []OutputJson `json:"outputs"`
@@ -42,7 +40,6 @@ type TxProofJson struct {
 }
 type ContractInvokeRequest struct {
 	ContractAddress string
-	FunctionName    string
 	Args            []string
 }
 type InputJson struct {

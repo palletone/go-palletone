@@ -249,10 +249,25 @@ func (db *UtxoDb) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	return view, err
 }
 func (db *UtxoDb) ClearUtxo() error {
-	iter := db.db.NewIterator()
+	err := clearByPrefix(db.db, constants.UTXO_PREFIX)
+	if err != nil {
+		return err
+	}
+	err = clearByPrefix(db.db, constants.AddrOutPoint_Prefix)
+	if err != nil {
+		return err
+	}
+	err = clearByPrefix(db.db, constants.UTXO_INDEX_PREFIX)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func clearByPrefix(db ptndb.Database, prefix []byte) error {
+	iter := db.NewIteratorWithPrefix(prefix)
 	for iter.Next() {
 		key := iter.Key()
-		err := db.db.Delete(key)
+		err := db.Delete(key)
 		if err != nil {
 			return err
 		}

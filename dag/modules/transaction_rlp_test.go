@@ -239,10 +239,9 @@ func newTestContractTpl() *ContractTplPayload {
 }
 
 type TestContractInvokeRequestPayload struct {
-	ContractId   []byte   `json:"contract_id"` // contract id
-	FunctionName string   `json:"function_name"`
-	Args         [][]byte `json:"args"` // contract arguments list
-	Timeout      uint32   `json:"timeout"`
+	ContractId []byte   `json:"contract_id"` // contract id
+	Args       [][]byte `json:"args"`        // contract arguments list
+	Timeout    uint32   `json:"timeout"`
 }
 
 func TestContractInvokeReqPayload_Rlp(t *testing.T) {
@@ -262,7 +261,7 @@ func newTestContractInvokeReq() *TestContractInvokeRequestPayload {
 	a := []byte("AAAA")
 	b := []byte("BBBBBBBBBBB")
 	args := [][]byte{a, b, nil}
-	pay := &TestContractInvokeRequestPayload{[]byte("ContractId"), "Func1", args, 3}
+	pay := &TestContractInvokeRequestPayload{[]byte("ContractId"),  args, 3}
 
 	return pay
 }
@@ -293,7 +292,6 @@ func newTestContractInvokeResult() *ContractInvokePayload {
 
 	pay := &ContractInvokePayload{
 		ContractId:   []byte("ContractId"),
-		FunctionName: "Func1",
 		Args:         args,
 		ReadSet:      readset,
 		WriteSet:     wset,

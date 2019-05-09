@@ -385,19 +385,20 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		if false == ctx.valid || ctx.reqTx == nil {
 			continue
 		}
-		reqhash := ctx.reqTx.RequestHash()
+		reqId := ctx.reqTx.RequestHash()
 		if !ctx.reqTx.IsSystemContract() {
-			defer rwM.CloseTxSimulator(setChainId, reqhash.String())
+			defer rwM.CloseTxSimulator(setChainId, reqId.String())
 		}
-		log.Debug("AddContractLoop", "enter mtx", addr.String())
-		ctx.valid = false
+
 		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
-				if p.checkTxReqIdIsExist(reqhash) {
-					log.Debug("AddContractLoop ,checkTxReqIdIsExist is ok", "reqId", reqhash.String())
+				ctx.valid = false
+				log.Debug("AddContractLoop", "A enter mtx, reqId", reqId, "addr:", addr.String())
+				if p.checkTxReqIdIsExist(reqId) {
+					log.Debug("AddContractLoop ,checkTxReqIdIsExist is ok", "reqId", reqId)
 					continue
 				}
-				if p.runContractReq(reqhash, nil) != nil {
+				if p.runContractReq(reqId, nil) != nil {
 					continue
 				}
 			}
@@ -405,6 +406,8 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		if ctx.rstTx == nil {
 			continue
 		}
+		ctx.valid = false
+		log.Debug("AddContractLoop", "B enter mtx, reqId", reqId, "addr:", addr.String())
 		tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
 		if err != nil {
 			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
@@ -429,7 +432,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
 		}
-		log.Debug("AddContractLoop", "Tx reqId", tx.RequestHash().String(), "Tx hash", tx.Hash().String())
+		log.Debug("AddContractLoop", "OK, Tx reqId", tx.RequestHash().String(), "Tx hash", tx.Hash().String())
 	}
 	rwM.Close()
 	return nil
@@ -443,6 +446,9 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	log.Debug("CheckContractTxValid", "reqId:", tx.RequestHash().String(), "exec:", execute)
 	if !execute || !tx.IsSystemContract() {
 		//不执行合约或者用户合约
+		return true
+	}
+	if p.validator.CheckTxIsExist(tx) {
 		return true
 	}
 	if !p.checkTxValid(tx) {
@@ -794,7 +800,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}

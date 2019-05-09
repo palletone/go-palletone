@@ -117,10 +117,9 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId:   contractId.Bytes21(),
-			FunctionName: "",
-			Args:         args,
-			Timeout:      timeout,
+			ContractId: contractId.Bytes21(),
+			Args:       args,
+			Timeout:    timeout,
 		},
 	}
 	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, certID, msgReq, false)
@@ -141,10 +140,9 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId:   contractId.Bytes21(),
-			FunctionName: "",
-			Args:         args,
-			Timeout:      timeout,
+			ContractId: contractId.Bytes21(),
+			Args:       args,
+			Timeout:    timeout,
 		},
 	}
 	reqId, tx, err := p.createContractTxReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msgReq, false)

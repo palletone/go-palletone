@@ -50,7 +50,6 @@ type IDag interface {
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
-	// GetHeaderByHash retrieves a header from the local chain.
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUnstableUnits() []*modules.Unit
 	//GetPrefix(prefix string) map[string][]byte
@@ -104,8 +103,8 @@ type IDag interface {
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error)
 
-	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
-	GetContractTplCode(tplId []byte) ([]byte,error)
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContractTplCode(tplId []byte) ([]byte, error)
 	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	//WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
@@ -163,4 +162,6 @@ type IDag interface {
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 	GetCoinYearRate() float64
+
+	RefreshAddrTxIndex() error
 }

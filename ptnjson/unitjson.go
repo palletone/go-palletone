@@ -55,14 +55,14 @@ type HeaderJson struct {
 type ChainIndexJson struct {
 	AssetID string `json:"asset_id"`
 	//IsMain  bool   `json:"is_main"`
-	Index   uint64 `json:"index"`
+	Index uint64 `json:"index"`
 }
 
 func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc) *UnitJson {
 	json := &UnitJson{
 		UnitHash:   unit.Hash(),
 		UnitSize:   unit.Size(),
-		UnitHeader: convertUnitHeader2Json(unit.UnitHeader),
+		UnitHeader: ConvertUnitHeader2Json(unit.UnitHeader),
 		Txs:        []*TxJson{},
 	}
 
@@ -72,7 +72,7 @@ func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc) *Unit
 	}
 	return json
 }
-func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
+func ConvertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	json := &HeaderJson{
 		ParentsHash:   header.ParentsHash,
 		AuthorAddress: header.Authors.Address().String(),
@@ -87,7 +87,7 @@ func convertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	json.Number = ChainIndexJson{
 		AssetID: header.Number.AssetID.String(),
 		//IsMain:  header.Number.IsMain,
-		Index:   header.Number.Index,
+		Index: header.Number.Index,
 	}
 	return json
 }
@@ -104,7 +104,7 @@ func ConvertUnit2SummaryJson(unit *modules.Unit) *UnitSummaryJson {
 	json := &UnitSummaryJson{
 		UnitHash:   unit.Hash(),
 		UnitSize:   unit.Size(),
-		UnitHeader: convertUnitHeader2Json(unit.UnitHeader),
+		UnitHeader: ConvertUnitHeader2Json(unit.UnitHeader),
 		Txs:        []common.Hash{},
 		TxCount:    len(unit.Txs),
 	}
