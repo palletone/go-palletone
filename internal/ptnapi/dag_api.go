@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/shopspring/decimal"
 )
 
 type PublicDagAPI struct {
@@ -149,6 +150,25 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 	}
 	return *(*string)(unsafe.Pointer(&content))
 }
+
+// getUnitsByIndex
+func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.Decimal) string {
+	log.Info("PublicDagAPI ,GetUnitsByIndexs:", "start", start, "end", end)
+	units := s.b.GetUnitsByIndex(start, end)
+	jsonUnits := make([]*ptnjson.UnitJson, 0)
+
+	for _, u := range units {
+		jsonu := ptnjson.ConvertUnit2Json(u, s.b.Dag().GetUtxoEntry)
+		jsonUnits = append(jsonUnits, jsonu)
+	}
+	info := NewPublicReturnInfo("units", jsonUnits)
+	content, err := json.Marshal(info)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitsByIndexs Marshal err:", err)
+	}
+	return *(*string)(unsafe.Pointer(&content))
+}
+
 func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
 	log.Info("PublicDagAPI", "GetUnitByNumber condition:", assetid)
 	token, _, _ := modules.String2AssetId(assetid)
