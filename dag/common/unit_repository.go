@@ -456,6 +456,9 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		}
 	}
 
+	//标记交易有效性
+//	MarkTxIllegal(rep.statedb, txs)
+
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
