@@ -7,7 +7,7 @@ Resource          ../setups.robot
 *** Test Cases ***
 sectionIssueUser
     Given section unlock its account succeed
-    Then section issues intermediate certificate name cert2 to user succeed
+    When section issues intermediate certificate name cert2 to user succeed
     and wait for transaction being packaged
     Then user can query his certificate in db
 
