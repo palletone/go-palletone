@@ -155,7 +155,6 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis) error {
 		mi := modules.NewMediatorInfo()
 		*mi.MediatorInfoBase = *imc.MediatorInfoBase
 		mi.Address = imc.AddStr
-		mi.ApplyTime = mi.ApplyTime / 1800
 
 		addr, _ := common.StringToAddress(mi.AddStr)
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)

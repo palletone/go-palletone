@@ -39,7 +39,7 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
-	case "ApplyBecomeMediator":
+	case modules.ApplyMediator:
 		//log.Info("Enter DepositChaincode Contract ApplyBecomeMediator Invoke")
 		//申请成为Mediator
 		return d.applyBecomeMediator(stub, args)

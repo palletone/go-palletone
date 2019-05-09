@@ -19,11 +19,11 @@
 package ptnapi
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	dagcom "github.com/palletone/go-palletone/dag/common"
@@ -167,7 +167,7 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	if err != nil {
 		return nil, err
 	}
-	cArgs := [][]byte{[]byte("ApplyBecomeMediator"), argsB}
+	cArgs := [][]byte{[]byte(modules.ApplyMediator), argsB}
 
 	// 调用系统合约
 	fee := a.Dag().CurrentFeeSchedule().MediatorCreateFee

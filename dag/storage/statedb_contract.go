@@ -21,6 +21,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -30,8 +31,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/core"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -341,6 +344,21 @@ func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvoke
 }
 
 func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
+	// append by Albert·gou
+	if common.BytesToAddress(invoke.ContractId) == syscontract.DepositContractAddress {
+		if string(invoke.Args[0]) == modules.ApplyMediator {
+			var mco modules.MediatorCreateOperation
+			err := json.Unmarshal(invoke.Args[1], &mco)
+			if err == nil {
+				mi := modules.NewMediatorInfo()
+				*mi.MediatorInfoBase = *mco.MediatorInfoBase
+				*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
+				addr, _ := core.StrToMedAdd(mco.AddStr)
+				StoreMediatorInfo(statedb.db, addr, mi)
+			}
+		}
+	}
+
 	// key: reqid
 	key := append(constants.CONTRACT_INVOKE_REQ, reqid...)
 	return StoreBytes(statedb.db, key, invoke)

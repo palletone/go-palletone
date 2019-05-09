@@ -25,6 +25,10 @@ import (
 	"github.com/palletone/go-palletone/core"
 )
 
+const (
+	ApplyMediator = "ApplyBecomeMediator"
+)
+
 type MediatorInfo struct {
 	*core.MediatorInfoBase
 	*core.MediatorApplyInfo
