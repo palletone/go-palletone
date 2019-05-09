@@ -293,7 +293,7 @@ func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
 }
 
 func (pm *ProtocolManager) SendTxMsg(msg p2p.Msg, p *peer) error {
-	if pm.lightSync == true {
+	if pm.txpool == nil {
 		return errResp(ErrRequestRejected, "")
 	}
 	// Transactions arrived, parse all of them and deliver to the pool
