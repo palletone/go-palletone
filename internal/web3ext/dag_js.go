@@ -31,6 +31,12 @@ web3._extend({
         	inputFormatter: [null]
 		}),
 		new web3._extend.Method({
+			name: 'getUnitsByIndex',
+        	call: 'dag_getUnitsByIndex',
+        	params: 2,
+        	// inputFormatter: [null]
+		}),
+		new web3._extend.Method({
 			name: 'getUnitSummaryByNumber',
         	call: 'dag_getUnitSummaryByNumber',
         	params: 1,

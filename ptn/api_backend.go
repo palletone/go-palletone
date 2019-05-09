@@ -38,6 +38,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -339,6 +340,24 @@ func (b *PtnApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Uni
 		return nil
 	}
 	return unit
+}
+func (b *PtnApiBackend) GetUnitsByIndex(start, end decimal.Decimal) []*modules.Unit {
+	index1 := uint64(start.IntPart())
+	index2 := uint64(end.IntPart())
+	units := make([]*modules.Unit, 0)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	for i := index1; i <= index2; i++ {
+		number := new(modules.ChainIndex)
+		number.Index = i
+		number.AssetID = gasToken
+		unit, err := b.ptn.dag.GetUnitByNumber(number)
+		if unit == nil || err != nil {
+			log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number.String(), "error", err)
+		}
+		//jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetUtxoEntry)
+		units = append(units, unit)
+	}
+	return units
 }
 
 func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJson, error) {
