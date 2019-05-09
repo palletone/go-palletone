@@ -171,9 +171,13 @@ func (b *bridge) GetUnitsByIndex(call otto.FunctionCall) (response otto.Value) {
 	if !call.Argument(0).IsNumber() || !call.Argument(1).IsNumber() {
 		throwJSException("the argument must be number.")
 	}
+	if !call.Argument(2).IsString() {
+		throwJSException("the argument must be string.")
+	}
 	start := call.Argument(0)
 	end := call.Argument(1)
-	val, err := call.Otto.Call("jptn.getUnitsByIndex", nil, start, end)
+	asset := call.Argument(2)
+	val, err := call.Otto.Call("jptn.getUnitsByIndex", nil, start, end, asset)
 	if err != nil {
 		throwJSException("jay++++" + err.Error())
 	}

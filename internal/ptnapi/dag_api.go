@@ -152,9 +152,9 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 }
 
 // getUnitsByIndex
-func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.Decimal) string {
+func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.Decimal, asset string) string {
 	log.Info("PublicDagAPI ,GetUnitsByIndexs:", "start", start, "end", end)
-	units := s.b.GetUnitsByIndex(start, end)
+	units := s.b.GetUnitsByIndex(start, end, asset)
 	jsonUnits := make([]*ptnjson.UnitJson, 0)
 
 	for _, u := range units {

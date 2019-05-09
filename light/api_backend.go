@@ -27,13 +27,13 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -286,15 +286,19 @@ func (b *LesApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 func (b *LesApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Unit {
 	return nil
 }
-func (b *LesApiBackend) GetUnitsByIndex(start, end decimal.Decimal) []*modules.Unit {
+func (b *LesApiBackend) GetUnitsByIndex(start, end decimal.Decimal, asset string) []*modules.Unit {
 	index1 := uint64(start.IntPart())
 	index2 := uint64(end.IntPart())
 	units := make([]*modules.Unit, 0)
-	gasToken := dagconfig.DagConfig.GetGasToken()
+	token, _, err := modules.String2AssetId(asset)
+	if err != nil {
+		log.Info("the asset str is not correct token string.")
+		return nil
+	}
 	for i := index1; i <= index2; i++ {
 		number := new(modules.ChainIndex)
 		number.Index = i
-		number.AssetID = gasToken
+		number.AssetID = token
 		unit, err := b.ptn.dag.GetUnitByNumber(number)
 		if err == nil {
 			units = append(units, unit)
@@ -465,7 +469,7 @@ func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal, tex
 	return b.ptn.TransferPtn(from, to, amount, text)
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
-	return  b.ptn.GetKeyStore()
+	return b.ptn.GetKeyStore()
 }
 
 // get tx hash by req id

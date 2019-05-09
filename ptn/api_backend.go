@@ -38,7 +38,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -341,15 +340,19 @@ func (b *PtnApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Uni
 	}
 	return unit
 }
-func (b *PtnApiBackend) GetUnitsByIndex(start, end decimal.Decimal) []*modules.Unit {
+func (b *PtnApiBackend) GetUnitsByIndex(start, end decimal.Decimal, asset string) []*modules.Unit {
 	index1 := uint64(start.IntPart())
 	index2 := uint64(end.IntPart())
 	units := make([]*modules.Unit, 0)
-	gasToken := dagconfig.DagConfig.GetGasToken()
+	token, _, err := modules.String2AssetId(asset)
+	if err != nil {
+		log.Info("the asset str is not correct token string.")
+		return nil
+	}
 	for i := index1; i <= index2; i++ {
 		number := new(modules.ChainIndex)
 		number.Index = i
-		number.AssetID = gasToken
+		number.AssetID = token
 		unit, err := b.ptn.dag.GetUnitByNumber(number)
 		if unit == nil || err != nil {
 			log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number.String(), "error", err)
