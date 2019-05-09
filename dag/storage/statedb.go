@@ -159,16 +159,16 @@ func (statedb *StateDb) GetApprovedMediatorList() ([]*modules.MediatorApplyInfo,
 }
 
 func (statedb *StateDb) IsApprovedMediator(address common.Address) bool {
-	//list, err := statedb.GetApprovedMediatorList()
-	//if err != nil {
-	//	return false
-	//}
+	list, err := statedb.GetApprovedMediatorList()
+	if err != nil {
+		return false
+	}
 
-	//for _, v := range list {
-	//	if strings.Compare(v.Address, address.String()) == 0 {
-	//		return true
-	//	}
-	//}
+	for _, v := range list {
+		if strings.Compare(v.Address, address.String()) == 0 {
+			return true
+		}
+	}
 
 	return false
 }

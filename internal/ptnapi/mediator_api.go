@@ -188,8 +188,9 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 
 	// 5. 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Create mediator %v with initPubKey : %v , node: %v , url: %v",
-		args.AddStr, args.InitPubKey, args.Node, args.Url)
+	// todo
+	//res.TxContent = fmt.Sprintf("Create mediator %v with initPubKey : %v , node: %v , url: %v",
+	//	args.AddStr, args.InitPubKey, args.Node, args.Url)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)

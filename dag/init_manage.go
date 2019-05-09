@@ -154,7 +154,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis) error {
 
 		mi := modules.NewMediatorInfo()
 		mi.MediatorInfoBase = imc.MediatorInfoBase
-		mi.ApplyTime = mi.ApplyTime / 1800
+		//mi.ApplyTime = mi.ApplyTime / 1800
 
 		addr, _ := common.StringToAddress(mi.AddStr)
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
@@ -163,6 +163,8 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis) error {
 			panic(err.Error())
 		}
 	}
+
+	// todo 待往mediator候选列表添加
 
 	return nil
 }
