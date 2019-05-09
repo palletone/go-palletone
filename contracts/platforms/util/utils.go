@@ -31,9 +31,9 @@ import (
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/vm/dockercontroller"
 )
 
@@ -181,10 +181,10 @@ func DockerBuild(opts DockerBuildOptions) error {
 	//创建一个暂时的容器用于链码编译
 	//-----------------------------------------------------------------------------------
 	hostConfig := &docker.HostConfig{
-		Memory:           dockercontroller.GetInt64FromDb("TempUccMemory"), //1GB
-		MemorySwap:dockercontroller.GetInt64FromDb("TempUccMemorySwap"), //1GB
-		CPUShares:        dockercontroller.GetInt64FromDb("TempUccCPUShares"),
-		CPUQuota:         dockercontroller.GetInt64FromDb("TempUccCPUQuota"),
+		Memory:     dockercontroller.GetInt64FromDb("TempUccMemory"),     //1GB
+		MemorySwap: dockercontroller.GetInt64FromDb("TempUccMemorySwap"), //1GB
+		CPUShares:  dockercontroller.GetInt64FromDb("TempUccCPUShares"),
+		CPUQuota:   dockercontroller.GetInt64FromDb("TempUccCPUQuota"),
 	}
 	container, err := client.CreateContainer(docker.CreateContainerOptions{
 		Config: &docker.Config{
@@ -194,7 +194,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 			AttachStdout: true,
 			AttachStderr: true,
 		},
-		HostConfig:hostConfig,
+		HostConfig: hostConfig,
 	})
 	if err != nil {
 		return fmt.Errorf("Error creating container: %s", err)
