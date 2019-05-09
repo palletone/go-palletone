@@ -22,10 +22,12 @@ package validator
 
 import (
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"math"
 )
 
 //Coinbase可以没有输入，就算有输入也没有Preoutpoint
@@ -94,8 +96,26 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			}
 			totalInput += utxo.Amount
 			// check SignatureScript
-
-			err = tokenengine.ScriptValidate(utxo.PkScript, nil, txForSign, msgIdx, inputIdx)
+			var redeemScript []byte
+			if contractId := tx.InvokeContractId(); contractId != nil {
+				if !common.IsSystemContractAddress(contractId) {
+					jury, err := validate.statequery.GetContractJury(contractId)
+					if err != nil {
+						log.Errorf("Cannot get contract[%x] jury", contractId)
+						return TxValidationCode_INVALID_CONTRACT
+					}
+					redeemScript, _ = generateJuryRedeemScript(jury)
+					log.DebugDynamic(func() string {
+						redeemStr, _ := tokenengine.DisasmString(redeemScript)
+						return "Generate RedeemScript: " + redeemStr
+					})
+				}
+			}
+			pickJuryFn := func(contractAddr common.Address) ([]byte, error) {
+				log.Debugf("Try to pickup jury for address:%s", contractAddr.String())
+				return redeemScript, nil
+			}
+			err = tokenengine.ScriptValidate(utxo.PkScript, pickJuryFn, txForSign, msgIdx, inputIdx)
 			if err != nil {
 
 				log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
@@ -138,4 +158,13 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		}
 	}
 	return TxValidationCode_VALID
+}
+func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
+	count := len(jury)
+	needed := byte(math.Ceil(float64(count) * 2 / 3))
+	pubKeys := [][]byte{}
+	for _, jurior := range jury {
+		pubKeys = append(pubKeys, jurior.PublicKey)
+	}
+	return tokenengine.GenerateRedeemScript(needed, pubKeys), nil
 }

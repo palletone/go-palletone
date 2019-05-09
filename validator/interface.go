@@ -41,9 +41,10 @@ type IUtxoQuery interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 }
 type IStateQuery interface {
-	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
+	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 }
 type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
