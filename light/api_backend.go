@@ -466,7 +466,8 @@ func (b *LesApiBackend) Dag() dag.IDag {
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
-	return b.ptn.TransferPtn(from, to, amount, text)
+	//return b.ptn.TransferPtn(from, to, amount, text)
+	return nil, nil
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
 	return b.ptn.GetKeyStore()
