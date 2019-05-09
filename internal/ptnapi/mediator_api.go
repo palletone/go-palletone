@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	dagcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -42,15 +43,37 @@ func NewPublicMediatorAPI(b Backend) *PublicMediatorAPI {
 }
 
 func (a *PublicMediatorAPI) IsApproved(AddStr string) (string, error) {
+	// 构建参数
 	cArgs := [][]byte{[]byte(modules.IsApproved), []byte(AddStr)}
-
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+
+	// 调用系统合约
 	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes21(), txid[:], cArgs, 0)
 	if err != nil {
 		return "", err
 	}
 
 	return string(rsp), nil
+}
+
+func (a *PublicMediatorAPI) GetDeposit(AddStr string) (*deposit.DepositBalance, error) {
+	// 构建参数
+	cArgs := [][]byte{[]byte(modules.GetDeposit), []byte(AddStr)}
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+
+	// 调用系统合约
+	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes21(), txid[:], cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	depositB := &deposit.DepositBalance{}
+	err = json.Unmarshal(rsp, depositB)
+	if err == nil {
+		return depositB, nil
+	}
+
+	return nil, fmt.Errorf(string(rsp))
 }
 
 func (a *PublicMediatorAPI) GetList() []string {

@@ -53,13 +53,18 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
-			name: 'vote',
-			call: 'mediator_vote',
+			name: 'deposit',
+			call: 'mediator_deposit',
 			params: 2,
 		}),
 		new web3._extend.Method({
-			name: 'deposit',
-			call: 'mediator_deposit',
+			name: 'getDeposit',
+			call: 'mediator_getDeposit',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'vote',
+			call: 'mediator_vote',
 			params: 2,
 		}),
 		new web3._extend.Method({

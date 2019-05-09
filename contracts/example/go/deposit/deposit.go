@@ -138,7 +138,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取某个节点的账户
-	case "GetBalanceWithAddr":
+	case modules.GetDeposit:
 		balance, err := stub.GetState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
