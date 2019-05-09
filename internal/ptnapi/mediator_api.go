@@ -19,12 +19,13 @@
 package ptnapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	dagcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -125,8 +126,8 @@ type TxExecuteResult struct {
 	TxHash    common.Hash `json:"txHash"`
 	TxSize    string      `json:"txSize"`
 	TxFee     string      `json:"txFee"`
-	//Tip       string      `json:"tip"`
-	Warning string `json:"warning"`
+	Tip       string      `json:"tip"`
+	Warning   string      `json:"warning"`
 }
 
 // 创建 mediator 所需的参数, 至少包含普通账户地址
@@ -135,16 +136,54 @@ type MediatorCreateArgs struct {
 }
 
 // 相关参数检查
-func (args *MediatorCreateArgs) setDefaults(node *discover.Node) (initPrivKey string) {
-	if args.InitPubKey == "" {
-		initPrivKey, args.InitPubKey = core.CreateInitDKS()
+func (args *MediatorCreateArgs) setDefaults() {
+	if args.Address == "" {
+		args.Address = args.AddStr
 	}
 
-	//if args.Node == "" {
-	//	args.Node = node.String()
-	//}
+	args.ApplyTime = time.Now().Unix()
 
 	return
+}
+
+func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, error) {
+	// 参数验证
+	err := args.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	// 参数补全
+	args.setDefaults()
+
+	addr := args.FeePayer()
+	// 判断是否已经是mediator
+	if a.Dag().IsMediator(addr) {
+		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
+	}
+
+	// 参数序列化
+	argsB, err := json.Marshal(args)
+	if err != nil {
+		return nil, err
+	}
+	cArgs := [][]byte{[]byte("ApplyBecomeMediator"), argsB}
+
+	// 调用系统合约
+	fee := a.Dag().CurrentFeeSchedule().MediatorCreateFee
+	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
+		syscontract.DepositContractAddress, cArgs, 0)
+
+	// 返回执行结果
+	res := &TxExecuteResult{}
+	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey : %v , node: %v , content: %v",
+		args.AddStr, args.InitPubKey, args.Node, args.Content)
+	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = DefaultResult
+	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
+		" , You can get the transaction hash with dag.getTxHashByReqId."
+
+	return res, nil
 }
 
 func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, error) {

@@ -176,4 +176,5 @@ type IDag interface {
 	GetAccountVotedMediators(addr common.Address) []common.Address
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
+	CurrentFeeSchedule() core.FeeSchedule
 }
