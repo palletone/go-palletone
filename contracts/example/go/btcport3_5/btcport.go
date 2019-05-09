@@ -439,7 +439,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	log.Debugf("btcAmount: %d, asset: %s", btcAmount, btcTokenAsset.String())
 
-	invokeTokens := new(dm.InvokeTokens)
+	invokeTokens := new(dm.AmountAsset)
 	invokeTokens.Amount = btcAmount
 	invokeTokens.Asset = btcTokenAsset
 	err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)

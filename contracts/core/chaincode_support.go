@@ -414,7 +414,7 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 		envs = append(envs, "CORE_CHAINCODE_LOGGING_SHIM="+chaincodeSupport.shimLogLevel)
 	}
 	if chaincodeSupport.peerAddress != "" {
-		log.Infof("-------------------------------------------%s\n\n",chaincodeSupport.peerAddress)
+		log.Infof("-------------------------------------------%s\n\n", chaincodeSupport.peerAddress)
 		envs = append(envs, "CORE_CHAINCODE_PEER_ADDRESS="+chaincodeSupport.peerAddress)
 	}
 	if chaincodeSupport.logFormat != "" {
@@ -423,7 +423,7 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	switch cLang {
 	case pb.ChaincodeSpec_GOLANG, pb.ChaincodeSpec_CAR:
 		//args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
-		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C /usr/local/bin && cd /usr/local/bin && ./chaincode"}
+		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && rm binpackage.tar && rm Dockerfile && cd $GOPATH/bin && ./chaincode"}
 	case pb.ChaincodeSpec_JAVA:
 		args = []string{"java", "-jar", "chaincode.jar", "--peerAddress", chaincodeSupport.peerAddress}
 	case pb.ChaincodeSpec_NODE:
@@ -877,7 +877,7 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	case <-time.After(setTimeout):
 		log.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
 		err = errors.New("timeout expired while executing transaction")
-}
+	}
 
 	//our responsibility to delete transaction context if sendExecuteMessage succeeded
 	chrte.handler.deleteTxContext(msg.ChannelId, msg.Txid)

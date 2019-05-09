@@ -604,7 +604,7 @@ func (stub *ChaincodeStub) SupplyToken(assetId []byte, uniqueId []byte, amt uint
 }
 
 //将合约上锁定的某种Token支付出去
-func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error {
+func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.AmountAsset, lockTime uint32) error {
 	//TODO Devin return stub.handler.handlePayOutToken(  stub.ContractId, stub.ChannelId, stub.TxID)
 	return stub.handler.handlePayOutToken("", addr, invokeTokens, lockTime, stub.ContractId, stub.ChannelId, stub.TxID)
 }

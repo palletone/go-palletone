@@ -217,7 +217,7 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//本金+利息
 	balance.TotalAmount += awards
-	invokeTokens := new(modules.InvokeTokens)
+	invokeTokens := new(modules.AmountAsset)
 	invokeTokens.Amount = balance.TotalAmount
 	fees, err := stub.GetInvokeFees()
 	if err != nil {

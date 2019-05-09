@@ -94,6 +94,8 @@ type IUnitRepository interface {
 
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//根据现有Tx数据，重新构建地址和Tx的关系索引
+	RefreshAddrTxIndex() error
 }
 type UnitRepository struct {
 	dagdb storage.IDagDb
@@ -982,20 +984,25 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		log.Info("Save transaction:", "error", err.Error())
 		return err
 	}
+	//Index
 	if dagconfig.DagConfig.AddrTxsIndex {
-		//Index TxId for to address
-		addresses := getPayToAddresses(tx)
-		for _, addr := range addresses {
-			rep.idxdb.SaveAddressTxId(addr, txHash)
-		}
-		//Index from address to txid
-		fromAddrs := rep.getPayFromAddresses(tx)
-		for _, addr := range fromAddrs {
-			rep.idxdb.SaveAddressTxId(addr, txHash)
-		}
+		rep.saveAddrTxIndex(txHash, tx)
+	}
+	return nil
+}
+func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) {
+
+	//Index TxId for to address
+	addresses := getPayToAddresses(tx)
+	for _, addr := range addresses {
+		rep.idxdb.SaveAddressTxId(addr, txHash)
+	}
+	//Index from address to txid
+	fromAddrs := rep.getPayFromAddresses(tx)
+	for _, addr := range fromAddrs {
+		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
 
-	return nil
 }
 func getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
@@ -1224,15 +1231,15 @@ To save contract template code
 */
 func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex uint32, installReq *modules.ContractInstallRequestPayload, tpl *modules.ContractTplPayload) bool {
 
-	template:=modules.NewContractTemplate(installReq,tpl)
-	err:= rep.statedb.SaveContractTpl(template)
-	if err!=nil{
-		log.Errorf("Save contract template fail,error:%s",err.Error())
+	template := modules.NewContractTemplate(installReq, tpl)
+	err := rep.statedb.SaveContractTpl(template)
+	if err != nil {
+		log.Errorf("Save contract template fail,error:%s", err.Error())
 		return false
 	}
-	err= rep.statedb.SaveContractTplCode(tpl.TemplateId,tpl.ByteCode)
-	if err!=nil{
-		log.Errorf("Save contract code fail,error:%s",err.Error())
+	err = rep.statedb.SaveContractTplCode(tpl.TemplateId, tpl.ByteCode)
+	if err != nil {
+		log.Errorf("Save contract code fail,error:%s", err.Error())
 		return false
 	}
 
@@ -1527,4 +1534,23 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 		}
 	}
 	return result, nil
+}
+func (rep *UnitRepository) RefreshAddrTxIndex() error{
+	rep.lock.RLock()
+	begin:=time.Now()
+	defer func() {
+		rep.lock.RUnlock()
+		log.Infof("CreateUnit cost time %s", time.Since(begin))
+	}()
+	if !dagconfig.DagConfig.AddrTxsIndex {
+		return errors.New("Please enable AddrTxsIndex in toml DagConfig")
+	}
+	txs,err:= rep.dagdb.GetAllTxs()
+	if err!=nil{
+		return err
+	}
+	for _, tx:=range txs{
+		rep.saveAddrTxIndex(tx.Hash(),tx)
+	}
+	return nil
 }

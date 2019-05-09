@@ -415,7 +415,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if btcTokenAsset == nil {
 		return shim.Error("need call setBTCTokenAsset()")
 	}
-	invokeTokens := new(dm.InvokeTokens)
+	invokeTokens := new(dm.AmountAsset)
 	invokeTokens.Amount = btcAmount
 	invokeTokens.Asset = btcTokenAsset
 	err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
