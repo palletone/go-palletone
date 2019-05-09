@@ -357,7 +357,11 @@ func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	return result, nil
 }
 func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
-	return nil, nil
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	return b.ptn.dag.GetAddrUtxos(address)
 }
 func (b *LesApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	utxos, err := b.ptn.dag.GetAllUtxos()
