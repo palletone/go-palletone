@@ -87,6 +87,7 @@ type iDag interface {
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
+	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 }
 
 type Juror struct {
@@ -732,20 +733,21 @@ func (p *Processor) getLocalAccount() *JuryAccount {
 }
 
 func (p *Processor) getContractElectionList(contractId common.Address) ([]modules.ElectionInf, error) {
-	eleByte, _, err := p.dag.GetContractState(contractId[:], "ElectionList")
-	if err != nil {
-		log.Debug("getContractElectionList", "not find contract election, contractId", contractId)
-		return nil, err
-	}
-	var ele []modules.ElectionInf
-	err = rlp.DecodeBytes(eleByte, &ele)
-	if err != nil {
-		errs := fmt.Sprintf("getContractElectionList, DecodeBytes fail, contractId:%v", contractId)
-		log.Debug(errs)
-		return nil, errors.New(errs)
-	}
-	log.Debug("getContractElectionList", "contractId", contractId, "ElectionInf", ele)
-	return ele, nil
+	//eleByte, _, err := p.dag.GetContractState(contractId[:], "ElectionList")
+	//if err != nil {
+	//	log.Debug("getContractElectionList", "not find contract election, contractId", contractId)
+	//	return nil, err
+	//}
+	//var ele []modules.ElectionInf
+	//err = rlp.DecodeBytes(eleByte, &ele)
+	//if err != nil {
+	//	errs := fmt.Sprintf("getContractElectionList, DecodeBytes fail, contractId:%v", contractId)
+	//	log.Debug(errs)
+	//	return nil, errors.New(errs)
+	//}
+	//log.Debug("getContractElectionList", "contractId", contractId, "ElectionInf", ele)
+	//return ele, nil
+	return p.dag.GetContractJury(contractId.Bytes())
 }
 
 func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
@@ -801,7 +803,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}

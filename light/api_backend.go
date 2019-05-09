@@ -469,13 +469,15 @@ func (b *LesApiBackend) TxPool() txspool.ITxPool {
 }
 
 func (b *LesApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
-	return b.ptn.SignAndSendTransaction(addr, tx)
+	//return b.ptn.SignAndSendTransaction(addr, tx)
+	return nil
 }
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
 	text *string) (*ptnapi.TxExecuteResult, error) {
-	return b.ptn.TransferPtn(from, to, amount, text)
+	//return b.ptn.TransferPtn(from, to, amount, text)
+	return nil, nil
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
 	return b.ptn.GetKeyStore()
