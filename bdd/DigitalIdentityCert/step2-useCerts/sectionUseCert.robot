@@ -6,8 +6,10 @@ Resource          ../pubFuncs.robot
 *** Test Cases ***
 sectionUseCert
     Given section unlock account succed
-    Given section uses debug contract to test getRequesterCert without error
-    When section uses debug contract to test checkRequesterCert without error
+    When section uses debug contract to test getRequesterCert without error
+    And wait for transaction being packaged
+    And section uses debug contract to test checkRequesterCert without error
+    And wait for transaction being packaged
     Then print out: section has authority to use this cert
 
 *** Keywords ***

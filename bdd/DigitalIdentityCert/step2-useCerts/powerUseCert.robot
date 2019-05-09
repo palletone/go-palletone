@@ -6,8 +6,10 @@ Resource          ../pubFuncs.robot
 *** Test Cases ***
 powerUseCert
     Given power unlock account succed
-    Given power uses debug contract to test getRequesterCert without error
-    When power uses debug contract to test checkRequesterCert without error
+    When power uses debug contract to test getRequesterCert without error
+    And wait for transaction being packaged
+    And power uses debug contract to test checkRequesterCert without error
+    And wait for transaction being packaged
     Then print out: power has authority to use this cert
 
 *** Keywords ***

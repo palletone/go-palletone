@@ -6,8 +6,10 @@ Resource          ../pubFuncs.robot
 *** Test Cases ***
 userUseCert
     Given user unlock account succed
-    Given user uses debug contract to test getRequesterCert without error
-    When user uses debug contract to test checkRequesterCert without error
+    When user uses debug contract to test getRequesterCert without error
+    And wait for transaction being packaged
+    And user uses debug contract to test checkRequesterCert without error
+    And wait for transaction being packaged
     Then print out: user has authority to use this cert
 
 *** Keywords ***

@@ -457,7 +457,7 @@ func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
 	return b.ptn.TransferPtn(from, to, amount, text)
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
-	return nil
+	return  b.ptn.GetKeyStore()
 }
 
 // get tx hash by req id
