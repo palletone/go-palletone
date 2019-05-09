@@ -789,7 +789,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		builder := func() (io.Reader, error) { return platforms.GenerateDockerBuild(cds) }
 		err = chaincodeSupport.launchAndWaitForRegister(context, cccid, cds, &ccLauncherImpl{context, chaincodeSupport, cccid, cds, builder})
 		if err != nil {
-			log.Errorf("launchAndWaitForRegister failed: %+v", err)
+			log.Debugf("launchAndWaitForRegister failed: %+v", err)
 			return cID, cMsg, err
 		}
 	}
