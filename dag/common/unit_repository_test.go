@@ -597,24 +597,29 @@ func TestContractStateVrf(t *testing.T) {
 
 	db, _ := ptndb.NewMemDatabase()
 	statedb := storage.NewStateDb(db)
-	eleW_bytes, _ := rlp.EncodeToBytes(eleW)
+	//eleW_bytes, _ := rlp.EncodeToBytes(eleW)
 	//write
-	ws := modules.NewWriteSet("ElectionList", eleW_bytes)
-	if statedb.SaveContractState(contractId, ws, ver) != nil {
-		log.Debug("TestContractStateVrf, SaveContractState fail")
-		return
-	}
+	err := statedb.SaveContractJury(contractId, eleW, ver)
+	assert.Nil(t, err)
+	//ws := modules.NewWriteSet("ElectionList", eleW_bytes)
+	//if statedb.SaveContractState(contractId, ws, ver) != nil {
+	//	log.Debug("TestContractStateVrf, SaveContractState fail")
+	//	return
+	//}
 
 	//read
-	eleByte, _, err := statedb.GetContractState(contractId, "ElectionList")
-	if err != nil {
-		log.Debug("TestContractStateVrf, GetContractState fail", "error", err)
-		return
-	}
-	var eler []modules.ElectionInf
-	err1 := rlp.DecodeBytes(eleByte, &eler)
-	log.Infof("%v", err1)
-	log.Infof("%v", eler)
+	eler, err := statedb.GetContractJury(contractId)
+	assert.Nil(t, err)
+	t.Logf("%v", eler)
+	//eleByte, _, err := statedb.GetContractState(contractId, "ElectionList")
+	//if err != nil {
+	//	log.Debug("TestContractStateVrf, GetContractState fail", "error", err)
+	//	return
+	//}
+	//var eler []modules.ElectionInf
+	//err1 := rlp.DecodeBytes(eleByte, &eler)
+	//log.Infof("%v", err1)
+	//log.Infof("%v", eler)
 }
 
 func TestContractRlpEncode(t *testing.T) {
