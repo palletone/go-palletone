@@ -671,6 +671,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		} else { //invoke,stop
 			elist, err := p.getContractElectionList(contractId)
 			if err != nil {
+				log.Error("signAndExecute", "getContractElectionList fail", err)
 				return common.Hash{}, nil, err
 			}
 			ctx.eleInf = elist
@@ -747,7 +748,7 @@ func (p *Processor) getContractElectionList(contractId common.Address) ([]module
 	//}
 	//log.Debug("getContractElectionList", "contractId", contractId, "ElectionInf", ele)
 	//return ele, nil
-	return p.dag.GetContractJury(contractId.Bytes())
+	return p.dag.GetContractJury(contractId.Bytes21())
 }
 
 func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
