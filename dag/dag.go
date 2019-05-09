@@ -799,7 +799,10 @@ func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStat
 func (d *Dag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return d.unstableStateRep.GetContractStatesByPrefix(id, prefix)
 }
+func (d *Dag) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+	return d.unstableStateRep.GetContractJury(contractId)
 
+}
 func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	return d.unstableUnitRep.CreateUnit(mAddr, txpool, t)
 }
@@ -1278,6 +1281,6 @@ func (d *Dag) GetCoinYearRate() float64 {
 func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	return d.stableUnitRep.GetTxRequesterAddress(tx)
 }
-func (d *Dag)RefreshAddrTxIndex() error{
+func (d *Dag) RefreshAddrTxIndex() error {
 	return d.stableUnitRep.RefreshAddrTxIndex()
 }

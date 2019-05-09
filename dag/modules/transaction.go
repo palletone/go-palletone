@@ -106,13 +106,13 @@ type TxPoolTransaction struct {
 	Tx *Transaction
 
 	From         []*OutPoint
-	CreationDate time.Time    `json:"creation_date"`
-	Priority_lvl string       `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time `json:"creation_date"`
+	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool // will remove
+	Discarded    bool         // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
 	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
@@ -588,6 +588,16 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 LOOP:
 	fmt.Println("goto loop.")
 	return request
+}
+
+func (tx *Transaction) InvokeContractId() []byte {
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
+			return contractId
+		}
+	}
+	return nil
 }
 
 type Addition struct {
