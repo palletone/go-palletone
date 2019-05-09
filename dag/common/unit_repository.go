@@ -455,7 +455,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 
 	//标记交易有效性
-//	MarkTxIllegal(rep.statedb, txs)
+	//	MarkTxIllegal(rep.statedb, txs)
 
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
@@ -916,6 +916,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	}
 	txHash := tx.Hash()
 	reqId := tx.RequestHash().Bytes()
+	unitTime := unit.Timestamp()
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
 	for msgIndex, msg := range tx.TxMessages {
@@ -931,7 +932,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("Save contract template error.")
 			}
 		case modules.APP_CONTRACT_DEPLOY:
-			if ok := rep.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+			deploy := msg.Payload.(*modules.ContractDeployPayload)
+			if ok := rep.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), deploy, requester, unitTime); ok != true {
 				return fmt.Errorf("Save contract init payload error.")
 			}
 		case modules.APP_CONTRACT_INVOKE:
@@ -1186,14 +1188,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 保存合约初始化状态
 To save contract init state
 */
-func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
-	var pl interface{}
-	pl = msg.Payload
-	payload, ok := pl.(*modules.ContractDeployPayload)
-	if ok == false {
-		return false
-	}
-
+func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, txIndex uint32, payload *modules.ContractDeployPayload, requester common.Address, unitTime int64) bool {
 	// save contract state
 	version := &modules.StateVersion{
 		Height:  height,
@@ -1206,8 +1201,14 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	}
 	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
 	// save contract name
-	write := &modules.ContractWriteSet{Key: "ContractName", Value: []byte(payload.Name)}
-	if rep.statedb.SaveContractState(payload.ContractId, write, version) != nil {
+	//write := &modules.ContractWriteSet{Key: "ContractName", Value: []byte(payload.Name)}
+	//if rep.statedb.SaveContractState(payload.ContractId, write, version) != nil {
+	//	return false
+	//}
+	contract := modules.NewContract(payload, requester, uint64(unitTime))
+	err = rep.statedb.SaveContract(contract)
+	if err != nil {
+		log.Errorf("Save contract[%x] error:%s", payload.ContractId, err.Error())
 		return false
 	}
 	//save contract election
