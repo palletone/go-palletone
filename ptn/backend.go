@@ -136,7 +136,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
-
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 
@@ -449,7 +448,7 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *s
 	}
 
 	res := &ptnapi.TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account(%s) transfer %vPTN to account(%s) with message: '%s'",
+	res.TxContent = fmt.Sprintf("Account(%v) transfer %vPTN to account(%v) with message: '%v'",
 		from, amount, to, textStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()

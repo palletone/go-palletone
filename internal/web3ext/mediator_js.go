@@ -58,6 +58,11 @@ web3._extend({
 			params: 2,
 		}),
 		new web3._extend.Method({
+			name: 'deposit',
+			call: 'mediator_deposit',
+			params: 2,
+		}),
+		new web3._extend.Method({
 			name: 'getNextUpdateTime',
 			call: 'mediator_getNextUpdateTime',
 			params: 0,

@@ -211,6 +211,7 @@ func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to,
 
 	return rsp.ReqId, err
 }
+
 func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Info("---enter DepositContractQuery---")
 	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param)

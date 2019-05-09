@@ -29,6 +29,8 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	dagcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/shopspring/decimal"
 )
 
 type PublicMediatorAPI struct {
@@ -191,6 +193,31 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey : %v , node: %v , content: %v",
 		args.AddStr, args.InitPubKey, args.Node, args.Content)
+	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = DefaultResult
+	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
+		" , You can get the transaction hash with dag.getTxHashByReqId."
+
+	return res, nil
+}
+
+func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxExecuteResult, error) {
+	// 参数检查
+	fromAdd, err := common.StringToAddress(from)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", from)
+	}
+
+	// 调用系统合约
+	cArgs := [][]byte{[]byte(modules.MediatorDeposit)}
+	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
+	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
+		fee, nil, syscontract.DepositContractAddress, cArgs, 0)
+
+	// 返回执行结果
+	res := &TxExecuteResult{}
+	res.TxContent = fmt.Sprintf("Account(%v) transfer %vPTN to DepositContract(%v) ",
+		from, amount, syscontract.DepositContractAddress.Str())
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
