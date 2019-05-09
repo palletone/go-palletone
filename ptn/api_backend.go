@@ -344,6 +344,28 @@ func (b *PtnApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Uni
 	}
 	return unit
 }
+func (b *PtnApiBackend) GetUnitsByIndex(start, end decimal.Decimal, asset string) []*modules.Unit {
+	index1 := uint64(start.IntPart())
+	index2 := uint64(end.IntPart())
+	units := make([]*modules.Unit, 0)
+	token, _, err := modules.String2AssetId(asset)
+	if err != nil {
+		log.Info("the asset str is not correct token string.")
+		return nil
+	}
+	for i := index1; i <= index2; i++ {
+		number := new(modules.ChainIndex)
+		number.Index = i
+		number.AssetID = token
+		unit, err := b.ptn.dag.GetUnitByNumber(number)
+		if unit == nil || err != nil {
+			log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number.String(), "error", err)
+		}
+		//jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetUtxoEntry)
+		units = append(units, unit)
+	}
+	return units
+}
 
 func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJson, error) {
 	header, err := b.ptn.dag.GetHeaderByHash(hash)

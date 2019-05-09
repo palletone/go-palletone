@@ -68,11 +68,11 @@ func (b *bridge) NewAccount(call otto.FunctionCall) (response otto.Value) {
 			throwJSException("passphrases don't match!")
 		}
 
-	// A single string password was specified, use that
+		// A single string password was specified, use that
 	case len(call.ArgumentList) == 1 && call.Argument(0).IsString():
 		password, _ = call.Argument(0).ToString()
 
-	// Otherwise fail with some error
+		// Otherwise fail with some error
 	default:
 		throwJSException("expected 0 or 1 string argument")
 	}
@@ -164,6 +164,24 @@ func (b *bridge) UnlockAccount(call otto.FunctionCall) (response otto.Value) {
 	if err != nil {
 		throwJSException(err.Error())
 	}
+	return val
+}
+
+func (b *bridge) GetUnitsByIndex(call otto.FunctionCall) (response otto.Value) {
+	if !call.Argument(0).IsNumber() || !call.Argument(1).IsNumber() {
+		throwJSException("the argument must be number.")
+	}
+	if !call.Argument(2).IsString() {
+		throwJSException("the argument must be string.")
+	}
+	start := call.Argument(0)
+	end := call.Argument(1)
+	asset := call.Argument(2)
+	val, err := call.Otto.Call("jptn.getUnitsByIndex", nil, start, end, asset)
+	if err != nil {
+		throwJSException("jay++++" + err.Error())
+	}
+	// Send the request to the backend and return
 	return val
 }
 

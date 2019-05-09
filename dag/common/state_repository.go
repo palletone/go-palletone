@@ -36,8 +36,8 @@ type IStateRepository interface {
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
 	GetContract(id []byte) (*modules.Contract, error)
-	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
-	GetContractTplCode(tplId []byte) ([]byte,error)
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
@@ -60,6 +60,8 @@ type IStateRepository interface {
 	UpdateSysParams(ver *modules.StateVersion) error
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
+	//获得一个合约的陪审团列表
+	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 }
 
 type StateRepository struct {
@@ -98,10 +100,10 @@ func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
 }
 
-func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate,error){
+func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return rep.statedb.GetContractTpl(tplId)
 }
-func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte,error){
+func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte, error) {
 	return rep.statedb.GetContractTplCode(tplId)
 }
 
@@ -179,4 +181,9 @@ func (rep *StateRepository) GetAllAccountStates(address common.Address) (map[str
 
 func (rep *StateRepository) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error) {
 	return rep.statedb.GetAccountState(address, statekey)
+}
+
+//获得一个合约的陪审团列表
+func (rep *StateRepository) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+	return rep.statedb.GetContractJury(contractId)
 }

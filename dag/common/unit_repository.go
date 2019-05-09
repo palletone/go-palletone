@@ -42,8 +42,6 @@ import (
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
 
-	"github.com/ethereum/go-ethereum/rlp"
-
 	"sync"
 )
 
@@ -456,6 +454,9 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		}
 	}
 
+	//标记交易有效性
+//	MarkTxIllegal(rep.statedb, txs)
+
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
@@ -501,7 +502,7 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 	return true
 }
 
-func MarkTxIllegal(dag storage.IStateDb, txs []*modules.Transaction) (error) {
+func MarkTxIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 	for _, tx := range txs {
 		if !tx.IsContractTx() {
 			continue
@@ -1210,17 +1211,22 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		return false
 	}
 	//save contract election
-	eleBytes, err := rlp.EncodeToBytes(payload.EleList)
-	if err == nil {
-		log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
-		writeElectionList := &modules.ContractWriteSet{Key: "ElectionList", Value: eleBytes}
-
-		if rep.statedb.SaveContractState(payload.ContractId, writeElectionList, version) != nil {
-			return false
-		}
-	} else {
+	err = rep.statedb.SaveContractJury(payload.ContractId, payload.EleList, version)
+	if err != nil {
+		log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
 		return false
 	}
+	//eleBytes, err := rlp.EncodeToBytes(payload.EleList)
+	//if err == nil {
+	//	log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
+	//	writeElectionList := &modules.ContractWriteSet{Key: "ElectionList", Value: eleBytes}
+	//
+	//	if rep.statedb.SaveContractState(payload.ContractId, writeElectionList, version) != nil {
+	//		return false
+	//	}
+	//} else {
+	//	return false
+	//}
 
 	return true
 }
@@ -1536,9 +1542,9 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 	}
 	return result, nil
 }
-func (rep *UnitRepository) RefreshAddrTxIndex() error{
+func (rep *UnitRepository) RefreshAddrTxIndex() error {
 	rep.lock.RLock()
-	begin:=time.Now()
+	begin := time.Now()
 	defer func() {
 		rep.lock.RUnlock()
 		log.Infof("CreateUnit cost time %s", time.Since(begin))
@@ -1546,12 +1552,12 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error{
 	if !dagconfig.DagConfig.AddrTxsIndex {
 		return errors.New("Please enable AddrTxsIndex in toml DagConfig")
 	}
-	txs,err:= rep.dagdb.GetAllTxs()
-	if err!=nil{
+	txs, err := rep.dagdb.GetAllTxs()
+	if err != nil {
 		return err
 	}
-	for _, tx:=range txs{
-		rep.saveAddrTxIndex(tx.Hash(),tx)
+	for _, tx := range txs {
+		rep.saveAddrTxIndex(tx.Hash(), tx)
 	}
 	return nil
 }
