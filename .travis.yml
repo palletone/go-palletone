@@ -20,7 +20,7 @@ script:
     - ./deposit_test.sh 4
     - python -m robot.run ../testcase/createTrans
     - python -m robot.run ../testcase/ccinvoke
-    - python -m robot.run ../DigitalIdentityCert
+    #- python -m robot.run ../DigitalIdentityCert
 
 after_success:
     - killall gptn
@@ -59,3 +59,6 @@ notifications:
             - elva1087penny@163.com
         on_success: always # default: change
         on_failure: always
+
+deploy:
+    skip_cleanup: true
