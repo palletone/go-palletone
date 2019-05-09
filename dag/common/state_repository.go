@@ -61,6 +61,7 @@ type IStateRepository interface {
 	GetMainChain() (*modules.MainChain, error)
 	//获得一个合约的陪审团列表
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 }
 
 type StateRepository struct {
@@ -181,4 +182,7 @@ func (rep *StateRepository) GetAccountState(address common.Address, statekey str
 //获得一个合约的陪审团列表
 func (rep *StateRepository) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
 	return rep.statedb.GetContractJury(contractId)
+}
+func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
+	return rep.statedb.GetAllContractTpl()
 }
