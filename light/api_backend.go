@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -285,6 +286,22 @@ func (b *LesApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 func (b *LesApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Unit {
 	return nil
 }
+func (b *LesApiBackend) GetUnitsByIndex(start, end decimal.Decimal) []*modules.Unit {
+	index1 := uint64(start.IntPart())
+	index2 := uint64(end.IntPart())
+	units := make([]*modules.Unit, 0)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	for i := index1; i <= index2; i++ {
+		number := new(modules.ChainIndex)
+		number.Index = i
+		number.AssetID = gasToken
+		unit, err := b.ptn.dag.GetUnitByNumber(number)
+		if err == nil {
+			units = append(units, unit)
+		}
+	}
+	return units
+}
 func (b *LesApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return b.ptn.dag.GetHeaderByHash(hash)
 }
@@ -448,7 +465,7 @@ func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal, tex
 	return b.ptn.TransferPtn(from, to, amount, text)
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
-	return nil
+	return  b.ptn.GetKeyStore()
 }
 
 // get tx hash by req id
