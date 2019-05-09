@@ -150,8 +150,6 @@ type ProtocolManager struct {
 	// and processing
 	wg *sync.WaitGroup
 
-	txCh     chan modules.TxPreEvent
-	txSub    event.Subscription
 	//SPV
 	validation *Validation
 	utxosync *UtxosSync
@@ -315,17 +313,13 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 		go pm.syncer()
 
 		pm.validation.Start()
+
 	} else {
 		go func() {
 			for range pm.newPeerCh {
 			}
 		}()
 	}
-
-	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
-	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
-	// 启动广播的goroutine
-	go pm.txBroadcastLoop()
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -348,7 +342,7 @@ func (pm *ProtocolManager) Stop() {
 	// Wait for any process action
 	pm.wg.Wait()
 	pm.validation.Stop()
-	pm.txSub.Unsubscribe() // quits txBroadcastLoop
+
 	log.Info("Light Palletone protocol stopped")
 }
 
@@ -550,7 +544,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return nil //pm.HelperTrieProofsMsg(msg, p)
 
 	case SendTxMsg:
-		return nil //pm.SendTxMsg(msg, p)
+		return pm.SendTxMsg(msg, p)
 
 	case SendTxV2Msg:
 
@@ -587,19 +581,7 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
 
-func (self *ProtocolManager) txBroadcastLoop() {
-	for {
-		select {
-		case event := <-self.txCh:
-			log.Debug("=====ProtocolManager=====", "txBroadcastLoop event.Tx", event.Tx)
-			self.BroadcastTx(event.Tx.Hash(), event.Tx)
 
-			// Err() channel will be closed when unsubscribing.
-		case <-self.txSub.Err():
-			return
-		}
-	}
-}
 /*
 // getAccount retrieves an account from the state based at root.
 func (pm *ProtocolManager) getAccount(statedb *state.StateDB, root, hash common.Hash) (state.Account, error) {

@@ -22,7 +22,6 @@ script:
     - python -m robot.run ../testcase/ccinvoke
     - python -m robot.run ../DigitalIdentityCert
 
-
 after_success:
     - killall gptn
 after_failure:

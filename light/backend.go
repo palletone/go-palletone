@@ -82,6 +82,9 @@ type LightPalletone struct {
 	netRPCService *ptnapi.PublicNetAPI
 
 	wg sync.WaitGroup
+
+	txCh  chan modules.TxPreEvent
+	txSub event.Subscription
 }
 
 func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) {
@@ -123,11 +126,11 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) 
 	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
 	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
 
-	lptn.txPool =  txspool.NewTxPool(config.TxPool, lptn.dag)
+	lptn.txPool = txspool.NewTxPool(config.TxPool, lptn.dag)
 	//NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
 
-	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, lptn.txPool,
+	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
 		dag, lptn.eventMux, genesis); err != nil {
 		return nil, err
 	}
@@ -212,6 +215,10 @@ func (s *LightPalletone) Start(srvr *p2p.Server) error {
 	//protocolVersion := AdvertiseProtocolVersions[0]
 	//s.serverPool.start(srvr, lesTopic(s.blockchain.Genesis().Hash(), protocolVersion))
 	s.protocolManager.Start(s.config.LightPeers)
+
+	s.txCh = make(chan modules.TxPreEvent, txChanSize)
+	s.txSub = s.txPool.SubscribeTxPreEvent(s.txCh)
+	go s.txBroadcastLoop()
 	return nil
 }
 
@@ -231,6 +238,7 @@ func (s *LightPalletone) Stop() error {
 	//s.blockchain.Stop()
 	s.protocolManager.Stop()
 	s.txPool.Stop()
+	s.txSub.Unsubscribe() // quits txBroadcastLoop
 
 	s.eventMux.Stop()
 
@@ -354,4 +362,18 @@ func (p *LightPalletone) TransferPtn(from, to string, amount decimal.Decimal,
 	res.Warning = ptnapi.DefaultResult
 
 	return res, nil
+}
+
+func (self *LightPalletone) txBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.txCh:
+			log.Debug("=====ProtocolManager=====", "txBroadcastLoop event.Tx", event.Tx)
+			self.protocolManager.BroadcastTx(event.Tx.Hash(), event.Tx)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-self.txSub.Err():
+			return
+		}
+	}
 }
