@@ -1280,3 +1280,6 @@ func (d *Dag) GetCoinYearRate() float64 {
 func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	return d.stableUnitRep.GetTxRequesterAddress(tx)
 }
+func (d *Dag)RefreshAddrTxIndex() error{
+	return d.stableUnitRep.RefreshAddrTxIndex()
+}

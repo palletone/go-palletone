@@ -163,6 +163,8 @@ type IDag interface {
 	GetMainChain() (*modules.MainChain, error)
 	GetCoinYearRate() float64
 
+	RefreshAddrTxIndex() error
+
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GenVoteMediatorTx(voter common.Address, mediators []common.Address,
