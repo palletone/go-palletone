@@ -24,10 +24,10 @@ func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
 // Block header query, collect the requested headers and reply
 func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 	log.Trace("Received announce message")
-	if p.requestAnnounceType == announceTypeNone {
-		log.Debug("Light Palletone ProtocolManager->AnnounceMsg", "p.requestAnnounceType", p.requestAnnounceType)
-		return nil //errResp(ErrUnexpectedResponse, "")
-	}
+	//if p.requestAnnounceType == announceTypeNone {
+	//	log.Debug("Light Palletone ProtocolManager->AnnounceMsg", "p.requestAnnounceType", p.requestAnnounceType)
+	//	return nil //errResp(ErrUnexpectedResponse, "")
+	//}
 
 	var req announceData
 	var data []byte

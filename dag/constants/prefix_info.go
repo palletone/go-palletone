@@ -38,7 +38,7 @@ var (
 	OutPointAddr_Prefix         = []byte("pa")  // outpoint addr
 	CONTRACT_STATE_PREFIX       = []byte("cs")
 	CONTRACT_TPL                = []byte("ct")
-	CONTRACT_TPL_CODE            = []byte("code")
+	CONTRACT_TPL_CODE           = []byte("code")
 	CONTRACT_DEPLOY             = []byte("cdy")
 	CONTRACT_DEPLOY_REQ         = []byte("cdr")
 	CONTRACT_STOP               = []byte("csp")
@@ -82,7 +82,7 @@ var (
 	CONTRACT_ATTRI    = []byte("contract") // like contract_[contract address]_[key]
 	UTXO_PREFIX       = []byte("uo")
 	UTXO_INDEX_PREFIX = []byte("ui")
-	ASSET_INFO_PREFIX = []byte("pi") // ACCOUNT_INFO_PREFIX is also "ai"  asset=property
+	//ASSET_INFO_PREFIX = []byte("pi") // ACCOUNT_INFO_PREFIX is also "ai"  asset=property
 
 	// token info
 	TOKENTYPE  = []byte("tp") // tp[types]

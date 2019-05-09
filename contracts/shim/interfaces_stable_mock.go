@@ -455,7 +455,7 @@ func (mr *MockChaincodeStubInterfaceMockRecorder) GetTokenBalance(address, token
 }
 
 // PayOutToken mocks base method
-func (m *MockChaincodeStubInterface) PayOutToken(addr string, invokeTokens *modules.InvokeTokens, lockTime uint32) error {
+func (m *MockChaincodeStubInterface) PayOutToken(addr string, invokeTokens *modules.AmountAsset, lockTime uint32) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PayOutToken", addr, invokeTokens, lockTime)
 	ret0, _ := ret[0].(error)

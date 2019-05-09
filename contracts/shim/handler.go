@@ -493,7 +493,7 @@ func (handler *Handler) handleGetTokenBalance(address string, token *modules.Ass
 	// Incorrect chaincode message received
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
-func (handler *Handler) handlePayOutToken(collection string, addr string, invokeTokens *modules.InvokeTokens, lockTime uint32, contractid []byte, channelId string, txid string) error {
+func (handler *Handler) handlePayOutToken(collection string, addr string, invokeTokens *modules.AmountAsset, lockTime uint32, contractid []byte, channelId string, txid string) error {
 	// Construct payload for PAY_OUT_TOKEN
 	//TODO Devin
 	payloadBytes, _ := proto.Marshal(&pb.PayOutToken{Asset: invokeTokens.Asset.Bytes(), Amount: invokeTokens.Amount, Address: addr, Locktime: lockTime})
@@ -961,7 +961,7 @@ func (handler *Handler) handleGetCAHolder(channelID string, txid string) (caHold
 func (handler *Handler) handleGetCertChain(rootIssuer string, cert *x509.Certificate, channelID string, txid string) (intermediates []*x509.Certificate, holders []string, err error) {
 	intermediates = []*x509.Certificate{}
 	holders = []string{}
-	subject := cert.Issuer.String()
+	subject := cert.Issuer.CommonName
 	for {
 		key := dagConstants.CERT_SUBJECT_SYMBOL + subject
 		val, err := handler.handleGetCertState(key, channelID, txid)
@@ -992,7 +992,7 @@ func (handler *Handler) handleGetCertChain(rootIssuer string, cert *x509.Certifi
 		}
 		intermediates = append(intermediates, newCert)
 		holders = append(holders, certDBInfo.Holder)
-		subject = newCert.Issuer.String()
+		subject = newCert.Issuer.CommonName
 		if subject == rootIssuer {
 			break
 		}
@@ -1079,7 +1079,7 @@ func (handler *Handler) handlerCheckCertValidation(caller string, certID []byte,
 		return false, fmt.Errorf("certificate has expired")
 	}
 	// check chain state ( get chain )
-	intermediates, holders, err := handler.handleGetCertChain(caCert.Subject.String(), cert, channelId, txid)
+	intermediates, holders, err := handler.handleGetCertChain(caCert.Subject.CommonName, cert, channelId, txid)
 	if err != nil {
 		return false, fmt.Errorf("get certificate chain error (%s)", err.Error())
 	}

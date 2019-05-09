@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"sync"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
@@ -133,11 +134,11 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	pool := txspool.NewTxPool(config.TxPool, ptn.dag)
-	ptn.txPool = pool
+	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
+
 
 	//Test for P2P
-	ptn.engine = consensus.New(dag, pool)
+	ptn.engine = consensus.New(dag, ptn.txPool)
 
 	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, dag, &config.MediatorPlugin)
 	if err != nil {
@@ -256,6 +257,10 @@ func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
 }
 func (s *PalletOne) ContractBroadcast(event jury.ContractEvent, local bool) {
+	log.DebugDynamic(func() string {
+		txJson, _ := json.Marshal(event.Tx)
+		return fmt.Sprintf("contract broadcast tx:%s", string(txJson))
+	})
 	s.protocolManager.ContractBroadcast(event, local)
 }
 func (s *PalletOne) ElectionBroadcast(event jury.ElectionEvent) {

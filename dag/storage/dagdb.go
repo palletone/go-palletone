@@ -52,6 +52,7 @@ type IDagDb interface {
 	SaveHeader(h *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
+	GetAllTxs() ([]*modules.Transaction,error)
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	//SaveTransactions(txs *modules.Transactions) error

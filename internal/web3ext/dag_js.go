@@ -47,6 +47,18 @@ web3._extend({
         	params: 1,
         	inputFormatter: [null]
 		}),
+        new web3._extend.Method({
+			name: 'getHeaderByHash',
+       		call: 'dag_getHeaderByHash',
+        	params: 1,
+        	inputFormatter: [null]
+		}),
+        new web3._extend.Method({
+			name: 'getHeaderByNumber',
+       		call: 'dag_getHeaderByNumber',
+        	params: 1,
+        	inputFormatter: [null]
+		}),
 		new web3._extend.Method({
 			name: 'getTransaction',
         	call: 'dag_getTransactionByHash',

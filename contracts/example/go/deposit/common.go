@@ -32,12 +32,12 @@ import (
 //处理交付保证金数据
 func updateForPayValue(balance *DepositBalance, invokeTokens *modules.InvokeTokens) {
 	balance.TotalAmount += invokeTokens.Amount
-	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
-	payTokens := &modules.InvokeTokens{}
+	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	payTokens := &modules.AmountAsset{}
 	payValue := &PayValue{PayTokens: payTokens}
 	payValue.PayTokens.Amount = invokeTokens.Amount
 	payValue.PayTokens.Asset = invokeTokens.Asset
-	payValue.PayTime = time.Now().UTC().Unix() / 1800
+	payValue.PayTime = time.Now().UTC().Unix() / DTimeDuration
 	balance.PayValues = append(balance.PayValues, payValue)
 }
 
@@ -71,7 +71,7 @@ func marshalAndPutStateForBalance(stub shim.ChaincodeStubInterface, nodeAddr str
 }
 
 //加入申请提取列表
-func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr string, invokeTokens *modules.InvokeTokens) error {
+func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr string, invokeTokens *modules.AmountAsset) error {
 	//先获取申请列表
 	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
@@ -142,7 +142,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		return err
 	}
 	//asset := modules.NewPTNAsset()
-	invokeTokens := &modules.InvokeTokens{
+	invokeTokens := &modules.AmountAsset{
 		Amount: ptnAccount,
 		Asset:  fees.Asset,
 	}
@@ -230,14 +230,14 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	endTime := balance.LastModifyTime * 1800
+	endTime := balance.LastModifyTime * DTimeDuration
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
-	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
+	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -300,14 +300,14 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 }
 
 //处理申请提保证金请求并移除列表
-func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr string, invokeTokens *modules.InvokeTokens, balance *DepositBalance) error {
+func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr string, invokeTokens *modules.AmountAsset, balance *DepositBalance) error {
 	//计算保证金全部利息
 	//获取币龄
 	//endTime := time.Now().UTC()
 	//coinDays := award.GetCoinDay(balance.TotalAmount, balance.LastModifyTime, endTime)
 	////计算币龄收益
 	//awards := award.CalculateAwardsForDepositContractNodes(coinDays)
-	endTime := balance.LastModifyTime * 1800
+	endTime := balance.LastModifyTime * DTimeDuration
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
@@ -348,7 +348,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
 	//v := handleValues(balanceValue.Values, tokens)
 	//balanceValue.Values = v
-	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
+	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
 	balance.TotalAmount -= cashbackValue.CashbackTokens.Amount
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
 	//TODO
@@ -636,7 +636,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 		log.Error("stub.GetInvokeFees err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	invokeTokens := &modules.InvokeTokens{
+	invokeTokens := &modules.AmountAsset{
 		Amount: ptnAccount,
 		Asset:  fees.Asset,
 	}
@@ -728,7 +728,7 @@ func isInForfeiturelist(addr string, list []*Forfeiture) bool {
 }
 
 //处理申请没收请求并移除列表
-func (d *DepositChaincode) forfeitureAllDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, invokeTokens *modules.InvokeTokens) error {
+func (d *DepositChaincode) forfeitureAllDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, invokeTokens *modules.AmountAsset) error {
 	//TODO 没收保证金是否需要计算利息
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(foundationAddr, invokeTokens, 0)
@@ -766,7 +766,7 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	}
 	//计算一部分的利息
 	//获取币龄
-	endTime := balance.LastModifyTime * 1800
+	endTime := balance.LastModifyTime * DTimeDuration
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
@@ -774,7 +774,7 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
+	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -795,7 +795,7 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 		return shim.Error(err.Error())
 	}
 	//计算当前币龄奖励
-	endTime := balance.LastModifyTime * 1800
+	endTime := balance.LastModifyTime * DTimeDuration
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
@@ -803,7 +803,7 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().UTC().Unix() / 1800
+	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -813,4 +813,13 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 
 	//序列化
 	return d.marshalForBalance(stub, forfeiture.ForfeitureAddress, balance)
+}
+
+func timeFormat(n string) string {
+	ent, err := strconv.ParseInt(n, 10, 64)
+	if err != nil {
+		log.Infof("time Format err: ", err.Error())
+		return n
+	}
+	return time.Unix(ent*DTimeDuration, 0).UTC().String()
 }

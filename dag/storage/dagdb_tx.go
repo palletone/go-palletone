@@ -28,6 +28,7 @@ import (
 
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 /**
@@ -60,7 +61,16 @@ func (dagdb *DagDb) saveReqIdByTx(tx *modules.Transaction) error {
 	key := append(constants.ReqIdPrefix, reqid.Bytes()...)
 	return dagdb.db.Put(key, txhash.Bytes())
 }
-
+func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction,error){
+	kvs:= getprefix(dagdb.db,constants.TRANSACTION_PREFIX)
+	result:=make([]*modules.Transaction,len(kvs))
+	for _,v:=range kvs{
+		tx := new(modules.Transaction)
+		rlp.DecodeBytes(v,tx)
+		result=append(result,tx)
+	}
+	return result,nil
+}
 //
 //func (dagdb *DagDb) saveOutputByAddr(addr string, hash common.Hash, msgindex int, output *modules.Output) error {
 //	if hash == (common.Hash{}) {

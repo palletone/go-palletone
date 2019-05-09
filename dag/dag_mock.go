@@ -1305,3 +1305,17 @@ func (mr *MockIDagMockRecorder) GetCoinYearRate() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCoinYearRate", reflect.TypeOf((*MockIDag)(nil).GetCoinYearRate))
 }
+
+// RefreshAddrTxIndex mocks base method
+func (m *MockIDag) RefreshAddrTxIndex() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefreshAddrTxIndex")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RefreshAddrTxIndex indicates an expected call of RefreshAddrTxIndex
+func (mr *MockIDagMockRecorder) RefreshAddrTxIndex() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshAddrTxIndex", reflect.TypeOf((*MockIDag)(nil).RefreshAddrTxIndex))
+}

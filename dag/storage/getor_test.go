@@ -123,10 +123,10 @@ func TestRLPTxDecode(t *testing.T) {
 	}
 	msg2 := &modules.Message{
 		App:     modules.APP_DATA,
-		Payload: &modules.DataPayload{MainData: []byte("Hello PalletOne"),ExtraData:[]byte("Hi PalletOne")},
+		Payload: &modules.DataPayload{MainData: []byte("Hello PalletOne"), ExtraData: []byte("Hi PalletOne")},
 	}
 
-	req := &modules.ContractInvokeRequestPayload{ContractId: []byte{0xcc}, FunctionName: "TestFun", Args: [][]byte{[]byte{0x11}, {0x22}}}
+	req := &modules.ContractInvokeRequestPayload{ContractId: []byte{0xcc}, Args: [][]byte{[]byte{0x11}, {0x22}}}
 	msg3 := &modules.Message{App: modules.APP_CONTRACT_INVOKE_REQUEST, Payload: req}
 	txmsg3 := modules.NewTransaction(
 		[]*modules.Message{msg, msg2, msg3},

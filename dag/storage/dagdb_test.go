@@ -116,7 +116,7 @@ func TestGetTransaction(t *testing.T) {
 		App:     modules.APP_DATA,
 		Payload: &modules.DataPayload{MainData: []byte("Hello PalletOne"), ExtraData: []byte("Hi PalletOne")},
 	}
-	req := &modules.ContractInvokeRequestPayload{ContractId: []byte{123}, FunctionName: "TestFun", Args: [][]byte{{0x11}, {0x22}}, Timeout: 300}
+	req := &modules.ContractInvokeRequestPayload{ContractId: []byte{123}, Args: [][]byte{{0x11}, {0x22}}, Timeout: 300}
 	msg3 := &modules.Message{App: modules.APP_CONTRACT_INVOKE_REQUEST, Payload: req}
 	tx := modules.NewTransaction(
 		[]*modules.Message{msg, msg2, msg3},

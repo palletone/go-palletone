@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -44,18 +45,31 @@ func (t *SimpleChaincode) payout(stub shim.ChaincodeStubInterface, args []string
 	to_address := args[0]
 	asset, _ := modules.StringToAsset(args[1])
 	amt, _ := strconv.Atoi(args[2])
-	amtToken := &modules.InvokeTokens{Amount: uint64(amt), Asset: asset}
+	amtToken := &modules.AmountAsset{Amount: uint64(amt), Asset: asset}
 	stub.PayOutToken(to_address, amtToken, 0)
 	fmt.Println("Payout token" + amtToken.String() + " to address " + to_address)
 	return shim.Success(nil)
 }
-
+func (t *SimpleChaincode) balance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	address := args[0]
+	result, err := stub.GetTokenBalance(address, nil)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	data, err := json.Marshal(result)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(data)
+}
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	if function == "payout" {
 		return t.payout(stub, args)
 	}
-
+	if function == "balance" {
+		return t.balance(stub, args)
+	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
 
