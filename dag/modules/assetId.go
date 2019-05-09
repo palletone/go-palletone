@@ -41,7 +41,7 @@ var (
 const (
 	ID_LENGTH = 16
 )
-
+//AssetId 资产类别,前26bit是symbol的base36编码，27-29是Symbol编码后字节长度，30-32bit为AssetType，剩下的是Txid的前12字节
 type AssetId [ID_LENGTH]byte
 
 func ZeroIdType16() AssetId {
@@ -56,7 +56,7 @@ func (it AssetId) String() string {
 	//b12 := make([]byte, 11)
 	//b12[0] = decimal
 	//copy(b12[1:], txHash)
-	type2 := byte(assetType)<<2 | byte(uidType)
+	type2 := byte(assetType)<<3 | byte(uidType)
 	return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + base36.EncodeBytes([]byte{type2}) + base36.EncodeBytes(txHash)
 
 }
@@ -71,8 +71,8 @@ func String2AssetId(str string) (AssetId, UniqueIdType, error) {
 	}
 	symbol := strArray[0]
 	type2 := base36.DecodeToBytes(string(strArray[1][1]))[0]
-	assetType := AssetType(type2 >> 2)
-	uniqueIdType := UniqueIdType(type2 & 3)
+	assetType := AssetType(type2 >> 3)
+	uniqueIdType := UniqueIdType(type2 & 7)
 	decimal := base36.DecodeToBytes(strArray[1][0:1])
 	tx12 := base36.DecodeToBytes(strArray[1][2:])
 	assetId, err := NewAssetId(symbol, assetType, decimal[0], tx12, uniqueIdType)

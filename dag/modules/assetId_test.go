@@ -11,4 +11,5 @@ func TestIDType16_String(t *testing.T) {
 func TestIDType16_Str(t *testing.T) {
 	ptn := NewPTNAsset()
 	t.Log(ptn.AssetId.String())
+	t.Logf("PTN hex:%#x",ptn.AssetId.Bytes())
 }
