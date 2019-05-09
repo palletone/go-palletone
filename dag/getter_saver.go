@@ -21,12 +21,12 @@
 package dag
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/dedis/kyber"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -260,7 +260,7 @@ func (d *Dag) GetAccountVotedMediators(addr common.Address) []common.Address {
 	}
 
 	votedMediators := make([]common.Address, 0)
-	err = rlp.DecodeBytes(data.Value, &votedMediators)
+	err = json.Unmarshal(data.Value, &votedMediators)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil

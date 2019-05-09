@@ -167,7 +167,7 @@ type IDag interface {
 
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GenVoteMediatorTx(voter common.Address, mediators []common.Address,
+	GenVoteMediatorTx(voter common.Address, mediators []string,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool

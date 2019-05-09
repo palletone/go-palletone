@@ -216,7 +216,6 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
 	//}
 
-	mediators := make([]common.Address, 0, len(mediatorStrs))
 	for _, mediatorStr := range mediatorStrs {
 		mediator, err := common.StringToAddress(mediatorStr)
 		if err != nil {
@@ -227,12 +226,10 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 		if !a.Dag().IsMediator(mediator) {
 			return nil, fmt.Errorf("%v is not mediator", mediatorStr)
 		}
-
-		mediators = append(mediators, mediator)
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mediators, a.TxPool())
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mediatorStrs, a.TxPool())
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +242,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 
 	// 5. 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account %v vote mediator %v", voterStr, mediatorStrs)
+	res.TxContent = fmt.Sprintf("Account %v vote mediator(s) %v", voterStr, mediatorStrs)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
