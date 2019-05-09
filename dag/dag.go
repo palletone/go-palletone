@@ -1045,6 +1045,9 @@ func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
 func (d *Dag) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return d.unstableStateRep.GetContractTpl(tplId)
 }
+func (d *Dag) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
+	return d.unstableStateRep.GetAllContractTpl()
+}
 
 func (d *Dag) GetContractTplCode(tplId []byte) ([]byte, error) {
 	return d.unstableStateRep.GetContractTplCode(tplId)
