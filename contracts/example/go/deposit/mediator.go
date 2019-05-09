@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -42,7 +43,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(err.Error())
 	}
 	content := args[0]
-	mediatorInfo := modules.MediatorApplyInfo{
+	mediatorInfo := core.MediatorApplyInfo{
 		Address:   invokeAddr.String(),
 		Content:   content,
 		ApplyTime: time.Now().Unix() / DTimeDuration,
@@ -68,7 +69,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 	if becomeList == nil {
 		log.Info("Stub.GetBecomeMediatorApplyList: list is nil")
-		becomeList = []*modules.MediatorApplyInfo{&mediatorInfo}
+		becomeList = []*core.MediatorApplyInfo{&mediatorInfo}
 	} else {
 		isExist := isInMediatorInfolist(invokeAddr.String(), becomeList)
 		if isExist {
@@ -87,7 +88,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 }
 
 //查找节点是否在列表中
-func isInMediatorInfolist(addr string, list []*modules.MediatorApplyInfo) bool {
+func isInMediatorInfolist(addr string, list []*core.MediatorApplyInfo) bool {
 	for _, m := range list {
 		if strings.Compare(addr, m.Address) == 0 {
 			return true
@@ -97,7 +98,7 @@ func isInMediatorInfolist(addr string, list []*modules.MediatorApplyInfo) bool {
 }
 
 //序列化list for mediator
-func marshalAndPutStateForMediatorList(stub shim.ChaincodeStubInterface, key string, list []*modules.MediatorApplyInfo) error {
+func marshalAndPutStateForMediatorList(stub shim.ChaincodeStubInterface, key string, list []*core.MediatorApplyInfo) error {
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -112,8 +113,8 @@ func marshalAndPutStateForMediatorList(stub shim.ChaincodeStubInterface, key str
 }
 
 //从列表中删除并返回该节点
-func moveMediatorFromList(address string, list []*modules.MediatorApplyInfo) (newList []*modules.MediatorApplyInfo,
-	mediator *modules.MediatorApplyInfo) {
+func moveMediatorFromList(address string, list []*core.MediatorApplyInfo) (newList []*core.MediatorApplyInfo,
+	mediator *core.MediatorApplyInfo) {
 	for i := 0; i < len(list); i++ {
 		if strings.Compare(list[i].Address, address) == 0 {
 			mediator = list[i]
@@ -164,7 +165,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("Node is not exist in the candidate list.")
 	}
 	//获取节点信息
-	mediator := &modules.MediatorApplyInfo{}
+	mediator := &core.MediatorApplyInfo{}
 	for _, m := range agreeList {
 		if strings.Compare(m.Address, invokeAddr.String()) == 0 {
 			mediator = m
@@ -180,7 +181,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 	}
 	if quitList == nil {
 		log.Info("Stub.GetQuitMediatorApplyList err:list is nil.")
-		quitList = []*modules.MediatorApplyInfo{mediator}
+		quitList = []*core.MediatorApplyInfo{mediator}
 	} else {
 		isExist := isInMediatorInfolist(mediator.Address, quitList)
 		if isExist {
@@ -293,7 +294,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("Node is not exist in the agree list,you should apply for it.")
 	}
 	//获取节点信息
-	mediator := &modules.MediatorApplyInfo{}
+	mediator := &core.MediatorApplyInfo{}
 	isFound := false
 	for _, m := range agreeList {
 		if strings.Compare(m.Address, invokeAddr.String()) == 0 {
@@ -355,7 +356,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 
 //加入候选列表并保存
 func addCandidateListAndPutStateForMediator(stub shim.ChaincodeStubInterface,
-	mediator *modules.MediatorApplyInfo) error {
+	mediator *core.MediatorApplyInfo) error {
 	candidateList, err := GetCandidateListForMediator(stub)
 	if err != nil {
 		log.Error("Stub.GetCandidateListForMediator err:", "error", err)
@@ -363,7 +364,7 @@ func addCandidateListAndPutStateForMediator(stub shim.ChaincodeStubInterface,
 	}
 	if candidateList == nil {
 		log.Info("Stub.GetCandidateListForMediator:list is nil.")
-		candidateList = []*modules.MediatorApplyInfo{mediator}
+		candidateList = []*core.MediatorApplyInfo{mediator}
 	} else {
 		isExist := isInMediatorInfolist(mediator.Address, candidateList)
 		if isExist {

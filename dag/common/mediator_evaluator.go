@@ -65,7 +65,8 @@ func (unitOp *UnitRepository) MediatorCreateApply(msg *modules.Message) bool {
 	}
 
 	mi := modules.NewMediatorInfo()
-	mi.MediatorInfoBase = mco.MediatorInfoBase
+	*mi.MediatorInfoBase = *mco.MediatorInfoBase
+	*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
 	//mi.Url = mco.Url
 
 	addr, _ := core.StrToMedAdd(mco.AddStr)

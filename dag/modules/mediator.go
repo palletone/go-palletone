@@ -25,21 +25,16 @@ import (
 	"github.com/palletone/go-palletone/core"
 )
 
-//申请成为Mediator
-type MediatorApplyInfo struct {
-	Address   string `json:"address"`
-	Content   string `json:"content"`
-	ApplyTime int64  `json:"applyTime"`
-}
-
 type MediatorInfo struct {
 	*core.MediatorInfoBase
+	*core.MediatorApplyInfo
 	*core.MediatorInfoExpand
 }
 
 func NewMediatorInfo() *MediatorInfo {
 	return &MediatorInfo{
 		MediatorInfoBase:   core.NewMediatorInfoBase(),
+		MediatorApplyInfo:  core.NewMediatorApplyInfo(),
 		MediatorInfoExpand: core.NewMediatorInfoExpand(),
 	}
 }
@@ -49,7 +44,8 @@ func MediatorToInfo(md *core.Mediator) *MediatorInfo {
 	mi.AddStr = md.Address.Str()
 	mi.InitPubKey = core.PointToStr(md.InitPubKey)
 	mi.Node = md.Node.String()
-	mi.MediatorInfoExpand = md.MediatorInfoExpand
+	*mi.MediatorApplyInfo = *md.MediatorApplyInfo
+	*mi.MediatorInfoExpand = *md.MediatorInfoExpand
 
 	return mi
 }
@@ -59,14 +55,15 @@ func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 	md.Address, _ = core.StrToMedAdd(mi.AddStr)
 	md.InitPubKey, _ = core.StrToPoint(mi.InitPubKey)
 	md.Node, _ = core.StrToMedNode(mi.Node)
-	md.MediatorInfoExpand = mi.MediatorInfoExpand
+	*md.MediatorApplyInfo = *mi.MediatorApplyInfo
+	*md.MediatorInfoExpand = *mi.MediatorInfoExpand
 
 	return md
 }
 
 type MediatorCreateOperation struct {
 	*core.MediatorInfoBase
-	*MediatorApplyInfo
+	*core.MediatorApplyInfo
 }
 
 func (mco *MediatorCreateOperation) FeePayer() common.Address {

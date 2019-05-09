@@ -17,16 +17,18 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
-	"strings"
-	"time"
 )
 
 //处理交付保证金数据
@@ -441,22 +443,22 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 	return
 }
 
-func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*modules.MediatorApplyInfo, error) {
+func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, modules.MediatorList)
 }
-func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*modules.MediatorApplyInfo, error) {
+func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForApplyBecomeMediator)
 }
-func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*modules.MediatorApplyInfo, error) {
+func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForApplyQuitMediator)
 }
 
-func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*modules.MediatorApplyInfo, error) {
+func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForAgreeBecomeMediator)
 
 }
 
-func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*modules.MediatorApplyInfo, error) {
+func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*core.MediatorApplyInfo, error) {
 	listByte, err := stub.GetState(typeList)
 	if err != nil {
 		return nil, err
@@ -464,7 +466,7 @@ func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*modules.Medi
 	if listByte == nil {
 		return nil, nil
 	}
-	var list []*modules.MediatorApplyInfo
+	var list []*core.MediatorApplyInfo
 	err = json.Unmarshal(listByte, &list)
 	if err != nil {
 		return nil, err
@@ -542,7 +544,7 @@ func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]common.A
 		if candidateListByte == nil {
 			return nil, nil
 		}
-		var candiateList []*modules.MediatorApplyInfo
+		var candiateList []*core.MediatorApplyInfo
 		err = json.Unmarshal(candidateListByte, &candiateList)
 		if err != nil {
 			return nil, err
