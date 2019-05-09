@@ -57,6 +57,27 @@ func getContractStateKey(id []byte, field string) []byte {
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	return append(key, []byte(field)...)
 }
+func (statedb *StateDb) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+	key := append(constants.CONTRACT_JURY_PREFIX, contractId...)
+	data, _, err := retrieveWithVersion(statedb.db, key)
+	if err != nil {
+		return nil, err
+	}
+	jury := []modules.ElectionInf{}
+	err = rlp.DecodeBytes(data, &jury)
+	if err != nil {
+		return nil, err
+	}
+	return jury, nil
+}
+func (statedb *StateDb) SaveContractJury(contractId []byte, jury []modules.ElectionInf, version *modules.StateVersion) error {
+	key := append(constants.CONTRACT_JURY_PREFIX, contractId...)
+	juryb, err := rlp.EncodeToBytes(jury)
+	if err != nil {
+		return err
+	}
+	return storeBytesWithVersion(statedb.db, key, version, juryb)
+}
 
 /**
 保存合约属性信息,合约属性有CONTRACT_STATE_PREFIX+contractId+key 作为Key

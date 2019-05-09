@@ -41,9 +41,10 @@ type IStateDb interface {
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 
 	SaveContractTpl(tpl *modules.ContractTemplate) error
-	SaveContractTplCode(tplId []byte,byteCode []byte) error
-	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
-	GetContractTplCode(tplId []byte) ([]byte,error)
+	SaveContractTplCode(tplId []byte, byteCode []byte) error
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContractTplCode(tplId []byte) ([]byte, error)
+	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 
 	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
 	SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error
@@ -52,7 +53,6 @@ type IStateDb interface {
 	SaveContractStop(reqid []byte, stop *modules.ContractStopPayload) error
 	SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error
 	SaveContractSignature(reqid []byte, sig *modules.SignaturePayload) error
-
 
 	GetContractDeploy(reqId []byte) (*modules.ContractDeployPayload, error)
 	GetContractDeployReq(reqid []byte) (*modules.ContractDeployRequestPayload, error)
@@ -70,7 +70,9 @@ type IStateDb interface {
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
 	GetAccountBalance(address common.Address) uint64
 	GetMinFee() (*modules.AmountAsset, error)
-
+	//获得一个合约的陪审团列表
+	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	SaveContractJury(contractId []byte, jury []modules.ElectionInf, version *modules.StateVersion) error
 	// world state chainIndex
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 	//保存当前最新单元的高度，即使是未稳定的单元，也会更新

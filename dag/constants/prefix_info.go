@@ -71,7 +71,8 @@ var (
 	TrieSyncKey          = []byte("TrieSync")
 	GenesisUnitHash      = []byte("GenesisUnitHash")
 	// contract
-	CONTRACT_PREFIX = []byte("cs")
+	CONTRACT_PREFIX      = []byte("cs")
+	CONTRACT_JURY_PREFIX = []byte("jury")
 
 	// other prefix
 	EAENED_HEADERS_COMMISSION = "earned_headers_commossion"

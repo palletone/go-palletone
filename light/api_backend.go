@@ -27,6 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -285,6 +286,26 @@ func (b *LesApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 func (b *LesApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Unit {
 	return nil
 }
+func (b *LesApiBackend) GetUnitsByIndex(start, end decimal.Decimal, asset string) []*modules.Unit {
+	index1 := uint64(start.IntPart())
+	index2 := uint64(end.IntPart())
+	units := make([]*modules.Unit, 0)
+	token, _, err := modules.String2AssetId(asset)
+	if err != nil {
+		log.Info("the asset str is not correct token string.")
+		return nil
+	}
+	for i := index1; i <= index2; i++ {
+		number := new(modules.ChainIndex)
+		number.Index = i
+		number.AssetID = token
+		unit, err := b.ptn.dag.GetUnitByNumber(number)
+		if err == nil {
+			units = append(units, unit)
+		}
+	}
+	return units
+}
 func (b *LesApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return b.ptn.dag.GetHeaderByHash(hash)
 }
@@ -445,10 +466,11 @@ func (b *LesApiBackend) Dag() dag.IDag {
 
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
-	return b.ptn.TransferPtn(from, to, amount, text)
+	//return b.ptn.TransferPtn(from, to, amount, text)
+	return nil, nil
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
-	return nil
+	return b.ptn.GetKeyStore()
 }
 
 // get tx hash by req id

@@ -924,6 +924,7 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 		addr := getBalance.Address
 		if len(addr) == 0 { //Get current contract address balance
 			addr = crypto.ContractIdToAddress(msg.ContractId).String()
+			log.Debugf("Address is nil, use contract id:%x, address:%s", msg.ContractId, addr)
 		}
 
 		address, err := common.StringToAddress(addr)
@@ -956,7 +957,7 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 			// Send response msg back to chaincode. GetState will not trigger event
 			result := []*modules.InvokeTokens{}
 			for asset, amt := range balance {
-				result = append(result, &modules.InvokeTokens{Amount: amt, Asset: &asset})
+				result = append(result, &modules.InvokeTokens{Amount: amt, Asset: &asset, Address: address.String()})
 			}
 			res, _ := rlp.EncodeToBytes(result)
 			log.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)

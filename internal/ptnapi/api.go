@@ -492,7 +492,7 @@ func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]
 	}
 	content, err := json.Marshal(prefix)
 	if err != nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "prefix:", prefix)
+		log.Info("PublicBlockChainAPI", "GetPrefix Marshal err:", err, "prefix:", prefix)
 		return "Marshal err"
 	}
 	return *(*string)(unsafe.Pointer(&content))
