@@ -61,5 +61,3 @@ notifications:
         on_success: always # default: change
         on_failure: always
         
-deploy:
-    skip_cleanup: true
