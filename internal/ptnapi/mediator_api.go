@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -36,6 +37,18 @@ type PublicMediatorAPI struct {
 
 func NewPublicMediatorAPI(b Backend) *PublicMediatorAPI {
 	return &PublicMediatorAPI{b}
+}
+
+func (a *PublicMediatorAPI) IsApproved(AddStr string) (string, error) {
+	cArgs := [][]byte{[]byte(modules.IsApproved), []byte(AddStr)}
+
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes21(), txid[:], cArgs, 0)
+	if err != nil {
+		return "", err
+	}
+
+	return string(rsp), nil
 }
 
 func (a *PublicMediatorAPI) GetList() []string {

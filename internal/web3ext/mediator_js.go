@@ -48,6 +48,11 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
+			name: 'isApproved',
+			call: 'mediator_isApproved',
+			params: 1,
+		}),
+		new web3._extend.Method({
 			name: 'vote',
 			call: 'mediator_vote',
 			params: 2,

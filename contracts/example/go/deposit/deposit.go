@@ -195,7 +195,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//查看是否申请Mediator通过
-	case "IsSelected":
+	case modules.IsApproved:
 		mediatorRegisterInfo, err := GetAgreeForBecomeMediatorList(stub)
 		if err != nil {
 			return shim.Error(err.Error())

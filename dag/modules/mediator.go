@@ -27,6 +27,7 @@ import (
 
 const (
 	ApplyMediator = "ApplyBecomeMediator"
+	IsApproved    = "IsSelected"
 )
 
 type MediatorInfo struct {
