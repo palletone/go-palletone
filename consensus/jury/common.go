@@ -407,10 +407,7 @@ func getTxSigNum(tx *modules.Transaction) int {
 }
 
 func (p *Processor) checkTxIsExist(tx *modules.Transaction) bool {
-	if p.validator.CheckTxIsExist(tx) {
-		return false
-	}
-	return true
+	return p.validator.CheckTxIsExist(tx)
 }
 
 func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {

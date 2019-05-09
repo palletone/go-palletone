@@ -198,7 +198,7 @@ func GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec) (io.Reader, error) {
 		tw := tar.NewWriter(gw)
 		err := _generateDockerBuild(platform, cds, inputFiles, tw)
 		if err != nil {
-			log.Error("GenerateDockerBuild error", err)
+			log.Debugf("GenerateDockerBuild error", err)
 		}
 
 		tw.Close()
@@ -206,5 +206,5 @@ func GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec) (io.Reader, error) {
 		output.CloseWithError(err)
 	}()
 
-	return input, nil
+	return input, err
 }

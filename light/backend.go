@@ -42,13 +42,9 @@ import (
 	//"github.com/palletone/go-palletone/core/types"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/internal/ptnapi"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/ptnjson"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type LightPalletone struct {
@@ -83,6 +79,9 @@ type LightPalletone struct {
 	netRPCService *ptnapi.PublicNetAPI
 
 	wg sync.WaitGroup
+
+	txCh     chan modules.TxPreEvent
+	txSub    event.Subscription
 }
 
 func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) {
@@ -128,7 +127,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) 
 	//NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
 
-	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, lptn.txPool,
+	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
 		dag, lptn.eventMux, genesis); err != nil {
 		return nil, err
 	}
@@ -213,6 +212,10 @@ func (s *LightPalletone) Start(srvr *p2p.Server) error {
 	//protocolVersion := AdvertiseProtocolVersions[0]
 	//s.serverPool.start(srvr, lesTopic(s.blockchain.Genesis().Hash(), protocolVersion))
 	s.protocolManager.Start(s.config.LightPeers)
+
+	s.txCh = make(chan modules.TxPreEvent, txChanSize)
+	s.txSub = s.txPool.SubscribeTxPreEvent(s.txCh)
+	go s.txBroadcastLoop()
 	return nil
 }
 
@@ -232,6 +235,8 @@ func (s *LightPalletone) Stop() error {
 	//s.blockchain.Stop()
 	s.protocolManager.Stop()
 	s.txPool.Stop()
+	s.txSub.Unsubscribe() // quits txBroadcastLoop
+
 
 	s.eventMux.Stop()
 
@@ -245,113 +250,128 @@ func (p *LightPalletone) GetKeyStore() *keystore.KeyStore {
 	return p.accountManager.Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 }
 
-func (p *LightPalletone) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
-	inputpoints := make(map[modules.OutPoint][]byte)
+func (self *LightPalletone) txBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.txCh:
+			log.Debug("=====ProtocolManager=====", "txBroadcastLoop event.Tx", event.Tx)
+			self.protocolManager.BroadcastTx(event.Tx.Hash(), event.Tx)
 
-	for i := 0; i < len(tx.TxMessages); i++ {
-		// 1. 获取PaymentPayload
-		msg := tx.TxMessages[i]
-		if msg.App != modules.APP_PAYMENT {
-			continue
-		}
-
-		//
-		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if !ok {
-			log.Debug("PaymentPayload conversion error, does not match TxMessage'APP type!")
-		}
-
-		// 2. 查询每个 Input 的 PkScript
-		for _, txin := range payload.Inputs {
-			inpoint := txin.PreviousOutPoint
-			utxo, err := p.dag.GetUtxoEntry(inpoint)
-			if err != nil {
-				return nil, err
-			}
-
-			inputpoints[*inpoint] = utxo.PkScript
+			// Err() channel will be closed when unsubscribing.
+		case <-self.txSub.Err():
+			return
 		}
 	}
-
-	// 3. 使用tokenengine 和 KeyStore 给 tx 签名
-	ks := p.GetKeyStore()
-	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
-		ks.GetPublicKey, ks.SignHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return tx, nil
 }
+//
+//func (p *LightPalletone) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
+//	inputpoints := make(map[modules.OutPoint][]byte)
+//
+//	for i := 0; i < len(tx.TxMessages); i++ {
+//		// 1. 获取PaymentPayload
+//		msg := tx.TxMessages[i]
+//		if msg.App != modules.APP_PAYMENT {
+//			continue
+//		}
+//
+//		//
+//		payload, ok := msg.Payload.(*modules.PaymentPayload)
+//		if !ok {
+//			log.Debug("PaymentPayload conversion error, does not match TxMessage'APP type!")
+//		}
+//
+//		// 2. 查询每个 Input 的 PkScript
+//		for _, txin := range payload.Inputs {
+//			inpoint := txin.PreviousOutPoint
+//			utxo, err := p.dag.GetUtxoEntry(inpoint)
+//			if err != nil {
+//				return nil, err
+//			}
+//
+//			inputpoints[*inpoint] = utxo.PkScript
+//		}
+//	}
+//
+//	// 3. 使用tokenengine 和 KeyStore 给 tx 签名
+//	ks := p.GetKeyStore()
+//	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
+//		ks.GetPublicKey, ks.SignHash)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return tx, nil
+//}
 
 // @author Albert·Gou
-func (p *LightPalletone) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
-	// 3. 签名 tx
-	tx, err := p.SignGenericTransaction(addr, tx)
-	if err != nil {
-		return err
-	}
-
-	// 4. 将 tx 放入 pool
-	txPool := p.TxPool()
-	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// @author Albert·Gou
-func (p *LightPalletone) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
-	// 参数检查
-	if from == to {
-		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
-	}
-
-	if amount.Cmp(decimal.New(0, 0)) != 1 {
-		return nil, fmt.Errorf("the amount of the transfer must be greater than 0")
-	}
-
-	fromAdd, err := common.StringToAddress(from)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", from)
-	}
-
-	toAdd, err := common.StringToAddress(to)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", to)
-	}
-
-	// 判断本节点是否同步完成，数据是否最新
-	//if !p.dag.IsSynced() {
-	//	return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
-	//}
-
-	// 1. 创建交易
-	tx, fee, err := p.dag.GenTransferPtnTx(fromAdd, toAdd, ptnjson.Ptn2Dao(amount), text, p.txPool)
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. 签名和发送交易
-	err = p.SignAndSendTransaction(fromAdd, tx)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. 返回执行结果
-	textStr := ""
-	if text != nil {
-		textStr = *text
-	}
-
-	res := &mp.TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account(%s) transfer %vPTN to account(%s) with message: '%s'",
-		from, amount, to, textStr)
-	res.TxHash = tx.Hash()
-	res.TxSize = tx.Size().TerminalString()
-	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = mp.DefaultResult
-
-	return res, nil
-}
+//func (p *LightPalletone) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
+//	// 3. 签名 tx
+//	tx, err := p.SignGenericTransaction(addr, tx)
+//	if err != nil {
+//		return err
+//	}
+//
+//	// 4. 将 tx 放入 pool
+//	txPool := p.TxPool()
+//	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
+//
+//// @author Albert·Gou
+//func (p *LightPalletone) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
+//	// 参数检查
+//	if from == to {
+//		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
+//	}
+//
+//	if amount.Cmp(decimal.New(0, 0)) != 1 {
+//		return nil, fmt.Errorf("the amount of the transfer must be greater than 0")
+//	}
+//
+//	fromAdd, err := common.StringToAddress(from)
+//	if err != nil {
+//		return nil, fmt.Errorf("invalid account address: %v", from)
+//	}
+//
+//	toAdd, err := common.StringToAddress(to)
+//	if err != nil {
+//		return nil, fmt.Errorf("invalid account address: %v", to)
+//	}
+//
+//	// 判断本节点是否同步完成，数据是否最新
+//	//if !p.dag.IsSynced() {
+//	//	return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
+//	//}
+//
+//	// 1. 创建交易
+//	tx, fee, err := p.dag.GenTransferPtnTx(fromAdd, toAdd, ptnjson.Ptn2Dao(amount), text, p.txPool)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	// 2. 签名和发送交易
+//	err = p.SignAndSendTransaction(fromAdd, tx)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	// 3. 返回执行结果
+//	textStr := ""
+//	if text != nil {
+//		textStr = *text
+//	}
+//
+//	res := &mp.TxExecuteResult{}
+//	res.TxContent = fmt.Sprintf("Account(%s) transfer %vPTN to account(%s) with message: '%s'",
+//		from, amount, to, textStr)
+//	res.TxHash = tx.Hash()
+//	res.TxSize = tx.Size().TerminalString()
+//	res.TxFee = fmt.Sprintf("%vdao", fee)
+//	res.Warning = mp.DefaultResult
+//
+//	return res, nil
+//}
+//

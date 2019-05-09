@@ -62,6 +62,7 @@ func (it AssetId) String() string {
 }
 
 func String2AssetId(str string) (AssetId, UniqueIdType, error) {
+	str = strings.ToUpper(str)
 	if str == "PTN" {
 		return PTNCOIN, UniqueIdType_Null, nil
 	}
