@@ -33,7 +33,7 @@ type IStateDb interface {
 	//Contract statedb
 	SaveContract(contract *modules.Contract) error
 	GetContract(id []byte) (*modules.Contract, error)
-
+	GetAllContracts() ([]*modules.Contract, error)
 	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)

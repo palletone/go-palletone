@@ -817,6 +817,36 @@ func (mr *MockIDagMockRecorder) GetContract(id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContract", reflect.TypeOf((*MockIDag)(nil).GetContract), id)
 }
 
+// GetAllContracts mocks base method
+func (m *MockIDag) GetAllContracts() ([]*modules.Contract, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllContracts")
+	ret0, _ := ret[0].([]*modules.Contract)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllContracts indicates an expected call of GetAllContracts
+func (mr *MockIDagMockRecorder) GetAllContracts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContracts", reflect.TypeOf((*MockIDag)(nil).GetAllContracts))
+}
+
+// GetContractsByTpl mocks base method
+func (m *MockIDag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContractsByTpl", tplId)
+	ret0, _ := ret[0].([]*modules.Contract)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContractsByTpl indicates an expected call of GetContractsByTpl
+func (mr *MockIDagMockRecorder) GetContractsByTpl(tplId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractsByTpl", reflect.TypeOf((*MockIDag)(nil).GetContractsByTpl), tplId)
+}
+
 // GetUnitByNumber mocks base method
 func (m *MockIDag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
 	m.ctrl.T.Helper()

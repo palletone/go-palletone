@@ -53,7 +53,7 @@ func (statedb *StateDb) GetContractTplCode(tplId []byte) ([]byte, error) {
 }
 func (statedb *StateDb) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
 	rows := getprefix(statedb.db, constants.CONTRACT_TPL)
-	result := make([]*modules.ContractTemplate, len(rows))
+	result := make([]*modules.ContractTemplate, 0,len(rows))
 	for _, v := range rows {
 		tpl := &modules.ContractTemplate{}
 		err := rlp.DecodeBytes(v, tpl)

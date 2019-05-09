@@ -48,6 +48,23 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	}
 	return statedb.saveTplToContractMapping(contract)
 }
+func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
+	key := append(constants.CONTRACT_PREFIX, id...)
+	contract := new(modules.Contract)
+	err := retrieve(statedb.db, key, contract)
+	return contract, err
+
+}
+func (statedb *StateDb) GetAllContracts() ([]*modules.Contract, error){
+	rows:= getprefix(statedb.db,constants.CONTRACT_PREFIX)
+	result:=make([]*modules.Contract,0,len(rows))
+	for _,v:=range rows{
+		contract:=&modules.Contract{}
+		rlp.DecodeBytes(v,contract)
+		result=append(result,contract)
+	}
+	return result,nil
+}
 func (statedb *StateDb) saveTplToContractMapping(contract *modules.Contract) error {
 	key := append(constants.CONTRACT_TPL_INSTANCE_MAP, contract.TemplateId...)
 	key = append(key, contract.ContractId...)
@@ -226,13 +243,6 @@ func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modu
 }
 
 // GetContract can get a Contract by the contract hash
-func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
-	key := append(constants.CONTRACT_PREFIX, id...)
-	contract := new(modules.Contract)
-	err := retrieve(statedb.db, key, contract)
-	return contract, err
-
-}
 
 func (statedb *StateDb) SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error {
 	// key: requestId
