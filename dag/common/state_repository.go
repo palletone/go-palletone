@@ -36,6 +36,8 @@ type IStateRepository interface {
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
 	GetContract(id []byte) (*modules.Contract, error)
+	GetAllContracts() ([]*modules.Contract, error)
+	GetContractsByTpl(tplId []byte) ([]*modules.Contract, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
@@ -61,6 +63,7 @@ type IStateRepository interface {
 	GetMainChain() (*modules.MainChain, error)
 	//获得一个合约的陪审团列表
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 }
 
 type StateRepository struct {
@@ -97,6 +100,24 @@ func (rep *StateRepository) GetContractStatesByPrefix(id []byte, prefix string) 
 
 func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
+}
+func (rep *StateRepository)GetAllContracts() ([]*modules.Contract, error){
+	return rep.statedb.GetAllContracts()
+}
+func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error){
+	cids,err:=rep.statedb.GetContractIdsByTpl(tplId)
+	if err!=nil{
+		return nil,err
+	}
+	result:=make([]*modules.Contract,0,len(cids))
+	for _,cid:=range cids{
+		contract,err:= rep.statedb.GetContract(cid)
+		if err!=nil{
+			return nil,err
+		}
+		result=append(result,contract)
+	}
+	return result,nil
 }
 
 func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
@@ -181,4 +202,7 @@ func (rep *StateRepository) GetAccountState(address common.Address, statekey str
 //获得一个合约的陪审团列表
 func (rep *StateRepository) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
 	return rep.statedb.GetContractJury(contractId)
+}
+func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
+	return rep.statedb.GetAllContractTpl()
 }

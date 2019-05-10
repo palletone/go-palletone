@@ -1043,6 +1043,9 @@ func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
 func (d *Dag) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return d.unstableStateRep.GetContractTpl(tplId)
 }
+func (d *Dag) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
+	return d.unstableStateRep.GetAllContractTpl()
+}
 
 func (d *Dag) GetContractTplCode(tplId []byte) ([]byte, error) {
 	return d.unstableStateRep.GetContractTplCode(tplId)
@@ -1283,4 +1286,10 @@ func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, er
 }
 func (d *Dag) RefreshAddrTxIndex() error {
 	return d.stableUnitRep.RefreshAddrTxIndex()
+}
+func (d *Dag) GetAllContracts() ([]*modules.Contract, error){
+	return d.unstableStateRep.GetAllContracts()
+}
+func (d *Dag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error){
+	return d.unstableStateRep.GetContractsByTpl(tplId)
 }
