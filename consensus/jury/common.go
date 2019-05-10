@@ -24,10 +24,9 @@ import (
 	"fmt"
 	"time"
 
-	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/util"
+
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
