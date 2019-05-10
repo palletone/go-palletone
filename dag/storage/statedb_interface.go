@@ -33,7 +33,7 @@ type IStateDb interface {
 	//Contract statedb
 	SaveContract(contract *modules.Contract) error
 	GetContract(id []byte) (*modules.Contract, error)
-
+	GetAllContracts() ([]*modules.Contract, error)
 	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
@@ -44,7 +44,8 @@ type IStateDb interface {
 	SaveContractTplCode(tplId []byte, byteCode []byte) error
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContractTplCode(tplId []byte) ([]byte, error)
-
+	GetAllContractTpl() ([]*modules.ContractTemplate, error)
+	GetContractIdsByTpl(tplId []byte) ([][]byte, error)
 	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
 	SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error
 	SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error
