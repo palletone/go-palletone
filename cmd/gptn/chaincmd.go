@@ -165,5 +165,6 @@ func initGenesis(ctx *cli.Context) error {
 		return err
 	}
 
+	log.Debugf("gptn init success")
 	return nil
 }

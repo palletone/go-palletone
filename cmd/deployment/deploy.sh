@@ -18,7 +18,7 @@ function ExecInit()
     initinfo=`echo $gptninit | sed -n '$p'`
     initinfotemp=`echo $initinfo | awk '{print $NF}'`
     initinfotemp=${initinfotemp:0:3}
-       if [ $initinfotemp != "db." ] ; then
+       if [ $initinfotemp != "success" ] ; then
                echo "====================init err=================="
                echo $initinfo
                return
