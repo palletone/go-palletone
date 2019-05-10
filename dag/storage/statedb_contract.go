@@ -21,6 +21,7 @@
 package storage
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -129,15 +130,19 @@ To save contract
 func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, version *modules.StateVersion) error {
 	key := getContractStateKey(id, field)
 
-	log.Debug(fmt.Sprintf("Try to save contract state with key:%s, version:%x", field, version.Bytes()))
+	log.Debugf("Try to save contract state with key:%v, version:%x", field, version.Bytes())
 	if err := storeBytesWithVersion(db, key, version, value); err != nil {
 		log.Error("Save contract state error", err.Error())
 		return err
 	}
 	return nil
 }
+
 func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
+	contractAddress := common.NewAddress(id, common.ContractHash)
+	log.Debugf("save contract(%v) States: %v", contractAddress.Str())
+
 	for _, write := range wset {
 		key := getContractStateKey(id, write.Key)
 		if write.IsDelete {
@@ -150,7 +155,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 	}
 	err := batch.Write()
 	if err != nil {
-		log.Errorf("batch write contract[%x] state error:%s", id, err)
+		log.Errorf("batch write contract(%v) state error:%s", contractAddress.Str(), err)
 		return err
 	}
 
@@ -313,16 +318,27 @@ func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvoke
 
 func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
 	// append by Albert·gou
-	if common.BytesToAddress(invoke.ContractId) == syscontract.DepositContractAddress {
+	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
+	log.Debugf("save contract invoke req id(%v) contractAddress: %v, timeout: %v",
+		hex.EncodeToString(reqid), contractAddress.Str(), invoke.Timeout)
+
+	if contractAddress == syscontract.DepositContractAddress {
+		log.Debugf("Save Deposit Contract Invoke Req")
+
 		if string(invoke.Args[0]) == modules.ApplyMediator {
 			var mco modules.MediatorCreateOperation
 			err := json.Unmarshal(invoke.Args[1], &mco)
 			if err == nil {
+				log.Debugf("Save Apply Mediator(%v) Invoke Req", mco.AddStr)
+
 				mi := modules.NewMediatorInfo()
 				*mi.MediatorInfoBase = *mco.MediatorInfoBase
 				*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
+
 				addr, _ := core.StrToMedAdd(mco.AddStr)
 				StoreMediatorInfo(statedb.db, addr, mi)
+			} else {
+				log.Debugf(err.Error())
 			}
 		}
 	}

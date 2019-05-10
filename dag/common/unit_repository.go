@@ -1165,22 +1165,26 @@ save config payload
 保存合约调用状态
 To save contract invoke state
 */
-func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex,
+	txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
 	if ok == false {
 		return false
 	}
+
 	version := &modules.StateVersion{
 		Height:  height,
 		TxIndex: txIndex,
 	}
+
 	err := rep.statedb.SaveContractStates(payload.ContractId, payload.WriteSet, version)
 	if err != nil {
 		log.Errorf("Tx[%s]Write contract state error:%s", tx.Hash().String(), err.Error())
 		return false
 	}
+
 	return true
 }
 
@@ -1305,6 +1309,7 @@ func (rep *UnitRepository) saveContractInvokeReq(reqid []byte, msg *modules.Mess
 		log.Info("save contract invoke req payload failed,", "error", err)
 		return false
 	}
+
 	return true
 }
 

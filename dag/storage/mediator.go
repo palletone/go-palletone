@@ -44,7 +44,7 @@ func StoreMediator(db ptndb.Database, med *core.Mediator) error {
 }
 
 func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.MediatorInfo) error {
-	//log.Debugf("Store Mediator %v:", mi.AddStr)
+	log.Debugf("Store Mediator Info %v:", mi.AddStr)
 
 	err := storeToJson(db, mediatorKey(add), mi)
 	if err != nil {
