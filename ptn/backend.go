@@ -136,7 +136,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
-
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 
