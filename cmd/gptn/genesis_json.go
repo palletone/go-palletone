@@ -34,6 +34,7 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -302,7 +303,7 @@ func createExampleGenesis() *core.Genesis {
 	mediators := []*mp.MediatorConf{mp.DefaultMediatorConf()}
 
 	return &core.Genesis{
-		GasToken:    core.DefaultAlias,
+		GasToken:    dagconfig.DefaultToken, //core.DefaultAlias,
 		Version:     configure.Version,
 		TokenAmount: core.DefaultTokenAmount,
 		//TokenDecimal:              core.DefaultTokenDecimal,
