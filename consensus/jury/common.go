@@ -169,7 +169,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req := ContractDeployReq{
 					chainID:    "palletone",
 					templateId: reqPay.TplId,
-					txid:       hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes()),
+					txid:       tx.RequestHash().String(), //  hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes()),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout),
 				}
