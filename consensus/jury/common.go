@@ -24,9 +24,9 @@ import (
 	"fmt"
 	"time"
 
-	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -114,7 +114,7 @@ func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq inte
 		return modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload)
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 		req := contractReq.(ContractInvokeReq)
-		payload := modules.NewContractInvokePayload(req.deployId,  req.args, 0, nil, nil, nil, err)
+		payload := modules.NewContractInvokePayload(req.deployId, req.args, 0, nil, nil, nil, err)
 		return modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload)
 	case modules.APP_CONTRACT_STOP_REQUEST:
 		req := contractReq.(ContractStopReq)
@@ -168,7 +168,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req := ContractDeployReq{
 					chainID:    "palletone",
 					templateId: reqPay.TplId,
-					txid:       hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes21()),
+					txid:       tx.RequestHash().String(), //  hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes()),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout),
 				}
@@ -221,7 +221,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -421,7 +421,7 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	err := p.validator.ValidateTx(tx, false)
 	if err != nil {
-		log.Errorf("Validate tx[%s] throw an error:%s", tx.Hash().String(), err.Error())
+		log.Debug("checkTxValid", "Validate fail, reqId", tx.RequestHash(), "tx", tx.Hash(), "err:", err.Error())
 	}
 
 	return err == nil

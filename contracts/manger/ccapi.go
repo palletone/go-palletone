@@ -154,9 +154,10 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 		listAdd(tcc)
 	} else {
 		//查询一下是否已经安装过
-		if tpl,_:= dag.GetContractTpl(tpid[:]); tpl != nil {
-			log.Error("getContractTpl err:", "error", "the contractTlp is exist")
-			return nil, errors.New("the contractTlp is exist.")
+		if tpl, _ := dag.GetContractTpl(tpid[:]); tpl != nil {
+			errMsg := fmt.Sprintf("install ,the contractTlp is exist.tplId:%v", tpid.Bytes())
+			log.Debug("Install", "err", errMsg)
+			return nil, errors.New(errMsg)
 		}
 		//将合约代码文件打包成 tar 文件
 		paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
@@ -250,7 +251,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 	cc := &cclist.CCInfo{
-		Id:       depId.Bytes21(),
+		Id:       depId.Bytes(),
 		Name:     usrccName,
 		Path:     usrcc.Path,
 		TempleId: templateId,
@@ -468,7 +469,7 @@ func GetAllContainers(client *docker.Client) {
 				}
 				txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 				//log.Infof("==============需要重启====容器名称为-->%s,---->%s",name, hex.EncodeToString(contractAddr.Bytes21()))
-				_, err = StartChaincodeContainert(dag, "palletone", contractAddr.Bytes21(), txid)
+				_, err = StartChaincodeContainert(dag, "palletone", contractAddr.Bytes(), txid)
 				if err != nil {
 					log.Infof("startChaincodeContainert err: %s", err.Error())
 					return

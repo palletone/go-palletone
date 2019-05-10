@@ -34,6 +34,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	dm "github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 type BTCPort struct {
@@ -151,18 +152,7 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	}
 
 	//
-	sendResult, err := stub.SendJury(1, []byte("getPubkey"), []byte(result)) //todo 封装重构
-	if err != nil {
-		log.Debugf("SendJury getPubkey err: %s", err.Error())
-		return shim.Success([]byte("SendJury getPubkey failed"))
-	}
-	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(1, []byte("getPubkey"), 2)
-	if err != nil {
-		log.Debugf("RecvJury getPubkey err: %s", err.Error())
-		return shim.Success([]byte("RecvJury failed"))
-	}
-	log.Debugf("recvResult: %s", string(recvResult))
+	recvResult, err := consult(stub, []byte("getPubkey"), []byte(result))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -767,6 +757,21 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 	return nil
 }
 
+func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) ([]byte, error) {
+	sendResult, err := stub.SendJury(2, content, myAnswer)
+	if err != nil {
+		log.Debugf("SendJury rawTx err: %s", err.Error())
+		return nil, errors.New("SendJury rawTx failed")
+	}
+	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
+	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 2)
+	if err != nil {
+		log.Debugf("RecvJury rawTx err: %s", err.Error())
+		return nil, errors.New("RecvJury rawTx failed")
+	}
+	log.Debugf("recvResult: %s", string(recvResult))
+	return recvResult, nil
+}
 func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 1 {
@@ -834,18 +839,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	// 签名交易
 	rawTxSign, err := signTx(rawTx, inputRedeemIndex, redeemHex, stub)
 	//协商交易
-	sendResult, err := stub.SendJury(2, []byte(rawTx), []byte(rawTxSign)) //todo 封装重构
-	if err != nil {
-		log.Debugf("SendJury rawTx err: %s", err.Error())
-		return shim.Success([]byte("SendJury rawTx failed"))
-	}
-	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 2)
-	if err != nil {
-		log.Debugf("RecvJury rawTx err: %s", err.Error())
-		return shim.Success([]byte("RecvJury rawTx failed"))
-	}
-	log.Debugf("recvResult: %s", string(recvResult))
+	recvResult, err := consult(stub, []byte(rawTx), []byte(rawTxSign))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -856,22 +850,55 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("RecvJury result's len not enough"))
 	}
 
-	// 合并交易
-	tx, err := mergeTx(rawTx, inputRedeemIndex, redeemHex, juryMsg, stub)
-	if err != nil {
-		return shim.Success([]byte("mergeTx failed: " + err.Error()))
+	minSig := string(juryMsg[0].Answer)
+	for i := 1; i < len(juryMsg); i++ {
+		if strings.Compare(minSig, string(juryMsg[i].Answer)) > 0 {
+			minSig = string(juryMsg[i].Answer)
+		}
 	}
-	// 发送交易
-	txHash, err := sendTx(tx, stub)
-	if err != nil {
-		return shim.Success([]byte("sendTx failed: " + err.Error()))
+	txHash := ""
+	if strings.Compare(minSig, rawTxSign) == 0 { //自己是执行jury
+		// 合并交易
+		tx, err := mergeTx(rawTx, inputRedeemIndex, redeemHex, juryMsg, stub)
+		if err != nil {
+			return shim.Success([]byte("mergeTx failed: " + err.Error()))
+		}
+		// 发送交易
+		txHash, err = sendTx(tx, stub)
+		if err != nil {
+			return shim.Success([]byte("sendTx failed: " + err.Error()))
+		}
+	} else { //自己不是执行jury
+		time.Sleep(2 * time.Second)
 	}
-	_ = txHash
+
+	//协商 发送交易哈希
+	txResult, err := consult(stub, []byte("getTxHash"), []byte(txHash))
+	var txJuryMsg []JuryMsgAddr
+	err = json.Unmarshal(txResult, &txJuryMsg)
+	if err != nil {
+		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
+	}
+	//stub.PutState("recvResult", recvResult)
+	if len(txJuryMsg) < 3 { //mod
+		return shim.Success([]byte("RecvJury result's len not enough"))
+	}
+	if "" == txHash {
+		for i := range txJuryMsg {
+			if "" != string(txJuryMsg[i].Answer) {
+				txHash = string(txJuryMsg[i].Answer)
+				break
+			}
+		}
+	}
+	if "" == txHash {
+		return shim.Success([]byte("consult txHash failed"))
+	}
 
 	// 记录花费
 	err = saveUtxos(int64(btcTokenAmount), selUnspnds, txHash, stub)
 	if err != nil {
-		return shim.Success([]byte("sendTx failed: " + err.Error()))
+		return shim.Success([]byte("saveUtxos failed: " + err.Error()))
 	}
 	return shim.Success([]byte(txHash))
 }

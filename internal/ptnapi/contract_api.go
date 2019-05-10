@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/ptnjson"
 	"math"
 	"math/big"
 	"math/rand"
@@ -118,7 +119,7 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, deployId string, param 
 
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
-	rsp, err := s.b.ContractQuery(contractId.Bytes21(), txid[:], fullArgs, 0)
+	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -363,4 +364,18 @@ func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, d
 	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
 	log.Info("-----Ccstoptx:" + hex.EncodeToString(reqId[:]))
 	return hex.EncodeToString(reqId[:]), err
+}
+
+func (s *PublicContractAPI) ListAllContractTemplates(ctx context.Context) ([]*ptnjson.ContractTemplateJson, error) {
+	return s.b.GetAllContractTpl()
+}
+func (s *PublicContractAPI) ListAllContracts(ctx context.Context) ([]*ptnjson.ContractJson, error) {
+	return s.b.GetAllContracts()
+}
+func (s *PublicContractAPI) GetContractsByTpl(ctx context.Context, tplId string) ([]*ptnjson.ContractJson, error) {
+	id, err := hex.DecodeString(tplId)
+	if err != nil {
+		return nil, err
+	}
+	return s.b.GetContractsByTpl(id)
 }

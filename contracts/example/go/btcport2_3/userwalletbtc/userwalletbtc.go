@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/naoina/toml"
 
@@ -527,10 +528,13 @@ func main() {
 			fmt.Println("Params : spendmulti2, txid, index, amount, txid2, index2, amount2, fee, toAddr, redeem, redeem2, key1, key2")
 			return
 		}
+		start := time.Now()
 		err := spendBTCFromMultiAddr2(args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13])
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+		end := time.Now()
+		fmt.Println(end.Sub(start))
 	default:
 		fmt.Println("Invalid cmd.")
 		helper()

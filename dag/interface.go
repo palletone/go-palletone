@@ -168,4 +168,6 @@ type IDag interface {
 	GetCoinYearRate() float64
 
 	RefreshAddrTxIndex() error
+
+	GetMinFee() (*modules.AmountAsset, error)
 }

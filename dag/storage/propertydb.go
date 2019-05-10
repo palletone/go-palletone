@@ -24,9 +24,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/contracts/list"
 )
 
 // modified by Yiran
@@ -50,8 +50,8 @@ type IPropertyDb interface {
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
 
-	SaveChaincode(contractId common.Address,cc *list.CCInfo) error
-	GetChaincodes(contractId common.Address) (*list.CCInfo,error)
+	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
+	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
 }
 
 // modified by Yiran
@@ -145,17 +145,17 @@ func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *module
 	}
 	return data.Hash, data.Index, int64(data.Timestamp), nil
 }
-func (db *PropertyDb) SaveChaincode(contractId common.Address,cc *list.CCInfo) error {
+func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
 	log.Debugf("Save chaincodes with contractid %s", contractId.String())
-	return StoreBytes(db.db,contractId.Bytes21(),cc)
+	return StoreBytes(db.db, contractId.Bytes(), cc)
 }
-func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo,error) {
+func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
 	log.Debugf("Get chaincodes with contractid %s", contractId.String())
 	cc := &list.CCInfo{}
-	err := retrieve(db.db,contractId.Bytes21(), cc)
+	err := retrieve(db.db, contractId.Bytes(), cc)
 	if err != nil {
 		log.Infof("Cannot retrieve chaincodes by contractid %s", contractId.String())
-		return nil,err
+		return nil, err
 	}
-	return cc,nil
+	return cc, nil
 }

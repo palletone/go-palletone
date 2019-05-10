@@ -717,3 +717,36 @@ func (s *PtnApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 func (b *PtnApiBackend) SyncUTXOByAddr(addr string) string {
 	return "Error"
 }
+func (b *PtnApiBackend) GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error) {
+	tpls, err := b.ptn.dag.GetAllContractTpl()
+	if err != nil {
+		return nil, err
+	}
+	jsons := []*ptnjson.ContractTemplateJson{}
+	for _, tpl := range tpls {
+		jsons = append(jsons, ptnjson.ConvertContractTemplate2Json(tpl))
+	}
+	return jsons, nil
+}
+func (b *PtnApiBackend) GetAllContracts() ([]*ptnjson.ContractJson, error) {
+	contracts, err := b.ptn.dag.GetAllContracts()
+	if err != nil {
+		return nil, err
+	}
+	jsons := []*ptnjson.ContractJson{}
+	for _, c := range contracts {
+		jsons = append(jsons, ptnjson.ConvertContract2Json(c))
+	}
+	return jsons, nil
+}
+func (b *PtnApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error) {
+	contracts, err := b.ptn.dag.GetContractsByTpl(tplId)
+	if err != nil {
+		return nil, err
+	}
+	jsons := []*ptnjson.ContractJson{}
+	for _, c := range contracts {
+		jsons = append(jsons, ptnjson.ConvertContract2Json(c))
+	}
+	return jsons, nil
+}
