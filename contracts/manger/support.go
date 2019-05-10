@@ -140,7 +140,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 }
 
 //func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, txid string, nm string, fun []byte) (*pb.ContractDeployPayload, error) {
-func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string, deployId []byte, args [][]byte, timeout time.Duration) (*md.ContractDeployPayload, error) {
+func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string, contractId []byte, args [][]byte, timeout time.Duration) (*md.ContractDeployPayload, error) {
 	log.Debug("RwTxResult2DagDeployUnit enter")
 
 	rd, wt, err := tx.GetRwData(nm)
@@ -150,7 +150,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 	log.Info("RwTxResult2DagDeployUnit", "nm=", nm, "rd=", rd, "wt=", wt)
 	deploy := &md.ContractDeployPayload{
 		TemplateId: templateId,
-		ContractId: deployId,
+		ContractId: contractId,
 		Name:       nm,
 		Args:       args,
 		ReadSet:    make([]md.ContractReadSet, 0),

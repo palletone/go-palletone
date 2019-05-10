@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -195,13 +196,13 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	reqId, depId, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
-	addDepId := common.NewAddress(depId, common.ContractHash)
+	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
+	contractAddr := crypto.RequestIdToContractAddress(reqId)
 	sReqId := hex.EncodeToString(reqId[:])
-	log.Info("-----Ccdeploytx:", "reqId", sReqId, "depId", addDepId.String())
+	log.Info("-----Ccdeploytx:", "reqId", sReqId, "depId", contractAddr.String())
 	rsp := &ContractDeployRsp{
 		ReqId:      sReqId,
-		ContractId: addDepId.String(),
+		ContractId: contractAddr.String(),
 	}
 	return rsp, err
 }

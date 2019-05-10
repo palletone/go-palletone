@@ -29,16 +29,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/scc"
-	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
-	"github.com/palletone/go-palletone/common/log"
 )
 
 func marshalOrPanic(pb proto.Message) []byte {
@@ -156,7 +156,7 @@ func peerServerInit(jury core.IAdapterJury) error {
 		peerAddress = "0.0.0.0:21726"
 	}
 	//TODO peer
-	log.Infof("peerServerInit listen tcp == %s",peerAddress)
+	log.Infof("peerServerInit listen tcp == %s", peerAddress)
 	lis, err := net.Listen("tcp", peerAddress)
 	if err != nil {
 		return err
