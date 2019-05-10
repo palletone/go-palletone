@@ -29,9 +29,9 @@ transferToken_senderTokenPTN
     [Tags]    normal
     ${GeneAdd}    getGeneAdd    ${host}
     normalCcinvokePass    ${result_code}    ${pretokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
-    sleep    4
+    sleep    5
     ${result1}    getBalance    ${GeneAdd}
-    sleep    4
+    sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result1}
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     ${item1}    Get From Dictionary    ${result1}    ${key}
@@ -39,7 +39,7 @@ transferToken_senderTokenPTN
     ...    ${evidence}    ${unlocktime}
     ${item'}    Evaluate    ${item1}-${senderAmount}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${pdg}')    decimal
-    sleep    4
+    sleep    5
     ${result2}    getBalance    ${GeneAdd}
     ${PTN2}    Get From Dictionary    ${result2}    PTN
     ${item2}    Get From Dictionary    ${result2}    ${key}
