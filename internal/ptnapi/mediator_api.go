@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -174,24 +175,32 @@ type MediatorCreateArgs struct {
 
 // 相关参数检查
 func (args *MediatorCreateArgs) setDefaults() {
+	if args.MediatorInfoBase == nil {
+		args.MediatorInfoBase = core.NewMediatorInfoBase()
+	}
+
+	if args.MediatorApplyInfo == nil {
+		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
+	}
+
 	if args.Address == "" {
 		args.Address = args.AddStr
 	}
 
-	args.ApplyTime = time.Now().Unix()
+	args.Time = time.Now().Unix()
 
 	return
 }
 
 func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, error) {
+	// 参数补全
+	args.setDefaults()
+
 	// 参数验证
 	err := args.Validate()
 	if err != nil {
 		return nil, err
 	}
-
-	// 参数补全
-	args.setDefaults()
 
 	addr := args.FeePayer()
 	// 判断是否已经是mediator
