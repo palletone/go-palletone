@@ -27,6 +27,7 @@ import (
 	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -445,11 +446,19 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	}
 	if msg1 != nil && msg2 != nil {
 		if msg1.CompareMessages(msg2) {
-			log.Debug("msgsCompare", "msg is equal, type", msgType)
+			log.Debug("msgsCompare,msg is equal.", " type", msgType)
+			log.Debugf("msga is equal, msga[%v] , msgb[%v]", msg1.Payload, msg2.Payload)
 			return true
 		}
 	}
-	log.Debug("msgsCompare", "msg is not equal") //todo del
+	a := util.RlpHash(msg1)
+	b := util.RlpHash(msg2)
+	if a != b {
+		log.Debugf("msga isnot equal msgb...hash_a [%s], hash_b [%s], msga[%v] , msgb[%v]", a.String(), b.String(), msg1.Payload, msg2.Payload)
+	} else {
+		log.Debugf("msga is equal msgb...hash_a [%s], hash_b [%s], msga[%v] , msgb[%v]", a.String(), b.String(), msg1.Payload, msg2.Payload)
+	}
+	log.Debug("msgsCompare，msg is not equal") //todo del
 	return false
 }
 
