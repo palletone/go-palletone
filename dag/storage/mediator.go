@@ -30,7 +30,7 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
+	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes21()...)
 	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Str()...)
 
 	return key
