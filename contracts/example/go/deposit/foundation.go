@@ -27,7 +27,8 @@ import (
 )
 
 //同意申请没收请求
-func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, applyTime int64, balance *DepositBalance) pb.Response {
+func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationAddr,
+	forfeitureAddr string, applyTime int64, balance *DepositBalance) pb.Response {
 	log.Info("Start entering agreeForApplyForfeiture func.")
 	//获取列表
 	listForForfeiture, err := GetListForForfeiture(stub)
@@ -218,7 +219,8 @@ func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInt
 }
 
 //基金会处理没收请求
-func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, applyTime int64, balance *DepositBalance, check string) pb.Response {
+func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.ChaincodeStubInterface, foundationAddr,
+	forfeitureAddr string, applyTime int64, balance *DepositBalance, check string) pb.Response {
 	//check 如果为ok，则同意此申请，如果为no，则不同意此申请
 	if strings.Compare(check, Ok) == 0 {
 		return d.agreeForApplyForfeiture(stub, foundationAddr, forfeitureAddr, applyTime, balance)

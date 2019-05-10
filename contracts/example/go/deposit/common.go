@@ -34,12 +34,12 @@ import (
 //处理交付保证金数据
 func updateForPayValue(balance *DepositBalance, invokeTokens *modules.InvokeTokens) {
 	balance.TotalAmount += invokeTokens.Amount
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	payTokens := &modules.AmountAsset{}
 	payValue := &PayValue{PayTokens: payTokens}
 	payValue.PayTokens.Amount = invokeTokens.Amount
 	payValue.PayTokens.Asset = invokeTokens.Asset
-	payValue.PayTime = time.Now().UTC().Unix() / DTimeDuration
+	payValue.PayTime = time.Now().Unix() / DTimeDuration
 	balance.PayValues = append(balance.PayValues, payValue)
 }
 
@@ -85,7 +85,7 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 	cashback.CashbackAddress = invokeAddr
 	cashback.CashbackTokens = invokeTokens
 	cashback.Role = role
-	cashback.CashbackTime = time.Now().UTC().Unix()
+	cashback.CashbackTime = time.Now().Unix()
 	if listForCashback == nil {
 		log.Info("stub.GetListForCashback:list is nil.")
 		listForCashback = []*Cashback{cashback}
@@ -239,7 +239,7 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		return err
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -350,7 +350,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
 	//v := handleValues(balanceValue.Values, tokens)
 	//balanceValue.Values = v
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	balance.TotalAmount -= cashbackValue.CashbackTokens.Amount
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
 	//TODO
@@ -420,7 +420,8 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAddr string, applyTime int64) (newList []*Forfeiture, isOk bool) {
+func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAddr string,
+	applyTime int64) (newList []*Forfeiture, isOk bool) {
 	for i := 0; i < len(listForForfeiture); i++ {
 		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
 			newList = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
@@ -432,7 +433,8 @@ func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAdd
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*Cashback, cashbackAddr string, applyTime int64) (newList []*Cashback, isOk bool) {
+func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*Cashback, cashbackAddr string,
+	applyTime int64) (newList []*Cashback, isOk bool) {
 	for i := 0; i < len(listForCashback); i++ {
 		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
 			newList = append(listForCashback[:i], listForCashback[i+1:]...)
@@ -644,7 +646,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	}
 	forfeiture.ApplyTokens = invokeTokens
 	forfeiture.ForfeitureRole = forfeitureRole
-	forfeiture.ApplyTime = time.Now().UTC().Unix()
+	forfeiture.ApplyTime = time.Now().Unix()
 	//先获取列表，再更新列表
 	listForForfeiture, err := GetListForForfeiture(stub)
 	if err != nil {
@@ -777,7 +779,7 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -806,7 +808,7 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
