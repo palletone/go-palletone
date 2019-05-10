@@ -155,8 +155,9 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	} else {
 		//查询一下是否已经安装过
 		if tpl, _ := dag.GetContractTpl(tpid[:]); tpl != nil {
-			log.Error("getContractTpl err:", "error", "the contractTlp is exist")
-			return nil, errors.New("the contractTlp is exist.")
+			errMsg := fmt.Sprintf("install ,the contractTlp is exist.tplId:%v", tpid.Bytes())
+			log.Debug("Install", "err", errMsg)
+			return nil, errors.New(errMsg)
 		}
 		//将合约代码文件打包成 tar 文件
 		paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
