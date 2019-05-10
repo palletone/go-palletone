@@ -810,13 +810,13 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 	contractInvokePayloads := []*modules.ContractInvokePayload{}
 	// generate systemcontract invoke payload
 	sysconfigPayload := &modules.ContractInvokePayload{}
-	sysconfigPayload.ContractId = syscontract.SysConfigContractAddress.Bytes21()
+	sysconfigPayload.ContractId = syscontract.SysConfigContractAddress.Bytes()
 	sysconfigPayload.WriteSet = writeSets
 	contractInvokePayloads = append(contractInvokePayloads, sysconfigPayload)
 
 	// generate digital identity contract invoke pyaload
 	digitalPayload := &modules.ContractInvokePayload{
-		ContractId: syscontract.DigitalIdentityContractAddress.Bytes21(),
+		ContractId: syscontract.DigitalIdentityContractAddress.Bytes(),
 		WriteSet:   digitalWriteSets,
 	}
 	contractInvokePayloads = append(contractInvokePayloads, digitalPayload)

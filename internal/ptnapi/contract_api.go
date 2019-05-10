@@ -119,7 +119,7 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, deployId string, param 
 
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
-	rsp, err := s.b.ContractQuery(contractId.Bytes21(), txid[:], fullArgs, 0)
+	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
 	}

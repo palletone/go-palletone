@@ -20,17 +20,17 @@ package storage
 
 import (
 	"bytes"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes21()...)
+	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
 	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Str()...)
 
 	return key

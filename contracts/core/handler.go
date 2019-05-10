@@ -2215,7 +2215,7 @@ func (handler *Handler) enterGetCertByID(e *fsm.Event) {
 			return
 		}
 		chaincodeID := handler.getCCRootName()
-		contractID := syscontract.DigitalIdentityContractAddress.Bytes21()
+		contractID := syscontract.DigitalIdentityContractAddress.Bytes()
 		payloadBytes, err := txContext.txsimulator.GetState(contractID, chaincodeID, keyForSystemConfig.Key)
 		log.Debugf("[%s] getting cert bytes for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		if err != nil {
