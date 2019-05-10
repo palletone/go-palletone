@@ -18,17 +18,24 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
-#    - ./deposit_test.sh 4
-#    - python -m robot.run ../testcase/createTrans
-#    - python -m robot.run ../testcase/ccinvoke
+    - mkdir ../logs
+    - ./deposit_test.sh 4 > ../logs/deposit_test.log
+    - python -m robot.run -d ../logs -l createTrans.log.html ../testcase/createTrans
+    - python -m robot.run -d ../logs -l ccinvoke.log.html ../testcase/ccinvoke
     - python -m robot.run -d ../logs -l DigitalIdentityCert.log.html ../DigitalIdentityCert
 
 after_success:
     - killall gptn
+    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log.html ftp://98.142.130.141:21/pub/
+    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://98.142.130.141:21/pub/
+    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/ccinvoke.log.html ftp://98.142.130.141:21/pub/
     - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141:21/pub/
 
 after_failure:
     - killall gptn
+    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log.html ftp://98.142.130.141:21/pub/
+    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://98.142.130.141:21/pub/
+    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/ccinvoke.log.html ftp://98.142.130.141:21/pub/
     - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141:21/pub/
 
 before_install:
