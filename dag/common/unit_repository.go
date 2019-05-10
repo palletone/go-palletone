@@ -1189,6 +1189,11 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 To save contract init state
 */
 func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, txIndex uint32, payload *modules.ContractDeployPayload, requester common.Address, unitTime int64) bool {
+	//编译源码时，发生错误信息，但是此时因为还没有构建chaincode容器，所以导致contractId为空
+	if payload.ContractId == nil {
+		log.Infof("source codes go build error")
+		return true
+	}
 	// save contract state
 	version := &modules.StateVersion{
 		Height:  height,

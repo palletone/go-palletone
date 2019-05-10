@@ -57,15 +57,15 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	return contract, err
 
 }
-func (statedb *StateDb) GetAllContracts() ([]*modules.Contract, error){
-	rows:= getprefix(statedb.db,constants.CONTRACT_PREFIX)
-	result:=make([]*modules.Contract,0,len(rows))
-	for _,v:=range rows{
-		contract:=&modules.Contract{}
-		rlp.DecodeBytes(v,contract)
-		result=append(result,contract)
+func (statedb *StateDb) GetAllContracts() ([]*modules.Contract, error) {
+	rows := getprefix(statedb.db, constants.CONTRACT_PREFIX)
+	result := make([]*modules.Contract, 0, len(rows))
+	for _, v := range rows {
+		contract := &modules.Contract{}
+		rlp.DecodeBytes(v, contract)
+		result = append(result, contract)
 	}
-	return result,nil
+	return result, nil
 }
 func (statedb *StateDb) saveTplToContractMapping(contract *modules.Contract) error {
 	key := append(constants.CONTRACT_TPL_INSTANCE_MAP, contract.TemplateId...)
@@ -99,6 +99,7 @@ func getContractStateKey(id []byte, field string) []byte {
 }
 
 func (statedb *StateDb) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+	log.Debugf("GetContractJury contractId %x", contractId)
 	key := append(constants.CONTRACT_JURY_PREFIX, contractId...)
 	data, _, err := retrieveWithVersion(statedb.db, key)
 	if err != nil {
@@ -112,6 +113,7 @@ func (statedb *StateDb) GetContractJury(contractId []byte) ([]modules.ElectionIn
 	return jury, nil
 }
 func (statedb *StateDb) SaveContractJury(contractId []byte, jury []modules.ElectionInf, version *modules.StateVersion) error {
+	log.Debugf("SaveContractJury contractId %x", contractId)
 	key := append(constants.CONTRACT_JURY_PREFIX, contractId...)
 	juryb, err := rlp.EncodeToBytes(jury)
 	if err != nil {
