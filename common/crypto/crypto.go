@@ -234,12 +234,35 @@ func ScriptHashToAddress(scriptHash []byte) common.Address {
 	return common.NewAddress(scriptHash, common.ScriptHash)
 }
 
-//func ContractIdToAddress(contractId []byte) common.Address {
-//	scriptHash := Hash160(contractId)
-//	return common.NewAddress(scriptHash, common.ContractHash)
-//}
+func RequestIdToContractAddress(deployRequestId common.Hash) common.Address {
+	scriptHash := Hash160(deployRequestId.Bytes())
+	return common.NewAddress(scriptHash, common.ContractHash)
+}
 func zeroBytes(bytes []byte) {
 	for i := range bytes {
 		bytes[i] = 0
 	}
+}
+
+// GetRandomBytes returns len random looking bytes
+func GetRandomBytes(len int) ([]byte, error) {
+	key := make([]byte, len)
+
+	// TODO: rand could fill less bytes then len
+	_, err := rand.Read(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return key, nil
+}
+
+const (
+	// NonceSize is the default NonceSize
+	NonceSize = 24
+)
+
+// GetRandomNonce returns a random byte array of length NonceSize
+func GetRandomNonce() ([]byte, error) {
+	return GetRandomBytes(NonceSize)
 }
