@@ -75,7 +75,7 @@ func processQueryMethodBTC(chaincodeID string, outChainAddr *pb.OutChainQuery,
 func processQueryMethodETH(chaincodeID string, outChainAddr *pb.OutChainQuery,
 	params *OutChainMethod) (string, error) {
 	switch params.Method {
-	case "GetBalance":
+	case "GetBestHeader":
 		var getHeaderParams adaptor.GetBestHeaderParams
 		err := json.Unmarshal(outChainAddr.Params, &getHeaderParams)
 		if err != nil {
