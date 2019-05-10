@@ -29,6 +29,7 @@ const (
 	SigHashAll          SigHashType = 0x1
 	SigHashNone         SigHashType = 0x2
 	SigHashSingle       SigHashType = 0x3
+	SigHashRaw          SigHashType = 0x4 //直接对构造好的不包含任何签名信息的Tx签名
 	SigHashAnyOneCanPay SigHashType = 0x80
 
 	// sigHashMask defines the number of bits of the hash type which is used
@@ -323,7 +324,8 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 			pay := txCopy.TxMessages[mIdx].Payload.(*modules.PaymentPayload)
 
 			for i := range pay.Inputs {
-				if i == idx && mIdx == msgIdx {
+				//Devin: for contract payout, remove all lockscript
+				if i == idx && mIdx == msgIdx && hashType != SigHashRaw {
 					// UnparseScript cannot fail here because removeOpcode
 					// above only returns a valid script.
 					sigScript, _ := unparseScript(script)
