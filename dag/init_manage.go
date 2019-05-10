@@ -171,7 +171,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		// 构建 initMediatorCandidates
 		mai := core.NewMediatorApplyInfo()
 		mai.Address = imc.AddStr
-		//mai.ApplyTime = mai.ApplyTime / deposit.DTimeDuration
+		//mai.Time = mai.Time / 1800
 		initMediatorCandidates = append(initMediatorCandidates, mai)
 	}
 

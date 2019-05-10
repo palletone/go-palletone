@@ -46,7 +46,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	mediatorInfo := core.MediatorApplyInfo{
 		Address:   invokeAddr.String(),
 		Content:   content,
-		ApplyTime: time.Now().Unix() / DTimeDuration,
+		Time: time.Now().Unix() / DTimeDuration,
 	}
 	//获取同意列表，判断是否已经申请过了
 	agreeList, err := GetAgreeForBecomeMediatorList(stub)
@@ -172,7 +172,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 			break
 		}
 	}
-	mediator.ApplyTime = time.Now().Unix() / DTimeDuration
+	mediator.Time = time.Now().Unix() / DTimeDuration
 	//获取列表
 	quitList, err := GetQuitMediatorApplyList(stub)
 	if err != nil {
@@ -330,7 +330,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 		balance = &DepositBalance{}
 		//处理数据
-		balance.EnterTime = strconv.FormatInt(time.Now().UTC().Unix()/DTimeDuration, 10)
+		balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
 		updateForPayValue(balance, invokeTokens)
 	} else {
 		//TODO 再次交付保证金时，先计算当前余额的币龄奖励
