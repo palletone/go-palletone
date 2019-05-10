@@ -60,7 +60,7 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	if stateDb != nil {
 		tpl, _ := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
 		if tpl != nil {
-			log.Errorf("Contract template[%x] already exist!", contractTplPayload.TemplateId)
+			log.Debug("validateContractTplPayload", "Contract template already exist!", contractTplPayload.TemplateId)
 			return TxValidationCode_INVALID_CONTRACT_TEMPLATE
 		}
 	}

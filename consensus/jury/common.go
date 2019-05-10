@@ -422,7 +422,7 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	err := p.validator.ValidateTx(tx, false)
 	if err != nil {
-		log.Errorf("Validate tx[%s] throw an error:%s", tx.Hash().String(), err.Error())
+		log.Debug("checkTxValid", "Validate fail, reqId", tx.RequestHash(), "tx", tx.Hash(), "err:", err.Error())
 	}
 
 	return err == nil
@@ -446,19 +446,11 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	}
 	if msg1 != nil && msg2 != nil {
 		if msg1.CompareMessages(msg2) {
-			log.Debug("msgsCompare,msg is equal.", " type", msgType)
-			log.Debugf("msga is equal, msga[%v] , msgb[%v]", msg1.Payload, msg2.Payload)
+			log.Debug("msgsCompare", "msg is equal, type", msgType)
 			return true
 		}
 	}
-	a := util.RlpHash(msg1)
-	b := util.RlpHash(msg2)
-	if a != b {
-		log.Debugf("msga isnot equal msgb...hash_a [%s], hash_b [%s], msga[%v] , msgb[%v]", a.String(), b.String(), msg1.Payload, msg2.Payload)
-	} else {
-		log.Debugf("msga is equal msgb...hash_a [%s], hash_b [%s], msga[%v] , msgb[%v]", a.String(), b.String(), msg1.Payload, msg2.Payload)
-	}
-	log.Debug("msgsCompare，msg is not equal") //todo del
+	log.Debug("msgsCompare", "msg is not equal") //todo del
 	return false
 }
 
