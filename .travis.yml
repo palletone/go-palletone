@@ -23,19 +23,9 @@ script:
 #    - python -m robot.run ../testcase/ccinvoke
     - python -m robot.run -d ../logs -l DigitalIdentityCert.log.html ../DigitalIdentityCert
 
-env:
-    global:
-        - 'SFTP_USER=[user]'
-        - 'SFTP_PASSWORD=[password]'
-        - 'SFTP_KEY=[base64-encoded-rsa-key]'
-
 after_success:
     - killall gptn
-    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
-    - curl --ftp-create-dirs
-        -T filename
-        --key /tmp/sftp_rsa
-        sftp://ftpuser:123456@example.com/directory/filename
+    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141:21/pub/
 
 after_failure:
     - killall gptn
@@ -76,3 +66,7 @@ notifications:
 
 deploy:
     skip_cleanup: true
+
+on:
+    tags: true
+    all_branches: true
