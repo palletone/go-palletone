@@ -33,7 +33,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/outchain"
@@ -923,7 +922,7 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 		var err error
 		addr := getBalance.Address
 		if len(addr) == 0 { //Get current contract address balance
-			addr = crypto.ContractIdToAddress(msg.ContractId).String()
+			addr = common.NewAddress(msg.ContractId, common.ContractHash).String()
 			log.Debugf("Address is nil, use contract id:%x, address:%s", msg.ContractId, addr)
 		}
 

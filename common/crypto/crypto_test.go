@@ -272,11 +272,11 @@ func TestScriptToAddress(t *testing.T) {
 	}
 }
 
-func TestNewContractIdAddress(t *testing.T) {
-	contractId := "0000000000000"
-	address := ContractIdToAddress([]byte(contractId))
-	t.Log(address.Str())
-}
+//func TestNewContractIdAddress(t *testing.T) {
+//	contractId := "0000000000000"
+//	address := ContractIdToAddress([]byte(contractId))
+//	t.Log(address.Str())
+//}
 
 func TestToWIFAndFromWIF(t *testing.T) {
 	prvKey, _ := GenerateKey()
