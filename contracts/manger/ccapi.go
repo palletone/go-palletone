@@ -299,8 +299,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
-	address := common.Address{}
-	address.SetBytes(deployId)
+	address := common.NewAddress(deployId, common.ContractHash)
 	cc := &cclist.CCInfo{}
 	var err error
 	if address.IsSystemContractAddress() {

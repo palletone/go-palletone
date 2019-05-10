@@ -81,9 +81,9 @@ func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, txi
 //	return hex.EncodeToString(rsp), err
 //}
 
-func (s *PublicContractAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
+func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
+	contractId, _ := common.StringToAddress(contractAddr)
+	log.Info("-----Ccinvoke:" + contractId.String() + ":" + txid)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -97,7 +97,7 @@ func (s *PublicContractAPI) Ccinvoke(ctx context.Context, deployId string, txid 
 	fullArgs = append(fullArgs, msgArg)
 	fullArgs = append(fullArgs, msgArg1)
 	fullArgs = append(fullArgs, args...)
-	rsp, err := s.b.ContractInvoke(depId, txid, fullArgs, 0)
+	rsp, err := s.b.ContractInvoke(contractId.Bytes(), txid, fullArgs, 0)
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 	return string(rsp), err
 }
