@@ -128,7 +128,7 @@ func newTestPayment(point *modules.OutPoint, outAmt uint64) *modules.PaymentPayl
 
 	output := modules.NewTxOut(outAmt, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), a)
 	pay1s.AddTxOut(output)
-	i := modules.NewTxIn(point, []byte("a"))
+	i := modules.NewTxIn(point, []byte{})
 	pay1s.AddTxIn(i)
 	return pay1s
 }

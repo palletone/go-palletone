@@ -35,7 +35,6 @@ import (
 //By default, system asset id=0,UniqueId=0
 //默认的PTN资产，则AssetId=0，UniqueId=0
 type Asset struct {
-	//AssetId 资产类别,前26bit是symbol的base36编码，27-29是Symbol编码后字节长度，30-32bit为AssetType，剩下的是Txid的前12字节
 	AssetId  AssetId  `json:"asset_id"`
 	UniqueId UniqueId `json:"unique_id"` // every token has its unique id
 	//ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id,read from toml config NetworkId

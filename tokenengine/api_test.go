@@ -385,6 +385,9 @@ func TestContractPayout(t *testing.T) {
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
 	txIn := modules.NewTxIn(outPoint, []byte{})
 	payment.AddTxIn(txIn)
+	outPoint1 := modules.NewOutPoint(utxoTxId, 0, 1)
+	txIn1 := modules.NewTxIn(outPoint1, []byte{})
+	payment.AddTxIn(txIn1)
 	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
 	payment.AddTxOut(modules.NewTxOut(1, p1lockScript, asset0))
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
@@ -432,18 +435,32 @@ func TestContractPayout(t *testing.T) {
 	redeemScript, _ := mockPickupJuryRedeemScript(contractAddr)
 	r, _ := txscript.DisasmString(redeemScript)
 	t.Logf("RedeemScript:%s", r)
-	sign12, err := MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
+	//Sign input0
+	sign0, err := MultiSignOnePaymentInput(tx, SigHashRaw, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
-	t.Logf("PrvKey1&2 sign result:%x\n", sign12)
+	t.Logf("PrvKey1&2 sign result:%x\n", sign0)
 	pay1 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	pay1.Inputs[0].SignatureScript = sign12
-	str, _ := txscript.DisasmString(sign12)
+	pay1.Inputs[0].SignatureScript = sign0
+	str, _ := txscript.DisasmString(sign0)
 	t.Logf("Signed script:{%s}", str)
+	//Sign input1
+	sign1, err := MultiSignOnePaymentInput(tx, SigHashRaw, 0, 1, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey1&2 sign result:%x\n", sign1)
+	pay1.Inputs[1].SignatureScript = sign1
+	str1, _ := txscript.DisasmString(sign1)
+	t.Logf("Signed script:{%s}", str1)
 
 	err = ScriptValidate(lockScript, mockPickupJuryRedeemScript, tx, 0, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
+
+	err = ScriptValidate(lockScript, mockPickupJuryRedeemScript, tx, 0, 1)
+	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
+
 }
 
 //func Test1(t *testing.T) {
@@ -467,4 +484,90 @@ func TestValidate2PaymentTx(t *testing.T) {
 	lockScript, _ := hex.DecodeString("76a9142f626624317921061ed83ab564fa92bb8aab7b5988ac")
 	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	assert.Nil(t, err)
+}
+
+func TestUserContractPayout(t *testing.T) {
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	asset0 := modules.NewPTNAsset()
+	payment := &modules.PaymentPayload{}
+	utxoTxId := common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
+	txIn := modules.NewTxIn(outPoint, []byte{})
+	payment.AddTxIn(txIn)
+	outPoint1 := modules.NewOutPoint(utxoTxId, 0, 1)
+	txIn1 := modules.NewTxIn(outPoint1, []byte{})
+	payment.AddTxIn(txIn1)
+	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
+	payment.AddTxOut(modules.NewTxOut(1, p1lockScript, asset0))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
+	//scriptCp:=make([]byte,len(lockScript))
+	//copy(scriptCp,lockScript)
+	contractAddr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+	lockScript := GenerateP2CHLockScript(contractAddr) //Token 锁定到合约中
+	l, _ := txscript.DisasmString(lockScript)
+	t.Logf("Lock Script:%s", l)
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		if addr == address1 {
+			return crypto.CompressPubkey(&prvKey1.PublicKey), nil
+		}
+		if addr == address2 {
+			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
+		}
+		if addr == address3 {
+			return crypto.CompressPubkey(&prvKey3.PublicKey), nil
+		}
+		if addr == address4 {
+			return crypto.CompressPubkey(&prvKey4.PublicKey), nil
+		}
+		return nil, nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+
+		if addr == address1 {
+			return crypto.Sign(hash, prvKey1)
+		}
+		if addr == address2 {
+			return crypto.Sign(hash, prvKey2)
+		}
+		if addr == address3 {
+			return crypto.Sign(hash, prvKey3)
+		}
+		if addr == address4 {
+			return crypto.Sign(hash, prvKey4)
+		}
+		return nil, nil
+	}
+	//构造用户合约的赎回脚本
+	redeemScript, _ := mockPickupJuryRedeemScript(contractAddr)
+	r, _ := txscript.DisasmString(redeemScript)
+	t.Logf("RedeemScript:%s", r)
+	lockScripts := make(map[modules.OutPoint][]byte)
+	lockScripts[*outPoint] = lockScript
+	lockScripts[*outPoint1] = lockScript
+	//签名所有input中锁定脚本为空的情况。
+	errMsg, err := SignTxAllPaymentInput(tx, SigHashRaw, lockScripts, redeemScript, getPubKeyFn, getSignFn)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	if len(errMsg) > 0 {
+		t.Logf("err:%s", errMsg[0].Error.Error())
+	}
+	err = ScriptValidate(lockScript, mockPickupJuryRedeemScript, tx, 0, 0)
+	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
+
+	err = ScriptValidate(lockScript, mockPickupJuryRedeemScript, tx, 0, 1)
+	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
+
+}
+func TestMergeContractUnlockScript(t *testing.T) {
+	sign1 := []byte("111111111111")
+	sign2 := []byte("222222222222")
+	sign3 := []byte("333333333333")
+	redeemScript, _ := mockPickupJuryRedeemScript(common.Address{})
+	result := MergeContractUnlockScript([][]byte{sign1, sign2, sign3}, redeemScript)
+	t.Logf("%x", result)
+	txt, _ := DisasmString(result)
+	t.Log(txt)
 }

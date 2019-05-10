@@ -24,58 +24,58 @@ const Ptn_JS = `
 web3._extend({
 	property: 'ptn',
 	methods: [
-		new web3._extend.Method({
-			name: 'sign',
-			call: 'ptn_sign',
-			params: 2,
-			inputFormatter: [web3._extend.formatters.inputAddressFormatter, null]
-		}),
-		new web3._extend.Method({
-			name: 'batchSign',
-			call: 'ptn_batchSign',
-			params: 6
-		}),
-		new web3._extend.Method({
-			name: 'encodeTx',
-			call: 'ptn_encodeTx',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'decodeTx',
-			call: 'ptn_decodeTx',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'resend',
-			call: 'ptn_resend',
-			params: 3,
-			inputFormatter: [web3._extend.formatters.inputTransactionFormatter, web3._extend.utils.fromDecimal, web3._extend.utils.fromDecimal]
-		}),
-		new web3._extend.Method({
-			name: 'signTransaction',
-			call: 'ptn_signTransaction',
-			params: 1,
-			inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
-		}),
-		new web3._extend.Method({
-			name: 'submitTransaction',
-			call: 'ptn_submitTransaction',
-			params: 1,
-			inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
-		}),
-		new web3._extend.Method({
-			name: 'getRawTransaction',
-			call: 'ptn_getRawTransactionByHash',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'getRawTransactionFromBlock',
-			call: function(args) {
-				return (web3._extend.utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'ptn_getRawTransactionByBlockHashAndIndex' : 'ptn_getRawTransactionByBlockNumberAndIndex';
-			},
-			params: 2,
-			inputFormatter: [web3._extend.formatters.inputBlockNumberFormatter, web3._extend.utils.toHex]
-		}),
+		//new web3._extend.Method({
+		//	name: 'sign',
+		//	call: 'ptn_sign',
+		//	params: 2,
+		//	inputFormatter: [web3._extend.formatters.inputAddressFormatter, null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'batchSign',
+		//	call: 'ptn_batchSign',
+		//	params: 6
+		//}),
+		//new web3._extend.Method({
+		//	name: 'encodeTx',
+		//	call: 'ptn_encodeTx',
+		//	params: 1
+		//}),
+		//new web3._extend.Method({
+		//	name: 'decodeTx',
+		//	call: 'ptn_decodeTx',
+		//	params: 1
+		//}),
+		//new web3._extend.Method({
+		//	name: 'resend',
+		//	call: 'ptn_resend',
+		//	params: 3,
+		//	inputFormatter: [web3._extend.formatters.inputTransactionFormatter, web3._extend.utils.fromDecimal, web3._extend.utils.fromDecimal]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'signTransaction',
+		//	call: 'ptn_signTransaction',
+		//	params: 1,
+		//	inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'submitTransaction',
+		//	call: 'ptn_submitTransaction',
+		//	params: 1,
+		//	inputFormatter: [web3._extend.formatters.inputTransactionFormatter]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'getRawTransaction',
+		//	call: 'ptn_getRawTransactionByHash',
+		//	params: 1
+		//}),
+		//new web3._extend.Method({
+		//	name: 'getRawTransactionFromBlock',
+		//	call: function(args) {
+		//		return (web3._extend.utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'ptn_getRawTransactionByBlockHashAndIndex' : 'ptn_getRawTransactionByBlockNumberAndIndex';
+		//	},
+		//	params: 2,
+		//	inputFormatter: [web3._extend.formatters.inputBlockNumberFormatter, web3._extend.utils.toHex]
+		//}),
 		
 		new web3._extend.Method({
 			name: 'setJuryAccount',

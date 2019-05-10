@@ -377,7 +377,7 @@ func (vm *Engine) checkHashTypeEncoding(hashType SigHashType) error {
 	}
 
 	sigHashType := hashType & ^SigHashAnyOneCanPay
-	if sigHashType < SigHashAll || sigHashType > SigHashSingle {
+	if sigHashType < SigHashAll || sigHashType > SigHashRaw {
 		return fmt.Errorf("invalid hashtype: 0x%x\n", hashType)
 	}
 	return nil
