@@ -43,11 +43,11 @@ func NewPublicMediatorAPI(b Backend) *PublicMediatorAPI {
 
 func (a *PublicMediatorAPI) IsApproved(AddStr string) (string, error) {
 	// 构建参数
-	cArgs := [][]byte{[]byte(modules.IsApproved), []byte(AddStr)}
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.IsApproved), []byte(AddStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes21(), txid[:], cArgs, 0)
+	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -57,11 +57,11 @@ func (a *PublicMediatorAPI) IsApproved(AddStr string) (string, error) {
 
 func (a *PublicMediatorAPI) GetDeposit(AddStr string) (*deposit.DepositBalance, error) {
 	// 构建参数
-	cArgs := [][]byte{[]byte(modules.GetDeposit), []byte(AddStr)}
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetDeposit), []byte(AddStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes21(), txid[:], cArgs, 0)
+	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxEx
 	}
 
 	// 调用系统合约
-	cArgs := [][]byte{[]byte(modules.MediatorDeposit)}
+	cArgs := [][]byte{[]byte(modules.MediatorPayDeposit)}
 	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
 		fee, nil, syscontract.DepositContractAddress, cArgs, 0)

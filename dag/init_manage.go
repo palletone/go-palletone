@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -172,7 +171,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		// 构建 initMediatorCandidates
 		mai := core.NewMediatorApplyInfo()
 		mai.Address = imc.AddStr
-		mai.ApplyTime = mai.ApplyTime / deposit.DTimeDuration
+		//mai.ApplyTime = mai.ApplyTime / deposit.DTimeDuration
 		initMediatorCandidates = append(initMediatorCandidates, mai)
 	}
 
@@ -191,7 +190,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 
 	version := &modules.StateVersion{
 		Height:  unit.Number(),
-		TxIndex: -1,
+		TxIndex: ^uint32(0),
 	}
 
 	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes21(), ws, version)
