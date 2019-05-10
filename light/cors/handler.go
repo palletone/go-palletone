@@ -15,17 +15,14 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package les implements the Light Palletone Subprotocol.
-package light
+package cors
 
 import (
 	//"encoding/binary"
 	"errors"
 	"fmt"
-	"math/big"
-	"net"
 	"sync"
 
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -64,73 +61,13 @@ func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
 }
 
-type BlockChain interface {
-	//Config() *params.ChainConfig
-	HasHeader(hash common.Hash, number uint64) bool
-	GetHeader(hash common.Hash, number uint64) *modules.Header
-	GetHeaderByHash(hash common.Hash) *modules.Header
-	CurrentHeader() *modules.Header
-	GetTd(hash common.Hash, number uint64) *big.Int
-	//State() (*state.StateDB, error)
-	InsertHeaderChain(chain []*modules.Header, checkFreq int) (int, error)
-	Rollback(chain []common.Hash)
-	GetHeaderByNumber(number uint64) *modules.Header
-	GetBlockHashesFromHash(hash common.Hash, max uint64) []common.Hash
-	//Genesis() *types.Block
-	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
-}
-
-type txPool interface {
-	AddRemotes(txs []*modules.Transaction) []error
-	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-
-	//Stop()
-	//AddLocal(tx *modules.TxPoolTransaction) error
-	//AddLocals(txs []*modules.TxPoolTransaction) []error
-	//AllHashs() []*common.Hash
-	//AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
-	//Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
-	//Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
-	//GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
-	//Stats() (int, int, int)
-	//GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
-	//SendStoredTxs(hashs []common.Hash) error
-	//DiscardTxs(hashs []common.Hash) error
-	////DiscardTx(hash common.Hash) error
-	//GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	//AddRemote(tx *modules.Transaction) error
-	////AddRemotes([]*modules.Transaction) []error
-	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
-	//// Pending should return pending transactions.
-	//// The slice should be modifiable by the caller.
-	//Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
-	//Queued() ([]*modules.TxPoolTransaction, error)
-	//SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error
-	//ResetPendingTxs(txs []*modules.Transaction) error
-	//// SubscribeTxPreEvent should return an event subscription of
-	//// TxPreEvent and send events to the given channel.
-	//SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
-	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
-}
-
 type ProtocolManager struct {
 	lightSync bool
-	txpool    txPool
-	//txrelay     *LesTxRelay
 	networkId uint64
-	//chainConfig *params.ChainConfig
-	dag     dag.IDag
-	assetId modules.AssetId
-	//chainDb     ethdb.Database
-	odr        *LesOdr
-	server     *LesServer
-	serverPool *serverPool
-	genesis    *modules.Unit
-	//lesTopic   discv5.Topic
-	reqDist   *requestDistributor
-	retriever *retrieveManager
+	dag       dag.IDag
+	assetId   modules.AssetId
+
+	genesis *modules.Unit
 
 	downloader *downloader.Downloader
 	fetcher    *LightFetcher
@@ -149,36 +86,24 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg *sync.WaitGroup
-
-	//SPV
-	validation *Validation
-	utxosync   *UtxosSync
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
-func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId, txpool txPool,
+func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId,
 	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		lightSync: lightSync,
-		eventMux:  mux,
-		assetId:   gasToken,
-		genesis:   genesis,
-		//blockchain:  blockchain,
-		//chainConfig: chainConfig,
-		//chainDb:     chainDb,
-		//odr:         odr,
-		dag:       dag,
-		networkId: networkId,
-		txpool:    txpool,
-
+		lightSync:   lightSync,
+		eventMux:    mux,
+		assetId:     gasToken,
+		genesis:     genesis,
+		dag:         dag,
+		networkId:   networkId,
 		peers:       peers,
 		newPeerCh:   make(chan *peer),
 		wg:          new(sync.WaitGroup),
 		noMorePeers: make(chan struct{}),
-		validation:  NewValidation(dag),
-		utxosync:    NewUtxosSync(dag),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -188,38 +113,25 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		// Compatible, initialize the sub-protocol
 		//version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
-			Name:    "lps",
+			Name:    "cors",
 			Version: version,
 			Length:  ProtocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-				var entry *poolEntry
-				peer := manager.newPeer(int(version), networkId, p, rw)
-				if manager.serverPool != nil {
-					addr := p.RemoteAddr().(*net.TCPAddr)
-					entry = manager.serverPool.connect(peer, addr.IP, uint16(addr.Port))
-				}
-				peer.poolEntry = entry
+				peer := manager.newPeer(int(version), 0, p, rw)
 				select {
 				case manager.newPeerCh <- peer:
 					manager.wg.Add(1)
 					defer manager.wg.Done()
-					err := manager.handle(peer)
-					if entry != nil {
-						manager.serverPool.disconnect(entry)
-					}
-					return err
+					return manager.handle(peer)
 				case <-manager.quitSync:
-					if entry != nil {
-						manager.serverPool.disconnect(entry)
-					}
 					return p2p.DiscQuitting
 				}
 			},
 			NodeInfo: func() interface{} {
-				return manager.NodeInfo(genesis.Hash())
+				return manager.NodeInfo(genesis.UnitHash)
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
-				if p := manager.peers.Peer(fmt.Sprintf("%x", id[:8])); p != nil {
+				if p := manager.peers.Peer(id.TerminalString()); p != nil {
 					return p.Info()
 				}
 				return nil
@@ -309,9 +221,6 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	if pm.lightSync {
-		go pm.syncer()
-
-		pm.validation.Start()
 
 	} else {
 		go func() {
@@ -340,13 +249,12 @@ func (pm *ProtocolManager) Stop() {
 
 	// Wait for any process action
 	pm.wg.Wait()
-	pm.validation.Stop()
 
 	log.Info("Light Palletone protocol stopped")
 }
 
 func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
-	return newPeer(pv, nv, p, newMeteredMsgWriter(rw))
+	return newPeer(pv, nv, p, rw)
 }
 
 // handle is the callback invoked to manage the life cycle of a les peer. When
@@ -379,22 +287,19 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
+	if err := p.Handshake(number, genesis.Hash(), headhash); err != nil {
 		log.Debug("Light Palletone handshake failed", "err", err)
 		return err
 	}
-	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
-		rw.Init(p.version)
-	}
+	//if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
+	//	rw.Init(p.version)
+	//}
 	// Register the peer locally
 	if err := pm.peers.Register(p); err != nil {
 		log.Error("Light Palletone peer registration failed", "err", err)
 		return err
 	}
 	defer func() {
-		if pm.server != nil && pm.server.fcManager != nil && p.fcClient != nil {
-			p.fcClient.Remove(pm.server.fcManager)
-		}
 		pm.removePeer(p.id)
 	}()
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
@@ -406,9 +311,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			//pm.fetcher.announce(p, head)
 		}
 
-		if p.poolEntry != nil {
-			pm.serverPool.registered(p.poolEntry)
-		}
+		//if p.poolEntry != nil {
+		//	pm.serverPool.registered(p.poolEntry)
+		//}
 	}
 
 	stop := make(chan struct{})
@@ -419,16 +324,15 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			select {
 			case announce := <-p.announceChn:
 				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
-				data, err := json.Marshal(announce.Header)
-				if err != nil {
-					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
-				} else {
-					//p.SetHead(&announce)
-					p.headInfo = &announce
-					if !p.fullnode {
-						p.SendRawAnnounce(data)
-					}
-				}
+				//data, err := json.Marshal(announce.Header)
+				//if err != nil {
+				//	log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
+				//} else {
+				//	p.headInfo = &announce
+				//	if !p.fullnode {
+				//		p.SendRawAnnounce(data)
+				//	}
+				//}
 			case <-stop:
 				return
 			}
@@ -456,24 +360,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	}
 	log.Trace("Light Palletone message arrived", "code", msg.Code, "bytes", msg.Size)
 
-	//costs := p.fcCosts[msg.Code]
-	//reject := func(reqCnt, maxCnt uint64) bool {
-	//	if p.fcClient == nil || reqCnt > maxCnt {
-	//		return true
-	//	}
-	//	bufValue, _ := p.fcClient.AcceptRequest()
-	//	cost := costs.baseCost + reqCnt*costs.reqCost
-	//	if cost > pm.server.defParams.BufLimit {
-	//		cost = pm.server.defParams.BufLimit
-	//	}
-	//	if cost > bufValue {
-	//		recharge := time.Duration((cost - bufValue) * 1000000 / pm.server.defParams.MinRecharge)
-	//		log.Error("Request came too early", "recharge", common.PrettyDuration(recharge))
-	//		return true
-	//	}
-	//	return false
-	//}
-
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
@@ -492,153 +378,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case AnnounceMsg:
 		return pm.AnnounceMsg(msg, p)
 
-	case GetBlockHeadersMsg:
-		return pm.GetBlockHeadersMsg(msg, p)
-
-	case BlockHeadersMsg:
-		return pm.BlockHeadersMsg(msg, p)
-
-	case GetBlockBodiesMsg:
-		return nil //pm.GetBlockBodiesMsg(msg, p)
-
-	case BlockBodiesMsg:
-		return nil //pm.BlockBodiesMsg(msg, p)
-
-	case GetCodeMsg:
-		return nil //pm.GetCodeMsg(msg, p)
-
-	case CodeMsg:
-		return nil //pm.CodeMsg(msg, p)
-
-	case GetProofsMsg:
-		return pm.GetProofsMsg(msg, p)
-
-	case GetProofsV2Msg:
-		log.Trace("Received les/2 proofs request")
-
-	case GetUTXOsMsg:
-		log.Debug("Received les GetUTXOsMsg")
-		return pm.GetUTXOsMsg(msg, p)
-
-	case UTXOsMsg:
-		log.Debug("Received les UTXOsMsg")
-		return pm.UTXOsMsg(msg, p)
-
-	case ProofsMsg:
-		return pm.ProofsMsg(msg, p)
-
-	case ProofsV2Msg:
-		log.Trace("Received les/2 proofs response")
-
-	case GetHeaderProofsMsg:
-		return nil //pm.GetHeaderProofsMsg(msg, p)
-
-	case GetHelperTrieProofsMsg:
-		return nil //pm.GetHelperTrieProofsMsg(msg, p)
-
-	case HeaderProofsMsg:
-		return nil // pm.HeaderProofsMsg(msg, p)
-
-	case HelperTrieProofsMsg:
-		return nil //pm.HelperTrieProofsMsg(msg, p)
-
-	case SendTxMsg:
-		return pm.SendTxMsg(msg, p)
-
-	case SendTxV2Msg:
-
-	case GetTxStatusMsg:
-		return nil //pm.GetTxStatusMsg(msg, p)
-
-	case TxStatusMsg:
-		return nil //pm.TxStatusMsg(msg, p)
-
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
-
-	//if deliverMsg != nil {
-	//	err := pm.retriever.deliver(p, deliverMsg)
-	//	if err != nil {
-	//		p.responseErrors++
-	//		if p.responseErrors > maxResponseErrors {
-	//			return err
-	//		}
-	//	}
-	//}
 	return nil
 }
 
-func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {
-	// Broadcast transaction to a batch of peers not knowing about it
-	peers := pm.peers.AllPeers()
-	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
-	for _, peer := range peers {
-		peer.SendTxs(0, 0, modules.Transactions{tx})
-	}
-	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
-}
-
-/*
-// getAccount retrieves an account from the state based at root.
-func (pm *ProtocolManager) getAccount(statedb *state.StateDB, root, hash common.Hash) (state.Account, error) {
-	trie, err := trie.New(root, statedb.Database().TrieDB())
-	if err != nil {
-		return state.Account{}, err
-	}
-	blob, err := trie.TryGet(hash[:])
-	if err != nil {
-		return state.Account{}, err
-	}
-	var account state.Account
-	if err = rlp.DecodeBytes(blob, &account); err != nil {
-		return state.Account{}, err
-	}
-	return account, nil
-}
-
-// getHelperTrie returns the post-processed trie root for the given trie ID and section index
-func (pm *ProtocolManager) getHelperTrie(id uint, idx uint64) (common.Hash, string) {
-	switch id {
-	case htCanonical:
-		sectionHead := core.GetCanonicalHash(pm.chainDb, (idx+1)*light.CHTFrequencyClient-1)
-		return light.GetChtV2Root(pm.chainDb, idx, sectionHead), light.ChtTablePrefix
-	case htBloomBits:
-		sectionHead := core.GetCanonicalHash(pm.chainDb, (idx+1)*light.BloomTrieFrequency-1)
-		return light.GetBloomTrieRoot(pm.chainDb, idx, sectionHead), light.BloomTrieTablePrefix
-	}
-	return common.Hash{}, ""
-}
-
-// getHelperTrieAuxData returns requested auxiliary data for the given HelperTrie request
-func (pm *ProtocolManager) getHelperTrieAuxData(req HelperTrieReq) []byte {
-	switch {
-	case req.Type == htCanonical && req.AuxReq == auxHeader && len(req.Key) == 8:
-		blockNum := binary.BigEndian.Uint64(req.Key)
-		hash := core.GetCanonicalHash(pm.chainDb, blockNum)
-		return core.GetHeaderRLP(pm.chainDb, hash, blockNum)
-	}
-	return nil
-}
-
-func (pm *ProtocolManager) txStatus(hashes []common.Hash) []txStatus {
-	stats := make([]txStatus, len(hashes))
-	for i, stat := range pm.txpool.Status(hashes) {
-		// Save the status we've got from the transaction pool
-		stats[i].Status = stat
-
-		// If the transaction is unknown to the pool, try looking it up locally
-		if stat == core.TxStatusUnknown {
-			if block, number, index := core.GetTxLookupEntry(pm.chainDb, hashes[i]); block != (common.Hash{}) {
-				stats[i].Status = core.TxStatusIncluded
-				stats[i].Lookup = &core.TxLookupEntry{BlockHash: block, BlockIndex: number, Index: index}
-			}
-		}
-	}
-	return stats
-}
-*/
 // NodeInfo represents a short summary of the Palletone sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
@@ -692,12 +438,14 @@ func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.C
 
 func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	log.Debug("peerConnection batch of headers by hash", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	return nil
+	//return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 func (pc *peerConnection) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
 	log.Debug("peerConnection batch of headers by number", "count", amount, "from origin", origin, "skip", skip, "reverse", reverse)
-	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	return nil
+	//return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)

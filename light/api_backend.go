@@ -429,7 +429,7 @@ func (b *LesApiBackend) EncodeTx(jsonStr string) (string, error) {
 func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
 	return
 }
-func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
+func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId common.Address, err error) {
 	return
 }
 func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {

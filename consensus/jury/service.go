@@ -501,10 +501,10 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		log.Info("isValidateElection, ElectionInf number not enough ", "len(ele)=", len(ele), "set electionNum=", p.electionNum)
 		return false
 	}
-	reqId := tx.ContractIdBytes()
+	contractId := tx.ContractIdBytes()
 	reqAddr, err := p.dag.GetTxRequesterAddress(tx)
 	if err != nil {
-		log.Error("isValidateElection", "GetTxRequesterAddress fail, reqId", reqId, "err", err)
+		log.Error("isValidateElection", "GetTxRequesterAddress fail, contractId", contractId, "err", err)
 		return false
 	}
 	isExit := false
@@ -530,10 +530,10 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		if e.Etype == 1 {
 			jjhAd, _, err := p.dag.GetConfig(modules.FoundationAddress)
 			if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
-				log.Debug("isValidateElection", "e.Etype == 1, ok, reqId", reqId)
+				log.Debug("isValidateElection", "e.Etype == 1, ok, contractId", contractId)
 				continue
 			} else {
-				log.Debug("isValidateElection", "e.Etype == 1, but not jjh request addr, reqId", reqId)
+				log.Debug("isValidateElection", "e.Etype == 1, but not jjh request addr, contractId", contractId)
 				log.Debug("isValidateElection", "reqAddr", reqAddr[:], "jjh", jjhAd)
 
 				//continue //todo test
@@ -552,9 +552,9 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 			return false
 		}
 		//验证proof是否通过
-		isVerify, err := etor.verifyVrf(e.Proof, conversionElectionSeedData(reqId), e.PublicKey)
+		isVerify, err := etor.verifyVrf(e.Proof, conversionElectionSeedData(contractId), e.PublicKey)
 		if err != nil || !isVerify {
-			log.Info("isValidateElection", "index", i, "verifyVrf fail, reqId", reqId)
+			log.Info("isValidateElection", "index", i, "verifyVrf fail, contractId", contractId)
 			return false
 		}
 	}

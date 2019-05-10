@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -85,9 +86,9 @@ func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, txi
 //	return hex.EncodeToString(rsp), err
 //}
 
-func (s *PublicContractAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
+func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
+	contractId, _ := common.StringToAddress(contractAddr)
+	log.Info("-----Ccinvoke:" + contractId.String() + ":" + txid)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -97,7 +98,7 @@ func (s *PublicContractAPI) Ccinvoke(ctx context.Context, deployId string, txid 
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-	rsp, err := s.b.ContractInvoke(depId, txid, fullArgs, 0)
+	rsp, err := s.b.ContractInvoke(contractId.Bytes(), txid, fullArgs, 0)
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 	return string(rsp), err
 }
@@ -192,13 +193,13 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	reqId, depId, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
-	addDepId := common.NewAddress(depId, common.ContractHash)
+	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
+	contractAddr := crypto.RequestIdToContractAddress(reqId)
 	sReqId := hex.EncodeToString(reqId[:])
-	log.Info("-----Ccdeploytx:", "reqId", sReqId, "depId", addDepId.String())
+	log.Info("-----Ccdeploytx:", "reqId", sReqId, "depId", contractAddr.String())
 	rsp := &ContractDeployRsp{
 		ReqId:      sReqId,
-		ContractId: addDepId.String(),
+		ContractId: contractAddr.String(),
 	}
 	return rsp, err
 }
