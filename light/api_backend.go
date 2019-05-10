@@ -498,3 +498,12 @@ func (b *LesApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 func (b *LesApiBackend) SyncUTXOByAddr(addr string) string {
 	return b.ptn.ProtocolManager().SyncUTXOByAddr(addr)
 }
+func (b *LesApiBackend) GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error) {
+	return nil, nil
+}
+func (b *LesApiBackend) GetAllContracts() ([]*ptnjson.ContractJson, error) {
+	return nil, nil
+}
+func (b *LesApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error) {
+	return nil, nil
+}

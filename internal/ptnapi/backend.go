@@ -157,6 +157,10 @@ type Backend interface {
 
 	GetFileInfo(filehash string) ([]*modules.FileInfo, error)
 
+	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
+	GetAllContracts() ([]*ptnjson.ContractJson, error)
+	GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error)
+
 	//SPV
 	GetProofTxInfoByHash(txhash string) ([][]byte, error)
 	ProofTransactionByHash(txhash string) (string, error)
