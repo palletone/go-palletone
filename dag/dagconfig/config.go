@@ -32,7 +32,8 @@ import (
 var (
 	SConfig      Sconfig
 	DefaultToken = "PTN"
-	DagConfig    = DefaultConfig
+	//DefaultToken = "ABC+10A4QIWCI46V8MZJ2UO"
+	DagConfig = DefaultConfig
 )
 
 var DefaultConfig = Config{
