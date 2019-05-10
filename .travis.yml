@@ -25,17 +25,17 @@ script:
     - python -m robot.run -d ../logs -l DigitalIdentityCert.log.html ../DigitalIdentityCert
 
 after_success:
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log.html ftp://98.142.130.141:21/pub/
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://98.142.130.141:21/pub/
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/ccinvoke.log.html ftp://98.142.130.141:21/pub/
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141:21/pub/
+    - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log ftp://98.142.130.141:21/pub/
+    - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://98.142.130.141:21/pub/
+    - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/ccinvoke.log.html ftp://98.142.130.141:21/pub/
+    - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141:21/pub/
     - killall gptn
 
 after_failure:
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log.html ftp://98.142.130.141:21/pub/
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://98.142.130.141:21/pub/
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/ccinvoke.log.html ftp://98.142.130.141:21/pub/
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141:21/pub/
+    - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log.html ftp://98.142.130.141:21/pub/
+    - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://98.142.130.141:21/pub/
+    - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/ccinvoke.log.html ftp://98.142.130.141:21/pub/
+    - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://98.142.130.141:21/pub/
     - killall gptn
 
 before_install:
