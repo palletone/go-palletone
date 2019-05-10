@@ -258,9 +258,7 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson.Name = deploy.Name
 	hash := common.BytesToHash(deploy.TemplateId[:])
 	djson.TemplateId = hash.String()
-	hash = common.Hash{}
-	hash.SetBytes(deploy.ContractId[:])
-	djson.ContractId = hash.String()
+	djson.ContractId = hex.EncodeToString(deploy.ContractId)
 	djson.Args = deploy.Args
 	//for _, addr := range deploy.Jury {
 	//	djson.Jury = append(djson.Jury, addr.String())
