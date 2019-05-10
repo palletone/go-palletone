@@ -169,7 +169,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		return nil
 	}
 
-	err = dag.InitStateDB(ptnConf.Genesis)
+	err = dag.InitStateDB(ptnConf.Genesis, unit)
 	if err != nil {
 		fmt.Printf("Failed to InitStateDB: %v", err)
 		return nil

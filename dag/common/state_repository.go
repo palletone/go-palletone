@@ -63,6 +63,8 @@ type IStateRepository interface {
 	//获得一个合约的陪审团列表
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
+
+	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 }
 
 type StateRepository struct {
@@ -126,6 +128,11 @@ func (rep *StateRepository) GetApprovedMediatorList() ([]*core.MediatorApplyInfo
 
 func (rep *StateRepository) IsApprovedMediator(address common.Address) bool {
 	return rep.statedb.IsApprovedMediator(address)
+}
+
+func (rep *StateRepository) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
+	version *modules.StateVersion) error {
+	return rep.statedb.SaveContractState(contractId, ws, version)
 }
 
 func (rep *StateRepository) IsMediator(address common.Address) bool {

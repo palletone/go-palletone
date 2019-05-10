@@ -21,17 +21,16 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
-
-	//"github.com/palletone/go-palletone/common/crypto"
-	"encoding/json"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
