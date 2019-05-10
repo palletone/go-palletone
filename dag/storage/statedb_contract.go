@@ -290,11 +290,11 @@ func (statedb *StateDb) GetContractDeployReq(reqId []byte) (*modules.ContractDep
 	return deploy, nil
 }
 
-func (statedb *StateDb) SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error {
-	// key : requestId
-	key := append(constants.CONTRACT_INVOKE, reqid...)
-	return StoreBytes(statedb.db, key, invoke)
-}
+//func (statedb *StateDb) SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error {
+//	// key : requestId
+//	key := append(constants.CONTRACT_INVOKE, reqid...)
+//	return StoreBytes(statedb.db, key, invoke)
+//}
 
 func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvokePayload, error) {
 	key := append(constants.CONTRACT_INVOKE, reqId...)

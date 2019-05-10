@@ -48,7 +48,7 @@ type IStateDb interface {
 	GetContractIdsByTpl(tplId []byte) ([][]byte, error)
 	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
 	SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error
-	SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error
+	//SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error
 	SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error
 	SaveContractStop(reqid []byte, stop *modules.ContractStopPayload) error
 	SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error
