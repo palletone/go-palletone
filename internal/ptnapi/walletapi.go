@@ -1136,11 +1136,7 @@ func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash st
 //		fmt.Printf("index[%d],value[%s]\n", i, arg)
 //	}
 //	//参数前面加入msg0和msg1,这里为空
-//	var fullArgs [][]byte
-//	msgArg := []byte("query has no msg0")
-//	msgArg1 := []byte("query has no msg1")
-//	fullArgs = append(fullArgs, msgArg)
-//	fullArgs = append(fullArgs, msgArg1)
+//	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 //	fullArgs = append(fullArgs, args...)
 //
 //	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))

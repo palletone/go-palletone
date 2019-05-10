@@ -193,7 +193,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		TxIndex: ^uint32(0),
 	}
 
-	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes21(), ws, version)
+	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
 	if err != nil {
 		log.Debugf(err.Error())
 		return err

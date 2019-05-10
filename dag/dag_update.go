@@ -34,7 +34,7 @@ import (
 func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	missedUnits := dag.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
-		log.Errorf("Trying to push double-produced unit onto current unit?!")
+		log.Debugf("Trying to push double-produced unit onto current unit?!")
 		return 0
 	}
 

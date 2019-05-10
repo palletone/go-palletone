@@ -53,7 +53,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case "HandleForApplyQuitMediator":
 		//基金会对退出申请Mediator进行处理
 		return d.handleForApplyQuitMediator(stub, args)
-	case modules.MediatorDeposit:
+	case modules.MediatorPayDeposit:
 		//mediator 交付保证金
 		return d.mediatorPayToDepositContract(stub, args)
 	case "JuryPayToDepositContract":
