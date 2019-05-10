@@ -23,15 +23,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
+	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
 	"github.com/palletone/go-palletone/consensus/jury/vrfEc"
 	"github.com/palletone/go-palletone/consensus/jury/vrfEs"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/accounts"
-	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -201,7 +201,7 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 		addrHash = util.RlpHash(addr)
 		break //only first one
 	}
-	proof, err := ele.checkElected(conversionElectionSeedData(reqEvt.ReqId[:]))
+	proof, err := ele.checkElected(getElectionSeedData(reqEvt.ReqId))
 	if err != nil {
 		log.Error("ProcessElectionRequestEvent", "reqHash", reqEvt.ReqId, "checkElected err", err)
 		return nil, err
@@ -248,7 +248,7 @@ func (p *Processor) processElectionResultEvent(ele *elector, rstEvt *ElectionRes
 	log.Debug("ProcessElectionResultEvent", "reqId", rstEvt.ReqId.Bytes(), "reqIdStr", rstEvt.ReqId.String(), "contractId", contractId, "tmpReqId", tmpReqId)
 	log.Debug("ProcessElectionResultEvent", "contractIdBytes", contractId.Bytes(), "contractIdStr", contractId.String())
 
-	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, conversionElectionSeedData(rstEvt.ReqId[:]), rstEvt.Ele.PublicKey) //rstEvt.ReqId[:]
+	ok, err := ele.verifyVrf(rstEvt.Ele.Proof, getElectionSeedData(rstEvt.ReqId), rstEvt.Ele.PublicKey) //rstEvt.ReqId[:]
 	if err != nil {
 		log.Error("ProcessElectionResultEvent", "verify VRF fail, ReqId is", rstEvt.ReqId.Bytes())
 		return err
@@ -271,10 +271,7 @@ func (p *Processor) ElectionRequest(reqId common.Hash, timeOut time.Duration) er
 	if reqId == (common.Hash{}) {
 		return errors.New("ElectionRequest param is nil")
 	}
-	seedData, err := getElectionSeedData(reqId)
-	if err != nil {
-		return err
-	}
+	seedData := getElectionSeedData(reqId)
 	p.locker.Lock()
 	p.mel[reqId] = &electionVrf{
 		eChan: make(chan bool, 1),

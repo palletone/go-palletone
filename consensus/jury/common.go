@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -526,7 +527,8 @@ func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageT
 	return nil, nil
 }
 
-func getElectionSeedData(in common.Hash) ([]byte, error) {
+func getElectionSeedData(in common.Hash) []byte {
+	addr := crypto.RequestIdToContractAddress(in)
 	//rd := make([]byte, 20)
 	//_, err := rand.Read(rd)
 	//if err != nil {
@@ -537,13 +539,14 @@ func getElectionSeedData(in common.Hash) ([]byte, error) {
 	//copy(seedData[len(in):], rd)
 	//return seedData, nil
 
-	return in.Bytes(), nil
+	return addr.Bytes()
 }
 
 func conversionElectionSeedData(in []byte) []byte {
-	tmp := common.BytesToAddress(in)
-	out := common.NewAddress(tmp.Bytes(), common.ContractHash)
-	return out[:]
+	//tmp := common.BytesToAddress(in)
+	//out := common.NewAddress(in, common.ContractHash)
+	//return out.Bytes()
+	return in
 }
 
 /*
