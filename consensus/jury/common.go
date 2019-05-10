@@ -27,6 +27,7 @@ import (
 	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -114,7 +115,7 @@ func createContractErrorPayloadMsg(reqType modules.MessageType, contractReq inte
 		return modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload)
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 		req := contractReq.(ContractInvokeReq)
-		payload := modules.NewContractInvokePayload(req.deployId,  req.args, 0, nil, nil, nil, err)
+		payload := modules.NewContractInvokePayload(req.deployId, req.args, 0, nil, nil, nil, err)
 		return modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload)
 	case modules.APP_CONTRACT_STOP_REQUEST:
 		req := contractReq.(ContractStopReq)
@@ -168,7 +169,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req := ContractDeployReq{
 					chainID:    "palletone",
 					templateId: reqPay.TplId,
-					txid:       hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes21()),
+					txid:       hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes()),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout),
 				}
@@ -221,7 +222,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -445,11 +446,19 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	}
 	if msg1 != nil && msg2 != nil {
 		if msg1.CompareMessages(msg2) {
-			log.Debug("msgsCompare", "msg is equal, type", msgType)
+			log.Debug("msgsCompare,msg is equal.", " type", msgType)
+			log.Debugf("msga is equal, msga[%v] , msgb[%v]", msg1.Payload, msg2.Payload)
 			return true
 		}
 	}
-	log.Debug("msgsCompare", "msg is not equal") //todo del
+	a := util.RlpHash(msg1)
+	b := util.RlpHash(msg2)
+	if a != b {
+		log.Debugf("msga isnot equal msgb...hash_a [%s], hash_b [%s], msga[%v] , msgb[%v]", a.String(), b.String(), msg1.Payload, msg2.Payload)
+	} else {
+		log.Debugf("msga is equal msgb...hash_a [%s], hash_b [%s], msga[%v] , msgb[%v]", a.String(), b.String(), msg1.Payload, msg2.Payload)
+	}
+	log.Debug("msgsCompare，msg is not equal") //todo del
 	return false
 }
 

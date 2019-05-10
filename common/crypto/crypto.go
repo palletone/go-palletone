@@ -234,10 +234,10 @@ func ScriptHashToAddress(scriptHash []byte) common.Address {
 	return common.NewAddress(scriptHash, common.ScriptHash)
 }
 
-func ContractIdToAddress(contractId []byte) common.Address {
-	scriptHash := Hash160(contractId)
-	return common.NewAddress(scriptHash, common.ContractHash)
-}
+//func ContractIdToAddress(contractId []byte) common.Address {
+//	scriptHash := Hash160(contractId)
+//	return common.NewAddress(scriptHash, common.ContractHash)
+//}
 func zeroBytes(bytes []byte) {
 	for i := range bytes {
 		bytes[i] = 0

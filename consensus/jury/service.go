@@ -748,7 +748,7 @@ func (p *Processor) getContractElectionList(contractId common.Address) ([]module
 	//}
 	//log.Debug("getContractElectionList", "contractId", contractId, "ElectionInf", ele)
 	//return ele, nil
-	return p.dag.GetContractJury(contractId.Bytes21())
+	return p.dag.GetContractJury(contractId.Bytes())
 }
 
 func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {

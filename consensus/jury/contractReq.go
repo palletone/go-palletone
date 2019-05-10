@@ -117,7 +117,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: contractId.Bytes21(),
+			ContractId: contractId.Bytes(),
 			Args:       args,
 			Timeout:    timeout,
 		},
@@ -140,7 +140,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: contractId.Bytes21(),
+			ContractId: contractId.Bytes(),
 			Args:       args,
 			Timeout:    timeout,
 		},
