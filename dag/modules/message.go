@@ -60,7 +60,6 @@ const (
 
 const (
 	FoundationAddress = "FoundationAddress"
-	MediatorList      = "MediatorList"
 	JuryList          = "JuryList"
 	DepositRate       = "DepositRate"
 )

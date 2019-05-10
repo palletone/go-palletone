@@ -53,12 +53,12 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
-			name: 'deposit',
+			name: 'payDeposit',
 			call: 'mediator_deposit',
 			params: 2,
 		}),
 		new web3._extend.Method({
-			name: 'getDeposit',
+			name: 'checkDeposit',
 			call: 'mediator_getDeposit',
 			params: 1,
 		}),

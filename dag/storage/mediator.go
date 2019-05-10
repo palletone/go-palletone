@@ -84,6 +84,7 @@ func GetMediatorCount(db ptndb.Database) int {
 	return mc
 }
 
+// todo
 func IsMediator(db ptndb.Database, address common.Address) bool {
 	has, err := db.Has(mediatorKey(address))
 	if err != nil {
@@ -93,6 +94,7 @@ func IsMediator(db ptndb.Database, address common.Address) bool {
 	return has
 }
 
+// todo
 func GetMediators(db ptndb.Database) map[common.Address]bool {
 	result := make(map[common.Address]bool)
 
@@ -113,6 +115,7 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 	return result
 }
 
+// todo
 func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 	result := make(map[common.Address]*core.Mediator)
 

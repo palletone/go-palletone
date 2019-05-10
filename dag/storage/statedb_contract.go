@@ -72,6 +72,7 @@ func (statedb *StateDb) saveTplToContractMapping(contract *modules.Contract) err
 	key = append(key, contract.ContractId...)
 	return statedb.db.Put(key, contract.ContractId)
 }
+
 func (statedb *StateDb) GetContractIdsByTpl(tplId []byte) ([][]byte, error) {
 	key := append(constants.CONTRACT_TPL_INSTANCE_MAP, tplId...)
 	rows := getprefix(statedb.db, key)
@@ -81,17 +82,22 @@ func (statedb *StateDb) GetContractIdsByTpl(tplId []byte) ([][]byte, error) {
 	}
 	return result, nil
 }
-func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.ContractWriteSet, version *modules.StateVersion) error {
+
+func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
+	version *modules.StateVersion) error {
 	key := getContractStateKey(contractId, ws.Key)
 	if ws.IsDelete {
 		return statedb.db.Delete(key)
 	}
+
 	return saveContractState(statedb.db, contractId, ws.Key, ws.Value, version)
 }
+
 func getContractStateKey(id []byte, field string) []byte {
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	return append(key, []byte(field)...)
 }
+
 func (statedb *StateDb) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
 	key := append(constants.CONTRACT_JURY_PREFIX, contractId...)
 	data, _, err := retrieveWithVersion(statedb.db, key)

@@ -24,10 +24,10 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func MediatorCreateEvaluate(op *modules.MediatorCreateOperation) bool {
-	// todo 判断是否已经申请缴纳保证金
-	return true
-}
+//func MediatorCreateEvaluate(op *modules.MediatorCreateOperation) bool {
+//	// todo 判断是否已经申请缴纳保证金
+//	return true
+//}
 
 // Create initial mediators
 //func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {

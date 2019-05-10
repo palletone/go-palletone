@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	dagcom "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -196,6 +195,7 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 
 	addr := args.FeePayer()
 	// 判断是否已经是mediator
+	// todo
 	if a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
@@ -272,9 +272,9 @@ func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, 
 	}
 
 	// 判断是否申请通过
-	if !dagcom.MediatorCreateEvaluate(args.MediatorCreateOperation) {
-		return nil, fmt.Errorf("has not successfully paid the deposit")
-	}
+	//if !dagcom.MediatorCreateEvaluate(args.MediatorCreateOperation) {
+	//	return nil, fmt.Errorf("has not successfully paid the deposit")
+	//}
 
 	// 1. 创建交易
 	tx, fee, err := a.Dag().GenMediatorCreateTx(addr, args.MediatorCreateOperation, a.TxPool())
