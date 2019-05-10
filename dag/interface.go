@@ -168,6 +168,7 @@ type IDag interface {
 	GetCoinYearRate() float64
 
 	RefreshAddrTxIndex() error
+	GetMinFee() (*modules.AmountAsset, error)
 
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)

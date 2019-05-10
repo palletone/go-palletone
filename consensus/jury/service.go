@@ -88,6 +88,9 @@ type iDag interface {
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	//获得系统配置的最低手续费要求
+	GetMinFee() (*modules.AmountAsset, error)
 }
 
 type Juror struct {
@@ -163,7 +166,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		}
 	}
 
-	validator := validator.NewValidate(dag, dag, nil)
+	validator := validator.NewValidate(dag, dag, dag)
 	p := &Processor{
 		name:           "contractProcessor",
 		ptn:            ptn,

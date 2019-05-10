@@ -27,7 +27,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -37,34 +36,32 @@ import (
 	dm "github.com/palletone/go-palletone/dag/modules"
 )
 
-type BTCPort struct {
+type ETHPort struct {
 }
 
-func (p *BTCPort) Init(stub shim.ChaincodeStubInterface) pb.Response {
+func (p *ETHPort) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
-func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
 	switch f {
 	case "initDepositAddr":
 		return _initDepositAddr(args, stub)
-	case "setBTCTokenAsset":
-		return _setBTCTokenAsset(args, stub)
-	case "setDepositAddr":
-		return _setDepositAddr(args, stub)
-	case "getBTCToken":
-		return _getBTCToken(args, stub)
-	case "withdrawBTC":
-		return _withdrawBTC(args, stub)
+	case "setETHTokenAsset":
+		return _setETHTokenAsset(args, stub)
+	case "getDepositAddr":
+		return _getDepositAddr(args, stub)
+	case "_getETHToken":
+		return _getETHToken(args, stub)
+	case "withdrawETH":
+		return _withdrawETH(args, stub)
 
 	case "put":
 		return put(args, stub)
 	case "get":
 		return get(args, stub)
-	case "getAsset":
-		return getAsset(stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -97,17 +94,20 @@ type CreateMultiSigResult struct {
 	Addresses    []string `json:"addresses"`
 }
 
-func creatMulti(userPubkey string, juryPubkeys []string, stub shim.ChaincodeStubInterface) ([]byte, error) {
+func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) ([]byte, error) {
 	//
-	a := sort.StringSlice(juryPubkeys[0:])
+	var answers []string
+	for i := range juryMsg {
+		answers = append(answers, string(juryMsg[i].Answer))
+	}
+	a := sort.StringSlice(answers[0:])
 	sort.Sort(a)
 	//
 	createMultiSigParams := BTCAddress_createMultiSig{Method: "CreateMultiSigAddress"}
-	createMultiSigParams.M = 2 //mod
-	createMultiSigParams.N = 3 //mod
-	createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, userPubkey)
-	for i := range juryPubkeys {
-		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, juryPubkeys[i])
+	createMultiSigParams.M = 3
+	createMultiSigParams.N = 4
+	for i := range answers {
+		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, string(answers[i]))
 	}
 	creteMultiReqBytes, err := json.Marshal(createMultiSigParams)
 	if err != nil {
@@ -117,17 +117,16 @@ func creatMulti(userPubkey string, juryPubkeys []string, stub shim.ChaincodeStub
 	if err != nil {
 		return nil, errors.New("OutChainAddress CreateMultiSigAddress failed: " + err.Error())
 	}
-	log.Debugf("creatMulti createMultiResult : %s", string(createMultiResult))
+	log.Debugf("OutChainAddress CreateMultiSigAddress createMultiResult ==== ===== %s", string(createMultiResult))
 
-	return createMultiResult, nil
+	return nil, nil
 }
 
-const symbolsBTCAsset = "btc_asset"
+const symbolsDeposit = "createMultiResult"
+const symbolsDepositAddr = "btc_multsigAddr"
+const symbolsDepositRedeem = "btc_redeem"
 
-const symbolsJuryPubkeys = "juryPubkeys"
-const symbolsCreateMulti = "createMulti_"
-const symbolsMultiAddr = "addr_"
-const symbolsRedeem = "redeem_"
+const symbolsBTCAsset = "eth_asset"
 
 const symbolsTx = "tx_"
 const symbolsUnspend = "unspend_"
@@ -136,7 +135,7 @@ const sep = "_"
 
 func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
-	saveResult, _ := stub.GetState(symbolsJuryPubkeys)
+	saveResult, _ := stub.GetState(symbolsDeposit)
 	if len(saveResult) != 0 {
 		return shim.Success([]byte("DepositAddr has been init"))
 	}
@@ -154,39 +153,57 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	}
 
 	//
-	recvResult, err := consult(stub, []byte("getPubkey"), []byte(result))
+	sendResult, err := stub.SendJury(1, []byte("getPubkey"), []byte(result)) //todo 封装重构
+	if err != nil {
+		log.Debugf("SendJury getPubkey err: %s", err.Error())
+		return shim.Success([]byte("SendJury getPubkey failed"))
+	}
+	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
+	recvResult, err := stub.RecvJury(1, []byte("getPubkey"), 2)
+	if err != nil {
+		log.Debugf("RecvJury getPubkey err: %s", err.Error())
+		return shim.Success([]byte("RecvJury failed"))
+	}
+	log.Debugf("recvResult: %s", string(recvResult))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
 	}
 	//stub.PutState("recvResult", recvResult)
-	if len(juryMsg) != 2 { //mod
+	if len(juryMsg) != 4 {
 		return shim.Success([]byte("RecvJury result's len not enough"))
 	}
 
 	//
-	var pubkeys []string
-	for i := range juryMsg {
-		pubkeys = append(pubkeys, string(juryMsg[i].Answer))
-	}
-	a := sort.StringSlice(pubkeys[0:])
-	sort.Sort(a)
-
-	pubkeysJson, err := json.Marshal(pubkeys)
+	createMultiResult, err := creatMulti(juryMsg, stub)
 	if err != nil {
-		return shim.Error("pubkeys Marshal failed: " + err.Error())
+		return shim.Success([]byte("creatMulti failed" + err.Error()))
+	}
+
+	var createResult CreateMultiSigResult
+	err = json.Unmarshal(createMultiResult, &createResult)
+	if err != nil {
+		return shim.Success([]byte("creatMulti result Unmarshal failed" + err.Error()))
 	}
 
 	// Write the state to the ledger
-	err = stub.PutState(symbolsJuryPubkeys, pubkeysJson)
+	err = stub.PutState(symbolsDeposit, createMultiResult)
 	if err != nil {
-		return shim.Error("write " + symbolsJuryPubkeys + " failed: " + err.Error())
+		return shim.Error("write " + symbolsDeposit + " failed: " + err.Error())
 	}
-	return shim.Success(pubkeysJson)
+	err = stub.PutState(symbolsDepositAddr, []byte(createResult.P2ShAddress))
+	if err != nil {
+		return shim.Error("write " + symbolsDepositAddr + " failed: " + err.Error())
+	}
+	err = stub.PutState(symbolsDepositRedeem, []byte(createResult.RedeemScript))
+	if err != nil {
+		return shim.Error("write " + symbolsDepositRedeem + " failed: " + err.Error())
+	}
+	return shim.Success(createMultiResult)
 }
 
-func _setBTCTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _setETHTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 1 {
 		return shim.Error("need 1 args (AssetStr)")
@@ -209,75 +226,84 @@ func getBTCTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
 	return asset
 }
 
-func _setDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (BTCPubkey)")
+func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	result, _ := stub.GetState(symbolsDepositAddr)
+	if len(result) == 0 {
+		return shim.Error("DepsoitAddr is empty")
 	}
-	userPubkey := args[0]
+	return shim.Success(result)
+}
+
+//refer to the struct GetTransactionHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
+//add 'method' member.
+type BTCTransaction_getTxHTTP struct { //GetTransactionHttpParams
+	Method string `json:"method"`
+	TxHash string `json:"txhash"`
+}
+
+//refert to the struct GetTransactionHttpResult in "github.com/palletone/adaptor/AdaptorBTC.go",
+type GetTransactionHttpResult struct {
+	Confirms uint64        `json:"confirms"`
+	Inputs   []Input       `json:"inputs"`
+	Outputs  []OutputIndex `json:"outputs"`
+}
+type Input struct {
+	Txid string `json:"txid"`
+	Vout uint32 `json:"vout"`
+	Addr string `json:"addr"`
+}
+type OutputIndex struct {
+	Index uint32 `json:"index"`
+	Addr  string `json:"addr"`
+	Value int64  `json:"value"` //satoshi
+}
+
+func getDepositBTCInfo(btcTxHash string, stub shim.ChaincodeStubInterface) (uint64, string, error, []OutputIndex) {
+	//
+	getTxHttp := BTCTransaction_getTxHTTP{Method: "GetTransactionHttp"}
+	getTxHttp.TxHash = btcTxHash
+
+	var outputs []OutputIndex
+	//
+	reqBytes, err := json.Marshal(getTxHttp)
+	if err != nil {
+		return 0, "", err, outputs
+	}
+	getTxHttpResult, err := stub.OutChainTransaction("btc", reqBytes)
+	if err != nil {
+		return 0, "", err, outputs
+	}
 
 	//
-	invokeAddr, err := stub.GetInvokeAddress()
+	var getTxResult GetTransactionHttpResult
+	err = json.Unmarshal(getTxHttpResult, &getTxResult)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
+		return 0, "", err, outputs
 	}
-	addrJson, _ := stub.GetState(symbolsMultiAddr + invokeAddr.String())
-	if len(addrJson) != 0 {
-		log.Debugf("symbolsMultiAddr+%s: %s", invokeAddr.String(), string(addrJson))
-		return shim.Success([]byte("You have set depsoitAddr"))
+	if getTxResult.Confirms < 6 {
+		return 0, "", errors.New("Confirms is less than 6, please wait"), outputs
 	}
-	log.Debugf("symbolsMultiAddr+%s need set", invokeAddr.String())
+
 	//
-	pubkeysJson, _ := stub.GetState(symbolsJuryPubkeys)
-	if len(pubkeysJson) == 0 {
-		log.Debugf("pubkeys is empty")
-		return shim.Success([]byte("pubkeys is empty"))
+	result, _ := stub.GetState(symbolsDepositAddr)
+	if len(result) == 0 {
+		return 0, "", errors.New("DepsoitAddr is empty"), outputs
 	}
-	var pubkeys []string
-	err = json.Unmarshal(pubkeysJson, &pubkeys)
-	if err != nil {
-		log.Debugf("pubkeys Unmarshal failed")
-		return shim.Success([]byte("pubkeys Unmarshal failed"))
-	}
-	if len(pubkeys) != 2 { //mod
-		log.Debugf("pubkeys' length is not 2")
-		return shim.Success([]byte("pubkeys' length is not 2")) //mod
-	}
+	depositAddr := string(result)
 
-	createMultiResult, err := creatMulti(userPubkey, pubkeys, stub)
-	if err != nil {
-		log.Debugf("creatMulti failed: " + err.Error())
-		return shim.Success([]byte("creatMulti failed: " + err.Error()))
-	}
-	log.Debugf("createMultiResult: " + string(createMultiResult))
-
-	var createResult CreateMultiSigResult
-	err = json.Unmarshal(createMultiResult, &createResult)
-	if err != nil {
-		log.Debugf("creatMulti result Unmarshal failed: " + err.Error())
-		return shim.Success([]byte("creatMulti result Unmarshal failed" + err.Error()))
-	}
-
-	// Write the state to the ledger
-	err = stub.PutState(symbolsCreateMulti+invokeAddr.String(), createMultiResult)
-	if err != nil {
-		log.Debugf("PutState symbolsCreateMulti failed err: %s", err.Error())
-		return shim.Error("write symbolsCreateMulti failed: " + err.Error())
-	}
-	err = stub.PutState(symbolsMultiAddr+invokeAddr.String(), []byte(createResult.P2ShAddress))
-	if err != nil {
-		log.Debugf("PutState symbolsMultiAddr failed err: %s", err.Error())
-		return shim.Error("PutState symbolsMultiAddr failed")
-	}
-	err = stub.PutState(symbolsRedeem+createResult.P2ShAddress, []byte(createResult.RedeemScript))
-	if err != nil {
-		log.Debugf("PutState symbolsRedeem failed err: %s", err.Error())
-		return shim.Error("PutState symbolsRedeem failed")
-	}
-	log.Debugf("symbolsMultiAddr+invokeAddr.String(): %s", createResult.P2ShAddress)
 	//
-	return shim.Success(createMultiResult)
+	depositAmount := int64(0)
+	for i := range getTxResult.Outputs {
+		if getTxResult.Outputs[i].Addr == depositAddr {
+			depositAmount += getTxResult.Outputs[i].Value
+			outputs = append(outputs, getTxResult.Outputs[i])
+		}
+	}
+	if depositAmount == 0 {
+		return 0, "", errors.New("Deposit amount is empty"), outputs
+	}
+
+	return uint64(depositAmount), getTxResult.Inputs[0].Addr, nil, outputs
 }
 
 //refer to the struct VerifyMessageParams in "github.com/palletone/adaptor/AdaptorBTC.go",
@@ -331,98 +357,57 @@ func BytesToInt64(buf []byte) int64 {
 	return int64(binary.BigEndian.Uint64(buf))
 }
 
-//refer to the struct GetUTXOHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-//add 'method' member.
-type BTCQuery_GetUTXOHttp struct {
-	Method  string `json:"method"`
-	Address string `json:"address"`
-	Txid    string `json:"txid"`
-}
-
-//refert to the struct GetUTXOHttpResult in "github.com/palletone/adaptor/AdaptorBTC.go",
-type GetUTXOHttpResult struct {
-	UTXOs []UTXO `json:"utxos"`
-}
-type UTXO struct {
-	TxID     string  `json:"txid"`
-	Vout     uint32  `json:"vout"`
-	Amount   float64 `json:"amount"`
-	Confirms uint64  `json:"confirms"`
-}
-
-func getAddrUTXO(btcAddr string, stub shim.ChaincodeStubInterface) (*GetUTXOHttpResult, error) {
-	//
-	getUTXO := BTCQuery_GetUTXOHttp{Method: "GetUTXOHttp"}
-	getUTXO.Address = btcAddr
-
-	//
-	reqBytes, err := json.Marshal(getUTXO)
-	if err != nil {
-		return nil, err
-	}
-	verifyResultByte, err := stub.OutChainQuery("btc", reqBytes)
-	if err != nil {
-		return nil, err
+func _getETHToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 2 {
+		return shim.Error("need 2 args (btcTxHash, btcTxHashSig(signed by input btcAddr))")
 	}
 
 	//
-	var result GetUTXOHttpResult
-	err = json.Unmarshal(verifyResultByte, &result)
-	if err != nil {
-		return nil, err
+	btcTxHash := args[0]
+	unspendResult, _ := stub.GetState(symbolsTx + btcTxHash)
+	if len(unspendResult) != 0 {
+		jsonResp := "{\"Error\":\"The tx has been used\"}"
+		return shim.Success([]byte(jsonResp))
 	}
 
-	return &result, nil
-}
+	//
+	btcAmount, btcAddr, err, outputs := getDepositBTCInfo(btcTxHash, stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Have get token\"}"
+		return shim.Success([]byte(jsonResp))
+	}
 
-func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//verify message
+	btcTxHashSig := args[1]
+	valid, err := verifySig(btcTxHash, btcTxHashSig, btcAddr, stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"verifySig failed," + err.Error() + "\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+	if !valid {
+		jsonResp := "{\"Error\":\"You are not the Depositor\"}"
+		return shim.Success([]byte(jsonResp))
+	}
+
 	//
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return shim.Error(jsonResp)
 	}
-	//
-	multiAddrByte, _ := stub.GetState(symbolsMultiAddr + invokeAddr.String())
-	if len(multiAddrByte) == 0 {
-		jsonResp := "{\"Error\":\"You need call getDepositAddr for get your deposit address\"}"
-		return shim.Success([]byte(jsonResp))
-	}
-	multiAddr := string(multiAddrByte)
-
-	//
-	getUTXOResult, err := getAddrUTXO(multiAddr, stub)
+	err = stub.PutState(symbolsTx+btcTxHash, []byte(invokeAddr.String()))
 	if err != nil {
-		jsonResp := "{\"Error\":\"Get multiAddr's UTXO failed\"}"
-		return shim.Success([]byte(jsonResp))
+		log.Debugf("PutState txhash failed err: %s", err.Error())
+		return shim.Error("PutState txhash failed")
 	}
-	btcAmount := uint64(0)
-	for i := range getUTXOResult.UTXOs {
-		if getUTXOResult.UTXOs[i].Confirms < 1 { //
-			continue
-		}
-		txIDVout := getUTXOResult.UTXOs[i].TxID + sep + strconv.Itoa(int(getUTXOResult.UTXOs[i].Vout))
-		//
-		unspendResult, _ := stub.GetState(symbolsTx + txIDVout)
-		if len(unspendResult) != 0 {
-			continue
-		}
-		err = stub.PutState(symbolsTx+txIDVout, []byte(invokeAddr.String()))
-		if err != nil {
-			log.Debugf("PutState txhash failed err: %s", err.Error())
-			return shim.Error("PutState txhash failed")
-		}
-		//
-		err = stub.PutState(symbolsUnspend+multiAddr+sep+txIDVout, []byte(Int64ToBytes(int64(getUTXOResult.UTXOs[i].Amount*1e8))))
+	for i := range outputs {
+		err = stub.PutState(symbolsUnspend+btcTxHash+sep+strconv.Itoa(int(outputs[i].Index)),
+			[]byte(Int64ToBytes(outputs[i].Value)))
 		if err != nil {
 			log.Debugf("PutState txhash unspend failed err: %s", err.Error())
 			return shim.Error("PutState txhash unspend failed")
 		}
-		btcAmount += uint64(getUTXOResult.UTXOs[i].Amount * 1e8)
-	}
-
-	if btcAmount == 0 {
-		return shim.Success([]byte("You need deposit"))
 	}
 
 	//
@@ -430,8 +415,6 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if btcTokenAsset == nil {
 		return shim.Error("need call setBTCTokenAsset()")
 	}
-	log.Debugf("btcAmount: %d, asset: %s", btcAmount, btcTokenAsset.String())
-
 	invokeTokens := new(dm.AmountAsset)
 	invokeTokens.Amount = btcAmount
 	invokeTokens.Asset = btcTokenAsset
@@ -441,14 +424,13 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 
-	return shim.Success([]byte("get success"))
+	return shim.Success([]byte("put failed"))
 }
 
 type Unspend struct {
-	MultiAddr string `json:"multiaddr"`
-	Txid      string `json:"txid"`
-	Vout      uint32 `json:"vout"`
-	Value     int64  `json:"value"`
+	Txid  string `json:"txid"`
+	Vout  uint32 `json:"vout"`
+	Value int64  `json:"value"`
 }
 
 // A slice of Unspend that implements sort.Interface to sort by Value.
@@ -470,21 +452,20 @@ func getUnspends(btcAmout int64, stub shim.ChaincodeStubInterface) []Unspend {
 	var bigUnspends []Unspend
 	var selUnspends []Unspend
 	for _, oneKV := range KVs {
+		unspend := Unspend{}
 		keys := strings.Split(oneKV.Key, sep)
-		if len(keys) < 4 {
+		if len(keys) < 3 {
 			log.Debugf("invalid key: %s", oneKV.Key)
 			continue
 		}
-		unspend := Unspend{}
-		index, err := strconv.Atoi(keys[3])
+		index, err := strconv.Atoi(keys[2])
 		if err != nil {
 			log.Debugf("invalid key index: %s", oneKV.Key)
 			continue
 		}
 		unspend.Value = BytesToInt64(oneKV.Value)
 
-		unspend.MultiAddr = keys[1]
-		unspend.Txid = keys[2]
+		unspend.Txid = keys[1]
 		unspend.Vout = uint32(index)
 		if unspend.Value == btcAmout {
 			selUnspends = append(selUnspends, unspend)
@@ -536,11 +517,6 @@ type BTCTransaction_rawTransactionGen struct { //GetTransactionHttpParams
 	Outputs  []Output `json:"outputs"`
 	Locktime int64    `json:"locktime"`
 }
-type Input struct {
-	Txid string `json:"txid"`
-	Vout uint32 `json:"vout"`
-	Addr string `json:"addr"`
-}
 type Output struct {
 	Address string  `json:"address"`
 	Amount  float64 `json:"amount"` //btc
@@ -564,7 +540,12 @@ func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub s
 	}
 	rawTxGen.Outputs = append(rawTxGen.Outputs, Output{btcAddr, converAmount(btcAmout - btcFee)})
 	if totalAmount > btcAmout {
-		rawTxGen.Outputs = append(rawTxGen.Outputs, Output{unspends[0].MultiAddr, converAmount(totalAmount - btcAmout)})
+		//
+		result, _ := stub.GetState(symbolsDepositAddr)
+		if len(result) == 0 {
+			return "", errors.New("DepsoitAddr is empty")
+		}
+		rawTxGen.Outputs = append(rawTxGen.Outputs, Output{string(result), converAmount(totalAmount - btcAmout)})
 	}
 
 	//
@@ -661,12 +642,16 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	sort.Sort(a)
 	//
 	var result MergeTransactionResult
-	array := [][3]int{{1, 2}}
-	num := 1
+	array := [][3]int{{1, 2, 3}, {1, 2, 4}, {1, 3, 4}, {2, 3, 4}}
+	num := 4
+	if len(answers) == 3 {
+		num = 1
+	}
 	for i := 0; i < num; i++ {
 		mergeTx.MergeTransactionHexs = []string{}
 		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]]))
 		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]]))
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][2]]))
 		//
 		reqBytes, err := json.Marshal(mergeTx)
 		if err != nil {
@@ -732,12 +717,12 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 	totalAmount := int64(0)
 	for i := range selUnspnds {
 		totalAmount += selUnspnds[i].Value
-		err := stub.DelState(symbolsUnspend + selUnspnds[i].MultiAddr + sep + selUnspnds[i].Txid + sep + strconv.Itoa(int(selUnspnds[i].Vout)))
+		err := stub.DelState(symbolsUnspend + selUnspnds[i].Txid + sep + strconv.Itoa(int(selUnspnds[i].Vout)))
 		if err != nil {
 			log.Debugf("DelState txhash unspend failed err: %s", err.Error())
 			return errors.New("DelState txhash unspend failed")
 		}
-		err = stub.PutState(symbolsSpent+selUnspnds[i].MultiAddr+sep+selUnspnds[i].Txid+sep+strconv.Itoa(int(selUnspnds[i].Vout)),
+		err = stub.PutState(symbolsSpent+selUnspnds[i].Txid+sep+strconv.Itoa(int(selUnspnds[i].Vout)),
 			[]byte(Int64ToBytes(selUnspnds[i].Value)))
 		if err != nil {
 			log.Debugf("PutState txhash spent failed err: %s", err.Error())
@@ -746,7 +731,7 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 	}
 
 	if totalAmount > btcTokenAmount {
-		err := stub.PutState(symbolsUnspend+selUnspnds[0].MultiAddr+sep+txHash+sep+strconv.Itoa(1), []byte(Int64ToBytes(totalAmount-btcTokenAmount)))
+		err := stub.PutState(symbolsUnspend+txHash+sep+strconv.Itoa(1), []byte(Int64ToBytes(totalAmount-btcTokenAmount)))
 		if err != nil {
 			log.Debugf("PutState txhash unspend failed err: %s", err.Error())
 			return errors.New("PutState txhash unspend failed")
@@ -756,23 +741,7 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 	return nil
 }
 
-func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) ([]byte, error) {
-	sendResult, err := stub.SendJury(2, content, myAnswer)
-	if err != nil {
-		log.Debugf("SendJury rawTx err: %s", err.Error())
-		return nil, errors.New("SendJury rawTx failed")
-	}
-	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 2)
-	if err != nil {
-		log.Debugf("RecvJury rawTx err: %s", err.Error())
-		return nil, errors.New("RecvJury rawTx failed")
-	}
-	log.Debugf("recvResult: %s", string(recvResult))
-	return recvResult, nil
-}
-
-func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 1 {
 		return shim.Error("need 1 args (btcAddr, [btcFee(>10000)])")
@@ -818,125 +787,77 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	rawTx, err := genRawTx(int64(btcTokenAmount), btcFee, btcAddr, selUnspnds, stub)
 
 	//
+	result, _ := stub.GetState(symbolsDepositRedeem)
+	if len(result) == 0 {
+		return shim.Error("DepsoitRedeem is empty")
+	}
+	redeemHex := string(result)
+
 	inputRedeemIndex := []int{}
-	redeemHex := []string{}
-	mapRedeem := make(map[string]int)
-	index := 0
-	for i := range selUnspnds {
-		if _, exist := mapRedeem[selUnspnds[i].MultiAddr]; exist {
-			inputRedeemIndex = append(inputRedeemIndex, mapRedeem[selUnspnds[i].MultiAddr])
-			continue
-		}
-		result, _ := stub.GetState(symbolsRedeem + selUnspnds[i].MultiAddr)
-		if len(result) == 0 {
-			return shim.Error("DepsoitRedeem is empty")
-		}
-		redeemHex = append(redeemHex, string(result))
-		mapRedeem[selUnspnds[i].MultiAddr] = index
-		inputRedeemIndex = append(inputRedeemIndex, index)
-		index++
+	for i := len(selUnspnds); i > 0; i-- {
+		inputRedeemIndex = append(inputRedeemIndex, 0)
 	}
 	// 签名交易
-	rawTxSign, err := signTx(rawTx, inputRedeemIndex, redeemHex, stub)
-
+	rawTxSign, err := signTx(rawTx, inputRedeemIndex, []string{redeemHex}, stub)
 	//协商交易
-	recvResult, err := consult(stub, []byte(rawTx), []byte(rawTxSign))
+	sendResult, err := stub.SendJury(2, []byte(rawTx), []byte(rawTxSign)) //todo 封装重构
+	if err != nil {
+		log.Debugf("SendJury rawTx err: %s", err.Error())
+		return shim.Success([]byte("SendJury rawTx failed"))
+	}
+	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
+	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 2)
+	if err != nil {
+		log.Debugf("RecvJury rawTx err: %s", err.Error())
+		return shim.Success([]byte("RecvJury rawTx failed"))
+	}
+	log.Debugf("recvResult: %s", string(recvResult))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
 		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
 	}
 	//stub.PutState("recvResult", recvResult)
-	if len(juryMsg) < 2 { //mod
+	if len(juryMsg) < 3 {
 		return shim.Success([]byte("RecvJury result's len not enough"))
-	}
-	minSig := string(juryMsg[0].Answer)
-	for i := 1; i < len(juryMsg); i++ {
-		if strings.Compare(minSig, string(juryMsg[i].Answer)) > 0 {
-			minSig = string(juryMsg[i].Answer)
-		}
-	}
-	txHash := ""
-	if strings.Compare(minSig, rawTxSign) == 0 { //自己是执行jury
-		// 合并交易
-		tx, err := mergeTx(rawTx, inputRedeemIndex, redeemHex, juryMsg, stub)
-		if err != nil {
-			return shim.Success([]byte("mergeTx failed: " + err.Error()))
-		}
-		// 发送交易
-		txHash, err = sendTx(tx, stub)
-		if err != nil {
-			return shim.Success([]byte("sendTx failed: " + err.Error()))
-		}
-	} else { //自己不是执行jury
-		time.Sleep(2 * time.Second)
 	}
 
-	//协商 发送交易哈希
-	txResult, err := consult(stub, []byte("getTxHash"), []byte(txHash))
-	var txJuryMsg []JuryMsgAddr
-	err = json.Unmarshal(txResult, &txJuryMsg)
+	// 合并交易
+	tx, err := mergeTx(rawTx, inputRedeemIndex, []string{redeemHex}, juryMsg, stub)
 	if err != nil {
-		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
+		return shim.Success([]byte("mergeTx failed: " + err.Error()))
 	}
-	//stub.PutState("recvResult", recvResult)
-	if len(txJuryMsg) < 2 { //mod
-		return shim.Success([]byte("RecvJury result's len not enough"))
+	// 发送交易
+	txHash, err := sendTx(tx, stub)
+	if err != nil {
+		return shim.Success([]byte("sendTx failed: " + err.Error()))
 	}
-	if "" == txHash {
-		for i := range txJuryMsg {
-			if "" != string(txJuryMsg[i].Answer) {
-				txHash = string(txJuryMsg[i].Answer)
-				break
-			}
-		}
-	}
-	if "" == txHash {
-		return shim.Success([]byte("consult txHash failed"))
-	}
+	_ = txHash
 
 	// 记录花费
 	err = saveUtxos(int64(btcTokenAmount), selUnspnds, txHash, stub)
 	if err != nil {
-		return shim.Success([]byte("saveUtxos failed: " + err.Error()))
+		return shim.Success([]byte("sendTx failed: " + err.Error()))
 	}
 	return shim.Success([]byte(txHash))
 }
 func put(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) > 0 {
-		err := stub.PutState(args[0], []byte("PutState put"))
-		if err != nil {
-			log.Debugf("PutState put %s err: %s", args[0], err.Error())
-			return shim.Error("PutState put " + args[0] + " failed")
-		}
-		log.Debugf("PutState put " + args[0] + " ok")
-		return shim.Success([]byte("PutState put " + args[0] + " ok"))
-	}
-	err := stub.PutState("result", []byte("PutState put"))
+	err := stub.PutState("result", []byte("put"))
 	if err != nil {
-		log.Debugf("PutState put err: %s", err.Error())
-		return shim.Error("PutState put failed")
+		log.Debugf("PutState err: %s", err.Error())
+		return shim.Error("PutState failed")
 	}
-	log.Debugf("PutState put ok")
-	return shim.Success([]byte("PutState put ok"))
+	log.Debugf("ok")
+	return shim.Success([]byte("PutState OK"))
 }
 
 func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) > 0 {
-		result, _ := stub.GetState(args[0])
-		return shim.Success(result) //test
-	}
 	result, _ := stub.GetState("result")
 	return shim.Success(result)
 }
 
-func getAsset(stub shim.ChaincodeStubInterface) pb.Response {
-	asset := getBTCTokenAsset(stub)
-	return shim.Success([]byte(asset.String()))
-}
-
 func main() {
-	err := shim.Start(new(BTCPort))
+	err := shim.Start(new(ETHPort))
 	if err != nil {
 		fmt.Printf("Error starting Simple chaincode: %s", err)
 	}

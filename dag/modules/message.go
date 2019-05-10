@@ -667,6 +667,13 @@ func (a *ContractReadSet) Equal(b *ContractReadSet) bool {
 		if a.Version.TxIndex != b.Version.TxIndex || a.Version.Height != b.Version.Height {
 			return false
 		}
+		if a.Version.Height != nil {
+			if !a.Version.Height.Equal(b.Version.Height) {
+				return false
+			}
+		} else if b.Version.Height != nil{
+			return false
+		}
 	} else if a.Version != b.Version {
 		return false
 	}
