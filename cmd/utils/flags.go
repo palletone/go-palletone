@@ -47,6 +47,7 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/light"
+	"github.com/palletone/go-palletone/light/cors"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
@@ -1189,6 +1190,10 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 			if fullNode != nil && cfg.LightServ > 0 {
 				ls, _ := light.NewLesServer(fullNode, cfg)
 				fullNode.AddLesServer(ls)
+
+				cs, _ := cors.NewCoresServer(fullNode, cfg)
+				fullNode.AddCorsServer(cs)
+
 			}
 			return fullNode, err
 		})

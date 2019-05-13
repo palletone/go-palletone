@@ -267,7 +267,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
-	return newLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
+	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
 		headerBroadcaster, inserter, pm.removePeer)
 }
 

@@ -117,7 +117,7 @@ type LightFetcher struct {
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func newLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightChainHeightFn, verifyHeader headerVerifierFn,
+func NewLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightChainHeightFn, verifyHeader headerVerifierFn,
 	broadcastHeader headerBroadcasterFn, insertHeader headerInsertFn, dropPeer peerDropFn) *LightFetcher {
 	return &LightFetcher{
 		//notify:           make(chan *announce),

@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/light"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -70,13 +71,14 @@ type ProtocolManager struct {
 	genesis *modules.Unit
 
 	downloader *downloader.Downloader
-	fetcher    *LightFetcher
+	fetcher    *light.LightFetcher
 	peers      *peerSet
 	maxPeers   int
 
 	SubProtocols []p2p.Protocol
 
 	eventMux *event.TypeMux
+	server   *CorsServer
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -157,7 +159,7 @@ func NewCorsProtocolManager(lightSync bool, peers *peerSet, networkId uint64, ga
 	return manager, nil
 }
 
-func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
+func (pm *ProtocolManager) newLightFetcher() *light.LightFetcher {
 	headerVerifierFn := func(header *modules.Header) error {
 		//hash := header.Hash()
 		//log.Debugf("Importing propagated block insert DAG Enter ValidateUnitExceptGroupSig, unit: %s", hash.String())
@@ -183,7 +185,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
-	return newLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
+	return light.NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
 		headerBroadcaster, inserter, pm.removePeer)
 }
 
@@ -288,7 +290,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if err := p.Handshake(number, genesis.Hash(), headhash); err != nil {
+	if err := p.Handshake(number, genesis.Hash(), headhash, pm.server); err != nil {
 		log.Debug("Light Palletone handshake failed", "err", err)
 		return err
 	}
@@ -377,7 +379,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	// Block header query, collect the requested headers and reply
 	case AnnounceMsg:
-		return pm.AnnounceMsg(msg, p)
+		return nil
 
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
