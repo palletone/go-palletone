@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -219,6 +220,19 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg.MediatorPlugin.EnableGroupSigning = true
 	cfg.MediatorPlugin.Mediators = mediators
 
+	// change log
+	isOpenSTD := ctx.Args().Get(1)
+	isOpenSTD = strings.ToUpper(isOpenSTD)
+	if isOpenSTD == "FALSE" {
+		newLogOutPath := []string{}
+		for _, p := range cfg.Log.OutputPaths {
+			if p == log.LogStdout {
+				continue
+			}
+			newLogOutPath = append(newLogOutPath, p)
+		}
+		cfg.Log.OutputPaths = newLogOutPath
+	}
 	// 修改默认的Jury配置
 	if len(mediators) > 0 {
 		cfg.Jury.Accounts[0].Address = mediators[0].Address
