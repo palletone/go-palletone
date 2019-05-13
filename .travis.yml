@@ -26,7 +26,6 @@ script:
 after_success:
     - killall gptn
 
-
 after_failure:
     - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log.html ftp://98.142.130.141:21/pub/
     - curl -u yy:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://98.142.130.141:21/pub/
