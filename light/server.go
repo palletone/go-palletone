@@ -30,13 +30,13 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
-	"sync"
-	"github.com/palletone/go-palletone/common"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -63,7 +63,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 	}
 
 	pm, err := NewProtocolManager(false, newPeerSet(), config.NetworkId, gasToken, ptn.TxPool(),
-		ptn.Dag(), ptn.EventMux(), genesis)
+		ptn.Dag(), ptn.EventMux(), genesis, quitSync)
 	if err != nil {
 		log.Error("NewlesServer NewProtocolManager", "err", err)
 		return nil, err
@@ -402,25 +402,25 @@ func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
 }
 
 func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
-	log.Debug("Light PalletOne","ProtocolManager->SyncUTXOByAddr addr:",addr)
+	log.Debug("Light PalletOne", "ProtocolManager->SyncUTXOByAddr addr:", addr)
 	_, err := common.StringToAddress(addr)
 	if err != nil {
-		log.Debug("Light PalletOne","ProtocolManager->SyncUTXOByAddr err:",err)
+		log.Debug("Light PalletOne", "ProtocolManager->SyncUTXOByAddr err:", err)
 		return err.Error()
 	}
 
-	req,err:=pm.utxosync.AddUtxoSyncReq(addr)
-	if err!=nil{
-		log.Debug("Light PalletOne","ProtocolManager->SyncUTXOByAddr err:",err)
+	req, err := pm.utxosync.AddUtxoSyncReq(addr)
+	if err != nil {
+		log.Debug("Light PalletOne", "ProtocolManager->SyncUTXOByAddr err:", err)
 		return err.Error()
 	}
 
 	//random select peer to download GetAddrUtxos(addr)
 	rand.Seed(time.Now().UnixNano())
-	peers :=pm.peers.AllPeers()
+	peers := pm.peers.AllPeers()
 	x := rand.Intn(len(peers))
 	p := peers[x]
-	p.RequestUTXOs(0,0,req.addr)
+	p.RequestUTXOs(0, 0, req.addr)
 
 	result := req.Wait()
 	if result == 0 {
