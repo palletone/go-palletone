@@ -44,12 +44,12 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 	content := args[0]
 	mediatorInfo := core.MediatorApplyInfo{
-		Address:   invokeAddr.String(),
-		Content:   content,
-		Time: time.Now().Unix() / DTimeDuration,
+		Address: invokeAddr.String(),
+		Content: content,
+		Time:    time.Now().Unix() / DTimeDuration,
 	}
 	//获取同意列表，判断是否已经申请过了
-	agreeList, err := GetAgreeForBecomeMediatorList(stub)
+	agreeList, err := GetAgreeForBecomeMediatorLists(stub)
 	if err != nil {
 		log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 		return shim.Error(err.Error())
@@ -62,7 +62,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		}
 	}
 	//获取列表
-	becomeList, err := GetBecomeMediatorApplyList(stub)
+	becomeList, err := GetBecomeMediatorApplyLists(stub)
 	if err != nil {
 		log.Error("Stub.GetBecomeMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
@@ -134,7 +134,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error(err.Error())
 	}
 	//获取同意列表
-	agreeList, err := GetAgreeForBecomeMediatorList(stub)
+	agreeList, err := GetAgreeForBecomeMediatorLists(stub)
 	if err != nil {
 		log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 		return shim.Error(err.Error())
@@ -174,7 +174,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 	}
 	mediator.Time = time.Now().Unix() / DTimeDuration
 	//获取列表
-	quitList, err := GetQuitMediatorApplyList(stub)
+	quitList, err := GetQuitMediatorApplyLists(stub)
 	if err != nil {
 		log.Error("Stub.GetQuitMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
@@ -279,7 +279,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error(err.Error())
 	}
 	//获取同意列表
-	agreeList, err := GetAgreeForBecomeMediatorList(stub)
+	agreeList, err := GetAgreeForBecomeMediatorLists(stub)
 	if err != nil {
 		log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 		return shim.Error(err.Error())
