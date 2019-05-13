@@ -18,7 +18,7 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     - mkdir ../logs
-    - ./deposit_test.sh 4 > ../logs/deposit_test.log
+#    - ./deposit_test.sh 4 > ../logs/deposit_test.log
     - python -m robot.run -d ../logs -l createTrans.log.html ../testcase/createTrans
     - python -m robot.run -d ../logs -l ccinvoke.log.html ../testcase/ccinvoke
     - python -m robot.run -d ../logs -l DigitalIdentityCert.log.html ../DigitalIdentityCert
