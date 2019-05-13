@@ -450,12 +450,18 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
 			t := txspool.PooltxToTx(tx)
+
+			//标记交易有效性
+			if err := markTxIllegal(rep.statedb, t); err != nil {
+				continue
+			}
+			if t.Illegal {
+				log.Debug("CreateUnit", "contract is illegal, reqId", t.RequestHash(), "tx hash", t.Hash())
+				continue
+			}
 			txs = append(txs, t)
 		}
 	}
-
-	//标记交易有效性
-	//	MarkTxIllegal(rep.statedb, txs)
 
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
@@ -502,7 +508,43 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 	return true
 }
 
-func MarkTxIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
+func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) error {
+	if tx == nil {
+		return errors.New("MarkTxIllegal, param tx is nil")
+	}
+	if !tx.IsContractTx() {
+		return nil
+	}
+	if tx.IsSystemContract() {
+		return nil
+	}
+	var readSet []modules.ContractReadSet
+	var contractId []byte
+
+	valid := true
+	for _, msg := range tx.TxMessages {
+		switch msg.App {
+		case modules.APP_CONTRACT_DEPLOY:
+			payload := msg.Payload.(*modules.ContractDeployPayload)
+			readSet = payload.ReadSet
+			contractId = payload.ContractId
+		case modules.APP_CONTRACT_INVOKE:
+			payload := msg.Payload.(*modules.ContractInvokePayload)
+			readSet = payload.ReadSet
+			contractId = payload.ContractId
+		case modules.APP_CONTRACT_STOP:
+			payload := msg.Payload.(*modules.ContractStopPayload)
+			readSet = payload.ReadSet
+			contractId = payload.ContractId
+		}
+	}
+	valid = checkReadSetValid(dag, contractId, readSet)
+	tx.Illegal = !valid
+
+	return nil
+}
+
+func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 	for _, tx := range txs {
 		if !tx.IsContractTx() {
 			continue
