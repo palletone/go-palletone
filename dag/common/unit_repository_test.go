@@ -601,6 +601,7 @@ func TestContractStateVrf(t *testing.T) {
 	//write
 	err := statedb.SaveContractJury(contractId, eleW, ver)
 	assert.Nil(t, err)
+
 	//ws := modules.NewWriteSet("ElectionList", eleW_bytes)
 	//if statedb.SaveContractState(contractId, ws, ver) != nil {
 	//	log.Debug("TestContractStateVrf, SaveContractState fail")
@@ -649,4 +650,67 @@ func TestContractRlpEncode(t *testing.T) {
 	}
 
 	log.Debug("TestContractRlpEncode", "addh", addh)
+}
+
+func TestContractTxIllegal(t *testing.T) {
+	//make tx
+	readSet := []modules.ContractReadSet{}
+	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
+		Height:  &modules.ChainIndex{Index: 123},
+		TxIndex: 1,
+	}})
+	writeSet := []modules.ContractWriteSet{
+		{
+			Key:   "name",
+			Value: []byte("Joe"),
+		},
+		{
+			Key:   "age",
+			Value: modules.ToPayloadMapValueBytes(uint8(10)),
+		},
+	}
+	addr := common.Address{}
+	addr.SetString("PC2EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
+	deployPayload := &modules.ContractDeployPayload{
+		TemplateId: []byte("contract_template0000"),
+		ContractId: []byte("contract0000"),
+		Name:       "testDeploy",
+		Args:       [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
+		ReadSet:    readSet,
+		WriteSet:   writeSet,
+	}
+	tx1 := &modules.Transaction{
+		TxMessages: []*modules.Message{
+			{
+				App:     modules.APP_CONTRACT_DEPLOY_REQUEST,
+				Payload: nil,
+			},
+			{
+				App:     modules.APP_CONTRACT_DEPLOY,
+				Payload: deployPayload,
+			},
+		},
+	}
+	txs := make([]*modules.Transaction, 0)
+	txs = append(txs, tx1)
+
+	//dag
+	db, _ := ptndb.NewMemDatabase()
+	statedb := storage.NewStateDb(db)
+
+	//set state
+	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
+	err := statedb.SaveContractState([]byte("contract0000"), &writeSet[0], ver)
+	if err != nil {
+		log.Debug("TestContractTxIllegal", "SaveContractState err", err)
+	}
+
+	//mark
+	err = markTxsIllegal(statedb, txs)
+	if err != nil {
+		log.Debug("TestContractTxIllegal", "MarkTxIllegal err", err)
+	}
+
+	log.Debug("TestContractTxIllegal", "txs", txs)
+
 }
