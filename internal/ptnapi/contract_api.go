@@ -23,6 +23,7 @@ package ptnapi
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -211,29 +212,29 @@ func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to,
 	log.Info("---enter DepositContractInvoke---")
 	// append by albert·gou
 	if param[0] == modules.ApplyMediator {
-		return "", fmt.Errorf("please use mediator.apply()")
-		//var args MediatorCreateArgs
-		//err := json.Unmarshal([]byte(param[1]), &args)
-		//if err != nil {
-		//	return "", fmt.Errorf("param error(%v), please use mediator.apply()", err.Error())
-		//} else {
-		//	// 参数补全
-		//	args.setDefaults()
-		//
-		//	// 参数验证
-		//	err := args.Validate()
-		//	if err != nil {
-		//		return "", err
-		//	}
-		//
-		//	// 参数序列化
-		//	argsB, err := json.Marshal(args)
-		//	if err != nil {
-		//		return "", err
-		//	}
-		//
-		//	param[1] = string(argsB)
-		//}
+		//return "", fmt.Errorf("please use mediator.apply()")
+		var args MediatorCreateArgs
+		err := json.Unmarshal([]byte(param[1]), &args)
+		if err != nil {
+			return "", fmt.Errorf("param error(%v), please use mediator.apply()", err.Error())
+		} else {
+			// 参数补全
+			args.setDefaults()
+
+			// 参数验证
+			err := args.Validate()
+			if err != nil {
+				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
+			}
+
+			// 参数序列化
+			argsB, err := json.Marshal(args)
+			if err != nil {
+				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
+			}
+
+			param[1] = string(argsB)
+		}
 	}
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(),
