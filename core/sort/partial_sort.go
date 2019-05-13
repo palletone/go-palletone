@@ -44,3 +44,21 @@ func PartialSort(data sort.Interface, m int) {
 	// Sort this heap
 	heapsort(data, 0, m)
 }
+
+func IsPartialSorted(data sort.Interface, m int) bool {
+	mid := m - 1
+	for i := mid; i > 0; i-- {
+		if data.Less(i, i-1) {
+			return false
+		}
+	}
+
+	n := data.Len()
+	for i := m; i < n; i++ {
+		if data.Less(i, mid) {
+			return false
+		}
+	}
+
+	return true
+}

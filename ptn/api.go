@@ -106,6 +106,6 @@ type TransferPtnArgs struct {
 	Text   *string         `json:"text"`
 }
 
-// func (api *PublicPalletOneAPI) TransferPtn(args TransferPtnArgs) (*mp.TxExecuteResult, error) {
+// func (api *PublicPalletOneAPI) TransferPtn(args TransferPtnArgs) (*ptnapi.TxExecuteResult, error) {
 // 	return api.p.TransferPtn(args.From, args.To, args.Amount, args.Text)
 // }

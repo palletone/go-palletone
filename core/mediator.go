@@ -21,6 +21,7 @@ package core
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/dedis/kyber"
@@ -42,19 +43,18 @@ type Mediator struct {
 	Address    common.Address
 	InitPubKey kyber.Point
 	Node       *discover.Node
+	*MediatorApplyInfo
 	*MediatorInfoExpand
 }
 
 type MediatorInfoExpand struct {
-	Url                  string
-	TotalMissed          uint64
-	LastConfirmedUnitNum uint32
-	TotalVotes           uint64
+	TotalMissed          uint64 `json:"totalMissed"`
+	LastConfirmedUnitNum uint32 `json:"lastConfirmedUnitNum"`
+	TotalVotes           uint64 `json:"totalVotes"`
 }
 
-func NewMediatorBase() *MediatorInfoExpand {
+func NewMediatorInfoExpand() *MediatorInfoExpand {
 	return &MediatorInfoExpand{
-		Url:                  "",
 		TotalMissed:          0,
 		LastConfirmedUnitNum: 0,
 		TotalVotes:           0,
@@ -63,7 +63,22 @@ func NewMediatorBase() *MediatorInfoExpand {
 
 func NewMediator() *Mediator {
 	return &Mediator{
-		MediatorInfoExpand: NewMediatorBase(),
+		MediatorApplyInfo:  NewMediatorApplyInfo(),
+		MediatorInfoExpand: NewMediatorInfoExpand(),
+	}
+}
+
+//申请成为Mediator
+type MediatorApplyInfo struct {
+	Address   string `json:"address"`
+	Content   string `json:"content"`
+	Time int64  `json:"time"` // mediator 申请时间或者申请退出时间
+}
+
+func NewMediatorApplyInfo() *MediatorApplyInfo {
+	return &MediatorApplyInfo{
+		Content:   "",
+		Time: time.Now().Unix(),
 	}
 }
 

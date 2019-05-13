@@ -26,15 +26,22 @@ import (
 	"errors"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/ptnjson"
 	"math"
 	"math/big"
 	"math/rand"
 	"strconv"
 	"time"
+)
+
+var (
+	defaultMsg0 = []byte("query has no msg0")
+	defaultMsg1 = []byte("query has no msg1")
 )
 
 type PublicContractAPI struct {
@@ -79,9 +86,9 @@ func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, txi
 //	return hex.EncodeToString(rsp), err
 //}
 
-func (s *PublicContractAPI) Ccinvoke(ctx context.Context, deployId string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("-----Ccinvoke:" + deployId + ":" + txid)
+func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
+	contractId, _ := common.StringToAddress(contractAddr)
+	log.Info("-----Ccinvoke:" + contractId.String() + ":" + txid)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -89,13 +96,9 @@ func (s *PublicContractAPI) Ccinvoke(ctx context.Context, deployId string, txid 
 		//fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
 	//参数前面加入msg0和msg1,这里为空
-	var fullArgs [][]byte
-	msgArg := []byte("query has no msg0")
-	msgArg1 := []byte("query has no msg1")
-	fullArgs = append(fullArgs, msgArg)
-	fullArgs = append(fullArgs, msgArg1)
+	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-	rsp, err := s.b.ContractInvoke(depId, txid, fullArgs, 0)
+	rsp, err := s.b.ContractInvoke(contractId.Bytes(), txid, fullArgs, 0)
 	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
 	return string(rsp), err
 }
@@ -109,16 +112,12 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, deployId string, param 
 		//fmt.Printf("index[%d],value[%s]\n", i, arg)
 	}
 	//参数前面加入msg0和msg1,这里为空
-	var fullArgs [][]byte
-	msgArg := []byte("query has no msg0")
-	msgArg1 := []byte("query has no msg1")
-	fullArgs = append(fullArgs, msgArg)
-	fullArgs = append(fullArgs, msgArg1)
+	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
 
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
-	rsp, err := s.b.ContractQuery(contractId.Bytes21(), txid[:], fullArgs, 0)
+	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -194,13 +193,13 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	reqId, depId, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
-	addDepId := common.NewAddress(depId, common.ContractHash)
+	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
+	contractAddr := crypto.RequestIdToContractAddress(reqId)
 	sReqId := hex.EncodeToString(reqId[:])
-	log.Info("-----Ccdeploytx:", "reqId", sReqId, "depId", addDepId.String())
+	log.Info("-----Ccdeploytx:", "reqId", sReqId, "depId", contractAddr.String())
 	rsp := &ContractDeployRsp{
 		ReqId:      sReqId,
-		ContractId: addDepId.String(),
+		ContractId: contractAddr.String(),
 	}
 	return rsp, err
 }
@@ -208,8 +207,10 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
 	log.Info("---enter DepositContractInvoke---")
 	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(), param, "")
+
 	return rsp.ReqId, err
 }
+
 func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Info("---enter DepositContractQuery---")
 	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param)
@@ -363,4 +364,18 @@ func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, d
 	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
 	log.Info("-----Ccstoptx:" + hex.EncodeToString(reqId[:]))
 	return hex.EncodeToString(reqId[:]), err
+}
+
+func (s *PublicContractAPI) ListAllContractTemplates(ctx context.Context) ([]*ptnjson.ContractTemplateJson, error) {
+	return s.b.GetAllContractTpl()
+}
+func (s *PublicContractAPI) ListAllContracts(ctx context.Context) ([]*ptnjson.ContractJson, error) {
+	return s.b.GetAllContracts()
+}
+func (s *PublicContractAPI) GetContractsByTpl(ctx context.Context, tplId string) ([]*ptnjson.ContractJson, error) {
+	id, err := hex.DecodeString(tplId)
+	if err != nil {
+		return nil, err
+	}
+	return s.b.GetContractsByTpl(id)
 }

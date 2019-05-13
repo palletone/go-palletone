@@ -21,10 +21,10 @@
 package dag
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -368,10 +368,10 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 	return tx, fee, nil
 }
 
-func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators []common.Address,
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators []string,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
-	msb, err := rlp.EncodeToBytes(mediators)
+	msb, err := json.Marshal(mediators)
 	if err != nil {
 		return nil, 0, err
 	}

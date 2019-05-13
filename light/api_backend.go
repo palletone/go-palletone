@@ -27,15 +27,16 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -285,6 +286,26 @@ func (b *LesApiBackend) GetUnitByHash(hash common.Hash) *modules.Unit {
 func (b *LesApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Unit {
 	return nil
 }
+func (b *LesApiBackend) GetUnitsByIndex(start, end decimal.Decimal, asset string) []*modules.Unit {
+	index1 := uint64(start.IntPart())
+	index2 := uint64(end.IntPart())
+	units := make([]*modules.Unit, 0)
+	token, _, err := modules.String2AssetId(asset)
+	if err != nil {
+		log.Info("the asset str is not correct token string.")
+		return nil
+	}
+	for i := index1; i <= index2; i++ {
+		number := new(modules.ChainIndex)
+		number.Index = i
+		number.AssetID = token
+		unit, err := b.ptn.dag.GetUnitByNumber(number)
+		if err == nil {
+			units = append(units, unit)
+		}
+	}
+	return units
+}
 func (b *LesApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return b.ptn.dag.GetHeaderByHash(hash)
 }
@@ -408,7 +429,7 @@ func (b *LesApiBackend) EncodeTx(jsonStr string) (string, error) {
 func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
 	return
 }
-func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
+func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId common.Address, err error) {
 	return
 }
 func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
@@ -443,12 +464,23 @@ func (b *LesApiBackend) Dag() dag.IDag {
 	return nil
 }
 
+func (b *LesApiBackend) TxPool() txspool.ITxPool {
+	return b.ptn.txPool
+}
+
+func (b *LesApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
+	//return b.ptn.SignAndSendTransaction(addr, tx)
+	return nil
+}
+
 //SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
-func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
-	return b.ptn.TransferPtn(from, to, amount, text)
+func (b *LesApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
+	text *string) (*ptnapi.TxExecuteResult, error) {
+	//return b.ptn.TransferPtn(from, to, amount, text)
+	return nil, nil
 }
 func (b *LesApiBackend) GetKeyStore() *keystore.KeyStore {
-	return nil
+	return b.ptn.GetKeyStore()
 }
 
 // get tx hash by req id
@@ -475,4 +507,13 @@ func (b *LesApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 
 func (b *LesApiBackend) SyncUTXOByAddr(addr string) string {
 	return b.ptn.ProtocolManager().SyncUTXOByAddr(addr)
+}
+func (b *LesApiBackend) GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error) {
+	return nil, nil
+}
+func (b *LesApiBackend) GetAllContracts() ([]*ptnjson.ContractJson, error) {
+	return nil, nil
+}
+func (b *LesApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error) {
+	return nil, nil
 }

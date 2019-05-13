@@ -50,22 +50,22 @@ func TestCoinDay(t *testing.T) {
 			want:      40000,
 		},
 		//{
-		//	startTime: startTime2.UTC().Unix(),
+		//	startTime: startTime2.Unix(),
 		//	endTime:   endTime2,
 		//	want:      1,
 		//},
 		//{
-		//	startTime: startTime3.UTC().Unix(),
+		//	startTime: startTime3.Unix(),
 		//	endTime:   endTime3,
 		//	want:      2,
 		//},
 		//{
-		//	startTime: startTime4.UTC().Unix(),
+		//	startTime: startTime4.Unix(),
 		//	endTime:   endTime4,
 		//	want:      3,
 		//},
 		//{
-		//	startTime: startTime5.UTC().Unix(),
+		//	startTime: startTime5.Unix(),
 		//	endTime:   time.Now().UTC(),
 		//	want:      4349,
 		//},
@@ -85,11 +85,11 @@ func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
 	endTime, _ := time.Parse("2006-01-02 15:04:05", "2018-12-05 07:57:13")
 	//距离现在天数：4349
 	//获取币龄 余额：1000
-	fmt.Println(time.Now().UTC().Unix())
+	fmt.Println(time.Now().Unix())
 	fmt.Println((endTime.Unix() - startTime.Unix()) / 60 / 60 / 24)
 	fmt.Println((endTime.Unix()/60 - startTime.Unix()/60) / 60 / 24)
-	fmt.Println(startTime.UTC().Unix())
-	fmt.Println(endTime.UTC().Unix() / 60 / 60 / 24)
+	fmt.Println(startTime.Unix())
+	fmt.Println(endTime.Unix() / 60 / 60 / 24)
 
 	coinDayUint64 := GetCoinDay(10000, startTime.UTC(), endTime)
 	//币龄：4349000
@@ -103,11 +103,11 @@ func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
 }
 
 func TestTime(t *testing.T) {
-	//txid := strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	//txid := strconv.FormatInt(time.Now().Unix(), 10)
 	//fmt.Println(txid)
-	//fmt.Println(time.Now().UTC().Unix())
+	//fmt.Println(time.Now().Unix())
 	//time.Sleep(1 * time.Second)
-	//txid = strconv.FormatInt(time.Now().UTC().Unix(), 10)
+	//txid = strconv.FormatInt(time.Now().Unix(), 10)
 	//fmt.Println(txid)
 
 	tx := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))

@@ -20,10 +20,11 @@ package storage
 
 import (
 	"bytes"
+
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -43,12 +44,11 @@ func StoreMediator(db ptndb.Database, med *core.Mediator) error {
 }
 
 func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.MediatorInfo) error {
-	//log.Debugf("Store Mediator %v:", mi.AddStr)
-	//add := core.StrToMedAdd(mi.AddStr)
+	log.Debugf("Store Mediator Info %v:", mi.AddStr)
 
-	err := StoreBytes(db, mediatorKey(add), mi)
+	err := storeToJson(db, mediatorKey(add), mi)
 	if err != nil {
-		log.Errorf("Store mediator error:%v", err.Error())
+		log.Debugf("Store mediator error:%v", err.Error())
 		return err
 	}
 
@@ -58,7 +58,7 @@ func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.Mediat
 func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*modules.MediatorInfo, error) {
 	mi := modules.NewMediatorInfo()
 
-	err := retrieve(db, mediatorKey(address), mi)
+	err := readFromJson(db, mediatorKey(address), mi)
 	if err != nil {
 		log.Errorf("Retrieve mediator error: %v", err.Error())
 		return nil, err
@@ -85,6 +85,7 @@ func GetMediatorCount(db ptndb.Database) int {
 	return mc
 }
 
+// todo
 func IsMediator(db ptndb.Database, address common.Address) bool {
 	has, err := db.Has(mediatorKey(address))
 	if err != nil {
@@ -94,6 +95,7 @@ func IsMediator(db ptndb.Database, address common.Address) bool {
 	return has
 }
 
+// todo
 func GetMediators(db ptndb.Database) map[common.Address]bool {
 	result := make(map[common.Address]bool)
 
@@ -114,6 +116,7 @@ func GetMediators(db ptndb.Database) map[common.Address]bool {
 	return result
 }
 
+// todo
 func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
 	result := make(map[common.Address]*core.Mediator)
 

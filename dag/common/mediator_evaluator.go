@@ -24,36 +24,36 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func MediatorCreateEvaluate(op *modules.MediatorCreateOperation) bool {
-	// todo 判断是否已经申请缴纳保证金
-	return true
-}
+//func MediatorCreateEvaluate(op *modules.MediatorCreateOperation) bool {
+//	// todo 判断是否已经申请缴纳保证金
+//	return true
+//}
 
 // Create initial mediators
-func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
-	result := make([]*modules.Message, 0)
-
-	for _, mi := range genesisConf.InitialMediatorCandidates {
-		mco := &modules.MediatorCreateOperation{
-			MediatorInfoBase: mi.MediatorInfoBase,
-			Url:              "",
-		}
-
-		err := mco.Validate()
-		if err != nil {
-			panic(err.Error())
-		}
-
-		msg := &modules.Message{
-			App:     modules.OP_MEDIATOR_CREATE,
-			Payload: mco,
-		}
-
-		result = append(result, msg)
-	}
-
-	return result
-}
+//func GetInitialMediatorMsgs(genesisConf *core.Genesis) []*modules.Message {
+//	result := make([]*modules.Message, 0)
+//
+//	for _, mi := range genesisConf.InitialMediatorCandidates {
+//		mco := &modules.MediatorCreateOperation{
+//			MediatorInfoBase: mi.MediatorInfoBase,
+//			Url:              "",
+//		}
+//
+//		err := mco.Validate()
+//		if err != nil {
+//			panic(err.Error())
+//		}
+//
+//		msg := &modules.Message{
+//			App:     modules.OP_MEDIATOR_CREATE,
+//			Payload: mco,
+//		}
+//
+//		result = append(result, msg)
+//	}
+//
+//	return result
+//}
 
 func (unitOp *UnitRepository) MediatorCreateApply(msg *modules.Message) bool {
 	var payload interface{}
@@ -65,8 +65,9 @@ func (unitOp *UnitRepository) MediatorCreateApply(msg *modules.Message) bool {
 	}
 
 	mi := modules.NewMediatorInfo()
-	mi.MediatorInfoBase = mco.MediatorInfoBase
-	mi.Url = mco.Url
+	*mi.MediatorInfoBase = *mco.MediatorInfoBase
+	*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
+	//mi.Url = mco.Url
 
 	addr, _ := core.StrToMedAdd(mco.AddStr)
 	unitOp.statedb.StoreMediatorInfo(addr, mi)

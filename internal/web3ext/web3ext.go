@@ -190,8 +190,23 @@ web3._extend({
         	params: 1, //param[]string
 			inputFormatter: [null]
 		}),
+		new web3._extend.Method({
+			name: 'getContractsByTpl',
+        	call: 'contract_getContractsByTpl',
+        	params: 1, //param[]string
+			inputFormatter: [null]
+		}),
 	],
-	properties: []
+	properties: [
+		new web3._extend.Property({
+			name: 'listAllContractTemplates',
+			getter: 'contract_listAllContractTemplates'
+		}),
+		new web3._extend.Property({
+			name: 'listAllContracts',
+			getter: 'contract_listAllContracts'
+		}),
+	]
 });
 `
 const RPC_JS = `

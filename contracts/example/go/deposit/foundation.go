@@ -16,16 +16,19 @@ package deposit
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/shim"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 	"strings"
+
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //同意申请没收请求
-func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, applyTime int64, balance *DepositBalance) pb.Response {
+func (d *DepositChaincode) agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationAddr,
+	forfeitureAddr string, applyTime int64, balance *DepositBalance) pb.Response {
 	log.Info("Start entering agreeForApplyForfeiture func.")
 	//获取列表
 	listForForfeiture, err := GetListForForfeiture(stub)
@@ -216,7 +219,8 @@ func (d *DepositChaincode) disagreeForApplyForfeiture(stub shim.ChaincodeStubInt
 }
 
 //基金会处理没收请求
-func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, applyTime int64, balance *DepositBalance, check string) pb.Response {
+func (d *DepositChaincode) handleForfeitureDepositApplication(stub shim.ChaincodeStubInterface, foundationAddr,
+	forfeitureAddr string, applyTime int64, balance *DepositBalance, check string) pb.Response {
 	//check 如果为ok，则同意此申请，如果为no，则不同意此申请
 	if strings.Compare(check, Ok) == 0 {
 		return d.agreeForApplyForfeiture(stub, foundationAddr, forfeitureAddr, applyTime, balance)
@@ -518,8 +522,8 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		log.Error("Node is not exist in the become list.")
 		return shim.Error("Node is not exist in the become list.")
 	}
-	//var mediatorList []*MediatorInfo
-	mediator := &MediatorRegisterInfo{}
+
+	mediator := &core.MediatorApplyInfo{}
 	//不同意，移除申请列表
 	if strings.Compare(isOk, No) == 0 {
 		log.Info("foundation is not agree with application.")
@@ -536,7 +540,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		}
 		if agreeList == nil {
 			log.Info("Stub.GetAgreeForBecomeMediatorList: list is nil")
-			agreeList = []*MediatorRegisterInfo{mediator}
+			agreeList = []*core.MediatorApplyInfo{mediator}
 		} else {
 			isExist := isInMediatorInfolist(mediator.Address, agreeList)
 			if isExist {
@@ -607,7 +611,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		log.Error("Node is not exist in the quit list.")
 		return shim.Error("Node is not exist in the quit list.")
 	}
-	//var mediatorList []*MediatorInfo
+
 	//不同意，移除申请列表
 	if strings.Compare(isOk, No) == 0 {
 		log.Info("foundation is not agree with application.")

@@ -55,12 +55,11 @@ const (
 	APP_CONTRACT_STOP_REQUEST   = 103
 	// 为了兼容起见:
 	// 添加別的request需要添加在 APP_CONTRACT_TPL_REQUEST 与 APP_CONTRACT_STOP_REQUEST 之间
-	// 添加别的msg类型，需要添加到OP_MEDIATOR_CREATE 与 APP_UNKNOW之间
+	// 添加别的msg类型，需要添加到 APP_ACCOUNT_UPDATE 与 APP_UNKNOW之间
 )
 
 const (
 	FoundationAddress = "FoundationAddress"
-	MediatorList      = "MediatorList"
 	JuryList          = "JuryList"
 	DepositRate       = "DepositRate"
 )
@@ -451,13 +450,6 @@ func (i *InvokeTokens) String() string {
 	return string(data)
 }
 
-//申请成为Mediator
-type MediatorRegisterInfo struct {
-	Address string `json:"address"`
-	Content string `json:"content"`
-	Time    int64  `json:"time"`
-}
-
 //金额和资�?
 type AmountAsset struct {
 	Amount uint64 `json:"amount"`
@@ -673,6 +665,13 @@ func (a *ContractReadSet) Equal(b *ContractReadSet) bool {
 	}
 	if a.Version != nil && b.Version != nil {
 		if a.Version.TxIndex != b.Version.TxIndex || a.Version.Height != b.Version.Height {
+			return false
+		}
+		if a.Version.Height != nil {
+			if !a.Version.Height.Equal(b.Version.Height) {
+				return false
+			}
+		} else if b.Version.Height != nil{
 			return false
 		}
 	} else if a.Version != b.Version {

@@ -33,7 +33,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/outchain"
@@ -923,7 +922,8 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 		var err error
 		addr := getBalance.Address
 		if len(addr) == 0 { //Get current contract address balance
-			addr = crypto.ContractIdToAddress(msg.ContractId).String()
+			addr = common.NewAddress(msg.ContractId, common.ContractHash).String()
+			log.Debugf("Address is nil, use contract id:%x, address:%s", msg.ContractId, addr)
 		}
 
 		address, err := common.StringToAddress(addr)
@@ -956,7 +956,7 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 			// Send response msg back to chaincode. GetState will not trigger event
 			result := []*modules.InvokeTokens{}
 			for asset, amt := range balance {
-				result = append(result, &modules.InvokeTokens{Amount: amt, Asset: &asset})
+				result = append(result, &modules.InvokeTokens{Amount: amt, Asset: &asset, Address: address.String()})
 			}
 			res, _ := rlp.EncodeToBytes(result)
 			log.Debugf("[%s]Got state. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
@@ -2215,7 +2215,7 @@ func (handler *Handler) enterGetCertByID(e *fsm.Event) {
 			return
 		}
 		chaincodeID := handler.getCCRootName()
-		contractID := syscontract.DigitalIdentityContractAddress.Bytes21()
+		contractID := syscontract.DigitalIdentityContractAddress.Bytes()
 		payloadBytes, err := txContext.txsimulator.GetState(contractID, chaincodeID, keyForSystemConfig.Key)
 		log.Debugf("[%s] getting cert bytes for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		if err != nil {

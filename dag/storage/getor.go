@@ -20,8 +20,11 @@
 package storage
 
 import (
+	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -53,6 +56,21 @@ func retrieve(db ptndb.Database, key []byte, v interface{}) error {
 	return nil
 }
 
+func readFromJson(db ptndb.Database, key []byte, v interface{}) error {
+	data, err := db.Get(key)
+	if err != nil {
+		log.Debugf("DB Get err: %v", err.Error())
+		return err
+	}
+
+	err = json.Unmarshal(data, v)
+	if err != nil {
+		log.Debugf("json Unmarshal err: %v", err.Error())
+		return err
+	}
+
+	return nil
+}
 
 // get string
 func getString(db ptndb.Database, key []byte) (string, error) {

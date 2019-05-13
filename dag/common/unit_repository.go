@@ -42,8 +42,6 @@ import (
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
 
-	"github.com/ethereum/go-ethereum/rlp"
-
 	"sync"
 )
 
@@ -456,6 +454,9 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		}
 	}
 
+	//标记交易有效性
+	//	MarkTxIllegal(rep.statedb, txs)
+
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
@@ -501,7 +502,7 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 	return true
 }
 
-func MarkTxIllegal(dag storage.IStateDb, txs []*modules.Transaction) (error) {
+func MarkTxIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 	for _, tx := range txs {
 		if !tx.IsContractTx() {
 			continue
@@ -809,13 +810,13 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 	contractInvokePayloads := []*modules.ContractInvokePayload{}
 	// generate systemcontract invoke payload
 	sysconfigPayload := &modules.ContractInvokePayload{}
-	sysconfigPayload.ContractId = syscontract.SysConfigContractAddress.Bytes21()
+	sysconfigPayload.ContractId = syscontract.SysConfigContractAddress.Bytes()
 	sysconfigPayload.WriteSet = writeSets
 	contractInvokePayloads = append(contractInvokePayloads, sysconfigPayload)
 
 	// generate digital identity contract invoke pyaload
 	digitalPayload := &modules.ContractInvokePayload{
-		ContractId: syscontract.DigitalIdentityContractAddress.Bytes21(),
+		ContractId: syscontract.DigitalIdentityContractAddress.Bytes(),
 		WriteSet:   digitalWriteSets,
 	}
 	contractInvokePayloads = append(contractInvokePayloads, digitalPayload)
@@ -915,6 +916,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	}
 	txHash := tx.Hash()
 	reqId := tx.RequestHash().Bytes()
+	unitTime := unit.Timestamp()
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
 	for msgIndex, msg := range tx.TxMessages {
@@ -930,7 +932,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("Save contract template error.")
 			}
 		case modules.APP_CONTRACT_DEPLOY:
-			if ok := rep.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+			deploy := msg.Payload.(*modules.ContractDeployPayload)
+			if ok := rep.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), deploy, requester, unitTime); ok != true {
 				return fmt.Errorf("Save contract init payload error.")
 			}
 		case modules.APP_CONTRACT_INVOKE:
@@ -1162,22 +1165,26 @@ save config payload
 保存合约调用状态
 To save contract invoke state
 */
-func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
+func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex,
+	txIndex uint32, msg *modules.Message) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
 	if ok == false {
 		return false
 	}
+
 	version := &modules.StateVersion{
 		Height:  height,
 		TxIndex: txIndex,
 	}
+
 	err := rep.statedb.SaveContractStates(payload.ContractId, payload.WriteSet, version)
 	if err != nil {
 		log.Errorf("Tx[%s]Write contract state error:%s", tx.Hash().String(), err.Error())
 		return false
 	}
+
 	return true
 }
 
@@ -1185,14 +1192,12 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 保存合约初始化状态
 To save contract init state
 */
-func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, txIndex uint32, msg *modules.Message) bool {
-	var pl interface{}
-	pl = msg.Payload
-	payload, ok := pl.(*modules.ContractDeployPayload)
-	if ok == false {
-		return false
+func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, txIndex uint32, payload *modules.ContractDeployPayload, requester common.Address, unitTime int64) bool {
+	//编译源码时，发生错误信息，但是此时因为还没有构建chaincode容器，所以导致contractId为空
+	if payload.ContractId == nil {
+		log.Infof("source codes go build error")
+		return true
 	}
-
 	// save contract state
 	version := &modules.StateVersion{
 		Height:  height,
@@ -1205,22 +1210,33 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	}
 	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
 	// save contract name
-	write := &modules.ContractWriteSet{Key: "ContractName", Value: []byte(payload.Name)}
-	if rep.statedb.SaveContractState(payload.ContractId, write, version) != nil {
+	//write := &modules.ContractWriteSet{Key: "ContractName", Value: []byte(payload.Name)}
+	//if rep.statedb.SaveContractState(payload.ContractId, write, version) != nil {
+	//	return false
+	//}
+	contract := modules.NewContract(payload, requester, uint64(unitTime))
+	err = rep.statedb.SaveContract(contract)
+	if err != nil {
+		log.Errorf("Save contract[%x] error:%s", payload.ContractId, err.Error())
 		return false
 	}
 	//save contract election
-	eleBytes, err := rlp.EncodeToBytes(payload.EleList)
-	if err == nil {
-		log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
-		writeElectionList := &modules.ContractWriteSet{Key: "ElectionList", Value: eleBytes}
-
-		if rep.statedb.SaveContractState(payload.ContractId, writeElectionList, version) != nil {
-			return false
-		}
-	} else {
+	err = rep.statedb.SaveContractJury(payload.ContractId, payload.EleList, version)
+	if err != nil {
+		log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
 		return false
 	}
+	//eleBytes, err := rlp.EncodeToBytes(payload.EleList)
+	//if err == nil {
+	//	log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
+	//	writeElectionList := &modules.ContractWriteSet{Key: "ElectionList", Value: eleBytes}
+	//
+	//	if rep.statedb.SaveContractState(payload.ContractId, writeElectionList, version) != nil {
+	//		return false
+	//	}
+	//} else {
+	//	return false
+	//}
 
 	return true
 }
@@ -1266,19 +1282,19 @@ func (rep *UnitRepository) saveContractDeployReq(reqid []byte, msg *modules.Mess
 }
 
 // saveContractInvoke
-func (rep *UnitRepository) saveContractInvoke(reqid []byte, msg *modules.Message) bool {
-	invoke, ok := msg.Payload.(*modules.ContractInvokePayload)
-	if !ok {
-		log.Error("saveContractInvoke", "error", "payload is not the ContractInvoke type.")
-		return false
-	}
-	err := rep.statedb.SaveContractInvoke(reqid[:], invoke)
-	if err != nil {
-		log.Info("save contract invoke payload failed,", "error", err)
-		return false
-	}
-	return true
-}
+//func (rep *UnitRepository) saveContractInvoke(reqid []byte, msg *modules.Message) bool {
+//	invoke, ok := msg.Payload.(*modules.ContractInvokePayload)
+//	if !ok {
+//		log.Error("saveContractInvoke", "error", "payload is not the ContractInvoke type.")
+//		return false
+//	}
+//	err := rep.statedb.SaveContractInvoke(reqid[:], invoke)
+//	if err != nil {
+//		log.Info("save contract invoke payload failed,", "error", err)
+//		return false
+//	}
+//	return true
+//}
 
 // saveContractInvokeReq
 func (rep *UnitRepository) saveContractInvokeReq(reqid []byte, msg *modules.Message) bool {
@@ -1287,11 +1303,13 @@ func (rep *UnitRepository) saveContractInvokeReq(reqid []byte, msg *modules.Mess
 		log.Error("saveContractInvokeReq", "error", "payload is not the ContractInvokeReq type.")
 		return false
 	}
+
 	err := rep.statedb.SaveContractInvokeReq(reqid[:], invoke)
 	if err != nil {
 		log.Info("save contract invoke req payload failed,", "error", err)
 		return false
 	}
+
 	return true
 }
 
@@ -1535,9 +1553,9 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 	}
 	return result, nil
 }
-func (rep *UnitRepository) RefreshAddrTxIndex() error{
+func (rep *UnitRepository) RefreshAddrTxIndex() error {
 	rep.lock.RLock()
-	begin:=time.Now()
+	begin := time.Now()
 	defer func() {
 		rep.lock.RUnlock()
 		log.Infof("CreateUnit cost time %s", time.Since(begin))
@@ -1545,12 +1563,12 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error{
 	if !dagconfig.DagConfig.AddrTxsIndex {
 		return errors.New("Please enable AddrTxsIndex in toml DagConfig")
 	}
-	txs,err:= rep.dagdb.GetAllTxs()
-	if err!=nil{
+	txs, err := rep.dagdb.GetAllTxs()
+	if err != nil {
 		return err
 	}
-	for _, tx:=range txs{
-		rep.saveAddrTxIndex(tx.Hash(),tx)
+	for _, tx := range txs {
+		rep.saveAddrTxIndex(tx.Hash(), tx)
 	}
 	return nil
 }

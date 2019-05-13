@@ -169,6 +169,12 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		return nil
 	}
 
+	err = dag.InitStateDB(ptnConf.Genesis, unit)
+	if err != nil {
+		fmt.Printf("Failed to InitStateDB: %v", err)
+		return nil
+	}
+
 	db.Close()
 	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ptnConf) }); err != nil {
 		t.Fatalf("failed to register PalletOne protocol: %v", err)

@@ -22,7 +22,8 @@ package storage
 
 import (
 	"bytes"
-	"github.com/ethereum/go-ethereum/rlp"
+	"encoding/json"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -80,8 +81,8 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		accKey := append(accountKey(add), []byte(constants.VOTED_MEDIATORS)...)
 		data, _, err := retrieveWithVersion(statedb.db, accKey)
 		if err == nil {
-			votedMediators := make([]common.Address, 0)
-			err = rlp.DecodeBytes(data, &votedMediators)
+			votedMediators := make([]string, 0)
+			err = json.Unmarshal(data, &votedMediators)
 			if err == nil {
 				acc.VotedMediators = votedMediators
 			} else {

@@ -71,7 +71,9 @@ var (
 	TrieSyncKey          = []byte("TrieSync")
 	GenesisUnitHash      = []byte("GenesisUnitHash")
 	// contract
-	CONTRACT_PREFIX = []byte("cs")
+	CONTRACT_PREFIX           = []byte("cp")
+	CONTRACT_TPL_INSTANCE_MAP = []byte("cmap")
+	CONTRACT_JURY_PREFIX      = []byte("jury")
 
 	// other prefix
 	EAENED_HEADERS_COMMISSION = "earned_headers_commossion"
@@ -79,7 +81,6 @@ var (
 	UTXOSNAPSHOT_PREFIX       = "us"
 
 	// utxo && state storage
-	CONTRACT_ATTRI    = []byte("contract") // like contract_[contract address]_[key]
 	UTXO_PREFIX       = []byte("uo")
 	UTXO_INDEX_PREFIX = []byte("ui")
 	//ASSET_INFO_PREFIX = []byte("pi") // ACCOUNT_INFO_PREFIX is also "ai"  asset=property

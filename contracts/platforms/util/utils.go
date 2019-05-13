@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
 	"github.com/palletone/go-palletone/vm/dockercontroller"
+	"time"
 )
 
 //var log = flogging.MustGetLogger("util")
@@ -148,6 +149,7 @@ type DockerBuildOptions struct {
 //                      after successful execution of Cmd.
 //-------------------------------------------------------------------------------------------
 func DockerBuild(opts DockerBuildOptions) error {
+
 	client, err := cutil.NewDockerClient()
 	if err != nil {
 		return fmt.Errorf("Error creating docker client: %s", err)
@@ -183,9 +185,10 @@ func DockerBuild(opts DockerBuildOptions) error {
 	hostConfig := &docker.HostConfig{
 		Memory:     dockercontroller.GetInt64FromDb("TempUccMemory"),     //1GB
 		MemorySwap: dockercontroller.GetInt64FromDb("TempUccMemorySwap"), //1GB
-		CPUShares:  dockercontroller.GetInt64FromDb("TempUccCPUShares"),
-		CPUQuota:   dockercontroller.GetInt64FromDb("TempUccCPUQuota"),
+		CPUShares:  dockercontroller.GetInt64FromDb("TempUccCpuShares"),
+		CPUQuota:   dockercontroller.GetInt64FromDb("TempUccCpuQuota"),
 	}
+	log.Infof("client.CreateContainer")
 	container, err := client.CreateContainer(docker.CreateContainerOptions{
 		Config: &docker.Config{
 			Image:        opts.Image,
@@ -205,6 +208,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	// Upload our input stream
 	//上传输入
 	//-----------------------------------------------------------------------------------
+	log.Infof("client.UploadToContainer")
 	err = client.UploadToContainer(container.ID, docker.UploadToContainerOptions{
 		Path:        "/chaincode/input", //  /chaincode/input
 		InputStream: opts.InputStream,
@@ -217,6 +221,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	// Attach stdout buffer to capture possible compilation errors
 	//-----------------------------------------------------------------------------------
 	stdout := bytes.NewBuffer(nil)
+	log.Infof("client.AttachToContainerNonBlocking")
 	_, err = client.AttachToContainerNonBlocking(docker.AttachToContainerOptions{
 		Container:    container.ID,
 		OutputStream: stdout,
@@ -234,15 +239,30 @@ func DockerBuild(opts DockerBuildOptions) error {
 	// Launch the actual build, realizing the Env/Cmd specified at container creation
 	//启动容器
 	//-----------------------------------------------------------------------------------
+	log.Infof("client.StartContainer")
 	err = client.StartContainer(container.ID, nil)
 	if err != nil {
 		return fmt.Errorf("Error executing build: %s \"%s\"", err, stdout.String())
 	}
-
+	//解决临时容器一直运行的情况
+	go func(client *docker.Client, id string) {
+		for {
+			select {
+			case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
+				log.Infof("======go build error")
+				err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+				if err != nil {
+					log.Infof("======go build error,%s", err.Error())
+				}
+				return
+			}
+		}
+	}(client, container.ID)
 	//-----------------------------------------------------------------------------------
 	// Wait for the build to complete and gather the return value
 	//等待容器返回
 	//-----------------------------------------------------------------------------------
+	log.Infof("client.WaitContainer")
 	retval, err := client.WaitContainer(container.ID)
 	if err != nil {
 		return fmt.Errorf("Error waiting for container to complete: %s", err)
@@ -255,6 +275,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	// Finally, download the result
 	//获取容器输出
 	//-----------------------------------------------------------------------------------
+	log.Infof("client.DownloadFromContainer")
 	err = client.DownloadFromContainer(container.ID, docker.DownloadFromContainerOptions{
 		Path:         "/chaincode/output/.",
 		OutputStream: opts.OutputStream,

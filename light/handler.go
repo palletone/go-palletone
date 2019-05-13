@@ -53,7 +53,7 @@ const (
 	MaxTxStatus              = 256 // Amount of transactions to queried per request
 
 	disableClientRemovePeer = false
-	txChanSize = 4096
+	txChanSize              = 4096
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -152,7 +152,7 @@ type ProtocolManager struct {
 
 	//SPV
 	validation *Validation
-	utxosync *UtxosSync
+	utxosync   *UtxosSync
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -172,14 +172,13 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		dag:       dag,
 		networkId: networkId,
 		txpool:    txpool,
-		//txrelay:     txrelay,
-		peers:     peers, //newPeerSet(),
-		newPeerCh: make(chan *peer),
-		//quitSync:    quitSync,
+
+		peers:       peers,
+		newPeerCh:   make(chan *peer),
 		wg:          new(sync.WaitGroup),
 		noMorePeers: make(chan struct{}),
 		validation:  NewValidation(dag),
-		utxosync: NewUtxosSync(dag),
+		utxosync:    NewUtxosSync(dag),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -368,10 +367,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//)
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
-		if err != nil {
-			log.Error("Light PalletOne New", "get genesis err:", err)
-			return err
-		}
+		log.Error("Light PalletOne New", "get genesis err:", err)
+		return err
 	}
 
 	var (
@@ -428,7 +425,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 				} else {
 					//p.SetHead(&announce)
 					p.headInfo = &announce
-					if !p.fullnode{p.SendRawAnnounce(data)}
+					if !p.fullnode {
+						p.SendRawAnnounce(data)
+					}
 				}
 			case <-stop:
 				return
@@ -519,11 +518,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case GetUTXOsMsg:
 		log.Debug("Received les GetUTXOsMsg")
-		return pm.GetUTXOsMsg(msg,p)
+		return pm.GetUTXOsMsg(msg, p)
 
 	case UTXOsMsg:
 		log.Debug("Received les UTXOsMsg")
-		return pm.UTXOsMsg(msg,p)
+		return pm.UTXOsMsg(msg, p)
 
 	case ProofsMsg:
 		return pm.ProofsMsg(msg, p)
@@ -573,14 +572,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {
 	// Broadcast transaction to a batch of peers not knowing about it
-	peers:=pm.peers.AllPeers()
+	peers := pm.peers.AllPeers()
 	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
 	for _, peer := range peers {
-		peer.SendTxs(0,0,modules.Transactions{tx})
+		peer.SendTxs(0, 0, modules.Transactions{tx})
 	}
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
-
 
 /*
 // getAccount retrieves an account from the state based at root.

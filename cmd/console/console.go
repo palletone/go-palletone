@@ -227,6 +227,16 @@ func (c *Console) init(preload []string) error {
 			}
 			obj.Set("transferPTN", bridge.TransferGasToken)
 		}
+		dag, err := c.jsre.Get("dag")
+		if err != nil {
+			return err
+		}
+		if obj := dag.Object(); obj != nil {
+			if _, err = c.jsre.Run(`jptn.getUnitsByIndex = dag.getUnitsByIndex;`); err != nil {
+				return fmt.Errorf("dag.getUnitsByIndex: %v", err)
+			}
+			obj.Set("getUnitsByIndex", bridge.GetUnitsByIndex)
+		}
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
 	admin, err := c.jsre.Get("admin")

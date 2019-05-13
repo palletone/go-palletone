@@ -687,7 +687,7 @@ func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec,
 		OutputStream: binpackage,
 	})
 	if err != nil {
-		log.Errorf("DockerBuild err:%s", err)
+		log.Debugf("DockerBuild err:%s", err)
 		return err
 	}
 

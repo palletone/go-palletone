@@ -43,6 +43,26 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
+			name: 'apply',
+			call: 'mediator_apply',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'isApproved',
+			call: 'mediator_isApproved',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'payDeposit',
+			call: 'mediator_deposit',
+			params: 2,
+		}),
+		new web3._extend.Method({
+			name: 'checkDeposit',
+			call: 'mediator_getDeposit',
+			params: 1,
+		}),
+		new web3._extend.Method({
 			name: 'vote',
 			call: 'mediator_vote',
 			params: 2,
@@ -72,16 +92,6 @@ web3._extend({
 			call: 'mediator_listVoteResults',
 			params: 0,
 		}),
-		//new web3._extend.Method({
-		//	name: 'setDesiredCount',
-		//	call: 'mediator_setDesiredCount',
-		//	params: 2,
-		//}),
-		//new web3._extend.Method({
-		//	name: 'getDesiredCount',
-		//	call: 'mediator_getDesiredCount',
-		//	params: 1,
-		//}),
 	],
 	properties: [
 		new web3._extend.Property({

@@ -19,13 +19,9 @@
 package mediatorplugin
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func (mp *MediatorPlugin) LocalMediators() []common.Address {
@@ -110,42 +106,6 @@ func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
 	return &PublicMediatorAPI{mp}
 }
 
-func (a *PublicMediatorAPI) GetList() []string {
-	addStrs := make([]string, 0)
-	mas := a.dag.GetMediators()
-
-	for address, _ := range mas {
-		addStrs = append(addStrs, address.Str())
-	}
-
-	return addStrs
-}
-
-func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
-	mediatorVoteCount := make(map[string]uint64)
-
-	for address, _ := range a.dag.GetMediators() {
-		mediatorVoteCount[address.String()] = 0
-	}
-
-	for med, stake := range a.dag.MediatorVotedResults() {
-		mediatorVoteCount[med.String()] = stake
-	}
-
-	return mediatorVoteCount
-}
-
-func (a *PublicMediatorAPI) GetActives() []string {
-	addStrs := make([]string, 0)
-	ms := a.dag.ActiveMediators()
-
-	for medAdd, _ := range ms {
-		addStrs = append(addStrs, medAdd.Str())
-	}
-
-	return addStrs
-}
-
 type InitDKSResult struct {
 	PrivateKey string
 	PublicKey  string
@@ -160,38 +120,26 @@ func (a *PublicMediatorAPI) DumpInitDKS() (res InitDKSResult) {
 	return
 }
 
-func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
-	addr, err := common.StringToAddress(addStr)
-	if err != nil {
-		return nil, err
-	}
-
-	voted := a.dag.GetAccountVotedMediators(addr)
-	mediators := make([]string, 0, len(voted))
-
-	for _, med := range voted {
-		mediators = append(mediators, med.Str())
-	}
-
-	return mediators, nil
+type PrivateMediatorAPI struct {
+	*MediatorPlugin
 }
 
-func (a *PublicMediatorAPI) GetNextUpdateTime() string {
-	dgp := a.dag.GetDynGlobalProp()
-	time := time.Unix(int64(dgp.NextMaintenanceTime), 0)
-
-	return time.Format("2006-01-02 15:04:05")
+func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
+	return &PrivateMediatorAPI{mp}
 }
 
-func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error) {
-	mediator, err := common.StringToAddress(addStr)
-	if err != nil {
-		return nil, err
+func (a *PrivateMediatorAPI) StartProduce() {
+	if !a.producingEnabled {
+		a.producingEnabled = true
+		go a.ScheduleProductionLoop()
 	}
+}
 
-	if !a.dag.IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator", mediator.Str())
+func (a *PrivateMediatorAPI) StopProduce() {
+	if a.producingEnabled {
+		a.producingEnabled = false
+		go func() {
+			a.stopProduce <- struct{}{}
+		}()
 	}
-
-	return a.dag.GetMediatorInfo(mediator), nil
 }

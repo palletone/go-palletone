@@ -136,7 +136,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
 
-
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 
@@ -405,7 +404,7 @@ func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Tran
 }
 
 // @author Albert·Gou
-func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error) {
+func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*ptnapi.TxExecuteResult, error) {
 	// 参数检查
 	if from == to {
 		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
@@ -448,13 +447,13 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *s
 		textStr = *text
 	}
 
-	res := &mp.TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account(%s) transfer %vPTN to account(%s) with message: '%s'",
+	res := &ptnapi.TxExecuteResult{}
+	res.TxContent = fmt.Sprintf("Account(%v) transfer %vPTN to account(%v) with message: '%v'",
 		from, amount, to, textStr)
 	res.TxHash = tx.Hash()
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = mp.DefaultResult
+	res.Warning = ptnapi.DefaultResult
 
 	return res, nil
 }

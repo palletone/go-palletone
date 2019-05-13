@@ -71,7 +71,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 				return shim.Error(err.Error())
 			}
 			isDeveloper = true
-			balance.EnterTime = strconv.FormatInt(time.Now().UTC().Unix()/DTimeDuration, 10)
+			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
 		}
 		updateForPayValue(balance, invokeTokens)
 	} else {
@@ -102,7 +102,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 				log.Error("AddCandaditeList err:", "error", err)
 				return shim.Error(err.Error())
 			}
-			balance.EnterTime = strconv.FormatInt(time.Now().UTC().Unix()/DTimeDuration, 10)
+			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
 		}
 	}
 	err = marshalAndPutStateForBalance(stub, invokeAddr.String(), balance)

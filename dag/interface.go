@@ -84,7 +84,7 @@ type IDag interface {
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
-
+	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 	//GetCanonicalHash(number uint64) (common.Hash, error)
 	//GetHeadHeaderHash() (common.Hash, error)
@@ -105,9 +105,13 @@ type IDag interface {
 
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContractTplCode(tplId []byte) ([]byte, error)
+	GetAllContractTpl() ([]*modules.ContractTemplate, error)
+
 	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	//WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
+	GetAllContracts() ([]*modules.Contract, error)
+	GetContractsByTpl(tplId []byte) ([]*modules.Contract, error)
 	GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
 
@@ -164,4 +168,18 @@ type IDag interface {
 	GetCoinYearRate() float64
 
 	RefreshAddrTxIndex() error
+	GetMinFee() (*modules.AmountAsset, error)
+
+	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GenVoteMediatorTx(voter common.Address, mediators []string,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	IsMediator(address common.Address) bool
+	GetMediators() map[common.Address]bool
+	MediatorVotedResults() map[string]uint64
+	ActiveMediators() map[common.Address]bool
+	GetAccountVotedMediators(addr common.Address) []common.Address
+	GetDynGlobalProp() *modules.DynamicGlobalProperty
+	GetMediatorInfo(address common.Address) *modules.MediatorInfo
+	CurrentFeeSchedule() core.FeeSchedule
 }

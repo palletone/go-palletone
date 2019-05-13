@@ -108,7 +108,7 @@ func (input *Unit) EncodeRLP(w io.Writer) error {
 	temp.Txs = input.Txs
 	temp.UnitHash = input.UnitHash
 	temp.UnitSize = uint32(input.UnitSize)
-	temp.ReceivedAt = uint32(input.ReceivedAt.UTC().Unix())
+	temp.ReceivedAt = uint32(input.ReceivedAt.Unix())
 
 	return rlp.Encode(w, temp)
 }

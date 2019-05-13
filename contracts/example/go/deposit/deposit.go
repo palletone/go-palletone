@@ -39,7 +39,7 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
-	case "ApplyBecomeMediator":
+	case modules.ApplyMediator:
 		//log.Info("Enter DepositChaincode Contract ApplyBecomeMediator Invoke")
 		//申请成为Mediator
 		return d.applyBecomeMediator(stub, args)
@@ -53,7 +53,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case "HandleForApplyQuitMediator":
 		//基金会对退出申请Mediator进行处理
 		return d.handleForApplyQuitMediator(stub, args)
-	case "MediatorPayToDepositContract":
+	case modules.MediatorPayDeposit:
 		//mediator 交付保证金
 		return d.mediatorPayToDepositContract(stub, args)
 	case "JuryPayToDepositContract":
@@ -138,7 +138,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取某个节点的账户
-	case "GetBalanceWithAddr":
+	case modules.GetDeposit:
 		balance, err := stub.GetState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
@@ -195,7 +195,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//查看是否申请Mediator通过
-	case "IsSelected":
+	case modules.IsApproved:
 		mediatorRegisterInfo, err := GetAgreeForBecomeMediatorList(stub)
 		if err != nil {
 			return shim.Error(err.Error())

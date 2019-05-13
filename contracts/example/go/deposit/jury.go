@@ -73,7 +73,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 				return shim.Error(err.Error())
 			}
 			isJury = true
-			balance.EnterTime = strconv.FormatInt(time.Now().UTC().Unix()/DTimeDuration, 10)
+			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
 		}
 		updateForPayValue(balance, invokeTokens)
 	} else {
@@ -104,7 +104,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 				log.Error("AddCandaditeList err:", "error", err)
 				return shim.Error(err.Error())
 			}
-			balance.EnterTime = strconv.FormatInt(time.Now().UTC().Unix()/DTimeDuration, 10)
+			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
 		}
 	}
 	err = marshalAndPutStateForBalance(stub, invokeAddr.String(), balance)

@@ -21,17 +21,16 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
-
-	//"github.com/palletone/go-palletone/common/crypto"
-	"encoding/json"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +40,7 @@ func TestGetContractState(t *testing.T) {
 	//l := log.NewTestLog()
 	statedb := NewStateDb(db)
 	id := []byte("TestContract")
-	contract := &modules.Contract{Id: id, Name: "TestContract1", Code: []byte("code"), NeedApprovalCount: 10}
+	contract := &modules.Contract{ContractId: id, Name: "TestContract1", TemplateId: []byte("Temp")}
 	err := statedb.SaveContract(contract)
 	assert.Nil(t, err, "save contract to statedb fail")
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
@@ -68,16 +67,16 @@ func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 	contractId := depositeContractAddress.Bytes()
 	//fmt.Println(contractId)
 	addr1 := "P1G988UGLytFgPwxy1bzY3FkzPT46ThDhTJ"
-	mediator1 := &modules.MediatorRegisterInfo{
+	mediator1 := &core.MediatorApplyInfo{
 		Address: addr1,
 	}
 	//assert.Nil(t, err, "string 2 address fail: ")
 	addr2 := "P1FbTqEaSLNfhp1hCwNmRkj5BkMjTNU8jRp"
-	mediator2 := &modules.MediatorRegisterInfo{
+	mediator2 := &core.MediatorApplyInfo{
 		Address: addr2,
 	}
 	//assert.Nil(t, err, "string 2 address fail: ")
-	mediatorList := []*modules.MediatorRegisterInfo{mediator1, mediator2}
+	mediatorList := []*core.MediatorApplyInfo{mediator1, mediator2}
 	mediatorListBytes, err := json.Marshal(mediatorList)
 	assert.Nil(t, err, "json marshal error: ")
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
@@ -98,17 +97,15 @@ func TestGetContract(t *testing.T) {
 	//var results []interface{}
 	var contract modules.Contract
 
-	contract.Id = []byte("123456")
-	contract.LangCode = "go"
+	contract.ContractId = []byte("123456")
+	contract.TemplateId = []byte("Temp")
 	contract.Name = "test"
-	contract.Code = []byte(`logger.PrintLn("hello world")`)
-	contract.Input = []byte("input")
 
 	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
 	err := statedb.SaveContract(&contract)
 	assert.Nil(t, err)
-	dbContract, err := statedb.GetContract(contract.Id)
+	dbContract, err := statedb.GetContract(contract.ContractId)
 	assert.Nil(t, err)
 	t.Logf("%#v", dbContract)
 	assertRlpHashEqual(t, contract, dbContract)
@@ -199,7 +196,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	// if err != nil {
 	// 	t.Log(err.Error())
 	// }
-	assert.NotNil(t,err)
+	assert.NotNil(t, err)
 	if sysParam == nil {
 		t.Log("update sysParam success")
 	} else {
@@ -207,7 +204,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 		t.Error("update sysParam fail")
 	}
 	sysParams, _, err := statedb.GetSysConfig("sysParams")
-	assert.NotNil(t,err)
+	assert.NotNil(t, err)
 
 	if err != nil {
 		t.Log(err.Error())

@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
@@ -43,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -59,16 +59,20 @@ func (b *PtnApiBackend) Dag() dag.IDag {
 	return b.ptn.dag
 }
 
-//func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
-//	return b.ptn.SignAndSendTransaction(addr, tx)
-//}
+func (b *PtnApiBackend) TxPool() txspool.ITxPool {
+	return b.ptn.txPool
+}
+
+func (b *PtnApiBackend) SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error {
+	return b.ptn.SignAndSendTransaction(addr, tx)
+}
 
 func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
 	return b.ptn.GetKeyStore()
 }
 
 func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
-	text *string) (*mp.TxExecuteResult, error) {
+	text *string) (*ptnapi.TxExecuteResult, error) {
 	return b.ptn.TransferPtn(from, to, amount, text)
 }
 
@@ -340,6 +344,28 @@ func (b *PtnApiBackend) GetUnitByNumber(number *modules.ChainIndex) *modules.Uni
 	}
 	return unit
 }
+func (b *PtnApiBackend) GetUnitsByIndex(start, end decimal.Decimal, asset string) []*modules.Unit {
+	index1 := uint64(start.IntPart())
+	index2 := uint64(end.IntPart())
+	units := make([]*modules.Unit, 0)
+	token, _, err := modules.String2AssetId(asset)
+	if err != nil {
+		log.Info("the asset str is not correct token string.")
+		return nil
+	}
+	for i := index1; i <= index2; i++ {
+		number := new(modules.ChainIndex)
+		number.Index = i
+		number.AssetID = token
+		unit, err := b.ptn.dag.GetUnitByNumber(number)
+		if unit == nil || err != nil {
+			log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number.String(), "error", err)
+		}
+		//jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetUtxoEntry)
+		units = append(units, unit)
+	}
+	return units
+}
 
 func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJson, error) {
 	header, err := b.ptn.dag.GetHeaderByHash(hash)
@@ -562,7 +588,7 @@ func (b *PtnApiBackend) ContractStartChaincodeContainer(deployId []byte, txid st
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, description, abi, language, true, addrs)
 }
-func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error) {
+func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (common.Hash, common.Address, error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
 }
 func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
@@ -694,4 +720,37 @@ func (s *PtnApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 
 func (b *PtnApiBackend) SyncUTXOByAddr(addr string) string {
 	return "Error"
+}
+func (b *PtnApiBackend) GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error) {
+	tpls, err := b.ptn.dag.GetAllContractTpl()
+	if err != nil {
+		return nil, err
+	}
+	jsons := []*ptnjson.ContractTemplateJson{}
+	for _, tpl := range tpls {
+		jsons = append(jsons, ptnjson.ConvertContractTemplate2Json(tpl))
+	}
+	return jsons, nil
+}
+func (b *PtnApiBackend) GetAllContracts() ([]*ptnjson.ContractJson, error) {
+	contracts, err := b.ptn.dag.GetAllContracts()
+	if err != nil {
+		return nil, err
+	}
+	jsons := []*ptnjson.ContractJson{}
+	for _, c := range contracts {
+		jsons = append(jsons, ptnjson.ConvertContract2Json(c))
+	}
+	return jsons, nil
+}
+func (b *PtnApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error) {
+	contracts, err := b.ptn.dag.GetContractsByTpl(tplId)
+	if err != nil {
+		return nil, err
+	}
+	jsons := []*ptnjson.ContractJson{}
+	for _, c := range contracts {
+		jsons = append(jsons, ptnjson.ConvertContract2Json(c))
+	}
+	return jsons, nil
 }

@@ -21,6 +21,7 @@
 package dag
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -137,6 +139,63 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
 	if err := dag.propRep.StoreMediatorSchl(ms); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
+	initMediatorCandidates := make([]*core.MediatorApplyInfo, 0, len(genesis.InitialMediatorCandidates))
+
+	// Create initial mediators
+	for _, imc := range genesis.InitialMediatorCandidates {
+		// 存储 mediator info
+		err := imc.Validate()
+		if err != nil {
+			log.Debugf(err.Error())
+			panic(err.Error())
+		}
+
+		mi := modules.NewMediatorInfo()
+		*mi.MediatorInfoBase = *imc.MediatorInfoBase
+		mi.Address = imc.AddStr
+
+		addr, _ := common.StringToAddress(mi.AddStr)
+		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
+		if err != nil {
+			log.Debugf(err.Error())
+			panic(err.Error())
+		}
+
+		// 构建 initMediatorCandidates
+		mai := core.NewMediatorApplyInfo()
+		mai.Address = imc.AddStr
+		//mai.Time = mai.Time / 1800
+		initMediatorCandidates = append(initMediatorCandidates, mai)
+	}
+
+	// 存储 initMediatorCandidates
+	imcB, err := json.Marshal(initMediatorCandidates)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+
+	ws := &modules.ContractWriteSet{
+		IsDelete: false,
+		Key:      modules.MediatorList,
+		Value:    imcB,
+	}
+
+	version := &modules.StateVersion{
+		Height:  unit.Number(),
+		TxIndex: ^uint32(0),
+	}
+
+	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+	if err != nil {
+		log.Debugf(err.Error())
 		return err
 	}
 

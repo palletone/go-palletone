@@ -25,7 +25,8 @@ import (
 	"encoding/hex"
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/contracts/platforms"
-	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"

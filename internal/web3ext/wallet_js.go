@@ -42,11 +42,11 @@ const Wallet_JS = `
 			call: 'wallet_getAddrUtxos',
 			params: 1
 		}),
- 		new web3._extend.Method({
-			name: 'createPaymentTx',
-			call: 'wallet_createPaymentTx',
-			params: 4
-		}),
+ 		//new web3._extend.Method({
+		//	name: 'createPaymentTx',
+		//	call: 'wallet_createPaymentTx',
+		//	params: 4
+		//}),
 		new web3._extend.Method({
 			name: 'createRawTransaction',
 			call: 'wallet_createRawTransaction',

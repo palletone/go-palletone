@@ -20,6 +20,7 @@ package jury
 
 import (
 	"time"
+	"fmt"
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -35,11 +36,10 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	if event == nil || len(event.Tx.TxMessages) < 1 {
 		return errors.New("ProcessContractEvent param is nil")
 	}
-
-	//if p.checkTxIsExist(event.Tx) {
-	//	err := fmt.Sprintf("ProcessContractEvent, event Tx is exist, reqId:%v, txId:%v", event.Tx.RequestHash().Bytes(), event.Tx.Hash().Bytes())
-	//	return errors.New(err)
-	//}
+	if p.checkTxIsExist(event.Tx) {
+		err := fmt.Sprintf("ProcessContractEvent, event Tx is exist, reqId:%s, txId:%s", event.Tx.RequestHash().String(), event.Tx.Hash().String())
+		return errors.New(err)
+	}
 	//p.checkTxReqIdIsExist(event.Tx.RequestHash())
 
 	if !p.checkTxValid(event.Tx) {

@@ -23,9 +23,10 @@ package modules
 import "testing"
 
 func TestUniqueId_StringFriendly(t *testing.T) {
-	uid := &UniqueId{0xff, 0xff, 0xff, 0xff}
+	uid := &UniqueId{0x28, 0x5a, 0x59, 0x29}
 	t.Logf("%x, %s", uid.Bytes(), uid.StringFriendly(UniqueIdType_Sequence))
 	t.Logf("%x, %s", uid.Bytes(), uid.StringFriendly(UniqueIdType_Uuid))
 	t.Logf("%x, %s", uid.Bytes(), uid.StringFriendly(UniqueIdType_UserDefine))
+	t.Logf("%x, %s", uid.Bytes(), uid.StringFriendly(UniqueIdType_Ascii))
 
 }

@@ -21,12 +21,12 @@
 package storage
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-
-func (statedb *StateDb)SaveContractTpl(tpl *modules.ContractTemplate) error{
+func (statedb *StateDb) SaveContractTpl(tpl *modules.ContractTemplate) error {
 	key := append(constants.CONTRACT_TPL, tpl.TplId...)
 	if err := StoreBytes(statedb.db, key, tpl); err != nil {
 		return err
@@ -34,21 +34,33 @@ func (statedb *StateDb)SaveContractTpl(tpl *modules.ContractTemplate) error{
 
 	return nil
 }
-func (statedb *StateDb)SaveContractTplCode(tplId []byte,byteCode []byte) error{
+func (statedb *StateDb) SaveContractTplCode(tplId []byte, byteCode []byte) error {
 	key := append(constants.CONTRACT_TPL_CODE, tplId...)
-	return statedb.db.Put(key,byteCode)
+	return statedb.db.Put(key, byteCode)
 }
-func (statedb *StateDb)GetContractTpl(tplId []byte) (*modules.ContractTemplate,error){
+func (statedb *StateDb) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	key := append(constants.CONTRACT_TPL, tplId...)
-	tpl:=&modules.ContractTemplate{}
-	err:= retrieve(statedb.db,key,tpl)
-	if err!=nil{
-		return nil,err
+	tpl := &modules.ContractTemplate{}
+	err := retrieve(statedb.db, key, tpl)
+	if err != nil {
+		return nil, err
 	}
-	return tpl,nil
+	return tpl, nil
 }
-func (statedb *StateDb)GetContractTplCode(tplId []byte) ([]byte,error){
+func (statedb *StateDb) GetContractTplCode(tplId []byte) ([]byte, error) {
 	key := append(constants.CONTRACT_TPL_CODE, tplId...)
 	return statedb.db.Get(key)
 }
-
+func (statedb *StateDb) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
+	rows := getprefix(statedb.db, constants.CONTRACT_TPL)
+	result := make([]*modules.ContractTemplate, 0,len(rows))
+	for _, v := range rows {
+		tpl := &modules.ContractTemplate{}
+		err := rlp.DecodeBytes(v, tpl)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, tpl)
+	}
+	return result, nil
+}

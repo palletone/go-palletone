@@ -32,7 +32,7 @@ import (
 //var CONF_PREFIX = append(constants.CONTRACT_STATE_PREFIX, scc.SysConfigContractAddress.Bytes()...)
 func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
 	//SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion)
-	id := syscontract.SysConfigContractAddress.Bytes21()
+	id := syscontract.SysConfigContractAddress.Bytes()
 	err := saveContractState(statedb.db, id, key, val, ver)
 	if err != nil {
 		return err
@@ -45,11 +45,11 @@ func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.State
 get config information
 */
 func (statedb *StateDb) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
-	id := syscontract.SysConfigContractAddress.Bytes21()
+	id := syscontract.SysConfigContractAddress.Bytes()
 	return statedb.GetContractState(id, name)
 }
 func (statedb *StateDb) GetAllSysConfig() (map[string]*modules.ContractStateValue, error) {
-	id := syscontract.SysConfigContractAddress.Bytes21()
+	id := syscontract.SysConfigContractAddress.Bytes()
 	return statedb.GetContractStatesById(id)
 }
 
@@ -66,7 +66,7 @@ func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
 	return &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}, nil
 }
 func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) {
-	id := syscontract.PartitionContractAddress.Bytes21()
+	id := syscontract.PartitionContractAddress.Bytes()
 	rows, err := statedb.GetContractStatesByPrefix(id, "PC")
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) 
 	return result, nil
 }
 func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
-	id := syscontract.PartitionContractAddress.Bytes21()
+	id := syscontract.PartitionContractAddress.Bytes()
 	data, _, err := statedb.GetContractState(id, "MainChain")
 	if err != nil {
 		return nil, err

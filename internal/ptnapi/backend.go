@@ -26,12 +26,12 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -93,6 +93,7 @@ type Backend interface {
 	//get level db
 	GetUnitByHash(hash common.Hash) *modules.Unit
 	GetUnitByNumber(number *modules.ChainIndex) *modules.Unit
+	GetUnitsByIndex(start, end decimal.Decimal, asset string) []*modules.Unit
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	// get state
@@ -136,7 +137,7 @@ type Backend interface {
 	EncodeTx(jsonStr string) (string, error)
 
 	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error)
-	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId []byte, err error)
+	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
 	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) (reqId common.Hash, err error)
@@ -146,15 +147,20 @@ type Backend interface {
 
 	ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 
+	TxPool() txspool.ITxPool
 	Dag() dag.IDag
-	//SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
-	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*mp.TxExecuteResult, error)
+	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
+	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*TxExecuteResult, error)
 	GetKeyStore() *keystore.KeyStore
 
 	// get tx hash by req id
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 
 	GetFileInfo(filehash string) ([]*modules.FileInfo, error)
+
+	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
+	GetAllContracts() ([]*ptnjson.ContractJson, error)
+	GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error)
 
 	//SPV
 	GetProofTxInfoByHash(txhash string) ([][]byte, error)
@@ -219,6 +225,18 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Namespace: "contract",
 			Version:   "1.0",
 			Service:   NewPublicContractAPI(apiBackend),
+			Public:    true,
+		},
+		{
+			Namespace: "mediator",
+			Version:   "1.0",
+			Service:   NewPrivateMediatorAPI(apiBackend),
+			Public:    false,
+		},
+		{
+			Namespace: "mediator",
+			Version:   "1.0",
+			Service:   NewPublicMediatorAPI(apiBackend),
 			Public:    true,
 		},
 	}

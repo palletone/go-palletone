@@ -35,13 +35,6 @@ const (
 	DTimeDuration              = 1800
 )
 
-//申请成为Mediator
-type MediatorRegisterInfo struct {
-	Address string `json:"address"`
-	Content string `json:"content"`
-	Time    int64  `json:"time"`
-}
-
 //申请提保证金
 type Cashback struct {
 	CashbackAddress string               `json:"cashback_address"` //请求地址

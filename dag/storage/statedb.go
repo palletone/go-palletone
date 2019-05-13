@@ -142,17 +142,19 @@ func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 }
 
 //xiaozhi
-func (statedb *StateDb) GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error) {
+func (statedb *StateDb) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
 		return nil, fmt.Errorf("mediator candidate list is nil.")
 	}
-	var candidateList []*modules.MediatorRegisterInfo
+
+	var candidateList []*core.MediatorApplyInfo
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
 	}
+
 	return candidateList, nil
 }
 
@@ -161,11 +163,13 @@ func (statedb *StateDb) IsApprovedMediator(address common.Address) bool {
 	if err != nil {
 		return false
 	}
+
 	for _, v := range list {
 		if strings.Compare(v.Address, address.String()) == 0 {
 			return true
 		}
 	}
+
 	return false
 }
 

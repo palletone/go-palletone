@@ -74,13 +74,13 @@ func (dag *Dag) performAccountMaintenance() {
 	for mediator, _ := range mediators {
 
 		voteTally := newVoteTally(mediator)
-		voteTally.votedCount = mediatorVoteCount[mediator]
+		voteTally.votedCount = mediatorVoteCount[mediator.Str()]
 		dag.mediatorVoteTally = append(dag.mediatorVoteTally, voteTally)
 	}
 }
 
-func (dag *Dag) MediatorVotedResults() map[common.Address]uint64 {
-	mediatorVoteCount := make(map[common.Address]uint64)
+func (dag *Dag) MediatorVotedResults() map[string]uint64 {
+	mediatorVoteCount := make(map[string]uint64)
 
 	allAccount := dag.LookupAccount()
 	for _, info := range allAccount {

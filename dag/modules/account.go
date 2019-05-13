@@ -20,10 +20,8 @@
 
 package modules
 
-import "github.com/palletone/go-palletone/common"
-
 type AccountInfo struct {
 	Balance uint64
 	//当前账户投票的Mediator
-	VotedMediators []common.Address
+	VotedMediators []string
 }

@@ -27,7 +27,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
-	"github.com/palletone/go-palletone/core/vmContractPub/crypto"
+
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -76,14 +77,14 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	return reqId, templateId, nil
 }
 
-func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (common.Hash, []byte, error) {
+func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (common.Hash, common.Address, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil {
 		log.Error("ContractDeployReq", "param is error")
-		return common.Hash{}, nil, errors.New("ContractDeployReq request param is error")
+		return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param is error")
 	}
 	if len(templateId) > MaxLengthTplId || len(args) > MaxNumberArgs {
 		log.Error("ContractDeployReq", "len(templateId)", len(templateId), "len(args)", len(args))
-		return common.Hash{}, nil, errors.New("ContractDeployReq request param len overflow")
+		return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param len overflow")
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
@@ -95,14 +96,14 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	}
 	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, false)
 	if err != nil {
-		return common.Hash{}, nil, err
+		return common.Hash{}, common.Address{}, err
 	}
-	contractId := common.BytesToAddress(reqId.Bytes()).Bytes()
+	contractId := crypto.RequestIdToContractAddress(reqId)
 	log.Info("ContractDeployReq", "ok, reqId", reqId.Bytes(), "templateId ", templateId, "contractId", contractId)
 
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
-	return reqId, contractId[:], err
+	return reqId, contractId, err
 }
 
 func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
@@ -117,7 +118,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: contractId.Bytes21(),
+			ContractId: contractId.Bytes(),
 			Args:       args,
 			Timeout:    timeout,
 		},
@@ -140,7 +141,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: contractId.Bytes21(),
+			ContractId: contractId.Bytes(),
 			Args:       args,
 			Timeout:    timeout,
 		},

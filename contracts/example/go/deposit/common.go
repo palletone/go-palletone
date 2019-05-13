@@ -17,27 +17,29 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
-	"strings"
-	"time"
 )
 
 //处理交付保证金数据
 func updateForPayValue(balance *DepositBalance, invokeTokens *modules.InvokeTokens) {
 	balance.TotalAmount += invokeTokens.Amount
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	payTokens := &modules.AmountAsset{}
 	payValue := &PayValue{PayTokens: payTokens}
 	payValue.PayTokens.Amount = invokeTokens.Amount
 	payValue.PayTokens.Asset = invokeTokens.Asset
-	payValue.PayTime = time.Now().UTC().Unix() / DTimeDuration
+	payValue.PayTime = time.Now().Unix() / DTimeDuration
 	balance.PayValues = append(balance.PayValues, payValue)
 }
 
@@ -83,7 +85,7 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 	cashback.CashbackAddress = invokeAddr
 	cashback.CashbackTokens = invokeTokens
 	cashback.Role = role
-	cashback.CashbackTime = time.Now().UTC().Unix()
+	cashback.CashbackTime = time.Now().Unix()
 	if listForCashback == nil {
 		log.Info("stub.GetListForCashback:list is nil.")
 		listForCashback = []*Cashback{cashback}
@@ -237,7 +239,7 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		return err
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -348,7 +350,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
 	//v := handleValues(balanceValue.Values, tokens)
 	//balanceValue.Values = v
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	balance.TotalAmount -= cashbackValue.CashbackTokens.Amount
 	//fmt.Printf("balanceValue=%s\n", balanceValue)
 	//TODO
@@ -418,7 +420,8 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAddr string, applyTime int64) (newList []*Forfeiture, isOk bool) {
+func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAddr string,
+	applyTime int64) (newList []*Forfeiture, isOk bool) {
 	for i := 0; i < len(listForForfeiture); i++ {
 		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
 			newList = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
@@ -430,7 +433,8 @@ func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAdd
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*Cashback, cashbackAddr string, applyTime int64) (newList []*Cashback, isOk bool) {
+func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*Cashback, cashbackAddr string,
+	applyTime int64) (newList []*Cashback, isOk bool) {
 	for i := 0; i < len(listForCashback); i++ {
 		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
 			newList = append(listForCashback[:i], listForCashback[i+1:]...)
@@ -441,22 +445,22 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 	return
 }
 
-func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, modules.MediatorList)
 }
-func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForApplyBecomeMediator)
 }
-func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForApplyQuitMediator)
 }
 
-func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*MediatorRegisterInfo, error) {
+func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForAgreeBecomeMediator)
 
 }
 
-func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*MediatorRegisterInfo, error) {
+func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*core.MediatorApplyInfo, error) {
 	listByte, err := stub.GetState(typeList)
 	if err != nil {
 		return nil, err
@@ -464,7 +468,7 @@ func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*MediatorRegi
 	if listByte == nil {
 		return nil, nil
 	}
-	var list []*MediatorRegisterInfo
+	var list []*core.MediatorApplyInfo
 	err = json.Unmarshal(listByte, &list)
 	if err != nil {
 		return nil, err
@@ -542,7 +546,7 @@ func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]common.A
 		if candidateListByte == nil {
 			return nil, nil
 		}
-		var candiateList []*MediatorRegisterInfo
+		var candiateList []*core.MediatorApplyInfo
 		err = json.Unmarshal(candidateListByte, &candiateList)
 		if err != nil {
 			return nil, err
@@ -642,7 +646,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	}
 	forfeiture.ApplyTokens = invokeTokens
 	forfeiture.ForfeitureRole = forfeitureRole
-	forfeiture.ApplyTime = time.Now().UTC().Unix()
+	forfeiture.ApplyTime = time.Now().Unix()
 	//先获取列表，再更新列表
 	listForForfeiture, err := GetListForForfeiture(stub)
 	if err != nil {
@@ -706,6 +710,7 @@ func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr 
 	} else {
 		return false
 	}
+	return false
 }
 
 func isInCandidateList(addr string, list []common.Address) bool {
@@ -774,7 +779,7 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分
@@ -803,7 +808,7 @@ func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.Chaincod
 	}
 	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().UTC().Unix() / DTimeDuration
+	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	//加上利息奖励
 	balance.TotalAmount += awards
 	//减去提取部分

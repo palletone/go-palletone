@@ -36,8 +36,10 @@ type IStateRepository interface {
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
 	GetContract(id []byte) (*modules.Contract, error)
-	GetContractTpl(tplId []byte) (*modules.ContractTemplate,error)
-	GetContractTplCode(tplId []byte) ([]byte,error)
+	GetAllContracts() ([]*modules.Contract, error)
+	GetContractsByTpl(tplId []byte) ([]*modules.Contract, error)
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
@@ -46,11 +48,12 @@ type IStateRepository interface {
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
 	GetMediators() map[common.Address]bool
-	GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error)
+	GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error)
 	IsApprovedMediator(address common.Address) bool
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
+	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
@@ -59,6 +62,11 @@ type IStateRepository interface {
 	UpdateSysParams(ver *modules.StateVersion) error
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
+	//获得一个合约的陪审团列表
+	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetAllContractTpl() ([]*modules.ContractTemplate, error)
+
+	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 }
 
 type StateRepository struct {
@@ -72,7 +80,7 @@ func NewStateRepository(statedb storage.IStateDb) *StateRepository {
 
 func NewStateRepository4Db(db ptndb.Database) *StateRepository {
 	statedb := storage.NewStateDb(db)
-	return &StateRepository{statedb: statedb}
+	return NewStateRepository(statedb)
 }
 
 func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
@@ -96,11 +104,29 @@ func (rep *StateRepository) GetContractStatesByPrefix(id []byte, prefix string) 
 func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
 }
+func (rep *StateRepository)GetAllContracts() ([]*modules.Contract, error){
+	return rep.statedb.GetAllContracts()
+}
+func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error){
+	cids,err:=rep.statedb.GetContractIdsByTpl(tplId)
+	if err!=nil{
+		return nil,err
+	}
+	result:=make([]*modules.Contract,0,len(cids))
+	for _,cid:=range cids{
+		contract,err:= rep.statedb.GetContract(cid)
+		if err!=nil{
+			return nil,err
+		}
+		result=append(result,contract)
+	}
+	return result,nil
+}
 
-func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate,error){
+func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return rep.statedb.GetContractTpl(tplId)
 }
-func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte,error){
+func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte, error) {
 	return rep.statedb.GetContractTplCode(tplId)
 }
 
@@ -116,12 +142,17 @@ func (rep *StateRepository) GetMediators() map[common.Address]bool {
 	return rep.statedb.GetMediators()
 }
 
-func (rep *StateRepository) GetApprovedMediatorList() ([]*modules.MediatorRegisterInfo, error) {
+func (rep *StateRepository) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
 	return rep.statedb.GetApprovedMediatorList()
 }
 
 func (rep *StateRepository) IsApprovedMediator(address common.Address) bool {
 	return rep.statedb.IsApprovedMediator(address)
+}
+
+func (rep *StateRepository) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
+	version *modules.StateVersion) error {
+	return rep.statedb.SaveContractState(contractId, ws, version)
 }
 
 func (rep *StateRepository) IsMediator(address common.Address) bool {
@@ -138,6 +169,10 @@ func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountI
 
 func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return rep.statedb.RetrieveMediatorInfo(address)
+}
+
+func (rep *StateRepository) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
+	return rep.statedb.StoreMediatorInfo(add, mi)
 }
 
 func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
@@ -174,4 +209,12 @@ func (rep *StateRepository) GetAllAccountStates(address common.Address) (map[str
 
 func (rep *StateRepository) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error) {
 	return rep.statedb.GetAccountState(address, statekey)
+}
+
+//获得一个合约的陪审团列表
+func (rep *StateRepository) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+	return rep.statedb.GetContractJury(contractId)
+}
+func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
+	return rep.statedb.GetAllContractTpl()
 }

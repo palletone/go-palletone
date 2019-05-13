@@ -38,6 +38,7 @@ const (
 	SigHashAll          uint32 = 0x1
 	SigHashNone         uint32 = 0x2
 	SigHashSingle       uint32 = 0x3
+	SigHashRaw          uint32 = 0x4
 	SigHashAnyOneCanPay uint32 = 0x80
 	// sigHashMask defines the number of bits of the hash type which is used
 	// to identify which outputs are signed.
@@ -284,6 +285,10 @@ func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScr
 				return nil, errors.New("Invalid payment message")
 			}
 			for j, input := range pay.Inputs {
+				if len(input.SignatureScript) > 0 {
+					//已经签名了，不需要再次签名
+					continue
+				}
 				utxoLockScript, find := utxoLockScripts[*input.PreviousOutPoint]
 				if !find {
 					errMsg := fmt.Sprintf("Don't find utxo for outpoint[%s]", input.PreviousOutPoint.String())
@@ -319,4 +324,17 @@ func DisasmString(script []byte) (string, error) {
 }
 func IsUnspendable(script []byte) bool {
 	return txscript.IsUnspendable(script)
+}
+
+func MergeContractUnlockScript(signs [][]byte, redeemScript []byte) []byte {
+	builder := txscript.NewScriptBuilder().AddOp(txscript.OP_FALSE)
+	for _, sign := range signs {
+		sign1 := make([]byte, len(sign)+1)
+		copy(sign1, sign)
+		sign1[len(sign)] = 4
+		builder.AddData(sign1)
+	}
+	builder.AddData(redeemScript)
+	result, _ := builder.Script()
+	return result
 }

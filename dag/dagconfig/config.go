@@ -32,7 +32,8 @@ import (
 var (
 	SConfig      Sconfig
 	DefaultToken = "PTN"
-	DagConfig    = DefaultConfig
+	//DefaultToken = "ABC+10A4QIWCI46V8MZJ2UO"
+	DagConfig = DefaultConfig
 )
 
 var DefaultConfig = Config{
@@ -150,7 +151,7 @@ func (c *Config) GetGasToken() modules.AssetId {
 	if c.gasToken == modules.ZeroIdType16() {
 		token, _, err := modules.String2AssetId(c.GasToken)
 		if err != nil {
-			log.Warn("Cannot parse node.GasToken to a correct asset, token str:" + c.GasToken)
+			log.Warn("Cannot parse node.GasToken to a correct asset, token str:" + c.GasToken + ",error: " + err.Error())
 			return modules.PTNCOIN
 		}
 		c.gasToken = token

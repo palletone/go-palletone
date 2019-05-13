@@ -35,7 +35,7 @@ import (
 
 var systemChaincodes = []*SystemChaincode{
 	{
-		Id:        syscontract.TestRunContractAddress.Bytes21(), //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
+		Id:        syscontract.TestRunContractAddress.Bytes(), //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 		Enabled:   true,
 		Name:      "sample_syscc",
 		Path:      "../example/go/samplesyscc/samplesyscc",
@@ -66,7 +66,7 @@ var systemChaincodes = []*SystemChaincode{
 	//	Chaincode: &samplesyscc2.SampleSysCC2{},
 	//},
 	{
-		Id:        syscontract.DepositContractAddress.Bytes21(), //合约ID为20字节
+		Id:        syscontract.DepositContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "deposit_syscc",
 		Path:      "../example/go/deposit/deposit",
@@ -75,7 +75,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &deposit.DepositChaincode{},
 	},
 	{
-		Id:        syscontract.CreateTokenContractAddress.Bytes21(), //合约ID为20字节
+		Id:        syscontract.CreateTokenContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "createToken_sycc",
 		Path:      "../syscontract/prc20/prc20",
@@ -84,7 +84,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &prc20.PRC20{},
 	},
 	{
-		Id:        syscontract.VoteTokenContractAddress.Bytes21(), //合约ID为20字节
+		Id:        syscontract.VoteTokenContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "voteToken_sycc",
 		Path:      "../syscontract/vote/vote",
@@ -93,7 +93,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &vote.Vote{},
 	},
 	{
-		Id:        syscontract.SysConfigContractAddress.Bytes21(),
+		Id:        syscontract.SysConfigContractAddress.Bytes(),
 		Enabled:   true,
 		Name:      "sysconfig_sycc",
 		Path:      "../syscontract/sysconfigcc/sysconfigcc",
@@ -102,7 +102,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &sysconfigcc.SysConfigChainCode{},
 	},
 	{
-		Id:        syscontract.CreateToken721ContractAddress.Bytes21(), //合约ID为20字节
+		Id:        syscontract.CreateToken721ContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
 		Name:      "createToken721_sycc",
 		Path:      "../syscontract/prc721/prc721",
@@ -111,7 +111,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &prc721.PRC721{},
 	},
 	{
-		Id:        syscontract.DigitalIdentityContractAddress.Bytes21(),
+		Id:        syscontract.DigitalIdentityContractAddress.Bytes(),
 		Enabled:   true,
 		Name:      "digital_identity_sycc",
 		Path:      "../syscontract/digitalidcc/digitalidcc",
@@ -120,7 +120,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &digitalidcc.DigitalIdentityChainCode{},
 	},
 	{
-		Id:        syscontract.PartitionContractAddress.Bytes21(),
+		Id:        syscontract.PartitionContractAddress.Bytes(),
 		Enabled:   true,
 		Name:      "partition_manager_sycc",
 		Path:      ".",
@@ -129,7 +129,7 @@ var systemChaincodes = []*SystemChaincode{
 		Chaincode: &partitioncc.PartitionMgr{},
 	},
 	{
-		Id:        syscontract.TestContractAddress.Bytes21(),
+		Id:        syscontract.TestContractAddress.Bytes(),
 		Enabled:   true,
 		Name:      "debug_sycc",
 		Path:      "../syscontract/debugcc/debugcc",

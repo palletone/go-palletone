@@ -21,7 +21,6 @@
 package core
 
 const (
-	DefaultAlias       = "PTN"
 	DefaultTokenAmount = "100000000000000000"
 	//DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
@@ -41,7 +40,8 @@ const (
 	DefaultUccCpuQuota   = "25000"      //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
 	DefaultUccCpuSetCpus = "0-3"        //限制使用某些CPUS  "1,3"  "0-3"
 
-	DefaultTempUccMemory     = "1073741824" //物理内存  1073741824  1G
+	DefaultTempUccMemory = "1073741824" //物理内存  1073741824  1G
+	//DefaultTempUccMemory     = "52428800" //50M
 	DefaultTempUccMemorySwap = "1073741824" //内存交换区，不设置默认为memory的两倍 1073741824  1G
 	DefaultTempUccCpuShares  = "512"        //CPU占用率，相对的  CPU 利用率权重，默认为 1024
 	DefaultTempUccCpuQuota   = "200000"     //限制CPU 200%上限
