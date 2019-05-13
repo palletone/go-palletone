@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/light"
 	"github.com/palletone/go-palletone/ptn"
 )
 
@@ -361,7 +360,7 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash) error {
+func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash, server *CorsServer) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 

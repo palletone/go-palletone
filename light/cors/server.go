@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
 )
 
@@ -35,6 +36,7 @@ func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error)
 		protocolManager: pm,
 		quitSync:        quitSync,
 	}
+	pm.server = srv
 
 	return srv, nil
 }
@@ -59,5 +61,62 @@ func (s *CorsServer) Stop() {
 }
 
 func (pm *ProtocolManager) blockLoop() {
+	pm.wg.Add(1)
+	headCh := make(chan modules.ChainHeadEvent, 10)
+	headSub := pm.dag.SubscribeChainHeadEvent(headCh)
+	go func() {
+		var lastHead *modules.Header
+		for {
+			select {
+			case ev := <-headCh:
+				peers := pm.peers.AllPeers()
+				if len(peers) > 0 {
+					header := ev.Unit.Header()
+					hash := header.Hash()
+					number := header.Number.Index
+					//td := core.GetTd(pm.chainDb, hash, number)
+					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
+						lastHead = header
+						log.Debug("Announcing block to peers", "number", number, "hash", hash)
 
+						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
+						var (
+							signed         bool
+							signedAnnounce announceData
+						)
+
+						for _, p := range peers {
+							log.Debug("Light Palletone", "ProtocolManager->blockLoop p.announceType", p.announceType)
+							switch p.announceType {
+
+							case announceTypeSimple:
+								select {
+								case p.announceChn <- announce:
+								default:
+									pm.removePeer(p.id)
+								}
+
+							case announceTypeSigned:
+								if !signed {
+									signedAnnounce = announce
+									signedAnnounce.sign(pm.server.privateKey)
+									signed = true
+								}
+
+								select {
+								case p.announceChn <- signedAnnounce:
+								default:
+									pm.removePeer(p.id)
+								}
+							}
+						}
+					}
+				}
+			case <-pm.quitSync:
+				headSub.Unsubscribe()
+				pm.wg.Done()
+				return
+			}
+		}
+	}()
 }

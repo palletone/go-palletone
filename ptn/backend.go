@@ -69,6 +69,7 @@ type PalletOne struct {
 	txPool          txspool.ITxPool
 	protocolManager *ProtocolManager
 	lesServer       LesServer
+	corsServer      LesServer
 
 	eventMux       *event.TypeMux
 	engine         core.ConsensusEngine
@@ -97,7 +98,10 @@ type PalletOne struct {
 
 func (p *PalletOne) AddLesServer(ls LesServer) {
 	p.lesServer = ls
-	//ls.SetBloomBitsIndexer(p.bloomIndexer)
+}
+
+func (p *PalletOne) AddCorsServer(ls LesServer) {
+	p.corsServer = ls
 }
 
 // New creates a new PalletOne object (including the
@@ -250,7 +254,8 @@ func (s *PalletOne) UnitDb() ptndb.Database             { return s.unitDb }
 
 func (s *PalletOne) ContractProcessor() *jury.Processor { return s.contractPorcessor }
 func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManager }
-func (s *PalletOne) GetLesServer() LesServer            { return s.lesServer }
+
+//func (s *PalletOne) GetLesServer() LesServer            { return s.lesServer }
 
 func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
@@ -282,7 +287,11 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 	if s.lesServer == nil {
 		return s.protocolManager.SubProtocols
 	}
-	return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
+	if s.corsServer == nil {
+		return s.protocolManager.SubProtocols
+	}
+	protocols := append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
+	return append(protocols, s.corsServer.Protocols()...)
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
@@ -316,6 +325,9 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	if s.lesServer != nil {
 		s.lesServer.Start(srvr)
 	}
+	if s.corsServer != nil {
+		s.corsServer.Start(srvr)
+	}
 	return nil
 }
 
@@ -337,6 +349,10 @@ func (s *PalletOne) Stop() error {
 	s.dag.Close()
 	if s.lesServer != nil {
 		s.lesServer.Stop()
+	}
+
+	if s.corsServer != nil {
+		s.corsServer.Stop()
 	}
 
 	return nil
