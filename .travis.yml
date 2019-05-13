@@ -25,8 +25,8 @@ script:
 
 after_success:
     - killall gptn
-    - crl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/cmd/gptn/log/all.log ftp://39.105.191.26:21/ftptest/
-    - crl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/cmd/gptn/log/error.log ftp://39.105.191.26:21/ftptest/
+    - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/cmd/gptn/log/all.log ftp://39.105.191.26:21/ftptest/
+    - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/cmd/gptn/log/error.log ftp://39.105.191.26:21/ftptest/
     - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log.html ftp://39.105.191.26:21/ftptest/
     - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://39.105.191.26:21/ftptest/
     - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/ccinvoke.log.html ftp://39.105.191.26:21/ftptest/
@@ -34,8 +34,8 @@ after_success:
 
 after_failure:
     - killall gptn
-    - crl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/cmd/gptn/log/all.log ftp://39.105.191.26:21/ftptest/
-    - crl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/cmd/gptn/log/error.log ftp://39.105.191.26:21/ftptest/
+    - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/cmd/gptn/log/all.log ftp://39.105.191.26:21/ftptest/
+    - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/cmd/gptn/log/error.log ftp://39.105.191.26:21/ftptest/
     - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/deposit_test.log.html ftp://39.105.191.26:21/ftptest/
     - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://39.105.191.26:21/ftptest/
     - curl -u ftptest:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/ccinvoke.log.html ftp://39.105.191.26:21/ftptest/
