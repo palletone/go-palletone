@@ -102,7 +102,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) 
 	peers := newPeerSet()
 	gasToken := config.Dag.GetGasToken()
 
-	//quitSync := make(chan struct{})
+	quitSync := make(chan struct{})
 
 	lptn := &LightPalletone{
 		config: config,
@@ -128,7 +128,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) 
 	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
-		dag, lptn.eventMux, genesis); err != nil {
+		dag, lptn.eventMux, genesis, quitSync); err != nil {
 		return nil, err
 	}
 
