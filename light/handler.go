@@ -158,17 +158,14 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
 func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId, txpool txPool,
-	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit) (*ProtocolManager, error) {
+	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		lightSync: lightSync,
 		eventMux:  mux,
 		assetId:   gasToken,
 		genesis:   genesis,
-		//blockchain:  blockchain,
-		//chainConfig: chainConfig,
-		//chainDb:     chainDb,
-		//odr:         odr,
+		quitSync:  quitSync,
 		dag:       dag,
 		networkId: networkId,
 		txpool:    txpool,

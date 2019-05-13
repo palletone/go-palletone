@@ -10,11 +10,8 @@ import (
 type CorsServer struct {
 	config          *ptn.Config
 	protocolManager *ProtocolManager
-	//lesTopics       []discv5.Topic
-	privateKey *ecdsa.PrivateKey
-	quitSync   chan struct{}
-
-	//chtIndexer, bloomTrieIndexer *core.ChainIndexer
+	privateKey      *ecdsa.PrivateKey
+	quitSync        chan struct{}
 }
 
 func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error) {
@@ -26,8 +23,8 @@ func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error)
 		return nil, err
 	}
 
-	pm, err := NewProtocolManager(false, newPeerSet(), config.NetworkId, gasToken,
-		ptn.Dag(), ptn.EventMux(), genesis)
+	pm, err := NewCorsProtocolManager(true, newPeerSet(), config.NetworkId, gasToken,
+		ptn.Dag(), ptn.EventMux(), genesis, quitSync)
 	if err != nil {
 		log.Error("NewlesServer NewProtocolManager", "err", err)
 		return nil, err

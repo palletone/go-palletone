@@ -137,9 +137,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 			}
 			hasRequestMsg = true
 			payload, _ := msg.Payload.(*modules.ContractInvokeRequestPayload)
-			if len(payload.ContractId) == 0 {
-				return TxValidationCode_INVALID_CONTRACT, nil
-			}
 			// 验证ContractId有效性
 			if len(payload.ContractId) <= 0 {
 				return TxValidationCode_INVALID_CONTRACT, nil
