@@ -42,9 +42,9 @@ func NewPublicMediatorAPI(b Backend) *PublicMediatorAPI {
 	return &PublicMediatorAPI{b}
 }
 
-func (a *PublicMediatorAPI) IsApproved(AddStr string) (string, error) {
+func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	// 构建参数
-	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.IsApproved), []byte(AddStr)}
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.IsApproved), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
 	// 调用系统合约
@@ -56,9 +56,9 @@ func (a *PublicMediatorAPI) IsApproved(AddStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func (a *PublicMediatorAPI) GetDeposit(AddStr string) (*deposit.DepositBalance, error) {
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, error) {
 	// 构建参数
-	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetDeposit), []byte(AddStr)}
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
 	// 调用系统合约
@@ -74,6 +74,15 @@ func (a *PublicMediatorAPI) GetDeposit(AddStr string) (*deposit.DepositBalance, 
 	}
 
 	return nil, fmt.Errorf(string(rsp))
+}
+
+func (a *PublicMediatorAPI) IsInList(addStr string) (bool, error) {
+	mediator, err := common.StringToAddress(addStr)
+	if err != nil {
+		return false, err
+	}
+
+	return a.Dag().IsMediator(mediator), nil
 }
 
 func (a *PublicMediatorAPI) GetList() []string {
