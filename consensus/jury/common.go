@@ -446,11 +446,11 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	}
 	if msg1 != nil && msg2 != nil {
 		if msg1.CompareMessages(msg2) {
-			log.Debug("msgsCompare", "msg is equal, type", msgType)
+			log.Debug("msgsCompare,msg is equal.", "type", msgType)
 			return true
 		}
 	}
-	log.Debug("msgsCompare", "msg is not equal") //todo del
+	log.Debug("msgsCompare,msg is not equal", "msg1", msg1.Payload, "msg2", msg2.Payload) //todo del
 	return false
 }
 
