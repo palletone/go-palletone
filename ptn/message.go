@@ -382,11 +382,14 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	var temptxs modules.Transactions
 	for _, tx := range unit.Txs {
 		if tx.IsContractTx() {
+			log.Debug("rwset info:", "readset_init", rwset.RwM.BaseTxSim())
 			if !pm.contractProc.CheckContractTxValid(rwset.RwM, tx, true) {
+				log.Debug("rwset info:", "readset_not_equal", rwset.RwM.BaseTxSim()["palletone"].String())
 				log.Debug("NewBlockMsg,CheckContractTxValid is false.", "reqHash", tx.RequestHash().String())
 				//return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
 				continue
 			}
+			log.Debug("rwset info:", "readset_equal", rwset.RwM.BaseTxSim()["palletone"].String())
 			//rwset.RwM.CloseTxSimulator(rwset.ChainId, tx.RequestHash().String())
 		}
 		temptxs = append(temptxs, tx)

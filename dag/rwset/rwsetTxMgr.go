@@ -87,6 +87,10 @@ func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string, 
 	}
 }
 
+func (m *RwSetTxMgr) BaseTxSim() map[string]TxSimulator {
+	return m.baseTxSim
+}
+
 // 每次产块结束后，需要关闭该chainId的txsimulator.
 func (m *RwSetTxMgr) CloseTxSimulator(chainid, txid string) error {
 	m.rwLock.Lock()

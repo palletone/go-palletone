@@ -31,4 +31,5 @@ type TxSimulator interface {
 	GetTxSimulationResults() ([]byte, error)
 	CheckDone() error
 	Done()
+	String() string
 }

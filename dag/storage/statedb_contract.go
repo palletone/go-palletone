@@ -141,7 +141,7 @@ func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, v
 func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
 	contractAddress := common.NewAddress(id, common.ContractHash)
-	log.Debugf("save contract(%v) States: %v", contractAddress.Str())
+	log.Debugf("save contract(%v) StateVersion: %v", contractAddress.Str(), version.String())
 
 	for _, write := range wset {
 		key := getContractStateKey(id, write.Key)

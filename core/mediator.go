@@ -70,15 +70,15 @@ func NewMediator() *Mediator {
 
 //申请成为Mediator
 type MediatorApplyInfo struct {
-	Address   string `json:"address"`
-	Content   string `json:"content"`
-	Time int64  `json:"time"` // mediator 申请时间或者申请退出时间
+	Address string `json:"address"`
+	Content string `json:"content"`
+	Time    int64  `json:"time"` // mediator 申请时间或者申请退出时间
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
 	return &MediatorApplyInfo{
-		Content:   "",
-		Time: time.Now().Unix(),
+		Content: "",
+		Time:    time.Now().Unix(),
 	}
 }
 
