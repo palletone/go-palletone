@@ -285,7 +285,7 @@ func (s *RwSetTxSimulator) String() string {
 	for k, v := range s.rwsetBuilder.pubRwBuilderMap {
 		str += ("key:" + k)
 		for rk, rv := range v.readMap {
-			str += fmt.Sprintf("val__[key:%s],[value:%s]", rk, rv.String())
+			//str += fmt.Sprintf("val__[key:%s],[value:%s]", rk, rv.String())
 			log.Debug("RwSetTxSimulator) String", "key", rk, "val-", rv)
 		}
 	}
