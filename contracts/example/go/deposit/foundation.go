@@ -506,7 +506,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("arg need two parameters.")
 	}
 	//获取申请列表
-	becomeList, err := GetBecomeMediatorApplyList(stub)
+	becomeList, err := GetBecomeMediatorApplyLists(stub)
 	if err != nil {
 		log.Error("Stub.GetBecomeMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
@@ -533,7 +533,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		//同意，移除列表，并且加入同意申请列表
 		becomeList, mediator = moveMediatorFromList(addr, becomeList)
 		//获取同意列表
-		agreeList, err := GetAgreeForBecomeMediatorList(stub)
+		agreeList, err := GetAgreeForBecomeMediatorLists(stub)
 		if err != nil {
 			log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 			return shim.Error(err.Error())
@@ -594,7 +594,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		return shim.Error("Arg need two parameter.")
 	}
 	//获取申请列表
-	quitList, err := GetQuitMediatorApplyList(stub)
+	quitList, err := GetQuitMediatorApplyLists(stub)
 	if err != nil {
 		log.Error("Stub.GetQuitMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
@@ -636,7 +636,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 			return shim.Error(err.Error())
 		}
 		//从同意列表中删除
-		agreeList, err := GetAgreeForBecomeMediatorList(stub)
+		agreeList, err := GetAgreeForBecomeMediatorLists(stub)
 		if err != nil {
 			log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
 			return shim.Error(err.Error())

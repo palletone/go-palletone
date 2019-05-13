@@ -43,52 +43,52 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//log.Info("Enter DepositChaincode Contract ApplyBecomeMediator Invoke")
 		//申请成为Mediator
 		return d.applyBecomeMediator(stub, args)
-	case "HandleForApplyBecomeMediator":
+	case HandleForApplyBecomeMediator:
 		//log.Info("Enter DepositChaincode Contract HandleForApplyBecomeMediator Invoke")
 		//基金会对加入申请Mediator进行处理
 		return d.handleForApplyBecomeMediator(stub, args)
-	case "MediatorApplyQuitMediator":
+	case MediatorApplyQuitMediator:
 		//申请退出Mediator
 		return d.mediatorApplyQuitMediator(stub, args)
-	case "HandleForApplyQuitMediator":
+	case HandleForApplyQuitMediator:
 		//基金会对退出申请Mediator进行处理
 		return d.handleForApplyQuitMediator(stub, args)
 	case modules.MediatorPayDeposit:
 		//mediator 交付保证金
 		return d.mediatorPayToDepositContract(stub, args)
-	case "JuryPayToDepositContract":
+	case JuryPayToDepositContract:
 		//jury 交付保证金
 		return d.juryPayToDepositContract(stub, args)
-	case "DeveloperPayToDepositContract":
+	case DeveloperPayToDepositContract:
 		//developer 交付保证金
 		return d.developerPayToDepositContract(stub, args)
-	case "MediatorApplyCashback":
+	case MediatorApplyCashback:
 		//mediator 申请提取保证金
 		return d.mediatorApplyCashback(stub, args)
-	case "HandleForMediatorApplyCashback":
+	case HandleForMediatorApplyCashback:
 		//基金会处理提取保证金
 		return d.handleForMediatorApplyCashback(stub, args)
-	case "JuryApplyCashback":
+	case JuryApplyCashback:
 		//jury 申请提取保证金
 		return d.juryApplyCashback(stub, args)
-	case "HandleForJuryApplyCashback":
+	case HandleForJuryApplyCashback:
 		//基金会处理提取保证金
 		return d.handleForJuryApplyCashback(stub, args)
-	case "DeveloperApplyCashback":
+	case DeveloperApplyCashback:
 		//developer 申请提取保证金
 		return d.developerApplyCashback(stub, args)
-	case "HandleForDeveloperApplyCashback":
+	case HandleForDeveloperApplyCashback:
 		//基金会处理提取保证金
 		return d.handleForDeveloperApplyCashback(stub, args)
-	case "ApplyForForfeitureDeposit":
+	case ApplyForForfeitureDeposit:
 		//申请保证金没收
 		//void forfeiture_deposit(const witness_object& wit, token_type amount)
 		return d.applyForForfeitureDeposit(stub, args)
-	case "HandleForForfeitureApplication":
+	case HandleForForfeitureApplication:
 		//基金会对申请做相应的处理
 		return d.handleForForfeitureApplication(stub, args)
 	//获取提取保证金申请列表
-	case "GetListForCashbackApplication":
+	case GetListForCashbackApplication:
 		list, err := stub.GetState(ListForCashback)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -98,7 +98,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取没收保证金申请列表
-	case "GetListForForfeitureApplication":
+	case GetListForForfeitureApplication:
 		list, err := stub.GetState(ListForForfeiture)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -108,7 +108,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取Mediator候选列表
-	case "GetListForMediatorCandidate":
+	case GetListForMediatorCandidate:
 		list, err := stub.GetState(modules.MediatorList)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -118,7 +118,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取Jury候选列表
-	case "GetListForJuryCandidate":
+	case GetListForJuryCandidate:
 		list, err := stub.GetState(modules.JuryList)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -128,7 +128,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取Contract Developer候选列表
-	case "GetListForDeveloperCandidate":
+	case GetListForDeveloperCandidate:
 		list, err := stub.GetState(DeveloperList)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -163,7 +163,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(balance)
 		//获取Mediator申请加入列表
-	case "GetBecomeMediatorApplyList":
+	case GetBecomeMediatorApplyList:
 		log.Info("Enter DepositChaincode Contract GetBecomeMediatorApplyList Invoke")
 		list, err := stub.GetState(ListForApplyBecomeMediator)
 		if err != nil {
@@ -174,7 +174,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取已同意的mediator列表
-	case "GetAgreeForBecomeMediatorList":
+	case GetAgreeForBecomeMediatorList:
 		log.Info("Enter DepositChaincode Contract GetAgreeForBecomeMediatorList Invoke")
 		list, err := stub.GetState(ListForAgreeBecomeMediator)
 		if err != nil {
@@ -185,7 +185,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//获取Mediator申请退出列表
-	case "GetQuitMediatorApplyList":
+	case GetQuitMediatorApplyList:
 		list, err := stub.GetState(ListForApplyQuitMediator)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -196,19 +196,34 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(list)
 		//查看是否申请Mediator通过
 	case modules.IsApproved:
-		mediatorRegisterInfo, err := GetAgreeForBecomeMediatorList(stub)
+		mediatorRegisterInfo, err := GetAgreeForBecomeMediatorLists(stub)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		if mediatorRegisterInfo == nil {
-			return shim.Success([]byte("list is nil"))
+			return shim.Success([]byte("Please wait while approval..."))
 		}
 		for _, m := range mediatorRegisterInfo {
 			if args[0] == m.Address {
-				return shim.Success([]byte("had pass"))
+				return shim.Success([]byte("You have already applied, please go to the delivery deposit to join the super node candidate list as soon as possible."))
 			}
 		}
-		return shim.Success([]byte("no pass"))
+		return shim.Success([]byte("Please wait while approval..."))
+		// 查看是否在候选列表中
+	case IsInMediatorCandidateList:
+		mediatorRegisterInfo, err := GetCandidateListForMediator(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if mediatorRegisterInfo == nil {
+			return shim.Success([]byte("Super node candidate list is empty."))
+		}
+		for _, m := range mediatorRegisterInfo {
+			if args[0] == m.Address {
+				return shim.Success([]byte("Joined the super node candidate list."))
+			}
+		}
+		return shim.Success([]byte("Not in the supernode candidate list."))
 	}
 
 	return shim.Error("Please enter validate function name.")

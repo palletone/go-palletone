@@ -33,6 +33,30 @@ const (
 	Ok                         = "ok"
 	No                         = "no"
 	DTimeDuration              = 1800
+	//获取Mediator候选列表
+	GetListForMediatorCandidate = "GetListForMediatorCandidate"
+	//查看是否在候选列表中
+	IsInMediatorCandidateList       = "IsInMediatorCandidateList"
+	GetQuitMediatorApplyList        = "GetQuitMediatorApplyList"
+	GetAgreeForBecomeMediatorList   = "GetAgreeForBecomeMediatorList"
+	GetBecomeMediatorApplyList      = "GetBecomeMediatorApplyList"
+	GetListForDeveloperCandidate    = "GetListForDeveloperCandidate"
+	GetListForJuryCandidate         = "GetListForJuryCandidate"
+	GetListForForfeitureApplication = "GetListForForfeitureApplication"
+	GetListForCashbackApplication   = "GetListForCashbackApplication"
+	HandleForForfeitureApplication  = "HandleForForfeitureApplication"
+	ApplyForForfeitureDeposit       = "ApplyForForfeitureDeposit"
+	HandleForDeveloperApplyCashback = "HandleForDeveloperApplyCashback"
+	DeveloperApplyCashback          = "DeveloperApplyCashback"
+	HandleForJuryApplyCashback      = "HandleForJuryApplyCashback"
+	JuryApplyCashback               = "JuryApplyCashback"
+	HandleForMediatorApplyCashback  = "HandleForMediatorApplyCashback"
+	MediatorApplyCashback           = "MediatorApplyCashback"
+	DeveloperPayToDepositContract   = "DeveloperPayToDepositContract"
+	JuryPayToDepositContract        = "JuryPayToDepositContract"
+	HandleForApplyQuitMediator      = "HandleForApplyQuitMediator"
+	MediatorApplyQuitMediator       = "MediatorApplyQuitMediator"
+	HandleForApplyBecomeMediator    = "HandleForApplyBecomeMediator"
 )
 
 //申请提保证金

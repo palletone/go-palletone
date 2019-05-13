@@ -137,11 +137,6 @@ func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, 
 	return []byte(fmt.Sprintf("%d", timeHeader.Time)), nil
 }
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
-	//log.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
-	//fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
-	//balance := &modules.DepositBalance{}
-	//_ = json.Unmarshal(value, balance)
-	//fmt.Printf("llllllll   %#v\n", stateValue)
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
@@ -284,4 +279,15 @@ func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte
 func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64, creator string) error {
 	createAddr, _ := common.StringToAddress(creator)
 	return s.rwsetBuilder.AddSupplyToken(ns, assetId, uniqueId, amt, createAddr)
+}
+func (s *RwSetTxSimulator) String() string {
+	str := "rwSet_txSimulator: "
+	for k, v := range s.rwsetBuilder.pubRwBuilderMap {
+		str += ("key:" + k)
+		for rk, rv := range v.readMap {
+			//str += fmt.Sprintf("val__[key:%s],[value:%s]", rk, rv.String())
+			log.Debug("RwSetTxSimulator) String", "key", rk, "val-", rv)
+		}
+	}
+	return str
 }

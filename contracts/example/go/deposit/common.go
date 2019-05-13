@@ -448,14 +448,14 @@ func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashbac
 func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, modules.MediatorList)
 }
-func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
+func GetBecomeMediatorApplyLists(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForApplyBecomeMediator)
 }
-func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
+func GetQuitMediatorApplyLists(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForApplyQuitMediator)
 }
 
-func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
+func GetAgreeForBecomeMediatorLists(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
 	return GetList(stub, ListForAgreeBecomeMediator)
 
 }
