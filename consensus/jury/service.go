@@ -257,7 +257,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	} else {
 		account := p.getLocalAccount()
 		if account == nil {
-			log.Error("runContractReq", "not find local account, reqId", reqId)
+			log.Error("runContractReq", "not find local account, reqId", reqId.String())
 			return errors.New("runContractReq no local account")
 		}
 		sigTx, err := p.GenContractSigTransaction(account.Address, account.Password, tx, p.ptn.GetKeyStore())
@@ -273,9 +273,9 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 				if err != nil {
 					log.Debug("runContractReq", "checkAndAddTxSigMsgData error", err.Error())
 				} else if ok {
-					log.Debug("runContractReq", "checkAndAddTxSigMsgData ok, reqId", reqId)
+					log.Debug("runContractReq", "checkAndAddTxSigMsgData ok, reqId", reqId.String())
 				} else {
-					log.Debug("runContractReq", "checkAndAddTxSigMsgData fail, reqId", reqId)
+					log.Debug("runContractReq", "checkAndAddTxSigMsgData fail, reqId", reqId.String())
 				}
 			}
 			req.rcvTx = nil
@@ -283,7 +283,10 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 
 		if getTxSigNum(req.sigTx) >= p.contractSigNum {
 			if localIsMinSignature(req.sigTx) {
-				log.Info("runContractReq", "localIsMinSignature Ok!, reqId", reqId)
+				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
+				log.Info("runContractReq", "localIsMinSignature Ok!, reqId", reqId.String())
+
+				processContractPayout(req.sigTx, elf)
 				go p.ptn.ContractBroadcast(ContractEvent{Ele: req.eleInf, CType: CONTRACT_EVENT_COMMIT, Tx: req.sigTx}, true)
 				return nil
 			}
@@ -308,16 +311,20 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 	needSignMsg := true
 	//Find contract pay out payment messages
 	resultMsg := false
+	isSysContract := false
 	for msgidx, msg := range tx.TxMessages {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			resultMsg = true
+			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			isSysContract = common.IsSystemContractAddress(requestMsg.ContractId)
 			continue
 		}
 		if resultMsg {
 			if msg.App == modules.APP_PAYMENT {
 				//Contract result里面的Payment只有2种，创币或者从合约付出，
 				payment := msg.Payload.(*modules.PaymentPayload)
-				if !payment.IsCoinbase() {
+				if !payment.IsCoinbase() && isSysContract {
+					//如果是系统合约付出，那么Mediator一个签名就够了
 					//Contract Payout, need sign
 					needSignMsg = false
 					pubKey, _ := ks.GetPublicKey(singer)

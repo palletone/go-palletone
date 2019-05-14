@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
+	"math"
 )
 
 const (
@@ -63,7 +64,59 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 	}
 	return false
 }
+func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
+	count := len(jury)
+	needed := byte(math.Ceil(float64(count) * 2 / 3))
+	pubKeys := [][]byte{}
+	for _, jurior := range jury {
+		pubKeys = append(pubKeys, jurior.PublicKey)
+	}
+	return tokenengine.GenerateRedeemScript(needed, pubKeys), nil
+}
 
+//对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
+func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
+	if has, payout := tx.HasContractPayoutMsg(); has {
+		_, signs := getSignature(tx)
+
+		redeem, err := generateJuryRedeemScript(elf)
+		if err != nil {
+			log.Errorf("generateJuryRedeemScript error:%s", err.Error())
+		}
+		unlock := tokenengine.MergeContractUnlockScript(signs, redeem)
+		log.DebugDynamic(func() string {
+			unlockStr, _ := tokenengine.DisasmString(unlock)
+			return fmt.Sprintf("Move sign payload to contract payout unlock script:%s", unlockStr)
+		})
+		for _, input := range payout.Inputs {
+			input.SignatureScript = unlock
+		}
+	}
+	//remove signature payload
+	msgs := []*modules.Message{}
+	for _, msg := range tx.TxMessages {
+		if msg.App != modules.APP_SIGNATURE {
+			msgs = append(msgs, msg)
+		}
+	}
+	log.Debug("Remove SignaturePayload from req[%s]", tx.RequestHash().String())
+	tx.TxMessages = msgs
+}
+func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_SIGNATURE {
+			sig := msg.Payload.(*modules.SignaturePayload)
+			pubKeys := [][]byte{}
+			signs := [][]byte{}
+			for _, s := range sig.Signatures {
+				pubKeys = append(pubKeys, s.PubKey)
+				signs = append(signs, s.Signature)
+			}
+			return pubKeys, signs
+		}
+	}
+	return nil, nil
+}
 func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) error {
 	if local == nil || recv == nil {
 		return errors.New("checkAndAddSigSet param is nil")
