@@ -60,7 +60,8 @@ func electionOnce(index int, ks *keystore.KeyStore) {
 	//h := util.RlpHash(acc)
 	//log.Info("electionOnce", "account hash", h)
 
-	proof, err := ele.checkElected(getElectionSeedData(reqId))
+	seedData:= getElectionSeedData(reqId)
+	proof, err := ele.checkElected(seedData)
 	if err != nil {
 		log.Error("electionOnce", "checkElected fail", err, "index", index)
 		return
