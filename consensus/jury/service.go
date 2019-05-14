@@ -366,6 +366,7 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 					Signatures: sigs,
 				},
 			}
+			log.Debugf("Add sign message[%s] to tx requestId[%s]", sigSet.String(), tx.RequestHash().String())
 			tx.TxMessages = append(tx.TxMessages, msgSig)
 		}
 		log.Debug("GenContractSigTransactions", "orgTx.TxId id ok:", tx.Hash())
