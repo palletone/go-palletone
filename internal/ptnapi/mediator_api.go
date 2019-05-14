@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -56,7 +55,7 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, error) {
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorInfo, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
@@ -67,7 +66,7 @@ func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, 
 		return nil, err
 	}
 
-	depositB := &deposit.DepositBalance{}
+	depositB := &modules.MediatorInfo{}
 	err = json.Unmarshal(rsp, depositB)
 	if err == nil {
 		return depositB, nil
@@ -196,7 +195,7 @@ func (args *MediatorCreateArgs) setDefaults() {
 		args.Address = args.AddStr
 	}
 
-	args.Time = time.Now().Unix()
+	args.ApplyEnterTime = time.Now().Unix()
 
 	return
 }
