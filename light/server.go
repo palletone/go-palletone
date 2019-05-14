@@ -53,7 +53,7 @@ type LesServer struct {
 	//chtIndexer, bloomTrieIndexer *core.ChainIndexer
 }
 
-func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
+func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (*LesServer, error) {
 	quitSync := make(chan struct{})
 	gasToken := config.Dag.GetGasToken()
 	genesis, err := ptn.Dag().GetGenesisUnit()
@@ -63,7 +63,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 	}
 
 	pm, err := NewProtocolManager(false, newPeerSet(), config.NetworkId, gasToken, ptn.TxPool(),
-		ptn.Dag(), ptn.EventMux(), genesis, quitSync)
+		ptn.Dag(), ptn.EventMux(), genesis, quitSync, protocolname)
 	if err != nil {
 		log.Error("NewlesServer NewProtocolManager", "err", err)
 		return nil, err
