@@ -25,14 +25,11 @@ script:
 
 after_success:
     - killall gptn
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://39.105.191.26/pub/
+    - curl -T /homae/travis/gopth/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://ftpuser:123456@39.105.191.26/pub/
 
 after_failure:
     - killall gptn
-    - curl -u ftpuser:123456 -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://39.105.191.26/pub/
-
-
-
+    - curl -T /homae/travis/gopth/src/github.com/palletone/go-palletone/bdd/logs/DigitalIdentityCert.log.html ftp://ftpuser:123456@39.105.191.26/pub/
 
 before_install:
     - go get github.com/mattn/goveralls
