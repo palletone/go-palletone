@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -151,31 +152,32 @@ type ProtocolManager struct {
 	wg *sync.WaitGroup
 
 	//SPV
-	validation *Validation
-	utxosync   *UtxosSync
+	validation   *Validation
+	utxosync     *UtxosSync
+	protocolname string
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
 func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId, txpool txPool,
-	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}) (*ProtocolManager, error) {
+	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}, protocolname string) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		lightSync: lightSync,
-		eventMux:  mux,
-		assetId:   gasToken,
-		genesis:   genesis,
-		quitSync:  quitSync,
-		dag:       dag,
-		networkId: networkId,
-		txpool:    txpool,
-
-		peers:       peers,
-		newPeerCh:   make(chan *peer),
-		wg:          new(sync.WaitGroup),
-		noMorePeers: make(chan struct{}),
-		validation:  NewValidation(dag),
-		utxosync:    NewUtxosSync(dag),
+		lightSync:    lightSync,
+		eventMux:     mux,
+		assetId:      gasToken,
+		genesis:      genesis,
+		quitSync:     quitSync,
+		dag:          dag,
+		networkId:    networkId,
+		txpool:       txpool,
+		protocolname: protocolname,
+		peers:        peers,
+		newPeerCh:    make(chan *peer),
+		wg:           new(sync.WaitGroup),
+		noMorePeers:  make(chan struct{}),
+		validation:   NewValidation(dag),
+		utxosync:     NewUtxosSync(dag),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -185,7 +187,7 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		// Compatible, initialize the sub-protocol
 		//version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
-			Name:    "lps",
+			Name:    protocolname,
 			Version: version,
 			Length:  ProtocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
@@ -353,15 +355,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return p2p.DiscTooManyPeers
 	}
-
 	log.Debug("Light Palletone peer connected", "name", p.Name())
 
-	// Execute the LES handshake
-	//var (
-	//	head   = pm.dag.CurrentHeader(pm.assetId)
-	//	number = head.Number
-	//	//td     = pm.blockchain.GetTd(hash, number)
-	//)
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("Light PalletOne New", "get genesis err:", err)
@@ -376,10 +371,22 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
-		log.Debug("Light Palletone handshake failed", "err", err)
-		return err
+	if pm.protocolname == configure.LPSProtocol {
+		if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
+			log.Debug("Light Palletone handshake failed", "err", err)
+			return err
+		}
+	} else if pm.protocolname == configure.CORSProtocol {
+		//mainchain, err := pm.GetMainChain()
+		//if err != nil {
+		//	return nil
+		//}
+		//if err := p.CorsHandshake(number, genesis.Hash(), pm.server, headhash, mainchain); err != nil {
+		//	log.Debug("Light Palletone handshake failed", "err", err)
+		//	return err
+		//}
 	}
+
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}

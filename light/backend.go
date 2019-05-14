@@ -84,7 +84,7 @@ type LightPalletone struct {
 	txSub event.Subscription
 }
 
-func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) {
+func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string) (*LightPalletone, error) {
 	chainDb, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config) (*LightPalletone, error) 
 	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
-		dag, lptn.eventMux, genesis, quitSync); err != nil {
+		dag, lptn.eventMux, genesis, quitSync, protocolname); err != nil {
 		return nil, err
 	}
 

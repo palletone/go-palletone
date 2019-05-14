@@ -115,7 +115,9 @@ func (p *peer) Info() *ptn.PeerInfo {
 func (p *peer) Head() (hash common.Hash) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-
+	if p.headInfo == nil {
+		return hash
+	}
 	copy(hash[:], p.headInfo.Hash[:])
 	return hash
 }
@@ -503,7 +505,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	if err := recv.get("fullnode", nil); err != nil {
 		p.fullnode = false
 		log.Debug("Light Palletone peer->Handshake peer is light node")
-	}else {
+	} else {
 		p.fullnode = true
 		log.Debug("Light Palletone peer->Handshake peer is full node")
 	}

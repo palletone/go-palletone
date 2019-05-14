@@ -711,6 +711,6 @@ func TestContractTxIllegal(t *testing.T) {
 		log.Debug("TestContractTxIllegal", "MarkTxIllegal err", err)
 	}
 
-	log.Debug("TestContractTxIllegal", "txs", txs)
+	//log.Debug("TestContractTxIllegal", "txs", txs)
 
 }
