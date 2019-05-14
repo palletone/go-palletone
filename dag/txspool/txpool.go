@@ -98,6 +98,10 @@ type dags interface {
 	// getTxfee
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	//GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetMinFee() (*modules.AmountAsset, error)
+	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -223,7 +227,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	}
 	pool.mu = new(sync.RWMutex)
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
-	pool.txValidator = validator.NewValidate(unit, pool, nil)
+	pool.txValidator = validator.NewValidate(unit, pool, unit)
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)
