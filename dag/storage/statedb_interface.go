@@ -87,13 +87,13 @@ type IStateDb interface {
 	GetMediators() map[common.Address]bool
 	LookupMediator() map[common.Address]*core.Mediator
 
-	GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error)
+	GetApprovedMediatorList() (map[string]bool, error)
 	IsApprovedMediator(address common.Address) bool
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 
-	GetJuryCandidateList() ([]common.Address, error)
+	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
 
 	UpdateSysParams(ver *modules.StateVersion) error

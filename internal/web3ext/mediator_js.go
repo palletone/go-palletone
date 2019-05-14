@@ -63,6 +63,11 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
+			name: 'isInList',
+			call: 'mediator_isInList',
+			params: 1,
+		}),
+		new web3._extend.Method({
 			name: 'vote',
 			call: 'mediator_vote',
 			params: 2,

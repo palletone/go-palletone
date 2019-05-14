@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
@@ -67,28 +66,31 @@ func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 	contractId := depositeContractAddress.Bytes()
 	//fmt.Println(contractId)
 	addr1 := "P1G988UGLytFgPwxy1bzY3FkzPT46ThDhTJ"
-	mediator1 := &core.MediatorApplyInfo{
-		Address: addr1,
-	}
+	//mediator1 := &core.MediatorApplyInfo{
+	//	Address: addr1,
+	//}
 	//assert.Nil(t, err, "string 2 address fail: ")
 	addr2 := "P1FbTqEaSLNfhp1hCwNmRkj5BkMjTNU8jRp"
-	mediator2 := &core.MediatorApplyInfo{
-		Address: addr2,
-	}
+	//mediator2 := &core.MediatorApplyInfo{
+	//	Address: addr2,
+	//}
 	//assert.Nil(t, err, "string 2 address fail: ")
-	mediatorList := []*core.MediatorApplyInfo{mediator1, mediator2}
-	mediatorListBytes, err := json.Marshal(mediatorList)
+	//mediatorList := []*core.MediatorApplyInfo{mediator1, mediator2}
+	list1 := make(map[string]bool)
+	list1[addr1] = true
+	list1[addr2] = true
+	mediatorListBytes, err := json.Marshal(list1)
 	assert.Nil(t, err, "json marshal error: ")
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	ws := modules.NewWriteSet("MediatorList", mediatorListBytes)
 
 	err = statedb.SaveContractState(contractId, ws, version)
 	assert.Nil(t, err, "save mediatorlist error: ")
-	list, err := statedb.GetApprovedMediatorList()
+	list2, err := statedb.GetApprovedMediatorList()
 	assert.Nil(t, err, "get mediator candidate list error: ")
-	assert.True(t, len(list) == 2, "len is erroe")
-	for _, mediatorAddr := range list {
-		fmt.Println(mediatorAddr)
+	assert.True(t, len(list2) == 2, "len is erroe")
+	for k, b := range list2 {
+		fmt.Println(k, b)
 	}
 }
 
