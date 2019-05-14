@@ -387,7 +387,10 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 		log.Error(msg)
 		return nil, errors.New(msg)
 	}
-
+	log.DebugDynamic(func() string {
+		data,_:=rlp.EncodeToBytes(tx)
+		return fmt.Sprintf( "Jurior[%s] try to sign tx reqid:%s,signature:%x, tx rlpcode for debug:%x",signer.String(),tx.RequestHash().String(),sign, data)
+	})
 	return sign, nil
 }
 func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {

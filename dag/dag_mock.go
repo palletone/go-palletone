@@ -1379,3 +1379,162 @@ func (mr *MockIDagMockRecorder) RefreshAddrTxIndex() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshAddrTxIndex", reflect.TypeOf((*MockIDag)(nil).RefreshAddrTxIndex))
 }
+
+// GetMinFee mocks base method
+func (m *MockIDag) GetMinFee() (*modules.AmountAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMinFee")
+	ret0, _ := ret[0].(*modules.AmountAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMinFee indicates an expected call of GetMinFee
+func (mr *MockIDagMockRecorder) GetMinFee() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMinFee", reflect.TypeOf((*MockIDag)(nil).GetMinFee))
+}
+
+// GenMediatorCreateTx mocks base method
+func (m *MockIDag) GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenMediatorCreateTx", account, op, txPool)
+	ret0, _ := ret[0].(*modules.Transaction)
+	ret1, _ := ret[1].(uint64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GenMediatorCreateTx indicates an expected call of GenMediatorCreateTx
+func (mr *MockIDagMockRecorder) GenMediatorCreateTx(account, op, txPool interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenMediatorCreateTx", reflect.TypeOf((*MockIDag)(nil).GenMediatorCreateTx), account, op, txPool)
+}
+
+// GenVoteMediatorTx mocks base method
+func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators []string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators, txPool)
+	ret0, _ := ret[0].(*modules.Transaction)
+	ret1, _ := ret[1].(uint64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GenVoteMediatorTx indicates an expected call of GenVoteMediatorTx
+func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, txPool interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, txPool)
+}
+
+// IsMediator mocks base method
+func (m *MockIDag) IsMediator(address common.Address) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMediator", address)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsMediator indicates an expected call of IsMediator
+func (mr *MockIDagMockRecorder) IsMediator(address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMediator", reflect.TypeOf((*MockIDag)(nil).IsMediator), address)
+}
+
+// GetMediators mocks base method
+func (m *MockIDag) GetMediators() map[common.Address]bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMediators")
+	ret0, _ := ret[0].(map[common.Address]bool)
+	return ret0
+}
+
+// GetMediators indicates an expected call of GetMediators
+func (mr *MockIDagMockRecorder) GetMediators() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediators", reflect.TypeOf((*MockIDag)(nil).GetMediators))
+}
+
+// MediatorVotedResults mocks base method
+func (m *MockIDag) MediatorVotedResults() map[string]uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MediatorVotedResults")
+	ret0, _ := ret[0].(map[string]uint64)
+	return ret0
+}
+
+// MediatorVotedResults indicates an expected call of MediatorVotedResults
+func (mr *MockIDagMockRecorder) MediatorVotedResults() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MediatorVotedResults", reflect.TypeOf((*MockIDag)(nil).MediatorVotedResults))
+}
+
+// ActiveMediators mocks base method
+func (m *MockIDag) ActiveMediators() map[common.Address]bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ActiveMediators")
+	ret0, _ := ret[0].(map[common.Address]bool)
+	return ret0
+}
+
+// ActiveMediators indicates an expected call of ActiveMediators
+func (mr *MockIDagMockRecorder) ActiveMediators() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ActiveMediators", reflect.TypeOf((*MockIDag)(nil).ActiveMediators))
+}
+
+// GetAccountVotedMediators mocks base method
+func (m *MockIDag) GetAccountVotedMediators(addr common.Address) []common.Address {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountVotedMediators", addr)
+	ret0, _ := ret[0].([]common.Address)
+	return ret0
+}
+
+// GetAccountVotedMediators indicates an expected call of GetAccountVotedMediators
+func (mr *MockIDagMockRecorder) GetAccountVotedMediators(addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountVotedMediators", reflect.TypeOf((*MockIDag)(nil).GetAccountVotedMediators), addr)
+}
+
+// GetDynGlobalProp mocks base method
+func (m *MockIDag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDynGlobalProp")
+	ret0, _ := ret[0].(*modules.DynamicGlobalProperty)
+	return ret0
+}
+
+// GetDynGlobalProp indicates an expected call of GetDynGlobalProp
+func (mr *MockIDagMockRecorder) GetDynGlobalProp() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDynGlobalProp", reflect.TypeOf((*MockIDag)(nil).GetDynGlobalProp))
+}
+
+// GetMediatorInfo mocks base method
+func (m *MockIDag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMediatorInfo", address)
+	ret0, _ := ret[0].(*modules.MediatorInfo)
+	return ret0
+}
+
+// GetMediatorInfo indicates an expected call of GetMediatorInfo
+func (mr *MockIDagMockRecorder) GetMediatorInfo(address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediatorInfo", reflect.TypeOf((*MockIDag)(nil).GetMediatorInfo), address)
+}
+
+// CurrentFeeSchedule mocks base method
+func (m *MockIDag) CurrentFeeSchedule() core.FeeSchedule {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CurrentFeeSchedule")
+	ret0, _ := ret[0].(core.FeeSchedule)
+	return ret0
+}
+
+// CurrentFeeSchedule indicates an expected call of CurrentFeeSchedule
+func (mr *MockIDagMockRecorder) CurrentFeeSchedule() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentFeeSchedule", reflect.TypeOf((*MockIDag)(nil).CurrentFeeSchedule))
+}
