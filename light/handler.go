@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -371,20 +370,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if pm.protocolname == configure.LPSProtocol {
-		if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
-			log.Debug("Light Palletone handshake failed", "err", err)
-			return err
-		}
-	} else if pm.protocolname == configure.CORSProtocol {
-		//mainchain, err := pm.GetMainChain()
-		//if err != nil {
-		//	return nil
-		//}
-		//if err := p.CorsHandshake(number, genesis.Hash(), pm.server, headhash, mainchain); err != nil {
-		//	log.Debug("Light Palletone handshake failed", "err", err)
-		//	return err
-		//}
+
+	if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
+		log.Debug("Light Palletone handshake failed", "err", err)
+		return err
 	}
 
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {

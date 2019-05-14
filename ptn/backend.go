@@ -287,11 +287,12 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 	if s.lesServer == nil {
 		return s.protocolManager.SubProtocols
 	}
-	if s.corsServer == nil {
-		return s.protocolManager.SubProtocols
-	}
+	//if s.corsServer == nil {
+	//	return s.protocolManager.SubProtocols
+	//}
 	protocols := append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
-	return append(protocols, s.corsServer.Protocols()...)
+	return protocols
+	//return append(protocols, s.corsServer.Protocols()...)
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
