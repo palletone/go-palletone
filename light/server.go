@@ -29,9 +29,12 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 
+	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
@@ -46,11 +49,9 @@ type LesServer struct {
 	fcManager       *flowcontrol.ClientManager // nil if our node is client only
 	fcCostStats     *requestCostStats
 	defParams       *flowcontrol.ServerParams
-	//lesTopics       []discv5.Topic
-	privateKey *ecdsa.PrivateKey
-	quitSync   chan struct{}
-
-	//chtIndexer, bloomTrieIndexer *core.ChainIndexer
+	p2psrv          *p2p.Server
+	privateKey      *ecdsa.PrivateKey
+	quitSync        chan struct{}
 }
 
 func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (*LesServer, error) {
@@ -92,14 +93,11 @@ func (s *LesServer) Protocols() []p2p.Protocol {
 
 // Start starts the LES server
 func (s *LesServer) Start(srvr *p2p.Server) {
+	s.p2psrv = srvr
 	s.protocolManager.Start(s.config.LightPeers)
 	s.privateKey = srvr.PrivateKey
 	s.protocolManager.blockLoop()
 }
-
-//func (s *LesServer) SetBloomBitsIndexer(bloomIndexer *core.ChainIndexer) {
-//	bloomIndexer.AddChildIndexer(s.bloomTrieIndexer)
-//}
 
 // Stop stops the LES service
 func (s *LesServer) Stop() {
@@ -431,4 +429,39 @@ func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
 		return "timeout"
 	}
 	return "errors"
+}
+
+func (pm *ProtocolManager) AddPeer(url string) (bool, error) {
+	// Make sure the server is running, fail otherwise
+	if pm.server.p2psrv == nil {
+		return false, nil
+	}
+	// Try to add the url as a static peer and return
+	node, err := discover.ParseNode(url)
+	if err != nil {
+		return false, fmt.Errorf("invalid pnode: %v", err)
+	}
+	pm.server.p2psrv.AddPeer(node)
+	return true, nil
+}
+
+/*
+type MainChain struct {
+	GenesisHash common.Hash
+	Status      byte //Active:1 ,Terminated:0,Suspended:2
+	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
+	GasToken    AssetId
+	Peers       []string // IP:port format string
+}
+*/
+func (pm *ProtocolManager) GetMainChain() (*modules.MainChain, error) {
+	//contract.ccquery("PCGTta3M4t3yXu8uRgkKvaWd2d8DRxVdGDZ",["getMainChain"])
+	return nil, fmt.Errorf("this is not cors protocol")
+	//TODO
+	if pm.protocolname != configure.CORSProtocol {
+		return nil, fmt.Errorf("this is not cors protocol")
+	}
+	mainchain := &modules.MainChain{}
+
+	return mainchain, nil
 }

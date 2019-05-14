@@ -355,15 +355,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return p2p.DiscTooManyPeers
 	}
-
 	log.Debug("Light Palletone peer connected", "name", p.Name())
 
-	// Execute the LES handshake
-	//var (
-	//	head   = pm.dag.CurrentHeader(pm.assetId)
-	//	number = head.Number
-	//	//td     = pm.blockchain.GetTd(hash, number)
-	//)
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("Light PalletOne New", "get genesis err:", err)
@@ -384,10 +377,14 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			return err
 		}
 	} else if pm.protocolname == configure.CORSProtocol {
-		if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
-			log.Debug("Light Palletone handshake failed", "err", err)
-			return err
-		}
+		//mainchain, err := pm.GetMainChain()
+		//if err != nil {
+		//	return nil
+		//}
+		//if err := p.CorsHandshake(number, genesis.Hash(), pm.server, headhash, mainchain); err != nil {
+		//	log.Debug("Light Palletone handshake failed", "err", err)
+		//	return err
+		//}
 	}
 
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
