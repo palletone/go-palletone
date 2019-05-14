@@ -564,7 +564,7 @@ func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, e
 		return nil, err
 	}
 	//defer ZeroKey(privateKey)
-	hash := crypto.Keccak256Hash(util.RHashBytes(data))
+	hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
 	if err != nil {
 		return nil, err
 	}
@@ -572,11 +572,13 @@ func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("Try to sign data hash:%s,sign result:%x", hash.String(), sign)
+
 	return sign, nil
 }
 
 func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey *ecdsa.PrivateKey) ([]byte, error) {
-	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
 	//unit signature
 	sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
@@ -586,7 +588,7 @@ func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey *ecdsa.PrivateKe
 }
 
 func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
-	hash := crypto.Keccak256Hash(util.RHashBytes(unit))
+	hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
 	// s, err := hexutil.Decode(sign)
 	// if err != nil {
 	// 	return false

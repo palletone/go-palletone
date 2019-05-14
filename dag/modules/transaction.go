@@ -590,7 +590,14 @@ LOOP:
 	fmt.Println("goto loop.")
 	return request
 }
-
+func (tx *Transaction) GetRequestMsgIndex() int {
+	for idx, msg := range tx.TxMessages {
+		if msg.App.IsRequest() {
+			return idx
+		}
+	}
+	return -1
+}
 func (tx *Transaction) InvokeContractId() []byte {
 	for _, msg := range tx.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
