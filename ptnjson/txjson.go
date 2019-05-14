@@ -238,11 +238,7 @@ func ConvertJson2Tx(json *TxJson) *modules.Transaction {
 }
 func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson := new(TplJson)
-	//hash := common.BytesToHash(tpl.TemplateId[:])
 	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
-	//tpljson.Name = tpl.Name
-	//tpljson.Path = tpl.Path
-	//tpljson.Version = tpl.Version
 	tpljson.Bytecode = tpl.ByteCode[:]
 	tpljson.BytecodeSize = len(tpl.ByteCode[:])
 	tpljson.Memory = tpl.Memory
@@ -256,8 +252,8 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson := new(DeployJson)
 	djson.Name = deploy.Name
-	hash := common.BytesToHash(deploy.TemplateId[:])
-	djson.TemplateId = hash.String()
+
+	djson.TemplateId = hex.EncodeToString(deploy.TemplateId)
 	djson.ContractId = hex.EncodeToString(deploy.ContractId)
 	djson.Args = deploy.Args
 	//for _, addr := range deploy.Jury {
@@ -275,8 +271,7 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 }
 func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	injson := new(InvokeJson)
-	hash := common.BytesToHash(invoke.ContractId[:])
-	injson.ContractId = hash.String()
+	injson.ContractId = contractId2AddrString(invoke.ContractId)
 	injson.Args = []string{}
 	for _, arg := range invoke.Args {
 		injson.Args = append(injson.Args, string(arg))
@@ -291,10 +286,14 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 
 	return injson
 }
+func contractId2AddrString(contractId []byte) string{
+	addr:=common.NewAddress(contractId, common.ContractHash)
+	return addr.String()
+}
 func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
 	sjson := new(StopJson)
-	hash := common.BytesToHash(stop.ContractId[:])
-	sjson.ContractId = hash.String()
+
+	sjson.ContractId = contractId2AddrString(stop.ContractId)
 	rset, _ := json.Marshal(stop.ReadSet)
 	sjson.ReadSet = string(rset)
 	wset, _ := json.Marshal(stop.WriteSet)
@@ -313,9 +312,8 @@ func convertSig2Json(sig *modules.SignaturePayload) *SignatureJson {
 }
 
 func convertInvokeRequest2Json(req *modules.ContractInvokeRequestPayload) *InvokeRequestJson {
-	addr := common.NewAddress(req.ContractId[:], common.ContractHash)
 	reqJson := &InvokeRequestJson{}
-	reqJson.ContractAddr = addr.String()
+	reqJson.ContractAddr = contractId2AddrString(req.ContractId)
 	reqJson.Args = []string{}
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))
@@ -336,8 +334,8 @@ func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *Ins
 
 func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *DeployRequestJson {
 	reqJson := &DeployRequestJson{}
-	hash := common.BytesToHash(req.TplId[:])
-	reqJson.TplId = hash.String()
+
+	reqJson.TplId = hex.EncodeToString(req.TplId)
 	reqJson.Args = []string{}
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))
@@ -347,8 +345,8 @@ func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *Deplo
 
 func convertStopRequest2Json(req *modules.ContractStopRequestPayload) *StopRequestJson {
 	reqJson := &StopRequestJson{}
-	addr := common.NewAddress(req.ContractId[:], common.ContractHash)
-	reqJson.ContractId = addr.String()
+
+	reqJson.ContractId = contractId2AddrString(req.ContractId)
 	reqJson.Txid = req.Txid
 
 	return reqJson
