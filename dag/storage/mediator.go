@@ -79,42 +79,42 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 	return med, nil
 }
 
-func GetMediatorCount(db ptndb.Database) int {
-	mc := getCountByPrefix(db, constants.MEDIATOR_INFO_PREFIX)
-
-	return mc
-}
-
-// todo
-func IsMediator(db ptndb.Database, address common.Address) bool {
-	has, err := db.Has(mediatorKey(address))
-	if err != nil {
-		log.Debugf("Error in determining if it is a mediator: %v", err.Error())
-	}
-
-	return has
-}
+//func GetMediatorCount(db ptndb.Database) int {
+//	mc := getCountByPrefix(db, constants.MEDIATOR_INFO_PREFIX)
+//
+//	return mc
+//}
 
 // todo
-func GetMediators(db ptndb.Database) map[common.Address]bool {
-	result := make(map[common.Address]bool)
+//func IsMediator(db ptndb.Database, address common.Address) bool {
+//	has, err := db.Has(mediatorKey(address))
+//	if err != nil {
+//		log.Debugf("Error in determining if it is a mediator: %v", err.Error())
+//	}
+//
+//	return has
+//}
 
-	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
-	for iter.Next() {
-		key := iter.Key()
-		if key == nil {
-			continue
-		}
-
-		//log.Debugf("Get Mediator's key : %s", key))
-		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
-
-		result[common.BytesToAddress(addB)] = true
-		//result[core.StrToMedAdd(string(addStr))] = true
-	}
-
-	return result
-}
+// todo
+//func GetMediators(db ptndb.Database) map[common.Address]bool {
+//	result := make(map[common.Address]bool)
+//
+//	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
+//	for iter.Next() {
+//		key := iter.Key()
+//		if key == nil {
+//			continue
+//		}
+//
+//		//log.Debugf("Get Mediator's key : %s", key))
+//		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
+//
+//		result[common.BytesToAddress(addB)] = true
+//		//result[core.StrToMedAdd(string(addStr))] = true
+//	}
+//
+//	return result
+//}
 
 // todo
 func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {

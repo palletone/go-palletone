@@ -200,13 +200,13 @@ func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.unstableStateRep.GetMediators()
 }
 
-func (dag *Dag) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
-	return dag.unstableStateRep.GetApprovedMediatorList()
-}
-
-func (dag *Dag) IsApprovedMediator(address common.Address) bool {
-	return dag.unstableStateRep.IsApprovedMediator(address)
-}
+//func (dag *Dag) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
+//	return dag.unstableStateRep.GetApprovedMediatorList()
+//}
+//
+//func (dag *Dag) IsApprovedMediator(address common.Address) bool {
+//	return dag.unstableStateRep.IsApprovedMediator(address)
+//}
 
 func (dag *Dag) IsMediator(address common.Address) bool {
 	return dag.unstableStateRep.IsMediator(address)

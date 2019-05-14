@@ -32,6 +32,7 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 )
@@ -125,16 +126,31 @@ func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator
 	return RetrieveMediator(statedb.db, address)
 }
 
-func (statedb *StateDb) GetMediatorCount() int {
-	return GetMediatorCount(statedb.db)
-}
-
 func (statedb *StateDb) IsMediator(address common.Address) bool {
-	return IsMediator(statedb.db, address)
+	//return IsMediator(statedb.db, address)
+	return statedb.isApprovedMediator(address)
 }
 
 func (statedb *StateDb) GetMediators() map[common.Address]bool {
-	return GetMediators(statedb.db)
+	//return GetMediators(statedb.db)
+
+	var res map[common.Address]bool
+	list, err := statedb.getApprovedMediatorList()
+	if err != nil {
+		return nil
+	}
+
+	for _, v := range list {
+		add, err := common.StringToAddress(v.Address)
+		if err != nil {
+			log.Debugf(err.Error())
+			continue
+		}
+
+		res[add] = true
+	}
+
+	return res
 }
 
 func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
@@ -142,7 +158,7 @@ func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 }
 
 //xiaozhi
-func (statedb *StateDb) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
+func (statedb *StateDb) getApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
@@ -158,8 +174,8 @@ func (statedb *StateDb) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, er
 	return candidateList, nil
 }
 
-func (statedb *StateDb) IsApprovedMediator(address common.Address) bool {
-	list, err := statedb.GetApprovedMediatorList()
+func (statedb *StateDb) isApprovedMediator(address common.Address) bool {
+	list, err := statedb.getApprovedMediatorList()
 	if err != nil {
 		return false
 	}
