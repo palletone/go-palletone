@@ -19,9 +19,6 @@
 package storage
 
 import (
-	"bytes"
-
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -31,8 +28,9 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes21()...)
 	//key := append(constants.MEDIATOR_INFO_PREFIX, address.Str()...)
+	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes21()...)
+	key = append(constants.CONTRACT_STATE_PREFIX, key...)
 
 	return key
 }
@@ -69,7 +67,8 @@ func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*modules.M
 
 func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
 	mi, err := RetrieveMediatorInfo(db, address)
-	if mi == nil || err != nil {
+	if err != nil {
+		log.Debugf(err.Error())
 		return nil, err
 	}
 
@@ -85,7 +84,6 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 //	return mc
 //}
 
-// todo
 //func IsMediator(db ptndb.Database, address common.Address) bool {
 //	has, err := db.Has(mediatorKey(address))
 //	if err != nil {
@@ -95,7 +93,6 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 //	return has
 //}
 
-// todo
 //func GetMediators(db ptndb.Database) map[common.Address]bool {
 //	result := make(map[common.Address]bool)
 //
@@ -116,35 +113,34 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 //	return result
 //}
 
-// todo
-func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
-	result := make(map[common.Address]*core.Mediator)
-
-	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
-	for iter.Next() {
-		key := iter.Key()
-		if key == nil {
-			continue
-		}
-
-		value := iter.Value()
-		if value == nil {
-			continue
-		}
-
-		mi := modules.NewMediatorInfo()
-		err := rlp.DecodeBytes(value, mi)
-		if err != nil {
-			log.Debugf("Error in Decoding Bytes to MediatorInfo: %v", err.Error())
-		}
-
-		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
-		add := common.BytesToAddress(addB)
-		med := mi.InfoToMediator()
-		//med.Address = add
-
-		result[add] = med
-	}
-
-	return result
-}
+//func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
+//	result := make(map[common.Address]*core.Mediator)
+//
+//	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
+//	for iter.Next() {
+//		key := iter.Key()
+//		if key == nil {
+//			continue
+//		}
+//
+//		value := iter.Value()
+//		if value == nil {
+//			continue
+//		}
+//
+//		mi := modules.NewMediatorInfo()
+//		err := rlp.DecodeBytes(value, mi)
+//		if err != nil {
+//			log.Debugf("Error in Decoding Bytes to MediatorInfo: %v", err.Error())
+//		}
+//
+//		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
+//		add := common.BytesToAddress(addB)
+//		med := mi.InfoToMediator()
+//		//med.Address = add
+//
+//		result[add] = med
+//	}
+//
+//	return result
+//}

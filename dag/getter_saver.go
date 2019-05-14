@@ -22,7 +22,6 @@ package dag
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -137,7 +136,7 @@ func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	if !d.IsActiveMediator(add) {
-		log.Debug(fmt.Sprintf("%v is not active mediator!", add.Str()))
+		log.Debugf("%v is not active mediator!", add.Str())
 		return nil
 	}
 
@@ -147,9 +146,9 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
 	med, err := d.unstableStateRep.RetrieveMediator(add)
 	if err != nil {
-		log.Error("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
 		return nil
 	}
+
 	return med
 }
 

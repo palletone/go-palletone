@@ -86,12 +86,12 @@ func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 
 	err = statedb.SaveContractState(contractId, ws, version)
 	assert.Nil(t, err, "save mediatorlist error: ")
-	list2, err := statedb.GetApprovedMediatorList()
-	assert.Nil(t, err, "get mediator candidate list error: ")
-	assert.True(t, len(list2) == 2, "len is erroe")
-	for k, b := range list2 {
-		fmt.Println(k, b)
-	}
+	//list2, err := statedb.GetApprovedMediatorList()
+	//assert.Nil(t, err, "get mediator candidate list error: ")
+	//assert.True(t, len(list2) == 2, "len is erroe")
+	//for k, b := range list2 {
+	//	fmt.Println(k, b)
+	//}
 }
 
 func TestGetContract(t *testing.T) {

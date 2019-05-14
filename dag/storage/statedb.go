@@ -21,19 +21,16 @@
 package storage
 
 import (
-	"errors"
-
-	"github.com/palletone/go-palletone/common/ptndb"
-
-	"github.com/palletone/go-palletone/dag/modules"
-
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //保存了对合约写集、Config、Asset信息
@@ -139,8 +136,8 @@ func (statedb *StateDb) GetMediators() map[common.Address]bool {
 		return nil
 	}
 
-	for _, v := range list {
-		add, err := common.StringToAddress(v.Address)
+	for addStr, _ := range list {
+		add, err := common.StringToAddress(addStr)
 		if err != nil {
 			log.Debugf(err.Error())
 			continue
@@ -153,11 +150,35 @@ func (statedb *StateDb) GetMediators() map[common.Address]bool {
 }
 
 func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
-	return LookupMediator(statedb.db)
+	//return LookupMediator(statedb.db)
+
+	result := make(map[common.Address]*core.Mediator)
+
+	list, err := statedb.getApprovedMediatorList()
+	if err != nil {
+		return nil
+	}
+
+	for addStr, _ := range list {
+		add, err := common.StringToAddress(addStr)
+		if err != nil {
+			log.Debugf(err.Error())
+			continue
+		}
+
+		med, err := RetrieveMediator(statedb.db, add)
+		if err != nil {
+			continue
+		}
+
+		result[add] = med
+	}
+
+	return result
 }
 
 //xiaozhi
-func (statedb *StateDb) GetApprovedMediatorList() (map[string]bool, error) {
+func (statedb *StateDb) getApprovedMediatorList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
@@ -179,14 +200,17 @@ func (statedb *StateDb) isApprovedMediator(address common.Address) bool {
 	if err != nil {
 		return false
 	}
+
 	if _, ok := list[address.String()]; ok {
 		return true
 	}
+
 	//for _, v := range list {
 	//	if strings.Compare(v.Address, address.String()) == 0 {
 	//		return true
 	//	}
 	//}
+
 	return false
 }
 
