@@ -21,7 +21,6 @@
 package deposit
 
 import (
-	"encoding/json"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -149,18 +148,18 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if string(balance) == "" {
 			return shim.Success([]byte("balance is nil"))
 		}
-		depositB := &DepositBalance{}
-		err = json.Unmarshal(balance, depositB)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		if depositB.EnterTime != "" {
-			depositB.EnterTime = timeFormat(depositB.EnterTime)
-		}
-		balance, err = json.Marshal(depositB)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
+		//depositB := &modules.MediatorInfo{}
+		//err = json.Unmarshal(balance, depositB)
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
+		//if depositB.EnterTime != "" {
+		//	depositB.EnterTime = timeFormat(depositB.EnterTime)
+		//}
+		//	balance, err = json.Marshal(depositB)
+		//	if err != nil {
+		//	return shim.Error(err.Error())
+		//}
 		return shim.Success(balance)
 		//获取Mediator申请加入列表
 	case GetBecomeMediatorApplyList:
@@ -201,14 +200,17 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if mediatorRegisterInfo == nil {
-			return shim.Success([]byte("Please wait while approval..."))
+			return shim.Success([]byte("Not in the supernode become list,please wait while approval..."))
 		}
-		for _, m := range mediatorRegisterInfo {
-			if args[0] == m.Address {
-				return shim.Success([]byte("You have already applied, please go to the delivery deposit to join the super node candidate list as soon as possible."))
-			}
+		if _, ok := mediatorRegisterInfo[args[0]]; ok {
+			return shim.Success([]byte("You have already applied, please go to the delivery deposit to join the super node candidate list as soon as possible."))
 		}
-		return shim.Success([]byte("Please wait while approval..."))
+		//for _, m := range mediatorRegisterInfo {
+		//	if args[0] == m.Address {
+		//		return shim.Success([]byte("You have already applied, please go to the delivery deposit to join the super node candidate list as soon as possible."))
+		//	}
+		//}
+		return shim.Success([]byte("Not in the supernode become list,please wait while approval..."))
 		// 查看是否在候选列表中
 	case IsInMediatorCandidateList:
 		mediatorRegisterInfo, err := GetCandidateListForMediator(stub)
@@ -218,11 +220,14 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if mediatorRegisterInfo == nil {
 			return shim.Success([]byte("Super node candidate list is empty."))
 		}
-		for _, m := range mediatorRegisterInfo {
-			if args[0] == m.Address {
-				return shim.Success([]byte("Joined the super node candidate list."))
-			}
+		if _, ok := mediatorRegisterInfo[args[0]]; ok {
+			return shim.Success([]byte("Joined the super node candidate list."))
 		}
+		//for _, m := range mediatorRegisterInfo {
+		//	if args[0] == m.Address {
+		//		return shim.Success([]byte("Joined the super node candidate list."))
+		//	}
+		//}
 		return shim.Success([]byte("Not in the supernode candidate list."))
 	}
 

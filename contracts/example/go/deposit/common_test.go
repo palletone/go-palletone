@@ -15,10 +15,12 @@
 package deposit
 
 import (
+	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"testing"
 )
 
-func TestIsInCashbacklist(t *testing.T){
+func TestIsInCashbacklist(t *testing.T) {
 	//申请提保证金
 	//type Cashback struct {
 	//	CashbackAddress string        `json:"cashback_address"` //请求地址
@@ -26,24 +28,25 @@ func TestIsInCashbacklist(t *testing.T){
 	//	Role            string        `json:"role"`             //请求角色
 	//	CashbackTime    int64         `json:"cashback_time"`    //请求时间
 	//}
-	cashback := &Cashback{CashbackAddress:"P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8"}
+	cashback := &Cashback{CashbackAddress: "P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8"}
 	cashList := []*Cashback{cashback}
-	isIn := isInCashbacklist("P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8",cashList)
-	if isIn{
+	isIn := isInCashbacklist("P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8", cashList)
+	if isIn {
 		t.Log("expected in")
-	}else {
+	} else {
 		t.Error("unexpected")
 	}
 
-	isNot := isInCashbacklist("P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY9",cashList)
+	isNot := isInCashbacklist("P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY9", cashList)
 	if isNot {
 		t.Error("unexpected")
-	}else {
+	} else {
 		t.Log("expected not in")
 	}
 }
 
 func TestMoveInApplyForForfeitureList(t *testing.T) {
+	fmt.Println("============", common.HexToAddress("0x853c98cb67ad40ddc3edc13f9ec52dea67a3a82200").String())
 	//申请没收保证金
 	//type Forfeiture struct {
 	//	ApplyAddress      string        `json:"apply_address"`      //谁发起的
@@ -53,16 +56,16 @@ func TestMoveInApplyForForfeitureList(t *testing.T) {
 	//	//Extra             string        `json:"extra"`              //备注
 	//	ApplyTime int64 `json:"apply_time"` //请求时间
 	//}
-	forfeiture := &Forfeiture{ForfeitureAddress:"P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8",ApplyTime:123456}
+	forfeiture := &Forfeiture{ForfeitureAddress: "P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8", ApplyTime: 123456}
 	forfeitureList := []*Forfeiture{forfeiture}
-	result,isExist := moveInApplyForForfeitureList(forfeitureList,"P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8",123456)
+	result, isExist := moveInApplyForForfeitureList(forfeitureList, "P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8", 123456)
 	if isExist && len(result) == 0 {
 		t.Log("expected move successfully")
 	} else {
 		t.Error("unexpected")
 	}
 
-	result, isExist = moveInApplyForForfeitureList(forfeitureList,"P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8",123457)
+	result, isExist = moveInApplyForForfeitureList(forfeitureList, "P1GGtw1q4XUm5w5TXcZ6dEStidFLbEkipY8", 123457)
 	if isExist && len(result) == 0 {
 		t.Error("unexpected")
 	} else {

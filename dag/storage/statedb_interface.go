@@ -91,7 +91,7 @@ type IStateDb interface {
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 
-	GetJuryCandidateList() ([]common.Address, error)
+	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
 
 	UpdateSysParams(ver *modules.StateVersion) error

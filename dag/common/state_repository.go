@@ -59,7 +59,7 @@ type IStateRepository interface {
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
-	GetJuryCandidateList() ([]common.Address, error)
+	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
 	UpdateSysParams(ver *modules.StateVersion) error
 	GetPartitionChains() ([]*modules.PartitionChain, error)
@@ -106,23 +106,23 @@ func (rep *StateRepository) GetContractStatesByPrefix(id []byte, prefix string) 
 func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
 }
-func (rep *StateRepository)GetAllContracts() ([]*modules.Contract, error){
+func (rep *StateRepository) GetAllContracts() ([]*modules.Contract, error) {
 	return rep.statedb.GetAllContracts()
 }
-func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error){
-	cids,err:=rep.statedb.GetContractIdsByTpl(tplId)
-	if err!=nil{
-		return nil,err
+func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
+	cids, err := rep.statedb.GetContractIdsByTpl(tplId)
+	if err != nil {
+		return nil, err
 	}
-	result:=make([]*modules.Contract,0,len(cids))
-	for _,cid:=range cids{
-		contract,err:= rep.statedb.GetContract(cid)
-		if err!=nil{
-			return nil,err
+	result := make([]*modules.Contract, 0, len(cids))
+	for _, cid := range cids {
+		contract, err := rep.statedb.GetContract(cid)
+		if err != nil {
+			return nil, err
 		}
-		result=append(result,contract)
+		result = append(result, contract)
 	}
-	return result,nil
+	return result, nil
 }
 
 func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
@@ -185,7 +185,7 @@ func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
 	return rep.statedb.GetMinFee()
 }
 
-func (rep *StateRepository) GetJuryCandidateList() ([]common.Address, error) {
+func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 	return rep.statedb.GetJuryCandidateList()
 }
 

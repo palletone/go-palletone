@@ -17,6 +17,7 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -54,14 +55,14 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(err.Error())
 	}
 	//获取账户
-	balance, err := GetDepositBalance(stub, invokeAddr.String())
+	balance, err := GetMedNodeInfo(stub, invokeAddr.String())
 	if err != nil {
 		log.Error("Stub.GetDepositBalance err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	isDeveloper := false
-	if balance == nil {
-		balance = &DepositBalance{}
+	if balance.Balance == 0 {
+		//balance = &DepositBalance{}
 		if invokeTokens.Amount >= depositAmountsForDeveloper {
 			//加入列表
 			//addList(Developer, invokeAddr, stub)
@@ -76,7 +77,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		updateForPayValue(balance, invokeTokens)
 	} else {
 		//账户已存在，进行信息的更新操作
-		if balance.TotalAmount >= depositAmountsForDeveloper {
+		if balance.Balance >= depositAmountsForDeveloper {
 			//原来就是Developer
 			isDeveloper = true
 			//TODO 再次交付保证金时，先计算当前余额的币龄奖励
@@ -86,8 +87,8 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 				log.Error("stub.GetSystemConfig err:", "error", err)
 				return shim.Error(err.Error())
 			}
-			awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
-			balance.TotalAmount += awards
+			awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
+			balance.Balance += awards
 
 		}
 		//处理交付保证金数据
@@ -95,7 +96,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 	}
 	if !isDeveloper {
 		//判断交了保证金后是否超过了Developer
-		if balance.TotalAmount >= depositAmountsForDeveloper {
+		if balance.Balance >= depositAmountsForDeveloper {
 			//addList(Developer, invokeAddr, stub)
 			err = addCandaditeList(invokeAddr, stub, DeveloperList)
 			if err != nil {
@@ -105,7 +106,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
 		}
 	}
-	err = marshalAndPutStateForBalance(stub, invokeAddr.String(), balance)
+	err = marshalAndPutStateForBalance(stub, invokeAddr, balance)
 	if err != nil {
 		log.Error("MarshalAndPutStateForBalance err:", "error", err)
 		return shim.Error(err.Error())
@@ -122,7 +123,7 @@ func developerApplyCashback(stub shim.ChaincodeStubInterface, args []string) pee
 	return shim.Success([]byte("ok"))
 }
 
-func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64, balance *DepositBalance) error {
+func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, applyTime int64, balance *modules.MediatorInfo) error {
 	//获取请求列表
 	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
@@ -133,27 +134,32 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 		log.Error("listForCashback is nil.")
 		return fmt.Errorf("%s", "listForCashback is nil.")
 	}
-	isExist := isInCashbacklist(cashbackAddr, listForCashback)
-	if !isExist {
+	if _, ok := listForCashback[cashbackAddr]; !ok {
 		log.Error("node is not exist in the list.")
 		return fmt.Errorf("%s", "node is not exist in the list.")
 	}
+	//isExist := isInCashbacklist(cashbackAddr, listForCashback)
+	//if !isExist {
+	//	log.Error("node is not exist in the list.")
+	//	return fmt.Errorf("%s", "node is not exist in the list.")
+	//}
 	//获取节点信息
-	cashbackNode := &Cashback{}
-	isFound := false
-	for _, m := range listForCashback {
-		if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {
-			cashbackNode = m
-			isFound = true
-			break
-		}
-	}
-	if !isFound {
-		log.Error("Apply time is wrong.")
-		return fmt.Errorf("%s", "Apply time is wrong.")
-	}
-	newList, _ := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
-	listForCashbackByte, err := json.Marshal(newList)
+	//cashbackNode := &Cashback{}
+	//isFound := false
+	//for _, m := range listForCashback {
+	//	if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {
+	//		cashbackNode = m
+	//		isFound = true
+	//		break
+	//	}
+	//}
+	//if !isFound {
+	//	log.Error("Apply time is wrong.")
+	//	return fmt.Errorf("%s", "Apply time is wrong.")
+	//}
+	//newList, _ := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
+	delete(listForCashback, cashbackAddr)
+	listForCashbackByte, err := json.Marshal(listForCashback)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
 		return err
@@ -165,11 +171,11 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 		return err
 	}
 	//还得判断一下是否超过余额
-	if cashbackNode.CashbackTokens.Amount > balance.TotalAmount {
+	if listForCashback[cashbackAddr].CashbackTokens.Amount > balance.Balance {
 		log.Error("Balance is not enough.")
 		return fmt.Errorf("%s", "Balance is not enough.")
 	}
-	err = handleDeveloperDepositCashback(stub, cashbackAddr, cashbackNode, balance)
+	err = handleDeveloperDepositCashback(stub, cashbackAddr, listForCashback[cashbackAddr], balance)
 	if err != nil {
 		log.Error("HandleDeveloperDepositCashback err:", "error", err)
 		return err
@@ -178,7 +184,7 @@ func handleDeveloper(stub shim.ChaincodeStubInterface, cashbackAddr string, appl
 }
 
 //Developer已在列表中
-func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
+func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *modules.MediatorInfo) error {
 	depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositPeriod err:", "error", err)
@@ -192,7 +198,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr stri
 	log.Info("Stub.GetSystemConfig with DepositPeriod:", "value", day)
 	//退出列表
 	//计算余额
-	result := balance.TotalAmount - cashbackValue.CashbackTokens.Amount
+	result := balance.Balance - cashbackValue.CashbackTokens.Amount
 	//判断是否退出列表
 	if result == 0 {
 		//加入列表时的时间

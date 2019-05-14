@@ -29,7 +29,6 @@ import (
 
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -158,14 +157,15 @@ func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
 }
 
 //xiaozhi
-func (statedb *StateDb) getApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
+func (statedb *StateDb) GetApprovedMediatorList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
 		return nil, fmt.Errorf("mediator candidate list is nil.")
 	}
 
-	var candidateList []*core.MediatorApplyInfo
+	//var candidateList []*core.MediatorApplyInfo
+	candidateList := make(map[string]bool)
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
@@ -179,23 +179,25 @@ func (statedb *StateDb) isApprovedMediator(address common.Address) bool {
 	if err != nil {
 		return false
 	}
-
-	for _, v := range list {
-		if strings.Compare(v.Address, address.String()) == 0 {
-			return true
-		}
+	if _, ok := list[address.String()]; ok {
+		return true
 	}
-
+	//for _, v := range list {
+	//	if strings.Compare(v.Address, address.String()) == 0 {
+	//		return true
+	//	}
+	//}
 	return false
 }
 
-func (statedb *StateDb) GetJuryCandidateList() ([]common.Address, error) {
+func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.JuryList)
 	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
-	var candidateList []common.Address
+	//var candidateList []common.Address
+	candidateList := make(map[string]bool)
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
@@ -208,11 +210,14 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 	if err != nil {
 		return false
 	}
-	for _, v := range list {
-		if strings.Compare(v.String(), address.String()) == 0 {
-			return true
-		}
+	if _, ok := list[address.String()]; ok {
+		return true
 	}
+	//for _, v := range list {
+	//	if strings.Compare(v.String(), address.String()) == 0 {
+	//		return true
+	//	}
+	//}
 	return false
 }
 
