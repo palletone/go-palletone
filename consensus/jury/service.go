@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
 	"github.com/dedis/kyber"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -388,8 +389,15 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 		return nil, errors.New(msg)
 	}
 	log.DebugDynamic(func() string {
-		data,_:=rlp.EncodeToBytes(tx)
-		return fmt.Sprintf( "Jurior[%s] try to sign tx reqid:%s,signature:%x, tx rlpcode for debug:%x",signer.String(),tx.RequestHash().String(),sign, data)
+		data, err := rlp.EncodeToBytes(tx)
+		if err != nil {
+			return err.Error()
+		}
+		js, err := json.Marshal(tx)
+		if err != nil {
+			return err.Error()
+		}
+		return fmt.Sprintf("Jurior[%s] try to sign tx reqid:%s,signature:%x, tx json: %s\n rlpcode for debug: %x", signer.String(), tx.RequestHash().String(), sign, string(js), data)
 	})
 	return sign, nil
 }
