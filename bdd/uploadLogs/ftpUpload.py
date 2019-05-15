@@ -1,27 +1,48 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
-import subprocess
 import pexpect
-from time import sleep
 
 logPath = "/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs"
 os.chdir(logPath)
-# 登录
-child = pexpect.spawn(command="./ftp 39.105.191.26",maxread=3000)
-child.expect("Name (39.105.191.26:root):")
+# login
+child = pexpect.spawnu("ftp 39.105.191.26")
+print child.after
+child.expect(u'(?i)Name.*.')
 child.sendline("ftpuser")
 print child.after
-child.expect("Password:")
+child.expect(u"(?i)Password")
 child.sendline("123456")
 print child.after
-# 登录成功
-child.expect("ftp>")
+# login succeed
+child.expect(u"ftp>")
 child.sendline("cd pub")
 print child.after
-
-# 上传日志
-child.expect("ftp>")
+# upload logs
+child.expect(u"ftp>")
 createTransLogName = "createTrans.log.html"
-ccinvokeLogName = "ccinvoke.log.html"
-DigitalIdentityCertLogName = "DigitalIdentityCert.log.html"
-child.sendline("put "+logPath+createTransLogName+" "+createTransLogName)
-child.expect(pexpect.EOF)
+# createTransLogName = "log.txt"
+# ccinvokeLogName = "ccinvoke.log.html"
+# DigitalIdentityCertLogName = "DigitalIdentityCert.log.html"
+putStr = "put "+logPath+"/"+createTransLogName+" "+createTransLogName
+child.sendline(putStr)
+try:
+	child.expect(u"(?i).*complete.*")
+	print "=== upload succed ==="
+except:
+	child.sendline('quote pasv')
+	child.sendline('passive')
+	child.after
+	child.sendline(putStr)
+
+try:
+	child.expect(u"(?i).*complete.*")
+	print "=== upload succed ==="
+except:
+	print "=== upload failed === "
+
+child.expect(u"ftp>")
+child.sendline("bye")
+print child.after
+child.close()
