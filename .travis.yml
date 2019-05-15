@@ -26,11 +26,13 @@ script:
 
 after_success:
     - killall gptn
+    - ufw disable
     - cd ../uploadLogs
     - python ftpUpload.py
 
 after_failure:
     - killall gptn
+    - ufw disable
     - cd ../uploadLogs
     - python ftpUpload.py
 
