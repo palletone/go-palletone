@@ -19,9 +19,13 @@
 package storage
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -78,69 +82,73 @@ func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator
 	return med, nil
 }
 
-//func GetMediatorCount(db ptndb.Database) int {
-//	mc := getCountByPrefix(db, constants.MEDIATOR_INFO_PREFIX)
-//
-//	return mc
-//}
+func (statedb *StateDb) IsMediator(address common.Address) bool {
+	list, err := statedb.getCandidateMediatorList()
+	if err != nil {
+		return false
+	}
 
-//func IsMediator(db ptndb.Database, address common.Address) bool {
-//	has, err := db.Has(mediatorKey(address))
-//	if err != nil {
-//		log.Debugf("Error in determining if it is a mediator: %v", err.Error())
-//	}
-//
-//	return has
-//}
+	return list[address.String()]
+}
 
-//func GetMediators(db ptndb.Database) map[common.Address]bool {
-//	result := make(map[common.Address]bool)
-//
-//	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
-//	for iter.Next() {
-//		key := iter.Key()
-//		if key == nil {
-//			continue
-//		}
-//
-//		//log.Debugf("Get Mediator's key : %s", key))
-//		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
-//
-//		result[common.BytesToAddress(addB)] = true
-//		//result[core.StrToMedAdd(string(addStr))] = true
-//	}
-//
-//	return result
-//}
+func (statedb *StateDb) GetMediators() map[common.Address]bool {
+	list, err := statedb.getCandidateMediatorList()
+	if err != nil {
+		return nil
+	}
 
-//func LookupMediator(db ptndb.Database) map[common.Address]*core.Mediator {
-//	result := make(map[common.Address]*core.Mediator)
-//
-//	iter := db.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
-//	for iter.Next() {
-//		key := iter.Key()
-//		if key == nil {
-//			continue
-//		}
-//
-//		value := iter.Value()
-//		if value == nil {
-//			continue
-//		}
-//
-//		mi := modules.NewMediatorInfo()
-//		err := rlp.DecodeBytes(value, mi)
-//		if err != nil {
-//			log.Debugf("Error in Decoding Bytes to MediatorInfo: %v", err.Error())
-//		}
-//
-//		addB := bytes.TrimPrefix(key, constants.MEDIATOR_INFO_PREFIX)
-//		add := common.BytesToAddress(addB)
-//		med := mi.InfoToMediator()
-//		//med.Address = add
-//
-//		result[add] = med
-//	}
-//
-//	return result
-//}
+	res := make(map[common.Address]bool, len(list))
+	for addStr, _ := range list {
+		add, err := common.StringToAddress(addStr)
+		if err != nil {
+			log.Debugf(err.Error())
+			continue
+		}
+
+		res[add] = true
+	}
+
+	return res
+}
+
+func (statedb *StateDb) LookupMediatorInfo() []*modules.MediatorInfo {
+	list, err := statedb.getCandidateMediatorList()
+	if err != nil {
+		return nil
+	}
+
+	result := make([]*modules.MediatorInfo, 0, len(list))
+	for addStr, _ := range list {
+		add, err := common.StringToAddress(addStr)
+		if err != nil {
+			log.Debugf(err.Error())
+			continue
+		}
+
+		med, err := RetrieveMediatorInfo(statedb.db, add)
+		if err != nil {
+			continue
+		}
+
+		result = append(result, med)
+	}
+
+	return result
+}
+
+//xiaozhi
+func (statedb *StateDb) getCandidateMediatorList() (map[string]bool, error) {
+	depositeContractAddress := syscontract.DepositContractAddress
+	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
+	if err != nil {
+		return nil, fmt.Errorf("mediator candidate list is nil.")
+	}
+
+	candidateList := make(map[string]bool)
+	err = json.Unmarshal(val, &candidateList)
+	if err != nil {
+		return nil, err
+	}
+
+	return candidateList, nil
+}

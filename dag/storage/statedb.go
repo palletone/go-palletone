@@ -26,7 +26,6 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
@@ -120,98 +119,6 @@ func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.M
 
 func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
 	return RetrieveMediator(statedb.db, address)
-}
-
-func (statedb *StateDb) IsMediator(address common.Address) bool {
-	//return IsMediator(statedb.db, address)
-	return statedb.isApprovedMediator(address)
-}
-
-func (statedb *StateDb) GetMediators() map[common.Address]bool {
-	//return GetMediators(statedb.db)
-
-	list, err := statedb.getApprovedMediatorList()
-	if err != nil {
-		return nil
-	}
-
-	res := make(map[common.Address]bool, len(list))
-	for addStr, _ := range list {
-		add, err := common.StringToAddress(addStr)
-		if err != nil {
-			log.Debugf(err.Error())
-			continue
-		}
-
-		res[add] = true
-	}
-
-	return res
-}
-
-func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
-	//return LookupMediator(statedb.db)
-
-	result := make(map[common.Address]*core.Mediator)
-
-	list, err := statedb.getApprovedMediatorList()
-	if err != nil {
-		return nil
-	}
-
-	for addStr, _ := range list {
-		add, err := common.StringToAddress(addStr)
-		if err != nil {
-			log.Debugf(err.Error())
-			continue
-		}
-
-		med, err := RetrieveMediator(statedb.db, add)
-		if err != nil {
-			continue
-		}
-
-		result[add] = med
-	}
-
-	return result
-}
-
-//xiaozhi
-func (statedb *StateDb) getApprovedMediatorList() (map[string]bool, error) {
-	depositeContractAddress := syscontract.DepositContractAddress
-	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
-	if err != nil {
-		return nil, fmt.Errorf("mediator candidate list is nil.")
-	}
-
-	//var candidateList []*core.MediatorApplyInfo
-	candidateList := make(map[string]bool)
-	err = json.Unmarshal(val, &candidateList)
-	if err != nil {
-		return nil, err
-	}
-
-	return candidateList, nil
-}
-
-func (statedb *StateDb) isApprovedMediator(address common.Address) bool {
-	list, err := statedb.getApprovedMediatorList()
-	if err != nil {
-		return false
-	}
-
-	if _, ok := list[address.String()]; ok {
-		return true
-	}
-
-	//for _, v := range list {
-	//	if strings.Compare(v.Address, address.String()) == 0 {
-	//		return true
-	//	}
-	//}
-
-	return false
 }
 
 func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
