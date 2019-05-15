@@ -130,12 +130,12 @@ func (statedb *StateDb) IsMediator(address common.Address) bool {
 func (statedb *StateDb) GetMediators() map[common.Address]bool {
 	//return GetMediators(statedb.db)
 
-	var res map[common.Address]bool
 	list, err := statedb.getApprovedMediatorList()
 	if err != nil {
 		return nil
 	}
 
+	res := make(map[common.Address]bool, len(list))
 	for addStr, _ := range list {
 		add, err := common.StringToAddress(addStr)
 		if err != nil {
