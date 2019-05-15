@@ -27,15 +27,17 @@ createTransLogName = "createTrans.log.html"
 # DigitalIdentityCertLogName = "DigitalIdentityCert.log.html"
 putStr = "put "+logPath+"/"+createTransLogName+" "+createTransLogName
 child.sendline(putStr)
+print putStr
 try:
 	child.expect(u"(?i).*complete.*")
 	print "=== upload succed ==="
 except:
+	print "==== setting passive mode ==="
 	child.sendline('quote pasv')
 	child.sendline('passive')
 	child.after
 	child.sendline(putStr)
-
+	print putStr
 try:
 	child.expect(u"(?i).*complete.*")
 	print "=== upload succed ==="
