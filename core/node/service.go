@@ -108,7 +108,7 @@ type Service interface {
 	// layer was also initialized to spawn any goroutines required by the service.
 	// start 方法是在所有服务构建之后和网络层初始化完后调用，
 	// 在 start 方法用于开启大量 service 所需要的任何 goroutines
-	Start(server *p2p.Server) error
+	Start(server *p2p.Server, corss *p2p.Server) error
 
 	// Stop terminates all goroutines belonging to the service, blocking until they
 	// are all terminated.

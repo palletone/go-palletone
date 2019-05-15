@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/internal/debug"
-	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptnclient"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"gopkg.in/urfave/cli.v1"
@@ -308,15 +307,14 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 	}()
 	// Start auxiliary services if enabled
-	//如果指定了--mine 选项，就自动开始挖矿
-	if ctx.GlobalBool(utils.MiningEnabledFlag.Name) || ctx.GlobalBool(utils.DeveloperFlag.Name) {
-		// Mining only makes sense if a full PalletOne node is running
-		if ctx.GlobalBool(utils.LightModeFlag.Name) || ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
-			utils.Fatalf("Light clients do not support mining")
-		}
-		var palletone *ptn.PalletOne
-		if err := stack.Service(&palletone); err != nil {
-			utils.Fatalf("PalletOne service not running: %v", err)
-		}
-	}
+	//if ctx.GlobalBool(utils.MiningEnabledFlag.Name) || ctx.GlobalBool(utils.DeveloperFlag.Name) {
+	//	// Mining only makes sense if a full PalletOne node is running
+	//	if ctx.GlobalBool(utils.LightModeFlag.Name) || ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
+	//		utils.Fatalf("Light clients do not support mining")
+	//	}
+	//	var palletone *ptn.PalletOne
+	//	if err := stack.Service(&palletone); err != nil {
+	//		utils.Fatalf("PalletOne service not running: %v", err)
+	//	}
+	//}
 }

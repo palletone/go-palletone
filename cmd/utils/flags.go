@@ -1190,8 +1190,8 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 				ls, _ := light.NewLesServer(fullNode, cfg, configure.LPSProtocol)
 				fullNode.AddLesServer(ls)
 
-				cs, _ := light.NewLesServer(fullNode, cfg, configure.CORSProtocol)
-				fullNode.AddCorsServer(cs)
+				//cs, _ := light.NewLesServer(fullNode, cfg, configure.CORSProtocol)
+				//fullNode.AddCorsServer(cs)
 			}
 			return fullNode, err
 		})

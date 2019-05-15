@@ -204,13 +204,10 @@ func (s *LightPalletone) Protocols() []p2p.Protocol {
 
 // Start implements node.Service, starting all internal goroutines needed by the
 // Ethereum protocol implementation.
-func (s *LightPalletone) Start(srvr *p2p.Server) error {
+func (s *LightPalletone) Start(srvr *p2p.Server, corss *p2p.Server) error {
 	//s.startBloomHandlers()
 	log.Debug("Light client mode is an experimental feature")
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.networkId)
-	// clients are searching for the first advertised protocol in the list
-	//protocolVersion := AdvertiseProtocolVersions[0]
-	//s.serverPool.start(srvr, lesTopic(s.blockchain.Genesis().Hash(), protocolVersion))
 	s.protocolManager.Start(s.config.LightPeers)
 
 	s.txCh = make(chan modules.TxPreEvent, txChanSize)

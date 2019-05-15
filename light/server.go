@@ -462,6 +462,8 @@ func (pm *ProtocolManager) GetMainChain() (*modules.MainChain, error) {
 		return nil, fmt.Errorf("this is not cors protocol")
 	}
 	mainchain := &modules.MainChain{}
-
+	mainchain.NetworkId = 1
+	mainchain.Version = 1
+	mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
 	return mainchain, nil
 }
