@@ -297,7 +297,7 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 
 // Start implements node.Service, starting all internal goroutines needed by the
 // PalletOne protocol implementation.
-func (s *PalletOne) Start(srvr *p2p.Server) error {
+func (s *PalletOne) Start(srvr *p2p.Server, corss *p2p.Server) error {
 	// Start the bloom bits servicing goroutines
 	//s.startBloomHandlers()
 

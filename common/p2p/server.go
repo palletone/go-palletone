@@ -123,6 +123,8 @@ type Config struct {
 	// the server is started.
 	ListenAddr string
 
+	CorsListenAddr string
+
 	// If set to a non-nil value, the given NAT port mapper
 	// is used to make the listening port available to the
 	// Internet.
@@ -144,9 +146,20 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	ListenAddr: ":30303",
-	MaxPeers:   25,
-	NAT:        nat.Any(),
+	ListenAddr:     ":30303",
+	MaxPeers:       25,
+	NAT:            nat.Any(),
+	CorsListenAddr: ":50505",
+}
+
+func GetCorsConfig(config Config) Config {
+	corsconfig := config
+	corsconfig.BootstrapNodes = []*discover.Node{}
+	corsconfig.StaticNodes = []*discover.Node{}
+	corsconfig.TrustedNodes = []*discover.Node{}
+	corsconfig.NoDiscovery = true
+	corsconfig.ListenAddr = config.CorsListenAddr
+	return corsconfig
 }
 
 // Server manages all peer connections.
