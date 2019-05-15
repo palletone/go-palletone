@@ -7,6 +7,7 @@ HTTPPort=8545
 WSPort=8546
 Port=8080
 ListenAddr=30303
+CorsListenAddr=50505
 BtcHost=18332
 ContractAddress=12345
 LocalHost=localhost
@@ -35,6 +36,9 @@ sed -i '/^Port/c'$newPort'' ptn-config.toml
 
 newListenAddr="ListenAddr=\":$[$ListenAddr+$1]\""
 sed -i '/^ListenAddr/c'$newListenAddr'' ptn-config.toml
+
+newCorsListenAddr="CorsListenAddr=\":$[$CorsListenAddr+$1]\""
+sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' ptn-config.toml
 
 newBtcHost="BtcHost=\"localhost:$[$BtcHost+$1]\""
 sed -i '/^BtcHost/c'$newBtcHost'' ptn-config.toml
