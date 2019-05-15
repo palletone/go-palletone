@@ -109,6 +109,10 @@ func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 	return mediatorVoteCount
 }
 
+func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
+	return a.Dag().LookupMediatorInfo()
+}
+
 func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.Dag().ActiveMediators()
@@ -212,7 +216,6 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 
 	addr := args.FeePayer()
 	// 判断是否已经是mediator
-	// todo
 	if a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
@@ -262,63 +265,6 @@ func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxEx
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
 		" , You can get the transaction hash with dag.getTxHashByReqId."
-
-	return res, nil
-}
-
-func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, error) {
-	// 参数补全
-	//initPrivKey := args.setDefaults(a.srvr.Self())
-
-	// 参数验证
-	err := args.Validate()
-	if err != nil {
-		return nil, err
-	}
-
-	// 判断本节点是否同步完成，数据是否最新
-	//if !a.dag.IsSynced() {
-	//	return nil, fmt.Errorf("the data of this node is not synced, " +
-	//		"and mediator cannot be created at present")
-	//}
-
-	addr := args.FeePayer()
-	// 判断是否已经是mediator
-	if a.Dag().IsMediator(addr) {
-		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
-	}
-
-	// 判断是否申请通过
-	//if !dagcom.MediatorCreateEvaluate(args.MediatorCreateOperation) {
-	//	return nil, fmt.Errorf("has not successfully paid the deposit")
-	//}
-
-	// 1. 创建交易
-	tx, fee, err := a.Dag().GenMediatorCreateTx(addr, args.MediatorCreateOperation, a.TxPool())
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. 签名和发送交易
-	err = a.SignAndSendTransaction(addr, tx)
-	if err != nil {
-		return nil, err
-	}
-
-	// 5. 返回执行结果
-	res := &TxExecuteResult{}
-	// todo
-	//res.TxContent = fmt.Sprintf("Create mediator %v with initPubKey : %v , node: %v , url: %v",
-	//	args.AddStr, args.InitPubKey, args.Node, args.Url)
-	res.TxHash = tx.Hash()
-	res.TxSize = tx.Size().TerminalString()
-	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = DefaultResult
-
-	//if initPrivKey != "" {
-	//	res.Tip = "Your initial private key is: " + initPrivKey + " , initial public key is: " +
-	//		args.InitPubKey + " , please keep in mind!"
-	//}
 
 	return res, nil
 }

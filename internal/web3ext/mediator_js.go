@@ -38,11 +38,6 @@ web3._extend({
 			params: 0,
 		}),
 		new web3._extend.Method({
-			name: 'create',
-			call: 'mediator_create',
-			params: 1,
-		}),
-		new web3._extend.Method({
 			name: 'apply',
 			call: 'mediator_apply',
 			params: 1,
@@ -97,6 +92,12 @@ web3._extend({
 			call: 'mediator_listVoteResults',
 			params: 0,
 		}),
+		new web3._extend.Method({
+			name: 'lookupMediatorInfo',
+			call: 'mediator_lookupMediatorInfo',
+			params: 0,
+		}),
+
 	],
 	properties: [
 		new web3._extend.Property({

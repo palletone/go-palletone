@@ -170,8 +170,6 @@ type IDag interface {
 	RefreshAddrTxIndex() error
 	GetMinFee() (*modules.AmountAsset, error)
 
-	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
-		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CurrentFeeSchedule() core.FeeSchedule

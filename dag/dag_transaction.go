@@ -350,24 +350,6 @@ func (dag *Dag) CreateTokenTransaction(from, to, toToken common.Address, daoAmou
 	return tx, daoFee, nil
 }
 
-func (dag *Dag) GenMediatorCreateTx(account common.Address,
-	op *modules.MediatorCreateOperation, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	// 1. 组装 message
-	msg := &modules.Message{
-		App:     modules.OP_MEDIATOR_CREATE,
-		Payload: op,
-	}
-
-	// 2. 组装 tx
-	fee := dag.CurrentFeeSchedule().MediatorCreateFee
-	tx, fee, err := dag.CreateGenericTransaction(account, account, 0, fee, nil, msg, txPool)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return tx, fee, nil
-}
-
 func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
