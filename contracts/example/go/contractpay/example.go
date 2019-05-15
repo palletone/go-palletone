@@ -62,6 +62,16 @@ func (t *SimpleChaincode) balance(stub shim.ChaincodeStubInterface, args []strin
 	}
 	return shim.Success(data)
 }
+func (t *SimpleChaincode) time(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	time, err := stub.GetTxTimestamp(10)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	tStr := strconv.Itoa(int(time.Seconds))
+	stub.PutState("time", []byte(tStr))
+
+	return shim.Success([]byte(tStr))
+}
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	if function == "payout" {
@@ -69,6 +79,9 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	if function == "balance" {
 		return t.balance(stub, args)
+	}
+	if function == "time" {
+		return t.time(stub, args)
 	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }

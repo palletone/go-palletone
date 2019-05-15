@@ -569,6 +569,10 @@ type SignatureSet struct {
 	Signature []byte //
 }
 
+func (ss SignatureSet) String() string {
+	return fmt.Sprintf("SignatureSet: Pubkey[%x],Signature[%x]", ss.PubKey, ss.Signature)
+}
+
 // Token exchange message and verify message
 // App: text
 type DataPayload struct {
@@ -671,7 +675,7 @@ func (a *ContractReadSet) Equal(b *ContractReadSet) bool {
 			if !a.Version.Height.Equal(b.Version.Height) {
 				return false
 			}
-		} else if b.Version.Height != nil{
+		} else if b.Version.Height != nil {
 			return false
 		}
 	} else if a.Version != b.Version {

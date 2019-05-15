@@ -628,7 +628,7 @@ func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	txjson := ptnjson.ConvertTx2FullJson(tx, nil)
+	txjson := ptnjson.ConvertTx2FullJson(tx, b.Dag().GetUtxoEntry)
 	json, err := json.Marshal(txjson)
 	return string(json), err
 }
