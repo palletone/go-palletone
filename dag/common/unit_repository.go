@@ -990,10 +990,6 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 			//		return fmt.Errorf("Save contract invode payload error.")
 			//	}
-		case modules.OP_MEDIATOR_CREATE:
-			if !rep.MediatorCreateApply(msg) {
-				return fmt.Errorf("apply Mediator Creating Operation error")
-			}
 		case modules.APP_ACCOUNT_UPDATE:
 			if err := rep.updateAccountInfo(msg, requester, unit.UnitHeader.Number, uint32(txIndex)); err != nil {
 				return fmt.Errorf("apply Account Updating Operation error")

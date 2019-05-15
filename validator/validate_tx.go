@@ -186,7 +186,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase,isFullT
 				return validateCode, nil
 			}
 
-		case modules.OP_MEDIATOR_CREATE:
 		case modules.APP_ACCOUNT_UPDATE:
 
 		default:
@@ -254,10 +253,6 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 		}
 	case *modules.DataPayload:
 		if app == modules.APP_DATA {
-			return true
-		}
-	case *modules.MediatorCreateOperation:
-		if app == modules.OP_MEDIATOR_CREATE {
 			return true
 		}
 	case *modules.AccountStateUpdatePayload:
