@@ -61,6 +61,11 @@ addons:
     apt:
         update: true
 
+deploy:
+    skip_cleanup: true
+    on:
+        branch: certbdd
+
 notifications:
     email: elva1087penny@163.com
     email:
@@ -69,9 +74,3 @@ notifications:
         on_success: always # default: change
         on_failure: always
 
-deploy:
-    skip_cleanup: true
-
-on:
-    tags: true
-    all_branches: true
