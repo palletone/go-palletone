@@ -129,8 +129,8 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	voted := a.Dag().GetAccountVotedMediators(addr)
 	mediators := make([]string, 0, len(voted))
 
-	for _, med := range voted {
-		mediators = append(mediators, med.Str())
+	for med, _ := range voted {
+		mediators = append(mediators, med)
 	}
 
 	return mediators, nil
@@ -335,6 +335,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
 	//}
 
+	mp := make(map[string]bool)
 	for _, mediatorStr := range mediatorStrs {
 		mediator, err := common.StringToAddress(mediatorStr)
 		if err != nil {
@@ -345,10 +346,16 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 		if !a.Dag().IsMediator(mediator) {
 			return nil, fmt.Errorf("%v is not mediator", mediatorStr)
 		}
+
+		if mp[mediatorStr] {
+			return nil, fmt.Errorf("this mediator(%v) has already been voted", mediatorStr)
+		}
+
+		mp[mediatorStr] = true
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mediatorStrs, a.TxPool())
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp, a.TxPool())
 	if err != nil {
 		return nil, err
 	}

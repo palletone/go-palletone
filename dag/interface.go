@@ -172,13 +172,13 @@ type IDag interface {
 
 	GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	GenVoteMediatorTx(voter common.Address, mediators []string,
+	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
 	MediatorVotedResults() map[string]uint64
 	ActiveMediators() map[common.Address]bool
-	GetAccountVotedMediators(addr common.Address) []common.Address
+	GetAccountVotedMediators(addr common.Address) map[string]bool
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 	CurrentFeeSchedule() core.FeeSchedule

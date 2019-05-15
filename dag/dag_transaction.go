@@ -368,7 +368,7 @@ func (dag *Dag) GenMediatorCreateTx(account common.Address,
 	return tx, fee, nil
 }
 
-func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators []string,
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	msb, err := json.Marshal(mediators)

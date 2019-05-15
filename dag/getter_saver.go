@@ -251,14 +251,14 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	return nodes
 }
 
-func (d *Dag) GetAccountVotedMediators(addr common.Address) []common.Address {
+func (d *Dag) GetAccountVotedMediators(addr common.Address) map[string]bool {
 	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTED_MEDIATORS)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil
 	}
 
-	votedMediators := make([]common.Address, 0)
+	votedMediators := make(map[string]bool)
 	err = json.Unmarshal(data.Value, &votedMediators)
 	if err != nil {
 		log.Debugf(err.Error())

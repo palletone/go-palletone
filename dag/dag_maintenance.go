@@ -85,7 +85,7 @@ func (dag *Dag) MediatorVotedResults() map[string]uint64 {
 	allAccount := dag.LookupAccount()
 	for _, info := range allAccount {
 		// 遍历该账户投票的mediator
-		for _, med := range info.VotedMediators {
+		for med, _ := range info.VotedMediators {
 			// 累加投票数量
 			mediatorVoteCount[med] += info.Balance
 		}
