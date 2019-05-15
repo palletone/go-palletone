@@ -354,7 +354,8 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
 		}
-		sig, err := GetTxSig(tx, ks, singer)
+		//只对合约执行后不包含Jury签名的Tx进行签名
+		sig, err := GetTxSig(tx.GetResultRawTx(), ks, singer)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.RequestHash().String()))
 		}
