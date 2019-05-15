@@ -25,11 +25,11 @@ script:
 
 after_success:
     - killall gptn
-    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://ftpuser:123456@39.105.191.26/pub/ -v
+    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://ftpuser:123456@39.105.191.26/pub/ -P – -v
 
 after_failure:
     - killall gptn
-    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://ftpuser:123456@39.105.191.26/pub/ -v
+    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/createTrans.log.html ftp://ftpuser:123456@39.105.191.26/pub/ -P – -v
 
 before_install:
     - go get github.com/mattn/goveralls
