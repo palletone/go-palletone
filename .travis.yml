@@ -17,22 +17,21 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
+    - ls /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/
+    - ls /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log
     - mkdir ../logs
 #    - ./deposit_test.sh 4 > ../logs/deposit_test.log
 #    - python -m robot.run -d ../logs -l createTrans.log.html ../testcase/createTrans
-    - ls /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/
 #    - python -m robot.run -d ../logs -l ccinvoke.log.html ../testcase/ccinvoke
 #    - python -m robot.run -d ../logs -l DigitalIdentityCert.log.html ../DigitalIdentityCert
 
 after_success:
     - killall gptn
-    - ufw disable
     - cd ../uploadLogs
     - python ftpUpload.py
 
 after_failure:
     - killall gptn
-    - ufw disable
     - cd ../uploadLogs
     - python ftpUpload.py
 
