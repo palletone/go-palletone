@@ -26,7 +26,7 @@ createTransLogName = "createTrans.log.html"
 # ccinvokeLogName = "ccinvoke.log.html"
 # DigitalIdentityCertLogName = "DigitalIdentityCert.log.html"
 putStr = "put "+logPath+"/"+createTransLogName+" "+createTransLogName
-child.sendline(putStr)
+child.sendline("put /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/output.xml output.xml")
 print putStr
 try:
 	child.expect(u"(?i).*complete.*")
@@ -36,11 +36,11 @@ except:
 	child.sendline('quote pasv')
 	child.sendline('passive')
 	child.after
-	child.sendline(putStr)
+	child.sendline("put /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/output.xml output.xml")
 	print putStr
 try:
 	child.expect(u"(?i).*complete.*")
-	print "=== upload succed ==="
+	print "=== upload succeed ==="
 except:
 	print "=== upload failed === "
 
