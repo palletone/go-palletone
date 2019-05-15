@@ -331,7 +331,7 @@ func MergeContractUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 	for _, sign := range signs {
 		sign1 := make([]byte, len(sign)+1)
 		copy(sign1, sign)
-		sign1[len(sign)] = 4
+		sign1[len(sign)] = 4 //SigHashRaw
 		builder.AddData(sign1)
 	}
 	builder.AddData(redeemScript)

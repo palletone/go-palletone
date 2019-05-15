@@ -590,6 +590,8 @@ LOOP:
 	fmt.Println("goto loop.")
 	return request
 }
+
+//Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
 	for idx, msg := range tx.TxMessages {
 		if msg.App.IsRequest() {
@@ -598,6 +600,25 @@ func (tx *Transaction) GetRequestMsgIndex() int {
 	}
 	return -1
 }
+
+//这个交易是否包含了从合约付款出去的结果,有则返回该Payment
+func (tx *Transaction) HasContractPayoutMsg() (bool, *PaymentPayload) {
+	isInvokeResult := false
+	for _, msg := range tx.TxMessages {
+		if msg.App.IsRequest() {
+			isInvokeResult = true
+			continue
+		}
+		if isInvokeResult && msg.App == APP_PAYMENT {
+			pay := msg.Payload.(*PaymentPayload)
+			if !pay.IsCoinbase() {
+				return true, pay
+			}
+		}
+	}
+	return false, nil
+}
+
 func (tx *Transaction) InvokeContractId() []byte {
 	for _, msg := range tx.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
