@@ -360,7 +360,7 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash, server *CorsServer) error {
+func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash, assetId modules.AssetId) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -370,22 +370,11 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	send = send.add("headNum", *number)
 	send = send.add("headHash", headhash)
 	send = send.add("genesisHash", genesis)
+	send = send.add("gastoken", assetId)
 
-	if server != nil {
-		send = send.add("serveHeaders", nil)
-		send = send.add("serveChainSince", uint64(0))
-		send = send.add("serveStateSince", uint64(0))
-		send = send.add("txRelay", nil)
-		//send = send.add("flowControl/BL", server.defParams.BufLimit)
-		//send = send.add("flowControl/MRR", server.defParams.MinRecharge)
-		//list := server.fcCostStats.getCurrentList()
-		//send = send.add("flowControl/MRC", list)
-		send = send.add("fullnode", nil)
-		//p.fcCosts = list.decode()
-	} else {
-		p.requestAnnounceType = announceTypeSimple // set to default until "very light" client mode is implemented
-		send = send.add("announceType", p.requestAnnounceType)
-	}
+	//if assetId == modules.PTNCOIN {
+	//	send = send.add("ptn_main_node", nil)
+	//}
 	recvList, err := p.sendReceiveHandshake(send)
 	if err != nil {
 		return err
@@ -394,8 +383,8 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 
 	var rGenesis, rHash common.Hash
 	var rVersion, rNetwork uint64
-	//var rTd *big.Int
 	var rNum modules.ChainIndex
+	var rGastoken modules.AssetId
 
 	if err := recv.get("protocolVersion", &rVersion); err != nil {
 		return err
@@ -412,66 +401,28 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	if err := recv.get("genesisHash", &rGenesis); err != nil {
 		return err
 	}
-
-	if rGenesis != genesis {
-		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", rGenesis[:8], genesis[:8])
-	}
-	if rNetwork != p.network {
-		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", rNetwork, p.network)
-	}
-	if int(rVersion) != p.version {
-		return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, p.version)
-	}
-	if server != nil {
-		// until we have a proper peer connectivity API, allow LES connection to other servers
-		//if recv.get("serveStateSince", nil) == nil {
-		//	return errResp(ErrUselessPeer, "wanted client, got server")
-		//}
-		if recv.get("announceType", &p.announceType) != nil {
-			p.announceType = announceTypeSimple
-		}
-		//p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
-	} else {
-		if recv.get("serveChainSince", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot serve chain")
-		}
-		if recv.get("serveStateSince", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot serve state")
-		}
-		if recv.get("txRelay", nil) != nil {
-			return errResp(ErrUselessPeer, "peer cannot relay transactions")
-		}
-		//params := &flowcontrol.ServerParams{}
-		//if err := recv.get("flowControl/BL", &params.BufLimit); err != nil {
-		//	return err
-		//}
-		//if err := recv.get("flowControl/MRR", &params.MinRecharge); err != nil {
-		//	return err
-		//}
-		//var MRC RequestCostList
-		//if err := recv.get("flowControl/MRC", &MRC); err != nil {
-		//	return err
-		//}
-		//p.fcServerParams = params
-		//p.fcServer = flowcontrol.NewServerNode(params)
-		//p.fcCosts = MRC.decode()
+	if err := recv.get("gastoken", &rGastoken); err != nil {
+		return err
 	}
 
-	if err := recv.get("fullnode", nil); err != nil {
-		p.fullnode = false
-		log.Debug("Light Palletone peer->Handshake peer is light node")
-	} else {
-		p.fullnode = true
-		log.Debug("Light Palletone peer->Handshake peer is full node")
-	}
-	//p.headInfo = &announceData{Hash: rHash, Number: rNum}
+	//if rGenesis != genesis {
+	//	return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", rGenesis[:8], genesis[:8])
+	//}
+	//if rNetwork != p.network {
+	//	return errResp(ErrNetworkIdMismatch, "%d (!= %d)", rNetwork, p.network)
+	//}
+	//if int(rVersion) != p.version {
+	//	return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, p.version)
+	//}
+
+	log.Debug("Cors Handshake", "p.ID()", p.ID(), "genesis", rGenesis, "network", rNetwork, "version", rVersion, "gastoken", rGastoken)
 	return nil
 }
 
 // String implements fmt.Stringer.
 func (p *peer) String() string {
 	return fmt.Sprintf("Peer %s [%s]", p.id,
-		fmt.Sprintf("les/%d", p.version),
+		fmt.Sprintf("cors/%d", p.version),
 	)
 }
 

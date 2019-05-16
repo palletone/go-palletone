@@ -29,10 +29,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 
-	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -440,41 +438,4 @@ func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
 		return "timeout"
 	}
 	return "errors"
-}
-
-func (pm *ProtocolManager) AddPeer(url string) (bool, error) {
-	// Make sure the server is running, fail otherwise
-	if pm.server.corss == nil {
-		return false, nil
-	}
-	// Try to add the url as a static peer and return
-	node, err := discover.ParseNode(url)
-	if err != nil {
-		return false, fmt.Errorf("invalid pnode: %v", err)
-	}
-	pm.server.corss.AddPeer(node)
-	return true, nil
-}
-
-/*
-type MainChain struct {
-	GenesisHash common.Hash
-	Status      byte //Active:1 ,Terminated:0,Suspended:2
-	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
-	GasToken    AssetId
-	Peers       []string // IP:port format string
-}
-*/
-func (pm *ProtocolManager) GetMainChain() (*modules.MainChain, error) {
-	//contract.ccquery("PCGTta3M4t3yXu8uRgkKvaWd2d8DRxVdGDZ",["getMainChain"])
-	return nil, fmt.Errorf("this is not cors protocol")
-	//TODO
-	if pm.protocolname != configure.CORSProtocol {
-		return nil, fmt.Errorf("this is not cors protocol")
-	}
-	mainchain := &modules.MainChain{}
-	mainchain.NetworkId = 1
-	mainchain.Version = 1
-	mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
-	return mainchain, nil
 }

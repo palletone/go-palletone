@@ -277,6 +277,20 @@ func (api *PublicAdminAPI) CorsPeers(protocol string) ([]*p2p.PeerInfo, error) {
 	return server.CorsPeerInfo(strings.ToLower(protocol)), nil
 }
 
+//addCorsPeer
+func (api *PublicAdminAPI) AddCorsPeer(url string) (bool, error) {
+	server := api.node.CorsServer()
+	if server == nil {
+		return false, ErrNodeStopped
+	}
+	node, err := discover.ParseNode(url)
+	if err != nil {
+		return false, fmt.Errorf("invalid pnode: %v", err)
+	}
+	server.AddPeer(node)
+	return true, nil
+}
+
 // Datadir retrieves the current data directory the node is using.
 func (api *PublicAdminAPI) Datadir() string {
 	return api.node.DataDir()
