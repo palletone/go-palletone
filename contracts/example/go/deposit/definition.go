@@ -57,24 +57,26 @@ const (
 	HandleForApplyQuitMediator      = "HandleForApplyQuitMediator"
 	MediatorApplyQuitMediator       = "MediatorApplyQuitMediator"
 	HandleForApplyBecomeMediator    = "HandleForApplyBecomeMediator"
+	IsInMediatorQuitList            = "IsInMediatorQuitList"
+	IsInCashbackList                = "IsInCashbackList"
 )
 
 //申请提保证金
 type Cashback struct {
-	CashbackAddress string               `json:"cashback_address"` //请求地址
-	CashbackTokens  *modules.AmountAsset `json:"cashback_tokens"`  //请求数量
-	Role            string               `json:"role"`             //请求角色
-	CashbackTime    int64                `json:"cashback_time"`    //请求时间
+	//CashbackAddress string               `json:"cashback_address"` //请求地址
+	CashbackTokens *modules.AmountAsset `json:"cashback_tokens"` //请求数量
+	Role           string               `json:"role"`            //请求角色
+	CashbackTime   int64                `json:"cashback_time"`   //请求时间
 }
 
 //申请没收保证金
 type Forfeiture struct {
-	ApplyAddress      string               `json:"apply_address"`      //谁发起的
-	ForfeitureAddress string               `json:"forfeiture_address"` //没收节点地址
-	ApplyTokens       *modules.AmountAsset `json:"apply_tokens"`       //没收数量
-	ForfeitureRole    string               `json:"forfeiture_role"`    //没收角色
-	//Extra             string        `json:"extra"`              //备注
-	ApplyTime int64 `json:"apply_time"` //请求时间
+	ApplyAddress string `json:"apply_address"` //谁发起的
+	//ForfeitureAddress string               `json:"forfeiture_address"` //没收节点地址
+	ApplyTokens    *modules.AmountAsset `json:"apply_tokens"`    //没收数量
+	ForfeitureRole string               `json:"forfeiture_role"` //没收角色
+	Extra          string               `json:"extra"`           //备注
+	ApplyTime      int64                `json:"apply_time"`      //请求时间
 }
 
 //交易的内容
@@ -93,3 +95,9 @@ type PayValue struct {
 //	CashbackValues   []*Cashback   `json:"cashback_values"`   //退款的历史记录
 //	ForfeitureValues []*Forfeiture `json:"forfeiture_values"` //被没收的历史记录
 //}
+
+type DepositBalance struct {
+	Balance        uint64 `json:"balance"`          //  保证金余额
+	EnterTime      string `json:"enter_time"`       //  交保证金的时间
+	LastModifyTime int64  `json:"last_modify_time"` //  计算币龄时间
+}

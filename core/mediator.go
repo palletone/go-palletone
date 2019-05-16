@@ -70,16 +70,11 @@ func NewMediator() *Mediator {
 
 //申请成为Mediator
 type MediatorApplyInfo struct {
-	Address        string `json:"address"`          //  地址
 	Content        string `json:"content"`          //  申请信息
 	ApplyEnterTime int64  `json:"apply_enter_time"` //  申请加入时间
 	ApllyQuitTime  int64  `json:"apply_quit_time"`  //  申请退出时间
 	Status         string `json:"status"`           //  申请状态  申请、同意、退出
-	Balance        uint64 `json:"balance"`          //  保证金余额
 	AgreeTime      int64  `json:"agree_time"`       //  基金会同意申请时间
-	EnterTime      string `json:"enter_time"`       //  交保证金的时间
-	LastModifyTime int64  `json:"last_modify_time"` //  计算币龄时间
-
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
