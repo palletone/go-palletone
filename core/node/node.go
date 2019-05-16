@@ -226,10 +226,9 @@ func (n *Node) Start() error {
 	}
 
 	// Gather the protocols and start the freshly assembled P2P server
-	// 3. 启动P2P server
-	// 收集所有的这些服务的协议, 为后面启动协议做准备
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
+		corss.Protocols = append(corss.Protocols, service.CorsProtocols()...)
 	}
 
 	if err := running.Start(); err != nil {

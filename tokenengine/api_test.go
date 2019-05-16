@@ -244,6 +244,14 @@ func build23Address() ([]byte, []byte, string) {
 
 	return lockScript, redeemScript, addressMulti.Str()
 }
+func build22Address() ([]byte, []byte, string) {
+
+	redeemScript := GenerateRedeemScript(2, [][]byte{pubKey1B, pubKey2B})
+	lockScript := GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+	addressMulti, _ := GetAddressFromScript(lockScript)
+
+	return lockScript, redeemScript, addressMulti.Str()
+}
 
 //构造一个2/3签名的地址和UTXO，然后用其中的2个私钥对其进行签名
 func TestMultiSign1Step(t *testing.T) {
@@ -570,4 +578,60 @@ func TestMergeContractUnlockScript(t *testing.T) {
 	t.Logf("%x", result)
 	txt, _ := DisasmString(result)
 	t.Log(txt)
+}
+func Test22MutiSign(t *testing.T) {
+	lockScript, redeemScript, addressMulti := build22Address()
+	t.Logf("MultiSign Address:%s\n", addressMulti)
+	t.Logf("RedeemScript: %x\n", redeemScript)
+	r, _ := DisasmString(redeemScript)
+	t.Logf("RedeemScript: %s\n", r)
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	asset0 := &modules.Asset{}
+	payment := &modules.PaymentPayload{}
+	utxoTxId := common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
+	txIn := modules.NewTxIn(outPoint, []byte{})
+	payment.AddTxIn(txIn)
+	p1lockScript := GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
+	payment.AddTxOut(modules.NewTxOut(1, p1lockScript, asset0))
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
+	//scriptCp:=make([]byte,len(lockScript))
+	//copy(scriptCp,lockScript)
+	//privKeys := map[common.Address]*ecdsa.PrivateKey{
+	//	address1: prvKey1,
+	//	address2: prvKey2,
+	//}
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		if addr == address1 {
+			return crypto.CompressPubkey(&prvKey1.PublicKey), nil
+		}
+		if addr == address2 {
+			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
+		}
+		return nil, nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+
+		if addr == address1 {
+			return crypto.Sign(hash, prvKey1)
+		}
+		if addr == address2 {
+			return crypto.Sign(hash, prvKey2)
+		}
+		return nil, nil
+	}
+	sign12, err := MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey1&2 sign result:%x\n", sign12)
+	pay1 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	pay1.Inputs[0].SignatureScript = sign12
+	str, _ := txscript.DisasmString(sign12)
+	t.Logf("Unlock script:{%s}", str)
+
+	err = ScriptValidate(lockScript, nil, tx, 0, 0)
+	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 }

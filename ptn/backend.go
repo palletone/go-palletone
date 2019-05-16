@@ -53,9 +53,10 @@ import (
 )
 
 type LesServer interface {
-	Start(srvr *p2p.Server)
+	Start(srvr *p2p.Server, corss *p2p.Server)
 	Stop()
 	Protocols() []p2p.Protocol
+	CorsProtocols() []p2p.Protocol
 }
 
 // PalletOne implements the PalletOne full node service.
@@ -284,15 +285,15 @@ func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *PalletOne) Protocols() []p2p.Protocol {
-	if s.lesServer == nil {
+	if s.lesServer == nil && s.corsServer == nil {
 		return s.protocolManager.SubProtocols
 	}
-	//if s.corsServer == nil {
-	//	return s.protocolManager.SubProtocols
-	//}
 	protocols := append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
-	return protocols
-	//return append(protocols, s.corsServer.Protocols()...)
+	return append(protocols, s.corsServer.Protocols()...)
+}
+
+func (s *PalletOne) CorsProtocols() []p2p.Protocol {
+	return nil
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
@@ -324,10 +325,10 @@ func (s *PalletOne) Start(srvr *p2p.Server, corss *p2p.Server) error {
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(srvr, maxPeers)
 	if s.lesServer != nil {
-		s.lesServer.Start(srvr)
+		s.lesServer.Start(srvr, corss)
 	}
 	if s.corsServer != nil {
-		s.corsServer.Start(srvr)
+		s.corsServer.Start(srvr, corss)
 	}
 	return nil
 }
