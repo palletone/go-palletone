@@ -32,12 +32,12 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/simulations"
 	"github.com/palletone/go-palletone/common/p2p/simulations/adapters"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 )
@@ -142,7 +142,7 @@ func (t *testNode) APIs() []rpc.API {
 	return nil
 }
 
-func (t *testNode) Start(server *p2p.Server) error {
+func (t *testNode) Start(server *p2p.Server, corss *p2p.Server) error {
 	return nil
 }
 
@@ -192,6 +192,10 @@ func (m *mockNode) Run(peer *p2p.Peer, rw p2p.MsgReadWriter) error {
 func (m *mockNode) Trigger(trig *Trigger) error {
 	m.trigger <- trig
 	return <-m.err
+}
+
+func (m *mockNode) CorsProtocols() []p2p.Protocol {
+	return nil
 }
 
 func (m *mockNode) Expect(exp ...Expect) error {
