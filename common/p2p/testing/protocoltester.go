@@ -137,7 +137,9 @@ func (t *testNode) Protocols() []p2p.Protocol {
 		Run:    t.run,
 	}}
 }
-
+func (t *testNode) CorsProtocols() []p2p.Protocol {
+	return nil
+}
 func (t *testNode) APIs() []rpc.API {
 	return nil
 }
