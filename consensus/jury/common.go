@@ -115,7 +115,8 @@ func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 		log.Debugf("invalid redeemStr %s", redeemStr)
 	}
 	pubkeyBytes := [][]byte{}
-	for i := 1; i < len(pubkeyStrs)-1; i++ {
+	for i := 1; i < len(pubkeyStrs)-2; i++ {
+		//log.Debugf("%d %s", i, pubkeyStrs[i])//the order of redeem's Pubkey
 		pubkeyBytes = append(pubkeyBytes, common.Hex2Bytes(pubkeyStrs[i]))
 	}
 
