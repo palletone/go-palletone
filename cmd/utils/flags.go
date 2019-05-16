@@ -47,6 +47,7 @@ import (
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/light"
+	"github.com/palletone/go-palletone/light/cors"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
@@ -1190,8 +1191,8 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 				ls, _ := light.NewLesServer(fullNode, cfg, configure.LPSProtocol)
 				fullNode.AddLesServer(ls)
 
-				//cs, _ := light.NewLesServer(fullNode, cfg, configure.CORSProtocol)
-				//fullNode.AddCorsServer(cs)
+				cs, _ := cors.NewCoresServer(fullNode, cfg)
+				fullNode.AddCorsServer(cs)
 			}
 			return fullNode, err
 		})

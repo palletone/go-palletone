@@ -100,6 +100,8 @@ type Service interface {
 	// 返回 service 要启动的 P2P 协议列表
 	Protocols() []p2p.Protocol
 
+	CorsProtocols() []p2p.Protocol
+
 	// APIs retrieves the list of RPC descriptors the service provides
 	// 返回本 service 能提供的 RPC API 接口
 	APIs() []rpc.API

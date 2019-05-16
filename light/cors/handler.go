@@ -31,8 +31,6 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/light"
-	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 const (
@@ -70,10 +68,10 @@ type ProtocolManager struct {
 
 	genesis *modules.Unit
 
-	downloader *downloader.Downloader
-	fetcher    *light.LightFetcher
-	peers      *peerSet
-	maxPeers   int
+	//downloader *downloader.Downloader
+	fetcher  *LightFetcher
+	peers    *peerSet
+	maxPeers int
 
 	SubProtocols []p2p.Protocol
 
@@ -92,7 +90,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
-func NewCorsProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId,
+func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.AssetId,
 	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
@@ -102,7 +100,7 @@ func NewCorsProtocolManager(lightSync bool, peers *peerSet, networkId uint64, ga
 		genesis:     genesis,
 		dag:         dag,
 		networkId:   networkId,
-		peers:       peers,
+		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
 		wg:          new(sync.WaitGroup),
 		noMorePeers: make(chan struct{}),
@@ -145,21 +143,21 @@ func NewCorsProtocolManager(lightSync bool, peers *peerSet, networkId uint64, ga
 		return nil, errIncompatibleConfig
 	}
 
-	removePeer := manager.removePeer
-	if disableClientRemovePeer {
-		removePeer = func(id string) {}
-	}
+	//removePeer := manager.removePeer
+	//if disableClientRemovePeer {
+	//	removePeer = func(id string) {}
+	//}
 
 	if manager.lightSync {
-		manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
-		manager.peers.notify((*downloaderPeerNotify)(manager))
+		//manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
+		//manager.peers.notify((*downloaderPeerNotify)(manager))
 		manager.fetcher = manager.newLightFetcher()
 	}
 
 	return manager, nil
 }
 
-func (pm *ProtocolManager) newLightFetcher() *light.LightFetcher {
+func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	headerVerifierFn := func(header *modules.Header) error {
 		//hash := header.Hash()
 		//log.Debugf("Importing propagated block insert DAG Enter ValidateUnitExceptGroupSig, unit: %s", hash.String())
@@ -182,10 +180,10 @@ func (pm *ProtocolManager) newLightFetcher() *light.LightFetcher {
 		//	log.Warn("Discarded lighting sync propagated block", "number", headers[0].Number.Index, "hash", headers[0].Hash())
 		//	return 0, errors.New("fasting sync")
 		//}
-		log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		log.Debug("Cors Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
-	return light.NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
+	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
 		headerBroadcaster, inserter, pm.removePeer)
 }
 
@@ -236,7 +234,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	// Showing a log message. During download / process this could actually
 	// take between 5 to 10 seconds and therefor feedback is required.
-	log.Info("Stopping light Palletone protocol")
+	log.Info("Stopping cors Palletone protocol")
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
@@ -462,16 +460,16 @@ func (p *peerConnection) RequestLeafNodes() error {
 	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
 }
 
-func (d *downloaderPeerNotify) registerPeer(p *peer) {
-	pm := (*ProtocolManager)(d)
-	pc := &peerConnection{
-		manager: pm,
-		peer:    p,
-	}
-	pm.downloader.RegisterLightPeer(p.id, p.version, pc)
-}
-
-func (d *downloaderPeerNotify) unregisterPeer(p *peer) {
-	pm := (*ProtocolManager)(d)
-	pm.downloader.UnregisterPeer(p.id)
-}
+//func (d *downloaderPeerNotify) registerPeer(p *peer) {
+//	pm := (*ProtocolManager)(d)
+//	pc := &peerConnection{
+//		manager: pm,
+//		peer:    p,
+//	}
+//	pm.downloader.RegisterLightPeer(p.id, p.version, pc)
+//}
+//
+//func (d *downloaderPeerNotify) unregisterPeer(p *peer) {
+//	pm := (*ProtocolManager)(d)
+//	pm.downloader.UnregisterPeer(p.id)
+//}

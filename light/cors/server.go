@@ -12,6 +12,7 @@ type CorsServer struct {
 	config          *ptn.Config
 	protocolManager *ProtocolManager
 	privateKey      *ecdsa.PrivateKey
+	corss           *p2p.Server
 	quitSync        chan struct{}
 }
 
@@ -23,9 +24,23 @@ func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error)
 		log.Error("Light PalletOne New", "get genesis err:", err)
 		return nil, err
 	}
+	//TODO version network gastoken genesis by
+	//type MainChain struct {
+	//	GenesisHash common.Hash
+	//	Status      byte //Active:1 ,Terminated:0,Suspended:2
+	//	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
+	//	GasToken    AssetId
+	//	NetworkId   uint64
+	//	Version     int
+	//	Peers       []string // pnode://publickey@IP:port format string
+	//}
 
-	pm, err := NewCorsProtocolManager(true, newPeerSet(), config.NetworkId, gasToken,
-		ptn.Dag(), ptn.EventMux(), genesis, quitSync)
+	//pm, err := NewCorsProtocolManager(true, config.NetworkId, gasToken,
+	//	ptn.Dag(), ptn.EventMux(), genesis, make(chan struct{}))
+
+	pm, err := NewCorsProtocolManager(true, 5, gasToken,
+		ptn.Dag(), ptn.EventMux(), genesis, make(chan struct{}))
+
 	if err != nil {
 		log.Error("NewlesServer NewProtocolManager", "err", err)
 		return nil, err
@@ -42,13 +57,18 @@ func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error)
 }
 
 func (s *CorsServer) Protocols() []p2p.Protocol {
+	return nil
+}
+
+func (s *CorsServer) CorsProtocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
 }
 
 // Start starts the LES server
-func (s *CorsServer) Start(srvr *p2p.Server) {
+func (s *CorsServer) Start(srvr *p2p.Server, corss *p2p.Server) {
 	s.protocolManager.Start(s.config.LightPeers)
-	s.privateKey = srvr.PrivateKey
+	s.privateKey = corss.PrivateKey
+	s.corss = corss
 	s.protocolManager.blockLoop()
 }
 
