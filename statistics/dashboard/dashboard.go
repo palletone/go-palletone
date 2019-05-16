@@ -111,11 +111,13 @@ func emptyChartEntries(t time.Time, limit int, refresh time.Duration) ChartEntri
 // Protocols is a meaningless implementation of node.Service.
 func (db *Dashboard) Protocols() []p2p.Protocol { return nil }
 
+func (db *Dashboard) CorsProtocols() []p2p.Protocol { return nil }
+
 // APIs is a meaningless implementation of node.Service.
 func (db *Dashboard) APIs() []rpc.API { return nil }
 
 // Start implements node.Service, starting the data collection thread and the listening server of the dashboard.
-func (db *Dashboard) Start(server *p2p.Server) error {
+func (db *Dashboard) Start(server *p2p.Server, corss *p2p.Server) error {
 	log.Info("Starting dashboard")
 
 	db.wg.Add(2)

@@ -49,9 +49,11 @@ type LesServer struct {
 	fcManager       *flowcontrol.ClientManager // nil if our node is client only
 	fcCostStats     *requestCostStats
 	defParams       *flowcontrol.ServerParams
-	p2psrv          *p2p.Server
+	srv             *p2p.Server
+	corss           *p2p.Server
 	privateKey      *ecdsa.PrivateKey
 	quitSync        chan struct{}
+	protocolname    string
 }
 
 func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (*LesServer, error) {
@@ -74,6 +76,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (
 		config:          config,
 		protocolManager: pm,
 		quitSync:        quitSync,
+		protocolname:    protocolname,
 	}
 
 	pm.server = srv
@@ -91,10 +94,18 @@ func (s *LesServer) Protocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
 }
 
+func (s *LesServer) CorsProtocols() []p2p.Protocol {
+	return nil
+}
+
 // Start starts the LES server
-func (s *LesServer) Start(srvr *p2p.Server) {
-	s.p2psrv = srvr
-	s.protocolManager.Start(s.config.LightPeers)
+func (s *LesServer) Start(srvr *p2p.Server, corss *p2p.Server) {
+	s.srv = srvr
+	if s.protocolname == configure.CORSProtocol {
+		s.corss = corss
+	}
+
+	s.protocolManager.Start(s.config.LightPeers, s.corss)
 	s.privateKey = srvr.PrivateKey
 	s.protocolManager.blockLoop()
 }
@@ -433,7 +444,7 @@ func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
 
 func (pm *ProtocolManager) AddPeer(url string) (bool, error) {
 	// Make sure the server is running, fail otherwise
-	if pm.server.p2psrv == nil {
+	if pm.server.corss == nil {
 		return false, nil
 	}
 	// Try to add the url as a static peer and return
@@ -441,7 +452,7 @@ func (pm *ProtocolManager) AddPeer(url string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("invalid pnode: %v", err)
 	}
-	pm.server.p2psrv.AddPeer(node)
+	pm.server.corss.AddPeer(node)
 	return true, nil
 }
 
@@ -462,6 +473,8 @@ func (pm *ProtocolManager) GetMainChain() (*modules.MainChain, error) {
 		return nil, fmt.Errorf("this is not cors protocol")
 	}
 	mainchain := &modules.MainChain{}
-
+	mainchain.NetworkId = 1
+	mainchain.Version = 1
+	mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
 	return mainchain, nil
 }

@@ -112,12 +112,14 @@ func New(url string, ptnServ *ptn.PalletOne) (*Service, error) {
 // by the stats service (nil as it doesn't use the devp2p overlay network).
 func (s *Service) Protocols() []p2p.Protocol { return nil }
 
+func (s *Service) CorsProtocols() []p2p.Protocol { return nil }
+
 // APIs implements node.Service, returning the RPC API endpoints provided by the
 // stats service (nil as it doesn't provide any user callable APIs).
 func (s *Service) APIs() []rpc.API { return nil }
 
 // Start implements node.Service, starting up the monitoring and reporting daemon.
-func (s *Service) Start(server *p2p.Server) error {
+func (s *Service) Start(server *p2p.Server, corss *p2p.Server) error {
 	s.server = server
 	go s.loop()
 

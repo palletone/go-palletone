@@ -40,11 +40,13 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	//"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
+	"github.com/palletone/go-palletone/light/cors"
 )
 
 type LightPalletone struct {
@@ -61,9 +63,10 @@ type LightPalletone struct {
 	txPool *txspool.TxPool
 	//blockchain      *light.LightChain
 	protocolManager *ProtocolManager
-	serverPool      *serverPool
-	//reqDist         *requestDistributor
-	//retriever       *retrieveManager
+
+	corsProtocolManager *cors.ProtocolManager
+
+	serverPool *serverPool
 	// DB interfaces
 	dag dag.IDag
 	// DB interfaces
@@ -124,11 +127,14 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string) (*Li
 	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
 
 	lptn.txPool = txspool.NewTxPool(config.TxPool, lptn.dag)
-	//NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
-	//		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
-		dag, lptn.eventMux, genesis, quitSync, protocolname); err != nil {
+		dag, lptn.eventMux, genesis, quitSync, configure.LPSProtocol); err != nil {
+		return nil, err
+	}
+
+	if lptn.corsProtocolManager, err = cors.NewCorsProtocolManager(true, config.NetworkId, gasToken,
+		dag, lptn.eventMux, genesis, make(chan struct{})); err != nil {
 		return nil, err
 	}
 
@@ -202,16 +208,17 @@ func (s *LightPalletone) Protocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
 }
 
+func (s *LightPalletone) CorsProtocols() []p2p.Protocol {
+	return nil
+}
+
 // Start implements node.Service, starting all internal goroutines needed by the
 // Ethereum protocol implementation.
-func (s *LightPalletone) Start(srvr *p2p.Server) error {
+func (s *LightPalletone) Start(srvr *p2p.Server, corss *p2p.Server) error {
 	//s.startBloomHandlers()
 	log.Debug("Light client mode is an experimental feature")
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.networkId)
-	// clients are searching for the first advertised protocol in the list
-	//protocolVersion := AdvertiseProtocolVersions[0]
-	//s.serverPool.start(srvr, lesTopic(s.blockchain.Genesis().Hash(), protocolVersion))
-	s.protocolManager.Start(s.config.LightPeers)
+	s.protocolManager.Start(s.config.LightPeers, corss)
 
 	s.txCh = make(chan modules.TxPreEvent, txChanSize)
 	s.txSub = s.txPool.SubscribeTxPreEvent(s.txCh)

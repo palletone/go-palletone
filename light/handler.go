@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -84,36 +83,6 @@ type BlockChain interface {
 type txPool interface {
 	AddRemotes(txs []*modules.Transaction) []error
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-
-	//Stop()
-	//AddLocal(tx *modules.TxPoolTransaction) error
-	//AddLocals(txs []*modules.TxPoolTransaction) []error
-	//AllHashs() []*common.Hash
-	//AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
-	//Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
-	//Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
-	//GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
-	//Stats() (int, int, int)
-	//GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
-	//SendStoredTxs(hashs []common.Hash) error
-	//DiscardTxs(hashs []common.Hash) error
-	////DiscardTx(hash common.Hash) error
-	//GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	//AddRemote(tx *modules.Transaction) error
-	////AddRemotes([]*modules.Transaction) []error
-	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
-	//// Pending should return pending transactions.
-	//// The slice should be modifiable by the caller.
-	//Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
-	//Queued() ([]*modules.TxPoolTransaction, error)
-	//SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error
-	//ResetPendingTxs(txs []*modules.Transaction) error
-	//// SubscribeTxPreEvent should return an event subscription of
-	//// TxPreEvent and send events to the given channel.
-	//SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
-	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
 
 type ProtocolManager struct {
@@ -138,9 +107,9 @@ type ProtocolManager struct {
 	peers      *peerSet
 	maxPeers   int
 
-	SubProtocols []p2p.Protocol
-
-	eventMux *event.TypeMux
+	SubProtocols     []p2p.Protocol
+	CorsSubProtocols []p2p.Protocol
+	eventMux         *event.TypeMux
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -155,6 +124,9 @@ type ProtocolManager struct {
 	validation   *Validation
 	utxosync     *UtxosSync
 	protocolname string
+
+	//cors
+	corss *p2p.Server
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -181,9 +153,8 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
-	protocolVersions := ClientProtocolVersions
-	manager.SubProtocols = make([]p2p.Protocol, 0, len(protocolVersions))
-	for _, version := range protocolVersions {
+	manager.SubProtocols = make([]p2p.Protocol, 0, len(ClientProtocolVersions))
+	for _, version := range ClientProtocolVersions {
 		// Compatible, initialize the sub-protocol
 		//version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
@@ -304,12 +275,11 @@ func (pm *ProtocolManager) removePeer(id string) {
 	pm.peers.Unregister(id)
 }
 
-func (pm *ProtocolManager) Start(maxPeers int) {
+func (pm *ProtocolManager) Start(maxPeers int, corss *p2p.Server) {
 	pm.maxPeers = maxPeers
 
 	if pm.lightSync {
 		go pm.syncer()
-
 		pm.validation.Start()
 
 	} else {
@@ -371,20 +341,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if pm.protocolname == configure.LPSProtocol {
-		if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
-			log.Debug("Light Palletone handshake failed", "err", err)
-			return err
-		}
-	} else if pm.protocolname == configure.CORSProtocol {
-		//mainchain, err := pm.GetMainChain()
-		//if err != nil {
-		//	return nil
-		//}
-		//if err := p.CorsHandshake(number, genesis.Hash(), pm.server, headhash, mainchain); err != nil {
-		//	log.Debug("Light Palletone handshake failed", "err", err)
-		//	return err
-		//}
+
+	if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
+		log.Debug("Light Palletone handshake failed", "err", err)
+		return err
 	}
 
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
