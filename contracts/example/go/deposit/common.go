@@ -121,7 +121,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 	}
 	//  对mediator的特殊处理
 	if strings.Compare(role, Mediator) == 0 {
-		//  获取保证金下线
+		//  获取保证金下限
 		depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
 		if err != nil {
 			return err
@@ -453,9 +453,9 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 	log.Info("applyForForfeitureDeposit")
 	//没收地址 数量 角色 额外说明
 	//forfeiture string, invokeTokens InvokeTokens, role, extra string
-	if len(args) != 3 {
-		log.Error("args need three parameters")
-		return shim.Error("args need three parameters")
+	if len(args) != 4 {
+		log.Error("args need four parameters")
+		return shim.Error("args need four parameters")
 	}
 	//  获取参数信息
 	forfeitureAddr := args[0]
@@ -503,8 +503,26 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error(err.Error())
 	}
 	//  比较没收数量
-	if ptnAccount < balance.Balance {
+	if ptnAccount > balance.Balance {
 		return shim.Error("forfeituring to many ")
+	}
+	//  如果时没收mediator则，要么没收所有，要么没收后，该节点的保证金还在规定的下限之上
+	if strings.Compare(role, Mediator) == 0 {
+		//
+		amount, err := stub.GetSystemConfig(DepositAmountForMediator)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		//  转换保证金数量
+		depositAmountsForMediator, err := strconv.ParseUint(amount, 10, 64)
+		if err != nil {
+			log.Error("strconv.ParseUint err:", "error", err)
+			return shim.Error(err.Error())
+		}
+		result := balance.Balance - ptnAccount
+		if result < depositAmountsForMediator {
+			return shim.Error("can not forfeiture some deposit amount for mediator")
+		}
 	}
 	fees, err := stub.GetInvokeFees()
 	if err != nil {
@@ -626,7 +644,7 @@ func forfertureAndMoveList(role string, stub shim.ChaincodeStubInterface, founda
 }
 
 //不需要移除候选列表，但是要没收一部分保证金
-func forfeitureSomeDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr string, forfeitureAddress string, forfeiture *Forfeiture, balance *DepositBalance) error {
+func forfeitureSomeDeposit(stub shim.ChaincodeStubInterface, foundationAddr string, forfeitureAddress string, forfeiture *Forfeiture, balance *DepositBalance) error {
 	//  调用从合约把token转到请求地址
 	err := stub.PayOutToken(foundationAddr, forfeiture.ApplyTokens, 0)
 	if err != nil {
@@ -681,13 +699,22 @@ func GetMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) (*mo
 	return mediator, nil
 }
 
-//  保存Mediator账户信息
+//  保存Mediator账信息
 func SaveMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string, med *modules.MediatorInfo) error {
 	byte, err := json.Marshal(med)
 	if err != nil {
 		return err
 	}
 	err = stub.PutState(string(constants.MEDIATOR_INFO_PREFIX)+mediatorAddr, byte)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//  删除节点信息
+func DelMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) error {
+	err := stub.DelState(string(constants.MEDIATOR_INFO_PREFIX) + mediatorAddr)
 	if err != nil {
 		return err
 	}
