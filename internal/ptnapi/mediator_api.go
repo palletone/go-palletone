@@ -191,10 +191,6 @@ func (args *MediatorCreateArgs) setDefaults() {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
 	}
 
-	if args.Address == "" {
-		args.Address = args.AddStr
-	}
-
 	args.ApplyEnterTime = time.Now().Unix()
 
 	return
