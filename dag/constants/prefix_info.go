@@ -54,6 +54,7 @@ var (
 	ASSET_PREFIX                  = []byte("as")
 	ASSET_ATTESTORS               = []byte("ae")
 	MEDIATOR_INFO_PREFIX          = []byte("mi")
+	DEPOSIT_BALANCE_PREFIX        = []byte("depb")
 	GLOBALPROPERTY_PREFIX         = []byte("gp")
 	DYNAMIC_GLOBALPROPERTY_PREFIX = []byte("dp")
 	MEDIATOR_SCHEME_PREFIX        = []byte("ms")

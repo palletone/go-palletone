@@ -15,7 +15,6 @@
 package deposit
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
@@ -28,105 +27,104 @@ import (
 )
 
 func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	log.Info("juryPayToDepositContract")
+	//  获取jury交付保证金的下线
 	depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
 	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+		log.Error("get deposit amount for jury err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//转换
+	//  转换
 	depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
 	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
+		log.Error("strconv.ParseUint err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	log.Info("Stub.GetSystemConfig with DepositAmountForJury:", "value", depositAmountsForJury)
-	//交付地址
+	//  交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		log.Error("Stub.GetInvokeAddress err:", "error", err)
+		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//交付数量
-	//交付数量
-	//invokeTokens, err := stub.GetInvokeTokens()
+	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
-		log.Error("Stub.GetInvokeTokens err:", "error", err)
+		log.Error("isContainDepositContractAddr err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//fmt.Printf("lalal %#v\n", invokeTokens)
-
 	//获取账户
-	balance, err := GetMedNodeInfo(stub, invokeAddr.String())
+	balance, err := GetNodeBalance(stub, invokeAddr.String())
 	if err != nil {
-		log.Error("Stub.GetDepositBalance err:", "error", err)
+		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	isJury := false
 	if balance == nil {
-		balance = &modules.MediatorInfo{}
+		balance = &DepositBalance{}
 		if invokeTokens.Amount >= depositAmountsForJury {
-			//加入列表
-			//addList("Jury", invokeAddr, stub)
+			//  加入候选列表
 			err = addCandaditeList(invokeAddr, stub, modules.JuryList)
 			if err != nil {
-				log.Error("AddCandaditeList err:", "error", err)
+				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
 			}
 			isJury = true
 			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
 		}
-		updateForPayValue(balance, invokeTokens)
+		balance.Balance += invokeTokens.Amount
+		balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	} else {
-		//账户已存在，进行信息的更新操作
+		//  账户已存在，进行信息的更新操作
 		if balance.Balance >= depositAmountsForJury {
-			//原来就是jury
+			//  原来就是jury
 			isJury = true
-			//TODO 再次交付保证金时，先计算当前余额的币龄奖励
+			//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
 			endTime := balance.LastModifyTime * DTimeDuration
+			//  获取保证金年利率
 			depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 			if err != nil {
-				log.Error("stub.GetSystemConfig err:", "error", err)
+				log.Error("get deposit rate err: ", "error", err)
 				return shim.Error(err.Error())
 			}
+			//  计算币龄收益
 			awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
 			balance.Balance += awards
-
 		}
-		//处理交付保证金数据
-		updateForPayValue(balance, invokeTokens)
+		//  处理交付保证金数据
+		balance.Balance += invokeTokens.Amount
+		balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	}
 	if !isJury {
-		//判断交了保证金后是否超过了jury
+		//  判断交了保证金后是否超过了jury
 		if balance.Balance >= depositAmountsForJury {
-			//addList("Jury", invokeAddr, stub)
+			//  加入候选列表
 			err = addCandaditeList(invokeAddr, stub, modules.JuryList)
 			if err != nil {
-				log.Error("AddCandaditeList err:", "error", err)
+				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
 			}
 			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
 		}
 	}
-	err = marshalAndPutStateForBalance(stub, invokeAddr, balance)
+	err = SaveNodeBalance(stub, invokeAddr.String(), balance)
 	if err != nil {
-		log.Error("MarshalAndPutStateForBalance err:", "error", err)
+		log.Error("save node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	return shim.Success([]byte("ok"))
+	return shim.Success([]byte(nil))
 }
 
 func juryApplyCashback(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	err := applyCashbackList(Jury, stub, args)
 	if err != nil {
-		log.Error("ApplyCashbackList err:", "error", err)
+		log.Error("applyCashbackList err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	return shim.Success([]byte("ok"))
+	return shim.Success([]byte(nil))
 }
 
-func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, applyTime int64, balance *modules.MediatorInfo) error {
-	//获取请求列表
+func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, balance *DepositBalance) error {
+	//  获取请求列表
 	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
 		log.Error("Stub.GetListForCashback err:", "error", err)
@@ -136,48 +134,25 @@ func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, a
 		log.Error("listForCashback is nil.")
 		return fmt.Errorf("%s", "listForCashback is nil.")
 	}
-	if _, ok := listForCashback[cashbackAddr]; !ok {
+	if _, ok := listForCashback[cashbackAddr.String()]; !ok {
 		log.Error("node is not exist in the list.")
 		return fmt.Errorf("%s", "node is not exist in the list.")
 	}
-	//isExist := isInCashbacklist(cashbackAddr, listForCashback)
-	//if !isExist {
-	//	log.Error("node is not exist in the list.")
-	//	return fmt.Errorf("%s", "node is not exist in the list.")
-	//}
-	//获取节点信息
-	//cashbackNode := &Cashback{}
-	//isFound := false
-	//for _, m := range listForCashback {
-	//	if m.CashbackAddress == cashbackAddr && m.CashbackTime == applyTime {
-	//		cashbackNode = m
-	//		isFound = true
-	//		break
-	//	}
-	//}
-	//if !isFound {
-	//	log.Error("Apply time is wrong.")
-	//	return fmt.Errorf("%s", "Apply time is wrong.")
-	//}
-	delete(listForCashback, cashbackAddr)
-	//newList, _ := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
-	listForCashbackByte, err := json.Marshal(listForCashback)
-	if err != nil {
-		log.Error("Json.Marshal err:", "error", err)
-		return err
-	}
+	cashbackNode := listForCashback[cashbackAddr.String()]
+	delete(listForCashback, cashbackAddr.String())
 	//更新列表
-	err = stub.PutState(ListForCashback, listForCashbackByte)
+	err = SaveListForCashback(stub, listForCashback)
 	if err != nil {
-		log.Error("Stub.PutState err:", "error", err)
+		log.Error("saveListForCashback err:", "error", err)
 		return err
 	}
-	//还得判断一下是否超过余额
-	if listForCashback[cashbackAddr].CashbackTokens.Amount > balance.Balance {
+	//  还得判断一下是否超过余额
+	if cashbackNode.CashbackTokens.Amount > balance.Balance {
 		log.Error("Balance is not enough.")
 		return fmt.Errorf("%s", "Balance is not enough.")
 	}
-	err = handleJuryDepositCashback(stub, cashbackAddr, listForCashback[cashbackAddr], balance)
+	//
+	err = handleJuryDepositCashback(stub, cashbackAddr, cashbackNode, balance)
 	if err != nil {
 		log.Error("HandleJuryDepositCashback err:", "error", err)
 		return err
@@ -186,7 +161,8 @@ func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, a
 }
 
 //Jury已在列表中
-func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *modules.MediatorInfo) error {
+func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *DepositBalance) error {
+	//
 	depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
 	if err != nil {
 		log.Error("Stub.GetSystemConfig with DepositPeriod err:", "error", err)
@@ -197,34 +173,32 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Ad
 		log.Error("Strconv.Atoi err:", "error", err)
 		return err
 	}
-	log.Info("Stub.GetSystemConfig with DepositPeriod:", "value", day)
-	//退出列表
-	//计算余额
+	//  退出列表
+	//  计算余额
 	result := balance.Balance - cashbackValue.CashbackTokens.Amount
-	//判断是否退出列表
+	//  判断是否退出列表
 	if result == 0 {
-		//加入列表时的时间
+		//  加入列表时的时间
 		ent, err := strconv.ParseInt(balance.EnterTime, 10, 64)
 		startTime := time.Unix(ent*DTimeDuration, 0).UTC().YearDay()
-		//当前退出时间
+		//  当前退出时间
 		endTime := time.Now().UTC().YearDay()
-		//判断是否已到期
+		//  判断是否已到期
 		if endTime-startTime >= day {
-			//退出全部，即删除cashback，利息计算好了
+			//  退出全部，即删除cashback，利息计算好了
 			err = cashbackAllDeposit(Jury, stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
 			if err != nil {
 				return err
 			}
 		} else {
-			log.Error("Not exceeding the valid time,can not cashback some.")
-			return fmt.Errorf("%s", "Not exceeding the valid time,can not cashback some.")
+			log.Error("not exceeding the valid time,can not cashback some")
+			return fmt.Errorf("%s", "not exceeding the valid time,can not cashback some")
 		}
 	} else {
 		//TODO 退出一部分，且退出该部分金额后还在列表中，还没有计算利息
-		//d.addListForCashback("Jury", stub, cashbackAddr, invokeTokens)
 		err = cashbackSomeDeposit(Jury, stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
-			log.Error("CashbackSomeDeposit err:", "error", err)
+			log.Error("cashbackSomeDeposit err: ", "error", err)
 			return err
 		}
 	}
