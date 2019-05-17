@@ -14,6 +14,7 @@ env:
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
+        - DEPOSIT_LOG_NAME=deposit_test.log
         - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub
         - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
@@ -30,7 +31,7 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     - mkdir -p ${BDD_LOG_PATH}
-#    - ./deposit_test.sh 4 > BDD_LOG_PATH/deposit_test.log
+#    - ./deposit_test.sh 4 > ${BDD_LOG_PATH}/${DEPOSIT_LOG_NAME}
     - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
     - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
@@ -40,6 +41,8 @@ after_success:
     - killall gptn
     # upload all log
     - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/all.log -v
+    # upload deposit log
+    - curl -T ${BDD_LOG_PATH}/${DEPOSIT_LOG_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/DEPOSIT_LOG_NAME -v
     # upload create transactions log and report
     - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
     - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
