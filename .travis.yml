@@ -41,7 +41,7 @@ after_success:
     # upload all log
     - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/all.log -v
     # upload deposit log
-    - curl -T ${BDD_LOG_PATH}/${DEPOSIT_LOG_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/DEPOSIT_LOG_NAME -v
+    - curl -T ${BDD_LOG_PATH}/${DEPOSIT_LOG_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/${DEPOSIT_LOG_NAME} -v
     # upload create transactions log and report
     - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
     - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
