@@ -16,7 +16,6 @@ env:
         - REPORT_NAME=report.html
         - DEPOSIT_LOG_NAME=deposit_test.log
         - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub
-        - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
     - go build ./cmd/gptn
@@ -55,6 +54,19 @@ after_success:
 
 after_failure:
     - killall gptns
+    # upload all log
+    - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/all.log -v
+    # upload deposit log
+    - curl -T ${BDD_LOG_PATH}/${DEPOSIT_LOG_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/DEPOSIT_LOG_NAME -v
+    # upload create transactions log and report
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
+    # upload ccinvoke log and report
+    - curl -T ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
+    # upload digital identity log and report
+    - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
 
 before_install:
     - go get github.com/mattn/goveralls
