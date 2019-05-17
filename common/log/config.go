@@ -22,7 +22,7 @@ var DefaultConfig = Config{
 	OutputPaths:      []string{LogStdout, "./log/all.log"},
 	ErrorOutputPaths: []string{LogStderr, "./log/error.log"},
 	//OpenModule:       []string{"all"},
-	LoggerLvl:       "INFO",
+	LoggerLvl:       "DEBUG",
 	Encoding:        "console",
 	Development:     true,
 	RotationMaxSize: 500,

@@ -13,6 +13,8 @@ env:
         - CCINVOKE_DIR=ccinvoke
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
         - FTP_SERVER_IP=98.142.130.141
+        - LOG_NAME=log.html
+        - REPORT_NAME=report.html
         - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
@@ -37,11 +39,9 @@ script:
 after_success:
     - killall gptn
     - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
-#    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/log.html ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy/log.html -v
-    - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy/all.log -v
-#        --key /tmp/sftp_rsa
-#        --ftp-port -
-#        ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy -v
+    - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/all.log -v
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/${CREATE_TRANS_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
 
 after_failure:
     - killall gptns
