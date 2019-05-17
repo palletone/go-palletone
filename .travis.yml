@@ -30,13 +30,13 @@ after_success:
     - killall gptn
     - cd ../uploadLogs
 #    - python ftpUpload.py
-    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log ftp://${YANGYU}:${PASSWORD}/98.142.130.141/yy -v
+    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log ftp://${YANGYU}:${PASSWORD}/98.142.130.141:21/yy -v
 
 after_failure:
     - killall gptn
     - cd ../uploadLogs
 #    - python ftpUpload.py
-    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log ftp://${YANGYU}:${PASSWORD}/98.142.130.141/yy -v
+    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log ftp://${YANGYU}:${PASSWORD}/98.142.130.141:21/yy -v
 
 before_install:
     - go get github.com/mattn/goveralls
