@@ -9,9 +9,10 @@ env:
     global:
         - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
         - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
-        - CREATE_TRANS_DIR=createTans
+        - CREATE_TRANS_DIR=createTrans
         - CCINVOKE_DIR=ccinvoke
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
+        - FTP_SERVER_IP=98.142.130.141
 
 script:
     - go build ./cmd/gptn
@@ -34,6 +35,7 @@ script:
 
 after_success:
     - killall gptn
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/log.html ftp://${USER}:${PASSWORD}@${FTP_SERVER_IP}/pub/${CREATE_TRANS_DIR}/log.html -v --ftp-port -
 
 after_failure:
     - killall gptns
@@ -69,10 +71,10 @@ deploy:
 #        branch: certbdd
 
 notifications:
-    email: elva1087penny@163.com
+    email: 602554102@qq.com
     email:
         recipients:
-            - elva1087penny@163.com
+            - 602554102@qq.com
         on_success: always # default: change
         on_failure: always
 
