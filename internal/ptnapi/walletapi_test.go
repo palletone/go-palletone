@@ -27,7 +27,7 @@ func TestSimpleSignHash(t *testing.T) {
 	//pubKey1 := prvKey.PublicKey
 	//pubKeyBytes := crypto.CompressPubkey(&pubKey)
 	//sign := tokenengine.GenerateP2PKHUnlockScript(signature[0:64],pubKeyBytes)
-	pass := crypto.VerifySignature(pubKey, hash.Bytes(), signature[0:64])
+	pass := crypto.VerifySignature(pubKey, hash.Bytes(), signature)
 	if pass {
 		t.Log("Pass")
 	} else {
@@ -52,12 +52,12 @@ func TestSignHash(t *testing.T) {
 
 		t.Log("Signature is: " + hexutil.Encode(signature))
 		pubKey := crypto.FromECDSAPub(&prvKey.PublicKey)
-		pass := crypto.VerifySignature(pubKey, hash.Bytes(), signature[0:64])
+		pass := crypto.VerifySignature(pubKey, hash.Bytes(), signature)
 		if pass {
 			t.Log("Pass")
 			pubKey := prvKey.PublicKey
 			pubKeyBytes := crypto.CompressPubkey(&pubKey)
-			sign := tokenengine.GenerateP2PKHUnlockScript(signature[0:64], pubKeyBytes)
+			sign := tokenengine.GenerateP2PKHUnlockScript(signature, pubKeyBytes)
 			hs := hexutil.Encode(sign)
 			RawTxjsonGenParams.Payload[0].Inputs[index].Signature = hs
 			//dc,err:=hexutil.Decode(hs)
@@ -83,7 +83,7 @@ func TestJsSign(t *testing.T) {
 	pubKeyBytes := crypto.CompressPubkey(&pubKey)
 	//pubKeyBytes,_ := hexutil2.Decode("072aa614647a979f360cba4e5f1f825a71779ba954e15dc50a765c40ec11807f1e0ada7de14d8cccf9f3364ca7698ce9d1ccf5f57c59b49cc37bf1925a436ed0")
 	t.Log(pubKeyBytes)
-	sign := tokenengine.GenerateP2PKHUnlockScript(signature[0:64], pubKeyBytes)
+	sign := tokenengine.GenerateP2PKHUnlockScript(signature, pubKeyBytes)
 	hs := hexutil.Encode(sign)
 	t.Log(hs)
 }

@@ -449,6 +449,10 @@ type snapshotService struct {
 	services map[string]node.Service
 }
 
+func (s *snapshotService) CorsProtocols() []p2p.Protocol {
+	return nil
+}
+
 func (s *snapshotService) APIs() []rpc.API {
 	return []rpc.API{{
 		Namespace: "simulation",
@@ -461,7 +465,7 @@ func (s *snapshotService) Protocols() []p2p.Protocol {
 	return nil
 }
 
-func (s *snapshotService) Start(*p2p.Server) error {
+func (s *snapshotService) Start(server *p2p.Server, corss *p2p.Server) error {
 	return nil
 }
 
