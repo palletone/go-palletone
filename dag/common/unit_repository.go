@@ -1319,21 +1319,6 @@ func (rep *UnitRepository) saveContractDeployReq(reqid []byte, msg *modules.Mess
 	return true
 }
 
-// saveContractInvoke
-//func (rep *UnitRepository) saveContractInvoke(reqid []byte, msg *modules.Message) bool {
-//	invoke, ok := msg.Payload.(*modules.ContractInvokePayload)
-//	if !ok {
-//		log.Error("saveContractInvoke", "error", "payload is not the ContractInvoke type.")
-//		return false
-//	}
-//	err := rep.statedb.SaveContractInvoke(reqid[:], invoke)
-//	if err != nil {
-//		log.Info("save contract invoke payload failed,", "error", err)
-//		return false
-//	}
-//	return true
-//}
-
 // saveContractInvokeReq
 func (rep *UnitRepository) saveContractInvokeReq(reqid []byte, msg *modules.Message) bool {
 	invoke, ok := msg.Payload.(*modules.ContractInvokeRequestPayload)

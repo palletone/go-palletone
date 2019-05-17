@@ -62,7 +62,7 @@ func (vts voteTallys) Swap(i, j int) {
 
 // 获取账户相关投票数据的直方图
 func (dag *Dag) performAccountMaintenance() {
-	log.Debugf("Tally account voting mediators and setting mediators' count")
+	log.Debugf("Tally account voting mediators")
 	// 初始化数据
 	mediators := dag.GetMediators()
 	dag.mediatorVoteTally = make([]*voteTally, 0, len(mediators))

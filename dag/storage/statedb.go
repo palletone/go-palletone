@@ -40,6 +40,7 @@ type StateDb struct {
 func NewStateDb(db ptndb.Database) *StateDb {
 	return &StateDb{db: db}
 }
+
 func storeBytesWithVersion(db ptndb.Putter, key []byte, version *modules.StateVersion, val []byte) error {
 	v := append(version.Bytes(), val...)
 	if err := db.Put(key, v); err != nil {
@@ -47,11 +48,13 @@ func storeBytesWithVersion(db ptndb.Putter, key []byte, version *modules.StateVe
 	}
 	return nil
 }
+
 func retrieveWithVersion(db ptndb.Database, key []byte) ([]byte, *modules.StateVersion, error) {
 	data, err := db.Get(key)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return splitValueAndVersion(data)
 }
 
