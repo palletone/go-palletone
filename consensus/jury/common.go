@@ -33,6 +33,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
+	"math"
+	"strings"
 )
 
 const (
@@ -63,7 +65,95 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 	}
 	return false
 }
+func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
+	count := len(jury)
+	needed := byte(math.Ceil(float64(count) * 2 / 3))
+	pubKeys := [][]byte{}
+	for _, jurior := range jury {
+		pubKeys = append(pubKeys, jurior.PublicKey)
+	}
+	return tokenengine.GenerateRedeemScript(needed, pubKeys), nil
+}
 
+//对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
+func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
+	if has, payout := tx.HasContractPayoutMsg(); has {
+		pubkeys, signs := getSignature(tx)
+
+		redeem, err := generateJuryRedeemScript(elf)
+		if err != nil {
+			log.Errorf("generateJuryRedeemScript error:%s", err.Error())
+		}
+
+		signsOrder := SortSigs(pubkeys, signs, redeem)
+		unlock := tokenengine.MergeContractUnlockScript(signsOrder, redeem)
+		log.DebugDynamic(func() string {
+			unlockStr, _ := tokenengine.DisasmString(unlock)
+			return fmt.Sprintf("Move sign payload to contract payout unlock script:%s", unlockStr)
+		})
+		for _, input := range payout.Inputs {
+			input.SignatureScript = unlock
+		}
+	}
+	//remove signature payload
+	msgs := []*modules.Message{}
+	for _, msg := range tx.TxMessages {
+		if msg.App != modules.APP_SIGNATURE {
+			msgs = append(msgs, msg)
+		}
+	}
+	log.Debug("Remove SignaturePayload from req[%s]", tx.RequestHash().String())
+	tx.TxMessages = msgs
+}
+
+func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
+
+	//get all pubkey of redeem
+	redeemStr, _ := tokenengine.DisasmString(redeem)
+	pubkeyStrs := strings.Split(redeemStr, " ")
+	if len(pubkeyStrs) < 3 {
+		log.Debugf("invalid redeemStr %s", redeemStr)
+	}
+	pubkeyBytes := [][]byte{}
+	for i := 1; i < len(pubkeyStrs)-2; i++ {
+		//log.Debugf("%d %s", i, pubkeyStrs[i])//the order of redeem's Pubkey
+		pubkeyBytes = append(pubkeyBytes, common.Hex2Bytes(pubkeyStrs[i]))
+	}
+
+	//order
+	signsNew := make([][]byte, len(pubkeyBytes))
+	for i := range pubkeys {
+		for j := range pubkeyBytes {
+			if bytes.Equal(pubkeys[i], pubkeyBytes[j]) {
+				signsNew[j] = signs[i]
+				break
+			}
+		}
+	}
+	signsOrder := [][]byte{}
+	for i := range signsNew {
+		if len(signsNew[i]) > 0 {
+			signsOrder = append(signsOrder, signsNew[i])
+		}
+	}
+	return signsOrder
+}
+
+func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_SIGNATURE {
+			sig := msg.Payload.(*modules.SignaturePayload)
+			pubKeys := [][]byte{}
+			signs := [][]byte{}
+			for _, s := range sig.Signatures {
+				pubKeys = append(pubKeys, s.PubKey)
+				signs = append(signs, s.Signature)
+			}
+			return pubKeys, signs
+		}
+	}
+	return nil, nil
+}
 func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) error {
 	if local == nil || recv == nil {
 		return errors.New("checkAndAddSigSet param is nil")
@@ -388,7 +478,7 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 				sigPayload.Signatures = append(sigs, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0])
 			}
 			local.TxMessages[i].Payload = sigPayload
-			log.Info("checkAndAddTxSigMsgData", "add sig payload:", sigPayload.Signatures)
+			log.Info("checkAndAddTxSigMsgData", "add sig payload:", sigPayload.Signatures, "sigPayload.Signatures ", len(sigPayload.Signatures))
 			return true, nil
 		}
 	}
@@ -420,7 +510,7 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 }
 
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
-	err := p.validator.ValidateTx(tx, false)
+	err := p.validator.ValidateTx(tx, false, false)
 	if err != nil {
 		log.Debug("checkTxValid", "Validate fail, reqId", tx.RequestHash(), "tx", tx.Hash(), "err:", err.Error())
 	}
@@ -446,11 +536,11 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	}
 	if msg1 != nil && msg2 != nil {
 		if msg1.CompareMessages(msg2) {
-			log.Debug("msgsCompare", "msg is equal, type", msgType)
+			log.Debug("msgsCompare,msg is equal.", "type", msgType)
 			return true
 		}
 	}
-	log.Debug("msgsCompare", "msg is not equal") //todo del
+	log.Debug("msgsCompare,msg is not equal", "msg1", msg1.Payload, "msg2", msg2.Payload) //todo del
 	return false
 }
 

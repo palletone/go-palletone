@@ -123,6 +123,8 @@ type Config struct {
 	// the server is started.
 	ListenAddr string
 
+	CorsListenAddr string
+
 	// If set to a non-nil value, the given NAT port mapper
 	// is used to make the listening port available to the
 	// Internet.
@@ -144,9 +146,20 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	ListenAddr: ":30303",
-	MaxPeers:   25,
-	NAT:        nat.Any(),
+	ListenAddr:     ":30303",
+	MaxPeers:       25,
+	NAT:            nat.Any(),
+	CorsListenAddr: ":50505",
+}
+
+func GetCorsConfig(config Config) Config {
+	corsconfig := config
+	corsconfig.BootstrapNodes = []*discover.Node{}
+	corsconfig.StaticNodes = []*discover.Node{}
+	corsconfig.TrustedNodes = []*discover.Node{}
+	corsconfig.NoDiscovery = true
+	corsconfig.ListenAddr = config.CorsListenAddr
+	return corsconfig
 }
 
 // Server manages all peer connections.
@@ -733,7 +746,7 @@ running:
 		case pd := <-srv.delpeer:
 			// A peer disconnected.
 			d := common.PrettyDuration(mclock.Now() - pd.created)
-			log.Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
+			log.Error("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
 			delete(peers, pd.ID())
 			if pd.Inbound() {
 				inboundCount--
@@ -973,7 +986,6 @@ func (srv *Server) runPeer(p *Peer) {
 		Peer:  p.ID(),
 		Error: err.Error(),
 	})
-
 	// Note: run waits for existing peers to be sent on srv.delpeer
 	// before returning, so this send should not select on srv.quit.
 	srv.delpeer <- peerDrop{p, err, remoteRequested}
@@ -1053,18 +1065,18 @@ func (srv *Server) Corss() []string {
 
 func (srv *Server) CorsPeerInfo(protocol string) []*PeerInfo {
 	infos := make([]*PeerInfo, 0, srv.PeerCount())
-	for _, peer := range srv.Peers() {
-		if peer != nil && peer.Caps()[0].Name == protocol {
-			infos = append(infos, peer.CorsInfo(protocol))
-		}
-	}
-	// Sort the result array alphabetically by node identifier
-	for i := 0; i < len(infos); i++ {
-		for j := i + 1; j < len(infos); j++ {
-			if infos[i].ID > infos[j].ID {
-				infos[i], infos[j] = infos[j], infos[i]
-			}
-		}
-	}
+	//for _, peer := range srv.Peers() {
+	//	if peer != nil && peer.Caps()[0].Name == protocol {
+	//		infos = append(infos, peer.CorsInfo(protocol))
+	//	}
+	//}
+	//// Sort the result array alphabetically by node identifier
+	//for i := 0; i < len(infos); i++ {
+	//	for j := i + 1; j < len(infos); j++ {
+	//		if infos[i].ID > infos[j].ID {
+	//			infos[i], infos[j] = infos[j], infos[i]
+	//		}
+	//	}
+	//}
 	return infos
 }

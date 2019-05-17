@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -318,11 +319,18 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 
 	txCopy := tx.Clone()
 	payCopy := txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
+	requestIndex := tx.GetRequestMsgIndex()
+	isInResult := false
+	if msgIdx > requestIndex && requestIndex != -1 {
+		isInResult = true
+	}
 
 	for mIdx, mCopy := range txCopy.TxMessages {
 		if mCopy.App == modules.APP_PAYMENT {
 			pay := txCopy.TxMessages[mIdx].Payload.(*modules.PaymentPayload)
-
+			if isInResult && mIdx < requestIndex {
+				continue // 对于请求部分的Payment，不做任何处理
+			}
 			for i := range pay.Inputs {
 				//Devin: for contract payout, remove all lockscript
 				if i == idx && mIdx == msgIdx && hashType != SigHashRaw {
@@ -388,6 +396,10 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 		log.Error("Rlp encode tx error:" + err.Error())
 	}
 	hash, _ := crypto.Hash(data)
+	log.DebugDynamic(func() string {
+		js, _ := json.Marshal(txCopy)
+		return fmt.Sprintf("Try to calc hash for tx[%s],hash is:%x, json:%s\nrlp data:%x", txCopy.Hash().String(), hash, string(js), data)
+	})
 	return hash
 
 }

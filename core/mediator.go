@@ -70,15 +70,17 @@ func NewMediator() *Mediator {
 
 //申请成为Mediator
 type MediatorApplyInfo struct {
-	Address   string `json:"address"`
-	Content   string `json:"content"`
-	Time int64  `json:"time"` // mediator 申请时间或者申请退出时间
+	Content        string `json:"content"`          //  申请信息
+	ApplyEnterTime int64  `json:"apply_enter_time"` //  申请加入时间
+	ApllyQuitTime  int64  `json:"apply_quit_time"`  //  申请退出时间
+	Status         string `json:"status"`           //  申请状态  申请、同意、退出
+	AgreeTime      int64  `json:"agree_time"`       //  基金会同意申请时间
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
 	return &MediatorApplyInfo{
-		Content:   "",
-		Time: time.Now().Unix(),
+		Content:        "",
+		ApplyEnterTime: time.Now().Unix(),
 	}
 }
 

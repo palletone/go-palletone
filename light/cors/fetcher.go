@@ -117,7 +117,7 @@ type LightFetcher struct {
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func newLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightChainHeightFn, verifyHeader headerVerifierFn,
+func NewLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightChainHeightFn, verifyHeader headerVerifierFn,
 	broadcastHeader headerBroadcasterFn, insertHeader headerInsertFn, dropPeer peerDropFn) *LightFetcher {
 	return &LightFetcher{
 		//notify:           make(chan *announce),
@@ -426,7 +426,6 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
 			return
 		}
-		//TODO must recover
 		//p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
 		// If import succeeded, broadcast the block
 		go f.broadcastHeader(header, false)

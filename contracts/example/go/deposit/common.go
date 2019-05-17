@@ -17,31 +17,18 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
+	"strings"
+	"time"
 )
-
-//处理交付保证金数据
-func updateForPayValue(balance *DepositBalance, invokeTokens *modules.InvokeTokens) {
-	balance.TotalAmount += invokeTokens.Amount
-	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
-	payTokens := &modules.AmountAsset{}
-	payValue := &PayValue{PayTokens: payTokens}
-	payValue.PayTokens.Amount = invokeTokens.Amount
-	payValue.PayTokens.Asset = invokeTokens.Asset
-	payValue.PayTime = time.Now().Unix() / DTimeDuration
-	balance.PayValues = append(balance.PayValues, payValue)
-}
 
 //判断 invokeTokens 是否包含保证金合约地址
 func isContainDepositContractAddr(stub shim.ChaincodeStubInterface) (invokeToken *modules.InvokeTokens, err error) {
@@ -54,142 +41,111 @@ func isContainDepositContractAddr(stub shim.ChaincodeStubInterface) (invokeToken
 			return invokeTo, nil
 		}
 	}
-	return nil, fmt.Errorf("it is not a depositContract invoke")
+	return nil, fmt.Errorf("it is not a depositContract invoke transaction")
 }
 
 //对结果序列化并更新数据
-func marshalAndPutStateForBalance(stub shim.ChaincodeStubInterface, nodeAddr string, balance *DepositBalance) error {
-	balanceByte, err := json.Marshal(balance)
-	if err != nil {
-		log.Error("json.Marshal err:", "error", err)
-		return err
-	}
-	err = stub.PutState(nodeAddr, balanceByte)
-	if err != nil {
-		log.Error("stub.PutState err:", "error", err)
-		return err
-	}
-	return nil
-}
+//func marshalAndPutStateForBalance(stub shim.ChaincodeStubInterface, nodeAddr common.Address, balance *modules.MediatorInfo) error {
+//	balanceByte, err := json.Marshal(balance)
+//	if err != nil {
+//		log.Error("json.Marshal err:", "error", err)
+//		return err
+//	}
+//	err = stub.PutState(nodeAddr.String(), balanceByte)
+//	if err != nil {
+//		log.Error("stub.PutState err:", "error", err)
+//		return err
+//	}
+//	return nil
+//}
 
-//加入申请提取列表
-func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr string, invokeTokens *modules.AmountAsset) error {
-	//先获取申请列表
+//  加入申请提取列表
+func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.AmountAsset) error {
+	//  先获取申请列表
 	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
-		log.Error("stub.GetListForCashback err:", "error", err)
 		return err
 	}
-	////序列化
-	cashback := new(Cashback)
-	cashback.CashbackAddress = invokeAddr
+	cashback := &Cashback{}
 	cashback.CashbackTokens = invokeTokens
 	cashback.Role = role
-	cashback.CashbackTime = time.Now().Unix()
+	cashback.CashbackTime = time.Now().Unix() / DTimeDuration
+	// 判断列表是否为空
 	if listForCashback == nil {
-		log.Info("stub.GetListForCashback:list is nil.")
-		listForCashback = []*Cashback{cashback}
+		listForCashback = make(map[string]*Cashback)
 	} else {
-		isExist := isInCashbacklist(invokeAddr, listForCashback)
-		if isExist {
-			log.Error("node is exist in the list.")
-			return fmt.Errorf("%s", "node is exist in the list.")
+		if _, ok := listForCashback[invokeAddr.String()]; ok {
+			return fmt.Errorf("node is exist in the list")
 		}
-		listForCashback = append(listForCashback, cashback)
 	}
-	//反序列化
-	listForCashbackByte, err := json.Marshal(listForCashback)
+	listForCashback[invokeAddr.String()] = cashback
+	//  保存退还列表
+	err = SaveListForCashback(stub, listForCashback)
 	if err != nil {
-		log.Error("json.Marshal err:", "error", err)
-		return err
-	}
-	err = stub.PutState(ListForCashback, listForCashbackByte)
-	if err != nil {
-		log.Error("stub.PutState err:", "error", err)
 		return err
 	}
 	return nil
-}
-
-//查找节点是否在列表中
-func isInCashbacklist(addr string, list []*Cashback) bool {
-	for _, m := range list {
-		if strings.Compare(addr, m.CashbackAddress) == 0 {
-			return true
-		}
-	}
-	return false
 }
 
 func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []string) error {
 	if len(args) != 1 {
-		log.Error("arg need one parameter.")
-		return fmt.Errorf("%s", "arg need one parameter.")
+		return fmt.Errorf("%s", "arg need one parameter")
 	}
-	//获取 请求 调用 地址
+	//  获取请求调用地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		log.Error("stub.GetInvokeAddress err:", "error", err)
 		return err
 	}
-	//数量
+	//  转换保证金数量
 	ptnAccount, err := strconv.ParseUint(args[0], 10, 64)
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
+	//  获取资产类型
 	fees, err := stub.GetInvokeFees()
 	if err != nil {
-		log.Error("stub.GetInvokeFees err:", "error", err)
 		return err
 	}
-	//asset := modules.NewPTNAsset()
 	invokeTokens := &modules.AmountAsset{
 		Amount: ptnAccount,
 		Asset:  fees.Asset,
 	}
-	//先获取数据库信息
-	balance, err := GetDepositBalance(stub, invokeAddr.String())
-	if err != nil {
-		log.Error("stub.GetDepositBalance err:", "error", err)
-		return err
-	}
-	if balance == nil {
-		log.Error("balance is nil")
+	//  先获取账户信息
+	mediator, err := GetNodeBalance(stub, invokeAddr.String())
+	if mediator == nil {
 		return fmt.Errorf("%s", "balance is nil")
 	}
-	if balance.TotalAmount < invokeTokens.Amount {
-		log.Error("balance is not enough")
+	//  判断余额与当前退还的比较
+	if mediator.Balance < invokeTokens.Amount {
 		return fmt.Errorf("%s", "balance is not enough")
 	}
+	//  对mediator的特殊处理
 	if strings.Compare(role, Mediator) == 0 {
+		//  获取保证金下限
 		depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
 		if err != nil {
-			log.Error("Stub.GetSystemConfig with DepositAmountForMediator err:", "error", err)
 			return err
 		}
-		//转换
+		//  转换
 		depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
 		if err != nil {
-			log.Error("Strconv.ParseUint err:", "error", err)
 			return err
 		}
-		log.Info("Stub.GetSystemConfig with DepositAmountForMediator:", "value", depositAmountsForMediator)
-		if balance.TotalAmount-invokeTokens.Amount < depositAmountsForMediator {
-			log.Error("can not cashback some")
+		//  判断退还后是否还在保证金下线之上
+		if mediator.Balance-invokeTokens.Amount < depositAmountsForMediator {
 			return fmt.Errorf("%s", "can not cashback some")
 		}
 	}
-	err = addListAndPutStateForCashback(role, stub, invokeAddr.String(), invokeTokens)
+	//  加入退还列表
+	err = addListAndPutStateForCashback(role, stub, invokeAddr, invokeTokens)
 	if err != nil {
-		log.Error("addListAndPutStateForCashback err:", "error", err)
 		return err
 	}
 	return nil
 }
 
 //从 申请提取保证金列表中移除节点
-func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackAddr string, applyTime int64) error {
+func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackAddr common.Address) error {
 	//获取没收列表
 	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
@@ -200,17 +156,12 @@ func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackA
 		log.Error("listForCashback is nil")
 		return fmt.Errorf("%s", "listForCashback is nil")
 	}
-	isExist := isInCashbacklist(cashbackAddr, listForCashback)
-	if !isExist {
+	if _, ok := listForCashback[cashbackAddr.String()]; !ok {
 		log.Error("node is not exist in the cashback list.")
 		return fmt.Errorf("%s", "node is not exist in the cashback list.")
 	}
-	newList, isOk := moveInApplyForCashbackList(stub, listForCashback, cashbackAddr, applyTime)
-	if !isOk {
-		log.Error("Apply time is wrong.")
-		return fmt.Errorf("%s", "Apply time is wrong.")
-	}
-	listForCashbackByte, err := json.Marshal(newList)
+	delete(listForCashback, cashbackAddr.String())
+	listForCashbackByte, err := json.Marshal(listForCashback)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
 		return err
@@ -224,44 +175,44 @@ func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackA
 	return nil
 }
 
-//提取一部分保证金
-func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
-	//调用从合约把token转到请求地址
-	err := stub.PayOutToken(cashbackAddr, cashbackValue.CashbackTokens, 0)
+//  提取一部分保证金
+func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *DepositBalance) error {
+	//  调用从合约把token转到请求地址
+	err := stub.PayOutToken(cashbackAddr.String(), cashbackValue.CashbackTokens, 0)
 	if err != nil {
-		log.Error("stub.PayOutToken err:", "error", err)
+		log.Error("stub.PayOutToken err: ", "error", err)
 		return err
 	}
 	endTime := balance.LastModifyTime * DTimeDuration
+	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
+	//
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
 	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
-	//加上利息奖励
-	balance.TotalAmount += awards
-	//减去提取部分
-	balance.TotalAmount -= cashbackValue.CashbackTokens.Amount
+	//  加上利息奖励
+	balance.Balance += awards
+	//  减去提取部分
+	balance.Balance -= cashbackValue.CashbackTokens.Amount
 	//TODO 如果推出后低于保证金，则退出列表
 	if role == Jury {
-		//如果推出后低于保证金，则退出列表
+		//  如果推出后低于保证金，则退出列表
 		depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
 		if err != nil {
 			log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
 			return err
 		}
-		//转换
+		//  转换
 		depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
 		if err != nil {
 			log.Error("Strconv.ParseUint err:", "error", err)
 			return err
 		}
-		log.Info("Stub.GetSystemConfig with DepositAmountForJury:", "value", depositAmountsForJury)
-		if balance.TotalAmount < depositAmountsForJury {
-			//handleMember("Jury", cashbackAddr, stub)
-			err = moveCandidate(modules.JuryList, cashbackAddr, stub)
+		if balance.Balance < depositAmountsForJury {
+			err = moveCandidate(modules.JuryList, cashbackAddr.String(), stub)
 			if err != nil {
 				log.Error("moveCandidate err:", "error", err)
 				return err
@@ -281,57 +232,48 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 			return err
 		}
 		log.Info("Stub.GetSystemConfig with DepositAmountForDeveloper:", "value", depositAmountsForDeveloper)
-		if balance.TotalAmount < depositAmountsForDeveloper {
-			//handleMember(Developer, cashbackAddr, stub)
-			err = moveCandidate(DeveloperList, cashbackAddr, stub)
+		if balance.Balance < depositAmountsForDeveloper {
+			err = moveCandidate(DeveloperList, cashbackAddr.String(), stub)
 			if err != nil {
 				log.Error("moveCandidate err:", "error", err)
 				return err
 			}
 		}
 	}
-	//TODO 加入提款记录
-	balance.CashbackValues = append(balance.CashbackValues, cashbackValue)
-	//序列化
-	err = marshalAndPutStateForBalance(stub, cashbackAddr, balance)
+	err = SaveNodeBalance(stub, cashbackAddr.String(), balance)
 	if err != nil {
-		log.Error("marshalAndPutStateForBalance err:", "error", err)
+		log.Error("SaveMedInfo err:", "error", err)
 		return err
 	}
 	return nil
 }
 
 //处理申请提保证金请求并移除列表
-func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr string, invokeTokens *modules.AmountAsset, balance *DepositBalance) error {
-	//计算保证金全部利息
-	//获取币龄
-	//endTime := time.Now().UTC()
-	//coinDays := award.GetCoinDay(balance.TotalAmount, balance.LastModifyTime, endTime)
-	////计算币龄收益
-	//awards := award.CalculateAwardsForDepositContractNodes(coinDays)
+func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr common.Address, invokeTokens *modules.AmountAsset, balance *DepositBalance) error {
 	endTime := balance.LastModifyTime * DTimeDuration
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
-	//本金+利息
+	//  计算币龄收益
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
+	//  本金+利息
 	invokeTokens.Amount += awards
-	//调用从合约把token转到请求地址
-	err = stub.PayOutToken(cashbackAddr, invokeTokens, 0)
+	//  调用从合约把token转到请求地址
+	err = stub.PayOutToken(cashbackAddr.String(), invokeTokens, 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	//移除出列表
-	err = moveCandidate(role, cashbackAddr, stub)
+	//  移除出列表
+	err = moveCandidate(role, cashbackAddr.String(), stub)
 	if err != nil {
 		log.Error("moveCandidate err:", "error", err)
 		return err
 	}
-	//删除节点
-	err = stub.DelState(cashbackAddr)
+	//  删除节点
+	err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + cashbackAddr.String())
 	if err != nil {
 		log.Error("stub.DelState err:", "error", err)
 		return err
@@ -340,79 +282,66 @@ func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackA
 }
 
 //Jury or developer 可以随时退保证金，只是不在列表中的话，没有奖励
-func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr string, cashbackValue *Cashback, balance *DepositBalance) error {
+func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *DepositBalance) error {
 	//调用从合约把token转到请求地址
-	err := stub.PayOutToken(cashbackAddr, cashbackValue.CashbackTokens, 0)
+	err := stub.PayOutToken(cashbackAddr.String(), cashbackValue.CashbackTokens, 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	//fmt.Printf("balanceValue=%s\n", balanceValue)
-	//v := handleValues(balanceValue.Values, tokens)
-	//balanceValue.Values = v
 	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
-	balance.TotalAmount -= cashbackValue.CashbackTokens.Amount
-	//fmt.Printf("balanceValue=%s\n", balanceValue)
-	//TODO
-	balance.CashbackValues = append(balance.CashbackValues, cashbackValue)
+	balance.Balance -= cashbackValue.CashbackTokens.Amount
 
-	err = marshalAndPutStateForBalance(stub, cashbackAddr, balance)
+	err = SaveNodeBalance(stub, cashbackAddr.String(), balance)
 	if err != nil {
-		log.Error("marshalAndPutStateForBalance err:", "error", err)
+		log.Error("SaveMedInfo err:", "error", err)
 		return err
 	}
 	return nil
 }
 
 func addCandaditeList(invokeAddr common.Address, stub shim.ChaincodeStubInterface, candidate string) error {
-	list, err := GetCandidateList(stub, candidate)
+	//  获取列表
+	list, err := GetList(stub, candidate)
 	if err != nil {
-		log.Error("stub.GetCandidateList err:", "error", err)
 		return err
 	}
 	if list == nil {
-		log.Info("stub.GetCandidateList: list is nil")
-		list = []common.Address{invokeAddr}
+		list = make(map[string]bool)
+		list[invokeAddr.String()] = true
 	} else {
-		list = append(list, invokeAddr)
+		if _, ok := list[invokeAddr.String()]; ok {
+			return fmt.Errorf("node was in the candidate list")
+		}
 	}
+	list[invokeAddr.String()] = true
 	listByte, err := json.Marshal(list)
 	if err != nil {
-		log.Error("json.Marshal err:", "error", err)
 		return err
 	}
 	err = stub.PutState(candidate, listByte)
 	if err != nil {
-		log.Error("stub.PutState err:", "error", err)
 		return err
 	}
 	return nil
 }
 
 func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeStubInterface) error {
-	list, err := GetCandidateList(stub, candidate)
+	//
+	list, err := GetList(stub, candidate)
 	if err != nil {
 		log.Error("stub.GetCandidateList err:", "error", err)
 		return err
 	}
+	//
 	if list == nil {
 		log.Error("stub.GetCandidateList err: list is nil")
-		return fmt.Errorf("%s", "list is nil.")
+		return fmt.Errorf("%s", "list is nil")
 	}
-	for i := 0; i < len(list); i++ {
-		if list[i].String() == invokeFromAddr {
-			list = append(list[:i], list[i+1:]...)
-			break
-		}
-	}
-	listBytes, err := json.Marshal(list)
+	delete(list, invokeFromAddr)
+	//
+	err = saveList(stub, candidate, list)
 	if err != nil {
-		log.Error("json.Marshal err:", "error", err)
-		return err
-	}
-	err = stub.PutState(candidate, listBytes)
-	if err != nil {
-		log.Error("stub.PutState err:", "error", err)
 		return err
 	}
 	return nil
@@ -420,168 +349,92 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 }
 
 //从申请没收保证金列表中移除
-func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAddr string,
-	applyTime int64) (newList []*Forfeiture, isOk bool) {
-	for i := 0; i < len(listForForfeiture); i++ {
-		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
-			newList = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
-			isOk = true
-			break
-		}
-	}
-	return
-}
+//func moveInApplyForForfeitureList(listForForfeiture []*Forfeiture, forfeitureAddr string,
+//	applyTime int64) (newList []*Forfeiture, isOk bool) {
+//	for i := 0; i < len(listForForfeiture); i++ {
+//		if listForForfeiture[i].ApplyTime == applyTime && listForForfeiture[i].ForfeitureAddress == forfeitureAddr {
+//			newList = append(listForForfeiture[:i], listForForfeiture[i+1:]...)
+//			isOk = true
+//			break
+//		}
+//	}
+//	return
+//}
 
-//从申请没收保证金列表中移除
-func moveInApplyForCashbackList(stub shim.ChaincodeStubInterface, listForCashback []*Cashback, cashbackAddr string,
-	applyTime int64) (newList []*Cashback, isOk bool) {
-	for i := 0; i < len(listForCashback); i++ {
-		if listForCashback[i].CashbackTime == applyTime && listForCashback[i].CashbackAddress == cashbackAddr {
-			newList = append(listForCashback[:i], listForCashback[i+1:]...)
-			isOk = true
-			break
-		}
-	}
-	return
-}
-
-func GetCandidateListForMediator(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
-	return GetList(stub, modules.MediatorList)
-}
-func GetBecomeMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
-	return GetList(stub, ListForApplyBecomeMediator)
-}
-func GetQuitMediatorApplyList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
-	return GetList(stub, ListForApplyQuitMediator)
-}
-
-func GetAgreeForBecomeMediatorList(stub shim.ChaincodeStubInterface) ([]*core.MediatorApplyInfo, error) {
-	return GetList(stub, ListForAgreeBecomeMediator)
-
-}
-
-func GetList(stub shim.ChaincodeStubInterface, typeList string) ([]*core.MediatorApplyInfo, error) {
-	listByte, err := stub.GetState(typeList)
+func GetList(stub shim.ChaincodeStubInterface, typeList string) (map[string]bool, error) {
+	byte, err := stub.GetState(typeList)
 	if err != nil {
 		return nil, err
 	}
-	if listByte == nil {
+	if byte == nil {
 		return nil, nil
 	}
-	var list []*core.MediatorApplyInfo
-	err = json.Unmarshal(listByte, &list)
+	list := make(map[string]bool)
+	err = json.Unmarshal(byte, &list)
 	if err != nil {
 		return nil, err
 	}
-	//if len(list) == 0 {
-	//	return nil, nil
-	//}
 	return list, nil
 }
 
-func GetListForForfeiture(stub shim.ChaincodeStubInterface) ([]*Forfeiture, error) {
-	listByte, err := stub.GetState(ListForForfeiture)
+func SaveListForForfeiture(stub shim.ChaincodeStubInterface, list map[string]*Forfeiture) error {
+	byte, err := json.Marshal(list)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(ListForForfeiture, byte)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetListForForfeiture(stub shim.ChaincodeStubInterface) (map[string]*Forfeiture, error) {
+	byte, err := stub.GetState(ListForForfeiture)
 	if err != nil {
 		return nil, err
 	}
-	if listByte == nil {
+	if byte == nil {
 		return nil, nil
 	}
-	var list []*Forfeiture
-	err = json.Unmarshal(listByte, &list)
+	list := make(map[string]*Forfeiture)
+	err = json.Unmarshal(byte, &list)
 	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
+		return nil, err
 	}
-	//if len(list) == 0 {
-	//	return nil, nil
-	//}
 	return list, nil
 }
 
-func GetListForCashback(stub shim.ChaincodeStubInterface) ([]*Cashback, error) {
-	listByte, err := stub.GetState(ListForCashback)
+func SaveListForCashback(stub shim.ChaincodeStubInterface, list map[string]*Cashback) error {
+	byte, err := json.Marshal(list)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(ListForCashback, byte)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetListForCashback(stub shim.ChaincodeStubInterface) (map[string]*Cashback, error) {
+	byte, err := stub.GetState(ListForCashback)
 	if err != nil {
 		return nil, err
 	}
-	if listByte == nil {
+	if byte == nil {
 		return nil, nil
 	}
-	var list []*Cashback
-	err = json.Unmarshal(listByte, &list)
+	list := make(map[string]*Cashback)
+	err = json.Unmarshal(byte, &list)
 	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
+		return nil, err
 	}
-	//if len(list) == 0 {
-	//	return nil, fmt.Errorf("%s", "list is nil.")
-	//}
 	return list, nil
-}
-
-func GetDepositBalance(stub shim.ChaincodeStubInterface, nodeAddr string) (*DepositBalance, error) {
-	balanceByte, err := stub.GetState(nodeAddr)
-	if err != nil {
-		return nil, err
-	}
-	if balanceByte == nil {
-		return nil, nil
-	}
-	if string(balanceByte) == "" {
-		return nil, nil
-	}
-	balance := new(DepositBalance)
-	err = json.Unmarshal(balanceByte, balance)
-	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal error %s", err.Error())
-	}
-	return balance, nil
-}
-
-//获取候选列表信息
-func GetCandidateList(stub shim.ChaincodeStubInterface, role string) ([]common.Address, error) {
-	if strings.Compare(role, modules.MediatorList) == 0 {
-		candidateListByte, err := stub.GetState(role)
-		if err != nil {
-			return nil, err
-		}
-		if candidateListByte == nil {
-			return nil, nil
-		}
-		var candiateList []*core.MediatorApplyInfo
-		err = json.Unmarshal(candidateListByte, &candiateList)
-		if err != nil {
-			return nil, err
-		}
-		var candidateListStr []common.Address
-		for i := range candiateList {
-			adrr, err := common.StringToAddress(candiateList[i].Address)
-			if err != nil {
-				return nil, err
-			}
-			candidateListStr = append(candidateListStr, adrr)
-		}
-		return candidateListStr, err
-	}
-	candidateListByte, err := stub.GetState(role)
-	if err != nil {
-		return nil, err
-	}
-	if candidateListByte == nil {
-		return nil, nil
-	}
-	var candidateList []common.Address
-	err = json.Unmarshal(candidateListByte, &candidateList)
-	if err != nil {
-		return nil, err
-	}
-	//if len(candidateList) == 0 {
-	//	return nil, fmt.Errorf("%s", "list is nil.")
-	//}
-	return candidateList, nil
-
 }
 
 //对结果序列化并更新数据
-func (d *DepositChaincode) marshalForBalance(stub shim.ChaincodeStubInterface, nodeAddr string, balance *DepositBalance) pb.Response {
+func marshalForBalance(stub shim.ChaincodeStubInterface, nodeAddr string, balance *modules.MediatorInfo) pb.Response {
 	balanceByte, err := json.Marshal(balance)
 	if err != nil {
 		log.Error("Json.Marshal err:", "error", err)
@@ -595,46 +448,82 @@ func (d *DepositChaincode) marshalForBalance(stub shim.ChaincodeStubInterface, n
 	return shim.Success([]byte("ok"))
 }
 
-//社区申请没收某节点的保证金数量
-func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	log.Info("Start entering applyForForfeitureDeposit func.")
+//  社区申请没收某节点的保证金数量
+func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	log.Info("applyForForfeitureDeposit")
 	//没收地址 数量 角色 额外说明
 	//forfeiture string, invokeTokens InvokeTokens, role, extra string
-	if len(args) != 3 {
-		log.Error("Arg need three parameters.")
-		return shim.Error("Arg need three parameters.")
+	if len(args) != 4 {
+		log.Error("args need four parameters")
+		return shim.Error("args need four parameters")
 	}
-	//获取参数信息
+	//  获取参数信息
 	forfeitureAddr := args[0]
 	amount := args[1]
-	forfeitureRole := args[2]
-	//申请地址
+	extra := args[2]
+	role := args[3]
+	//  申请地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("Stub.GetInvokeAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-
-	forfeiture := new(Forfeiture)
+	//  存储信息
+	forfeiture := &Forfeiture{}
 	forfeiture.ApplyAddress = invokeAddr.String()
-	//判断被没收时，该节点是否在相应的候选列表当中
-	isFound := isFoundInCandidateList(stub, forfeitureRole, forfeitureAddr)
-	if !isFound {
-		log.Error("Node is not exist in the candidate list.")
-		return shim.Error("Node is not exist in the candidate list.")
+	forfeiture.Extra = extra
+	forfeiture.ForfeitureRole = role
+	forfeiture.ApplyTime = time.Now().Unix() / DTimeDuration
+	//  判断被没收时，该节点是否在相应的候选列表当中
+	listForForfeiture, err := GetListForForfeiture(stub)
+	if err != nil {
+		return shim.Error(err.Error())
 	}
-	//获取没收保证金数量，将 string 转 uint64
+	//
+	f, _ := common.StringToAddress(forfeitureAddr)
+	if listForForfeiture == nil {
+		listForForfeiture = make(map[string]*Forfeiture)
+		listForForfeiture[f.String()] = forfeiture
+	} else {
+		//
+		if _, ok := listForForfeiture[f.String()]; ok {
+			return shim.Error("node was in the forfeiture list")
+		}
+		listForForfeiture[f.String()] = forfeiture
+	}
+	//  获取没收保证金数量，将 string 转 uint64
 	ptnAccount, err := strconv.ParseUint(amount, 10, 64)
 	if err != nil {
 		log.Error("Strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	//fmt.Println("ptnAccount  args[1] ", ptnAccount)
-	//判断账户余额和没收请求数量
-	//if balanceValue.TotalAmount < ptnAccount {
-	//	return shim.Success([]byte("Forfeiture too many."))
-	//}
-	forfeiture.ForfeitureAddress = forfeitureAddr
+	//  获取该节点账户
+	balance, err := GetNodeBalance(stub, forfeitureAddr)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	//  比较没收数量
+	if ptnAccount > balance.Balance {
+		return shim.Error("forfeituring to many ")
+	}
+	//  如果时没收mediator则，要么没收所有，要么没收后，该节点的保证金还在规定的下限之上
+	if strings.Compare(role, Mediator) == 0 {
+		//
+		amount, err := stub.GetSystemConfig(DepositAmountForMediator)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		//  转换保证金数量
+		depositAmountsForMediator, err := strconv.ParseUint(amount, 10, 64)
+		if err != nil {
+			log.Error("strconv.ParseUint err:", "error", err)
+			return shim.Error(err.Error())
+		}
+		result := balance.Balance - ptnAccount
+		if result < depositAmountsForMediator {
+			return shim.Error("can not forfeiture some deposit amount for mediator")
+		}
+	}
 	fees, err := stub.GetInvokeFees()
 	if err != nil {
 		log.Error("stub.GetInvokeFees err:", "error", err)
@@ -645,110 +534,73 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 		Asset:  fees.Asset,
 	}
 	forfeiture.ApplyTokens = invokeTokens
-	forfeiture.ForfeitureRole = forfeitureRole
-	forfeiture.ApplyTime = time.Now().Unix()
-	//先获取列表，再更新列表
-	listForForfeiture, err := GetListForForfeiture(stub)
+	//  保存列表
+	err = SaveListForForfeiture(stub, listForForfeiture)
 	if err != nil {
-		log.Error("Stub.GetListForForfeiture err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	if listForForfeiture == nil {
-		log.Info("Stub.GetListForForfeiture:list is nil.")
-		listForForfeiture = []*Forfeiture{forfeiture}
-	} else {
-		isExist := isInForfeiturelist(forfeiture.ForfeitureAddress, listForForfeiture)
-		if isExist {
-			log.Error("Node is exist in the forfeiture list.")
-			return shim.Error("Node is exist in the forfeiture list.")
-		}
-		listForForfeiture = append(listForForfeiture, forfeiture)
-	}
-	listForForfeitureByte, err := json.Marshal(listForForfeiture)
-	if err != nil {
-		log.Error("Json.Marshal err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	err = stub.PutState(ListForForfeiture, listForForfeitureByte)
-	if err != nil {
-		log.Error("Stub.PutState err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	log.Info("End entering applyForForfeitureDeposit func.")
-	return shim.Success([]byte("ok"))
+	return shim.Success([]byte(nil))
 }
 
-func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr string) bool {
-	if strings.Compare(role, Mediator) == 0 {
-		candidateList, err := GetCandidateListForMediator(stub)
-		if err != nil {
-			return false
-		}
-		if candidateList == nil {
-			return false
-		}
-		return isInMediatorInfolist(addr, candidateList)
-
-	} else if strings.Compare(role, Jury) == 0 {
-		candidateList, err := GetCandidateList(stub, modules.JuryList)
-		if err != nil {
-			return false
-		}
-		if candidateList == nil {
-			return false
-		}
-		return isInCandidateList(addr, candidateList)
-	} else if strings.Compare(role, Developer) == 0 {
-		candidateList, err := GetCandidateList(stub, DeveloperList)
-		if err != nil {
-			return false
-		}
-		if candidateList == nil {
-			return false
-		}
-		return isInCandidateList(addr, candidateList)
-	} else {
-		return false
-	}
-	return false
-}
-
-func isInCandidateList(addr string, list []common.Address) bool {
-	for _, a := range list {
-		if strings.Compare(addr, a.String()) == 0 {
-			return true
-		}
-	}
-	return false
-}
-
-//查找节点是否在列表中
-func isInForfeiturelist(addr string, list []*Forfeiture) bool {
-	for _, m := range list {
-		if strings.Compare(addr, m.ForfeitureAddress) == 0 {
-			return true
-		}
-	}
-	return false
-}
+//func isFoundInCandidateList(stub shim.ChaincodeStubInterface, role string, addr common.Address) bool {
+//	if strings.Compare(role, Mediator) == 0 {
+//		candidateList, err := GetList(stub, modules.MediatorList)
+//		if err != nil {
+//			return false
+//		}
+//		if candidateList == nil {
+//			return false
+//		}
+//		if _, ok := candidateList[addr.String()]; ok {
+//			return true
+//		}
+//		return false
+//	} else if strings.Compare(role, Jury) == 0 {
+//		candidateList, err := GetList(stub, modules.JuryList)
+//		if err != nil {
+//			return false
+//		}
+//		if candidateList == nil {
+//			return false
+//		}
+//		if _, ok := candidateList[addr.String()]; ok {
+//			return true
+//		}
+//		return false
+//	} else if strings.Compare(role, Developer) == 0 {
+//		candidateList, err := GetList(stub, DeveloperList)
+//		if err != nil {
+//			return false
+//		}
+//		if candidateList == nil {
+//			return false
+//		}
+//		if _, ok := candidateList[addr.String()]; ok {
+//			return true
+//		}
+//		return false
+//	} else {
+//		return false
+//	}
+//}
 
 //处理申请没收请求并移除列表
-func (d *DepositChaincode) forfeitureAllDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, invokeTokens *modules.AmountAsset) error {
-	//TODO 没收保证金是否需要计算利息
-	//调用从合约把token转到请求地址
+func forfeitureAllDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr, forfeitureAddr string, invokeTokens *modules.AmountAsset) error {
+	//  TODO 没收保证金是否需要计算利息
+	//  调用从合约把token转到请求地址
 	err := stub.PayOutToken(foundationAddr, invokeTokens, 0)
 	if err != nil {
 		log.Error("Stub.PayOutToken err:", "error", err)
 		return err
 	}
-	//移除出列表
+	//  移除出列表
 	err = moveCandidate(role, forfeitureAddr, stub)
 	if err != nil {
 		log.Error("MoveCandidate err:", "error", err)
 		return err
 	}
-	//删除节点
-	err = stub.DelState(forfeitureAddr)
+	//  删除节点
+	err = DelNodeBalance(stub, forfeitureAddr)
 	if err != nil {
 		log.Error("Stub.DelState err:", "error", err)
 		return err
@@ -756,18 +608,17 @@ func (d *DepositChaincode) forfeitureAllDeposit(role string, stub shim.Chaincode
 	return nil
 }
 
-func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.ChaincodeStubInterface, foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance) pb.Response {
+func forfertureAndMoveList(role string, stub shim.ChaincodeStubInterface, foundationAddr string, forfeitureAddr string, forfeiture *Forfeiture, balance *DepositBalance) error {
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(foundationAddr, forfeiture.ApplyTokens, 0)
 	if err != nil {
 		log.Error("Stub.PayOutToken err:", "error", err)
-		return shim.Error(err.Error())
+		return err
 	}
-	//handleMember(role, forfeiture.ForfeitureAddress, stub)
-	err = moveCandidate(role, forfeiture.ForfeitureAddress, stub)
+	err = moveCandidate(role, forfeitureAddr, stub)
 	if err != nil {
 		log.Error("MoveCandidate err:", "error", err)
-		return shim.Error(err.Error())
+		return err
 	}
 	//计算一部分的利息
 	//获取币龄
@@ -775,49 +626,51 @@ func (d *DepositChaincode) forfertureAndMoveList(role string, stub shim.Chaincod
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
-		return shim.Error(err.Error())
+		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
 	//fmt.Println("awards ", awards)
 	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
 	//加上利息奖励
-	balance.TotalAmount += awards
+	balance.Balance += awards
 	//减去提取部分
-	balance.TotalAmount -= forfeiture.ApplyTokens.Amount
-
-	balance.ForfeitureValues = append(balance.ForfeitureValues, forfeiture)
-
+	balance.Balance -= forfeiture.ApplyTokens.Amount
+	err = SaveNodeBalance(stub, forfeitureAddr, balance)
+	if err != nil {
+		return err
+	}
 	//序列化
-	return d.marshalForBalance(stub, forfeiture.ForfeitureAddress, balance)
+	return nil
 }
 
 //不需要移除候选列表，但是要没收一部分保证金
-func (d *DepositChaincode) forfeitureSomeDeposit(role string, stub shim.ChaincodeStubInterface, foundationAddr string, forfeiture *Forfeiture, balance *DepositBalance) pb.Response {
-	//调用从合约把token转到请求地址
+func forfeitureSomeDeposit(stub shim.ChaincodeStubInterface, foundationAddr string, forfeitureAddress string, forfeiture *Forfeiture, balance *DepositBalance) error {
+	//  调用从合约把token转到请求地址
 	err := stub.PayOutToken(foundationAddr, forfeiture.ApplyTokens, 0)
 	if err != nil {
 		log.Error("Stub.PayOutToken err:", "error", err)
-		return shim.Error(err.Error())
+		return err
 	}
-	//计算当前币龄奖励
+	//  计算当前币龄奖励
 	endTime := balance.LastModifyTime * DTimeDuration
+	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
-		return shim.Error(err.Error())
+		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.TotalAmount, endTime, depositRate)
-	//fmt.Println("awards ", awards)
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
 	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
-	//加上利息奖励
-	balance.TotalAmount += awards
-	//减去提取部分
-	balance.TotalAmount -= forfeiture.ApplyTokens.Amount
-
-	balance.ForfeitureValues = append(balance.ForfeitureValues, forfeiture)
-
-	//序列化
-	return d.marshalForBalance(stub, forfeiture.ForfeitureAddress, balance)
+	//  加上利息奖励
+	balance.Balance += awards
+	//  减去提取部分
+	balance.Balance -= forfeiture.ApplyTokens.Amount
+	//
+	err = SaveNodeBalance(stub, forfeitureAddress, balance)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func timeFormat(n string) string {
@@ -827,4 +680,79 @@ func timeFormat(n string) string {
 		return n
 	}
 	return time.Unix(ent*DTimeDuration, 0).UTC().String()
+}
+
+//  通过地址获取Mediator节点信息
+func GetMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) (*modules.MediatorInfo, error) {
+	byte, err := stub.GetState(string(constants.MEDIATOR_INFO_PREFIX) + mediatorAddr)
+	if err != nil {
+		return nil, err
+	}
+	if byte == nil {
+		return nil, nil
+	}
+	mediator := &modules.MediatorInfo{}
+	err = json.Unmarshal(byte, mediator)
+	if err != nil {
+		return nil, err
+	}
+	return mediator, nil
+}
+
+//  保存Mediator账信息
+func SaveMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string, med *modules.MediatorInfo) error {
+	byte, err := json.Marshal(med)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(string(constants.MEDIATOR_INFO_PREFIX)+mediatorAddr, byte)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//  删除节点信息
+func DelMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) error {
+	err := stub.DelState(string(constants.MEDIATOR_INFO_PREFIX) + mediatorAddr)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SaveNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balance *DepositBalance) error {
+	balanceByte, err := json.Marshal(balance)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(string(constants.DEPOSIT_BALANCE_PREFIX)+balanceAddr, balanceByte)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string) (*DepositBalance, error) {
+	byte, err := stub.GetState(string(constants.DEPOSIT_BALANCE_PREFIX) + balanceAddr)
+	if err != nil {
+		return nil, err
+	}
+	if byte == nil {
+		return nil, nil
+	}
+	balance := &DepositBalance{}
+	err = json.Unmarshal(byte, balance)
+	if err != nil {
+		return nil, err
+	}
+	return balance, nil
+}
+
+func DelNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string) error {
+	err := stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + balanceAddr)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -36,9 +36,9 @@ Tx的第一条Msg必须是Payment
 	3.  不是Coinbase的情况下，创币PaymentMessage必须在Request下面，并由系统合约创建
 	4.  如果是系统合约的请求和结果，必须重新运行合约，保证结果一致
 To validate one transaction
-
+如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
-func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, unitTime int64) (ValidationCode, *modules.AmountAsset) {
+func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase,isFullTx bool, unitTime int64) (ValidationCode, *modules.AmountAsset) {
 	if len(tx.TxMessages) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
@@ -51,6 +51,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 		return TxValidationCode_INVALID_FEE, nil
 	}
 	hasRequestMsg := false
+	requestMsgIndex:=9999
 	isSysContractCall := false
 	usedUtxo := make(map[string]bool) //Cached all used utxo in this tx
 	for msgIdx, msg := range tx.TxMessages {
@@ -75,17 +76,22 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD, nil
 			}
-			validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase, usedUtxo)
-			if validateCode != TxValidationCode_VALID {
-				if validateCode == TxValidationCode_ORPHAN {
-					isOrphanTx = true
-				} else {
-					return validateCode, nil
+			//如果是合约执行结果中的Payment，只有是完整交易的情况下才检查解锁脚本
+			if msgIdx>requestMsgIndex && !isFullTx{
+				log.Debugf("Tx reqid[%s] is processing tx, don't need validate result payment",tx.RequestHash().String())
+			}else {
+				validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase, usedUtxo)
+				if validateCode != TxValidationCode_VALID {
+					if validateCode == TxValidationCode_ORPHAN {
+						isOrphanTx = true
+					} else {
+						return validateCode, nil
+					}
 				}
-			}
-			//检查一个Tx是否包含了发币的Payment，如果有，那么检查是否是系统合约调用的结果
-			if msgIdx != 0 && payment.IsCoinbase() && !isSysContractCall {
-				return TxValidationCode_INVALID_COINBASE, nil
+				//检查一个Tx是否包含了发币的Payment，如果有，那么检查是否是系统合约调用的结果
+				if msgIdx != 0 && payment.IsCoinbase() && !isSysContractCall {
+					return TxValidationCode_INVALID_COINBASE, nil
+				}
 			}
 		case modules.APP_CONTRACT_TPL:
 			payload, _ := msg.Payload.(*modules.ContractTplPayload)
@@ -110,6 +116,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 				return TxValidationCode_INVALID_MSG, nil
 			}
 			hasRequestMsg = true
+			requestMsgIndex=msgIdx
 			payload, _ := msg.Payload.(*modules.ContractInstallRequestPayload)
 			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
 				return TxValidationCode_INVALID_CONTRACT, nil
@@ -120,6 +127,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 				return TxValidationCode_INVALID_MSG, nil
 			}
 			hasRequestMsg = true
+			requestMsgIndex=msgIdx
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
 			if len(payload.TplId) == 0 || payload.Timeout < 0 {
@@ -136,10 +144,8 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 				return TxValidationCode_INVALID_MSG, nil
 			}
 			hasRequestMsg = true
+			requestMsgIndex=msgIdx
 			payload, _ := msg.Payload.(*modules.ContractInvokeRequestPayload)
-			if len(payload.ContractId) == 0 {
-				return TxValidationCode_INVALID_CONTRACT, nil
-			}
 			// 验证ContractId有效性
 			if len(payload.ContractId) <= 0 {
 				return TxValidationCode_INVALID_CONTRACT, nil
@@ -157,6 +163,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase bool, u
 			if len(payload.ContractId) <= 0 {
 				return TxValidationCode_INVALID_CONTRACT, nil
 			}
+			requestMsgIndex=msgIdx
 		case modules.APP_CONTRACT_STOP:
 			payload, _ := msg.Payload.(*modules.ContractStopPayload)
 			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)

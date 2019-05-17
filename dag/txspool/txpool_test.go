@@ -158,6 +158,18 @@ func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transacti
 	return nil, nil
 }
 
+func (ud *UnitDag4Test) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error){
+	return nil,nil
+}
+
+func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error){
+	return nil,nil
+}
+
+func (ud *UnitDag4Test) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+	return nil,nil
+}
+
 // create txs
 func createTxs(address string) []*modules.Transaction {
 	txs := make([]*modules.Transaction, 0)

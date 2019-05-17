@@ -23,20 +23,23 @@ package ptnapi
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+	"math/big"
+	"math/rand"
+	"strconv"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
-	"math"
-	"math/big"
-	"math/rand"
-	"strconv"
-	"time"
 )
 
 var (
@@ -204,9 +207,38 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 	return rsp, err
 }
 
-func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string, param []string) (string, error) {
+func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
+	param []string) (string, error) {
 	log.Info("---enter DepositContractInvoke---")
-	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(), param, "")
+	// append by albert·gou
+	if param[0] == modules.ApplyMediator {
+		//return "", fmt.Errorf("please use mediator.apply()")
+		var args MediatorCreateArgs
+		err := json.Unmarshal([]byte(param[1]), &args)
+		if err != nil {
+			return "", fmt.Errorf("param error(%v), please use mediator.apply()", err.Error())
+		} else {
+			// 参数补全
+			args.setDefaults()
+
+			// 参数验证
+			err := args.Validate()
+			if err != nil {
+				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
+			}
+
+			// 参数序列化
+			argsB, err := json.Marshal(args)
+			if err != nil {
+				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
+			}
+
+			param[1] = string(argsB)
+		}
+	}
+
+	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(),
+		param, "")
 
 	return rsp.ReqId, err
 }

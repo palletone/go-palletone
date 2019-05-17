@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
 	"github.com/dedis/kyber"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -257,7 +258,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	} else {
 		account := p.getLocalAccount()
 		if account == nil {
-			log.Error("runContractReq", "not find local account, reqId", reqId)
+			log.Error("runContractReq", "not find local account, reqId", reqId.String())
 			return errors.New("runContractReq no local account")
 		}
 		sigTx, err := p.GenContractSigTransaction(account.Address, account.Password, tx, p.ptn.GetKeyStore())
@@ -273,17 +274,22 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 				if err != nil {
 					log.Debug("runContractReq", "checkAndAddTxSigMsgData error", err.Error())
 				} else if ok {
-					log.Debug("runContractReq", "checkAndAddTxSigMsgData ok, reqId", reqId)
+					log.Debug("runContractReq", "checkAndAddTxSigMsgData ok, reqId", reqId.String())
 				} else {
-					log.Debug("runContractReq", "checkAndAddTxSigMsgData fail, reqId", reqId)
+					log.Debug("runContractReq", "checkAndAddTxSigMsgData fail, reqId", reqId.String())
 				}
 			}
 			req.rcvTx = nil
 		}
 
-		if getTxSigNum(req.sigTx) >= p.contractSigNum {
+		sigNum := getTxSigNum(req.sigTx)
+		log.Debugf("runContractReq sigNum %d, p.contractSigNum %d", sigNum, p.contractSigNum)
+		if sigNum >= p.contractSigNum {
 			if localIsMinSignature(req.sigTx) {
-				log.Info("runContractReq", "localIsMinSignature Ok!, reqId", reqId)
+				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
+				log.Info("runContractReq", "localIsMinSignature Ok!, reqId", reqId.String())
+
+				processContractPayout(req.sigTx, elf)
 				go p.ptn.ContractBroadcast(ContractEvent{Ele: req.eleInf, CType: CONTRACT_EVENT_COMMIT, Tx: req.sigTx}, true)
 				return nil
 			}
@@ -308,16 +314,20 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 	needSignMsg := true
 	//Find contract pay out payment messages
 	resultMsg := false
+	isSysContract := false
 	for msgidx, msg := range tx.TxMessages {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			resultMsg = true
+			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			isSysContract = common.IsSystemContractAddress(requestMsg.ContractId)
 			continue
 		}
 		if resultMsg {
 			if msg.App == modules.APP_PAYMENT {
 				//Contract result里面的Payment只有2种，创币或者从合约付出，
 				payment := msg.Payload.(*modules.PaymentPayload)
-				if !payment.IsCoinbase() {
+				if !payment.IsCoinbase() && isSysContract {
+					//如果是系统合约付出，那么Mediator一个签名就够了
 					//Contract Payout, need sign
 					needSignMsg = false
 					pubKey, _ := ks.GetPublicKey(singer)
@@ -346,7 +356,8 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetPublicKey fail, address[%s]", singer.String()))
 		}
-		sig, err := GetTxSig(tx, ks, singer)
+		//只对合约执行后不包含Jury签名的Tx进行签名
+		sig, err := GetTxSig(tx.GetResultRawTx(), ks, singer)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("GenContractSigTransctions GetTxSig fail, address[%s], tx[%s]", singer.String(), orgTx.RequestHash().String()))
 		}
@@ -366,6 +377,7 @@ func (p *Processor) GenContractSigTransaction(singer common.Address, password st
 					Signatures: sigs,
 				},
 			}
+			log.Debugf("Add sign message[%s] to tx requestId[%s]", sigSet.String(), tx.RequestHash().String())
 			tx.TxMessages = append(tx.TxMessages, msgSig)
 		}
 		log.Debug("GenContractSigTransactions", "orgTx.TxId id ok:", tx.Hash())
@@ -379,7 +391,17 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 		log.Error(msg)
 		return nil, errors.New(msg)
 	}
-
+	log.DebugDynamic(func() string {
+		data, err := rlp.EncodeToBytes(tx)
+		if err != nil {
+			return err.Error()
+		}
+		js, err := json.Marshal(tx)
+		if err != nil {
+			return err.Error()
+		}
+		return fmt.Sprintf("Jurior[%s] try to sign tx reqid:%s,signature:%x, tx json: %s\n rlpcode for debug: %x", signer.String(), tx.RequestHash().String(), sign, string(js), data)
+	})
 	return sign, nil
 }
 func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error {

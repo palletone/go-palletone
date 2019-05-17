@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package les implements the Light Palletone Subprotocol.
+// Package les implements the Cors Palletone Subprotocol.
 package cors
 
 import (
@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 const (
@@ -69,14 +68,15 @@ type ProtocolManager struct {
 
 	genesis *modules.Unit
 
-	downloader *downloader.Downloader
-	fetcher    *LightFetcher
-	peers      *peerSet
-	maxPeers   int
+	//downloader *downloader.Downloader
+	fetcher  *LightFetcher
+	peers    *peerSet
+	maxPeers int
 
 	SubProtocols []p2p.Protocol
 
 	eventMux *event.TypeMux
+	server   *CorsServer
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -86,13 +86,16 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg *sync.WaitGroup
+
+	ptnmainnode bool
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
-func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId,
-	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit) (*ProtocolManager, error) {
+func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.AssetId,
+	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
+	log.Debug("Enter NewCorsProtocolManager")
 	manager := &ProtocolManager{
 		lightSync:   lightSync,
 		eventMux:    mux,
@@ -100,26 +103,27 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		genesis:     genesis,
 		dag:         dag,
 		networkId:   networkId,
-		peers:       peers,
+		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
 		wg:          new(sync.WaitGroup),
 		noMorePeers: make(chan struct{}),
+		quitSync:    quitSync,
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
 	protocolVersions := ClientProtocolVersions
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(protocolVersions))
 	for _, version := range protocolVersions {
-		// Compatible, initialize the sub-protocol
-		//version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    "cors",
 			Version: version,
 			Length:  ProtocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-				peer := manager.newPeer(int(version), 0, p, rw)
+				peer := manager.newPeer(int(version), NetworkId, p, rw)
+				log.Debug("NewCorsProtocolManager Run", "peer.ID:", peer.ID())
 				select {
 				case manager.newPeerCh <- peer:
+					log.Debug("NewCorsProtocolManager Run newPeerCh")
 					manager.wg.Add(1)
 					defer manager.wg.Done()
 					return manager.handle(peer)
@@ -142,17 +146,17 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		return nil, errIncompatibleConfig
 	}
 
-	removePeer := manager.removePeer
-	if disableClientRemovePeer {
-		removePeer = func(id string) {}
-	}
+	//removePeer := manager.removePeer
+	//if disableClientRemovePeer {
+	//	removePeer = func(id string) {}
+	//}
 
 	if manager.lightSync {
-		manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
-		manager.peers.notify((*downloaderPeerNotify)(manager))
+		//manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
+		//manager.peers.notify((*downloaderPeerNotify)(manager))
 		manager.fetcher = manager.newLightFetcher()
 	}
-
+	log.Debug("End NewCorsProtocolManager", "len(manager.SubProtocols)", len(manager.SubProtocols))
 	return manager, nil
 }
 
@@ -179,10 +183,10 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		//	log.Warn("Discarded lighting sync propagated block", "number", headers[0].Number.Index, "hash", headers[0].Hash())
 		//	return 0, errors.New("fasting sync")
 		//}
-		log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		log.Debug("Cors Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
-	return newLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
+	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
 		headerBroadcaster, inserter, pm.removePeer)
 }
 
@@ -194,7 +198,7 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 		if p == nil {
 			continue
 		}
-		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
+		log.Debug("Cors Palletone", "BroadcastLightHeader announceType", p.announceType)
 		switch p.announceType {
 		case announceTypeNone:
 			select {
@@ -233,7 +237,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	// Showing a log message. During download / process this could actually
 	// take between 5 to 10 seconds and therefor feedback is required.
-	log.Info("Stopping light Palletone protocol")
+	log.Info("Stopping cors Palletone protocol")
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
@@ -250,7 +254,7 @@ func (pm *ProtocolManager) Stop() {
 	// Wait for any process action
 	pm.wg.Wait()
 
-	log.Info("Light Palletone protocol stopped")
+	log.Info("Cors Palletone protocol stopped")
 }
 
 func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -261,18 +265,14 @@ func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgRea
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
-	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		return p2p.DiscTooManyPeers
-	}
+	//if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+	//	return p2p.DiscTooManyPeers
+	//}
 
-	log.Debug("Light Palletone peer connected", "name", p.Name())
+	log.Debug("Enter Cors Palletone peer connected", "name", p.Name())
+	defer log.Debug("End Cors Palletone peer connected", "name", p.Name())
 
-	// Execute the LES handshake
-	//var (
-	//	head   = pm.dag.CurrentHeader(pm.assetId)
-	//	number = head.Number
-	//	//td     = pm.blockchain.GetTd(hash, number)
-	//)
+	// Execute the Cors handshake
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("Light PalletOne New", "get genesis err:", err)
@@ -287,8 +287,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if err := p.Handshake(number, genesis.Hash(), headhash); err != nil {
-		log.Debug("Light Palletone handshake failed", "err", err)
+	if err := p.Handshake(number, genesis.Hash(), headhash, pm.assetId); err != nil {
+		log.Debug("Cors Palletone handshake failed", "err", err)
 		return err
 	}
 	//if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
@@ -296,7 +296,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//}
 	// Register the peer locally
 	if err := pm.peers.Register(p); err != nil {
-		log.Error("Light Palletone peer registration failed", "err", err)
+		log.Error("Cors Palletone peer registration failed", "err", err)
 		return err
 	}
 	defer func() {
@@ -323,10 +323,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
-				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
+				log.Debug("Cors Palletone ProtocolManager->handle", "announce", announce)
 				//data, err := json.Marshal(announce.Header)
 				//if err != nil {
-				//	log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
+				//	log.Error("Cors Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
 				//} else {
 				//	p.headInfo = &announce
 				//	if !p.fullnode {
@@ -358,7 +358,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	if err != nil {
 		return err
 	}
-	log.Trace("Light Palletone message arrived", "code", msg.Code, "bytes", msg.Size)
+	log.Trace("Cors Palletone message arrived", "code", msg.Code, "bytes", msg.Size)
 
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
@@ -376,7 +376,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	// Block header query, collect the requested headers and reply
 	case AnnounceMsg:
-		return pm.AnnounceMsg(msg, p)
+		return nil
 
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
@@ -459,16 +459,16 @@ func (p *peerConnection) RequestLeafNodes() error {
 	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
 }
 
-func (d *downloaderPeerNotify) registerPeer(p *peer) {
-	pm := (*ProtocolManager)(d)
-	pc := &peerConnection{
-		manager: pm,
-		peer:    p,
-	}
-	pm.downloader.RegisterLightPeer(p.id, p.version, pc)
-}
-
-func (d *downloaderPeerNotify) unregisterPeer(p *peer) {
-	pm := (*ProtocolManager)(d)
-	pm.downloader.UnregisterPeer(p.id)
-}
+//func (d *downloaderPeerNotify) registerPeer(p *peer) {
+//	pm := (*ProtocolManager)(d)
+//	pc := &peerConnection{
+//		manager: pm,
+//		peer:    p,
+//	}
+//	pm.downloader.RegisterLightPeer(p.id, p.version, pc)
+//}
+//
+//func (d *downloaderPeerNotify) unregisterPeer(p *peer) {
+//	pm := (*ProtocolManager)(d)
+//	pm.downloader.UnregisterPeer(p.id)
+//}

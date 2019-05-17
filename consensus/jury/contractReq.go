@@ -108,7 +108,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 
 func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
-		log.Error("ContractInvokeReq", "param is error")
+		log.Error("ContractInvokeReq", "info", "param is error")
 		return common.Hash{}, errors.New("ContractInvokeReq request param is error")
 	}
 	if len(args) > MaxNumberArgs {

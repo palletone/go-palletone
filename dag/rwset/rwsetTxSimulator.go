@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"runtime"
+	"sort"
 )
 
 type RwSetTxSimulator struct {
@@ -137,11 +138,6 @@ func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, 
 	return []byte(fmt.Sprintf("%d", timeHeader.Time)), nil
 }
 func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
-	//log.Debugf("RW:SetState,ns[%s]--key[%s]---value[%s]", ns, key, value)
-	//fmt.Println("SetState(ns string, key string, value []byte)===>>>\n\n", ns, key, value)
-	//balance := &modules.DepositBalance{}
-	//_ = json.Unmarshal(value, balance)
-	//fmt.Printf("llllllll   %#v\n", stateValue)
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
@@ -159,7 +155,7 @@ func (s *RwSetTxSimulator) DeleteState(ns string, key string) error {
 	return s.SetState(ns, key, nil)
 }
 
-func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]*KVWrite, error) {
+func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	var rd map[string]*KVRead
 	var wt map[string]*KVWrite
 
@@ -185,8 +181,32 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 			}
 		}
 	}
-
-	return rd, wt, nil
+	//sort keys and convert map to slice
+	return convertReadMap2Slice(rd), convertWriteMap2Slice(wt), nil
+}
+func convertReadMap2Slice(rd map[string]*KVRead) []*KVRead {
+	keys := []string{}
+	for k, _ := range rd {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	result := []*KVRead{}
+	for _, key := range keys {
+		result = append(result, rd[key])
+	}
+	return result
+}
+func convertWriteMap2Slice(rd map[string]*KVWrite) []*KVWrite {
+	keys := []string{}
+	for k, _ := range rd {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	result := []*KVWrite{}
+	for _, key := range keys {
+		result = append(result, rd[key])
+	}
+	return result
 }
 
 //get all dag
@@ -284,4 +304,15 @@ func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte
 func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64, creator string) error {
 	createAddr, _ := common.StringToAddress(creator)
 	return s.rwsetBuilder.AddSupplyToken(ns, assetId, uniqueId, amt, createAddr)
+}
+func (s *RwSetTxSimulator) String() string {
+	str := "rwSet_txSimulator: "
+	for k, v := range s.rwsetBuilder.pubRwBuilderMap {
+		str += ("key:" + k)
+		for rk, rv := range v.readMap {
+			//str += fmt.Sprintf("val__[key:%s],[value:%s]", rk, rv.String())
+			log.Debug("RwSetTxSimulator) String", "key", rk, "val-", rv)
+		}
+	}
+	return str
 }

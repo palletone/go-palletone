@@ -81,7 +81,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-		txCode, txFee := validate.validateTx(tx, txIndex == 0, unitTime)
+		txCode, txFee := validate.validateTx(tx, txIndex == 0,true, unitTime)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 
@@ -131,8 +131,8 @@ func ComputeRewards() uint64 {
 	}
 	return rewards
 }
-func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase bool) error {
-	code, _ := validate.validateTx(tx, isCoinbase, time.Now().Unix())
+func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase,isFullTx bool) error {
+	code, _ := validate.validateTx(tx, isCoinbase, isFullTx,time.Now().Unix())
 	if code == TxValidationCode_VALID {
 		log.Debugf("Tx[%s] validate pass!", tx.Hash().String())
 		return nil

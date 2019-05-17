@@ -30,13 +30,14 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
-	"sync"
-	"github.com/palletone/go-palletone/common"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -46,14 +47,14 @@ type LesServer struct {
 	fcManager       *flowcontrol.ClientManager // nil if our node is client only
 	fcCostStats     *requestCostStats
 	defParams       *flowcontrol.ServerParams
-	//lesTopics       []discv5.Topic
-	privateKey *ecdsa.PrivateKey
-	quitSync   chan struct{}
-
-	//chtIndexer, bloomTrieIndexer *core.ChainIndexer
+	srv             *p2p.Server
+	corss           *p2p.Server
+	privateKey      *ecdsa.PrivateKey
+	quitSync        chan struct{}
+	protocolname    string
 }
 
-func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
+func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (*LesServer, error) {
 	quitSync := make(chan struct{})
 	gasToken := config.Dag.GetGasToken()
 	genesis, err := ptn.Dag().GetGenesisUnit()
@@ -63,7 +64,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 	}
 
 	pm, err := NewProtocolManager(false, newPeerSet(), config.NetworkId, gasToken, ptn.TxPool(),
-		ptn.Dag(), ptn.EventMux(), genesis)
+		ptn.Dag(), ptn.EventMux(), genesis, quitSync, protocolname)
 	if err != nil {
 		log.Error("NewlesServer NewProtocolManager", "err", err)
 		return nil, err
@@ -73,6 +74,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config) (*LesServer, error) {
 		config:          config,
 		protocolManager: pm,
 		quitSync:        quitSync,
+		protocolname:    protocolname,
 	}
 
 	pm.server = srv
@@ -90,16 +92,21 @@ func (s *LesServer) Protocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
 }
 
+func (s *LesServer) CorsProtocols() []p2p.Protocol {
+	return nil
+}
+
 // Start starts the LES server
-func (s *LesServer) Start(srvr *p2p.Server) {
-	s.protocolManager.Start(s.config.LightPeers)
+func (s *LesServer) Start(srvr *p2p.Server, corss *p2p.Server) {
+	s.srv = srvr
+	if s.protocolname == configure.CORSProtocol {
+		s.corss = corss
+	}
+
+	s.protocolManager.Start(s.config.LightPeers, s.corss)
 	s.privateKey = srvr.PrivateKey
 	s.protocolManager.blockLoop()
 }
-
-//func (s *LesServer) SetBloomBitsIndexer(bloomIndexer *core.ChainIndexer) {
-//	bloomIndexer.AddChildIndexer(s.bloomTrieIndexer)
-//}
 
 // Stop stops the LES service
 func (s *LesServer) Stop() {
@@ -402,25 +409,25 @@ func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
 }
 
 func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
-	log.Debug("Light PalletOne","ProtocolManager->SyncUTXOByAddr addr:",addr)
+	log.Debug("Light PalletOne", "ProtocolManager->SyncUTXOByAddr addr:", addr)
 	_, err := common.StringToAddress(addr)
 	if err != nil {
-		log.Debug("Light PalletOne","ProtocolManager->SyncUTXOByAddr err:",err)
+		log.Debug("Light PalletOne", "ProtocolManager->SyncUTXOByAddr err:", err)
 		return err.Error()
 	}
 
-	req,err:=pm.utxosync.AddUtxoSyncReq(addr)
-	if err!=nil{
-		log.Debug("Light PalletOne","ProtocolManager->SyncUTXOByAddr err:",err)
+	req, err := pm.utxosync.AddUtxoSyncReq(addr)
+	if err != nil {
+		log.Debug("Light PalletOne", "ProtocolManager->SyncUTXOByAddr err:", err)
 		return err.Error()
 	}
 
 	//random select peer to download GetAddrUtxos(addr)
 	rand.Seed(time.Now().UnixNano())
-	peers :=pm.peers.AllPeers()
+	peers := pm.peers.AllPeers()
 	x := rand.Intn(len(peers))
 	p := peers[x]
-	p.RequestUTXOs(0,0,req.addr)
+	p.RequestUTXOs(0, 0, req.addr)
 
 	result := req.Wait()
 	if result == 0 {

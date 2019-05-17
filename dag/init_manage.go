@@ -146,9 +146,10 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 }
 
 func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
-	initMediatorCandidates := make([]*core.MediatorApplyInfo, 0, len(genesis.InitialMediatorCandidates))
+	//initMediatorCandidates := make([]*core.MediatorApplyInfo, 0, len(genesis.InitialMediatorCandidates))
 
 	// Create initial mediators
+	list := make(map[string]bool)
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
 		err := imc.Validate()
@@ -159,7 +160,6 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 
 		mi := modules.NewMediatorInfo()
 		*mi.MediatorInfoBase = *imc.MediatorInfoBase
-		mi.Address = imc.AddStr
 
 		addr, _ := common.StringToAddress(mi.AddStr)
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
@@ -168,15 +168,16 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 			panic(err.Error())
 		}
 
-		// 构建 initMediatorCandidates
-		mai := core.NewMediatorApplyInfo()
-		mai.Address = imc.AddStr
-		//mai.Time = mai.Time / 1800
-		initMediatorCandidates = append(initMediatorCandidates, mai)
+		list[mi.AddStr] = true
+		//// 构建 initMediatorCandidates
+		//mai := core.NewMediatorApplyInfo()
+		//mai.Address = imc.AddStr
+		////mai.Time = mai.Time / 1800
+		//initMediatorCandidates = append(initMediatorCandidates, mai)
 	}
 
 	// 存储 initMediatorCandidates
-	imcB, err := json.Marshal(initMediatorCandidates)
+	imcB, err := json.Marshal(list)
 	if err != nil {
 		log.Debugf(err.Error())
 		return err

@@ -64,6 +64,10 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		txForSign := tx
 		if msgIdx < invokeReqMsgIdx {
 			txForSign = tx.GetRequestTx()
+			log.Debugf("msgIdx %d, GetRequestTx 1", msgIdx)
+		} else if invokeReqMsgIdx > 0 && msgIdx > invokeReqMsgIdx {
+			txForSign = tx.GetResultTx()
+			log.Debugf("msgIdx %d, GetResultTx 1", msgIdx)
 		}
 
 		for inputIdx, in := range payment.Inputs {

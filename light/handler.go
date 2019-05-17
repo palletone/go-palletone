@@ -83,36 +83,6 @@ type BlockChain interface {
 type txPool interface {
 	AddRemotes(txs []*modules.Transaction) []error
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-
-	//Stop()
-	//AddLocal(tx *modules.TxPoolTransaction) error
-	//AddLocals(txs []*modules.TxPoolTransaction) []error
-	//AllHashs() []*common.Hash
-	//AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
-	//Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
-	//Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
-	//GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
-	//Stats() (int, int, int)
-	//GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
-	//SendStoredTxs(hashs []common.Hash) error
-	//DiscardTxs(hashs []common.Hash) error
-	////DiscardTx(hash common.Hash) error
-	//GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	//AddRemote(tx *modules.Transaction) error
-	////AddRemotes([]*modules.Transaction) []error
-	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
-	//// Pending should return pending transactions.
-	//// The slice should be modifiable by the caller.
-	//Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
-	//Queued() ([]*modules.TxPoolTransaction, error)
-	//SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error
-	//ResetPendingTxs(txs []*modules.Transaction) error
-	//// SubscribeTxPreEvent should return an event subscription of
-	//// TxPreEvent and send events to the given channel.
-	//SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
-	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
 
 type ProtocolManager struct {
@@ -137,9 +107,9 @@ type ProtocolManager struct {
 	peers      *peerSet
 	maxPeers   int
 
-	SubProtocols []p2p.Protocol
-
-	eventMux *event.TypeMux
+	SubProtocols     []p2p.Protocol
+	CorsSubProtocols []p2p.Protocol
+	eventMux         *event.TypeMux
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -151,44 +121,44 @@ type ProtocolManager struct {
 	wg *sync.WaitGroup
 
 	//SPV
-	validation *Validation
-	utxosync   *UtxosSync
+	validation   *Validation
+	utxosync     *UtxosSync
+	protocolname string
+
+	//cors
+	corss *p2p.Server
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
 func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId, txpool txPool,
-	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit) (*ProtocolManager, error) {
+	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}, protocolname string) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		lightSync: lightSync,
-		eventMux:  mux,
-		assetId:   gasToken,
-		genesis:   genesis,
-		//blockchain:  blockchain,
-		//chainConfig: chainConfig,
-		//chainDb:     chainDb,
-		//odr:         odr,
-		dag:       dag,
-		networkId: networkId,
-		txpool:    txpool,
-
-		peers:       peers,
-		newPeerCh:   make(chan *peer),
-		wg:          new(sync.WaitGroup),
-		noMorePeers: make(chan struct{}),
-		validation:  NewValidation(dag),
-		utxosync:    NewUtxosSync(dag),
+		lightSync:    lightSync,
+		eventMux:     mux,
+		assetId:      gasToken,
+		genesis:      genesis,
+		quitSync:     quitSync,
+		dag:          dag,
+		networkId:    networkId,
+		txpool:       txpool,
+		protocolname: protocolname,
+		peers:        peers,
+		newPeerCh:    make(chan *peer),
+		wg:           new(sync.WaitGroup),
+		noMorePeers:  make(chan struct{}),
+		validation:   NewValidation(dag),
+		utxosync:     NewUtxosSync(dag),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
-	protocolVersions := ClientProtocolVersions
-	manager.SubProtocols = make([]p2p.Protocol, 0, len(protocolVersions))
-	for _, version := range protocolVersions {
+	manager.SubProtocols = make([]p2p.Protocol, 0, len(ClientProtocolVersions))
+	for _, version := range ClientProtocolVersions {
 		// Compatible, initialize the sub-protocol
 		//version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
-			Name:    "lps",
+			Name:    protocolname,
 			Version: version,
 			Length:  ProtocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
@@ -270,7 +240,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
-	return newLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
+	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
 		headerBroadcaster, inserter, pm.removePeer)
 }
 
@@ -305,12 +275,11 @@ func (pm *ProtocolManager) removePeer(id string) {
 	pm.peers.Unregister(id)
 }
 
-func (pm *ProtocolManager) Start(maxPeers int) {
+func (pm *ProtocolManager) Start(maxPeers int, corss *p2p.Server) {
 	pm.maxPeers = maxPeers
 
 	if pm.lightSync {
 		go pm.syncer()
-
 		pm.validation.Start()
 
 	} else {
@@ -356,15 +325,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return p2p.DiscTooManyPeers
 	}
-
 	log.Debug("Light Palletone peer connected", "name", p.Name())
 
-	// Execute the LES handshake
-	//var (
-	//	head   = pm.dag.CurrentHeader(pm.assetId)
-	//	number = head.Number
-	//	//td     = pm.blockchain.GetTd(hash, number)
-	//)
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("Light PalletOne New", "get genesis err:", err)
@@ -379,10 +341,12 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
+
 	if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
 		log.Debug("Light Palletone handshake failed", "err", err)
 		return err
 	}
+
 	if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
 		rw.Init(p.version)
 	}

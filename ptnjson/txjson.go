@@ -55,7 +55,7 @@ type TxWithUnitInfoJson struct {
 	TxIndex    uint64    `json:"tx_index"`
 }
 type TplJson struct {
-	Number     int    `json:"number"`
+	Number     int    `json:"row_number"`
 	TemplateId string `json:"template_id"`
 	//Name         string `json:"name"`
 	//Path         string `json:"path"`
@@ -68,20 +68,20 @@ type TplJson struct {
 	ErrorMessage string `json:"error_message"`
 }
 type DeployJson struct {
-	Number       int      `json:"number"`
-	TemplateId   string   `json:"template_id"`
-	ContractId   string   `json:"contract_id"`
-	Name         string   `json:"name"`
-	Args         [][]byte `json:"args"` // contract arguments list
-	Jury         []string `json:"jury"`
-	EleList      string   `json:"election_list"`
-	ReadSet      string   `json:"read_set"`
-	WriteSet     string   `json:"write_set"`
-	ErrorCode    uint32   `json:"error_code"`
-	ErrorMessage string   `json:"error_message"`
+	Number     int      `json:"row_number"`
+	TemplateId string   `json:"template_id"`
+	ContractId string   `json:"contract_id"`
+	Name       string   `json:"name"`
+	Args       [][]byte `json:"args"` // contract arguments list
+	//Jury         []string `json:"jury"`
+	EleList      string `json:"election_list"`
+	ReadSet      string `json:"read_set"`
+	WriteSet     string `json:"write_set"`
+	ErrorCode    uint32 `json:"error_code"`
+	ErrorMessage string `json:"error_message"`
 }
 type InvokeJson struct {
-	Number       int      `json:"number"`
+	Number       int      `json:"row_number"`
 	ContractId   string   `json:"contract_id"` // contract id
 	Args         []string `json:"args"`        // contract arguments list
 	ReadSet      string   `json:"read_set"`    // the set data of read, and value could be any type
@@ -91,27 +91,27 @@ type InvokeJson struct {
 	ErrorMessage string   `json:"error_message"`
 }
 type StopJson struct {
-	Number       int      `json:"number"`
-	ContractId   string   `json:"contract_id"`
-	Jury         []string `json:"jury"`
-	ReadSet      string   `json:"read_set"`
-	WriteSet     string   `json:"write_set"`
-	ErrorCode    uint32   `json:"error_code"`
-	ErrorMessage string   `json:"error_message"`
+	Number     int    `json:"row_number"`
+	ContractId string `json:"contract_id"`
+	//Jury         []string `json:"jury"`
+	ReadSet      string `json:"read_set"`
+	WriteSet     string `json:"write_set"`
+	ErrorCode    uint32 `json:"error_code"`
+	ErrorMessage string `json:"error_message"`
 }
 type SignatureJson struct {
-	Number     int      `json:"number"`
+	Number     int      `json:"row_number"`
 	Signatures []string `json:"signature_set"` // the array of signature
 }
 
 type InvokeRequestJson struct {
-	Number       int      `json:"number"`
+	Number       int      `json:"row_number"`
 	ContractAddr string   `json:"contract_addr"`
 	Args         []string `json"arg_set"`
 }
 
 type InstallRequestJson struct {
-	Number         int    `json:"number"`
+	Number         int    `json:"row_number"`
 	TplName        string `json:"tpl_name"`
 	TplDescription string `json:"tpl_description"`
 	Path           string `json:"path"`
@@ -121,26 +121,26 @@ type InstallRequestJson struct {
 }
 
 type DeployRequestJson struct {
-	Number  int           `json:"number"`
-	TplId   string        `json:"tpl_id"`
-	TxId    string        `json:"tx_id"`
+	Number int    `json:"row_number"`
+	TplId  string `json:"tpl_id"`
+	//TxId    string        `json:"tx_id"`
 	Args    []string      `json:"arg_set"`
 	Timeout time.Duration `json:"timeout"`
 }
 
 type StopRequestJson struct {
-	Number      int    `json:"number"`
-	ContractId  string `json:"contract_id"`
-	Txid        string `json:"tx_id"`
-	DeleteImage bool   `json:"delete_image"`
+	Number     int    `json:"row_number"`
+	ContractId string `json:"contract_id"`
+	//Txid        string `json:"tx_id"`
+	DeleteImage bool `json:"delete_image"`
 }
 type DataJson struct {
-	Number    int    `json:"number"`
+	Number    int    `json:"row_number"`
 	MainData  string `json:"main_data"`
 	ExtraData string `json:"extra_data"`
 }
 type AccountStateJson struct {
-	Number   int    `json:"number"`
+	Number   int    `json:"row_number"`
 	WriteSet string `json:"write_set"`
 }
 
@@ -238,11 +238,7 @@ func ConvertJson2Tx(json *TxJson) *modules.Transaction {
 }
 func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson := new(TplJson)
-	//hash := common.BytesToHash(tpl.TemplateId[:])
 	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
-	//tpljson.Name = tpl.Name
-	//tpljson.Path = tpl.Path
-	//tpljson.Version = tpl.Version
 	tpljson.Bytecode = tpl.ByteCode[:]
 	tpljson.BytecodeSize = len(tpl.ByteCode[:])
 	tpljson.Memory = tpl.Memory
@@ -256,8 +252,8 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson := new(DeployJson)
 	djson.Name = deploy.Name
-	hash := common.BytesToHash(deploy.TemplateId[:])
-	djson.TemplateId = hash.String()
+
+	djson.TemplateId = hex.EncodeToString(deploy.TemplateId)
 	djson.ContractId = hex.EncodeToString(deploy.ContractId)
 	djson.Args = deploy.Args
 	//for _, addr := range deploy.Jury {
@@ -275,8 +271,7 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 }
 func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	injson := new(InvokeJson)
-	hash := common.BytesToHash(invoke.ContractId[:])
-	injson.ContractId = hash.String()
+	injson.ContractId = contractId2AddrString(invoke.ContractId)
 	injson.Args = []string{}
 	for _, arg := range invoke.Args {
 		injson.Args = append(injson.Args, string(arg))
@@ -291,10 +286,14 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 
 	return injson
 }
+func contractId2AddrString(contractId []byte) string {
+	addr := common.NewAddress(contractId, common.ContractHash)
+	return addr.String()
+}
 func convertStop2Json(stop *modules.ContractStopPayload) *StopJson {
 	sjson := new(StopJson)
-	hash := common.BytesToHash(stop.ContractId[:])
-	sjson.ContractId = hash.String()
+
+	sjson.ContractId = contractId2AddrString(stop.ContractId)
 	rset, _ := json.Marshal(stop.ReadSet)
 	sjson.ReadSet = string(rset)
 	wset, _ := json.Marshal(stop.WriteSet)
@@ -313,9 +312,8 @@ func convertSig2Json(sig *modules.SignaturePayload) *SignatureJson {
 }
 
 func convertInvokeRequest2Json(req *modules.ContractInvokeRequestPayload) *InvokeRequestJson {
-	addr := common.NewAddress(req.ContractId[:], common.ContractHash)
 	reqJson := &InvokeRequestJson{}
-	reqJson.ContractAddr = addr.String()
+	reqJson.ContractAddr = contractId2AddrString(req.ContractId)
 	reqJson.Args = []string{}
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))
@@ -336,8 +334,8 @@ func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *Ins
 
 func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *DeployRequestJson {
 	reqJson := &DeployRequestJson{}
-	hash := common.BytesToHash(req.TplId[:])
-	reqJson.TplId = hash.String()
+
+	reqJson.TplId = hex.EncodeToString(req.TplId)
 	reqJson.Args = []string{}
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))
@@ -347,9 +345,9 @@ func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *Deplo
 
 func convertStopRequest2Json(req *modules.ContractStopRequestPayload) *StopRequestJson {
 	reqJson := &StopRequestJson{}
-	addr := common.NewAddress(req.ContractId[:], common.ContractHash)
-	reqJson.ContractId = addr.String()
-	reqJson.Txid = req.Txid
+
+	reqJson.ContractId = contractId2AddrString(req.ContractId)
+	//reqJson.Txid = req.Txid
 
 	return reqJson
 }

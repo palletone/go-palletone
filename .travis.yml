@@ -12,7 +12,7 @@ env:
         - CREATE_TRANS_DIR=createTans
         - CCINVOKE_DIR=ccinvoke
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
-        - 'SFTP_KEY=[base64-encoded-rsa-key]'
+
 script:
     - go build ./cmd/gptn
     - make gptn
@@ -25,34 +25,18 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
-    - ls /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/
-    - ls /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log
-    - mkdir ../logs
-#    - ./deposit_test.sh 4 > ../logs/deposit_test.log
+    - mkdir -p ${BDD_LOG_PATH}
+#    - ./deposit_test.sh 4 > BDD_LOG_PATH/deposit_test.log
     - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
-    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
-    - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
+#    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
+#    - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
+
 
 after_success:
     - killall gptn
-    - cd ../uploadLogs
-    - python ftpUpload.py
-#    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
-#    - curl --ftp-create-dirs
-#        -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
-#        --key /tmp/sftp_rsa
-#        --ftp-port -
-#        ftp://${USER}:${PASSWORD}@39.105.191.26/pub/all.log
 
 after_failure:
     - killall gptns
-    - cd ../uploadLogs
-#    - python ftpUpload.py
-#    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
-#    - curl --ftp-create-dirs
-#        -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
-#        --key /tmp/sftp_rsa
-#        ftp://${USER}:${PASSWORD}@39.105.191.26/pub/all.log
 
 before_install:
     - go get github.com/mattn/goveralls
@@ -85,10 +69,10 @@ deploy:
 #        branch: certbdd
 
 notifications:
-    email: 602554102@qq.com
+    email: elva1087penny@163.com
     email:
         recipients:
-            - 602554102@qq.com
+            - elva1087penny@163.com
         on_success: always # default: change
         on_failure: always
 

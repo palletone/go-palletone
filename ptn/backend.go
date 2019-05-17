@@ -53,9 +53,10 @@ import (
 )
 
 type LesServer interface {
-	Start(srvr *p2p.Server)
+	Start(srvr *p2p.Server, corss *p2p.Server)
 	Stop()
 	Protocols() []p2p.Protocol
+	CorsProtocols() []p2p.Protocol
 }
 
 // PalletOne implements the PalletOne full node service.
@@ -93,11 +94,20 @@ type PalletOne struct {
 	// append by Albert·Gou
 	mediatorPlugin    *mp.MediatorPlugin
 	contractPorcessor *jury.Processor
+
+	//cors
+	corsServer LesServer
 }
 
 func (p *PalletOne) AddLesServer(ls LesServer) {
 	p.lesServer = ls
-	//ls.SetBloomBitsIndexer(p.bloomIndexer)
+}
+
+func (p *PalletOne) AddCorsServer(cs LesServer) *PalletOne {
+	p.corsServer = cs
+	log.Debug("PalletOne->AddCorsServer", "len(p.corsServer.CorsProtocols())", len(p.corsServer.CorsProtocols()))
+	log.Debug("PalletOne->AddCorsServer", "len(cs.CorsProtocols())", len(cs.CorsProtocols()))
+	return p
 }
 
 // New creates a new PalletOne object (including the
@@ -250,7 +260,8 @@ func (s *PalletOne) UnitDb() ptndb.Database             { return s.unitDb }
 
 func (s *PalletOne) ContractProcessor() *jury.Processor { return s.contractPorcessor }
 func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManager }
-func (s *PalletOne) GetLesServer() LesServer            { return s.lesServer }
+
+//func (s *PalletOne) GetLesServer() LesServer            { return s.lesServer }
 
 func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
@@ -282,12 +293,25 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 	if s.lesServer == nil {
 		return s.protocolManager.SubProtocols
 	}
-	return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
+	protocols := append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
+	return protocols
+	//return append(protocols, s.corsServer.CorsProtocols()...)
+}
+
+func (s *PalletOne) CorsProtocols() []p2p.Protocol {
+	if s.corsServer != nil {
+		return s.corsServer.CorsProtocols()
+	}
+	return nil
+}
+
+func (s *PalletOne) CorsServer() LesServer {
+	return s.corsServer
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
 // PalletOne protocol implementation.
-func (s *PalletOne) Start(srvr *p2p.Server) error {
+func (s *PalletOne) Start(srvr *p2p.Server, corss *p2p.Server) error {
 	// Start the bloom bits servicing goroutines
 	//s.startBloomHandlers()
 
@@ -314,7 +338,10 @@ func (s *PalletOne) Start(srvr *p2p.Server) error {
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(srvr, maxPeers)
 	if s.lesServer != nil {
-		s.lesServer.Start(srvr)
+		s.lesServer.Start(srvr, corss)
+	}
+	if s.corsServer != nil {
+		s.corsServer.Start(srvr, corss)
 	}
 	return nil
 }
@@ -337,6 +364,10 @@ func (s *PalletOne) Stop() error {
 	s.dag.Close()
 	if s.lesServer != nil {
 		s.lesServer.Stop()
+	}
+
+	if s.corsServer != nil {
+		s.corsServer.Stop()
 	}
 
 	return nil

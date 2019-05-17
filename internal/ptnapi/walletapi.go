@@ -315,17 +315,17 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	for msgindex, msg := range mtxtmp.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok == false {
-		       continue
+			continue
 		}
-		for inputindex, _:= range payload.Inputs {
-            hashforsign, err := tokenengine.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex,inputindex, nil)
+		for inputindex, _ := range payload.Inputs {
+			hashforsign, err := tokenengine.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex, inputindex, nil)
 			if err != nil {
 				return "", err
 			}
 			payloadtmp := mtx.TxMessages[msgindex].Payload.(*modules.PaymentPayload)
-            payloadtmp.Inputs[inputindex].SignatureScript = hashforsign
+			payloadtmp.Inputs[inputindex].SignatureScript = hashforsign
 		}
-    }
+	}
 
 	bytetxjson, err := json.Marshal(mtx)
 	if err != nil {
@@ -344,42 +344,42 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 // walletSendTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string) (common.Hash, error) {
-	var RawTxjsonGenParams walletjson.TxJson
-	err := json.Unmarshal([]byte(params), &RawTxjsonGenParams)
+
+	decoded, err := hex.DecodeString(params)
 	if err != nil {
-		return common.Hash{}, err
+		return common.Hash{}, errors.New("Decode Signedtx is invalid")
 	}
-	pload := new(modules.PaymentPayload)
-	for _, input := range RawTxjsonGenParams.Payload[0].Inputs {
-		txHash := common.HexToHash(input.TxHash)
-		if err != nil {
-			return common.Hash{}, rpcDecodeHexError(input.TxHash)
-		}
-		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.OutIndex)
-		hh, err := hexutil.Decode(input.Signature)
-		if err != nil {
-			return common.Hash{}, rpcDecodeHexError(input.TxHash)
-		}
-		txInput := modules.NewTxIn(prevOut, hh)
-		pload.AddTxIn(txInput)
+	var btxjson []byte
+	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
+		return common.Hash{}, errors.New("RLP Decode To Byte is invalid")
 	}
-	for _, output := range RawTxjsonGenParams.Payload[0].Outputs {
-		Addr, err := common.StringToAddress(output.ToAddress)
-		if err != nil {
-			return common.Hash{}, err
-		}
-		pkScript := tokenengine.GenerateLockScript(Addr)
-		asset, err := modules.StringToAsset(output.Asset)
-		txOut := modules.NewTxOut(uint64(output.Amount), pkScript, asset)
-		pload.AddTxOut(txOut)
-	}
-	mtx := &modules.Transaction{
+	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
-	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	err = json.Unmarshal(btxjson, tx)
+	if err != nil {
+		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
+	}
 
-	log.Debugf("Tx outpoint tx hash:%s", mtx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
-	return submitTransaction(ctx, s.b, mtx)
+	if 0 == len(tx.TxMessages) {
+		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
+	}
+	var outAmount uint64
+	var outpoint_txhash common.Hash
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+
+		for _, txout := range payload.Outputs {
+			outAmount += txout.Value
+		}
+		log.Info("payment info", "info", payload)
+		outpoint_txhash = payload.Inputs[0].PreviousOutPoint.TxHash
+	}
+	log.Infof("Tx outpoint tx hash:%s", outpoint_txhash.String())
+	return submitTransaction(ctx, s.b, tx)
 }
 
 func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
@@ -439,8 +439,8 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	var inputs []ptnjson.TransactionInput
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
-		utxo := u.(*ptnjson.UtxoJson)
-		input.Txid = utxo.TxHash
+		utxo := u.(*modules.UtxoWithOutPoint)
+		input.Txid = utxo.TxHash.String()
 		input.MessageIndex = utxo.MessageIndex
 		input.Vout = utxo.OutIndex
 		inputs = append(inputs, input)
