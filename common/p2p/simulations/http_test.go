@@ -79,6 +79,10 @@ func (t *testService) peer(id discover.NodeID) *testPeer {
 	return peer
 }
 
+func (t *testService) CorsProtocols() []p2p.Protocol {
+	return nil
+}
+
 func (t *testService) Protocols() []p2p.Protocol {
 	return []p2p.Protocol{
 		{
@@ -113,7 +117,7 @@ func (t *testService) APIs() []rpc.API {
 	}}
 }
 
-func (t *testService) Start(server *p2p.Server) error {
+func (t *testService) Start(server *p2p.Server, corss *p2p.Server) error {
 	return nil
 }
 

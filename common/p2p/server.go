@@ -986,7 +986,6 @@ func (srv *Server) runPeer(p *Peer) {
 		Peer:  p.ID(),
 		Error: err.Error(),
 	})
-	log.Error("==========================================")
 	// Note: run waits for existing peers to be sent on srv.delpeer
 	// before returning, so this send should not select on srv.quit.
 	srv.delpeer <- peerDrop{p, err, remoteRequested}

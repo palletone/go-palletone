@@ -121,21 +121,15 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
 				peer := manager.newPeer(int(version), NetworkId, p, rw)
 				log.Debug("NewCorsProtocolManager Run", "peer.ID:", peer.ID())
-				log.Debug("NewCorsProtocolManager Run newPeerCh")
-				manager.wg.Add(1)
-				defer manager.wg.Done()
-				err := manager.handle(peer)
 				select {
 				case manager.newPeerCh <- peer:
-					//log.Debug("NewCorsProtocolManager Run newPeerCh")
-					//manager.wg.Add(1)
-					//defer manager.wg.Done()
-					//return manager.handle(peer)
+					log.Debug("NewCorsProtocolManager Run newPeerCh")
+					manager.wg.Add(1)
+					defer manager.wg.Done()
+					return manager.handle(peer)
 				case <-manager.quitSync:
 					return p2p.DiscQuitting
 				}
-				log.Debug("NewCorsProtocolManager Run return", "err", err)
-				return err
 			},
 			NodeInfo: func() interface{} {
 				return manager.NodeInfo(genesis.UnitHash)
