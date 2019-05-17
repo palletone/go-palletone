@@ -41,7 +41,7 @@ after_success:
         -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/log.html
         --key /tmp/sftp_rsa
         --ftp-port -
-        ftp://${YANGYU}:${PASSWORD}@${FTP_SERVER_IP}/pub/${CREATE_TRANS_DIR}/log.html -v
+        ftp://${YANGYU}:${PASSWORD}@${FTP_SERVER_IP}/yy/${CREATE_TRANS_DIR}/log.html -v
 
 after_failure:
     - killall gptns
