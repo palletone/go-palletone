@@ -12,9 +12,9 @@ env:
         - CREATE_TRANS_DIR=createTrans
         - CCINVOKE_DIR=ccinvoke
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
-        - FTP_SERVER_IP=98.142.130.141
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
+        - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub
         - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
@@ -33,15 +33,19 @@ script:
 #    - ./deposit_test.sh 4 > BDD_LOG_PATH/deposit_test.log
     - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
-#    - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
+    - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
 
 
 after_success:
     - killall gptn
-    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+    # upload all log
     - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/all.log -v
-    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/${CREATE_TRANS_DIR}/${LOG_NAME} -v
-    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
+    # upload create transactions log and report
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
+    # upload digital identity log and report
+    - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
 
 after_failure:
     - killall gptns
