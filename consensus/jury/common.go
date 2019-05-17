@@ -473,7 +473,7 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 }
 
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
-	err := p.validator.ValidateTx(tx, false,false)
+	err := p.validator.ValidateTx(tx, false, false)
 	if err != nil {
 		log.Debug("checkTxValid", "Validate fail, reqId", tx.RequestHash(), "tx", tx.Hash(), "err:", err.Error())
 	}
@@ -503,7 +503,7 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 			return true
 		}
 	}
-	log.Debug("msgsCompare,msg is not equal", "msg1", msg1.Payload, "msg2", msg2.Payload) //todo del
+	log.Debugf("msgsCompare,msg is not equal, msg1[%v],msg2[%v]", msg1.Payload, msg2.Payload) //todo del
 	return false
 }
 
