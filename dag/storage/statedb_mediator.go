@@ -24,7 +24,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -32,7 +31,7 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.CONTRACT_STATE_PREFIX, syscontract.DepositContractAddress.Str()...)
+	key := append(constants.CONTRACT_STATE_PREFIX, syscontract.DepositContractAddress.Bytes()...)
 	key = append(key, string(constants.MEDIATOR_INFO_PREFIX)+address.Str()...)
 
 	log.Debugf("mediatorKey %v", string(key))
@@ -40,16 +39,15 @@ func mediatorKey(address common.Address) []byte {
 	return key
 }
 
-func StoreMediator(db ptndb.Database, med *core.Mediator) error {
+func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
 	mi := modules.MediatorToInfo(med)
-
-	return StoreMediatorInfo(db, med.Address, mi)
+	return statedb.StoreMediatorInfo(med.Address, mi)
 }
 
-func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.MediatorInfo) error {
+func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
 	log.Debugf("Store Mediator Info %v:", mi.AddStr)
 
-	err := storeToJson(db, mediatorKey(add), mi)
+	err := storeToJson(statedb.db, mediatorKey(add), mi)
 	if err != nil {
 		log.Debugf("Store mediator error:%v", err.Error())
 		return err
@@ -58,8 +56,8 @@ func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.Mediat
 	return nil
 }
 
-func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*modules.MediatorInfo, error) {
-	data, err := db.Get(mediatorKey(address))
+func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
+	data, err := statedb.db.Get(mediatorKey(address))
 	if err != nil {
 		log.Debugf("Retrieve mediator error: %v", err.Error())
 		return nil, err
@@ -92,8 +90,8 @@ func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*modules.M
 	return mi, nil
 }
 
-func RetrieveMediator(db ptndb.Database, address common.Address) (*core.Mediator, error) {
-	mi, err := RetrieveMediatorInfo(db, address)
+func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
+	mi, err := statedb.RetrieveMediatorInfo( address)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -148,7 +146,7 @@ func (statedb *StateDb) LookupMediatorInfo() []*modules.MediatorInfo {
 			continue
 		}
 
-		med, err := RetrieveMediatorInfo(statedb.db, add)
+		med, err := statedb.RetrieveMediatorInfo(add)
 		if err != nil {
 			continue
 		}

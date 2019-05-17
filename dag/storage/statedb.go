@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -108,21 +107,6 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 
 // ######################### GET IMPL END ###########################
 
-func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
-	return StoreMediator(statedb.db, med)
-}
-
-func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
-	return StoreMediatorInfo(statedb.db, add, mi)
-}
-
-func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
-	return RetrieveMediatorInfo(statedb.db, address)
-}
-
-func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
-	return RetrieveMediator(statedb.db, address)
-}
 
 func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
