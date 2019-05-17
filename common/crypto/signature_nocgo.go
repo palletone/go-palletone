@@ -21,9 +21,10 @@ import (
 	"crypto/elliptic"
 	"errors"
 	"fmt"
-	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/common/log"
+	"math/big"
 )
 
 /*
@@ -55,7 +56,7 @@ func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
 // be aware that the given hash cannot be chosen by an adversery. Common
 // solution is to hash any input before calculating the signature.
 //
-// The produced signature is in the [R || S || V] format where V is 0 or 1.
+// The produced signature is in the [R || S ] .
 func Sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
 	if len(hash) != 32 {
 		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))
@@ -63,36 +64,48 @@ func Sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
 	if prv.Curve != btcec.S256() {
 		return nil, fmt.Errorf("private key curve is not secp256k1")
 	}
-	sig, err := btcec.SignCompact(btcec.S256(), (*btcec.PrivateKey)(prv), hash, false)
-	if err != nil {
-		return nil, err
-	}
-	// Convert to PalletOne signature format with 'recovery id' v at the end.
-	v := sig[0] - 27
-	copy(sig, sig[1:])
-	sig[64] = v
-	return sig[:64], nil
+	//sig, err := btcec.SignCompact(btcec.S256(), (*btcec.PrivateKey)(prv), hash, false)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//// Convert to PalletOne signature format with 'recovery id' v at the end.
+	//v := sig[0] - 27
+	//copy(sig, sig[1:])
+	//sig[64] = v
+	//return sig[:64], nil
+	key := (*btcec.PrivateKey)(prv)
+	sign, _ := key.Sign(hash)
+	return sign.Serialize(), nil
 }
 
 // VerifySignature checks that the given public key created signature over hash.
 // The public key should be in compressed (33 bytes) or uncompressed (65 bytes) format.
 // The signature should have the 64 byte [R || S] format.
 func VerifySignature(pubkey, hash, signature []byte) bool {
-	if len(signature) != 64 {
-		return false
-	}
-	sig := &btcec.Signature{R: new(big.Int).SetBytes(signature[:32]), S: new(big.Int).SetBytes(signature[32:])}
+
 	key, err := btcec.ParsePubKey(pubkey, btcec.S256())
 	if err != nil {
-		fmt.Println("parsePubKey error:", err)
+		log.Info("parsePubKey error:" + err.Error())
 		return false
 	}
-	// Reject malleable signatures. libsecp256k1 does this check but btcec doesn't.
-	if sig.S.Cmp(secp256k1_halfN) > 0 {
-		fmt.Println("sig.S.Cmp > 0")
-		return false
+	var sig *btcec.Signature
+	if len(signature) == 64 { // R||S
+		sig = &btcec.Signature{R: new(big.Int).SetBytes(signature[:32]), S: new(big.Int).SetBytes(signature[32:])}
+	} else {
+		sig, err = btcec.ParseSignature(signature, S256())
+		if err != nil {
+			log.Info("ParseSignature error:" + err.Error())
+			return false
+		}
 	}
 	return sig.Verify(hash, key)
+	//
+	//// Reject malleable signatures. libsecp256k1 does this check but btcec doesn't.
+	//if sig.S.Cmp(secp256k1_halfN) > 0 {
+	//	fmt.Println("sig.S.Cmp > 0")
+	//	return false
+	//}
+	//return sig.Verify(hash, key)
 }
 
 // DecompressPubkey parses a public key in the 33-byte compressed format.
