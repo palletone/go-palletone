@@ -92,8 +92,8 @@ func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.Contrac
 }
 
 func getContractStateKey(id []byte, field string) []byte {
-	contractAddress := common.NewAddress(id, common.ContractHash)
-	key := append(constants.CONTRACT_STATE_PREFIX, contractAddress.Str()...)
+	// contractAddress := common.NewAddress(id, common.ContractHash)
+	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	return append(key, field...)
 }
 
@@ -138,9 +138,10 @@ func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, v
 
 func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
-	contractAddress := common.NewAddress(id, common.ContractHash)
-	log.Debugf("save contract(%v) StateVersion: %v", contractAddress.Str(), version.String())
-
+	log.DebugDynamic(func() string {
+		contractAddress := common.NewAddress(id, common.ContractHash)
+		return fmt.Sprintf("save contract(%v) StateVersion: %v", contractAddress.Str(), version.String())
+	})
 	for _, write := range wset {
 		key := getContractStateKey(id, write.Key)
 		log.Debugf("ContractState key: %v", string(key))
@@ -155,6 +156,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 	}
 	err := batch.Write()
 	if err != nil {
+		contractAddress := common.NewAddress(id, common.ContractHash)
 		log.Errorf("batch write contract(%v) state error:%s", contractAddress.Str(), err)
 		return err
 	}
