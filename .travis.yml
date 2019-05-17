@@ -37,7 +37,7 @@ after_success:
         -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
         --key /tmp/sftp_rsa
         --ftp-port -
-        ftp://${YANGYU}:${PASSWORD}@39.105.191.26/pub/all.log
+        ftp://${USER}:${PASSWORD}@39.105.191.26/pub/all.log
 
 after_failure:
     - killall gptn
@@ -47,7 +47,7 @@ after_failure:
     - curl --ftp-create-dirs
         -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
         --key /tmp/sftp_rsa
-        ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy/all.log
+        ftp://${USER}:${PASSWORD}@39.105.191.26/pub/all.log
 
 before_install:
     - go get github.com/mattn/goveralls
