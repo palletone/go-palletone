@@ -51,6 +51,8 @@ after_success:
     # upload digital identity log and report
     - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
     - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
+    # echo ftp address
+    - echo "Logs in ftp server is ftp://98.142.130.141/pub"
 
 after_failure:
     - killall gptns
@@ -67,6 +69,8 @@ after_failure:
     # upload digital identity log and report
     - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
     - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
+    # echo ftp address
+    - echo "Logs in ftp server is ftp://98.142.130.141/pub"
 
 before_install:
     - go get github.com/mattn/goveralls
@@ -99,6 +103,7 @@ deploy:
 #        branch: certbdd
 
 notifications:
+#    email: elva1087penny@163.com
     email: 602554102@qq.com
     email:
         recipients:
