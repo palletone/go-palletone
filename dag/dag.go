@@ -97,12 +97,12 @@ func (d *Dag) IsEmpty() bool {
 }
 
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
-	return d.Memdag.GetLastMainchainUnit(token)
+	return d.Memdag.GetLastMainchainUnit()
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
-	main_token := dagconfig.DagConfig.GetGasToken()
-	return d.Memdag.GetLastMainchainUnit(main_token)
+	//main_token := dagconfig.DagConfig.GetGasToken()
+	return d.Memdag.GetLastMainchainUnit()
 }
 
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
@@ -119,7 +119,7 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
-	curUnit := d.Memdag.GetLastMainchainUnit(assetId)
+	curUnit := d.Memdag.GetLastMainchainUnit()
 
 	return curUnit
 }
@@ -491,7 +491,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	if !dag.IsHeaderExist(hash) {
 		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
 			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
-		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
+		newestUnit := dag.Memdag.GetLastMainchainUnit()
 		if nil != newestUnit {
 			// todo 待删除 处理临时prop没有回滚的问题
 			dgp := dag.GetDynGlobalProp()
@@ -1204,8 +1204,19 @@ func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 //根据资产Id返回所有链的header。
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 	// step1: get all AssetId
-
-	return []*modules.Header{}, nil
+	partitions, _ := d.unstableStateRep.GetPartitionChains()
+	leafs := []*modules.Header{}
+	for _, partition := range partitions {
+		tokenId := partition.GasToken
+		pMemdag, ok := d.PartitionMemDag[tokenId]
+		if ok {
+			unit := pMemdag.GetLastMainchainUnit()
+			leafs = append(leafs, unit.UnitHeader)
+		} else {
+			log.Warnf("Token[%s] is a patition, but not in dag.PartitionMemDag", tokenId.String())
+		}
+	}
+	return leafs, nil
 }
 
 func (d *Dag) UpdateSysParams() error {
