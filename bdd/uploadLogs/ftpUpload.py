@@ -8,7 +8,7 @@ import sys
 logPath = "/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs"
 os.chdir(logPath)
 # login
-child = pexpect.spawnu("ftp 39.105.191.26")
+child = pexpect.spawnu("ftp 98.142.130.141")
 child.logfile = sys.stdout
 print child.after
 child.expect(u'(?i)Name.*.')

@@ -17,7 +17,7 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
-    - ls /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/
+#    - ls /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/
     - ls /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log
     - mkdir ../logs
 #    - ./deposit_test.sh 4 > ../logs/deposit_test.log
