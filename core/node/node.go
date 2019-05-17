@@ -231,6 +231,7 @@ func (n *Node) Start() error {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 		corss.Protocols = append(corss.Protocols, service.CorsProtocols()...)
 	}
+	log.Debug("Node Start", "len(running.Protocols)", len(running.Protocols), "len(corss.Protocols)", len(corss.Protocols))
 
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)

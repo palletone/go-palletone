@@ -70,7 +70,6 @@ type PalletOne struct {
 	txPool          txspool.ITxPool
 	protocolManager *ProtocolManager
 	lesServer       LesServer
-	corsServer      LesServer
 
 	eventMux       *event.TypeMux
 	engine         core.ConsensusEngine
@@ -95,14 +94,20 @@ type PalletOne struct {
 	// append by Albert·Gou
 	mediatorPlugin    *mp.MediatorPlugin
 	contractPorcessor *jury.Processor
+
+	//cors
+	corsServer LesServer
 }
 
 func (p *PalletOne) AddLesServer(ls LesServer) {
 	p.lesServer = ls
 }
 
-func (p *PalletOne) AddCorsServer(ls LesServer) {
-	p.corsServer = ls
+func (p *PalletOne) AddCorsServer(cs LesServer) *PalletOne {
+	p.corsServer = cs
+	log.Debug("PalletOne->AddCorsServer", "len(p.corsServer.CorsProtocols())", len(p.corsServer.CorsProtocols()))
+	log.Debug("PalletOne->AddCorsServer", "len(cs.CorsProtocols())", len(cs.CorsProtocols()))
+	return p
 }
 
 // New creates a new PalletOne object (including the
@@ -285,15 +290,23 @@ func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *PalletOne) Protocols() []p2p.Protocol {
-	if s.lesServer == nil && s.corsServer == nil {
+	if s.lesServer == nil {
 		return s.protocolManager.SubProtocols
 	}
 	protocols := append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
-	return append(protocols, s.corsServer.Protocols()...)
+	return protocols
+	//return append(protocols, s.corsServer.CorsProtocols()...)
 }
 
 func (s *PalletOne) CorsProtocols() []p2p.Protocol {
+	if s.corsServer != nil {
+		return s.corsServer.CorsProtocols()
+	}
 	return nil
+}
+
+func (s *PalletOne) CorsServer() LesServer {
+	return s.corsServer
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
