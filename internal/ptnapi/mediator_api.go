@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -55,10 +56,10 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorInfo, error) {
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetDeposit), []byte(addStr)}
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
 	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
@@ -66,7 +67,7 @@ func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorInfo, er
 		return nil, err
 	}
 
-	depositB := &modules.MediatorInfo{}
+	depositB := &deposit.DepositBalance{}
 	err = json.Unmarshal(rsp, depositB)
 	if err == nil {
 		return depositB, nil
@@ -227,6 +228,9 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	fee := a.Dag().CurrentFeeSchedule().MediatorCreateFee
 	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
@@ -235,7 +239,7 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
-		" , You can get the transaction hash with dag.getTxHashByReqId."
+		" , You can get the transaction hash with dag.getTxByReqId()."
 
 	return res, nil
 }
@@ -252,6 +256,9 @@ func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxEx
 	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
 		fee, nil, syscontract.DepositContractAddress, cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
@@ -260,7 +267,7 @@ func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxEx
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
-		" , You can get the transaction hash with dag.getTxHashByReqId."
+		" , You can get the transaction hash with dag.getTxByReqId()."
 
 	return res, nil
 }

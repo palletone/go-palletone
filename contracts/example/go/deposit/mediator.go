@@ -135,7 +135,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		log.Error("get candidate list: list is nil")
 		return shim.Error("get candidate list: list is nil")
 	}
-	if candidateList[invokeAddr.String()] {
+	if !candidateList[invokeAddr.String()] {
 		log.Error("node is not exist in the candidate list")
 		return shim.Error("node is not exist in the candidate list")
 	}
@@ -286,7 +286,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("agree list is nil")
 	}
 	//  判断是否已经通过了申请
-	if agreeList[invokeAddr.String()] {
+	if !agreeList[invokeAddr.String()] {
 		log.Error("node is not exist in the agree list,you should apply for it.")
 		return shim.Error("node is not exist in the agree list,you should apply for it.")
 	}
