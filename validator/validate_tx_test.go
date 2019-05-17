@@ -99,7 +99,7 @@ func signTx(tx *modules.Transaction, outPoint *modules.OutPoint) {
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		s, e := crypto.Sign(hash, privKey)
-		return s[0:64], e
+		return s, e
 	}
 	var hashtype uint32
 	hashtype = 1

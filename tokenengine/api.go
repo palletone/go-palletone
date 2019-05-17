@@ -330,9 +330,9 @@ func IsUnspendable(script []byte) bool {
 func MergeContractUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 	builder := txscript.NewScriptBuilder().AddOp(txscript.OP_FALSE)
 	for _, sign := range signs {
-		sign1 := make([]byte, len(sign))
+		sign1 := make([]byte, len(sign)+1)
 		copy(sign1, sign)
-		sign1[len(sign)-1] = 4 //SigHashRaw
+		sign1[len(sign)] = 4 //SigHashRaw
 		builder.AddData(sign1)
 	}
 	builder.AddData(redeemScript)

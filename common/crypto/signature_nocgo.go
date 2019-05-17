@@ -71,7 +71,7 @@ func Sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
 	v := sig[0] - 27
 	copy(sig, sig[1:])
 	sig[64] = v
-	return sig, nil
+	return sig[:64], nil
 }
 
 // VerifySignature checks that the given public key created signature over hash.

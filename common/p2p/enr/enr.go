@@ -248,7 +248,7 @@ func (r *Record) signAndEncode(privkey *ecdsa.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	sig = sig[:len(sig)-1] // remove v
+	//sig = sig[:len(sig)-1] // remove v
 
 	// Put signature in front.
 	r.signature, list[0] = sig, sig
