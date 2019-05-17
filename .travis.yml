@@ -37,11 +37,11 @@ script:
 after_success:
     - killall gptn
     - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
-    - curl --ftp-create-dirs
-        -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/log.html
-        --key /tmp/sftp_rsa
+#    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/log.html ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy/log.html -v
+    - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy/all.log -v
+#        --key /tmp/sftp_rsa
 #        --ftp-port -
-        ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy -v
+#        ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy -v
 
 after_failure:
     - killall gptns
