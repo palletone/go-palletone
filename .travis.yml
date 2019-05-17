@@ -37,7 +37,7 @@ after_success:
         -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
         --key /tmp/sftp_rsa
         --ftp-port -
-        ftp://${USER}:${PASSWORD}@39.105.191.26/pub/all.log
+        ftp://${USER}:${PASSWORD}@39.105.191.26:21/pub/all.log
 
 after_failure:
     - killall gptn
@@ -80,10 +80,10 @@ deploy:
 #        branch: certbdd
 
 notifications:
-    email: elva1087penny@163.com
+    email: 602554102@qq.com
     email:
         recipients:
-            - elva1087penny@163.com
+            - 602554102@qq.com
         on_success: always # default: change
         on_failure: always
 
