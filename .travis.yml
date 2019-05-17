@@ -25,18 +25,29 @@ script:
 #    - python -m robot.run -d ../logs -l createTrans.log.html ../testcase/createTrans
 #    - python -m robot.run -d ../logs -l ccinvoke.log.html ../testcase/ccinvoke
 #    - python -m robot.run -d ../logs -l DigitalIdentityCert.log.html ../DigitalIdentityCert
-
+env:
+    global:
+        - 'SFTP_KEY=[base64-encoded-rsa-key]'
 after_success:
     - killall gptn
     - cd ../uploadLogs
 #    - python ftpUpload.py
-    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy/all.log -v
+    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+    - curl --ftp-create-dirs
+        -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
+        --key /tmp/sftp_rsa
+        --ftp-port -
+        sftp://${YANGYU}:${PASSWORD}@39.105.191.26/pub/all.log
 
 after_failure:
     - killall gptn
     - cd ../uploadLogs
 #    - python ftpUpload.py
-    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log ftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy/all.log -v
+    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+    - curl --ftp-create-dirs
+        -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
+        --key /tmp/sftp_rsa
+        sftp://${YANGYU}:${PASSWORD}@98.142.130.141/yy/all.log
 
 before_install:
     - go get github.com/mattn/goveralls
