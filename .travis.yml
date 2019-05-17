@@ -5,6 +5,7 @@ language:
     - go
 go:
     - 1.10.8
+
 script:
     - go build ./cmd/gptn
     - make gptn
@@ -28,12 +29,14 @@ script:
 after_success:
     - killall gptn
     - cd ../uploadLogs
-    - python ftpUpload.py
+#    - python ftpUpload.py
+    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log ftp://${YANGYU}:${PASSWORD}/98.142.130.141/yy -v
 
 after_failure:
     - killall gptn
     - cd ../uploadLogs
-    - python ftpUpload.py
+#    - python ftpUpload.py
+    - curl -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log ftp://${YANGYU}:${PASSWORD}/98.142.130.141/yy -v
 
 before_install:
     - go get github.com/mattn/goveralls
