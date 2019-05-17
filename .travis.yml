@@ -36,8 +36,8 @@ after_success:
     - curl --ftp-create-dirs
         -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
         --key /tmp/sftp_rsa
-        --ftp-port -
-        ftp://${USER}:${PASSWORD}@39.105.191.26:21/pub/all.log
+#        --ftp-port -
+        ftp://${USER}:${PASSWORD}@39.105.191.26/pub/all.log
 
 after_failure:
     - killall gptn
