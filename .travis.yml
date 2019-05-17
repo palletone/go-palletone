@@ -13,6 +13,7 @@ env:
         - CCINVOKE_DIR=ccinvoke
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
         - FTP_SERVER_IP=98.142.130.141
+        - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
     - go build ./cmd/gptn
@@ -35,7 +36,8 @@ script:
 
 after_success:
     - killall gptn
-    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/log.html ftp://${USER}:${PASSWORD}@${FTP_SERVER_IP}/pub/${CREATE_TRANS_DIR}/log.html -v --ftp-port -
+    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+    - curl --ftp-create-dirs --key /tmp/sftp_rsa -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/log.html sftp://${USER}:${PASSWORD}@${FTP_SERVER_IP}/pub/${CREATE_TRANS_DIR}/log.html -v --ftp-port -
 
 after_failure:
     - killall gptns
