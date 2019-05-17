@@ -42,7 +42,7 @@ func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error)
 		quitSync:        quitSync,
 	}
 	pm.server = srv
-
+	log.Debug("NewCoresServer", "len(srv.protocolManager.SubProtocols)", srv.protocolManager.SubProtocols)
 	return srv, nil
 }
 

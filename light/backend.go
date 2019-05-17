@@ -209,7 +209,7 @@ func (s *LightPalletone) Protocols() []p2p.Protocol {
 }
 
 func (s *LightPalletone) CorsProtocols() []p2p.Protocol {
-	return nil
+	return s.corsProtocolManager.SubProtocols
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
@@ -218,7 +218,8 @@ func (s *LightPalletone) Start(srvr *p2p.Server, corss *p2p.Server) error {
 	//s.startBloomHandlers()
 	log.Debug("Light client mode is an experimental feature")
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.networkId)
-	s.protocolManager.Start(s.config.LightPeers, corss)
+	//s.protocolManager.Start(s.config.LightPeers, corss)
+	s.protocolManager.Start(3, corss)
 
 	s.txCh = make(chan modules.TxPreEvent, txChanSize)
 	s.txSub = s.txPool.SubscribeTxPreEvent(s.txCh)

@@ -95,6 +95,7 @@ type ProtocolManager struct {
 func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.AssetId,
 	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
+	log.Debug("Enter NewCorsProtocolManager")
 	manager := &ProtocolManager{
 		lightSync:   lightSync,
 		eventMux:    mux,
@@ -119,14 +120,19 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 			Length:  ProtocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
 				peer := manager.newPeer(int(version), NetworkId, p, rw)
-				select {
-				case manager.newPeerCh <- peer:
-					manager.wg.Add(1)
-					defer manager.wg.Done()
-					return manager.handle(peer)
-				case <-manager.quitSync:
-					return p2p.DiscQuitting
-				}
+				log.Debug("NewCorsProtocolManager Run", "peer.ID:", peer.ID())
+				manager.wg.Add(1)
+				defer manager.wg.Done()
+				return manager.handle(peer)
+				//select {
+				//case manager.newPeerCh <- peer:
+				//	log.Debug("NewCorsProtocolManager Run newPeerCh")
+				//	manager.wg.Add(1)
+				//	defer manager.wg.Done()
+				//	return manager.handle(peer)
+				//case <-manager.quitSync:
+				//	return p2p.DiscQuitting
+				//}
 			},
 			NodeInfo: func() interface{} {
 				return manager.NodeInfo(genesis.UnitHash)
@@ -153,7 +159,7 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 		//manager.peers.notify((*downloaderPeerNotify)(manager))
 		manager.fetcher = manager.newLightFetcher()
 	}
-
+	log.Debug("End NewCorsProtocolManager", "len(manager.SubProtocols)", len(manager.SubProtocols))
 	return manager, nil
 }
 
@@ -266,14 +272,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//	return p2p.DiscTooManyPeers
 	//}
 
-	log.Debug("Cors Palletone peer connected", "name", p.Name())
+	log.Debug("Enter Cors Palletone peer connected", "name", p.Name())
+	defer log.Debug("End Cors Palletone peer connected", "name", p.Name())
 
-	// Execute the LES handshake
-	//var (
-	//	head   = pm.dag.CurrentHeader(pm.assetId)
-	//	number = head.Number
-	//	//td     = pm.blockchain.GetTd(hash, number)
-	//)
+	// Execute the Cors handshake
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("Light PalletOne New", "get genesis err:", err)

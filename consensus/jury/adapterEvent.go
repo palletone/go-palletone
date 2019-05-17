@@ -33,8 +33,8 @@ import (
 func checkValid(reqEvt *AdapterRequestEvent) bool {
 	hash := crypto.Keccak256(reqEvt.ConsultData, reqEvt.Answer)
 	log.Debugf("sig: %s", common.Bytes2Hex(reqEvt.Sig))
-	sig := reqEvt.Sig[:len(reqEvt.Sig)-1] // remove recovery id
-	return crypto.VerifySignature(reqEvt.Pubkey, hash, sig)
+	// sig := reqEvt.Sig[:len(reqEvt.Sig)-1] // remove recovery id
+	return crypto.VerifySignature(reqEvt.Pubkey, hash, reqEvt.Sig)
 }
 func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstSave bool) {
 	p.locker.Lock()

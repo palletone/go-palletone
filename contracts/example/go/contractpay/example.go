@@ -83,9 +83,34 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	if function == "time" {
 		return t.time(stub, args)
 	}
+	if function == "put" {
+		return t.put(stub, args)
+	}
+	if function == "get" {
+		return t.get(stub, args)
+	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
+func (t *SimpleChaincode) put(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
+	stub.PutState("b", []byte("b"))
+	stub.PutState("a", []byte("a"))
+	stub.PutState("c", []byte("c"))
+	stub.PutState("a", []byte("aa"))
+	return shim.Success(nil)
+}
+func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	result, err := stub.GetContractAllState()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	str := ""
+	for key, v := range result {
+		str += fmt.Sprintf("Key:%s,Value:%#v", key, v)
+	}
+	return shim.Success([]byte(str))
+}
 func main() {
 	err := shim.Start(new(SimpleChaincode))
 	if err != nil {

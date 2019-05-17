@@ -173,8 +173,9 @@ func TestSignVerify(t *testing.T) {
 	//signB, _ := hexutil.Decode(sign)
 	signature, _ := Sign(hash, prvKey)
 	t.Log("Signature is: " + hexutil.Encode(signature))
+	t.Logf("Sign len:%d", len(signature))
 	pubKey := FromECDSAPub(&prvKey.PublicKey)
-	pass := VerifySignature(pubKey, hash, signature[0:64])
+	pass := VerifySignature(pubKey, hash, signature)
 	if pass {
 		t.Log("Pass")
 	} else {

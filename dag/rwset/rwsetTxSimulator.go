@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"runtime"
+	"sort"
 )
 
 type RwSetTxSimulator struct {
@@ -154,7 +155,7 @@ func (s *RwSetTxSimulator) DeleteState(ns string, key string) error {
 	return s.SetState(ns, key, nil)
 }
 
-func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]*KVWrite, error) {
+func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	var rd map[string]*KVRead
 	var wt map[string]*KVWrite
 
@@ -180,8 +181,32 @@ func (s *RwSetTxSimulator) GetRwData(ns string) (map[string]*KVRead, map[string]
 			}
 		}
 	}
-
-	return rd, wt, nil
+	//sort keys and convert map to slice
+	return convertReadMap2Slice(rd), convertWriteMap2Slice(wt), nil
+}
+func convertReadMap2Slice(rd map[string]*KVRead) []*KVRead {
+	keys := []string{}
+	for k, _ := range rd {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	result := []*KVRead{}
+	for _, key := range keys {
+		result = append(result, rd[key])
+	}
+	return result
+}
+func convertWriteMap2Slice(rd map[string]*KVWrite) []*KVWrite {
+	keys := []string{}
+	for k, _ := range rd {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	result := []*KVWrite{}
+	for _, key := range keys {
+		result = append(result, rd[key])
+	}
+	return result
 }
 
 //get all dag

@@ -29,10 +29,11 @@ import (
 // NoopService is a trivial implementation of the Service interface.
 type NoopService struct{}
 
-func (s *NoopService) Protocols() []p2p.Protocol { return nil }
-func (s *NoopService) APIs() []rpc.API           { return nil }
-func (s *NoopService) Start(*p2p.Server) error   { return nil }
-func (s *NoopService) Stop() error               { return nil }
+func (s *NoopService) Protocols() []p2p.Protocol            { return nil }
+func (s *NoopService) CorsProtocols() []p2p.Protocol        { return nil }
+func (s *NoopService) APIs() []rpc.API                      { return nil }
+func (s *NoopService) Start(*p2p.Server, *p2p.Server) error { return nil }
+func (s *NoopService) Stop() error                          { return nil }
 
 func NewNoopService(*ServiceContext) (Service, error) { return new(NoopService), nil }
 
@@ -68,11 +69,15 @@ func (s *InstrumentedService) Protocols() []p2p.Protocol {
 	return s.protocols
 }
 
+func (s *InstrumentedService) CorsProtocols() []p2p.Protocol {
+	return nil
+}
+
 func (s *InstrumentedService) APIs() []rpc.API {
 	return s.apis
 }
 
-func (s *InstrumentedService) Start(server *p2p.Server) error {
+func (s *InstrumentedService) Start(server *p2p.Server, corss *p2p.Server) error {
 	if s.startHook != nil {
 		s.startHook(server)
 	}
