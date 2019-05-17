@@ -31,13 +31,13 @@ env:
 after_success:
     - killall gptn
     - cd ../uploadLogs
-#    - python ftpUpload.py
-    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
-    - curl --ftp-create-dirs
-        -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
-        --key /tmp/sftp_rsa
+    - python ftpUpload.py
+#    - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+#    - curl --ftp-create-dirs
+#        -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
+#        --key /tmp/sftp_rsa
 #        --ftp-port -
-        ftp://${USER}:${PASSWORD}@39.105.191.26/pub/all.log
+#        ftp://${USER}:${PASSWORD}@39.105.191.26/pub/all.log
 
 after_failure:
     - killall gptn

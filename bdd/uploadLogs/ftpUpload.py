@@ -19,7 +19,7 @@ child.sendline("123456")
 print child.after
 # login succeed
 child.expect(u"ftp>")
-child.sendline("cd pub")
+child.sendline("cd bddlogs")
 print child.after
 # upload logs
 child.expect(u"ftp>")
