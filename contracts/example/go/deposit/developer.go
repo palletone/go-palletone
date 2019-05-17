@@ -186,7 +186,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr comm
 		//判断是否已到期
 		if endTime-startTime >= day {
 			//退出全部，即删除cashback，利息计算好了
-			err = cashbackAllDeposit(Developer, stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
+			err = cashbackAllDeposit(DeveloperList, stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
 			if err != nil {
 				return err
 			}
@@ -197,7 +197,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr comm
 	} else {
 		//TODO 退出一部分，且退出该部分金额后还在列表中，还没有计算利息
 		//d.addListForCashback(Developer, stub, cashbackAddr, invokeTokens)
-		err = cashbackSomeDeposit(Developer, stub, cashbackAddr, cashbackValue, balance)
+		err = cashbackSomeDeposit(DeveloperList, stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
 			log.Error("CashbackSomeDeposit err:", "error", err)
 			return err

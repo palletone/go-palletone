@@ -59,6 +59,8 @@ const (
 	HandleForApplyBecomeMediator    = "HandleForApplyBecomeMediator"
 	IsInMediatorQuitList            = "IsInMediatorQuitList"
 	IsInCashbackList                = "IsInCashbackList"
+	IsInJuryCandidateList           = "IsInJuryCandidateList"
+	IsInDeveloperCandidateList      = "IsInDeveloperCandidateList"
 )
 
 //申请提保证金

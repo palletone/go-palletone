@@ -195,6 +195,7 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 			}
 			if idx == msgIdx && !isRequestMsg {
 				txCopy = tx.GetRequestTx()
+				log.Debugf("msgIdx %d, GetRequestTx 2", msgIdx)
 			}
 		}
 	}
@@ -329,9 +330,9 @@ func IsUnspendable(script []byte) bool {
 func MergeContractUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 	builder := txscript.NewScriptBuilder().AddOp(txscript.OP_FALSE)
 	for _, sign := range signs {
-		sign1 := make([]byte, len(sign)+1)
+		sign1 := make([]byte, len(sign))
 		copy(sign1, sign)
-		sign1[len(sign)] = 4 //SigHashRaw
+		sign1[len(sign)-1] = 4 //SigHashRaw
 		builder.AddData(sign1)
 	}
 	builder.AddData(redeemScript)

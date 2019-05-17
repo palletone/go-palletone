@@ -612,6 +612,19 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 	return result
 }
 
+func (tx *Transaction) GetResultTx() *Transaction {
+	txCopy := tx.Clone()
+	result := &Transaction{}
+	result.CertId = tx.CertId
+	for _, msg := range txCopy.TxMessages {
+		if msg.App == APP_SIGNATURE {
+			continue //移除SignaturePayload
+		}
+		result.TxMessages = append(result.TxMessages, msg)
+	}
+	return result
+}
+
 //Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
 	for idx, msg := range tx.TxMessages {

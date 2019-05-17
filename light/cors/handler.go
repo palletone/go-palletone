@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package les implements the Light Palletone Subprotocol.
+// Package les implements the Cors Palletone Subprotocol.
 package cors
 
 import (
@@ -86,6 +86,8 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg *sync.WaitGroup
+
+	ptnmainnode bool
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -111,14 +113,12 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 	protocolVersions := ClientProtocolVersions
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(protocolVersions))
 	for _, version := range protocolVersions {
-		// Compatible, initialize the sub-protocol
-		//version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    "cors",
 			Version: version,
 			Length:  ProtocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-				peer := manager.newPeer(int(version), 0, p, rw)
+				peer := manager.newPeer(int(version), NetworkId, p, rw)
 				select {
 				case manager.newPeerCh <- peer:
 					manager.wg.Add(1)
@@ -195,7 +195,7 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 		if p == nil {
 			continue
 		}
-		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
+		log.Debug("Cors Palletone", "BroadcastLightHeader announceType", p.announceType)
 		switch p.announceType {
 		case announceTypeNone:
 			select {
@@ -251,7 +251,7 @@ func (pm *ProtocolManager) Stop() {
 	// Wait for any process action
 	pm.wg.Wait()
 
-	log.Info("Light Palletone protocol stopped")
+	log.Info("Cors Palletone protocol stopped")
 }
 
 func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -262,11 +262,11 @@ func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgRea
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
-	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		return p2p.DiscTooManyPeers
-	}
+	//if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+	//	return p2p.DiscTooManyPeers
+	//}
 
-	log.Debug("Light Palletone peer connected", "name", p.Name())
+	log.Debug("Cors Palletone peer connected", "name", p.Name())
 
 	// Execute the LES handshake
 	//var (
@@ -288,8 +288,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if err := p.Handshake(number, genesis.Hash(), headhash, pm.server); err != nil {
-		log.Debug("Light Palletone handshake failed", "err", err)
+	if err := p.Handshake(number, genesis.Hash(), headhash, pm.assetId); err != nil {
+		log.Debug("Cors Palletone handshake failed", "err", err)
 		return err
 	}
 	//if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
@@ -297,7 +297,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//}
 	// Register the peer locally
 	if err := pm.peers.Register(p); err != nil {
-		log.Error("Light Palletone peer registration failed", "err", err)
+		log.Error("Cors Palletone peer registration failed", "err", err)
 		return err
 	}
 	defer func() {
@@ -324,10 +324,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
-				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
+				log.Debug("Cors Palletone ProtocolManager->handle", "announce", announce)
 				//data, err := json.Marshal(announce.Header)
 				//if err != nil {
-				//	log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
+				//	log.Error("Cors Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
 				//} else {
 				//	p.headInfo = &announce
 				//	if !p.fullnode {
@@ -359,7 +359,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	if err != nil {
 		return err
 	}
-	log.Trace("Light Palletone message arrived", "code", msg.Code, "bytes", msg.Size)
+	log.Trace("Cors Palletone message arrived", "code", msg.Code, "bytes", msg.Size)
 
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)

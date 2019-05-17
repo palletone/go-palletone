@@ -2,8 +2,10 @@ package cors
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
 )
@@ -25,20 +27,8 @@ func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error)
 		return nil, err
 	}
 	//TODO version network gastoken genesis by
-	//type MainChain struct {
-	//	GenesisHash common.Hash
-	//	Status      byte //Active:1 ,Terminated:0,Suspended:2
-	//	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
-	//	GasToken    AssetId
-	//	NetworkId   uint64
-	//	Version     int
-	//	Peers       []string // pnode://publickey@IP:port format string
-	//}
 
-	//pm, err := NewCorsProtocolManager(true, config.NetworkId, gasToken,
-	//	ptn.Dag(), ptn.EventMux(), genesis, make(chan struct{}))
-
-	pm, err := NewCorsProtocolManager(true, 5, gasToken,
+	pm, err := NewCorsProtocolManager(true, config.NetworkId, gasToken,
 		ptn.Dag(), ptn.EventMux(), genesis, make(chan struct{}))
 
 	if err != nil {
@@ -139,4 +129,47 @@ func (pm *ProtocolManager) blockLoop() {
 			}
 		}
 	}()
+}
+
+func (pm *ProtocolManager) AddCorsPeer(url string) (bool, error) {
+	// Make sure the server is running, fail otherwise
+	if pm.server.corss == nil {
+		return false, nil
+	}
+	// Try to add the url as a static peer and return
+	node, err := discover.ParseNode(url)
+	if err != nil {
+		return false, fmt.Errorf("invalid pnode: %v", err)
+	}
+	pm.server.corss.AddPeer(node)
+	return true, nil
+}
+
+/*
+type MainChain struct {
+	GenesisHash common.Hash
+	Status      byte //Active:1 ,Terminated:0,Suspended:2
+	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
+	GasToken    AssetId
+	Peers       []string // IP:port format string
+}
+*/
+func (pm *ProtocolManager) GetMainChain() (*modules.MainChain, error) {
+	mainchain := &modules.MainChain{}
+	mainchain.NetworkId = 1
+	mainchain.Version = 1
+	mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
+	mainchain.GasToken = modules.PTNCOIN
+	return mainchain, nil
+}
+
+func (pm *ProtocolManager) GetPartitionChain() ([]*modules.PartitionChain, error) {
+	mainchains := []*modules.PartitionChain{}
+	mainchain := &modules.PartitionChain{}
+	mainchain.NetworkId = 1
+	mainchain.Version = 1
+	mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
+	mainchain.GasToken = modules.PTNCOIN
+	mainchains = append(mainchains, mainchain)
+	return mainchains, nil
 }
