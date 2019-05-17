@@ -41,19 +41,20 @@ type IStateRepository interface {
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error)
+
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
-
 	GetAccountBalance(address common.Address) uint64
+	LookupAccount() map[common.Address]*modules.AccountInfo
+
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
 	GetMediators() map[common.Address]bool
-	GetApprovedMediatorList() (map[string]bool, error)
-	IsApprovedMediator(address common.Address) bool
+	LookupMediatorInfo() []*modules.MediatorInfo
 	IsMediator(address common.Address) bool
-	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
+
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
@@ -142,13 +143,13 @@ func (rep *StateRepository) GetMediators() map[common.Address]bool {
 	return rep.statedb.GetMediators()
 }
 
-func (rep *StateRepository) GetApprovedMediatorList() (map[string]bool, error) {
-	return rep.statedb.GetApprovedMediatorList()
-}
-
-func (rep *StateRepository) IsApprovedMediator(address common.Address) bool {
-	return rep.statedb.IsApprovedMediator(address)
-}
+//func (rep *StateRepository) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
+//	return rep.statedb.GetApprovedMediatorList()
+//}
+//
+//func (rep *StateRepository) IsApprovedMediator(address common.Address) bool {
+//	return rep.statedb.IsApprovedMediator(address)
+//}
 
 func (rep *StateRepository) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
 	version *modules.StateVersion) error {
@@ -169,6 +170,10 @@ func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountI
 
 func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return rep.statedb.RetrieveMediatorInfo(address)
+}
+
+func (rep *StateRepository) LookupMediatorInfo() []*modules.MediatorInfo {
+	return rep.statedb.LookupMediatorInfo()
 }
 
 func (rep *StateRepository) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {

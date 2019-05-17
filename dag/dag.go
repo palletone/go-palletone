@@ -97,12 +97,12 @@ func (d *Dag) IsEmpty() bool {
 }
 
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
-	return d.Memdag.GetLastMainchainUnit(token)
+	return d.Memdag.GetLastMainchainUnit()
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
-	main_token := dagconfig.DagConfig.GetGasToken()
-	return d.Memdag.GetLastMainchainUnit(main_token)
+	//main_token := dagconfig.DagConfig.GetGasToken()
+	return d.Memdag.GetLastMainchainUnit()
 }
 
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
@@ -119,7 +119,7 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
-	curUnit := d.Memdag.GetLastMainchainUnit(assetId)
+	curUnit := d.Memdag.GetLastMainchainUnit()
 
 	return curUnit
 }
@@ -445,7 +445,39 @@ To get account token list and tokens's information
 //	// })
 //	return d.utxos_cache
 //}
+func (d *Dag) refreshPartitionMemDag() {
+	db := d.Db
+	unitRep := d.stableUnitRep
+	propRep := d.propRep
+	partitions, err := d.unstableStateRep.GetPartitionChains()
+	if err != nil {
+		log.Warnf("GetPartitionChains error:%s", err.Error())
+		return
+	}
+	//Init partition memdag
+	if d.PartitionMemDag == nil {
+		partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
 
+		for _, partition := range partitions {
+			ptoken := partition.GasToken
+			log.Debugf("Init partition mem dag for:%s", ptoken.String())
+			partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)
+		}
+
+		d.PartitionMemDag = partitionMemdag
+		return
+	}
+	//Exist! update
+	for _, partition := range partitions {
+		ptoken := partition.GasToken
+		_, ok := d.PartitionMemDag[ptoken]
+		if !ok {
+			log.Debugf("Init partition mem dag for:%s", ptoken.String())
+			d.PartitionMemDag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)
+		}
+	}
+
+}
 func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
@@ -464,10 +496,6 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	unstableChain := memunit.NewMemDag(gasToken, false, db, unitRep, propRep)
 	tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
-	partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
-	for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
-		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep)
-	}
 
 	dag := &Dag{
 		//Cache:            freecache.NewCache(200 * 1024 * 1024),
@@ -483,7 +511,6 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		ChainHeadFeed:    new(event.Feed),
 		Mutex:            *mutex,
 		Memdag:           unstableChain,
-		PartitionMemDag:  partitionMemdag,
 	}
 
 	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
@@ -491,7 +518,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	if !dag.IsHeaderExist(hash) {
 		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
 			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
-		newestUnit := dag.Memdag.GetLastMainchainUnit(gasToken)
+		newestUnit := dag.Memdag.GetLastMainchainUnit()
 		if nil != newestUnit {
 			// todo 待删除 处理临时prop没有回滚的问题
 			dgp := dag.GetDynGlobalProp()
@@ -507,7 +534,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 			dag.propRep.SetNewestUnit(newestUnit.Header())
 		}
 	}
-
+	dag.refreshPartitionMemDag()
 	return dag, nil
 }
 
@@ -767,7 +794,7 @@ func (d *Dag) RefreshSysParameters() {
 	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
-
+	d.refreshPartitionMemDag()
 }
 
 //func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
@@ -818,6 +845,9 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 		memdag = d.Memdag
 	} else {
 		memdag = d.PartitionMemDag[asset]
+		if memdag == nil {
+			return errors.New("Don't have partition mem dag for token:" + asset.String())
+		}
 	}
 	if err := memdag.AddUnit(unit, nil); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
@@ -1204,8 +1234,19 @@ func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 //根据资产Id返回所有链的header。
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 	// step1: get all AssetId
-
-	return []*modules.Header{}, nil
+	partitions, _ := d.unstableStateRep.GetPartitionChains()
+	leafs := []*modules.Header{}
+	for _, partition := range partitions {
+		tokenId := partition.GasToken
+		pMemdag, ok := d.PartitionMemDag[tokenId]
+		if ok {
+			unit := pMemdag.GetLastMainchainUnit()
+			leafs = append(leafs, unit.UnitHeader)
+		} else {
+			log.Warnf("Token[%s] is a patition, but not in dag.PartitionMemDag", tokenId.String())
+		}
+	}
+	return leafs, nil
 }
 
 func (d *Dag) UpdateSysParams() error {

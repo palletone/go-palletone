@@ -22,7 +22,6 @@ package dag
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -137,7 +136,7 @@ func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	if !d.IsActiveMediator(add) {
-		log.Debug(fmt.Sprintf("%v is not active mediator!", add.Str()))
+		log.Debugf("%v is not active mediator!", add.Str())
 		return nil
 	}
 
@@ -147,9 +146,9 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
 	med, err := d.unstableStateRep.RetrieveMediator(add)
 	if err != nil {
-		log.Error("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
 		return nil
 	}
+
 	return med
 }
 
@@ -200,12 +199,8 @@ func (dag *Dag) GetMediators() map[common.Address]bool {
 	return dag.unstableStateRep.GetMediators()
 }
 
-func (dag *Dag) GetApprovedMediatorList() (map[string]bool, error) {
-	return dag.unstableStateRep.GetApprovedMediatorList()
-}
-
-func (dag *Dag) IsApprovedMediator(address common.Address) bool {
-	return dag.unstableStateRep.IsApprovedMediator(address)
+func (dag *Dag) LookupMediatorInfo() []*modules.MediatorInfo {
+	return dag.unstableStateRep.LookupMediatorInfo()
 }
 
 func (dag *Dag) IsMediator(address common.Address) bool {
@@ -252,14 +247,14 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	return nodes
 }
 
-func (d *Dag) GetAccountVotedMediators(addr common.Address) []common.Address {
+func (d *Dag) GetAccountVotedMediators(addr common.Address) map[string]bool {
 	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTED_MEDIATORS)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil
 	}
 
-	votedMediators := make([]common.Address, 0)
+	votedMediators := make(map[string]bool)
 	err = json.Unmarshal(data.Value, &votedMediators)
 	if err != nil {
 		log.Debugf(err.Error())

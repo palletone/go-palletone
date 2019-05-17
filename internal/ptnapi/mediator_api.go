@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/contracts/example/go/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -55,10 +56,10 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorInfo, error) {
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetDeposit), []byte(addStr)}
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
 	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
@@ -66,7 +67,7 @@ func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorInfo, er
 		return nil, err
 	}
 
-	depositB := &modules.MediatorInfo{}
+	depositB := &deposit.DepositBalance{}
 	err = json.Unmarshal(rsp, depositB)
 	if err == nil {
 		return depositB, nil
@@ -109,6 +110,10 @@ func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 	return mediatorVoteCount
 }
 
+func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
+	return a.Dag().LookupMediatorInfo()
+}
+
 func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.Dag().ActiveMediators()
@@ -129,8 +134,8 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	voted := a.Dag().GetAccountVotedMediators(addr)
 	mediators := make([]string, 0, len(voted))
 
-	for _, med := range voted {
-		mediators = append(mediators, med.Str())
+	for med, _ := range voted {
+		mediators = append(mediators, med)
 	}
 
 	return mediators, nil
@@ -149,9 +154,9 @@ func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error
 		return nil, err
 	}
 
-	if !a.Dag().IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator", mediator.Str())
-	}
+	//if !a.Dag().IsMediator(mediator) {
+	//	return nil, fmt.Errorf("%v is not mediator", mediator.Str())
+	//}
 
 	return a.Dag().GetMediatorInfo(mediator), nil
 }
@@ -208,7 +213,6 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 
 	addr := args.FeePayer()
 	// 判断是否已经是mediator
-	// todo
 	if a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
@@ -224,6 +228,9 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	fee := a.Dag().CurrentFeeSchedule().MediatorCreateFee
 	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
@@ -232,7 +239,7 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
-		" , You can get the transaction hash with dag.getTxHashByReqId."
+		" , You can get the transaction hash with dag.getTxByReqId()."
 
 	return res, nil
 }
@@ -249,6 +256,9 @@ func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxEx
 	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
 		fee, nil, syscontract.DepositContractAddress, cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
@@ -257,64 +267,7 @@ func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxEx
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
-		" , You can get the transaction hash with dag.getTxHashByReqId."
-
-	return res, nil
-}
-
-func (a *PrivateMediatorAPI) Create(args MediatorCreateArgs) (*TxExecuteResult, error) {
-	// 参数补全
-	//initPrivKey := args.setDefaults(a.srvr.Self())
-
-	// 参数验证
-	err := args.Validate()
-	if err != nil {
-		return nil, err
-	}
-
-	// 判断本节点是否同步完成，数据是否最新
-	//if !a.dag.IsSynced() {
-	//	return nil, fmt.Errorf("the data of this node is not synced, " +
-	//		"and mediator cannot be created at present")
-	//}
-
-	addr := args.FeePayer()
-	// 判断是否已经是mediator
-	if a.Dag().IsMediator(addr) {
-		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
-	}
-
-	// 判断是否申请通过
-	//if !dagcom.MediatorCreateEvaluate(args.MediatorCreateOperation) {
-	//	return nil, fmt.Errorf("has not successfully paid the deposit")
-	//}
-
-	// 1. 创建交易
-	tx, fee, err := a.Dag().GenMediatorCreateTx(addr, args.MediatorCreateOperation, a.TxPool())
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. 签名和发送交易
-	err = a.SignAndSendTransaction(addr, tx)
-	if err != nil {
-		return nil, err
-	}
-
-	// 5. 返回执行结果
-	res := &TxExecuteResult{}
-	// todo
-	//res.TxContent = fmt.Sprintf("Create mediator %v with initPubKey : %v , node: %v , url: %v",
-	//	args.AddStr, args.InitPubKey, args.Node, args.Url)
-	res.TxHash = tx.Hash()
-	res.TxSize = tx.Size().TerminalString()
-	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = DefaultResult
-
-	//if initPrivKey != "" {
-	//	res.Tip = "Your initial private key is: " + initPrivKey + " , initial public key is: " +
-	//		args.InitPubKey + " , please keep in mind!"
-	//}
+		" , You can get the transaction hash with dag.getTxByReqId()."
 
 	return res, nil
 }
@@ -331,6 +284,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
 	//}
 
+	mp := make(map[string]bool)
 	for _, mediatorStr := range mediatorStrs {
 		mediator, err := common.StringToAddress(mediatorStr)
 		if err != nil {
@@ -341,10 +295,16 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 		if !a.Dag().IsMediator(mediator) {
 			return nil, fmt.Errorf("%v is not mediator", mediatorStr)
 		}
+
+		if mp[mediatorStr] {
+			return nil, fmt.Errorf("this mediator(%v) has already been voted", mediatorStr)
+		}
+
+		mp[mediatorStr] = true
 	}
 
 	// 1. 创建交易
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mediatorStrs, a.TxPool())
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp, a.TxPool())
 	if err != nil {
 		return nil, err
 	}

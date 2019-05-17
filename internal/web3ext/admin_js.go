@@ -90,8 +90,8 @@ web3._extend({
 			getter: 'admin_datadir'
 		}),
 		new web3._extend.Property({
-			name: 'corss',
-			getter: 'admin_corss'
+			name: 'corsInfo',
+			getter: 'admin_corsInfo'
 		}),
 	]
 });
