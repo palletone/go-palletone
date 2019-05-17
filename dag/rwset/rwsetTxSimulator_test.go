@@ -198,3 +198,19 @@ func mockTestUtxos(assid modules.AssetId) map[modules.OutPoint]*modules.Utxo {
 	result[*p2] = utxo2
 	return result
 }
+
+func TestConvertReadMap2Slice(t *testing.T) {
+	rd := make(map[string]*KVRead)
+	r1 := &KVRead{key: "bbb", value: []byte("bbb"), version: &modules.StateVersion{}}
+	r2 := &KVRead{key: "ccc", value: []byte("ccc"), version: &modules.StateVersion{}}
+	r3 := &KVRead{key: "aaa", value: []byte("aaa"), version: &modules.StateVersion{}}
+	rd["bbb"] = r1
+	rd["ccc"] = r2
+	rd["aaa"] = r3
+	result := convertReadMap2Slice(rd)
+	assert.Equal(t, 3, len(result))
+	assert.Equal(t, "aaa", result[0].GetKey())
+	for i, r := range result {
+		t.Logf("%d,%#v", i, r)
+	}
+}
