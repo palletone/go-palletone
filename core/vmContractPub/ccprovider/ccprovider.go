@@ -30,6 +30,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/pkg/errors"
 	"time"
@@ -392,6 +393,12 @@ func (cccid *CCContext) GetCanonicalName() string {
 	}
 
 	return cccid.canonicalName
+}
+
+func (cccid *CCContext) GetContainerName() string {
+	name := cccid.Name + ":" + cccid.Version
+	name = contractcfg.GetConfig().ContractAddress + ":" + name
+	return strings.Replace(name, ":", "-", -1)
 }
 
 //-------- ChaincodeData is stored on the LSCC -------
