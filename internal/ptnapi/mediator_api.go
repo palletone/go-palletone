@@ -154,9 +154,9 @@ func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error
 		return nil, err
 	}
 
-	if !a.Dag().IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator", mediator.Str())
-	}
+	//if !a.Dag().IsMediator(mediator) {
+	//	return nil, fmt.Errorf("%v is not mediator", mediator.Str())
+	//}
 
 	return a.Dag().GetMediatorInfo(mediator), nil
 }

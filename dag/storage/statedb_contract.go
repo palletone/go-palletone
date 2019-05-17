@@ -92,8 +92,9 @@ func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.Contrac
 }
 
 func getContractStateKey(id []byte, field string) []byte {
-	key := append(constants.CONTRACT_STATE_PREFIX, id...)
-	return append(key, []byte(field)...)
+	contractAddress := common.NewAddress(id, common.ContractHash)
+	key := append(constants.CONTRACT_STATE_PREFIX, contractAddress.Str()...)
+	return append(key, field...)
 }
 
 func (statedb *StateDb) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
@@ -142,6 +143,8 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 
 	for _, write := range wset {
 		key := getContractStateKey(id, write.Key)
+		log.Debugf("ContractState key: %v", string(key))
+
 		if write.IsDelete {
 			batch.Delete(key)
 		} else {
@@ -294,12 +297,6 @@ func (statedb *StateDb) GetContractDeployReq(reqId []byte) (*modules.ContractDep
 	return deploy, nil
 }
 
-//func (statedb *StateDb) SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error {
-//	// key : requestId
-//	key := append(constants.CONTRACT_INVOKE, reqid...)
-//	return StoreBytes(statedb.db, key, invoke)
-//}
-
 func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvokePayload, error) {
 	key := append(constants.CONTRACT_INVOKE, reqId...)
 	data, err := statedb.db.Get(key)
@@ -318,27 +315,6 @@ func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.Cont
 	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
 	log.Debugf("save contract invoke req id(%v) contractAddress: %v, timeout: %v",
 		hex.EncodeToString(reqid), contractAddress.Str(), invoke.Timeout)
-
-	//if contractAddress == syscontract.DepositContractAddress {
-	//	log.Debugf("Save Deposit Contract Invoke Req")
-	//
-	//	if string(invoke.Args[0]) == modules.ApplyMediator {
-	//		var mco modules.MediatorCreateOperation
-	//		err := json.Unmarshal(invoke.Args[1], &mco)
-	//		if err == nil {
-	//			log.Debugf("Save Apply Mediator(%v) Invoke Req", mco.AddStr)
-	//
-	//			mi := modules.NewMediatorInfo()
-	//			*mi.MediatorInfoBase = *mco.MediatorInfoBase
-	//			*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
-	//
-	//			addr, _ := core.StrToMedAdd(mco.AddStr)
-	//			StoreMediatorInfo(statedb.db, addr, mi)
-	//		} else {
-	//			log.Debugf(err.Error())
-	//		}
-	//	}
-	//}
 
 	// key: reqid
 	key := append(constants.CONTRACT_INVOKE_REQ, reqid...)

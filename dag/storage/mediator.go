@@ -32,9 +32,10 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.CONTRACT_STATE_PREFIX, syscontract.DepositContractAddress.Bytes()...)
-	key = append(key, constants.MEDIATOR_INFO_PREFIX...)
-	key = append(key, []byte(address.Str())...)
+	key := append(constants.CONTRACT_STATE_PREFIX, syscontract.DepositContractAddress.Str()...)
+	key = append(key, string(constants.MEDIATOR_INFO_PREFIX)+address.Str()...)
+
+	log.Debugf("mediatorKey %v", string(key))
 
 	return key
 }
@@ -58,13 +59,35 @@ func StoreMediatorInfo(db ptndb.Database, add common.Address, mi *modules.Mediat
 }
 
 func RetrieveMediatorInfo(db ptndb.Database, address common.Address) (*modules.MediatorInfo, error) {
-	mi := modules.NewMediatorInfo()
-
-	err := readFromJson(db, mediatorKey(address), mi)
+	data, err := db.Get(mediatorKey(address))
 	if err != nil {
-		log.Errorf("Retrieve mediator error: %v", err.Error())
+		log.Debugf("Retrieve mediator error: %v", err.Error())
 		return nil, err
 	}
+
+	mi := modules.NewMediatorInfo()
+	err = json.Unmarshal(data, mi)
+	if err == nil {
+		return mi, nil
+	}
+
+	data, _, err = splitValueAndVersion(data)
+	if err != nil {
+		log.Debugf("Retrieve mediator splitValueAndVersion error: %v", err.Error())
+		return nil, err
+	}
+
+	err = json.Unmarshal(data, mi)
+	if err != nil {
+		log.Debugf("Retrieve mediator Unmarshal error: %v", err.Error())
+		return nil, err
+	}
+
+	//err := readFromJson(db, mediatorKey(address), mi)
+	//if err != nil {
+	//	log.Debugf("Retrieve mediator error: %v", err.Error())
+	//	return nil, err
+	//}
 
 	return mi, nil
 }
