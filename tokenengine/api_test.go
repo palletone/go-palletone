@@ -132,7 +132,7 @@ func TestSignAndVerify2PaymentTx(t *testing.T) {
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		s, e := crypto.Sign(hash, privKey)
-		return s[0:64], e
+		return s, e
 	}
 	var hashtype uint32
 	hashtype = 1
@@ -192,7 +192,7 @@ func TestHashNone1Payment(t *testing.T) {
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		s, e := crypto.Sign(hash, privKey)
-		return s[0:64], e
+		return s, e
 	}
 	var hashtype uint32
 	hashtype = SigHashNone
