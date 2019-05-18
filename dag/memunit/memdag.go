@@ -213,7 +213,7 @@ func (chain *MemDag) checkStableCondition(needAddrCount int, txpool txspool.ITxP
 
 //清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
 func (chain *MemDag) rebuildTempdb() {
-	log.Debugf("Clear tempdb and reubild data")
+	log.Debugf("Clear tempdb and rebuild data")
 	chain.tempdb.Clear()
 	unstableUnits := chain.getMainChainUnits()
 	for _, unit := range unstableUnits {
