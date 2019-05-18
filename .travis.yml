@@ -86,11 +86,10 @@ deploy:
 #        branch: certbdd
 
 notifications:
-#    email: elva1087penny@163.com
-    email: 602554102@qq.com
+    email: elva1087penny@163.com
     email:
         recipients:
-            - 602554102@qq.com
+            - elva1087penny@163.com
         on_success: always # default: change
         on_failure: always
 
