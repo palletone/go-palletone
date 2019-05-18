@@ -9,12 +9,13 @@ env:
     global:
         - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
         - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
+        - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
         - CREATE_TRANS_DIR=createTrans
         - CCINVOKE_DIR=ccinvoke
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
+        - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
-        - DEPOSIT_LOG_NAME=deposit_test.log
         - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub
 
 script:
@@ -30,7 +31,7 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     - mkdir -p ${BDD_LOG_PATH}
-    - ./deposit_test.sh 4 > ${BDD_LOG_PATH}/${DEPOSIT_LOG_NAME}
+    - ./deposit_test.sh 4
     - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
     - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
@@ -41,7 +42,8 @@ after_success:
     # upload all log
     - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/all.log -v
     # upload deposit log
-    - curl -T ${BDD_LOG_PATH}/${DEPOSIT_LOG_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/${DEPOSIT_LOG_NAME} -v
+    - curl -T ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
+    - curl -T ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
     # upload create transactions log and report
     - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
     - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
@@ -59,7 +61,8 @@ after_failure:
     # upload all log
     - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/all.log -v
     # upload deposit log
-    - curl -T ${BDD_LOG_PATH}/${DEPOSIT_LOG_NAME} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/${DEPOSIT_LOG_NAME} -v
+    - curl -T ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
+    - curl -T ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
     # upload create transactions log and report
     - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
     - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
@@ -70,7 +73,7 @@ after_failure:
     - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
     - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
     # echo ftp address
-    - echo "Logs in ftp server is ftp://anonymous:anonymous@98.142.130.141/pub"
+    - echo "Logs in ftp server is ftp://98.142.130.141/pub"
 
 before_install:
     - go get github.com/mattn/goveralls
