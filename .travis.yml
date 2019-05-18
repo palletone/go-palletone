@@ -53,7 +53,7 @@ after_script:
     - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
     - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
     # echo ftp address
-    - echo "The path of all bdd log in vsftpd is 'ftp://anonymous@98.142.130.141/pub'"
+    - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/pub', but you should quit VPN first"
 
 before_install:
     - go get github.com/mattn/goveralls
