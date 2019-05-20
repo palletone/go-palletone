@@ -684,8 +684,8 @@ func timeFormat(n string) string {
 }
 
 //  通过地址获取Mediator节点信息
-func GetMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) (*modules.MediatorInfo, error) {
-	byte, err := stub.GetState(string(constants.MEDIATOR_INFO_PREFIX) + mediatorAddr)
+func GetMediatorInfo(stub shim.ChaincodeStubInterface, medAddr common.Address) (*modules.MediatorInfo, error) {
+	byte, err := stub.GetState(contractMediatorKey(medAddr))
 	if err != nil {
 		return nil, err
 	}
@@ -700,13 +700,17 @@ func GetMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) (*mo
 	return mediator, nil
 }
 
+func contractMediatorKey(medAddr common.Address) string {
+	return string(constants.MEDIATOR_INFO_PREFIX) + string(medAddr.Bytes())
+}
+
 //  保存Mediator账信息
-func SaveMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string, med *modules.MediatorInfo) error {
+func SaveMediatorInfo(stub shim.ChaincodeStubInterface, medAddr common.Address, med *modules.MediatorInfo) error {
 	byte, err := json.Marshal(med)
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(string(constants.MEDIATOR_INFO_PREFIX)+mediatorAddr, byte)
+	err = stub.PutState(contractMediatorKey(medAddr), byte)
 	if err != nil {
 		return err
 	}

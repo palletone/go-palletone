@@ -32,7 +32,7 @@ import (
 
 func mediatorKey(address common.Address) []byte {
 	key := append(constants.CONTRACT_STATE_PREFIX, syscontract.DepositContractAddress.Bytes()...)
-	key = append(key, string(constants.MEDIATOR_INFO_PREFIX)+address.Str()...)
+	key = append(key, string(constants.MEDIATOR_INFO_PREFIX)+string(address.Bytes())...)
 
 	log.Debugf("mediatorKey %v", string(key))
 
@@ -91,7 +91,7 @@ func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.M
 }
 
 func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
-	mi, err := statedb.RetrieveMediatorInfo( address)
+	mi, err := statedb.RetrieveMediatorInfo(address)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
