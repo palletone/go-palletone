@@ -78,7 +78,7 @@ type DynamicGlobalProperty struct {
 	// 最低位表示最近一个slot， 初始值全为1。
 	RecentSlotsFilled uint64
 
-	LastIrreversibleUnitNum uint64
+	//LastIrreversibleUnitNum uint64
 	//NewestUnit     map[AssetId]*UnitProperty
 	//LastStableUnit map[AssetId]*UnitProperty
 
@@ -108,7 +108,7 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 
 		RecentSlotsFilled: ^uint64(0),
 
-		LastIrreversibleUnitNum: 0,
+		//LastIrreversibleUnitNum: 0,
 		//NewestUnit:     map[AssetId]*UnitProperty{},
 		//LastStableUnit: map[AssetId]*UnitProperty{},
 

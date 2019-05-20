@@ -34,15 +34,15 @@ import (
 )
 
 type MemDag struct {
-	token             modules.AssetId
-	stableUnitHash    common.Hash
-	stableUnitHeight  uint64
-	lastMainchainUnit *modules.Unit
-	orphanUnits       map[common.Hash]*modules.Unit
-	chainUnits        map[common.Hash]*modules.Unit
-	tempdbunitRep     common2.IUnitRepository
-	tempUtxoRep       common2.IUtxoRepository
-	tempStateRep      common2.IStateRepository
+	token              modules.AssetId
+	stableUnitHash     common.Hash
+	stableUnitHeight   uint64
+	lastMainchainUnit  *modules.Unit
+	orphanUnits        map[common.Hash]*modules.Unit
+	chainUnits         map[common.Hash]*modules.Unit
+	tempdbunitRep      common2.IUnitRepository
+	tempUtxoRep        common2.IUtxoRepository
+	tempStateRep       common2.IStateRepository
 	tempPropRep        common2.IPropRepository
 	tempUnitProduceRep common2.IUnitProduceRepository
 
@@ -62,7 +62,7 @@ func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, st
 	tpropRep := common2.NewPropRepository4Db(tempdb)
 	tempUnitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
 	ldbUnitProduceRep := common2.NewUnitProduceRepository(stableUnitRep, propRep, stableStateRep)
-	stablehash, stbIndex, err := propRep.GetLastStableUnit(token)
+	stablehash, stbIndex, err := propRep.GetNewestUnit(token)
 	if err != nil {
 		log.Errorf("Cannot retrieve last stable unit from db for token:%s, you forget 'gptn init'??", token.String())
 		return nil
@@ -84,9 +84,9 @@ func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, st
 		stableUnitHeight:  stbIndex.Index,
 		lastMainchainUnit: stableUnit,
 		saveHeaderOnly:    saveHeaderOnly,
-	
-		ldbUnitProduceRep:  ldbUnitProduceRep,
-		
+
+		ldbUnitProduceRep: ldbUnitProduceRep,
+
 		tempUnitProduceRep: tempUnitProduceRep,
 	}
 }
@@ -236,7 +236,7 @@ func (chain *MemDag) saveUnit2TempDb(unit *modules.Unit) {
 		chain.tempdbunitRep.SaveHeader(unit.Header())
 	} else {
 		//chain.tempdbunitRep.SaveUnit(unit, false)
-		chain.ldbUnitProduceRep.PushUnit(unit)
+		chain.tempUnitProduceRep.PushUnit(unit)
 
 	}
 }
@@ -420,7 +420,7 @@ func (chain *MemDag) setStableUnit(unit *modules.Unit) {
 	index := unit.NumberU64()
 	chain.stableUnitHash = hash
 	chain.stableUnitHeight = index
-	chain.ldbPropRep.SetLastStableUnit(hash, &modules.ChainIndex{AssetID: chain.token, Index: index})
+	chain.ldbPropRep.SetNewestUnit(unit.UnitHeader)
 }
 
 //查询所有不稳定单元（不包括孤儿单元）
