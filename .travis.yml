@@ -31,7 +31,7 @@ script:
     - netstat -ap | grep gptn
 #    - cd ../dct
 #    - ./deposit_test.sh 4
-    - cd ../inital
+    - cd ../initialEnv
     - ./initFtpUrl.sh
 #    - mkdir -p ${BDD_LOG_PATH}
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
@@ -84,6 +84,9 @@ addons:
 
 deploy:
     skip_cleanup: true
+    provider:
+    on:
+        branch: all
 
 notifications:
 #    email: elva1087penny@163.com
