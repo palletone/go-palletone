@@ -60,7 +60,7 @@ var (
 		Action:    utils.MigrateFlags(createGenesisJson),
 		Name:      "newgenesis",
 		Usage:     "Create a genesis json file template",
-		ArgsUsage: "<genesisJsonPath> <OutputPaths> <ErrorOutputPaths>",
+		ArgsUsage: "<genesisJsonPath> <openStdout>",
 		Flags: []cli.Flag{
 			GenesisJsonPathFlag,
 		},
@@ -253,20 +253,11 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 
 func getGenesisPath(ctx *cli.Context) string {
 	genesisOut := ctx.Args().First()
-	outputPaths := ctx.Args().Get(1)
-	errorOutputPaths := ctx.Args().Get(2)
 
 	// If no path is specified, the default path is used
 	if len(genesisOut) == 0 {
 		// utils.Fatalf("Must supply path to genesis JSON file")
 		genesisOut = defaultGenesisJsonPath
-	}
-	if len(outputPaths) != 0 {
-		log.DefaultConfig.OutputPaths = []string{outputPaths}
-	}
-
-	if len(errorOutputPaths) != 0 {
-		log.DefaultConfig.ErrorOutputPaths = []string{errorOutputPaths}
 	}
 
 	if files.IsDir(genesisOut) {
