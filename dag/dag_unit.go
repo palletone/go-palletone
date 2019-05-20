@@ -70,7 +70,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%#x], spent time: %s",
 		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
 		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.GetTxIds(), time.Since(t0).String())
-
+	//3.将新单元添加到MemDag中
+	dag.Memdag.AddUnit(newUnit, txpool)
+	//4.PostChainEvents
 	//TODO add PostChainEvents
 	go func() {
 		var (
@@ -80,86 +82,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		dag.PostChainEvents(events)
 	}()
 
-	if !dag.PushUnit(sign_unit, txpool) {
-		return nil
-	}
+	//if !dag.PushUnit(sign_unit, txpool) {
+	//	return nil
+	//}
 
 	return sign_unit
-}
-
-/**
- * Push unit "may fail" in which case every partial change is unwound.  After
- * push unit is successful the block is appended to the chain database on disk.
- *
- * 推块“可能会失败”，在这种情况下，每个部分地更改都会撤销。 推块成功后，该块将附加到磁盘上的链数据库。
- *
- * @return true if we switched forks as a result of this push.
- */
-func (dag *Dag) PushUnit(newUnit *modules.Unit, txpool txspool.ITxPool) bool {
-	t0 := time.Now()
-	// 1. 如果当前初生产的unit不在最长链条上，那么就切换到最长链分叉上。
-
-	// 2. 更新状态
-	if err := dag.ApplyUnit(newUnit); err != nil {
-		return false
-	}
-
-	dag.Memdag.AddUnit(newUnit, txpool)
-	log.Debugf("save newest unit spent time: %s, index: %d , hash:%s", time.Since(t0).String(), newUnit.NumberU64(), newUnit.UnitHash.String())
-	return true
-}
-
-// ApplyUnit, 运用下一个 unit 更新整个区块链状态
-func (dag *Dag) ApplyUnit(nextUnit *modules.Unit) error {
-	defer func(start time.Time) {
-		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
-	}(time.Now())
-
-	dag.applyLock.Lock()
-	defer dag.applyLock.Unlock()
-
-	// 下一个 unit 和本地 unit 连续性的判断
-	if err := dag.validateUnitHeader(nextUnit); err != nil {
-		return err
-	}
-
-	// todo 待删除 处理临时prop没有回滚的问题
-	skip := false
-	// 验证 unit 的 mediator 调度
-	if err := dag.validateMediatorSchedule(nextUnit); err != nil {
-		//return err
-		skip = true
-	}
-
-	// todo 运用Unit中的交易
-
-	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
-	missed := dag.updateMediatorMissedUnits(nextUnit)
-
-	// 更新全局动态属性值
-	dag.updateDynGlobalProp(nextUnit, missed)
-
-	// 更新 mediator 的相关数据
-	dag.updateSigningMediator(nextUnit)
-
-	// 更新最新不可逆区块高度
-	dag.updateLastIrreversibleUnit()
-
-	// 判断是否到了链维护周期，并维护
-	maintenanceNeeded := !(dag.GetDynGlobalProp().NextMaintenanceTime > uint32(nextUnit.Timestamp()))
-	if maintenanceNeeded {
-		dag.performChainMaintenance(nextUnit)
-	}
-
-	// 更新链维护周期标志
-	// n.b., updateMaintenanceFlag() happens this late because GetSlotTime() / GetSlotAtTime() is needed above
-	// 由于前面的操作需要调用 GetSlotTime() / GetSlotAtTime() 这两个方法，所以在最后才更新链维护周期标志
-	dag.updateMaintenanceFlag(maintenanceNeeded)
-
-	if !skip {
-		// 洗牌
-		dag.updateMediatorSchedule()
-	}
-
-	return nil
 }

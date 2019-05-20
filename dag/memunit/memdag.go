@@ -43,19 +43,25 @@ type MemDag struct {
 	tempdbunitRep     common2.IUnitRepository
 	tempUtxoRep       common2.IUtxoRepository
 	tempStateRep      common2.IStateRepository
+	tempPropRep        common2.IPropRepository
+	tempUnitProduceRep common2.IUnitProduceRepository
+
 	ldbunitRep        common2.IUnitRepository
 	ldbPropRep        common2.IPropRepository
+	ldbUnitProduceRep common2.IUnitProduceRepository
 	tempdb            *Tempdb
 	saveHeaderOnly    bool
 	lock              sync.RWMutex
 }
 
-func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository) *MemDag {
+func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository, stableStateRep common2.IStateRepository) *MemDag {
 	tempdb, _ := NewTempdb(db)
 	trep := common2.NewUnitRepository4Db(tempdb)
 	tutxoRep := common2.NewUtxoRepository4Db(tempdb)
 	tstateRep := common2.NewStateRepository4Db(tempdb)
-
+	tpropRep := common2.NewPropRepository4Db(tempdb)
+	tempUnitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
+	ldbUnitProduceRep := common2.NewUnitProduceRepository(stableUnitRep, propRep, stableStateRep)
 	stablehash, stbIndex, err := propRep.GetLastStableUnit(token)
 	if err != nil {
 		log.Errorf("Cannot retrieve last stable unit from db for token:%s, you forget 'gptn init'??", token.String())
@@ -63,12 +69,7 @@ func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, st
 	}
 	stableUnit, _ := stableUnitRep.GetUnit(stablehash)
 	log.Debugf("Init MemDag, get last stable unit[%s] to set lastMainchainUnit", stablehash.String())
-	//stable_unit_hash := make(map[modules.AssetId]common.Hash)
-	//stable_unit_height := make(map[modules.AssetId]uint64)
-	//last_mainchain_unit := make(map[modules.AssetId]*modules.Unit)
-	//stable_unit_hash[token] = stablehash
-	//stable_unit_height[token] = stbIndex.Index
-	//last_mainchain_unit[token] = stableUnit
+
 	return &MemDag{
 		token:             token,
 		ldbunitRep:        stableUnitRep,
@@ -83,24 +84,15 @@ func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, st
 		stableUnitHeight:  stbIndex.Index,
 		lastMainchainUnit: stableUnit,
 		saveHeaderOnly:    saveHeaderOnly,
+	
+		ldbUnitProduceRep:  ldbUnitProduceRep,
+		
+		tempUnitProduceRep: tempUnitProduceRep,
 	}
 }
 
-//func (chain *MemDag) Init(stablehash common.Hash, stableHeight uint64) {
-//	chain.stableUnitHash = stablehash
-//	chain.stableUnitHeight = stableHeight
-//	chain.tempdb.Clear()
-//	chain.lastMainchainUnit, _ = chain.ldbunitRep.GetUnit(stablehash)
-//
-//	for k := range chain.orphanUnits {
-//		delete(chain.orphanUnits, k)
-//	}
-//	for k := range chain.chainUnits {
-//		delete(chain.chainUnits, k)
-//	}
-//}
-func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository) {
-	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep
+func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository) {
+	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep, chain.tempPropRep
 }
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error {
 	chain.lock.Lock()
@@ -160,7 +152,8 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 		chain.ldbunitRep.SaveHeader(unit.Header())
 	} else {
 		//Save stable unit to ldb
-		chain.ldbunitRep.SaveUnit(unit, false)
+		//chain.ldbunitRep.SaveUnit(unit, false)
+		chain.ldbUnitProduceRep.PushUnit(unit)
 		//txpool flag tx as packaged
 		if len(unit.Txs) > 0 {
 			log.Debugf("Set tx[%x] status to confirm", unit.Txs.GetTxIds())
@@ -242,7 +235,9 @@ func (chain *MemDag) saveUnit2TempDb(unit *modules.Unit) {
 	if chain.saveHeaderOnly {
 		chain.tempdbunitRep.SaveHeader(unit.Header())
 	} else {
-		chain.tempdbunitRep.SaveUnit(unit, false)
+		//chain.tempdbunitRep.SaveUnit(unit, false)
+		chain.ldbUnitProduceRep.PushUnit(unit)
+
 	}
 }
 
