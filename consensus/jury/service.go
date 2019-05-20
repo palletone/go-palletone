@@ -282,7 +282,9 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 			req.rcvTx = nil
 		}
 
-		if getTxSigNum(req.sigTx) >= p.contractSigNum {
+		sigNum := getTxSigNum(req.sigTx)
+		log.Debugf("runContractReq sigNum %d, p.contractSigNum %d", sigNum, p.contractSigNum)
+		if sigNum >= p.contractSigNum {
 			if localIsMinSignature(req.sigTx) {
 				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
 				log.Info("runContractReq", "localIsMinSignature Ok!, reqId", reqId.String())

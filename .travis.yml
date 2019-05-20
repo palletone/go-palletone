@@ -5,6 +5,19 @@ language:
     - go
 go:
     - 1.10.8
+env:
+    global:
+        - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
+        - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
+        - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
+        - CREATE_TRANS_DIR=createTrans
+        - CCINVOKE_DIR=ccinvoke
+        - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
+        - DEPOSIT_DIR=deposit
+        - LOG_NAME=log.html
+        - REPORT_NAME=report.html
+        - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub
+
 script:
     - go build ./cmd/gptn
     - make gptn
@@ -17,20 +30,30 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - cd ../dct
-    #- ./deposit_test.sh 4
-    - python -m robot.run -d ../logs -l creatTrans_log.html ../testcase/createTrans
-    - python -m robot.run ../testcase/ccinvoke
-    - python -m robot.run ../DigitalIdentityCert
+    - mkdir -p ${BDD_LOG_PATH}
+    - ./deposit_test.sh 4
+    - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
+    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
+    - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
 
-after_success:
+after_script:
     - killall gptn
-
-
-after_failure:
-    - killall gptn
-
-
-
+    # upload all log
+    - curl -T ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub/all.log -v
+    # upload deposit log
+    - curl -T ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
+    - curl -T ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
+    # upload create transactions log and report
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
+    # upload ccinvoke log and report
+    - curl -T ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
+    # upload digital identity log and report
+    - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
+    - curl -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
+    # echo ftp address
+    - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/pub', but you should quit VPN first"
 
 before_install:
     - go get github.com/mattn/goveralls
@@ -57,6 +80,11 @@ addons:
     apt:
         update: true
 
+deploy:
+    skip_cleanup: true
+#    on:
+#        branch: certbdd
+
 notifications:
     email: elva1087penny@163.com
     email:
@@ -64,3 +92,4 @@ notifications:
             - elva1087penny@163.com
         on_success: always # default: change
         on_failure: always
+

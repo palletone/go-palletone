@@ -23,5 +23,5 @@ package modules
 type AccountInfo struct {
 	Balance uint64
 	//当前账户投票的Mediator
-	VotedMediators []string
+	VotedMediators map[string]bool
 }

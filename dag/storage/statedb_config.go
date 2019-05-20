@@ -68,10 +68,11 @@ func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
 func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) {
 	id := syscontract.PartitionContractAddress.Bytes()
 	rows, err := statedb.GetContractStatesByPrefix(id, "PC")
-	if err != nil {
-		return nil, err
-	}
 	result := []*modules.PartitionChain{}
+	if err != nil {
+		return result, nil
+	}
+
 	for _, v := range rows {
 		partition := &modules.PartitionChain{}
 		json.Unmarshal(v.Value, &partition)

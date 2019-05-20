@@ -54,6 +54,7 @@ type Node struct {
 
 	serverConfig p2p.Config
 	server       *p2p.Server // Currently running P2P networking layer
+	corsserver   *p2p.Server
 
 	serviceFuncs []ServiceConstructor     // Service constructors (in dependency order)
 	services     map[reflect.Type]Service // Currently running services
@@ -230,6 +231,7 @@ func (n *Node) Start() error {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 		corss.Protocols = append(corss.Protocols, service.CorsProtocols()...)
 	}
+	log.Debug("Node Start", "len(running.Protocols)", len(running.Protocols), "len(corss.Protocols)", len(corss.Protocols))
 
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
@@ -240,9 +242,7 @@ func (n *Node) Start() error {
 	}
 
 	// Start each of the services
-	// 4. 启动Service
 	started := []reflect.Type{}
-	// 启动所有刚才创建的服务，依次调用每个Service的Start()方法， 如果出错就stop之前所有的服务并返回错误
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
 		if err := service.Start(running, corss); err != nil {
@@ -254,7 +254,6 @@ func (n *Node) Start() error {
 			return err
 		}
 		// Mark the service started for potential cleanup
-		// 把启动的Service的类型存储到started表中
 		started = append(started, kind)
 	}
 
@@ -270,6 +269,7 @@ func (n *Node) Start() error {
 	// Finish initializing the startup
 	n.services = services
 	n.server = running
+	n.corsserver = corss
 	n.stop = make(chan struct{})
 
 	return nil
@@ -573,6 +573,10 @@ func (n *Node) Server() *p2p.Server {
 	defer n.lock.RUnlock()
 
 	return n.server
+}
+
+func (n *Node) CorsServer() *p2p.Server {
+	return n.corsserver
 }
 
 // Service retrieves a currently running service registered of a specific type.

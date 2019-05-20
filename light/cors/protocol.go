@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	NetworkId          = 1
+	NetworkId          = 10
 	ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
 )
 
 const (
-	cors = 1
+	cors = 10
 )
 
 var ProtocolLengths = map[uint]uint64{cors: 15}

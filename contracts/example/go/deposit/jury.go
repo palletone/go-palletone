@@ -186,7 +186,7 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Ad
 		//  判断是否已到期
 		if endTime-startTime >= day {
 			//  退出全部，即删除cashback，利息计算好了
-			err = cashbackAllDeposit(Jury, stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
+			err = cashbackAllDeposit(modules.JuryList, stub, cashbackAddr, cashbackValue.CashbackTokens, balance)
 			if err != nil {
 				return err
 			}
@@ -196,7 +196,7 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Ad
 		}
 	} else {
 		//TODO 退出一部分，且退出该部分金额后还在列表中，还没有计算利息
-		err = cashbackSomeDeposit(Jury, stub, cashbackAddr, cashbackValue, balance)
+		err = cashbackSomeDeposit(modules.JuryList, stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
 			log.Error("cashbackSomeDeposit err: ", "error", err)
 			return err

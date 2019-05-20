@@ -81,7 +81,7 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		accKey := append(accountKey(add), []byte(constants.VOTED_MEDIATORS)...)
 		data, _, err := retrieveWithVersion(statedb.db, accKey)
 		if err == nil {
-			votedMediators := make([]string, 0)
+			votedMediators := make(map[string]bool)
 			err = json.Unmarshal(data, &votedMediators)
 			if err == nil {
 				acc.VotedMediators = votedMediators

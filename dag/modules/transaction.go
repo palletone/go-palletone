@@ -547,10 +547,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(DataPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == OP_MEDIATOR_CREATE {
-				payload := new(MediatorCreateOperation)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
 			} else if msg.App == APP_ACCOUNT_UPDATE {
 				payload := new(AccountStateUpdatePayload)
 				obj.DeepCopy(payload, msg.Payload)
@@ -610,6 +606,19 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 			for _, in := range pay.Inputs {
 				in.SignatureScript = nil
 			}
+		}
+		result.TxMessages = append(result.TxMessages, msg)
+	}
+	return result
+}
+
+func (tx *Transaction) GetResultTx() *Transaction {
+	txCopy := tx.Clone()
+	result := &Transaction{}
+	result.CertId = tx.CertId
+	for _, msg := range txCopy.TxMessages {
+		if msg.App == APP_SIGNATURE {
+			continue //移除SignaturePayload
 		}
 		result.TxMessages = append(result.TxMessages, msg)
 	}

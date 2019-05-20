@@ -17,6 +17,7 @@ package deposit
 
 import (
 	"encoding/json"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -279,6 +280,35 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Success(byte)
 		}
 		return shim.Success([]byte("not in the cashback list"))
+		//  查看jury是否在候选列表中
+	case IsInJuryCandidateList:
+		log.Info("Enter DepositChaincode Contract " + IsInJuryCandidateList + " Invoke")
+		jByte, err := GetList(stub, modules.JuryList)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if jByte == nil {
+			return shim.Success([]byte("jury node candidate list is empty"))
+		}
+		if _, ok := jByte[args[0]]; ok {
+			return shim.Success([]byte("joined the jury node candidate list"))
+		}
+		return shim.Success([]byte("not in the jury candidate list"))
+		//  查看developer是否在候选列表中
+	case IsInDeveloperCandidateList:
+		log.Info("Enter DepositChaincode Contract " + IsInDeveloperCandidateList + " Invoke")
+		dByte, err := GetList(stub, DeveloperList)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if dByte == nil {
+			return shim.Success([]byte("jury node candidate list is empty"))
+		}
+		if _, ok := dByte[args[0]]; ok {
+			return shim.Success([]byte("joined the jury node candidate list"))
+		}
+		return shim.Success([]byte("not in the jury candidate list"))
+
 	}
 	return shim.Error("please enter validate function name")
 }

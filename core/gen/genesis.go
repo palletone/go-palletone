@@ -189,7 +189,7 @@ func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
 	hash := crypto.Keccak256(txBytes)
 	sign, err := crypto.Sign(hash, key)
 
-	return sign[0:64], err
+	return sign, err
 }
 
 func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) (*modules.Transaction, error) {

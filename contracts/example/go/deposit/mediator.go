@@ -64,7 +64,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 	if agreeList != nil {
 		//  判断是否已经申请过，并且通过了申请
-		if _, ok := agreeList[invokeAddr.String()]; ok {
+		if agreeList[invokeAddr.String()] {
 			log.Error("Node is exist in the agree list.")
 			return shim.Error("Node is exist in the agree list.")
 		}
@@ -81,7 +81,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		becomeList = make(map[string]bool)
 	} else {
 		//  判断是否已经申请过了
-		if _, ok := becomeList[invokeAddr.String()]; ok {
+		if becomeList[invokeAddr.String()] {
 			log.Debug("Node is exist in the become list.")
 			return shim.Error("Node is exist in the become list.")
 		}
@@ -135,7 +135,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		log.Error("get candidate list: list is nil")
 		return shim.Error("get candidate list: list is nil")
 	}
-	if _, ok := candidateList[invokeAddr.String()]; !ok {
+	if !candidateList[invokeAddr.String()] {
 		log.Error("node is not exist in the candidate list")
 		return shim.Error("node is not exist in the candidate list")
 	}
@@ -157,7 +157,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		quitList = make(map[string]bool)
 		quitList[invokeAddr.String()] = true
 	} else {
-		if _, ok := quitList[invokeAddr.String()]; ok {
+		if quitList[invokeAddr.String()] {
 			log.Error("node is exist in the quit list")
 			return shim.Error("node is exist in the quit list")
 		}
@@ -286,7 +286,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("agree list is nil")
 	}
 	//  判断是否已经通过了申请
-	if _, ok := agreeList[invokeAddr.String()]; !ok {
+	if !agreeList[invokeAddr.String()] {
 		log.Error("node is not exist in the agree list,you should apply for it.")
 		return shim.Error("node is not exist in the agree list,you should apply for it.")
 	}
@@ -369,7 +369,7 @@ func addCandidateListAndPutStateForMediator(stub shim.ChaincodeStubInterface,
 	if candidateList == nil {
 		candidateList = make(map[string]bool)
 	} else {
-		if _, ok := candidateList[addr.String()]; ok {
+		if candidateList[addr.String()] {
 			log.Error("node was in the candidate list.")
 			return fmt.Errorf("%s", "node was in the candidate list.")
 		}

@@ -195,6 +195,7 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 			}
 			if idx == msgIdx && !isRequestMsg {
 				txCopy = tx.GetRequestTx()
+				log.Debugf("msgIdx %d, GetRequestTx 2", msgIdx)
 			}
 		}
 	}

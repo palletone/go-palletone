@@ -19,8 +19,8 @@
 package jury
 
 import (
-	"time"
 	"fmt"
+	"time"
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -117,7 +117,11 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 
 	if ok, err := checkAndAddTxSigMsgData(ctx.sigTx, tx); err == nil && ok {
 		if getTxSigNum(ctx.sigTx) >= p.contractSigNum {
-			if localIsMinSignature(ctx.sigTx) {
+			if localIsMinSignature(ctx.sigTx) { //todo
+				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
+				log.Info("runContractReq", "localIsMinSignature Ok!2, reqId", reqId.String())
+
+				processContractPayout(ctx.sigTx, ele)
 				go p.ptn.ContractBroadcast(ContractEvent{Ele: ele, CType: CONTRACT_EVENT_COMMIT, Tx: ctx.sigTx}, true)
 			}
 		}

@@ -132,7 +132,7 @@ func TestSignAndVerify2PaymentTx(t *testing.T) {
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		s, e := crypto.Sign(hash, privKey)
-		return s[0:64], e
+		return s, e
 	}
 	var hashtype uint32
 	hashtype = 1
@@ -192,7 +192,7 @@ func TestHashNone1Payment(t *testing.T) {
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		s, e := crypto.Sign(hash, privKey)
-		return s[0:64], e
+		return s, e
 	}
 	var hashtype uint32
 	hashtype = SigHashNone
@@ -469,6 +469,19 @@ func TestContractPayout(t *testing.T) {
 	err = ScriptValidate(lockScript, mockPickupJuryRedeemScript, tx, 0, 1)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 
+}
+
+func TestGenerateRedeemScript(t *testing.T) {
+	jury := []string{"03f28978eeb02f2c97db338f76b093ada5a36022964d85ff3ad5c04b800602b071", "0312857d1e1c5c151f37cede37d694f6b8661f37690f5b3b87946489c479e6dc80"}
+
+	pubKeys := [][]byte{}
+	for _, jurior := range jury {
+		pubKey1, _ := hex.DecodeString(jurior)
+		pubKeys = append(pubKeys, pubKey1)
+	}
+	redeem := GenerateRedeemScript(2, pubKeys)
+
+	fmt.Printf("%x", redeem)
 }
 
 //func Test1(t *testing.T) {

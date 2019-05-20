@@ -66,6 +66,11 @@ web3._extend({
 			call: 'admin_stopWS'
 		}),
 		new web3._extend.Method({
+			name: 'addCorsPeer',
+			call: 'admin_addCorsPeer',
+			params: 1
+		}),
+		new web3._extend.Method({
 			name: 'corsPeers',
 			call: 'admin_corsPeers',
 			params: 1
@@ -85,8 +90,8 @@ web3._extend({
 			getter: 'admin_datadir'
 		}),
 		new web3._extend.Property({
-			name: 'corss',
-			getter: 'admin_corss'
+			name: 'corsInfo',
+			getter: 'admin_corsInfo'
 		}),
 	]
 });

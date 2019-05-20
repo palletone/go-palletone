@@ -218,7 +218,8 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		_, err = pm.dag.GetUnitByHash(currentUnit.ParentHash()[0])
 	}
 
-	if index >= pindex && pindex > 0 && err == nil {
+	//if index >= pindex && pindex > 0 && err == nil {
+	if index >= pindex && err == nil {
 		if atomic.LoadUint32(&pm.fastSync) == 1 {
 			log.Debug("Fast sync complete, auto disabling")
 			atomic.StoreUint32(&pm.fastSync, 0)
