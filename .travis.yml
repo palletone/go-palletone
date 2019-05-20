@@ -16,7 +16,7 @@ env:
         - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
-        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/pub/certbdd
+        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/certbdd
 
 script:
     - go build ./cmd/gptn
