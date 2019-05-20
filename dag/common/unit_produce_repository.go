@@ -57,19 +57,19 @@ func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, 
  *
  * @return true if we switched forks as a result of this push.
  */
-func (dag *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
+func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 
 	// 2. 更新状态
-	if err := dag.ApplyUnit(newUnit); err != nil {
+	if err := rep.ApplyUnit(newUnit); err != nil {
 		return err
 	}
 	//更新数据库
-	return dag.unitRep.SaveUnit(newUnit, false)
+	return rep.unitRep.SaveUnit(newUnit, false)
 
 }
 
 // ApplyUnit, 运用下一个 unit 更新整个区块链状态
-func (dag *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
+func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	defer func(start time.Time) {
 		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
 	}(time.Now())
@@ -77,7 +77,7 @@ func (dag *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	// todo 待删除 处理临时prop没有回滚的问题
 	skip := false
 	// 验证 unit 的 mediator 调度
-	if err := dag.validateMediatorSchedule(nextUnit); err != nil {
+	if err := rep.validateMediatorSchedule(nextUnit); err != nil {
 		//return err
 		skip = true
 	}
@@ -85,52 +85,52 @@ func (dag *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	// todo 运用Unit中的交易
 
 	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
-	missed := dag.updateMediatorMissedUnits(nextUnit)
+	missed := rep.updateMediatorMissedUnits(nextUnit)
 
 	// 更新全局动态属性值
-	dag.updateDynGlobalProp(nextUnit, missed)
+	rep.updateDynGlobalProp(nextUnit, missed)
 
 	// 更新 mediator 的相关数据
-	dag.updateSigningMediator(nextUnit)
+	rep.updateSigningMediator(nextUnit)
 
 	// 更新最新不可逆区块高度
-	//dag.updateLastIrreversibleUnit()
+	//rep.updateLastIrreversibleUnit()
 
 	// 判断是否到了链维护周期，并维护
-	//maintenanceNeeded := !(dag.GetDynGlobalProp().NextMaintenanceTime > uint32(nextUnit.Timestamp()))
+	//maintenanceNeeded := !(rep.GetDynGlobalProp().NextMaintenanceTime > uint32(nextUnit.Timestamp()))
 	//if maintenanceNeeded {
-	//	dag.performChainMaintenance(nextUnit)
+	//	rep.performChainMaintenance(nextUnit)
 	//}
 	//
 	//// 更新链维护周期标志
 	//// n.b., updateMaintenanceFlag() happens this late because GetSlotTime() / GetSlotAtTime() is needed above
 	//// 由于前面的操作需要调用 GetSlotTime() / GetSlotAtTime() 这两个方法，所以在最后才更新链维护周期标志
-	//dag.updateMaintenanceFlag(maintenanceNeeded)
+	//rep.updateMaintenanceFlag(maintenanceNeeded)
 
 	if !skip {
 		// 洗牌
-		dag.updateMediatorSchedule()
+		rep.updateMediatorSchedule()
 	}
 
 	return nil
 }
-func (dag *UnitProduceRepository) validateMediatorSchedule(nextUnit *modules.Unit) error {
+func (rep *UnitProduceRepository) validateMediatorSchedule(nextUnit *modules.Unit) error {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	ts, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
+	ts, _ := rep.propRep.GetNewestUnitTimestamp(gasToken)
 	if ts >= nextUnit.Timestamp() {
 		errStr := "invalidated unit's timestamp"
 		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts, nextUnit.Hash().String(), nextUnit.Timestamp())
 		return fmt.Errorf(errStr)
 	}
 
-	slotNum := dag.propRep.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
+	slotNum := rep.propRep.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
 	if slotNum <= 0 {
 		errStr := "invalidated unit's slot"
 		log.Debugf(errStr)
 		return fmt.Errorf(errStr)
 	}
 
-	scheduledMediator := dag.propRep.GetScheduledMediator(slotNum)
+	scheduledMediator := rep.propRep.GetScheduledMediator(slotNum)
 	if !scheduledMediator.Equal(nextUnit.Author()) {
 		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", nextUnit.Author().Str())
 		log.Debugf(errStr)
@@ -142,8 +142,8 @@ func (dag *UnitProduceRepository) validateMediatorSchedule(nextUnit *modules.Uni
 
 // 根据最新 unit 计算出生产该 unit 的 mediator 缺失的 unit 个数，
 // 并更新到 mediator的相应字段中，返回数量
-func (dag *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
-	missedUnits := dag.propRep.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
+func (rep *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
+	missedUnits := rep.propRep.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
 		log.Errorf("Trying to push double-produced unit onto current unit?!")
 		return 0
@@ -152,15 +152,15 @@ func (dag *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) 
 	missedUnits--
 	log.Debugf("the count of missed units: %v", missedUnits)
 
-	aSize := dag.GetGlobalProp().ActiveMediatorsCount()
+	aSize := rep.GetGlobalProp().ActiveMediatorsCount()
 	if missedUnits < uint32(aSize) {
 		var i uint32
 		for i = 0; i < missedUnits; i++ {
-			mediatorMissed := dag.propRep.GetScheduledMediator(i + 1)
+			mediatorMissed := rep.propRep.GetScheduledMediator(i + 1)
 
-			med := dag.GetMediator(mediatorMissed)
+			med := rep.GetMediator(mediatorMissed)
 			med.TotalMissed++
-			dag.SaveMediator(med, false)
+			rep.SaveMediator(med, false)
 		}
 	}
 
@@ -168,96 +168,96 @@ func (dag *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) 
 }
 
 // UpdateDynGlobalProp, update global dynamic data
-func (dag *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
+func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
 	log.Debugf("update global dynamic data")
-	dgp := dag.GetDynGlobalProp()
+	dgp := rep.GetDynGlobalProp()
 
 	//dgp.HeadUnitNum = unit.NumberU64()
 	//dgp.HeadUnitHash = unit.Hash()
 	//dgp.HeadUnitTime = unit.Timestamp()
-	dag.propRep.SetNewestUnit(unit.Header())
+	rep.propRep.SetNewestUnit(unit.Header())
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
 	dgp.RecentSlotsFilled = (dgp.RecentSlotsFilled << (missedUnits + 1)) + 1
 	dgp.CurrentASlot += missedUnits + 1
 
-	dag.SaveDynGlobalProp(dgp, false)
+	rep.SaveDynGlobalProp(dgp, false)
 
 	return
 }
 
-func (dag *UnitProduceRepository) updateMediatorSchedule() {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
-	ms := dag.GetMediatorSchl()
+func (rep *UnitProduceRepository) updateMediatorSchedule() {
+	gp := rep.GetGlobalProp()
+	dgp := rep.GetDynGlobalProp()
+	ms := rep.GetMediatorSchl()
 
-	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
+	if rep.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
 		log.Debugf("shuffle the scheduling order of mediators")
-		dag.SaveMediatorSchl(ms, false)
+		rep.SaveMediatorSchl(ms, false)
 
 		dgp.IsShuffledSchedule = true
-		dag.SaveDynGlobalProp(dgp, false)
+		rep.SaveDynGlobalProp(dgp, false)
 	}
 
 	return
 }
 
-func (dag *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
+func (rep *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
 	// 1. 更新 签名mediator 的LastConfirmedUnitNum
 	signingMediator := newUnit.Author()
-	med := dag.GetMediator(signingMediator)
+	med := rep.GetMediator(signingMediator)
 
 	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
 	med.LastConfirmedUnitNum = lastConfirmedUnitNum
-	dag.SaveMediator(med, false)
+	rep.SaveMediator(med, false)
 
 	log.Debugf("the LastConfirmedUnitNum of mediator(%v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
 }
 
-func (d *UnitProduceRepository) GetGlobalProp() *modules.GlobalProperty {
-	gp, _ := d.propRep.RetrieveGlobalProp()
+func (rep *UnitProduceRepository) GetGlobalProp() *modules.GlobalProperty {
+	gp, _ := rep.propRep.RetrieveGlobalProp()
 	return gp
 }
 
-func (d *UnitProduceRepository) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	dgp, _ := d.propRep.RetrieveDynGlobalProp()
+func (rep *UnitProduceRepository) GetDynGlobalProp() *modules.DynamicGlobalProperty {
+	dgp, _ := rep.propRep.RetrieveDynGlobalProp()
 	return dgp
 }
 
-func (d *UnitProduceRepository) GetMediatorSchl() *modules.MediatorSchedule {
-	ms, _ := d.propRep.RetrieveMediatorSchl()
+func (rep *UnitProduceRepository) GetMediatorSchl() *modules.MediatorSchedule {
+	ms, _ := rep.propRep.RetrieveMediatorSchl()
 	return ms
 }
 
-func (d *UnitProduceRepository) SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) {
+func (rep *UnitProduceRepository) SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) {
 	if !onlyStore {
 		// todo 更新缓存
 	}
 
-	d.propRep.StoreGlobalProp(gp)
+	rep.propRep.StoreGlobalProp(gp)
 	return
 }
 
-func (d *UnitProduceRepository) SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) {
+func (rep *UnitProduceRepository) SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) {
 	if !onlyStore {
 		// todo 更新缓存
 	}
 
-	d.propRep.StoreDynGlobalProp(dgp)
+	rep.propRep.StoreDynGlobalProp(dgp)
 	return
 }
 
-func (d *UnitProduceRepository) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) {
+func (rep *UnitProduceRepository) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) {
 	if !onlyStore {
 		// todo 更新缓存
 	}
 
-	d.propRep.StoreMediatorSchl(ms)
+	rep.propRep.StoreMediatorSchl(ms)
 	return
 }
-func (d *UnitProduceRepository) GetMediator(add common.Address) *core.Mediator {
-	med, err := d.stateRep.RetrieveMediator(add)
+func (rep *UnitProduceRepository) GetMediator(add common.Address) *core.Mediator {
+	med, err := rep.stateRep.RetrieveMediator(add)
 	if err != nil {
 		log.Error("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
 		return nil
@@ -265,11 +265,11 @@ func (d *UnitProduceRepository) GetMediator(add common.Address) *core.Mediator {
 	return med
 }
 
-func (d *UnitProduceRepository) SaveMediator(med *core.Mediator, onlyStore bool) {
+func (rep *UnitProduceRepository) SaveMediator(med *core.Mediator, onlyStore bool) {
 	if !onlyStore {
 		// todo 更新缓存
 	}
 
-	d.stateRep.StoreMediator(med)
+	rep.stateRep.StoreMediator(med)
 	return
 }
