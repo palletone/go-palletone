@@ -133,6 +133,8 @@ type txPool interface {
 	Stop()
 	AddLocal(tx *modules.TxPoolTransaction) error
 	AddLocals(txs []*modules.TxPoolTransaction) []error
+	AddSequenTx(tx *modules.Transaction) error
+	AddSequenTxs(txs []*modules.Transaction) error
 	AllHashs() []*common.Hash
 	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
 	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)

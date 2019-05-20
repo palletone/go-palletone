@@ -454,7 +454,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		//	continue
 		//}
 
-		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil {
+		if err = txpool.AddSequenTx(tx); err != nil {
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
 		}
