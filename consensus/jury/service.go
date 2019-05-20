@@ -445,14 +445,24 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		//	log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
 		//	continue
 		//}
-		if err := txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, ctx.rstTx)); err != nil {
+		txHash, err := p.dag.GetTxHashByReqId(ctx.rstTx.RequestHash())
+		if err == nil && txHash != (common.Hash{}) {
+			log.Info("AddContractLoop", "transaction request Id already in dag", ctx.rstTx.RequestHash())
+			continue
+		}
+		//if false == checkTxValid(ctx.rstTx) {
+		//	log.Error("AddContractLoop recv event Tx is invalid,", "txid", ctx.rstTx.RequestHash().String())
+		//	continue
+		//}
+
+		if err = txpool.AddSequenTx(ctx.rstTx); err != nil {
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
 		}
 		log.Debug("AddContractLoop", "OK, index", index, "Tx reqId", ctx.rstTx.RequestHash().String(), "Tx hash", ctx.rstTx.Hash().String())
-		index ++
+		index++
 	}
-	rwM.Close()
+	//rwM.Close()
 	return nil
 }
 
@@ -824,7 +834,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}

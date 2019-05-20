@@ -381,3 +381,31 @@ func (mr *MockITxPoolMockRecorder) ValidateOrphanTx(tx interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateOrphanTx", reflect.TypeOf((*MockITxPool)(nil).ValidateOrphanTx), tx)
 }
+
+// AddSequenTx mocks base method
+func (m *MockITxPool) AddSequenTx(tx *modules.Transaction) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddSequenTx", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddSequenTx indicates an expected call of AddSequenTx
+func (mr *MockITxPoolMockRecorder) AddSequenTx(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSequenTx", reflect.TypeOf((*MockITxPool)(nil).AddSequenTx), tx)
+}
+
+// AddSequenTx mocks base method
+func (m *MockITxPool) AddSequenTxs(txs []*modules.Transaction) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddSequenTxs", txs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddSequenTx indicates an expected call of AddSequenTx
+func (mr *MockITxPoolMockRecorder) AddSequenTxs(txs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSequenTxs", reflect.TypeOf((*MockITxPool)(nil).AddSequenTxs), txs)
+}

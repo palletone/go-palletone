@@ -116,9 +116,10 @@ func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks i
 
 // testTxPool is a fake, helper transaction pool for testing purposes
 type testTxPool struct {
-	txFeed event.Feed
-	pool   []*modules.Transaction        // Collection of all transactions
-	added  chan<- []*modules.Transaction // Notification channel for new transactions
+	txFeed     event.Feed
+	pool       []*modules.Transaction        // Collection of all transactions
+	added      chan<- []*modules.Transaction // Notification channel for new transactions
+	sequenPool *modules.SequeueTxPoolTxs
 
 	lock sync.RWMutex // Protects the transaction pool
 }
@@ -181,6 +182,20 @@ func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 		p.added <- txs
 	}
 	return make([]error, len(txs))
+}
+func (p *testTxPool) AddSequenTx(tx *modules.Transaction) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.sequenPool.Add(txspool.TxtoTxpoolTx(p, tx))
+	return nil
+}
+func (p *testTxPool) AddSequenTxs(txs []*modules.Transaction) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	for _, tx := range txs {
+		p.sequenPool.Add(txspool.TxtoTxpoolTx(p, tx))
+	}
+	return nil
 }
 
 func (p *testTxPool) Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
