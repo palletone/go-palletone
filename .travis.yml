@@ -87,7 +87,7 @@ deploy:
 
 notifications:
 #    email: elva1087penny@163.com
-    email:602554102@qq.com
+    email: 602554102@qq.com
     email:
         recipients:
             - 602554102@qq.com
