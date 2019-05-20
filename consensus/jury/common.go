@@ -540,7 +540,7 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 			return true
 		}
 	}
-	log.Debug("msgsCompare,msg is not equal", "msg1", msg1.Payload, "msg2", msg2.Payload) //todo del
+	log.Debugf("msgsCompare,msg is not equal, msg1[%v],msg2[%v]", msg1.Payload, msg2.Payload) //todo del
 	return false
 }
 

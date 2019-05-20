@@ -47,6 +47,6 @@ type IMemDag interface {
 	//Init(stablehash common.Hash, stableHeight uint64)
 	GetLastMainchainUnit() *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit
-	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository)
+	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository)
 	SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error
 }
