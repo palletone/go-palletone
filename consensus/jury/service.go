@@ -440,21 +440,16 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		}
 		ctx.valid = false
 		log.Debug("AddContractLoop", "B enter mtx, reqId", reqId, "addr:", addr.String())
-		tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
-		if err != nil {
-			log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
-			continue
-		}
-		txHash, err := p.dag.GetTxHashByReqId(ctx.rstTx.RequestHash())
-		if err == nil && txHash != (common.Hash{}) {
-			log.Info("AddContractLoop", "transaction request Id already in dag", ctx.rstTx.RequestHash())
-			continue
-		}
-		if err = txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, tx)); err != nil {
+		//tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
+		//if err != nil {
+		//	log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
+		//	continue
+		//}
+		if err := txpool.AddLocal(txspool.TxtoTxpoolTx(txpool, ctx.rstTx)); err != nil {
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
 		}
-		log.Debug("AddContractLoop", "OK, index", index, "Tx reqId", tx.RequestHash().String(), "Tx hash", tx.Hash().String())
+		log.Debug("AddContractLoop", "OK, index", index, "Tx reqId", ctx.rstTx.RequestHash().String(), "Tx hash", ctx.rstTx.Hash().String())
 		index ++
 	}
 	rwM.Close()
