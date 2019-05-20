@@ -31,18 +31,18 @@ import (
 
 func MockStateMemDb() *StateDb {
 	db, _ := ptndb.NewMemDatabase()
-	//l := log.NewTestLog()
-	//db, _ := ptndb.NewLDBDatabase("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb", 0, 0)
 	statedb := NewStateDb(db)
 	return statedb
 }
+func TestStateDb_GetPartitionChains(t *testing.T) {
+	db:=MockStateMemDb()
+	partitions,err:= db.GetPartitionChains()
+	assert.Nil(t,err)
+	assert.Equal(t,0,len(partitions))
+}
 
 func TestSaveAndGetConfig(t *testing.T) {
-	//Dbconn := storage.ReNewDbConn("E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb")
-	//if Dbconn == nil {
-	//	fmt.Println("Connect to db error.")
-	//	return
-	//}
+
 	db := MockStateMemDb()
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	err := db.SaveSysConfig("key1", nil, version)
@@ -52,100 +52,5 @@ func TestSaveAndGetConfig(t *testing.T) {
 	t.Log(data)
 	// assert.Nil(t, data)
 	assert.NotNil(t, version)
-	//confs := []modules.ContractWriteSet{}
-	//aid := modules.AssetId{}
-	//aid.SetBytes([]byte("1111111111111111222222222222222222"))
-	//st := modules.Asset{
-	//	AssetId:  aid,
-	//	UniqueId: aid,
-	//	ChainId:  1,
-	//}
-	//confs = append(confs, modules.ContractWriteSet{Key: "TestStruct", Value: modules.ToPayloadMapValueBytes(st)})
-	//confs = append(confs, modules.ContractWriteSet{Key: "TestInt", Value: modules.ToPayloadMapValueBytes(uint32(10))})
-	//stateVersion := modules.StateVersion{
-	//	Height: modules.ChainIndex{
-	//		AssetID: aid,
-	//		IsMain:  true,
-	//		Index:   0,
-	//	},
-	//	TxIndex: 0,
-	//}
-	//logger.Println(stateVersion)
-	//if err := db.SaveConfig(confs, &stateVersion); err != nil {
-	//	logger.Println(err)
-	//}
-	//
-	//data := db.GetSysConfig([]byte("MediatorCandidates"))
-	//var mList []core.MediatorInfo
-	//fmt.Println(data)
-	//if err := rlp.DecodeBytes(data, &mList); err != nil {
-	//	logger.Println("Check unit signature when get mediators list", "error", err.Error())
-	//	return
-	//}
-	//// todo get ActiveMediators
-	//bNum := db.GetSysConfig([]byte("ActiveMediators"))
-	//var mNum uint16
-	//if err := rlp.DecodeBytes(bNum, &mNum); err != nil {
-	//	logger.Println("Check unit signature", "error", err.Error())
-	//	return
-	//}
-	//fmt.Println("Num=", mNum)
-	//if int(mNum) != len(mList) {
-	//	logger.Println("Check unit signature", "error", "mediators info error, pls update network")
-	//	return
-	//}
-	// todo get GenesisAsset
-	// genesisAsset, _, err := db.GetSysConfig([]byte(modules.FIELD_GENESIS_ASSET))
-	// if !assert.NotNil(t, err) {
-	// 	log.Error("getConfig is failed", "error", err)
-	// 	return
-	// }
-	// var asset modules.Asset
-	// if err := rlp.DecodeBytes(genesisAsset, &asset); err != nil {
-	// 	log.Error("Check unit signature", "error", err.Error())
-	// 	return
-	// }
-	// fmt.Println("asset=", asset)
-	// log.Debug(">>>>>>>>> Pass >>>>>>>>>>.")
-}
 
-//
-//func TestSaveStruct(t *testing.T) {
-//	//Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-//	//if Dbconn == nil {
-//	//	fmt.Println("Connect to db error.")
-//	//	return
-//	//}
-//	db:=MockStateMemDb()
-//	aid := modules.AssetId{}
-//	aid.SetBytes([]byte("1111111111111111222222222222222222"))
-//	st := modules.Asset{
-//		AssetId:  aid,
-//		UniqueId: aid,
-//		ChainId:  1,
-//	}
-//
-//	if err := storage.Store(Dbconn, "TestStruct", st); err != nil {
-//		t.Error(err.Error())
-//	}
-//}
-//
-//func TestReadStruct(t *testing.T) {
-//	Dbconn := storage.ReNewDbConn(dagconfig.DbPath)
-//	if Dbconn == nil {
-//		fmt.Println("Connect to db error.")
-//		return
-//	}
-//
-//	data, err := storage.Get(Dbconn, []byte("TestStruct"))
-//	if err != nil {
-//		t.Error(err.Error())
-//	}
-//
-//	var st modules.Asset
-//	if err := rlp.DecodeBytes(data, &st); err != nil {
-//		t.Error(err.Error())
-//	}
-//	logger.Println("Data:", data)
-//	logger.Println(st)
-//}
+}

@@ -21,17 +21,14 @@
 package storage
 
 import (
-	"errors"
-
-	"github.com/palletone/go-palletone/common/ptndb"
-
-	"github.com/palletone/go-palletone/dag/modules"
-
 	"encoding/json"
+	"errors"
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //保存了对合约写集、Config、Asset信息
@@ -42,6 +39,7 @@ type StateDb struct {
 func NewStateDb(db ptndb.Database) *StateDb {
 	return &StateDb{db: db}
 }
+
 func storeBytesWithVersion(db ptndb.Putter, key []byte, version *modules.StateVersion, val []byte) error {
 	v := append(version.Bytes(), val...)
 	if err := db.Put(key, v); err != nil {
@@ -49,11 +47,13 @@ func storeBytesWithVersion(db ptndb.Putter, key []byte, version *modules.StateVe
 	}
 	return nil
 }
+
 func retrieveWithVersion(db ptndb.Database, key []byte) ([]byte, *modules.StateVersion, error) {
 	data, err := db.Get(key)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return splitValueAndVersion(data)
 }
 
@@ -107,71 +107,6 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 
 // ######################### GET IMPL END ###########################
 
-func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
-	return StoreMediator(statedb.db, med)
-}
-
-func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
-	return StoreMediatorInfo(statedb.db, add, mi)
-}
-
-func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
-	return RetrieveMediatorInfo(statedb.db, address)
-}
-
-func (statedb *StateDb) RetrieveMediator(address common.Address) (*core.Mediator, error) {
-	return RetrieveMediator(statedb.db, address)
-}
-
-func (statedb *StateDb) GetMediatorCount() int {
-	return GetMediatorCount(statedb.db)
-}
-
-func (statedb *StateDb) IsMediator(address common.Address) bool {
-	return IsMediator(statedb.db, address)
-}
-
-func (statedb *StateDb) GetMediators() map[common.Address]bool {
-	return GetMediators(statedb.db)
-}
-
-func (statedb *StateDb) LookupMediator() map[common.Address]*core.Mediator {
-	return LookupMediator(statedb.db)
-}
-
-//xiaozhi
-func (statedb *StateDb) GetApprovedMediatorList() (map[string]bool, error) {
-	depositeContractAddress := syscontract.DepositContractAddress
-	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
-	if err != nil {
-		return nil, fmt.Errorf("mediator candidate list is nil.")
-	}
-
-	//var candidateList []*core.MediatorApplyInfo
-	candidateList := make(map[string]bool)
-	err = json.Unmarshal(val, &candidateList)
-	if err != nil {
-		return nil, err
-	}
-
-	return candidateList, nil
-}
-
-func (statedb *StateDb) IsApprovedMediator(address common.Address) bool {
-	list, err := statedb.GetApprovedMediatorList()
-	if err != nil {
-		return false
-	}
-	if _, ok := list[address.String()]; ok {
-		return true
-	}
-	//for _, v := range list {
-	//	if strings.Compare(v.Address, address.String()) == 0 {
-	//		return true
-	//	}
-	//}
-	return false
-}
 
 func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress

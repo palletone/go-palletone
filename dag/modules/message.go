@@ -43,7 +43,6 @@ const (
 	APP_SIGNATURE
 
 	APP_DATA
-	OP_MEDIATOR_CREATE
 	APP_ACCOUNT_UPDATE
 
 	APP_UNKNOW = 99
@@ -69,7 +68,7 @@ const (
 )
 
 func (mt MessageType) IsRequest() bool {
-	return mt > 99
+	return mt > APP_UNKNOW
 }
 
 // key: message.UnitHash(message+timestamp)

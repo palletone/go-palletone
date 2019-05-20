@@ -499,11 +499,11 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("save become list err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-		//  删除节点信息
-		err = DelMediatorInfo(stub, addr.String())
-		if err != nil {
-			return shim.Error(err.Error())
-		}
+		// 删除节点信息
+		//err = DelMediatorInfo(stub, addr.String())
+		//if err != nil {
+		//	return shim.Error(err.Error())
+		//}
 	} else if strings.Compare(isOk, Ok) == 0 {
 		//  同意，移除列表，并且加入同意申请列表
 		delete(becomeList, addr.String())

@@ -13,15 +13,24 @@
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developer <dev@pallet.one>
- *  * @date 2018
+ *  * @author PalletOne core developers <dev@pallet.one>
+ *  * @date 2018-2019
+ *
  *
  */
 
 package modules
 
-type AccountInfo struct {
-	Balance uint64
-	//当前账户投票的Mediator
-	VotedMediators map[string]bool
+import (
+	"testing"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestCalcThreshold(t *testing.T){
+	t2:= calcThreshold(2)
+	assert.Equal(t,2,t2)
+	t3:= calcThreshold(3)
+	assert.Equal(t,3,t3)
+	t4:= calcThreshold(4)
+	assert.Equal(t,3,t4)
 }

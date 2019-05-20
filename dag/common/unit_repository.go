@@ -961,8 +961,12 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	unitTime := unit.Timestamp()
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
+	reqIndex := tx.GetRequestMsgIndex()
 	for msgIndex, msg := range tx.TxMessages {
 		// handle different messages
+		if tx.Illegal && msgIndex > reqIndex {
+			break
+		}
 		switch msg.App {
 		case modules.APP_PAYMENT:
 			if ok := rep.savePaymentPayload(unit.Timestamp(), txHash, msg.Payload.(*modules.PaymentPayload), uint32(msgIndex)); ok != true {
@@ -990,10 +994,6 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
 			//		return fmt.Errorf("Save contract invode payload error.")
 			//	}
-		case modules.OP_MEDIATOR_CREATE:
-			if !rep.MediatorCreateApply(msg) {
-				return fmt.Errorf("apply Mediator Creating Operation error")
-			}
 		case modules.APP_ACCOUNT_UPDATE:
 			if err := rep.updateAccountInfo(msg, requester, unit.UnitHeader.Number, uint32(txIndex)); err != nil {
 				return fmt.Errorf("apply Account Updating Operation error")
@@ -1322,21 +1322,6 @@ func (rep *UnitRepository) saveContractDeployReq(reqid []byte, msg *modules.Mess
 	}
 	return true
 }
-
-// saveContractInvoke
-//func (rep *UnitRepository) saveContractInvoke(reqid []byte, msg *modules.Message) bool {
-//	invoke, ok := msg.Payload.(*modules.ContractInvokePayload)
-//	if !ok {
-//		log.Error("saveContractInvoke", "error", "payload is not the ContractInvoke type.")
-//		return false
-//	}
-//	err := rep.statedb.SaveContractInvoke(reqid[:], invoke)
-//	if err != nil {
-//		log.Info("save contract invoke payload failed,", "error", err)
-//		return false
-//	}
-//	return true
-//}
 
 // saveContractInvokeReq
 func (rep *UnitRepository) saveContractInvokeReq(reqid []byte, msg *modules.Message) bool {

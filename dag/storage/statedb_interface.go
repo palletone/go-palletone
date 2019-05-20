@@ -48,7 +48,6 @@ type IStateDb interface {
 	GetContractIdsByTpl(tplId []byte) ([][]byte, error)
 	SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error
 	SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error
-	//SaveContractInvoke(reqid []byte, invoke *modules.ContractInvokePayload) error
 	SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error
 	SaveContractStop(reqid []byte, stop *modules.ContractStopPayload) error
 	SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error
@@ -61,14 +60,14 @@ type IStateDb interface {
 	GetContractStop(reqId []byte) (*modules.ContractStopPayload, error)
 	GetContractStopReq(reqId []byte) (*modules.ContractStopRequestPayload, error)
 	GetContractSignature(reqId []byte) (*modules.SignaturePayload, error)
-	/* Account_Info */
+
 	SaveAccountState(address common.Address, write *modules.ContractWriteSet, version *modules.StateVersion) error
 	SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
-
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
 	GetAccountBalance(address common.Address) uint64
+
 	GetMinFee() (*modules.AmountAsset, error)
 	//获得一个合约的陪审团列表
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
@@ -82,13 +81,8 @@ type IStateDb interface {
 	StoreMediator(med *core.Mediator) error
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
-	GetMediatorCount() int
-
 	GetMediators() map[common.Address]bool
-	LookupMediator() map[common.Address]*core.Mediator
-
-	GetApprovedMediatorList() (map[string]bool, error)
-	IsApprovedMediator(address common.Address) bool
+	LookupMediatorInfo() []*modules.MediatorInfo
 	IsMediator(address common.Address) bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)

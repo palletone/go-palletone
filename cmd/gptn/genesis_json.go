@@ -25,11 +25,13 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/files"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
@@ -58,7 +60,7 @@ var (
 		Action:    utils.MigrateFlags(createGenesisJson),
 		Name:      "newgenesis",
 		Usage:     "Create a genesis json file template",
-		ArgsUsage: "<genesisJsonPath>",
+		ArgsUsage: "<genesisJsonPath> <OutputPaths> <ErrorOutputPaths>",
 		Flags: []cli.Flag{
 			GenesisJsonPathFlag,
 		},
@@ -219,6 +221,19 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg.MediatorPlugin.EnableGroupSigning = true
 	cfg.MediatorPlugin.Mediators = mediators
 
+	// change log
+	isOpenSTD := ctx.Args().Get(1)
+	isOpenSTD = strings.ToUpper(isOpenSTD)
+	if isOpenSTD == "FALSE" {
+		newLogOutPath := []string{}
+		for _, p := range cfg.Log.OutputPaths {
+			if p == log.LogStdout {
+				continue
+			}
+			newLogOutPath = append(newLogOutPath, p)
+		}
+		cfg.Log.OutputPaths = newLogOutPath
+	}
 	// 修改默认的Jury配置
 	if len(mediators) > 0 {
 		cfg.Jury.Accounts[0].Address = mediators[0].Address
@@ -238,11 +253,20 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 
 func getGenesisPath(ctx *cli.Context) string {
 	genesisOut := ctx.Args().First()
+	outputPaths := ctx.Args().Get(1)
+	errorOutputPaths := ctx.Args().Get(2)
 
 	// If no path is specified, the default path is used
 	if len(genesisOut) == 0 {
 		// utils.Fatalf("Must supply path to genesis JSON file")
 		genesisOut = defaultGenesisJsonPath
+	}
+	if len(outputPaths) != 0 {
+		log.DefaultConfig.OutputPaths = []string{outputPaths}
+	}
+
+	if len(errorOutputPaths) != 0 {
+		log.DefaultConfig.ErrorOutputPaths = []string{errorOutputPaths}
 	}
 
 	if files.IsDir(genesisOut) {

@@ -1395,24 +1395,8 @@ func (mr *MockIDagMockRecorder) GetMinFee() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMinFee", reflect.TypeOf((*MockIDag)(nil).GetMinFee))
 }
 
-// GenMediatorCreateTx mocks base method
-func (m *MockIDag) GenMediatorCreateTx(account common.Address, op *modules.MediatorCreateOperation, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenMediatorCreateTx", account, op, txPool)
-	ret0, _ := ret[0].(*modules.Transaction)
-	ret1, _ := ret[1].(uint64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GenMediatorCreateTx indicates an expected call of GenMediatorCreateTx
-func (mr *MockIDagMockRecorder) GenMediatorCreateTx(account, op, txPool interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenMediatorCreateTx", reflect.TypeOf((*MockIDag)(nil).GenMediatorCreateTx), account, op, txPool)
-}
-
 // GenVoteMediatorTx mocks base method
-func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators []string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
@@ -1425,6 +1409,34 @@ func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators []string, t
 func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, txPool interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, txPool)
+}
+
+// CurrentFeeSchedule mocks base method
+func (m *MockIDag) CurrentFeeSchedule() core.FeeSchedule {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CurrentFeeSchedule")
+	ret0, _ := ret[0].(core.FeeSchedule)
+	return ret0
+}
+
+// CurrentFeeSchedule indicates an expected call of CurrentFeeSchedule
+func (mr *MockIDagMockRecorder) CurrentFeeSchedule() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentFeeSchedule", reflect.TypeOf((*MockIDag)(nil).CurrentFeeSchedule))
+}
+
+// GetDynGlobalProp mocks base method
+func (m *MockIDag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDynGlobalProp")
+	ret0, _ := ret[0].(*modules.DynamicGlobalProperty)
+	return ret0
+}
+
+// GetDynGlobalProp indicates an expected call of GetDynGlobalProp
+func (mr *MockIDagMockRecorder) GetDynGlobalProp() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDynGlobalProp", reflect.TypeOf((*MockIDag)(nil).GetDynGlobalProp))
 }
 
 // IsMediator mocks base method
@@ -1455,20 +1467,6 @@ func (mr *MockIDagMockRecorder) GetMediators() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediators", reflect.TypeOf((*MockIDag)(nil).GetMediators))
 }
 
-// MediatorVotedResults mocks base method
-func (m *MockIDag) MediatorVotedResults() map[string]uint64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MediatorVotedResults")
-	ret0, _ := ret[0].(map[string]uint64)
-	return ret0
-}
-
-// MediatorVotedResults indicates an expected call of MediatorVotedResults
-func (mr *MockIDagMockRecorder) MediatorVotedResults() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MediatorVotedResults", reflect.TypeOf((*MockIDag)(nil).MediatorVotedResults))
-}
-
 // ActiveMediators mocks base method
 func (m *MockIDag) ActiveMediators() map[common.Address]bool {
 	m.ctrl.T.Helper()
@@ -1484,10 +1482,10 @@ func (mr *MockIDagMockRecorder) ActiveMediators() *gomock.Call {
 }
 
 // GetAccountVotedMediators mocks base method
-func (m *MockIDag) GetAccountVotedMediators(addr common.Address) []common.Address {
+func (m *MockIDag) GetAccountVotedMediators(addr common.Address) map[string]bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccountVotedMediators", addr)
-	ret0, _ := ret[0].([]common.Address)
+	ret0, _ := ret[0].(map[string]bool)
 	return ret0
 }
 
@@ -1495,20 +1493,6 @@ func (m *MockIDag) GetAccountVotedMediators(addr common.Address) []common.Addres
 func (mr *MockIDagMockRecorder) GetAccountVotedMediators(addr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountVotedMediators", reflect.TypeOf((*MockIDag)(nil).GetAccountVotedMediators), addr)
-}
-
-// GetDynGlobalProp mocks base method
-func (m *MockIDag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDynGlobalProp")
-	ret0, _ := ret[0].(*modules.DynamicGlobalProperty)
-	return ret0
-}
-
-// GetDynGlobalProp indicates an expected call of GetDynGlobalProp
-func (mr *MockIDagMockRecorder) GetDynGlobalProp() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDynGlobalProp", reflect.TypeOf((*MockIDag)(nil).GetDynGlobalProp))
 }
 
 // GetMediatorInfo mocks base method
@@ -1525,16 +1509,30 @@ func (mr *MockIDagMockRecorder) GetMediatorInfo(address interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediatorInfo", reflect.TypeOf((*MockIDag)(nil).GetMediatorInfo), address)
 }
 
-// CurrentFeeSchedule mocks base method
-func (m *MockIDag) CurrentFeeSchedule() core.FeeSchedule {
+// MediatorVotedResults mocks base method
+func (m *MockIDag) MediatorVotedResults() map[string]uint64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CurrentFeeSchedule")
-	ret0, _ := ret[0].(core.FeeSchedule)
+	ret := m.ctrl.Call(m, "MediatorVotedResults")
+	ret0, _ := ret[0].(map[string]uint64)
 	return ret0
 }
 
-// CurrentFeeSchedule indicates an expected call of CurrentFeeSchedule
-func (mr *MockIDagMockRecorder) CurrentFeeSchedule() *gomock.Call {
+// MediatorVotedResults indicates an expected call of MediatorVotedResults
+func (mr *MockIDagMockRecorder) MediatorVotedResults() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentFeeSchedule", reflect.TypeOf((*MockIDag)(nil).CurrentFeeSchedule))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MediatorVotedResults", reflect.TypeOf((*MockIDag)(nil).MediatorVotedResults))
+}
+
+// LookupMediatorInfo mocks base method
+func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LookupMediatorInfo")
+	ret0, _ := ret[0].([]*modules.MediatorInfo)
+	return ret0
+}
+
+// LookupMediatorInfo indicates an expected call of LookupMediatorInfo
+func (mr *MockIDagMockRecorder) LookupMediatorInfo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupMediatorInfo", reflect.TypeOf((*MockIDag)(nil).LookupMediatorInfo))
 }

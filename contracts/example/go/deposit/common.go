@@ -17,6 +17,10 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
@@ -25,9 +29,6 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
-	"strings"
-	"time"
 )
 
 //判断 invokeTokens 是否包含保证金合约地址
@@ -713,13 +714,13 @@ func SaveMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string, med
 }
 
 //  删除节点信息
-func DelMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) error {
-	err := stub.DelState(string(constants.MEDIATOR_INFO_PREFIX) + mediatorAddr)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+//func DelMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) error {
+//	err := stub.DelState(string(constants.MEDIATOR_INFO_PREFIX) + mediatorAddr)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func SaveNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balance *DepositBalance) error {
 	balanceByte, err := json.Marshal(balance)
