@@ -42,8 +42,8 @@ type IPropRepository interface {
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 	GetChainThreshold() (int, error)
-	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
-	GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
+	// SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
+	// GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
@@ -97,12 +97,12 @@ func (pRep *PropRepository) StoreMediatorSchl(ms *modules.MediatorSchedule) erro
 func (pRep *PropRepository) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	return pRep.db.RetrieveMediatorSchl()
 }
-func (pRep *PropRepository) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
-	return pRep.db.SetLastStableUnit(hash, index)
-}
-func (pRep *PropRepository) GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
-	return pRep.db.GetLastStableUnit(token)
-}
+// func (pRep *PropRepository) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
+// 	return pRep.db.SetLastStableUnit(hash, index)
+// }
+// func (pRep *PropRepository) GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+// 	return pRep.db.GetLastStableUnit(token)
+// }
 func (pRep *PropRepository) SetNewestUnit(header *modules.Header) error {
 	return pRep.db.SetNewestUnit(header)
 }

@@ -202,20 +202,17 @@ func (d *Dag) UnitIrreversibleTime() time.Duration {
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
-	unit, err := d.GetUnitByHash(hash)
-	if unit != nil && err == nil {
-		_, idx, _ := d.stablePropRep.GetLastStableUnit(unit.UnitHeader.Number.AssetID)
-
-		if unit.NumberU64() <= idx.Index {
-			return true
-		}
+	exist, err := d.stableUnitRep.IsHeaderExist(hash)
+	if err != nil {
+		log.Errorf("IsHeaderExist execute error:%s", err.Error())
+		return false
 	}
 
-	return false
+	return exist
 }
 
 func (d *Dag) GetIrreversibleUnit(id modules.AssetId) (*modules.ChainIndex, error) {
-	_, idx, err := d.stablePropRep.GetLastStableUnit(id)
+	_, idx, err := d.stablePropRep.GetNewestUnit(id)
 	return idx, err
 }
 
