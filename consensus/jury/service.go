@@ -455,12 +455,12 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		//	continue
 		//}
 
-		if err = txpool.AddSequenTx(tx); err != nil {
+		if err = txpool.AddSequenTx(ctx.rstTx); err != nil {
 			log.Error("AddContractLoop", "error", err.Error())
 			continue
 		}
 		log.Debug("AddContractLoop", "OK, index", index, "Tx reqId", ctx.rstTx.RequestHash().String(), "Tx hash", ctx.rstTx.Hash().String())
-		index ++
+		index++
 	}
 	//rwM.Close()
 	return nil
@@ -834,7 +834,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
