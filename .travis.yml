@@ -33,8 +33,7 @@ script:
 #    - cd ../dct
 #    - ./deposit_test.sh 4
     - cd ../initialEnv
-    - chmod +x initFtpUrl.sh
-    - ./initFtpUrl.sh
+    - bash ./initFtpUrl.sh
 #    - mkdir -p ${BDD_LOG_PATH}
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
