@@ -29,10 +29,11 @@ script:
     - nohup ./gptn &
     - sleep 15
     - netstat -ap | grep gptn
-    - cd ../dct
+#    - cd ../dct
 #    - ./deposit_test.sh 4
-    - cd ../inital && ./initFtpUrl.sh
-    - mkdir -p ${BDD_LOG_PATH}
+    - cd ../inital
+    - ./initFtpUrl.sh
+#    - mkdir -p ${BDD_LOG_PATH}
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
 #    - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
