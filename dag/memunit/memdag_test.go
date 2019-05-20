@@ -173,7 +173,7 @@ func TestMemDag_AddOrphanUnit(t *testing.T){
 func TestMemDag_SwitchMainChain(t *testing.T){
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	u0 := newTestUnit(common.Hash{},0)
+	u0 := newTestUnit(common.Hash{},1)
 	txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)

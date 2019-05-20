@@ -388,7 +388,7 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 
 	sign, err := ks.SigData(tx, signer)
 	if err != nil {
-		return nil, fmt.Errorf("GetTxSig, Failed to singure transaction, reqId%s, err:", reqId.String(), err.Error())
+		return nil, fmt.Errorf("GetTxSig, Failed to singure transaction, reqId%s, err:%s", reqId.String(), err.Error())
 	}
 	log.DebugDynamic(func() string {
 		data, err := rlp.EncodeToBytes(tx)
