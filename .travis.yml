@@ -82,14 +82,15 @@ addons:
 
 deploy:
     skip_cleanup: true
-#    on:
-#        branch: certbdd
+    on:
+        branch: certbdd
 
 notifications:
-    email: elva1087penny@163.com
+#    email: elva1087penny@163.com
+    email:602554102@qq.com
     email:
         recipients:
-            - elva1087penny@163.com
+            - 602554102@qq.com
         on_success: always # default: change
         on_failure: always
 
