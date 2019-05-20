@@ -149,19 +149,19 @@ func initGenesis(ctx *cli.Context) error {
 	genesisUnitHash := unit.UnitHash
 	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
 
-	// 初始化属性数据库
-	// modified by Yiran
-	err = dag.InitPropertyDB(genesis, unit)
-	if err != nil {
-		utils.Fatalf("Failed to InitPropertyDB: %v", err)
-		return err
-	}
-
 	// 初始化 stateDB
 	// append by albert·gou
 	err = dag.InitStateDB(genesis, unit)
 	if err != nil {
 		utils.Fatalf("Failed to InitStateDB: %v", err)
+		return err
+	}
+
+	// 初始化属性数据库
+	// modified by Yiran
+	err = dag.InitPropertyDB(genesis, unit)
+	if err != nil {
+		utils.Fatalf("Failed to InitPropertyDB: %v", err)
 		return err
 	}
 

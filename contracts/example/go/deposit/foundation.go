@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"time"
 
 	"fmt"
 	"github.com/palletone/go-palletone/common"
@@ -25,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 //同意申请没收请求

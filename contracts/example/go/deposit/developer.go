@@ -16,14 +16,15 @@ package deposit
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
-	"time"
 )
 
 func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
