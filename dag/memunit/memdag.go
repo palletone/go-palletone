@@ -77,6 +77,7 @@ func NewMemDag(token modules.AssetId, saveHeaderOnly bool, db ptndb.Database, st
 		tempdbunitRep:     trep,
 		tempUtxoRep:       tutxoRep,
 		tempStateRep:      tstateRep,
+		tempPropRep:		tpropRep,
 		tempdb:            tempdb,
 		orphanUnits:       make(map[common.Hash]*modules.Unit),
 		chainUnits:        make(map[common.Hash]*modules.Unit),
