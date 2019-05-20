@@ -22,12 +22,13 @@ package common
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 type IUnitProduceRepository interface {
@@ -118,7 +119,7 @@ func (dag *UnitProduceRepository) validateMediatorSchedule(nextUnit *modules.Uni
 	ts, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
 	if ts >= nextUnit.Timestamp() {
 		errStr := "invalidated unit's timestamp"
-		log.Debugf(errStr)
+		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts, nextUnit.Hash().String(), nextUnit.Timestamp())
 		return fmt.Errorf(errStr)
 	}
 

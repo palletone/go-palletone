@@ -34,7 +34,7 @@ func mediatorKey(address common.Address) []byte {
 	key := append(constants.CONTRACT_STATE_PREFIX, syscontract.DepositContractAddress.Bytes()...)
 	key = append(key, string(constants.MEDIATOR_INFO_PREFIX)+string(address.Bytes())...)
 
-	log.Debugf("mediatorKey %v", string(key))
+	//log.Debugf("mediatorKey %v", string(key))
 
 	return key
 }

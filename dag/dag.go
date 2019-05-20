@@ -528,21 +528,22 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	if !dag.IsHeaderExist(hash) {
 		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
 			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
-		newestUnit := dag.Memdag.GetLastMainchainUnit()
-		if nil != newestUnit {
-			// todo 待删除 处理临时prop没有回滚的问题
-			dgp := dag.GetDynGlobalProp()
+		//TODO Devin query all unit,get newest one
+		//newestUnit := dag.Memdag.GetLastMainchainUnit()
+		//if nil != newestUnit {
 
-			interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
-			time, _ := dag.stablePropRep.GetNewestUnitTimestamp(gasToken)
-			dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
-			//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
-
-			dag.SaveDynGlobalProp(dgp, false)
-			//----------
-
-			dag.stablePropRep.SetNewestUnit(newestUnit.Header())
-		}
+		//	dgp := dag.GetDynGlobalProp()
+		//
+		//	interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
+		//	time, _ := dag.stablePropRep.GetNewestUnitTimestamp(gasToken)
+		//	dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
+		//	//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
+		//
+		//	dag.SaveDynGlobalProp(dgp, false)
+		//	//----------
+		//
+		//	dag.stablePropRep.SetNewestUnit(newestUnit.Header())
+		//}
 	}
 	dag.refreshPartitionMemDag()
 	return dag, nil
@@ -1153,8 +1154,9 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
+	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
 	d.Memdag.SetUnitGroupSign(unitHash, nil, groupSign, txpool)
-	log.Debugf("Update unit[%s] group sign", unitHash.String())
+
 	//TODO Group pub key????
 	// 将缓存池utxo更新到utxodb中
 	//go d.UpdateUtxosByUnit(unitHash)
