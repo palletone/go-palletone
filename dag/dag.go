@@ -226,10 +226,6 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
-	// var (
-	// 	events = make([]interface{}, 0, len(units))
-	// 	coalescedLogs []*types.Log
-	// )
 
 	count := int(0)
 	for i, u := range units {
@@ -256,22 +252,11 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
-		// append by albert·gou, 利用 unit 更新相关状态
-		if err := d.statleUnitProduceRep.ApplyUnit(u); err != nil {
+		if err:=d.Memdag.AddUnit(u,txpool); err != nil {
 			//return count, err
 			return count, nil
 		}
-
-		// todo 应当和本地生产的unit统一接口，而不是直接存储
-		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
-		if err := d.SaveUnit(u, txpool, false); err != nil {
-			return count, err
-		}
-
-		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
-		//log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
-		// events = append(events, modules.ChainEvent{u, common.Hash{}, nil})
 	}
 
 	//TODO add PostChainEvents
