@@ -667,3 +667,10 @@ func electionWeightValue(total uint64) (val uint64) {
 	}
 	return 4
 }
+
+func shortId(id string) string {
+	if len(id) < 8 {
+		return id
+	}
+	return id[0:8]
+}

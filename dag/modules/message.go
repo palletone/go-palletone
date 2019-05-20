@@ -68,7 +68,7 @@ const (
 )
 
 func (mt MessageType) IsRequest() bool {
-	return mt > 99
+	return mt > APP_UNKNOW
 }
 
 // key: message.UnitHash(message+timestamp)

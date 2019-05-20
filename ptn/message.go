@@ -374,23 +374,22 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
 			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
 		log.Debugf(errStr)
-
 		return fmt.Errorf(errStr)
-		//return nil
+	}
+	for _, tx := range unit.Txs{
+		log.Debug("NewBlockMsg", "unit hash", unit.UnitHash.String(), "txReq", tx.RequestHash().String(), "tx", tx.Hash().String())
 	}
 	rwset.Init()
 	var temptxs modules.Transactions
+	index := 0
 	for _, tx := range unit.Txs {
 		if tx.IsContractTx() {
-			log.Debug("rwset info:", "readset_init", rwset.RwM.BaseTxSim())
+			log.Debug("NewBlockMsg", "index",index, "reqId", tx.RequestHash().String(), "txHash", tx.Hash().String())
+			index ++
 			if !pm.contractProc.CheckContractTxValid(rwset.RwM, tx, true) {
-				//log.Debug("rwset info:", "readset_not_equal", rwset.RwM.BaseTxSim()["palletone"].String())
 				log.Debug("NewBlockMsg,CheckContractTxValid is false.", "reqHash", tx.RequestHash().String())
-				//return errResp(ErrDecode, "Contract transaction valid check fail, reqId %v", tx.RequestHash().String())
 				continue
 			}
-			//log.Debug("rwset info:", "readset_equal", rwset.RwM.BaseTxSim()["palletone"].String())
-			//rwset.RwM.CloseTxSimulator(rwset.ChainId, tx.RequestHash().String())
 		}
 		temptxs = append(temptxs, tx)
 	}

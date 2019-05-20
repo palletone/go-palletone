@@ -104,10 +104,11 @@ func (p *peer) queueSend(f func()) {
 
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info() *ptn.PeerInfo {
+	hash, number := p.HeadAndNumber()
 	return &ptn.PeerInfo{
 		Version: p.version,
-		Index:   uint64(0),
-		Head:    fmt.Sprintf("%x", p.Head()),
+		Index:   number.Index, //uint64(0),
+		Head:    fmt.Sprintf("%x", hash),
 	}
 }
 
