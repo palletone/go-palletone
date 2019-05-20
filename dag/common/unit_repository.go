@@ -961,8 +961,12 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	unitTime := unit.Timestamp()
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
+	reqIndex := tx.GetRequestMsgIndex()
 	for msgIndex, msg := range tx.TxMessages {
 		// handle different messages
+		if tx.Illegal && msgIndex > reqIndex {
+			break
+		}
 		switch msg.App {
 		case modules.APP_PAYMENT:
 			if ok := rep.savePaymentPayload(unit.Timestamp(), txHash, msg.Payload.(*modules.PaymentPayload), uint32(msgIndex)); ok != true {

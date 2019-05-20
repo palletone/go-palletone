@@ -21,12 +21,7 @@ package web3ext
 const Mediator_JS = `
 web3._extend({
 	property: 'mediator',
-	methods: [
-		new web3._extend.Method({
-			name: 'listAll',
-			call: 'mediator_getList',
-			params: 0,
-		}),
+	methods: [	 
 		new web3._extend.Method({
 			name: 'getVoted',
 			call: 'mediator_getVoted',
@@ -86,12 +81,7 @@ web3._extend({
 			name: 'stopProduce',
 			call: 'mediator_stopProduce',
 			params: 0,
-		}),
-		new web3._extend.Method({
-			name: 'listVoteResults',
-			call: 'mediator_listVoteResults',
-			params: 0,
-		}),
+		}),	
 		new web3._extend.Method({
 			name: 'lookupMediatorInfo',
 			call: 'mediator_lookupMediatorInfo',
@@ -103,6 +93,14 @@ web3._extend({
 		new web3._extend.Property({
 			name: 'listActives',
 			getter: 'mediator_getActives'
+		}),
+		new web3._extend.Property({
+			name: 'listAll',
+			getter: 'mediator_getList'
+		}),
+		new web3._extend.Property({
+			name: 'listVoteResults',
+			getter: 'mediator_listVoteResults'
 		}),
 	]
 });

@@ -607,7 +607,7 @@ func (pm *ProtocolManager) txStatus(hashes []common.Hash) []txStatus {
 // known about the host peer.
 type NodeInfo struct {
 	Network uint64      `json:"network"` // Palletone network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
-	Index   uint64      `json:"number"`  // Total difficulty of the host's blockchain
+	Index   uint64      `json:"Index"`   // Total difficulty of the host's blockchain
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block
 	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	//Config     *params.ChainConfig `json:"config"`     // Chain configuration for the fork rules
