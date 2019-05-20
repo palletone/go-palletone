@@ -21,7 +21,7 @@
 package scc
 
 import (
-	"github.com/palletone/go-palletone/contracts/example/go/deposit"
+	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
