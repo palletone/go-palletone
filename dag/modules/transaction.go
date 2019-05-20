@@ -393,7 +393,6 @@ func (txs Transactions) GetTxIds() []common.Hash {
 	for i, tx := range txs {
 		ids[i] = tx.Hash()
 	}
-	txs.Hash()
 	return ids
 }
 
