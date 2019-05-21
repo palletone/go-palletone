@@ -16,7 +16,7 @@ env:
         - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
-        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/master
+        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/palletone
         - CURL_CMD=curl --ftp-create-dirs -T
 
 script:
@@ -42,7 +42,7 @@ script:
 after_script:
     - killall gptn
     # upload all log
-    - ${CURL_CMD} ${ALL_LOG_PATH} ftp://${CERT}:${PASSWORD}@98.142.130.141/master/all.log -v
+    - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
 #    # upload deposit log
 #    - ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
 #    - ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
@@ -56,7 +56,7 @@ after_script:
     - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
     - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
     # echo ftp address
-    - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/cerbdd', but you should quit VPN first"
+    - echo "The path of all bdd log in vsftpd is '${FTP_URL}', but you should quit VPN first"
 
 before_install:
     - go get github.com/mattn/goveralls
