@@ -449,7 +449,6 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s]", shortId(reqId.String()), index, ctx.rstTx.Hash().String())
 		index ++
 	}
-	rwM.Close()
 	return nil
 }
 
