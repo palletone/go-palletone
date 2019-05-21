@@ -16,8 +16,8 @@ env:
         - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
-        - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/certbdd
-        - CURL_CMD=curl --ftp-create-dirs -T
+        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/certbdd
+#        - CURL_CMD=curl --ftp-create-dirs -T
 
 script:
     - go build ./cmd/gptn
@@ -42,19 +42,19 @@ script:
 after_script:
     - killall gptn
     # upload all log
-    - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
+    - curl --ftp-create-dirs -T ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
 #    # upload deposit log
-#    - ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
-#    - ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
+#    - curl --ftp-create-dirs -T ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
+#    - curl --ftp-create-dirs -T ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
     # upload create transactions log and report
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
+    - curl --ftp-create-dirs -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
+    - curl --ftp-create-dirs -T ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
 #    # upload ccinvoke log and report
-#    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
-#    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
+#    - curl --ftp-create-dirs -T ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
+#    - curl --ftp-create-dirs -T ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
     # upload digital identity log and report
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
+    - curl --ftp-create-dirs -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
+    - curl --ftp-create-dirs -T ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
     # echo ftp address
     - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/cerbdd', but you should quit VPN first"
 
