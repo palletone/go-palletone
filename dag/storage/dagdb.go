@@ -52,7 +52,7 @@ type IDagDb interface {
 	SaveHeader(h *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
-	GetAllTxs() ([]*modules.Transaction,error)
+	GetAllTxs() ([]*modules.Transaction, error)
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	//SaveTransactions(txs *modules.Transactions) error
@@ -313,7 +313,7 @@ func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	log.Debug("get unit body info", "unitHash", unitHash.String())
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
 	var txHashs []common.Hash
-	err := retrieve(dagdb.db, key, &txHashs)
+	err := Retrieve(dagdb.db, key, &txHashs)
 
 	if err != nil {
 		return nil, err
@@ -353,7 +353,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 func (dagdb *DagDb) GetTxLookupEntry(txHash common.Hash) (*modules.TxLookupEntry, error) {
 	key := append(constants.LookupPrefix, txHash.Bytes()...)
 	entry := &modules.TxLookupEntry{}
-	err := retrieve(dagdb.db, key, entry)
+	err := Retrieve(dagdb.db, key, entry)
 	if err != nil {
 		log.Info("get entry structure info:", "error", err, "tx_entry", entry)
 		return nil, err
@@ -548,7 +548,7 @@ func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
 	log.Debugf("DB[%s] Get Header by unit hash:%s", reflect.TypeOf(dagdb.db).String(), hash.String())
 	header := new(modules.Header)
-	err := retrieve(dagdb.db, key, header)
+	err := Retrieve(dagdb.db, key, header)
 	if err != nil {
 		return nil, err
 	}

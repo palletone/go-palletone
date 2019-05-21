@@ -120,7 +120,7 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 // func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 // 	key := append(constants.LastStableUnitHash, asset.Bytes()...)
 // 	data := &modules.UnitProperty{}
-// 	err := retrieve(db.db, key, data)
+// 	err := Retrieve(db.db, key, data)
 // 	if err != nil {
 // 		log.Warnf("Cannot retrieve last stable unit hash by asset:%s", asset.String())
 // 		return common.Hash{}, nil, err
@@ -140,7 +140,7 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
 	key := append(constants.LastUnitInfo, asset.Bytes()...)
 	data := &modules.UnitProperty{}
-	err := retrieve(db.db, key, data)
+	err := Retrieve(db.db, key, data)
 	if err != nil {
 		return common.Hash{}, nil, 0, err
 	}
@@ -155,7 +155,7 @@ func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) 
 func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
 	log.Debugf("Get chaincodes with contractid %s", contractId.String())
 	cc := &list.CCInfo{}
-	err := retrieve(db.db, contractId.Bytes(), cc)
+	err := Retrieve(db.db, contractId.Bytes(), cc)
 	if err != nil {
 		log.Infof("Cannot retrieve chaincodes by contractid %s", contractId.String())
 		return nil, err

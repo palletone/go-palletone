@@ -69,7 +69,7 @@ type IIndexDb interface {
 //func (idxdb *IndexDb) GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error) {
 //	key := idx.ToKey()
 //	utxo := new(modules.Utxo)
-//	err := retrieve(idxdb.db, key, utxo)
+//	err := Retrieve(idxdb.db, key, utxo)
 //	return utxo, err
 //}
 //func (idxdb *IndexDb) DeleteUtxoByIndex(idx *modules.UtxoIndex) error {

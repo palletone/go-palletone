@@ -41,7 +41,7 @@ func (statedb *StateDb) SaveContractTplCode(tplId []byte, byteCode []byte) error
 func (statedb *StateDb) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	key := append(constants.CONTRACT_TPL, tplId...)
 	tpl := &modules.ContractTemplate{}
-	err := retrieve(statedb.db, key, tpl)
+	err := Retrieve(statedb.db, key, tpl)
 	if err != nil {
 		return nil, err
 	}

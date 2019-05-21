@@ -52,7 +52,7 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	key := append(constants.CONTRACT_PREFIX, id...)
 	contract := new(modules.Contract)
-	err := retrieve(statedb.db, key, contract)
+	err := Retrieve(statedb.db, key, contract)
 	return contract, err
 
 }
