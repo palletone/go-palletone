@@ -86,7 +86,7 @@ web3._extend({
 			name: 'stopProduce',
 			call: 'mediator_stopProduce',
 			params: 0,
-		}),
+		}),	
 		new web3._extend.Method({
 			name: 'listVoteResults',
 			call: 'mediator_listVoteResults',

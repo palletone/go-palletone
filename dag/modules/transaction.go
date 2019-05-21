@@ -1023,3 +1023,51 @@ func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
 	}
 	return false, nil
 }
+
+type SequeueTxPoolTxs []*TxPoolTransaction
+
+// add
+func (seqTxs *SequeueTxPoolTxs) Add(newPoolTx *TxPoolTransaction) {
+	*seqTxs = append(*seqTxs, newPoolTx)
+}
+
+// add priority
+func (seqTxs *SequeueTxPoolTxs) AddPriority(newPoolTx *TxPoolTransaction) {
+	if len(*seqTxs) == 0 {
+		*seqTxs = append(*seqTxs, newPoolTx)
+	} else {
+		added := false
+		for i, item := range *seqTxs {
+			if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
+				*seqTxs = append((*seqTxs)[:i], append(SequeueTxPoolTxs{newPoolTx}, (*seqTxs)[i:]...)...)
+				added = true
+				break
+			}
+		}
+		if !added {
+			*seqTxs = append(*seqTxs, newPoolTx)
+		}
+	}
+}
+
+// get
+func (seqTxs *SequeueTxPoolTxs) Get() *TxPoolTransaction {
+	if len(*seqTxs) <= 0 {
+		return nil
+	}
+	if len(*seqTxs) == 1 {
+		first := (*seqTxs)[0]
+		*seqTxs = make([]*TxPoolTransaction, 0)
+		return first
+	}
+	first, rest := (*seqTxs)[0], (*seqTxs)[1:]
+	*seqTxs = rest
+	return first
+}
+
+// get all
+func (seqTxs *SequeueTxPoolTxs) All() []*TxPoolTransaction {
+	items := (*seqTxs)[:]
+	*seqTxs = make([]*TxPoolTransaction, 0)
+	return items
+}

@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"reflect"
 )
 
 // modified by Yiran
@@ -45,8 +46,8 @@ type IPropertyDb interface {
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 
 	//设置稳定单元的Hash
-	SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
-	GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
+	// SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
+	// GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
 
@@ -110,39 +111,41 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 	return RetrieveMediatorSchl(propdb.db)
 }
 
-func (db *PropertyDb) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
-	data := &modules.UnitProperty{hash, index, 0}
-	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
-	log.Debugf("Save last stable assetId:%s,unit: %s", index.AssetID.String(), hash.String())
-	return StoreBytes(db.db, key, data)
-}
-func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
-	key := append(constants.LastStableUnitHash, asset.Bytes()...)
-	data := &modules.UnitProperty{}
-	err := retrieve(db.db, key, data)
-	if err != nil {
-		log.Warnf("Cannot retrieve last stable unit hash by asset:%s", asset.String())
-		return common.Hash{}, nil, err
-	}
-	return data.Hash, data.Index, nil
-}
+// func (db *PropertyDb) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
+// 	data := &modules.UnitProperty{hash, index, 0}
+// 	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
+// 	log.Debugf("Save last stable assetId:%s,unit: %s", index.AssetID.String(), hash.String())
+// 	return StoreBytes(db.db, key, data)
+// }
+// func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+// 	key := append(constants.LastStableUnitHash, asset.Bytes()...)
+// 	data := &modules.UnitProperty{}
+// 	err := retrieve(db.db, key, data)
+// 	if err != nil {
+// 		log.Warnf("Cannot retrieve last stable unit hash by asset:%s", asset.String())
+// 		return common.Hash{}, nil, err
+// 	}
+// 	return data.Hash, data.Index, nil
+// }
 func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
 	index := header.Number
 	timestamp := uint32(header.Time)
 	data := &modules.UnitProperty{hash, index, timestamp}
-	key := append(constants.LastUnstableUnitHash, index.AssetID.Bytes()...)
-	log.Debugf("Save newest unit %s,index:%s", hash.String(), index.String())
+	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
+	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(),hash.String(), index.String())
 
 	return StoreBytes(db.db, key, data)
 }
 func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
-	key := append(constants.LastUnstableUnitHash, asset.Bytes()...)
+	key := append(constants.LastUnitInfo, asset.Bytes()...)
 	data := &modules.UnitProperty{}
 	err := retrieve(db.db, key, data)
 	if err != nil {
 		return common.Hash{}, nil, 0, err
 	}
+	log.Debugf("DB[%s] GetNewestUnit: %s,Index:%s,timestamp:%d", reflect.TypeOf(db.db).String(),
+		data.Hash.String(),data.Index.String(),data.Timestamp)
 	return data.Hash, data.Index, int64(data.Timestamp), nil
 }
 func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {

@@ -33,23 +33,24 @@ func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscr
 }
 
 func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
-	if event == nil || len(event.Tx.TxMessages) < 1 {
+	if event == nil || event.Tx == nil || len(event.Tx.TxMessages) < 1 {
 		return errors.New("ProcessContractEvent param is nil")
 	}
+	reqId := event.Tx.RequestHash()
 	if p.checkTxIsExist(event.Tx) {
-		err := fmt.Sprintf("ProcessContractEvent, event Tx is exist, reqId:%s, txId:%s", event.Tx.RequestHash().String(), event.Tx.Hash().String())
+		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is exist,  txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 		return errors.New(err)
 	}
 	//p.checkTxReqIdIsExist(event.Tx.RequestHash())
-
 	if !p.checkTxValid(event.Tx) {
-		return errors.New("ProcessContractEvent event Tx is invalid")
+		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is invalid,  txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
+		return errors.New(err)
 	}
 	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
-		log.Debug("ProcessContractEvent", "contractEventExecutable is false, reqId", event.Tx.RequestHash())
+		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
 		return nil
 	}
-	log.Debug("ProcessContractEvent", " reqId", event.Tx.RequestHash(), "event", event.CType)
+	log.Debugf("[%s]ProcessContractEvent, event type:%v ", shortId(reqId.String()), event.CType)
 
 	switch event.CType {
 	case CONTRACT_EVENT_EXEC:
@@ -78,7 +79,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 		adaInf: make(map[uint32]*AdapterInf),
 	}
 	p.locker.Unlock()
-	log.Debug("contractExecEvent", "add tx req id", reqId)
+	log.Debugf("[%s]contractExecEvent, add tx reqId:%s", shortId(reqId.String()), reqId.String())
 
 	if !tx.IsSystemContract() { //系统合约在UNIT构建前执行
 		go p.runContractReq(reqId, ele)
@@ -119,8 +120,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 		if getTxSigNum(ctx.sigTx) >= p.contractSigNum {
 			if localIsMinSignature(ctx.sigTx) { //todo
 				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
-				log.Info("runContractReq", "localIsMinSignature Ok!2, reqId", reqId.String())
-
+				log.Infof("[%s]runContractReq, localIsMinSignature Ok!", shortId(reqId.String()))
 				processContractPayout(ctx.sigTx, ele)
 				go p.ptn.ContractBroadcast(ContractEvent{Ele: ele, CType: CONTRACT_EVENT_COMMIT, Tx: ctx.sigTx}, true)
 			}
@@ -133,9 +133,6 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 
 func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 	reqId := tx.RequestHash()
-	//todo
-	//合约安装，检查合约签名数据
-	//用户合约，检查签名数量及有效性
 	p.locker.Lock()
 	defer p.locker.Unlock()
 	if _, ok := p.mtx[reqId]; !ok {
@@ -147,7 +144,7 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 	} else if p.mtx[reqId].rstTx != nil {
-		//log.Info("contractCommitEvent", "rstTx already receive,reqId", reqId)
+		log.Info("[%s]contractCommitEvent, rstTx already receive", shortId(reqId.String()))
 		return nil //rstTx already receive
 	}
 	p.mtx[reqId].valid = true

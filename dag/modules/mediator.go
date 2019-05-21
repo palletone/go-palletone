@@ -34,7 +34,7 @@ const (
 	Apply              = "apply"
 	Agree              = "agree"
 	Quit               = "quit"
-	GetMediatorInfo    = "GetMediatorInfo"
+	//GetMediatorInfo    = "GetMediatorInfo"
 )
 
 type MediatorInfo struct {

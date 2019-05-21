@@ -20,12 +20,10 @@
 package dag
 
 import (
-	"sort"
 	"time"
 
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -56,88 +54,40 @@ func (dag *Dag) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	return uint64(missedUnits)
 }
 
-// UpdateDynGlobalProp, update global dynamic data
-func (dag *Dag) updateDynGlobalProp(unit *modules.Unit, missedUnits uint64) {
-	log.Debugf("update global dynamic data")
-	dgp := dag.GetDynGlobalProp()
+//func (dag *Dag) updateLastIrreversibleUnit() {
+//	aSize := dag.ActiveMediatorsCount()
+//	lastConfirmedUnitNums := make([]int, 0, aSize)
+//
+//	// 1. 获取所有活跃 mediator 最后确认unit编号
+//	meds := dag.GetActiveMediators()
+//	for _, add := range meds {
+//		med := dag.GetActiveMediator(add)
+//		lastConfirmedUnitNums = append(lastConfirmedUnitNums, int(med.LastConfirmedUnitNum))
+//	}
+//
+//	// 2. 排序
+//	// todo 应当优化本排序方法，使用第n大元素的方法
+//	sort.Ints(lastConfirmedUnitNums)
+//
+//	// 3. 获取倒数第 > 2/3 个确认unit编号
+//	offset := aSize - dag.ChainThreshold()
+//	var newLastIrreversibleUnitNum = uint64(lastConfirmedUnitNums[offset])
+//
+//	// 4. 更新
+//	dag.updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum)
+//	log.Debugf("new last irreversible unit number is: %v", newLastIrreversibleUnitNum)
+//}
 
-	//dgp.HeadUnitNum = unit.NumberU64()
-	//dgp.HeadUnitHash = unit.Hash()
-	//dgp.HeadUnitTime = unit.Timestamp()
-	dag.propRep.SetNewestUnit(unit.Header())
-
-	dgp.LastMediator = unit.Author()
-	dgp.IsShuffledSchedule = false
-	dgp.RecentSlotsFilled = (dgp.RecentSlotsFilled << (missedUnits + 1)) + 1
-	dgp.CurrentASlot += missedUnits + 1
-
-	dag.SaveDynGlobalProp(dgp, false)
-
-	return
-}
-
-func (dag *Dag) updateMediatorSchedule() {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
-	ms := dag.GetMediatorSchl()
-
-	if dag.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
-		log.Debugf("shuffle the scheduling order of mediators")
-		dag.SaveMediatorSchl(ms, false)
-
-		dgp.IsShuffledSchedule = true
-		dag.SaveDynGlobalProp(dgp, false)
-	}
-
-	return
-}
-
-func (dag *Dag) updateSigningMediator(newUnit *modules.Unit) {
-	// 1. 更新 签名mediator 的LastConfirmedUnitNum
-	signingMediator := newUnit.Author()
-	med := dag.GetMediator(signingMediator)
-
-	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
-	med.LastConfirmedUnitNum = lastConfirmedUnitNum
-	dag.SaveMediator(med, false)
-
-	log.Debugf("the LastConfirmedUnitNum of mediator(%v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
-}
-
-func (dag *Dag) updateLastIrreversibleUnit() {
-	aSize := dag.ActiveMediatorsCount()
-	lastConfirmedUnitNums := make([]int, 0, aSize)
-
-	// 1. 获取所有活跃 mediator 最后确认unit编号
-	meds := dag.GetActiveMediators()
-	for _, add := range meds {
-		med := dag.GetActiveMediator(add)
-		lastConfirmedUnitNums = append(lastConfirmedUnitNums, int(med.LastConfirmedUnitNum))
-	}
-
-	// 2. 排序
-	// todo 应当优化本排序方法，使用第n大元素的方法
-	sort.Ints(lastConfirmedUnitNums)
-
-	// 3. 获取倒数第 > 2/3 个确认unit编号
-	offset := aSize - dag.ChainThreshold()
-	var newLastIrreversibleUnitNum = uint64(lastConfirmedUnitNums[offset])
-
-	// 4. 更新
-	dag.updateLastIrreversibleUnitNum(newLastIrreversibleUnitNum)
-	log.Debugf("new last irreversible unit number is: %v", newLastIrreversibleUnitNum)
-}
-
-func (dag *Dag) updateLastIrreversibleUnitNum( /*hash common.Hash, */ newLastIrreversibleUnitNum uint64) {
-	dgp := dag.GetDynGlobalProp()
-	token := dagconfig.DagConfig.GetGasToken()
-	_, index, _ := dag.propRep.GetLastStableUnit(token)
-	if newLastIrreversibleUnitNum > index.Index {
-		//dag.propRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
-		dgp.LastIrreversibleUnitNum = newLastIrreversibleUnitNum
-		dag.SaveDynGlobalProp(dgp, false)
-	}
-}
+//func (dag *Dag) updateLastIrreversibleUnitNum( /*hash common.Hash, */ newLastIrreversibleUnitNum uint64) {
+//	dgp := dag.GetDynGlobalProp()
+//	token := dagconfig.DagConfig.GetGasToken()
+//	_, index, _ := dag.stablePropRep.GetLastStableUnit(token)
+//	if newLastIrreversibleUnitNum > index.Index {
+//		//dag.stablePropRep.SetLastStableUnit(hash, &modules.ChainIndex{token, true, newLastIrreversibleUnitNum})
+//		dgp.LastIrreversibleUnitNum = newLastIrreversibleUnitNum
+//		dag.SaveDynGlobalProp(dgp, false)
+//	}
+//}
 
 //func (dag *Dag) updateGlobalPropDependGroupSign(unitHash common.Hash) {
 //	unit, err := dag.GetUnitByHash(unitHash)

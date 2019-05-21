@@ -937,10 +937,10 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
 		//Save StableUnit
-		if err := rep.propdb.SetLastStableUnit(uHash, unit.UnitHeader.Number); err != nil {
-			log.Info("Set LastStableUnit:", "error", err.Error())
-			return modules.ErrUnit(-3)
-		}
+		// if err := rep.propdb.SetLastStableUnit(uHash, unit.UnitHeader.Number); err != nil {
+		// 	log.Info("Set LastStableUnit:", "error", err.Error())
+		// 	return modules.ErrUnit(-3)
+		// }
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
 	return nil
@@ -1552,7 +1552,7 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
-	hash, _, err := rep.propdb.GetLastStableUnit(assetID)
+	hash, _,_, err := rep.propdb.GetNewestUnit(assetID)
 	if err != nil {
 		return nil, err
 	}

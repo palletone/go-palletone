@@ -94,7 +94,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(err.Error())
 	}
 	//  保存账户信息
-	err = SaveMediatorInfo(stub, invokeAddr.String(), mi)
+	err = SaveMediatorInfo(stub, invokeAddr, mi)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
 		return shim.Error(err.Error())
@@ -140,7 +140,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("node is not exist in the candidate list")
 	}
 	//  获取节点信息
-	mediator, err := GetMediatorInfo(stub, invokeAddr.String())
+	mediator, err := GetMediatorInfo(stub, invokeAddr)
 	if err != nil {
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
@@ -170,7 +170,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error(err.Error())
 	}
 	//  保存账户信息
-	err = SaveMediatorInfo(stub, invokeAddr.String(), mediator)
+	err = SaveMediatorInfo(stub, invokeAddr, mediator)
 	if err != nil {
 		log.Error("save mediator info err: ", "error", err)
 		return shim.Error(err.Error())
@@ -233,14 +233,14 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 		return err
 	}
 	//  获取该节点信息
-	mediator, err := GetMediatorInfo(stub, nodeAddr.String())
+	mediator, err := GetMediatorInfo(stub, nodeAddr)
 	if err != nil {
 		return err
 	}
 	//  更新
 	mediator.Status = modules.Quit
 	//  保存
-	err = SaveMediatorInfo(stub, nodeAddr.String(), mediator)
+	err = SaveMediatorInfo(stub, nodeAddr, mediator)
 	if err != nil {
 		return err
 	}
@@ -339,7 +339,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error(err.Error())
 	}
 	//  获取mediator信息
-	mediator, err := GetMediatorInfo(stub, invokeAddr.String())
+	mediator, err := GetMediatorInfo(stub, invokeAddr)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -348,7 +348,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		mediator.Status = modules.Agree
 		mediator.AgreeTime = time.Now().Unix() / DTimeDuration
 		mediator.ApllyQuitTime = 0
-		err = SaveMediatorInfo(stub, invokeAddr.String(), mediator)
+		err = SaveMediatorInfo(stub, invokeAddr, mediator)
 		if err != nil {
 			return shim.Error(err.Error())
 		}

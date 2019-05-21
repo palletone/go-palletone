@@ -66,12 +66,11 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	}
 	tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
 	if err != nil || tpl == nil {
-		errMsg := fmt.Sprintf("getContractTxContractInfo fail, tpl Name[%s], reqId[%s]", tplName, reqId.Bytes())
+		errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName, )
 		return common.Hash{}, nil, errors.New(errMsg)
 	}
 	templateId := tpl.(*modules.ContractTplPayload).TemplateId
-	log.Info("ContractInstallReq", "ok, reqId", reqId.Bytes(), "templateId", templateId)
-
+	log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%s]", shortId(reqId.String()), reqId.String(), string(templateId))
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, true)
 	return reqId, templateId, nil
@@ -99,7 +98,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		return common.Hash{}, common.Address{}, err
 	}
 	contractId := crypto.RequestIdToContractAddress(reqId)
-	log.Info("ContractDeployReq", "ok, reqId", reqId.Bytes(), "templateId ", templateId, "contractId", contractId)
+	log.Infof("[%s]ContractDeployReq ok, reqId[%s] templateId[%s],contractId[%s] ", shortId(reqId.String()), reqId.String(), string(templateId), contractId.String())
 
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
@@ -127,7 +126,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	if err != nil {
 		return common.Hash{}, err
 	}
-	log.Info("ContractInvokeReq", "ok, reqId", reqId.Bytes(), "contractId", contractId.Bytes())
+	log.Infof("[%s]ContractInvokeReq ok, reqId[%s], contractId[%s]", shortId(reqId.String()), reqId.String(), contractId.String())
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
@@ -150,7 +149,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 	if err != nil {
 		return common.Hash{}, err
 	}
-	log.Info("ContractInvokeReqToken", "ok, reqId", reqId, "contractId", contractId.Bytes())
+	log.Infof("[%s]ContractInvokeReqToken ok, reqId[%s] contractId[%s]", shortId(reqId.String()), reqId.String(), contractId.Bytes())
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
@@ -177,7 +176,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	if err != nil {
 		return common.Hash{}, err
 	}
-	log.Info("ContractStopReq", "ok, reqId", reqId.Bytes(), "contractId ", contractId, "txId", hex.EncodeToString(randNum))
+	log.Infof("[%s]ContractStopReq ok, reqId[%s], contractId[%s], txId[%s]", shortId(reqId.String()), reqId.String(), contractId, hex.EncodeToString(randNum))
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil

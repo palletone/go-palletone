@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
+
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -55,7 +55,7 @@ func (dag *Dag) validateUnit(unit *modules.Unit) error {
 
 func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) error {
 	pHash := nextUnit.ParentHash()[0]
-	headHash, idx, _ := dag.propRep.GetNewestUnit(nextUnit.Number().AssetID)
+	headHash, idx, _ := dag.stablePropRep.GetNewestUnit(nextUnit.Number().AssetID)
 	if pHash != headHash {
 		// todo 出现分叉, 调用本方法之前未处理分叉
 		errStr := fmt.Sprintf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
@@ -67,32 +67,6 @@ func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) error {
 	if idx.Index+1 != nextUnit.NumberU64() {
 		errStr := fmt.Sprintf("invalidated unit(%v)'s height number!, last height:%d, next unit height:%d",
 			nextUnit.UnitHash.TerminalString(), idx.Index, nextUnit.NumberU64())
-		log.Debugf(errStr)
-		return fmt.Errorf(errStr)
-	}
-
-	return nil
-}
-
-func (dag *Dag) validateMediatorSchedule(nextUnit *modules.Unit) error {
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	ts, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
-	if ts >= nextUnit.Timestamp() {
-		errStr := "invalidated unit's timestamp"
-		log.Debugf(errStr)
-		return fmt.Errorf(errStr)
-	}
-
-	slotNum := dag.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
-	if slotNum <= 0 {
-		errStr := "invalidated unit's slot"
-		log.Debugf(errStr)
-		return fmt.Errorf(errStr)
-	}
-
-	scheduledMediator := dag.GetScheduledMediator(slotNum)
-	if !scheduledMediator.Equal(nextUnit.Author()) {
-		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", nextUnit.Author().Str())
 		log.Debugf(errStr)
 		return fmt.Errorf(errStr)
 	}
@@ -123,22 +97,22 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	//  全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	gp := modules.InitGlobalProp(genesis)
-	if err := dag.propRep.StoreGlobalProp(gp); err != nil {
+	if err := dag.stablePropRep.StoreGlobalProp(gp); err != nil {
 		return err
 	}
 
 	//  动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
 	dgp := modules.InitDynGlobalProp(unit)
-	if err := dag.propRep.StoreDynGlobalProp(dgp); err != nil {
+	if err := dag.stablePropRep.StoreDynGlobalProp(dgp); err != nil {
 		return err
 	}
-	//dag.propRep.SetNewestUnit(unit.Header())
+	//dag.stablePropRep.SetNewestUnit(unit.Header())
 
 	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	if err := dag.propRep.StoreMediatorSchl(ms); err != nil {
+	if err := dag.stablePropRep.StoreMediatorSchl(ms); err != nil {
 		return err
 	}
 
@@ -203,7 +177,7 @@ func (dag *Dag) IsSynced() bool {
 	//nowFine := time.Now()
 	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 	now := time.Now()
-	nextSlotTime := dag.propRep.GetSlotTime(gp, dgp, 1)
+	nextSlotTime := dag.stablePropRep.GetSlotTime(gp, dgp, 1)
 
 	if nextSlotTime.Before(now) {
 		return false
@@ -228,20 +202,17 @@ func (d *Dag) UnitIrreversibleTime() time.Duration {
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
-	unit, err := d.GetUnitByHash(hash)
-	if unit != nil && err == nil {
-		_, idx, _ := d.propRep.GetLastStableUnit(unit.UnitHeader.Number.AssetID)
-
-		if unit.NumberU64() <= idx.Index {
-			return true
-		}
+	exist, err := d.stableUnitRep.IsHeaderExist(hash)
+	if err != nil {
+		log.Errorf("IsHeaderExist execute error:%s", err.Error())
+		return false
 	}
 
-	return false
+	return exist
 }
 
 func (d *Dag) GetIrreversibleUnit(id modules.AssetId) (*modules.ChainIndex, error) {
-	_, idx, err := d.propRep.GetLastStableUnit(id)
+	_, idx, err := d.stablePropRep.GetNewestUnit(id)
 	return idx, err
 }
 
