@@ -35,13 +35,13 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-      cd ../dct；
-      ./deposit_test.sh 4；
+      cd ../dct;
+      ./deposit_test.sh 4;
       fi
 
     - mkdir -p ${BDD_LOG_PATH}
     - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-      python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans；
+      python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans;
       fi
 
     - if [ $IS_RUN_CCINVOKE == 'true' ]; then
@@ -53,7 +53,6 @@ script:
       fi
 
 after_script:
-    - killall gptn
     # upload all log
     - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
 
@@ -83,6 +82,7 @@ after_script:
 
     # echo ftp address
     - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141', but you should quit VPN first"
+    - killall gptn
 
 before_install:
     - go get github.com/mattn/goveralls
