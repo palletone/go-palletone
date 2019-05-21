@@ -156,21 +156,23 @@ type MainChain struct {
 }
 */
 func (pm *ProtocolManager) GetMainChain() (*modules.MainChain, error) {
-	mainchain := &modules.MainChain{}
-	mainchain.NetworkId = 1
-	mainchain.Version = 1
-	mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
-	mainchain.GasToken = modules.PTNCOIN
-	return mainchain, nil
+	return pm.dag.GetMainChain()
+	//mainchain := &modules.MainChain{}
+	//mainchain.NetworkId = 1
+	//mainchain.Version = 1
+	//mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
+	//mainchain.GasToken = modules.PTNCOIN
+	//return mainchain, nil
 }
 
 func (pm *ProtocolManager) GetPartitionChain() ([]*modules.PartitionChain, error) {
-	mainchains := []*modules.PartitionChain{}
-	mainchain := &modules.PartitionChain{}
-	mainchain.NetworkId = 1
-	mainchain.Version = 1
-	mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
-	mainchain.GasToken = modules.PTNCOIN
-	mainchains = append(mainchains, mainchain)
-	return mainchains, nil
+	return pm.dag.GetPartitionChains()
+	//mainchains := []*modules.PartitionChain{}
+	//mainchain := &modules.PartitionChain{}
+	//mainchain.NetworkId = 1
+	//mainchain.Version = 1
+	//mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
+	//mainchain.GasToken = modules.PTNCOIN
+	//mainchains = append(mainchains, mainchain)
+	//return mainchains, nil
 }
