@@ -53,6 +53,9 @@ script:
       fi
 
 after_script:
+    - killall gptn
+    - sleep 2
+
     # upload all log
     - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
 
@@ -82,7 +85,6 @@ after_script:
 
     # echo ftp address
     - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141', but you should quit VPN first"
-    - killall gptn
 
 before_install:
     - go get github.com/mattn/goveralls
