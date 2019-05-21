@@ -4,7 +4,7 @@ sudo: required
 language:
     - go
 go:
-    - 1.12.X
+    - 1.12
 env:
     global:
         - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
