@@ -57,12 +57,12 @@ after_script:
     - sleep 2
 
     # upload all log
-    - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
+    - ${CURL_CMD} ${ALL_LOG_PATH} ftp://${USER}:${PASSWORD}@98.142.130.141/palletone/ -v
 
     # upload deposit log
     - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME};
-      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME};
+      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME} -v;
+      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME} -v;
       fi
 
     # upload create transactions log and report
