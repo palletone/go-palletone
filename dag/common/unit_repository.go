@@ -501,7 +501,27 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 			log.Debug("checkReadSetValid", "GetContractState fail, contractId", contractId)
 			return false
 		}
+
+		//if v == nil && rd.Version == nil{
+		//	continue
+		//}else if v != nil && rd.Version != nil {
+		//	m1,err1:= json.Marshal(v)
+		//	m2,err2:= json.Marshal(rd.Version)
+		//	if err1 != nil || err2 != nil {
+		//		log.Debug("checkReadSetValid", "Marshal err, err1", err1, "err2", err2)
+		//		return false
+		//	}
+		//	if !bytes.Equal(m1, m2) {
+		//		log.Debug("checkReadSetValid","marshal not equal, contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
+		//		return false
+		//	}
+		//}else{
+		//	log.Debug("checkReadSetValid","not equal, contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
+		//	return false
+		//}
+
 		if v != nil && !v.Equal(rd.Version) {
+			log.Debug("checkReadSetValid","contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
 			return false
 		}
 	}

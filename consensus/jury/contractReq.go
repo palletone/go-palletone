@@ -70,7 +70,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		return common.Hash{}, nil, errors.New(errMsg)
 	}
 	templateId := tpl.(*modules.ContractTplPayload).TemplateId
-	log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%s]", shortId(reqId.String()), reqId.String(), string(templateId))
+	log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, true)
 	return reqId, templateId, nil
@@ -98,7 +98,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		return common.Hash{}, common.Address{}, err
 	}
 	contractId := crypto.RequestIdToContractAddress(reqId)
-	log.Infof("[%s]ContractDeployReq ok, reqId[%s] templateId[%s],contractId[%s] ", shortId(reqId.String()), reqId.String(), string(templateId), contractId.String())
+	log.Infof("[%s]ContractDeployReq ok, reqId[%s] templateId[%x],contractId[%s] ", shortId(reqId.String()), reqId.String(), templateId, contractId.String())
 
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)

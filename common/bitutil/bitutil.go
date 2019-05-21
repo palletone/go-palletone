@@ -186,3 +186,13 @@ func safeTestBytes(p []byte) bool {
 	}
 	return false
 }
+
+//IsZero all bytes are 0?
+func IsZero(bytes []byte) bool {
+	for _, b := range bytes {
+		if b != byte(0x0) {
+			return false
+		}
+	}
+	return true
+}

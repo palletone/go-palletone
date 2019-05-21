@@ -756,7 +756,7 @@ func (p *Processor) getContractElectionList(contractId common.Address) ([]module
 func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
 	addrBytes, _, err := p.dag.GetContractState(tplId[:], "TplAddrHash")
 	if err != nil {
-		log.Debugf("getTemplateAddrHash, not find contract template addrHash, tplId[%s]", string(tplId))
+		log.Debugf("getTemplateAddrHash, not find contract template addrHash, tplId[%x]", tplId)
 		return nil, err
 	}
 
@@ -764,11 +764,11 @@ func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
 	err = rlp.DecodeBytes(addrBytes, &addh)
 	if err != nil {
 		log.Debug("getTemplateAddrHash", "err", err)
-		errs := fmt.Sprintf("getTemplateAddrHash, DecodeBytes fail, templateId:%s", string(tplId))
+		errs := fmt.Sprintf("getTemplateAddrHash, DecodeBytes fail, templateId:%x", tplId)
 		log.Debug(errs)
 		return nil, errors.New(errs)
 	}
-	log.Debug("getContractElectionList", "templateId", string(tplId), "addrHash", addh)
+	log.Debugf("getContractElectionList, templateId[%x], addrHash[%v]", tplId, "addrHash", addh)
 	return addh, nil
 }
 
@@ -788,7 +788,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	//find the address of the contract template binding in the dag
 	addrHash, err := p.getTemplateAddrHash(tplId)
 	if err != nil {
-		log.Debugf("[%s]genContractElectionList, getTemplateAddrHash fail,templateId[%s], err:", shortId(reqId.String()), string(tplId), err)
+		log.Debugf("[%s]genContractElectionList, getTemplateAddrHash fail,templateId[%x], err:", shortId(reqId.String()), tplId, err)
 	}
 	if len(addrHash) >= p.electionNum {
 		num = p.electionNum

@@ -325,7 +325,6 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 		addr:     account.Address,
 		password: account.Password,
 		ks:       p.ptn.GetKeyStore(),
-		//vrfAct: p.vrfAct,
 	}
 	ele.weight = electionWeightValue(ele.total)
 	//log.Info("ProcessElectionEvent0", "event", event.EType)

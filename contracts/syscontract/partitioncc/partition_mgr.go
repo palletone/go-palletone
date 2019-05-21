@@ -88,8 +88,8 @@ func addPartitionChain(stub shim.ChaincodeStubInterface, chain *dm.PartitionChai
 	return stub.PutState(key, value)
 }
 func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
-	if len(args) < 8 {
-		return nil, errors.New("need 8 args (GenesisHash,GenesisHeight,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,[Peers])")
+	if len(args) < 10 {
+		return nil, errors.New("need 10 args (GenesisHash,GenesisHeight,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,[Peers])")
 	}
 	var err error
 	partitionChain := &dm.PartitionChain{}
@@ -103,9 +103,11 @@ func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
 	}
 	partitionChain.Status = args[5][0] - '0'
 	partitionChain.SyncModel = args[6][0] - '0'
-	if len(args[7]) > 0 {
+	partitionChain.NetworkId, _ = strconv.ParseUint(args[7], 10, 64)
+	partitionChain.Version, _ = strconv.ParseUint(args[8], 10, 64)
+	if len(args[9]) > 0 {
 		peers := []string{}
-		err = json.Unmarshal([]byte(args[7]), &peers)
+		err = json.Unmarshal([]byte(args[9]), &peers)
 		if err != nil {
 			return nil, err
 		}
@@ -162,8 +164,8 @@ func updatePartition(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 	return shim.Success(nil)
 }
 func buildMainChain(args []string) (*dm.MainChain, error) {
-	if len(args) < 5 {
-		return nil, errors.New("need 5 args (GenesisHash,GasToken,Status,SyncModel,[Peers])")
+	if len(args) < 7 {
+		return nil, errors.New("need 7 args (GenesisHash,GasToken,Status,SyncModel,[Peers])")
 	}
 	var err error
 	mainChain := &dm.MainChain{}
@@ -174,9 +176,11 @@ func buildMainChain(args []string) (*dm.MainChain, error) {
 	}
 	mainChain.Status = args[2][0] - '0'
 	mainChain.SyncModel = args[3][0] - '0'
-	if len(args[4]) > 0 {
+	mainChain.NetworkId, _ = strconv.ParseUint(args[4], 10, 64)
+	mainChain.Version, _ = strconv.ParseUint(args[5], 10, 64)
+	if len(args[6]) > 0 {
 		peers := []string{}
-		err = json.Unmarshal([]byte(args[4]), &peers)
+		err = json.Unmarshal([]byte(args[6]), &peers)
 		if err != nil {
 			return nil, err
 		}
