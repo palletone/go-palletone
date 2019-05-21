@@ -72,8 +72,8 @@ func (s *CorsServer) Stop() {
 
 func (pm *ProtocolManager) blockLoop() {
 	pm.wg.Add(1)
-	headCh := make(chan modules.ChainHeadEvent, 10)
-	headSub := pm.dag.SubscribeChainHeadEvent(headCh)
+	headCh := make(chan modules.ChainEvent, 10)
+	headSub := pm.dag.SubscribeChainEvent(headCh)
 	go func() {
 		var lastHead *modules.Header
 		for {
@@ -82,7 +82,7 @@ func (pm *ProtocolManager) blockLoop() {
 				peers := pm.peers.AllPeers()
 				if len(peers) > 0 {
 					header := ev.Unit.Header()
-					hash := header.Hash()
+					hash := ev.Hash
 					number := header.Number.Index
 					//td := core.GetTd(pm.chainDb, hash, number)
 					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
@@ -90,35 +90,36 @@ func (pm *ProtocolManager) blockLoop() {
 						log.Debug("Announcing block to peers", "number", number, "hash", hash)
 
 						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
-						var (
-							signed         bool
-							signedAnnounce announceData
-						)
+						//var (
+						//	signed         bool
+						//	signedAnnounce announceData
+						//)
 
 						for _, p := range peers {
-							log.Debug("Light Palletone", "ProtocolManager->blockLoop p.announceType", p.announceType)
-							switch p.announceType {
-
-							case announceTypeSimple:
-								select {
-								case p.announceChn <- announce:
-								default:
-									pm.removePeer(p.id)
-								}
-
-							case announceTypeSigned:
-								if !signed {
-									signedAnnounce = announce
-									signedAnnounce.sign(pm.server.privateKey)
-									signed = true
-								}
-
-								select {
-								case p.announceChn <- signedAnnounce:
-								default:
-									pm.removePeer(p.id)
-								}
-							}
+							log.Debug("Light Palletone", "ProtocolManager->blockLoop p.ID", p.ID())
+							p.announceChn <- announce
+							//switch p.announceType {
+							//
+							//case announceTypeSimple:
+							//	select {
+							//	case p.announceChn <- announce:
+							//	default:
+							//		pm.removePeer(p.id)
+							//	}
+							//
+							//case announceTypeSigned:
+							//	if !signed {
+							//		signedAnnounce = announce
+							//		signedAnnounce.sign(pm.server.privateKey)
+							//		signed = true
+							//	}
+							//
+							//	select {
+							//	case p.announceChn <- signedAnnounce:
+							//	default:
+							//		pm.removePeer(p.id)
+							//	}
+							//}
 						}
 					}
 				}

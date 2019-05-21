@@ -79,6 +79,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			events = make([]interface{}, 0, 1)
 		)
 		events = append(events, modules.ChainHeadEvent{sign_unit})
+		events = append(events, modules.ChainEvent{sign_unit, sign_unit.UnitHash})
 		dag.PostChainEvents(events)
 	}()
 
