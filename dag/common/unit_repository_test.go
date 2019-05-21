@@ -710,7 +710,5 @@ func TestContractTxIllegal(t *testing.T) {
 	if err != nil {
 		log.Debug("TestContractTxIllegal", "MarkTxIllegal err", err)
 	}
-
 	//log.Debug("TestContractTxIllegal", "txs", txs)
-
 }

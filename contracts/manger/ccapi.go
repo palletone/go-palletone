@@ -155,7 +155,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	} else {
 		//查询一下是否已经安装过
 		if tpl, _ := dag.GetContractTpl(tpid[:]); tpl != nil {
-			errMsg := fmt.Sprintf("install ,the contractTlp is exist.tplId:%v", tpid.Bytes())
+			errMsg := fmt.Sprintf("install ,the contractTlp is exist.tplId:%x", tpid)
 			log.Debug("Install", "err", errMsg)
 			return nil, errors.New(errMsg)
 		}
@@ -212,7 +212,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 			templateCC.Path = tmpcc.path
 			templateCC.Version = tmpcc.vers
 		} else {
-			errMsg := fmt.Sprintf("Deploy not find tplId[%s] in list", hex.EncodeToString(templateId))
+			errMsg := fmt.Sprintf("Deploy not find tplId[%x] in list", templateId)
 			log.Error(errMsg)
 			return nil, nil, errors.New(errMsg)
 		}
