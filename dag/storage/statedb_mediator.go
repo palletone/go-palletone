@@ -47,7 +47,7 @@ func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
 func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
 	log.Debugf("Store Mediator Info %v:", mi.AddStr)
 
-	err := storeToJson(statedb.db, mediatorKey(add), mi)
+	err := StoreToJsonBytes(statedb.db, mediatorKey(add), mi)
 	if err != nil {
 		log.Debugf("Store mediator error:%v", err.Error())
 		return err
@@ -81,7 +81,7 @@ func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.M
 		return nil, err
 	}
 
-	//err := readFromJson(db, mediatorKey(address), mi)
+	//err := RetrieveFromJsonBytes(db, mediatorKey(address), mi)
 	//if err != nil {
 	//	log.Debugf("Retrieve mediator error: %v", err.Error())
 	//	return nil, err

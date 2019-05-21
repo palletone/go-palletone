@@ -41,8 +41,7 @@ type DatabaseReader interface {
 	NewIteratorWithPrefix(prefix []byte) iterator.Iterator
 }
 
-// @author Albert·Gou
-func retrieve(db ptndb.Database, key []byte, v interface{}) error {
+func Retrieve(db ptndb.Database, key []byte, v interface{}) error {
 	data, err := db.Get(key)
 	if err != nil {
 		return err
@@ -56,7 +55,7 @@ func retrieve(db ptndb.Database, key []byte, v interface{}) error {
 	return nil
 }
 
-func readFromJson(db ptndb.Database, key []byte, v interface{}) error {
+func RetrieveFromJsonBytes(db ptndb.Database, key []byte, v interface{}) error {
 	data, err := db.Get(key)
 	if err != nil {
 		log.Debugf("DB Get err: %v", err.Error())

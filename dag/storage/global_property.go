@@ -21,7 +21,6 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -33,77 +32,24 @@ var (
 	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
 )
 
-// only for serialization(storage)
-type globalProperty struct {
-	*modules.GlobalPropBase
-
-	ActiveJuries       []common.Address
-	ActiveMediators    []common.Address
-	PrecedingMediators []common.Address
-}
-
-func getGPT(gp *modules.GlobalProperty) *globalProperty {
-	ajs := make([]common.Address, 0)
-	ams := make([]common.Address, 0)
-	pms := make([]common.Address, 0)
-
-	for juryAdd, _ := range gp.ActiveJuries {
-		ajs = append(ajs, juryAdd)
-	}
-
-	for medAdd, _ := range gp.ActiveMediators {
-		ams = append(ams, medAdd)
-	}
-
-	for medAdd, _ := range gp.PrecedingMediators {
-		pms = append(pms, medAdd)
-	}
-
-	gpt := &globalProperty{
-		GlobalPropBase:     gp.GlobalPropBase,
-		ActiveJuries:       ajs,
-		ActiveMediators:    ams,
-		PrecedingMediators: pms,
-	}
-
-	return gpt
-}
-
-func (gpt *globalProperty) getGP() *modules.GlobalProperty {
-	ajs := make(map[common.Address]bool, 0)
-	ams := make(map[common.Address]bool, 0)
-	pms := make(map[common.Address]bool, 0)
-
-	for _, addStr := range gpt.ActiveJuries {
-		ajs[addStr] = true
-	}
-
-	for _, addStr := range gpt.ActiveMediators {
-		ams[addStr] = true
-	}
-
-	for _, addStr := range gpt.PrecedingMediators {
-		pms[addStr] = true
-	}
-
-	gp := modules.NewGlobalProp()
-	gp.GlobalPropBase = gpt.GlobalPropBase
-	gp.ActiveJuries = ajs
-	gp.ActiveMediators = ams
-	gp.PrecedingMediators = pms
-
-	return gp
-}
-
 func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
-	gpt := getGPT(gp)
-
-	err := StoreBytes(db, GlobalPropDBKey, gpt)
+	err := StoreToJsonBytes(db, GlobalPropDBKey, gp)
 	if err != nil {
 		log.Errorf("Store global properties error: %v", err.Error())
 	}
 
 	return err
+}
+
+func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
+	gp := modules.NewGlobalProp()
+
+	err := RetrieveFromJsonBytes(db, GlobalPropDBKey, gp)
+	if err != nil {
+		log.Errorf("Retrieve global properties error: %v", err.Error())
+	}
+
+	return gp, err
 }
 
 func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) error {
@@ -115,23 +61,10 @@ func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) e
 	return err
 }
 
-func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
-	gpt := new(globalProperty)
-
-	err := retrieve(db, GlobalPropDBKey, gpt)
-	if err != nil {
-		log.Errorf("Retrieve global properties error: %v", err.Error())
-	}
-
-	gp := gpt.getGP()
-
-	return gp, err
-}
-
 func RetrieveDynGlobalProp(db ptndb.Database) (*modules.DynamicGlobalProperty, error) {
 	dgp := modules.NewDynGlobalProp()
 
-	err := retrieve(db, DynGlobalPropDBKey, dgp)
+	err := Retrieve(db, DynGlobalPropDBKey, dgp)
 	if err != nil {
 		log.Errorf("Retrieve dynamic global properties error: %v", err.Error())
 	}

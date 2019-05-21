@@ -45,7 +45,7 @@ func Store(db ptndb.Database, key string, value interface{}) error {
 //	return err
 //}
 
-func storeToJson(db ptndb.Putter, key []byte, value interface{}) error {
+func StoreToJsonBytes(db ptndb.Putter, key []byte, value interface{}) error {
 	val, err := json.Marshal(value)
 	if err != nil {
 		log.Debugf("json marshal err: %v", err.Error())
