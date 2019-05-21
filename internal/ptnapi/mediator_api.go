@@ -56,9 +56,9 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, error) {
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.MediatorDeposit, error) {
 	// 构建参数
-	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(deposit.GetDeposit), []byte(addStr)}
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorrDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
@@ -67,7 +67,7 @@ func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, 
 		return nil, err
 	}
 
-	depositB := &deposit.DepositBalance{}
+	depositB := deposit.NewMediatorDeposit()
 	err = json.Unmarshal(rsp, depositB)
 	if err == nil {
 		return depositB, nil
@@ -195,8 +195,6 @@ func (args *MediatorCreateArgs) setDefaults() {
 	if args.MediatorApplyInfo == nil {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
 	}
-
-	//args.ApplyEnterTime = time.Now().Unix()
 
 	return
 }
