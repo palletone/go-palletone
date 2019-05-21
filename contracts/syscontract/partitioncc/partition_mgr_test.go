@@ -149,7 +149,7 @@ func TestSetMainChainAndQuery(t *testing.T) {
 	stub.EXPECT().GetInvokeParameters().Return(fundationAddr, nil, nil, "registerPartition", nil, nil).AnyTimes()
 	stub.EXPECT().GetSystemConfig("FoundationAddress").Return("P1EZE1HAqMZATrdTkpgmizoRV21rj4pm3db", nil).AnyTimes()
 
-	args := []string{"111111", "PTN", "1", "1", "[\"127.0.0.1:1234\",\"192.168.100.2:9090\"]"}
+	args := []string{"111111", "PTN", "1", "1", "1", "1", "[\"127.0.0.1:1234\",\"192.168.100.2:9090\"]"}
 	response := setMainChain(args, stub)
 	assert.Equal(t, response.Status, int32(200))
 	mainCh := getMainChain(stub)
