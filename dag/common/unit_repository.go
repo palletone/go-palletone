@@ -501,27 +501,25 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 			log.Debug("checkReadSetValid", "GetContractState fail, contractId", contractId)
 			return false
 		}
-
-		//if v == nil && rd.Version == nil{
+		//if v == nil && rd.Version == nil {
 		//	continue
-		//}else if v != nil && rd.Version != nil {
-		//	m1,err1:= json.Marshal(v)
-		//	m2,err2:= json.Marshal(rd.Version)
+		//} else if v != nil && rd.Version != nil {
+		//	m1, err1 := rlp.EncodeToBytes(v)
+		//	m2, err2 := rlp.EncodeToBytes(rd.Version)
 		//	if err1 != nil || err2 != nil {
-		//		log.Debug("checkReadSetValid", "Marshal err, err1", err1, "err2", err2)
+		//		log.Debugf("checkReadSetValid, rlp err, err1:%s, err2:%s", err1.Error(), err2.Error())
 		//		return false
 		//	}
 		//	if !bytes.Equal(m1, m2) {
-		//		log.Debug("checkReadSetValid","marshal not equal, contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
+		//		log.Debugf("checkReadSetValid, marshal not equal, contractId[%x], local ver1[%v], ver2[%v]", contractId, v, rd.Version)
 		//		return false
 		//	}
-		//}else{
-		//	log.Debug("checkReadSetValid","not equal, contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
+		//} else {
+		//	log.Debug("checkReadSetValid, not equal, contractId[%x], local ver1[%v],ver2[%v] ", contractId,  v,  rd.Version)
 		//	return false
 		//}
-
 		if v != nil && !v.Equal(rd.Version) {
-			log.Debug("checkReadSetValid","contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
+			log.Debugf("checkReadSetValid, marshal not equal, contractId[%x], local ver1[%v], ver2[%v]", contractId, v, rd.Version)
 			return false
 		}
 	}
@@ -1572,7 +1570,7 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
-	hash, _,_, err := rep.propdb.GetNewestUnit(assetID)
+	hash, _, _, err := rep.propdb.GetNewestUnit(assetID)
 	if err != nil {
 		return nil, err
 	}

@@ -144,7 +144,7 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 	} else if p.mtx[reqId].rstTx != nil {
-		log.Info("[%s]contractCommitEvent, rstTx already receive", shortId(reqId.String()))
+		log.Infof("[%s]contractCommitEvent, rstTx already receive", shortId(reqId.String()))
 		return nil //rstTx already receive
 	}
 	p.mtx[reqId].valid = true
