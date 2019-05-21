@@ -16,7 +16,7 @@ env:
         - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
-        - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/master
+        - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/certbdd
         - CURL_CMD=curl --ftp-create-dirs -T
 
 script:
@@ -56,7 +56,7 @@ after_script:
     - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
     - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
     # echo ftp address
-    - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/master', but you should quit VPN first"
+    - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/cerbdd', but you should quit VPN first"
 
 before_install:
     - go get github.com/mattn/goveralls
