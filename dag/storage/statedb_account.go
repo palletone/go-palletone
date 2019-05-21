@@ -31,13 +31,19 @@ import (
 )
 
 func accountKey(address common.Address) []byte {
-	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes21()...)
+	key := append(constants.ACCOUNT_INFO_PREFIX, address.Bytes()...)
+
+	return key
+}
+
+func ptnBalanceKey(address common.Address) []byte {
+	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes()...)
 
 	return key
 }
 
 func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount int64) error {
-	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
+	key := ptnBalanceKey(address)
 	balance := uint64(0)
 
 	data, err := statedb.db.Get(key)
@@ -54,13 +60,13 @@ func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount i
 }
 
 func (statedb *StateDb) GetAccountBalance(address common.Address) uint64 {
-	key := append(constants.ACCOUNT_PTN_BALANCE_PREFIX, address.Bytes21()...)
 	balance := uint64(0)
-	data, err := statedb.db.Get(key)
-	if err == nil {
 
+	data, err := statedb.db.Get(ptnBalanceKey(address))
+	if err == nil {
 		balance = BytesToUint64(data)
 	}
+
 	return balance
 }
 
@@ -78,7 +84,7 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		acc := &modules.AccountInfo{Balance: balance}
 
 		//get address vote mediator
-		accKey := append(accountKey(add), []byte(constants.VOTED_MEDIATORS)...)
+		accKey := append(accountKey(add), constants.VOTED_MEDIATORS...)
 		data, _, err := retrieveWithVersion(statedb.db, accKey)
 		if err == nil {
 			votedMediators := make(map[string]bool)

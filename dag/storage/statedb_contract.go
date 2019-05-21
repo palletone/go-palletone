@@ -22,6 +22,7 @@ package storage
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -30,6 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -316,10 +319,31 @@ func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvoke
 }
 
 func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
-	// append by Albert·gou
 	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
 	log.Debugf("save contract invoke req id(%v) contractAddress: %v, timeout: %v",
 		hex.EncodeToString(reqid), contractAddress.Str(), invoke.Timeout)
+
+	// append by Albert·gou
+	if contractAddress == syscontract.DepositContractAddress {
+		log.Debugf("Save Deposit Contract Invoke Req")
+
+		if string(invoke.Args[0]) == modules.ApplyMediator {
+			var mco modules.MediatorCreateOperation
+			err := json.Unmarshal(invoke.Args[1], &mco)
+			if err == nil {
+				log.Debugf("Save Apply Mediator(%v) Invoke Req", mco.AddStr)
+
+				mi := modules.NewMediatorInfo()
+				*mi.MediatorInfoBase = *mco.MediatorInfoBase
+				*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
+
+				addr, _ := core.StrToMedAdd(mco.AddStr)
+				statedb.StoreMediatorInfo(addr, mi)
+			} else {
+				log.Debugf(err.Error())
+			}
+		}
+	}
 
 	// key: reqid
 	key := append(constants.CONTRACT_INVOKE_REQ, reqid...)
