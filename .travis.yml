@@ -57,7 +57,7 @@ after_script:
     - sleep 2
 
     # upload all log
-    - ${CURL_CMD} ${ALL_LOG_PATH} ftp://${USER}:${PASSWORD}@98.142.130.141/palletone/ -v
+    - ${CURL_CMD} ${ALL_LOG_PATH} ftp://${USER}:${PASSWORD}@98.142.130.141/palletone/all.log -v
 
     # upload deposit log
     - if [ $IS_RUN_DEPOSIT == 'true' ]; then
@@ -79,7 +79,9 @@ after_script:
 
     # upload digital identity log and report
     - if [ $IS_RUN_DIGITAL == 'true' ]; then
-      ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v;
+      echo $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME;
+      echo $FTP_URL/$DIGITAL_IDENTITY_DIR/$LOG_NAME;
+      $CURL_CMD $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME $FTP_URL/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
       ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v;
       fi
 
