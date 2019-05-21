@@ -182,11 +182,6 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
-		//TODO must add lock
-		//if pm.lightSync {
-		//	log.Warn("Discarded lighting sync propagated block", "number", headers[0].Number.Index, "hash", headers[0].Hash())
-		//	return 0, errors.New("fasting sync")
-		//}
 		log.Debug("Cors Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
@@ -196,28 +191,29 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 
 func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
-	peers := pm.peers.PeersWithoutHeader(header.Hash())
-	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
-	for _, p := range peers {
-		if p == nil {
-			continue
-		}
-		log.Debug("Cors Palletone", "BroadcastLightHeader announceType", p.announceType)
-		switch p.announceType {
-		case announceTypeNone:
-			select {
-			case p.announceChn <- announce:
-			default:
-				pm.removePeer(p.id)
-			}
-		case announceTypeSimple:
-
-		case announceTypeSigned:
-
-		}
-	}
-	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
 	return
+	//peers := pm.peers.PeersWithoutHeader(header.Hash())
+	//announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
+	//for _, p := range peers {
+	//	if p == nil {
+	//		continue
+	//	}
+	//	log.Debug("Cors Palletone", "BroadcastLightHeader announceType", p.announceType)
+	//	switch p.announceType {
+	//	case announceTypeNone:
+	//		select {
+	//		case p.announceChn <- announce:
+	//		default:
+	//			pm.removePeer(p.id)
+	//		}
+	//	case announceTypeSimple:
+	//
+	//	case announceTypeSigned:
+	//
+	//	}
+	//}
+	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
+	//return
 }
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
@@ -400,7 +396,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 		log.Trace("CorsHeaderMsg message content", "header", req.Header)
 		if pm.fetcher != nil {
-			pm.fetcher.Enqueue(p, &req.Header)
+			//pm.fetcher.Enqueue(p, &req.Header)
+			pm.fetcher.Insert(p, &req.Header)
 		}
 		return nil
 

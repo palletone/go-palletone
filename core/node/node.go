@@ -193,10 +193,10 @@ func (n *Node) Start() error {
 		n.serverConfig.NodeDatabase = n.config.NodeDB()
 	}
 
+	corss := &p2p.Server{Config: p2p.GetCorsConfig(n.serverConfig)}
+
 	running := &p2p.Server{Config: n.serverConfig}
 	log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
-
-	corss := &p2p.Server{Config: p2p.GetCorsConfig(n.serverConfig)}
 
 	// Otherwise copy and specialize the P2P configuration
 	services := make(map[reflect.Type]Service)
@@ -233,11 +233,11 @@ func (n *Node) Start() error {
 	}
 	log.Debug("Node Start", "len(running.Protocols)", len(running.Protocols), "len(corss.Protocols)", len(corss.Protocols))
 
-	if err := running.Start(); err != nil {
+	if err := corss.Start(); err != nil {
 		return convertFileLockError(err)
 	}
 
-	if err := corss.Start(); err != nil {
+	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
 	}
 
@@ -486,6 +486,9 @@ func (n *Node) Stop() error {
 			failure.Services[kind] = err
 		}
 	}
+
+	n.corsserver.Stop()
+	n.corsserver = nil
 	n.server.Stop()
 	n.services = nil
 	n.server = nil
@@ -521,7 +524,7 @@ func (n *Node) Stop() error {
 // 让主线程进入阻塞状态，保持进程不退出，直到从channel中收到stop消息。
 func (n *Node) Wait() {
 	n.lock.RLock()
-	if n.server == nil {
+	if n.server == nil && n.corsserver == nil {
 		n.lock.RUnlock()
 		return
 	}

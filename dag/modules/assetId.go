@@ -28,6 +28,7 @@ import (
 
 	"bytes"
 	"encoding/json"
+	"github.com/palletone/go-palletone/common/bitutil"
 	"strings"
 )
 
@@ -41,6 +42,7 @@ var (
 const (
 	ID_LENGTH = 16
 )
+
 //AssetId 资产类别,前26bit是symbol的base36编码，27-29是Symbol编码后字节长度，30-32bit为AssetType，剩下的是Txid的前12字节
 type AssetId [ID_LENGTH]byte
 
@@ -53,9 +55,12 @@ func (it AssetId) String() string {
 		return "PTN"
 	}
 	symbol, assetType, decimal, txHash, uidType := it.ParseAssetId()
-	//b12 := make([]byte, 11)
-	//b12[0] = decimal
-	//copy(b12[1:], txHash)
+	if bitutil.IsZero(txHash) { //不是合约创建的Token，而是创世单元生成的Token
+		if assetType == AssetType_FungibleToken && decimal == 8 {
+			return symbol
+		}
+	}
+
 	type2 := byte(assetType)<<3 | byte(uidType)
 	return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + base36.EncodeBytes([]byte{type2}) + base36.EncodeBytes(txHash)
 
@@ -68,7 +73,8 @@ func String2AssetId(str string) (AssetId, UniqueIdType, error) {
 	}
 	strArray := strings.Split(str, "+")
 	if len(strArray) < 2 {
-		return AssetId{}, UniqueIdType_Null, errors.New("Asset string invalid")
+		asset, err := NewAssetId(strArray[0], AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
+		return asset, UniqueIdType_Null, err
 	}
 	symbol := strArray[0]
 	type2 := base36.DecodeToBytes(string(strArray[1][1]))[0]

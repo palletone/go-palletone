@@ -294,3 +294,10 @@ func (f *LightFetcher) Enqueue(p *peer, header *modules.Header) error {
 		return errTerminated
 	}
 }
+
+func (f *LightFetcher) Insert(p *peer, header *modules.Header) error {
+	log.Debug("Enter CorsFetcher Insert", "peer id", p.id, "header index:", header.Index())
+	defer log.Debug("End CorsFetcher Insert")
+	f.insert(p, header)
+	return nil
+}
