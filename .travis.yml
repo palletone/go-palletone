@@ -16,7 +16,7 @@ env:
         - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
-        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/certbdd
+        - FTP_URL=ftp://${CERT}:${PASSWORD}@98.142.130.141/certbdd
 #        - CURL_CMD=curl --ftp-create-dirs -T
 
 script:
@@ -85,9 +85,9 @@ addons:
 
 deploy:
     skip_cleanup: true
-    provider:
-    on:
-        branch: all
+#    provider:
+#    on:
+#        branch: all
 
 notifications:
 #    email: elva1087penny@163.com
