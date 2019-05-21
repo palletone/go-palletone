@@ -447,7 +447,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			continue
 		}
 		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s]", shortId(reqId.String()), index, ctx.rstTx.Hash().String())
-		index ++
+		index++
 	}
 	return nil
 }
@@ -642,13 +642,13 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	return false
 }
 
-func (p *Processor) createContractTxReqToken(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
+func (p *Processor) createContractTxReqToken(contractId, from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, p.ptn.TxPool())
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
-	log.Debugf("[%s]createContractTxReqToken, tx[%v]", shortId(tx.RequestHash().String()), tx)
-	return p.signAndExecute(common.BytesToAddress(tx.RequestHash().Bytes()), from, tx, isLocalInstall)
+	log.Debugf("[%s]createContractTxReqToken, contractId[%s], tx[%v]", shortId(tx.RequestHash().String()), contractId.String(), tx)
+	return p.signAndExecute(contractId, from, tx, isLocalInstall)
 }
 
 func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
@@ -806,7 +806,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
