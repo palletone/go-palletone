@@ -158,20 +158,22 @@ func (p *Processor) electionEventBroadcast(event *ElectionEvent) (recved bool, e
 	switch event.EType {
 	case ELECTION_EVENT_REQUEST:
 		evt := event.Event.(*ElectionRequestEvent)
-		if e, ok := p.mel[evt.ReqId]; ok {
+		reqId := evt.ReqId
+		if e, ok := p.mel[reqId]; ok {
 			if e.req {
 				return true, nil
 			} else {
 				e.req = true
 			}
 		} else {
-			p.mel[evt.ReqId] = &electionVrf{}
-			p.mel[evt.ReqId].req = true
-			p.mel[evt.ReqId].tm = time.Now()
+			p.mel[reqId] = &electionVrf{}
+			p.mel[reqId].req = true
+			p.mel[reqId].tm = time.Now()
 		}
 	case ELECTION_EVENT_RESULT:
 		evt := event.Event.(*ElectionResultEvent)
-		if e, ok := p.mel[evt.ReqId]; ok {
+		reqId := evt.ReqId
+		if e, ok := p.mel[reqId]; ok {
 			for _, a := range e.rst {
 				if a == evt.Ele.AddrHash {
 					return true, nil
@@ -179,9 +181,9 @@ func (p *Processor) electionEventBroadcast(event *ElectionEvent) (recved bool, e
 			}
 			e.rst = append(e.rst, evt.Ele.AddrHash)
 		} else {
-			p.mel[evt.ReqId] = &electionVrf{rst: make([]common.Hash, 0)}
-			p.mel[evt.ReqId].rst = append(p.mel[evt.ReqId].rst, evt.Ele.AddrHash)
-			p.mel[evt.ReqId].tm = time.Now()
+			p.mel[reqId] = &electionVrf{rst: make([]common.Hash, 0)}
+			p.mel[reqId].rst = append(p.mel[reqId].rst, evt.Ele.AddrHash)
+			p.mel[reqId].tm = time.Now()
 		}
 	}
 	go p.ptn.ElectionBroadcast(*event)
