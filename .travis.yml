@@ -35,15 +35,19 @@ script:
     - sleep 15
     - netstat -ap | grep gptn
     - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-      cd ../dct
-      ./deposit_test.sh 4
+      cd ../dct；
+      ./deposit_test.sh 4；
+      fi
     - mkdir -p ${BDD_LOG_PATH}
     - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-      python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
+      python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans；
+      fi
     - if [ $IS_RUN_CCINVOKE == 'true' ]; then
-      python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
+      python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke;
+      fi
     - if [ $IS_RUN_DIGITAL == 'true' ]; then
-      python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
+      python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
+      fi
 
 after_script:
     - killall gptn
@@ -52,23 +56,27 @@ after_script:
 
     # upload deposit log
     - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
-      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
+      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME};
+      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME};
+      fi
 
     # upload create transactions log and report
     - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-      ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
-      ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
+      ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v;
+      ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v;
+      fi
 
     # upload ccinvoke log and report
     - if [ $IS_RUN_CCINVOKE == 'true' ]; then
-      ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
-      ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
+      ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v;
+      ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v;
+      fi
 
     # upload digital identity log and report
     - if [ $IS_RUN_DIGITAL == 'true' ]; then
-      ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
-      ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
+      ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v;
+      ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v;
+      fi
 
     # echo ftp address
     - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141', but you should quit VPN first"
