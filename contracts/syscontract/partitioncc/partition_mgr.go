@@ -107,9 +107,9 @@ func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
 	partitionChain.Version, _ = strconv.ParseUint(args[8], 10, 64)
 	threshold, _ := strconv.ParseUint(args[9], 10, 32)
 	partitionChain.StableThreshold = uint32(threshold)
-	if len(args[9]) > 0 {
+	if len(args[10]) > 0 {
 		peers := []string{}
-		err = json.Unmarshal([]byte(args[9]), &peers)
+		err = json.Unmarshal([]byte(args[10]), &peers)
 		if err != nil {
 			return nil, err
 		}

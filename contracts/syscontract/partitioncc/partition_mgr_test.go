@@ -33,7 +33,7 @@ func TestRegisterPartition(t *testing.T) {
 	fundationAddr, _ := common.StringToAddress("P1EZE1HAqMZATrdTkpgmizoRV21rj4pm3db")
 	stub.EXPECT().GetInvokeParameters().Return(fundationAddr, nil, nil, "registerPartition", nil, nil).AnyTimes()
 	stub.EXPECT().GetSystemConfig("FoundationAddress").Return("P1EZE1HAqMZATrdTkpgmizoRV21rj4pm3db", nil).AnyTimes()
-	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", "[\"127.0.0.1:1234\",\"192.168.100.2:9090\"]"}
+	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", "1", "1", "2", "[\"127.0.0.1:1234\",\"192.168.100.2:9090\"]"}
 	result := registerPartition(args, stub)
 	t.Log(result.Status)
 }
@@ -65,7 +65,7 @@ func TestListPartition(t *testing.T) {
 
 	peers := []string{"127.0.0.1:1234", "192.168.100.2:9090"}
 	peersJson, _ := json.Marshal(peers)
-	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", string(peersJson)}
+	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", "1", "1", "2", string(peersJson)}
 	partitionChain, _ := buildPartitionChain(args)
 
 	err := addPartitionChain(stub, partitionChain)
@@ -105,7 +105,7 @@ func TestUpdatePartition(t *testing.T) {
 
 	peers := []string{"127.0.0.1:1234", "192.168.100.2:9090"}
 	peersJson, _ := json.Marshal(peers)
-	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", string(peersJson)}
+	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", "1", "1", "2", string(peersJson)}
 	partitionChain, _ := buildPartitionChain(args)
 
 	err := addPartitionChain(stub, partitionChain)
