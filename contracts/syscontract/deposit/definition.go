@@ -14,7 +14,11 @@
 
 package deposit
 
-import "github.com/palletone/go-palletone/dag/modules"
+import (
+	"time"
+
+	"github.com/palletone/go-palletone/dag/modules"
+)
 
 const (
 	ListForCashback            = "ListForCashback"
@@ -114,5 +118,12 @@ type MediatorDeposit struct {
 	ApllyQuitTime  int64  `json:"apply_quit_time"`  //  申请退出时间
 	Status         string `json:"status"`           //  申请状态  申请、同意、退出
 	AgreeTime      int64  `json:"agree_time"`       //  基金会同意申请时间'
-	*DepositBalance
+	DepositBalance
+}
+
+func NewMediatorDeposit() *MediatorDeposit {
+	return &MediatorDeposit{
+		ApplyEnterTime: time.Now().Unix(),
+		Status:         Quit,
+	}
 }

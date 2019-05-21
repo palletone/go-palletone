@@ -674,57 +674,47 @@ func forfeitureSomeDeposit(stub shim.ChaincodeStubInterface, foundationAddr stri
 	return nil
 }
 
-func timeFormat(n string) string {
-	ent, err := strconv.ParseInt(n, 10, 64)
-	if err != nil {
-		log.Infof("time Format err: ", err.Error())
-		return n
-	}
-	return time.Unix(ent*DTimeDuration, 0).UTC().String()
+func mediatorDepositKey(medAddr string) string {
+	return string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX) + medAddr
 }
 
-//  通过地址获取Mediator节点信息
-func GetMediatorInfo(stub shim.ChaincodeStubInterface, medAddr common.Address) (*modules.MediatorInfo, error) {
-	byte, err := stub.GetState(contractMediatorKey(medAddr))
+func GetMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) (*MediatorDeposit, error) {
+	byte, err := stub.GetState(mediatorDepositKey(medAddr))
+	if err != nil || byte == nil {
+		return nil, err
+	}
+
+	balance := NewMediatorDeposit()
+	err = json.Unmarshal(byte, balance)
 	if err != nil {
 		return nil, err
 	}
-	if byte == nil {
-		return nil, nil
-	}
-	mediator := &modules.MediatorInfo{}
-	err = json.Unmarshal(byte, mediator)
-	if err != nil {
-		return nil, err
-	}
-	return mediator, nil
+
+	return balance, nil
 }
 
-func contractMediatorKey(medAddr common.Address) string {
-	return string(constants.MEDIATOR_INFO_PREFIX) + string(medAddr.Bytes())
-}
-
-//  保存Mediator账信息
-func SaveMediatorInfo(stub shim.ChaincodeStubInterface, medAddr common.Address, med *modules.MediatorInfo) error {
-	byte, err := json.Marshal(med)
+func SaveMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string, balance *MediatorDeposit) error {
+	byte, err := json.Marshal(balance)
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(contractMediatorKey(medAddr), byte)
+
+	err = stub.PutState(mediatorDepositKey(medAddr), byte)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
-//  删除节点信息
-//func DelMediatorInfo(stub shim.ChaincodeStubInterface, mediatorAddr string) error {
-//	err := stub.DelState(string(constants.MEDIATOR_INFO_PREFIX) + mediatorAddr)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
+func DelMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) error {
+	err := stub.DelState(mediatorDepositKey(medAddr))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func SaveNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balance *DepositBalance) error {
 	balanceByte, err := json.Marshal(balance)

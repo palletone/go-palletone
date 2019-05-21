@@ -491,7 +491,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("node is not exist in the become list")
 	}
 	//  不同意，移除申请列表
-	if strings.Compare(isOk, No) == 0 {
+	if isOk == No {
 		delete(becomeList, addr.String())
 		//  保存成为列表
 		err = saveList(stub, ListForApplyBecomeMediator, becomeList)
@@ -499,12 +499,12 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("save become list err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-		// 删除节点信息
-		//err = DelMediatorInfo(stub, addr.String())
-		//if err != nil {
-		//	return shim.Error(err.Error())
-		//}
-	} else if strings.Compare(isOk, Ok) == 0 {
+
+		err = DelMediatorDeposit(stub, addr.String())
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+	} else if isOk == Ok {
 		//  同意，移除列表，并且加入同意申请列表
 		delete(becomeList, addr.String())
 		//  保存成为列表
@@ -535,14 +535,14 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		//  修改同意时间
-		mediator, err := GetMediatorInfo(stub, addr)
+		mediator, err := GetMediatorDeposit(stub, addr.Str())
 		if err != nil {
 			log.Error("get mediator info err: ", "error", err)
 			return shim.Error(err.Error())
 		}
 		mediator.AgreeTime = time.Now().Unix() / DTimeDuration
 		mediator.Status = Agree
-		err = SaveMediatorInfo(stub, addr, mediator)
+		err = SaveMediatorDeposit(stub, addr.Str(), mediator)
 		if err != nil {
 			log.Error("save mediator info err: ", "error", err)
 			return shim.Error(err.Error())
