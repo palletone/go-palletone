@@ -191,8 +191,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//  获取节点的账户
-	case modules.GetDeposit:
-		log.Info("Enter DepositChaincode Contract " + modules.GetDeposit + " Invoke")
+	case GetDeposit:
+		log.Info("Enter DepositChaincode Contract " + GetDeposit + " Invoke")
 		balance, err := GetNodeBalance(stub, args[0])
 		if err != nil {
 			return shim.Error(err.Error())

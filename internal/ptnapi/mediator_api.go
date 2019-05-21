@@ -26,8 +26,8 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -58,7 +58,7 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 
 func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, error) {
 	// 构建参数
-	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetDeposit), []byte(addStr)}
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(deposit.GetDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约

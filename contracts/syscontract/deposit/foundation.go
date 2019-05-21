@@ -541,7 +541,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		mediator.AgreeTime = time.Now().Unix() / DTimeDuration
-		mediator.Status = modules.Agree
+		mediator.Status = Agree
 		err = SaveMediatorInfo(stub, addr, mediator)
 		if err != nil {
 			log.Error("save mediator info err: ", "error", err)

@@ -61,6 +61,11 @@ const (
 	IsInCashbackList                = "IsInCashbackList"
 	IsInJuryCandidateList           = "IsInJuryCandidateList"
 	IsInDeveloperCandidateList      = "IsInDeveloperCandidateList"
+	GetDeposit                      = "GetNodeBalance"
+
+	Apply = "apply"
+	Agree = "agree"
+	Quit  = "quit"
 )
 
 //申请提保证金
