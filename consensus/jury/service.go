@@ -534,7 +534,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		if checkExit && !isExit {
 			for addr, _ := range p.local {
 				log.Debugf("[%s]isValidateElection, local addr[%s] hash[%s]", shortId(reqId.String()), addr.String(), util.RlpHash(addr).String())
-				log.Debugf("[%s]isValidateElection", "addrHash", shortId(reqId.String()), e.AddrHash.String())
+				log.Debugf("[%s]isValidateElection, addrHash", shortId(reqId.String()), e.AddrHash.String())
 				if bytes.Equal(e.AddrHash.Bytes(), util.RlpHash(addr).Bytes()) {
 					isExit = true
 					break
