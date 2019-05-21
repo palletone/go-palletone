@@ -22,7 +22,6 @@ package dag
 
 import (
 	"encoding/json"
-	"strconv"
 	"time"
 
 	"github.com/dedis/kyber"
@@ -264,10 +263,6 @@ func (d *Dag) GetAccountVotedMediators(addr common.Address) map[string]bool {
 	return votedMediators
 }
 
-func (d *Dag) LookupAccount() map[common.Address]*modules.AccountInfo {
-	return d.unstableStateRep.LookupAccount()
-}
-
 func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
 	return d.unstableStateRep.GetAccountBalance(addr)
 }
@@ -297,11 +292,4 @@ func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
 
 	return d.unstableStateRep.IsJury(addr)
-}
-
-func (d *Dag) getActiveMediatorCount() int {
-	activeMediatorCountStr, _, _ := d.stableStateRep.GetConfig("ActiveMediatorCount")
-	activeMediatorCount, _ := strconv.ParseUint(string(activeMediatorCountStr), 10, 16)
-
-	return int(activeMediatorCount)
 }

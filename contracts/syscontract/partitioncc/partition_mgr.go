@@ -88,8 +88,8 @@ func addPartitionChain(stub shim.ChaincodeStubInterface, chain *dm.PartitionChai
 	return stub.PutState(key, value)
 }
 func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
-	if len(args) < 10 {
-		return nil, errors.New("need 10 args (GenesisHash,GenesisHeight,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,[Peers])")
+	if len(args) < 11 {
+		return nil, errors.New("need 10 args (GenesisHash,GenesisHeight,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,NetworkId,Version,StableThreshold,[Peers])")
 	}
 	var err error
 	partitionChain := &dm.PartitionChain{}
@@ -105,9 +105,11 @@ func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
 	partitionChain.SyncModel = args[6][0] - '0'
 	partitionChain.NetworkId, _ = strconv.ParseUint(args[7], 10, 64)
 	partitionChain.Version, _ = strconv.ParseUint(args[8], 10, 64)
-	if len(args[9]) > 0 {
+	threshold, _ := strconv.ParseUint(args[9], 10, 32)
+	partitionChain.StableThreshold = uint32(threshold)
+	if len(args[10]) > 0 {
 		peers := []string{}
-		err = json.Unmarshal([]byte(args[9]), &peers)
+		err = json.Unmarshal([]byte(args[10]), &peers)
 		if err != nil {
 			return nil, err
 		}
