@@ -48,6 +48,7 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	}
 	return statedb.saveTplToContractMapping(contract)
 }
+
 func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	key := append(constants.CONTRACT_PREFIX, id...)
 	contract := new(modules.Contract)
@@ -55,6 +56,7 @@ func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	return contract, err
 
 }
+
 func (statedb *StateDb) GetAllContracts() ([]*modules.Contract, error) {
 	rows := getprefix(statedb.db, constants.CONTRACT_PREFIX)
 	result := make([]*modules.Contract, 0, len(rows))
@@ -65,6 +67,7 @@ func (statedb *StateDb) GetAllContracts() ([]*modules.Contract, error) {
 	}
 	return result, nil
 }
+
 func (statedb *StateDb) saveTplToContractMapping(contract *modules.Contract) error {
 	key := append(constants.CONTRACT_TPL_INSTANCE_MAP, contract.TemplateId...)
 	key = append(key, contract.ContractId...)

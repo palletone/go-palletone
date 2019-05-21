@@ -54,7 +54,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	mi := modules.NewMediatorInfo()
 	*mi.MediatorInfoBase = *mco.MediatorInfoBase
 	*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
-	mi.MediatorApplyInfo.ApplyEnterTime = time.Now().Unix() / DTimeDuration
+	//mi.MediatorApplyInfo.ApplyEnterTime = time.Now().Unix() / DTimeDuration
 	mi.MediatorApplyInfo.Status = modules.Apply
 	//  获取同意列表
 	agreeList, err := GetList(stub, ListForAgreeBecomeMediator)

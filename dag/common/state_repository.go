@@ -143,14 +143,6 @@ func (rep *StateRepository) GetMediators() map[common.Address]bool {
 	return rep.statedb.GetMediators()
 }
 
-//func (rep *StateRepository) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
-//	return rep.statedb.GetApprovedMediatorList()
-//}
-//
-//func (rep *StateRepository) IsApprovedMediator(address common.Address) bool {
-//	return rep.statedb.IsApprovedMediator(address)
-//}
-
 func (rep *StateRepository) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
 	version *modules.StateVersion) error {
 	return rep.statedb.SaveContractState(contractId, ws, version)

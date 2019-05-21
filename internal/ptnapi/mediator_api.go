@@ -196,7 +196,7 @@ func (args *MediatorCreateArgs) setDefaults() {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
 	}
 
-	args.ApplyEnterTime = time.Now().Unix()
+	//args.ApplyEnterTime = time.Now().Unix()
 
 	return
 }

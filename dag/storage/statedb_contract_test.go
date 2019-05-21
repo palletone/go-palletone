@@ -124,6 +124,7 @@ func TestGetContract(t *testing.T) {
 	//	}
 	//}
 }
+
 func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 	hash1 := util.RlpHash(a)
 	hash2 := util.RlpHash(b)
