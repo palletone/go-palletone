@@ -119,5 +119,3 @@ notifications:
             - 602554102@qq.com
         on_success: always # default: change
         on_failure: always
-
-
