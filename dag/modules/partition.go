@@ -32,7 +32,7 @@ type PartitionChain struct {
 	Status         byte //Active:1 ,Terminated:0,Suspended:2
 	SyncModel      byte //Push:1 , Pull:2, Push+Pull:3
 	NetworkId      uint64
-	Version        int
+	Version        uint64
 	Peers          []string //pnode://publickey@IP:port format string
 }
 
@@ -43,6 +43,6 @@ type MainChain struct {
 	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
 	GasToken    AssetId
 	NetworkId   uint64
-	Version     int
+	Version     uint64
 	Peers       []string // pnode://publickey@IP:port format string
 }

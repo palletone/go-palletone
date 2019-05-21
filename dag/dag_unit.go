@@ -71,7 +71,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
 		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.GetTxIds(), time.Since(t0).String())
 	//3.将新单元添加到MemDag中
-	dag.Memdag.AddUnit(newUnit, txpool)
+	dag.Memdag.AddUnit(sign_unit, txpool)
 	//4.PostChainEvents
 	//TODO add PostChainEvents
 	go func() {
@@ -79,6 +79,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			events = make([]interface{}, 0, 1)
 		)
 		events = append(events, modules.ChainHeadEvent{sign_unit})
+		events = append(events, modules.ChainEvent{sign_unit, sign_unit.UnitHash})
 		dag.PostChainEvents(events)
 	}()
 

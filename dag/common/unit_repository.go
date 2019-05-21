@@ -501,7 +501,27 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 			log.Debug("checkReadSetValid", "GetContractState fail, contractId", contractId)
 			return false
 		}
+
+		//if v == nil && rd.Version == nil{
+		//	continue
+		//}else if v != nil && rd.Version != nil {
+		//	m1,err1:= json.Marshal(v)
+		//	m2,err2:= json.Marshal(rd.Version)
+		//	if err1 != nil || err2 != nil {
+		//		log.Debug("checkReadSetValid", "Marshal err, err1", err1, "err2", err2)
+		//		return false
+		//	}
+		//	if !bytes.Equal(m1, m2) {
+		//		log.Debug("checkReadSetValid","marshal not equal, contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
+		//		return false
+		//	}
+		//}else{
+		//	log.Debug("checkReadSetValid","not equal, contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
+		//	return false
+		//}
+
 		if v != nil && !v.Equal(rd.Version) {
+			log.Debug("checkReadSetValid","contractId",string(contractId), "local ver1", v, "ver2", rd.Version)
 			return false
 		}
 	}
@@ -937,10 +957,10 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
 		//Save StableUnit
-		if err := rep.propdb.SetLastStableUnit(uHash, unit.UnitHeader.Number); err != nil {
-			log.Info("Set LastStableUnit:", "error", err.Error())
-			return modules.ErrUnit(-3)
-		}
+		// if err := rep.propdb.SetLastStableUnit(uHash, unit.UnitHeader.Number); err != nil {
+		// 	log.Info("Set LastStableUnit:", "error", err.Error())
+		// 	return modules.ErrUnit(-3)
+		// }
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
 	return nil
@@ -1552,7 +1572,7 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
-	hash, _, err := rep.propdb.GetLastStableUnit(assetID)
+	hash, _,_, err := rep.propdb.GetNewestUnit(assetID)
 	if err != nil {
 		return nil, err
 	}

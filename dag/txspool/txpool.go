@@ -779,8 +779,8 @@ func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 }
 func (pool *TxPool) AddSequenTx(tx *modules.Transaction) error {
 	p_tx := TxtoTxpoolTx(pool, tx)
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	return pool.addSequenTx(p_tx)
 }
 func (pool *TxPool) AddSequenTxs(txs []*modules.Transaction) error {
@@ -850,9 +850,7 @@ func (pool *TxPool) addSequenTx(p_tx *modules.TxPoolTransaction) error {
 
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
 	log.Debugf("Add Tx[%s] to sequen txpool.", p_tx.Tx.Hash().String())
-	pool.mu.Lock()
 	pool.sequenTxs.Add(p_tx)
-	pool.mu.Unlock()
 	pool.all.Store(hash, p_tx)
 	pool.addCache(p_tx)
 	go pool.journalTx(p_tx)
@@ -1628,6 +1626,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	// get sequenTxs
 	stxs := pool.GetSequenTxs()
 	pool.mu.RLock()
+	defer pool.mu.RUnlock()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
@@ -1698,7 +1697,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			}
 		}
 	}
-	pool.mu.RUnlock()
+
 	// 	去重
 	m := make(map[common.Hash]*modules.TxPoolTransaction)
 	indexL := make(map[int]common.Hash)

@@ -16,16 +16,16 @@ package deposit
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 //同意申请没收请求
@@ -535,14 +535,14 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		//  修改同意时间
-		mediator, err := GetMediatorInfo(stub, addr.String())
+		mediator, err := GetMediatorInfo(stub, addr)
 		if err != nil {
 			log.Error("get mediator info err: ", "error", err)
 			return shim.Error(err.Error())
 		}
 		mediator.AgreeTime = time.Now().Unix() / DTimeDuration
 		mediator.Status = modules.Agree
-		err = SaveMediatorInfo(stub, addr.String(), mediator)
+		err = SaveMediatorInfo(stub, addr, mediator)
 		if err != nil {
 			log.Error("save mediator info err: ", "error", err)
 			return shim.Error(err.Error())

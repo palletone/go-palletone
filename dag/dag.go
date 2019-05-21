@@ -226,10 +226,6 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
-	// var (
-	// 	events = make([]interface{}, 0, len(units))
-	// 	coalescedLogs []*types.Log
-	// )
 
 	count := int(0)
 	for i, u := range units {
@@ -256,22 +252,11 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
-		// append by albert·gou, 利用 unit 更新相关状态
-		if err := d.statleUnitProduceRep.ApplyUnit(u); err != nil {
+		if err:=d.Memdag.AddUnit(u,txpool); err != nil {
 			//return count, err
 			return count, nil
 		}
-
-		// todo 应当和本地生产的unit统一接口，而不是直接存储
-		//if err := d.unstableUnitRep.SaveUnit(u, false); err != nil {
-		if err := d.SaveUnit(u, txpool, false); err != nil {
-			return count, err
-		}
-
-		//d.updateLastIrreversibleUnitNum(u.Hash(), uint64(u.NumberU64()))
-		//log.Debug("Dag", "InsertDag ok index:", u.UnitHeader.Number.Index, "hash:", u.Hash())
 		count += 1
-		// events = append(events, modules.ChainEvent{u, common.Hash{}, nil})
 	}
 
 	//TODO add PostChainEvents
@@ -528,21 +513,22 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	if !dag.IsHeaderExist(hash) {
 		log.Debugf("Newest unit[%s] not exist in dag, retrieve another from memdag "+
 			"and update NewestUnit.index [%d]", hash.String(), chainIndex.Index)
-		newestUnit := dag.Memdag.GetLastMainchainUnit()
-		if nil != newestUnit {
-			// todo 待删除 处理临时prop没有回滚的问题
-			dgp := dag.GetDynGlobalProp()
+		//TODO Devin query all unit,get newest one
+		//newestUnit := dag.Memdag.GetLastMainchainUnit()
+		//if nil != newestUnit {
 
-			interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
-			time, _ := dag.stablePropRep.GetNewestUnitTimestamp(gasToken)
-			dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
-			//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
-
-			dag.SaveDynGlobalProp(dgp, false)
-			//----------
-
-			dag.stablePropRep.SetNewestUnit(newestUnit.Header())
-		}
+		//	dgp := dag.GetDynGlobalProp()
+		//
+		//	interval := dag.GetGlobalProp().ChainParameters.MediatorInterval
+		//	time, _ := dag.stablePropRep.GetNewestUnitTimestamp(gasToken)
+		//	dgp.CurrentASlot -= uint64(uint8(time-newestUnit.Timestamp()) / interval)
+		//	//dgp.CurrentASlot += newestUnit.NumberU64() - chainIndex.Index
+		//
+		//	dag.SaveDynGlobalProp(dgp, false)
+		//	//----------
+		//
+		//	dag.stablePropRep.SetNewestUnit(newestUnit.Header())
+		//}
 	}
 	dag.refreshPartitionMemDag()
 	return dag, nil
@@ -1153,8 +1139,9 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
+	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
 	d.Memdag.SetUnitGroupSign(unitHash, nil, groupSign, txpool)
-	log.Debugf("Update unit[%s] group sign", unitHash.String())
+
 	//TODO Group pub key????
 	// 将缓存池utxo更新到utxodb中
 	//go d.UpdateUtxosByUnit(unitHash)
@@ -1304,18 +1291,13 @@ func (bc *Dag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscript
 // TODO: Should not expose PostChainEvents. The chain events should be posted in WriteBlock.
 func (bc *Dag) PostChainEvents(events []interface{}) {
 	log.Debug("enter PostChainEvents")
-	// post event logs for further processing
-	//if logs != nil {
-	//	bc.logsFeed.Send(logs)
-	//}
+
 	for _, event := range events {
 		switch ev := event.(type) {
 		case modules.ChainEvent:
-			log.Debug("======PostChainEvents======", "ev", ev)
 			bc.chainFeed.Send(ev)
 
 		case modules.ChainHeadEvent:
-			log.Debug("======PostChainHeadEvent======", "ev", ev)
 			bc.chainHeadFeed.Send(ev)
 
 			//case modules.ChainSideEvent:
