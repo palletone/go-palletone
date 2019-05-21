@@ -42,7 +42,7 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	if count > 0 {
 		return errors.New("Contract[" + common.Bytes2Hex(contract.ContractId) + "]'s state existed!")
 	}
-	err := StoreBytes(statedb.db, key, contract)
+	err := StoreToRlpBytes(statedb.db, key, contract)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	key := append(constants.CONTRACT_PREFIX, id...)
 	contract := new(modules.Contract)
-	err := Retrieve(statedb.db, key, contract)
+	err := RetrieveFromRlpBytes(statedb.db, key, contract)
 	return contract, err
 
 }
@@ -267,7 +267,7 @@ func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modu
 func (statedb *StateDb) SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error {
 	// key: requestId
 	key := append(constants.CONTRACT_DEPLOY, reqid...)
-	return StoreBytes(statedb.db, key, deploy)
+	return StoreToRlpBytes(statedb.db, key, deploy)
 }
 
 func (statedb *StateDb) GetContractDeploy(reqId []byte) (*modules.ContractDeployPayload, error) {
@@ -286,7 +286,7 @@ func (statedb *StateDb) GetContractDeploy(reqId []byte) (*modules.ContractDeploy
 func (statedb *StateDb) SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error {
 	// key : requestId
 	key := append(constants.CONTRACT_DEPLOY_REQ, reqid...)
-	return StoreBytes(statedb.db, key, deploy)
+	return StoreToRlpBytes(statedb.db, key, deploy)
 }
 
 func (statedb *StateDb) GetContractDeployReq(reqId []byte) (*modules.ContractDeployRequestPayload, error) {
@@ -323,7 +323,7 @@ func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.Cont
 
 	// key: reqid
 	key := append(constants.CONTRACT_INVOKE_REQ, reqid...)
-	return StoreBytes(statedb.db, key, invoke)
+	return StoreToRlpBytes(statedb.db, key, invoke)
 }
 
 func (statedb *StateDb) GetContractInvokeReq(reqId []byte) (*modules.ContractInvokeRequestPayload, error) {
@@ -342,7 +342,7 @@ func (statedb *StateDb) GetContractInvokeReq(reqId []byte) (*modules.ContractInv
 func (statedb *StateDb) SaveContractStop(reqid []byte, stop *modules.ContractStopPayload) error {
 	// key: reqid
 	key := append(constants.CONTRACT_STOP, reqid...)
-	return StoreBytes(statedb.db, key, stop)
+	return StoreToRlpBytes(statedb.db, key, stop)
 }
 
 func (statedb *StateDb) GetContractStop(reqId []byte) (*modules.ContractStopPayload, error) {
@@ -361,7 +361,7 @@ func (statedb *StateDb) GetContractStop(reqId []byte) (*modules.ContractStopPayl
 func (statedb *StateDb) SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error {
 	// key: reqid
 	key := append(constants.CONTRACT_STOP_REQ, reqid...)
-	return StoreBytes(statedb.db, key, stopr)
+	return StoreToRlpBytes(statedb.db, key, stopr)
 }
 
 func (statedb *StateDb) GetContractStopReq(reqId []byte) (*modules.ContractStopRequestPayload, error) {
@@ -379,7 +379,7 @@ func (statedb *StateDb) GetContractStopReq(reqId []byte) (*modules.ContractStopR
 func (statedb *StateDb) SaveContractSignature(reqid []byte, sig *modules.SignaturePayload) error {
 	// key: reqid
 	key := append(constants.CONTRACT_SIGNATURE, reqid...)
-	return StoreBytes(statedb.db, key, sig)
+	return StoreToRlpBytes(statedb.db, key, sig)
 }
 
 func (statedb *StateDb) GetContractSignature(reqId []byte) (*modules.SignaturePayload, error) {

@@ -63,13 +63,13 @@ func (utxodb *UtxoDb) saveUtxoOutpoint(address common.Address, outpoint *modules
 
 	// save outpoint tofind address
 	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
-	StoreBytes(utxodb.db, out_key, address.String())
-	return StoreBytes(utxodb.db, key, outpoint)
+	StoreToRlpBytes(utxodb.db, out_key, address.String())
+	return StoreToRlpBytes(utxodb.db, key, outpoint)
 }
 func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Address, outpoint *modules.OutPoint) error {
 	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
-	return StoreBytes(batch, key, outpoint)
+	return StoreToRlpBytes(batch, key, outpoint)
 	//val, err := rlp.EncodeToBytes(outpoint)
 	//if err != nil {
 	//	return err
@@ -98,7 +98,7 @@ func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.U
 	key := outpoint.ToKey()
 	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 	//log.Debug("Try to save utxo by key:", "outpoint_key", outpoint.String(), "and index by address:", address.String())
-	err := StoreBytes(utxodb.db, key, utxo)
+	err := StoreToRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 			continue
 		} else {
 			key := outpoint.ToKey()
-			err := StoreBytes(batch, key, utxo)
+			err := StoreToRlpBytes(batch, key, utxo)
 			//val, err := rlp.EncodeToBytes(utxo)
 			if err != nil {
 				return err
@@ -148,7 +148,7 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	key := outpoint.ToKey()
 	utxo.Spend()
 	//log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
-	err = StoreBytes(utxodb.db, key, utxo)
+	err = StoreToRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	key := outpoint.ToKey()
 
 	//log.Debugf("DB[%s] Query utxo by outpoint:%s", reflect.TypeOf(utxodb.db).String(), outpoint.String())
-	err := Retrieve(utxodb.db, key, utxo)
+	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	//data, err := utxodb.db.Get(key)
 	if err != nil {
 		log.Error("get utxo entry failed", "error", err, "outpoint", outpoint.String())

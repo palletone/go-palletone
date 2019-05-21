@@ -41,7 +41,7 @@ type DatabaseReader interface {
 	NewIteratorWithPrefix(prefix []byte) iterator.Iterator
 }
 
-func Retrieve(db ptndb.Database, key []byte, v interface{}) error {
+func RetrieveFromRlpBytes(db ptndb.Database, key []byte, v interface{}) error {
 	data, err := db.Get(key)
 	if err != nil {
 		return err

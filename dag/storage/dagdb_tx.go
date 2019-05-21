@@ -41,7 +41,7 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	log.Debugf("Try to save tx[%s]", txHash.String())
 	//Save tx to db
 	key := append(constants.TRANSACTION_PREFIX, txHash.Bytes()...)
-	err := StoreBytes(dagdb.db, key, tx)
+	err := StoreToRlpBytes(dagdb.db, key, tx)
 	if err != nil {
 		log.Errorf("Save tx[%s] error:%s", txHash.Str(), err.Error())
 		return err
@@ -78,7 +78,7 @@ func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction,error){
 //	}
 //	key := append(constants.AddrOutput_Prefix, []byte(addr)...)
 //	key = append(key, []byte(hash.String())...)
-//	err := StoreBytes(dagdb.db, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output)
+//	err := StoreToRlpBytes(dagdb.db, append(key, new(big.Int).SetInt64(int64(msgindex)).Bytes()...), output)
 //	return err
 //}
 //
@@ -110,7 +110,7 @@ func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction,error){
 //			return err
 //		} else { // first store the addr
 //			hashs = append(hashs, hash)
-//			if err := StoreBytes(dagdb.db, append(key, []byte(addr)...), hashs); err != nil {
+//			if err := StoreToRlpBytes(dagdb.db, append(key, []byte(addr)...), hashs); err != nil {
 //				return err
 //			}
 //			return nil
@@ -120,7 +120,7 @@ func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction,error){
 //		return err
 //	}
 //	hashs = append(hashs, hash)
-//	if err := StoreBytes(dagdb.db, append(key, []byte(addr)...), hashs); err != nil {
+//	if err := StoreToRlpBytes(dagdb.db, append(key, []byte(addr)...), hashs); err != nil {
 //		return err
 //	}
 //	return nil
@@ -202,7 +202,7 @@ func (dagdb *DagDb) GetTransactionOnly(hash common.Hash) (*modules.Transaction, 
 	}
 	tx := new(modules.Transaction)
 	key := append(constants.TRANSACTION_PREFIX, hash.Bytes()...)
-	err := Retrieve(dagdb.db, key, tx)
+	err := RetrieveFromRlpBytes(dagdb.db, key, tx)
 	if err != nil {
 		log.Warn("get transaction failed.", "tx_hash", hash.String(), "error", err)
 		return nil, err

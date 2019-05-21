@@ -28,11 +28,6 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 )
 
-// value will serialize to rlp encoding bytes
-func Store(db ptndb.Database, key string, value interface{}) error {
-	return StoreBytes(db, []byte(key), value)
-}
-
 //func BatchStore(batch ptndb.Batch, key []byte, value interface{}) error {
 //	val, err := rlp.EncodeToBytes(value)
 //	if err != nil {
@@ -61,14 +56,14 @@ func StoreToJsonBytes(db ptndb.Putter, key []byte, value interface{}) error {
 	return nil
 }
 
-func StoreBytes(db ptndb.Putter, key []byte, value interface{}) error {
+func StoreToRlpBytes(db ptndb.Putter, key []byte, value interface{}) error {
 	val, err := rlp.EncodeToBytes(value)
 	if err != nil {
 		return err
 	}
 	err = db.Put(key, val)
 	if err != nil {
-		log.Error("StoreBytes", "key:", string(key), "err:", err)
+		log.Error("StoreToRlpBytes", "key:", string(key), "err:", err)
 	}
 	return err
 	/*

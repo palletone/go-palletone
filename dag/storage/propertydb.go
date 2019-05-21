@@ -115,12 +115,12 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 // 	data := &modules.UnitProperty{hash, index, 0}
 // 	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
 // 	log.Debugf("Save last stable assetId:%s,unit: %s", index.AssetID.String(), hash.String())
-// 	return StoreBytes(db.db, key, data)
+// 	return StoreToRlpBytes(db.db, key, data)
 // }
 // func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 // 	key := append(constants.LastStableUnitHash, asset.Bytes()...)
 // 	data := &modules.UnitProperty{}
-// 	err := Retrieve(db.db, key, data)
+// 	err := RetrieveFromRlpBytes(db.db, key, data)
 // 	if err != nil {
 // 		log.Warnf("Cannot retrieve last stable unit hash by asset:%s", asset.String())
 // 		return common.Hash{}, nil, err
@@ -135,12 +135,12 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
 	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(),hash.String(), index.String())
 
-	return StoreBytes(db.db, key, data)
+	return StoreToRlpBytes(db.db, key, data)
 }
 func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
 	key := append(constants.LastUnitInfo, asset.Bytes()...)
 	data := &modules.UnitProperty{}
-	err := Retrieve(db.db, key, data)
+	err := RetrieveFromRlpBytes(db.db, key, data)
 	if err != nil {
 		return common.Hash{}, nil, 0, err
 	}
@@ -150,12 +150,12 @@ func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *module
 }
 func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
 	log.Debugf("Save chaincodes with contractid %s", contractId.String())
-	return StoreBytes(db.db, contractId.Bytes(), cc)
+	return StoreToRlpBytes(db.db, contractId.Bytes(), cc)
 }
 func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
 	log.Debugf("Get chaincodes with contractid %s", contractId.String())
 	cc := &list.CCInfo{}
-	err := Retrieve(db.db, contractId.Bytes(), cc)
+	err := RetrieveFromRlpBytes(db.db, contractId.Bytes(), cc)
 	if err != nil {
 		log.Infof("Cannot retrieve chaincodes by contractid %s", contractId.String())
 		return nil, err

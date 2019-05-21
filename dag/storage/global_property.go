@@ -28,8 +28,8 @@ import (
 )
 
 var (
-	GlobalPropDBKey    = append(constants.GLOBALPROPERTY_PREFIX, []byte("GlobalProperty")...)
-	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, []byte("DynamicGlobalProperty")...)
+	GlobalPropDBKey    = append(constants.GLOBALPROPERTY_PREFIX, "GlobalProperty"...)
+	DynGlobalPropDBKey = append(constants.DYNAMIC_GLOBALPROPERTY_PREFIX, "DynamicGlobalProperty"...)
 )
 
 func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
@@ -53,7 +53,7 @@ func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
 }
 
 func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) error {
-	err := StoreBytes(db, DynGlobalPropDBKey, *dgp)
+	err := StoreToRlpBytes(db, DynGlobalPropDBKey, *dgp)
 	if err != nil {
 		log.Errorf("Store dynamic global properties error: %v", err.Error())
 	}
@@ -64,7 +64,7 @@ func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) e
 func RetrieveDynGlobalProp(db ptndb.Database) (*modules.DynamicGlobalProperty, error) {
 	dgp := modules.NewDynGlobalProp()
 
-	err := Retrieve(db, DynGlobalPropDBKey, dgp)
+	err := RetrieveFromRlpBytes(db, DynGlobalPropDBKey, dgp)
 	if err != nil {
 		log.Errorf("Retrieve dynamic global properties error: %v", err.Error())
 	}

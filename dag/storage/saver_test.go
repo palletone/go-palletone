@@ -154,7 +154,7 @@ func TestSaveUtxos(t *testing.T) {
 	cap = append(cap, *myplane, *myplane2)
 	fmt.Println(" cap :", cap)
 	//2. store object
-	StoreBytes(utxodb.db, []byte("testkey"), &cap)
+	StoreToRlpBytes(utxodb.db, []byte("testkey"), &cap)
 	//3. load object
 	something, err := utxodb.db.Get([]byte("testkey"))
 

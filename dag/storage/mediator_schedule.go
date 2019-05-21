@@ -30,7 +30,7 @@ var (
 )
 
 func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
-	err := StoreBytes(db, MediatorSchlDBKey, ms)
+	err := StoreToRlpBytes(db, MediatorSchlDBKey, ms)
 	if err != nil {
 		log.Errorf("Store mediator schedule error: %v", err.Error())
 	}
@@ -40,7 +40,7 @@ func StoreMediatorSchl(db ptndb.Database, ms *modules.MediatorSchedule) error {
 
 func RetrieveMediatorSchl(db ptndb.Database) (*modules.MediatorSchedule, error) {
 	ms := new(modules.MediatorSchedule)
-	err := Retrieve(db, MediatorSchlDBKey, ms)
+	err := RetrieveFromRlpBytes(db, MediatorSchlDBKey, ms)
 	if err != nil {
 		log.Errorf("Retrieve mediator schedule error: %v", err.Error())
 	}
