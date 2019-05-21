@@ -18,6 +18,10 @@ env:
         - REPORT_NAME=report.html
         - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/palletone
         - CURL_CMD=curl --ftp-create-dirs -T
+        - IS_RUN_DEPOSIT=false
+        - IS_RUN_CREATE_TRANS=true
+        - IS_RUN_CCINVOKE=false
+        - IS_RUN_DIGITAL=true
 
 script:
     - go build ./cmd/gptn
@@ -30,33 +34,44 @@ script:
     - nohup ./gptn &
     - sleep 15
     - netstat -ap | grep gptn
-#    - cd ../dct
-#    - ./deposit_test.sh 4
-#    - cd ../initialEnv
-#    - bash ./initFtpUrl.sh
+    - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+      cd ../dct
+      ./deposit_test.sh 4
     - mkdir -p ${BDD_LOG_PATH}
-    - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
-#    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
-    - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
+    - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
+      python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
+    - if [ $IS_RUN_CCINVOKE == 'true' ]; then
+      python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
+    - if [ $IS_RUN_DIGITAL == 'true' ]; then
+      python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
 
 after_script:
     - killall gptn
     # upload all log
     - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
-#    # upload deposit log
-#    - ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
-#    - ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
+
+    # upload deposit log
+    - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
+      ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
+
     # upload create transactions log and report
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
-#    # upload ccinvoke log and report
-#    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
-#    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
+    - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
+      ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
+      ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
+
+    # upload ccinvoke log and report
+    - if [ $IS_RUN_CCINVOKE == 'true' ]; then
+      ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
+      ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
+
     # upload digital identity log and report
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
+    - if [ $IS_RUN_DIGITAL == 'true' ]; then
+      ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
+      ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
+
     # echo ftp address
-    - echo "The path of all bdd log in vsftpd is '${FTP_URL}', but you should quit VPN first"
+    - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141', but you should quit VPN first"
 
 before_install:
     - go get github.com/mattn/goveralls
@@ -85,9 +100,9 @@ addons:
 
 deploy:
     skip_cleanup: true
-#    provider:
-#    on:
-#        branch: all
+    provider:
+    on:
+        branch: all
 
 notifications:
 #    email: elva1087penny@163.com
