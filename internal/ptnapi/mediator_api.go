@@ -58,7 +58,7 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 
 func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.MediatorDeposit, error) {
 	// 构建参数
-	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorrDeposit), []byte(addStr)}
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约

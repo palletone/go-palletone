@@ -206,8 +206,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(byte)
 		// 获取mediator Deposit
-	case modules.GetMediatorrDeposit:
-		log.Info("Enter DepositChaincode Contract " + modules.GetMediatorrDeposit + " Invoke")
+	case modules.GetMediatorDeposit:
+		log.Info("Enter DepositChaincode Contract " + modules.GetMediatorDeposit + " Invoke")
 		mediator, err := GetMediatorDeposit(stub, args[0])
 		if err != nil {
 			return shim.Error(err.Error())

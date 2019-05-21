@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -45,20 +44,9 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(err.Error())
 	}
 
-	// 解释参数
-	//var mco modules.MediatorCreateOperation
-	//err = json.Unmarshal([]byte(args[0]), &mco)
-	//if err != nil {
-	//	log.Debugf("Save Apply Mediator(%v) Invoke Req", mco.AddStr)
-	//	return shim.Error(err.Error())
-	//}
-	//mi := modules.NewMediatorInfo()
-	//*mi.MediatorInfoBase = *mco.MediatorInfoBase
-	//*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
-
-	mb := NewMediatorDeposit()
-	mb.ApplyEnterTime = time.Now().Unix() / DTimeDuration
-	mb.Status = Apply
+	md := NewMediatorDeposit()
+	md.ApplyEnterTime = time.Now().Unix() / DTimeDuration
+	md.Status = Apply
 	//  获取同意列表
 	agreeList, err := GetList(stub, ListForAgreeBecomeMediator)
 	if err != nil {
@@ -97,7 +85,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(err.Error())
 	}
 	//  保存账户信息
-	err = SaveMediatorDeposit(stub, invokeAddr.Str(), mb)
+	err = SaveMediatorDeposit(stub, invokeAddr.Str(), md)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
 		return shim.Error(err.Error())
@@ -182,9 +170,9 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 	return shim.Success([]byte(nil))
 }
 
-func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeAddr common.Address) error {
+func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit, nodeAddr common.Address) error {
 	//  计算币龄收益
-	endTime := balance.LastModifyTime * DTimeDuration
+	endTime := md.LastModifyTime * DTimeDuration
 	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
@@ -192,11 +180,11 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 		return err
 	}
 	//
-	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
+	awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
 	//  本金+利息
-	balance.Balance += awards
+	md.Balance += awards
 	invokeTokens := new(modules.AmountAsset)
-	invokeTokens.Amount = balance.Balance
+	invokeTokens.Amount = md.Balance
 	//
 	fees, err := stub.GetInvokeFees()
 	if err != nil {
@@ -210,12 +198,7 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 		log.Error("Stub.PayOutToken err:", "error", err)
 		return err
 	}
-	//  删除节点
-	err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + nodeAddr.String())
-	if err != nil {
-		log.Error("Stub.DelState err:", "error", err)
-		return err
-	}
+
 	//  获取候选列表
 	candidateList, err := GetList(stub, modules.MediatorList)
 	if err != nil {
@@ -235,18 +218,15 @@ func deleteNode(stub shim.ChaincodeStubInterface, balance *DepositBalance, nodeA
 		log.Error("MarshalAndPutStateForMediatorList err:", "error", err)
 		return err
 	}
-	//  获取该节点信息
-	mediator, err := GetMediatorDeposit(stub, nodeAddr.Str())
-	if err != nil {
-		return err
-	}
+
 	//  更新
-	mediator.Status = Quit
+	md.Status = Quit
 	//  保存
-	err = SaveMediatorDeposit(stub, nodeAddr.Str(), mediator)
+	err = SaveMediatorDeposit(stub, nodeAddr.Str(), md)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -271,7 +251,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  判断是否是交付保证金并获取交付保证金数量
+	//  判断是否是交付保证金到保证金合约地址
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
 		log.Error("get deposit invoke tokens err: ", "error", err)
@@ -294,13 +274,13 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("node is not exist in the agree list,you should apply for it.")
 	}
 	//  获取保证金账户信息
-	balance, err := GetNodeBalance(stub, invokeAddr.String())
+	md, err := GetMediatorDeposit(stub, invokeAddr.String())
 	if err != nil {
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  第一次交付
-	if balance == nil {
+	if md.Balance == 0 {
 		//  判断保证金是否足够(Mediator第一次交付必须足够)
 		if invokeTokens.Amount < depositAmountsForMediator {
 			//TODO 第一次交付不够的话，这里必须终止
@@ -313,15 +293,15 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-		balance = &DepositBalance{}
+
 		//  处理数据
-		balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
-		balance.Balance += invokeTokens.Amount
-		balance.LastModifyTime = time.Now().Unix() / DTimeDuration
+		md.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
+		md.Balance += invokeTokens.Amount
+		md.LastModifyTime = time.Now().Unix() / DTimeDuration
 	} else {
 		//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		//  获取上次加入最后更改的时间
-		endTime := balance.LastModifyTime * DTimeDuration
+		endTime := md.LastModifyTime * DTimeDuration
 		//  获取保证金的年利率
 		depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 		if err != nil {
@@ -329,33 +309,26 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		//  计算币龄收益
-		awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
-		balance.Balance += awards
+		awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
+		md.Balance += awards
 		//  处理数据
-		balance.Balance += invokeTokens.Amount
-		balance.LastModifyTime = time.Now().Unix() / DTimeDuration
+		md.Balance += invokeTokens.Amount
+		md.LastModifyTime = time.Now().Unix() / DTimeDuration
+	}
+
+	//  退出后，再交付的状态
+	if md.Status == Quit {
+		md.Status = Agree
+		md.AgreeTime = time.Now().Unix() / DTimeDuration
+		md.ApllyQuitTime = 0
 	}
 	//  保存账户信息
-	err = SaveNodeBalance(stub, invokeAddr.String(), balance)
+	err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
 	if err != nil {
 		log.Error("save node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  获取mediator信息
-	mediator, err := GetMediatorDeposit(stub, invokeAddr.Str())
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	//  退出后，再交付的状态
-	if mediator.Status == Quit {
-		mediator.Status = Agree
-		mediator.AgreeTime = time.Now().Unix() / DTimeDuration
-		mediator.ApllyQuitTime = 0
-		err = SaveMediatorDeposit(stub, invokeAddr.Str(), mediator)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-	}
+
 	return shim.Success([]byte(nil))
 }
 
@@ -399,19 +372,19 @@ func mediatorApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.R
 	return shim.Success([]byte(nil))
 }
 
-func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, balance *DepositBalance) error {
+func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, md *MediatorDeposit) error {
 	//
-	depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
-	if err != nil {
-		log.Error("get deposit period err: ", "error", err)
-		return err
-	}
-	//
-	day, err := strconv.Atoi(depositPeriod)
-	if err != nil {
-		log.Error("strconv.Atoi err: ", "error", err)
-		return err
-	}
+	//depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
+	//if err != nil {
+	//	log.Error("get deposit period err: ", "error", err)
+	//	return err
+	//}
+	////
+	//day, err := strconv.Atoi(depositPeriod)
+	//if err != nil {
+	//	log.Error("strconv.Atoi err: ", "error", err)
+	//	return err
+	//}
 	//
 	depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
 	if err != nil {
@@ -447,39 +420,73 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr common.Addres
 		return err
 	}
 	//  计算余额
-	result := balance.Balance - cashbackNode.CashbackTokens.Amount
+	result := md.Balance - cashbackNode.CashbackTokens.Amount
 	//  判断是否全部退
-	if result == 0 {
-		//  加入候选列表的时的时间
-		ent, err := strconv.ParseInt(balance.EnterTime, 10, 64)
-		startTime := time.Unix(ent*DTimeDuration, 0).UTC().YearDay()
-		//  当前时间
-		endTime := time.Now().UTC().YearDay()
-		//  判断是否已超过规定周期
-		if endTime-startTime >= day {
-			//  退出全部，即删除cashback
-			err = deleteNode(stub, balance, cashbackAddr)
-			if err != nil {
-				log.Error("deleteNode err: ", "error", err)
-				return err
-			}
-		} else {
-			//  没有超过周期，不能退出
-			log.Error("not exceeding the valid time,can not quit.")
-			return fmt.Errorf("%s", "not exceeding the valid time,can not quit.")
-		}
-	} else if result < depositAmountsForMediator {
-		//  说明退款后，余额少于规定数量
+	//if result == 0 {
+	//	//  加入候选列表的时的时间
+	//	ent, err := strconv.ParseInt(md.EnterTime, 10, 64)
+	//	startTime := time.Unix(ent*DTimeDuration, 0).UTC().YearDay()
+	//	//  当前时间
+	//	endTime := time.Now().UTC().YearDay()
+	//	//  判断是否已超过规定周期
+	//	if endTime-startTime >= day {
+	//		//  退出全部，即删除cashback
+	//		err = deleteNode(stub, md, cashbackAddr)
+	//		if err != nil {
+	//			log.Error("deleteNode err: ", "error", err)
+	//			return err
+	//		}
+	//	} else {
+	//		//  没有超过周期，不能退出
+	//		log.Error("not exceeding the valid time,can not quit.")
+	//		return fmt.Errorf("%s", "not exceeding the valid time,can not quit.")
+	//	}
+	//} else if result < depositAmountsForMediator {
+	//  说明退款后，余额少于规定数量
+	// 判断退款后，余额是否少于规定数量
+	if result < depositAmountsForMediator {
 		log.Error("can not cashback some")
 		return fmt.Errorf("%s", "can not cashback some")
 	} else {
 		//TODO 这是只退一部分钱，剩下余额还是在规定范围之内
-		err = cashbackSomeDeposit(Mediator, stub, cashbackAddr, cashbackNode, balance)
+		err = cashbackSomeMediatorDeposit(stub, cashbackAddr, cashbackNode, md)
 		if err != nil {
 			log.Error("cashbackSomeDeposit err: ", "error", err)
 			return err
 		}
 	}
 
+	return nil
+}
+
+//  提取一部分保证金
+func cashbackSomeMediatorDeposit(stub shim.ChaincodeStubInterface, cashbackAddr common.Address,
+	cashbackValue *Cashback, md *MediatorDeposit) error {
+	//  调用从合约把token转到请求地址
+	err := stub.PayOutToken(cashbackAddr.String(), cashbackValue.CashbackTokens, 0)
+	if err != nil {
+		log.Error("stub.PayOutToken err: ", "error", err)
+		return err
+	}
+	endTime := md.LastModifyTime * DTimeDuration
+	//
+	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
+	if err != nil {
+		log.Error("stub.GetSystemConfig err:", "error", err)
+		return err
+	}
+	//
+	awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
+	md.LastModifyTime = time.Now().Unix() / DTimeDuration
+	//  加上利息奖励
+	md.Balance += awards
+	//  减去提取部分
+	md.Balance -= cashbackValue.CashbackTokens.Amount
+
+	err = SaveMediatorDeposit(stub, cashbackAddr.String(), md)
+	if err != nil {
+		log.Error("SaveMedInfo err:", "error", err)
+		return err
+	}
 	return nil
 }

@@ -619,16 +619,16 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 			return shim.Error(err.Error())
 		}
 		//获取该账户
-		balance, err := GetNodeBalance(stub, addr.String())
+		md, err := GetMediatorDeposit(stub, addr.String())
 		if err != nil {
 			log.Error("Stub.GetDepositBalance err:", "error", err)
 			return shim.Error(err.Error())
 		}
-		if balance == nil {
+		if md == nil {
 			log.Error("Stub.GetDepositBalance err: balance is nil.")
 			return shim.Error("Stub.GetDepositBalance err: balance is nil.")
 		}
-		err = deleteNode(stub, balance, addr)
+		err = deleteMediatorDeposit(stub, md, addr)
 		if err != nil {
 			log.Error("DeleteNode err:", "error", err)
 			return shim.Error(err.Error())
@@ -691,13 +691,13 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 		log.Error("string to address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	balance, err := GetNodeBalance(stub, addr.String())
+	md, err := GetMediatorDeposit(stub, addr.String())
 	if err != nil {
 		log.Error("get cashback node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  判断没收节点账户是否为空
-	if balance == nil {
+	if md == nil {
 		log.Error("get cashback node balance: balance is nil")
 		return shim.Error("get cashback node balance: balance is nil")
 	}
@@ -705,7 +705,7 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 	//  判断处理结果
 	if strings.Compare(isOk, Ok) == 0 {
 		//  对余额处理
-		err = handleMediator(stub, addr, balance)
+		err = handleMediator(stub, addr, md)
 		if err != nil {
 			log.Error("handle mediator err: ", "error", err)
 			return shim.Error(err.Error())
