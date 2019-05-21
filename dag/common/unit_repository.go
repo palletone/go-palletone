@@ -453,11 +453,12 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 
 			//标记交易有效性
 			if err := markTxIllegal(rep.statedb, t); err != nil {
-				continue
+				log.Error("CreateUnit", "markTxIllegal err:", err)
+				//continue
 			}
 			if t.Illegal {
 				log.Debug("CreateUnit", "contract is illegal, reqId", t.RequestHash(), "tx hash", t.Hash())
-				continue
+				//continue
 			}
 			txs = append(txs, t)
 		}
