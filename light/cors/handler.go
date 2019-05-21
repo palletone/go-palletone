@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"sync"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -327,15 +328,15 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			select {
 			case announce := <-p.announceChn:
 				log.Debug("Cors Palletone ProtocolManager->handle", "announce", announce)
-				//data, err := json.Marshal(announce.Header)
-				//if err != nil {
-				//	log.Error("Cors Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
-				//} else {
-				//	p.headInfo = &announce
-				//	if !p.fullnode {
-				//		p.SendRawAnnounce(data)
-				//	}
-				//}
+				data, err := json.Marshal(announce.Header)
+				if err != nil {
+					log.Error("Cors Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
+				} else {
+					//p.headInfo = &announce
+					//if !p.fullnode {
+					p.SendRawAnnounce(data)
+					//}
+				}
 			case <-stop:
 				return
 			}
@@ -350,8 +351,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		}
 	}
 }
-
-var reqList = []uint64{GetBlockHeadersMsg, GetBlockBodiesMsg, GetCodeMsg, GetUTXOsMsg, GetProofsMsg, SendTxMsg, SendTxV2Msg, GetTxStatusMsg, GetHeaderProofsMsg, GetProofsV2Msg, GetHelperTrieProofsMsg}
 
 // handleMsg is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
@@ -378,7 +377,31 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 
 	// Block header query, collect the requested headers and reply
-	case AnnounceMsg:
+	case CorsHeaderMsg:
+		var req announceData
+		var data []byte
+		if err := msg.Decode(&data); err != nil {
+			log.Error("CorsHeaderMsg", "Decode err", err, "msg", msg)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+
+		if err := json.Unmarshal(data, &req.Header); err != nil {
+			log.Error("CorsHeaderMsg", "Unmarshal err", err, "data", data)
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+
+		//if p.requestAnnounceType == announceTypeSigned {
+		//	if err := req.checkSignature(p.pubKey); err != nil {
+		//		log.Trace("Invalid announcement signature", "err", err)
+		//		return err
+		//	}
+		//	log.Trace("Valid announcement signature")
+		//}
+
+		log.Trace("CorsHeaderMsg message content", "header", req.Header)
+		if pm.fetcher != nil {
+			pm.fetcher.Enqueue(p, &req.Header)
+		}
 		return nil
 
 	default:

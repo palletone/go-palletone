@@ -165,12 +165,11 @@ func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
 	return hasBlock != nil && hasBlock(hash, number)
 }
 
-/*
-
 func (p *peer) SendRawAnnounce(request []byte) error {
-	return p2p.Send(p.rw, AnnounceMsg, request)
+	return p2p.Send(p.rw, CorsHeaderMsg, request)
 }
 
+/*
 // SendBlockHeaders sends a batch of block headers to the remote peer.
 func (p *peer) SendUnitHeaders(reqID, bv uint64, headers []*modules.Header) error {
 	return sendResponse(p.rw, BlockHeadersMsg, reqID, bv, headers)

@@ -1284,18 +1284,13 @@ func (bc *Dag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscript
 // TODO: Should not expose PostChainEvents. The chain events should be posted in WriteBlock.
 func (bc *Dag) PostChainEvents(events []interface{}) {
 	log.Debug("enter PostChainEvents")
-	// post event logs for further processing
-	//if logs != nil {
-	//	bc.logsFeed.Send(logs)
-	//}
+
 	for _, event := range events {
 		switch ev := event.(type) {
 		case modules.ChainEvent:
-			log.Debug("======PostChainEvents======", "ev", ev)
 			bc.chainFeed.Send(ev)
 
 		case modules.ChainHeadEvent:
-			log.Debug("======PostChainHeadEvent======", "ev", ev)
 			bc.chainHeadFeed.Send(ev)
 
 			//case modules.ChainSideEvent:
