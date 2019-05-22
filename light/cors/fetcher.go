@@ -261,11 +261,11 @@ func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 		return
 	}
 	// Discard any past or too distant blocks
-	heightChain := int64(f.lightChainHeight(header.Number.AssetID))
-	if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(), "heightChain", heightChain, "distance", dist)
-		return
-	}
+	//heightChain := int64(f.lightChainHeight(header.Number.AssetID))
+	//if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
+	//	log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(), "heightChain", heightChain, "distance", dist)
+	//	return
+	//}
 	// Schedule the block for future importing
 	if _, ok := f.queued[hash]; !ok {
 		op := &inject{
