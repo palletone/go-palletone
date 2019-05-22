@@ -45,6 +45,9 @@ import (
 	"os"
 	"testing"
 
+	"encoding/json"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -64,5 +67,19 @@ func BenchmarkPropRepository_RetrieveDynGlobalProp(b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		rep.RetrieveDynGlobalProp()
+	}
+}
+func TestShuffle(t *testing.T) {
+	addr1 := common.NewAddress(crypto.Hash160([]byte("1")), common.PublicKeyHash)
+	addr2 := common.NewAddress(crypto.Hash160([]byte("2")), common.PublicKeyHash)
+	addr3 := common.NewAddress(crypto.Hash160([]byte("3")), common.PublicKeyHash)
+	addr4 := common.NewAddress(crypto.Hash160([]byte("4")), common.PublicKeyHash)
+	addr5 := common.NewAddress(crypto.Hash160([]byte("5")), common.PublicKeyHash)
+
+	for i := 0; i < 10; i++ {
+		addrs := []common.Address{addr1, addr2, addr3, addr4, addr5}
+		Shuffle(addrs, uint64(i))
+		addrJs, _ := json.Marshal(addrs)
+		t.Logf("i:%d,addr:%s", i, addrJs)
 	}
 }
