@@ -46,7 +46,7 @@ func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
 }
 
 func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
-	log.Debugf("Store Mediator Info %v:", mi.AddStr)
+	log.Debugf("Store Mediator Info %v", mi.AddStr)
 
 	err := StoreToRlpBytes(statedb.db, mediatorKey(add), mi)
 	if err != nil {

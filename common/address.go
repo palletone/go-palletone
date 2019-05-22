@@ -139,7 +139,7 @@ func BytesListToAddressList(b []byte) []Address {
 }
 
 func (a Addresses) Len() int {
-	return a.Len()
+	return len(a)
 }
 
 func (a Addresses) Less(i, j int) bool {
