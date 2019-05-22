@@ -47,7 +47,7 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 			return "", err
 		}
 		signTransactionParams.Privkeys = append(signTransactionParams.Privkeys, prikey)
-		log.Debug(modName, "SignTransaction Privkeys ==== ==== ", signTransactionParams.Privkeys)
+		//log.Debug(modName, "SignTransaction Privkeys ==== ==== ", signTransactionParams.Privkeys)
 
 		var btcAdaptor adaptorbtc.AdaptorBTC
 		btcAdaptor.NetID = cfg.Ada.Btc.NetID
