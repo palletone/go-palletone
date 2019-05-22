@@ -33,45 +33,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-//func (dag *Dag) validateUnit(unit *modules.Unit) error {
-//	author := unit.Author()
-//	if !dag.IsActiveMediator(author) && !dag.IsPrecedingMediator(author) {
-//		errStr := fmt.Sprintf("The author(%v) of unit(%v) is not mediator!",
-//			author.Str(), unit.UnitHash.TerminalString())
-//		log.Debugf(errStr)
-//
-//		return fmt.Errorf(errStr)
-//	}
-//
-//	err := dag.validate.ValidateUnitExceptGroupSig(unit)
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//}
-
-//func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) error {
-//	pHash := nextUnit.ParentHash()[0]
-//	headHash, idx, _ := dag.stablePropRep.GetNewestUnit(nextUnit.Number().AssetID)
-//	if pHash != headHash {
-//		// todo 出现分叉, 调用本方法之前未处理分叉
-//		errStr := fmt.Sprintf("unit(%v) on the forked chain: parentHash(%v) not equal headUnitHash(%v)",
-//			nextUnit.UnitHash.TerminalString(), pHash.TerminalString(), headHash.TerminalString())
-//		log.Debugf(errStr)
-//		return fmt.Errorf(errStr)
-//	}
-//
-//	if idx.Index+1 != nextUnit.NumberU64() {
-//		errStr := fmt.Sprintf("invalidated unit(%v)'s height number!, last height:%d, next unit height:%d",
-//			nextUnit.UnitHash.TerminalString(), idx.Index, nextUnit.NumberU64())
-//		log.Debugf(errStr)
-//		return fmt.Errorf(errStr)
-//	}
-//
-//	return nil
-//}
-
 // @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit)

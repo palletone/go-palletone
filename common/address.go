@@ -220,15 +220,15 @@ func (a *Address) UnmarshalText(input []byte) error {
 }
 
 // UnmarshalJSON parses a hash in hex syntax.
-//func (a *Address) UnmarshalJSON(input []byte) error {
-//	addrStr := string(input[1 : len(input)-1])
-//	return a.SetString(addrStr)
-//}
-//
-//func (a *Address) MarshalJSON() ([]byte, error) {
-//	str := a.String()
-//	return json.Marshal(str)
-//}
+func (a *Address) UnmarshalJSON(input []byte) error {
+	addrStr := string(input[1 : len(input)-1])
+	return a.SetString(addrStr)
+}
+
+func (a *Address) MarshalJSON() ([]byte, error) {
+	str := a.String()
+	return json.Marshal(str)
+}
 
 //YiRan
 //Returns true when the contents of the two Address are exactly the same
