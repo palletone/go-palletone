@@ -564,6 +564,10 @@ func (s *PublicBlockChainAPI) SyncUTXOByAddr(ctx context.Context, addr string) s
 	return s.b.SyncUTXOByAddr(addr)
 }
 
+func (s *PublicBlockChainAPI) StartCorsSync(ctx context.Context) (string, error) {
+	return s.b.StartCorsSync()
+}
+
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value

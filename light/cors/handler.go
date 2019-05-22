@@ -90,7 +90,7 @@ type ProtocolManager struct {
 	// and processing
 	wg *sync.WaitGroup
 
-	ptnmainnode bool
+	mainchain *modules.MainChain
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -493,17 +493,3 @@ func (p *peerConnection) RequestLeafNodes() error {
 	return nil
 	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
 }
-
-//func (d *downloaderPeerNotify) registerPeer(p *peer) {
-//	pm := (*ProtocolManager)(d)
-//	pc := &peerConnection{
-//		manager: pm,
-//		peer:    p,
-//	}
-//	pm.downloader.RegisterLightPeer(p.id, p.version, pc)
-//}
-//
-//func (d *downloaderPeerNotify) unregisterPeer(p *peer) {
-//	pm := (*ProtocolManager)(d)
-//	pm.downloader.UnregisterPeer(p.id)
-//}

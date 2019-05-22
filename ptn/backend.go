@@ -57,6 +57,7 @@ type LesServer interface {
 	Stop()
 	Protocols() []p2p.Protocol
 	CorsProtocols() []p2p.Protocol
+	StartCorsSync() (string, error)
 }
 
 // PalletOne implements the PalletOne full node service.

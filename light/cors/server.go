@@ -54,6 +54,10 @@ func (s *CorsServer) CorsProtocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
 }
 
+func (s *CorsServer) StartCorsSync() (string, error) {
+	return s.protocolManager.StartCorsSync()
+}
+
 // Start starts the LES server
 func (s *CorsServer) Start(srvr *p2p.Server, corss *p2p.Server) {
 	s.protocolManager.Start(s.config.LightPeers)
@@ -175,4 +179,34 @@ func (pm *ProtocolManager) GetPartitionChain() ([]*modules.PartitionChain, error
 	//mainchain.GasToken = modules.PTNCOIN
 	//mainchains = append(mainchains, mainchain)
 	//return mainchains, nil
+}
+
+/*
+type MainChain struct {
+	GenesisHash common.Hash
+	Status      byte //Active:1 ,Terminated:0,Suspended:2
+	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
+	GasToken    AssetId
+	NetworkId   uint64
+	Version     uint64
+	Peers       []string // pnode://publickey@IP:port format string
+}
+*/
+
+func (pm *ProtocolManager) StartCorsSync() (string, error) {
+	mainchain, err := pm.dag.GetMainChain()
+	if err != nil {
+		log.Debug("Cors ProtocolManager StartCorsSync", "GetMainChain err", err)
+		return err.Error(), err
+	}
+	pm.mainchain = mainchain
+	for _, peer := range mainchain.Peers {
+		node, err := discover.ParseNode(peer)
+		if err != nil {
+			return fmt.Sprintf("Cors ProtocolManager StartCorsSync invalid pnode: %v", err), err
+		}
+		log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
+		pm.server.corss.AddPeer(node)
+	}
+	return "OK", nil
 }
