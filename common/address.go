@@ -31,7 +31,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 const (
@@ -212,12 +211,12 @@ func (a *Address) Set(other Address) {
 
 // MarshalText returns the hex representation of a.
 func (a Address) MarshalText() ([]byte, error) {
-	return hexutil.Bytes(a[:]).MarshalText()
+	return []byte(a.String()), nil
 }
 
 // UnmarshalText parses a hash in hex syntax.
 func (a *Address) UnmarshalText(input []byte) error {
-	return hexutil.UnmarshalFixedText("Address", input, a[:])
+	return a.SetString(string(input))
 }
 
 // UnmarshalJSON parses a hash in hex syntax.
