@@ -126,7 +126,7 @@ type IDag interface {
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
 	IsSynced() bool
-	SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription
+	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() time.Duration
 	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)

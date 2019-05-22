@@ -1,4 +1,5 @@
 *** Settings ***
+Default Tags      normal
 Library           RequestsLibrary
 Library           Collections
 Library           /opt/python/2.7.15/lib/python2.7/decimal.py
@@ -28,6 +29,7 @@ Ccinvoke SenderTokenId
     ${GAIN}    countRecieverPTN    2001
     ${log2}    getGeneAdd    ${host}
     ${PTN2}    ${result2}    normalGetBalance    ${log2}
+    sleep    4
     : FOR    ${key}    IN    ${result2.keys}
     \    log    ${key}
     ${count}    evaluate    int(pow(10,-${tokenDecimal})*${tokenAmount})

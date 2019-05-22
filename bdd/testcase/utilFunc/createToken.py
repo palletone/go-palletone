@@ -3,6 +3,7 @@ import requests
 import json
 import random
 import re
+import string
 from time import sleep
 
 class createToken(object):
@@ -12,6 +13,7 @@ class createToken(object):
         self.headers = {'Content-Type':'application/json'}
         self.tempToken = ''
         self.tempValue = ''
+        self.vote_value = '0'
 
     def runTest(self):
         pass
@@ -131,7 +133,6 @@ class createToken(object):
                 print 'transferToken Result: ' + str(result) + '\n'
                 return result
 
-
     def listAccounts(self):
         data = {
             "jsonrpc": "2.0",
@@ -160,6 +161,21 @@ class createToken(object):
         print result1['result']
         return result1['result']
 
+
+    def personalUnlockAccount(self,addr):
+        data = {
+            "jsonrpc": "2.0",
+            "method": "personal_listAccounts",
+            "params":
+                [addr,"1",6000000],
+            "id": 1
+        }
+        data = json.dumps(data)
+        response = requests.post(url=self.domain, data=data, headers=self.headers)
+        result1 = json.loads(response.content)
+        print result1['result']
+        return result1['result']
+
     def paramGroups(self,dynamic,number,*params):
         if len(params) < number:
             paramsList = []
@@ -177,6 +193,41 @@ class createToken(object):
                 print n
             return n
 
+    def ccqueryById(self,contranctId,methodType,preTokenId):
+        data = {
+                "jsonrpc":"2.0",
+                "method":"contract_ccquery",
+                "params":
+                    [contranctId,[methodType,preTokenId]],
+                "id":1
+            }
+        data = json.dumps(data)
+        response = requests.post(url=self.domain, data=data, headers=self.headers)
+        result1 = json.loads(response.content)
+        return result1
+
+    def compareCquery(self,result):
+        #result = '{\"Symbol\":\"QA001\",\"CreateAddr\":\"P1N6s8g9if8kSRL86ta4mkVSLq1yLvMr5Je\",\"TotalSupply\":25000,\"Decimals\":1,\"SupplyAddr\":\"P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw\",\"AssetID\":\"QA001+10BLAMF0JYO3UVBEDJM\"}'
+        result = json.loads(result)
+        for key in result:
+            print key,result[key]
+            try:
+                assert result['Symbol'] == 'QA001'
+            except AssertionError,ext:
+                ext.message
+                print "assert failed.\n"
+
+    def voteExist(self,voteId,dict):
+        data = json.dumps(dict)
+        if voteId in data:
+            self.vote_value = dict['result'][voteId]
+            print self.vote_value
+        else:
+            print self.vote_value
+        return self.vote_value
+
 if __name__ == '__main__':
     pass
-    #createToken().getTokenIdFromTokens('P1HhWxfQLMgb5TfE56GASURCuitX2XL397G','QA003')
+    #voteId = "VOTE+0G7N1MFOXE1DYRHFXUP"
+    #dict = {"id":1,"jsonrpc":"2.0","result":{"PTN":"0.00003","VOTE+0G7N1MFOXE1DYRHFXUP":"1000"}}
+    #result = createToken().voteExist(voteId,dict)

@@ -66,7 +66,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	}
 	tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
 	if err != nil || tpl == nil {
-		errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName, )
+		errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
 		return common.Hash{}, nil, errors.New(errMsg)
 	}
 	templateId := tpl.(*modules.ContractTplPayload).TemplateId
@@ -145,7 +145,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 			Timeout:    timeout,
 		},
 	}
-	reqId, tx, err := p.createContractTxReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msgReq, false)
+	reqId, tx, err := p.createContractTxReqToken(contractId, from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msgReq, false)
 	if err != nil {
 		return common.Hash{}, err
 	}

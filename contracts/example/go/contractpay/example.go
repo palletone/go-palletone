@@ -21,13 +21,15 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
-	"encoding/json"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -50,6 +52,45 @@ func (t *SimpleChaincode) payout(stub shim.ChaincodeStubInterface, args []string
 	fmt.Println("Payout token" + amtToken.String() + " to address " + to_address)
 	return shim.Success(nil)
 }
+
+func (t *SimpleChaincode) paystate1(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	stub.PutState("paystate1", []byte("paystate1"))
+	return shim.Success(nil)
+}
+
+func (t *SimpleChaincode) paystate2(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	stub.PutState("paystate2", []byte("paystate2"))
+	return shim.Success(nil)
+}
+
+func (t *SimpleChaincode) payoutstate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	paystate1Byte, _ := stub.GetState("paystate1")
+	if len(paystate1Byte) == 0 {
+		jsonResp := "{\"Error\":\"You need call getDepositAddr for get your deposit address\"}"
+		return shim.Error(jsonResp)
+	}
+	log.Debugf("paystate1Byte: %s", string(paystate1Byte))
+
+	paystate2Byte, _ := stub.GetState("paystate2")
+	if len(paystate1Byte) == 0 {
+		jsonResp := "{\"Error\":\"You need call getDepositAddr for get your deposit address\"}"
+		return shim.Error(jsonResp)
+	}
+	log.Debugf("paystate2Byte: %s", string(paystate2Byte))
+
+	time.Sleep(1 * time.Second)
+
+	stub.PutState("paystate3", []byte("paystate3"))
+
+	to_address := args[0]
+	asset, _ := modules.StringToAsset(args[1])
+	amt, _ := strconv.Atoi(args[2])
+	amtToken := &modules.AmountAsset{Amount: uint64(amt), Asset: asset}
+	stub.PayOutToken(to_address, amtToken, 0)
+	fmt.Println("Payout token" + amtToken.String() + " to address " + to_address)
+	return shim.Success(nil)
+}
+
 func (t *SimpleChaincode) balance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	address := args[0]
 	result, err := stub.GetTokenBalance(address, nil)
@@ -77,6 +118,17 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	if function == "payout" {
 		return t.payout(stub, args)
 	}
+
+	if function == "paystate1" {
+		return t.paystate1(stub, args)
+	}
+	if function == "paystate2" {
+		return t.paystate2(stub, args)
+	}
+	if function == "payoutstate" {
+		return t.payoutstate(stub, args)
+	}
+
 	if function == "balance" {
 		return t.balance(stub, args)
 	}
@@ -89,6 +141,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	if function == "get" {
 		return t.get(stub, args)
 	}
+
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
 func (t *SimpleChaincode) put(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -100,6 +153,10 @@ func (t *SimpleChaincode) put(stub shim.ChaincodeStubInterface, args []string) p
 	return shim.Success(nil)
 }
 func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) > 0 {
+		result, _ := stub.GetState(args[0])
+		return shim.Success(result)
+	}
 
 	result, err := stub.GetContractAllState()
 	if err != nil {

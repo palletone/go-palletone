@@ -74,10 +74,6 @@ func (dag *Dag) validateUnitHeader(nextUnit *modules.Unit) error {
 	return nil
 }
 
-func (d *Dag) Close() {
-	d.activeMediatorsUpdatedScope.Close()
-}
-
 // @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit)

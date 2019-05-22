@@ -1,4 +1,5 @@
 *** Settings ***
+Default Tags      normal
 Library           RequestsLibrary
 Library           Collections
 Library           /opt/python/2.7.15/lib/python2.7/decimal.py
