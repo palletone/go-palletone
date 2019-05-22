@@ -165,8 +165,8 @@ func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
 	return hasBlock != nil && hasBlock(hash, number)
 }
 
-func (p *peer) SendRawAnnounce(request []byte) error {
-	return p2p.Send(p.rw, CorsHeaderMsg, request)
+func (p *peer) SendHeaders(headers []*modules.Header) error {
+	return p2p.Send(p.rw, CorsHeaderMsg, headers)
 }
 
 /*
