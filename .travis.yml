@@ -51,11 +51,11 @@ script:
       fi
 
     - if [ $IS_RUN_VOTE == 'true' ]; then
-      python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/
+      python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/;
       fi
 
     - if [ $IS_RUN_DIGITAL == 'true' ]; then
-      python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} -i normal ../DigitalIdentityCert;
+      python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
       fi
 
 after_script:
