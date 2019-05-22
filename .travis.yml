@@ -64,7 +64,7 @@ after_script:
     - sleep 2
     - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
     # upload all log
-    - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log
+    - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
 
     # upload deposit log
     - if [ $IS_RUN_DEPOSIT == 'true' ]; then
@@ -129,8 +129,7 @@ addons:
 deploy:
     skip_cleanup: true
     provider:
-    on:
-        branch: all
+    all_branches: true
 
 notifications:
     email:
