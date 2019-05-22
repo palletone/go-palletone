@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"time"
 
+	"strconv"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -31,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
 )
 
 type IUnitProduceRepository interface {

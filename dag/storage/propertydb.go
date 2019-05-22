@@ -21,6 +21,7 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -85,7 +86,9 @@ func NewPropertyDb(db ptndb.Database) *PropertyDb {
 }
 
 func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
-	log.Debug("Save mediator schedule to db.")
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("Save mediator schedule:%s to db.", ms.String())
+	})
 	return StoreMediatorSchl(propdb.db, ms)
 }
 
@@ -133,7 +136,7 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	timestamp := uint32(header.Time)
 	data := &modules.UnitProperty{hash, index, timestamp}
 	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
-	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(),hash.String(), index.String())
+	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(), hash.String(), index.String())
 
 	return StoreToRlpBytes(db.db, key, data)
 }
@@ -145,7 +148,7 @@ func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *module
 		return common.Hash{}, nil, 0, err
 	}
 	log.Debugf("DB[%s] GetNewestUnit: %s,Index:%s,timestamp:%d", reflect.TypeOf(db.db).String(),
-		data.Hash.String(),data.Index.String(),data.Timestamp)
+		data.Hash.String(), data.Index.String(), data.Timestamp)
 	return data.Hash, data.Index, int64(data.Timestamp), nil
 }
 func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {

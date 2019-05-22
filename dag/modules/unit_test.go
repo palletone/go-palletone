@@ -228,5 +228,16 @@ func TestHeaderRLP(t *testing.T) {
 	h2 := &headerTemp{}
 	err = rlp.DecodeBytes(bytes, h2)
 	t.Log("data", h2)
-	assert.Equal(t, h, h2)
+	assertEqualRlp(t, h, h2)
+}
+func assertEqualRlp(t *testing.T, a, b interface{}) {
+	aa, err := rlp.EncodeToBytes(a)
+	if err != nil {
+		t.Error(err)
+	}
+	bb, err := rlp.EncodeToBytes(b)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, aa, bb)
 }

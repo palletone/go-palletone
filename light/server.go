@@ -95,6 +95,9 @@ func (s *LesServer) Protocols() []p2p.Protocol {
 func (s *LesServer) CorsProtocols() []p2p.Protocol {
 	return nil
 }
+func (s *LesServer) StartCorsSync() (string, error) {
+	return "", nil
+}
 
 // Start starts the LES server
 func (s *LesServer) Start(srvr *p2p.Server, corss *p2p.Server) {
