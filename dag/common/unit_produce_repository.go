@@ -111,14 +111,21 @@ func (d *UnitProduceRepository) Close() {
  * @return true if we switched forks as a result of this push.
  */
 func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
+	var err error
 
-	// 2. 更新状态
-	if err := rep.ApplyUnit(newUnit); err != nil {
+	//更新数据库
+	err = rep.unitRep.SaveUnit(newUnit, false)
+	if err != nil {
 		return err
 	}
-	//更新数据库
-	return rep.unitRep.SaveUnit(newUnit, false)
 
+	// 2. 更新状态
+	err = rep.ApplyUnit(newUnit)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ApplyUnit, 运用下一个 unit 更新整个区块链状态
@@ -127,12 +134,9 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
 	}(time.Now())
 
-	// todo 待删除 处理临时prop没有回滚的问题
-	skip := false
 	// 验证 unit 的 mediator 调度
 	if err := rep.validateMediatorSchedule(nextUnit); err != nil {
-		//return err
-		skip = true
+		return err
 	}
 
 	// todo 运用Unit中的交易
@@ -155,15 +159,13 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 		rep.performChainMaintenance(nextUnit)
 	}
 
-	//// 更新链维护周期标志
-	//// n.b., updateMaintenanceFlag() happens this late because GetSlotTime() / GetSlotAtTime() is needed above
-	//// 由于前面的操作需要调用 GetSlotTime() / GetSlotAtTime() 这两个方法，所以在最后才更新链维护周期标志
-	//rep.updateMaintenanceFlag(maintenanceNeeded)
+	// 更新链维护周期标志
+	// n.b., updateMaintenanceFlag() happens this late because GetSlotTime() / GetSlotAtTime() is needed above
+	// 由于前面的操作需要调用 GetSlotTime() / GetSlotAtTime() 这两个方法，所以在最后才更新链维护周期标志
+	rep.updateMaintenanceFlag(maintenanceNeeded)
 
-	if !skip {
-		// 洗牌
-		rep.updateMediatorSchedule()
-	}
+	// 洗牌
+	rep.updateMediatorSchedule()
 
 	return nil
 }

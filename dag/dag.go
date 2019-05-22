@@ -876,7 +876,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			return errors.ErrUnitExist
 		}
 		// step2. validate unit
-		err := d.validateUnit(unit)
+		err := d.validate.ValidateUnitExceptGroupSig(unit)
 		if err != nil {
 			return fmt.Errorf("SaveDag, validate unit error, err=%s", err.Error())
 		}
