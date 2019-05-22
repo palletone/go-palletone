@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -396,12 +395,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 		log.Error("Rlp encode tx error:" + err.Error())
 	}
 	hash, _ := crypto.Hash(data)
-	log.DebugDynamic(func() string {
-		js, _ := json.Marshal(txCopy)
-		return fmt.Sprintf("Try to calc hash for tx[%s],hash is:%x, json:%s\nrlp data:%x", txCopy.Hash().String(), hash, string(js), data)
-	})
 	return hash
-
 }
 
 // asSmallInt returns the passed opcode, which must be true according to
