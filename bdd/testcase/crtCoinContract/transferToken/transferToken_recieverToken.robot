@@ -1,4 +1,5 @@
 *** Settings ***
+Default Tags      normal
 Library           RequestsLibrary
 Library           Collections
 Library           ../../utilFunc/createToken.py
@@ -28,9 +29,11 @@ transferToken_recieverToken
     [Tags]    normal
     ${GeneAdd}    getGeneAdd    ${host}
     normalCcinvokePass    ${result_code}    ${preTokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
-    sleep    4
+    sleep    3
     ${resultGene}    getBalance    ${GeneAdd}
+    sleep    4
     ${result1}    getBalance    ${recieverAdd}
+    sleep    4
     ${key}    getTokenId    ${preTokenId}    ${resultGene}
     ${item}    Set Variable    0
     #${item}    Get From Dictionary    ${result1}    ${key}
@@ -38,9 +41,10 @@ transferToken_recieverToken
     #ELSE    Get From Dictionary    ${result1}    ${key}
     ${tokenResult}    transferToken    ${key}    ${GeneAdd}    ${recieverAdd}    ${senderAmount}    ${pdg}
     ...    ${evidence}    ${unlocktime}
-    sleep    4
+    sleep    3
     ${item1}    Evaluate    ${item}+${senderAmount}
     ${result2}    getBalance    ${recieverAdd}
+    sleep    4
     ${key2}    getTokenId    ${preTokenId}    ${result2}
     ${item2}    Get From Dictionary    ${result2}    ${key2}
     Should Be Equal As Numbers    ${item2}    ${item1}

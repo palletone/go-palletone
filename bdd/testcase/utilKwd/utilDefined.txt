@@ -61,3 +61,13 @@ countRecieverPTN
     ${quantity}    evaluate    ${Amount}*0.00000001
     ${quantity}    evaluate    decimal.Decimal('${quantity}')    decimal
     [Return]    ${quantity}
+
+voteTransToken
+    ${listAccounts}    getlistAccounts
+    ${result}    getBalance    ${listAccounts[0]}
+    sleep    5
+    ${voteToken}    getTokenId    ${voteId}    ${result}
+    Transfer token of vote contract    ${listAccounts[0]}
+    sleep    4
+    Set Suite Variable    ${voteToken}    ${voteToken}
+    [Return]    ${listAccounts}    ${voteToken}

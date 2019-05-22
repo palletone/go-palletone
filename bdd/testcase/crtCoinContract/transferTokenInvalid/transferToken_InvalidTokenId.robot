@@ -1,6 +1,5 @@
 *** Settings ***
 Suite Setup       preTransToken
-Default Tags      invalidAdd
 Library           RequestsLibrary
 Library           Collections
 Library           ../../utilFunc/createToken.py

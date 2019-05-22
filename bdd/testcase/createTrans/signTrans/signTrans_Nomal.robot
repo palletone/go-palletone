@@ -1,4 +1,5 @@
 *** Settings ***
+Default Tags      normal
 Library           RequestsLibrary
 Library           Collections
 Resource          ../../utilKwd/utilDefined.txt
