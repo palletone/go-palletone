@@ -70,7 +70,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 				return shim.Error(err.Error())
 			}
 			isDeveloper = true
-			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
+			balance.EnterTime = time.Now().Unix() / DTimeDuration
 		}
 		balance.Balance += invokeTokens.Amount
 		balance.LastModifyTime = time.Now().Unix() / DTimeDuration
@@ -104,7 +104,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 				log.Error("addCandaditeList err:", "error", err)
 				return shim.Error(err.Error())
 			}
-			balance.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
+			balance.EnterTime = time.Now().Unix() / DTimeDuration
 		}
 	}
 	//  保存账户信息
@@ -180,8 +180,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr comm
 	//判断是否退出列表
 	if result == 0 {
 		//加入列表时的时间
-		ent, err := strconv.ParseInt(balance.EnterTime, 10, 64)
-		startTime := time.Unix(ent*DTimeDuration, 0).UTC().YearDay()
+		startTime := time.Unix(balance.EnterTime*DTimeDuration, 0).UTC().YearDay()
 		//当前退出时间
 		endTime := time.Now().UTC().YearDay()
 		//判断是否已到期

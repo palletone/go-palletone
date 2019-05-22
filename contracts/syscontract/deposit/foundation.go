@@ -534,7 +534,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("save agree list err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-		//  修改同意时间
+		// 修改同意时间
 		mediator, err := GetMediatorDeposit(stub, addr.Str())
 		if err != nil {
 			log.Error("get mediator info err: ", "error", err)

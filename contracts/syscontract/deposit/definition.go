@@ -109,13 +109,13 @@ type PayValue struct {
 
 type DepositBalance struct {
 	Balance        uint64 `json:"balance"`          //  保证金余额
-	EnterTime      string `json:"enter_time"`       //  交保证金的时间
+	EnterTime      int64  `json:"enter_time"`       //  交保证金的时间
 	LastModifyTime int64  `json:"last_modify_time"` //  计算币龄时间
 }
 
 type MediatorDeposit struct {
 	ApplyEnterTime int64  `json:"apply_enter_time"` //  申请加入时间
-	ApllyQuitTime  int64  `json:"apply_quit_time"`  //  申请退出时间
+	ApplyQuitTime  int64  `json:"apply_quit_time"`  //  申请退出时间
 	Status         string `json:"status"`           //  申请状态  申请、同意、退出
 	AgreeTime      int64  `json:"agree_time"`       //  基金会同意申请时间'
 	DepositBalance

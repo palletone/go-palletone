@@ -44,9 +44,6 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(err.Error())
 	}
 
-	md := NewMediatorDeposit()
-	md.ApplyEnterTime = time.Now().Unix() / DTimeDuration
-	md.Status = Apply
 	//  获取同意列表
 	agreeList, err := GetList(stub, ListForAgreeBecomeMediator)
 	if err != nil {
@@ -84,12 +81,17 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		log.Error("saveList err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  保存账户信息
+
+	// 保存账户信息
+	md := NewMediatorDeposit()
+	md.ApplyEnterTime = time.Now().Unix() / DTimeDuration
+	md.Status = Apply
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), md)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
 		return shim.Error(err.Error())
 	}
+
 	log.Info("End entering apply for become mediator func")
 	return shim.Success([]byte("ok"))
 }
@@ -136,7 +138,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	mediator.ApllyQuitTime = time.Now().Unix() / DTimeDuration
+	mediator.ApplyQuitTime = time.Now().Unix() / DTimeDuration
 	mediator.Status = Quit
 	//  获取退出列表
 	quitList, err := GetList(stub, ListForApplyQuitMediator)
@@ -295,7 +297,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 
 		//  处理数据
-		md.EnterTime = strconv.FormatInt(time.Now().Unix()/DTimeDuration, 10)
+		md.EnterTime = time.Now().Unix() / DTimeDuration
 		md.Balance += invokeTokens.Amount
 		md.LastModifyTime = time.Now().Unix() / DTimeDuration
 	} else {
@@ -320,7 +322,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	if md.Status == Quit {
 		md.Status = Agree
 		md.AgreeTime = time.Now().Unix() / DTimeDuration
-		md.ApllyQuitTime = 0
+		md.ApplyQuitTime = 0
 	}
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
