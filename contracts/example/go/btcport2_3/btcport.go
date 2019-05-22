@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -556,7 +557,7 @@ func converAmount(a int64) float64 {
 }
 func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGe"}
+	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGen"}
 	totalAmount := int64(0)
 	for i := range unspends {
 		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: uint32(unspends[i].Vout)})
@@ -816,6 +817,10 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	// 产生交易
 	rawTx, err := genRawTx(int64(btcTokenAmount), btcFee, btcAddr, selUnspnds, stub)
+	if err != nil {
+		return shim.Success([]byte("genRawTx failed: " + err.Error()))
+	}
+	log.Debugf("rawTx:%s", rawTx)
 
 	//
 	inputRedeemIndex := []int{}
@@ -838,9 +843,17 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	// 签名交易
 	rawTxSign, err := signTx(rawTx, inputRedeemIndex, redeemHex, stub)
+	if err != nil {
+		return shim.Success([]byte("signTx failed: " + err.Error()))
+	}
+	log.Debugf("rawTxSign:%s", rawTxSign)
+
+	tempHash := crypto.Keccak256([]byte(rawTx))
+	tempHashHex := fmt.Sprintf("%x", tempHash)
+	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, err := consult(stub, []byte(rawTx), []byte(rawTxSign))
+	recvResult, err := consult(stub, []byte(tempHashHex), []byte(rawTxSign))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {

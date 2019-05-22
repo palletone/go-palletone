@@ -122,7 +122,7 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-	log.Info("AdapterFunRequest")
+	log.Infof("AdapterFunRequest", "reqid: %x, consultContent: %s", reqId, string(consultContent))
 	//
 	account := p.getLocalAccount()
 	if account == nil {
@@ -179,7 +179,7 @@ func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent 
 		return nil, errors.New("Not exist adaInf of msgType")
 	}
 	if _, exist := adaInf.JuryMsgAll[string(consultContent)]; !exist {
-		log.Debugf("Not exist consultContent")
+		log.Debugf("Not exist consultContent %s", string(consultContent))
 		return nil, errors.New("Not exist consultContent")
 	}
 	if len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig) >= p.contractSigNum {
@@ -199,7 +199,7 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-	log.Info("AdapterFunResult")
+	log.Infof("AdapterFunResult", "reqid: %x, consultContent: %s", reqId, string(consultContent))
 	result, err := p.getRusult(reqId, msgType, consultContent)
 	if err == nil {
 		return result, nil
@@ -217,8 +217,8 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 		if err == nil {
 			return result, nil
 		}
-		log.Debug("AdapterFunRequest, time out")
-		return nil, errors.New("AdapterFunRequest, time out")
+		log.Debug("AdapterFunResult, time out")
+		return nil, errors.New("AdapterFunResult, time out")
 	}
 }
 
