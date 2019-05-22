@@ -291,19 +291,6 @@ func (pool *TxPool) loop() {
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
-		// Handle ChainHeadEvent
-		//case ev := <-pool.chainHeadCh:
-		//	if ev.Unit != nil {
-		//		pool.mu.Lock()
-		//		pool.reset(head.Header(), ev.Unit.Header())
-		//		head = ev.Unit
-		//		pool.mu.Unlock()
-		//	}
-		// Be unsubscribed due to system stopped
-		//would recover
-		//case <-pool.chainHeadSub.Err():
-		//	return
-
 		// Handle stats reporting ticks
 		case <-report.C:
 			pending, queued, _ := pool.stats()
@@ -662,7 +649,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	pool.priority_sorted.Put(tx)
 	pool.all.Store(hash, tx)
 	pool.addCache(tx)
-	go pool.journalTx(tx)
+	//go pool.journalTx(tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
@@ -784,8 +771,8 @@ func (pool *TxPool) AddSequenTx(tx *modules.Transaction) error {
 	return pool.addSequenTx(p_tx)
 }
 func (pool *TxPool) AddSequenTxs(txs []*modules.Transaction) error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	for _, tx := range txs {
 		p_tx := TxtoTxpoolTx(pool, tx)
 		if err := pool.addSequenTx(p_tx); err != nil {
@@ -853,7 +840,7 @@ func (pool *TxPool) addSequenTx(p_tx *modules.TxPoolTransaction) error {
 	pool.sequenTxs.Add(p_tx)
 	pool.all.Store(hash, p_tx)
 	pool.addCache(p_tx)
-	go pool.journalTx(p_tx)
+	//go pool.journalTx(p_tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{p_tx.Tx})

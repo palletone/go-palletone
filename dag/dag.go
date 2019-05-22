@@ -52,10 +52,11 @@ type Dag struct {
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
-	unstableUnitRep  dagcommon.IUnitRepository
-	unstableUtxoRep  dagcommon.IUtxoRepository
-	unstableStateRep dagcommon.IStateRepository
-	unstablePropRep  dagcommon.IPropRepository
+	unstableUnitRep        dagcommon.IUnitRepository
+	unstableUtxoRep        dagcommon.IUtxoRepository
+	unstableStateRep       dagcommon.IStateRepository
+	unstablePropRep        dagcommon.IPropRepository
+	unstableUnitProduceRep dagcommon.IUnitProduceRepository
 
 	stableUnitRep  dagcommon.IUnitRepository
 	stableUtxoRep  dagcommon.IUtxoRepository
@@ -74,13 +75,7 @@ type Dag struct {
 	//utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
 	// utxos_cache1 sync.Map
 
-	// append by albert·gou 用于活跃mediator更新时的事件订阅
-	activeMediatorsUpdatedFeed  event.Feed
-	activeMediatorsUpdatedScope event.SubscriptionScope
-
-	// append by albert·gou 用于account 各种投票数据统计
-	mediatorVoteTally voteTallys
-	applyLock         sync.Mutex
+	applyLock sync.Mutex
 
 	//SPV
 	rmLogsFeed    event.Feed
@@ -99,12 +94,12 @@ func (d *Dag) IsEmpty() bool {
 }
 
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
-	return d.Memdag.GetLastMainchainUnit()
+	return d.Memdag.GetLastMainChainUnit()
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
 	//main_token := dagconfig.DagConfig.GetGasToken()
-	return d.Memdag.GetLastMainchainUnit()
+	return d.Memdag.GetLastMainChainUnit()
 }
 
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
@@ -121,7 +116,7 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
-	curUnit := d.Memdag.GetLastMainchainUnit()
+	curUnit := d.Memdag.GetLastMainChainUnit()
 
 	return curUnit
 }
@@ -252,7 +247,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
-		if err:=d.Memdag.AddUnit(u,txpool); err != nil {
+		if err := d.Memdag.AddUnit(u, txpool); err != nil {
 			//return count, err
 			return count, nil
 		}
@@ -447,8 +442,9 @@ func (d *Dag) refreshPartitionMemDag() {
 
 		for _, partition := range partitions {
 			ptoken := partition.GasToken
+			threshold := int(partition.StableThreshold)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, d.stableStateRep)
+			partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
 		}
 
 		d.PartitionMemDag = partitionMemdag
@@ -457,10 +453,13 @@ func (d *Dag) refreshPartitionMemDag() {
 	//Exist! update
 	for _, partition := range partitions {
 		ptoken := partition.GasToken
-		_, ok := d.PartitionMemDag[ptoken]
+		threshold := int(partition.StableThreshold)
+		partitonMemDag, ok := d.PartitionMemDag[ptoken]
 		if !ok {
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			d.PartitionMemDag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, d.stableStateRep)
+			d.PartitionMemDag[ptoken] = memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
+		} else {
+			partitonMemDag.SetStableThreshold(threshold) //可能更新了该数字
 		}
 	}
 
@@ -481,31 +480,33 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	//hash, idx, _ := stablePropRep.GetLastStableUnit(modules.PTNCOIN)
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	unstableChain := memunit.NewMemDag(gasToken, false, db, unitRep, propRep, stateRep)
-	tunitRep, tutxoRep, tstateRep, tpropRep := unstableChain.GetUnstableRepositories()
+	threshold, _ := propRep.GetChainThreshold()
+	unstableChain := memunit.NewMemDag(gasToken, threshold, false, db, unitRep, propRep, stateRep)
+	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
-	partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
-	for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
-		partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, stateRep)
-	}
+	//partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
+	//for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
+	//	partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, stateRep)
+	//}
 
 	dag := &Dag{
 		//Cache:            freecache.NewCache(200 * 1024 * 1024),
-		Db:                   db,
-		unstableUnitRep:      tunitRep,
-		unstableUtxoRep:      tutxoRep,
-		unstableStateRep:     tstateRep,
-		unstablePropRep:      tpropRep,
-		stablePropRep:        propRep,
-		stableUnitRep:        unitRep,
-		stableUtxoRep:        utxoRep,
-		stableStateRep:       stateRep,
-		statleUnitProduceRep: statleUnitProduceRep,
-		validate:             validate,
-		ChainHeadFeed:        new(event.Feed),
-		Mutex:                *mutex,
-		Memdag:               unstableChain,
-		PartitionMemDag:      partitionMemdag,
+		Db:                     db,
+		unstableUnitRep:        tunitRep,
+		unstableUtxoRep:        tutxoRep,
+		unstableStateRep:       tstateRep,
+		unstablePropRep:        tpropRep,
+		unstableUnitProduceRep: tUnitProduceRep,
+		stablePropRep:          propRep,
+		stableUnitRep:          unitRep,
+		stableUtxoRep:          utxoRep,
+		stableStateRep:         stateRep,
+		statleUnitProduceRep:   statleUnitProduceRep,
+		validate:               validate,
+		ChainHeadFeed:          new(event.Feed),
+		Mutex:                  *mutex,
+		Memdag:                 unstableChain,
+		//PartitionMemDag:      partitionMemdag,
 	}
 
 	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
@@ -582,26 +583,28 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
+	threshold, _ := propRep.GetChainThreshold()
 
 	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
-	unstableChain := memunit.NewMemDag(modules.PTNCOIN, false, db, unitRep, propRep, stateRep)
-	tunitRep, tutxoRep, tstateRep, tpropRep := unstableChain.GetUnstableRepositories()
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep, propRep, stateRep)
+	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{
 		//Cache:            freecache.NewCache(200 * 1024 * 1024),
-		Db:                   db,
-		stableUnitRep:        unitRep,
-		stableUtxoRep:        utxoRep,
-		stableStateRep:       stateRep,
-		stablePropRep:        propRep,
-		statleUnitProduceRep: statleUnitProduceRep,
-		validate:             validate,
-		ChainHeadFeed:        new(event.Feed),
-		Mutex:                *mutex,
-		Memdag:               unstableChain,
-		unstableUnitRep:      tunitRep,
-		unstableUtxoRep:      tutxoRep,
-		unstableStateRep:     tstateRep,
-		unstablePropRep:      tpropRep,
+		Db:                     db,
+		stableUnitRep:          unitRep,
+		stableUtxoRep:          utxoRep,
+		stableStateRep:         stateRep,
+		stablePropRep:          propRep,
+		statleUnitProduceRep:   statleUnitProduceRep,
+		validate:               validate,
+		ChainHeadFeed:          new(event.Feed),
+		Mutex:                  *mutex,
+		Memdag:                 unstableChain,
+		unstableUnitRep:        tunitRep,
+		unstableUtxoRep:        tutxoRep,
+		unstableStateRep:       tstateRep,
+		unstablePropRep:        tpropRep,
+		unstableUnitProduceRep: tUnitProduceRep,
 		//utxos_cache:   make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
 	return dag, nil
@@ -1247,7 +1250,7 @@ func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 		tokenId := partition.GasToken
 		pMemdag, ok := d.PartitionMemDag[tokenId]
 		if ok {
-			unit := pMemdag.GetLastMainchainUnit()
+			unit := pMemdag.GetLastMainChainUnit()
 			leafs = append(leafs, unit.UnitHeader)
 		} else {
 			log.Warnf("Token[%s] is a patition, but not in dag.PartitionMemDag", tokenId.String())
@@ -1341,4 +1344,13 @@ func (d *Dag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 
 func (d *Dag) GetMinFee() (*modules.AmountAsset, error) {
 	return d.unstableStateRep.GetMinFee()
+}
+func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
+	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
+}
+func (d *Dag) Close() {
+	d.unstableUnitProduceRep.Close()
+}
+func (dag *Dag) MediatorVotedResults() map[string]uint64 {
+	return dag.unstableUnitProduceRep.MediatorVotedResults()
 }

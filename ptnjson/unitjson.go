@@ -54,8 +54,7 @@ type HeaderJson struct {
 }
 type ChainIndexJson struct {
 	AssetID string `json:"asset_id"`
-	//IsMain  bool   `json:"is_main"`
-	Index uint64 `json:"index"`
+	Index   uint64 `json:"index"`
 }
 
 func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc) *UnitJson {
@@ -82,12 +81,11 @@ func ConvertUnitHeader2Json(header *modules.Header) *HeaderJson {
 		GroupPubKey:   hex.EncodeToString(header.GroupPubKey),
 		TxRoot:        header.TxRoot,
 		Extra:         hex.EncodeToString(header.Extra),
-		CreationTime:  time.Now(), // TODO: header.Time
+		CreationTime:  time.Unix(header.Time, 0),
 	}
 	json.Number = ChainIndexJson{
 		AssetID: header.Number.AssetID.String(),
-		//IsMain:  header.Number.IsMain,
-		Index: header.Number.Index,
+		Index:   header.Number.Index,
 	}
 	return json
 }

@@ -35,6 +35,7 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -144,7 +145,7 @@ type ProtocolManager struct {
 
 	genesis *modules.Unit
 
-	activeMediatorsUpdatedCh  chan dag.ActiveMediatorsUpdatedEvent
+	activeMediatorsUpdatedCh  chan modules.ActiveMediatorsUpdatedEvent
 	activeMediatorsUpdatedSub event.Subscription
 }
 
@@ -382,7 +383,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
 		pm.contractSub = pm.contractProc.SubscribeContractEvent(pm.contractCh)
 	}
 
-	pm.activeMediatorsUpdatedCh = make(chan dag.ActiveMediatorsUpdatedEvent)
+	pm.activeMediatorsUpdatedCh = make(chan modules.ActiveMediatorsUpdatedEvent)
 	pm.activeMediatorsUpdatedSub = pm.dag.SubscribeActiveMediatorsUpdatedEvent(pm.activeMediatorsUpdatedCh)
 	go pm.activeMediatorsUpdatedEventRecvLoop()
 

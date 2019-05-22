@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
 const (
@@ -51,6 +52,7 @@ const (
 
 	disableClientRemovePeer = false
 	txChanSize              = 4096
+	forceSyncCycle          = 10 * time.Second
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -121,19 +123,14 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 			Length:  ProtocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
 				peer := manager.newPeer(int(version), NetworkId, p, rw)
-				log.Debug("NewCorsProtocolManager Run", "peer.ID:", peer.ID())
-				manager.wg.Add(1)
-				defer manager.wg.Done()
-				return manager.handle(peer)
-				//select {
-				//case manager.newPeerCh <- peer:
-				//	log.Debug("NewCorsProtocolManager Run newPeerCh")
-				//	manager.wg.Add(1)
-				//	defer manager.wg.Done()
-				//	return manager.handle(peer)
-				//case <-manager.quitSync:
-				//	return p2p.DiscQuitting
-				//}
+				select {
+				case manager.newPeerCh <- peer:
+					manager.wg.Add(1)
+					defer manager.wg.Done()
+					return manager.handle(peer)
+				case <-manager.quitSync:
+					return p2p.DiscQuitting
+				}
 			},
 			NodeInfo: func() interface{} {
 				return manager.NodeInfo(genesis.UnitHash)
@@ -225,7 +222,22 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	if pm.lightSync {
+		go func() {
+			go pm.fetcher.Start()
+			forceSync := time.Tick(forceSyncCycle)
+			for {
+				select {
+				case <-pm.newPeerCh:
 
+				case <-forceSync:
+					// Force a sync even if not enough peers are present
+					//log.Debug("===============CORS ProtocolManager Start forceSync====================")
+
+				case <-pm.noMorePeers:
+					return
+				}
+			}
+		}()
 	} else {
 		go func() {
 			for range pm.newPeerCh {
@@ -396,8 +408,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 		log.Trace("CorsHeaderMsg message content", "header", req.Header)
 		if pm.fetcher != nil {
-			//pm.fetcher.Enqueue(p, &req.Header)
-			pm.fetcher.Insert(p, &req.Header)
+			pm.fetcher.Enqueue(p, &req.Header)
+			//pm.fetcher.Insert(p, &req.Header)
 		}
 		return nil
 

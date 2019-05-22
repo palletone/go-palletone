@@ -28,3 +28,8 @@ type ChainSideEvent struct {
 }
 
 type ChainHeadEvent struct{ Unit *Unit }
+
+// 活跃 mediators 更新事件
+type ActiveMediatorsUpdatedEvent struct {
+	IsChanged bool // 标记活跃 mediators 是否有改变
+}

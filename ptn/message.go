@@ -368,7 +368,6 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
 		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 		unit.Author().Str())
-
 	latency := time.Now().Sub(timestamp)
 	if latency < -3*time.Second {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
@@ -376,7 +375,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		log.Debugf(errStr)
 		return fmt.Errorf(errStr)
 	}
-	for _, tx := range unit.Txs{
+	for _, tx := range unit.Txs {
 		log.Debug("NewBlockMsg", "unit hash", unit.UnitHash.String(), "txReq", tx.RequestHash().String(), "tx", tx.Hash().String())
 	}
 	rwset.Init()
@@ -384,10 +383,11 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	index := 0
 	for _, tx := range unit.Txs {
 		if tx.IsContractTx() {
-			log.Debug("NewBlockMsg", "index",index, "reqId", tx.RequestHash().String(), "txHash", tx.Hash().String())
+			reqId := tx.RequestHash()
+			log.Debugf("[%s]NewBlockMsg, index[%x],txHash[%s]",reqId.String()[0:8], index, tx.Hash().String())
 			index ++
 			if !pm.contractProc.CheckContractTxValid(rwset.RwM, tx, true) {
-				log.Debug("NewBlockMsg,CheckContractTxValid is false.", "reqHash", tx.RequestHash().String())
+				log.Debug("[%s]NewBlockMsg, CheckContractTxValid is false.", reqId.String()[0:8])
 				continue
 			}
 		}
@@ -578,10 +578,11 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===ContractMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	log.Info("===ContractMsg===", "event type:", event.CType, "reqId", event.Tx.RequestHash())
+	reqId := event.Tx.RequestHash()
+	log.Infof("[%s]===ContractMsg===, event type[%v]", reqId.String()[0:8], event.CType, )
 	err := pm.contractProc.ProcessContractEvent(&event)
 	if err != nil {
-		log.Debug("ContractMsg", "error:", err)
+		log.Debugf("[%s]ContractMsg, error:%s", reqId.String()[0:8], err.Error())
 	}
 	return nil
 }
