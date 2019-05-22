@@ -167,7 +167,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		}
 	}
 
-	validator := validator.NewValidate(dag, dag, dag)
+	validator := validator.NewValidate(dag, dag, dag, nil)
 	p := &Processor{
 		name:           "contractProcessor",
 		ptn:            ptn,
