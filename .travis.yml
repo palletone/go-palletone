@@ -17,8 +17,8 @@ env:
         - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
-        - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/pub
-        - CURL_CMD=curl --ftp-create-dirs --key /tmp/sftp_rsa -T
+        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141
+        - CURL_CMD=curl --ftp-create-dirs -T
         - IS_RUN_DEPOSIT=false
         - IS_RUN_CREATE_TRANS=false
         - IS_RUN_CCINVOKE=false
