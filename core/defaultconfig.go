@@ -61,6 +61,9 @@ const (
 	DefaultMinMediatorCount    = 5 //21
 	DefaultMinMediatorInterval = 1
 
+	DefaultContractSignatureNum = "3"
+	DefaultContractElectionNum  = "4"
+
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
 		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +
 		"刘百祥丨上海丨 GoC-lab发起人兼技术社群负责人,复旦大学计算机博士.\r\n" +

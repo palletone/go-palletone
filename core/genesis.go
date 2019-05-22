@@ -55,6 +55,10 @@ type SystemConfig struct {
 	TempUccCpuShares  string `json"temp_ucc_cpu_shares"`
 	TempUccCpuQuota   string `json"temp_ucc_cpu_quota"`
 
+	//contract about
+	ContractSignatureNum string `json"contract_signature_num"`
+	ContractElectionNum  string `json"contract_election_num"`
+
 	ActiveMediatorCount string `json:"activeMediatorCount"`
 }
 

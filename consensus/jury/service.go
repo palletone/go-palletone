@@ -24,6 +24,7 @@ import (
 	"math/big"
 	"sync"
 	"time"
+	"strconv"
 
 	"encoding/json"
 	"github.com/dedis/kyber"
@@ -44,6 +45,8 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/core"
+
 )
 
 const (
@@ -167,6 +170,18 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		}
 	}
 
+	//get contract system config
+	contractSigNum := getSystemContractConfig(dag, "ContractSignatureNum")
+	if contractSigNum < 1 {
+		num, _ := strconv.Atoi(core.DefaultContractSignatureNum)
+		contractSigNum = num
+	}
+	contractEleNum := getSystemContractConfig(dag, "ContractElectionNum")
+	if contractEleNum < 1 {
+		num, _ := strconv.Atoi(core.DefaultContractElectionNum)
+		contractEleNum = num
+	}
+
 	validator := validator.NewValidate(dag, dag, dag, nil)
 	p := &Processor{
 		name:           "contractProcessor",
@@ -179,8 +194,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		mtx:            make(map[common.Hash]*contractTx),
 		mel:            make(map[common.Hash]*electionVrf),
 		lockVrf:        make(map[common.Address][]modules.ElectionInf),
-		electionNum:    cfg.ElectionNum,
-		contractSigNum: cfg.ContractSigNum,
+		electionNum:    cfg.ElectionNum,    //todo contractSigNum
+		contractSigNum: cfg.ContractSigNum, //todo contractEleNum
 		validator:      validator,
 		errMsgEnable:   true,
 	}
