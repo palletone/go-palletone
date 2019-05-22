@@ -33,6 +33,7 @@ type Validate struct {
 	utxoquery  IUtxoQuery
 	statequery IStateQuery
 	dagquery   IDagQuery
+	propquery  IPropQuery
 }
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
