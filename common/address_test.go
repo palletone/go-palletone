@@ -130,3 +130,18 @@ func TestAddresses_MarshalJson(t *testing.T) {
 	addrListStr, _ := json.Marshal(addrList)
 	t.Log(string(addrListStr))
 }
+func TestAddressIsMapKey(t *testing.T) {
+	addr1, _ := StringToAddress("P124gB1bXHDTXmox58g4hd4u13HV3e5vKie")
+	addr2, _ := StringToAddress("P1LWaK3KBCuPVsXUPHXkMZr2Cm5tZquRDK8")
+	m := make(map[Address]bool)
+	m[addr1] = true
+	m[addr2] = false
+	data, err := json.Marshal(m)
+	assert.Nil(t, err)
+	t.Log(string(data))
+
+	m2 := make(map[Address]bool)
+	err = json.Unmarshal(data, &m2)
+	assert.Nil(t, err)
+	t.Logf("%#v", m2)
+}
