@@ -16,7 +16,7 @@ env:
         - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
-        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/palletone
+        - FTP_URL=ftp://${YANGYU}:${PASSWORD}@98.142.130.141/palletone
         - CURL_CMD=curl -T
         - IS_RUN_DEPOSIT=false
         - IS_RUN_CREATE_TRANS=true
