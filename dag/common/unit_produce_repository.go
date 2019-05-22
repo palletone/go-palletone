@@ -113,14 +113,14 @@ func (d *UnitProduceRepository) Close() {
 func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 	var err error
 
-	//更新数据库
-	err = rep.unitRep.SaveUnit(newUnit, false)
+	// 2. 更新状态
+	err = rep.ApplyUnit(newUnit)
 	if err != nil {
 		return err
 	}
 
-	// 2. 更新状态
-	err = rep.ApplyUnit(newUnit)
+	//更新数据库
+	err = rep.unitRep.SaveUnit(newUnit, false)
 	if err != nil {
 		return err
 	}
@@ -169,6 +169,7 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 
 	return nil
 }
+
 func (rep *UnitProduceRepository) validateMediatorSchedule(nextUnit *modules.Unit) error {
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	ts, _ := rep.propRep.GetNewestUnitTimestamp(gasToken)

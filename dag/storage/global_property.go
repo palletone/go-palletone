@@ -35,7 +35,7 @@ var (
 func StoreGlobalProp(db ptndb.Database, gp *modules.GlobalProperty) error {
 	err := StoreToJsonBytes(db, GlobalPropDBKey, gp)
 	if err != nil {
-		log.Errorf("Store global properties error: %v", err.Error())
+		log.Debugf("Store global properties error: %v", err.Error())
 	}
 
 	return err
@@ -46,7 +46,7 @@ func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
 
 	err := RetrieveFromJsonBytes(db, GlobalPropDBKey, gp)
 	if err != nil {
-		log.Errorf("Retrieve global properties error: %v", err.Error())
+		log.Debugf("Retrieve global properties error: %v", err.Error())
 	}
 
 	return gp, err
@@ -55,7 +55,7 @@ func RetrieveGlobalProp(db ptndb.Database) (*modules.GlobalProperty, error) {
 func StoreDynGlobalProp(db ptndb.Database, dgp *modules.DynamicGlobalProperty) error {
 	err := StoreToRlpBytes(db, DynGlobalPropDBKey, *dgp)
 	if err != nil {
-		log.Errorf("Store dynamic global properties error: %v", err.Error())
+		log.Debugf("Store dynamic global properties error: %v", err.Error())
 	}
 
 	return err
@@ -66,7 +66,7 @@ func RetrieveDynGlobalProp(db ptndb.Database) (*modules.DynamicGlobalProperty, e
 
 	err := RetrieveFromRlpBytes(db, DynGlobalPropDBKey, dgp)
 	if err != nil {
-		log.Errorf("Retrieve dynamic global properties error: %v", err.Error())
+		log.Debugf("Retrieve dynamic global properties error: %v", err.Error())
 	}
 
 	return dgp, err

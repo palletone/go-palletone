@@ -28,17 +28,18 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	common2 "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 )
 
 type MemDag struct {
-	token              modules.AssetId
-	stableUnitHash     common.Hash
-	stableUnitHeight   uint64
-	lastMainChainUnit  *modules.Unit
-	threshold          int
+	token             modules.AssetId
+	stableUnitHash    common.Hash
+	stableUnitHeight  uint64
+	lastMainChainUnit *modules.Unit
+	//threshold          int
 	orphanUnits        map[common.Hash]*modules.Unit
 	chainUnits         map[common.Hash]*modules.Unit
 	tempdbunitRep      common2.IUnitRepository
@@ -55,11 +56,27 @@ type MemDag struct {
 	lock              sync.RWMutex
 }
 
-func (chain *MemDag) SetStableThreshold(count int) {
-	chain.threshold = count
+type PartitionMemDag struct {
+	*MemDag
+	threshold int
 }
 
-func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database, stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository, stableStateRep common2.IStateRepository) *MemDag {
+func (pmg *PartitionMemDag) SetStableThreshold(count int) {
+	pmg.threshold = count
+}
+
+func NewPartitionMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
+	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
+	stableStateRep common2.IStateRepository) *PartitionMemDag {
+	return &PartitionMemDag{
+		MemDag:    NewMemDag(token, saveHeaderOnly, db, stableUnitRep, propRep, stableStateRep),
+		threshold: threshold,
+	}
+}
+
+func NewMemDag(token modules.AssetId /*, threshold int*/, saveHeaderOnly bool, db ptndb.Database,
+	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
+	stableStateRep common2.IStateRepository) *MemDag {
 	tempdb, _ := NewTempdb(db)
 	trep := common2.NewUnitRepository4Db(tempdb)
 	tutxoRep := common2.NewUtxoRepository4Db(tempdb)
@@ -76,8 +93,8 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	log.Debugf("Init MemDag, get last stable unit[%s] to set lastMainChainUnit", stablehash.String())
 
 	return &MemDag{
-		token:             token,
-		threshold:         threshold,
+		token: token,
+		//threshold:         threshold,
 		ldbunitRep:        stableUnitRep,
 		ldbPropRep:        propRep,
 		tempdbunitRep:     trep,
@@ -199,7 +216,9 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 			hs[addr] = true
 		}
 		childrenCofirmAddrs[u.Author()] = true
-		if len(hs) >= chain.threshold {
+		// todo threshold 换届后可能会变
+		threshold, _ := chain.ldbPropRep.GetChainThreshold()
+		if len(hs) >= threshold {
 			log.Debugf("Unit[%s] has enough confirm address count=%d, make it to stable.", ustbHash.String(), len(hs))
 			chain.SetStableUnit(ustbHash, u.NumberU64(), txpool)
 
@@ -278,7 +297,8 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash) {
 
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	defer func(start time.Time) {
-		log.Debugf("MemDag[%s] AddUnit cost time: %v ,index: %d", chain.token.String(), time.Since(start), unit.NumberU64())
+		log.Debugf("MemDag[%s] AddUnit cost time: %v ,index: %d", dagconfig.DagConfig.GetGasToken().String(),
+			time.Since(start), unit.NumberU64())
 	}(time.Now())
 
 	if unit == nil {
