@@ -443,6 +443,7 @@ func (d *Dag) refreshPartitionMemDag() {
 		for _, partition := range partitions {
 			ptoken := partition.GasToken
 			threshold := int(partition.StableThreshold)
+			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
 			partitionMemdag[ptoken] = memunit.NewPartitionMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
 		}
@@ -456,6 +457,7 @@ func (d *Dag) refreshPartitionMemDag() {
 		threshold := int(partition.StableThreshold)
 		partitonMemDag, ok := d.PartitionMemDag[ptoken]
 		if !ok {
+			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
 			d.PartitionMemDag[ptoken] = memunit.NewPartitionMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
 		} else {
@@ -463,6 +465,15 @@ func (d *Dag) refreshPartitionMemDag() {
 		}
 	}
 
+}
+func (d *Dag) initDataForPartition(partition *modules.PartitionChain) {
+	pHeader := partition.GetGenesisHeader()
+	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
+	if !exist {
+		log.Debugf("Init partition[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
+		d.stableUnitRep.SaveHeader(pHeader)
+		d.stablePropRep.SetNewestUnit(pHeader)
+	}
 }
 func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)

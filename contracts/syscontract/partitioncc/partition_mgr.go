@@ -21,7 +21,9 @@
 package partitioncc
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -88,28 +90,37 @@ func addPartitionChain(stub shim.ChaincodeStubInterface, chain *dm.PartitionChai
 	return stub.PutState(key, value)
 }
 func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
-	if len(args) < 11 {
-		return nil, errors.New("need 10 args (GenesisHash,GenesisHeight,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,NetworkId,Version,StableThreshold,[Peers])")
+	if len(args) < 10 {
+		return nil, errors.New("need 10 args (GenesisHeaderRlp,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,NetworkId,Version,StableThreshold,[Peers])")
 	}
 	var err error
-	partitionChain := &dm.PartitionChain{}
-	partitionChain.GenesisHash = common.HexToHash(args[0])
-	partitionChain.GenesisHeight, _ = strconv.ParseUint(args[1], 10, 64)
-	partitionChain.ForkUnitHash = common.HexToHash(args[2])
-	partitionChain.ForkUnitHeight, _ = strconv.ParseUint(args[3], 10, 64)
-	partitionChain.GasToken, _, err = dm.String2AssetId(args[4])
+	gbytes, err := hex.DecodeString(args[0])
 	if err != nil {
 		return nil, err
 	}
-	partitionChain.Status = args[5][0] - '0'
-	partitionChain.SyncModel = args[6][0] - '0'
-	partitionChain.NetworkId, _ = strconv.ParseUint(args[7], 10, 64)
-	partitionChain.Version, _ = strconv.ParseUint(args[8], 10, 64)
-	threshold, _ := strconv.ParseUint(args[9], 10, 32)
+	header := &dm.Header{}
+	err = rlp.DecodeBytes(gbytes, header)
+	if err != nil {
+		return nil, err
+	}
+	partitionChain := &dm.PartitionChain{}
+	partitionChain.GenesisHeaderRlp = gbytes
+	//partitionChain.GenesisHeight, _ = strconv.ParseUint(args[1], 10, 64)
+	partitionChain.ForkUnitHash = common.HexToHash(args[1])
+	partitionChain.ForkUnitHeight, _ = strconv.ParseUint(args[2], 10, 64)
+	partitionChain.GasToken, _, err = dm.String2AssetId(args[3])
+	if err != nil {
+		return nil, err
+	}
+	partitionChain.Status = args[4][0] - '0'
+	partitionChain.SyncModel = args[5][0] - '0'
+	partitionChain.NetworkId, _ = strconv.ParseUint(args[6], 10, 64)
+	partitionChain.Version, _ = strconv.ParseUint(args[7], 10, 64)
+	threshold, _ := strconv.ParseUint(args[8], 10, 32)
 	partitionChain.StableThreshold = uint32(threshold)
-	if len(args[10]) > 0 {
+	if len(args[9]) > 0 {
 		peers := []string{}
-		err = json.Unmarshal([]byte(args[10]), &peers)
+		err = json.Unmarshal([]byte(args[9]), &peers)
 		if err != nil {
 			return nil, err
 		}

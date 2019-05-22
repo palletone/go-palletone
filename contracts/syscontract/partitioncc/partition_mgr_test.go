@@ -6,6 +6,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 
+	"encoding/hex"
 	"encoding/json"
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
@@ -13,6 +14,9 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"strings"
 )
+
+var headerHexString = "f8f3e1a00000000000000000000000000000000000000000000000000000000000000000f86aa1026a16514269bc7324ff9a3b0a39a13e8928cc3d2b2b7d650b5d2c8580fd3e9a23b84630440220545062adc8304f45f429a7f4571f04f39d76125d938a27a7599ddc2619fb5f7a02201af270ab69a957e8626eba0fa181eb8ff9de817bfc026bcb8476aa4d825b16ed8a67726f75705f7369676e8c67726f75705f7075624b6579a0c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35fd2908157c40f080000000000000000000000809400000000000000000000000000000000000000007b820102"
+var headerRlp, _ = hex.DecodeString(headerHexString)
 
 func TestAddPartition(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
@@ -33,7 +37,7 @@ func TestRegisterPartition(t *testing.T) {
 	fundationAddr, _ := common.StringToAddress("P1EZE1HAqMZATrdTkpgmizoRV21rj4pm3db")
 	stub.EXPECT().GetInvokeParameters().Return(fundationAddr, nil, nil, "registerPartition", nil, nil).AnyTimes()
 	stub.EXPECT().GetSystemConfig("FoundationAddress").Return("P1EZE1HAqMZATrdTkpgmizoRV21rj4pm3db", nil).AnyTimes()
-	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", "1", "1", "2", "[\"127.0.0.1:1234\",\"192.168.100.2:9090\"]"}
+	args := []string{headerHexString, "222222222", "2", "PTN", "1", "1", "1", "1", "2", "[\"127.0.0.1:1234\",\"192.168.100.2:9090\"]"}
 	result := registerPartition(args, stub)
 	t.Log(result.Status)
 }
@@ -65,7 +69,7 @@ func TestListPartition(t *testing.T) {
 
 	peers := []string{"127.0.0.1:1234", "192.168.100.2:9090"}
 	peersJson, _ := json.Marshal(peers)
-	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", "1", "1", "2", string(peersJson)}
+	args := []string{headerHexString, "222222222", "2", "PTN", "1", "1", "1", "1", "2", string(peersJson)}
 	partitionChain, _ := buildPartitionChain(args)
 
 	err := addPartitionChain(stub, partitionChain)
@@ -105,7 +109,7 @@ func TestUpdatePartition(t *testing.T) {
 
 	peers := []string{"127.0.0.1:1234", "192.168.100.2:9090"}
 	peersJson, _ := json.Marshal(peers)
-	args := []string{"111111", "0", "222222222", "2", "PTN", "1", "1", "1", "1", "2", string(peersJson)}
+	args := []string{headerHexString, "222222222", "2", "PTN", "1", "1", "1", "1", "2", string(peersJson)}
 	partitionChain, _ := buildPartitionChain(args)
 
 	err := addPartitionChain(stub, partitionChain)
@@ -122,10 +126,9 @@ func TestUpdatePartition(t *testing.T) {
 
 func newTestPartition() *modules.PartitionChain {
 	return &modules.PartitionChain{
-		GenesisHash:   common.HexToHash("1111111"),
-		GenesisHeight: 0,
-		GasToken:      modules.PTNCOIN,
-		Status:        1,
+		GenesisHeaderRlp: headerRlp,
+		GasToken:         modules.PTNCOIN,
+		Status:           1,
 	}
 }
 

@@ -106,6 +106,7 @@ type idxContractStopPayload struct {
 type txJsonTemp struct {
 	MsgCount int
 	CertId   string
+	Illegal  bool
 	Payment  []*idxPaymentPayload
 	//Config                  []*idxConfigPayload
 	Text                    []*idxTextPayload
@@ -126,7 +127,7 @@ type txJsonTemp struct {
 
 func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 	intCertID := new(big.Int).SetBytes(tx.CertId)
-	temp := &txJsonTemp{MsgCount: len(tx.TxMessages), CertId: intCertID.String()}
+	temp := &txJsonTemp{MsgCount: len(tx.TxMessages), CertId: intCertID.String(), Illegal: tx.Illegal}
 	for idx, msg := range tx.TxMessages {
 		if msg.App == APP_PAYMENT {
 			temp.Payment = append(temp.Payment, &idxPaymentPayload{Index: idx, PaymentPayload: msg.Payload.(*PaymentPayload)})
@@ -186,6 +187,7 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 		}
 		tx.CertId = intCertID.Bytes()
 	}
+	tx.Illegal = temp.Illegal
 	tx.TxMessages = make([]*Message, temp.MsgCount)
 	processed := 0
 	for _, p := range temp.Payment {
