@@ -349,7 +349,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			select {
 			case announce := <-p.announceChn:
 				log.Debug("Cors Palletone ProtocolManager->handle", "announce", announce)
-				p.SendHeaders([]*modules.Header{&announce.Header})
+				p.SendSingleHeader([]*modules.Header{&announce.Header})
 
 			case <-stop:
 				return
@@ -392,7 +392,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	// Block header query, collect the requested headers and reply
 	case CorsHeaderMsg:
-
 		var headers []*modules.Header
 		if err := msg.Decode(&headers); err != nil {
 			log.Info("msg.Decode", "err:", err)
@@ -406,23 +405,21 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				pm.fetcher.Enqueue(p, header)
 			}
 		}
-		//var req announceData
-		//var data []byte
-		//if err := msg.Decode(&data); err != nil {
-		//	log.Error("CorsHeaderMsg", "Decode err", err, "msg", msg)
-		//	return errResp(ErrDecode, "%v: %v", msg, err)
-		//}
-		//
-		//if err := json.Unmarshal(data, &req.Header); err != nil {
-		//	log.Error("CorsHeaderMsg", "Unmarshal err", err, "data", data)
-		//	return errResp(ErrDecode, "%v: %v", msg, err)
-		//}
-		//
-		//log.Trace("CorsHeaderMsg message content", "header", req.Header)
-		//if pm.fetcher != nil {
-		//	pm.fetcher.Enqueue(p, &req.Header)
-		//}
-		//return nil
+
+	case CorsHeadersMsg:
+		var headers []*modules.Header
+		if err := msg.Decode(&headers); err != nil {
+			log.Info("msg.Decode", "err:", err)
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		log.Trace("CorsHeadersMsg message content", "len(headers)", len(headers))
+		if pm.fetcher != nil {
+			for _, header := range headers {
+				log.Trace("CorsHeadersMsg message content", "header:", header)
+				pm.fetcher.Enqueue(p, header)
+			}
+		}
 
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
@@ -470,12 +467,6 @@ type peerConnection struct {
 	manager *ProtocolManager
 	peer    *peer
 }
-
-//Head(modules.AssetId) (common.Hash, *modules.ChainIndex)
-//RequestHeadersByHash(common.Hash, int, int, bool) error
-//RequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error
-//RequestDagHeadersByHash(common.Hash, int, int, bool) error
-//RequestLeafNodes() error
 
 func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	//return common.Hash{}, nil

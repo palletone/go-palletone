@@ -88,46 +88,18 @@ func (pm *ProtocolManager) blockLoop() {
 			select {
 			case ev := <-headCh:
 				peers := pm.peers.AllPeers()
-				if len(peers) > 0 {
+				if len(peers) > 0 && atomic.LoadUint32(&pm.corsSync) == 0 {
 					header := ev.Unit.Header()
 					hash := ev.Hash
 					number := header.Number.Index
-					//td := core.GetTd(pm.chainDb, hash, number)
 					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
 						lastHead = header
 						log.Debug("Announcing block to peers", "number", number, "hash", hash)
-
 						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
-						//var (
-						//	signed         bool
-						//	signedAnnounce announceData
-						//)
 
 						for _, p := range peers {
 							log.Debug("Light Palletone", "ProtocolManager->blockLoop p.ID", p.ID())
 							p.announceChn <- announce
-							//switch p.announceType {
-							//
-							//case announceTypeSimple:
-							//	select {
-							//	case p.announceChn <- announce:
-							//	default:
-							//		pm.removePeer(p.id)
-							//	}
-							//
-							//case announceTypeSigned:
-							//	if !signed {
-							//		signedAnnounce = announce
-							//		signedAnnounce.sign(pm.server.privateKey)
-							//		signed = true
-							//	}
-							//
-							//	select {
-							//	case p.announceChn <- signedAnnounce:
-							//	default:
-							//		pm.removePeer(p.id)
-							//	}
-							//}
 						}
 					}
 				}
