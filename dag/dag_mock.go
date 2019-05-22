@@ -637,6 +637,20 @@ func (mr *MockIDagMockRecorder) SubscribeChainHeadEvent(ch interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainHeadEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainHeadEvent), ch)
 }
 
+// SubscribeChainEvent mocks base method
+func (m *MockIDag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeChainEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeChainEvent indicates an expected call of SubscribeChainEvent
+func (mr *MockIDagMockRecorder) SubscribeChainEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainEvent), ch)
+}
+
 // GetTrieSyncProgress mocks base method
 func (m *MockIDag) GetTrieSyncProgress() (uint64, error) {
 	m.ctrl.T.Helper()
@@ -977,7 +991,7 @@ func (mr *MockIDagMockRecorder) IsSynced() *gomock.Call {
 }
 
 // SubscribeActiveMediatorsUpdatedEvent mocks base method
-func (m *MockIDag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- ActiveMediatorsUpdatedEvent) event.Subscription {
+func (m *MockIDag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubscribeActiveMediatorsUpdatedEvent", ch)
 	ret0, _ := ret[0].(event.Subscription)

@@ -25,20 +25,32 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
 )
 
 type IUnitProduceRepository interface {
 	PushUnit(nextUnit *modules.Unit) error
 	ApplyUnit(nextUnit *modules.Unit) error
+	MediatorVotedResults() map[string]uint64
+	Close()
+	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 }
 type UnitProduceRepository struct {
 	unitRep  IUnitRepository
 	propRep  IPropRepository
 	stateRep IStateRepository
+	// append by albert·gou 用于活跃mediator更新时的事件订阅
+	activeMediatorsUpdatedFeed  event.Feed
+	activeMediatorsUpdatedScope event.SubscriptionScope
+
+	// append by albert·gou 用于account 各种投票数据统计
+	mediatorVoteTally voteTallys
 }
 
 func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, stateRep IStateRepository) *UnitProduceRepository {
@@ -47,6 +59,47 @@ func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, 
 		propRep:  propRep,
 		stateRep: stateRep,
 	}
+}
+
+// 投票统计辅助结构体
+type voteTally struct {
+	candidate  common.Address
+	votedCount uint64
+}
+
+func newVoteTally(candidate common.Address) *voteTally {
+	return &voteTally{
+		candidate:  candidate,
+		votedCount: 0,
+	}
+}
+
+type voteTallys []*voteTally
+
+func (vts voteTallys) Len() int {
+	return len(vts)
+}
+
+func (vts voteTallys) Less(i, j int) bool {
+	mVoteI := vts[i].votedCount
+	mVoteJ := vts[j].votedCount
+
+	if mVoteI != mVoteJ {
+		return mVoteI > mVoteJ
+	}
+
+	return vts[i].candidate.Less(vts[j].candidate)
+}
+
+func (vts voteTallys) Swap(i, j int) {
+	vts[i], vts[j] = vts[j], vts[i]
+}
+
+func (dag *UnitProduceRepository) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
+	return dag.activeMediatorsUpdatedScope.Track(dag.activeMediatorsUpdatedFeed.Subscribe(ch))
+}
+func (d *UnitProduceRepository) Close() {
+	d.activeMediatorsUpdatedScope.Close()
 }
 
 /**
@@ -97,11 +150,11 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	//rep.updateLastIrreversibleUnit()
 
 	// 判断是否到了链维护周期，并维护
-	//maintenanceNeeded := !(rep.GetDynGlobalProp().NextMaintenanceTime > uint32(nextUnit.Timestamp()))
-	//if maintenanceNeeded {
-	//	rep.performChainMaintenance(nextUnit)
-	//}
-	//
+	maintenanceNeeded := !(rep.GetDynGlobalProp().NextMaintenanceTime > uint32(nextUnit.Timestamp()))
+	if maintenanceNeeded {
+		rep.performChainMaintenance(nextUnit)
+	}
+
 	//// 更新链维护周期标志
 	//// n.b., updateMaintenanceFlag() happens this late because GetSlotTime() / GetSlotAtTime() is needed above
 	//// 由于前面的操作需要调用 GetSlotTime() / GetSlotAtTime() 这两个方法，所以在最后才更新链维护周期标志
@@ -272,4 +325,198 @@ func (rep *UnitProduceRepository) SaveMediator(med *core.Mediator, onlyStore boo
 
 	rep.stateRep.StoreMediator(med)
 	return
+}
+
+func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit) {
+	log.Debugf("We are at the maintenance interval")
+
+	// 更新要修改的区块链参数
+	dag.updateChainParameters()
+
+	// 对每个账户的各种投票信息进行初步统计
+	dag.performAccountMaintenance()
+
+	// 统计投票并更新活跃 mediator 列表
+	isChanged := dag.updateActiveMediators()
+
+	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
+	go dag.activeMediatorsUpdatedFeed.Send(modules.ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
+
+	// 计算并更新下一次维护时间
+	dag.updateNextMaintenanceTime(nextUnit)
+
+	// 清理中间处理缓存数据
+	dag.mediatorVoteTally = nil
+}
+
+func (dag *UnitProduceRepository) updateChainParameters() {
+	log.Debugf("update chain parameters")
+
+	//dag.UpdateSysParams()
+	//dag.RefreshSysParameters()
+
+	return
+}
+
+// 获取账户相关投票数据的直方图
+func (dag *UnitProduceRepository) performAccountMaintenance() {
+	log.Debugf("Tally account voting mediators")
+	// 初始化数据
+	mediators := dag.stateRep.GetMediators()
+	dag.mediatorVoteTally = make([]*voteTally, 0, len(mediators))
+
+	// 遍历所有账户
+	mediatorVoteCount := dag.MediatorVotedResults()
+
+	// 初始化 mediator 的投票数据
+	for mediator, _ := range mediators {
+
+		voteTally := newVoteTally(mediator)
+		voteTally.votedCount = mediatorVoteCount[mediator.Str()]
+		dag.mediatorVoteTally = append(dag.mediatorVoteTally, voteTally)
+	}
+}
+
+func (dag *UnitProduceRepository) MediatorVotedResults() map[string]uint64 {
+	mediatorVoteCount := make(map[string]uint64)
+
+	allAccount := dag.LookupAccount()
+	for _, info := range allAccount {
+		// 遍历该账户投票的mediator
+		for med, _ := range info.VotedMediators {
+			// 累加投票数量
+			mediatorVoteCount[med] += info.Balance
+		}
+	}
+
+	return mediatorVoteCount
+}
+func (d *UnitProduceRepository) LookupAccount() map[common.Address]*modules.AccountInfo {
+	return d.stateRep.LookupAccount()
+}
+func (dag *UnitProduceRepository) updateActiveMediators() bool {
+	// 1. 统计出活跃mediator数量n
+	maxFn := func(x, y int) int {
+		if x > y {
+			return x
+		}
+		return y
+	}
+
+	gp := dag.GetGlobalProp()
+
+	// 保证活跃mediator的总数必须大于MinimumMediatorCount
+	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
+	countInSystem := dag.getActiveMediatorCount()
+	mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
+
+	mediatorLen := dag.mediatorVoteTally.Len()
+	if mediatorLen < mediatorCount {
+		log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
+			" the minimum mediator count is %v", countInSystem, mediatorLen, minMediatorCount)
+		// 保证活跃mediator的总数为奇数
+		mediatorCount = (mediatorLen-1)/2*2 + 1
+	}
+	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
+
+	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
+	sort.PartialSort(dag.mediatorVoteTally, mediatorCount)
+
+	// 3. 更新每个mediator的得票数
+	for _, voteTally := range dag.mediatorVoteTally {
+		med := dag.GetMediator(voteTally.candidate)
+		med.TotalVotes = voteTally.votedCount
+		dag.SaveMediator(med, false)
+	}
+
+	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
+	gp.PrecedingMediators = gp.ActiveMediators
+	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
+	for index := 0; index < mediatorCount; index++ {
+		voteTally := dag.mediatorVoteTally[index]
+		gp.ActiveMediators[voteTally.candidate] = true
+	}
+	dag.SaveGlobalProp(gp, false)
+
+	return isActiveMediatorsChanged(gp)
+}
+func (d *UnitProduceRepository) getActiveMediatorCount() int {
+	activeMediatorCountStr, _, _ := d.stateRep.GetConfig("ActiveMediatorCount")
+	activeMediatorCount, _ := strconv.ParseUint(string(activeMediatorCountStr), 10, 16)
+
+	return int(activeMediatorCount)
+}
+
+func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Unit) {
+	dgp := dag.GetDynGlobalProp()
+	gp := dag.GetGlobalProp()
+
+	nextMaintenanceTime := dgp.NextMaintenanceTime
+	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
+
+	if nextUnit.NumberU64() == 1 {
+		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
+	} else {
+		// We want to find the smallest k such that nextMaintenanceTime + k * maintenanceInterval > HeadUnitTime()
+		//  This implies k > ( HeadUnitTime() - nextMaintenanceTime ) / maintenanceInterval
+		//
+		// Let y be the right-hand side of this inequality, i.e.
+		// y = ( HeadUnitTime() - nextMaintenanceTime ) / maintenanceInterval
+		//
+		// and let the fractional part f be y-floor(y).  Clearly 0 <= f < 1.
+		// We can rewrite f = y-floor(y) as floor(y) = y-f.
+		//
+		// Clearly k = floor(y)+1 has k > y as desired.  Now we must
+		// show that this is the least such k, i.e. k-1 <= y.
+		//
+		// But k-1 = floor(y)+1-1 = floor(y) = y-f <= y.
+		// So this k suffices.
+		//
+
+		y := (dag.HeadUnitTime() - int64(nextMaintenanceTime)) / maintenanceInterval
+		nextMaintenanceTime += uint32((y + 1) * maintenanceInterval)
+	}
+
+	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
+	dgp.NextMaintenanceTime = nextMaintenanceTime
+	dag.SaveDynGlobalProp(dgp, false)
+
+	time := time.Unix(int64(nextMaintenanceTime), 0)
+	log.Debugf("nextMaintenanceTime: %v", time.Format("2006-01-02 15:04:05"))
+
+	return
+}
+
+func (dag *UnitProduceRepository) updateMaintenanceFlag(newMaintenanceFlag bool) {
+	log.Debugf("update maintenance flag: %v", newMaintenanceFlag)
+
+	dgp := dag.GetDynGlobalProp()
+	dgp.MaintenanceFlag = newMaintenanceFlag
+	dag.SaveDynGlobalProp(dgp, false)
+
+	return
+}
+func (dag *UnitProduceRepository) HeadUnitTime() int64 {
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	t, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
+	return t
+}
+
+// 判断新一届mediator和上一届mediator是否有变化
+func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
+	precedingMediators := gp.PrecedingMediators
+	activeMediators := gp.ActiveMediators
+
+	// 首先考虑活跃mediator个数是否改变
+	if len(precedingMediators) != len(activeMediators) {
+		return true
+	}
+
+	for am, _ := range activeMediators {
+		if !precedingMediators[am] {
+			return true
+		}
+	}
+
+	return false
 }

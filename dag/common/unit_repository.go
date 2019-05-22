@@ -450,14 +450,14 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	if len(poolTxs) > 0 {
 		for _, tx := range poolTxs {
 			t := txspool.PooltxToTx(tx)
-
+			reqId := t.RequestHash()
 			//标记交易有效性
 			if err := markTxIllegal(rep.statedb, t); err != nil {
-				log.Error("CreateUnit", "markTxIllegal err:", err)
+				log.Errorf("[%s]CreateUnit, markTxIllegal err:", reqId.String()[0:8], err)
 				//continue
 			}
 			if t.Illegal {
-				log.Debug("CreateUnit", "contract is illegal, reqId", t.RequestHash(), "tx hash", t.Hash())
+				log.Debugf("[%s]CreateUnit, contract is illegal, txHash[%s]", reqId.String()[0:8], t.Hash().String())
 				//continue
 			}
 			txs = append(txs, t)
@@ -520,7 +520,7 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 		//	return false
 		//}
 		if v != nil && !v.Equal(rd.Version) {
-			log.Debugf("checkReadSetValid, marshal not equal, contractId[%x], local ver1[%v], ver2[%v]", contractId, v, rd.Version)
+			log.Debugf("checkReadSetValid, not equal, contractId[%x], local ver1[%v], ver2[%v]", contractId, v, rd.Version)
 			return false
 		}
 	}
