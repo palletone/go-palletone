@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -508,6 +509,11 @@ func (b *LesApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 func (b *LesApiBackend) SyncUTXOByAddr(addr string) string {
 	return b.ptn.ProtocolManager().SyncUTXOByAddr(addr)
 }
+
+func (b *LesApiBackend) StartCorsSync() (string, error) {
+	return "light node have not cors server", errors.New("light node have not cors server")
+}
+
 func (b *LesApiBackend) GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error) {
 	return nil, nil
 }

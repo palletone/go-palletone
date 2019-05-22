@@ -167,6 +167,7 @@ type Backend interface {
 	ProofTransactionByHash(txhash string) (string, error)
 	ProofTransactionByRlptx(rlptx [][]byte) (string, error)
 	SyncUTXOByAddr(addr string) string
+	StartCorsSync() (string, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

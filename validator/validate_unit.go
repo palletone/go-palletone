@@ -63,9 +63,9 @@ func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCod
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	// if genesis unit just return
-	//if isGenesis == true {
-	//	return TxValidationCode_VALID
-	//}
+	if len(h.ParentsHash) == 0 {
+		return TxValidationCode_VALID
+	}
 
 	// get mediators
 	//TODO Devin
@@ -88,6 +88,33 @@ func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCod
 	// 这一步后续添加： 调用 mediator 模块校验见证人的接口
 
 	//return modules.UNIT_STATE_VALIDATED
+	return TxValidationCode_VALID
+}
+func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
+	//gasToken := dagconfig.DagConfig.GetGasToken()
+	//ts, _ := rep.propRep.GetNewestUnitTimestamp(gasToken)
+	//if ts >= nextUnit.Timestamp() {
+	//	errStr := "invalidated unit's timestamp"
+	//	log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts, nextUnit.Hash().String(), nextUnit.Timestamp())
+	//	return fmt.Errorf(errStr)
+	//}
+	if validate.propquery == nil {
+		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
+		return TxValidationCode_VALID
+	}
+	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
+	if slotNum <= 0 {
+		log.Warn("invalidated unit's slot")
+		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+	}
+
+	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
+	if !scheduledMediator.Equal(header.Author()) {
+		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", header.Author().Str())
+		log.Warn(errStr)
+		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+	}
+
 	return TxValidationCode_VALID
 }
 
@@ -168,6 +195,10 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	if thisUnitIsNotTransmitted {
 		sigState := validate.validateUnitSignature(header)
 		return sigState
+	}
+	vcode := validate.validateMediatorSchedule(header)
+	if vcode != TxValidationCode_VALID {
+		return vcode
 	}
 	//Is orphan?
 	parent := header.ParentsHash[0]

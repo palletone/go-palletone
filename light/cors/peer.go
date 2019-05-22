@@ -165,8 +165,8 @@ func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
 	return hasBlock != nil && hasBlock(hash, number)
 }
 
-func (p *peer) SendRawAnnounce(request []byte) error {
-	return p2p.Send(p.rw, CorsHeaderMsg, request)
+func (p *peer) SendHeaders(headers []*modules.Header) error {
+	return p2p.Send(p.rw, CorsHeaderMsg, headers)
 }
 
 /*
@@ -435,10 +435,10 @@ type peerSetNotify interface {
 // peerSet represents the collection of active peers currently participating in
 // the Light Ethereum sub-protocol.
 type peerSet struct {
-	peers      map[string]*peer
-	lock       sync.RWMutex
-	notifyList []peerSetNotify
-	closed     bool
+	peers map[string]*peer
+	lock  sync.RWMutex
+	//notifyList []peerSetNotify
+	closed bool
 }
 
 // newPeerSet creates a new peer set to track the active participants.
@@ -448,65 +448,33 @@ func newPeerSet() *peerSet {
 	}
 }
 
-// notify adds a service to be notified about added or removed peers
-func (ps *peerSet) notify(n peerSetNotify) {
-	ps.lock.Lock()
-	ps.notifyList = append(ps.notifyList, n)
-	peers := make([]*peer, 0, len(ps.peers))
-	for _, p := range ps.peers {
-		peers = append(peers, p)
-	}
-	ps.lock.Unlock()
-
-	for _, p := range peers {
-		n.registerPeer(p)
-	}
-}
-
 // Register injects a new peer into the working set, or returns an error if the
 // peer is already known.
 func (ps *peerSet) Register(p *peer) error {
 	ps.lock.Lock()
+	defer ps.lock.Unlock()
+
 	if ps.closed {
-		ps.lock.Unlock()
 		return errClosed
 	}
 	if _, ok := ps.peers[p.id]; ok {
-		ps.lock.Unlock()
 		return errAlreadyRegistered
 	}
 	ps.peers[p.id] = p
-	//p.sendQueue = newExecQueue(100)
-	peers := make([]peerSetNotify, len(ps.notifyList))
-	copy(peers, ps.notifyList)
-	ps.lock.Unlock()
-
-	for _, n := range peers {
-		n.registerPeer(p)
-	}
 	return nil
 }
 
 // Unregister removes a remote peer from the active set, disabling any further
-// actions to/from that particular entity. It also initiates disconnection at the networking layer.
+// actions to/from that particular entity.
 func (ps *peerSet) Unregister(id string) error {
 	ps.lock.Lock()
-	if p, ok := ps.peers[id]; !ok {
-		ps.lock.Unlock()
-		return errNotRegistered
-	} else {
-		delete(ps.peers, id)
-		peers := make([]peerSetNotify, len(ps.notifyList))
-		copy(peers, ps.notifyList)
-		ps.lock.Unlock()
+	defer ps.lock.Unlock()
 
-		for _, n := range peers {
-			n.unregisterPeer(p)
-		}
-		//p.sendQueue.quit()
-		p.Peer.Disconnect(p2p.DiscUselessPeer)
-		return nil
+	if _, ok := ps.peers[id]; !ok {
+		return errNotRegistered
 	}
+	delete(ps.peers, id)
+	return nil
 }
 
 // AllPeerIDs returns a list of all registered peer IDs

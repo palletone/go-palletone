@@ -20,12 +20,15 @@
 
 package modules
 
-import "github.com/palletone/go-palletone/common"
+import (
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+)
 
 //作为主链，我会维护我上面支持的分区
 type PartitionChain struct {
-	GenesisHash     common.Hash
-	GenesisHeight   uint64
+	GenesisHeaderRlp []byte
+	//GenesisHeight   uint64
 	ForkUnitHash    common.Hash
 	ForkUnitHeight  uint64
 	GasToken        AssetId
@@ -35,6 +38,15 @@ type PartitionChain struct {
 	Version         uint64
 	StableThreshold uint32   //需要多少个签名才能是稳定单元
 	Peers           []string //pnode://publickey@IP:port format string
+}
+
+func (p *PartitionChain) GetGenesisHeader() *Header {
+	header := &Header{}
+	err := rlp.DecodeBytes(p.GenesisHeaderRlp, header)
+	if err != nil {
+		return nil
+	}
+	return header
 }
 
 //作为一个分区，我会维护我链接到的主链

@@ -3,11 +3,15 @@ package cors
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
+	"math/rand"
+	"sync/atomic"
+	"time"
 )
 
 type CorsServer struct {
@@ -52,6 +56,10 @@ func (s *CorsServer) Protocols() []p2p.Protocol {
 
 func (s *CorsServer) CorsProtocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
+}
+
+func (s *CorsServer) StartCorsSync() (string, error) {
+	return s.protocolManager.StartCorsSync()
 }
 
 // Start starts the LES server
@@ -175,4 +183,85 @@ func (pm *ProtocolManager) GetPartitionChain() ([]*modules.PartitionChain, error
 	//mainchain.GasToken = modules.PTNCOIN
 	//mainchains = append(mainchains, mainchain)
 	//return mainchains, nil
+}
+
+/*
+type MainChain struct {
+	GenesisHash common.Hash
+	Status      byte //Active:1 ,Terminated:0,Suspended:2
+	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
+	GasToken    AssetId
+	NetworkId   uint64
+	Version     uint64
+	Peers       []string // pnode://publickey@IP:port format string
+}
+*/
+
+func (pm *ProtocolManager) StartCorsSync() (string, error) {
+	mainchain, err := pm.dag.GetMainChain()
+	if mainchain == nil || err != nil {
+		log.Debug("Cors ProtocolManager StartCorsSync", "GetMainChain err", err)
+		return err.Error(), err
+	}
+	pm.mainchain = mainchain
+	pm.mclock.RLock()
+	for _, peer := range mainchain.Peers {
+		node, err := discover.ParseNode(peer)
+		if err != nil {
+			return fmt.Sprintf("Cors ProtocolManager StartCorsSync invalid pnode: %v", err), err
+		}
+		log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
+		pm.server.corss.AddPeer(node)
+	}
+	pm.mclock.RUnlock()
+
+	return "OK", nil
+}
+
+func (pm *ProtocolManager) Sync() {
+	log.Debug("Enter Cors ProtocolManager Sync")
+	defer log.Debug("End Cors ProtocolManager Sync")
+	if atomic.LoadUint32(&pm.corsSync) == 0 {
+		atomic.StoreUint32(&pm.corsSync, 1)
+		_, err := pm.pushSync()
+		if err != nil {
+			log.Debug("Cors Sync OK")
+		}
+		forceSync := time.Tick(forceSyncCycle)
+		select {
+		case <-forceSync:
+			// Force a sync even if not enough peers are present
+			log.Debug("Cors Sync Set cors Sync")
+			atomic.StoreUint32(&pm.corsSync, 0)
+		}
+	}
+}
+
+func (pm *ProtocolManager) pushSync() (uint64, error) {
+	var (
+		bytes   common.StorageSize
+		headers []*modules.Header
+		index   uint64
+	)
+	number := &modules.ChainIndex{pm.assetId, index}
+	for {
+		for bytes < softResponseLimit && len(headers) < MaxHeaderFetch {
+			bytes += estHeaderRlpSize
+			number.Index = index
+			header, err := pm.dag.GetHeaderByNumber(number)
+			if err != nil {
+				return index, err
+			}
+
+			headers = append(headers, header)
+			index++
+		}
+		rand.Seed(time.Now().UnixNano())
+		peers := pm.peers.AllPeers()
+		x := rand.Intn(len(peers))
+		p := peers[x]
+		p.SendHeaders(headers)
+		break
+	}
+	return index, nil
 }

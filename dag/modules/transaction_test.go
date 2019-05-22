@@ -199,7 +199,8 @@ func TestTransactionEncode(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log("data", tx)
-	assert.Equal(t, txmsg3, tx)
+	//assert.Equal(t, txmsg3, tx)
+	assertEqualRlp(t, txmsg3, tx)
 	//if tx.Locktime != 12345 {
 	//	log.Error("decode RLP mismatch", "error", txb)
 	//}
