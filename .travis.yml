@@ -63,7 +63,7 @@ after_script:
     - sleep 2
 
     # upload all log
-    - ${CURL_CMD} ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/certbdd/all.log -v
+    - ${CURL_CMD} ${ALL_LOG_PATH} ftp://${YANGYU}:${PASSWORD}@98.142.130.141/certbdd/all.log
 
     # upload deposit log
     - if [ $IS_RUN_DEPOSIT == 'true' ]; then
