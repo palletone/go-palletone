@@ -494,7 +494,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	threshold, _ := propRep.GetChainThreshold()
 	unstableChain := memunit.NewMemDag(gasToken, threshold, false, db, unitRep, propRep, stateRep)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
-	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
+	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep, nil)
 	//partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
 	//for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
 	//	partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, stateRep)
@@ -557,7 +557,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
+	validate := validator.NewValidate(dagDb, utxoRep, stateDb, nil)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 
@@ -596,7 +596,7 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	threshold, _ := propRep.GetChainThreshold()
 
-	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
+	validate := validator.NewValidate(dagDb, utxoRep, stateDb, propRep)
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep, propRep, stateRep)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 	dag := &Dag{

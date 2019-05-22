@@ -553,7 +553,7 @@ func converAmount(a int64) float64 {
 }
 func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGe"}
+	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGen"}
 	totalAmount := int64(0)
 	for i := range unspends {
 		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: uint32(unspends[i].Vout)})

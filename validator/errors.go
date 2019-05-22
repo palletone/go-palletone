@@ -65,18 +65,18 @@ const (
 	TxValidationCode_NOT_COMPARE_SIZE             ValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         ValidationCode = 256
 
-	UNIT_STATE_AUTHOR_SIGNATURE_PASSED  ValidationCode = 101
-	UNIT_STATE_EMPTY                    ValidationCode = 102
-	UNIT_STATE_INVALID_AUTHOR_SIGNATURE ValidationCode = 103
-	UNIT_STATE_INVALID_GROUP_SIGNATURE  ValidationCode = 104
-	UNIT_STATE_HAS_INVALID_TRANSACTIONS ValidationCode = 105
-	UNIT_STATE_INVALID_SIZE             ValidationCode = 106
-	UNIT_STATE_INVALID_EXTRA_DATA       ValidationCode = 107
-	UNIT_STATE_INVALID_HEADER           ValidationCode = 108
-	UNIT_STATE_INVALID_HEADER_NUMBER    ValidationCode = 109
-	UNIT_STATE_INVALID_HEADER_TXROOT    ValidationCode = 110
-	UNIT_STATE_INVALID_HEADER_TIME      ValidationCode = 111
-	UNIT_STATE_ORPHAN                   ValidationCode = 999
+	UNIT_STATE_AUTHOR_SIGNATURE_PASSED   ValidationCode = 101
+	UNIT_STATE_INVALID_MEDIATOR_SCHEDULE ValidationCode = 102
+	UNIT_STATE_INVALID_AUTHOR_SIGNATURE  ValidationCode = 103
+	UNIT_STATE_INVALID_GROUP_SIGNATURE   ValidationCode = 104
+	UNIT_STATE_HAS_INVALID_TRANSACTIONS  ValidationCode = 105
+	UNIT_STATE_INVALID_SIZE              ValidationCode = 106
+	UNIT_STATE_INVALID_EXTRA_DATA        ValidationCode = 107
+	UNIT_STATE_INVALID_HEADER            ValidationCode = 108
+	UNIT_STATE_INVALID_HEADER_NUMBER     ValidationCode = 109
+	UNIT_STATE_INVALID_HEADER_TXROOT     ValidationCode = 110
+	UNIT_STATE_INVALID_HEADER_TIME       ValidationCode = 111
+	UNIT_STATE_ORPHAN                    ValidationCode = 999
 )
 
 var validationCode_name = map[int32]string{
@@ -117,7 +117,7 @@ var validationCode_name = map[int32]string{
 	34:  "INVALID_DATAPAYLOAD",
 	35:  "DOUBLE_SPEND",
 	101: "AUTHOR_SIGNATURE_PASSED",
-	102: "EMPTY",
+	102: "UNIT_STATE_INVALID_MEDIATOR_SCHEDULE",
 	103: "INVALID_AUTHOR_SIGNATURE",
 	104: "INVALID_GROUP_SIGNATURE",
 	105: "HAS_INVALID_TRANSACTIONS",

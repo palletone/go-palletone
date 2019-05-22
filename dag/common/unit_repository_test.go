@@ -352,7 +352,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 
 	}
 	t.Log("data", tx)
-	assert.Equal(t, tx2, tx)
+	assert.Equal(t, tx2.Hash(), tx.Hash())
 
 }
 
