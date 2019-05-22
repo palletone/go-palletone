@@ -31,8 +31,9 @@ import (
 )
 
 func mediatorKey(address common.Address) []byte {
-	key := append(constants.CONTRACT_STATE_PREFIX, syscontract.DepositContractAddress.Bytes()...)
-	key = append(key, string(constants.MEDIATOR_INFO_PREFIX)+string(address.Bytes())...)
+	//key := append(constants.CONTRACT_STATE_PREFIX, syscontract.DepositContractAddress.Bytes()...)
+	//key = append(key, string(constants.MEDIATOR_INFO_PREFIX)+string(address.Bytes())...)
+	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
 
 	//log.Debugf("mediatorKey %v", string(key))
 
@@ -47,7 +48,7 @@ func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
 func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
 	log.Debugf("Store Mediator Info %v:", mi.AddStr)
 
-	err := StoreToJsonBytes(statedb.db, mediatorKey(add), mi)
+	err := StoreToRlpBytes(statedb.db, mediatorKey(add), mi)
 	if err != nil {
 		log.Debugf("Store mediator error:%v", err.Error())
 		return err
@@ -57,35 +58,36 @@ func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.Mediat
 }
 
 func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
-	data, err := statedb.db.Get(mediatorKey(address))
-	if err != nil {
-		log.Debugf("Retrieve mediator error: %v", err.Error())
-		return nil, err
-	}
-
-	mi := modules.NewMediatorInfo()
-	err = json.Unmarshal(data, mi)
-	if err == nil {
-		return mi, nil
-	}
-
-	data, _, err = splitValueAndVersion(data)
-	if err != nil {
-		log.Debugf("Retrieve mediator splitValueAndVersion error: %v", err.Error())
-		return nil, err
-	}
-
-	err = json.Unmarshal(data, mi)
-	if err != nil {
-		log.Debugf("Retrieve mediator Unmarshal error: %v", err.Error())
-		return nil, err
-	}
-
-	//err := RetrieveFromJsonBytes(db, mediatorKey(address), mi)
+	//data, err := statedb.db.Get(mediatorKey(address))
 	//if err != nil {
 	//	log.Debugf("Retrieve mediator error: %v", err.Error())
 	//	return nil, err
 	//}
+	//
+	//mi := modules.NewMediatorInfo()
+	//err = json.Unmarshal(data, mi)
+	//if err == nil {
+	//	return mi, nil
+	//}
+	//
+	//data, _, err = splitValueAndVersion(data)
+	//if err != nil {
+	//	log.Debugf("Retrieve mediator splitValueAndVersion error: %v", err.Error())
+	//	return nil, err
+	//}
+	//
+	//err = json.Unmarshal(data, mi)
+	//if err != nil {
+	//	log.Debugf("Retrieve mediator Unmarshal error: %v", err.Error())
+	//	return nil, err
+	//}
+
+	mi := modules.NewMediatorInfo()
+	err := RetrieveFromRlpBytes(statedb.db, mediatorKey(address), mi)
+	if err != nil {
+		log.Debugf("Retrieve mediator error: %v", err.Error())
+		return nil, err
+	}
 
 	return mi, nil
 }
@@ -162,7 +164,7 @@ func (statedb *StateDb) getCandidateMediatorList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
-		return nil, fmt.Errorf("mediator candidate list is nil.")
+		return nil, fmt.Errorf("mediator candidate list is nil")
 	}
 
 	candidateList := make(map[string]bool)
