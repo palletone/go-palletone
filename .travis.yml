@@ -128,8 +128,8 @@ addons:
 
 deploy:
     skip_cleanup: true
-    provider:
-    all_branches: true
+#    provider:
+#    all_branches: true
 
 notifications:
     email:
@@ -137,4 +137,3 @@ notifications:
             - travisreport@163.com
         on_success: always # default: change
         on_failure: always
-        
