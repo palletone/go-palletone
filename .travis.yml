@@ -58,7 +58,7 @@ script:
       python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
       fi
 
-after_script:
+after_success:
     - killall gptn
     - sleep 2
 
