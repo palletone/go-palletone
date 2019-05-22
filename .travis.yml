@@ -117,7 +117,7 @@ deploy:
     skip_cleanup: true
     provider:
     on:
-        branch: all
+        branch: certbdd
 
 notifications:
 #    email: elva1087penny@163.com
