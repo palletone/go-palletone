@@ -29,11 +29,13 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 func TestGetAddressFromScript(t *testing.T) {
@@ -647,4 +649,117 @@ func Test22MutiSign(t *testing.T) {
 
 	err = ScriptValidate(lockScript, nil, tx, 0, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
+}
+func TestSampleTx(t *testing.T) {
+	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
+	privKey, _ := crypto.ToECDSA(privKeyBytes)
+	pubKey := privKey.PublicKey
+	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+	pubKeyHash := crypto.Hash160(pubKeyBytes)
+	t.Logf("Public Key:%x", pubKeyBytes)
+	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	t.Logf("Addr:%s", addr.String())
+	lockScript := GenerateP2PKHLockScript(pubKeyHash)
+	t.Logf("UTXO lock script:%x", lockScript)
+
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	pay1 := &modules.PaymentPayload{}
+	utxoTxId := common.HexToHash("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
+	txIn := modules.NewTxIn(outPoint, []byte{})
+	pay1.AddTxIn(txIn)
+	asset0 := &modules.Asset{}
+	pay1.AddTxOut(modules.NewTxOut(1, lockScript, asset0))
+
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pay1))
+
+	lockScripts := map[modules.OutPoint][]byte{
+		*outPoint: lockScript[:],
+	}
+	getPubKeyFn := func(common.Address) ([]byte, error) {
+		return crypto.CompressPubkey(&privKey.PublicKey), nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		s, e := crypto.Sign(hash, privKey)
+		return s, e
+	}
+	var hashtype uint32
+	hashtype = 1
+	_, err := SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	txjson, _ := json.Marshal(tx)
+	txrlp, _ := rlp.EncodeToBytes(tx)
+	t.Logf("Tx len:%d, txjson:%s", len(txrlp), string(txjson))
+	unlockScript := tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
+	t.Logf("UnlockScript:%x", unlockScript)
+	s, _ := DisasmString(unlockScript)
+	t.Logf("UnlockScript string:%s", s)
+	err = ScriptValidate(lockScript, nil, tx, 0, 0)
+	if err != nil {
+		t.Logf("validate error:%s", err)
+	}
+
+}
+func generateSignedTx() (*modules.Transaction, []byte) {
+	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
+	privKey, _ := crypto.ToECDSA(privKeyBytes)
+	pubKey := privKey.PublicKey
+	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+	pubKeyHash := crypto.Hash160(pubKeyBytes)
+
+	lockScript := GenerateP2PKHLockScript(pubKeyHash)
+
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	pay1 := &modules.PaymentPayload{}
+	utxoTxId := common.HexToHash("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
+	txIn := modules.NewTxIn(outPoint, []byte{})
+	pay1.AddTxIn(txIn)
+	asset0 := &modules.Asset{}
+	pay1.AddTxOut(modules.NewTxOut(1, lockScript, asset0))
+
+	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pay1))
+
+	lockScripts := map[modules.OutPoint][]byte{
+		*outPoint: lockScript[:],
+	}
+	getPubKeyFn := func(common.Address) ([]byte, error) {
+		return crypto.CompressPubkey(&privKey.PublicKey), nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		s, e := crypto.Sign(hash, privKey)
+		return s, e
+	}
+	var hashtype uint32
+	hashtype = 1
+	SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	return tx, lockScript
+}
+
+func BenchmarkScriptValidate(b *testing.B) {
+	tx, lockScript := generateSignedTx()
+	for i := 0; i < b.N; i++ {
+
+		err := ScriptValidate(lockScript, nil, tx, 0, 0)
+		if err != nil {
+			b.Logf("validate error:%s", err)
+		}
+	}
+}
+func Test2WScriptValidate(t *testing.T) {
+	tx, lockScript := generateSignedTx()
+	start := time.Now()
+	for i := 0; i < 20000; i++ {
+		err := ScriptValidate(lockScript, nil, tx, 0, 0)
+		if err != nil {
+			t.Logf("validate error:%s", err)
+		}
+	}
+	t.Logf("Cost time:%v", time.Since(start))
 }
