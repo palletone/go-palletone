@@ -246,7 +246,7 @@ func (a *account) Sign(address common.Address, digest []byte) ([]byte, error) {
 	return a.signFn(address, digest)
 }
 func (a *account) Verify(pubKey, signature, digest []byte) (bool, error) {
-	log.Debugf("Pubkey:%x,Signature:%x,hash:%x", pubKey, signature, digest)
+	//log.Debugf("Pubkey:%x,Signature:%x,hash:%x", pubKey, signature, digest)
 	return crypto.VerifySignature(pubKey, digest, signature), nil
 }
 func (a *account) GetPubKey(address common.Address) ([]byte, error) {
