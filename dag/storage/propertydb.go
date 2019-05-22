@@ -87,18 +87,18 @@ func NewPropertyDb(db ptndb.Database) *PropertyDb {
 
 func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
 	log.DebugDynamic(func() string {
-		return fmt.Sprintf("Save mediator schedule:%s to db.", ms.String())
+		return fmt.Sprintf("DB[%s] Save mediator schedule:%s to db.", reflect.TypeOf(propdb.db).String(), ms.String())
 	})
 	return StoreMediatorSchl(propdb.db, ms)
 }
 
 func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
-	log.Debugf("Save dynamic global property to db.")
+	log.Debugf("DB[%s] Save dynamic global property to db.", reflect.TypeOf(propdb.db).String())
 	return StoreDynGlobalProp(propdb.db, dgp)
 }
 
 func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
-	log.Debug("Save global property to db.")
+	log.Debugf("DB[%s] Save global property to db.", reflect.TypeOf(propdb.db).String())
 	return StoreGlobalProp(propdb.db, gp)
 }
 

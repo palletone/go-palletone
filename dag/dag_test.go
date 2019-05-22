@@ -12,13 +12,11 @@ import (
 	dagcomm "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateUnit(t *testing.T) {
-	//path := "E:\\codes\\go\\src\\github.com\\palletone\\go-palletone\\cmd\\gptn\\gptn\\leveldb"
-	//
-	//dagconfig.DbPath = path
-	//db, err := storage.Init(path, 16, 16)
+
 	db, err := ptndb.NewMemDatabase()
 	if err != nil {
 		log.Error("Init db error", "error", err.Error())
@@ -145,4 +143,34 @@ func newHeader() *modules.Header {
 	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
 	h.Authors = au
 	return h
+}
+func TestDag_InsertHeaderDag(t *testing.T) {
+	dag, err := setupDag()
+	assert.NotNil(t, dag)
+	assert.Nil(t, err)
+	headers := []*modules.Header{newHeader()}
+
+	dag.InsertHeaderDag(headers)
+}
+func setupDag() (*Dag, error) {
+	db, err := ptndb.NewMemDatabase()
+	if err != nil {
+		log.Error("Init db error", "error", err.Error())
+		return nil, err
+	}
+	unit, _ := createUnit()
+	// save unit
+	initDag, err := NewDag4GenesisInit(db)
+	if err != nil {
+		log.Error("New dag error", "error", err.Error())
+		return nil, err
+	}
+
+	//txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
+	if err := initDag.SaveUnit(unit, nil, true); err != nil {
+		log.Error("Save unit error", "error", err.Error())
+		return nil, err
+	}
+	test_dag, err := NewDagForTest(db, nil)
+	return test_dag, err
 }

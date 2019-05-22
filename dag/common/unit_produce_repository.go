@@ -211,7 +211,7 @@ func (rep *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) 
 
 			med := rep.GetMediator(mediatorMissed)
 			med.TotalMissed++
-			rep.SaveMediator(med, false)
+			rep.stateRep.StoreMediator(med)
 		}
 	}
 
@@ -233,7 +233,7 @@ func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missed
 	dgp.RecentSlotsFilled = (dgp.RecentSlotsFilled << (missedUnits + 1)) + 1
 	dgp.CurrentASlot += missedUnits + 1
 
-	rep.SaveDynGlobalProp(dgp, false)
+	rep.propRep.StoreDynGlobalProp(dgp)
 
 	return
 }
@@ -245,10 +245,10 @@ func (rep *UnitProduceRepository) updateMediatorSchedule() {
 
 	if rep.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
 		log.Debugf("shuffle the scheduling order of mediators")
-		rep.SaveMediatorSchl(ms, false)
+		rep.propRep.StoreMediatorSchl(ms)
 
 		dgp.IsShuffledSchedule = true
-		rep.SaveDynGlobalProp(dgp, false)
+		rep.propRep.StoreDynGlobalProp(dgp)
 	}
 
 	return
@@ -261,7 +261,7 @@ func (rep *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
 
 	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
 	med.LastConfirmedUnitNum = lastConfirmedUnitNum
-	rep.SaveMediator(med, false)
+	rep.stateRep.StoreMediator(med)
 
 	log.Debugf("the LastConfirmedUnitNum of mediator(%v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
 }
@@ -281,32 +281,6 @@ func (rep *UnitProduceRepository) GetMediatorSchl() *modules.MediatorSchedule {
 	return ms
 }
 
-func (rep *UnitProduceRepository) SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	rep.propRep.StoreGlobalProp(gp)
-	return
-}
-
-func (rep *UnitProduceRepository) SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	rep.propRep.StoreDynGlobalProp(dgp)
-	return
-}
-
-func (rep *UnitProduceRepository) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	rep.propRep.StoreMediatorSchl(ms)
-	return
-}
 func (rep *UnitProduceRepository) GetMediator(add common.Address) *core.Mediator {
 	med, err := rep.stateRep.RetrieveMediator(add)
 	if err != nil {
@@ -314,15 +288,6 @@ func (rep *UnitProduceRepository) GetMediator(add common.Address) *core.Mediator
 		return nil
 	}
 	return med
-}
-
-func (rep *UnitProduceRepository) SaveMediator(med *core.Mediator, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	rep.stateRep.StoreMediator(med)
-	return
 }
 
 func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit) {
@@ -424,7 +389,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	for _, voteTally := range dag.mediatorVoteTally {
 		med := dag.GetMediator(voteTally.candidate)
 		med.TotalVotes = voteTally.votedCount
-		dag.SaveMediator(med, false)
+		dag.stateRep.StoreMediator(med)
 	}
 
 	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
@@ -434,7 +399,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 		voteTally := dag.mediatorVoteTally[index]
 		gp.ActiveMediators[voteTally.candidate] = true
 	}
-	dag.SaveGlobalProp(gp, false)
+	dag.propRep.StoreGlobalProp(gp)
 
 	return isActiveMediatorsChanged(gp)
 }
@@ -477,7 +442,7 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 
 	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
 	dgp.NextMaintenanceTime = nextMaintenanceTime
-	dag.SaveDynGlobalProp(dgp, false)
+	dag.propRep.StoreDynGlobalProp(dgp)
 
 	time := time.Unix(int64(nextMaintenanceTime), 0)
 	log.Debugf("nextMaintenanceTime: %v", time.Format("2006-01-02 15:04:05"))
@@ -490,7 +455,7 @@ func (dag *UnitProduceRepository) updateMaintenanceFlag(newMaintenanceFlag bool)
 
 	dgp := dag.GetDynGlobalProp()
 	dgp.MaintenanceFlag = newMaintenanceFlag
-	dag.SaveDynGlobalProp(dgp, false)
+	dag.propRep.StoreDynGlobalProp(dgp)
 
 	return
 }

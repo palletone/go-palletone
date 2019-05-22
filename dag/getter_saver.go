@@ -49,33 +49,6 @@ func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
 	return ms
 }
 
-func (d *Dag) SaveGlobalProp(gp *modules.GlobalProperty, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	d.stablePropRep.StoreGlobalProp(gp)
-	return
-}
-
-func (d *Dag) SaveDynGlobalProp(dgp *modules.DynamicGlobalProperty, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	d.stablePropRep.StoreDynGlobalProp(dgp)
-	return
-}
-
-func (d *Dag) SaveMediatorSchl(ms *modules.MediatorSchedule, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	d.stablePropRep.StoreMediatorSchl(ms)
-	return
-}
-
 // author Albert·Gou
 func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 	nodes := make(map[string]*discover.Node)
