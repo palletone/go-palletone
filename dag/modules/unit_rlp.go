@@ -29,6 +29,7 @@ type headerTemp struct {
 	GroupSign   []byte       `json:"groupSign"`   // 群签名, 用于加快单元确认速度
 	GroupPubKey []byte       `json:"groupPubKey"` // 群公钥, 用于验证群签名
 	TxRoot      common.Hash  `json:"root"`
+	TxsIllegal  []uint16     `json:"txs_illegal"` //Unit中非法交易索引
 	Number      *ChainIndex  `json:"index"`
 	Extra       []byte       `json:"extra"`
 	Time        uint32       `json:"creation_time"` // unit create time
@@ -51,6 +52,7 @@ func (input *Header) DecodeRLP(s *rlp.Stream) error {
 	input.GroupSign = temp.GroupSign
 	input.GroupPubKey = temp.GroupPubKey
 	input.TxRoot = temp.TxRoot
+	input.TxsIllegal = temp.TxsIllegal
 	input.Number = temp.Number
 	input.Extra = temp.Extra
 	input.Time = int64(temp.Time)
@@ -64,6 +66,7 @@ func (input *Header) EncodeRLP(w io.Writer) error {
 	temp.GroupSign = input.GroupSign
 	temp.GroupPubKey = input.GroupPubKey
 	temp.TxRoot = input.TxRoot
+	temp.TxsIllegal = input.TxsIllegal
 	temp.Number = input.Number
 	temp.Extra = input.Extra
 	temp.Time = uint32(input.Time)

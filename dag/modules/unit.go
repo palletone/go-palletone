@@ -60,10 +60,11 @@ const (
 
 type Header struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
-	Authors     Authentifier  `json:"mediator"`    // the unit creation authors
-	GroupSign   []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
-	GroupPubKey []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
+	Authors     Authentifier  `json:"mediator"`     // the unit creation authors
+	GroupSign   []byte        `json:"group_sign"`   // 群签名, 用于加快单元确认速度
+	GroupPubKey []byte        `json:"group_pubKey"` // 群公钥, 用于验证群签名
 	TxRoot      common.Hash   `json:"root"`
+	TxsIllegal  []uint16      `json:"txs_illegal"` //Unit中非法交易索引
 	Number      *ChainIndex   `json:"index"`
 	Extra       []byte        `json:"extra"`
 	Time        int64         `json:"creation_time"` // unit create time
@@ -186,6 +187,13 @@ func CopyHeader(h *Header) *Header {
 
 	if len(h.TxRoot) > 0 {
 		cpy.TxRoot.Set(h.TxRoot)
+	}
+
+	if len(h.TxsIllegal) > 0 {
+		cpy.TxsIllegal = make([]uint16, 0)
+		for _, txsI := range h.TxsIllegal {
+			cpy.TxsIllegal = append(cpy.TxsIllegal, txsI)
+		}
 	}
 
 	return &cpy

@@ -445,20 +445,19 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 		txs = append(txs, coinbase)
 	}
 
+	illegalTxs := make([]uint16, 0)
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
 	if len(poolTxs) > 0 {
-		for _, tx := range poolTxs {
+		for idx, tx := range poolTxs {
 			t := txspool.PooltxToTx(tx)
 			reqId := t.RequestHash()
+
 			//标记交易有效性
-			if err := markTxIllegal(rep.statedb, t); err != nil {
-				log.Errorf("[%s]CreateUnit, markTxIllegal err:", reqId.String()[0:8], err)
-				//continue
-			}
+			markTxIllegal(rep.statedb, t)
 			if t.Illegal {
+				illegalTxs = append(illegalTxs, uint16(idx))
 				log.Debugf("[%s]CreateUnit, contract is illegal, txHash[%s]", reqId.String()[0:8], t.Hash().String())
-				//continue
 			}
 			txs = append(txs, t)
 		}
@@ -473,6 +472,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	root := core.DeriveSha(txs)
 	log.Infof("core.DeriveSha cost time %s", time.Since(begin))
 	// step9. generate genesis unit header
+	header.TxsIllegal = illegalTxs
 	header.TxRoot = root
 	unit := &modules.Unit{}
 	unit.UnitHeader = &header
@@ -527,15 +527,15 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 	return true
 }
 
-func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) error {
+func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 	if tx == nil {
-		return errors.New("MarkTxIllegal, param tx is nil")
+		return
 	}
 	if !tx.IsContractTx() {
-		return nil
+		return
 	}
 	if tx.IsSystemContract() {
-		return nil
+		return
 	}
 	var readSet []modules.ContractReadSet
 	var contractId []byte
@@ -560,7 +560,7 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) error {
 	valid = checkReadSetValid(dag, contractId, readSet)
 	tx.Illegal = !valid
 
-	return nil
+	return
 }
 
 func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
