@@ -67,6 +67,7 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
+	dag.stablePropRep.UpdateMediatorSchedule(ms, gp, dgp)
 	if err := dag.stablePropRep.StoreMediatorSchl(ms); err != nil {
 		return err
 	}

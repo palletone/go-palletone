@@ -168,29 +168,16 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
-	mediators := make([]common.Address, 0, gp.ActiveMediatorsCount())
+	var mediators common.Addresses
+	mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
 
 	for medAdd, _ := range gp.ActiveMediators {
 		mediators = append(mediators, medAdd)
 	}
 
-	sortAddress(mediators)
+	sort.Sort(mediators)
 
 	return mediators
-}
-
-func sortAddress(adds []common.Address) {
-	aSize := len(adds)
-	addStrs := make([]string, aSize, aSize)
-	for i, add := range adds {
-		addStrs[i] = add.Str()
-	}
-
-	sort.Strings(addStrs)
-
-	for i, addStr := range addStrs {
-		adds[i], _ = common.StringToAddress(addStr)
-	}
 }
 
 func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {

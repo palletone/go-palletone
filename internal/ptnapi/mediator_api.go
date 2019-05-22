@@ -116,9 +116,9 @@ func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
 
 func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
-	ms := a.Dag().ActiveMediators()
+	ms := a.Dag().GetActiveMediators()
 
-	for medAdd, _ := range ms {
+	for _, medAdd := range ms {
 		addStrs = append(addStrs, medAdd.Str())
 	}
 
