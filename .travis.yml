@@ -129,7 +129,7 @@ deploy:
     skip_cleanup: true
     provider:
     on:
-        branch: certbdd
+        branch: all
 
 notifications:
     email:
