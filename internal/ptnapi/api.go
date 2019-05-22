@@ -760,10 +760,14 @@ type PublicTransactionPoolAPI struct {
 type PublicReturnInfo struct {
 	Item string      `json:"item"`
 	Info interface{} `json:"info"`
+	Hex  string      `json:"hex"`
 }
 
 func NewPublicReturnInfo(name string, info interface{}) *PublicReturnInfo {
-	return &PublicReturnInfo{name, info}
+	return &PublicReturnInfo{name, info, ""}
+}
+func NewPublicReturnInfoWithHex(name string, info interface{}, rlpData []byte) *PublicReturnInfo {
+	return &PublicReturnInfo{name, info, hex.EncodeToString(rlpData)}
 }
 
 // NewPublicTransactionPoolAPI creates a new RPC service with methods specific for the transaction pool.

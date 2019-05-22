@@ -23,11 +23,11 @@ package ptnapi
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"time"
 	"unsafe"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -56,7 +56,6 @@ func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (st
 		return "all_items:null", nil
 	}
 
-	fmt.Println("...")
 	info := NewPublicReturnInfo("all_items", result)
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
@@ -72,7 +71,8 @@ func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) st
 		log.Info("PublicBlockChainAPI", "GetHeaderByHash err:", err, "hash", hash.String())
 	}
 	headerJson := ptnjson.ConvertUnitHeader2Json(header)
-	info := NewPublicReturnInfo("header", headerJson)
+	headerRlp, _ := rlp.EncodeToBytes(header)
+	info := NewPublicReturnInfoWithHex("header", headerJson, headerRlp)
 	content, err := json.Marshal(info)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByHash Marshal err:", err, "hash", hash.String())
@@ -90,11 +90,12 @@ func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) 
 	number.Index = uint64(index)
 	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	header, err := s.b.GetHeaderByNumber(number)
+	headerRlp, _ := rlp.EncodeToBytes(header)
 	headerJson := ptnjson.ConvertUnitHeader2Json(header)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber err:", err, "number", number.String())
 	}
-	info := NewPublicReturnInfo("header", headerJson)
+	info := NewPublicReturnInfoWithHex("header", headerJson, headerRlp)
 	content, err := json.Marshal(info)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber Marshal err:", err, "number", number.String())
