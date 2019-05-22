@@ -23,10 +23,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
@@ -160,5 +160,6 @@ func TestRLPTxDecode(t *testing.T) {
 		}
 
 	}
-	assert.Equal(t, txmsg3, tx)
+	assert.Equal(t, txmsg3.Hash(), tx.Hash())
+
 }

@@ -21,7 +21,6 @@
 package common
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -127,13 +126,13 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
 	}(time.Now())
 
-	// todo 待删除 处理临时prop没有回滚的问题
-	skip := false
-	// 验证 unit 的 mediator 调度
-	if err := rep.validateMediatorSchedule(nextUnit); err != nil {
-		//return err
-		skip = true
-	}
+	//// todo 待删除 处理临时prop没有回滚的问题
+	//skip := false
+	//// 验证 unit 的 mediator 调度
+	//if err := rep.validateMediatorSchedule(nextUnit); err != nil {
+	//	//return err
+	//	skip = true
+	//}
 
 	// todo 运用Unit中的交易
 
@@ -160,38 +159,37 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	//// 由于前面的操作需要调用 GetSlotTime() / GetSlotAtTime() 这两个方法，所以在最后才更新链维护周期标志
 	//rep.updateMaintenanceFlag(maintenanceNeeded)
 
-	if !skip {
-		// 洗牌
-		rep.updateMediatorSchedule()
-	}
+	// 洗牌
+	rep.updateMediatorSchedule()
 
 	return nil
 }
-func (rep *UnitProduceRepository) validateMediatorSchedule(nextUnit *modules.Unit) error {
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	ts, _ := rep.propRep.GetNewestUnitTimestamp(gasToken)
-	if ts >= nextUnit.Timestamp() {
-		errStr := "invalidated unit's timestamp"
-		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts, nextUnit.Hash().String(), nextUnit.Timestamp())
-		return fmt.Errorf(errStr)
-	}
 
-	slotNum := rep.propRep.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
-	if slotNum <= 0 {
-		errStr := "invalidated unit's slot"
-		log.Debugf(errStr)
-		return fmt.Errorf(errStr)
-	}
-
-	scheduledMediator := rep.propRep.GetScheduledMediator(slotNum)
-	if !scheduledMediator.Equal(nextUnit.Author()) {
-		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", nextUnit.Author().Str())
-		log.Debugf(errStr)
-		return fmt.Errorf(errStr)
-	}
-
-	return nil
-}
+//func (rep *UnitProduceRepository) validateMediatorSchedule(nextUnit *modules.Unit) error {
+//	gasToken := dagconfig.DagConfig.GetGasToken()
+//	ts, _ := rep.propRep.GetNewestUnitTimestamp(gasToken)
+//	if ts >= nextUnit.Timestamp() {
+//		errStr := "invalidated unit's timestamp"
+//		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts, nextUnit.Hash().String(), nextUnit.Timestamp())
+//		return fmt.Errorf(errStr)
+//	}
+//
+//	slotNum := rep.propRep.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
+//	if slotNum <= 0 {
+//		errStr := "invalidated unit's slot"
+//		log.Debugf(errStr)
+//		return fmt.Errorf(errStr)
+//	}
+//
+//	scheduledMediator := rep.propRep.GetScheduledMediator(slotNum)
+//	if !scheduledMediator.Equal(nextUnit.Author()) {
+//		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", nextUnit.Author().Str())
+//		log.Debugf(errStr)
+//		return fmt.Errorf(errStr)
+//	}
+//
+//	return nil
+//}
 
 // 根据最新 unit 计算出生产该 unit 的 mediator 缺失的 unit 个数，
 // 并更新到 mediator的相应字段中，返回数量
