@@ -22,7 +22,7 @@ env:
         - IS_RUN_DEPOSIT=false
         - IS_RUN_CREATE_TRANS=false
         - IS_RUN_CCINVOKE=false
-        - IS_RUN_DIGITAL=true
+        - IS_RUN_DIGITAL=false
         - IS_RUN_VOTE=false
 
 script:
