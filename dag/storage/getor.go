@@ -62,6 +62,8 @@ func RetrieveFromJsonBytes(db ptndb.Database, key []byte, v interface{}) error {
 		return err
 	}
 
+	//log.Debugf("RetrieveFromJsonBytes, key: %v, value: %v", string(key), string(data))
+
 	err = json.Unmarshal(data, v)
 	if err != nil {
 		log.Debugf("json Unmarshal err: %v", err.Error())

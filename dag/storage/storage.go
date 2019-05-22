@@ -47,6 +47,8 @@ func StoreToJsonBytes(db ptndb.Putter, key []byte, value interface{}) error {
 		return err
 	}
 
+	//log.Debugf("StoreToJsonBytes, key: %v, value: %v", string(key), string(val))
+
 	err = db.Put(key, val)
 	if err != nil {
 		log.Debugf("DB put err: %v", err.Error())
