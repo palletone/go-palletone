@@ -7,7 +7,7 @@ go:
     - 1.10.8
 env:
     global:
-        - ALL_LOG_PATH="/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log"
+        - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
         - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
         - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
         - CREATE_TRANS_DIR=createTrans
