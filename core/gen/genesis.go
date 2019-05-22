@@ -237,6 +237,8 @@ func DefaultGenesisBlock() *core.Genesis {
 		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
 		TempUccCpuShares:          core.DefaultTempUccCpuShares,
 		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+		ContractSignatureNum:      core.DefaultContractSignatureNum,
+		ContractElectionNum:       core.DefaultContractElectionNum,
 		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
 	}
 
@@ -284,6 +286,8 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
 		TempUccCpuShares:          core.DefaultTempUccCpuShares,
 		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+		ContractSignatureNum:      core.DefaultContractSignatureNum,
+		ContractElectionNum:       core.DefaultContractElectionNum,
 		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
 	}
 
