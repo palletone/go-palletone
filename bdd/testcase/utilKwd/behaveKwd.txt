@@ -49,6 +49,27 @@ normalGetBalance
     ${ptn}    ${result}    Then I_get_a_getBalance_result    ${resp}
     [Return]    ${ptn}    ${result}
 
+normalCcqueryById
+    [Arguments]    ${contractId}    ${methodType}    ${preTokenId}
+    ${ret}    Given I_set_Ccquery_params_to_Normal    ${contractId}    ${methodType}    ${preTokenId}
+    ${resp}    When I_post_a_Ccquery_request    ${ret}
+    ${resultCqy}    Then I_get_a_Ccquery_result    ${resp}
+    [Return]    ${resultCqy}
+
+normalVoteTransfer
+    [Arguments]    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
+    ${ret}    Given I_set_CcinvokePass_params_to_Normal    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}
+    ${resp}    When I_post_a_CcinvokePass_request    ${ret}
+    ${resultCrt}    Then I_get_a_CcinvokePass_result    ${resp}    ${result_code}
+    [Return]    ${resultCrt}
+
+InvalidCcqueryById
+    [Arguments]    ${contractId}    ${methodType}    ${preTokenId}    ${error_code}    ${error_message}
+    ${ret}    Given I_set_Ccquery_params_to_Normal    ${contractId}    ${methodType}    ${preTokenId}
+    ${resp}    When I_post_a_Ccquery_request    ${ret}
+    ${resultCqy}    Then I_get_a_Ccquery_result_error    ${error_code}    ${error_message}    ${resp}
+    [Return]    ${resultCqy}
+
 InvalidCrtTrans
     [Arguments]    ${senderAdd}    ${recieverAdd}    ${Amount}    ${poundage}    ${error_code}    ${error_message}
     ${result}    Given I set crtTrans params    ${senderAdd}    ${recieverAdd}    ${Amount}    ${poundage}
@@ -98,8 +119,10 @@ InvalidCcinvoke
     [Return]    ${resultCrt}
 
 InvalidTransferToken
-    [Arguments]    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}    ${error_code}    ${error_message}    ${senderAdd}    ${recieverAdd}
-    ${ret}    Given I_set_TransferToken_params    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}    ${senderAdd}    ${recieverAdd}
+    [Arguments]    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}
+    ...    ${error_code}    ${error_message}    ${senderAdd}    ${recieverAdd}
+    ${ret}    Given I_set_TransferToken_params    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}
+    ...    ${locktime}    ${senderAdd}    ${recieverAdd}
     ${resp}    When I_post_TransferToken_request    ${ret}
     ${resultCrt}    Then I_get_the_TransferToken_result    ${resp}    ${error_code}    ${error_message}
     [Return]    ${resultCrt}

@@ -44,9 +44,9 @@ import (
 type IMemDag interface {
 	SetStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool)
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error
-	//Init(stablehash common.Hash, stableHeight uint64)
-	GetLastMainchainUnit() *modules.Unit
+	SetStableThreshold(threshold int)
+	GetLastMainChainUnit() *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit
-	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository)
+	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository)
 	SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error
 }

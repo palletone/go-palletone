@@ -652,7 +652,7 @@ func TestContractRlpEncode(t *testing.T) {
 	log.Debug("TestContractRlpEncode", "addh", addh)
 }
 
-func TestContractTxIllegal(t *testing.T) {
+func TestContractTxsIllegal(t *testing.T) {
 	//make tx
 	readSet := []modules.ContractReadSet{}
 	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{

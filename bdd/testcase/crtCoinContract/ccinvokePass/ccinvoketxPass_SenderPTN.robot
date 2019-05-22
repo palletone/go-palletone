@@ -1,4 +1,5 @@
 *** Settings ***
+Default Tags      normal
 Library           RequestsLibrary
 Library           Collections
 Library           /opt/python/2.7.15/lib/python2.7/decimal.py
@@ -28,5 +29,6 @@ Ccinvoke SenderPTN
     ${GAIN}    countRecieverPTN    2001
     ${log2}    getGeneAdd    ${host}
     ${PTN2}    ${result}    normalGetBalance    ${log2}
+    sleep    4
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}

@@ -140,9 +140,7 @@ I_get_a_getBalance_result
     ${strResult}    Evaluate    str(${jsonRes['result']})
     ${PTN}    Run Keyword If    ${strResult}=={}    Set Variable    ${0}
     ...    ELSE    Set Variable    ${jsonRes['result']['PTN']}
-    log    ${PTN}
     [Return]    ${PTN}    ${jsonRes}
-
 
 I_set_TransferToken_params_to_Normal
     [Arguments]    ${preTokenId}
@@ -153,7 +151,7 @@ I_set_TransferToken_params_to_Normal
     ${ccList}    Create List    ${tokenId}    ${geneAdd}    ${recieverAdd}    2    1
     ...    description    1    ${6000000}
     [Return]    ${ccList}
-	
+
 I_post_a_TransferToken_request
     [Arguments]    @{transList}
     ${resp}    setPostRequest    ${host}    wallet_transferToken    @{transList}
@@ -165,4 +163,48 @@ I_get_a_TransferToken_result
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"
     ${ret}    Should Match Regexp    ${resp.content}['error']['code']    ${result_code}    msg="result:does't match Result expression"
+    ${ret}    Given I_set_Ccquery_params_to_Normal
+    ${resp}    When I_post_a_Ccquery_request    ${ret}
+    ${resultCqy}    Then I_get_a_Ccquery_result    ${resp}
+    [Return]    ${ret}
+
+I_set_Ccquery_params_to_Normal
+    [Arguments]    ${contractId}    ${methodType}    ${PreTokenId}
+    ${methodType}    Create List    ${methodType}    ${PreTokenId}
+    ${transList}    Create List    ${contractId}    ${methodType}
+    [Return]    ${transList}
+
+I_post_a_Ccquery_request
+    [Arguments]    ${transList}
+    ${resp}    setPostRequest    ${host}    contract_ccquery    ${transList}
+    [Return]    ${resp}
+
+I_get_a_Ccquery_result
+    [Arguments]    ${resp}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    Should Match Regexp    ${resp.content}['result']    QA001    msg="Symbol:does't match"
+    Should Match Regexp    ${resp.content}['result']    25000    msg="TotalSupply:does't match"
+    Should Match Regexp    ${resp.content}['result']    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    msg="SupplyAddr:does't match"
+
+I_get_a_Ccquery_result_error
+    [Arguments]    ${error_code}    ${error_message}    ${resp}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    Should Contain    ${resp.content}['error']['code']    ${error_code}    msg="code:failed"
+    Should Contain    ${resp.content}['error']['message']    ${error_message}    msg="message:failed"
+
+Transfer token of vote contract
+    [Arguments]    ${geneAdd}
+    ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
+    ...    ${commonVoteInfo}
+    ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
+    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
     [Return]    ${ret}

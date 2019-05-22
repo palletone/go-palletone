@@ -87,7 +87,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if s.rwsetBuilder != nil {
 		s.rwsetBuilder.AddToReadSet(ns, key, ver)
 	}
-	log.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]", ns, key, val)
+	log.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]---ver[%v]", ns, key, val, ver)
 
 	//TODO change.
 	//return testValue, nil
