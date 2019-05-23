@@ -74,10 +74,10 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 
 		//get address voted mediators
 		addB := bytes.TrimPrefix(iter.Key(), constants.ACCOUNT_PTN_BALANCE_PREFIX)
-		add := common.BytesToAddress(addB)
+		add := common.NewAddress(addB, common.PublicKeyHash)
 		acc.VotedMediators = statedb.GetAccountVotedMediators(add)
 
-		log.Debugf("Found account[%v] balance:%v,vote mediator:%v", add.String(), balance, acc.VotedMediators)
+		log.Debugf("Found account[%v] balance:%v,voted mediators:%v", add.String(), balance, acc.VotedMediators)
 		result[add] = acc
 	}
 
@@ -89,7 +89,7 @@ func (statedb *StateDb) GetAccountVotedMediators(addr common.Address) map[string
 
 	data, err := statedb.GetAccountState(addr, constants.VOTED_MEDIATORS)
 	if err != nil {
-		log.Debugf(err.Error())
+		//log.Debugf(err.Error())
 		return votedMediators
 	}
 
