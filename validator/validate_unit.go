@@ -104,7 +104,7 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 	}
 	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
 	if slotNum <= 0 {
-		log.Warn("invalidated unit's slot")
+		log.Info("invalidated unit's slot")
 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
 	}
 

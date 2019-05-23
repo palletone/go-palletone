@@ -56,7 +56,12 @@ const (
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
 // not compatible (low protocol version restrictions and high requirements).
-var errIncompatibleConfig = errors.New("incompatible configuration")
+var (
+	errIncompatibleConfig = errors.New("incompatible configuration")
+	errCancelHeaderFetch  = errors.New("header cors canceled (requested)")
+	errBadPeer            = errors.New("action from bad peer ignored")
+	errTimeout            = errors.New("timeout")
+)
 
 func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
@@ -92,6 +97,10 @@ type ProtocolManager struct {
 	mainchain *modules.MainChain
 	mclock    sync.RWMutex
 	corsSync  uint32
+
+	rttEstimate   uint64
+	rttConfidence uint64
+	headerCh      chan dataPack
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -113,6 +122,10 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 		noMorePeers: make(chan struct{}),
 		quitSync:    quitSync,
 		corsSync:    0,
+
+		rttEstimate:   uint64(rttMaxEstimate),
+		rttConfidence: uint64(1000000),
+		headerCh:      make(chan dataPack, 1),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -236,11 +249,11 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 			for {
 				select {
 				case <-pm.newPeerCh:
-					if pm.mainchain != nil {
-						if pm.peers.Len() >= pm.mainchainpeers()/2 {
-							go pm.Sync()
-						}
-					}
+					//if pm.mainchain != nil {
+					//if pm.peers.Len() >= pm.mainchainpeers()/2 {
+					//	go pm.Sync()
+					//}
+					//}
 
 				case <-forceSync:
 					// Force a sync even if not enough peers are present
@@ -420,6 +433,35 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				pm.fetcher.Enqueue(p, header)
 			}
 		}
+	case GetCurrentHeaderMsg:
+		var number modules.ChainIndex
+		if err := msg.Decode(&number); err != nil {
+			log.Info("msg.Decode", "err:", err)
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		header := pm.dag.CurrentHeader(number.AssetID)
+		log.Trace("GetCurrentHeaderMsg message content", "number", number.AssetID, "header", header)
+		var headers []*modules.Header
+		headers = append(headers, header)
+		return p.SendCurrentHeader(headers)
+	case CurrentHeaderMsg:
+		var headers []*modules.Header
+		if err := msg.Decode(&headers); err != nil {
+			log.Info("msg.Decode", "err:", err)
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		log.Trace("CurrentHeaderMsg message content", "len(headers)", len(headers))
+		if len(headers) != 1 {
+			log.Info("CurrentHeaderMsg len err", "len(headers)", len(headers))
+			return errResp(ErrDecode, "msg %v: %v", msg, "len is err")
+		}
+		if headers[0].Number.AssetID.String() != pm.assetId.String() {
+			log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].Number.AssetID.String(), "local", pm.assetId.String())
+			return errBadPeer
+		}
+		pm.headerCh <- &headerPack{p.id, headers}
 
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
