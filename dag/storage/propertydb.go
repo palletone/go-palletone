@@ -69,7 +69,7 @@ func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error 
 	log.DebugDynamic(func() string {
 		return fmt.Sprintf("DB[%s] Save mediator schedule:%s to db.", reflect.TypeOf(propdb.db).String(), ms.String())
 	})
-	err := StoreBytes(propdb.db, constants.MEDIATOR_SCHEME_PREFIX, ms)
+	err := StoreBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
 	if err != nil {
 		log.Errorf("Store mediator schedule error: %v", err.Error())
 	}
@@ -79,7 +79,7 @@ func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error 
 
 func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
 	log.Debugf("DB[%s] Save dynamic global property to db.", reflect.TypeOf(propdb.db).String())
-	err := StoreBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_PREFIX, dgp)
+	err := StoreBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
 	if err != nil {
 		log.Errorf("Store dynamic global properties error: %v", err.Error())
 	}
@@ -89,7 +89,7 @@ func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty)
 
 func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 	log.Debugf("DB[%s] Save global property to db.", reflect.TypeOf(propdb.db).String())
-	err := StoreBytes(propdb.db, constants.GLOBALPROPERTY_PREFIX, gp)
+	err := StoreBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Store global properties error: %v", err.Error())
 	}
@@ -100,7 +100,7 @@ func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 
 	gp := &modules.GlobalProperty{}
-	err := retrieve(propdb.db, constants.GLOBALPROPERTY_PREFIX, gp)
+	err := retrieve(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Retrieve global properties error: %v", err.Error())
 	}
@@ -110,7 +110,7 @@ func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) 
 func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	dgp := modules.NewDynGlobalProp()
 
-	err := retrieve(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_PREFIX, dgp)
+	err := retrieve(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
 	if err != nil {
 		log.Errorf("Retrieve dynamic global properties error: %v", err.Error())
 	}
@@ -120,7 +120,7 @@ func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalPropert
 
 func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	ms := new(modules.MediatorSchedule)
-	err := retrieve(propdb.db, constants.MEDIATOR_SCHEME_PREFIX, ms)
+	err := retrieve(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
 	if err != nil {
 		log.Errorf("Retrieve mediator schedule error: %v", err.Error())
 	}
