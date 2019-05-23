@@ -51,10 +51,6 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 
 		var btcAdaptor adaptorbtc.AdaptorBTC
 		btcAdaptor.NetID = cfg.Ada.Btc.NetID
-		btcAdaptor.Host = cfg.Ada.Btc.Host
-		btcAdaptor.RPCUser = cfg.Ada.Btc.RPCUser
-		btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
-		btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
 		return btcAdaptor.SignTransaction(&signTransactionParams)
 	case "SendTransactionHttp":
 		var sendTransactionParams adaptor.SendTransactionHttpParams
@@ -158,6 +154,16 @@ func processTransactionMethodBTC(chaincodeID string, outChainTX *pb.OutChainTran
 		var btcAdaptor adaptorbtc.AdaptorBTC
 		btcAdaptor.NetID = cfg.Ada.Btc.NetID
 		return btcAdaptor.VerifyMessage(&verifyMessage)
+	case "MergeTransaction":
+		var mergeTransaction adaptor.MergeTransactionParams
+		err := json.Unmarshal(outChainTX.Params, &mergeTransaction)
+		if err != nil {
+			return "", fmt.Errorf("MergeTransaction params error : %s", err.Error())
+		}
+
+		var btcAdaptor adaptorbtc.AdaptorBTC
+		btcAdaptor.NetID = cfg.Ada.Btc.NetID
+		return btcAdaptor.MergeTransaction(&mergeTransaction)
 	}
 
 	return "", errors.New("Unspport out chain Transaction method.")

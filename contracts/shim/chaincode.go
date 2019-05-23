@@ -575,8 +575,7 @@ func (stub *ChaincodeStub) GetInvokeFees() (*modules.AmountAsset, error) {
 	return invokeFees, err
 }
 func (stub *ChaincodeStub) GetContractID() ([]byte, string) {
-	addr := new(common.Address)
-	addr.SetBytes(stub.ContractId)
+	addr := common.NewAddress(stub.ContractId, common.ContractHash)
 	return stub.ContractId, addr.Str()
 }
 
