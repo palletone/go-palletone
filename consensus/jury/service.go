@@ -46,7 +46,6 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/core"
-
 )
 
 const (
@@ -138,16 +137,19 @@ type Processor struct {
 	dag       iDag
 	validator validator.Validator
 	contract  *contracts.Contract
-	local     map[common.Address]*JuryAccount          //[]common.Address //local jury account addr
-	mtx       map[common.Hash]*contractTx              //all contract buffer
-	mel       map[common.Hash]*electionVrf             //election vrf inform
-	lockVrf   map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
-	quit      chan struct{}
-	locker    *sync.Mutex
-	//vrfAct    vrfAccount
-	errMsgEnable      bool //package contract execution error information into the transaction
-	electionNum       int
-	contractSigNum    int
+
+	local   map[common.Address]*JuryAccount          //[]common.Address //local jury account addr
+	mtx     map[common.Hash]*contractTx              //all contract buffer
+	mel     map[common.Hash]*electionVrf             //election vrf inform
+	lockVrf map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
+
+	quit         chan struct{}
+	locker       *sync.Mutex
+	errMsgEnable bool //package contract execution error information into the transaction
+
+	electionNum    int
+	contractSigNum int
+
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
 	contractSigFeed   event.Feed
@@ -821,7 +823,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
