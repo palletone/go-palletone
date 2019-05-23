@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+
 	// "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -66,6 +67,7 @@ func Uint64ToBytes(number uint64) []byte {
 	binary.BigEndian.PutUint64(enc, number)
 	return enc
 }
+
 func BytesToUint64(b []byte) uint64 {
 
 	return binary.BigEndian.Uint64(b)
@@ -73,7 +75,7 @@ func BytesToUint64(b []byte) uint64 {
 
 func GetUnitKeys(db ptndb.Database) []string {
 	var keys []string
-	if keys_byte, err := db.Get([]byte("array_units")); err != nil {
+	if keys_byte, err := db.Get([]byte(constants.ALL_UNITS)); err != nil {
 		log.Println("get units error:", err)
 	} else {
 		if err := rlp.DecodeBytes(keys_byte[:], &keys); err != nil {
@@ -82,6 +84,7 @@ func GetUnitKeys(db ptndb.Database) []string {
 	}
 	return keys
 }
+
 func AddUnitKeys(db ptndb.Database, key string) error {
 	keys := GetUnitKeys(db)
 	if len(keys) <= 0 {
@@ -95,8 +98,9 @@ func AddUnitKeys(db ptndb.Database, key string) error {
 	}
 	keys = append(keys, key)
 
-	return Store(db, "array_units", keys)
+	return StoreToRlpBytes(db, []byte(constants.ALL_UNITS), keys)
 }
+
 func ConvertBytes(val interface{}) (re []byte) {
 	var err error
 	if re, err = json.Marshal(val); err != nil {

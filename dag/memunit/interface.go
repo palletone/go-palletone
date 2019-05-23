@@ -41,12 +41,17 @@ import (
 // 	GetDelhashs() chan common.Hash
 // 	PushDelHashs(hashs []common.Hash)
 // }
+
 type IMemDag interface {
 	SetStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool)
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error
-	SetStableThreshold(threshold int)
 	GetLastMainChainUnit() *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit
 	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository)
 	SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error
+}
+
+type IPartitionMemDag interface {
+	IMemDag
+	SetStableThreshold(threshold int)
 }

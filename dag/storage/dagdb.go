@@ -52,7 +52,7 @@ type IDagDb interface {
 	SaveHeader(h *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	SaveTransaction(tx *modules.Transaction) error
-	GetAllTxs() ([]*modules.Transaction,error)
+	GetAllTxs() ([]*modules.Transaction, error)
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	//SaveTransactions(txs *modules.Transactions) error
@@ -177,7 +177,7 @@ func (dagdb *DagDb) SaveHeaders(headers []*modules.Header) error {
 func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 	uHash := h.Hash()
 	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
-	err := StoreBytes(putter, key[:], h)
+	err := StoreToRlpBytes(putter, key[:], h)
 	if err != nil {
 		log.Error("Save Header error", err.Error())
 		return err
@@ -190,7 +190,7 @@ func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 func (dagdb *DagDb) saveHeaderChainIndex(putter ptndb.Putter, h *modules.Header) error {
 	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
 	uHash := h.Hash()
-	err := StoreBytes(putter, idxKey, uHash)
+	err := StoreToRlpBytes(putter, idxKey, uHash)
 	if err != nil {
 		log.Error("Save Header height index error", err.Error())
 		return err
@@ -225,7 +225,7 @@ func (dagdb *DagDb) GetHashByNumber(number *modules.ChainIndex) (common.Hash, er
 //			return nil
 //		}
 //	}
-//	return StoreBytes(dagdb.db, []byte(key), index)
+//	return StoreToRlpBytes(dagdb.db, []byte(key), index)
 //}
 //
 ////這是通過hash存儲modules.ChainIndex
@@ -250,7 +250,7 @@ func (dagdb *DagDb) GetHashByNumber(number *modules.ChainIndex) (common.Hash, er
 //	}
 //	key = fmt.Sprintf("%s_%s_%d_%d", constants.UNIT_NUMBER_PREFIX, number.AssetID.String(), i, number.Index)
 //	//log.Info("*****************DagDB SaveHashByNumber info.", "SaveHashByNumber_key", string(key), "hash:", uHash.Hex())
-//	return StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
+//	return StoreToRlpBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), uHash.Hex())
 //}
 
 //func (dagdb *DagDb) UpdateParentChainIndexByHash(hash common.Hash, index modules.ChainIndex) error {
@@ -306,14 +306,14 @@ func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error 
 	// db.Put(append())
 	log.Debugf("DB[%s] Save body of unit[%s], include txs:%#x", reflect.TypeOf(dagdb.db).String(), unitHash.String(), txsHash)
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
-	return StoreBytes(dagdb.db, key, txsHash)
+	return StoreToRlpBytes(dagdb.db, key, txsHash)
 }
 
 func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	log.Debug("get unit body info", "unitHash", unitHash.String())
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
 	var txHashs []common.Hash
-	err := retrieve(dagdb.db, key, &txHashs)
+	err := RetrieveFromRlpBytes(dagdb.db, key, &txHashs)
 
 	if err != nil {
 		return nil, err
@@ -344,7 +344,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 		}
 		key := append(constants.LookupPrefix, tx.Hash().Bytes()...)
 
-		if err := StoreBytes(batch, key, in); err != nil {
+		if err := StoreToRlpBytes(batch, key, in); err != nil {
 			return err
 		}
 	}
@@ -353,7 +353,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 func (dagdb *DagDb) GetTxLookupEntry(txHash common.Hash) (*modules.TxLookupEntry, error) {
 	key := append(constants.LookupPrefix, txHash.Bytes()...)
 	entry := &modules.TxLookupEntry{}
-	err := retrieve(dagdb.db, key, entry)
+	err := RetrieveFromRlpBytes(dagdb.db, key, entry)
 	if err != nil {
 		log.Info("get entry structure info:", "error", err, "tx_entry", entry)
 		return nil, err
@@ -369,7 +369,7 @@ func (dagdb *DagDb) GetTxLookupEntry(txHash common.Hash) (*modules.TxLookupEntry
 //
 //	key := string(constants.TOKENTYPE) + token_info.TokenHex
 //	log.Info("================save token info =========", "key", key)
-//	if err := StoreBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), token_info); err != nil {
+//	if err := StoreToRlpBytes(dagdb.db, *(*[]byte)(unsafe.Pointer(&key)), token_info); err != nil {
 //		return token_info, err
 //	}
 //	// 更新all token_info table.
@@ -548,7 +548,7 @@ func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
 	log.Debugf("DB[%s] Get Header by unit hash:%s", reflect.TypeOf(dagdb.db).String(), hash.String())
 	header := new(modules.Header)
-	err := retrieve(dagdb.db, key, header)
+	err := RetrieveFromRlpBytes(dagdb.db, key, header)
 	if err != nil {
 		return nil, err
 	}

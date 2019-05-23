@@ -138,7 +138,22 @@ func BytesListToAddressList(b []byte) []Address {
 	return Addresses
 }
 
-func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }
+func (a Addresses) Len() int {
+	return len(a)
+}
+
+func (a Addresses) Less(i, j int) bool {
+	return a[i].Less(a[j])
+}
+
+func (a Addresses) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func HexToAddress(s string) Address {
+	return BytesToAddress(FromHex(s))
+}
+
 func PubKeyHashHexToAddress(s string) Address {
 	pubKeyHash := FromHex(s)
 	addrStr := "P" + base58.CheckEncode(pubKeyHash, byte(0))
@@ -224,8 +239,9 @@ func (a *Address) UnmarshalJSON(input []byte) error {
 	addrStr := string(input[1 : len(input)-1])
 	return a.SetString(addrStr)
 }
-func (addr Address) MarshalJSON() ([]byte, error) {
-	str := addr.String()
+
+func (a *Address) MarshalJSON() ([]byte, error) {
+	str := a.String()
 	return json.Marshal(str)
 }
 

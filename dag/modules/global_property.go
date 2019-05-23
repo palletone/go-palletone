@@ -41,19 +41,21 @@ func NewGlobalPropBase() *GlobalPropBase {
 
 // 全局属性的结构体定义
 type GlobalProperty struct {
-	*GlobalPropBase
+	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
+	ChainParameters     core.ChainParameters          // 区块链网络参数
 
-	ActiveJuries       map[common.Address]bool //当前活跃Jury集合
+	ActiveJuries       map[common.Address]bool // 当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool // 上一届 mediator
 }
 
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
-		GlobalPropBase:     NewGlobalPropBase(),
-		ActiveJuries:       make(map[common.Address]bool, 0),
-		ActiveMediators:    make(map[common.Address]bool, 0),
-		PrecedingMediators: make(map[common.Address]bool, 0),
+		ImmutableParameters: core.NewImmutChainParams(),
+		ChainParameters:     core.NewChainParams(),
+		ActiveJuries:        make(map[common.Address]bool, 0),
+		ActiveMediators:     make(map[common.Address]bool, 0),
+		PrecedingMediators:  make(map[common.Address]bool, 0),
 	}
 }
 
@@ -183,29 +185,16 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
-	mediators := make([]common.Address, 0, gp.ActiveMediatorsCount())
+	var mediators common.Addresses
+	mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
 
 	for medAdd, _ := range gp.ActiveMediators {
 		mediators = append(mediators, medAdd)
 	}
 
-	sortAddress(mediators)
+	sort.Sort(mediators)
 
 	return mediators
-}
-
-func sortAddress(adds []common.Address) {
-	aSize := len(adds)
-	addStrs := make([]string, aSize, aSize)
-	for i, add := range adds {
-		addStrs[i] = add.Str()
-	}
-
-	sort.Strings(addStrs)
-
-	for i, addStr := range addStrs {
-		adds[i], _ = common.StringToAddress(addStr)
-	}
 }
 
 func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {

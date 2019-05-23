@@ -178,7 +178,7 @@ type IDag interface {
 
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
-	ActiveMediators() map[common.Address]bool
+	GetActiveMediators() []common.Address
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 

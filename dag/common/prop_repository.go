@@ -82,18 +82,23 @@ func (pRep *PropRepository) GetChainThreshold() (int, error) {
 	}
 	return gp.ChainThreshold(), nil
 }
+
 func (pRep *PropRepository) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	return pRep.db.RetrieveDynGlobalProp()
 }
+
 func (pRep *PropRepository) StoreGlobalProp(gp *modules.GlobalProperty) error {
 	return pRep.db.StoreGlobalProp(gp)
 }
+
 func (pRep *PropRepository) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
 	return pRep.db.StoreDynGlobalProp(dgp)
 }
+
 func (pRep *PropRepository) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
 	return pRep.db.StoreMediatorSchl(ms)
 }
+
 func (pRep *PropRepository) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	return pRep.db.RetrieveMediatorSchl()
 }
@@ -104,9 +109,11 @@ func (pRep *PropRepository) RetrieveMediatorSchl() (*modules.MediatorSchedule, e
 // func (pRep *PropRepository) GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 // 	return pRep.db.GetLastStableUnit(token)
 // }
+
 func (pRep *PropRepository) SetNewestUnit(header *modules.Header) error {
 	return pRep.db.SetNewestUnit(header)
 }
+
 func (pRep *PropRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	hash, index, _, e := pRep.db.GetNewestUnit(token)
 	return hash, index, e

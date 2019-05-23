@@ -19,6 +19,18 @@
 
 package core
 
+type ImmutableChainParameters struct {
+	MinimumMediatorCount uint8 `json:"minMediatorCount"`
+	MinMediatorInterval  uint8 `json:"minMediatorInterval"`
+}
+
+func NewImmutChainParams() ImmutableChainParameters {
+	return ImmutableChainParameters{
+		MinimumMediatorCount: DefaultMinMediatorCount,
+		MinMediatorInterval:  DefaultMinMediatorInterval,
+	}
+}
+
 // ChainParameters 区块链网络参数结构体的定义
 //变量名一定要大些，否则外部无法访问，导致无法进行json编码和解码
 type ChainParameters struct {
