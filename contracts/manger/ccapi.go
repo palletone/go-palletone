@@ -357,8 +357,7 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 	if txid == "" {
 		return nil, errors.New("input param txid is nil")
 	}
-	address := common.Address{}
-	address.SetBytes(deployId)
+	address := common.NewAddress(deployId, common.ContractHash)
 	cc, err := getChaincode(idag, address)
 	if err != nil {
 		return nil, err
@@ -454,7 +453,7 @@ func GetAllContainers(client *docker.Client) {
 	}
 	if len(cons) > 0 {
 		for _, v := range cons {
-			//log.Infof("--------------------------%d,=======================%s,%s,%s",i,v.ID,v.Status,v.Names[0])
+			//log.Infof("--------------------------%d,=======================%s,%s,%s", i, v.ID, v.Status, v.Names[0])
 			if strings.Contains(v.Names[0][1:], "PC") && strings.Contains(v.Status, "Exited") {
 				dag, err := db.GetCcDagHand()
 				if err != nil {
@@ -468,7 +467,7 @@ func GetAllContainers(client *docker.Client) {
 					return
 				}
 				txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
-				//log.Infof("==============需要重启====容器名称为-->%s,---->%s",name, hex.EncodeToString(contractAddr.Bytes21()))
+				//log.Infof("==============需要重启====容器名称为-->%s,---->%s", name, hex.EncodeToString(contractAddr.Bytes21()))
 				_, err = StartChaincodeContainert(dag, "palletone", contractAddr.Bytes21(), txid)
 				if err != nil {
 					log.Infof("startChaincodeContainert err: %s", err.Error())
@@ -502,8 +501,7 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 		ChaincodeId: &pb.ChaincodeID{},
 	}
 	//test
-	address := common.Address{}
-	address.SetBytes(deployId)
+	address := common.NewAddress(deployId, common.ContractHash)
 	cc, err := getChaincode(idag, address)
 	if err != nil {
 		return nil, err
