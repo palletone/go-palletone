@@ -3,10 +3,8 @@ import subprocess
 import pexpect
 from time import sleep
 import json
-import platform
 
 MAIN_PATH="../../../"
-sysName = platform.system().lower()
 
 def edit_genesis_json():
     genesisPath = os.path.join(MAIN_PATH, 'GasToken/node/ptn-genesis.json')
@@ -19,8 +17,6 @@ def edit_genesis_json():
 def new_genesis():
     gptnPath = os.path.join(MAIN_PATH, 'bdd/GasToken/node')
     os.chdir(gptnPath)
-    if sysName == "windows":
-        child =
     child = pexpect.spawn(command='./gptn "" false')
     child.logfile=sys.stdout
     child.expect("Do you want to create a new account as the holder of the token")
@@ -44,6 +40,6 @@ def init_gptn():
     print EOFLog
 
 if __name__=='__main__':
-    new_genesis()
+    # new_genesis()
     edit_genesis_json()
-    init_gptn()
+    # init_gptn()
