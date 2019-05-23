@@ -290,7 +290,7 @@ func (rep *UnitProduceRepository) GetMediatorSchl() *modules.MediatorSchedule {
 func (rep *UnitProduceRepository) GetMediator(add common.Address) *core.Mediator {
 	med, err := rep.stateRep.RetrieveMediator(add)
 	if err != nil {
-		log.Error("dag", "GetMediator RetrieveMediator err:", err, "address:", add)
+		log.Error("dag", "GetMediator RetrieveMediator err", err, "address", add)
 		return nil
 	}
 	return med
