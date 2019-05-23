@@ -69,12 +69,12 @@ func NewMediator() *Mediator {
 
 //申请成为Mediator
 type MediatorApplyInfo struct {
-	Content string `json:"content"` //  申请信息
+	ApplyInfo string `json:"applyInfo"` //  申请信息
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
 	return &MediatorApplyInfo{
-		Content: "",
+		ApplyInfo: "",
 	}
 }
 

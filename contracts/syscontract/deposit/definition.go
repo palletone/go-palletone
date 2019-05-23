@@ -67,9 +67,9 @@ const (
 	IsInDeveloperCandidateList      = "IsInDeveloperCandidateList"
 	GetDeposit                      = "GetNodeBalance"
 
-	Apply = "apply"
-	Agree = "agree"
-	Quit  = "quit"
+	Apply = "applying"
+	Agree = "approved"
+	Quit  = "quited"
 )
 
 //申请提保证金
