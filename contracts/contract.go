@@ -133,8 +133,8 @@ func (c *Contract) Deploy(rwM rwset.TxManager, chainID string, templateId []byte
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
 func (c *Contract) Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
-	log.Info("Enter Contract Invoke====", "chainID", "deployId", deployId, "txid", txid, "timeout", timeout)
-	defer log.Info("Exit Contract Invoke====", "chainID", "deployId", deployId, "txid", txid, "timeout", timeout)
+	log.Info("Enter Contract Invoke====", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
+	defer log.Info("Exit Contract Invoke====", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("Contract module not initialized")

@@ -383,9 +383,6 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	send = send.add("genesisHash", genesis)
 	send = send.add("gastoken", assetId)
 
-	//if assetId == modules.PTNCOIN {
-	//	send = send.add("ptn_main_node", nil)
-	//}
 	recvList, err := p.sendReceiveHandshake(send)
 	if err != nil {
 		return err

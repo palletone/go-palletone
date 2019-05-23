@@ -94,7 +94,12 @@ func (d *Dag) IsEmpty() bool {
 }
 
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
-	return d.Memdag.GetLastMainChainUnit()
+	memdag, err := d.getMemDag(token)
+	if err != nil {
+		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		return nil
+	}
+	return memdag.GetLastMainChainUnit()
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
@@ -863,15 +868,10 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 	}
 	unit := &modules.Unit{UnitHeader: header}
 	asset := header.Number.AssetID
-	var memdag memunit.IMemDag
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	if asset == gasToken {
-		memdag = d.Memdag
-	} else {
-		memdag = d.PartitionMemDag[asset]
-		if memdag == nil {
-			return errors.New("Don't have partition mem dag for token:" + asset.String())
-		}
+	memdag, err := d.getMemDag(asset)
+	if err != nil {
+		log.Error(err.Error())
+		return err
 	}
 	if err := memdag.AddUnit(unit, nil); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
@@ -879,6 +879,19 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 		log.Debug("=============    save_memdag_unit header     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 	}
 	return nil
+}
+func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
+	var memdag memunit.IMemDag
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	if asset == gasToken {
+		memdag = d.Memdag
+	} else {
+		memdag = d.PartitionMemDag[asset]
+		if memdag == nil {
+			return nil, errors.New("Don't have partition mem dag for token:" + asset.String())
+		}
+	}
+	return memdag, nil
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {

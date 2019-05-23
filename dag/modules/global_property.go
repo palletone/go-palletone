@@ -59,6 +59,23 @@ func NewGlobalProp() *GlobalProperty {
 	}
 }
 
+type GlobalPropertyHistory struct {
+	// unit生产之间的间隔时间，以秒为单元。 interval in seconds between Units
+	MediatorInterval uint8 `json:"mediatorInterval"`
+
+	// 区块链维护事件之间的间隔，以秒为单元。 interval in sections between unit maintenance events
+	MaintenanceInterval uint32 `json:"maintenanceInterval"`
+
+	// 在维护时跳过的MediatorInterval数量。 number of MediatorInterval to skip at maintenance time
+	MaintenanceSkipSlots uint8 `json:"maintenanceSkipSlots"`
+
+	ActiveJuries    []common.Address //当前活跃Jury集合
+	ActiveMediators []common.Address // 当前活跃 mediator 集合；每个维护间隔更新一次
+	EffectiveTime   uint64           //生效时间
+	EffectiveHeight uint64           //生效高度
+	ExpiredTime     uint64           //失效时间
+}
+
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
 	//HeadUnitNum  uint64      // 最新单元的编号(数量)

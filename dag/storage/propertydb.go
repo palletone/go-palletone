@@ -21,21 +21,20 @@
 package storage
 
 import (
+	"encoding/binary"
+	"reflect"
+
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"reflect"
 )
 
-// modified by Yiran
 type PropertyDb struct {
 	db ptndb.Database
-	//GlobalProp    *modules.GlobalProperty
-	//DynGlobalProp *modules.DynamicGlobalProperty
-	//MediatorSchl  *modules.MediatorSchedule
 }
 type IPropertyDb interface {
 	StoreGlobalProp(gp *modules.GlobalProperty) error
@@ -45,6 +44,8 @@ type IPropertyDb interface {
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 
+	StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error
+	RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error)
 	//设置稳定单元的Hash
 	// SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	// GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
@@ -59,28 +60,6 @@ type IPropertyDb interface {
 // initialize PropertyDB , and retrieve gp,dgp,mc from IPropertyDb.
 func NewPropertyDb(db ptndb.Database) *PropertyDb {
 	pdb := &PropertyDb{db: db}
-
-	//gp, err := pdb.RetrieveGlobalProp()
-	//if err != nil {
-	//	logger.Error("RetrieveGlobalProp Error")
-	//	return nil,err
-	//}
-	//
-	//dgp, err := pdb.RetrieveDynGlobalProp()
-	//if err != nil {
-	//	logger.Error("RetrieveDynGlobalProp Error")
-	//	return nil,err
-	//}
-	//
-	//ms, err := pdb.RetrieveMediatorSchl()
-	//if err != nil {
-	//	logger.Error("RetrieveMediatorSchl Error")
-	//	return nil,err
-	//}
-	//pdb.GlobalProp = gp
-	//pdb.DynGlobalProp = dgp
-	//pdb.MediatorSchl = ms
-
 	return pdb
 }
 
@@ -88,47 +67,91 @@ func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error 
 	//log.DebugDynamic(func() string {
 	//	return fmt.Sprintf("DB[%s] Save mediator schedule:%s to db.", reflect.TypeOf(propdb.db).String(), ms.String())
 	//})
-	return StoreMediatorSchl(propdb.db, ms)
+
+	err := StoreToRlpBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
+	if err != nil {
+		log.Errorf("Store mediator schedule error: %v", err.Error())
+	}
+
+	return err
 }
 
 func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
 	log.Debugf("DB[%s] Save dynamic global property to db.", reflect.TypeOf(propdb.db).String())
-	return StoreDynGlobalProp(propdb.db, dgp)
+	err := StoreToRlpBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
+	if err != nil {
+		log.Errorf("Store dynamic global properties error: %v", err.Error())
+	}
+
+	return err
 }
 
 func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 	log.Debugf("DB[%s] Save global property to db.", reflect.TypeOf(propdb.db).String())
-	return StoreGlobalProp(propdb.db, gp)
+	err := StoreToJsonBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	if err != nil {
+		log.Errorf("Store global properties error: %v", err.Error())
+	}
+
+	return err
 }
 
 func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
-	return RetrieveGlobalProp(propdb.db)
+
+	gp := &modules.GlobalProperty{}
+	err := RetrieveFromJsonBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	if err != nil {
+		log.Errorf("Retrieve global properties error: %v", err.Error())
+	}
+	return gp, err
 }
 
 func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
-	return RetrieveDynGlobalProp(propdb.db)
+	dgp := modules.NewDynGlobalProp()
+
+	err := RetrieveFromRlpBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
+	if err != nil {
+		log.Errorf("Retrieve dynamic global properties error: %v", err.Error())
+	}
+
+	return dgp, err
 }
 
 func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
-	return RetrieveMediatorSchl(propdb.db)
+	ms := new(modules.MediatorSchedule)
+	err := RetrieveFromRlpBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
+	if err != nil {
+		log.Errorf("Retrieve mediator schedule error: %v", err.Error())
+	}
+
+	return ms, err
+}
+func makeGlobalPropHistoryKey(gp *modules.GlobalPropertyHistory) []byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, gp.EffectiveTime)
+	return append(constants.GLOBALPROPERTY_HISTORY_PREFIX, b...)
+}
+func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error {
+	log.Debugf("DB[%s] Save global property history to db.", reflect.TypeOf(propdb.db).String())
+	key := makeGlobalPropHistoryKey(gp)
+	err := StoreToRlpBytes(propdb.db, key, gp)
+	if err != nil {
+		log.Errorf("Store global properties history error: %v", err.Error())
+	}
+
+	return err
+}
+func (propdb *PropertyDb) RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error) {
+	kv := getprefix(propdb.db, constants.GLOBALPROPERTY_HISTORY_PREFIX)
+	result := []*modules.GlobalPropertyHistory{}
+	for _, v := range kv {
+		gp := &modules.GlobalPropertyHistory{}
+		rlp.DecodeBytes(v, gp)
+		result = append(result, gp)
+	}
+	return result, nil
 }
 
-// func (db *PropertyDb) SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error {
-// 	data := &modules.UnitProperty{hash, index, 0}
-// 	key := append(constants.LastStableUnitHash, index.AssetID.Bytes()...)
-// 	log.Debugf("Save last stable assetId:%s,unit: %s", index.AssetID.String(), hash.String())
-// 	return StoreToRlpBytes(db.db, key, data)
-// }
-// func (db *PropertyDb) GetLastStableUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
-// 	key := append(constants.LastStableUnitHash, asset.Bytes()...)
-// 	data := &modules.UnitProperty{}
-// 	err := RetrieveFromRlpBytes(db.db, key, data)
-// 	if err != nil {
-// 		log.Warnf("Cannot retrieve last stable unit hash by asset:%s", asset.String())
-// 		return common.Hash{}, nil, err
-// 	}
-// 	return data.Hash, data.Index, nil
-// }
 func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
 	index := header.Number
