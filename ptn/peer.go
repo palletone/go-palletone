@@ -79,8 +79,8 @@ type peer struct {
 	peermsg map[modules.AssetId]peerMsg
 	lock    sync.RWMutex
 
-	lightpeermsg map[modules.AssetId]peerMsg
-	lightlock    sync.RWMutex
+	//lightpeermsg map[modules.AssetId]peerMsg
+	//lightlock    sync.RWMutex
 
 	knownTxs          *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks       *set.Set // Set of block hashes known to be known by this peer
@@ -101,7 +101,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownLightHeaders: set.New(),
 		knownGroupSig:     set.New(),
 		peermsg:           map[modules.AssetId]peerMsg{},
-		lightpeermsg:      map[modules.AssetId]peerMsg{},
+		//lightpeermsg:      map[modules.AssetId]peerMsg{},
 	}
 }
 
@@ -158,30 +158,30 @@ func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
 	p.peermsg[number.AssetID] = msg
 }
 
-func (p *peer) LightHead(assetID modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
-	p.lightlock.RLock()
-	defer p.lightlock.RUnlock()
+//func (p *peer) LightHead(assetID modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
+//	p.lightlock.RLock()
+//	defer p.lightlock.RUnlock()
+//
+//	msg, ok := p.lightpeermsg[assetID]
+//	if ok {
+//		copy(hash[:], msg.head[:])
+//		number = msg.number
+//	}
+//	return hash, number
+//}
 
-	msg, ok := p.lightpeermsg[assetID]
-	if ok {
-		copy(hash[:], msg.head[:])
-		number = msg.number
-	}
-	return hash, number
-}
-
-func (p *peer) SetLightHead(hash common.Hash, number *modules.ChainIndex) {
-	p.lightlock.Lock()
-	defer p.lightlock.Unlock()
-
-	msg, ok := p.lightpeermsg[number.AssetID]
-
-	if (ok && number.Index > msg.number.Index) || !ok {
-		copy(msg.head[:], hash[:])
-		msg.number = number
-	}
-	p.lightpeermsg[number.AssetID] = msg
-}
+//func (p *peer) SetLightHead(hash common.Hash, number *modules.ChainIndex) {
+//	p.lightlock.Lock()
+//	defer p.lightlock.Unlock()
+//
+//	msg, ok := p.lightpeermsg[number.AssetID]
+//
+//	if (ok && number.Index > msg.number.Index) || !ok {
+//		copy(msg.head[:], hash[:])
+//		msg.number = number
+//	}
+//	p.lightpeermsg[number.AssetID] = msg
+//}
 
 // MarkBlock marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.

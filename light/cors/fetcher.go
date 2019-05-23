@@ -58,7 +58,7 @@ type headerRequesterFn func(common.Hash) error
 type headerVerifierFn func(header *modules.Header) error
 
 // blockBroadcasterFn is a callback type for broadcasting a block to connected peers.
-type headerBroadcasterFn func(header *modules.Header, propagate bool)
+type headerBroadcasterFn func(p *peer, header *modules.Header, propagate bool)
 
 // chainHeightFn is a callback type to retrieve the current chain height.
 type lightChainHeightFn func(assetId modules.AssetId) uint64
@@ -224,7 +224,7 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 		switch err := f.verifyHeader(header); err {
 		case nil:
 			// All ok, quickly propagate to our peers
-			go f.broadcastHeader(header, true)
+			go f.broadcastHeader(p, header, true)
 
 		case dagerrors.ErrFutureBlock:
 			// Weird future block, don't fail, but neither propagate
@@ -243,7 +243,7 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 		}
 		//p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
 		// If import succeeded, broadcast the block
-		go f.broadcastHeader(header, false)
+		go f.broadcastHeader(p, header, false)
 
 	}()
 }

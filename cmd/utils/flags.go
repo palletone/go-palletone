@@ -1188,11 +1188,11 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 			fullNode, err := ptn.New(ctx, cfg)
 			if fullNode != nil && cfg.LightServ > 0 {
-				cs, _ := cors.NewCoresServer(fullNode, cfg)
-				fullNode.AddCorsServer(cs)
-
 				ls, _ := light.NewLesServer(fullNode, cfg, configure.LPSProtocol)
 				fullNode.AddLesServer(ls)
+
+				cs, _ := cors.NewCoresServer(fullNode, cfg)
+				fullNode.AddCorsServer(cs)
 			}
 			return fullNode, err
 		})

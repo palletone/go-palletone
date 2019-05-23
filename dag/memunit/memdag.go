@@ -187,7 +187,8 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 		}
 	}
 	if chain.saveHeaderOnly {
-		chain.ldbunitRep.SaveHeader(unit.Header())
+		chain.ldbunitRep.SaveHeader(unit.UnitHeader)
+		chain.ldbPropRep.SetNewestUnit(unit.UnitHeader)
 	} else {
 		//Save stable unit to ldb
 		//chain.ldbunitRep.SaveUnit(unit, false)

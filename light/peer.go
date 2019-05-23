@@ -65,6 +65,9 @@ type peer struct {
 	headInfo *announceData
 	lock     sync.RWMutex
 
+	//lightpeermsg map[modules.AssetId]*announceData
+	//lightlock    sync.RWMutex
+
 	announceChn chan announceData
 	sendQueue   *execQueue
 
