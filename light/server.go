@@ -31,6 +31,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -52,6 +53,7 @@ type LesServer struct {
 	privateKey      *ecdsa.PrivateKey
 	quitSync        chan struct{}
 	protocolname    string
+	fullnode        *ptn.PalletOne
 }
 
 func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (*LesServer, error) {
@@ -75,6 +77,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (
 		protocolManager: pm,
 		quitSync:        quitSync,
 		protocolname:    protocolname,
+		fullnode:        ptn,
 	}
 
 	pm.server = srv
@@ -109,6 +112,7 @@ func (s *LesServer) Start(srvr *p2p.Server, corss *p2p.Server) {
 	s.protocolManager.Start(s.config.LightPeers, s.corss)
 	s.privateKey = srvr.PrivateKey
 	s.protocolManager.blockLoop()
+	s.loopCors()
 }
 
 // Stop stops the LES service
@@ -121,6 +125,42 @@ func (s *LesServer) Stop() {
 		<-s.protocolManager.noMorePeers
 	}()
 	s.protocolManager.Stop()
+}
+
+func (s *LesServer) SubscribeCeEvent(ch chan<- *modules.Header) event.Subscription {
+	return nil
+}
+
+func (s *LesServer) loopCors() {
+	headCh := make(chan *modules.Header, 10)
+	headSub := s.fullnode.CorsServer().SubscribeCeEvent(headCh)
+	go func() {
+		for {
+			select {
+			case header := <-headCh:
+				log.Debug("LesServer loopCors", "recv header:", header)
+				peers := s.protocolManager.peers.AllPeers()
+				if len(peers) > 0 {
+					announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
+					for _, p := range peers {
+						log.Debug("Light Palletone", "ProtocolManager->blockLoop p.announceType", p.announceType)
+						switch p.announceType {
+						case announceTypeSimple:
+							select {
+							case p.announceChn <- announce:
+							default:
+								s.protocolManager.removePeer(p.id)
+							}
+						case announceTypeSigned:
+						}
+					}
+				}
+			case <-s.quitSync:
+				headSub.Unsubscribe()
+				return
+			}
+		}
+	}()
 }
 
 type requestCosts struct {

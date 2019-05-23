@@ -3,6 +3,7 @@ package cors
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -26,6 +27,10 @@ type CorsServer struct {
 	privateKey      *ecdsa.PrivateKey
 	corss           *p2p.Server
 	quitSync        chan struct{}
+
+	//cors communication with lps
+	scope    event.SubscriptionScope
+	dposFeed event.Feed
 }
 
 func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error) {
@@ -82,6 +87,15 @@ func (s *CorsServer) Stop() {
 		<-s.protocolManager.noMorePeers
 	}()
 	s.protocolManager.Stop()
+	s.scope.Close()
+}
+
+func (s *CorsServer) SubscribeCeEvent(ch chan<- *modules.Header) event.Subscription {
+	return s.scope.Track(s.dposFeed.Subscribe(ch))
+}
+
+func (s *CorsServer) SendEvents(header *modules.Header) {
+	s.dposFeed.Send(header)
 }
 
 func (pm *ProtocolManager) blockLoop() {

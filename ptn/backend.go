@@ -58,6 +58,8 @@ type LesServer interface {
 	Protocols() []p2p.Protocol
 	CorsProtocols() []p2p.Protocol
 	StartCorsSync() (string, error)
+
+	SubscribeCeEvent(ch chan<- *modules.Header) event.Subscription
 }
 
 // PalletOne implements the PalletOne full node service.
@@ -106,8 +108,6 @@ func (p *PalletOne) AddLesServer(ls LesServer) {
 
 func (p *PalletOne) AddCorsServer(cs LesServer) *PalletOne {
 	p.corsServer = cs
-	log.Debug("PalletOne->AddCorsServer", "len(p.corsServer.CorsProtocols())", len(p.corsServer.CorsProtocols()))
-	log.Debug("PalletOne->AddCorsServer", "len(cs.CorsProtocols())", len(cs.CorsProtocols()))
 	return p
 }
 

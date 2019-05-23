@@ -53,6 +53,7 @@ const (
 	txChanSize              = 4096
 	forceSyncCycle          = 10 * time.Second
 	waitPushSync            = 200 * time.Millisecond
+	waitneedboradcast       = 500 * time.Millisecond
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -102,6 +103,8 @@ type ProtocolManager struct {
 	rttEstimate   uint64
 	rttConfidence uint64
 	headerCh      chan dataPack
+	needboradcast map[string]uint64
+	bdlock        sync.RWMutex
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -127,6 +130,7 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 		rttEstimate:   uint64(rttMaxEstimate),
 		rttConfidence: uint64(1000000),
 		headerCh:      make(chan dataPack, 1),
+		needboradcast: make(map[string]uint64),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -181,9 +185,9 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		//}
 		return dagerrors.ErrFutureBlock
 	}
-	headerBroadcaster := func(header *modules.Header, propagate bool) {
+	headerBroadcaster := func(p *peer, header *modules.Header, propagate bool) {
 		log.Debug("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
-		pm.BroadcastLightHeader(header)
+		pm.BroadcastCorsHeader(p, header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -194,8 +198,15 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		headerBroadcaster, inserter, pm.removePeer)
 }
 
-func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
-	//log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
+func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) {
+	//log.Debug("Cors ProtocolManager", "BroadcastCorsHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
+	pm.bdlock.RLock()
+	v, ok := pm.needboradcast[p.id]
+	pm.bdlock.RUnlock()
+	if ok && header.Number.Index >= v {
+		//TODO broadcast to lps
+		log.Debug("Cors ProtocolManager", "BroadcastCorsHeader assetid:", header.Number.AssetID.String(), "index:", header.Index())
+	}
 	return
 }
 
@@ -378,6 +389,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 		log.Trace("CorsHeaderMsg message content", "len(headers)", len(headers))
 		if pm.fetcher != nil {
+			//TODO start lps broadcast
 			for _, header := range headers {
 				log.Trace("CorsHeaderMsg message content", "header:", header)
 				pm.fetcher.Enqueue(p, header)
@@ -396,6 +408,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			for _, header := range headers {
 				log.Trace("CorsHeadersMsg message content", "header:", header)
 				pm.fetcher.Enqueue(p, header)
+			}
+			if len(headers) < MaxHeaderFetch {
+				pm.bdlock.Lock()
+				pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
+				pm.bdlock.Unlock()
 			}
 		}
 	case GetCurrentHeaderMsg:
