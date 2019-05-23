@@ -1,2 +1,0 @@
-*** Test Cases ***
-newToken

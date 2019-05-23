@@ -2,8 +2,9 @@
 cd ../../
 ## build gptn
 go build ./cmd/gptn
-cp ./cmd/gptn/gptn ./bdd/GasToken/node
 cd ./bdd/GasToken/node
+rm -rf ./*
+cp ./cmd/gptn/gptn ./bdd/GasToken/node
 chmod +x gptn
 
 # new genesis

@@ -8,7 +8,7 @@ newAccount
     Dictionary Should Contain Key    ${respJson}    result
     [Return]    ${respJson["result"]}
 
-transferPTN
+transferPtnTo
     [Arguments]    ${to}
     ${params}=    Create List    ${tokenHolder}    ${to}    ${amount}    ${fee}    ${null}
     ...    ${pwd}
