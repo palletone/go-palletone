@@ -56,6 +56,7 @@ var (
 	MEDIATOR_INFO_PREFIX          = []byte("mi")
 	DEPOSIT_BALANCE_PREFIX        = []byte("depb")
 	GLOBALPROPERTY_PREFIX         = []byte("gp")
+	GLOBALPROPERTY_HISTORY_PREFIX = []byte("gh")
 	DYNAMIC_GLOBALPROPERTY_PREFIX = []byte("dp")
 	MEDIATOR_SCHEME_PREFIX        = []byte("ms")
 	ACCOUNT_INFO_PREFIX           = []byte("ai")
