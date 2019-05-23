@@ -173,6 +173,14 @@ func (p *peer) SendHeaders(headers []*modules.Header) error {
 	return p2p.Send(p.rw, CorsHeadersMsg, headers)
 }
 
+func (p *peer) RequestCurrentHeader(number modules.ChainIndex) error {
+	return p2p.Send(p.rw, GetCurrentHeaderMsg, number)
+}
+
+func (p *peer) SendCurrentHeader(headers []*modules.Header) error {
+	return p2p.Send(p.rw, CurrentHeaderMsg, headers)
+}
+
 /*
 // SendBlockHeaders sends a batch of block headers to the remote peer.
 func (p *peer) SendUnitHeaders(reqID, bv uint64, headers []*modules.Header) error {
