@@ -21,7 +21,6 @@
 package storage
 
 import (
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -86,9 +85,9 @@ func NewPropertyDb(db ptndb.Database) *PropertyDb {
 }
 
 func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
-	log.DebugDynamic(func() string {
-		return fmt.Sprintf("DB[%s] Save mediator schedule:%s to db.", reflect.TypeOf(propdb.db).String(), ms.String())
-	})
+	//log.DebugDynamic(func() string {
+	//	return fmt.Sprintf("DB[%s] Save mediator schedule:%s to db.", reflect.TypeOf(propdb.db).String(), ms.String())
+	//})
 	return StoreMediatorSchl(propdb.db, ms)
 }
 
