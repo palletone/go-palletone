@@ -162,14 +162,7 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 		return nil, errIncompatibleConfig
 	}
 
-	//removePeer := manager.removePeer
-	//if disableClientRemovePeer {
-	//	removePeer = func(id string) {}
-	//}
-
 	if manager.lightSync {
-		//manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
-		//manager.peers.notify((*downloaderPeerNotify)(manager))
 		manager.fetcher = manager.newLightFetcher()
 	}
 	log.Debug("End NewCorsProtocolManager", "len(manager.SubProtocols)", len(manager.SubProtocols))
@@ -185,11 +178,10 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		//if verr != nil && !validator.IsOrphanError(verr) {
 		//	return dagerrors.ErrFutureBlock
 		//}
-		//TODO must modify
 		return dagerrors.ErrFutureBlock
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
-		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
+		log.Debug("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
 		pm.BroadcastLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
@@ -202,30 +194,8 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 }
 
 func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
-	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
+	//log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
 	return
-	//peers := pm.peers.PeersWithoutHeader(header.Hash())
-	//announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
-	//for _, p := range peers {
-	//	if p == nil {
-	//		continue
-	//	}
-	//	log.Debug("Cors Palletone", "BroadcastLightHeader announceType", p.announceType)
-	//	switch p.announceType {
-	//	case announceTypeNone:
-	//		select {
-	//		case p.announceChn <- announce:
-	//		default:
-	//			pm.removePeer(p.id)
-	//		}
-	//	case announceTypeSimple:
-	//
-	//	case announceTypeSigned:
-	//
-	//	}
-	//}
-	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
-	//return
 }
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
@@ -244,20 +214,14 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 	if pm.lightSync {
 		go func() {
-			go pm.fetcher.Start()
+			pm.fetcher.Start()
 			forceSync := time.Tick(forceSyncCycle)
 			for {
 				select {
 				case <-pm.newPeerCh:
-					//if pm.mainchain != nil {
-					//if pm.peers.Len() >= pm.mainchainpeers()/2 {
-					//	go pm.Sync()
-					//}
-					//}
 
 				case <-forceSync:
 					// Force a sync even if not enough peers are present
-					//log.Debug("===============CORS ProtocolManager Start forceSync====================")
 
 				case <-pm.noMorePeers:
 					return
