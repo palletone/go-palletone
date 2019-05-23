@@ -64,11 +64,11 @@ after_script:
     - sleep 2
     - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
     # upload all log
+    - ll ${DEPOSIT_LOG_PATH}/${LOG_NAME}
     - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
 
     # upload deposit log
     - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-      ll ${DEPOSIT_LOG_PATH}/${LOG_NAME}
       ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME} -v;
       ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME} -v;
       fi
