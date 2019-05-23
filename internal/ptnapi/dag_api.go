@@ -60,15 +60,16 @@ func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (st
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
-func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) string {
+func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) (string, error) {
 	hash := common.Hash{}
 	if err := hash.SetHexString(condition); err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
-		return ""
+		return "", err
 	}
 	header, err := s.b.GetHeaderByHash(hash)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByHash err:", err, "hash", hash.String())
+		return "", err
 	}
 	headerJson := ptnjson.ConvertUnitHeader2Json(header)
 	headerRlp, _ := rlp.EncodeToBytes(header)
@@ -76,20 +77,23 @@ func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) st
 	content, err := json.Marshal(info)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByHash Marshal err:", err, "hash", hash.String())
-		return "Marshal err"
+		return "Marshal err", err
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return *(*string)(unsafe.Pointer(&content)), nil
 }
-func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) string {
+func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) (string, error) {
 	number := &modules.ChainIndex{}
 	index, err := strconv.ParseInt(condition, 10, 64)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber strconv.ParseInt err:", err, "condition:", condition)
-		return ""
+		return "", err
 	}
 	number.Index = uint64(index)
 	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	header, err := s.b.GetHeaderByNumber(number)
+	if err != nil {
+		return "", err
+	}
 	headerRlp, _ := rlp.EncodeToBytes(header)
 	headerJson := ptnjson.ConvertUnitHeader2Json(header)
 	if err != nil {
@@ -100,7 +104,7 @@ func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) 
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber Marshal err:", err, "number", number.String())
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return *(*string)(unsafe.Pointer(&content)), nil
 }
 
 func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {
