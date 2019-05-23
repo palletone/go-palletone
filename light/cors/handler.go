@@ -52,6 +52,7 @@ const (
 	disableClientRemovePeer = false
 	txChanSize              = 4096
 	forceSyncCycle          = 10 * time.Second
+	waitPushSync            = 200 * time.Millisecond
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are

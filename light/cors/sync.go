@@ -87,13 +87,14 @@ func (pm *ProtocolManager) Sync() {
 		if err != nil {
 			log.Debug("Cors Sync OK")
 		}
-		forceSync := time.Tick(forceSyncCycle)
-		select {
-		case <-forceSync:
-			// Force a sync even if not enough peers are present
-			log.Debug("Cors Sync Set cors Sync")
-			atomic.StoreUint32(&pm.corsSync, 0)
-		}
+		atomic.StoreUint32(&pm.corsSync, 0)
+		//forceSync := time.Tick(forceSyncCycle)
+		//select {
+		//case <-forceSync:
+		//	// Force a sync even if not enough peers are present
+		//	log.Debug("Cors Sync Set cors Sync")
+		//	atomic.StoreUint32(&pm.corsSync, 0)
+		//}
 	}
 }
 
@@ -104,13 +105,13 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 		index   uint64
 	)
 
-	//pheader, err := pm.fetchHeader()
-	//if err != nil {
-	//	log.Debug("Cors ProtocolManager", "pushSync fetchHeader err", err)
-	//	return 0, err
-	//}
-	//log.Debug("Cors ProtocolManager", "pushSync fetchHeader header", pheader)
-	//index = pheader.Number.Index
+	pheader, err := pm.fetchHeader()
+	if err != nil {
+		log.Debug("Cors ProtocolManager", "pushSync fetchHeader err", err)
+		return 0, err
+	}
+	log.Debug("Cors ProtocolManager", "pheader.index", pheader.Number.Index, "pushSync fetchHeader header", pheader)
+	index = pheader.Number.Index
 	number := &modules.ChainIndex{pm.assetId, index}
 	for {
 		bytes = 0
@@ -131,7 +132,9 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 		peers := pm.peers.AllPeers()
 		x := rand.Intn(len(peers))
 		p := peers[x]
+		log.Debug("Cors ProtocolManager", "pushSync SendHeaders len(headers)", len(headers), "index", index)
 		p.SendHeaders(headers)
+		time.Sleep(waitPushSync)
 	}
 	return index, nil
 }
