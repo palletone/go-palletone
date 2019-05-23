@@ -72,7 +72,21 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		log.Errorf("Cannot retrieve last stable unit from db for token:%s, you forget 'gptn init'??", token.String())
 		return nil
 	}
-	stableUnit, _ := stableUnitRep.GetUnit(stablehash)
+	var stableUnit *modules.Unit
+	if saveHeaderOnly {
+		header, err := stableUnitRep.GetHeaderByHash(stablehash)
+		if err != nil {
+			log.Errorf("Cannot retrieve last stable unit from db by hash[%s]", stablehash.String())
+			return nil
+		}
+		stableUnit = modules.NewUnit(header, nil)
+	} else {
+		stableUnit, err = stableUnitRep.GetUnit(stablehash)
+		if err != nil {
+			log.Errorf("Cannot retrieve last stable unit from db by hash[%s]", stablehash.String())
+			return nil
+		}
+	}
 	log.Debugf("Init MemDag, get last stable unit[%s] to set lastMainChainUnit", stablehash.String())
 
 	return &MemDag{
