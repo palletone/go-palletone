@@ -356,7 +356,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		chain.processOrphan(uHash, txpool)
 	} else {
 		//add unit to orphan
-		log.Infof("This unit[%s] is a orphan unit", uHash.String())
+		log.Infof("This unit[%s] is an orphan unit", uHash.String())
 		chain.orphanUnits[uHash] = unit
 	}
 	return nil

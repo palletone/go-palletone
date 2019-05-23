@@ -46,7 +46,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 	txs := modules.Transactions{tx0, tx1, tx2}
 
 	utxoQuery := &mockUtxoQuery{}
-	validate := NewValidate(nil, utxoQuery, nil)
+	validate := NewValidate(nil, utxoQuery, nil,nil)
 	code := validate.validateTransactions(txs, time.Now().Unix())
 	assert.Equal(t, code, TxValidationCode_VALID)
 }
@@ -195,7 +195,7 @@ func TestValidate_ValidateHeader(t *testing.T) {
 	tx := newTx1(t)
 
 	header := newHeader(modules.Transactions{tx})
-	v := NewValidate(nil, nil, nil)
+	v := NewValidate(nil, nil, nil,nil)
 	vresult := v.validateHeaderExceptGroupSig(header)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)

@@ -494,7 +494,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	//threshold, _ := propRep.GetChainThreshold()
 	unstableChain := memunit.NewMemDag(gasToken /*, threshold*/, false, db, unitRep, propRep, stateRep)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
-	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep, nil)
+	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep, tpropRep)
 	//partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
 	//for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
 	//	partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, stateRep)
@@ -858,6 +858,9 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.T
 }
 
 func (d *Dag) saveHeader(header *modules.Header) error {
+	if header == nil {
+		return errors.ErrNullPoint
+	}
 	unit := &modules.Unit{UnitHeader: header}
 	asset := header.Number.AssetID
 	var memdag memunit.IMemDag

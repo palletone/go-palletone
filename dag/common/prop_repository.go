@@ -154,8 +154,13 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 	}
 
 	// 4. 打乱证人的调度顺序
+	Shuffle(ms.CurrentShuffledMediators, uint64(timestamp))
+	return true
+}
+func Shuffle(mediators []common.Address, timestamp uint64) {
 	nowHi := uint64(timestamp << 32)
-	for i := uint64(0); i < aSize; i++ {
+	aSize := len(mediators)
+	for i := 0; i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
 		// 原理请参考 http://xorshift.di.unimi.it/
 		k := nowHi + uint64(i)*2685821657736338717
@@ -164,15 +169,12 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 		k ^= k >> 27
 		k *= 2685821657736338717
 
-		jmax := aSize - i
-		j := i + k%jmax
+		jmax := uint64(aSize - i)
+		j := uint64(i) + k%jmax
 
 		// 进行N次随机交换
-		ms.CurrentShuffledMediators[i], ms.CurrentShuffledMediators[j] =
-			ms.CurrentShuffledMediators[j], ms.CurrentShuffledMediators[i]
+		mediators[i], mediators[j] = mediators[j], mediators[i]
 	}
-
-	return true
 }
 
 /**

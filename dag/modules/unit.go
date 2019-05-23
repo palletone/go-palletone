@@ -22,6 +22,7 @@ import (
 	"time"
 	"unsafe"
 
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
-	"bytes"
 )
 
 // validate unit state
@@ -396,9 +396,10 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 
 // function Hash, return the unit's hash.
 func (u *Unit) Hash() common.Hash {
-	if u.UnitHash != u.UnitHeader.Hash() {
+	headerHash := u.UnitHeader.Hash()
+	if u.UnitHash != headerHash {
 		u.UnitHash = common.Hash{}
-		u.UnitHash.Set(u.UnitHeader.Hash())
+		u.UnitHash.Set(headerHash)
 	}
 	return u.UnitHash
 }
