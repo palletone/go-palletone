@@ -24,8 +24,8 @@ import (
 	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 	"strconv"
+	"time"
 )
 
 type UnitJson struct {
@@ -41,8 +41,8 @@ type FastUnitJson struct {
 	StableIndex uint64      `json:"stable_index"`
 }
 type HeaderJson struct {
-	ParentsHash []common.Hash `json:"parents_hash"`
-	//AssetIDs      []string       `json:"assets"`
+	ParentsHash   []common.Hash  `json:"parents_hash"`
+	Hash          string         `json:"hash"`
 	AuthorAddress string         `json:"mediator_address"`
 	AuthorPubKey  string         `json:"mediator_pubkey"`
 	AuthorSign    string         `json:"mediator_sign"` // the unit creation authors
@@ -76,6 +76,7 @@ func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc) *Unit
 func ConvertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	json := &HeaderJson{
 		ParentsHash:   header.ParentsHash,
+		Hash:          header.Hash().String(),
 		AuthorAddress: header.Authors.Address().String(),
 		AuthorPubKey:  hex.EncodeToString(header.Authors.PubKey),
 		AuthorSign:    hex.EncodeToString(header.Authors.Signature),
@@ -104,8 +105,7 @@ type UnitSummaryJson struct {
 	TxCount    int                `json:"transaction_count"`
 }
 
-func
-ConvertUnit2SummaryJson(unit *modules.Unit) *UnitSummaryJson {
+func ConvertUnit2SummaryJson(unit *modules.Unit) *UnitSummaryJson {
 	json := &UnitSummaryJson{
 		UnitHash:   unit.Hash(),
 		UnitSize:   unit.Size(),
