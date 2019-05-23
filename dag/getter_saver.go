@@ -21,7 +21,6 @@
 package dag
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/dedis/kyber"
@@ -29,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -220,20 +218,7 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 }
 
 func (d *Dag) GetAccountVotedMediators(addr common.Address) map[string]bool {
-	data, err := d.unstableStateRep.GetAccountState(addr, constants.VOTED_MEDIATORS)
-	if err != nil {
-		log.Debugf(err.Error())
-		return nil
-	}
-
-	votedMediators := make(map[string]bool)
-	err = json.Unmarshal(data.Value, &votedMediators)
-	if err != nil {
-		log.Debugf(err.Error())
-		return nil
-	}
-
-	return votedMediators
+	return d.unstableStateRep.GetAccountVotedMediators(addr)
 }
 
 func (d *Dag) GetPtnBalance(addr common.Address) uint64 {

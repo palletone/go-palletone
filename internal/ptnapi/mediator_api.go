@@ -26,8 +26,8 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -56,9 +56,9 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, error) {
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.MediatorDeposit, error) {
 	// 构建参数
-	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetDeposit), []byte(addStr)}
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
@@ -67,7 +67,7 @@ func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.DepositBalance, 
 		return nil, err
 	}
 
-	depositB := &deposit.DepositBalance{}
+	depositB := deposit.NewMediatorDeposit()
 	err = json.Unmarshal(rsp, depositB)
 	if err == nil {
 		return depositB, nil
@@ -116,9 +116,9 @@ func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
 
 func (a *PublicMediatorAPI) GetActives() []string {
 	addStrs := make([]string, 0)
-	ms := a.Dag().ActiveMediators()
+	ms := a.Dag().GetActiveMediators()
 
-	for medAdd, _ := range ms {
+	for _, medAdd := range ms {
 		addStrs = append(addStrs, medAdd.Str())
 	}
 
@@ -196,8 +196,6 @@ func (args *MediatorCreateArgs) setDefaults() {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
 	}
 
-	args.ApplyEnterTime = time.Now().Unix()
-
 	return
 }
 
@@ -235,7 +233,7 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	// 返回执行结果
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey : %v , node: %v , content: %v",
-		args.AddStr, args.InitPubKey, args.Node, args.Content)
+		args.AddStr, args.InitPubKey, args.Node, args.ApplyInfo)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +

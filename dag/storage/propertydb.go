@@ -21,9 +21,8 @@
 package storage
 
 import (
-	"fmt"
-
 	"encoding/binary"
+	"reflect"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -32,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"reflect"
 )
 
 type PropertyDb struct {
@@ -66,10 +64,11 @@ func NewPropertyDb(db ptndb.Database) *PropertyDb {
 }
 
 func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
-	log.DebugDynamic(func() string {
-		return fmt.Sprintf("DB[%s] Save mediator schedule:%s to db.", reflect.TypeOf(propdb.db).String(), ms.String())
-	})
-	err := StoreBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
+	//log.DebugDynamic(func() string {
+	//	return fmt.Sprintf("DB[%s] Save mediator schedule:%s to db.", reflect.TypeOf(propdb.db).String(), ms.String())
+	//})
+
+	err := StoreToRlpBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
 	if err != nil {
 		log.Errorf("Store mediator schedule error: %v", err.Error())
 	}
@@ -79,7 +78,7 @@ func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error 
 
 func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty) error {
 	log.Debugf("DB[%s] Save dynamic global property to db.", reflect.TypeOf(propdb.db).String())
-	err := StoreBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
+	err := StoreToRlpBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
 	if err != nil {
 		log.Errorf("Store dynamic global properties error: %v", err.Error())
 	}
@@ -89,7 +88,7 @@ func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty)
 
 func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 	log.Debugf("DB[%s] Save global property to db.", reflect.TypeOf(propdb.db).String())
-	err := StoreBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	err := StoreToJsonBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Store global properties error: %v", err.Error())
 	}
@@ -100,7 +99,7 @@ func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 
 	gp := &modules.GlobalProperty{}
-	err := retrieve(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	err := RetrieveFromJsonBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Retrieve global properties error: %v", err.Error())
 	}
@@ -110,7 +109,7 @@ func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) 
 func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	dgp := modules.NewDynGlobalProp()
 
-	err := retrieve(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
+	err := RetrieveFromRlpBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
 	if err != nil {
 		log.Errorf("Retrieve dynamic global properties error: %v", err.Error())
 	}
@@ -120,7 +119,7 @@ func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalPropert
 
 func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
 	ms := new(modules.MediatorSchedule)
-	err := retrieve(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
+	err := RetrieveFromRlpBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
 	if err != nil {
 		log.Errorf("Retrieve mediator schedule error: %v", err.Error())
 	}
@@ -135,7 +134,7 @@ func makeGlobalPropHistoryKey(gp *modules.GlobalPropertyHistory) []byte {
 func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error {
 	log.Debugf("DB[%s] Save global property history to db.", reflect.TypeOf(propdb.db).String())
 	key := makeGlobalPropHistoryKey(gp)
-	err := StoreBytes(propdb.db, key, gp)
+	err := StoreToRlpBytes(propdb.db, key, gp)
 	if err != nil {
 		log.Errorf("Store global properties history error: %v", err.Error())
 	}
@@ -161,12 +160,12 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
 	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(), hash.String(), index.String())
 
-	return StoreBytes(db.db, key, data)
+	return StoreToRlpBytes(db.db, key, data)
 }
 func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
 	key := append(constants.LastUnitInfo, asset.Bytes()...)
 	data := &modules.UnitProperty{}
-	err := retrieve(db.db, key, data)
+	err := RetrieveFromRlpBytes(db.db, key, data)
 	if err != nil {
 		return common.Hash{}, nil, 0, err
 	}
@@ -176,12 +175,12 @@ func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *module
 }
 func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
 	log.Debugf("Save chaincodes with contractid %s", contractId.String())
-	return StoreBytes(db.db, contractId.Bytes(), cc)
+	return StoreToRlpBytes(db.db, contractId.Bytes(), cc)
 }
 func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
 	log.Debugf("Get chaincodes with contractid %s", contractId.String())
 	cc := &list.CCInfo{}
-	err := retrieve(db.db, contractId.Bytes(), cc)
+	err := RetrieveFromRlpBytes(db.db, contractId.Bytes(), cc)
 	if err != nil {
 		log.Infof("Cannot retrieve chaincodes by contractid %s", contractId.String())
 		return nil, err
