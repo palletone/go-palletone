@@ -167,7 +167,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
 		Payload: &modules.ContractStopRequestPayload{
-			ContractId:  contractId[:],
+			ContractId:  contractId.Bytes(),
 			Txid:        hex.EncodeToString(randNum),
 			DeleteImage: deleteImage,
 		},
