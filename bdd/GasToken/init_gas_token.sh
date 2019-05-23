@@ -2,7 +2,7 @@
 cd ../../
 ## build gptn
 go build ./cmd/gptn
-cp ./cmd/gptn/gptn ./bdd/GasToken/node/
+cp ./cmd/gptn/gptn ./bdd/GasToken/node
 cd ./bdd/GasToken/node
 chmod +x gptn
 
@@ -42,4 +42,4 @@ fi
 EOF
 
 # start gptn
-nohup ./gptn &
+#nohup ./gptn &
