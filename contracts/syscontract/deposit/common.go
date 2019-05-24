@@ -61,7 +61,8 @@ func isContainDepositContractAddr(stub shim.ChaincodeStubInterface) (invokeToken
 //}
 
 //  加入申请提取列表
-func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr common.Address, invokeTokens *modules.AmountAsset) error {
+func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface, invokeAddr common.Address,
+	invokeTokens *modules.AmountAsset) error {
 	//  先获取申请列表
 	listForCashback, err := GetListForCashback(stub)
 	if err != nil {
@@ -111,15 +112,28 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		Amount: ptnAccount,
 		Asset:  fees.Asset,
 	}
-	//  先获取账户信息
-	mediator, err := GetNodeBalance(stub, invokeAddr.String())
-	if mediator == nil {
-		return fmt.Errorf("%s", "balance is nil")
+
+	var balance uint64
+	if role == Mediator {
+		md, _ := GetMediatorDeposit(stub, invokeAddr.String())
+		if md == nil {
+			return fmt.Errorf("%s", "mediator balance is nil")
+		}
+		balance = md.Balance
+	} else {
+		//  先获取账户信息
+		deposit, _ := GetNodeBalance(stub, invokeAddr.String())
+		if deposit == nil {
+			return fmt.Errorf("%s", "balance is nil")
+		}
+		balance = deposit.Balance
 	}
+
 	//  判断余额与当前退还的比较
-	if mediator.Balance < invokeTokens.Amount {
+	if balance < invokeTokens.Amount {
 		return fmt.Errorf("%s", "balance is not enough")
 	}
+
 	//  对mediator的特殊处理
 	if role == Mediator {
 		//  获取保证金下限
@@ -133,7 +147,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 			return err
 		}
 		//  判断退还后是否还在保证金下线之上
-		if mediator.Balance-invokeTokens.Amount < depositAmountsForMediator {
+		if balance-invokeTokens.Amount < depositAmountsForMediator {
 			return fmt.Errorf("%s", "can not cashback some")
 		}
 	}

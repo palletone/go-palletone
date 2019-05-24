@@ -257,15 +257,15 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 	// 调用系统合约
 	cArgs := [][]byte{[]byte(modules.MediatorPayDeposit)}
 	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
-	reqId, err := a.ContractInvokeReqTx(fromAdd, fromAdd, 0, fee, nil,
-		syscontract.DepositContractAddress, cArgs, 0)
+	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
+		fee, nil, syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account(%v) transfer %vPTN to DepositContract(%v) ",
+	res.TxContent = fmt.Sprintf("Account(%v) pay %vPTN to DepositContract(%v) ",
 		from, amount, syscontract.DepositContractAddress.Str())
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
@@ -296,8 +296,8 @@ func (a *PrivateMediatorAPI) WithdrawDeposit(from string, amount decimal.Decimal
 	cArgs := [][]byte{[]byte(modules.MediatorWithdrawDeposit), []byte(amountStr)}
 
 	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
-	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, 0,
-		fee, nil, syscontract.DepositContractAddress, cArgs, 0)
+	reqId, err := a.ContractInvokeReqTx(fromAdd, fromAdd, 0, fee,
+		nil, syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
