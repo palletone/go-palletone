@@ -80,7 +80,7 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 func (p *Processor) checkJury(reqEvt *AdapterRequestEvent) bool {
 	juryAll, err := p.getContractElectionList(reqEvt.ContractId)
 	if err != nil {
-		log.Debug("checkJury", "ContractId",reqEvt.ContractId, "getContractElectionList err:", err)
+		log.Debug("checkJury", "ContractId", reqEvt.ContractId, "getContractElectionList err:", err)
 		return false
 	}
 	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
@@ -123,7 +123,7 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-	log.Infof("AdapterFunRequest", "reqid: %x, consultContent: %s", reqId, string(consultContent))
+	log.Infof("AdapterFunRequest reqid: %x, consultContent: %s", reqId, string(consultContent))
 	//
 	account := p.getLocalAccount()
 	if account == nil {
@@ -200,7 +200,7 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-	log.Infof("AdapterFunResult", "reqid: %x, consultContent: %s", reqId, string(consultContent))
+	log.Infof("AdapterFunResult reqid: %x, consultContent: %s", reqId, string(consultContent))
 	result, err := p.getRusult(reqId, msgType, consultContent)
 	if err == nil {
 		return result, nil

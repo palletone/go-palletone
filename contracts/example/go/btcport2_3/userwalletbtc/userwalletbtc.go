@@ -354,6 +354,8 @@ func spendBTCFromMultiAddr(txid string, index string, txAmount string, fee strin
 			return err
 		}
 		fmt.Println(sendResult)
+	} else {
+		fmt.Println("Not complete")
 	}
 	return nil
 }
@@ -447,6 +449,141 @@ func spendBTCFromMultiAddr2(txid string, index string, txAmount string, txid2 st
 			return err
 		}
 		fmt.Println(sendResult)
+	} else {
+		fmt.Println("Not complete")
+	}
+	return nil
+}
+
+func signTx(rawtx, redeem1, redeem2, prikey string) (string, error) {
+	var signTxParams adaptor.SignTransactionParams
+	signTxParams.TransactionHex = rawtx
+	signTxParams.InputRedeemIndex = []int{0, 1}
+	signTxParams.RedeemHex = append(signTxParams.RedeemHex, redeem1)
+	signTxParams.RedeemHex = append(signTxParams.RedeemHex, redeem2)
+	signTxParams.Privkeys = append(signTxParams.Privkeys, prikey)
+
+	//
+	var btcadaptor adaptorbtc.AdaptorBTC
+	btcadaptor.NetID = gWallet.BtcConfig.NetID
+	signReuslt, err := btcadaptor.SignTransaction(&signTxParams)
+	if err != nil {
+		return "", err
+	} else {
+		fmt.Println("==== ==== Signed tx start ==== ====")
+		fmt.Println(signReuslt)
+		fmt.Println("==== ==== Signed tx end ==== ====")
+	}
+	var signTxResult adaptor.SignTransactionResult
+	err = json.Unmarshal([]byte(signReuslt), &signTxResult)
+	if err != nil {
+		return "", err
+	}
+	return signTxResult.TransactionHex, nil
+}
+
+func mergeMultiAddr2(txid string, index string, txAmount string, txid2 string, index2 string, txAmount2 string,
+	fee string, toAddr string, redeem string, redeem2 string, prikey string, prikey2 string) error {
+	//
+	vout, err := strconv.Atoi(index)
+	if err != nil {
+		return errors.New("Index is Invalid.")
+	}
+	vout2, err := strconv.Atoi(index2)
+	if err != nil {
+		return errors.New("Index2 is Invalid.")
+	}
+
+	amountValue, err := strconv.ParseFloat(txAmount, 64)
+	if err != nil {
+		return errors.New("Amount is Invalid.")
+	}
+	amountValue2, err := strconv.ParseFloat(txAmount2, 64)
+	if err != nil {
+		return errors.New("Amount2 is Invalid.")
+	}
+	feeValue, err := strconv.ParseFloat(fee, 64)
+	if err != nil {
+		return errors.New("Fee is Invalid.")
+	}
+
+	err = checkTxAmount(txid, vout, amountValue)
+	if err != nil {
+		return err
+	}
+	err = checkTxAmount(txid2, vout2, amountValue2)
+	if err != nil {
+		return err
+	}
+	//
+	var btcadaptor adaptorbtc.AdaptorBTC
+	btcadaptor.NetID = gWallet.BtcConfig.NetID
+	//
+	var rawTransactionGenParams adaptor.RawTransactionGenParams
+	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid, Vout: uint32(vout)})
+	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid2, Vout: uint32(vout2)})
+	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptor.Output{toAddr, amountValue + amountValue2 - feeValue})
+	//
+	btcadaptor.Host = gWallet.BtcConfig.Host
+	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
+	btcadaptor.RPCPasswd = gWallet.BtcConfig.RPCPasswd
+	btcadaptor.CertPath = gWallet.BtcConfig.CertPath
+	//
+	rawResult, err := btcadaptor.RawTransactionGen(&rawTransactionGenParams)
+	if err != nil {
+		return err
+	} else {
+		fmt.Println("==== ==== Raw tx start ==== ====")
+		fmt.Println(rawResult)
+		fmt.Println("==== ==== Raw tx end ==== ====")
+	}
+	//
+	var rawTransactionGenResult adaptor.RawTransactionGenResult
+	err = json.Unmarshal([]byte(rawResult), &rawTransactionGenResult)
+	if err != nil {
+		return err
+	}
+
+	sign1, err := signTx(rawTransactionGenResult.Rawtx, redeem, redeem2, prikey)
+	if err != nil {
+		return err
+	}
+	sign2, err := signTx(rawTransactionGenResult.Rawtx, redeem, redeem2, prikey2)
+	if err != nil {
+		return err
+	}
+	//
+	var mergeTxParams adaptor.MergeTransactionParams
+	mergeTxParams.UserTransactionHex = rawTransactionGenResult.Rawtx
+	mergeTxParams.InputRedeemIndex = []int{0, 1}
+	mergeTxParams.RedeemHex = append(mergeTxParams.RedeemHex, redeem)
+	mergeTxParams.RedeemHex = append(mergeTxParams.RedeemHex, redeem2)
+	mergeTxParams.MergeTransactionHexs = append(mergeTxParams.MergeTransactionHexs, sign1)
+	mergeTxParams.MergeTransactionHexs = append(mergeTxParams.MergeTransactionHexs, sign2)
+	mergeReuslt, err := btcadaptor.MergeTransaction(&mergeTxParams)
+	if err != nil {
+		return err
+	} else {
+		fmt.Println("==== ==== merge tx start ==== ====")
+		fmt.Println(mergeReuslt)
+		fmt.Println("==== ==== merge tx end ==== ====")
+	}
+	var mergeTxResult adaptor.MergeTransactionResult
+	err = json.Unmarshal([]byte(mergeReuslt), &mergeTxResult)
+	if err != nil {
+		fmt.Println("Not complete1")
+		return err
+	}
+
+	if mergeTxResult.Complete {
+		sendTxParams := adaptor.SendTransactionHttpParams{mergeTxResult.TransactionHex}
+		sendResult, err := btcadaptor.SendTransactionHttp(&sendTxParams)
+		if err != nil {
+			return err
+		}
+		fmt.Println(sendResult)
+	} else {
+		fmt.Println("Not complete")
 	}
 	return nil
 }
@@ -459,6 +596,7 @@ func helper() {
 	fmt.Println("Params : sendToMulti, txid, index, txAmount, fee, multiSigAddr")
 	fmt.Println("Params : spendmulti, txid, index, amount, fee, toAddr, redeem, key1, key2")
 	fmt.Println("Params : spendmulti2, txid, index, amount, txid2, index2, amount2, fee, toAddr, redeem, redeem2, key1, key2")
+	fmt.Println("Params : mergemulti2, txid, index, amount, txid2, index2, amount2, fee, toAddr, redeem, redeem2, key1, key2")
 }
 func main() {
 	f, err := os.Open(gWalletFile)
@@ -523,6 +661,18 @@ func main() {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+	case "mergemulti2":
+		if len(args) < 14 {
+			fmt.Println("Params : mergemulti2, txid, index, amount, txid2, index2, amount2, fee, toAddr, redeem, redeem2, key1, key2")
+			return
+		}
+		start := time.Now()
+		err := mergeMultiAddr2(args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13])
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		end := time.Now()
+		fmt.Println(end.Sub(start))
 	case "spendmulti2":
 		if len(args) < 14 {
 			fmt.Println("Params : spendmulti2, txid, index, amount, txid2, index2, amount2, fee, toAddr, redeem, redeem2, key1, key2")
