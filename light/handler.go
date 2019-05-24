@@ -325,7 +325,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return p2p.DiscTooManyPeers
 	}
-	log.Debug("Light Palletone peer connected", "name", p.Name())
+	log.Debug("Light Palletone peer connected", "id", p.ID())
 
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
@@ -363,9 +363,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}()
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
 	if pm.lightSync {
-		//p.lock.Lock()
-		//head := p.headInfo
-		//p.lock.Unlock()
 		if pm.fetcher != nil {
 			//pm.fetcher.announce(p, head)
 		}
@@ -421,24 +418,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return err
 	}
 	log.Trace("Light Palletone message arrived", "code", msg.Code, "bytes", msg.Size)
-
-	//costs := p.fcCosts[msg.Code]
-	//reject := func(reqCnt, maxCnt uint64) bool {
-	//	if p.fcClient == nil || reqCnt > maxCnt {
-	//		return true
-	//	}
-	//	bufValue, _ := p.fcClient.AcceptRequest()
-	//	cost := costs.baseCost + reqCnt*costs.reqCost
-	//	if cost > pm.server.defParams.BufLimit {
-	//		cost = pm.server.defParams.BufLimit
-	//	}
-	//	if cost > bufValue {
-	//		recharge := time.Duration((cost - bufValue) * 1000000 / pm.server.defParams.MinRecharge)
-	//		log.Error("Request came too early", "recharge", common.PrettyDuration(recharge))
-	//		return true
-	//	}
-	//	return false
-	//}
 
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
@@ -524,15 +503,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
 
-	//if deliverMsg != nil {
-	//	err := pm.retriever.deliver(p, deliverMsg)
-	//	if err != nil {
-	//		p.responseErrors++
-	//		if p.responseErrors > maxResponseErrors {
-	//			return err
-	//		}
-	//	}
-	//}
 	return nil
 }
 
@@ -546,65 +516,6 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
 
-/*
-// getAccount retrieves an account from the state based at root.
-func (pm *ProtocolManager) getAccount(statedb *state.StateDB, root, hash common.Hash) (state.Account, error) {
-	trie, err := trie.New(root, statedb.Database().TrieDB())
-	if err != nil {
-		return state.Account{}, err
-	}
-	blob, err := trie.TryGet(hash[:])
-	if err != nil {
-		return state.Account{}, err
-	}
-	var account state.Account
-	if err = rlp.DecodeBytes(blob, &account); err != nil {
-		return state.Account{}, err
-	}
-	return account, nil
-}
-
-// getHelperTrie returns the post-processed trie root for the given trie ID and section index
-func (pm *ProtocolManager) getHelperTrie(id uint, idx uint64) (common.Hash, string) {
-	switch id {
-	case htCanonical:
-		sectionHead := core.GetCanonicalHash(pm.chainDb, (idx+1)*light.CHTFrequencyClient-1)
-		return light.GetChtV2Root(pm.chainDb, idx, sectionHead), light.ChtTablePrefix
-	case htBloomBits:
-		sectionHead := core.GetCanonicalHash(pm.chainDb, (idx+1)*light.BloomTrieFrequency-1)
-		return light.GetBloomTrieRoot(pm.chainDb, idx, sectionHead), light.BloomTrieTablePrefix
-	}
-	return common.Hash{}, ""
-}
-
-// getHelperTrieAuxData returns requested auxiliary data for the given HelperTrie request
-func (pm *ProtocolManager) getHelperTrieAuxData(req HelperTrieReq) []byte {
-	switch {
-	case req.Type == htCanonical && req.AuxReq == auxHeader && len(req.Key) == 8:
-		blockNum := binary.BigEndian.Uint64(req.Key)
-		hash := core.GetCanonicalHash(pm.chainDb, blockNum)
-		return core.GetHeaderRLP(pm.chainDb, hash, blockNum)
-	}
-	return nil
-}
-
-func (pm *ProtocolManager) txStatus(hashes []common.Hash) []txStatus {
-	stats := make([]txStatus, len(hashes))
-	for i, stat := range pm.txpool.Status(hashes) {
-		// Save the status we've got from the transaction pool
-		stats[i].Status = stat
-
-		// If the transaction is unknown to the pool, try looking it up locally
-		if stat == core.TxStatusUnknown {
-			if block, number, index := core.GetTxLookupEntry(pm.chainDb, hashes[i]); block != (common.Hash{}) {
-				stats[i].Status = core.TxStatusIncluded
-				stats[i].Lookup = &core.TxLookupEntry{BlockHash: block, BlockIndex: number, Index: index}
-			}
-		}
-	}
-	return stats
-}
-*/
 // NodeInfo represents a short summary of the Palletone sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {

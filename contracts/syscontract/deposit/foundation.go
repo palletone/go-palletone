@@ -681,7 +681,7 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 		log.Error("get foundation address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
+	if invokeAddr.String() != foundationAddress {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
@@ -703,14 +703,14 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 	}
 	isOk := args[1]
 	//  判断处理结果
-	if strings.Compare(isOk, Ok) == 0 {
+	if isOk == Ok {
 		//  对余额处理
 		err = handleMediator(stub, addr, md)
 		if err != nil {
 			log.Error("handle mediator err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-	} else if strings.Compare(isOk, No) == 0 {
+	} else if isOk == No {
 		//移除提取申请列表
 		err = moveAndPutStateFromCashbackList(stub, addr)
 		if err != nil {

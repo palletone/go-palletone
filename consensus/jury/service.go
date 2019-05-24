@@ -173,12 +173,12 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	}
 
 	//get contract system config
-	contractSigNum := getSystemContractConfig(dag, "ContractSignatureNum")
+	contractSigNum := getSystemContractConfig(dag, modules.ContractSignatureNum)
 	if contractSigNum < 1 {
 		num, _ := strconv.Atoi(core.DefaultContractSignatureNum)
 		contractSigNum = num
 	}
-	contractEleNum := getSystemContractConfig(dag, "ContractElectionNum")
+	contractEleNum := getSystemContractConfig(dag, modules.ContractElectionNum)
 	if contractEleNum < 1 {
 		num, _ := strconv.Atoi(core.DefaultContractElectionNum)
 		contractEleNum = num
@@ -454,16 +454,21 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		}
 		ctx.valid = false
 		log.Debugf("[%s]AddContractLoop, B enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
-		//tx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
-		//if err != nil {
-		//	log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
-		//	continue
-		//}
-		if err := txpool.AddSequenTx(ctx.rstTx); err != nil {
+
+		tx := ctx.rstTx
+		if tx.IsSystemContract() {
+			sigTx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
+			if err != nil {
+				log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
+				continue
+			}
+			tx = sigTx
+		}
+		if err := txpool.AddSequenTx(tx); err != nil {
 			log.Errorf("[%s]AddContractLoop, error:%s", shortId(reqId.String()), err.Error())
 			continue
 		}
-		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s]", shortId(reqId.String()), index, ctx.rstTx.Hash().String())
+		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s]", shortId(reqId.String()), index, tx.Hash().String())
 		index++
 	}
 	return nil

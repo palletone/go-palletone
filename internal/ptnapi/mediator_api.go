@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -237,16 +238,20 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
-		" , You can get the transaction hash with dag.getTxByReqId()."
+		" , You can get the transaction hash with dag.getTxByReqId()"
 
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*TxExecuteResult, error) {
 	// 参数检查
 	fromAdd, err := common.StringToAddress(from)
 	if err != nil {
 		return nil, fmt.Errorf("invalid account address: %v", from)
+	}
+
+	if !amount.IsPositive() {
+		return nil, fmt.Errorf("the amount of the deposit must be greater than 0")
 	}
 
 	// 调用系统合约
@@ -260,12 +265,83 @@ func (a *PrivateMediatorAPI) Deposit(from string, amount decimal.Decimal) (*TxEx
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account(%v) transfer %vPTN to DepositContract(%v) ",
+	res.TxContent = fmt.Sprintf("Account(%v) pay %vPTN to DepositContract(%v)",
 		from, amount, syscontract.DepositContractAddress.Str())
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
-		" , You can get the transaction hash with dag.getTxByReqId()."
+		" , You can get the transaction hash with dag.getTxByReqId()"
+
+	return res, nil
+}
+
+func (a *PrivateMediatorAPI) WithdrawDeposit(medAddStr string, amount decimal.Decimal) (*TxExecuteResult, error) {
+	// 参数检查
+	medAdd, err := common.StringToAddress(medAddStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", medAddStr)
+	}
+
+	// 判断是否是mediator
+	if !a.Dag().IsMediator(medAdd) {
+		return nil, fmt.Errorf("account %v is not a mediator", medAddStr)
+	}
+
+	if !amount.IsPositive() {
+		return nil, fmt.Errorf("the amount of the deposit must be greater than 0")
+	}
+
+	// 调用系统合约
+	amountStr := strconv.FormatUint(ptnjson.Ptn2Dao(amount), 10)
+	cArgs := [][]byte{[]byte(modules.MediatorWithdrawDeposit), []byte(amountStr)}
+
+	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
+	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
+		nil, syscontract.DepositContractAddress, cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// 返回执行结果
+	res := &TxExecuteResult{}
+	res.TxContent = fmt.Sprintf("Mediator(%v) apply to withdraw %vPTN to DepositContract(%v)",
+		medAddStr, amount, syscontract.DepositContractAddress.Str())
+	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = DefaultResult
+	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
+		" , You can get the transaction hash with dag.getTxByReqId()"
+
+	return res, nil
+}
+
+func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
+	// 参数检查
+	medAdd, err := common.StringToAddress(medAddStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", medAddStr)
+	}
+
+	// 判断是否是mediator
+	if !a.Dag().IsMediator(medAdd) {
+		return nil, fmt.Errorf("account %v is not a mediator", medAddStr)
+	}
+
+	// 调用系统合约
+	cArgs := [][]byte{[]byte(modules.MediatorApplyQuitMediator)}
+	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
+	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
+		nil, syscontract.DepositContractAddress, cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// 返回执行结果
+	res := &TxExecuteResult{}
+	res.TxContent = fmt.Sprintf("mediator(%v) apply to quit list", medAddStr)
+	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = DefaultResult
+	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
+		" , You can get the transaction hash with dag.getTxByReqId()"
 
 	return res, nil
 }
