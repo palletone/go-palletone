@@ -55,7 +55,6 @@ const (
 	HandleForJuryApplyCashback      = "HandleForJuryApplyCashback"
 	JuryApplyCashback               = "JuryApplyCashback"
 	HandleForMediatorApplyCashback  = "HandleForMediatorApplyCashback"
-	MediatorApplyCashback           = "MediatorApplyCashback"
 	DeveloperPayToDepositContract   = "DeveloperPayToDepositContract"
 	JuryPayToDepositContract        = "JuryPayToDepositContract"
 	HandleForApplyQuitMediator      = "HandleForApplyQuitMediator"
