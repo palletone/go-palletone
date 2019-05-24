@@ -22,8 +22,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"time"
-	"math/rand"
 	"math/big"
 	"strconv"
 	"strings"
@@ -155,76 +153,6 @@ func NewFromString(value string) (Decimal, error) {
 	}, nil
 }
 
-
-func RandFromString(value string) (Decimal, error) {
-	originalInput := value
-	var intString string
-	var exp int64
-
-	// Check if number is using scientific notation
-	eIndex := strings.IndexAny(value, "Ee")
-	if eIndex != -1 {
-		expInt, err := strconv.ParseInt(value[eIndex+1:], 10, 32)
-		if err != nil {
-			if e, ok := err.(*strconv.NumError); ok && e.Err == strconv.ErrRange {
-				return Decimal{}, fmt.Errorf("can't convert %s to decimal: fractional part too long", value)
-			}
-			return Decimal{}, fmt.Errorf("can't convert %s to decimal: exponent is not numeric", value)
-		}
-		value = value[:eIndex]
-		exp = expInt
-	}
-
-	parts := strings.Split(value, ".")
-	if len(parts) == 1 {
-		// There is no decimal point, we can just parse the original string as
-		// an int
-		intString = value
-	} else if len(parts) == 2 {
-		// strip the insignificant digits for more accurate comparisons.
-		decimalPart := strings.TrimRight(parts[1], "0")
-		intString = parts[0] + decimalPart
-		expInt := -len(decimalPart)
-		exp += int64(expInt)
-	} else {
-		return Decimal{}, fmt.Errorf("can't convert %s to decimal: too many .s", value)
-	}
-    
-	dValue := new(big.Int)
-	_, ok := dValue.SetString(intString, 10)
-	if !ok {
-		return Decimal{}, fmt.Errorf("can't convert %s to decimal", value)
-	}
-
-	if exp < math.MinInt32 || exp > math.MaxInt32 {
-		// NOTE(vadim): I doubt a string could realistically be this long
-		return Decimal{}, fmt.Errorf("can't convert %s to decimal: fractional part too long", originalInput)
-	}
-	rand.Seed(time.Now().UnixNano())
-    
-	input_number:= Decimal{
-		value: dValue,
-		exp:   int32(exp),
-	}
-	result := Decimal{}
-	rand_number := Decimal{}
-	r := rand.Int()
-	rd :=big.NewInt(int64(r))
-	for {
-		r = rand.Int()
-	    rd =big.NewInt(int64(r))
-
-	    rand_number = Decimal{
-			value: rd,
-			exp:   int32(exp),
-		}
-		result = rand_number.Mod(input_number)
-	    if result.IsZero() == false{
-                  break
-	    }
-    }
-	return result, nil
-}
 // RequireFromString returns a new Decimal from a string representation
 // or panics if NewFromString would have returned an error.
 //
@@ -701,8 +629,8 @@ func (d Decimal) Sign() int {
 //	false if d == 0
 //	false if d < 0
 func (d Decimal) IsPositive() bool {
-	return d.Sign() >= 1
-} 
+	return d.Sign() == 1
+}
 
 // IsNegative return
 //
