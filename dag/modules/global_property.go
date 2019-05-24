@@ -32,8 +32,8 @@ type GlobalPropBase struct {
 	ChainParameters     core.ChainParameters          // 区块链网络参数
 }
 
-func NewGlobalPropBase() *GlobalPropBase {
-	return &GlobalPropBase{
+func NewGlobalPropBase() GlobalPropBase {
+	return GlobalPropBase{
 		ImmutableParameters: core.NewImmutChainParams(),
 		ChainParameters:     core.NewChainParams(),
 	}
@@ -41,8 +41,7 @@ func NewGlobalPropBase() *GlobalPropBase {
 
 // 全局属性的结构体定义
 type GlobalProperty struct {
-	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
-	ChainParameters     core.ChainParameters          // 区块链网络参数
+	GlobalPropBase
 
 	ActiveJuries       map[common.Address]bool // 当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
@@ -51,11 +50,10 @@ type GlobalProperty struct {
 
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
-		ImmutableParameters: core.NewImmutChainParams(),
-		ChainParameters:     core.NewChainParams(),
-		ActiveJuries:        make(map[common.Address]bool, 0),
-		ActiveMediators:     make(map[common.Address]bool, 0),
-		PrecedingMediators:  make(map[common.Address]bool, 0),
+		GlobalPropBase:     NewGlobalPropBase(),
+		ActiveJuries:       make(map[common.Address]bool, 0),
+		ActiveMediators:    make(map[common.Address]bool, 0),
+		PrecedingMediators: make(map[common.Address]bool, 0),
 	}
 }
 

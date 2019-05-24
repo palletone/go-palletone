@@ -88,7 +88,7 @@ func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty)
 
 func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 	log.Debugf("DB[%s] Save global property to db.", reflect.TypeOf(propdb.db).String())
-	err := StoreToJsonBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	err := StoreToRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Store global properties error: %v", err.Error())
 	}
@@ -99,7 +99,7 @@ func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 
 	gp := &modules.GlobalProperty{}
-	err := RetrieveFromJsonBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	err := RetrieveFromRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Retrieve global properties error: %v", err.Error())
 	}
@@ -126,11 +126,13 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 
 	return ms, err
 }
+
 func makeGlobalPropHistoryKey(gp *modules.GlobalPropertyHistory) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, gp.EffectiveTime)
 	return append(constants.GLOBALPROPERTY_HISTORY_PREFIX, b...)
 }
+
 func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error {
 	log.Debugf("DB[%s] Save global property history to db.", reflect.TypeOf(propdb.db).String())
 	key := makeGlobalPropHistoryKey(gp)
@@ -141,9 +143,10 @@ func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHisto
 
 	return err
 }
+
 func (propdb *PropertyDb) RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error) {
 	kv := getprefix(propdb.db, constants.GLOBALPROPERTY_HISTORY_PREFIX)
-	result := []*modules.GlobalPropertyHistory{}
+	result := make([]*modules.GlobalPropertyHistory, 0)
 	for _, v := range kv {
 		gp := &modules.GlobalPropertyHistory{}
 		rlp.DecodeBytes(v, gp)
@@ -162,6 +165,7 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 
 	return StoreToRlpBytes(db.db, key, data)
 }
+
 func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
 	key := append(constants.LastUnitInfo, asset.Bytes()...)
 	data := &modules.UnitProperty{}
@@ -173,10 +177,12 @@ func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *module
 		data.Hash.String(), data.Index.String(), data.Timestamp)
 	return data.Hash, data.Index, int64(data.Timestamp), nil
 }
+
 func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
 	log.Debugf("Save chaincodes with contractid %s", contractId.String())
 	return StoreToRlpBytes(db.db, contractId.Bytes(), cc)
 }
+
 func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
 	log.Debugf("Get chaincodes with contractid %s", contractId.String())
 	cc := &list.CCInfo{}

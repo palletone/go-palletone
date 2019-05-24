@@ -21,7 +21,6 @@
 package common
 
 import (
-	"fmt"
 	"time"
 
 	"strconv"
@@ -114,14 +113,14 @@ func (d *UnitProduceRepository) Close() {
 func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 	var err error
 
-	// 2. 更新状态
-	err = rep.ApplyUnit(newUnit)
+	//更新数据库
+	err = rep.unitRep.SaveUnit(newUnit, false)
 	if err != nil {
 		return err
 	}
 
-	//更新数据库
-	err = rep.unitRep.SaveUnit(newUnit, false)
+	// 2. 更新状态
+	err = rep.ApplyUnit(newUnit)
 	if err != nil {
 		return err
 	}
@@ -134,13 +133,6 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	defer func(start time.Time) {
 		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
 	}(time.Now())
-
-	// 验证 unit 的 mediator 调度
-	if err := rep.validateMediatorSchedule(nextUnit); err != nil {
-		return err
-	}
-
-	// todo 运用Unit中的交易
 
 	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
 	missed := rep.updateMediatorMissedUnits(nextUnit)
@@ -167,32 +159,6 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 
 	// 洗牌
 	rep.updateMediatorSchedule()
-
-	return nil
-}
-
-func (rep *UnitProduceRepository) validateMediatorSchedule(nextUnit *modules.Unit) error {
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	ts, _ := rep.propRep.GetNewestUnitTimestamp(gasToken)
-	if ts >= nextUnit.Timestamp() {
-		errStr := "invalidated unit's timestamp"
-		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts, nextUnit.Hash().String(), nextUnit.Timestamp())
-		return fmt.Errorf(errStr)
-	}
-
-	slotNum := rep.propRep.GetSlotAtTime(time.Unix(nextUnit.Timestamp(), 0))
-	if slotNum <= 0 {
-		errStr := "invalidated unit's slot"
-		log.Debugf(errStr)
-		return fmt.Errorf(errStr)
-	}
-
-	scheduledMediator := rep.propRep.GetScheduledMediator(slotNum)
-	if !scheduledMediator.Equal(nextUnit.Author()) {
-		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", nextUnit.Author().Str())
-		log.Debugf(errStr)
-		return fmt.Errorf(errStr)
-	}
 
 	return nil
 }

@@ -22,10 +22,11 @@
 package modules
 
 import (
+	"testing"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestCalcThreshold(t *testing.T) {
@@ -36,11 +37,12 @@ func TestCalcThreshold(t *testing.T) {
 	t4 := calcThreshold(4)
 	assert.Equal(t, 3, t4)
 }
+
 func TestGlobalProperty_Rlp(t *testing.T) {
 	gp := NewGlobalProp()
 	addr1, _ := common.StringToAddress("P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gj")
 	addr2, _ := common.StringToAddress("P124gB1bXHDTXmox58g4hd4u13HV3e5vKie")
-	gp.GlobalPropBase.ChainParameters.MaximumMediatorCount = 21
+	gp.ChainParameters.MaximumMediatorCount = 21
 	gp.ActiveMediators[addr1] = true
 	gp.ActiveMediators[addr2] = false
 	gp.ActiveJuries[addr1] = true
