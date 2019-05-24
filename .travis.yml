@@ -15,6 +15,7 @@ env:
         - VOTECONTRACT_DIR=voteContract
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
         - DEPOSIT_DIR=deposit
+        - GAS_TOKEN=gasToken
         - LOG_NAME=log.html
         - REPORT_NAME=report.html
         - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/pub
@@ -24,6 +25,7 @@ env:
         - IS_RUN_CCINVOKE=false
         - IS_RUN_DIGITAL=false
         - IS_RUN_VOTE=false
+        - IS_RUN_GASTOKEN=true
         - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
@@ -57,6 +59,13 @@ script:
 
     - if [ $IS_RUN_DIGITAL == 'true' ]; then
       python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
+      fi
+
+    - if [ $IS_RUN_GASTOKEN == 'true' ]; then
+      cd ../GasToken;
+      ./init_gas_token.sh;
+      sleep 5;
+      python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN} ./testcases;
       fi
 
 after_script:
