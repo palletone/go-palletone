@@ -1940,7 +1940,8 @@ func (handler *Handler) enterSendJury(e *fsm.Event, state string) {
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}
-		result, err := handler.aJury.AdapterFunRequest(common.HexToHash(msg.Txid), common.BytesToAddress(msg.ContractId),
+		contractAddr, _ := common.StringToAddress(chaincodeID)
+		result, err := handler.aJury.AdapterFunRequest(common.HexToHash(msg.Txid), contractAddr,
 			sendJury.MsgType, sendJury.ConsultContent, sendJury.MyAnswer)
 		if err == nil {
 			res = result
@@ -2026,7 +2027,8 @@ func (handler *Handler) enterRecvJury(e *fsm.Event, state string) {
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}
-		result, err := handler.aJury.AdapterFunResult(common.HexToHash(msg.Txid), common.BytesToAddress(msg.ContractId),
+		contractAddr, _ := common.StringToAddress(chaincodeID)
+		result, err := handler.aJury.AdapterFunResult(common.HexToHash(msg.Txid), contractAddr,
 			recvJury.MsgType, recvJury.ConsultContent, time.Second*time.Duration(recvJury.Timeout))
 		if err == nil {
 			res = result
