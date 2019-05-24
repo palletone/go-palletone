@@ -53,7 +53,7 @@ const (
 	txChanSize              = 4096
 	forceSyncCycle          = 10 * time.Second
 	waitPushSync            = 200 * time.Millisecond
-	waitneedboradcast       = 500 * time.Millisecond
+	fsMinFullBlocks         = 64
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -206,6 +206,7 @@ func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) 
 	if ok && header.Number.Index >= v {
 		//TODO broadcast to lps
 		log.Debug("Cors ProtocolManager", "BroadcastCorsHeader assetid:", header.Number.AssetID.String(), "index:", header.Index())
+		pm.server.SendEvents(header)
 	}
 	return
 }
@@ -403,15 +404,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 
-		log.Trace("CorsHeadersMsg message content", "len(headers)", len(headers))
+		log.Trace("CorsHeadersMsg message length", "len(headers)", len(headers))
 		if pm.fetcher != nil {
 			for _, header := range headers {
-				log.Trace("CorsHeadersMsg message content", "header:", header)
+				//log.Trace("CorsHeadersMsg message content", "header:", header)
 				pm.fetcher.Enqueue(p, header)
 			}
 			if len(headers) < MaxHeaderFetch {
-				pm.bdlock.Lock()
-				pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
+				pm.bdlock.Lock() //TODO modify
+				//pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
 				pm.bdlock.Unlock()
 			}
 		}

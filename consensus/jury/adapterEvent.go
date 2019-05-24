@@ -40,13 +40,16 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
+	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
+	log.Debugf("start saveSig from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
+
 	if _, exist := p.mtx[reqEvt.ReqId]; !exist { //todo how to process
+		log.Debugf("reqEvt.ReqId not exist")
 		return true
 	}
 	if p.mtx[reqEvt.ReqId].adaInf == nil {
 		p.mtx[reqEvt.ReqId].adaInf = make(map[uint32]*AdapterInf)
 	}
-	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
 	if _, exist := p.mtx[reqEvt.ReqId].adaInf[msgType]; !exist {
 		//all jury msg
 		typeAdaInf := &AdapterInf{JuryMsgAll: make(map[string]*MsgSigCollect)}
@@ -54,7 +57,7 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 		msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
 		msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
 		typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
-		log.Debugf("Create msgType saved,from %s", pubkeyHex)
+		log.Debugf("Create msgType saved,from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
 		//
 		p.mtx[reqEvt.ReqId].adaInf[msgType] = typeAdaInf
 	} else {
@@ -64,14 +67,14 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 			msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
 			msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
 			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
-			log.Debugf("Create ConsultData saved,from %s", pubkeyHex)
+			log.Debugf("Create ConsultData saved,from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
 		} else {
 			if _, exist := typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex]; exist {
-				log.Debugf("Have saved,from %s", pubkeyHex)
+				log.Debugf("Have saved,from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
 				return false
 			}
 			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
-			log.Debugf("First saved,from %s", pubkeyHex)
+			log.Debugf("First saved,from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
 		}
 	}
 	return true

@@ -103,8 +103,12 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 		return 0, err
 	}
 	log.Debug("Cors ProtocolManager", "pheader.index", pheader.Number.Index, "pushSync fetchHeader header", pheader)
+
 	flag = 0
-	index = pheader.Number.Index
+	if index = pheader.Number.Index - fsMinFullBlocks; index < 0 {
+		index = 0
+	}
+
 	number := &modules.ChainIndex{pm.assetId, index}
 	for {
 		bytes = 0
