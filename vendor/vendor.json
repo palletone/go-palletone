@@ -3,12 +3,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "24EW3PGLGVSy/5joAOZdHzN/S2E=",
-			"path": "github.com/Azure/azure-storage-go",
-			"revision": "12ccaadb081cdd217702067d28da9a7ff4305239",
-			"revisionTime": "2017-03-02T22:15:08Z"
-		},
-		{
 			"checksumSHA1": "uspv0yZkBarDgMn+YE35Esx5Ewc=",
 			"path": "github.com/Azure/go-ansiterm",
 			"revision": "d6e3b3328b783f23731bc4d058875b0371ff8109",
