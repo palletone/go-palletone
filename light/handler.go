@@ -190,7 +190,7 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
 				if p := manager.peers.Peer(fmt.Sprintf("%x", id[:8])); p != nil {
-					return p.Info()
+					return p.Info(manager.assetId)
 				}
 				return nil
 			},
@@ -246,7 +246,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 
 func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
-	peers := pm.peers.PeersWithoutHeader(header.Hash())
+	peers := pm.peers.PeersWithoutHeader(header.Number.AssetID, header.Hash())
 	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
 	for _, p := range peers {
 		if p == nil {
@@ -363,9 +363,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}()
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
 	if pm.lightSync {
-		p.lock.Lock()
+		//p.lock.Lock()
 		//head := p.headInfo
-		p.lock.Unlock()
+		//p.lock.Unlock()
 		if pm.fetcher != nil {
 			//pm.fetcher.announce(p, head)
 		}
@@ -387,8 +387,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 				if err != nil {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
 				} else {
-					//p.SetHead(&announce)
-					p.headInfo = &announce
+					p.lightlock.Lock()
+					//p.headInfo = &announce
+					p.lightpeermsg[announce.Number.AssetID] = &announce
+					p.lightlock.Unlock()
 					if !p.fullnode {
 						p.SendRawAnnounce(data)
 					}
@@ -536,7 +538,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {
 	// Broadcast transaction to a batch of peers not knowing about it
-	peers := pm.peers.AllPeers()
+	peers := pm.peers.AllPeers(pm.assetId)
 	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
 	for _, peer := range peers {
 		peer.SendTxs(0, 0, modules.Transactions{tx})
@@ -651,7 +653,7 @@ type peerConnection struct {
 
 func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	//return common.Hash{}, nil
-	return pc.peer.HeadAndNumber()
+	return pc.peer.HeadAndNumber(assetId)
 }
 
 func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {

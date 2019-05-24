@@ -16,6 +16,7 @@
 
 package light
 
+/*
 import (
 	"sync"
 
@@ -51,17 +52,17 @@ func NewLesTxRelay(ps *peerSet, reqDist *requestDistributor) *LesTxRelay {
 }
 
 func (self *LesTxRelay) registerPeer(p *peer) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	self.peerList = self.ps.AllPeers()
+	//self.lock.Lock()
+	//defer self.lock.Unlock()
+	//
+	//self.peerList = self.ps.AllPeers()
 }
 
 func (self *LesTxRelay) unregisterPeer(p *peer) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	self.peerList = self.ps.AllPeers()
+	//self.lock.Lock()
+	//defer self.lock.Unlock()
+	//
+	//self.peerList = self.ps.AllPeers()
 }
 
 // send sends a list of transactions to at most a given number of peers at
@@ -173,3 +174,4 @@ func (self *LesTxRelay) Discard(hashes []common.Hash) {
 		delete(self.txPending, hash)
 	}
 }
+*/

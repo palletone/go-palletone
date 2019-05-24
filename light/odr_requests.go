@@ -368,10 +368,10 @@ func (r *ChtRequest) GetCost(peer *peer) uint64 {
 
 // CanSend tells if a certain peer is suitable for serving the given request
 func (r *ChtRequest) CanSend(peer *peer) bool {
-	peer.lock.RLock()
-	defer peer.lock.RUnlock()
-
-	return peer.headInfo.Number.Index >= les.HelperTrieConfirmations && r.ChtNum <= (peer.headInfo.Number.Index-les.HelperTrieConfirmations)/les.CHTFrequencyClient
+	return false
+	//peer.lock.RLock()
+	//defer peer.lock.RUnlock()
+	//return peer.headInfo.Number.Index >= les.HelperTrieConfirmations && r.ChtNum <= (peer.headInfo.Number.Index-les.HelperTrieConfirmations)/les.CHTFrequencyClient
 }
 
 // Request sends an ODR request to the LES network (implementation of LesOdrRequest)

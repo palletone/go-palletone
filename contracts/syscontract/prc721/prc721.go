@@ -219,8 +219,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		idType = dm.UniqueIdType_Uuid
 	} else if args[2] == "3" {
 		idType = dm.UniqueIdType_UserDefine
+	} else if args[2] == "4" {
+		idType = dm.UniqueIdType_Ascii
 	} else {
-		jsonResp := "{\"Error\":\"Only string, 1(Seqence) or 2(UUID) or 3(Custom)\"}"
+		jsonResp := "{\"Error\":\"Only string, 1(Seqence) or 2(UUID) or 3(Custom) or 4(Assii)\"}"
 		return shim.Error(jsonResp)
 	}
 	nonFungible.Type = byte(idType)
