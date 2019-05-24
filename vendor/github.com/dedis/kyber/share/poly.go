@@ -16,7 +16,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 )
 
 // Some error definitions

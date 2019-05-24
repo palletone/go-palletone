@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/dedis/kyber/group/edwards25519"
+	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"github.com/stretchr/testify/require"
 )
 

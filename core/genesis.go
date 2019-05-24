@@ -23,7 +23,7 @@ import (
 	"strconv"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 )

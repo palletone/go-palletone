@@ -3,9 +3,9 @@
 package suites
 
 import (
-	"github.com/dedis/kyber/group/curve25519"
-	"github.com/dedis/kyber/group/nist"
-	"github.com/dedis/kyber/pairing/bn256"
+	"go.dedis.ch/kyber/v3/group/curve25519"
+	"go.dedis.ch/kyber/v3/group/nist"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
 )
 
 func init() {

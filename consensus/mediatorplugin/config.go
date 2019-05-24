@@ -19,7 +19,7 @@
 package mediatorplugin
 
 import (
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"

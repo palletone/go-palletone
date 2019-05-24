@@ -19,7 +19,7 @@
 package mediatorplugin
 
 import (
-	"github.com/dedis/kyber/share/dkg/pedersen"
+	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
