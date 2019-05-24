@@ -87,13 +87,14 @@ func newPeer(version int, network uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *pe
 	pubKey, _ := id.Pubkey()
 
 	return &peer{
-		Peer:        p,
-		pubKey:      pubKey,
-		rw:          rw,
-		version:     version,
-		network:     network,
-		id:          fmt.Sprintf("%x", id[:8]),
-		announceChn: make(chan announceData, 20),
+		Peer:         p,
+		pubKey:       pubKey,
+		rw:           rw,
+		version:      version,
+		network:      network,
+		id:           fmt.Sprintf("%x", id[:8]),
+		announceChn:  make(chan announceData, 20),
+		lightpeermsg: map[modules.AssetId]*announceData{},
 	}
 }
 
@@ -520,8 +521,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fullnode = true
 		log.Debug("Light Palletone peer->Handshake peer is full node")
 	}
-
+	p.lightlock.Lock()
 	p.lightpeermsg[rNum.AssetID] = &announceData{Hash: rHash, Number: rNum}
+	p.lightlock.Unlock()
 	return nil
 }
 
