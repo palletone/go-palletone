@@ -52,11 +52,6 @@ type ContractInf interface {
 	Stop(rwM rwset.TxManager, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error)
 }
 
-//var (
-//	//保证金合约地址（0x1号合约）
-//	DepositeContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000011C")
-//)
-
 // Initialize 初始化合约管理模块以及加载系统合约，
 // 由上层应用指定dag以及初始合约配置信息
 // Initialize the contract management module and load the system contract,
@@ -105,11 +100,11 @@ func (c *Contract) Close() error {
 // and forming a contract template unit together with the contract name and version
 // Chain code ID for multiple chains
 func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error) {
-	log.Info("===========================enter contract.go Install==============================")
-	defer log.Info("===========================exit contract.go Install==============================")
+	log.Info("Enter Contract Install====", "chainId", chainID, "ccName", ccName, "ccPath", ccPath, "ccVersion", ccVersion)
+	defer log.Info("Exit Contract Install====", "chainId", chainID, "ccName", ccName, "ccPath", ccPath, "ccVersion", ccVersion)
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
-		log.Error("initFlag == 0")
+		log.Error("Contract module not initialized")
 		return nil, errors.New("Contract not initialized")
 	}
 	return cc.Install(c.dag, chainID, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
@@ -124,11 +119,11 @@ func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersi
 // The interface returns the contract deployment ID (there is a different return ID for each deployment)
 // and the deployment unit
 func (c *Contract) Deploy(rwM rwset.TxManager, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
-	log.Info("===========================enter contract.go Deploy==============================")
-	defer log.Info("===========================exit contract.go Deploy==============================")
+	log.Info("Enter Contract Deploy====", "chainID", chainID, "templateId", templateId, "txId", txId, "timeout", timeout)
+	defer log.Info("Exit Contract Deploy====", "chainID", chainID, "templateId", templateId, "txId", txId, "timeout", timeout)
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
-		log.Error("initFlag == 0")
+		log.Error("Contract module not initialized")
 		return nil, nil, errors.New("Contract not initialized")
 	}
 	return cc.Deploy(rwM, c.dag, chainID, templateId, txId, args, timeout)
@@ -138,38 +133,35 @@ func (c *Contract) Deploy(rwM rwset.TxManager, chainID string, templateId []byte
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
 func (c *Contract) Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
-	log.Info("===========================enter contract.go Invoke==============================")
-	defer log.Info("===========================exit contract.go Invoke==============================")
+	log.Info("Enter Contract Invoke====", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
+	defer log.Info("Exit Contract Invoke====", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
-		log.Error("initFlag == 0")
+		log.Error("Contract module not initialized")
 		return nil, errors.New("contract not initialized")
 	}
-	//depId := common.NewAddress(deployId[:20], common.ContractHash)
-	result, err := cc.Invoke(rwM, c.dag, chainID, deployId, txid, args, timeout)
-	log.Infof("contract cc.Invoke is ok, result:[%v] err:[%v]", result, err)
-	return result, err
+	return cc.Invoke(rwM, c.dag, chainID, deployId, txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作
 //Stop the specified contract. The image file can be deleted according to requirements.
 func (c *Contract) Stop(rwM rwset.TxManager, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
-	log.Info("===========================enter contract.go Stop==============================")
-	defer log.Info("===========================exit contract.go Stop==============================")
+	log.Info("Enter Contract Stop====", "chainID", chainID, "deployId", deployId, "txid", txid, "deleteImage", deleteImage)
+	defer log.Info("Exit Contract Stop====", "chainID", chainID, "deployId", deployId, "txid", txid, "deleteImage", deleteImage)
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
-		log.Error("initFlag == 0")
+		log.Error("Contract module not initialized")
 		return nil, errors.New("contract not initialized")
 	}
 	return cc.Stop(rwM, c.dag, deployId, chainID, deployId, txid, deleteImage)
 }
 
 func (c *Contract) StartChaincodeContainer(chainID string, templateId []byte, txId string) (deployId []byte, e error) {
-	log.Info("===========================enter contract.go StartChaincodeContainer==============================")
-	defer log.Info("===========================exit contract.go StartChaincodeContainer==============================")
+	log.Info("Enter Contract StartChaincodeContainer====", "chainID", chainID, "templateId", templateId, "txId", txId)
+	defer log.Info("Exit Contract StartChaincodeContainer====", "chainID", chainID, "templateId", templateId, "txId", txId)
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
-		log.Error("initFlag == 0")
+		log.Error("Contract module not initialized")
 		return nil, errors.New("Contract not initialized")
 	}
 	return cc.StartChaincodeContainer(c.dag, chainID, templateId, txId)

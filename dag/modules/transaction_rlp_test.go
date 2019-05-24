@@ -59,11 +59,11 @@ type TestOutput struct {
 	OutIndex     uint32      `json:"out_index"`
 }
 
-func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
-	hash1 := util.RlpHash(a)
-	hash2 := util.RlpHash(b)
-	assert.Equal(t, hash1, hash2)
-}
+//func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
+//	hash1 := util.RlpHash(a)
+//	hash2 := util.RlpHash(b)
+//	assert.Equal(t, hash1, hash2)
+//}
 
 //func assertRlpTxEqual(t assert.TestingT, a, b interface{}) {
 //	tx1 := test
@@ -108,7 +108,7 @@ func TestInput_RLP(t *testing.T) {
 	input3.Extra = input.Extra
 	bytes3, _ := rlp.EncodeToBytes(input3)
 	assert.Equal(t, bytes, bytes3)
-	assertRlpHashEqual(t, input, input3)
+	assertEqualRlp(t, input, input3)
 }
 
 func TestCoinbaseInput_RLP(t *testing.T) {
@@ -132,7 +132,7 @@ func TestCoinbaseInput_RLP(t *testing.T) {
 	input3.Extra = input.Extra
 	bytes3, _ := rlp.EncodeToBytes(input3)
 	assert.Equal(t, bytes, bytes3)
-	assertRlpHashEqual(t, input, input3)
+	assertEqualRlp(t, input, input3)
 }
 
 func TestOutput_Rlp(t *testing.T) {
@@ -161,7 +161,7 @@ func TestPaymentPayload_Rlp(t *testing.T) {
 	err = rlp.DecodeBytes(bytes, pay2)
 	assert.Nil(t, err)
 	t.Logf("Pay:%#v", pay2)
-	assertRlpHashEqual(t, pay, pay2)
+	assertEqualRlp(t, pay, pay2)
 }
 func newTestPayment(includeCoinbase bool) *TestPayment {
 	pay := &TestPayment{LockTime: 123, Inputs: []*TestInput{}, Outputs: []*Output{}}
@@ -214,7 +214,7 @@ func TestDataPayload_Rlp(t *testing.T) {
 	err = rlp.DecodeBytes(bytes, pay2)
 	assert.Nil(t, err)
 	t.Logf("Pay:%#v", pay2)
-	assertRlpHashEqual(t, pay, pay2)
+	assertEqualRlp(t, pay, pay2)
 }
 
 //
@@ -228,7 +228,7 @@ func TestContractTplPayload_Rlp(t *testing.T) {
 	err = rlp.DecodeBytes(bytes, pay2)
 	assert.Nil(t, err)
 	t.Logf("Pay:%#v", pay2)
-	assertRlpHashEqual(t, pay, pay2)
+	assertEqualRlp(t, pay, pay2)
 }
 
 func newTestContractTpl() *ContractTplPayload {
@@ -254,14 +254,14 @@ func TestContractInvokeReqPayload_Rlp(t *testing.T) {
 	err = rlp.DecodeBytes(bytes, pay2)
 	assert.Nil(t, err)
 	t.Logf("Pay:%#v", pay2)
-	assertRlpHashEqual(t, pay, pay2)
+	assertEqualRlp(t, pay, pay2)
 }
 
 func newTestContractInvokeReq() *TestContractInvokeRequestPayload {
 	a := []byte("AAAA")
 	b := []byte("BBBBBBBBBBB")
 	args := [][]byte{a, b, nil}
-	pay := &TestContractInvokeRequestPayload{[]byte("ContractId"),  args, 3}
+	pay := &TestContractInvokeRequestPayload{[]byte("ContractId"), args, 3}
 
 	return pay
 }
@@ -276,7 +276,7 @@ func TestContractInvokeResultPayload_Rlp(t *testing.T) {
 	err = rlp.DecodeBytes(bytes, pay2)
 	assert.Nil(t, err)
 	t.Logf("Pay:%#v", pay2)
-	assertRlpHashEqual(t, pay, pay2)
+	assertEqualRlp(t, pay, pay2)
 }
 
 func newTestContractInvokeResult() *ContractInvokePayload {
@@ -291,10 +291,10 @@ func newTestContractInvokeResult() *ContractInvokePayload {
 	wset := []ContractWriteSet{write1}
 
 	pay := &ContractInvokePayload{
-		ContractId:   []byte("ContractId"),
-		Args:         args,
-		ReadSet:      readset,
-		WriteSet:     wset,
+		ContractId: []byte("ContractId"),
+		Args:       args,
+		ReadSet:    readset,
+		WriteSet:   wset,
 	}
 
 	return pay

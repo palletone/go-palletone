@@ -73,7 +73,7 @@ func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
 
 //func (statedb *StateDb) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
 //	key := assetInfo.Tokey()
-//	return StoreBytes(statedb.db, key, assetInfo)
+//	return StoreToRlpBytes(statedb.db, key, assetInfo)
 //}
 
 func (statedb *StateDb) DeleteState(key []byte) error {

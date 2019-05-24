@@ -426,9 +426,9 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
 			return
 		}
-		p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
-		//data := &announceData{Hash: header.Hash(), Number: *header.Number}
-		//p.SetHead(data)
+		p.lightlock.Lock()
+		p.lightpeermsg[header.Number.AssetID] = &announceData{Hash: header.Hash(), Number: *header.Number}
+		p.lightlock.Unlock()
 		// If import succeeded, broadcast the block
 		go f.broadcastHeader(header, false)
 

@@ -47,11 +47,11 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			go pm.synchronise(pm.peers.BestPeer())
+			go pm.synchronise(pm.peers.BestPeer(pm.assetId))
 
 		case <-forceSync:
 			// Force a sync even if not enough peers are present
-			go pm.synchronise(pm.peers.BestPeer())
+			go pm.synchronise(pm.peers.BestPeer(pm.assetId))
 
 		case <-pm.noMorePeers:
 			return
@@ -74,15 +74,15 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	}
 
 	// Make sure the peer's TD is higher than our own.
-	if !pm.needToSync(peer.headBlockInfo()) {
-		return
-	}
+	//if !pm.needToSync(peer.headBlockInfo()) {
+	//	return
+	//}
 
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	//defer cancel()
 	//pm.blockchain.(*light.LightChain).SyncCht(ctx)
 	//
 	//pm.downloader.Synchronise(peer.id, peer.Head(), peer.Td(), downloader.LightSync)
-	headhash, number := peer.HeadAndNumber()
+	headhash, number := peer.HeadAndNumber(pm.assetId)
 	pm.downloader.Synchronise(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID)
 }

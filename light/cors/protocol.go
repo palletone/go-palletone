@@ -29,8 +29,11 @@ var (
 // les protocol message codes
 const (
 	// Protocol messages belonging to LPV1
-	StatusMsg     = 0x00
-	CorsHeaderMsg = 0x01
+	StatusMsg           = 0x00
+	CorsHeaderMsg       = 0x01
+	CorsHeadersMsg      = 0x02
+	GetCurrentHeaderMsg = 0x03
+	CurrentHeaderMsg    = 0x04
 )
 
 const (

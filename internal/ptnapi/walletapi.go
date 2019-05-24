@@ -382,6 +382,38 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	return submitTransaction(ctx, s.b, tx)
 }
 
+
+func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx string) (common.Hash, error) {
+	//transaction inputs
+	if encodedTx == "" {
+		return common.Hash{}, errors.New("Params is Empty")
+	}
+	tx := new(modules.Transaction)
+	serializedTx, err := decodeHexStr(encodedTx)
+	if err != nil {
+		return common.Hash{}, errors.New("encodedTx is invalid")
+	}
+
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
+		return common.Hash{}, errors.New("encodedTx decode is invalid")
+	}
+	if 0 == len(tx.TxMessages) {
+		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
+	}
+	var outAmount uint64
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+
+		for _, txout := range payload.Outputs {
+			outAmount += txout.Value
+		}
+	}
+	return submitTransaction(ctx, s.b, tx)
+}
+
 func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
 
 	var proofTransactionGenParams ptnjson.ProofTransactionGenParams

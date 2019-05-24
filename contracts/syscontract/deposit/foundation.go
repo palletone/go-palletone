@@ -491,7 +491,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("node is not exist in the become list")
 	}
 	//  不同意，移除申请列表
-	if strings.Compare(isOk, No) == 0 {
+	if isOk == No {
 		delete(becomeList, addr.String())
 		//  保存成为列表
 		err = saveList(stub, ListForApplyBecomeMediator, becomeList)
@@ -499,12 +499,12 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("save become list err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-		// 删除节点信息
-		//err = DelMediatorInfo(stub, addr.String())
-		//if err != nil {
-		//	return shim.Error(err.Error())
-		//}
-	} else if strings.Compare(isOk, Ok) == 0 {
+
+		err = DelMediatorDeposit(stub, addr.String())
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+	} else if isOk == Ok {
 		//  同意，移除列表，并且加入同意申请列表
 		delete(becomeList, addr.String())
 		//  保存成为列表
@@ -534,15 +534,15 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("save agree list err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-		//  修改同意时间
-		mediator, err := GetMediatorInfo(stub, addr)
+		// 修改同意时间
+		mediator, err := GetMediatorDeposit(stub, addr.Str())
 		if err != nil {
 			log.Error("get mediator info err: ", "error", err)
 			return shim.Error(err.Error())
 		}
 		mediator.AgreeTime = time.Now().Unix() / DTimeDuration
-		mediator.Status = modules.Agree
-		err = SaveMediatorInfo(stub, addr, mediator)
+		mediator.Status = Agree
+		err = SaveMediatorDeposit(stub, addr.Str(), mediator)
 		if err != nil {
 			log.Error("save mediator info err: ", "error", err)
 			return shim.Error(err.Error())
@@ -619,16 +619,16 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 			return shim.Error(err.Error())
 		}
 		//获取该账户
-		balance, err := GetNodeBalance(stub, addr.String())
+		md, err := GetMediatorDeposit(stub, addr.String())
 		if err != nil {
 			log.Error("Stub.GetDepositBalance err:", "error", err)
 			return shim.Error(err.Error())
 		}
-		if balance == nil {
+		if md == nil {
 			log.Error("Stub.GetDepositBalance err: balance is nil.")
 			return shim.Error("Stub.GetDepositBalance err: balance is nil.")
 		}
-		err = deleteNode(stub, balance, addr)
+		err = deleteMediatorDeposit(stub, md, addr)
 		if err != nil {
 			log.Error("DeleteNode err:", "error", err)
 			return shim.Error(err.Error())
@@ -681,7 +681,7 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 		log.Error("get foundation address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
+	if invokeAddr.String() != foundationAddress {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
@@ -691,26 +691,26 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 		log.Error("string to address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	balance, err := GetNodeBalance(stub, addr.String())
+	md, err := GetMediatorDeposit(stub, addr.String())
 	if err != nil {
 		log.Error("get cashback node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  判断没收节点账户是否为空
-	if balance == nil {
+	if md == nil {
 		log.Error("get cashback node balance: balance is nil")
 		return shim.Error("get cashback node balance: balance is nil")
 	}
 	isOk := args[1]
 	//  判断处理结果
-	if strings.Compare(isOk, Ok) == 0 {
+	if isOk == Ok {
 		//  对余额处理
-		err = handleMediator(stub, addr, balance)
+		err = handleMediator(stub, addr, md)
 		if err != nil {
 			log.Error("handle mediator err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-	} else if strings.Compare(isOk, No) == 0 {
+	} else if isOk == No {
 		//移除提取申请列表
 		err = moveAndPutStateFromCashbackList(stub, addr)
 		if err != nil {

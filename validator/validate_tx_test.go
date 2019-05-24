@@ -45,7 +45,7 @@ func getAccount() (*ecdsa.PrivateKey, []byte, common.Address) {
 
 func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
 	tx := &modules.Transaction{} //Empty Tx
-	validat := NewValidate(nil, nil, nil)
+	validat := NewValidate(nil, nil, nil,nil)
 	err := validat.ValidateTx(tx, false,true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -58,7 +58,7 @@ func TestValidate_ValidateTx_MsgCodeIncorrect(t *testing.T) {
 	tx := &modules.Transaction{}
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &modules.DataPayload{MainData: []byte("m")}))
 
-	validat := NewValidate(nil, nil, nil)
+	validat := NewValidate(nil, nil, nil,nil)
 	err := validat.ValidateTx(tx, false,true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -204,7 +204,7 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 
 	signTx(tx, outPoint)
 	utxoq := &testutxoQuery{}
-	validate := NewValidate(nil, utxoq, nil)
+	validate := NewValidate(nil, utxoq, nil,nil)
 	result := validate.ValidateTx(tx, false,true)
 	assert.Nil(t, result)
 	pay2 := newTestPayment(outPoint, 2)

@@ -49,7 +49,12 @@ web3._extend({
 		}),
 		new web3._extend.Method({
 			name: 'payDeposit',
-			call: 'mediator_deposit',
+			call: 'mediator_payDeposit',
+			params: 2,
+		}),
+		new web3._extend.Method({
+			name: 'withdrawDeposit',
+			call: 'mediator_withdrawDeposit',
 			params: 2,
 		}),
 		new web3._extend.Method({
@@ -60,6 +65,11 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'isInList',
 			call: 'mediator_isInList',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'quit',
+			call: 'mediator_quit',
 			params: 1,
 		}),
 		new web3._extend.Method({

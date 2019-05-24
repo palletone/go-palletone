@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"sync"
 
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -53,11 +52,18 @@ const (
 	disableClientRemovePeer = false
 	txChanSize              = 4096
 	forceSyncCycle          = 10 * time.Second
+	waitPushSync            = 200 * time.Millisecond
+	fsMinFullBlocks         = 64
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
 // not compatible (low protocol version restrictions and high requirements).
-var errIncompatibleConfig = errors.New("incompatible configuration")
+var (
+	errIncompatibleConfig = errors.New("incompatible configuration")
+	errCancelHeaderFetch  = errors.New("header cors canceled (requested)")
+	errBadPeer            = errors.New("action from bad peer ignored")
+	errTimeout            = errors.New("timeout")
+)
 
 func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
@@ -90,7 +96,15 @@ type ProtocolManager struct {
 	// and processing
 	wg *sync.WaitGroup
 
-	ptnmainnode bool
+	mainchain *modules.MainChain
+	mclock    sync.RWMutex
+	corsSync  uint32
+
+	rttEstimate   uint64
+	rttConfidence uint64
+	headerCh      chan dataPack
+	needboradcast map[string]uint64
+	bdlock        sync.RWMutex
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -111,6 +125,12 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 		wg:          new(sync.WaitGroup),
 		noMorePeers: make(chan struct{}),
 		quitSync:    quitSync,
+		corsSync:    0,
+
+		rttEstimate:   uint64(rttMaxEstimate),
+		rttConfidence: uint64(1000000),
+		headerCh:      make(chan dataPack, 1),
+		needboradcast: make(map[string]uint64),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -147,14 +167,7 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 		return nil, errIncompatibleConfig
 	}
 
-	//removePeer := manager.removePeer
-	//if disableClientRemovePeer {
-	//	removePeer = func(id string) {}
-	//}
-
 	if manager.lightSync {
-		//manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
-		//manager.peers.notify((*downloaderPeerNotify)(manager))
 		manager.fetcher = manager.newLightFetcher()
 	}
 	log.Debug("End NewCorsProtocolManager", "len(manager.SubProtocols)", len(manager.SubProtocols))
@@ -170,12 +183,11 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		//if verr != nil && !validator.IsOrphanError(verr) {
 		//	return dagerrors.ErrFutureBlock
 		//}
-		//TODO must modify
 		return dagerrors.ErrFutureBlock
 	}
-	headerBroadcaster := func(header *modules.Header, propagate bool) {
-		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
-		pm.BroadcastLightHeader(header)
+	headerBroadcaster := func(p *peer, header *modules.Header, propagate bool) {
+		log.Debug("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
+		pm.BroadcastCorsHeader(p, header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
@@ -186,31 +198,17 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		headerBroadcaster, inserter, pm.removePeer)
 }
 
-func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
-	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
+func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) {
+	//log.Debug("Cors ProtocolManager", "BroadcastCorsHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
+	pm.bdlock.RLock()
+	v, ok := pm.needboradcast[p.id]
+	pm.bdlock.RUnlock()
+	if ok && header.Number.Index >= v {
+		//TODO broadcast to lps
+		log.Debug("Cors ProtocolManager", "BroadcastCorsHeader assetid:", header.Number.AssetID.String(), "index:", header.Index())
+		pm.server.SendEvents(header)
+	}
 	return
-	//peers := pm.peers.PeersWithoutHeader(header.Hash())
-	//announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
-	//for _, p := range peers {
-	//	if p == nil {
-	//		continue
-	//	}
-	//	log.Debug("Cors Palletone", "BroadcastLightHeader announceType", p.announceType)
-	//	switch p.announceType {
-	//	case announceTypeNone:
-	//		select {
-	//		case p.announceChn <- announce:
-	//		default:
-	//			pm.removePeer(p.id)
-	//		}
-	//	case announceTypeSimple:
-	//
-	//	case announceTypeSigned:
-	//
-	//	}
-	//}
-	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
-	//return
 }
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
@@ -218,12 +216,18 @@ func (pm *ProtocolManager) removePeer(id string) {
 	pm.peers.Unregister(id)
 }
 
+func (pm *ProtocolManager) mainchainpeers() int {
+	pm.mclock.RLock()
+	defer pm.mclock.RUnlock()
+	return len(pm.mainchain.Peers)
+}
+
 func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	if pm.lightSync {
 		go func() {
-			go pm.fetcher.Start()
+			pm.fetcher.Start()
 			forceSync := time.Tick(forceSyncCycle)
 			for {
 				select {
@@ -231,7 +235,6 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 				case <-forceSync:
 					// Force a sync even if not enough peers are present
-					//log.Debug("===============CORS ProtocolManager Start forceSync====================")
 
 				case <-pm.noMorePeers:
 					return
@@ -336,15 +339,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			select {
 			case announce := <-p.announceChn:
 				log.Debug("Cors Palletone ProtocolManager->handle", "announce", announce)
-				data, err := json.Marshal(announce.Header)
-				if err != nil {
-					log.Error("Cors Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
-				} else {
-					//p.headInfo = &announce
-					//if !p.fullnode {
-					p.SendRawAnnounce(data)
-					//}
-				}
+				p.SendSingleHeader([]*modules.Header{&announce.Header})
+
 			case <-stop:
 				return
 			}
@@ -386,32 +382,69 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	// Block header query, collect the requested headers and reply
 	case CorsHeaderMsg:
-		var req announceData
-		var data []byte
-		if err := msg.Decode(&data); err != nil {
-			log.Error("CorsHeaderMsg", "Decode err", err, "msg", msg)
-			return errResp(ErrDecode, "%v: %v", msg, err)
+		var headers []*modules.Header
+		if err := msg.Decode(&headers); err != nil {
+			log.Info("msg.Decode", "err:", err)
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 
-		if err := json.Unmarshal(data, &req.Header); err != nil {
-			log.Error("CorsHeaderMsg", "Unmarshal err", err, "data", data)
-			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-
-		//if p.requestAnnounceType == announceTypeSigned {
-		//	if err := req.checkSignature(p.pubKey); err != nil {
-		//		log.Trace("Invalid announcement signature", "err", err)
-		//		return err
-		//	}
-		//	log.Trace("Valid announcement signature")
-		//}
-
-		log.Trace("CorsHeaderMsg message content", "header", req.Header)
+		log.Trace("CorsHeaderMsg message content", "len(headers)", len(headers))
 		if pm.fetcher != nil {
-			pm.fetcher.Enqueue(p, &req.Header)
-			//pm.fetcher.Insert(p, &req.Header)
+			//TODO start lps broadcast
+			for _, header := range headers {
+				log.Trace("CorsHeaderMsg message content", "header:", header)
+				pm.fetcher.Enqueue(p, header)
+			}
 		}
-		return nil
+
+	case CorsHeadersMsg:
+		var headers []*modules.Header
+		if err := msg.Decode(&headers); err != nil {
+			log.Info("msg.Decode", "err:", err)
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		log.Trace("CorsHeadersMsg message length", "len(headers)", len(headers))
+		if pm.fetcher != nil {
+			for _, header := range headers {
+				//log.Trace("CorsHeadersMsg message content", "header:", header)
+				pm.fetcher.Enqueue(p, header)
+			}
+			if len(headers) < MaxHeaderFetch {
+				pm.bdlock.Lock() //TODO modify
+				//pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
+				pm.bdlock.Unlock()
+			}
+		}
+	case GetCurrentHeaderMsg:
+		var number modules.ChainIndex
+		if err := msg.Decode(&number); err != nil {
+			log.Info("msg.Decode", "err:", err)
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		header := pm.dag.CurrentHeader(number.AssetID)
+		log.Trace("GetCurrentHeaderMsg message content", "number", number.AssetID, "header", header)
+		var headers []*modules.Header
+		headers = append(headers, header)
+		return p.SendCurrentHeader(headers)
+	case CurrentHeaderMsg:
+		var headers []*modules.Header
+		if err := msg.Decode(&headers); err != nil {
+			log.Info("msg.Decode", "err:", err)
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		log.Trace("CurrentHeaderMsg message content", "len(headers)", len(headers))
+		if len(headers) != 1 {
+			log.Info("CurrentHeaderMsg len err", "len(headers)", len(headers))
+			return errResp(ErrDecode, "msg %v: %v", msg, "len is err")
+		}
+		if headers[0].Number.AssetID.String() != pm.assetId.String() {
+			log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].Number.AssetID.String(), "local", pm.assetId.String())
+			return errBadPeer
+		}
+		pm.headerCh <- &headerPack{p.id, headers}
 
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
@@ -460,12 +493,6 @@ type peerConnection struct {
 	peer    *peer
 }
 
-//Head(modules.AssetId) (common.Hash, *modules.ChainIndex)
-//RequestHeadersByHash(common.Hash, int, int, bool) error
-//RequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error
-//RequestDagHeadersByHash(common.Hash, int, int, bool) error
-//RequestLeafNodes() error
-
 func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	//return common.Hash{}, nil
 	return pc.peer.HeadAndNumber()
@@ -493,17 +520,3 @@ func (p *peerConnection) RequestLeafNodes() error {
 	return nil
 	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
 }
-
-//func (d *downloaderPeerNotify) registerPeer(p *peer) {
-//	pm := (*ProtocolManager)(d)
-//	pc := &peerConnection{
-//		manager: pm,
-//		peer:    p,
-//	}
-//	pm.downloader.RegisterLightPeer(p.id, p.version, pc)
-//}
-//
-//func (d *downloaderPeerNotify) unregisterPeer(p *peer) {
-//	pm := (*ProtocolManager)(d)
-//	pm.downloader.UnregisterPeer(p.id)
-//}

@@ -46,6 +46,7 @@ type IStateRepository interface {
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
 	GetAccountBalance(address common.Address) uint64
 	LookupAccount() map[common.Address]*modules.AccountInfo
+	GetAccountVotedMediators(addr common.Address) map[string]bool
 
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
@@ -143,14 +144,6 @@ func (rep *StateRepository) GetMediators() map[common.Address]bool {
 	return rep.statedb.GetMediators()
 }
 
-//func (rep *StateRepository) GetApprovedMediatorList() ([]*core.MediatorApplyInfo, error) {
-//	return rep.statedb.GetApprovedMediatorList()
-//}
-//
-//func (rep *StateRepository) IsApprovedMediator(address common.Address) bool {
-//	return rep.statedb.IsApprovedMediator(address)
-//}
-
 func (rep *StateRepository) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
 	version *modules.StateVersion) error {
 	return rep.statedb.SaveContractState(contractId, ws, version)
@@ -222,4 +215,8 @@ func (rep *StateRepository) GetContractJury(contractId []byte) ([]modules.Electi
 }
 func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
 	return rep.statedb.GetAllContractTpl()
+}
+
+func (rep *StateRepository) GetAccountVotedMediators(addr common.Address) map[string]bool {
+	return rep.statedb.GetAccountVotedMediators(addr)
 }

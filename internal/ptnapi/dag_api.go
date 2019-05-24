@@ -23,11 +23,11 @@ package ptnapi
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"time"
 	"unsafe"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -56,50 +56,55 @@ func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (st
 		return "all_items:null", nil
 	}
 
-	fmt.Println("...")
 	info := NewPublicReturnInfo("all_items", result)
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
-func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) string {
+func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) (string, error) {
 	hash := common.Hash{}
 	if err := hash.SetHexString(condition); err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByHash SetHexString err:", err, "condition:", condition)
-		return ""
+		return "", err
 	}
 	header, err := s.b.GetHeaderByHash(hash)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByHash err:", err, "hash", hash.String())
+		return "", err
 	}
 	headerJson := ptnjson.ConvertUnitHeader2Json(header)
-	info := NewPublicReturnInfo("header", headerJson)
+	headerRlp, _ := rlp.EncodeToBytes(header)
+	info := NewPublicReturnInfoWithHex("header", headerJson, headerRlp)
 	content, err := json.Marshal(info)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByHash Marshal err:", err, "hash", hash.String())
-		return "Marshal err"
+		return "Marshal err", err
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return *(*string)(unsafe.Pointer(&content)), nil
 }
-func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) string {
+func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) (string, error) {
 	number := &modules.ChainIndex{}
 	index, err := strconv.ParseInt(condition, 10, 64)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber strconv.ParseInt err:", err, "condition:", condition)
-		return ""
+		return "", err
 	}
 	number.Index = uint64(index)
 	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	header, err := s.b.GetHeaderByNumber(number)
+	if err != nil {
+		return "", err
+	}
+	headerRlp, _ := rlp.EncodeToBytes(header)
 	headerJson := ptnjson.ConvertUnitHeader2Json(header)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber err:", err, "number", number.String())
 	}
-	info := NewPublicReturnInfo("header", headerJson)
+	info := NewPublicReturnInfoWithHex("header", headerJson, headerRlp)
 	content, err := json.Marshal(info)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber Marshal err:", err, "number", number.String())
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return *(*string)(unsafe.Pointer(&content)), nil
 }
 
 func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {

@@ -40,13 +40,16 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
+	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
+	log.Debugf("start saveSig from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
+
 	if _, exist := p.mtx[reqEvt.ReqId]; !exist { //todo how to process
+		log.Debugf("reqEvt.ReqId not exist")
 		return true
 	}
 	if p.mtx[reqEvt.ReqId].adaInf == nil {
 		p.mtx[reqEvt.ReqId].adaInf = make(map[uint32]*AdapterInf)
 	}
-	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
 	if _, exist := p.mtx[reqEvt.ReqId].adaInf[msgType]; !exist {
 		//all jury msg
 		typeAdaInf := &AdapterInf{JuryMsgAll: make(map[string]*MsgSigCollect)}
@@ -54,7 +57,7 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 		msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
 		msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
 		typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
-		log.Debugf("Create msgType saved,from %s", pubkeyHex)
+		log.Debugf("Create msgType saved,from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
 		//
 		p.mtx[reqEvt.ReqId].adaInf[msgType] = typeAdaInf
 	} else {
@@ -64,25 +67,26 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 			msgSigCollect := &MsgSigCollect{OneMsgAllSig: make(map[string]JuryMsgSig)}
 			msgSigCollect.OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
 			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)] = msgSigCollect
-			log.Debugf("Create ConsultData saved,from %s", pubkeyHex)
+			log.Debugf("Create ConsultData saved,from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
 		} else {
 			if _, exist := typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex]; exist {
-				log.Debugf("Have saved,from %s", pubkeyHex)
+				log.Debugf("Have saved,from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
 				return false
 			}
 			typeAdaInf.JuryMsgAll[string(reqEvt.ConsultData)].OneMsgAllSig[pubkeyHex] = JuryMsgSig{reqEvt.Sig, reqEvt.Answer}
-			log.Debugf("First saved,from %s", pubkeyHex)
+			log.Debugf("First saved,from %s, %s", pubkeyHex, string(reqEvt.ConsultData))
 		}
 	}
 	return true
 }
 
 func (p *Processor) checkJury(reqEvt *AdapterRequestEvent) bool {
-	if _, exist := p.lockVrf[reqEvt.ContractId]; !exist {
+	juryAll, err := p.getContractElectionList(reqEvt.ContractId)
+	if err != nil {
+		log.Debug("checkJury", "ContractId", reqEvt.ContractId, "getContractElectionList err:", err)
 		return false
 	}
 	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
-	juryAll := p.lockVrf[reqEvt.ContractId]
 	for i := range juryAll {
 		if common.Bytes2Hex(juryAll[i].PublicKey) == pubkeyHex {
 			return true
@@ -122,7 +126,7 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-	log.Info("AdapterFunRequest")
+	log.Infof("AdapterFunRequest reqid: %x, consultContent: %s", reqId, string(consultContent))
 	//
 	account := p.getLocalAccount()
 	if account == nil {
@@ -179,7 +183,7 @@ func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent 
 		return nil, errors.New("Not exist adaInf of msgType")
 	}
 	if _, exist := adaInf.JuryMsgAll[string(consultContent)]; !exist {
-		log.Debugf("Not exist consultContent")
+		log.Debugf("Not exist consultContent %s", string(consultContent))
 		return nil, errors.New("Not exist consultContent")
 	}
 	if len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig) >= p.contractSigNum {
@@ -199,7 +203,7 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
-	log.Info("AdapterFunResult")
+	log.Infof("AdapterFunResult reqid: %x, consultContent: %s", reqId, string(consultContent))
 	result, err := p.getRusult(reqId, msgType, consultContent)
 	if err == nil {
 		return result, nil
@@ -217,8 +221,8 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 		if err == nil {
 			return result, nil
 		}
-		log.Debug("AdapterFunRequest, time out")
-		return nil, errors.New("AdapterFunRequest, time out")
+		log.Debug("AdapterFunResult, time out")
+		return nil, errors.New("AdapterFunResult, time out")
 	}
 }
 

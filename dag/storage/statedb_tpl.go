@@ -28,7 +28,7 @@ import (
 
 func (statedb *StateDb) SaveContractTpl(tpl *modules.ContractTemplate) error {
 	key := append(constants.CONTRACT_TPL, tpl.TplId...)
-	if err := StoreBytes(statedb.db, key, tpl); err != nil {
+	if err := StoreToRlpBytes(statedb.db, key, tpl); err != nil {
 		return err
 	}
 
@@ -41,7 +41,7 @@ func (statedb *StateDb) SaveContractTplCode(tplId []byte, byteCode []byte) error
 func (statedb *StateDb) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	key := append(constants.CONTRACT_TPL, tplId...)
 	tpl := &modules.ContractTemplate{}
-	err := retrieve(statedb.db, key, tpl)
+	err := RetrieveFromRlpBytes(statedb.db, key, tpl)
 	if err != nil {
 		return nil, err
 	}

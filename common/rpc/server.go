@@ -19,14 +19,13 @@ package rpc
 import (
 	"context"
 	"fmt"
+	set "github.com/deckarep/golang-set"
+	"github.com/palletone/go-palletone/common/log"
 	"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
-
-	"github.com/palletone/go-palletone/common/log"
-	"gopkg.in/fatih/set.v0"
 )
 
 const MetadataApi = "rpc"
@@ -46,7 +45,7 @@ const (
 func NewServer() *Server {
 	server := &Server{
 		services: make(serviceRegistry),
-		codecs:   set.New(),
+		codecs:   set.NewSet(),
 		run:      1,
 	}
 

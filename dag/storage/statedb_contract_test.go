@@ -112,7 +112,7 @@ func TestGetContract(t *testing.T) {
 	assert.Nil(t, err)
 	t.Logf("%#v", dbContract)
 	assertRlpHashEqual(t, contract, dbContract)
-	//log.Debug("store error: ", StoreBytes(db, append(CONTRACT_PREFIX, contract.Id[:]...), contract))
+	//log.Debug("store error: ", StoreToRlpBytes(db, append(CONTRACT_PREFIX, contract.Id[:]...), contract))
 	//keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
 	//results = append(results, common.HexToHash("123456"), nil, "test", []byte(`logger.PrintLn("hello world")`), nil, nil, nil)
 	//log.Debug("test data: ", keys)
@@ -124,6 +124,7 @@ func TestGetContract(t *testing.T) {
 	//	}
 	//}
 }
+
 func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
 	hash1 := util.RlpHash(a)
 	hash2 := util.RlpHash(b)

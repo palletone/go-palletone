@@ -68,8 +68,8 @@ type Dag struct {
 	ChainHeadFeed        *event.Feed
 
 	Mutex           sync.RWMutex
-	Memdag          memunit.IMemDag                     // memory unit
-	PartitionMemDag map[modules.AssetId]memunit.IMemDag //其他分区的MemDag
+	Memdag          memunit.IMemDag                              // memory unit
+	PartitionMemDag map[modules.AssetId]memunit.IPartitionMemDag //其他分区的MemDag
 	// memutxo
 	// 按unit单元划分存储Utxo
 	//utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
@@ -94,7 +94,12 @@ func (d *Dag) IsEmpty() bool {
 }
 
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
-	return d.Memdag.GetLastMainChainUnit()
+	memdag, err := d.getMemDag(token)
+	if err != nil {
+		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		return nil
+	}
+	return memdag.GetLastMainChainUnit()
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
@@ -438,13 +443,14 @@ func (d *Dag) refreshPartitionMemDag() {
 	}
 	//Init partition memdag
 	if d.PartitionMemDag == nil {
-		partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
+		partitionMemdag := make(map[modules.AssetId]memunit.IPartitionMemDag)
 
 		for _, partition := range partitions {
 			ptoken := partition.GasToken
 			threshold := int(partition.StableThreshold)
+			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
+			partitionMemdag[ptoken] = memunit.NewPartitionMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
 		}
 
 		d.PartitionMemDag = partitionMemdag
@@ -456,13 +462,23 @@ func (d *Dag) refreshPartitionMemDag() {
 		threshold := int(partition.StableThreshold)
 		partitonMemDag, ok := d.PartitionMemDag[ptoken]
 		if !ok {
+			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			d.PartitionMemDag[ptoken] = memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
+			d.PartitionMemDag[ptoken] = memunit.NewPartitionMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
 		} else {
 			partitonMemDag.SetStableThreshold(threshold) //可能更新了该数字
 		}
 	}
 
+}
+func (d *Dag) initDataForPartition(partition *modules.PartitionChain) {
+	pHeader := partition.GetGenesisHeader()
+	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
+	if !exist {
+		log.Debugf("Init partition[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
+		d.stableUnitRep.SaveHeader(pHeader)
+		d.stablePropRep.SetNewestUnit(pHeader)
+	}
 }
 func NewDag(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
@@ -480,10 +496,10 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	//hash, idx, _ := stablePropRep.GetLastStableUnit(modules.PTNCOIN)
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	threshold, _ := propRep.GetChainThreshold()
-	unstableChain := memunit.NewMemDag(gasToken, threshold, false, db, unitRep, propRep, stateRep)
+	//threshold, _ := propRep.GetChainThreshold()
+	unstableChain := memunit.NewMemDag(gasToken /*, threshold*/, false, db, unitRep, propRep, stateRep)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
-	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep)
+	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep, tpropRep)
 	//partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
 	//for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
 	//	partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, stateRep)
@@ -546,7 +562,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
+	validate := validator.NewValidate(dagDb, utxoRep, stateDb, nil)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 
@@ -583,11 +599,12 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
-	threshold, _ := propRep.GetChainThreshold()
 
-	validate := validator.NewValidate(dagDb, utxoRep, stateDb)
-	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep, propRep, stateRep)
+	//threshold, _ := propRep.GetChainThreshold()
+	validate := validator.NewValidate(dagDb, utxoRep, stateDb, propRep)
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN /*, threshold*/, false, db, unitRep, propRep, stateRep)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
+
 	dag := &Dag{
 		//Cache:            freecache.NewCache(200 * 1024 * 1024),
 		Db:                     db,
@@ -846,17 +863,15 @@ func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.T
 }
 
 func (d *Dag) saveHeader(header *modules.Header) error {
+	if header == nil {
+		return errors.ErrNullPoint
+	}
 	unit := &modules.Unit{UnitHeader: header}
 	asset := header.Number.AssetID
-	var memdag memunit.IMemDag
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	if asset == gasToken {
-		memdag = d.Memdag
-	} else {
-		memdag = d.PartitionMemDag[asset]
-		if memdag == nil {
-			return errors.New("Don't have partition mem dag for token:" + asset.String())
-		}
+	memdag, err := d.getMemDag(asset)
+	if err != nil {
+		log.Error(err.Error())
+		return err
 	}
 	if err := memdag.AddUnit(unit, nil); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
@@ -864,6 +879,19 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 		log.Debug("=============    save_memdag_unit header     =================", "save_memdag_unit_hex", unit.Hash().String(), "index", unit.UnitHeader.Index())
 	}
 	return nil
+}
+func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
+	var memdag memunit.IMemDag
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	if asset == gasToken {
+		memdag = d.Memdag
+	} else {
+		memdag = d.PartitionMemDag[asset]
+		if memdag == nil {
+			return nil, errors.New("Don't have partition mem dag for token:" + asset.String())
+		}
+	}
+	return memdag, nil
 }
 
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
@@ -876,7 +904,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 			return errors.ErrUnitExist
 		}
 		// step2. validate unit
-		err := d.validateUnit(unit)
+		err := d.validate.ValidateUnitExceptGroupSig(unit)
 		if err != nil {
 			return fmt.Errorf("SaveDag, validate unit error, err=%s", err.Error())
 		}

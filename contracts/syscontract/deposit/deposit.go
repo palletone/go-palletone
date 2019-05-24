@@ -45,12 +45,12 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Info("Enter DepositChaincode Contract " + modules.MediatorPayDeposit + " Invoke")
 		return d.mediatorPayToDepositContract(stub, args)
 		//  mediator 申请提取保证金
-	case MediatorApplyCashback:
-		log.Info("Enter DepositChaincode Contract " + MediatorApplyCashback + " Invoke")
+	case modules.MediatorWithdrawDeposit:
+		log.Info("Enter DepositChaincode Contract " + modules.MediatorWithdrawDeposit + " Invoke")
 		return d.mediatorApplyCashback(stub, args)
 		//  申请退出Mediator
-	case MediatorApplyQuitMediator:
-		log.Info("Enter DepositChaincode Contract " + MediatorApplyQuitMediator + " Invoke")
+	case modules.MediatorApplyQuitMediator:
+		log.Info("Enter DepositChaincode Contract " + modules.MediatorApplyQuitMediator + " Invoke")
 		return d.mediatorApplyQuitMediator(stub, args)
 	//
 	//  jury 交付保证金
@@ -191,8 +191,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//  获取节点的账户
-	case modules.GetDeposit:
-		log.Info("Enter DepositChaincode Contract " + modules.GetDeposit + " Invoke")
+	case GetDeposit:
+		log.Info("Enter DepositChaincode Contract " + GetDeposit + " Invoke")
 		balance, err := GetNodeBalance(stub, args[0])
 		if err != nil {
 			return shim.Error(err.Error())
@@ -205,21 +205,21 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		return shim.Success(byte)
-		//  获取mediator节点信息
-	//case modules.GetMediatorInfo:
-	//	log.Info("Enter DepositChaincode Contract " + modules.GetMediatorInfo + " Invoke")
-	//	mediator, err := GetMediatorInfo(stub, args[0])
-	//	if err != nil {
-	//		return shim.Error(err.Error())
-	//	}
-	//	if mediator == nil {
-	//		return shim.Success([]byte("mediator is nil"))
-	//	}
-	//	byte, err := json.Marshal(mediator)
-	//	if err != nil {
-	//		return shim.Error(err.Error())
-	//	}
-	//	return shim.Success(byte)
+		// 获取mediator Deposit
+	case modules.GetMediatorDeposit:
+		log.Info("Enter DepositChaincode Contract " + modules.GetMediatorDeposit + " Invoke")
+		mediator, err := GetMediatorDeposit(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if mediator == nil {
+			return shim.Success([]byte("mediator is nil"))
+		}
+		byte, err := json.Marshal(mediator)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(byte)
 	// 查看是否申请Mediator通过
 	case modules.IsApproved:
 		log.Info("Enter DepositChaincode Contract " + modules.IsApproved + " Invoke")

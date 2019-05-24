@@ -3,11 +3,22 @@ package cors
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
+	"sync/atomic"
+	"time"
+)
+
+var (
+	rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
+	rttMaxEstimate   = 20 * time.Second // Maximum round-trip time to target for download requests
+	rttMinConfidence = 0.1              // Worse confidence factor in our estimated RTT value
+	ttlScaling       = 3                // Constant scaling factor for RTT -> TTL conversion
+	ttlLimit         = time.Minute      // Maximum TTL allowance to prevent reaching crazy timeouts
 )
 
 type CorsServer struct {
@@ -16,6 +27,10 @@ type CorsServer struct {
 	privateKey      *ecdsa.PrivateKey
 	corss           *p2p.Server
 	quitSync        chan struct{}
+
+	//cors communication with lps
+	scope    event.SubscriptionScope
+	dposFeed event.Feed
 }
 
 func NewCoresServer(ptn *ptn.PalletOne, config *ptn.Config) (*CorsServer, error) {
@@ -54,6 +69,10 @@ func (s *CorsServer) CorsProtocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
 }
 
+func (s *CorsServer) StartCorsSync() (string, error) {
+	return s.protocolManager.StartCorsSync()
+}
+
 // Start starts the LES server
 func (s *CorsServer) Start(srvr *p2p.Server, corss *p2p.Server) {
 	s.protocolManager.Start(s.config.LightPeers)
@@ -68,6 +87,15 @@ func (s *CorsServer) Stop() {
 		<-s.protocolManager.noMorePeers
 	}()
 	s.protocolManager.Stop()
+	s.scope.Close()
+}
+
+func (s *CorsServer) SubscribeCeEvent(ch chan<- *modules.Header) event.Subscription {
+	return s.scope.Track(s.dposFeed.Subscribe(ch))
+}
+
+func (s *CorsServer) SendEvents(header *modules.Header) {
+	s.dposFeed.Send(header)
 }
 
 func (pm *ProtocolManager) blockLoop() {
@@ -80,46 +108,18 @@ func (pm *ProtocolManager) blockLoop() {
 			select {
 			case ev := <-headCh:
 				peers := pm.peers.AllPeers()
-				if len(peers) > 0 {
+				if len(peers) > 0 && atomic.LoadUint32(&pm.corsSync) == 0 {
 					header := ev.Unit.Header()
 					hash := ev.Hash
 					number := header.Number.Index
-					//td := core.GetTd(pm.chainDb, hash, number)
 					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
 						lastHead = header
 						log.Debug("Announcing block to peers", "number", number, "hash", hash)
-
 						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
-						//var (
-						//	signed         bool
-						//	signedAnnounce announceData
-						//)
 
 						for _, p := range peers {
 							log.Debug("Light Palletone", "ProtocolManager->blockLoop p.ID", p.ID())
 							p.announceChn <- announce
-							//switch p.announceType {
-							//
-							//case announceTypeSimple:
-							//	select {
-							//	case p.announceChn <- announce:
-							//	default:
-							//		pm.removePeer(p.id)
-							//	}
-							//
-							//case announceTypeSigned:
-							//	if !signed {
-							//		signedAnnounce = announce
-							//		signedAnnounce.sign(pm.server.privateKey)
-							//		signed = true
-							//	}
-							//
-							//	select {
-							//	case p.announceChn <- signedAnnounce:
-							//	default:
-							//		pm.removePeer(p.id)
-							//	}
-							//}
 						}
 					}
 				}
@@ -144,35 +144,4 @@ func (pm *ProtocolManager) AddCorsPeer(url string) (bool, error) {
 	}
 	pm.server.corss.AddPeer(node)
 	return true, nil
-}
-
-/*
-type MainChain struct {
-	GenesisHash common.Hash
-	Status      byte //Active:1 ,Terminated:0,Suspended:2
-	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
-	GasToken    AssetId
-	Peers       []string // IP:port format string
-}
-*/
-func (pm *ProtocolManager) GetMainChain() (*modules.MainChain, error) {
-	return pm.dag.GetMainChain()
-	//mainchain := &modules.MainChain{}
-	//mainchain.NetworkId = 1
-	//mainchain.Version = 1
-	//mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
-	//mainchain.GasToken = modules.PTNCOIN
-	//return mainchain, nil
-}
-
-func (pm *ProtocolManager) GetPartitionChain() ([]*modules.PartitionChain, error) {
-	return pm.dag.GetPartitionChains()
-	//mainchains := []*modules.PartitionChain{}
-	//mainchain := &modules.PartitionChain{}
-	//mainchain.NetworkId = 1
-	//mainchain.Version = 1
-	//mainchain.GenesisHash.SetHexString("0x927c94780c89b450cf2d9bcb3febea8457bcb830f5867b9d85c74ce4df3d2ac4")
-	//mainchain.GasToken = modules.PTNCOIN
-	//mainchains = append(mainchains, mainchain)
-	//return mainchains, nil
 }

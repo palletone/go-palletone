@@ -124,7 +124,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			Version: val.GetVersion(),
 		}
 		invoke.ReadSet = append(invoke.ReadSet, rdNew)
-		log.Infof("ReadSet: idx[%s], fun[%s], key[%s], val[%v]", idx, args[2], val.GetKey(), val.GetVersion())
+		log.Infof("ReadSet: idx[%v], fun[%s], key[%s], val[%v]", idx, args[2], val.GetKey(), val.GetVersion())
 	}
 	for idx, val := range wt {
 		rd := md.ContractWriteSet{

@@ -77,6 +77,8 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return oneToken(args, stub)
 	case "getAllTokenInfo":
 		return allToken(args, stub)
+	case "changeSupplyAddr":
+		return changeSupplyAddr(args, stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -217,8 +219,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		idType = dm.UniqueIdType_Uuid
 	} else if args[2] == "3" {
 		idType = dm.UniqueIdType_UserDefine
+	} else if args[2] == "4" {
+		idType = dm.UniqueIdType_Ascii
 	} else {
-		jsonResp := "{\"Error\":\"Only string, 1(Seqence) or 2(UUID) or 3(Custom)\"}"
+		jsonResp := "{\"Error\":\"Only string, 1(Seqence) or 2(UUID) or 3(Custom) or 4(Assii)\"}"
 		return shim.Error(jsonResp)
 	}
 	nonFungible.Type = byte(idType)
@@ -428,6 +432,46 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		}
 	}
 
+	return shim.Success([]byte(""))
+}
+
+func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 2 {
+		return shim.Error("need 2 args (Symbol,NewSupplyAddr)")
+	}
+
+	//symbol
+	symbol := strings.ToUpper(args[0])
+	//check name is exist or not
+	tkInfo := getSymbols(stub, symbol)
+	if tkInfo == nil {
+		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//new supply address
+	newSupplyAddr := args[1]
+
+	//get invoke address
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	//check supply address
+	if invokeAddr.String() != tkInfo.SupplyAddr {
+		jsonResp := "{\"Error\":\"Not the supply address\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//set supply address
+	tkInfo.SupplyAddr = newSupplyAddr
+	err = setSymbols(stub, tkInfo)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
+		return shim.Error(jsonResp)
+	}
 	return shim.Success([]byte(""))
 }
 

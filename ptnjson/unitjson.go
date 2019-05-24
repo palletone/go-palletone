@@ -24,6 +24,7 @@ import (
 	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
 	"time"
 )
 
@@ -40,14 +41,15 @@ type FastUnitJson struct {
 	StableIndex uint64      `json:"stable_index"`
 }
 type HeaderJson struct {
-	ParentsHash []common.Hash `json:"parents_hash"`
-	//AssetIDs      []string       `json:"assets"`
+	ParentsHash   []common.Hash  `json:"parents_hash"`
+	Hash          string         `json:"hash"`
 	AuthorAddress string         `json:"mediator_address"`
 	AuthorPubKey  string         `json:"mediator_pubkey"`
 	AuthorSign    string         `json:"mediator_sign"` // the unit creation authors
-	GroupSign     string         `json:"groupSign"`     // 群签名, 用于加快单元确认速度
-	GroupPubKey   string         `json:"groupPubKey"`   // 群公钥, 用于验证群签名
+	GroupSign     string         `json:"group_sign"`    // 群签名, 用于加快单元确认速度
+	GroupPubKey   string         `json:"group_pubKey"`  // 群公钥, 用于验证群签名
 	TxRoot        common.Hash    `json:"root"`
+	TxsIllegal    []string       `json:"txs_illegal"` //Unit中非法交易索引
 	Number        ChainIndexJson `json:"index"`
 	Extra         string         `json:"extra"`
 	CreationTime  time.Time      `json:"creation_time"` // unit create time
@@ -74,14 +76,19 @@ func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc) *Unit
 func ConvertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	json := &HeaderJson{
 		ParentsHash:   header.ParentsHash,
+		Hash:          header.Hash().String(),
 		AuthorAddress: header.Authors.Address().String(),
 		AuthorPubKey:  hex.EncodeToString(header.Authors.PubKey),
 		AuthorSign:    hex.EncodeToString(header.Authors.Signature),
 		GroupSign:     hex.EncodeToString(header.GroupSign),
 		GroupPubKey:   hex.EncodeToString(header.GroupPubKey),
 		TxRoot:        header.TxRoot,
+		TxsIllegal:    make([]string, 0),
 		Extra:         hex.EncodeToString(header.Extra),
 		CreationTime:  time.Unix(header.Time, 0),
+	}
+	for _, txI := range header.TxsIllegal {
+		json.TxsIllegal = append(json.TxsIllegal, strconv.Itoa(int(txI)))
 	}
 	json.Number = ChainIndexJson{
 		AssetID: header.Number.AssetID.String(),
@@ -106,7 +113,6 @@ func ConvertUnit2SummaryJson(unit *modules.Unit) *UnitSummaryJson {
 		Txs:        []common.Hash{},
 		TxCount:    len(unit.Txs),
 	}
-
 	for _, tx := range unit.Txs {
 
 		json.Txs = append(json.Txs, tx.Hash())

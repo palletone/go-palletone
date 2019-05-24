@@ -173,9 +173,13 @@ func listMediators(ctx *cli.Context) error {
 		return err
 	}
 
-	dag, _ := dag.NewDag4GenesisInit(Dbconn)
-	mas := dag.GetMediators()
+	dag, err := dag.NewDag(Dbconn)
+	if err != nil {
+		fmt.Println("leveldb init failed!")
+		return err
+	}
 
+	mas := dag.GetMediators()
 	fmt.Println("\nList all existing mediator addresses:")
 	fmt.Println("[")
 

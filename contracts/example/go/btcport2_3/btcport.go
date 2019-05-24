@@ -27,9 +27,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -58,6 +58,9 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return _getBTCToken(args, stub)
 	case "withdrawBTC":
 		return _withdrawBTC(args, stub)
+
+	case "send":
+		return send(args, stub)
 
 	case "put":
 		return put(args, stub)
@@ -133,6 +136,8 @@ const symbolsTx = "tx_"
 const symbolsUnspend = "unspend_"
 const symbolsSpent = "spent_"
 const sep = "_"
+
+const symbolsWithdraw = "withdraw_"
 
 func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
@@ -556,7 +561,7 @@ func converAmount(a int64) float64 {
 }
 func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGe"}
+	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGen"}
 	totalAmount := int64(0)
 	for i := range unspends {
 		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: uint32(unspends[i].Vout)})
@@ -641,11 +646,12 @@ type BTCTransaction_mergeTransaction struct {
 
 //refert to the struct MergeTransactionResult in "github.com/palletone/adaptor/AdaptorBTC.go",
 type MergeTransactionResult struct {
-	Complete       bool   `json:"complete"`
-	TransactionHex string `json:"transactionhex"`
+	Complete        bool   `json:"complete"`
+	TransactionHash string `json:"transactionhash"`
+	TransactionHex  string `json:"transactionhex"`
 }
 
-func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) (string, error) {
+func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) (string, string, error) {
 	//
 	mergeTx := BTCTransaction_mergeTransaction{Method: "MergeTransaction"}
 	mergeTx.UserTransactionHex = rawTx
@@ -665,8 +671,8 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	num := 1
 	for i := 0; i < num; i++ {
 		mergeTx.MergeTransactionHexs = []string{}
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]]))
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]-1]))
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]-1]))
 		//
 		reqBytes, err := json.Marshal(mergeTx)
 		if err != nil {
@@ -686,9 +692,9 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	} //for
 
 	if result.Complete {
-		return result.TransactionHex, nil
+		return result.TransactionHex, result.TransactionHash, nil
 	}
-	return "", errors.New("Not complete")
+	return "", "", errors.New("Not complete")
 }
 
 //refer to the struct SendTransactionHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
@@ -759,14 +765,14 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) ([]byte, error) {
 	sendResult, err := stub.SendJury(2, content, myAnswer)
 	if err != nil {
-		log.Debugf("SendJury rawTx err: %s", err.Error())
-		return nil, errors.New("SendJury rawTx failed")
+		log.Debugf("SendJury err: %s", err.Error())
+		return nil, errors.New("SendJury failed")
 	}
 	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 2)
+	recvResult, err := stub.RecvJury(2, content, 2)
 	if err != nil {
-		log.Debugf("RecvJury rawTx err: %s", err.Error())
-		return nil, errors.New("RecvJury rawTx failed")
+		log.Debugf("RecvJury err: %s", err.Error())
+		return nil, errors.New("RecvJury failed")
 	}
 	log.Debugf("recvResult: %s", string(recvResult))
 	return recvResult, nil
@@ -799,13 +805,21 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"GetInvokeTokens failed\"}"
 		return shim.Success([]byte(jsonResp))
 	}
+
 	btcTokenAmount := uint64(0)
+	log.Debugf("contractAddr %s", contractAddr)
 	for i := 0; i < len(invokeTokens); i++ {
+		log.Debugf("invokeTokens[i].Address %s", invokeTokens[i].Address)
 		if invokeTokens[i].Address == contractAddr {
 			if invokeTokens[i].Asset.AssetId == btcTokenAsset.AssetId {
 				btcTokenAmount += invokeTokens[i].Amount
 			}
 		}
+	}
+	if btcTokenAmount == 0 {
+		log.Debugf("You need send contractAddr btcToken")
+		jsonResp := "{\"Error\":\"You need send contractAddr btcToken\"}"
+		return shim.Success([]byte(jsonResp))
 	}
 
 	// 取未花费
@@ -816,6 +830,10 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	// 产生交易
 	rawTx, err := genRawTx(int64(btcTokenAmount), btcFee, btcAddr, selUnspnds, stub)
+	if err != nil {
+		return shim.Success([]byte("genRawTx failed: " + err.Error()))
+	}
+	log.Debugf("rawTx:%s", rawTx)
 
 	//
 	inputRedeemIndex := []int{}
@@ -838,70 +856,101 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	// 签名交易
 	rawTxSign, err := signTx(rawTx, inputRedeemIndex, redeemHex, stub)
+	if err != nil {
+		return shim.Success([]byte("signTx failed: " + err.Error()))
+	}
+	log.Debugf("rawTxSign:%s", rawTxSign)
+
+	tempHash := crypto.Keccak256([]byte(rawTx))
+	tempHashHex := fmt.Sprintf("%x", tempHash)
+	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, err := consult(stub, []byte(rawTx), []byte(rawTxSign))
+	recvResult, err := consult(stub, []byte(tempHashHex), []byte(rawTxSign))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
-		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
+		log.Debugf("Unmarshal rawTxSign result failed: " + err.Error())
+		return shim.Success([]byte("Unmarshal rawTxSign result failed: " + err.Error()))
 	}
 	//stub.PutState("recvResult", recvResult)
 	if len(juryMsg) < 2 { //mod
-		return shim.Success([]byte("RecvJury result's len not enough"))
-	}
-	minSig := string(juryMsg[0].Answer)
-	for i := 1; i < len(juryMsg); i++ {
-		if strings.Compare(minSig, string(juryMsg[i].Answer)) > 0 {
-			minSig = string(juryMsg[i].Answer)
-		}
-	}
-	txHash := ""
-	if strings.Compare(minSig, rawTxSign) == 0 { //自己是执行jury
-		// 合并交易
-		tx, err := mergeTx(rawTx, inputRedeemIndex, redeemHex, juryMsg, stub)
-		if err != nil {
-			return shim.Success([]byte("mergeTx failed: " + err.Error()))
-		}
-		// 发送交易
-		txHash, err = sendTx(tx, stub)
-		if err != nil {
-			return shim.Success([]byte("sendTx failed: " + err.Error()))
-		}
-	} else { //自己不是执行jury
-		time.Sleep(2 * time.Second)
+		log.Debugf("RecvJury rawTxSign result's len not enough")
+		return shim.Success([]byte("RecvJury rawTxSign result's len not enough"))
 	}
 
+	// 合并交易
+	tx, txHash, err := mergeTx(rawTx, inputRedeemIndex, redeemHex, juryMsg, stub)
+	if err != nil {
+		log.Debugf("mergeTx failed:  %s", err.Error())
+		return shim.Success([]byte("mergeTx failed: " + err.Error()))
+	}
+
+	log.Debugf("start consult txHash %s", txHash)
 	//协商 发送交易哈希
-	txResult, err := consult(stub, []byte("getTxHash"), []byte(txHash))
+	txResult, err := consult(stub, []byte(txHash), []byte("txhash"))
 	var txJuryMsg []JuryMsgAddr
 	err = json.Unmarshal(txResult, &txJuryMsg)
 	if err != nil {
-		return shim.Success([]byte("Unmarshal result failed: " + err.Error()))
+		log.Debugf("Unmarshal txhash result failed: " + err.Error())
+		return shim.Success([]byte("Unmarshal txhash result failed: " + err.Error()))
 	}
-	//stub.PutState("recvResult", recvResult)
 	if len(txJuryMsg) < 2 { //mod
-		return shim.Success([]byte("RecvJury result's len not enough"))
-	}
-	if "" == txHash {
-		for i := range txJuryMsg {
-			if "" != string(txJuryMsg[i].Answer) {
-				txHash = string(txJuryMsg[i].Answer)
-				break
-			}
-		}
-	}
-	if "" == txHash {
-		return shim.Success([]byte("consult txHash failed"))
+		log.Debugf("RecvJury txhash result's len not enough")
+		return shim.Success([]byte("RecvJury txhash result's len not enough"))
 	}
 
+	//记录交易
+	err = stub.PutState(symbolsWithdraw+stub.GetTxID(), []byte(tx))
+	if err != nil {
+		log.Debugf("save tx failed: " + err.Error())
+		return shim.Success([]byte("save tx failed: " + err.Error()))
+	}
 	// 记录花费
 	err = saveUtxos(int64(btcTokenAmount), selUnspnds, txHash, stub)
 	if err != nil {
+		log.Debugf("saveUtxos failed: " + err.Error())
 		return shim.Success([]byte("saveUtxos failed: " + err.Error()))
+	}
+
+	////发送交易
+	//minSig := string(juryMsg[0].Answer)
+	//for i := 1; i < len(juryMsg); i++ {
+	//	if strings.Compare(minSig, string(juryMsg[i].Answer)) > 0 {
+	//		minSig = string(juryMsg[i].Answer)
+	//	}
+	//}
+	//if strings.Compare(minSig, rawTxSign) == 0 { //自己是执行jury
+	//	// 发送交易
+	//	txHash, err = sendTx(tx, stub)
+	//	if err != nil {
+	//		return shim.Success([]byte("sendTx failed: " + err.Error()))
+	//	}
+	//} else { //自己不是执行jury
+	//	time.Sleep(2 * time.Second)
+	//}
+
+	return shim.Success([]byte(txHash))
+}
+
+func send(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	if len(args) == 0 {
+		return shim.Error("need 1 args (reqid)")
+	}
+	//查询交易
+	result, _ := stub.GetState(symbolsWithdraw + args[0])
+	if len(result) == 0 {
+		return shim.Success([]byte("No withdraw"))
+	}
+	tx := string(result)
+	// 发送交易
+	txHash, err := sendTx(tx, stub)
+	if err != nil {
+		return shim.Success([]byte("sendTx failed: " + err.Error()))
 	}
 	return shim.Success([]byte(txHash))
 }
+
 func put(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if len(args) > 0 {
 		err := stub.PutState(args[0], []byte("PutState put"))
