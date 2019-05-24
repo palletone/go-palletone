@@ -105,6 +105,12 @@
 			"revisionTime": "2016-10-29T20:57:26Z"
 		},
 		{
+			"checksumSHA1": "b7rDOjTalhH82k8cKWvSVABFSHE=",
+			"path": "github.com/deckarep/golang-set",
+			"revision": "699df6a3acf6867538e50931511e9dc403da108a",
+			"revisionTime": "2018-09-27T02:58:44Z"
+		},
+		{
 			"checksumSHA1": "KLYE0IvFlrTPK4MeS9LGJvxOwIc=",
 			"path": "github.com/dedis/kyber",
 			"revision": "ca626fd2efa3f8446087a3437d250582f5057314",
@@ -694,10 +700,10 @@
 			"revisionTime": "2016-01-10T10:55:54Z"
 		},
 		{
-			"checksumSHA1": "WbbxCn2jUYIL5viqLo0BKXEdPrQ=",
-			"path": "github.com/prometheus/prometheus/util/flock",
-			"revision": "3101606756c53221ed58ba94ecba6b26adf89dcc",
-			"revisionTime": "2017-08-14T17:01:13Z"
+			"checksumSHA1": "kqHU4rjm7uawMYNt1lcpLi0jSKE=",
+			"path": "github.com/prometheus/tsdb/fileutil",
+			"revision": "d48a5e2d5c34116dfcbc7b935c66157847b2d8b5",
+			"revisionTime": "2019-05-17T10:39:03Z"
 		},
 		{
 			"checksumSHA1": "lU41NL1TEDtsrr0yUdp3SMB4Y9o=",
@@ -1242,12 +1248,6 @@
 			"path": "gopkg.in/check.v1",
 			"revision": "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec",
 			"revisionTime": "2016-12-08T18:13:25Z"
-		},
-		{
-			"checksumSHA1": "NGg7/qIJVUfXi7xnEyyDLocdi6Y=",
-			"path": "gopkg.in/fatih/set.v0",
-			"revision": "27c40922c40b43fe04554d8223a402af3ea333f3",
-			"revisionTime": "2014-12-10T08:48:24Z"
 		},
 		{
 			"checksumSHA1": "DQXNV0EivoHm4q+bkdahYXrjjfE=",
