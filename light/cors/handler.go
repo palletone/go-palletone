@@ -404,7 +404,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 
-		log.Trace("CorsHeadersMsg message length", "len(headers)", len(headers))
+		log.Debug("CorsHeadersMsg message length", "len(headers)", len(headers))
 		if pm.fetcher != nil {
 			for _, header := range headers {
 				//log.Trace("CorsHeadersMsg message content", "header:", header)
@@ -412,7 +412,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			if len(headers) < MaxHeaderFetch {
 				pm.bdlock.Lock() //TODO modify
-				//pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
+				log.Info("CorsHeadersMsg message needboradcast", "assetid", headers[len(headers)-1].Number.AssetID,
+					"index", headers[len(headers)-1].Number.Index)
+				pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
 				pm.bdlock.Unlock()
 			}
 		}
