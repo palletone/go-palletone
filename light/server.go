@@ -138,7 +138,7 @@ func (s *LesServer) loopCors() {
 		for {
 			select {
 			case header := <-headCh:
-				log.Debug("LesServer loopCors", "recv header:", header)
+				log.Debug("LesServer loopCors", "Light recv Cors header:", header)
 				peers := s.protocolManager.peers.AllPeers(header.Number.AssetID)
 				if len(peers) > 0 {
 					announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
