@@ -42,9 +42,9 @@ build_script:
   - C:\gopath\bin\mockgen.exe -source=".\dag\interface.go" -destination=".\dag\dag_mock.go" -package="dag" -self_package="github.com/palletone/go-palletone/dag"
   - go run build\ci.go install
 
-after_build:
-  - go run build\ci.go archive -type zip -signer WINDOWS_SIGNING_KEY -upload ""
-  # - go run build\ci.go nsis -signer WINDOWS_SIGNING_KEY -upload ""
+# after_build:
+#   - go run build\ci.go archive -type zip -signer WINDOWS_SIGNING_KEY -upload ""
+#   - go run build\ci.go nsis -signer WINDOWS_SIGNING_KEY -upload ""
 
 test_script:
    - set CGO_ENABLED=1
