@@ -230,6 +230,10 @@ func (rep *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
 	// 1. 更新 签名mediator 的LastConfirmedUnitNum
 	signingMediator := newUnit.Author()
 	med := rep.GetMediator(signingMediator)
+	if med == nil {
+		log.Errorf("state db have not mediator(%v) info", signingMediator.Str())
+		return
+	}
 
 	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
 	med.LastConfirmedUnitNum = lastConfirmedUnitNum
