@@ -32,14 +32,16 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/stretchr/testify/assert"
 
+	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"testing"
 )
 
 func TestMemDag_AddUnit(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	lastHeader := newTestUnit(common.Hash{}, 0)
+	lastHeader := newTestUnit(common.Hash{}, 0, key1)
 	txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
@@ -56,16 +58,16 @@ func TestMemDag_AddUnit(t *testing.T) {
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken/*, 2*/, false, db, unitRep, propRep, stateRep)
+	memdag := NewMemDag(gasToken /*, 2*/, false, db, unitRep, propRep, stateRep)
 	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 
-	err := memdag.AddUnit(newTestUnit(common.Hash{}, 0), txpool)
+	err := memdag.AddUnit(newTestUnit(common.Hash{}, 0, key2), txpool)
 	assert.Nil(t, err)
 }
 func BenchmarkMemDag_AddUnit(b *testing.B) {
 	mockCtrl := gomock.NewController(b)
 	defer mockCtrl.Finish()
-	lastHeader := newTestUnit(common.Hash{}, 0)
+	lastHeader := newTestUnit(common.Hash{}, 0, key1)
 	txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
@@ -82,18 +84,18 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken/*, 2*/, false, db, unitRep, propRep, stateRep)
+	memdag := NewMemDag(gasToken /*, 2*/, false, db, unitRep, propRep, stateRep)
 	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	parentHash := lastHeader.Hash()
 	for i := 0; i < b.N; i++ {
-		unit := newTestUnit(parentHash, uint64(i+1))
+		unit := newTestUnit(parentHash, uint64(i+1), key1)
 		err := memdag.AddUnit(unit, txpool)
 		assert.Nil(b, err)
 		parentHash = unit.Hash()
 	}
 }
-func newTestUnit(parentHash common.Hash, height uint64) *modules.Unit {
-	h := newTestHeader(parentHash, height)
+func newTestUnit(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey) *modules.Unit {
+	h := newTestHeader(parentHash, height, key)
 	return modules.NewUnit(h, []*modules.Transaction{})
 }
 
@@ -102,9 +104,11 @@ var (
 	addr1   = crypto.PubkeyToAddress(&key1.PublicKey)
 	key2, _ = crypto.GenerateKey()
 	addr2   = crypto.PubkeyToAddress(&key2.PublicKey)
+	key3, _ = crypto.GenerateKey()
+	key4, _ = crypto.GenerateKey()
 )
 
-func newTestHeader(parentHash common.Hash, height uint64) *modules.Header {
+func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey) *modules.Header {
 
 	h := new(modules.Header)
 	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
@@ -120,12 +124,12 @@ func newTestHeader(parentHash common.Hash, height uint64) *modules.Header {
 	//tr := common.Hash{}
 	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
-	key, _ := crypto.GenerateKey()
+
 	sig, _ := crypto.Sign(h.TxRoot[:], key)
 	au.Signature = sig
 	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
 	h.Authors = au
-	h.Time = 123
+	h.Time = int64(height) * 3
 	return h
 }
 
@@ -133,7 +137,8 @@ func newTestHeader(parentHash common.Hash, height uint64) *modules.Header {
 func TestMemDag_AddOrphanUnit(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	lastHeader := newTestUnit(common.Hash{}, 0)
+
+	lastHeader := newTestUnit(common.Hash{}, 0, key1)
 	txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
@@ -142,25 +147,21 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 	propDb.SetNewestUnit(lastHeader.Header())
-	gp := modules.NewGlobalProp()
-	gp.ActiveMediators = make(map[common.Address]bool)
-	gp.ActiveMediators[addr1] = true
-	gp.ActiveMediators[addr2] = true
-	propDb.StoreGlobalProp(gp)
+	mockMediatorInit(stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken/*, 2*/, false, db, unitRep, propRep, stateRep)
-	u1 := newTestUnit(lastHeader.Hash(), 1)
+	memdag := NewMemDag(gasToken /*, 2*/, false, db, unitRep, propRep, stateRep)
+	u1 := newTestUnit(lastHeader.Hash(), 1, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
 	err := memdag.AddUnit(u1, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 1, memdag.GetLastMainChainUnit().NumberU64())
 
-	u2 := newTestUnit(u1.Hash(), 2)
-	u3 := newTestUnit(u2.Hash(), 3)
+	u2 := newTestUnit(u1.Hash(), 2, key1)
+	u3 := newTestUnit(u2.Hash(), 3, key2)
 	log.Debugf("Try add orphan unit[%x] to memdag", u3.Hash())
 	err = memdag.AddUnit(u3, txpool)
 	assert.Nil(t, err)
@@ -171,11 +172,11 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
 }
 
-//添加1,2单元后，再次添加2'最新单元不变，再添加3‘ 则主链切换，最新单元更新为3’
+//添加1,2单元后，再次添加2'最新单元不变，再添加3'则主链切换，最新单元更新为3'
 func TestMemDag_SwitchMainChain(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	u0 := newTestUnit(common.Hash{}, 1)
+	u0 := newTestUnit(common.Hash{}, 1, key1)
 	txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
@@ -184,33 +185,52 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 	propDb.SetNewestUnit(u0.UnitHeader)
-	gp := modules.NewGlobalProp()
-	gp.ActiveMediators = make(map[common.Address]bool)
-	gp.ActiveMediators[addr1] = true
-	gp.ActiveMediators[addr2] = true
-	propDb.StoreGlobalProp(gp)
+	mockMediatorInit(stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	unitRep.SaveUnit(u0, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken/*, 2*/, false, db, unitRep, propRep, stateRep)
-	u1 := newTestUnit(u0.Hash(), 2)
+	memdag := NewMemDag(gasToken /*, 2*/, false, db, unitRep, propRep, stateRep)
+	u1 := newTestUnit(u0.Hash(), 2, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
 	err := memdag.AddUnit(u1, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 2, memdag.GetLastMainChainUnit().NumberU64())
 
-	u22 := newTestUnit(u0.Hash(), 2)
+	u22 := newTestUnit(u0.Hash(), 2, key1)
 	log.Debugf("Try add side unit[%x] to memdag", u22.Hash())
 	err = memdag.AddUnit(u22, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, u1.Hash(), memdag.GetLastMainChainUnit().Hash())
 
-	u33 := newTestUnit(u22.Hash(), 3)
+	u33 := newTestUnit(u22.Hash(), 3, key2)
 	log.Debugf("Try add new longest chain unit[%x] to memdag", u33.Hash())
 
 	err = memdag.AddUnit(u33, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
+}
+func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
+
+	point, _ := core.StrToPoint("gxjMgTWsVV7KVgSWHu6YiDQKknA58Sa4df23pTJphfgcLMqtHWdemW29BNEQFxjRvpjh7AhpW79sbju4DBQNVHBwhNwM9a624Qb4RdTYJd7RuaXgciJ2nFKDgSRRa351BhSXPyJiD96zoMub4rMVPEwXigYzvC7bPPFayAGxM9eQFUV")
+	node, _ := core.StrToMedNode("pnode://f056aca66625c286ae444add82f44b9eb74f18a8a96572360cb70df9b6d64d9bd2c58a345e570beb2bcffb037cd0a075f548b73083d31c12f1f4564865372534@127.0.0.1:30303")
+	m1 := &core.Mediator{Address: addr1, InitPubKey: point, Node: node, MediatorApplyInfo: &core.MediatorApplyInfo{}, MediatorInfoExpand: &core.MediatorInfoExpand{}}
+
+	statedb.StoreMediator(m1)
+	m2 := &core.Mediator{Address: addr2, InitPubKey: point, Node: node, MediatorApplyInfo: &core.MediatorApplyInfo{}, MediatorInfoExpand: &core.MediatorInfoExpand{}}
+	statedb.StoreMediator(m2)
+	gp := modules.NewGlobalProp()
+	gp.ActiveMediators = make(map[common.Address]bool)
+	gp.ActiveMediators[addr1] = true
+	gp.ActiveMediators[addr2] = true
+	gp.ChainParameters.MediatorInterval = 3
+	propDb.StoreGlobalProp(gp)
+	dgp := modules.NewDynGlobalProp()
+	dgp.NextMaintenanceTime = 99999
+	propDb.StoreDynGlobalProp(dgp)
+	ms := modules.NewMediatorSchl()
+	ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, addr1)
+	ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, addr2)
+	propDb.StoreMediatorSchl(ms)
 }
