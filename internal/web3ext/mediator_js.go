@@ -68,6 +68,11 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
+			name: 'quit',
+			call: 'mediator_quit',
+			params: 1,
+		}),
+		new web3._extend.Method({
 			name: 'vote',
 			call: 'mediator_vote',
 			params: 2,

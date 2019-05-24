@@ -58,7 +58,6 @@ const (
 	DeveloperPayToDepositContract   = "DeveloperPayToDepositContract"
 	JuryPayToDepositContract        = "JuryPayToDepositContract"
 	HandleForApplyQuitMediator      = "HandleForApplyQuitMediator"
-	MediatorApplyQuitMediator       = "MediatorApplyQuitMediator"
 	HandleForApplyBecomeMediator    = "HandleForApplyBecomeMediator"
 	IsInMediatorQuitList            = "IsInMediatorQuitList"
 	IsInCashbackList                = "IsInCashbackList"
