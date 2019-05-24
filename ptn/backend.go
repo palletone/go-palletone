@@ -128,7 +128,10 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
 	}
+
+	// todo albert·gou 待合并
 	dag.RefreshSysParameters()
+
 	ptn := &PalletOne{
 		config:         config,
 		eventMux:       ctx.EventMux,
