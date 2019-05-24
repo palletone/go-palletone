@@ -28,8 +28,8 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/consensus/jury"
 	//"github.com/palletone/go-palletone/dag/dagconfig"
+	set "github.com/deckarep/golang-set"
 	"github.com/palletone/go-palletone/dag/modules"
-	"gopkg.in/fatih/set.v0"
 	"strings"
 )
 
@@ -82,10 +82,10 @@ type peer struct {
 	//lightpeermsg map[modules.AssetId]peerMsg
 	//lightlock    sync.RWMutex
 
-	knownTxs          *set.Set // Set of transaction hashes known to be known by this peer
-	knownBlocks       *set.Set // Set of block hashes known to be known by this peer
-	knownLightHeaders *set.Set
-	knownGroupSig     *set.Set // Set of block hashes known to be known by this peer
+	knownTxs          set.Set // Set of transaction hashes known to be known by this peer
+	knownBlocks       set.Set // Set of block hashes known to be known by this peer
+	knownLightHeaders set.Set
+	knownGroupSig     set.Set // Set of block hashes known to be known by this peer
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -96,10 +96,10 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		rw:                rw,
 		version:           version,
 		id:                id.TerminalString(),
-		knownTxs:          set.New(),
-		knownBlocks:       set.New(),
-		knownLightHeaders: set.New(),
-		knownGroupSig:     set.New(),
+		knownTxs:          set.NewSet(),
+		knownBlocks:       set.NewSet(),
+		knownLightHeaders: set.NewSet(),
+		knownGroupSig:     set.NewSet(),
 		peermsg:           map[modules.AssetId]peerMsg{},
 		//lightpeermsg:      map[modules.AssetId]peerMsg{},
 	}
@@ -187,7 +187,7 @@ func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
 // never be propagated to this particular peer.
 func (p *peer) MarkUnit(hash common.Hash) {
 	// If we reached the memory allowance, drop a previously known block hash
-	for p.knownBlocks.Size() >= maxKnownBlocks {
+	for p.knownBlocks.Cardinality() >= maxKnownBlocks {
 		p.knownBlocks.Pop()
 	}
 	p.knownBlocks.Add(hash)
@@ -197,7 +197,7 @@ func (p *peer) MarkUnit(hash common.Hash) {
 // never be propagated to this particular peer.
 func (p *peer) MarkGroupSig(hash common.Hash) {
 	// If we reached the memory allowance, drop a previously known block hash
-	for p.knownGroupSig.Size() >= maxKnownBlocks {
+	for p.knownGroupSig.Cardinality() >= maxKnownBlocks {
 		p.knownGroupSig.Pop()
 	}
 	p.knownGroupSig.Add(hash)
@@ -207,7 +207,7 @@ func (p *peer) MarkGroupSig(hash common.Hash) {
 // will never be propagated to this particular peer.
 func (p *peer) MarkTransaction(hash common.Hash) {
 	// If we reached the memory allowance, drop a previously known transaction hash
-	for p.knownTxs.Size() >= maxKnownTxs {
+	for p.knownTxs.Cardinality() >= maxKnownTxs {
 		p.knownTxs.Pop()
 	}
 	p.knownTxs.Add(hash)
@@ -215,7 +215,7 @@ func (p *peer) MarkTransaction(hash common.Hash) {
 
 func (p *peer) MarkLightHeader(hash common.Hash) {
 	// If we reached the memory allowance, drop a previously known transaction hash
-	for p.knownLightHeaders.Size() >= maxKnownTxs {
+	for p.knownLightHeaders.Cardinality() >= maxKnownTxs {
 		p.knownLightHeaders.Pop()
 	}
 	p.knownLightHeaders.Add(hash)
@@ -514,7 +514,7 @@ func (ps *peerSet) PeersWithoutUnit(hash common.Hash) []*peer {
 
 	list := make([]*peer, 0, len(ps.peers))
 	for _, p := range ps.peers {
-		if !p.knownBlocks.Has(hash) {
+		if !p.knownBlocks.Contains(hash) {
 			list = append(list, p)
 		}
 	}
@@ -527,7 +527,7 @@ func (ps *peerSet) PeersWithoutLightHeader(hash common.Hash) []*peer {
 
 	list := make([]*peer, 0, len(ps.peers))
 	for _, p := range ps.peers {
-		if !p.knownLightHeaders.Has(hash) {
+		if !p.knownLightHeaders.Contains(hash) {
 			list = append(list, p)
 		}
 	}
@@ -541,7 +541,7 @@ func (ps *peerSet) PeersWithoutGroupSig(hash common.Hash) []*peer {
 
 	list := make([]*peer, 0, len(ps.peers))
 	for _, p := range ps.peers {
-		if !p.knownGroupSig.Has(hash) {
+		if !p.knownGroupSig.Contains(hash) {
 			list = append(list, p)
 		}
 	}
@@ -556,7 +556,7 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 
 	list := make([]*peer, 0, len(ps.peers))
 	for _, p := range ps.peers {
-		if !p.knownTxs.Has(hash) {
+		if !p.knownTxs.Contains(hash) {
 			list = append(list, p)
 		}
 	}

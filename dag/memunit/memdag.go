@@ -291,7 +291,6 @@ func (chain *MemDag) saveUnit2TempDb(unit *modules.Unit) {
 	} else {
 		//chain.tempdbunitRep.SaveUnit(unit, false)
 		chain.tempUnitProduceRep.PushUnit(unit)
-
 	}
 }
 
