@@ -31,7 +31,7 @@ before_build:
   - go get -u github.com/palletone/adaptor
   - go get -u github.com/palletone/btc-adaptor
   - go get -u github.com/palletone/eth-adaptor
-  - go get -u github.com/palletone/digital-identity/...
+  - go get -u github.com/palletone/digital-identity
   - go get github.com/golang/mock/gomock
   # - cd C:\gopath\src\github.com\golang\mock
   # - git checkout 442550a
