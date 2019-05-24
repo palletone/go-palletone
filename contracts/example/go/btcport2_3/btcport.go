@@ -899,6 +899,18 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		log.Debugf("RecvJury txhash result's len not enough")
 		return shim.Success([]byte("RecvJury txhash result's len not enough"))
 	}
+	//协商 保证协商一致
+	txResult2, err := consult(stub, []byte(txHash+"twice"), []byte("txhash2"))
+	var txJuryMsg2 []JuryMsgAddr
+	err = json.Unmarshal(txResult2, &txJuryMsg2)
+	if err != nil {
+		log.Debugf("Unmarshal txhash2 result failed: " + err.Error())
+		return shim.Success([]byte("Unmarshal txhash2 result failed: " + err.Error()))
+	}
+	if len(txJuryMsg2) < 2 { //mod
+		log.Debugf("RecvJury txhash2 result's len not enough")
+		return shim.Success([]byte("RecvJury txhash2 result's len not enough"))
+	}
 
 	//记录交易
 	err = stub.PutState(symbolsWithdraw+stub.GetTxID(), []byte(tx))
