@@ -521,9 +521,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fullnode = true
 		log.Debug("Light Palletone peer->Handshake peer is full node")
 	}
-	p.lightlock.Lock()
 	p.lightpeermsg[rNum.AssetID] = &announceData{Hash: rHash, Number: rNum}
-	p.lightlock.Unlock()
 	return nil
 }
 

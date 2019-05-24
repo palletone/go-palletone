@@ -325,7 +325,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return p2p.DiscTooManyPeers
 	}
-	log.Debug("Light Palletone peer connected", "name", p.Name())
+	log.Debug("Light Palletone peer connected", "id", p.ID())
 
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
