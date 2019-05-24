@@ -64,8 +64,8 @@ script:
     - if [ $IS_RUN_GASTOKEN == 'true' ]; then
       cd ../GasToken;
       ./init_gas_token.sh;
-      sleep 5;
-      python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN} ./testcases;
+#      sleep 5;
+#      python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN} ./testcases;
       fi
 
 after_script:
