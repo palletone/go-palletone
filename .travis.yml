@@ -12,6 +12,7 @@ env:
         - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
         - CREATE_TRANS_DIR=createTrans
         - CCINVOKE_DIR=ccinvoke
+        - VOTECONTRACT_DIR=voteContract
         - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
         - DEPOSIT_DIR=deposit
         - LOG_NAME=log.html
@@ -34,8 +35,9 @@ script:
     - cd ../dct
     - mkdir -p ${BDD_LOG_PATH}
 #    - ./deposit_test.sh 4
-    - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} ../testcase/createTrans
-#    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} ../testcase/ccinvoke
+    - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ../testcase/createTrans
+    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ../testcase/crtCoinContract
+    - python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/
     - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
 
 after_script:
@@ -48,9 +50,12 @@ after_script:
     # upload create transactions log and report
     - ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
     - ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
-#    # upload ccinvoke log and report
-#    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
-#    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
+    # upload ccinvoke log and report
+    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
+    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
+    # upload voteContract log and report
+    - ${CURL_CMD} ${BDD_LOG_PATH}/${VOTECONTRACT_DIR}/${LOG_NAME} ${FTP_URL}/${VOTECONTRACT_DIR}/${LOG_NAME} -v
+    - ${CURL_CMD} ${BDD_LOG_PATH}/${VOTECONTRACT_DIR}/${REPORT_NAME} ${FTP_URL}/${VOTECONTRACT_DIR}/${REPORT_NAME} -v
     # upload digital identity log and report
     - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
     - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
@@ -89,7 +94,6 @@ deploy:
         branch: all
 
 notifications:
-#    email: elva1087penny@163.com
     email:
         recipients:
             - elva1087penny@163.com

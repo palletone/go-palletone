@@ -721,6 +721,14 @@ func (s *PtnApiBackend) ProofTransactionByRlptx(rlptx [][]byte) (string, error) 
 func (b *PtnApiBackend) SyncUTXOByAddr(addr string) string {
 	return "Error"
 }
+
+func (b *PtnApiBackend) StartCorsSync() (string, error) {
+	if b.ptn.corsServer != nil {
+		return b.ptn.corsServer.StartCorsSync()
+	}
+	return "cors server is nil", errors.New("cors server is nil")
+}
+
 func (b *PtnApiBackend) GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error) {
 	tpls, err := b.ptn.dag.GetAllContractTpl()
 	if err != nil {

@@ -207,8 +207,8 @@ func TestHeaderRLP(t *testing.T) {
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
 	h.Number = &ChainIndex{}
-	h.Number.AssetID = PTNCOIN
-	h.Number.Index = uint64(333333)
+	h.Number.AssetID, _, _ = String2AssetId("DEVIN")
+	h.Number.Index = uint64(0)
 	h.Extra = make([]byte, 20)
 	h.CryptoLib = []byte{0x1, 0x2}
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
@@ -228,5 +228,16 @@ func TestHeaderRLP(t *testing.T) {
 	h2 := &headerTemp{}
 	err = rlp.DecodeBytes(bytes, h2)
 	t.Log("data", h2)
-	assert.Equal(t, h, h2)
+	assertEqualRlp(t, h, h2)
+}
+func assertEqualRlp(t *testing.T, a, b interface{}) {
+	aa, err := rlp.EncodeToBytes(a)
+	if err != nil {
+		t.Error(err)
+	}
+	bb, err := rlp.EncodeToBytes(b)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, aa, bb)
 }

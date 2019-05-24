@@ -67,6 +67,8 @@ type IStateDb interface {
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
 	GetAccountBalance(address common.Address) uint64
+	GetAccountVotedMediators(addr common.Address) map[string]bool
+	LookupAccount() map[common.Address]*modules.AccountInfo
 
 	GetMinFee() (*modules.AmountAsset, error)
 	//获得一个合约的陪审团列表
@@ -84,7 +86,6 @@ type IStateDb interface {
 	GetMediators() map[common.Address]bool
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsMediator(address common.Address) bool
-	LookupAccount() map[common.Address]*modules.AccountInfo
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 
 	GetJuryCandidateList() (map[string]bool, error)

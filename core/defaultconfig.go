@@ -61,6 +61,9 @@ const (
 	DefaultMinMediatorCount    = 5 //21
 	DefaultMinMediatorInterval = 1
 
+	DefaultContractSignatureNum = "3"
+	DefaultContractElectionNum  = "4"
+
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
 		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +
 		"刘百祥丨上海丨 GoC-lab发起人兼技术社群负责人,复旦大学计算机博士.\r\n" +
@@ -115,7 +118,7 @@ const (
 
 	DefaultMediatorInterval     = 3       /* seconds */
 	DefaultMaintenanceInterval  = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
-	DefaultMaintenanceSkipSlots = 2       // number of slots to skip for maintenance interval
+	DefaultMaintenanceSkipSlots = 1       //3 // number of slots to skip for maintenance interval
 
 	DefaultMediatorCreateFee        = 5000
 	DefaultAccountUpdateFee         = 20

@@ -28,6 +28,8 @@ import (
 
 type transactionTemp struct {
 	TxMessages []messageTemp
+	CertId     []byte `json:"cert_id"` // should be big.Int byte
+	Illegal    bool   `json:"Illegal"` // not hash, 1:no valid, 0:ok
 }
 type messageTemp struct {
 	App  MessageType
@@ -55,6 +57,8 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 }
 func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	temp := &transactionTemp{}
+	temp.Illegal = tx.Illegal
+	temp.CertId = tx.CertId
 
 	for _, m := range tx.TxMessages {
 		m1 := messageTemp{
@@ -137,6 +141,8 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 		tx.TxMessages = append(tx.TxMessages, m1)
 
 	}
+	tx.Illegal = temp.Illegal
+	tx.CertId = temp.CertId
 	return nil
 
 }

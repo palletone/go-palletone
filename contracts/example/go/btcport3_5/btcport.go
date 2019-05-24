@@ -553,7 +553,7 @@ func converAmount(a int64) float64 {
 }
 func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGe"}
+	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGen"}
 	totalAmount := int64(0)
 	for i := range unspends {
 		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: uint32(unspends[i].Vout)})
@@ -665,9 +665,9 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	}
 	for i := 0; i < num; i++ {
 		mergeTx.MergeTransactionHexs = []string{}
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][2]]))
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]-1]))
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]-1]))
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][2]-1]))
 		//
 		reqBytes, err := json.Marshal(mergeTx)
 		if err != nil {
@@ -764,7 +764,7 @@ func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) 
 		return nil, errors.New("SendJury rawTx failed")
 	}
 	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
-	recvResult, err := stub.RecvJury(2, []byte("getPubkey"), 2)
+	recvResult, err := stub.RecvJury(2, content, 2)
 	if err != nil {
 		log.Debugf("RecvJury rawTx err: %s", err.Error())
 		return nil, errors.New("RecvJury rawTx failed")

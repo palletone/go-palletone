@@ -23,14 +23,36 @@ package modules
 
 import (
 	"testing"
+
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCalcThreshold(t *testing.T){
-	t2:= calcThreshold(2)
-	assert.Equal(t,2,t2)
-	t3:= calcThreshold(3)
-	assert.Equal(t,3,t3)
-	t4:= calcThreshold(4)
-	assert.Equal(t,3,t4)
+func TestCalcThreshold(t *testing.T) {
+	t2 := calcThreshold(2)
+	assert.Equal(t, 2, t2)
+	t3 := calcThreshold(3)
+	assert.Equal(t, 3, t3)
+	t4 := calcThreshold(4)
+	assert.Equal(t, 3, t4)
+}
+
+func TestGlobalProperty_Rlp(t *testing.T) {
+	gp := NewGlobalProp()
+	addr1, _ := common.StringToAddress("P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gj")
+	addr2, _ := common.StringToAddress("P124gB1bXHDTXmox58g4hd4u13HV3e5vKie")
+	gp.ChainParameters.MaximumMediatorCount = 21
+	gp.ActiveMediators[addr1] = true
+	gp.ActiveMediators[addr2] = false
+	gp.ActiveJuries[addr1] = true
+	data, err := rlp.EncodeToBytes(gp)
+	assert.Nil(t, err)
+	t.Logf("%x", data)
+
+	gp2 := &GlobalProperty{}
+	err = rlp.DecodeBytes(data, gp2)
+	assert.Nil(t, err)
+	assert.Equal(t, uint8(21), gp2.ChainParameters.MaximumMediatorCount)
+	assert.Equal(t, 2, len(gp2.ActiveMediators))
 }

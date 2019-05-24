@@ -218,7 +218,7 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg.MediatorPlugin.EnableStaleProduction = true
 	cfg.MediatorPlugin.EnableConsecutiveProduction = false
 	cfg.MediatorPlugin.RequiredParticipation = 0
-	cfg.MediatorPlugin.EnableGroupSigning = true
+	cfg.MediatorPlugin.EnableGroupSigning = false
 	cfg.MediatorPlugin.Mediators = mediators
 
 	// change log
@@ -307,7 +307,10 @@ func createExampleGenesis() *core.Genesis {
 		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
 		TempUccCpuShares:          core.DefaultTempUccCpuShares,
 		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
-		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
+		ContractSignatureNum:      core.DefaultContractSignatureNum,
+		ContractElectionNum:       core.DefaultContractElectionNum,
+
+		ActiveMediatorCount: strconv.FormatUint(core.DefaultMediatorCount, 10),
 	}
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址

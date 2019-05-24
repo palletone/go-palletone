@@ -72,7 +72,7 @@ func (t *SimpleChaincode) payoutstate(stub shim.ChaincodeStubInterface, args []s
 	log.Debugf("paystate1Byte: %s", string(paystate1Byte))
 
 	paystate2Byte, _ := stub.GetState("paystate2")
-	if len(paystate1Byte) == 0 {
+	if len(paystate2Byte) == 0 {
 		jsonResp := "{\"Error\":\"You need call getDepositAddr for get your deposit address\"}"
 		return shim.Error(jsonResp)
 	}
@@ -80,7 +80,7 @@ func (t *SimpleChaincode) payoutstate(stub shim.ChaincodeStubInterface, args []s
 
 	time.Sleep(1 * time.Second)
 
-	stub.PutState("paystate3", []byte("paystate3"))
+	stub.PutState("paystate", []byte("paystate"))
 
 	to_address := args[0]
 	asset, _ := modules.StringToAsset(args[1])
@@ -128,7 +128,9 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	if function == "payoutstate" {
 		return t.payoutstate(stub, args)
 	}
-
+	if function == "addr" {
+		return t.addr(stub, args)
+	}
 	if function == "balance" {
 		return t.balance(stub, args)
 	}
@@ -168,6 +170,14 @@ func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) p
 	}
 	return shim.Success([]byte(str))
 }
+
+func (t *SimpleChaincode) addr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	contractBuf, contractAddr := stub.GetContractID()
+	result := fmt.Sprintf("%x-%s", contractBuf, contractAddr)
+	log.Debugf(result)
+	return shim.Success([]byte(result))
+}
+
 func main() {
 	err := shim.Start(new(SimpleChaincode))
 	if err != nil {

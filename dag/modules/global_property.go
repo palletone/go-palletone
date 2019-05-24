@@ -32,8 +32,8 @@ type GlobalPropBase struct {
 	ChainParameters     core.ChainParameters          // 区块链网络参数
 }
 
-func NewGlobalPropBase() *GlobalPropBase {
-	return &GlobalPropBase{
+func NewGlobalPropBase() GlobalPropBase {
+	return GlobalPropBase{
 		ImmutableParameters: core.NewImmutChainParams(),
 		ChainParameters:     core.NewChainParams(),
 	}
@@ -41,9 +41,9 @@ func NewGlobalPropBase() *GlobalPropBase {
 
 // 全局属性的结构体定义
 type GlobalProperty struct {
-	*GlobalPropBase
+	GlobalPropBase
 
-	ActiveJuries       map[common.Address]bool //当前活跃Jury集合
+	ActiveJuries       map[common.Address]bool // 当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool // 上一届 mediator
 }
@@ -55,6 +55,23 @@ func NewGlobalProp() *GlobalProperty {
 		ActiveMediators:    make(map[common.Address]bool, 0),
 		PrecedingMediators: make(map[common.Address]bool, 0),
 	}
+}
+
+type GlobalPropertyHistory struct {
+	// unit生产之间的间隔时间，以秒为单元。 interval in seconds between Units
+	MediatorInterval uint8 `json:"mediatorInterval"`
+
+	// 区块链维护事件之间的间隔，以秒为单元。 interval in sections between unit maintenance events
+	MaintenanceInterval uint32 `json:"maintenanceInterval"`
+
+	// 在维护时跳过的MediatorInterval数量。 number of MediatorInterval to skip at maintenance time
+	MaintenanceSkipSlots uint8 `json:"maintenanceSkipSlots"`
+
+	ActiveJuries    []common.Address //当前活跃Jury集合
+	ActiveMediators []common.Address // 当前活跃 mediator 集合；每个维护间隔更新一次
+	EffectiveTime   uint64           //生效时间
+	EffectiveHeight uint64           //生效高度
+	ExpiredTime     uint64           //失效时间
 }
 
 // 动态全局属性的结构体定义
@@ -166,29 +183,16 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
-	mediators := make([]common.Address, 0, gp.ActiveMediatorsCount())
+	var mediators common.Addresses
+	mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
 
 	for medAdd, _ := range gp.ActiveMediators {
 		mediators = append(mediators, medAdd)
 	}
 
-	sortAddress(mediators)
+	sort.Sort(mediators)
 
 	return mediators
-}
-
-func sortAddress(adds []common.Address) {
-	aSize := len(adds)
-	addStrs := make([]string, aSize, aSize)
-	for i, add := range adds {
-		addStrs[i] = add.Str()
-	}
-
-	sort.Strings(addStrs)
-
-	for i, addStr := range addStrs {
-		adds[i], _ = common.StringToAddress(addStr)
-	}
 }
 
 func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {

@@ -29,12 +29,8 @@ const (
 	ApplyMediator      = "ApplyBecomeMediator"
 	IsApproved         = "IsSelected"
 	MediatorPayDeposit = "MediatorPayToDepositContract"
-	GetDeposit         = "GetNodeBalance"
 	MediatorList       = "MediatorList"
-	Apply              = "apply"
-	Agree              = "agree"
-	Quit               = "quit"
-	//GetMediatorInfo    = "GetMediatorInfo"
+	GetMediatorDeposit = "GetMediatorDeposit"
 )
 
 type MediatorInfo struct {

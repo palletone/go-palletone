@@ -56,7 +56,7 @@ type IIndexDb interface {
 
 // ###################### SAVE IMPL START ######################
 //func (idxdb *IndexDb) SaveIndexValue(key []byte, value interface{}) error {
-//	return StoreBytes(idxdb.db, key, value)
+//	return StoreToRlpBytes(idxdb.db, key, value)
 //}
 
 // ###################### SAVE IMPL END ######################
@@ -69,7 +69,7 @@ type IIndexDb interface {
 //func (idxdb *IndexDb) GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error) {
 //	key := idx.ToKey()
 //	utxo := new(modules.Utxo)
-//	err := retrieve(idxdb.db, key, utxo)
+//	err := RetrieveFromRlpBytes(idxdb.db, key, utxo)
 //	return utxo, err
 //}
 //func (idxdb *IndexDb) DeleteUtxoByIndex(idx *modules.UtxoIndex) error {

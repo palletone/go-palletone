@@ -33,12 +33,13 @@ type Validate struct {
 	utxoquery  IUtxoQuery
 	statequery IStateQuery
 	dagquery   IDagQuery
+	propquery  IPropQuery
 }
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
-func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery) *Validate {
-	return &Validate{dagquery: dagdb, utxoquery: utxoRep, statequery: statedb}
+func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery) *Validate {
+	return &Validate{dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
 }
 
 type newUtxoQuery struct {
@@ -81,7 +82,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-		txCode, txFee := validate.validateTx(tx, txIndex == 0,true, unitTime)
+		txCode, txFee := validate.validateTx(tx, txIndex == 0, true, unitTime)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 
@@ -131,12 +132,12 @@ func ComputeRewards() uint64 {
 	}
 	return rewards
 }
-func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase,isFullTx bool) error {
-	code, _ := validate.validateTx(tx, isCoinbase, isFullTx,time.Now().Unix())
+func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase, isFullTx bool) error {
+	code, _ := validate.validateTx(tx, isCoinbase, isFullTx, time.Now().Unix())
 	if code == TxValidationCode_VALID {
-		log.Debugf("Tx[%s] validate pass!", tx.Hash().String())
 		return nil
 	}
+	log.Debugf("Tx[%s] validate not pass!", tx.Hash().String())
 	return NewValidateError(code)
 }
 

@@ -22,6 +22,7 @@ package storage
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -30,6 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -42,19 +45,21 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	if count > 0 {
 		return errors.New("Contract[" + common.Bytes2Hex(contract.ContractId) + "]'s state existed!")
 	}
-	err := StoreBytes(statedb.db, key, contract)
+	err := StoreToRlpBytes(statedb.db, key, contract)
 	if err != nil {
 		return err
 	}
 	return statedb.saveTplToContractMapping(contract)
 }
+
 func (statedb *StateDb) GetContract(id []byte) (*modules.Contract, error) {
 	key := append(constants.CONTRACT_PREFIX, id...)
 	contract := new(modules.Contract)
-	err := retrieve(statedb.db, key, contract)
+	err := RetrieveFromRlpBytes(statedb.db, key, contract)
 	return contract, err
 
 }
+
 func (statedb *StateDb) GetAllContracts() ([]*modules.Contract, error) {
 	rows := getprefix(statedb.db, constants.CONTRACT_PREFIX)
 	result := make([]*modules.Contract, 0, len(rows))
@@ -65,6 +70,7 @@ func (statedb *StateDb) GetAllContracts() ([]*modules.Contract, error) {
 	}
 	return result, nil
 }
+
 func (statedb *StateDb) saveTplToContractMapping(contract *modules.Contract) error {
 	key := append(constants.CONTRACT_TPL_INSTANCE_MAP, contract.TemplateId...)
 	key = append(key, contract.ContractId...)
@@ -138,13 +144,13 @@ func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, v
 
 func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
-	log.DebugDynamic(func() string {
-		contractAddress := common.NewAddress(id, common.ContractHash)
-		return fmt.Sprintf("save contract(%v) StateVersion: %v", contractAddress.Str(), version.String())
-	})
+	//log.DebugDynamic(func() string {
+	//	contractAddress := common.NewAddress(id, common.ContractHash)
+	//	return fmt.Sprintf("save contract(%v) StateVersion: %v", contractAddress.Str(), version.String())
+	//})
 	for _, write := range wset {
 		key := getContractStateKey(id, write.Key)
-		log.Debugf("Save Contract State key: %x, string key:%s", key, string(key))
+		//log.Debugf("Save Contract State key: %x, string key:%s", key, string(key))
 
 		if write.IsDelete {
 			batch.Delete(key)
@@ -264,7 +270,7 @@ func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modu
 func (statedb *StateDb) SaveContractDeploy(reqid []byte, deploy *modules.ContractDeployPayload) error {
 	// key: requestId
 	key := append(constants.CONTRACT_DEPLOY, reqid...)
-	return StoreBytes(statedb.db, key, deploy)
+	return StoreToRlpBytes(statedb.db, key, deploy)
 }
 
 func (statedb *StateDb) GetContractDeploy(reqId []byte) (*modules.ContractDeployPayload, error) {
@@ -283,7 +289,7 @@ func (statedb *StateDb) GetContractDeploy(reqId []byte) (*modules.ContractDeploy
 func (statedb *StateDb) SaveContractDeployReq(reqid []byte, deploy *modules.ContractDeployRequestPayload) error {
 	// key : requestId
 	key := append(constants.CONTRACT_DEPLOY_REQ, reqid...)
-	return StoreBytes(statedb.db, key, deploy)
+	return StoreToRlpBytes(statedb.db, key, deploy)
 }
 
 func (statedb *StateDb) GetContractDeployReq(reqId []byte) (*modules.ContractDeployRequestPayload, error) {
@@ -313,14 +319,35 @@ func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvoke
 }
 
 func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
-	// append by Albert·gou
 	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
 	log.Debugf("save contract invoke req id(%v) contractAddress: %v, timeout: %v",
 		hex.EncodeToString(reqid), contractAddress.Str(), invoke.Timeout)
 
+	// append by Albert·gou
+	if contractAddress == syscontract.DepositContractAddress {
+		log.Debugf("Save Deposit Contract Invoke Req")
+
+		if string(invoke.Args[0]) == modules.ApplyMediator {
+			var mco modules.MediatorCreateOperation
+			err := json.Unmarshal(invoke.Args[1], &mco)
+			if err == nil {
+				log.Debugf("Save Apply Mediator(%v) Invoke Req", mco.AddStr)
+
+				mi := modules.NewMediatorInfo()
+				*mi.MediatorInfoBase = *mco.MediatorInfoBase
+				*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
+
+				addr, _ := core.StrToMedAdd(mco.AddStr)
+				statedb.StoreMediatorInfo(addr, mi)
+			} else {
+				log.Debugf(err.Error())
+			}
+		}
+	}
+
 	// key: reqid
 	key := append(constants.CONTRACT_INVOKE_REQ, reqid...)
-	return StoreBytes(statedb.db, key, invoke)
+	return StoreToRlpBytes(statedb.db, key, invoke)
 }
 
 func (statedb *StateDb) GetContractInvokeReq(reqId []byte) (*modules.ContractInvokeRequestPayload, error) {
@@ -339,7 +366,7 @@ func (statedb *StateDb) GetContractInvokeReq(reqId []byte) (*modules.ContractInv
 func (statedb *StateDb) SaveContractStop(reqid []byte, stop *modules.ContractStopPayload) error {
 	// key: reqid
 	key := append(constants.CONTRACT_STOP, reqid...)
-	return StoreBytes(statedb.db, key, stop)
+	return StoreToRlpBytes(statedb.db, key, stop)
 }
 
 func (statedb *StateDb) GetContractStop(reqId []byte) (*modules.ContractStopPayload, error) {
@@ -358,7 +385,7 @@ func (statedb *StateDb) GetContractStop(reqId []byte) (*modules.ContractStopPayl
 func (statedb *StateDb) SaveContractStopReq(reqid []byte, stopr *modules.ContractStopRequestPayload) error {
 	// key: reqid
 	key := append(constants.CONTRACT_STOP_REQ, reqid...)
-	return StoreBytes(statedb.db, key, stopr)
+	return StoreToRlpBytes(statedb.db, key, stopr)
 }
 
 func (statedb *StateDb) GetContractStopReq(reqId []byte) (*modules.ContractStopRequestPayload, error) {
@@ -376,7 +403,7 @@ func (statedb *StateDb) GetContractStopReq(reqId []byte) (*modules.ContractStopR
 func (statedb *StateDb) SaveContractSignature(reqid []byte, sig *modules.SignaturePayload) error {
 	// key: reqid
 	key := append(constants.CONTRACT_SIGNATURE, reqid...)
-	return StoreBytes(statedb.db, key, sig)
+	return StoreToRlpBytes(statedb.db, key, sig)
 }
 
 func (statedb *StateDb) GetContractSignature(reqId []byte) (*modules.SignaturePayload, error) {

@@ -564,6 +564,10 @@ func (s *PublicBlockChainAPI) SyncUTXOByAddr(ctx context.Context, addr string) s
 	return s.b.SyncUTXOByAddr(addr)
 }
 
+func (s *PublicBlockChainAPI) StartCorsSync(ctx context.Context) (string, error) {
+	return s.b.StartCorsSync()
+}
+
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value
@@ -760,10 +764,14 @@ type PublicTransactionPoolAPI struct {
 type PublicReturnInfo struct {
 	Item string      `json:"item"`
 	Info interface{} `json:"info"`
+	Hex  string      `json:"hex"`
 }
 
 func NewPublicReturnInfo(name string, info interface{}) *PublicReturnInfo {
-	return &PublicReturnInfo{name, info}
+	return &PublicReturnInfo{name, info, ""}
+}
+func NewPublicReturnInfoWithHex(name string, info interface{}, rlpData []byte) *PublicReturnInfo {
+	return &PublicReturnInfo{name, info, hex.EncodeToString(rlpData)}
 }
 
 // NewPublicTransactionPoolAPI creates a new RPC service with methods specific for the transaction pool.
@@ -1990,7 +1998,6 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
-	var outpoint_txhash common.Hash
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if ok == false {
@@ -2000,10 +2007,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 		for _, txout := range payload.Outputs {
 			outAmount += txout.Value
 		}
-		log.Info("payment info", "info", payload)
-		outpoint_txhash = payload.Inputs[0].PreviousOutPoint.TxHash
 	}
-	log.Infof("Tx outpoint tx hash:%s", outpoint_txhash.String())
 	return submitTransaction(ctx, s.b, tx)
 }
 
