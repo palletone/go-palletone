@@ -139,7 +139,7 @@ func (s *LesServer) loopCors() {
 			select {
 			case header := <-headCh:
 				log.Debug("LesServer loopCors", "recv header:", header)
-				peers := s.protocolManager.peers.AllPeers()
+				peers := s.protocolManager.peers.AllPeers(header.Number.AssetID)
 				if len(peers) > 0 {
 					announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
 					for _, p := range peers {
@@ -346,7 +346,7 @@ func (pm *ProtocolManager) blockLoop() {
 		for {
 			select {
 			case ev := <-headCh:
-				peers := pm.peers.AllPeers()
+				peers := pm.peers.AllPeers(ev.Unit.UnitHeader.Number.AssetID)
 				if len(peers) > 0 {
 					header := ev.Unit.Header()
 					hash := header.Hash()
@@ -399,7 +399,7 @@ func (pm *ProtocolManager) blockLoop() {
 }
 
 func (pm *ProtocolManager) ReqProofByTxHash(strhash string) string {
-	peers := pm.peers.AllPeers()
+	peers := pm.peers.AllPeers(pm.assetId)
 	vreq, err := pm.validation.AddSpvReq(strhash)
 	if err != nil {
 		return err.Error()
@@ -467,7 +467,7 @@ func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
 
 	//random select peer to download GetAddrUtxos(addr)
 	rand.Seed(time.Now().UnixNano())
-	peers := pm.peers.AllPeers()
+	peers := pm.peers.AllPeers(pm.assetId)
 	x := rand.Intn(len(peers))
 	p := peers[x]
 	p.RequestUTXOs(0, 0, req.addr)

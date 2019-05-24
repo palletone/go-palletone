@@ -62,11 +62,11 @@ type peer struct {
 
 	id string
 
-	headInfo *announceData
-	lock     sync.RWMutex
+	//headInfo *announceData
+	//lock     sync.RWMutex
 
-	//lightpeermsg map[modules.AssetId]*announceData
-	//lightlock    sync.RWMutex
+	lightpeermsg map[modules.AssetId]*announceData
+	lightlock    sync.RWMutex
 
 	announceChn chan announceData
 	sendQueue   *execQueue
@@ -106,8 +106,8 @@ func (p *peer) queueSend(f func()) {
 }
 
 // Info gathers and returns a collection of metadata known about a peer.
-func (p *peer) Info() *ptn.PeerInfo {
-	hash, number := p.HeadAndNumber()
+func (p *peer) Info(assetId modules.AssetId) *ptn.PeerInfo {
+	hash, number := p.HeadAndNumber(assetId)
 	return &ptn.PeerInfo{
 		Version: p.version,
 		Index:   number.Index, //uint64(0),
@@ -116,30 +116,35 @@ func (p *peer) Info() *ptn.PeerInfo {
 }
 
 // Head retrieves a copy of the current head (most recent) hash of the peer.
-func (p *peer) Head() (hash common.Hash) {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-	if p.headInfo == nil {
+func (p *peer) Head(assetid modules.AssetId) (hash common.Hash) {
+	p.lightlock.RLock()
+	defer p.lightlock.RUnlock()
+	if v, ok := p.lightpeermsg[assetid]; ok {
+		copy(hash[:], v.Hash[:])
 		return hash
 	}
-	copy(hash[:], p.headInfo.Hash[:])
 	return hash
 }
 
-func (p *peer) HeadAndNumber() (hash common.Hash, number *modules.ChainIndex) {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+func (p *peer) HeadAndNumber(assetid modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
+	p.lightlock.RLock()
+	defer p.lightlock.RUnlock()
 
-	copy(hash[:], p.headInfo.Hash[:])
-	return hash, &p.headInfo.Number
+	if v, ok := p.lightpeermsg[assetid]; ok {
+		copy(hash[:], v.Hash[:])
+		return hash, &v.Number
+	}
+	return hash, nil
 }
 
-func (p *peer) headBlockInfo() blockInfo {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-
-	return blockInfo{Hash: p.headInfo.Hash, Number: &p.headInfo.Number /*, Td: p.headInfo.Td*/}
-}
+//func (p *peer) headBlockInfo(assetid modules.AssetId) blockInfo {
+//	p.lightlock.RLock()
+//	defer p.lightlock.RUnlock()
+//	if v, ok := p.lightpeermsg[assetid]; ok {
+//		return blockInfo{Hash: v.Hash, Number: &v.Number}
+//	}
+//	return blockInfo{}
+//}
 
 // Td retrieves the current total difficulty of a peer.
 //func (p *peer) Td() *big.Int {
@@ -171,8 +176,8 @@ func sendResponse(w p2p.MsgWriter, msgcode, reqID, bv uint64, data interface{}) 
 }
 
 func (p *peer) GetRequestCost(msgcode uint64, amount int) uint64 {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+	p.lightlock.RLock()
+	defer p.lightlock.RUnlock()
 
 	cost := p.fcCosts[msgcode].baseCost + p.fcCosts[msgcode].reqCost*uint64(amount)
 	if cost > p.fcServerParams.BufLimit {
@@ -183,9 +188,9 @@ func (p *peer) GetRequestCost(msgcode uint64, amount int) uint64 {
 
 // HasBlock checks if the peer has a given block
 func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
-	p.lock.RLock()
+	p.lightlock.RLock()
+	defer p.lightlock.RUnlock()
 	hasBlock := p.hasBlock
-	p.lock.RUnlock()
 	return hasBlock != nil && hasBlock(hash, number)
 }
 
@@ -410,8 +415,10 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
 func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer, headhash common.Hash) error {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	//p.lock.Lock()
+	//defer p.lock.Unlock()
+	p.lightlock.RLock()
+	defer p.lightlock.RUnlock()
 
 	var send keyValueList
 	send = send.add("protocolVersion", uint64(p.version))
@@ -513,10 +520,8 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		p.fullnode = true
 		log.Debug("Light Palletone peer->Handshake peer is full node")
 	}
-	//
-	p.headInfo = &announceData{Hash: rHash, Number: rNum}
-	//data := &announceData{Hash: rHash, Number: rNum}
-	//p.SetHead(data)
+
+	p.lightpeermsg[rNum.AssetID] = &announceData{Hash: rHash, Number: rNum}
 	return nil
 }
 
@@ -642,7 +647,7 @@ func (ps *peerSet) Len() int {
 }
 
 // BestPeer retrieves the known peer with the currently highest total difficulty.
-func (ps *peerSet) BestPeer() *peer {
+func (ps *peerSet) BestPeer(assetid modules.AssetId) *peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
@@ -651,35 +656,37 @@ func (ps *peerSet) BestPeer() *peer {
 		bestTd   uint64
 	)
 	for _, p := range ps.peers {
-		if number := p.headInfo.Number; bestPeer == nil || number.Index > bestTd {
-			bestPeer, bestTd = p, number.Index
+		if v, ok := p.lightpeermsg[assetid]; ok {
+			if number := v.Number; bestPeer == nil || number.Index > bestTd {
+				bestPeer, bestTd = p, number.Index
+			}
 		}
 	}
 	return bestPeer
 }
 
 // AllPeers returns all peers in a list
-func (ps *peerSet) AllPeers() []*peer {
+func (ps *peerSet) AllPeers(assetid modules.AssetId) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
-	list := make([]*peer, len(ps.peers))
-	i := 0
+	list := []*peer{}
 	for _, peer := range ps.peers {
-		list[i] = peer
-		i++
+		if _, ok := peer.lightpeermsg[assetid]; ok {
+			list = append(list, peer)
+		}
 	}
 	return list
 }
 
-func (ps *peerSet) PeersWithoutHeader(hash common.Hash) []*peer {
+func (ps *peerSet) PeersWithoutHeader(assetid modules.AssetId, hash common.Hash) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
 	list := make([]*peer, len(ps.peers))
 	i := 0
 	for _, peer := range ps.peers {
-		if peer.Head().String() != hash.String() {
+		if peer.Head(assetid).String() != hash.String() {
 			list[i] = peer
 			i++
 		}
