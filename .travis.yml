@@ -25,7 +25,7 @@ env:
         - IS_RUN_CCINVOKE=false
         - IS_RUN_DIGITAL=false
         - IS_RUN_VOTE=false
-        - IS_RUN_GASTOKEN=true
+        - IS_RUN_GASTOKEN=false
         - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
