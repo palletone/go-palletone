@@ -325,13 +325,13 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 	}
 	ele := &elector{
 		num:      uint(p.electionNum),
-		total:    uint64(p.dag.JuryCount()), //todo dynamic acquisition
+		total:    100, // uint64(p.dag.JuryCount()), // 100 todo dynamic acquisition
 		addr:     account.Address,
 		password: account.Password,
 		ks:       p.ptn.GetKeyStore(),
 	}
 	ele.weight = electionWeightValue(ele.total)
-	//log.Debugf("[%s]ProcessElectionEvent, event type[%v], event[%v]", shortId(reqId.String()), event.EType, event)
+	log.Debugf("[%s]ProcessElectionEvent, ele info[%v]", shortId(reqId.String()), ele)
 	recved, err := p.electionEventBroadcast(event)
 	if err != nil {
 		return nil, err
