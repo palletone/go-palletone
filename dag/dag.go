@@ -432,6 +432,7 @@ To get account token list and tokens's information
 //	// })
 //	return d.utxos_cache
 //}
+
 func (d *Dag) refreshPartitionMemDag() {
 	db := d.Db
 	unitRep := d.stableUnitRep
@@ -471,6 +472,7 @@ func (d *Dag) refreshPartitionMemDag() {
 	}
 
 }
+
 func (d *Dag) initDataForPartition(partition *modules.PartitionChain) {
 	pHeader := partition.GetGenesisHeader()
 	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
@@ -804,23 +806,23 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 	return all, err
 }
 
+// todo albert·gou 待合并
 func (d *Dag) RefreshSysParameters() {
-	deposit, _, _ := d.stableStateRep.GetConfig("DepositRate")
+	deposit, _, _ := d.GetConfig("DepositRate")
 	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
 	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
 	log.Debugf("Load SysParameter DepositContractInterest value:%f",
 		parameter.CurrentSysParameters.DepositContractInterest)
 
-	txCoinYearRateStr, _, _ := d.stableStateRep.GetConfig("TxCoinYearRate")
+	txCoinYearRateStr, _, _ := d.GetConfig("TxCoinYearRate")
 	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
 	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
 	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
 
-	generateUnitRewardStr, _, _ := d.stableStateRep.GetConfig("GenerateUnitReward")
+	generateUnitRewardStr, _, _ := d.GetConfig("GenerateUnitReward")
 	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
-	d.refreshPartitionMemDag()
 }
 
 //func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
@@ -1285,15 +1287,6 @@ func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 		}
 	}
 	return leafs, nil
-}
-
-func (d *Dag) UpdateSysParams() error {
-	version := &modules.StateVersion{}
-	//Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1
-	unit := d.GetMainCurrentUnit()
-	version.Height = unit.UnitHeader.Number
-	version.TxIndex = 0
-	return d.stableStateRep.UpdateSysParams(version)
 }
 
 //SPV

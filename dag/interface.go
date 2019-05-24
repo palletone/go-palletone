@@ -157,10 +157,7 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 
-	UpdateSysParams() error
-
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
-	RefreshSysParameters()
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)

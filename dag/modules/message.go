@@ -57,9 +57,11 @@ const (
 )
 
 const (
-	FoundationAddress = "FoundationAddress"
-	JuryList          = "JuryList"
-	DepositRate       = "DepositRate"
+	FoundationAddress    = "FoundationAddress"
+	JuryList             = "JuryList"
+	DepositRate          = "DepositRate"
+	ContractSignatureNum = "ContractSignatureNum"
+	ContractElectionNum  = "ContractElectionNum"
 )
 
 const (
@@ -211,7 +213,6 @@ type ContractWriteSet struct {
 	Key      string `json:"key"`
 	Value    []byte `json:"value"`
 }
-
 
 func NewWriteSet(key string, value []byte) *ContractWriteSet {
 	return &ContractWriteSet{Key: key, Value: value, IsDelete: false}
@@ -373,7 +374,6 @@ type ContractReadSet struct {
 	Version *StateVersion `json:"version"`
 	Value   []byte        `json:"value"`
 }
-
 
 //请求合约信息
 type InvokeInfo struct {
@@ -698,7 +698,7 @@ func (a *ContractInvokePayload) Equal(b *ContractInvokePayload) bool {
 		return false
 	}
 	if !bytes.Equal(a.ContractId, b.ContractId) || !bytes.Equal(a.Payload, b.Payload) {
-//		log.Debug("ContractInvokePayload Equal", "a.Payload", string(a.Payload), "b.Payload", string(b.Payload))
+		//		log.Debug("ContractInvokePayload Equal", "a.Payload", string(a.Payload), "b.Payload", string(b.Payload))
 		return false
 	}
 	if len(a.Args) == len(b.Args) {
