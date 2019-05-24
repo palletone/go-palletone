@@ -24,20 +24,20 @@ import (
 	"sync"
 	"time"
 
+	set "github.com/deckarep/golang-set"
 	"github.com/palletone/go-palletone/common/log"
-	set "gopkg.in/fatih/set.v0"
 )
 
 // fileCache is a cache of files seen during scan of keystore.
 type fileCache struct {
-	all     *set.SetNonTS // Set of all files from the keystore folder
-	lastMod time.Time     // Last time instance when a file was modified
+	all     set.Set   // Set of all files from the keystore folder
+	lastMod time.Time // Last time instance when a file was modified
 	mu      sync.RWMutex
 }
 
 // scan performs a new scan on the given directory, compares against the already
 // cached filenames, and returns file sets: creates, deletes, updates.
-func (fc *fileCache) scan(keyDir string) (set.Interface, set.Interface, set.Interface, error) {
+func (fc *fileCache) scan(keyDir string) (set.Set, set.Set, set.Set, error) {
 	t0 := time.Now()
 
 	// List all the failes from the keystore folder
@@ -51,8 +51,8 @@ func (fc *fileCache) scan(keyDir string) (set.Interface, set.Interface, set.Inte
 	defer fc.mu.Unlock()
 
 	// Iterate all the files and gather their metadata
-	all := set.NewNonTS()
-	mods := set.NewNonTS()
+	all := set.NewThreadUnsafeSet()
+	mods := set.NewThreadUnsafeSet()
 
 	var newLastMod time.Time
 	for _, fi := range files {
@@ -76,10 +76,9 @@ func (fc *fileCache) scan(keyDir string) (set.Interface, set.Interface, set.Inte
 	t2 := time.Now()
 
 	// Update the tracked files and return the three sets
-	deletes := set.Difference(fc.all, all)   // Deletes = previous - current
-	creates := set.Difference(all, fc.all)   // Creates = current - previous
-	updates := set.Difference(mods, creates) // Updates = modified - creates
-
+	deletes := fc.all.Difference(all)   // Deletes = previous - current
+	creates := all.Difference(fc.all)   // Creates = current - previous
+	updates := mods.Difference(creates) // Updates = modified - creates
 	fc.all, fc.lastMod = all, newLastMod
 	t3 := time.Now()
 
