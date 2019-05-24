@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -91,17 +92,20 @@ func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCod
 	return TxValidationCode_VALID
 }
 func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
-	//gasToken := dagconfig.DagConfig.GetGasToken()
-	//ts, _ := rep.propRep.GetNewestUnitTimestamp(gasToken)
-	//if ts >= nextUnit.Timestamp() {
-	//	errStr := "invalidated unit's timestamp"
-	//	log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts, nextUnit.Hash().String(), nextUnit.Timestamp())
-	//	return fmt.Errorf(errStr)
-	//}
 	if validate.propquery == nil {
 		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
 		return TxValidationCode_VALID
 	}
+
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
+	if ts >= header.Time {
+		errStr := "invalidated unit's timestamp"
+		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
+			header.Hash().String(), header.Time)
+		return UNIT_STATE_INVALID_HEADER_TIME
+	}
+
 	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
 	if slotNum <= 0 {
 		log.Info("invalidated unit's slot")
@@ -196,10 +200,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		sigState := validate.validateUnitSignature(header)
 		return sigState
 	}
-	vcode := validate.validateMediatorSchedule(header)
-	if vcode != TxValidationCode_VALID {
-		return vcode
-	}
+
 	//Is orphan?
 	parent := header.ParentsHash[0]
 	if validate.dagquery != nil {
@@ -209,6 +210,10 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		}
 		if parentHeader.Number.Index+1 != header.Number.Index {
 			return UNIT_STATE_INVALID_HEADER_NUMBER
+		}
+		vcode := validate.validateMediatorSchedule(header)
+		if vcode != TxValidationCode_VALID {
+			return vcode
 		}
 	}
 	return TxValidationCode_VALID

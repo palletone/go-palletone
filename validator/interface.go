@@ -57,4 +57,5 @@ type IDagQuery interface {
 type IPropQuery interface {
 	GetSlotAtTime(when time.Time) uint32
 	GetScheduledMediator(slotNum uint32) common.Address
+	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 }
