@@ -72,7 +72,7 @@ after_script:
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
   # upload all log
 #  - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
-  - curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH}
+  - curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
 
   # upload deposit log
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
