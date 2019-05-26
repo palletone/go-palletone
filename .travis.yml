@@ -71,7 +71,6 @@ after_script:
   - sleep 2
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
   # upload all log
-#  - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
   - curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
 
   # upload deposit log
@@ -100,9 +99,8 @@ after_script:
 
   # upload digital identity log and report
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
-    echo $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME;
-    echo $FTP_URL/$DIGITAL_IDENTITY_DIR/$LOG_NAME;
-    $CURL_CMD $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME $FTP_URL/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
+#    $CURL_CMD $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME $FTP_URL/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v
     ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v;
     fi
 
