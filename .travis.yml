@@ -18,7 +18,7 @@ env:
     - GAS_TOKEN_DIR=gasToken
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
-    - FTP_URL=ftp://98.142.130.141/pub -T
+    - FTP_URL=ftp://98.142.130.141/pub
     - CURL_CMD=curl -u ${USER}:${PASSWORD}
     - IS_RUN_DEPOSIT=false
     - IS_RUN_CREATE_TRANS=false
@@ -71,9 +71,8 @@ after_script:
   - sleep 2
   - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
   # upload all log
-  - ls -l ${ALL_LOG_PATH}
 #  - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
-  - curl -u ${USER}:123456 ftp://98.142.130.141/pub/all.log -T /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
+  - ${CURL_CMD} ${FTP_URL}/all.log -T ${ALL_LOG_PATH} -v
 
   # upload deposit log
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
