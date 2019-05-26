@@ -25,7 +25,7 @@ env:
     - IS_RUN_CCINVOKE=false
     - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=false
-    - IS_RUN_GASTOKEN=false
+#    - IS_RUN_GASTOKEN=false
     - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
@@ -99,7 +99,6 @@ after_script:
 
   # upload digital identity log and report
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
-#    $CURL_CMD $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME $FTP_URL/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
     curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
     ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v;
     fi
