@@ -18,14 +18,12 @@ env:
     - GAS_TOKEN_DIR=gasToken
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
-    - FTP_URL=ftp://98.142.130.141/pub
-    - CURL_CMD=curl -u ${USER}:123456
     - IS_RUN_DEPOSIT=false
-    - IS_RUN_CREATE_TRANS=false
-    - IS_RUN_CCINVOKE=false
+    - IS_RUN_CREATE_TRANS=true
+    - IS_RUN_CCINVOKE=true
     - IS_RUN_DIGITAL=true
-    - IS_RUN_VOTE=false
-#    - IS_RUN_GASTOKEN=false
+    - IS_RUN_VOTE=true
+    - IS_RUN_GASTOKEN=true
     - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
@@ -60,11 +58,12 @@ script:
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
     python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
     fi
-#  - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-#    cd ../GasToken;
-#    chmod +x ./init_gas_token.sh;
-#    python -m robot.rum -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
-#    fi
+
+  - if [ $IS_RUN_GASTOKEN == 'true' ]; then
+    cd ../GasToken;
+    chmod +x ./init_gas_token.sh;
+    python -m robot.rum -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
+    fi
 
 after_script:
   - killall gptn
@@ -75,32 +74,37 @@ after_script:
 
   # upload deposit log
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-    ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME} -v;
-    ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME} -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DEPOSIT_DIR/$LOG_NAME -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DEPOSIT_DIR/${REPORT_NAME} -v;
     fi
 
   # upload create transactions log and report
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-    ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v;
-    ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/$LOG_NAME -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/${REPORT_NAME} -v;
     fi
 
   # upload ccinvoke log and report
   - if [ $IS_RUN_CCINVOKE == 'true' ]; then
-    ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v;
-    ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CCINVOKE_DIR/$LOG_NAME -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CCINVOKE_DIR/${REPORT_NAME} -v;
     fi
 
   # upload voteContract log and report
   - if [ $IS_RUN_VOTE == 'true' ]; then
-    ${CURL_CMD} ${BDD_LOG_PATH}/${VOTECONTRACT_DIR}/${LOG_NAME} ${FTP_URL}/${VOTECONTRACT_DIR}/${LOG_NAME} -v
-    ${CURL_CMD} ${BDD_LOG_PATH}/${VOTECONTRACT_DIR}/${REPORT_NAME} ${FTP_URL}/${VOTECONTRACT_DIR}/${REPORT_NAME} -v
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/$LOG_NAME -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} -v;
     fi
 
   # upload digital identity log and report
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
     curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
-    ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -v;
+    fi
+
+  - if [ $IS_RUN_GASTOKEN == 'true' ]; then
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/$LOG_NAME -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/$LOG_NAME -v;
+    curl -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} -v;
     fi
 
   # echo ftp address
