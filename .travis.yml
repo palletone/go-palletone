@@ -62,7 +62,7 @@ script:
     fi
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
     cd ../GasToken;
-    chmod +x ./init_gas_token.sh
+    chmod +x ./init_gas_token.sh;
     python -m robot.rum -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
 
