@@ -19,7 +19,7 @@ env:
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     - FTP_URL=ftp://98.142.130.141/pub
-    - CURL_CMD=curl -u ${USER}:${PASSWORD}
+    - CURL_CMD=curl -u ${USER}:123456
     - IS_RUN_DEPOSIT=false
     - IS_RUN_CREATE_TRANS=false
     - IS_RUN_CCINVOKE=false
