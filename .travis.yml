@@ -23,7 +23,7 @@ env:
     - IS_RUN_DEPOSIT=false
     - IS_RUN_CREATE_TRANS=false
     - IS_RUN_CCINVOKE=false
-    - IS_RUN_DIGITAL=false
+    - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=false
     - IS_RUN_GAS_TOKEN=false
     - 'SFTP_KEY=[base64-encoded-rsa-key]'
@@ -60,7 +60,7 @@ script:
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
     python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
     fi
-  - if [ $IS_RUN_DIGITAL == 'true' ]; then
+  - if [ $IS_RUN_GAS_TOKEN == 'true' ]; then
     cd ../GasToken;
     chmod +x ./init_gas_token.sh;
     python -m robot.rum -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
