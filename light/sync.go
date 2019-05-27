@@ -17,6 +17,8 @@
 package light
 
 import (
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"time"
 )
@@ -47,11 +49,11 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			go pm.synchronise(pm.peers.BestPeer(pm.assetId))
+			go pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
 
 		case <-forceSync:
 			// Force a sync even if not enough peers are present
-			go pm.synchronise(pm.peers.BestPeer(pm.assetId))
+			go pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
 
 		case <-pm.noMorePeers:
 			return
@@ -67,7 +69,7 @@ func (pm *ProtocolManager) needToSync(peerHead blockInfo) bool {
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.
-func (pm *ProtocolManager) synchronise(peer *peer) {
+func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	// Short circuit if no peers are available
 	if peer == nil {
 		return
@@ -77,12 +79,17 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	//if !pm.needToSync(peer.headBlockInfo()) {
 	//	return
 	//}
-
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	//defer cancel()
 	//pm.blockchain.(*light.LightChain).SyncCht(ctx)
-	//
 	//pm.downloader.Synchronise(peer.id, peer.Head(), peer.Td(), downloader.LightSync)
-	headhash, number := peer.HeadAndNumber(pm.assetId)
+
+	headhash, number := peer.HeadAndNumber(assetId)
+	log.Debug("Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
 	pm.downloader.Synchronise(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID)
+	//if number == nil {
+	//	pm.downloader.Synchronise(peer.id, headhash, 1, downloader.LightSync, assetId)
+	//} else {
+	//	pm.downloader.Synchronise(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID)
+	//}
 }

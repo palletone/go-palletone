@@ -35,11 +35,11 @@ import (
 )
 
 type MemDag struct {
-	token             modules.AssetId
-	stableUnitHash    common.Hash
-	stableUnitHeight  uint64
-	lastMainChainUnit *modules.Unit
-	//threshold          int
+	token              modules.AssetId
+	stableUnitHash     common.Hash
+	stableUnitHeight   uint64
+	lastMainChainUnit  *modules.Unit
+	threshold          int
 	orphanUnits        map[common.Hash]*modules.Unit
 	chainUnits         map[common.Hash]*modules.Unit
 	tempdbunitRep      common2.IUnitRepository
@@ -56,25 +56,26 @@ type MemDag struct {
 	lock              sync.RWMutex
 }
 
-type PartitionMemDag struct {
-	*MemDag
-	threshold int
-}
+//
+//type PartitionMemDag struct {
+//	*MemDag
+//	threshold int
+//}
 
-func (pmg *PartitionMemDag) SetStableThreshold(count int) {
+func (pmg *MemDag) SetStableThreshold(count int) {
 	pmg.threshold = count
 }
 
-func NewPartitionMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
-	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
-	stableStateRep common2.IStateRepository) *PartitionMemDag {
-	return &PartitionMemDag{
-		MemDag:    NewMemDag(token, saveHeaderOnly, db, stableUnitRep, propRep, stableStateRep),
-		threshold: threshold,
-	}
-}
+//func NewPartitionMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
+//	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
+//	stableStateRep common2.IStateRepository) *PartitionMemDag {
+//	return &PartitionMemDag{
+//		MemDag:    NewMemDag(token, saveHeaderOnly, db, stableUnitRep, propRep, stableStateRep),
+//		threshold: threshold,
+//	}
+//}
 
-func NewMemDag(token modules.AssetId /*, threshold int*/, saveHeaderOnly bool, db ptndb.Database,
+func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
 	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
 	stableStateRep common2.IStateRepository) *MemDag {
 	tempdb, _ := NewTempdb(db)
@@ -107,8 +108,8 @@ func NewMemDag(token modules.AssetId /*, threshold int*/, saveHeaderOnly bool, d
 	log.Debugf("Init MemDag, get last stable unit[%s] to set lastMainChainUnit", stablehash.String())
 
 	return &MemDag{
-		token: token,
-		//threshold:         threshold,
+		token:             token,
+		threshold:         threshold,
 		ldbunitRep:        stableUnitRep,
 		ldbPropRep:        propRep,
 		tempdbunitRep:     trep,
@@ -232,8 +233,10 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 		}
 		childrenCofirmAddrs[u.Author()] = true
 		// todo threshold 换届后可能会变
-		threshold, _ := chain.ldbPropRep.GetChainThreshold()
-		if len(hs) >= threshold {
+		if chain.token == dagconfig.DagConfig.GetGasToken() {
+			chain.threshold, _ = chain.ldbPropRep.GetChainThreshold()
+		}
+		if len(hs) >= chain.threshold {
 			log.Debugf("Unit[%s] has enough confirm address count=%d, make it to stable.", ustbHash.String(), len(hs))
 			chain.SetStableUnit(ustbHash, u.NumberU64(), txpool)
 

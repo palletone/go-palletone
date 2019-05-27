@@ -116,6 +116,17 @@ func (p *peer) Info(assetId modules.AssetId) *ptn.PeerInfo {
 	}
 }
 
+//lightpeermsg map[modules.AssetId]*announceData
+//lightlock    sync.RWMutex
+func (p *peer) SetHead(data *announceData) {
+	p.lightlock.Lock()
+	defer p.lightlock.Unlock()
+	data.Number = *data.Header.Number
+	data.Hash = data.Header.Hash()
+	p.lightpeermsg[data.Number.AssetID] = data
+
+}
+
 // Head retrieves a copy of the current head (most recent) hash of the peer.
 func (p *peer) Head(assetid modules.AssetId) (hash common.Hash) {
 	p.lightlock.RLock()

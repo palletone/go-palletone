@@ -58,7 +58,7 @@ func TestMemDag_AddUnit(t *testing.T) {
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken /*, 2*/, false, db, unitRep, propRep, stateRep)
+	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
 	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 
 	err := memdag.AddUnit(newTestUnit(common.Hash{}, 0, key2), txpool)
@@ -84,7 +84,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken /*, 2*/, false, db, unitRep, propRep, stateRep)
+	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
 	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 	parentHash := lastHeader.Hash()
 	for i := 0; i < b.N; i++ {
@@ -153,7 +153,7 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken /*, 2*/, false, db, unitRep, propRep, stateRep)
+	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
 	u1 := newTestUnit(lastHeader.Hash(), 1, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
 	err := memdag.AddUnit(u1, txpool)
@@ -191,7 +191,7 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken /*, 2*/, false, db, unitRep, propRep, stateRep)
+	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
 	u1 := newTestUnit(u0.Hash(), 2, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
 	err := memdag.AddUnit(u1, txpool)
