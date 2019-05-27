@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #pkill gptn
-tskill gptn
+#tskill gptn
 cd ../../
 # build gptn
 go build ./cmd/gptn
