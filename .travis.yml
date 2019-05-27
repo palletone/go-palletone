@@ -19,10 +19,10 @@ env:
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     - IS_RUN_DEPOSIT=false
-    - IS_RUN_CREATE_TRANS=true
-    - IS_RUN_CCINVOKE=true
-    - IS_RUN_DIGITAL=true
-    - IS_RUN_VOTE=true
+    - IS_RUN_CREATE_TRANS=false
+    - IS_RUN_CCINVOKE=false
+    - IS_RUN_DIGITAL=false
+    - IS_RUN_VOTE=false
     - IS_RUN_GASTOKEN=true
     - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
