@@ -274,12 +274,12 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	} else {
 		account := p.getLocalAccount()
 		if account == nil {
-			log.Errorf("[%s]runContractReq", "not find local account", shortId(reqId.String()))
+			log.Errorf("[%s]runContractReq, not find local account", shortId(reqId.String()))
 			return fmt.Errorf("runContractReq no local account, reqId[%s]", reqId.String())
 		}
 		sigTx, err := p.GenContractSigTransaction(account.Address, account.Password, tx, p.ptn.GetKeyStore())
 		if err != nil {
-			log.Errorf("[%s]runContractReq, GenContractSigTransctions error:", shortId(reqId.String()), err.Error())
+			log.Errorf("[%s]runContractReq, GenContractSigTransctions error:%s", shortId(reqId.String()), err.Error())
 			return fmt.Errorf("runContractReq, GenContractSigTransctions error, reqId[%s], err:%s", reqId, err.Error())
 		}
 		req.sigTx = sigTx
@@ -288,11 +288,11 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 			for _, rtx := range req.rcvTx {
 				ok, err := checkAndAddTxSigMsgData(req.sigTx, rtx)
 				if err != nil {
-					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData error", shortId(reqId.String()), err.Error())
+					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData error:%s", shortId(reqId.String()), err.Error())
 				} else if ok {
-					log.Debugf("[%s]runContractReq", "checkAndAddTxSigMsgData ok", shortId(reqId.String()))
+					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData ok", shortId(reqId.String()))
 				} else {
-					log.Debugf("[%s]runContractReq", "checkAndAddTxSigMsgData fail", shortId(reqId.String()))
+					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData fail", shortId(reqId.String()))
 				}
 			}
 			req.rcvTx = nil
@@ -556,7 +556,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		if checkExit && !isExit {
 			for addr, _ := range p.local {
 				log.Debugf("[%s]isValidateElection, local addr[%s] hash[%s]", shortId(reqId.String()), addr.String(), util.RlpHash(addr).String())
-				log.Debugf("[%s]isValidateElection, addrHash", shortId(reqId.String()), e.AddrHash.String())
+				log.Debugf("[%s]isValidateElection, addrHash[%s]", shortId(reqId.String()), e.AddrHash.String())
 				if bytes.Equal(e.AddrHash.Bytes(), util.RlpHash(addr).Bytes()) {
 					isExit = true
 					break
@@ -580,12 +580,12 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		//检查地址与pubKey是否匹配:获取当前pubKey下的Addr，将地址hash后与输入比较
 		addr := crypto.PubkeyBytesToAddress(e.PublicKey)
 		if e.AddrHash != util.RlpHash(addr) {
-			log.Errorf("[%s]isValidateElection, publicKey not match address, addrHash is", shortId(reqId.String()), e.AddrHash)
+			log.Errorf("[%s]isValidateElection, publicKey not match address, addrHash[%v]", shortId(reqId.String()), e.AddrHash)
 			return false
 		}
 		//从数据库中查询该地址是否为Jury
 		if !p.dag.IsActiveJury(addr) {
-			log.Errorf("[%s]isValidateElection, not active Jury, addrHash is", shortId(reqId.String()), e.AddrHash)
+			log.Errorf("[%s]isValidateElection, not active Jury, addrHash[%v]", shortId(reqId.String()), e.AddrHash)
 			return false
 		}
 		//验证proof是否通过
@@ -790,7 +790,7 @@ func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
 		log.Debug(errs)
 		return nil, errors.New(errs)
 	}
-	log.Debugf("getContractElectionList, templateId[%x], addrHash[%v]", tplId, "addrHash", addh)
+	log.Debugf("getContractElectionList, templateId[%x], addrHash[%v]", tplId, addh)
 	return addh, nil
 }
 
@@ -810,7 +810,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	//find the address of the contract template binding in the dag
 	addrHash, err := p.getTemplateAddrHash(tplId)
 	if err != nil {
-		log.Debugf("[%s]genContractElectionList, getTemplateAddrHash fail,templateId[%x], err:", shortId(reqId.String()), tplId, err)
+		log.Debugf("[%s]genContractElectionList, getTemplateAddrHash fail,templateId[%x], err:%s", shortId(reqId.String()), tplId, err.Error())
 	}
 	if len(addrHash) >= p.electionNum {
 		num = p.electionNum
