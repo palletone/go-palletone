@@ -219,7 +219,7 @@ func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to,
 			return "", fmt.Errorf("param error(%v), please use mediator.apply()", err.Error())
 		} else {
 			// 参数补全
-			args.setDefaults()
+			args.setDefaults(from)
 
 			// 参数验证
 			err := args.Validate()
