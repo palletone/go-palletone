@@ -509,8 +509,8 @@ type SignaturePayload struct {
 	Signatures []SignatureSet `json:"signature_set"` // the array of signature
 }
 type SignatureSet struct {
-	PubKey    []byte //compress public key
-	Signature []byte //
+	PubKey    []byte `json:"public_key"` //compress public key
+	Signature []byte `json:"signature"`  //
 }
 
 func (ss SignatureSet) String() string {

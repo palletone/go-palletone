@@ -389,11 +389,11 @@ func (pm *ProtocolManager) handle(p *peer) error {
 					p.lightlock.Unlock()
 
 					if announce.Number.AssetID != modules.PTNCOIN {
-						log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
+						//log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
 						p.SendRawAnnounce(data)
 					} else {
 						if !p.fullnode {
-							log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
+							//log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
 							p.SendRawAnnounce(data)
 						}
 					}
