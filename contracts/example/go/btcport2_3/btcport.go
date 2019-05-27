@@ -56,6 +56,9 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return _setDepositAddr(args, stub)
 	case "getBTCToken":
 		return _getBTCToken(args, stub)
+
+	case "withdrawPrepare":
+		return _withdrawPrepare(args, stub)
 	case "withdrawBTC":
 		return _withdrawBTC(args, stub)
 
@@ -137,6 +140,7 @@ const symbolsUnspend = "unspend_"
 const symbolsSpent = "spent_"
 const sep = "_"
 
+const symbolsWithdrawPrepare = "withdrawPrepare_"
 const symbolsWithdraw = "withdraw_"
 
 func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
@@ -738,12 +742,7 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 	totalAmount := int64(0)
 	for i := range selUnspnds {
 		totalAmount += selUnspnds[i].Value
-		err := stub.DelState(symbolsUnspend + selUnspnds[i].MultiAddr + sep + selUnspnds[i].Txid + sep + strconv.Itoa(int(selUnspnds[i].Vout)))
-		if err != nil {
-			log.Debugf("DelState txhash unspend failed err: %s", err.Error())
-			return errors.New("DelState txhash unspend failed")
-		}
-		err = stub.PutState(symbolsSpent+selUnspnds[i].MultiAddr+sep+selUnspnds[i].Txid+sep+strconv.Itoa(int(selUnspnds[i].Vout)),
+		err := stub.PutState(symbolsSpent+selUnspnds[i].MultiAddr+sep+selUnspnds[i].Txid+sep+strconv.Itoa(int(selUnspnds[i].Vout)),
 			[]byte(Int64ToBytes(selUnspnds[i].Value)))
 		if err != nil {
 			log.Debugf("PutState txhash spent failed err: %s", err.Error())
@@ -756,6 +755,18 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 		if err != nil {
 			log.Debugf("PutState txhash unspend failed err: %s", err.Error())
 			return errors.New("PutState txhash unspend failed")
+		}
+	}
+
+	return nil
+}
+
+func deleteUtxos(selUnspnds []Unspend, stub shim.ChaincodeStubInterface) error {
+	for i := range selUnspnds {
+		err := stub.DelState(symbolsUnspend + selUnspnds[i].MultiAddr + sep + selUnspnds[i].Txid + sep + strconv.Itoa(int(selUnspnds[i].Vout)))
+		if err != nil {
+			log.Debugf("DelState txhash unspend failed err: %s", err.Error())
+			return errors.New("DelState txhash unspend failed")
 		}
 	}
 
@@ -778,7 +789,13 @@ func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) 
 	return recvResult, nil
 }
 
-func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+type WithdrawPrepare struct {
+	Unspends  []Unspend
+	BtcAmount uint64
+	RawTX     string
+}
+
+func _withdrawPrepare(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 1 {
 		return shim.Error("need 1 args (btcAddr, [btcFee(>10000)])")
@@ -835,33 +852,104 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	log.Debugf("rawTx:%s", rawTx)
 
+	tempHash := crypto.Keccak256([]byte(rawTx), []byte("prepare"))
+	tempHashHex := fmt.Sprintf("%x", tempHash)
+	log.Debugf("tempHashHex:%s", tempHashHex)
+
+	//协商交易
+	recvResult, err := consult(stub, []byte(tempHashHex), []byte("rawTx"))
+	var juryMsg []JuryMsgAddr
+	err = json.Unmarshal(recvResult, &juryMsg)
+	if err != nil {
+		log.Debugf("Unmarshal rawTxSign result failed: " + err.Error())
+		return shim.Success([]byte("Unmarshal rawTxSign result failed: " + err.Error()))
+	}
+	if len(juryMsg) < 2 { //mod
+		log.Debugf("RecvJury rawTxSign result's len not enough")
+		return shim.Success([]byte("RecvJury rawTxSign result's len not enough"))
+	}
+
+	// 记录Prepare
+	var prepare WithdrawPrepare
+	prepare.Unspends = selUnspnds
+	prepare.BtcAmount = btcTokenAmount
+	prepare.RawTX = rawTx
+	prepareByte, err := json.Marshal(prepare)
+	if err != nil {
+		log.Debugf("Marshal selUnspnds failed: " + err.Error())
+		return shim.Success([]byte("save tx failed: " + err.Error()))
+	}
+	err = stub.PutState(symbolsWithdrawPrepare+stub.GetTxID(), prepareByte)
+	if err != nil {
+		log.Debugf("save tx failed: " + err.Error())
+		return shim.Success([]byte("save tx failed: " + err.Error()))
+	}
+	// 删除UTXO，防止别的提现花费
+	err = deleteUtxos(selUnspnds, stub)
+	if err != nil {
+		log.Debugf("deleteUtxos failed: " + err.Error())
+		return shim.Success([]byte("deleteUtxos failed: " + err.Error()))
+	}
+
+	return shim.Success([]byte("Withdraw is ready, please invoke withdrawBTC"))
+}
+
+func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 1 {
+		return shim.Error("need 1 args (reqid)")
+	}
+
+	reqid := args[0]
+	if "0x" != reqid[0:2] {
+		reqid = "0x" + reqid
+	}
+
+	result, _ := stub.GetState(symbolsRedeem + reqid)
+	if len(result) == 0 {
+		return shim.Error("Please invoke withdrawPrepare first")
+	}
+
+	// 检查交易
+	var prepare WithdrawPrepare
+	err := json.Unmarshal(result, &prepare)
+	if len(prepare.Unspends) == 0 {
+		jsonResp := "check Unspends failed"
+		return shim.Success([]byte(jsonResp))
+	}
+	if "" == prepare.RawTX {
+		jsonResp := "check RawTx failed"
+		return shim.Success([]byte(jsonResp))
+	}
+	log.Debugf("rawTx:%s", prepare.RawTX) //todo check utxo spent
+
 	//
 	inputRedeemIndex := []int{}
 	redeemHex := []string{}
 	mapRedeem := make(map[string]int)
 	index := 0
-	for i := range selUnspnds {
-		if _, exist := mapRedeem[selUnspnds[i].MultiAddr]; exist {
-			inputRedeemIndex = append(inputRedeemIndex, mapRedeem[selUnspnds[i].MultiAddr])
+	for i := range prepare.Unspends {
+		if _, exist := mapRedeem[prepare.Unspends[i].MultiAddr]; exist {
+			inputRedeemIndex = append(inputRedeemIndex, mapRedeem[prepare.Unspends[i].MultiAddr])
 			continue
 		}
-		result, _ := stub.GetState(symbolsRedeem + selUnspnds[i].MultiAddr)
+		result, _ := stub.GetState(symbolsRedeem + prepare.Unspends[i].MultiAddr)
 		if len(result) == 0 {
 			return shim.Error("DepsoitRedeem is empty")
 		}
 		redeemHex = append(redeemHex, string(result))
-		mapRedeem[selUnspnds[i].MultiAddr] = index
+		mapRedeem[prepare.Unspends[i].MultiAddr] = index
 		inputRedeemIndex = append(inputRedeemIndex, index)
 		index++
 	}
 	// 签名交易
-	rawTxSign, err := signTx(rawTx, inputRedeemIndex, redeemHex, stub)
+	rawTxSign, err := signTx(prepare.RawTX, inputRedeemIndex, redeemHex, stub)
 	if err != nil {
 		return shim.Success([]byte("signTx failed: " + err.Error()))
 	}
 	log.Debugf("rawTxSign:%s", rawTxSign)
 
-	tempHash := crypto.Keccak256([]byte(rawTx))
+	tempHash := crypto.Keccak256([]byte(prepare.RawTX))
 	tempHashHex := fmt.Sprintf("%x", tempHash)
 	log.Debugf("tempHashHex:%s", tempHashHex)
 
@@ -880,7 +968,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	// 合并交易
-	tx, txHash, err := mergeTx(rawTx, inputRedeemIndex, redeemHex, juryMsg, stub)
+	tx, txHash, err := mergeTx(prepare.RawTX, inputRedeemIndex, redeemHex, juryMsg, stub)
 	if err != nil {
 		log.Debugf("mergeTx failed:  %s", err.Error())
 		return shim.Success([]byte("mergeTx failed: " + err.Error()))
@@ -919,10 +1007,16 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("save tx failed: " + err.Error()))
 	}
 	// 记录花费
-	err = saveUtxos(int64(btcTokenAmount), selUnspnds, txHash, stub)
+	err = saveUtxos(int64(prepare.BtcAmount), prepare.Unspends, txHash, stub)
 	if err != nil {
 		log.Debugf("saveUtxos failed: " + err.Error())
 		return shim.Success([]byte("saveUtxos failed: " + err.Error()))
+	}
+	//删除Prepare
+	err = stub.DelState(symbolsWithdrawPrepare + reqid)
+	if err != nil {
+		log.Debugf("delete WithdrawPrepare failed: " + err.Error())
+		return shim.Success([]byte("delete WithdrawPrepare failed: " + err.Error()))
 	}
 
 	////发送交易
