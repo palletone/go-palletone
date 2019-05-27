@@ -45,6 +45,8 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/contracts/syscontract"
+	"bytes"
 )
 
 type Dag struct {
@@ -437,11 +439,12 @@ func (d *Dag) refreshPartitionMemDag() {
 	db := d.Db
 	unitRep := d.stableUnitRep
 	propRep := d.stablePropRep
-	partitions, err := d.unstableStateRep.GetPartitionChains()
+	partitions, err := d.stableStateRep.GetPartitionChains()
 	if err != nil {
 		log.Warnf("GetPartitionChains error:%s", err.Error())
 		return
 	}
+	log.Debug("Start to refresh partition mem dag")
 	//Init partition memdag
 	if d.PartitionMemDag == nil {
 		partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
@@ -526,7 +529,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		Memdag:                 unstableChain,
 		//PartitionMemDag:      partitionMemdag,
 	}
-
+	unitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
 	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	if !dag.IsHeaderExist(hash) {
@@ -551,6 +554,12 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	}
 	dag.refreshPartitionMemDag()
 	return dag, nil
+}
+func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateChangeEvent){
+	log.Debug("Process AfterSysContractStateChangeEvent")
+	if bytes.Equal( arg.ContractId,syscontract.PartitionContractAddress.Bytes()){
+		dag.refreshPartitionMemDag()
+	}
 }
 
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
