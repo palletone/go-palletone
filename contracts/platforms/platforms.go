@@ -111,7 +111,7 @@ func generateDockerfile(platform Platform, cds *pb.ChaincodeDeploymentSpec) ([]b
 	// ----------------------------------------------------------------------------------------------------
 	base, err := platform.GenerateDockerfile(cds)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to generate platform-specific Dockerfile: %s", err)
+		return nil, fmt.Errorf("Failed to generate platform-specific Dockerfile: %s", err.Error())
 	}
 	buf = append(buf, base)
 
@@ -198,7 +198,7 @@ func GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec) (io.Reader, error) {
 		tw := tar.NewWriter(gw)
 		err := _generateDockerBuild(platform, cds, inputFiles, tw)
 		if err != nil {
-			log.Debugf("GenerateDockerBuild error", err)
+			log.Debugf("GenerateDockerBuild error:%s", err.Error())
 		}
 
 		tw.Close()

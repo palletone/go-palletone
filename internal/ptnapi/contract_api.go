@@ -268,7 +268,7 @@ func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount,
 		if _, ok := intCertID.SetString(certID, 10); !ok {
 			return &ContractDeployRsp{}, fmt.Errorf("certid is invalid")
 		}
-		log.Debugf("-----Ccinvoketx:", "certificate serial number", certID)
+		log.Debug("-----Ccinvoketx:", "certificate serial number", certID)
 	}
 	args := make([][]byte, len(param))
 	for i, arg := range param {

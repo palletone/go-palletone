@@ -133,7 +133,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			IsDelete: val.GetIsDelete(),
 		}
 		invoke.WriteSet = append(invoke.WriteSet, rd)
-		log.Infof("WriteSet: idx[%s], fun[%s], key[%s], val[%v], delete[%v]", idx, args[2], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		log.Infof("WriteSet: idx[%d], fun[%s], key[%s], val[%v], delete[%t]", idx, args[2], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return invoke, nil
