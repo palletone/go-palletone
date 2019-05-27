@@ -469,7 +469,7 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 			for _, sig := range sigs {
 				if true == bytes.Equal(sig.PubKey, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].PubKey) &&
 					true == bytes.Equal(sig.Signature, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].Signature) {
-					log.Infof("[%s]checkAndAddTxSigMsgData tx  already recv, reqId", shortId(reqId.String()), reqId.String())
+					log.Infof("[%s]checkAndAddTxSigMsgData tx  already recv, reqId[%s]", shortId(reqId.String()), reqId.String())
 					return false, nil
 				}
 			}
@@ -511,7 +511,7 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	err := p.validator.ValidateTx(tx, false, false)
 	if err != nil {
-		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
+		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
 	}
 
 	return err == nil
