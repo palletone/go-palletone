@@ -64,6 +64,8 @@ script:
     cd ../GasToken;
     pwd
     chmod +x ./init_gas_token.sh;
+    ./init_gas_token.sh;
+    sleep 15;
     python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
 
