@@ -54,7 +54,7 @@ func (pm *ProtocolManager) syncer() {
 
 		case <-forceSync:
 			// Force a sync even if not enough peers are present
-			go pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
+			go pm.syncall() //pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
 
 		case <-pm.noMorePeers:
 			return
@@ -67,7 +67,11 @@ func (pm *ProtocolManager) syncall() {
 		log.Debug("Light PalletOne syncall synchronising")
 		return
 	}
-	pm.downloader.FetchAllToken(pm.peers.BestPeer(pm.assetId).id)
+	headers, err := pm.downloader.FetchAllToken(pm.peers.BestPeer(pm.assetId).id)
+	if err != nil {
+		log.Debug("Light PalletOne syncall FetchAllToken", "err", err)
+	}
+	log.Debug("Light PalletOne syncall FetchAllToken", "len(headers)", len(headers), "headers", headers)
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.

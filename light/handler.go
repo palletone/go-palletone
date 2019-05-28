@@ -469,6 +469,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case SendTxMsg:
 		return pm.SendTxMsg(msg, p)
 
+	case GetLeafNodesMsg:
+		return pm.GetLeafNodesMsg(msg, p)
+
+	case LeafNodesMsg:
+		return pm.LeafNodesMsg(msg, p)
+
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
@@ -554,7 +560,6 @@ func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int,
 
 func (p *peerConnection) RequestLeafNodes() error {
 	log.Debug("Fetching leaf nodes")
-	return nil
 	return p2p.Send(p.peer.rw, GetLeafNodesMsg, "")
 }
 
