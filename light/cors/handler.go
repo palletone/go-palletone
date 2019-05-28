@@ -232,9 +232,13 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 			for {
 				select {
 				case <-pm.newPeerCh:
+					//go pm.StartCorsSync()
 
 				case <-forceSync:
 					// Force a sync even if not enough peers are present
+					log.Debug("Cors PalletOne ProtocolManager start force push cors sync")
+
+					go pm.StartCorsSync()
 
 				case <-pm.noMorePeers:
 					return
