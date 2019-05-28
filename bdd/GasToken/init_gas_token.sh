@@ -1,11 +1,10 @@
 #!/bin/bash
 #pkill gptn
 #tskill gptn
-cd ../../
-pwd
-go build ./cmd/gptn
-rm -rf ./bdd/GasToken/node/*
+cd ../../cmd/gptn && go build
 ls ./cmd/gptn/
+cd ../../
+rm -rf ./bdd/GasToken/node/*
 cp ./cmd/gptn/gptn ./bdd/GasToken/node
 cd ./bdd/GasToken/node
 chmod +x gptn
