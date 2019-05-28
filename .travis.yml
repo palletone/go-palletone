@@ -63,7 +63,7 @@ script:
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
     cd ../GasToken;
     mkdir node;
-    chmod a+x ./init_gas_token.sh;
+    chmod +x ./init_gas_token.sh;
     ls -l;
     ./init_gas_token.sh;
     sleep 15;

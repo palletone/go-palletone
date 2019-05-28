@@ -5,6 +5,7 @@ cd ../../
 pwd
 go build ./cmd/gptn
 rm -rf ./bdd/GasToken/node/*
+ls ./cmd/gptn/
 cp ./cmd/gptn/gptn ./bdd/GasToken/node
 cd ./bdd/GasToken/node
 chmod +x gptn
