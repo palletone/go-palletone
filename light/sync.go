@@ -76,7 +76,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		return
 	}
 
-	if pm.lightSync && pm.assetId == assetId {
+	if !pm.lightSync && pm.assetId == assetId {
 		log.Debug("Light PalletOne synchronise pm.assetId == assetId")
 		return
 	}

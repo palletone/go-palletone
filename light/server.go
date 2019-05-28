@@ -139,11 +139,10 @@ func (s *LesServer) loopCors() {
 			select {
 			case header := <-headCh:
 				peers := s.protocolManager.peers.AllPeers(s.protocolManager.assetId)
-				log.Debug("LesServer loopCors", "len(peers)", len(peers), "Light recv Cors header:", header)
+				log.Debug("LesServer loopCors Light recv Cors header", "len(peers)", len(peers), "assetid", header.Number.AssetID, "index", header.Number.Index, "hash", header.Hash())
 				if len(peers) > 0 {
 					announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
 					for _, p := range peers {
-						log.Debug("Light Palletone", "ProtocolManager->blockLoop p.announceType", p.announceType)
 						p.announceChn <- announce
 						//switch p.announceType {
 						//case announceTypeSimple:

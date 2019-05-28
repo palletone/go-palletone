@@ -278,13 +278,13 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	//获取docker客户端
 	client, err := vm.getClientFnc()
 	if err != nil {
-		log.Debugf("start - cannot create client: ", err)
+		log.Debugf("start - cannot create client: %s", err.Error())
 		return err
 	}
 
 	containerID, err := vm.GetContainerId(ccid)
 	if err != nil {
-		log.Debugf("get container %s error: ", containerID, err)
+		log.Debugf("get container %s error: %s", containerID, err.Error())
 		return err
 	}
 

@@ -51,27 +51,25 @@ func (pm *ProtocolManager) StartCorsSync() (string, error) {
 		log.Debug("Cors ProtocolManager StartCorsSync", "GetMainChain err", err)
 		return err.Error(), err
 	}
+	pm.mclock.Lock()
 	pm.mainchain = mainchain
+	pm.mclock.Unlock()
+
 	pm.mclock.RLock()
 	for _, peer := range mainchain.Peers {
 		node, err := discover.ParseNode(peer)
 		if err != nil {
 			return fmt.Sprintf("Cors ProtocolManager StartCorsSync invalid pnode: %v", err), err
 		}
-		log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
+		//log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
 		pm.server.corss.AddPeer(node)
 	}
 	pm.mclock.RUnlock()
 
 	go func() {
-		for {
-
-			if pm.peers.Len() >= pm.mainchainpeers()/2+1 {
-				pm.Sync()
-				break
-			} else {
-				time.Sleep(1 * time.Second)
-			}
+		time.Sleep(time.Duration(3) * time.Second)
+		if pm.peers.Len() >= pm.mainchainpeers()/2+1 {
+			pm.Sync()
 		}
 	}()
 

@@ -186,12 +186,12 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		return dagerrors.ErrFutureBlock
 	}
 	headerBroadcaster := func(p *peer, header *modules.Header, propagate bool) {
-		log.Debug("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
+		log.Debug("Cors ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
 		pm.BroadcastCorsHeader(p, header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
-		log.Debug("Cors Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		log.Debug("Cors ProtocolManager InsertLightHeader", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
 	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
@@ -199,13 +199,11 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 }
 
 func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) {
-	//log.Debug("Cors ProtocolManager", "BroadcastCorsHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
 	pm.bdlock.RLock()
 	v, ok := pm.needboradcast[p.id]
 	pm.bdlock.RUnlock()
 	if ok && header.Number.Index >= v {
-		//TODO broadcast to lps
-		log.Debug("Cors ProtocolManager", "BroadcastCorsHeader assetid:", header.Number.AssetID.String(), "index:", header.Index())
+		log.Debug("Cors ProtocolManager BroadcastCorsHeader", "assetid:", header.Number.AssetID.String(), "index:", header.Index(), "hash", header.Hash())
 		pm.server.SendEvents(header)
 	}
 	return
@@ -232,9 +230,13 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 			for {
 				select {
 				case <-pm.newPeerCh:
+					//go pm.StartCorsSync()
 
 				case <-forceSync:
 					// Force a sync even if not enough peers are present
+					log.Debug("Cors PalletOne ProtocolManager start force push cors sync")
+
+					go pm.StartCorsSync()
 
 				case <-pm.noMorePeers:
 					return
@@ -388,11 +390,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 
-		log.Trace("CorsHeaderMsg message content", "len(headers)", len(headers))
 		if pm.fetcher != nil {
 			//TODO start lps broadcast
 			for _, header := range headers {
-				log.Trace("CorsHeaderMsg message content", "header:", header)
+				log.Trace("CorsHeaderMsg message content", "assetid:", header.Number.AssetID, "index:", header.Number.Index)
 				pm.fetcher.Enqueue(p, header)
 			}
 		}

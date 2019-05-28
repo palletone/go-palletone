@@ -25,11 +25,10 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"encoding/json"
-	"unsafe"
 
 	"go.uber.org/zap/internal/bufferpool"
 	"go.uber.org/zap/internal/exit"
+
 	"go.uber.org/multierr"
 )
 
@@ -218,15 +217,6 @@ func (ce *CheckedEntry) Write(fields ...Field) {
 	if ce.ErrorOutput != nil {
 		if err != nil {
 			fmt.Fprintf(ce.ErrorOutput, "%v write error: %v\n", time.Now(), err)
-			ce.ErrorOutput.Sync()
-		}
-		//by yangjie for add error level log save to error file
-		var fs string
-		data, _ := json.Marshal(fields)
-
-		fs = *(*string)(unsafe.Pointer(&data))
-		if ce.Entry.Level >= ErrorLevel {
-			fmt.Fprintf(ce.ErrorOutput, "%v  %v  %v  %v  %v\n \n", ce.Time,ce.Level.String(), ce.Stack , ce.Message, fs)
 			ce.ErrorOutput.Sync()
 		}
 	}

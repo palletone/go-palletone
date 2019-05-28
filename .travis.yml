@@ -4,6 +4,7 @@ sudo: required
 language:
     - go
 go:
+    - 1.12.5
     - 1.10.8
 env:
     global:
@@ -19,6 +20,7 @@ env:
         - REPORT_NAME=report.html
         - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/master
         - CURL_CMD=curl --ftp-create-dirs -T
+        - GO111MODULE=on
 
 script:
     - go build ./cmd/gptn
@@ -66,7 +68,7 @@ before_install:
     - go get -u github.com/palletone/adaptor
     - go get -u github.com/palletone/btc-adaptor
     - go get -u github.com/palletone/eth-adaptor
-    - go get -u github.com/palletone/digital-identity/...
+    - source ./build/goget_by_version.sh
     - source ./gomockgen.sh
 
 install:

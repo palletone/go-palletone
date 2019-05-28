@@ -1321,7 +1321,7 @@ func (handler *Handler) handleGetTimestamp(msg *pb.ChaincodeMessage) {
 			return
 		}
 		chaincodeID := handler.getCCRootName()
-		log.Debugf("[%s] getting state for chaincode %s, key %s, channel %s",
+		log.Debugf("[%s] getting state for chaincode %s, key %d, channel %s",
 			shorttxid(msg.Txid), chaincodeID, getTimestamp.RangeNumber, txContext.chainID)
 
 		var res []byte
@@ -1345,7 +1345,7 @@ func (handler *Handler) handleGetTimestamp(msg *pb.ChaincodeMessage) {
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		} else if res == nil {
 			//The state object being requested does not exist
-			log.Debugf("[%s]No state associated with key: %s. Sending %s with an empty payload",
+			log.Debugf("[%s]No state associated with key: %d. Sending %s with an empty payload",
 				shorttxid(msg.Txid), getTimestamp.RangeNumber, pb.ChaincodeMessage_RESPONSE)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}
 		} else {
@@ -1360,7 +1360,7 @@ func (handler *Handler) getTxContextForMessage(channelID string, txid string, ms
 	//if we have a channelID, just get the txsim from isValidTxSim
 	//if this is NOT an INVOKE_CHAINCODE, then let isValidTxSim handle retrieving the txContext
 	if channelID != "" || msgType != pb.ChaincodeMessage_INVOKE_CHAINCODE.String() {
-		return handler.isValidTxSim(channelID, txid, fmtStr, args)
+		return handler.isValidTxSim(channelID, txid, fmtStr, args...)
 	}
 
 	var calledCcIns *sysccprovider.ChaincodeInstance
@@ -1389,13 +1389,13 @@ func (handler *Handler) getTxContextForMessage(channelID string, txid string, ms
 	//   without a channel context (ie, no ledger context).
 	if isscc := sysccprovider.GetSystemChaincodeProvider().IsSysCC(calledCcIns.ChaincodeName); !isscc {
 		// normal path - UCC invocation with an empty ("") channel: isValidTxSim will return an error
-		return handler.isValidTxSim("", txid, fmtStr, args)
+		return handler.isValidTxSim("", txid, fmtStr, args...)
 	}
 
 	// Calling SCC without a  ChainID, then the assumption this is an external SCC called by the client (special case) and no UCC involved,
 	// so no Transaction Simulator validation needed as there are no commits to the ledger, get the txContext directly if it is not nil
 	if txContext = handler.getTxContext(channelID, txid); txContext == nil {
-		errStr := fmt.Sprintf(fmtStr, args)
+		errStr := fmt.Sprintf(fmtStr, args...)
 		triggerNextStateMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(errStr), Txid: txid}
 		return nil, triggerNextStateMsg
 	}

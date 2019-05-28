@@ -49,20 +49,21 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		log.Trace("Valid announcement signature")
 	}
 
-	log.Debug("Light PalletOne Announce message content", "header", req.Header)
+	log.Debug("Light PalletOne Announce message content", "p.id", p.id, "assetid", req.Header.Number.AssetID, "index", req.Header.Number.Index, "hash", req.Header.Hash())
 
 	if pm.lightSync || pm.assetId != req.Header.Number.AssetID {
 		pm.fetcher.Enqueue(p, &req.Header)
 		localheader := pm.dag.CurrentHeader(req.Header.Number.AssetID)
 		if localheader != nil {
-			log.Debug("Light PalletOne Announce message ", "localheader index", localheader.Number.Index, "req.Header.Number.Index-1", req.Header.Number.Index-1)
+			log.Debug("Light PalletOne Announce message pre synchronise", "localheader index", localheader.Number.Index, "req.Header.Number.Index-1", req.Header.Number.Index-1)
 		} else {
-			log.Debug("Light PalletOne Announce message ", "localheader is ni.req.Header.Number.Index-1", req.Header.Number.Index-1)
+			log.Debug("Light PalletOne Announce message pre synchronise", "localheader is ni.req.Header.Number.Index-1", req.Header.Number.Index-1)
 		}
 
 		if localheader == nil || localheader.Number.Index < req.Header.Number.Index-1 {
 			p.SetHead(&req)
 			go func() {
+				log.Debug("Light PalletOne Announce message Enter synchronise")
 				pm.synchronise(p, req.Header.Number.AssetID)
 			}()
 		}
@@ -265,7 +266,7 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("Light PalletOne", "Prove err", err, "key", resp.key, "level", req.FromLevel, "proof", resp.pathData)
 		}
 		log.Debug("Light PalletOne", "key", resp.key, "level", req.FromLevel, "proof", resp.pathData)
-		log.Debugf("Light PalletOne GetProofsMsg recv %x", resp)
+		log.Debugf("Light PalletOne GetProofsMsg recv %v", resp)
 
 		data, err := resp.encode()
 		if err != nil {
