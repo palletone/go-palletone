@@ -4,6 +4,7 @@ sudo: required
 language:
     - go
 go:
+    - 1.12.5
     - 1.10.8
 env:
     global:
@@ -19,6 +20,7 @@ env:
         - REPORT_NAME=report.html
         - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/master
         - CURL_CMD=curl --ftp-create-dirs -T
+        - GO111MODULE=on
 
 script:
     - go build ./cmd/gptn
@@ -33,7 +35,7 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     - mkdir -p ${BDD_LOG_PATH}
-    - ./deposit_test.sh 4
+#    - ./deposit_test.sh 4
     - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ../testcase/createTrans
     - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ../testcase/crtCoinContract
     - python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/
@@ -66,7 +68,7 @@ before_install:
     - go get -u github.com/palletone/adaptor
     - go get -u github.com/palletone/btc-adaptor
     - go get -u github.com/palletone/eth-adaptor
-    - go get -u github.com/palletone/digital-identity/...
+    - source ./build/goget_by_version.sh
     - source ./gomockgen.sh
 
 install:

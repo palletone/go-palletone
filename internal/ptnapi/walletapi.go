@@ -22,6 +22,10 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
+	"math/big"
+	"math/rand"
+	"strconv"
+	"strings"
 )
 
 // Start forking command.
@@ -381,7 +385,6 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string)
 	log.Infof("Tx outpoint tx hash:%s", outpoint_txhash.String())
 	return submitTransaction(ctx, s.b, tx)
 }
-
 
 func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx string) (common.Hash, error) {
 	//transaction inputs
@@ -792,7 +795,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	if to == "" {
 		return common.Hash{}, nil
 	}
-	a, err := decimal.RandFromString(amount)
+	a, err := RandFromString(amount)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -948,41 +951,69 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	return submitTransaction(ctx, s.b, stx)
 }
 
-//func (s *PublicWalletAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, certID string) (string, error) {
-//	contractAddr, _ := common.StringToAddress(deployId)
-//
-//	fromAddr, _ := common.StringToAddress(from)
-//	toAddr, _ := common.StringToAddress(to)
-//	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-//	fee, _ := strconv.ParseUint(daoFee, 10, 64)
-//
-//	log.Info("-----Ccinvoketx:", "contractId", contractAddr.String())
-//	log.Info("-----Ccinvoketx:", "fromAddr", fromAddr.String())
-//	log.Info("-----Ccinvoketx:", "toAddr", toAddr.String())
-//	log.Info("-----Ccinvoketx:", "amount", amount)
-//	log.Info("-----Ccinvoketx:", "fee", fee)
-//
-//	if fee <= 0 {
-//		return "", fmt.Errorf("fee is ZERO ")
-//	}
-//
-//	intCertID := new(big.Int)
-//	if len(certID) > 0 {
-//		if _, ok := intCertID.SetString(certID, 10); !ok {
-//			return "", fmt.Errorf("certid is invalid")
-//		}
-//		log.Info("-----Ccinvoketx:", "certificate serial number", certID)
-//	}
-//	args := make([][]byte, len(param))
-//	for i, arg := range param {
-//		args[i] = []byte(arg)
-//		fmt.Printf("index[%d], value[%s]\n", i, arg)
-//	}
-//	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, intCertID, contractAddr, args, 0)
-//	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
-//
-//	return hex.EncodeToString(reqId[:]), err
-//}
+func RandFromString(value string) (decimal.Decimal, error) {
+	originalInput := value
+	var intString string
+	var exp int64
+
+	// Check if number is using scientific notation
+	eIndex := strings.IndexAny(value, "Ee")
+	if eIndex != -1 {
+		expInt, err := strconv.ParseInt(value[eIndex+1:], 10, 32)
+		if err != nil {
+			if e, ok := err.(*strconv.NumError); ok && e.Err == strconv.ErrRange {
+				return decimal.Decimal{}, fmt.Errorf("can't convert %s to decimal: fractional part too long", value)
+			}
+			return decimal.Decimal{}, fmt.Errorf("can't convert %s to decimal: exponent is not numeric", value)
+		}
+		value = value[:eIndex]
+		exp = expInt
+	}
+
+	parts := strings.Split(value, ".")
+	if len(parts) == 1 {
+		// There is no decimal point, we can just parse the original string as
+		// an int
+		intString = value
+	} else if len(parts) == 2 {
+		// strip the insignificant digits for more accurate comparisons.
+		decimalPart := strings.TrimRight(parts[1], "0")
+		intString = parts[0] + decimalPart
+		expInt := -len(decimalPart)
+		exp += int64(expInt)
+	} else {
+		return decimal.Decimal{}, fmt.Errorf("can't convert %s to decimal: too many .s", value)
+	}
+
+	dValue := new(big.Int)
+	_, ok := dValue.SetString(intString, 10)
+	if !ok {
+		return decimal.Decimal{}, fmt.Errorf("can't convert %s to decimal", value)
+	}
+
+	if exp < math.MinInt32 || exp > math.MaxInt32 {
+		// NOTE(vadim): I doubt a string could realistically be this long
+		return decimal.Decimal{}, fmt.Errorf("can't convert %s to decimal: fractional part too long", originalInput)
+	}
+	rand.Seed(time.Now().UnixNano())
+
+	input_number := decimal.NewFromBigInt(dValue, int32(exp))
+	result := decimal.Decimal{}
+	rand_number := decimal.Decimal{}
+	r := rand.Int()
+	rd := big.NewInt(int64(r))
+	for {
+		r = rand.Int()
+		rd = big.NewInt(int64(r))
+
+		rand_number = decimal.NewFromBigInt(rd, int32(exp))
+		result = rand_number.Mod(input_number)
+		if result.IsZero() == false {
+			break
+		}
+	}
+	return result, nil
+}
 
 func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)

@@ -24,7 +24,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/dedis/kyber/sign/bls"
+	"go.dedis.ch/kyber/v3/sign/bls"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"

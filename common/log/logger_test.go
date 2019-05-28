@@ -106,10 +106,10 @@ func TestNewExample(t *testing.T) {
 }
 
 func TestLogError(t *testing.T) {
-	err := fmt.Errorf("Save data error.")
+	err := errors.New("Save data error.")
 	//log := NewTestLog()
-	Errorf("test error", err)
-	Errorf("test error2", "test222", err)
+	Error("test error", err)
+	Error("test error2", "test222", err)
 }
 func TestLogDynamic(t *testing.T) {
 	LogConfig.LoggerLvl = "DEBUG"

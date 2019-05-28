@@ -188,9 +188,21 @@ type MediatorCreateArgs struct {
 }
 
 // 相关参数检查
-func (args *MediatorCreateArgs) setDefaults() {
+func (args *MediatorCreateArgs) setDefaults(addStr string) {
 	if args.MediatorInfoBase == nil {
 		args.MediatorInfoBase = core.NewMediatorInfoBase()
+	}
+
+	if args.AddStr == "" {
+		args.AddStr = addStr
+	}
+
+	if args.InitPubKey == "" {
+		args.InitPubKey = core.DefaultInitPubKey
+	}
+
+	if args.Node == "" {
+		args.Node = core.DefaultNodeInfo
 	}
 
 	if args.MediatorApplyInfo == nil {
@@ -202,7 +214,7 @@ func (args *MediatorCreateArgs) setDefaults() {
 
 func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, error) {
 	// 参数补全
-	args.setDefaults()
+	args.setDefaults("")
 
 	// 参数验证
 	err := args.Validate()

@@ -27,7 +27,7 @@ import (
 	"strconv"
 
 	"encoding/json"
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"

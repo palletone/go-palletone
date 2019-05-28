@@ -25,7 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
+	// "reflect"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -171,37 +171,37 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 }
 
 // Get contract key's value
-func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interface{}, error) {
-	var val interface{}
-	if common.EmptyHash(id) {
-		return nil, errors.New("the filed not defined")
-	}
-	con_bytes, err := db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
-	if err != nil {
-		return nil, err
-	}
-	contract := new(modules.Contract)
-	err = rlp.DecodeBytes(con_bytes, contract)
-	if err != nil {
-		log.Errorf("err:", err)
-		return nil, err
-	}
-	obj := reflect.ValueOf(contract)
-	myref := obj.Elem()
-	typeOftype := myref.Type()
+// func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interface{}, error) {
+// 	var val interface{}
+// 	if common.EmptyHash(id) {
+// 		return nil, errors.New("the filed not defined")
+// 	}
+// 	con_bytes, err := db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	contract := new(modules.Contract)
+// 	err = rlp.DecodeBytes(con_bytes, contract)
+// 	if err != nil {
+// 		log.Errorf("err:", err)
+// 		return nil, err
+// 	}
+// 	obj := reflect.ValueOf(contract)
+// 	myref := obj.Elem()
+// 	typeOftype := myref.Type()
 
-	for i := 0; i < myref.NumField(); i++ {
-		filed := myref.Field(i)
-		if typeOftype.Field(i).Name == key {
-			val = filed.Interface()
-			log.Errorf("", i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
-			break
-		} else if i == myref.NumField()-1 {
-			val = nil
-		}
-	}
-	return val, nil
-}
+// 	for i := 0; i < myref.NumField(); i++ {
+// 		filed := myref.Field(i)
+// 		if typeOftype.Field(i).Name == key {
+// 			val = filed.Interface()
+// 			log.Errorf("", i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
+// 			break
+// 		} else if i == myref.NumField()-1 {
+// 			val = nil
+// 		}
+// 	}
+// 	return val, nil
+// }
 
 /**
 获取合约全部属性

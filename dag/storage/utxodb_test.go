@@ -52,14 +52,17 @@ func TestGetUtxos(t *testing.T) {
 	utxodb.SaveUtxoEntity(key, utxo)
 
 	utxos, err := utxodb.GetAllUtxos()
-	for key, u := range utxos {
+	if err!=nil{
 		log.Debugf("get all utxo error:%s", err)
-		log.Debugf("key:%s", key.ToKey())
-		log.Debugf("utxo value:%s", u)
 	}
-	queryUtxo,err:=utxodb.GetUtxoEntry(key)
-	assert.Nil(t,err)
-	assert.Equal(t,utxo.Bytes(),queryUtxo.Bytes())
+	for key, u := range utxos {
+
+		log.Debugf("key:%s", key.ToKey())
+		log.Debugf("utxo value:%#v", u)
+	}
+	queryUtxo, err := utxodb.GetUtxoEntry(key)
+	assert.Nil(t, err)
+	assert.Equal(t, utxo.Bytes(), queryUtxo.Bytes())
 	//result := utxodb.GetPrefix(constants.UTXO_PREFIX)
 	//for key, b := range result {
 	//	log.Debugf("result::%s", key)

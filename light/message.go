@@ -266,7 +266,7 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("Light PalletOne", "Prove err", err, "key", resp.key, "level", req.FromLevel, "proof", resp.pathData)
 		}
 		log.Debug("Light PalletOne", "key", resp.key, "level", req.FromLevel, "proof", resp.pathData)
-		log.Debugf("Light PalletOne GetProofsMsg recv %x", resp)
+		log.Debugf("Light PalletOne GetProofsMsg recv %v", resp)
 
 		data, err := resp.encode()
 		if err != nil {

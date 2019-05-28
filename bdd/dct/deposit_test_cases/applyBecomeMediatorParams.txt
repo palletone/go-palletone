@@ -6,7 +6,7 @@ Resource          publicParams.txt
 *** Keywords ***
 申请加入Mediator候选节点所需参数
     [Arguments]    ${mediatorAddr}
-    ${one}    Create List    ApplyBecomeMediator    {\"key\":\"value\"}
+    ${one}    Create List    ApplyBecomeMediator    {\"applyInfo\":\"key: value\"}
     ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
     [Return]    ${two}
 

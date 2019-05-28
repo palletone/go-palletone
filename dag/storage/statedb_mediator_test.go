@@ -30,7 +30,7 @@ import (
 func TestSaveAndGetMediator(t *testing.T) {
 	db := MockStateMemDb()
 	addr, _ := common.StringToAddress("P1JJkSss3dEPCBJD6V759MgkB4vtj2EiUFX")
-	point, _ := core.StrToPoint("gxjMgTWsVV7KVgSWHu6YiDQKknA58Sa4df23pTJphfgcLMqtHWdemW29BNEQFxjRvpjh7AhpW79sbju4DBQNVHBwhNwM9a624Qb4RdTYJd7RuaXgciJ2nFKDgSRRa351BhSXPyJiD96zoMub4rMVPEwXigYzvC7bPPFayAGxM9eQFUV")
+	point, _ := core.StrToPoint("Dsn4gF2xpsM79R6kBfsR1joZD4BoPfBGREJGStCAz1bFfUnB5QXBGbNfudxyCWz6uWZZ8c43BYWkxiezyF5uifhv1diiykrxzgFhLMSAvppx34RjJwzjmXAXnYMuQX3Jy2P3ygehcKmATAyXQCVoXde6Xo3tkA2Jv8Zb8zDcdGjbFyd")
 	node, _ := core.StrToMedNode("pnode://f056aca66625c286ae444add82f44b9eb74f18a8a96572360cb70df9b6d64d9bd2c58a345e570beb2bcffb037cd0a075f548b73083d31c12f1f4564865372534@127.0.0.1:30303")
 	med := &core.Mediator{Address: addr, InitPubKey: point, Node: node, MediatorApplyInfo: &core.MediatorApplyInfo{}, MediatorInfoExpand: &core.MediatorInfoExpand{}}
 	med.ApplyInfo = "Test ApplyInfo"

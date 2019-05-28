@@ -123,24 +123,6 @@ type Callbacks map[string]Callback
 // which version of the callback will end up in the internal map. This is due
 // to the psuedo random nature of Go maps. No checking for multiple keys is
 // currently performed.
-
-
-// NewFSM根据事件和回调构造FSM。
-//
-//事件和转换被指定为一组指定为事件的结构。每个事件都映射到从Event.Src到Event.Dst的一个或多个内部转换。
-//回调被添加为指定为Callbacks的映射，其中键被解析为回调事件，如下所示，并以相同的顺序调用：
-// 1. before_ <EVENT> - 在名为<EVENT>的事件之前调用
-// 2. before_event - 在所有事件之前调用
-// 3. leave_ <OLD_STATE> - 在离开<OLD_STATE>之前调用
-// 4. leave_state - 在离开所有州之前调用
-// 5. enter_ <NEW_STATE> - 输入<NEW_STATE>后调用
-// 6. enter_state - 进入所有状态后调用
-// 7. after_ <EVENT> - 在名为<EVENT>的事件后调用
-// 8. after_event - 在所有事件之后调用
-//最常用的回调函数还有两个简短形式版本。它们只是事件或状态的名称：
-// 1. <NEW_STATE> - 输入<NEW_STATE>后调用
-// 2. <EVENT> - 在名为<EVENT>的事件后调用
-//如果同时指定了速记版本和完整版本，则未定义哪个版本的回调将在内部映射中结束。这是由于Go地图的伪随机特性。目前没有检查多个键。
 func NewFSM(initial string, events []EventDesc, callbacks map[string]Callback) *FSM {
 	f := &FSM{
 		transitionerObj: &transitionerStruct{},

@@ -417,31 +417,31 @@ func archiveVersion(env build.Environment) string {
 
 func archiveUpload(archive string, blobstore string, signer string) error {
 	// If signing was requested, generate the signature files
-	if signer != "" {
-		pgpkey, err := base64.StdEncoding.DecodeString(os.Getenv(signer))
-		if err != nil {
-			return fmt.Errorf("invalid base64 %s", signer)
-		}
-		if err := build.PGPSignFile(archive, archive+".asc", string(pgpkey)); err != nil {
-			return err
-		}
-	}
-	// If uploading to Azure was requested, push the archive possibly with its signature
-	if blobstore != "" {
-		auth := build.AzureBlobstoreConfig{
-			Account:   strings.Split(blobstore, "/")[0],
-			Token:     os.Getenv("AZURE_BLOBSTORE_TOKEN"),
-			Container: strings.SplitN(blobstore, "/", 2)[1],
-		}
-		if err := build.AzureBlobstoreUpload(archive, filepath.Base(archive), auth); err != nil {
-			return err
-		}
-		if signer != "" {
-			if err := build.AzureBlobstoreUpload(archive+".asc", filepath.Base(archive+".asc"), auth); err != nil {
-				return err
-			}
-		}
-	}
+	//if signer != "" {
+	//	pgpkey, err := base64.StdEncoding.DecodeString(os.Getenv(signer))
+	//	if err != nil {
+	//		return fmt.Errorf("invalid base64 %s", signer)
+	//	}
+	//	if err := build.PGPSignFile(archive, archive+".asc", string(pgpkey)); err != nil {
+	//		return err
+	//	}
+	//}
+	//// If uploading to Azure was requested, push the archive possibly with its signature
+	//if blobstore != "" {
+	//	auth := build.AzureBlobstoreConfig{
+	//		Account:   strings.Split(blobstore, "/")[0],
+	//		Token:     os.Getenv("AZURE_BLOBSTORE_TOKEN"),
+	//		Container: strings.SplitN(blobstore, "/", 2)[1],
+	//	}
+	//	if err := build.AzureBlobstoreUpload(archive, filepath.Base(archive), auth); err != nil {
+	//		return err
+	//	}
+	//	if signer != "" {
+	//		if err := build.AzureBlobstoreUpload(archive+".asc", filepath.Base(archive+".asc"), auth); err != nil {
+	//			return err
+	//		}
+	//	}
+	//}
 	return nil
 }
 
@@ -985,58 +985,58 @@ func xgoTool(args []string) *exec.Cmd {
 // Binary distribution cleanups
 
 func doPurge(cmdline []string) {
-	var (
-		store = flag.String("store", "", `Destination from where to purge archives (usually "gethstore/builds")`)
-		limit = flag.Int("days", 30, `Age threshold above which to delete unstalbe archives`)
-	)
-	flag.CommandLine.Parse(cmdline)
-
-	if env := build.Env(); !env.IsCronJob {
-		log.Printf("skipping because not a cron job")
-		os.Exit(0)
-	}
-	// Create the azure authentication and list the current archives
-	auth := build.AzureBlobstoreConfig{
-		Account:   strings.Split(*store, "/")[0],
-		Token:     os.Getenv("AZURE_BLOBSTORE_TOKEN"),
-		Container: strings.SplitN(*store, "/", 2)[1],
-	}
-	blobs, err := build.AzureBlobstoreList(auth)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Iterate over the blobs, collect and sort all unstable builds
-	for i := 0; i < len(blobs); i++ {
-		if !strings.Contains(blobs[i].Name, "unstable") {
-			blobs = append(blobs[:i], blobs[i+1:]...)
-			i--
-		}
-	}
-	for i := 0; i < len(blobs); i++ {
-		for j := i + 1; j < len(blobs); j++ {
-			iTime, err := time.Parse(time.RFC1123, blobs[i].Properties.LastModified)
-			if err != nil {
-				log.Fatal(err)
-			}
-			jTime, err := time.Parse(time.RFC1123, blobs[j].Properties.LastModified)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if iTime.After(jTime) {
-				blobs[i], blobs[j] = blobs[j], blobs[i]
-			}
-		}
-	}
-	// Filter out all archives more recent that the given threshold
-	for i, blob := range blobs {
-		timestamp, _ := time.Parse(time.RFC1123, blob.Properties.LastModified)
-		if time.Since(timestamp) < time.Duration(*limit)*24*time.Hour {
-			blobs = blobs[:i]
-			break
-		}
-	}
-	// Delete all marked as such and return
-	if err := build.AzureBlobstoreDelete(auth, blobs); err != nil {
-		log.Fatal(err)
-	}
+	//var (
+	//	store = flag.String("store", "", `Destination from where to purge archives (usually "gethstore/builds")`)
+	//	limit = flag.Int("days", 30, `Age threshold above which to delete unstalbe archives`)
+	//)
+	//flag.CommandLine.Parse(cmdline)
+	//
+	//if env := build.Env(); !env.IsCronJob {
+	//	log.Printf("skipping because not a cron job")
+	//	os.Exit(0)
+	//}
+	//// Create the azure authentication and list the current archives
+	//auth := build.AzureBlobstoreConfig{
+	//	Account:   strings.Split(*store, "/")[0],
+	//	Token:     os.Getenv("AZURE_BLOBSTORE_TOKEN"),
+	//	Container: strings.SplitN(*store, "/", 2)[1],
+	//}
+	//blobs, err := build.AzureBlobstoreList(auth)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//// Iterate over the blobs, collect and sort all unstable builds
+	//for i := 0; i < len(blobs); i++ {
+	//	if !strings.Contains(blobs[i].Name, "unstable") {
+	//		blobs = append(blobs[:i], blobs[i+1:]...)
+	//		i--
+	//	}
+	//}
+	//for i := 0; i < len(blobs); i++ {
+	//	for j := i + 1; j < len(blobs); j++ {
+	//		iTime, err := time.Parse(time.RFC1123, blobs[i].Properties.LastModified)
+	//		if err != nil {
+	//			log.Fatal(err)
+	//		}
+	//		jTime, err := time.Parse(time.RFC1123, blobs[j].Properties.LastModified)
+	//		if err != nil {
+	//			log.Fatal(err)
+	//		}
+	//		if iTime.After(jTime) {
+	//			blobs[i], blobs[j] = blobs[j], blobs[i]
+	//		}
+	//	}
+	//}
+	//// Filter out all archives more recent that the given threshold
+	//for i, blob := range blobs {
+	//	timestamp, _ := time.Parse(time.RFC1123, blob.Properties.LastModified)
+	//	if time.Since(timestamp) < time.Duration(*limit)*24*time.Hour {
+	//		blobs = blobs[:i]
+	//		break
+	//	}
+	//}
+	//// Delete all marked as such and return
+	//if err := build.AzureBlobstoreDelete(auth, blobs); err != nil {
+	//	log.Fatal(err)
+	//}
 }

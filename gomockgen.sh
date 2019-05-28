@@ -1,8 +1,4 @@
-mkdir -p $GOPATH/src/github.com/golang
-cd $GOPATH/src/github.com/golang
-git clone https://github.com/golang/mock.git
-cd mock
-git checkout 442550a
+go get github.com/golang/mock/gomock
 go install github.com/golang/mock/mockgen
 cd $GOPATH/src/github.com/palletone/go-palletone
 mockgen -source=./dag/interface.go -destination=./dag/dag_mock.go -package=dag -self_package="github.com/palletone/go-palletone/dag"

@@ -15,7 +15,7 @@ func CalculateAwardsForDepositContractNodes(coinDays uint64, yearRateStr string)
 	//yearRateStr := core.DefaultDepositRate
 	yearRateFloat64, err := strconv.ParseFloat(yearRateStr, 64)
 	if err != nil {
-		log.Errorf("string to float64 error: ", err)
+		log.Errorf("string to float64 error: %s", err.Error())
 		return 0
 	}
 	//yearRateFloat64 := 0.02

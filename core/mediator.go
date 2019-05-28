@@ -23,8 +23,8 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/pairing/bn256"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 )
