@@ -57,25 +57,21 @@ const (
 	AnnounceMsg        = 0x01
 	GetBlockHeadersMsg = 0x02
 	BlockHeadersMsg    = 0x03
-	GetBlockBodiesMsg  = 0x04
-	BlockBodiesMsg     = 0x05
-	GetUTXOsMsg     = 0x06
-	UTXOsMsg        = 0x07
-	GetProofsMsg       = 0x08
-	ProofsMsg          = 0x09
-	GetCodeMsg         = 0x0a
-	CodeMsg            = 0x0b
-	SendTxMsg          = 0x0c
-	GetHeaderProofsMsg = 0x0d
-	HeaderProofsMsg    = 0x0e
+	GetUTXOsMsg        = 0x04
+	UTXOsMsg           = 0x05
+	GetProofsMsg       = 0x06
+	ProofsMsg          = 0x07
+	SendTxMsg          = 0x08
+	GetLeafNodesMsg    = 0x09
+	LeafNodesMsg       = 0x0a
 	// Protocol messages belonging to LPV2
-	GetProofsV2Msg         = 0x0f
-	ProofsV2Msg            = 0x10
-	GetHelperTrieProofsMsg = 0x11
-	HelperTrieProofsMsg    = 0x12
-	SendTxV2Msg            = 0x13
-	GetTxStatusMsg         = 0x14
-	TxStatusMsg            = 0x15
+	//GetProofsV2Msg         = 0x0f
+	//ProofsV2Msg            = 0x10
+	//GetHelperTrieProofsMsg = 0x11
+	//HelperTrieProofsMsg    = 0x12
+	//SendTxV2Msg            = 0x13
+	//GetTxStatusMsg         = 0x14
+	//TxStatusMsg            = 0x15
 )
 
 type errCode int
@@ -261,5 +257,3 @@ func (p *proofsRespData) decode(data [][]byte) error {
 	p.index = string(data[5])
 	return nil
 }
-
-
