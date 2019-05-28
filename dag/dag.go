@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"bytes"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -34,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -45,8 +47,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/contracts/syscontract"
-	"bytes"
 )
 
 type Dag struct {
@@ -65,7 +65,7 @@ type Dag struct {
 	stableStateRep dagcommon.IStateRepository
 	stablePropRep  dagcommon.IPropRepository
 
-	statleUnitProduceRep dagcommon.IUnitProduceRepository
+	stableUnitProduceRep dagcommon.IUnitProduceRepository
 	validate             validator.Validator
 	ChainHeadFeed        *event.Feed
 
@@ -261,9 +261,6 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		count += 1
 	}
 
-	//TODO add PostChainEvents
-	// d.PostChainEvents(events, coalescedLogs)
-
 	return count, nil
 }
 
@@ -454,7 +451,9 @@ func (d *Dag) refreshPartitionMemDag() {
 			threshold := int(partition.StableThreshold)
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
+			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
+			pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			partitionMemdag[ptoken] = pmemdag
 		}
 
 		d.PartitionMemDag = partitionMemdag
@@ -468,7 +467,9 @@ func (d *Dag) refreshPartitionMemDag() {
 		if !ok {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			d.PartitionMemDag[ptoken] = memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
+			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
+			pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			d.PartitionMemDag[ptoken] = pmemdag
 		} else {
 			partitonMemDag.SetStableThreshold(threshold) //可能更新了该数字
 		}
@@ -498,7 +499,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
-	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
+	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	//hash, idx, _ := stablePropRep.GetLastStableUnit(modules.PTNCOIN)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
@@ -522,7 +523,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		stableUnitRep:          unitRep,
 		stableUtxoRep:          utxoRep,
 		stableStateRep:         stateRep,
-		statleUnitProduceRep:   statleUnitProduceRep,
+		stableUnitProduceRep:   stableUnitProduceRep,
 		validate:               validate,
 		ChainHeadFeed:          new(event.Feed),
 		Mutex:                  *mutex,
@@ -530,6 +531,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		//PartitionMemDag:      partitionMemdag,
 	}
 	unitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
+	stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
 	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
 	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	if !dag.IsHeaderExist(hash) {
@@ -555,13 +557,19 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	dag.refreshPartitionMemDag()
 	return dag, nil
 }
-func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateChangeEvent){
+func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateChangeEvent) {
 	log.Debug("Process AfterSysContractStateChangeEvent")
-	if bytes.Equal( arg.ContractId,syscontract.PartitionContractAddress.Bytes()){
+	if bytes.Equal(arg.ContractId, syscontract.PartitionContractAddress.Bytes()) {
+		//分区合约进行了修改，刷新PartitionMemDag
 		dag.refreshPartitionMemDag()
 	}
 }
-
+func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
+	log.Debug("Process AfterChainMaintenanceEvent")
+	//换届完成，dag需要进行的操作：
+	threshold, _ := dag.stablePropRep.GetChainThreshold()
+	dag.Memdag.SetStableThreshold(threshold)
+}
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 	//logger := log.New("Dag")
@@ -586,7 +594,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		stableUtxoRep:        utxoRep,
 		stablePropRep:        propRep,
 		stableStateRep:       stateRep,
-		statleUnitProduceRep: statleUnitProduceRep,
+		stableUnitProduceRep: statleUnitProduceRep,
 		validate:             validate,
 		ChainHeadFeed:        new(event.Feed),
 		Mutex:                *mutex,
@@ -623,7 +631,7 @@ func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
 		stableUtxoRep:          utxoRep,
 		stableStateRep:         stateRep,
 		stablePropRep:          propRep,
-		statleUnitProduceRep:   statleUnitProduceRep,
+		stableUnitProduceRep:   statleUnitProduceRep,
 		validate:               validate,
 		ChainHeadFeed:          new(event.Feed),
 		Mutex:                  *mutex,

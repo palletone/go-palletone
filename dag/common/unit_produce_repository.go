@@ -23,8 +23,6 @@ package common
 import (
 	"time"
 
-	"strconv"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -32,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
 )
 
 type IUnitProduceRepository interface {
@@ -39,6 +38,7 @@ type IUnitProduceRepository interface {
 	ApplyUnit(nextUnit *modules.Unit) error
 	MediatorVotedResults() map[string]uint64
 	Close()
+	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 }
 type UnitProduceRepository struct {
@@ -48,10 +48,12 @@ type UnitProduceRepository struct {
 	// append by albert·gou 用于活跃mediator更新时的事件订阅
 	activeMediatorsUpdatedFeed  event.Feed
 	activeMediatorsUpdatedScope event.SubscriptionScope
+	observers                   []AfterChainMaintenanceEventFunc
 
 	// append by albert·gou 用于account 各种投票数据统计
 	mediatorVoteTally voteTallys
 }
+type AfterChainMaintenanceEventFunc func(event *modules.ChainMaintenanceEvent)
 
 func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, stateRep IStateRepository) *UnitProduceRepository {
 	return &UnitProduceRepository{
@@ -59,6 +61,13 @@ func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, 
 		propRep:  propRep,
 		stateRep: stateRep,
 	}
+}
+func (rep *UnitProduceRepository) SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc) {
+	if rep.observers == nil {
+		rep.observers = []AfterChainMaintenanceEventFunc{}
+	}
+
+	rep.observers = append(rep.observers, ob)
 }
 
 // 投票统计辅助结构体
@@ -286,6 +295,11 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 
 	// 清理中间处理缓存数据
 	dag.mediatorVoteTally = nil
+	//触发ChainMaintenanceEvent事件
+	eventArg := &modules.ChainMaintenanceEvent{}
+	for _, eventFunc := range dag.observers {
+		go eventFunc(eventArg)
+	}
 }
 
 func (dag *UnitProduceRepository) updateChainParameters() {

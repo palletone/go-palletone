@@ -133,6 +133,13 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
 	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep, chain.tempPropRep, chain.tempUnitProduceRep
 }
+func (chain *MemDag) SetUnstableRepositories(tunitRep common2.IUnitRepository, tutxoRep common2.IUtxoRepository, tstateRep common2.IStateRepository, tpropRep common2.IPropRepository, tUnitProduceRep common2.IUnitProduceRepository) {
+	chain.tempdbunitRep = tunitRep
+	chain.tempUtxoRep = tutxoRep
+	chain.tempStateRep = tstateRep
+	chain.tempPropRep = tpropRep
+	chain.tempUnitProduceRep = tUnitProduceRep
+}
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
@@ -232,10 +239,7 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 			hs[addr] = true
 		}
 		childrenCofirmAddrs[u.Author()] = true
-		// todo threshold 换届后可能会变
-		if chain.token == dagconfig.DagConfig.GetGasToken() {
-			chain.threshold, _ = chain.ldbPropRep.GetChainThreshold()
-		}
+
 		if len(hs) >= chain.threshold {
 			log.Debugf("Unit[%s] has enough confirm address count=%d, make it to stable.", ustbHash.String(), len(hs))
 			chain.SetStableUnit(ustbHash, u.NumberU64(), txpool)
