@@ -28,7 +28,7 @@ Business_01
     @{addressList3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
     log    @{addressList3}
     Should Be True    '${mediatorAddr_01}' in @{addressList3}
-    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil    #有余额
     ${result}    applyQuitMediator    ${mediatorAddr_01}    #该节点申请退出mediator候选列表
@@ -38,7 +38,7 @@ Business_01
     Should Be True    '${mediatorAddr_01}' in @{addressList4}
     ${result}    handleForApplyForQuitMediator    ${foundationAddr}    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
-    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${result}
     Should Be Equal    ${result}    balance is nil    #账户地址不存在
     ${result}    getBecomeMediatorApplyList    #为空

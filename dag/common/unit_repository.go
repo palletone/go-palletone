@@ -94,6 +94,8 @@ type IUnitRepository interface {
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
+
+	SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc)
 }
 type UnitRepository struct {
 	dagdb storage.IDagDb
@@ -104,7 +106,14 @@ type UnitRepository struct {
 	//validate       validator.Validator
 	utxoRepository IUtxoRepository
 	lock           sync.RWMutex
+	observers []AfterSysContractStateChangeEventFunc
+
 }
+//type Observer interface {
+//	//更新事件
+//	AfterSysContractStateChangeEvent(event *modules.SysContractStateChangeEvent)
+//}
+type AfterSysContractStateChangeEventFunc func(event *modules.SysContractStateChangeEvent)
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
@@ -122,6 +131,19 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	//val := validator.NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, utxoRepository: utxoRep}
 }
+
+func (rep *UnitRepository) SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
+	if rep.observers==nil{
+		rep.observers= []AfterSysContractStateChangeEventFunc{}
+	}
+
+	rep.observers=append(rep.observers,ob)
+}
+
+//func (rep *UnitRepository) UnsubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
+//	delete(rep.observers, ob)
+//}
+
 
 func (rep *UnitRepository) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return rep.dagdb.GetHeaderByHash(hash)
@@ -502,23 +524,6 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 			log.Debug("checkReadSetValid", "GetContractState fail, contractId", contractId)
 			return false
 		}
-		//if v == nil && rd.Version == nil {
-		//	continue
-		//} else if v != nil && rd.Version != nil {
-		//	m1, err1 := rlp.EncodeToBytes(v)
-		//	m2, err2 := rlp.EncodeToBytes(rd.Version)
-		//	if err1 != nil || err2 != nil {
-		//		log.Debugf("checkReadSetValid, rlp err, err1:%s, err2:%s", err1.Error(), err2.Error())
-		//		return false
-		//	}
-		//	if !bytes.Equal(m1, m2) {
-		//		log.Debugf("checkReadSetValid, marshal not equal, contractId[%x], local ver1[%v], ver2[%v]", contractId, v, rd.Version)
-		//		return false
-		//	}
-		//} else {
-		//	log.Debug("checkReadSetValid, not equal, contractId[%x], local ver1[%v],ver2[%v] ", contractId,  v,  rd.Version)
-		//	return false
-		//}
 		if v != nil && !v.Equal(rd.Version) {
 			log.Debugf("checkReadSetValid, not equal, contractId[%x], local ver1[%v], ver2[%v]", contractId, v, rd.Version)
 			return false
@@ -1245,7 +1250,12 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		log.Errorf("Tx[%s]Write contract state error:%s", tx.Hash().String(), err.Error())
 		return false
 	}
-
+	if common.IsSystemContractAddress(payload.ContractId) &&payload.ErrMsg.Code==0{
+		eventArg:= &modules.SysContractStateChangeEvent{ContractId:payload.ContractId,WriteSet:payload.WriteSet}
+		for _,eventFunc := range rep.observers {
+			go	eventFunc(eventArg)
+		}
+	}
 	return true
 }
 
