@@ -312,24 +312,34 @@ func (version *StateVersion) SetBytes(b []byte) {
 }
 
 func (version *StateVersion) Equal(in *StateVersion) bool {
-	if in == nil {
+	rlpA, err := rlp.EncodeToBytes(version)
+	if err != nil {
 		return false
 	}
-	if version.Height != nil {
-		if in.Height == nil {
-			return false
-		}
-		if !version.Height.Equal(in.Height) {
-			return false
-		}
-	} else if in.Height != nil {
+	rlpB, err := rlp.EncodeToBytes(in)
+	if err != nil {
 		return false
 	}
+	return bytes.Equal(rlpA, rlpB)
 
-	if version.TxIndex != in.TxIndex {
-		return false
-	}
-	return true
+	//if in == nil {
+	//	return false
+	//}
+	//if version.Height != nil {
+	//	if in.Height == nil {
+	//		return false
+	//	}
+	//	if !version.Height.Equal(in.Height) {
+	//		return false
+	//	}
+	//} else if in.Height != nil {
+	//	return false
+	//}
+	//
+	//if version.TxIndex != in.TxIndex {
+	//	return false
+	//}
+	//return true
 }
 
 const (
@@ -509,8 +519,8 @@ type SignaturePayload struct {
 	Signatures []SignatureSet `json:"signature_set"` // the array of signature
 }
 type SignatureSet struct {
-	PubKey    []byte //compress public key
-	Signature []byte //
+	PubKey    []byte `json:"public_key"` //compress public key
+	Signature []byte `json:"signature"`  //
 }
 
 func (ss SignatureSet) String() string {
@@ -640,177 +650,257 @@ func (a *ContractWriteSet) Equal(b *ContractWriteSet) bool {
 }
 
 func (a *ContractTplPayload) Equal(b *ContractTplPayload) bool {
-	if b == nil {
+	rlpA, err := rlp.EncodeToBytes(a)
+	if err != nil {
 		return false
 	}
-	if bytes.Equal(a.TemplateId, b.TemplateId) &&
-		a.Memory == b.Memory &&
-		bytes.Equal(a.ByteCode, b.ByteCode) {
-		return true
+	rlpB, err := rlp.EncodeToBytes(b)
+	if err != nil {
+		return false
 	}
-	return false
+	return bytes.Equal(rlpA, rlpB)
+
+	//if b == nil {
+	//	return false
+	//}
+	//if bytes.Equal(a.TemplateId, b.TemplateId) &&
+	//	a.Memory == b.Memory &&
+	//	bytes.Equal(a.ByteCode, b.ByteCode) {
+	//	return true
+	//}
+	//return false
 }
 
 func (a *ContractDeployPayload) Equal(b *ContractDeployPayload) bool {
-	if b == nil {
+	rlpA, err := rlp.EncodeToBytes(a)
+	if err != nil {
 		return false
 	}
-	if !bytes.Equal(a.TemplateId, b.TemplateId) || !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Name, b.Name) {
+	rlpB, err := rlp.EncodeToBytes(b)
+	if err != nil {
 		return false
 	}
-	if len(a.Args) == len(b.Args) {
-		for i := 0; i < len(a.Args); i++ {
-			if !bytes.Equal(a.Args[i], b.Args[i]) {
-				return false
-			}
-		}
-	} else {
-		return false
-	}
-	if len(a.EleList) == len(b.EleList) {
-		for i := 0; i < len(a.EleList); i++ {
-			if !a.EleList[i].Equal(&b.EleList[i]) {
-				return false
-			}
-		}
-	} else {
-		return false
-	}
-	if len(a.ReadSet) == len(b.ReadSet) {
-		for i := 0; i < len(a.ReadSet); i++ {
-			a.ReadSet[i].Equal(&b.ReadSet[i])
-		}
-	} else {
-		return false
-	}
-	if len(a.WriteSet) == len(b.WriteSet) {
-		for i := 0; i < len(a.WriteSet); i++ {
-			a.WriteSet[i].Equal(&b.WriteSet[i])
-		}
-	} else {
-		return false
-	}
-	return true
+	return bytes.Equal(rlpA, rlpB)
+
+	//if b == nil {
+	//	return false
+	//}
+	//if !bytes.Equal(a.TemplateId, b.TemplateId) || !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Name, b.Name) {
+	//	return false
+	//}
+	//if len(a.Args) == len(b.Args) {
+	//	for i := 0; i < len(a.Args); i++ {
+	//		if !bytes.Equal(a.Args[i], b.Args[i]) {
+	//			return false
+	//		}
+	//	}
+	//} else {
+	//	return false
+	//}
+	//if len(a.EleList) == len(b.EleList) {
+	//	for i := 0; i < len(a.EleList); i++ {
+	//		if !a.EleList[i].Equal(&b.EleList[i]) {
+	//			return false
+	//		}
+	//	}
+	//} else {
+	//	return false
+	//}
+	//if len(a.ReadSet) == len(b.ReadSet) {
+	//	for i := 0; i < len(a.ReadSet); i++ {
+	//		a.ReadSet[i].Equal(&b.ReadSet[i])
+	//	}
+	//} else {
+	//	return false
+	//}
+	//if len(a.WriteSet) == len(b.WriteSet) {
+	//	for i := 0; i < len(a.WriteSet); i++ {
+	//		a.WriteSet[i].Equal(&b.WriteSet[i])
+	//	}
+	//} else {
+	//	return false
+	//}
+	//return true
 }
 
 func (a *ContractInvokePayload) Equal(b *ContractInvokePayload) bool {
-	if b == nil {
+	rlpA, err := rlp.EncodeToBytes(a)
+	if err != nil {
 		return false
 	}
-	if !bytes.Equal(a.ContractId, b.ContractId) || !bytes.Equal(a.Payload, b.Payload) {
-		//		log.Debug("ContractInvokePayload Equal", "a.Payload", string(a.Payload), "b.Payload", string(b.Payload))
+	rlpB, err := rlp.EncodeToBytes(b)
+	if err != nil {
 		return false
 	}
-	if len(a.Args) == len(b.Args) {
-		for i := 0; i < len(a.Args); i++ {
-			if !bytes.Equal(a.Args[i], b.Args[i]) {
-				return false
-			}
-		}
-	} else {
-		return false
-	}
-	if len(a.ReadSet) == len(b.ReadSet) {
-		for i := 0; i < len(a.ReadSet); i++ {
-			if !a.ReadSet[i].Equal(&b.ReadSet[i]) {
-				return false
-			}
-		}
-	} else {
-		return false
-	}
-	if len(a.WriteSet) == len(b.WriteSet) {
-		for i := 0; i < len(a.WriteSet); i++ {
-			if !a.WriteSet[i].Equal(&b.WriteSet[i]) {
-				return false
-			}
-		}
-	} else {
-		return false
-	}
-	return true
+	return bytes.Equal(rlpA, rlpB)
+
+	//if b == nil {
+	//	return false
+	//}
+	//if !bytes.Equal(a.ContractId, b.ContractId) || !bytes.Equal(a.Payload, b.Payload) {
+	//	//		log.Debug("ContractInvokePayload Equal", "a.Payload", string(a.Payload), "b.Payload", string(b.Payload))
+	//	return false
+	//}
+	//if len(a.Args) == len(b.Args) {
+	//	for i := 0; i < len(a.Args); i++ {
+	//		if !bytes.Equal(a.Args[i], b.Args[i]) {
+	//			return false
+	//		}
+	//	}
+	//} else {
+	//	return false
+	//}
+	//if len(a.ReadSet) == len(b.ReadSet) {
+	//	for i := 0; i < len(a.ReadSet); i++ {
+	//		if !a.ReadSet[i].Equal(&b.ReadSet[i]) {
+	//			return false
+	//		}
+	//	}
+	//} else {
+	//	return false
+	//}
+	//if len(a.WriteSet) == len(b.WriteSet) {
+	//	for i := 0; i < len(a.WriteSet); i++ {
+	//		if !a.WriteSet[i].Equal(&b.WriteSet[i]) {
+	//			return false
+	//		}
+	//	}
+	//} else {
+	//	return false
+	//}
+	//return true
 }
 
 func (a *ContractStopPayload) Equal(b *ContractStopPayload) bool {
-	if b == nil {
+	rlpA, err := rlp.EncodeToBytes(a)
+	if err != nil {
 		return false
 	}
-	if !bytes.Equal(a.ContractId, b.ContractId) {
+	rlpB, err := rlp.EncodeToBytes(b)
+	if err != nil {
 		return false
 	}
-	if len(a.ReadSet) == len(b.ReadSet) {
-		for i := 0; i < len(a.ReadSet); i++ {
-			a.ReadSet[i].Equal(&b.ReadSet[i])
-		}
-	} else {
-		return false
-	}
-	if len(a.WriteSet) == len(b.WriteSet) {
-		for i := 0; i < len(a.WriteSet); i++ {
-			a.WriteSet[i].Equal(&b.WriteSet[i])
-		}
-	} else {
-		return false
-	}
-	return true
+	return bytes.Equal(rlpA, rlpB)
+
+	//if b == nil {
+	//	return false
+	//}
+	//if !bytes.Equal(a.ContractId, b.ContractId) {
+	//	return false
+	//}
+	//if len(a.ReadSet) == len(b.ReadSet) {
+	//	for i := 0; i < len(a.ReadSet); i++ {
+	//		a.ReadSet[i].Equal(&b.ReadSet[i])
+	//	}
+	//} else {
+	//	return false
+	//}
+	//if len(a.WriteSet) == len(b.WriteSet) {
+	//	for i := 0; i < len(a.WriteSet); i++ {
+	//		a.WriteSet[i].Equal(&b.WriteSet[i])
+	//	}
+	//} else {
+	//	return false
+	//}
+	//return true
 }
 
 func (a *ContractInstallRequestPayload) Equal(b *ContractInstallRequestPayload) bool {
-	if b == nil {
+	rlpA, err := rlp.EncodeToBytes(a)
+	if err != nil {
 		return false
 	}
-	if !strings.EqualFold(a.TplName, b.TplName) || !strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
+	rlpB, err := rlp.EncodeToBytes(b)
+	if err != nil {
 		return false
 	}
-	return true
+	return bytes.Equal(rlpA, rlpB)
+
+	//if b == nil {
+	//	return false
+	//}
+	//if !strings.EqualFold(a.TplName, b.TplName) || !strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
+	//	return false
+	//}
+	//return true
 }
 
 func (a *ContractDeployRequestPayload) Equal(b *ContractDeployRequestPayload) bool {
-	if b == nil {
+	rlpA, err := rlp.EncodeToBytes(a)
+	if err != nil {
 		return false
 	}
-	if !bytes.Equal(a.TplId, b.TplId) || a.Timeout != b.Timeout {
+	rlpB, err := rlp.EncodeToBytes(b)
+	if err != nil {
 		return false
 	}
-	if len(a.Args) == len(b.Args) {
-		for i := 0; i < len(a.Args); i++ {
-			if !bytes.Equal(a.Args[i], b.Args[i]) {
-				return false
-			}
-		}
-	} else {
-		return false
-	}
-	return true
+	return bytes.Equal(rlpA, rlpB)
+
+	//if b == nil {
+	//	return false
+	//}
+	//if !bytes.Equal(a.TplId, b.TplId) || a.Timeout != b.Timeout {
+	//	return false
+	//}
+	//if len(a.Args) == len(b.Args) {
+	//	for i := 0; i < len(a.Args); i++ {
+	//		if !bytes.Equal(a.Args[i], b.Args[i]) {
+	//			return false
+	//		}
+	//	}
+	//} else {
+	//	return false
+	//}
+	//return true
 }
 
 func (a *ContractInvokeRequestPayload) Equal(b *ContractInvokeRequestPayload) bool {
-	if b == nil {
+	rlpA, err := rlp.EncodeToBytes(a)
+	if err != nil {
 		return false
 	}
-	if !bytes.Equal(a.ContractId, b.ContractId) || a.Timeout != b.Timeout {
+	rlpB, err := rlp.EncodeToBytes(b)
+	if err != nil {
 		return false
 	}
-	if len(a.Args) == len(b.Args) {
-		for i := 0; i < len(a.Args); i++ {
-			if !bytes.Equal(a.Args[i], b.Args[i]) {
-				return false
-			}
-		}
-	} else {
-		return false
-	}
-	return true
+	return bytes.Equal(rlpA, rlpB)
+
+	//if b == nil {
+	//	return false
+	//}
+	//if !bytes.Equal(a.ContractId, b.ContractId) || a.Timeout != b.Timeout {
+	//	return false
+	//}
+	//if len(a.Args) == len(b.Args) {
+	//	for i := 0; i < len(a.Args); i++ {
+	//		if !bytes.Equal(a.Args[i], b.Args[i]) {
+	//			return false
+	//		}
+	//	}
+	//} else {
+	//	return false
+	//}
+	//return true
 }
 
 func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
-	if b == nil {
+	rlpA, err := rlp.EncodeToBytes(a)
+	if err != nil {
 		return false
 	}
-	if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
+	rlpB, err := rlp.EncodeToBytes(b)
+	if err != nil {
 		return false
 	}
-	return true
+	return bytes.Equal(rlpA, rlpB)
+
+	//if b == nil {
+	//	return false
+	//}
+	//if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
+	//	return false
+	//}
+	//return true
 }
 
 //foundation modify sys param

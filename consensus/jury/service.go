@@ -92,6 +92,7 @@ type iDag interface {
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContract(contractId []byte) (*modules.Contract, error)
 	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
 }
@@ -632,6 +633,10 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Mediator, true", shortId(reqId.String()))
 			return true
 		} else if !isSysContract && isJury {
+			if !p.contractReqAddrCheck(tx, true){
+				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, stop, false", shortId(reqId.String()))
+				break
+			}
 			if p.isValidateElection(tx, ele, true) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, true", shortId(reqId.String()))
 				return true
@@ -641,6 +646,10 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
+			if !p.contractReqAddrCheck(tx, true){
+				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, stop, false", shortId(reqId.String()))
+				break
+			}
 			if p.isValidateElection(tx, ele, false) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, true", shortId(reqId.String()))
 				return true
@@ -851,4 +860,31 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 		}
 	}
 	return nil, nil
+}
+
+func (p *Processor) contractReqAddrCheck(tx *modules.Transaction, check bool) bool { //contract stop only
+	if check {
+		//只检查合约交易Stop请求地址与合同部署创建者地址是否相同
+		if contractType , err := getContractTxType(tx); err == nil{
+			if contractType != modules.APP_CONTRACT_STOP_REQUEST{
+				return true
+			}
+		}
+		reqId := tx.RequestHash()
+		contractId := tx.ContractIdBytes()
+		contract, err := p.dag.GetContract(contractId)
+		if err != nil {
+			log.Debugf("[%s]contractReqAddrCheck, GetContract fail, contractId[%v]", shortId(reqId.String()), contractId)
+			return false
+		}
+		reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+		if err != nil {
+			return false
+		}
+		if !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
+			log.Debugf("[%s]contractReqAddrCheck, addr is not equal, Creator[%v], reqAddr[%v]", shortId(reqId.String()), contract.Creator, reqAddr.Bytes())
+			return false
+		}
+	}
+	return true
 }

@@ -107,6 +107,8 @@ type ProtocolManager struct {
 	peers      *peerSet
 	maxPeers   int
 
+	fastSync uint32 //key:p.id
+
 	SubProtocols     []p2p.Protocol
 	CorsSubProtocols []p2p.Protocol
 	eventMux         *event.TypeMux
@@ -205,11 +207,13 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 		removePeer = func(id string) {}
 	}
 
-	if manager.lightSync {
-		manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
-		manager.peers.notify((*downloaderPeerNotify)(manager))
-		manager.fetcher = manager.newLightFetcher()
-	}
+	//if manager.lightSync {
+	manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
+	manager.peers.notify((*downloaderPeerNotify)(manager))
+	manager.fetcher = manager.newLightFetcher()
+	//}
+
+	manager.fastSync = uint32(1)
 
 	return manager, nil
 }
@@ -277,11 +281,10 @@ func (pm *ProtocolManager) removePeer(id string) {
 
 func (pm *ProtocolManager) Start(maxPeers int, corss *p2p.Server) {
 	pm.maxPeers = maxPeers
+	go pm.syncer()
 
 	if pm.lightSync {
-		go pm.syncer()
 		pm.validation.Start()
-
 	} else {
 		go func() {
 			for range pm.newPeerCh {
@@ -385,15 +388,17 @@ func (pm *ProtocolManager) handle(p *peer) error {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
 				} else {
 					p.lightlock.Lock()
+					announce.Hash = announce.Header.Hash()
+					announce.Number = *announce.Header.Number
 					p.lightpeermsg[announce.Number.AssetID] = &announce
 					p.lightlock.Unlock()
 
 					if announce.Number.AssetID != modules.PTNCOIN {
-						log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
+						//log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
 						p.SendRawAnnounce(data)
 					} else {
 						if !p.fullnode {
-							log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
+							//log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
 							p.SendRawAnnounce(data)
 						}
 					}

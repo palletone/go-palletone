@@ -33,3 +33,11 @@ type ChainHeadEvent struct{ Unit *Unit }
 type ActiveMediatorsUpdatedEvent struct {
 	IsChanged bool // 标记活跃 mediators 是否有改变
 }
+
+//系统合约被调用，导致状态数据库改变
+type SysContractStateChangeEvent struct {
+	ContractId []byte
+	WriteSet   []ContractWriteSet
+}
+type ChainMaintenanceEvent struct {
+}

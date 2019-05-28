@@ -26,7 +26,7 @@ getQuitMediatorApplyList
     ${resp}    创建公用的POST请求    ${depositContractQuery}    GetQuitMediatorApplyList    ${two}
     ${respContentJson}    to json    ${resp.content}
     ${resultLen}    get Length    ${respContentJson['result']}
-    ${address}    Run Keyword If    ${resultLen} == 0    Create List    list is not exist.
+    ${address}    Run Keyword If    ${resultLen} == 0    set variable    ""
     @{addressList}    Run Keyword If    ${resultLen} == 0    Create List    ${address}
     @{addressList}    Run Keyword If    ${resultLen} != 0    Evaluate    [addressList['address'] for addressList in ${respContentJson['result']}]
     [Return]    @{addressList}
