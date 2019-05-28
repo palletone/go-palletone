@@ -2,6 +2,7 @@
 #pkill gptn
 #tskill gptn
 cd ../../
+pwd
 go build ./cmd/gptn
 rm -rf ./bdd/GasToken/node/*
 cp ./cmd/gptn/gptn ./bdd/GasToken/node
@@ -40,7 +41,7 @@ if [ -e "$tomlFile" ]; then
     sed -i "s/BtcHost = \"localhost:18332\"/BtcHost = \"localhost:18342\"/g" $tomlFile
     sed -i "s/ContractAddress = \"127.0.0.1:12345\"/ContractAddress = \"127.0.0.1:12355\"/g" $tomlFile
     sed -i "s/CaUrl = \"http://localhost:8545\"/CaUrl = \"http://localhost:8555\"/g" $tomlFile
-    sed -i "s/OutputPaths = [\"stdout\", \"./log/all.log\"]/OutputPaths = [\"./log/all.log\"]/g" $tomlFile
+#    sed -i "s/OutputPaths = [\"stdout\", \"./log/all.log\"]/OutputPaths = [\"./log/all.log\"]/g" $tomlFile
 else
     #file not found, new file
     echo "no $tomlFile"
