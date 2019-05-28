@@ -10,9 +10,9 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/dag/errors"
 )
 
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
@@ -49,10 +49,25 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		log.Trace("Valid announcement signature")
 	}
 
-	log.Trace("Announce message content", "header", req.Header)
-	if pm.fetcher != nil {
+	log.Debug("Light PalletOne Announce message content", "header", req.Header)
+
+	if pm.lightSync || pm.assetId != req.Header.Number.AssetID {
 		pm.fetcher.Enqueue(p, &req.Header)
+		localheader := pm.dag.CurrentHeader(req.Header.Number.AssetID)
+		if localheader != nil {
+			log.Debug("Light PalletOne Announce message ", "localheader index", localheader.Number.Index, "req.Header.Number.Index-1", req.Header.Number.Index-1)
+		} else {
+			log.Debug("Light PalletOne Announce message ", "localheader is ni.req.Header.Number.Index-1", req.Header.Number.Index-1)
+		}
+
+		if localheader == nil || localheader.Number.Index < req.Header.Number.Index-1 {
+			p.SetHead(&req)
+			go func() {
+				pm.synchronise(p, req.Header.Number.AssetID)
+			}()
+		}
 	}
+
 	return nil
 }
 
@@ -313,9 +328,8 @@ func (pm *ProtocolManager) SendTxMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-
 func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
-	if pm.server==nil{
+	if pm.server == nil {
 		return errors.New("this node can not service with download utxo server")
 	}
 
@@ -325,39 +339,39 @@ func (pm *ProtocolManager) GetUTXOsMsg(msg p2p.Msg, p *peer) error {
 	}
 	address, err := common.StringToAddress(addr)
 	if err != nil {
-		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg addr err",err,"addr:",addr)
+		log.Error("Light PalletOne", "ProtocolManager->GetUTXOsMsg addr err", err, "addr:", addr)
 		return err
 	}
-	respdata:=NewUtxosRespData()
-	utxos,err:=pm.dag.GetAddrUtxos(address)
-	if err!=nil{
-		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos err",err,"addr:",addr)
+	respdata := NewUtxosRespData()
+	utxos, err := pm.dag.GetAddrUtxos(address)
+	if err != nil {
+		log.Error("Light PalletOne", "ProtocolManager->GetUTXOsMsg GetAddrUtxos err", err, "addr:", addr)
 		return err
 	}
 	respdata.addr = addr
 	respdata.utxos = utxos
 
-	datas,err:=respdata.encode()
-	if err!=nil{
-		log.Error("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos err",err,"respdata:",respdata)
+	datas, err := respdata.encode()
+	if err != nil {
+		log.Error("Light PalletOne", "ProtocolManager->GetUTXOsMsg GetAddrUtxos err", err, "respdata:", respdata)
 		return err
 	}
-	log.Debug("Light PalletOne","ProtocolManager->GetUTXOsMsg GetAddrUtxos respdata.addr:",respdata.addr,"len(datas)",len(datas),"datas",datas)
+	log.Debug("Light PalletOne", "ProtocolManager->GetUTXOsMsg GetAddrUtxos respdata.addr:", respdata.addr, "len(datas)", len(datas), "datas", datas)
 	return p.SendRawUTXOs(0, 0, datas)
 }
 func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
-	if pm.server!=nil {
+	if pm.server != nil {
 		return errors.New("this is server node")
 	}
 	var datas [][][]byte
-	respdata:=NewUtxosRespData()
+	respdata := NewUtxosRespData()
 	if err := msg.Decode(&datas); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 
-	log.Debug("Light PalletOne","ProtocolManager->UTXOsMsg respdata",datas)
-	if err:=respdata.decode(datas);err!=nil{
-		log.Error("Light PalletOne","ProtocolManager->UTXOsMsg respdata.decode err",err,"datas:",datas)
+	log.Debug("Light PalletOne", "ProtocolManager->UTXOsMsg respdata", datas)
+	if err := respdata.decode(datas); err != nil {
+		log.Error("Light PalletOne", "ProtocolManager->UTXOsMsg respdata.decode err", err, "datas:", datas)
 		return err
 	}
 
@@ -367,6 +381,7 @@ func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
 	//}
 	return pm.utxosync.SaveUtxoView(respdata)
 }
+
 /*
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	log.Trace("Received block bodies request")
