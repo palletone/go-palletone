@@ -62,13 +62,13 @@ script:
 
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
     cd ../GasToken;
-    pwd
+    pwd;
     chmod a+x ./init_gas_token.sh;
-    ls -l
+    ls -l;
     ./init_gas_token.sh;
     sleep 15;
-    ls -l ./node
-    ls -l ${BDD_LOG_PATH}/
+    ls -l ./node;
+    ls -l ${BDD_LOG_PATH};
     python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
 
