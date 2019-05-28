@@ -107,6 +107,8 @@ type ProtocolManager struct {
 	peers      *peerSet
 	maxPeers   int
 
+	fastSync uint32 //key:p.id
+
 	SubProtocols     []p2p.Protocol
 	CorsSubProtocols []p2p.Protocol
 	eventMux         *event.TypeMux
@@ -210,6 +212,9 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 	manager.peers.notify((*downloaderPeerNotify)(manager))
 	manager.fetcher = manager.newLightFetcher()
 	//}
+	if manager.lightSync {
+		manager.fastSync = uint32(1)
+	}
 
 	return manager, nil
 }
