@@ -27,7 +27,7 @@ import (
 	"strconv"
 
 	"encoding/json"
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -92,6 +92,7 @@ type iDag interface {
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContract(contractId []byte) (*modules.Contract, error)
 	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
 }
@@ -274,12 +275,12 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	} else {
 		account := p.getLocalAccount()
 		if account == nil {
-			log.Errorf("[%s]runContractReq", "not find local account", shortId(reqId.String()))
+			log.Errorf("[%s]runContractReq, not find local account", shortId(reqId.String()))
 			return fmt.Errorf("runContractReq no local account, reqId[%s]", reqId.String())
 		}
 		sigTx, err := p.GenContractSigTransaction(account.Address, account.Password, tx, p.ptn.GetKeyStore())
 		if err != nil {
-			log.Errorf("[%s]runContractReq, GenContractSigTransctions error:", shortId(reqId.String()), err.Error())
+			log.Errorf("[%s]runContractReq, GenContractSigTransctions error:%s", shortId(reqId.String()), err.Error())
 			return fmt.Errorf("runContractReq, GenContractSigTransctions error, reqId[%s], err:%s", reqId, err.Error())
 		}
 		req.sigTx = sigTx
@@ -288,11 +289,11 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 			for _, rtx := range req.rcvTx {
 				ok, err := checkAndAddTxSigMsgData(req.sigTx, rtx)
 				if err != nil {
-					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData error", shortId(reqId.String()), err.Error())
+					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData error:%s", shortId(reqId.String()), err.Error())
 				} else if ok {
-					log.Debugf("[%s]runContractReq", "checkAndAddTxSigMsgData ok", shortId(reqId.String()))
+					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData ok", shortId(reqId.String()))
 				} else {
-					log.Debugf("[%s]runContractReq", "checkAndAddTxSigMsgData fail", shortId(reqId.String()))
+					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData fail", shortId(reqId.String()))
 				}
 			}
 			req.rcvTx = nil
@@ -556,7 +557,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		if checkExit && !isExit {
 			for addr, _ := range p.local {
 				log.Debugf("[%s]isValidateElection, local addr[%s] hash[%s]", shortId(reqId.String()), addr.String(), util.RlpHash(addr).String())
-				log.Debugf("[%s]isValidateElection, addrHash", shortId(reqId.String()), e.AddrHash.String())
+				log.Debugf("[%s]isValidateElection, addrHash[%s]", shortId(reqId.String()), e.AddrHash.String())
 				if bytes.Equal(e.AddrHash.Bytes(), util.RlpHash(addr).Bytes()) {
 					isExit = true
 					break
@@ -580,12 +581,12 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		//检查地址与pubKey是否匹配:获取当前pubKey下的Addr，将地址hash后与输入比较
 		addr := crypto.PubkeyBytesToAddress(e.PublicKey)
 		if e.AddrHash != util.RlpHash(addr) {
-			log.Errorf("[%s]isValidateElection, publicKey not match address, addrHash is", shortId(reqId.String()), e.AddrHash)
+			log.Errorf("[%s]isValidateElection, publicKey not match address, addrHash[%v]", shortId(reqId.String()), e.AddrHash)
 			return false
 		}
 		//从数据库中查询该地址是否为Jury
 		if !p.dag.IsActiveJury(addr) {
-			log.Errorf("[%s]isValidateElection, not active Jury, addrHash is", shortId(reqId.String()), e.AddrHash)
+			log.Errorf("[%s]isValidateElection, not active Jury, addrHash[%v]", shortId(reqId.String()), e.AddrHash)
 			return false
 		}
 		//验证proof是否通过
@@ -632,6 +633,10 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Mediator, true", shortId(reqId.String()))
 			return true
 		} else if !isSysContract && isJury {
+			if !p.contractReqAddrCheck(tx, true){
+				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, stop, false", shortId(reqId.String()))
+				break
+			}
 			if p.isValidateElection(tx, ele, true) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, true", shortId(reqId.String()))
 				return true
@@ -641,6 +646,10 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
+			if !p.contractReqAddrCheck(tx, true){
+				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, stop, false", shortId(reqId.String()))
+				break
+			}
 			if p.isValidateElection(tx, ele, false) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, true", shortId(reqId.String()))
 				return true
@@ -790,7 +799,7 @@ func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
 		log.Debug(errs)
 		return nil, errors.New(errs)
 	}
-	log.Debugf("getContractElectionList, templateId[%x], addrHash[%v]", tplId, "addrHash", addh)
+	log.Debugf("getContractElectionList, templateId[%x], addrHash[%v]", tplId, addh)
 	return addh, nil
 }
 
@@ -810,7 +819,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	//find the address of the contract template binding in the dag
 	addrHash, err := p.getTemplateAddrHash(tplId)
 	if err != nil {
-		log.Debugf("[%s]genContractElectionList, getTemplateAddrHash fail,templateId[%x], err:", shortId(reqId.String()), tplId, err)
+		log.Debugf("[%s]genContractElectionList, getTemplateAddrHash fail,templateId[%x], err:%s", shortId(reqId.String()), tplId, err.Error())
 	}
 	if len(addrHash) >= p.electionNum {
 		num = p.electionNum
@@ -851,4 +860,31 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 		}
 	}
 	return nil, nil
+}
+
+func (p *Processor) contractReqAddrCheck(tx *modules.Transaction, check bool) bool { //contract stop only
+	if check {
+		//只检查合约交易Stop请求地址与合同部署创建者地址是否相同
+		if contractType , err := getContractTxType(tx); err == nil{
+			if contractType != modules.APP_CONTRACT_STOP_REQUEST{
+				return true
+			}
+		}
+		reqId := tx.RequestHash()
+		contractId := tx.ContractIdBytes()
+		contract, err := p.dag.GetContract(contractId)
+		if err != nil {
+			log.Debugf("[%s]contractReqAddrCheck, GetContract fail, contractId[%v]", shortId(reqId.String()), contractId)
+			return false
+		}
+		reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+		if err != nil {
+			return false
+		}
+		if !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
+			log.Debugf("[%s]contractReqAddrCheck, addr is not equal, Creator[%v], reqAddr[%v]", shortId(reqId.String()), contract.Creator, reqAddr.Bytes())
+			return false
+		}
+	}
+	return true
 }

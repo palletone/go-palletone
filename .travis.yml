@@ -4,7 +4,8 @@ sudo: required
 language:
   - go
 go:
-  - 1.10.8
+    - 1.12.5
+    - 1.10.8
 env:
   global:
     - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
@@ -26,6 +27,7 @@ env:
     - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
+    - GO111MODULE=on
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
@@ -117,12 +119,12 @@ after_script:
   - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141', but you should quit VPN first"
 
 before_install:
-  - go get github.com/mattn/goveralls
-  - go get -u github.com/palletone/adaptor
-  - go get -u github.com/palletone/btc-adaptor
-  - go get -u github.com/palletone/eth-adaptor
-  - go get -u github.com/palletone/digital-identity/...
-  - source ./gomockgen.sh
+    - go get github.com/mattn/goveralls
+    - go get -u github.com/palletone/adaptor
+    - go get -u github.com/palletone/btc-adaptor
+    - go get -u github.com/palletone/eth-adaptor
+    - source ./build/goget_by_version.sh
+    - source ./gomockgen.sh
 
 install:
   - python -V

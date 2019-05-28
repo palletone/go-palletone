@@ -23,8 +23,6 @@ package common
 import (
 	"time"
 
-	"strconv"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -32,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
 )
 
 type IUnitProduceRepository interface {
@@ -39,6 +38,7 @@ type IUnitProduceRepository interface {
 	ApplyUnit(nextUnit *modules.Unit) error
 	MediatorVotedResults() map[string]uint64
 	Close()
+	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 }
 type UnitProduceRepository struct {
@@ -48,10 +48,12 @@ type UnitProduceRepository struct {
 	// append by albert·gou 用于活跃mediator更新时的事件订阅
 	activeMediatorsUpdatedFeed  event.Feed
 	activeMediatorsUpdatedScope event.SubscriptionScope
+	observers                   []AfterChainMaintenanceEventFunc
 
 	// append by albert·gou 用于account 各种投票数据统计
 	mediatorVoteTally voteTallys
 }
+type AfterChainMaintenanceEventFunc func(event *modules.ChainMaintenanceEvent)
 
 func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, stateRep IStateRepository) *UnitProduceRepository {
 	return &UnitProduceRepository{
@@ -59,6 +61,13 @@ func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, 
 		propRep:  propRep,
 		stateRep: stateRep,
 	}
+}
+func (rep *UnitProduceRepository) SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc) {
+	if rep.observers == nil {
+		rep.observers = []AfterChainMaintenanceEventFunc{}
+	}
+
+	rep.observers = append(rep.observers, ob)
 }
 
 // 投票统计辅助结构体
@@ -269,9 +278,6 @@ func (rep *UnitProduceRepository) GetMediator(add common.Address) *core.Mediator
 func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit) {
 	log.Debugf("We are at the maintenance interval")
 
-	// 更新要修改的区块链参数
-	dag.updateChainParameters()
-
 	// 对每个账户的各种投票信息进行初步统计
 	dag.performAccountMaintenance()
 
@@ -281,21 +287,61 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
 	go dag.activeMediatorsUpdatedFeed.Send(modules.ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
 
+	// 更新要修改的区块链参数
+	dag.updateChainParameters()
+
 	// 计算并更新下一次维护时间
 	dag.updateNextMaintenanceTime(nextUnit)
 
 	// 清理中间处理缓存数据
 	dag.mediatorVoteTally = nil
+	//触发ChainMaintenanceEvent事件
+	eventArg := &modules.ChainMaintenanceEvent{}
+	for _, eventFunc := range dag.observers {
+		go eventFunc(eventArg)
+	}
 }
 
 func (dag *UnitProduceRepository) updateChainParameters() {
 	log.Debugf("update chain parameters")
 
+	// todo albert·gou 待合并
 	//dag.UpdateSysParams()
 	//dag.RefreshSysParameters()
 
 	return
 }
+
+// todo albert·gou 待合并
+//func (d *Dag) RefreshSysParameters() {
+//	deposit, _, _ := d.GetConfig("DepositRate")
+//	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
+//	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
+//	log.Debugf("Load SysParameter DepositContractInterest value:%f",
+//		parameter.CurrentSysParameters.DepositContractInterest)
+//
+//	txCoinYearRateStr, _, _ := d.GetConfig("TxCoinYearRate")
+//	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
+//	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
+//	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
+//
+//	generateUnitRewardStr, _, _ := d.GetConfig("GenerateUnitReward")
+//	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
+//	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
+//
+// log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+//  d.refreshPartitionMemDag()
+//}
+
+// todo albert·gou 待合并
+//func (d *Dag) UpdateSysParams() error {
+//	version := &modules.StateVersion{}
+//	//Height: &modules.ChainIndex{Index: 123, IsMain: true}, TxIndex: 1
+//	unit := d.GetMainCurrentUnit()
+//	version.Height = unit.UnitHeader.Number
+//	version.TxIndex = 0
+//	return d.stableStateRep.UpdateSysParams(version)
+//}
 
 // 获取账户相关投票数据的直方图
 func (dag *UnitProduceRepository) performAccountMaintenance() {

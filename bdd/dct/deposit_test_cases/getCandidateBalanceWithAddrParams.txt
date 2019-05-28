@@ -6,14 +6,14 @@ Resource          publicParams.txt
 *** Keywords ***
 获取某个节点的账户
     [Arguments]    ${nodeAddr}
-    ${one}    Create List    GetBalanceWithAddr    ${nodeAddr}
+    ${one}    Create List    GetNodeBalance    ${nodeAddr}
     ${two}    Create List    ${one}
     [Return]    ${two}
 
 getCandidateBalanceWithAddr
     [Arguments]    ${nodeAddr}
     ${11}    获取某个节点的账户    ${nodeAddr}
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetCandidateBalanceWithAddr    ${11}
+    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetNodeBalance    ${11}
     ${respContentJson}    to json    ${resp.content}
     ${balance}    Set Variable    ${respContentJson['result']}
     [Return]    ${balance}

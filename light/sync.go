@@ -17,7 +17,10 @@
 package light
 
 import (
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"sync/atomic"
 	"time"
 )
 
@@ -47,11 +50,11 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			go pm.synchronise(pm.peers.BestPeer(pm.assetId))
+			go pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
 
 		case <-forceSync:
 			// Force a sync even if not enough peers are present
-			go pm.synchronise(pm.peers.BestPeer(pm.assetId))
+			go pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
 
 		case <-pm.noMorePeers:
 			return
@@ -59,30 +62,46 @@ func (pm *ProtocolManager) syncer() {
 	}
 }
 
-func (pm *ProtocolManager) needToSync(peerHead blockInfo) bool {
-	return true
-	//head := pm.blockchain.CurrentHeader()
-	//currentTd := core.GetTd(pm.chainDb, head.Hash(), head.Number.Uint64())
-	//return currentTd != nil && peerHead.Td.Cmp(currentTd) > 0
+func (pm *ProtocolManager) syncall() {
+	if atomic.LoadUint32(&pm.fastSync) == 0 {
+		log.Debug("Light PalletOne syncall synchronising")
+		return
+	}
+	pm.downloader.FetchAllToken(pm.peers.BestPeer(pm.assetId).id)
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.
-func (pm *ProtocolManager) synchronise(peer *peer) {
+func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	// Short circuit if no peers are available
 	if peer == nil {
 		return
 	}
 
-	// Make sure the peer's TD is higher than our own.
-	//if !pm.needToSync(peer.headBlockInfo()) {
-	//	return
-	//}
+	if !pm.lightSync && pm.assetId == assetId {
+		log.Debug("Light PalletOne synchronise pm.assetId == assetId")
+		return
+	}
 
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	//defer cancel()
-	//pm.blockchain.(*light.LightChain).SyncCht(ctx)
-	//
-	//pm.downloader.Synchronise(peer.id, peer.Head(), peer.Td(), downloader.LightSync)
-	headhash, number := peer.HeadAndNumber(pm.assetId)
-	pm.downloader.Synchronise(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID)
+	if atomic.LoadUint32(&pm.fastSync) == 0 {
+		log.Debug("Light PalletOne synchronising")
+		return
+	}
+	atomic.StoreUint32(&pm.fastSync, 0)
+	headhash, number := peer.HeadAndNumber(assetId)
+	log.Debug("Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
+
+	if err := pm.downloader.Synchronise(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID); err != nil {
+		log.Debug("Light PalletOne ProtocolManager synchronise", "Synchronise err:", err)
+		return
+	}
+
+	if atomic.LoadUint32(&pm.fastSync) == 0 {
+		log.Debug("Fast sync complete, auto disabling")
+		atomic.StoreUint32(&pm.fastSync, 1)
+	}
+
+	header := pm.dag.CurrentHeader(assetId)
+	if header != nil && header.Number.Index > 0 {
+		go pm.BroadcastLightHeader(header)
+	}
 }

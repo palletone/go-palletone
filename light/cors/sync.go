@@ -51,27 +51,25 @@ func (pm *ProtocolManager) StartCorsSync() (string, error) {
 		log.Debug("Cors ProtocolManager StartCorsSync", "GetMainChain err", err)
 		return err.Error(), err
 	}
+	pm.mclock.Lock()
 	pm.mainchain = mainchain
+	pm.mclock.Unlock()
+
 	pm.mclock.RLock()
 	for _, peer := range mainchain.Peers {
 		node, err := discover.ParseNode(peer)
 		if err != nil {
 			return fmt.Sprintf("Cors ProtocolManager StartCorsSync invalid pnode: %v", err), err
 		}
-		log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
+		//log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
 		pm.server.corss.AddPeer(node)
 	}
 	pm.mclock.RUnlock()
 
 	go func() {
-		for {
-
-			if pm.peers.Len() >= pm.mainchainpeers()/2+1 {
-				pm.Sync()
-				break
-			} else {
-				time.Sleep(1 * time.Second)
-			}
+		time.Sleep(time.Duration(3) * time.Second)
+		if pm.peers.Len() >= pm.mainchainpeers()/2+1 {
+			pm.Sync()
 		}
 	}()
 
@@ -84,7 +82,7 @@ func (pm *ProtocolManager) Sync() {
 	if atomic.LoadUint32(&pm.corsSync) == 0 {
 		atomic.StoreUint32(&pm.corsSync, 1)
 		index, _ := pm.pushSync()
-		log.Debug("Cors Sync OK", "index", index)
+		log.Info("Cors Sync OK", "index", index)
 		atomic.StoreUint32(&pm.corsSync, 0)
 	}
 }
@@ -102,12 +100,15 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 		log.Debug("Cors ProtocolManager", "pushSync fetchHeader err", err)
 		return 0, err
 	}
-	log.Debug("Cors ProtocolManager", "pheader.index", pheader.Number.Index, "pushSync fetchHeader header", pheader)
 
 	flag = 0
-	if index = pheader.Number.Index - fsMinFullBlocks; index < 0 {
+	if pheader.Number.Index <= fsMinFullBlocks {
 		index = 0
+	} else {
+		index = pheader.Number.Index - fsMinFullBlocks
 	}
+
+	log.Debug("Cors ProtocolManager", "pheader.index", pheader.Number.Index, "push index", index, "pushSync fetchHeader header", pheader)
 
 	number := &modules.ChainIndex{pm.assetId, index}
 	for {
@@ -119,7 +120,12 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 			number.Index = index
 			header, err := pm.dag.GetHeaderByNumber(number)
 			if err != nil {
-				flag = 1
+				if len(headers) == MaxHeaderFetch {
+					index--
+					break
+				} else {
+					flag = 1
+				}
 				break
 			}
 			headers = append(headers, header)
@@ -130,7 +136,13 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 		peers := pm.peers.AllPeers()
 		x := rand.Intn(len(peers))
 		p := peers[x]
-		log.Debug("Cors ProtocolManager", "pushSync SendHeaders len(headers)", len(headers), "index", index)
+		log.Info("Cors ProtocolManager", "pushSync SendHeaders len(headers)", len(headers), "index", index)
+		if len(headers) == 0 {
+			header := modules.Header{}
+			number := modules.ChainIndex{pm.assetId, 0}
+			header.Number = &number
+			headers = append(headers, &header)
+		}
 		p.SendHeaders(headers)
 		if flag == 1 {
 			break

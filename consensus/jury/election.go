@@ -206,7 +206,7 @@ func (p *Processor) processElectionRequestEvent(ele *elector, reqEvt *ElectionRe
 	}
 	proof, err := ele.checkElected(getElectionSeedData(reqEvt.ReqId))
 	if err != nil {
-		log.Errorf("[%s]processElectionRequestEvent, checkElected err, err", shortId(reqId.String()), err)
+		log.Errorf("[%s]processElectionRequestEvent, checkElected err, %s", shortId(reqId.String()), err.Error())
 		return nil, fmt.Errorf("processElectionRequestEvent, checkElected err, reqId[%s]", shortId(reqId.String()))
 	}
 	pubKey, err := p.ptn.GetKeyStore().GetPublicKey(addr)
