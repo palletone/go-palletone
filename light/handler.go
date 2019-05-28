@@ -418,7 +418,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 }
 
-var reqList = []uint64{GetBlockHeadersMsg, GetBlockBodiesMsg, GetCodeMsg, GetUTXOsMsg, GetProofsMsg, SendTxMsg, SendTxV2Msg, GetTxStatusMsg, GetHeaderProofsMsg, GetProofsV2Msg, GetHelperTrieProofsMsg}
+//var reqList = []uint64{GetBlockHeadersMsg, GetBlockBodiesMsg, GetCodeMsg, GetUTXOsMsg, GetProofsMsg, SendTxMsg, GetHeaderProofsMsg}
 
 // handleMsg is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
@@ -454,60 +454,20 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case BlockHeadersMsg:
 		return pm.BlockHeadersMsg(msg, p)
 
-	case GetBlockBodiesMsg:
-		return nil //pm.GetBlockBodiesMsg(msg, p)
-
-	case BlockBodiesMsg:
-		return nil //pm.BlockBodiesMsg(msg, p)
-
-	case GetCodeMsg:
-		return nil //pm.GetCodeMsg(msg, p)
-
-	case CodeMsg:
-		return nil //pm.CodeMsg(msg, p)
-
 	case GetProofsMsg:
 		return pm.GetProofsMsg(msg, p)
 
-	case GetProofsV2Msg:
-		log.Trace("Received les/2 proofs request")
-
 	case GetUTXOsMsg:
-		log.Debug("Received les GetUTXOsMsg")
 		return pm.GetUTXOsMsg(msg, p)
 
 	case UTXOsMsg:
-		log.Debug("Received les UTXOsMsg")
 		return pm.UTXOsMsg(msg, p)
 
 	case ProofsMsg:
 		return pm.ProofsMsg(msg, p)
 
-	case ProofsV2Msg:
-		log.Trace("Received les/2 proofs response")
-
-	case GetHeaderProofsMsg:
-		return nil //pm.GetHeaderProofsMsg(msg, p)
-
-	case GetHelperTrieProofsMsg:
-		return nil //pm.GetHelperTrieProofsMsg(msg, p)
-
-	case HeaderProofsMsg:
-		return nil // pm.HeaderProofsMsg(msg, p)
-
-	case HelperTrieProofsMsg:
-		return nil //pm.HelperTrieProofsMsg(msg, p)
-
 	case SendTxMsg:
 		return pm.SendTxMsg(msg, p)
-
-	case SendTxV2Msg:
-
-	case GetTxStatusMsg:
-		return nil //pm.GetTxStatusMsg(msg, p)
-
-	case TxStatusMsg:
-		return nil //pm.TxStatusMsg(msg, p)
 
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
@@ -593,10 +553,9 @@ func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int,
 }
 
 func (p *peerConnection) RequestLeafNodes() error {
-	//GetLeafNodes
 	log.Debug("Fetching leaf nodes")
 	return nil
-	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
+	return p2p.Send(p.peer.rw, GetLeafNodesMsg, "")
 }
 
 func (d *downloaderPeerNotify) registerPeer(p *peer) {

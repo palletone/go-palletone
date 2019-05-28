@@ -377,15 +377,16 @@ func (r *ChtRequest) CanSend(peer *peer) bool {
 // Request sends an ODR request to the LES network (implementation of LesOdrRequest)
 func (r *ChtRequest) Request(reqID uint64, peer *peer) error {
 	log.Debug("Requesting CHT", "cht", r.ChtNum, "block", r.BlockNum)
-	var encNum [8]byte
-	binary.BigEndian.PutUint64(encNum[:], r.BlockNum)
-	req := HelperTrieReq{
-		Type:    htCanonical,
-		TrieIdx: r.ChtNum,
-		Key:     encNum[:],
-		AuxReq:  auxHeader,
-	}
-	return peer.RequestHelperTrieProofs(reqID, r.GetCost(peer), []HelperTrieReq{req})
+	return nil
+	//var encNum [8]byte
+	//binary.BigEndian.PutUint64(encNum[:], r.BlockNum)
+	//req := HelperTrieReq{
+	//	Type:    htCanonical,
+	//	TrieIdx: r.ChtNum,
+	//	Key:     encNum[:],
+	//	AuxReq:  auxHeader,
+	//}
+	//return peer.RequestHelperTrieProofs(reqID, r.GetCost(peer), []HelperTrieReq{req})
 }
 
 // Valid processes an ODR request reply message from the LES network

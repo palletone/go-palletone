@@ -62,11 +62,12 @@ func (pm *ProtocolManager) syncer() {
 	}
 }
 
-func (pm *ProtocolManager) needToSync(peerHead blockInfo) bool {
-	return true
-	//head := pm.blockchain.CurrentHeader()
-	//currentTd := core.GetTd(pm.chainDb, head.Hash(), head.Number.Uint64())
-	//return currentTd != nil && peerHead.Td.Cmp(currentTd) > 0
+func (pm *ProtocolManager) syncall() {
+	if atomic.LoadUint32(&pm.fastSync) == 0 {
+		log.Debug("Light PalletOne syncall synchronising")
+		return
+	}
+	pm.downloader.FetchAllToken(pm.peers.BestPeer(pm.assetId).id)
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.

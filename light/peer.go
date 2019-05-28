@@ -19,7 +19,6 @@ package light
 
 import (
 	"crypto/ecdsa"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"sync"
@@ -31,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
-	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn"
 )
 
@@ -222,15 +220,15 @@ func (p *peer) SendUnitHeaders(reqID, bv uint64, headers []*modules.Header) erro
 
 // SendBlockBodiesRLP sends a batch of block contents to the remote peer from
 // an already RLP encoded format.
-func (p *peer) SendBlockBodiesRLP(reqID, bv uint64, bodies []rlp.RawValue) error {
-	return sendResponse(p.rw, BlockBodiesMsg, reqID, bv, bodies)
-}
+//func (p *peer) SendBlockBodiesRLP(reqID, bv uint64, bodies []rlp.RawValue) error {
+//	return sendResponse(p.rw, BlockBodiesMsg, reqID, bv, bodies)
+//}
 
 // SendCodeRLP sends a batch of arbitrary internal data, corresponding to the
 // hashes requested.
-func (p *peer) SendCode(reqID, bv uint64, data [][]byte) error {
-	return sendResponse(p.rw, CodeMsg, reqID, bv, data)
-}
+//func (p *peer) SendCode(reqID, bv uint64, data [][]byte) error {
+//	return sendResponse(p.rw, CodeMsg, reqID, bv, data)
+//}
 
 func (p *peer) SendRawUTXOs(reqID, bv uint64, utxos [][][]byte) error {
 	return p2p.Send(p.rw, UTXOsMsg, utxos)
@@ -249,20 +247,20 @@ func (p *peer) SendProofs(reqID, bv uint64, proof proofsRespData) error {
 }
 
 // SendProofsV2 sends a batch of merkle proofs, corresponding to the ones requested.
-func (p *peer) SendProofsV2(reqID, bv uint64, proofs les.NodeList) error {
-	return sendResponse(p.rw, ProofsV2Msg, reqID, bv, proofs)
-}
+//func (p *peer) SendProofsV2(reqID, bv uint64, proofs les.NodeList) error {
+//	return sendResponse(p.rw, ProofsV2Msg, reqID, bv, proofs)
+//}
 
 // SendHeaderProofs sends a batch of legacy LES/1 header proofs, corresponding to the ones requested.
-func (p *peer) SendHeaderProofs(reqID, bv uint64, proofs []ChtResp) error {
-	return sendResponse(p.rw, HeaderProofsMsg, reqID, bv, proofs)
-}
+//func (p *peer) SendHeaderProofs(reqID, bv uint64, proofs []ChtResp) error {
+//	return sendResponse(p.rw, HeaderProofsMsg, reqID, bv, proofs)
+//}
 
 //
 //// SendHelperTrieProofs sends a batch of HelperTrie proofs, corresponding to the ones requested.
-func (p *peer) SendHelperTrieProofs(reqID, bv uint64, resp HelperTrieResps) error {
-	return sendResponse(p.rw, HelperTrieProofsMsg, reqID, bv, resp)
-}
+//func (p *peer) SendHelperTrieProofs(reqID, bv uint64, resp HelperTrieResps) error {
+//	return sendResponse(p.rw, HelperTrieProofsMsg, reqID, bv, resp)
+//}
 
 // SendTxStatus sends a batch of transaction status records, corresponding to the ones requested.
 //func (p *peer) SendTxStatus(reqID, bv uint64, stats []txStatus) error {
@@ -286,10 +284,10 @@ func (p *peer) RequestHeadersByNumber(reqID, cost uint64, origin modules.ChainIn
 
 // RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
 // specified.
-func (p *peer) RequestBodies(reqID, cost uint64, hashes []common.Hash) error {
-	log.Debug("Fetching batch of block bodies", "count", len(hashes))
-	return sendRequest(p.rw, GetBlockBodiesMsg, reqID, cost, hashes)
-}
+//func (p *peer) RequestBodies(reqID, cost uint64, hashes []common.Hash) error {
+//	log.Debug("Fetching batch of block bodies", "count", len(hashes))
+//	return sendRequest(p.rw, GetBlockBodiesMsg, reqID, cost, hashes)
+//}
 
 func (p *peer) RequestUTXOs(reqID, cost uint64, addr string) error {
 	log.Debug("Fetching batch of utxos", "addr", addr)
@@ -316,33 +314,33 @@ func (p *peer) RequestProofs(reqID, cost uint64, reqs []ProofReq) error {
 }
 
 // RequestHelperTrieProofs fetches a batch of HelperTrie merkle proofs from a remote node.
-func (p *peer) RequestHelperTrieProofs(reqID, cost uint64, reqs []HelperTrieReq) error {
-	log.Debug("Fetching batch of HelperTrie proofs", "count", len(reqs))
-	//return nil
-	switch p.version {
-	case lpv1:
-		reqsV1 := make([]ChtReq, len(reqs))
-		for i, req := range reqs {
-			if req.Type != htCanonical || req.AuxReq != auxHeader || len(req.Key) != 8 {
-				return fmt.Errorf("Request invalid in LES/1 mode")
-			}
-			blockNum := binary.BigEndian.Uint64(req.Key)
-			// convert HelperTrie request to old CHT request
-			reqsV1[i] = ChtReq{ChtNum: (req.TrieIdx + 1) * (les.CHTFrequencyClient / les.CHTFrequencyServer), BlockNum: blockNum, FromLevel: req.FromLevel}
-		}
-		return sendRequest(p.rw, GetHeaderProofsMsg, reqID, cost, reqsV1)
-	case lpv2:
-		return sendRequest(p.rw, GetHelperTrieProofsMsg, reqID, cost, reqs)
-	default:
-		panic(nil)
-	}
-}
+//func (p *peer) RequestHelperTrieProofs(reqID, cost uint64, reqs []HelperTrieReq) error {
+//	log.Debug("Fetching batch of HelperTrie proofs", "count", len(reqs))
+//	//return nil
+//	switch p.version {
+//	case lpv1:
+//		reqsV1 := make([]ChtReq, len(reqs))
+//		for i, req := range reqs {
+//			if req.Type != htCanonical || req.AuxReq != auxHeader || len(req.Key) != 8 {
+//				return fmt.Errorf("Request invalid in LES/1 mode")
+//			}
+//			blockNum := binary.BigEndian.Uint64(req.Key)
+//			// convert HelperTrie request to old CHT request
+//			reqsV1[i] = ChtReq{ChtNum: (req.TrieIdx + 1) * (les.CHTFrequencyClient / les.CHTFrequencyServer), BlockNum: blockNum, FromLevel: req.FromLevel}
+//		}
+//		return sendRequest(p.rw, GetHeaderProofsMsg, reqID, cost, reqsV1)
+//	case lpv2:
+//		return sendRequest(p.rw, GetHelperTrieProofsMsg, reqID, cost, reqs)
+//	default:
+//		panic(nil)
+//	}
+//}
 
 // RequestTxStatus fetches a batch of transaction status records from a remote node.
-func (p *peer) RequestTxStatus(reqID, cost uint64, txHashes []common.Hash) error {
-	log.Debug("Requesting transaction status", "count", len(txHashes))
-	return sendRequest(p.rw, GetTxStatusMsg, reqID, cost, txHashes)
-}
+//func (p *peer) RequestTxStatus(reqID, cost uint64, txHashes []common.Hash) error {
+//	log.Debug("Requesting transaction status", "count", len(txHashes))
+//	return sendRequest(p.rw, GetTxStatusMsg, reqID, cost, txHashes)
+//}
 
 // SendTxStatus sends a batch of transactions to be added to the remote transaction pool.
 func (p *peer) SendTxs(reqID, cost uint64, txs modules.Transactions) error {
@@ -350,8 +348,8 @@ func (p *peer) SendTxs(reqID, cost uint64, txs modules.Transactions) error {
 	switch p.version {
 	case lpv1:
 		return p2p.Send(p.rw, SendTxMsg, txs) // old message format does not include reqID
-	case lpv2:
-		return sendRequest(p.rw, SendTxV2Msg, reqID, cost, txs)
+	//case lpv2:
+	//return sendRequest(p.rw, SendTxV2Msg, reqID, cost, txs)
 	default:
 		panic(nil)
 	}
@@ -446,10 +444,10 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		send = send.add("txRelay", nil)
 		send = send.add("flowControl/BL", server.defParams.BufLimit)
 		send = send.add("flowControl/MRR", server.defParams.MinRecharge)
-		list := server.fcCostStats.getCurrentList()
-		send = send.add("flowControl/MRC", list)
+		//list := server.fcCostStats.getCurrentList()
+		//send = send.add("flowControl/MRC", list)
 		send = send.add("fullnode", nil)
-		p.fcCosts = list.decode()
+		//p.fcCosts = list.decode()
 	} else {
 		p.requestAnnounceType = announceTypeSimple // set to default until "very light" client mode is implemented
 		send = send.add("announceType", p.requestAnnounceType)
@@ -516,13 +514,13 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		if err := recv.get("flowControl/MRR", &params.MinRecharge); err != nil {
 			return err
 		}
-		var MRC RequestCostList
-		if err := recv.get("flowControl/MRC", &MRC); err != nil {
-			return err
-		}
+		//var MRC RequestCostList
+		//if err := recv.get("flowControl/MRC", &MRC); err != nil {
+		//	return err
+		//}
 		p.fcServerParams = params
 		p.fcServer = flowcontrol.NewServerNode(params)
-		p.fcCosts = MRC.decode()
+		//p.fcCosts = MRC.decode()
 	}
 
 	if err := recv.get("fullnode", nil); err != nil {
