@@ -15,9 +15,9 @@ Business_01
     [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点申请退出候选列表-》进入退出列表-》基金会同意。此时，所有列表为空
     ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表
     log    ${result}
-    @{addressList1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
-    log    @{addressList1}
-    Should Be True    '${mediatorAddr_01}' in @{addressList1}
+    &{addressList1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
+    log    &{addressList1}
+    Should Be True    '${mediatorAddr_01}' in &{addressList1}
     ${result}    handleForApplyBecomeMediator    ${foundationAddr}    0    #基金会处理列表里的节点（同意）
     log    ${result}
     @{addressList2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
