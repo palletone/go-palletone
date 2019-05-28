@@ -782,8 +782,11 @@ func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) 
 	log.Debugf("sendResult: %s", common.Bytes2Hex(sendResult))
 	recvResult, err := stub.RecvJury(2, content, 2)
 	if err != nil {
-		log.Debugf("RecvJury err: %s", err.Error())
-		return nil, errors.New("RecvJury failed")
+		recvResult, err = stub.RecvJury(2, content, 2)
+		if err != nil {
+			log.Debugf("RecvJury err: %s", err.Error())
+			return nil, errors.New("RecvJury failed")
+		}
 	}
 	log.Debugf("recvResult: %s", string(recvResult))
 	return recvResult, nil
@@ -905,7 +908,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		reqid = "0x" + reqid
 	}
 
-	result, _ := stub.GetState(symbolsRedeem + reqid)
+	result, _ := stub.GetState(symbolsWithdrawPrepare + reqid)
 	if len(result) == 0 {
 		return shim.Error("Please invoke withdrawPrepare first")
 	}
@@ -977,6 +980,10 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	log.Debugf("start consult txHash %s", txHash)
 	//协商 发送交易哈希
 	txResult, err := consult(stub, []byte(txHash), []byte("txhash"))
+	if err != nil {
+		log.Debugf("consult txhash failed: " + err.Error())
+		return shim.Success([]byte("consult txhash failed: " + err.Error()))
+	}
 	var txJuryMsg []JuryMsgAddr
 	err = json.Unmarshal(txResult, &txJuryMsg)
 	if err != nil {
@@ -987,8 +994,12 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		log.Debugf("RecvJury txhash result's len not enough")
 		return shim.Success([]byte("RecvJury txhash result's len not enough"))
 	}
-	//协商 保证协商一致
+	//协商 保证协商一致后才写入签名结果
 	txResult2, err := consult(stub, []byte(txHash+"twice"), []byte("txhash2"))
+	if err != nil {
+		log.Debugf("consult txhash2 failed: " + err.Error())
+		return shim.Success([]byte("consult txhash2 failed: " + err.Error()))
+	}
 	var txJuryMsg2 []JuryMsgAddr
 	err = json.Unmarshal(txResult2, &txJuryMsg2)
 	if err != nil {
@@ -1043,8 +1054,14 @@ func send(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if len(args) == 0 {
 		return shim.Error("need 1 args (reqid)")
 	}
+
+	reqid := args[0]
+	if "0x" != reqid[0:2] {
+		reqid = "0x" + reqid
+	}
+
 	//查询交易
-	result, _ := stub.GetState(symbolsWithdraw + args[0])
+	result, _ := stub.GetState(symbolsWithdraw + reqid)
 	if len(result) == 0 {
 		return shim.Success([]byte("No withdraw"))
 	}
