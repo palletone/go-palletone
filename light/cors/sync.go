@@ -45,24 +45,6 @@ func (p *headerPack) PeerId() string { return p.peerId }
 func (p *headerPack) Items() int     { return len(p.headers) }
 func (p *headerPack) Stats() string  { return fmt.Sprintf("%d", len(p.headers)) }
 
-//func (pm *ProtocolManager) loopCorsSync() {
-//	pm.StartCorsSync()
-//	forceSync := time.NewTicker(forceSyncCycle)
-//	defer forceSync.Stop()
-//
-//	for {
-//		select {
-//		case <-forceSync.C:
-//			// Force a sync even if not enough peers are present
-//			log.Debug("start force push cors sync")
-//			go pm.StartCorsSync()
-//
-//		case <-pm.noMorePeers:
-//			return
-//		}
-//	}
-//}
-
 func (pm *ProtocolManager) StartCorsSync() (string, error) {
 	mainchain, err := pm.dag.GetMainChain()
 	if mainchain == nil || err != nil {
@@ -91,7 +73,6 @@ func (pm *ProtocolManager) StartCorsSync() (string, error) {
 		}
 	}()
 
-	//TODO broadcast send msg to other partidion peer,that can push partition header to PTN network
 	return "OK", nil
 }
 

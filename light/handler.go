@@ -231,7 +231,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		return dagerrors.ErrFutureBlock
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
-		log.Info("ProtocolManager headerBroadcaster", "hash:", header.Hash().String())
+		log.Info("Light PalletOne ProtocolManager headerBroadcaster", "assetid", header.Number.AssetID, "index", header.Number.Index, "hash:", header.Hash().String())
 		pm.BroadcastLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
@@ -241,7 +241,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		//	log.Warn("Discarded lighting sync propagated block", "number", headers[0].Number.Index, "hash", headers[0].Hash())
 		//	return 0, errors.New("fasting sync")
 		//}
-		log.Debug("light Fetcher", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		log.Debug("Light PalletOne ProtocolManager InsertLightHeader", "assetId", headers[0].Number.AssetID, "index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
 	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
@@ -249,7 +249,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 }
 
 func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
-	log.Info("ProtocolManager", "BroadcastLightHeader index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
+	log.Info("Light PalletOne ProtocolManager BroadcastLightHeader", "index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
 	peers := pm.peers.PeersWithoutHeader(header.Number.AssetID, header.Hash())
 	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
 	for _, p := range peers {
@@ -270,7 +270,7 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 
 		}
 	}
-	log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
+	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
 	return
 }
 
