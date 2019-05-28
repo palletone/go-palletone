@@ -45,36 +45,53 @@ func (p *headerPack) PeerId() string { return p.peerId }
 func (p *headerPack) Items() int     { return len(p.headers) }
 func (p *headerPack) Stats() string  { return fmt.Sprintf("%d", len(p.headers)) }
 
+//func (pm *ProtocolManager) loopCorsSync() {
+//	pm.StartCorsSync()
+//	forceSync := time.NewTicker(forceSyncCycle)
+//	defer forceSync.Stop()
+//
+//	for {
+//		select {
+//		case <-forceSync.C:
+//			// Force a sync even if not enough peers are present
+//			log.Debug("start force push cors sync")
+//			go pm.StartCorsSync()
+//
+//		case <-pm.noMorePeers:
+//			return
+//		}
+//	}
+//}
+
 func (pm *ProtocolManager) StartCorsSync() (string, error) {
 	mainchain, err := pm.dag.GetMainChain()
 	if mainchain == nil || err != nil {
 		log.Debug("Cors ProtocolManager StartCorsSync", "GetMainChain err", err)
 		return err.Error(), err
 	}
+	pm.mclock.Lock()
 	pm.mainchain = mainchain
+	pm.mclock.Unlock()
+
 	pm.mclock.RLock()
 	for _, peer := range mainchain.Peers {
 		node, err := discover.ParseNode(peer)
 		if err != nil {
 			return fmt.Sprintf("Cors ProtocolManager StartCorsSync invalid pnode: %v", err), err
 		}
-		log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
+		//log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
 		pm.server.corss.AddPeer(node)
 	}
 	pm.mclock.RUnlock()
 
 	go func() {
-		for {
-
-			if pm.peers.Len() >= pm.mainchainpeers()/2+1 {
-				pm.Sync()
-				break
-			} else {
-				time.Sleep(1 * time.Second)
-			}
+		time.Sleep(time.Duration(3) * time.Second)
+		if pm.peers.Len() >= pm.mainchainpeers()/2+1 {
+			pm.Sync()
 		}
 	}()
 
+	//TODO broadcast send msg to other partidion peer,that can push partition header to PTN network
 	return "OK", nil
 }
 

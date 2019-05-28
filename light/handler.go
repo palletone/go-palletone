@@ -212,9 +212,8 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 	manager.peers.notify((*downloaderPeerNotify)(manager))
 	manager.fetcher = manager.newLightFetcher()
 	//}
-	if manager.lightSync {
-		manager.fastSync = uint32(1)
-	}
+
+	manager.fastSync = uint32(1)
 
 	return manager, nil
 }
