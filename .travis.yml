@@ -26,7 +26,7 @@ env:
     - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
-    - 'SFTP_KEY=[base64-encoded-rsa-key]'
+#    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
   - go build ./cmd/gptn
@@ -76,7 +76,7 @@ script:
 after_script:
   - killall gptn
   - sleep 2
-  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+#  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
   # upload all log
   - curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
 
