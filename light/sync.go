@@ -67,7 +67,13 @@ func (pm *ProtocolManager) syncall() {
 		log.Debug("Light PalletOne syncall synchronising")
 		return
 	}
-	headers, err := pm.downloader.FetchAllToken(pm.peers.BestPeer(pm.assetId).id)
+
+	p := pm.peers.BestPeer(pm.assetId)
+	if p == nil {
+		log.Debug("Light PalletOne syncall peer is nil")
+		return
+	}
+	headers, err := pm.downloader.FetchAllToken(p.id)
 	if err != nil {
 		log.Debug("Light PalletOne syncall FetchAllToken", "err", err)
 	}
