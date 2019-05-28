@@ -65,11 +65,8 @@ script:
     cd ../GasToken;
     mkdir node;
     chmod +x ./init_gas_token.sh;
-    ls -l;
     ./init_gas_token.sh;
     sleep 15;
-    ls -l ./node;
-    ls -l ${BDD_LOG_PATH};
     python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
 
