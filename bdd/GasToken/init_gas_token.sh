@@ -2,7 +2,6 @@
 #pkill gptn
 #tskill gptn
 cd ../../cmd/gptn && go build
-ls ./cmd/gptn/
 cd ../../
 rm -rf ./bdd/GasToken/node/*
 cp ./cmd/gptn/gptn ./bdd/GasToken/node
