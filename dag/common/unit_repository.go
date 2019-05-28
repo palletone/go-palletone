@@ -524,23 +524,6 @@ func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []module
 			log.Debug("checkReadSetValid", "GetContractState fail, contractId", contractId)
 			return false
 		}
-		//if v == nil && rd.Version == nil {
-		//	continue
-		//} else if v != nil && rd.Version != nil {
-		//	m1, err1 := rlp.EncodeToBytes(v)
-		//	m2, err2 := rlp.EncodeToBytes(rd.Version)
-		//	if err1 != nil || err2 != nil {
-		//		log.Debugf("checkReadSetValid, rlp err, err1:%s, err2:%s", err1.Error(), err2.Error())
-		//		return false
-		//	}
-		//	if !bytes.Equal(m1, m2) {
-		//		log.Debugf("checkReadSetValid, marshal not equal, contractId[%x], local ver1[%v], ver2[%v]", contractId, v, rd.Version)
-		//		return false
-		//	}
-		//} else {
-		//	log.Debug("checkReadSetValid, not equal, contractId[%x], local ver1[%v],ver2[%v] ", contractId,  v,  rd.Version)
-		//	return false
-		//}
 		if v != nil && !v.Equal(rd.Version) {
 			log.Debugf("checkReadSetValid, not equal, contractId[%x], local ver1[%v], ver2[%v]", contractId, v, rd.Version)
 			return false
