@@ -75,14 +75,9 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		return
 	}
 
-	// Make sure the peer's TD is higher than our own.
-	//if !pm.needToSync(peer.headBlockInfo()) {
-	//	return
-	//}
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	//defer cancel()
-	//pm.blockchain.(*light.LightChain).SyncCht(ctx)
-	//pm.downloader.Synchronise(peer.id, peer.Head(), peer.Td(), downloader.LightSync)
+	if pm.lightSync && pm.assetId == assetId {
+		return
+	}
 
 	headhash, number := peer.HeadAndNumber(assetId)
 	log.Debug("Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
