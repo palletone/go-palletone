@@ -32,7 +32,6 @@ var Modules = map[string]string{
 	"rpc":        RPC_JS,
 	"wallet":     Wallet_JS,
 	"txpool":     TxPool_JS,
-	"mediator":   Mediator_JS,
 	"contract":   Contract_JS,
 }
 

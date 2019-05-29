@@ -8,5 +8,6 @@ getListForJuryCandidate
     ${one}    Create List    GetListForJuryCandidate
     ${two}    Create List    ${one}
     ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForJuryCandidate    ${two}
-    ${addressMap}    Create Dictionary    ${result}
+    ${resJson}    To Json    ${result}
+    ${addressMap}    Create Dictionary    ${resJson}
     [Return]    ${addressMap}

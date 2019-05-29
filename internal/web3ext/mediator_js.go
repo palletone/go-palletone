@@ -18,6 +18,10 @@
 
 package web3ext
 
+func init() {
+	Modules["mediator"] = Mediator_JS
+}
+
 const Mediator_JS = `
 web3._extend({
 	property: 'mediator',

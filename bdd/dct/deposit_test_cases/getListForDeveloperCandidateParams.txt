@@ -8,5 +8,7 @@ getListForDeveloperCandidate
     ${one}    Create List    GetListForDeveloperCandidate
     ${two}    Create List    ${one}
     ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForDeveloperCandidate    ${two}
+    ${resJson}    To Json    ${result}
+    ${addressMap}    Create Dictionary    ${resJson}
     ${addressMap}    Create Dictionary    ${result}
     [Return]    ${addressMap}
