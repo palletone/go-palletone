@@ -1513,8 +1513,8 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 	return nil
 }
 func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
-	for _, tx := range txs {
-		if tx.Messages()[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+	for idx, tx := range txs {
+		if idx==0 {//coinbase
 			continue
 		}
 		err := pool.setPendingTx(unit_hash, tx)

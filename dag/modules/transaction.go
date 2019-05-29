@@ -664,9 +664,9 @@ func (tx *Transaction) InvokeContractId() []byte {
 }
 
 type Addition struct {
-	Addr   common.Address
-	Asset  Asset
-	Amount uint64
+	Addr        common.Address
+	AmountAsset AmountAsset
+	//Amount uint64
 }
 
 type OutPoint struct {
@@ -1018,7 +1018,7 @@ func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
 	if b == nil {
 		return false, errors.New("Addition isEqual err, param is nil")
 	}
-	if a.Addr == b.Addr && a.Asset == b.Asset {
+	if a.Addr == b.Addr && a.AmountAsset == b.AmountAsset {
 		return true, nil
 	}
 	return false, nil

@@ -26,6 +26,7 @@ const (
 	DefaultChainID                   = 1
 	DefaultDepositRate               = "0.02"
 	DefaultTxCoinYearRate            = "0.01"
+	DefaultRewardHeight              = 1000
 	DefaultGenerateUnitReward        = "100000000"
 	DefaultDepositPeriod             = "0"
 	DefaultDepositAmountForMediator  = "200000000000"

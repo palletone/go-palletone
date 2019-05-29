@@ -41,7 +41,8 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
-
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/dag/parameter"
 	"sync"
 )
 
@@ -106,9 +107,9 @@ type UnitRepository struct {
 	//validate       validator.Validator
 	utxoRepository IUtxoRepository
 	lock           sync.RWMutex
-	observers []AfterSysContractStateChangeEventFunc
-
+	observers      []AfterSysContractStateChangeEventFunc
 }
+
 //type Observer interface {
 //	//更新事件
 //	AfterSysContractStateChangeEvent(event *modules.SysContractStateChangeEvent)
@@ -133,17 +134,16 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 }
 
 func (rep *UnitRepository) SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
-	if rep.observers==nil{
-		rep.observers= []AfterSysContractStateChangeEventFunc{}
+	if rep.observers == nil {
+		rep.observers = []AfterSysContractStateChangeEventFunc{}
 	}
 
-	rep.observers=append(rep.observers,ob)
+	rep.observers = append(rep.observers, ob)
 }
 
 //func (rep *UnitRepository) UnsubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
 //	delete(rep.observers, ob)
 //}
-
 
 func (rep *UnitRepository) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return rep.dagdb.GetHeaderByHash(hash)
@@ -455,7 +455,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	}
 
 	outAds := arrangeAdditionFeeList(ads)
-	coinbase, rewards, err := CreateCoinbase(outAds, t)
+	coinbase, rewards, err := rep.CreateCoinbase(outAds, chainIndex.Index)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -611,10 +611,9 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 		if tx.Tx == nil || tx.TxFee == nil {
 			continue
 		}
-		a := &modules.Addition{
-			Amount: tx.TxFee.Amount,
-			Asset:  *tx.TxFee.Asset,
-		}
+		a := &modules.Addition{}
+		a.AmountAsset.Amount = tx.TxFee.Amount
+		a.AmountAsset.Asset = tx.TxFee.Asset
 
 		if !tx.Tx.IsContractTx() || tx.Tx.IsSystemContract() {
 			a.Addr = *m
@@ -628,24 +627,23 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 			ads = append(ads, a)
 			continue
 		}
-		jAll := a.Amount * 6 / 10       //all jury
-		j := jAll / uint64(nm)          //single jury
-		mAll := a.Amount - j*uint64(nm) //mediator
+		jAll := a.AmountAsset.Amount * 6 / 10       //all jury
+		j := jAll / uint64(nm)                      //single jury
+		mAll := a.AmountAsset.Amount - j*uint64(nm) //mediator
 
-		if mAll > a.Amount {
-			log.Error("ComputeTxFees", "computer err, mAll=", mAll, "a.mount=", a.Amount)
+		if mAll > a.AmountAsset.Amount {
+			log.Error("ComputeTxFees", "computer err, mAll=", mAll, "a.mount=", a.AmountAsset.Amount)
 			continue
 		}
 		for _, add := range addrs {
-			am := &modules.Addition{
-				Asset: *tx.TxFee.Asset,
-			}
-			am.Amount = j //jury fee= all * 0.6/nm
+			am := &modules.Addition{}
+			am.AmountAsset.Asset = tx.TxFee.Asset
+			am.AmountAsset.Amount = j //jury fee= all * 0.6/nm
 			am.Addr = add
 			//log.Info("ComputeTxFees", "i", i, "am.Amount", am.Amount, "nm", nm, "add", add)
 			ads = append(ads, am)
 		}
-		a.Amount = mAll //mediator fee = all * 0.4
+		a.AmountAsset.Amount = mAll //mediator fee = all * 0.4
 		a.Addr = *m
 		ads = append(ads, a)
 	}
@@ -656,11 +654,10 @@ func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modu
 //利息奖励,Mediator
 func ComputeRewardsFees(m *common.Address, asset *modules.Asset) *modules.Addition {
 	a := &modules.Addition{
-		Addr:   *m,
-		Amount: ComputeRewards(),
-		Asset:  *asset,
+		Addr: *m,
 	}
-
+	a.AmountAsset.Amount = ComputeRewards()
+	a.AmountAsset.Asset = asset
 	return a
 }
 
@@ -694,7 +691,7 @@ func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
 			}
 		}
 		if ok {
-			b.Amount += a.Amount
+			b.AmountAsset.Amount += a.AmountAsset.Amount
 			continue
 		}
 		out = append(out, a)
@@ -1250,10 +1247,10 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		log.Errorf("Tx[%s]Write contract state error:%s", tx.Hash().String(), err.Error())
 		return false
 	}
-	if common.IsSystemContractAddress(payload.ContractId) &&payload.ErrMsg.Code==0{
-		eventArg:= &modules.SysContractStateChangeEvent{ContractId:payload.ContractId,WriteSet:payload.WriteSet}
-		for _,eventFunc := range rep.observers {
-			go	eventFunc(eventArg)
+	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
+		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
+		for _, eventFunc := range rep.observers {
+			go eventFunc(eventArg)
 		}
 	}
 	return true
@@ -1426,29 +1423,124 @@ To get unit information by its ChainIndex
 创建coinbase交易
 To create coinbase transaction
 */
-func CreateCoinbase(ads []*modules.Addition, t time.Time) (*modules.Transaction, uint64, error) {
+func (rep *UnitRepository) CreateCoinbase(ads []*modules.Addition, height uint64) (*modules.Transaction, uint64, error) {
+	if height%parameter.CurrentSysParameters.RewardHeight == 0 {
+		return rep.createCoinbasePayment(ads)
+	} else {
+		return rep.createCoinbaseState(ads)
+	}
+}
+func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*modules.Transaction, uint64, error) {
 	totalIncome := uint64(0)
-	payload := modules.PaymentPayload{}
-
+	payload := modules.ContractInvokePayload{}
+	contractId := syscontract.CoinbaseContractAddress.Bytes()
+	payload.ContractId = contractId
+	//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
+	//key为奖励地址，Value为[]AmountAsset
 	if len(ads) != 0 {
 		for _, v := range ads {
-			script := tokenengine.GenerateLockScript(v.Addr)
-			additionalOutput := modules.Output{
-				Value:    v.Amount,
-				Asset:    &v.Asset,
-				PkScript: script,
+			key := RewardAddressPrefix + v.Addr.String()
+			data, _, err := rep.statedb.GetContractState(contractId, key)
+			income := []modules.AmountAsset{}
+			if err == nil { //之前有奖励
+				rlp.DecodeBytes(data, &income)
 			}
-			payload.Outputs = append(payload.Outputs, &additionalOutput)
-
-			totalIncome += v.Amount
+			newValue := addIncome(income, v.AmountAsset)
+			newData, _ := rlp.EncodeToBytes(newValue)
+			ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: newData}
+			payload.WriteSet = append(payload.WriteSet, ws)
+			totalIncome += v.AmountAsset.Amount
 		}
 	}
 	msg := &modules.Message{
-		App:     modules.APP_PAYMENT,
+		App:     modules.APP_CONTRACT_INVOKE,
 		Payload: &payload,
 	}
 	coinbase := new(modules.Transaction)
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
+	return coinbase, totalIncome, nil
+}
+func addIncome(income []modules.AmountAsset, new modules.AmountAsset) []modules.AmountAsset {
+	newValue := []modules.AmountAsset{}
+	hasOldValue := false
+	for _, aa := range income {
+		if aa.Asset.Equal(new.Asset) {
+			aa.Amount += new.Amount
+			hasOldValue = true
+		}
+		newValue = append(newValue, aa)
+	}
+	if !hasOldValue {
+		newValue = append(newValue, new)
+	}
+	return newValue
+}
+
+const RewardAddressPrefix = "Addr:"
+
+func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modules.Transaction, uint64, error) {
+	totalIncome := uint64(0)
+
+	contractId := syscontract.CoinbaseContractAddress.Bytes()
+
+	//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
+	//key为奖励地址，Value为[]AmountAsset
+	//读取之前的奖励统计值
+	addrMap, err := rep.statedb.GetContractStatesByPrefix(contractId, RewardAddressPrefix)
+	if err != nil {
+		return nil, 0, err
+	}
+	rewards := map[common.Address][]modules.AmountAsset{}
+	for key, v := range addrMap {
+		addr := string(key[len(RewardAddressPrefix):])
+		incomeAddr, _ := common.StringToAddress(addr)
+		aa := []modules.AmountAsset{}
+		rlp.DecodeBytes(v.Value, &aa)
+		rewards[incomeAddr] = aa
+	}
+	//附加最新的奖励
+	for _, ad := range ads {
+
+		reward, ok := rewards[ad.Addr]
+		if !ok {
+			reward = []modules.AmountAsset{}
+		}
+		reward = addIncome(reward, ad.AmountAsset)
+		rewards[ad.Addr] = reward
+		totalIncome += ad.AmountAsset.Amount
+	}
+	//所有奖励转换成PaymentPayload
+	coinbasePayment := &modules.PaymentPayload{}
+	for addr, v := range rewards {
+		script := tokenengine.GenerateLockScript(addr)
+		for _, reward := range v {
+			additionalOutput := modules.Output{
+				Value:    reward.Amount,
+				Asset:    reward.Asset,
+				PkScript: script,
+			}
+			coinbasePayment.Outputs = append(coinbasePayment.Outputs, &additionalOutput)
+		}
+	}
+	msg := &modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: coinbasePayment,
+	}
+	coinbase := new(modules.Transaction)
+	coinbase.TxMessages = append(coinbase.TxMessages, msg)
+	//清空历史奖励的记账值
+	payload := modules.ContractInvokePayload{}
+	payload.ContractId = contractId
+	for addr, _ := range rewards {
+		key := RewardAddressPrefix + addr.String()
+		ws := modules.ContractWriteSet{IsDelete: true, Key: key}
+		payload.WriteSet = append(payload.WriteSet, ws)
+	}
+	msg1 := &modules.Message{
+		App:     modules.APP_CONTRACT_INVOKE,
+		Payload: payload,
+	}
+	coinbase.TxMessages = append(coinbase.TxMessages, msg1)
 	return coinbase, totalIncome, nil
 }
 
