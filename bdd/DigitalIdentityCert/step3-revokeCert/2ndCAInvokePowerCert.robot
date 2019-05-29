@@ -23,7 +23,7 @@ ca unlock his account succed
 ca revoke power certificate succed
     Log    "ca revoke power certificate succed"
     ${args}=    Create List    ${addCRLMethod}    ${caRevokePowerCRLBytes}
-    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    1    1    ${certContractAddr}
+    ${params}=    genInvoketxParams    ${caCertHolder}    ${caCertHolder}    1    1    ${certContractAddr}
     ...    ${args}    ${null}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    addCRL
     Dictionary Should Contain Key    ${respJson}    result
