@@ -45,9 +45,7 @@ type ContractInf interface {
 	Close() error
 	Install(chainID string, ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error)
 	Deploy(rwM rwset.TxManager, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
-	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokePayload, error)
 	Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
-	//Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*modules.ContractInvokeResult, error)
 	StartChaincodeContainer(chainID string, templateId []byte, txId string) (deployId []byte, e error)
 	Stop(rwM rwset.TxManager, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error)
 }

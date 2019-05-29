@@ -382,6 +382,41 @@ func (b *bridge) TransferGasToken(call otto.FunctionCall) (response otto.Value) 
 	return val
 }
 
+func (b *bridge) Ccinvoketx(call otto.FunctionCall) (response otto.Value) {
+	if !call.Argument(0).IsString() {
+		throwJSException("1 argument must be account address string to unlock")
+	}
+	if !call.Argument(1).IsString() {
+		throwJSException("2 argument must be account address string to receive token")
+	}
+	from := call.Argument(0)
+	to := call.Argument(1)
+
+	//2 index, amount
+	//3 index, fee
+	amount := call.Argument(2)
+	fee := call.Argument(3)
+	deployId := call.Argument(4)
+
+	params := call.Argument(5)
+
+	certID := otto.NullValue()
+	if call.Argument(6).IsDefined() && !call.Argument(6).IsNull() {
+		certID = call.Argument(6)
+	}
+
+	timeout := otto.NullValue()
+	if call.Argument(7).IsDefined() && !call.Argument(7).IsNull() {
+		timeout = call.Argument(7)
+	}
+	// Send the request to the backend and return
+	val, err := call.Otto.Call("jptn.ccinvoketx", nil, from, to, amount, fee, deployId, params, certID, timeout)
+	if err != nil {
+		throwJSException(err.Error())
+	}
+	return val
+}
+
 // TransferPtn is a wrapper around the personal.TransferPtn RPC method that
 // uses a non-echoing password prompt to acquire the passphrase and executes the
 // original RPC method (saved in jptn.TransferPtn) with it to actually execute
