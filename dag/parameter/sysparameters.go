@@ -31,5 +31,5 @@ var CurrentSysParameters = &SysParameters{
 	TxCoinDayInterest:       0.01 / 365,
 	DepositContractInterest: 0.02 / 365,
 	GenerateUnitReward:      100000000,
-	RewardHeight:            1000,
+	RewardHeight:            50,
 }

@@ -1529,7 +1529,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	coinbase := new(modules.Transaction)
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	//清空历史奖励的记账值
-	payload := modules.ContractInvokePayload{}
+	payload := &modules.ContractInvokePayload{}
 	payload.ContractId = contractId
 	for addr, _ := range rewards {
 		key := RewardAddressPrefix + addr.String()
