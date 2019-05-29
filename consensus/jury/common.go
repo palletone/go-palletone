@@ -264,7 +264,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					templateId: reqPay.TplId,
 					txid:       tx.RequestHash().String(), //  hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes()),
 					args:       reqPay.Args,
-					timeout:    time.Duration(reqPay.Timeout),
+					timeout:    time.Duration(reqPay.Timeout)*time.Second,
 				}
 				deployResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
@@ -292,7 +292,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					deployId: reqPay.ContractId,
 					args:     reqPay.Args,
 					txid:     tx.RequestHash().String(),
-					timeout:  time.Duration(reqPay.Timeout),
+					timeout:  time.Duration(reqPay.Timeout)*time.Second,
 				}
 
 				fullArgs, err := handleMsg0(tx, dag, req.args)
