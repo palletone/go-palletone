@@ -495,7 +495,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if tx == nil || tx.Tx == nil {
 		return errors.New("This transaction is invalide.")
 	}
-	err := pool.txValidator.ValidateTx(tx.Tx, false, true)
+	err := pool.txValidator.ValidateTx(tx.Tx,  true)
 	return err
 }
 

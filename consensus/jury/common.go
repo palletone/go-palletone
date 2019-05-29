@@ -509,7 +509,7 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 }
 
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
-	err := p.validator.ValidateTx(tx, false, false)
+	err := p.validator.ValidateTx(tx,  false)
 	if err != nil {
 		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
 	}

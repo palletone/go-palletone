@@ -25,6 +25,7 @@ type SysParameters struct {
 	DepositContractInterest float64 //保证金合约一天产生多少利息
 	GenerateUnitReward      uint64  //每产生一个Unit奖励多少Dao的Token
 	RewardHeight            uint64
+	ContractFeeJuryPercent float64 //合约执行的手续费中，有多少比例是分给Mediator
 }
 
 var CurrentSysParameters = &SysParameters{
@@ -32,4 +33,5 @@ var CurrentSysParameters = &SysParameters{
 	DepositContractInterest: 0.02 / 365,
 	GenerateUnitReward:      100000000,
 	RewardHeight:            50,
+	ContractFeeJuryPercent:0.6,
 }

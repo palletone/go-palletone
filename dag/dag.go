@@ -905,7 +905,7 @@ func (d *Dag) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) 
 	return d.unstableStateRep.GetContractJury(contractId)
 
 }
-func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
+func (d *Dag) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	return d.unstableUnitRep.CreateUnit(mAddr, txpool, t)
 }
 
