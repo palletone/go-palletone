@@ -12,5 +12,5 @@ Resource          publicParams.txt
     ${resp}    Post Request    ${alias}    ${Url}    data=${data}    headers=${header}
     ${respJson}    To Json    ${resp.content}
     Dictionary Should Contain Key    ${respJson}    result
-    ${res}    Get From Dictionary result
+    ${res}    Get From Dictionary    ${respJson}    result
     [Return]    ${res}

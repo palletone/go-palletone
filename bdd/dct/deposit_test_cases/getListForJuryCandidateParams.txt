@@ -6,5 +6,6 @@ Resource          publicParams.txt
 *** Keywords ***
 getListForJuryCandidate
     ${one}    Create List    GetListForJuryCandidate
-    ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForJuryCandidate    ${one}
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForJuryCandidate    ${two}
     [Return]    ${result}

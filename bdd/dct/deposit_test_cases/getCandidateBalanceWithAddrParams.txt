@@ -7,7 +7,8 @@ Resource          publicParams.txt
 获取某个节点的账户余额的参数
     [Arguments]    ${nodeAddr}
     ${one}    Create List    GetNodeBalance    ${nodeAddr}
-    [Return]    ${one}
+    ${two}    Create List    ${one}
+    [Return]    ${two}
 
 getCandidateBalanceWithAddr
     [Arguments]    ${nodeAddr}
