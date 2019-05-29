@@ -119,7 +119,7 @@ after_script:
   # echo ftp address
   - "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/palletone"
   - "If you want to open it in explorer, you should close VPN first."
-  - "If you want to open in windows explorer, you can should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
+  - "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
 
 before_install:
     - go get github.com/mattn/goveralls
