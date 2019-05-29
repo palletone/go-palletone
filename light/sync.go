@@ -17,6 +17,7 @@
 package light
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -98,12 +99,18 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		return
 	}
 
+	headhash, number := peer.HeadAndNumber(assetId)
+	if common.EmptyHash(headhash) || number == nil {
+		log.Debug("Light PalletOne synchronise is nil", "assetId", assetId)
+		return
+	}
 	if atomic.LoadUint32(&pm.fastSync) == 0 {
 		log.Debug("Light PalletOne synchronising")
 		return
 	}
 	atomic.StoreUint32(&pm.fastSync, 0)
-	headhash, number := peer.HeadAndNumber(assetId)
+	defer atomic.StoreUint32(&pm.fastSync, 1)
+
 	log.Debug("Enter Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
 	defer log.Debug("End Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
 
@@ -112,10 +119,10 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		return
 	}
 
-	if atomic.LoadUint32(&pm.fastSync) == 0 {
-		log.Debug("Fast sync complete, auto disabling")
-		atomic.StoreUint32(&pm.fastSync, 1)
-	}
+	//if atomic.LoadUint32(&pm.fastSync) == 0 {
+	//	log.Debug("Fast sync complete, auto disabling")
+	//	atomic.StoreUint32(&pm.fastSync, 1)
+	//}
 
 	header := pm.dag.CurrentHeader(assetId)
 	if header != nil && header.Number.Index > 0 {
