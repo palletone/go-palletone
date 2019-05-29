@@ -13,7 +13,6 @@ Resource          publicParams.txt
 getMediatorDepositWithAddr
     [Arguments]    ${nodeAddr}
     ${11}    获取某个节点的账户    ${nodeAddr}
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetMediatorDeposit    ${11}
-    ${respContentJson}    to json    ${resp.content}
-    ${balance}    Set Variable    ${respContentJson['result']}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetMediatorDeposit    ${11}
+    ${balance}    To Json    ${result}
     [Return]    ${balance}

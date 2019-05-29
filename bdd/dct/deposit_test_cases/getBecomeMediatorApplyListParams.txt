@@ -1,15 +1,12 @@
 *** Settings ***
 Library           RequestsLibrary
-Resource          publicParams.txt
 
 *** Variables ***
 
 *** Keywords ***
 getBecomeMediatorApplyList
     ${one}    Create List    GetBecomeMediatorApplyList
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetBecomeMediatorApplyList    ${one}
-    ${respContentJson}    to json    ${resp.content}
-    #    ${resultLen}    get Length    ${respContentJson['result']}
-    #    &{addressList}    Run Keyword If    ${resultLen} != 0    Evaluate    [addressList['address'] for addressList in ${respContentJson['result']}]
-    ${addressList}    Create Dictionary    ${respContentJson['result']
-    [Return]    &{addressList}
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetBecomeMediatorApplyList    ${two}
+    ${addressMap}    To Json    ${result}
+    [Return]    ${addressMap}

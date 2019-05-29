@@ -3,17 +3,15 @@ Resource          publicParams.txt
 
 *** Keywords ***
 基金会处理申请所需参数
-    [Arguments]    ${foundationAddr}    ${index}
-    ${获取Mediator申请加入列表 }    获取Mediator申请加入列表    ${index}
-    ${获取Mediator申请加入列表}    Run Keyword If    ${获取Mediator申请加入列表 } != 0    Evaluate    ${获取Mediator申请加入列表}[0]
-    ${1}    Create List    HandleForApplyBecomeMediator    ok    ${获取Mediator申请加入列表}
-    ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
-    [Return]    ${one}
+    [Arguments]    ${foundationAddr}    ${mediatorAddr}
+    ${one}    Create List    HandleForApplyBecomeMediator    ok    ${mediatorAddr}
+    ${two}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${one}
+    log    ${two}
+    [Return]    ${two}
 
 handleForApplyBecomeMediator
-    [Arguments]    ${foundationAddr}    ${index}
-    ${基金会处理申请所需参数 }    基金会处理申请所需参数    ${foundationAddr}    ${index}
-    ${resp}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyBecomeMediator    ${基金会处理申请所需参数 }
-    ${result}    Set Variable    ${resp.content}
+    [Arguments]    ${foundationAddr}    ${mediatorAddr}
+    ${基金会处理申请所需参数 }    基金会处理申请所需参数    ${foundationAddr}    ${mediatorAddr}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyBecomeMediator    ${基金会处理申请所需参数 }
     sleep    8
     [Return]    ${result}
