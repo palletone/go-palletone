@@ -107,7 +107,7 @@ Business_04
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil
     ${result}    getListForDeveloperCandidate    #获取developer候选列表里的节点，不为空
-    Dictionary Should Not Contain Key    ${result}    ${developerAddr_01}
+    Dictionary Should Contain Key    ${result}    ${developerAddr_01}
     log    ${result}
 
 Business_06
