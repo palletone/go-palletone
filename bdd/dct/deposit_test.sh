@@ -66,8 +66,8 @@ echo "----0000"
 echo $found
 pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found --test Business_01 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found --test Business_02 ./deposit_test_cases/DepositContractTest.robot
-pybot -d ./log -v juryAddr:$jury_01 --test Business_03 ./deposit_test_cases/DepositContractTest.robot
-pybot -d ./log -v developerAddr:$developer_01 --test Business_04 ./deposit_test_cases/DepositContractTest.robot
+#pybot -d ./log -v juryAddr:$jury_01 --test Business_03 ./deposit_test_cases/DepositContractTest.robot
+#pybot -d ./log -v developerAddr:$developer_01 --test Business_04 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v juryAddr:$jury_01 -v foundationAddr:$found --test Business_06 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v developerAddr:$developer_01 --test Business_07 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_02:$mdi_02 --test Business_05 ./deposit_test_cases/DepositContractTest.robot
@@ -77,8 +77,8 @@ pybot -d ./log -v developerAddr:$developer_01 --test Business_04 ./deposit_test_
 #robot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found -v anotherAddr:$another --test Business_02 ./deposit_test_cases/DepositContractTest.robot
 #echo $another
 #echo $mdi_02
-echo $jury_01
-echo $developer_01
+#echo $jury_01
+#echo $developer_01
 #echo $another1
 #pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$mdi_01 -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v anotherAddr:$another1 ./deposit_test_cases/DepositContractTest.robot
 
