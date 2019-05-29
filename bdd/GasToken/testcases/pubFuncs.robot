@@ -7,7 +7,7 @@ genInvoketxParams
     [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}
     ...    ${certid}
     ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}
-    ...    ${args}    ${certid}
+    ...    ${args}    ${certid}    0
     [Return]    ${params}
 
 newAccount
