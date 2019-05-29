@@ -198,7 +198,7 @@ func (p *testTxPool) AddSequenTxs(txs []*modules.Transaction) error {
 	return nil
 }
 
-func (p *testTxPool) Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
+func (p *testTxPool) Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
 	return nil, nil
 }
 

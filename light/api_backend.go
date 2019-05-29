@@ -136,7 +136,7 @@ func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
 	return 0, 0, 0
 }
 
-func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
+func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
 	return nil, nil
 	//return b.ptn.txPool.Content()
 }

@@ -22,10 +22,10 @@ env:
     - REPORT_NAME=report.html
 ##########  control testcase  ##############
     - IS_RUN_DEPOSIT=false
-    - IS_RUN_CREATE_TRANS=true
-    - IS_RUN_CCINVOKE=true
-    - IS_RUN_DIGITAL=true
-    - IS_RUN_VOTE=true
+    - IS_RUN_CREATE_TRANS=false
+    - IS_RUN_CCINVOKE=false
+    - IS_RUN_DIGITAL=false
+    - IS_RUN_VOTE=false
     - IS_RUN_GASTOKEN=true
     - GO111MODULE=on
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
@@ -35,6 +35,8 @@ script:
   - make gptn
   #- $GOPATH/bin/goveralls -service=travis-ci
   - cp gptn bdd/node
+  - mkdir bdd/GasToken/node
+  - cp gptn bdd/GasToken/node
   - cd bdd/node
   - chmod +x gptn
   - python init.py
@@ -77,46 +79,48 @@ after_script:
   - sleep 2
 #  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
   # upload all log
-  - curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
+  - curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
 
   # upload deposit log
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DEPOSIT_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DEPOSIT_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DEPOSIT_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DEPOSIT_DIR/${REPORT_NAME} -v;
     fi
 
   # upload create transactions log and report
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/${REPORT_NAME} -v;
     fi
 
   # upload ccinvoke log and report
   - if [ $IS_RUN_CCINVOKE == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CCINVOKE_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CCINVOKE_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CCINVOKE_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CCINVOKE_DIR/${REPORT_NAME} -v;
     fi
 
   # upload voteContract log and report
   - if [ $IS_RUN_VOTE == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} -v;
     fi
 
   # upload digital identity log and report
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -v;
     fi
 
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/$LOG_NAME -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/gastoken_all.log -T ${GAS_TOKEN_ALL_LOG_PATH} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/$LOG_NAME -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/gastoken_all.log -T ${GAS_TOKEN_ALL_LOG_PATH} -v;
     fi
 
   # echo ftp address
-  - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141', but you should quit VPN first"
+  - "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/certbdd"
+  - "If you want to open it in explorer, you should close VPN first."
+  - "If you want to open in windows explorer, you can should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
 
 before_install:
     - go get github.com/mattn/goveralls

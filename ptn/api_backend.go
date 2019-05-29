@@ -183,7 +183,7 @@ func (b *PtnApiBackend) Stats() (int, int, int) {
 	return b.ptn.txPool.Stats()
 }
 
-func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
+func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
 	return b.ptn.TxPool().Content()
 }
 func (b *PtnApiBackend) Queued() ([]*modules.TxPoolTransaction, error) {

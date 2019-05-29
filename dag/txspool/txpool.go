@@ -359,23 +359,23 @@ func (pool *TxPool) stats() (int, int, int) {
 
 // Content retrieves the data content of the transaction pool, returning all the
 // pending as well as queued transactions, grouped by account and sorted by nonce.
-func (pool *TxPool) Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
-	pending := make(map[common.Hash]*modules.Transaction)
-	queue := make(map[common.Hash]*modules.Transaction)
+func (pool *TxPool) Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
+	pending := make(map[common.Hash]*modules.TxPoolTransaction)
+	queue := make(map[common.Hash]*modules.TxPoolTransaction)
 
 	alltxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
 	for hash, tx := range alltxs {
 		if tx.Pending {
-			pending[hash] = tx.Tx
+			pending[hash] = tx
 		}
 		if !tx.Pending && !tx.Confirmed {
-			queue[hash] = tx.Tx
+			queue[hash] = tx
 		}
 	}
 	for hash, tx := range orphanTxs {
 		if !tx.Pending {
-			queue[hash] = tx.Tx
+			queue[hash] = tx
 		}
 	}
 	return pending, queue
