@@ -11,5 +11,5 @@ getBecomeMediatorApplyList
     ${respContentJson}    to json    ${resp.content}
     #    ${resultLen}    get Length    ${respContentJson['result']}
     #    &{addressList}    Run Keyword If    ${resultLen} != 0    Evaluate    [addressList['address'] for addressList in ${respContentJson['result']}]
-    &{addressList}    Create Dictionary    ${respContentJson['result']
+    ${addressList}    Create Dictionary    ${respContentJson['result']
     [Return]    &{addressList}

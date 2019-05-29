@@ -17,7 +17,7 @@ Business_01
     log    ${result}
     @{addressList1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
     log    @{addressList1}
-    Should Be True    '${mediatorAddr_01}' in @{addressList1}
+    Dictionary Should Contain Key    @{addressList1}    ${mediatorAddr_01}
     ${result}    handleForApplyBecomeMediator    ${foundationAddr}    0    #基金会处理列表里的节点（同意）
     log    ${result}
     @{addressList2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
