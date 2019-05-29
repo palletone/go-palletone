@@ -131,18 +131,18 @@ func (p *testTxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
 	return true, nil
 }
 
-func (p *testTxPool) AddLocal(tx *modules.TxPoolTransaction) error {
+func (p *testTxPool) AddLocal(tx *modules.Transaction) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	p.pool = append(p.pool, tx.Tx)
+	p.pool = append(p.pool, tx)
 	if p.added != nil {
 		p.added <- p.pool
 	}
 	return nil
 }
 
-func (p *testTxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
+func (p *testTxPool) AddLocals(txs []*modules.Transaction) []error {
 	errs := make([]error, 0)
 	for _, tx := range txs {
 		errs = append(errs, p.AddLocal(tx))
@@ -374,7 +374,7 @@ func (p *testPeer) close() {
 }
 
 func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
-	dag, _ := dag.NewDagForTest(Memdb, nil)
+	dag, _ := dag.NewDagForTest(Memdb)
 	genesisUnit := newGenesisForTest(dag.Db)
 	newDag(dag.Db, genesisUnit, unitAccount)
 	return dag, nil
