@@ -94,7 +94,6 @@ Business_03
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
     log    ${result}
-    Should Not Be Equal    ${result}    balance is nil
     ${resul}    getListForJuryCandidate    #为空
     log    ${resul}
 
