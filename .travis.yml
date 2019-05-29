@@ -3,6 +3,11 @@ dist: xenial
 sudo: required
 language:
   - go
+  - ruby
+
+services:
+  - docker
+
 go:
     - 1.12.5
     - 1.10.8
@@ -20,7 +25,7 @@ env:
     - GAS_TOKEN_DIR=gasToken
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
-##########  control testcase  ##############
+    # ------- control testcases ---------
     - IS_RUN_DEPOSIT=false
     - IS_RUN_CREATE_TRANS=false
     - IS_RUN_CCINVOKE=false
@@ -28,7 +33,36 @@ env:
     - IS_RUN_VOTE=false
     - IS_RUN_GASTOKEN=true
     - GO111MODULE=on
+    # ------ end of control testcases -------
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
+
+before_install:
+    - go get github.com/mattn/goveralls
+    - go get -u github.com/palletone/adaptor
+    - go get -u github.com/palletone/btc-adaptor
+    - go get -u github.com/palletone/eth-adaptor
+    - source ./build/goget_by_version.sh
+    - source ./gomockgen.sh
+    #------- docker setting ----
+    - git clone https://github.com/travis-ci/docker-sinatra /root/sinatra
+    - docker build -t carlad/sinatra .
+    - docker run -d -p 127.0.0.1:80:4567 carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec foreman start;"
+    - docker ps -a
+    - docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test"
+    #------- end of docker setting ----
+
+install:
+  - python -V
+  - whereis python
+  - which python
+  - sudo -H pip install --upgrade pip
+  - sudo -H pip install robotframework==2.8.5
+  - sudo -H pip install requests
+  - sudo -H pip install robotframework-requests
+  - sudo -H pip install demjson
+  - sudo -H pip install pexpect
+  - sudo -H apt-get install expect
+  #- sudo -H apt-get install jq tcl tk
 
 script:
   - go build ./cmd/gptn
@@ -72,11 +106,15 @@ script:
     sleep 15;
     python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
+  # ---- docker test ------
+  - docker --version
+  - bundle exec rake test
+  # ---- end of docker test -----
 
 after_script:
   - killall gptn
   - sleep 2
-#  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+  #  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
   # upload all log
   - curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
 
@@ -120,27 +158,6 @@ after_script:
   - "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/certbdd"
   - "If you want to open it in explorer, you should close VPN first."
   - "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
-
-before_install:
-    - go get github.com/mattn/goveralls
-    - go get -u github.com/palletone/adaptor
-    - go get -u github.com/palletone/btc-adaptor
-    - go get -u github.com/palletone/eth-adaptor
-    - source ./build/goget_by_version.sh
-    - source ./gomockgen.sh
-
-install:
-  - python -V
-  - whereis python
-  - which python
-  - sudo -H pip install --upgrade pip
-  - sudo -H pip install robotframework==2.8.5
-  - sudo -H pip install requests
-  - sudo -H pip install robotframework-requests
-  - sudo -H pip install demjson
-  - sudo -H pip install pexpect
-  - sudo -H apt-get install expect
-  #- sudo -H apt-get install jq tcl tk
 
 addons:
   apt:
