@@ -43,12 +43,16 @@ Business_01
     Should Be Equal    ${result}    balance is nil    #账户地址不存在
     ${result}    getBecomeMediatorApplyList    #为空
     log    ${result}
+    Dictionary Should Not Contain Key    @{result}    ${mediatorAddr_01}
     ${result}    getAgreeForBecomeMediatorList    #为空
     log    ${result}
+    Dictionary Should Not Contain Key    @{result}    ${mediatorAddr_01}
     ${result}    getListForMediatorCandidate    #为空
     log    ${result}
+    Dictionary Should Not Contain Key    @{result}    ${mediatorAddr_01}
     ${result}    getQuitMediatorApplyList    #为空
     log    ${result}
+    Dictionary Should Not Contain Key    @{result}    ${mediatorAddr_01}
 
 Business_02
     [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》社区节点申请没收改地址所以保证金-》基金会同意，此时，只有同意列表不为空，其他的为空。
