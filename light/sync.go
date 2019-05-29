@@ -50,7 +50,7 @@ func (pm *ProtocolManager) syncer() {
 			if pm.peers.Len() < minDesiredPeerCount {
 				break
 			}
-			go pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
+			go pm.syncall() //pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
 
 		case <-forceSync:
 			// Force a sync even if not enough peers are present
@@ -63,7 +63,8 @@ func (pm *ProtocolManager) syncer() {
 }
 
 func (pm *ProtocolManager) syncall() {
-	return
+	log.Debug("Enter Light PalletOne syncall")
+	defer log.Debug("End Light PalletOne syncall")
 	if atomic.LoadUint32(&pm.fastSync) == 0 {
 		log.Debug("Light PalletOne syncall synchronising")
 		return
@@ -78,7 +79,11 @@ func (pm *ProtocolManager) syncall() {
 	if err != nil {
 		log.Debug("Light PalletOne syncall FetchAllToken", "err", err)
 	}
-	log.Debug("Light PalletOne syncall FetchAllToken", "len(headers)", len(headers), "headers", headers)
+	//log.Debug("Light PalletOne syncall FetchAllToken", "len(headers)", len(headers), "headers", headers)
+	for _, header := range headers {
+		log.Debug("Light PalletOne syncall FetchAllToken", "asset", header.Number.AssetID, "index", header.Number.Index)
+		pm.synchronise(p, header.Number.AssetID)
+	}
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.
@@ -99,7 +104,8 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	}
 	atomic.StoreUint32(&pm.fastSync, 0)
 	headhash, number := peer.HeadAndNumber(assetId)
-	log.Debug("Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
+	log.Debug("Enter Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
+	defer log.Debug("End Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
 
 	if err := pm.downloader.Synchronise(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID); err != nil {
 		log.Debug("Light PalletOne ProtocolManager synchronise", "Synchronise err:", err)
