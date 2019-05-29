@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"bytes"
-	"github.com/ethereum/go-ethereum/rlp"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -633,7 +633,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	return dag, nil
 }
 
-func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
+func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 	//logger := log.New("Dag")
 	dagDb := storage.NewDagDb(db)
@@ -1089,70 +1089,69 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 //	}
 //	return true, nil
 //}
-
-func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
-	// get current unit
-	token := modules.PTNCOIN
-	currentUnit := d.CurrentUnit(token)
-	if currentUnit == nil {
-		return nil, fmt.Errorf("CreateUnitForTest ERROR: genesis unit is null")
-	}
-	// compute height
-	height := &modules.ChainIndex{
-		AssetID: currentUnit.UnitHeader.Number.AssetID,
-		//IsMain:  currentUnit.UnitHeader.Number.IsMain,
-		Index: currentUnit.UnitHeader.Number.Index + 1,
-	}
-	//
-	unitHeader := modules.Header{
-		ParentsHash: []common.Hash{currentUnit.UnitHash},
-		//Authors:      nil,
-		GroupSign:   make([]byte, 0),
-		GroupPubKey: make([]byte, 0),
-		Number:      height,
-		Time:        time.Now().Unix(),
-	}
-
-	sAddr := "P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B"
-	addr, err := common.StringToAddress(sAddr)
-	if err != nil {
-
-	}
-	bAsset, _, _ := d.unstableStateRep.GetConfig("GenesisAsset")
-	if len(bAsset) <= 0 {
-		return nil, fmt.Errorf("Create unit error: query asset info empty")
-	}
-	var asset modules.Asset
-	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
-		return nil, fmt.Errorf("Create unit: %s", err.Error())
-	}
-	ad := &modules.Addition{
-		Addr:   addr,
-		Asset:  asset,
-		Amount: 0,
-	}
-	ads := make([]*modules.Addition, 0)
-	ads = append(ads, ad)
-	coinbase, _, err := dagcommon.CreateCoinbase(ads, time.Now())
-	if err != nil {
-		log.Error(err.Error())
-		return nil, err
-	}
-	newTxs := modules.Transactions{coinbase}
-	if len(txs) > 0 {
-		for _, tx := range txs {
-			txs = append(txs, tx)
-		}
-	}
-
-	unit := modules.Unit{
-		UnitHeader: &unitHeader,
-		Txs:        newTxs,
-	}
-	unit.UnitHash = unit.Hash()
-	unit.UnitSize = unit.Size()
-	return &unit, nil
-}
+//
+//func (d *Dag) CreateUnitForTest(txs modules.Transactions) (*modules.Unit, error) {
+//	// get current unit
+//	token := modules.PTNCOIN
+//	currentUnit := d.CurrentUnit(token)
+//	if currentUnit == nil {
+//		return nil, fmt.Errorf("CreateUnitForTest ERROR: genesis unit is null")
+//	}
+//	// compute height
+//	height := &modules.ChainIndex{
+//		AssetID: currentUnit.UnitHeader.Number.AssetID,
+//		//IsMain:  currentUnit.UnitHeader.Number.IsMain,
+//		Index: currentUnit.UnitHeader.Number.Index + 1,
+//	}
+//	//
+//	unitHeader := modules.Header{
+//		ParentsHash: []common.Hash{currentUnit.UnitHash},
+//		//Authors:      nil,
+//		GroupSign:   make([]byte, 0),
+//		GroupPubKey: make([]byte, 0),
+//		Number:      height,
+//		Time:        time.Now().Unix(),
+//	}
+//
+//	sAddr := "P1NsG3kiKJc87M6Di6YriqHxqfPhdvxVj2B"
+//	addr, err := common.StringToAddress(sAddr)
+//	if err != nil {
+//
+//	}
+//	bAsset, _, _ := d.unstableStateRep.GetConfig("GenesisAsset")
+//	if len(bAsset) <= 0 {
+//		return nil, fmt.Errorf("Create unit error: query asset info empty")
+//	}
+//	var asset modules.Asset
+//	if err := rlp.DecodeBytes(bAsset, &asset); err != nil {
+//		return nil, fmt.Errorf("Create unit: %s", err.Error())
+//	}
+//	ad := &modules.Addition{
+//		Addr:   addr,
+//	}
+//	ad.AmountAsset.Asset=&asset
+//	ads := make([]*modules.Addition, 0)
+//	ads = append(ads, ad)
+//	coinbase, _, err := dagcommon.CreateCoinbase(ads, time.Now())
+//	if err != nil {
+//		log.Error(err.Error())
+//		return nil, err
+//	}
+//	newTxs := modules.Transactions{coinbase}
+//	if len(txs) > 0 {
+//		for _, tx := range txs {
+//			txs = append(txs, tx)
+//		}
+//	}
+//
+//	unit := modules.Unit{
+//		UnitHeader: &unitHeader,
+//		Txs:        newTxs,
+//	}
+//	unit.UnitHash = unit.Hash()
+//	unit.UnitSize = unit.Size()
+//	return &unit, nil
+//}
 func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
 	return d.stableUnitRep.GetGenesisUnit()
 }

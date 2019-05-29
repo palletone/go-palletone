@@ -321,6 +321,21 @@ func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgRea
 	return newPeer(pv, nv, p, newMeteredMsgWriter(rw))
 }
 
+func (pm *ProtocolManager) getcorsinfo() [][][]byte {
+	var datas [][][]byte
+	if headers, err := pm.dag.GetAllLeafNodes(); err != nil {
+		return datas
+	} else {
+		for _, header := range headers {
+			var data [][]byte
+			data = append(data, header.Hash().Bytes())
+			data = append(data, header.Number.Bytes())
+			datas = append(datas, data)
+		}
+	}
+	return datas
+}
+
 // handle is the callback invoked to manage the life cycle of a les peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
@@ -345,7 +360,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		headhash = head.Hash()
 	}
 
-	if err := p.Handshake(number, genesis.Hash(), pm.server, headhash); err != nil {
+	if err := p.Handshake(number, genesis.Hash(), pm.server, headhash, pm.getcorsinfo()); err != nil {
 		log.Debug("Light Palletone handshake failed", "err", err)
 		return err
 	}

@@ -158,16 +158,16 @@ func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transacti
 	return nil, nil
 }
 
-func (ud *UnitDag4Test) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error){
-	return nil,nil
+func (ud *UnitDag4Test) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	return nil, nil
 }
 
-func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error){
-	return nil,nil
+func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error) {
+	return nil, nil
 }
 
 func (ud *UnitDag4Test) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
-	return nil,nil
+	return nil, nil
 }
 
 // create txs
@@ -238,7 +238,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	t1 := time.Now()
 	fmt.Println("addlocals start.... ", t1)
-	pool.AddLocals(txpool_txs)
+	pool.AddLocals(txs)
 	pendingTxs, _ := pool.pending()
 	pending := 0
 	p_txs := make([]*modules.TxPoolTransaction, 0)
