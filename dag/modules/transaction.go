@@ -114,7 +114,7 @@ type TxPoolTransaction struct {
 	IsOrphan     bool
 	Discarded    bool         // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
-	Index        int          `json:"index"  rlp:"-"` // index 是该tx在优先级堆中的位置
+	Index        int          `json:"index"` // index 是该tx在优先级堆中的位置
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time

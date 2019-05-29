@@ -21,7 +21,7 @@ power unlock its account succeed
 power issues intermediate certificate name cert2 to section succeed
     Log    "power issues intermediate certificate name cert2 to section succeed"
     ${args}=    Create List    addServerCert    ${sectionCertHolder}    ${sectionCertBytes}
-    ${params}=    Create List    ${powerCertHolder}    ${powerCertHolder}    1    1    ${certContractAddr}
+    ${params}=    genInvoketxParams    ${powerCertHolder}    ${powerCertHolder}    1    1    ${certContractAddr}
     ...    ${args}    ${null}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    addServerCert
     Dictionary Should Contain Key    ${respJson}    result

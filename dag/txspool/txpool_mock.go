@@ -307,10 +307,10 @@ func (mr *MockITxPoolMockRecorder) Stats() *gomock.Call {
 }
 
 // Content mocks base method
-func (m *MockITxPool) Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
+func (m *MockITxPool) Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
 	ret := m.ctrl.Call(m, "Content")
-	ret0, _ := ret[0].(map[common.Hash]*modules.Transaction)
-	ret1, _ := ret[1].(map[common.Hash]*modules.Transaction)
+	ret0, _ := ret[0].(map[common.Hash]*modules.TxPoolTransaction)
+	ret1, _ := ret[1].(map[common.Hash]*modules.TxPoolTransaction)
 	return ret0, ret1
 }
 
