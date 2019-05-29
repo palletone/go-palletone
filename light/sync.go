@@ -63,6 +63,7 @@ func (pm *ProtocolManager) syncer() {
 }
 
 func (pm *ProtocolManager) syncall() {
+	return
 	if atomic.LoadUint32(&pm.fastSync) == 0 {
 		log.Debug("Light PalletOne syncall synchronising")
 		return
