@@ -35,7 +35,7 @@ script:
     - netstat -ap | grep gptn
     - cd ../dct
     - mkdir -p ${BDD_LOG_PATH}
-#    - ./deposit_test.sh 4
+    - ./deposit_test.sh 4
     - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ../testcase/createTrans
     - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ../testcase/crtCoinContract
     - python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/
