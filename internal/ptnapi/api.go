@@ -146,28 +146,25 @@ func NewPublicTxPoolAPI(b Backend) *PublicTxPoolAPI {
 }
 
 // Content returns the transactions contained within the transaction pool.
-func (s *PublicTxPoolAPI) Content() map[string]map[string]map[string]*RPCTransaction {
-	content := map[string]map[string]map[string]*RPCTransaction{
-		"pending": make(map[string]map[string]*RPCTransaction),
-		"queued":  make(map[string]map[string]*RPCTransaction),
+func (s *PublicTxPoolAPI) Content() map[string]map[string]*RPCTransaction {
+	content := map[string]map[string]*RPCTransaction{
+		"pending": make(map[string]*RPCTransaction),
+		"queued":  make(map[string]*RPCTransaction),
 	}
 	pending, queue := s.b.TxPoolContent()
 
 	// Flatten the pending transactions
-	for account, tx := range pending {
-		txHash := tx.Hash()
+	for hash, tx := range pending {
 		dump := make(map[string]*RPCTransaction)
-		dump[txHash.String()] = newRPCPendingTransaction(tx)
-		content["pending"][account.String()] = dump
+		dump[hash.String()] = newRPCPendingTransaction(tx)
+		content["pending"] = dump
 	}
 	// Flatten the queued transactions
-	for account, tx := range queue {
-		txHash := tx.Hash()
+	for hash, tx := range queue {
 		dump := make(map[string]*RPCTransaction)
+		dump[hash.String()] = newRPCPendingTransaction(tx)
 
-		dump[txHash.String()] = newRPCPendingTransaction(tx)
-
-		content["queued"][account.String()] = dump
+		content["queued"] = dump
 	}
 	return content
 }
@@ -183,7 +180,11 @@ func (s *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
 }
 func (s *PublicTxPoolAPI) Queue() map[common.Hash]*modules.Transaction {
 	_, queue := s.b.TxPoolContent()
-	return queue
+	result := make(map[common.Hash]*modules.Transaction)
+	for hash, tx := range queue {
+		result[hash] = tx.Tx
+	}
+	return result
 }
 
 func (s *PublicTxPoolAPI) Pending() ([]*ptnjson.TxPoolPendingJson, error) {
@@ -703,13 +704,6 @@ type RPCTransaction struct {
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
-	// var signer types.Signer = types.FrontierSigner{}
-	// if tx.Protected() {
-	// 	return nil //signer = types.NewEIP155Signer(tx.ChainId())
-	// }
-	// from, _ := types.Sender(signer, tx)
-	// v, r, s := tx.RawSignatureValues()
-
 	result := &RPCTransaction{
 		Hash: tx.Hash(),
 	}
@@ -722,8 +716,11 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, blockNumb
 }
 
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
-func newRPCPendingTransaction(tx *modules.Transaction) *RPCTransaction {
-	return newRPCTransaction(tx, common.Hash{}, 0, 0)
+func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
+	if tx.UnitHash != (common.Hash{}) {
+		return newRPCTransaction(tx.Tx, tx.UnitHash, 0, 0)
+	}
+	return newRPCTransaction(tx.Tx, common.Hash{}, 0, 0)
 }
 
 /*

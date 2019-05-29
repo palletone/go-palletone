@@ -2,6 +2,13 @@
 Resource          pubVariables.robot
 
 *** Keywords ***
+genInvoketxParams
+    [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}
+    ...    ${certid}
+    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}
+    ...    ${args}    ${certid}    0
+    [Return]    ${params}
+
 addCert
     [Arguments]    ${addAddr}    ${addCertMethod}    ${certHolder}    ${certBytes}
     ${args}=    Create List    ${addCertMethod}    ${certHolder}    ${certBytes}
