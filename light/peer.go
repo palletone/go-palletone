@@ -218,6 +218,10 @@ func (p *peer) SendUnitHeaders(reqID, bv uint64, headers []*modules.Header) erro
 	return sendResponse(p.rw, BlockHeadersMsg, reqID, bv, headers)
 }
 
+func (p *peer) SendLeafNodes(reqID, bv uint64, headers []*modules.Header) error {
+	return sendResponse(p.rw, LeafNodesMsg, reqID, bv, headers)
+}
+
 // SendBlockBodiesRLP sends a batch of block contents to the remote peer from
 // an already RLP encoded format.
 //func (p *peer) SendBlockBodiesRLP(reqID, bv uint64, bodies []rlp.RawValue) error {
