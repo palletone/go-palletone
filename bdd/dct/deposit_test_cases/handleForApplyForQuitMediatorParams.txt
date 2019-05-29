@@ -10,8 +10,8 @@ Resource          publicParams.txt
     [Return]    ${two}
 
 handleForApplyForQuitMediator
-    [Arguments]    ${foundationAddr}
-    ${基金会处理申请退出Mediator列表的所需参数}    基金会处理申请退出Mediator列表的所需参数    ${foundationAddr}
+    [Arguments]    ${foundationAddr}    ${mediatorAddr}
+    ${基金会处理申请退出Mediator列表的所需参数}    基金会处理申请退出Mediator列表的所需参数    ${foundationAddr}    ${mediatorAddr}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyForQuitMediator    ${基金会处理申请退出Mediator列表的所需参数}
     sleep    8
     [Return]    ${result}

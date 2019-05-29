@@ -36,7 +36,7 @@ Business_01
     @{addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
     log    @{addressMap4}
     Dictionary Should Contain Key    @{addressMap4}    ${mediatorAddr_01}
-    ${result}    handleForApplyForQuitMediator    ${foundationAddr}     ${mediatorAddr_01}    #基金会处理退出候选列表里的节点（同意）
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
     ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${result}
