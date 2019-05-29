@@ -86,7 +86,7 @@ func (a *PublicMediatorAPI) IsInList(addStr string) (bool, error) {
 	return a.Dag().IsMediator(mediator), nil
 }
 
-func (a *PublicMediatorAPI) GetList() []string {
+func (a *PublicMediatorAPI) ListAll() []string {
 	addStrs := make([]string, 0)
 	mas := a.Dag().GetMediators()
 
@@ -115,7 +115,7 @@ func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
 	return a.Dag().LookupMediatorInfo()
 }
 
-func (a *PublicMediatorAPI) GetActives() []string {
+func (a *PublicMediatorAPI) ListActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.Dag().GetActiveMediators()
 
