@@ -22,7 +22,7 @@ user unlock account succed
 user uses debug contract to test getRequesterCert without error
     Log    "user uses debug contract to test getRequesterCert without error"
     ${args}=    Create List    ${getRequesterCertMethod}
-    ${params}=    Create List    ${userCertHolder}    ${userCertHolder}    1    1    ${debugContractAddr}
+    ${params}=    genInvoketxParams    ${userCertHolder}    ${userCertHolder}    1    1    ${debugContractAddr}
     ...    ${args}    ${userCertID}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    getRequesterCert
     Dictionary Should Contain Key    ${respJson}    result
@@ -30,7 +30,7 @@ user uses debug contract to test getRequesterCert without error
 user uses debug contract to test checkRequesterCert without error
     Log    "user uses debug contract to test checkRequesterCert without error"
     ${args}=    Create List    ${checkRequesterCertMethod}
-    ${params}=    Create List    ${userCertHolder}    ${userCertHolder}    1    1    ${debugContractAddr}
+    ${params}=    genInvoketxParams    ${userCertHolder}    ${userCertHolder}    1    1    ${debugContractAddr}
     ...    ${args}    ${userCertID}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    checkRequesterCert
     Dictionary Should Contain Key    ${respJson}    result

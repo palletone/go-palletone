@@ -3,6 +3,13 @@ Resource          pubVariables.robot
 Library           Collections
 
 *** Keywords ***
+genInvoketxParams
+    [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}
+    ...    ${certid}
+    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}
+    ...    ${args}    ${certid}
+    [Return]    ${params}
+
 newAccount
     ${params}=    Create List    ${pwd}
     ${respJson}=    sendRpcPost    personal_newAccount    ${params}    newAccount
@@ -55,7 +62,7 @@ issueToken
     [Arguments]    ${addr}    ${name}    ${amount}    ${decimal}    ${des}
     ${args}=    Create List    createToken    ${des}    ${name}    ${decimal}    ${amount}
     ...    ${addr}
-    ${params}=    Create List    ${addr}    ${addr}    100    1    ${prc720ContractAddr}
+    ${params}=    genInvoketxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}
     ...    ${args}    ${null}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    issueToken
     Dictionary Should Contain Key    ${respJson}    result
@@ -64,7 +71,7 @@ issueToken
 supplyToken
     [Arguments]    ${addr}    ${tokenID}    ${amount}
     ${args}=    Create List    supplyToken    ${tokenID}    ${amount}    ${addr}
-    ${params}=    Create List    ${addr}    ${addr}    100    1    ${prc720ContractAddr}
+    ${params}=    genInvoketxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}
     ...    ${args}    ${null}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    supplyToken
     Dictionary Should Contain Key    ${respJson}    result

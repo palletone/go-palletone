@@ -21,7 +21,7 @@ section unlock its account succeed
 section issues intermediate certificate name cert2 to user succeed
     Log    "section issues intermediate certificate name cert2 to user succeed"
     ${args}=    Create List    addServerCert    ${userCertHolder}    ${userCertBytes}
-    ${params}=    Create List    ${sectionCertHolder}    ${sectionCertHolder}    1    1    ${certContractAddr}
+    ${params}=    genInvoketxParams    ${sectionCertHolder}    ${sectionCertHolder}    1    1    ${certContractAddr}
     ...    ${args}    ${null}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    addServerCert
     Dictionary Should Contain Key    ${respJson}    result
