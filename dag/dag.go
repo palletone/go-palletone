@@ -436,6 +436,25 @@ func (d *Dag) refreshPartitionMemDag() {
 	db := d.Db
 	unitRep := d.stableUnitRep
 	propRep := d.stablePropRep
+
+	mainChain, err := d.stableStateRep.GetMainChain()
+	if err == nil && mainChain != nil {
+		//分区上要通过Memdag保留PTN的Header
+		if d.PartitionMemDag == nil {
+			d.PartitionMemDag = make(map[modules.AssetId]memunit.IMemDag)
+		}
+		mainChainMemDag, ok := d.PartitionMemDag[mainChain.GasToken]
+		threshold := int(mainChain.StableThreshold)
+		if !ok {
+			d.initDataForMainChainHeader(mainChain)
+			log.Debugf("Init main chain mem dag for:%s", mainChain.GasToken.String())
+			pmemdag := memunit.NewMemDag(mainChain.GasToken, threshold, true, db, unitRep, propRep, d.stableStateRep)
+			pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			d.PartitionMemDag[mainChain.GasToken] = pmemdag
+		} else {
+			mainChainMemDag.SetStableThreshold(threshold) //可能更新了该数字
+		}
+	}
 	partitions, err := d.stableStateRep.GetPartitionChains()
 	if err != nil {
 		log.Warnf("GetPartitionChains error:%s", err.Error())
@@ -482,6 +501,15 @@ func (d *Dag) initDataForPartition(partition *modules.PartitionChain) {
 	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
 	if !exist {
 		log.Debugf("Init partition[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
+		d.stableUnitRep.SaveHeader(pHeader)
+		d.stablePropRep.SetNewestUnit(pHeader)
+	}
+}
+func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
+	pHeader := mainChain.GetGenesisHeader()
+	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
+	if !exist {
+		log.Debugf("Init main chain[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
 		d.stableUnitRep.SaveHeader(pHeader)
 		d.stablePropRep.SetNewestUnit(pHeader)
 	}

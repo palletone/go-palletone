@@ -370,24 +370,31 @@ func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
 }
 
 func (pm *ProtocolManager) GetLeafNodesMsg(msg p2p.Msg, p *peer) error {
-	log.Debug("Light PalletOne ProtocolManager->GetLeafNodesMsg", "p.id", p.id)
+	//log.Debug("Light PalletOne ProtocolManager->GetLeafNodesMsg", "p.id", p.id)
 	headers, err := pm.dag.GetAllLeafNodes()
 	if err != nil {
 		log.Error("Light PalletOne ProtocolManager->GetLeafNodesMsg", "p.id", p.id, "GetAllLeafNodes err", err)
 		return err
 	}
-	log.Debug("Light PalletOne ProtocolManager->GetLeafNodesMsg", "p.id", p.id, "headers", headers)
+	headers = append(headers, pm.dag.CurrentHeader(pm.assetId))
+	log.Debug("Light PalletOne ProtocolManager->GetLeafNodesMsg", "p.id", p.id, "len(headers)", len(headers), "headers", headers)
+
 	p.SendLeafNodes(0, 0, headers)
 	return nil
 }
 
 func (pm *ProtocolManager) LeafNodesMsg(msg p2p.Msg, p *peer) error {
-	log.Debug("Light PalletOne ProtocolManager->LeafNodesMsg", "p.id", p.id)
-	var headers []*modules.Header
-	if err := msg.Decode(&headers); err != nil {
+	//var headers []*modules.Header
+	var resp struct {
+		ReqID, BV uint64
+		Headers   []*modules.Header
+	}
+	if err := msg.Decode(&resp); err != nil {
+		log.Debug("Light PalletOne ProtocolManager->LeafNodesMsg rlp", "err:", err)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	err := pm.downloader.DeliverHeaders(p.id, headers)
+	log.Debug("Light PalletOne ProtocolManager->LeafNodesMsg", "p.id", p.id, "len(headers)", len(resp.Headers), "headers", resp.Headers)
+	err := pm.downloader.DeliverAllToken(p.id, resp.Headers)
 	if err != nil {
 		log.Debug("Failed to deliver headers", "err", err.Error())
 	}
