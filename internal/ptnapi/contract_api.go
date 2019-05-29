@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"math/rand"
 	"strconv"
 	"time"
 
@@ -58,68 +57,56 @@ func NewPublicContractAPI(b Backend) *PublicContractAPI {
 //contract command
 //install
 func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
-	log.Info("CcInstall:" + ccname + ":" + ccpath + "_" + ccversion)
-
+	log.Info("CcInstall:", "ccname", ccname, "ccpath", ccpath, "ccversion", ccversion)
 	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion, "Descrition ...", "ABI file content", "go")
 	return hexutil.Bytes(templateId), err
 }
 
-func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, txid string, param []string) (hexutil.Bytes, error) {
+func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (hexutil.Bytes, error) {
 	tempId, _ := hex.DecodeString(templateId)
+	txid := "123"
 
-	//log.Info("Ccdeploy:" + templateId + ":" + txid)
-	//fmt.Printf("templateid=%v", tempId)
-	//fmt.Printf("-----------------parm len=%d", len(param))
-
+	log.Info("Ccdeploy:", "templateId", templateId, "txid", txid)
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
-		//fmt.Printf("index[%d], value[%s]\n", i, arg)
+		log.Info("Ccdeploy", "param index:", i, "arg", arg)
 	}
-	//f := "init"
-	//args := ut.ToChaincodeArgs(f, "a", "100", "b", "200")
 	deployId, err := s.b.ContractDeploy(tempId, txid, args, 30*time.Second)
 	return hexutil.Bytes(deployId), err
 }
 
-//func (s *PublicBlockChainAPI) Ccinvoke(ctx context.Context, txhex string) (string, error) {
-//	txBytes, _ := hex.DecodeString(txhex)
-//	rsp, err := s.b.ContractInvoke(txBytes)
-//	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
-//	return hex.EncodeToString(rsp), err
-//}
-
-func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, txid string, param []string /*fun string, key string, val string*/) (string, error) {
+func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
-	log.Info("-----Ccinvoke:" + contractId.String() + ":" + txid)
+	txid := "123"
+	log.Info("Ccinvoke" + contractId.String() + ":" + txid)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
-		//fmt.Printf("index[%d], value[%s]\n", i, arg)
+		log.Info("Ccinvoke", "param index:", i, "arg", arg)
 	}
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
 	rsp, err := s.b.ContractInvoke(contractId.Bytes(), txid, fullArgs, 0)
-	log.Info("-----ContractInvokeTxReq:" + hex.EncodeToString(rsp))
+	log.Info("Ccinvoke", "rsp", rsp)
 	return string(rsp), err
 }
 
-func (s *PublicContractAPI) Ccquery(ctx context.Context, deployId string, param []string) (string, error) {
-	contractId, _ := common.StringToAddress(deployId)
-	log.Info("-----Ccquery:", "contractId", contractId.String())
+func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, param []string) (string, error) {
+	contractId, _ := common.StringToAddress(contractAddr)
+	txid := "123"
+	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	log.Info("Ccquery", "contractId", contractId.String(), "txid", txid)
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
-		//fmt.Printf("index[%d],value[%s]\n", i, arg)
+		log.Info("Ccquery", "param index:", i, "arg", arg)
 	}
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
-
 	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid[:], fullArgs, 0)
 	if err != nil {
 		return "", err
@@ -127,11 +114,11 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, deployId string, param 
 	return string(rsp), nil
 }
 
-func (s *PublicContractAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("Ccstop:" + deployId + ":" + txid + "_")
-	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
-	err := s.b.ContractStop(depId, txid, false)
+func (s *PublicContractAPI) Ccstop(ctx context.Context, contractAddr string) error {
+	contractId, _ := hex.DecodeString(contractAddr)
+	txid := "123"
+	log.Info("Ccstop:" , "contractId",contractId,"txid", txid)
+	err := s.b.ContractStop(contractId, txid, false)
 	return err
 }
 

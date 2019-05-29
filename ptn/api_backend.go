@@ -525,14 +525,9 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 	return txjs, nil
 }
 
-//contract control
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) ([]byte, error) {
-	//tempid := []byte{0x1, 0x2, 0x3}
 	log.Debugf("======>ContractInstall:name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
-
-	//payload, err := cc.Install("palletone", ccName, ccPath, ccVersion)
 	payload, err := b.ptn.contract.Install("palletone", ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
-
 	return payload.TemplateId, err
 }
 

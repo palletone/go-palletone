@@ -295,16 +295,6 @@ func (pm *ProtocolManager) ProofsMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("Light PalletOne ProtocolManager ProofsMsg", "resp.key", resp.key)
 		pm.validation.AddSpvResp(resp)
 	}
-
-	//
-	//val, err, _ := trie.VerifyProof(root, []byte("abc"), resp)
-	//if err != nil {
-	//	log.Errorf("VerifyProof error for key %x: %v\nraw proof: %v", "abc", err, proofs)
-	//}
-	//if !bytes.Equal(val, []byte("abcdef")) {
-	//	log.Errorf("VerifyProof returned wrong value for key %x: got %x, want %x", "abc", val, "abddef")
-	//}
-
 	return nil
 }
 
@@ -376,9 +366,30 @@ func (pm *ProtocolManager) UTXOsMsg(msg p2p.Msg, p *peer) error {
 		return err
 	}
 
-	//if err:=json.Unmarshal(data,&respdata);err!=nil{
-	//	log.Error("Light PalletOne","ProtocolManager->UTXOsMsg  err",err,"data:",data)
-	//	return err
-	//}
 	return pm.utxosync.SaveUtxoView(respdata)
+}
+
+func (pm *ProtocolManager) GetLeafNodesMsg(msg p2p.Msg, p *peer) error {
+	log.Debug("Light PalletOne ProtocolManager->GetLeafNodesMsg", "p.id", p.id)
+	headers, err := pm.dag.GetAllLeafNodes()
+	if err != nil {
+		log.Error("Light PalletOne ProtocolManager->GetLeafNodesMsg", "p.id", p.id, "GetAllLeafNodes err", err)
+		return err
+	}
+	log.Debug("Light PalletOne ProtocolManager->GetLeafNodesMsg", "p.id", p.id, "headers", headers)
+	p.SendLeafNodes(0, 0, headers)
+	return nil
+}
+
+func (pm *ProtocolManager) LeafNodesMsg(msg p2p.Msg, p *peer) error {
+	log.Debug("Light PalletOne ProtocolManager->LeafNodesMsg", "p.id", p.id)
+	var headers []*modules.Header
+	if err := msg.Decode(&headers); err != nil {
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+	err := pm.downloader.DeliverHeaders(p.id, headers)
+	if err != nil {
+		log.Debug("Failed to deliver headers", "err", err.Error())
+	}
+	return err
 }
