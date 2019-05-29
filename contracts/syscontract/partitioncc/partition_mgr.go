@@ -90,8 +90,8 @@ func addPartitionChain(stub shim.ChaincodeStubInterface, chain *dm.PartitionChai
 	return stub.PutState(key, value)
 }
 func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
-	if len(args) < 10 {
-		return nil, errors.New("need 10 args (GenesisHeaderRlp,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,NetworkId,Version,StableThreshold,[Peers])")
+	if len(args) < 11 {
+		return nil, errors.New("need 11 args (GenesisHeaderRlp,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,NetworkId,Version,StableThreshold,[Peers],[CrossChainToken])")
 	}
 	var err error
 	gbytes, err := hex.DecodeString(args[0])
@@ -126,6 +126,12 @@ func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
 		}
 		partitionChain.Peers = peers
 	}
+	tokens := []dm.AssetId{}
+	err = json.Unmarshal([]byte(args[10]), &tokens)
+	if err != nil {
+		return nil, err
+	}
+	partitionChain.CrossChainTokens = tokens
 	return partitionChain, nil
 }
 func hasPermission(stub shim.ChaincodeStubInterface) bool {
@@ -177,12 +183,19 @@ func updatePartition(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 	return shim.Success(nil)
 }
 func buildMainChain(args []string) (*dm.MainChain, error) {
-	if len(args) < 7 {
-		return nil, errors.New("need 7 args (GenesisHash,GasToken,Status,SyncModel,[Peers])")
+	if len(args) < 8 {
+		return nil, errors.New("need 8 args (GenesisHeaderHex,GasToken,Status,SyncModel,StableThreshold,[Peers],[CrossChainToken])")
 	}
+	gbytes, _ := hex.DecodeString(args[0])
 	var err error
+	header := &dm.Header{}
+	err = rlp.DecodeBytes(gbytes, header)
+	if err != nil {
+		return nil, err
+	}
+
 	mainChain := &dm.MainChain{}
-	mainChain.GenesisHash = common.HexToHash(args[0])
+	mainChain.GenesisHeaderRlp = gbytes
 	mainChain.GasToken, _, err = dm.String2AssetId(args[1])
 	if err != nil {
 		return nil, err
@@ -191,14 +204,24 @@ func buildMainChain(args []string) (*dm.MainChain, error) {
 	mainChain.SyncModel = args[3][0] - '0'
 	mainChain.NetworkId, _ = strconv.ParseUint(args[4], 10, 64)
 	mainChain.Version, _ = strconv.ParseUint(args[5], 10, 64)
-	if len(args[6]) > 0 {
+	threshold, _ := strconv.ParseUint(args[6], 10, 32)
+	mainChain.StableThreshold = uint32(threshold)
+	if len(args[7]) > 0 {
 		peers := []string{}
-		err = json.Unmarshal([]byte(args[6]), &peers)
+		err = json.Unmarshal([]byte(args[7]), &peers)
 		if err != nil {
 			return nil, err
 		}
 		mainChain.Peers = peers
 	}
+
+	tokens := []dm.AssetId{}
+	err = json.Unmarshal([]byte(args[8]), &tokens)
+	if err != nil {
+		return nil, err
+	}
+	mainChain.CrossChainTokens = tokens
+
 	return mainChain, nil
 }
 func setMainChain(args []string, stub shim.ChaincodeStubInterface) pb.Response {

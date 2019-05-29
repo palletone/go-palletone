@@ -904,12 +904,7 @@ const Contract_JS = `
 web3._extend({
 	property: 'contract',
 	methods: [
-		new web3._extend.Method({
-			name: 'ccinvoke',
-			call: 'contract_ccinvoke',
-			params: 3,
-			inputFormatter: [null,null,null]
-		}),
+	   //ccTx
 		new web3._extend.Method({
 			name: 'ccinstalltx',
         	call: 'contract_ccinstalltx',
@@ -925,8 +920,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinvoketx',
         	call: 'contract_ccinvoketx',
-        	params: 7, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid
-			inputFormatter: [null, null, null,null, null, null, null]
+        	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid, timeout
+			inputFormatter: [null, null, null,null, null, null, null, null]
 		}),
         new web3._extend.Method({
 			name: 'ccinvoketxPass',
@@ -941,6 +936,32 @@ web3._extend({
 			inputFormatter: [null, null, null,null, null, null,null, null, null]
 		}),
 		new web3._extend.Method({
+			name: 'ccstoptx',
+        	call: 'contract_ccstoptx',
+        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
+			inputFormatter: [null, null, null, null, null, null]
+		}),
+
+		//cc
+		new web3._extend.Method({
+			name: 'ccinstall',
+        	call: 'contract_ccinstall',
+        	params: 3, //ccName string, ccPath string, ccVersion string
+			inputFormatter: [null, null, null]
+		}),
+		new web3._extend.Method({
+			name: 'ccdeploy',
+        	call: 'contract_ccdeploy',
+        	params: 2, //templateId, args []string ---->["init", "a", "1", "b", 10]
+			inputFormatter: [null, null]
+		}),
+		new web3._extend.Method({
+			name: 'ccinvoke',
+        	call: 'contract_ccinvoke',
+        	params: 2, // contractAddr, args[]string------>["fun", "key", "value"]
+			inputFormatter: [null, null]
+		}),
+		new web3._extend.Method({
 			name: 'ccquery',
 			call: 'contract_ccquery',
 			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
@@ -952,6 +973,7 @@ web3._extend({
         	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
 			inputFormatter: [null, null, null, null, null, null]
 		}),
+
 		new web3._extend.Method({
 			name: 'depositContractInvoke',
         	call: 'contract_depositContractInvoke',

@@ -33,7 +33,7 @@ ca unlock its account succeed
 ca issues intermediate certificate name cert1 to power succeed
     Log    "ca issues intermediate certificate name cert1 to user1 succeed"
     ${args}=    Create List    addServerCert    ${powerCertHolder}    ${powerCertBytes}
-    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    1    1    ${certContractAddr}
+    ${params}=    genInvoketxParams    ${caCertHolder}    ${caCertHolder}    1    1    ${certContractAddr}
     ...    ${args}    ${null}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    addServerCert
     Dictionary Should Contain Key    ${respJson}    result

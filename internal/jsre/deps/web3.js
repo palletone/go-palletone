@@ -5559,31 +5559,6 @@ var methods = function () {
         params: 1,
         // inputFormatter: [null]
     }); */
-
-
-// del ptn_getStorageAt
-//Contract
-    var ccinstall = new Method({
-        name: 'ccinstall',
-        call: 'contract_ccinstall',
-        params: 3, //ccName string, ccPath string, ccVersion string
-        inputFormatter: [null, null, null],
-    });
-
-    var ccdeploy = new Method({
-        name: 'ccdeploy',
-        call: 'contract_ccdeploy',
-        params: 3, //templateId string, txid string, args []string ---->["init", "a", "1", "b", 10]
-        inputFormatter: [null, null, null],
-    });
-
-    var ccstop = new Method({
-        name: 'ccstop',
-        call: 'contract_ccstop',
-        params: 2, //deployIdstring, txid string, deleteImage bool
-        inputFormatter: [null, null]
-    });
-
     return [
         forking,
         getUnitByHash,
@@ -5625,9 +5600,6 @@ var methods = function () {
         //getUnitNumber,
         //getTrieSyncProgress,
         //getTransactionsByTxid,
-        ccinstall,
-        ccdeploy,
-        ccstop,
         // createPayment,
         //getUnitTxsInfo,
         //getUnitTxsHashHex, 

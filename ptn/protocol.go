@@ -137,7 +137,7 @@ type txPool interface {
 	AddSequenTxs(txs []*modules.Transaction) error
 	AllHashs() []*common.Hash
 	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
-	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
+	Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction)
 	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
 	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
 	Stats() (int, int, int)
