@@ -109,7 +109,7 @@ func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
 //}
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(txspool.TxtoTxpoolTx(b.ptn.txPool, signedTx))
+	return b.ptn.txPool.AddLocal(signedTx)
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {

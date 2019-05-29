@@ -235,7 +235,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		log.Info("Journal path:" + config.Journal)
 		pool.journal = newTxJournal(config.Journal)
 
-		if err := pool.journal.load(pool.AddLocal); err != nil {
+		if err := pool.journal.load(pool.addLocal); err != nil {
 			log.Warn("Failed to load transaction journal", "err", err)
 		}
 		if err := pool.journal.rotate(pool.local()); err != nil {
@@ -731,8 +731,12 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 // AddLocal enqueues a single transaction into the pool if it is valid, marking
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
-func (pool *TxPool) AddLocal(tx *modules.TxPoolTransaction) error {
-	//tx.SetPriorityLvl(tx.GetPriorityLvl())
+func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
+	pool_tx := TxtoTxpoolTx(pool, tx)
+	return pool.addLocal(pool_tx)
+}
+func (pool *TxPool) addLocal(tx *modules.TxPoolTransaction) error {
+
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
 
@@ -750,8 +754,12 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 // AddLocals enqueues a batch of transactions into the pool if they are valid,
 // marking the senders as a local ones in the mean time, ensuring they go around
 // the local pricing constraints.
-func (pool *TxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
-	return pool.addTxs(txs, !pool.config.NoLocals)
+func (pool *TxPool) AddLocals(txs []*modules.Transaction) []error {
+	pool_txs := make([]*modules.TxPoolTransaction, 0)
+	for _, tx := range txs {
+		pool_txs = append(pool_txs, TxtoTxpoolTx(pool, tx))
+	}
+	return pool.addTxs(pool_txs, !pool.config.NoLocals)
 }
 
 // AddRemotes enqueues a batch of transactions into the pool if they are valid.

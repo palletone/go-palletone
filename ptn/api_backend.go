@@ -118,7 +118,7 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 }
 
 func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(txspool.TxtoTxpoolTx(b.ptn.txPool, signedTx))
+	return b.ptn.txPool.AddLocal(signedTx)
 }
 
 func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {

@@ -633,7 +633,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	return dag, nil
 }
 
-func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
+func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 	//logger := log.New("Dag")
 	dagDb := storage.NewDagDb(db)
