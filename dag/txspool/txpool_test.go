@@ -223,18 +223,18 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}
 
 	origin = len(txs)
-	//txpool_txs := make([]*modules.Transaction, 0)
-	//pool_tx := new(modules.Transaction)
-	//
-	//for i, tx := range txs {
-	//	p_tx := TxtoTxpoolTx(pool, tx)
-	//	p_tx.GetTxFee()
-	//	p_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
-	//	txpool_txs = append(txpool_txs, p_tx)
-	//	if i == len(txs)-1 {
-	//		pool_tx = p_tx
-	//	}
-	//}
+	txpool_txs := make([]*modules.TxPoolTransaction, 0)
+	pool_tx := new(modules.TxPoolTransaction)
+
+	for i, tx := range txs {
+		p_tx := TxtoTxpoolTx(pool, tx)
+		p_tx.GetTxFee()
+		p_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
+		txpool_txs = append(txpool_txs, p_tx)
+		if i == len(txs)-1 {
+			pool_tx = p_tx
+		}
+	}
 
 	t1 := time.Now()
 	fmt.Println("addlocals start.... ", t1)

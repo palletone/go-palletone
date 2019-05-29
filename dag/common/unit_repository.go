@@ -1510,22 +1510,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 		totalIncome += ad.AmountAsset.Amount
 	}
 	//所有奖励转换成PaymentPayload
-	coinbasePayment := &modules.PaymentPayload{}
-	for addr, v := range rewards {
-		script := tokenengine.GenerateLockScript(addr)
-		for _, reward := range v {
-			additionalOutput := modules.Output{
-				Value:    reward.Amount,
-				Asset:    reward.Asset,
-				PkScript: script,
-			}
-			coinbasePayment.Outputs = append(coinbasePayment.Outputs, &additionalOutput)
-		}
-	}
-	msg := &modules.Message{
-		App:     modules.APP_PAYMENT,
-		Payload: coinbasePayment,
-	}
+	msg := createCoinbasePaymentMsg(rewards)
 	coinbase := new(modules.Transaction)
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	//清空历史奖励的记账值
@@ -1542,6 +1527,25 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	}
 	coinbase.TxMessages = append(coinbase.TxMessages, msg1)
 	return coinbase, totalIncome, nil
+}
+func createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
+	coinbasePayment := &modules.PaymentPayload{}
+	for addr, v := range rewards {
+		script := tokenengine.GenerateLockScript(addr)
+		for _, reward := range v {
+			additionalOutput := modules.Output{
+				Value:    reward.Amount,
+				Asset:    reward.Asset,
+				PkScript: script,
+			}
+			coinbasePayment.Outputs = append(coinbasePayment.Outputs, &additionalOutput)
+		}
+	}
+	msg := &modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: coinbasePayment,
+	}
+	return msg
 }
 
 /**

@@ -577,10 +577,22 @@ func TestComputeTxFees(t *testing.T) {
 	if err == nil {
 		outAds := arrangeAdditionFeeList(ads)
 		log.Debug("TestComputeTxFees", "outAds:", outAds)
-		coinbase, rewards, err := CreateCoinbase(outAds, time.Now())
-		if err == nil {
-			log.Debug("TestComputeTxFees", "coinbase", coinbase, "rewards", rewards)
+		rewards := map[common.Address][]modules.AmountAsset{}
+
+		for _, ad := range outAds {
+
+			reward, ok := rewards[ad.Addr]
+			if !ok {
+				reward = []modules.AmountAsset{}
+			}
+			reward = addIncome(reward, ad.AmountAsset)
+			rewards[ad.Addr] = reward
+			//totalIncome += ad.AmountAsset.Amount
 		}
+		coinbase := createCoinbasePaymentMsg(rewards)
+
+		log.Debug("TestComputeTxFees", "coinbase", coinbase, "rewards", rewards)
+
 	}
 }
 
