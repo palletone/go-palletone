@@ -66,8 +66,6 @@ script:
     fi
 
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-    cd ../GasToken;
-    mkdir node;
     chmod +x ./init_gas_token.sh;
     ./init_gas_token.sh;
     sleep 15;
