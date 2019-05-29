@@ -66,6 +66,7 @@ script:
     fi
 
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
+    cd ../GasToken
     chmod +x ./init_gas_token.sh;
     ./init_gas_token.sh;
     sleep 15;
@@ -118,7 +119,7 @@ after_script:
   # echo ftp address
   - "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/certbdd"
   - "If you want to open it in explorer, you should close VPN first."
-  - "If you want to open in windows explorer, you can should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
+  - "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
 
 before_install:
     - go get github.com/mattn/goveralls
