@@ -22,20 +22,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
-
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
-	"math"
-	"strings"
-	"strconv"
 )
 
 const (
@@ -317,7 +316,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("[%s]runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", shortId(reqId.String()), req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -456,8 +455,8 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 		if recv.TxMessages[i].App == modules.APP_SIGNATURE {
 			recvSigMsg = recv.TxMessages[i]
 		} else if !local.TxMessages[i].CompareMessages(recv.TxMessages[i]) {
-			log.Infof("[%s]checkAndAddTxSigMsgData, local:[%v] recv:[%v]", shortId(reqId.String()), local.TxMessages[i], recv.TxMessages[i])
-			return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg is not equal", shortId(reqId.String()))
+			log.Info("checkAndAddTxSigMsgData", "reqId", shortId(reqId.String()), "local:", local.TxMessages[i], "recv:", recv.TxMessages[i])
+			return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg[%d] is not equal", shortId(reqId.String()), i)
 		}
 	}
 	if recvSigMsg == nil {

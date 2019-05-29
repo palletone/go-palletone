@@ -35,6 +35,7 @@ var Modules = map[string]string{
 	"mediator":   Mediator_JS,
 	"contract":   Contract_JS,
 }
+
 const Admin_JS = `
 web3._extend({
 	property: 'admin',
@@ -1009,8 +1010,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinvoketx',
         	call: 'contract_ccinvoketx',
-        	params: 7, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid
-			inputFormatter: [null, null, null,null, null, null, null]
+        	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid, timeout
+			inputFormatter: [null, null, null,null, null, null, null, null]
 		}),
         new web3._extend.Method({
 			name: 'ccinvoketxPass',
