@@ -213,9 +213,9 @@ func (c *Console) init(preload []string) error {
 			// }
 			// obj.Set("transferToken", bridge.TransferToken)
 		}
-		wallet, perr := c.jsre.Get("wallet")
-		if perr != nil {
-			return perr
+		wallet, err := c.jsre.Get("wallet")
+		if err != nil {
+			return err
 		}
 		if obj := wallet.Object(); obj != nil { // make sure the admin api is enabled over the interface
 			if _, err = c.jsre.Run(`jptn.transferToken = wallet.transferToken;`); err != nil {
@@ -226,6 +226,16 @@ func (c *Console) init(preload []string) error {
 				return fmt.Errorf("wallet.transferPtn: %v", err)
 			}
 			obj.Set("transferPTN", bridge.TransferGasToken)
+		}
+		contract, err := c.jsre.Get("contract")
+		if err != nil {
+			return err
+		}
+		if obj := contract.Object(); obj != nil { // make sure the contract api is enabled over the interface
+			if _, err = c.jsre.Run(`jptn.ccinvoketx = contract.ccinvoketx;`); err != nil {
+				return fmt.Errorf("contract.ccinvoketx: %v", err)
+			}
+			obj.Set("ccinvoketx", bridge.Ccinvoketx)
 		}
 		dag, err := c.jsre.Get("dag")
 		if err != nil {
