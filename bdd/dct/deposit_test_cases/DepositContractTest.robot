@@ -15,15 +15,15 @@ Business_01
     [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点申请退出候选列表-》进入退出列表-》基金会同意。此时，所有列表为空
     ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表
     log    ${result}
-    @{addressList1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
-    log    @{addressList1}
-    Dictionary Should Contain Key    @{addressList1}    ${mediatorAddr_01}
-    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    0    #基金会处理列表里的节点（同意）
+    @{addressMap1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
+    log    @{addressMap1}
+    Dictionary Should Contain Key    @{addressMap1}    ${mediatorAddr_01}
+    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理列表里的节点（同意）
     log    ${result}
-    @{addressList2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
+    @{addressMap2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
     log    @{addressList2}
-    Should Be True    '${mediatorAddr_01}' in @{addressList2}
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    200000000000    #在同意列表里的节点，可以交付保证金（大于或等于保证金数量）,需要200000000000及以上
+    Dictionary Should Contain Key    @{addressMap2}    ${mediatorAddr_01}
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金（大于或等于保证金数量）,需要200000000000及以上
     log    ${result}
     @{addressList3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
     log    @{addressList3}
@@ -94,7 +94,9 @@ Business_03
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
     log    ${result}
+    Should Not Be Equal    ${result}    balance is nil
     ${resul}    getListForJuryCandidate    #为空
+    Dictionary Should Not Contain Key    ${resul}    ${juryAddr_01}
     log    ${resul}
 
 Business_04
@@ -105,6 +107,7 @@ Business_04
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil
     ${result}    getListForDeveloperCandidate    #获取developer候选列表里的节点，不为空
+    Dictionary Should Not Contain Key    ${result}    ${developerAddr_01}
     log    ${result}
 
 Business_06

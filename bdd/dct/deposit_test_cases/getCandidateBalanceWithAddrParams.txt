@@ -15,5 +15,4 @@ getCandidateBalanceWithAddr
     ${11}    获取某个节点的账户余额的参数    ${nodeAddr}
     ${result}    创建公用的POST请求    ${depositContractQuery}    GetNodeBalance    ${11}
     ${balance}    Set Variable    ${result}
-    Should Not Be Equal    ${balance}    balance is nil
     [Return]    ${balance}
