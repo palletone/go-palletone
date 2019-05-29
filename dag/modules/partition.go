@@ -29,15 +29,16 @@ import (
 type PartitionChain struct {
 	GenesisHeaderRlp []byte
 	//GenesisHeight   uint64
-	ForkUnitHash    common.Hash
-	ForkUnitHeight  uint64
-	GasToken        AssetId
-	Status          byte //Active:1 ,Terminated:0,Suspended:2
-	SyncModel       byte //Push:1 , Pull:2, Push+Pull:3
-	NetworkId       uint64
-	Version         uint64
-	StableThreshold uint32   //需要多少个签名才能是稳定单元
-	Peers           []string //pnode://publickey@IP:port format string
+	ForkUnitHash     common.Hash
+	ForkUnitHeight   uint64
+	GasToken         AssetId
+	Status           byte //Active:1 ,Terminated:0,Suspended:2
+	SyncModel        byte //Push:1 , Pull:2, Push+Pull:3
+	NetworkId        uint64
+	Version          uint64
+	StableThreshold  uint32    //需要多少个签名才能是稳定单元
+	Peers            []string  //pnode://publickey@IP:port format string
+	CrossChainTokens []AssetId // 哪些Token可以跨链转移
 }
 
 func (p *PartitionChain) GetGenesisHeader() *Header {
@@ -51,11 +52,22 @@ func (p *PartitionChain) GetGenesisHeader() *Header {
 
 //作为一个分区，我会维护我链接到的主链
 type MainChain struct {
-	GenesisHash common.Hash
-	Status      byte //Active:1 ,Terminated:0,Suspended:2
-	SyncModel   byte //Push:1 , Pull:2, Push+Pull:0
-	GasToken    AssetId
-	NetworkId   uint64
-	Version     uint64
-	Peers       []string // pnode://publickey@IP:port format string
+	GenesisHeaderRlp []byte
+	Status           byte //Active:1 ,Terminated:0,Suspended:2
+	SyncModel        byte //Push:1 , Pull:2, Push+Pull:0
+	GasToken         AssetId
+	NetworkId        uint64
+	Version          uint64
+	StableThreshold  uint32    //需要多少个签名才能是稳定单元
+	Peers            []string  // pnode://publickey@IP:port format string
+	CrossChainTokens []AssetId // 哪些Token可以跨链转移
+}
+
+func (p *MainChain) GetGenesisHeader() *Header {
+	header := &Header{}
+	err := rlp.DecodeBytes(p.GenesisHeaderRlp, header)
+	if err != nil {
+		return nil
+	}
+	return header
 }
