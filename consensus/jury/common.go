@@ -293,6 +293,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					deployId: reqPay.ContractId,
 					args:     reqPay.Args,
 					txid:     tx.RequestHash().String(),
+					timeout:  time.Duration(reqPay.Timeout),
 				}
 
 				fullArgs, err := handleMsg0(tx, dag, req.args)
@@ -660,7 +661,7 @@ func shortId(id string) string {
 	return id[0:8]
 }
 
-func getSystemContractConfig(dag iDag, key string) int{
+func getSystemContractConfig(dag iDag, key string) int {
 	resultStr, _, err := dag.GetConfig(key)
 	if err != nil {
 		log.Debugf("getSystemContractConfig, dag.GetConfig err: %s", err.Error())
@@ -671,5 +672,5 @@ func getSystemContractConfig(dag iDag, key string) int{
 		log.Debugf("strconv.ParseInt err: %s", err.Error())
 		return 0
 	}
-	return  resultInt
+	return resultInt
 }
