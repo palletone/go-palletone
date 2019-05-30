@@ -717,7 +717,7 @@ func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
 		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, uint64(tx.Index))
 	}
-	return newRPCTransaction(tx.Tx, common.Hash{}, -1, 0)
+	return newRPCTransaction(tx.Tx, common.Hash{}, ^uint64(0), ^uint64(0))
 }
 
 /*
