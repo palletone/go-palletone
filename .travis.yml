@@ -156,8 +156,8 @@ addons:
   apt:
     update: true
 
-deploy:
-  skip_cleanup: true
+# deploy:
+#   skip_cleanup: true
 #    provider:
 #    all_branches: true
 
