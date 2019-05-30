@@ -371,7 +371,7 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash, assetId modules.AssetId) error {
+func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash, assetId modules.AssetId, pcs []*modules.PartitionChain) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -413,15 +413,31 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 		return err
 	}
 
-	//if rGenesis != genesis {
-	//	return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", rGenesis[:8], genesis[:8])
-	//}
-	//if rNetwork != p.network {
-	//	return errResp(ErrNetworkIdMismatch, "%d (!= %d)", rNetwork, p.network)
-	//}
-	//if int(rVersion) != p.version {
-	//	return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, p.version)
-	//}
+	if pcs != nil {
+		flag := 0
+		for _, pc := range pcs {
+			pcHash := pc.GetGenesisHeader().Hash()
+			if rGenesis != pcHash {
+				log.Debugf("ErrGenesisBlockMismatch , %x (!= %x)", rGenesis[:8], pcHash[:8]) //errResp(ErrGenesisBlockMismatch, "%x (!= %x)", rGenesis[:8], pcHash[:8])
+				continue
+			}
+			if rNetwork != pc.NetworkId {
+				log.Debugf("ErrNetworkIdMismatch, %d (!= %d)", rNetwork, pc.NetworkId) //return errResp(ErrNetworkIdMismatch, "%d (!= %d)", rNetwork, pc.NetworkId)
+				continue
+			}
+			if rVersion != pc.Version {
+				log.Debugf("ErrProtocolVersionMismatch %d (!= %d)", rVersion, pc.Version) //return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, pc.Version)
+				continue
+			}
+			flag = 1
+			break
+		}
+		if flag != 1 && len(pcs) > 0 {
+			return errResp(ErrRequestRejected, "Not Accessed")
+		}
+	} else {
+		return errResp(ErrRequestRejected, "Not Registered")
+	}
 
 	log.Debug("Cors Handshake", "p.ID()", p.ID(), "genesis", rGenesis, "network", rNetwork, "version", rVersion, "gastoken", rGastoken)
 	return nil

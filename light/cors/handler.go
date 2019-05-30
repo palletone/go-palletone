@@ -304,8 +304,14 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if err := p.Handshake(number, genesis.Hash(), headhash, pm.assetId); err != nil {
-		log.Debug("Cors Palletone handshake failed", "err", err)
+
+	pcs, err := pm.dag.GetPartitionChains()
+	if err != nil {
+		log.Debug("Cors PalletOne ProtocolManager handle GetPartitionChains", "err", err)
+	}
+
+	if err := p.Handshake(number, genesis.Hash(), headhash, pm.assetId, pcs); err != nil {
+		log.Debug("Cors PalletOne handshake failed", "err", err)
 		return err
 	}
 	//if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
