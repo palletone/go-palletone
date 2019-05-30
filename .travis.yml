@@ -48,11 +48,11 @@ before_install:
     - source ./gomockgen.sh
     #------- docker setting ----
     - if [ $IS_RUN_USER_CONTRACT == 'true' ]; then
-      git clone https://github.com/travis-ci/docker-sinatra /home/travis/sinatra;
-      docker build -t carlad/sinatra .;
-      docker run -d -p 127.0.0.1:80:4567 carlad/sinatra /bin/sh -c "cd /home/travis/sinatra; bundle exec foreman start;";
+      docker --version;
+      docker pull carlad/sinatra;
+      docker run -d -p 127.0.0.1:80:4567 carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec foreman start;"
       docker ps -a;
-      docker run carlad/sinatra /bin/sh -c "cd /home/travis/sinatra; bundle exec rake test";
+      docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test";
       fi
     #------- end of docker setting ----
 
@@ -74,7 +74,7 @@ script:
   - make gptn
   #- $GOPATH/bin/goveralls -service=travis-ci
   - cp gptn bdd/node
-  - mkdir bdd/GasToken/node
+  - mkdir -p bdd/GasToken/node
   - cp gptn bdd/GasToken/node
   - cd bdd/node
   - chmod +x gptn
@@ -118,7 +118,6 @@ script:
     fi
   # ---- docker test ------
   - if [ $IS_RUN_USER_CONTRACT == 'true' ]; then
-    docker --version;
     bundle exec rake test;
     fi
   # ---- end of docker test -----
