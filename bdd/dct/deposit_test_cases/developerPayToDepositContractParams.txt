@@ -13,7 +13,6 @@ Developer交付保证金所需参数
 developerPayToDepositContract
     [Arguments]    ${developerAddr}    ${depositAmounts}
     ${Developer交付保证金所需参数}    Developer交付保证金所需参数    ${developerAddr}    ${depositAmounts}
-    ${resp}    创建公用的POST请求    ${depositContractInvoke}    DeveloperPayToDepositContract    ${Developer交付保证金所需参数}
-    ${result}    Set Variable    ${resp.content}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    DeveloperPayToDepositContract    ${Developer交付保证金所需参数}
     sleep    8
     [Return]    ${result}

@@ -1,18 +1,12 @@
 *** Settings ***
-Library           RequestsLibrary
 Resource          publicParams.txt
 
 *** Variables ***
 
 *** Keywords ***
 getAgreeForBecomeMediatorList
-    [Arguments]    ${address}
     ${one}    Create List    GetAgreeForBecomeMediatorList
     ${two}    Create List    ${one}
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetAgreeForBecomeMediatorList    ${two}
-    ${respContentJson}    to json    ${resp.content}
-    log    ${respContentJson['result']}
-    ${resultDic}    Evaluate    demjson.decode(u'${respContentJson['result']}')    demjson
-    ${isIn}    Get From Dictionary    ${resultDic}    ${address}
-    log    ${isIn}
-    [Return]    ${isIn}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetAgreeForBecomeMediatorList    ${two}
+    ${addressMap}    To Json    ${result}
+    [Return]    ${addressMap}

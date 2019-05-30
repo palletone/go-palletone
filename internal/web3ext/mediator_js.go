@@ -17,3 +17,107 @@
  */
 
 package web3ext
+
+func init() {
+	Modules["mediator"] = Mediator_JS
+}
+
+const Mediator_JS = `
+web3._extend({
+	property: 'mediator',
+	methods: [
+		new web3._extend.Method({
+			name: 'listAll',
+			call: 'mediator_listAll',
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'getVoted',
+			call: 'mediator_getVoted',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'dumpInitDKS',
+			call: 'mediator_dumpInitDKS',
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'apply',
+			call: 'mediator_apply',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'isApproved',
+			call: 'mediator_isApproved',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'payDeposit',
+			call: 'mediator_payDeposit',
+			params: 2,
+		}),
+		new web3._extend.Method({
+			name: 'withdrawDeposit',
+			call: 'mediator_withdrawDeposit',
+			params: 2,
+		}),
+		new web3._extend.Method({
+			name: 'getDeposit',
+			call: 'mediator_getDeposit',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'isInList',
+			call: 'mediator_isInList',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'quit',
+			call: 'mediator_quit',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'vote',
+			call: 'mediator_vote',
+			params: 2,
+		}),
+		new web3._extend.Method({
+			name: 'getNextUpdateTime',
+			call: 'mediator_getNextUpdateTime',
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'getInfo',
+			call: 'mediator_getInfo',
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'startProduce',
+			call: 'mediator_startProduce',
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'stopProduce',
+			call: 'mediator_stopProduce',
+			params: 0,
+		}),	
+		new web3._extend.Method({
+			name: 'listVoteResults',
+			call: 'mediator_listVoteResults',
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'lookupMediatorInfo',
+			call: 'mediator_lookupMediatorInfo',
+			params: 0,
+		}),
+
+	],
+	properties: [
+		new web3._extend.Property({
+			name: 'listActives',
+			getter: 'mediator_listActives'
+		}),
+	]
+});
+`

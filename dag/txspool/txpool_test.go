@@ -169,6 +169,12 @@ func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error) {
 func (ud *UnitDag4Test) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
 	return nil, nil
 }
+func (ud *UnitDag4Test) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
+	return nil, nil, nil
+}
+func (ud *UnitDag4Test) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	return nil, nil
+}
 
 // create txs
 func createTxs(address string) []*modules.Transaction {

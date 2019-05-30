@@ -65,9 +65,10 @@ const (
 	IsInDeveloperCandidateList      = "IsInDeveloperCandidateList"
 	GetDeposit                      = "GetNodeBalance"
 
-	Apply = "applying"
-	Agree = "approved"
-	Quit  = "quited"
+	Apply    = "applying"
+	Agree    = "approved"
+	Quitting = "quitting"
+	Quited   = "quited"
 )
 
 //申请提保证金
@@ -122,6 +123,6 @@ type MediatorDeposit struct {
 func NewMediatorDeposit() *MediatorDeposit {
 	return &MediatorDeposit{
 		ApplyEnterTime: time.Now().Unix(),
-		Status:         Quit,
+		Status:         Quited,
 	}
 }

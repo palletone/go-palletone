@@ -102,6 +102,8 @@ type dags interface {
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetMinFee() (*modules.AmountAsset, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -1597,8 +1599,8 @@ func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
 func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
-	for _, tx := range txs {
-		if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+	for i, tx := range txs {
+		if i == 0 { //coinbase
 			continue
 		}
 		pool.resetPendingTx(tx)

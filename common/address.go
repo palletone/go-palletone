@@ -255,6 +255,14 @@ func (a *Address) Equal(b Address) bool {
 	}
 	return true
 }
+func (a *Address) IsZero() bool {
+	for _, v := range a {
+		if v != byte(0) {
+			return false
+		}
+	}
+	return true
+}
 
 func (a *Address) Less(b Address) bool {
 	for i, v := range a {

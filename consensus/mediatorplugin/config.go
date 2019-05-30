@@ -19,16 +19,16 @@
 package mediatorplugin
 
 import (
-	"go.dedis.ch/kyber/v3"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"go.dedis.ch/kyber/v3"
 	"gopkg.in/urfave/cli.v1"
 )
 
 const (
 	DefaultPassword              = "1"
-	DefaultInitPrivKey           = "47gsj9pK3pwYUS1ZrWQjTgWMHUXWdNuCr7hXPXHySyBk"
+	DefaultInitPrivKey           = "3ouzX3aTwrJM6PaqJrvE9XEWiycKuFgnZcfrW7duMEFu"
 	DefaultRequiredParticipation = 33
 )
 

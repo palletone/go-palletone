@@ -4,8 +4,8 @@ sudo: required
 language:
   - go
 go:
-    - 1.12.5
     - 1.10.8
+    - 1.12.5
 env:
   global:
     - BASE_DIR=/home/travis/gopath/src/github.com/palletone/go-palletone
@@ -22,7 +22,7 @@ env:
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
 ##########  control testcase  ##############
-    - IS_RUN_DEPOSIT=false
+    - IS_RUN_DEPOSIT=true
     - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
     - IS_RUN_CCINVOKE=true
@@ -56,7 +56,7 @@ script:
     ./test_start.sh;
     fi
 
-  - "into bdd path, all testcases is here"
+  # into bdd path, all testcases is here
   - cd ${BASE_DIR}/bdd
   - mkdir -p ${BDD_LOG_PATH}
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then

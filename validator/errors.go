@@ -39,7 +39,7 @@ const (
 	TxValidationCode_MVCC_READ_CONFLICT           ValidationCode = 11
 	TxValidationCode_PHANTOM_READ_CONFLICT        ValidationCode = 12
 	TxValidationCode_UNKNOWN_TX_TYPE              ValidationCode = 13
-	TxValidationCode_TARGET_CHAIN_NOT_FOUND       ValidationCode = 14
+	TxValidationCode_STATE_DATA_NOT_FOUND         ValidationCode = 14
 	TxValidationCode_MARSHAL_TX_ERROR             ValidationCode = 15
 	TxValidationCode_NIL_TXACTION                 ValidationCode = 16
 	TxValidationCode_EXPIRED_CHAINCODE            ValidationCode = 17
@@ -94,7 +94,7 @@ var validationCode_name = map[int32]string{
 	11:  "MVCC_READ_CONFLICT",
 	12:  "PHANTOM_READ_CONFLICT",
 	13:  "UNKNOWN_TX_TYPE",
-	14:  "TARGET_CHAIN_NOT_FOUND",
+	14:  "STATE_DATA_NOT_FOUND",
 	15:  "MARSHAL_TX_ERROR",
 	16:  "NIL_TXACTION",
 	17:  "EXPIRED_CHAINCODE",

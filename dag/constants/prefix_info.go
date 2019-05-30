@@ -103,7 +103,8 @@ var (
 	TxHash2ReqPrefix = []byte("tx2req")
 
 	//filehash
-	IDX_FileHash_Txid = []byte("mda")
+	IDX_FileHash_Txid   = []byte("mda")
+	RewardAddressPrefix = "Addr:"
 )
 
 // suffix
