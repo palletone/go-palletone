@@ -46,11 +46,11 @@ before_install:
     - source ./gomockgen.sh
     #------- docker setting ----
     - if [ $IS_RUN_USER_CONTRACT == 'true' ]; then
-      git clone https://github.com/travis-ci/docker-sinatra /root/sinatra
-      docker build -t carlad/sinatra .
-      docker run -d -p 127.0.0.1:80:4567 carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec foreman start;"
-      docker ps -a
-      docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test"
+      git clone https://github.com/travis-ci/docker-sinatra /root/sinatra;
+      docker build -t carlad/sinatra .;
+      docker run -d -p 127.0.0.1:80:4567 carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec foreman start;";
+      docker ps -a;
+      docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test";
       fi
     #------- end of docker setting ----
 
@@ -111,8 +111,8 @@ script:
     fi
   # ---- docker test ------
   - if [ $IS_RUN_USER_CONTRACT == 'true' ]; then
-    docker --version
-    bundle exec rake test
+    docker --version;
+    bundle exec rake test;
     fi
   # ---- end of docker test -----
 
@@ -158,7 +158,6 @@ after_script:
     curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} -v;
     curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/gastoken_all.log -T ${GAS_TOKEN_ALL_LOG_PATH} -v;
     fi
-
 
   # echo ftp address
   - "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/certbdd"
