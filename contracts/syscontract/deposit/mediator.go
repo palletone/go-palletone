@@ -139,8 +139,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error(err.Error())
 	}
 	mediator.ApplyQuitTime = time.Now().Unix() / DTimeDuration
-	mediator.Status = Quit
-	mediator.Balance = 0
+	mediator.Status = Quitting
 	//  获取退出列表
 	quitList, err := GetList(stub, ListForApplyQuitMediator)
 	if err != nil {
@@ -223,7 +222,8 @@ func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit
 	}
 
 	//  更新
-	md.Status = Quit
+	md.Status = Quited
+	md.Balance = 0
 	//  保存
 	err = SaveMediatorDeposit(stub, nodeAddr.Str(), md)
 	if err != nil {
@@ -320,7 +320,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	}
 
 	//  退出后，再交付的状态
-	if md.Status == Quit {
+	if md.Status == Quited {
 		md.Status = Agree
 		md.AgreeTime = time.Now().Unix() / DTimeDuration
 		md.ApplyQuitTime = 0

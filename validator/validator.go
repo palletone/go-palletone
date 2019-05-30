@@ -135,8 +135,14 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) err
 	if code == TxValidationCode_VALID {
 		return nil
 	}
+
 	log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
 		tx.Hash().String(), validationCode_name[int32(code)])
+	//log.DebugDynamic(func() string {
+	//	txj, _ := json.Marshal(tx)
+	//	return string(txj)
+	//})
+
 	return NewValidateError(code)
 }
 
