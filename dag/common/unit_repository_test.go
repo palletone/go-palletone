@@ -526,63 +526,75 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 	}
 	return txPTx
 }
-
-func TestComputeTxFees(t *testing.T) {
-	m, _ := common.StringToAddress("P1K7JsRvDc5THJe6TrtfdRNxp6ZkNiboy9z")
-	txs := make([]*modules.TxPoolTransaction, 0)
-	pks := make([][]byte, 0)
-	aId := modules.AssetId{}
-	tx := &modules.TxPoolTransaction{}
-
-	//1
-	pks = [][]byte{
-		{0x01}, {0x02}, {0x03}, {0x04}, {0x05}}
-	aId = modules.AssetId{'p', 't', 'n'}
-	tx = creatFeeTx(true, pks, 10, aId)
-	txs = append(txs, tx)
-
-	//	log.Info("TestComputeTxFees", "txs:", tx)
-	/*
-		//2
-		pks = [][]byte{
-			{0x01}, {0x02}, {0x03}, {0x04}}
-		aId = modules.AssetId{'p', 't', 'n'}
-		tx = creatFeeTx(true, pks, 10, aId)
-		txs = append(txs, tx)
-
-		//3
-		pks = [][]byte{
-			{0x05}, {0x06}, {0x07}, {0x08}}
-		aId = modules.AssetId{'p', 't', 'n'}
-		tx = creatFeeTx(true, pks, 10, aId)
-		txs = append(txs, tx)
-
-		//4
-		pks = [][]byte{
-			{0x01}, {0x02}, {0x03}, {0x04}}
-		aId = modules.AssetId{'a', 'b', 'c'}
-		tx = creatFeeTx(true, pks, 10, aId)
-		txs = append(txs, tx)
-
-		//5
-		pks = [][]byte{
-			{0x01}, {0x02}, {0x03}, {0x04}}
-		aId = modules.AssetId{'a', 'b', 'c'}
-		tx = creatFeeTx(true, pks, 10, aId)
-		txs = append(txs, tx)
-	*/
-	//log.Info("TestComputeTxFees", "txs:", txs)
-	ads, err := ComputeTxFees(&m, txs)
-	log.Info("TestComputeTxFees", "txs:", ads)
-	if err == nil {
-		outAds := arrangeAdditionFeeList(ads)
-		log.Debug("TestComputeTxFees", "outAds:", outAds)
-		coinbase, rewards, err := CreateCoinbase(outAds, time.Now())
-		if err == nil {
-			log.Debug("TestComputeTxFees", "coinbase", coinbase, "rewards", rewards)
-		}
-	}
-}
+//
+//func TestComputeTxFees(t *testing.T) {
+//	m, _ := common.StringToAddress("P1K7JsRvDc5THJe6TrtfdRNxp6ZkNiboy9z")
+//	txs := make([]*modules.TxPoolTransaction, 0)
+//	pks := make([][]byte, 0)
+//	aId := modules.AssetId{}
+//	tx := &modules.TxPoolTransaction{}
+//
+//	//1
+//	pks = [][]byte{
+//		{0x01}, {0x02}, {0x03}, {0x04}, {0x05}}
+//	aId = modules.AssetId{'p', 't', 'n'}
+//	tx = creatFeeTx(true, pks, 10, aId)
+//	txs = append(txs, tx)
+//
+//	//	log.Info("TestComputeTxFees", "txs:", tx)
+//	/*
+//		//2
+//		pks = [][]byte{
+//			{0x01}, {0x02}, {0x03}, {0x04}}
+//		aId = modules.AssetId{'p', 't', 'n'}
+//		tx = creatFeeTx(true, pks, 10, aId)
+//		txs = append(txs, tx)
+//
+//		//3
+//		pks = [][]byte{
+//			{0x05}, {0x06}, {0x07}, {0x08}}
+//		aId = modules.AssetId{'p', 't', 'n'}
+//		tx = creatFeeTx(true, pks, 10, aId)
+//		txs = append(txs, tx)
+//
+//		//4
+//		pks = [][]byte{
+//			{0x01}, {0x02}, {0x03}, {0x04}}
+//		aId = modules.AssetId{'a', 'b', 'c'}
+//		tx = creatFeeTx(true, pks, 10, aId)
+//		txs = append(txs, tx)
+//
+//		//5
+//		pks = [][]byte{
+//			{0x01}, {0x02}, {0x03}, {0x04}}
+//		aId = modules.AssetId{'a', 'b', 'c'}
+//		tx = creatFeeTx(true, pks, 10, aId)
+//		txs = append(txs, tx)
+//	*/
+//	//log.Info("TestComputeTxFees", "txs:", txs)
+//	ads, err := ComputeTxFees(&m, txs)
+//	log.Info("TestComputeTxFees", "txs:", ads)
+//	if err == nil {
+//		outAds := arrangeAdditionFeeList(ads)
+//		log.Debug("TestComputeTxFees", "outAds:", outAds)
+//		rewards := map[common.Address][]modules.AmountAsset{}
+//
+//		for _, ad := range outAds {
+//
+//			reward, ok := rewards[ad.Addr]
+//			if !ok {
+//				reward = []modules.AmountAsset{}
+//			}
+//			reward = addIncome(reward, ad.AmountAsset)
+//			rewards[ad.Addr] = reward
+//			//totalIncome += ad.AmountAsset.Amount
+//		}
+//		coinbase := createCoinbasePaymentMsg(rewards)
+//
+//		log.Debug("TestComputeTxFees", "coinbase", coinbase, "rewards", rewards)
+//
+//	}
+//}
 
 func TestContractStateVrf(t *testing.T) {
 	contractId := []byte("TestContractVrf")

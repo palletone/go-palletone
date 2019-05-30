@@ -38,7 +38,7 @@ Tx的第一条Msg必须是Payment
 To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
-func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase,isFullTx bool, unitTime int64) (ValidationCode, *modules.AmountAsset) {
+func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, unitTime int64) (ValidationCode, *modules.AmountAsset) {
 	if len(tx.TxMessages) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
@@ -80,7 +80,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isCoinbase,isFullT
 			if msgIdx>requestMsgIndex && !isFullTx{
 				log.Debugf("Tx reqid[%s] is processing tx, don't need validate result payment",tx.RequestHash().String())
 			}else {
-				validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, isCoinbase, usedUtxo)
+				validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, usedUtxo)
 				if validateCode != TxValidationCode_VALID {
 					if validateCode == TxValidationCode_ORPHAN {
 						isOrphanTx = true

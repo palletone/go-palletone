@@ -377,7 +377,11 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	rwset.Init()
 	var temptxs modules.Transactions
 	index := 0
-	for _, tx := range unit.Txs {
+	for i, tx := range unit.Txs {
+		if i == 0 {
+			temptxs = append(temptxs, tx)
+			continue //coinbase
+		}
 		if tx.IsContractTx() {
 			reqId := tx.RequestHash()
 			log.Debugf("[%s]NewBlockMsg, index[%x],txHash[%s]", reqId.String()[0:8], index, tx.Hash().String())

@@ -171,6 +171,6 @@ func setupDag() (*Dag, error) {
 		log.Error("Save unit error", "error", err.Error())
 		return nil, err
 	}
-	test_dag, err := NewDagForTest(db, nil)
+	test_dag, err := NewDagForTest(db)
 	return test_dag, err
 }

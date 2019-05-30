@@ -44,6 +44,13 @@ type PublicDagAPI struct {
 func NewPublicDagAPI(b Backend) *PublicDagAPI {
 	return &PublicDagAPI{b}
 }
+func (s *PublicDagAPI) SaveCommon(ctx context.Context, key string, val interface{}) error {
+	value, err := json.Marshal(val)
+	if err != nil {
+		return err
+	}
+	return s.b.SaveCommon([]byte(key), value)
+}
 
 func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error) {
 	// key to bytes

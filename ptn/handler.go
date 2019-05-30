@@ -295,7 +295,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 			if pm.dag.IsHeaderExist(hash) {
 				continue
 			}
-			pm.txpool.SetPendingTxs(hash, u.Transactions())
+			pm.txpool.SetPendingTxs(hash, u.NumberU64(), u.Transactions())
 		}
 
 		return pm.dag.InsertDag(blocks, pm.txpool)

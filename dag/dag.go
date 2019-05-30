@@ -633,7 +633,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	return dag, nil
 }
 
-func NewDagForTest(db ptndb.Database, txpool txspool.ITxPool) (*Dag, error) {
+func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 	//logger := log.New("Dag")
 	dagDb := storage.NewDagDb(db)
@@ -905,7 +905,7 @@ func (d *Dag) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) 
 	return d.unstableStateRep.GetContractJury(contractId)
 
 }
-func (d *Dag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
+func (d *Dag) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	return d.unstableUnitRep.CreateUnit(mAddr, txpool, t)
 }
 
@@ -1190,6 +1190,9 @@ func (d *Dag) GetCommon(key []byte) ([]byte, error) {
 // GetCommonByPrefix  return the prefix's all key && value.
 func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
+}
+func (d *Dag) SaveCommon(key, val []byte) error {
+	return d.unstableUnitRep.SaveCommon(key, val)
 }
 
 //func (d *Dag) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
