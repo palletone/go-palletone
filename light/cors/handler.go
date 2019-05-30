@@ -410,6 +410,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case CurrentHeaderMsg:
 		return pm.CurrentHeaderMsg(msg, p)
 
+	case GetBlockHeadersMsg:
+		return pm.GetBlockHeadersMsg(msg, p)
+
+	case BlockHeadersMsg:
+		return pm.BlockHeadersMsg(msg, p)
+
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)

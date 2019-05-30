@@ -209,14 +209,12 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 
 	log.Trace("Received block header response message")
 	// A batch of headers arrived to one of our previous requests
-	var resp struct {
-		ReqID, BV uint64
-		Headers   []*modules.Header
-	}
-	if err := msg.Decode(&resp); err != nil {
+	var headers []*modules.Header
+
+	if err := msg.Decode(&headers); err != nil {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
-	err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
+	err := pm.downloader.DeliverHeaders(p.id, headers)
 	if err != nil {
 		log.Debug(fmt.Sprint(err))
 	}

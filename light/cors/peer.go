@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
 	"sync"
@@ -313,7 +314,17 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 				log.Debugf("ErrProtocolVersionMismatch %d (!= %d)", rVersion, pc.Version) //return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, pc.Version)
 				continue
 			}
-			flag = 1
+
+			for _, peer := range pc.Peers {
+				node, err := discover.ParseNode(peer)
+				if err != nil {
+					continue
+				}
+				if p.id == node.ID.TerminalString() {
+					flag = 1
+					break
+				}
+			}
 			break
 		}
 		if flag != 1 && len(pcs) > 0 {

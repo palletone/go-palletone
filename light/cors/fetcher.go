@@ -282,8 +282,8 @@ func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 
 // Enqueue tries to fill gaps the the fetcher's future import queue.
 func (f *LightFetcher) Enqueue(p *peer, header *modules.Header) error {
-	log.Debug("Enter CorsFetcher Enqueue", "peer id", p.id, "header index:", header.Index())
-	defer log.Debug("End CorsFetcher Enqueue")
+	//log.Debug("Enter CorsFetcher Enqueue", "peer id", p.id, "header index:", header.Index())
+	//defer log.Debug("End CorsFetcher Enqueue")
 	op := &inject{
 		origin: p,
 		header: header,
@@ -294,11 +294,4 @@ func (f *LightFetcher) Enqueue(p *peer, header *modules.Header) error {
 	case <-f.quit:
 		return errTerminated
 	}
-}
-
-func (f *LightFetcher) Insert(p *peer, header *modules.Header) error {
-	log.Debug("Enter CorsFetcher Insert", "peer id", p.id, "header index:", header.Index())
-	defer log.Debug("End CorsFetcher Insert")
-	f.insert(p, header)
-	return nil
 }
