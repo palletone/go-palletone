@@ -21,14 +21,13 @@ do
 	then
 	account0=`echo $list|jq ".[0]"`
 	account1=`echo $list|jq ".[$index]"`
-	./transfertoken.sh $account0 $account1
-	sleep 3
 	fi
 #	#echo $list | jq ".[$index]";
 done
-
 echo $account0
 echo $account1
+./transfertoken.sh $account0 $account1
+sleep 3
 #调python 脚本，传入account0,account1
 ./addBalance.sh $account0 $account1
 

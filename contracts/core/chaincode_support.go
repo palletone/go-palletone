@@ -32,8 +32,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"bytes"
-	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
@@ -44,7 +42,6 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
-	"github.com/palletone/go-palletone/vm/common"
 	"github.com/palletone/go-palletone/vm/controller"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -176,7 +173,7 @@ func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout ti
 		theChaincodeSupport.auth.DisableAccessCheck()
 	}
 
-	kadef := 0
+	kadef := 120 //心跳定时维护时间,秒
 	if ka := viper.GetString("chaincode.keepalive"); ka == "" {
 		theChaincodeSupport.keepalive = time.Duration(kadef) * time.Second
 	} else {
@@ -617,7 +614,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: false}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/ , Version: cccid.Version}, Timeout: 0, Dontremove: false}
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
@@ -878,35 +875,37 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 		//are typically treated as error
 		//log.Errorf("{{{{{ time out [%d]", setTimeout)
 	case <-time.After(setTimeout):
-		var client *docker.Client
-		client, err = util.NewDockerClient()
-		if err != nil {
-			log.Error("util.NewDockerClient", "error", err)
-			err = errors.New("timeout expired while executing transaction")
-		}
-		var buf bytes.Buffer
-		logsO := docker.LogsOptions{
-			Container:   cccid.GetContainerName(),
-			ErrorStream: &buf,
-			Follow:      true,
-			Stdout:      true,
-			Stderr:      true,
-			Timestamps:  true,
-		}
-		err = client.Logs(logsO)
-		if err != nil {
-			log.Error("client.Logs", "error", err)
-			err = errors.New("timeout expired while executing transaction")
-		} else {
-			line, _ := buf.ReadString('\n')
-			line = strings.TrimSpace(line)
-			if strings.Contains(line, "panic: runtime error") || strings.Contains(line, "fatal error: runtime") {
-				err = errors.New(line)
-			} else {
-				log.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
-				err = errors.New("timeout expired while executing transaction")
-			}
-		}
+		err = errors.New("timeout expired while executing transaction")
+
+		//var client *docker.Client
+		//client, err = util.NewDockerClient()
+		//if err != nil {
+		//	log.Error("util.NewDockerClient", "error", err)
+		//	err = errors.New("timeout expired while executing transaction")
+		//}
+		//var buf bytes.Buffer
+		//logsO := docker.LogsOptions{
+		//	Container:   cccid.GetContainerName(),
+		//	ErrorStream: &buf,
+		//	Follow:      true,
+		//	Stdout:      true,
+		//	Stderr:      true,
+		//	Timestamps:  true,
+		//}
+		//err = client.Logs(logsO)
+		//if err != nil {
+		//	log.Error("client.Logs", "error", err)
+		//	err = errors.New("timeout expired while executing transaction")
+		//} else {
+		//	line, _ := buf.ReadString('\n')
+		//	line = strings.TrimSpace(line)
+		//	if strings.Contains(line, "panic: runtime error") || strings.Contains(line, "fatal error: runtime") {
+		//		err = errors.New(line)
+		//	} else {
+		//		log.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
+		//		err = errors.New("timeout expired while executing transaction")
+		//	}
+		//}
 	}
 	//our responsibility to delete transaction context if sendExecuteMessage succeeded
 	chrte.handler.deleteTxContext(msg.ChannelId, msg.Txid)

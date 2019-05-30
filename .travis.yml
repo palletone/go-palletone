@@ -8,10 +8,11 @@ go:
     - 1.10.8
 env:
   global:
+    - BASE_DIR=/home/travis/gopath/src/github.com/palletone/go-palletone
     - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
     - GAS_TOKEN_ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/GasToken/node/log/all.log
     - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
-    - DEPOSIT_LOG_PATH=/home/votravis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
+    - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
     - CREATE_TRANS_DIR=createTrans
     - CCINVOKE_DIR=ccinvoke
     - VOTECONTRACT_DIR=voteContract
@@ -21,7 +22,7 @@ env:
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
 ##########  control testcase  ##############
-    - IS_RUN_DEPOSIT=true
+    - IS_RUN_DEPOSIT=false
     - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
     - IS_RUN_CCINVOKE=true
@@ -49,30 +50,33 @@ script:
     ./deposit_test.sh 4;
     fi
 
-  - if [ $IS_RUN_TESTCONTRACTCASES == 'true'];then
+  - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
     cd ../contract/testcases;
+    chmod +x ./test_start.sh;
     ./test_start.sh;
     fi
 
+  - "into bdd path, all testcases is here"
+  - cd ${BASE_DIR}/bdd
   - mkdir -p ${BDD_LOG_PATH}
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ../testcase/createTrans;
+    python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
     fi
 
   - if [ $IS_RUN_CCINVOKE == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ../testcase/crtCoinContract;
+    python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ./testcase/crtCoinContract;
     fi
 
   - if [ $IS_RUN_VOTE == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/;
+    python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract/;
     fi
 
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
+    python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
     fi
 
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-    cd ../GasToken;
+    cd ./GasToken;
     chmod +x ./init_gas_token.sh;
     ./init_gas_token.sh;
     sleep 15;
@@ -88,8 +92,8 @@ after_script:
 
   # upload deposit log
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DEPOSIT_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DEPOSIT_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $DEPOSIT_LOG_PATH/${LOG_NAME} -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $DEPOSIT_LOG_PATH/${REPORT_NAME} -v;
     fi
 
   # upload create transactions log and report
