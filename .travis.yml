@@ -93,6 +93,8 @@ script:
     ./contract/testcases/test_start.sh;
     fi
 
+  - "into bdd path, all testcases is here"
+  - cd ${BASE_DIR}/bdd
   - mkdir -p ${BDD_LOG_PATH}
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
     python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
@@ -111,10 +113,11 @@ script:
     fi
 
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-    chmod +x ./GasToken/init_gas_token.sh;
-    ./GasToken/init_gas_token.sh;
+    cd ./GasToken;
+    chmod +x ./init_gas_token.sh;
+    ./init_gas_token.sh;
     sleep 15;
-    python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./GasToken/testcases;
+    python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
   # ---- docker test ------
   - if [ $IS_RUN_USER_CONTRACT == 'true' ]; then
@@ -131,8 +134,8 @@ after_script:
 
   # upload deposit log
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DEPOSIT_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DEPOSIT_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $DEPOSIT_LOG_PATH/${LOG_NAME} -v;
+    curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $DEPOSIT_LOG_PATH/${REPORT_NAME} -v;
     fi
 
   # upload create transactions log and report
