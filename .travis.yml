@@ -51,7 +51,7 @@ script:
 
   - if [ $IS_RUN_TESTCONTRACTCASES == 'true'];then
     cd ../contract/testcases;
-    ./test_start.sh
+    ./test_start.sh;
     fi
 
   - mkdir -p ${BDD_LOG_PATH}
