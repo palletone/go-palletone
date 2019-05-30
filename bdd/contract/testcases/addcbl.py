@@ -66,9 +66,9 @@ class createToken():
         try:
             result = result1['result']
         except KeyError:
-            print "Request addBalance failed.\n" +str(senderAddr) + str(result1)
+            print "Request addBalance failed. \naddr:" +str(senderAddr)+'\n' + str(result1)
         else:
-            print 'testaddBalance Result: '+str(senderAddr) + str(result) + '\n'
+            print 'testaddBalance Result: '+str(senderAddr) +'\n'+ str(result) + '\n'
             reqIds.append(str(result))
             return result
 
@@ -167,9 +167,9 @@ class createToken():
 
 threads = []
 for addr in addrs:
-    t1 = threading.Thread(target=createToken().ccinvoketx_create, args=(
-    addr, addr, "PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf",
-    100,))
+    print  "addr:" + str(addr)+ '\n'
+
+    t1 = threading.Thread(target=createToken().ccinvoketx_create, args=(addr,addr,"PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf",100,))
     threads.append(t1)
 
 if __name__ == '__main__':

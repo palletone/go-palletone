@@ -29,6 +29,6 @@ echo $account1
 ./transfertoken.sh $account0 $account1
 sleep 3
 #调python 脚本，传入account0,account1
-./addBalance.sh $account0 $account1
+python ./addcbl.py $account0 $account1
 
 killall gptn
