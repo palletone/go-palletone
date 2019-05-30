@@ -30,7 +30,7 @@ Business_01
     Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should  Be Equal    ${mDeposit.balance}    ${medDepositAmount}    #有余额
+    Should Be Equal    ${mDeposit.balance}    ${medDepositAmount}    #有余额
     ${result}    applyQuitMediator    ${mediatorAddr_01}    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
