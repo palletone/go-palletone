@@ -216,7 +216,7 @@ func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 func (p *testTxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return nil, nil
 }
-func (p *testTxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
+func (p *testTxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize) {
 	return nil, 0
 }
 func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
@@ -272,7 +272,7 @@ func (p *testTxPool) DiscardTxs(hashs []common.Hash) error {
 func (p *testTxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 	return nil
 }
-func (p *testTxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
+func (p *testTxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error {
 	return nil
 }
 

@@ -267,6 +267,10 @@ func (b *LesApiBackend) SendConsensus(ctx context.Context) error {
 //WalletTokens(address string) (map[string]*modules.AccountToken, error)
 //WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
+func (b *LesApiBackend) SaveCommon(key, val []byte) error {
+	return nil
+}
+
 // dag's get common
 func (b *LesApiBackend) GetCommon(key []byte) ([]byte, error) {
 	return nil, nil

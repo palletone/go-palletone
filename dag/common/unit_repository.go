@@ -96,6 +96,7 @@ type IUnitRepository interface {
 	RefreshAddrTxIndex() error
 
 	SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc)
+	SaveCommon(key, val []byte) error
 }
 type UnitRepository struct {
 	dagdb storage.IDagDb
@@ -106,9 +107,9 @@ type UnitRepository struct {
 	//validate       validator.Validator
 	utxoRepository IUtxoRepository
 	lock           sync.RWMutex
-	observers []AfterSysContractStateChangeEventFunc
-
+	observers      []AfterSysContractStateChangeEventFunc
 }
+
 //type Observer interface {
 //	//更新事件
 //	AfterSysContractStateChangeEvent(event *modules.SysContractStateChangeEvent)
@@ -133,17 +134,16 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 }
 
 func (rep *UnitRepository) SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
-	if rep.observers==nil{
-		rep.observers= []AfterSysContractStateChangeEventFunc{}
+	if rep.observers == nil {
+		rep.observers = []AfterSysContractStateChangeEventFunc{}
 	}
 
-	rep.observers=append(rep.observers,ob)
+	rep.observers = append(rep.observers, ob)
 }
 
 //func (rep *UnitRepository) UnsubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
 //	delete(rep.observers, ob)
 //}
-
 
 func (rep *UnitRepository) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return rep.dagdb.GetHeaderByHash(hash)
@@ -241,6 +241,9 @@ func (rep *UnitRepository) GetTxLookupEntry(hash common.Hash) (*modules.TxLookup
 func (rep *UnitRepository) GetCommon(key []byte) ([]byte, error) { return rep.dagdb.GetCommon(key) }
 func (rep *UnitRepository) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return rep.dagdb.GetCommonByPrefix(prefix)
+}
+func (rep *UnitRepository) SaveCommon(key, val []byte) error {
+	return rep.dagdb.SaveCommon(key, val)
 }
 
 //func (rep *UnitRepository) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
@@ -426,7 +429,7 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
-	poolTxs, _ := txpool.GetSortedTxs(h_hash)
+	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
 	txIds := []common.Hash{}
 	for _, tx := range poolTxs {
@@ -1250,10 +1253,10 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		log.Errorf("Tx[%s]Write contract state error:%s", tx.Hash().String(), err.Error())
 		return false
 	}
-	if common.IsSystemContractAddress(payload.ContractId) &&payload.ErrMsg.Code==0{
-		eventArg:= &modules.SysContractStateChangeEvent{ContractId:payload.ContractId,WriteSet:payload.WriteSet}
-		for _,eventFunc := range rep.observers {
-			go	eventFunc(eventArg)
+	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
+		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
+		for _, eventFunc := range rep.observers {
+			go eventFunc(eventArg)
 		}
 	}
 	return true

@@ -109,12 +109,13 @@ type TxPoolTransaction struct {
 	CreationDate time.Time `json:"creation_date"`
 	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
+	UnitIndex    uint64
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
 	Discarded    bool         // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
-	Index        int          `json:"index"` // index 是该tx在优先级堆中的位置
+	Index        int          `json:"index"` // index 是该Unit位置。
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time

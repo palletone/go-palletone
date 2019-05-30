@@ -152,20 +152,18 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]*RPCTransaction {
 		"queued":  make(map[string]*RPCTransaction),
 	}
 	pending, queue := s.b.TxPoolContent()
-
+	dump1 := make(map[string]*RPCTransaction)
 	// Flatten the pending transactions
 	for hash, tx := range pending {
-		dump := make(map[string]*RPCTransaction)
-		dump[hash.String()] = newRPCPendingTransaction(tx)
-		content["pending"] = dump
+		dump1[hash.String()] = newRPCPendingTransaction(tx)
 	}
+	content["pending"] = dump1
 	// Flatten the queued transactions
+	dump2 := make(map[string]*RPCTransaction)
 	for hash, tx := range queue {
-		dump := make(map[string]*RPCTransaction)
-		dump[hash.String()] = newRPCPendingTransaction(tx)
-
-		content["queued"] = dump
+		dump2[hash.String()] = newRPCPendingTransaction(tx)
 	}
+	content["queued"] = dump2
 	return content
 }
 
@@ -691,25 +689,23 @@ func (s *PublicBlockChainAPI) rpcOutputBlock(b *types.Block, inclTx bool, fullTx
 */
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
 type RPCTransaction struct {
-	BlockHash   common.Hash    `json:"blockHash"`
-	BlockNumber *hexutil.Big   `json:"blockNumber"`
-	From        common.Address `json:"from"`
+	UnitHash common.Hash `json:"unit_Hash"`
+	//From      common.Address `json:"from"`
+	UnitIndex uint64      `json:"unit_index"`
+	Hash      common.Hash `json:"hash"`
 
-	Hash  common.Hash   `json:"hash"`
-	Input hexutil.Bytes `json:"input"`
-
-	TransactionIndex hexutil.Uint `json:"transactionIndex"`
+	TransactionIndex hexutil.Uint `json:"transaction_index"`
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
+func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex, index uint64) *RPCTransaction {
 	result := &RPCTransaction{
 		Hash: tx.Hash(),
 	}
 	if blockHash != (common.Hash{}) {
-		result.BlockHash = blockHash
-		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
+		result.UnitHash = blockHash
+		result.UnitIndex = unitIndex
 		result.TransactionIndex = hexutil.Uint(index)
 	}
 	return result
@@ -718,7 +714,7 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, blockNumb
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
 func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
-		return newRPCTransaction(tx.Tx, tx.UnitHash, 0, 0)
+		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, uint64(tx.Index))
 	}
 	return newRPCTransaction(tx.Tx, common.Hash{}, 0, 0)
 }

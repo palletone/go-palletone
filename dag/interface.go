@@ -38,6 +38,7 @@ type IDag interface {
 	//common geter
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
+	SaveCommon(key, val []byte) error
 
 	IsEmpty() bool
 	CurrentUnit(token modules.AssetId) *modules.Unit
