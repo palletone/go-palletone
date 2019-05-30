@@ -28,9 +28,9 @@ Business_01
     ${addressMap3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
     log    ${addressMap3}
     Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
-    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
-    log    ${result}
-    Should Not Be Equal    ${result}    balance is nil    #有余额
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    log    ${mDeposit}
+    Should Not Be Equal    ${mDeposit}    ${medDepositAmount}    #有余额
     ${result}    applyQuitMediator    ${mediatorAddr_01}    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
@@ -38,9 +38,9 @@ Business_01
     Dictionary Should Contain Key    ${addressMap4}    ${mediatorAddr_01}
     ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
-    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
-    log    ${result}
-    Should Be Equal    ${result}    balance is nil    #账户地址不存在
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    log    ${mDeposit}
+    Should Be Equal    ${result}    0    #账户地址不存在
     ${result}    getBecomeMediatorApplyList    #为空
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
