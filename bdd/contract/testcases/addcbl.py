@@ -52,6 +52,7 @@ class createToken():
             return result
 
     def ccinvoketx_create(self, senderAddr, recieverAddr, contractAddr, tokenAmount):
+
         data = {
             "jsonrpc": "2.0",
             "method": "contract_ccinvoketxPass",
@@ -65,9 +66,9 @@ class createToken():
         try:
             result = result1['result']
         except KeyError:
-            print "Request addBalance failed.\n" + str(result1)
+            print "Request addBalance failed.\n" +str(senderAddr) + str(result1)
         else:
-            print 'testaddBalance Result: ' + str(result) + '\n'
+            print 'testaddBalance Result: '+str(senderAddr) + str(result) + '\n'
             reqIds.append(str(result))
             return result
 
