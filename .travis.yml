@@ -4,8 +4,8 @@ sudo: required
 language:
   - go
 go:
-    - 1.12.5
     - 1.10.8
+    - 1.12.5
 env:
   global:
     - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
@@ -49,10 +49,10 @@ script:
     ./deposit_test.sh 4;
     fi
 
-  - if [ $IS_RUN_TESTCONTRACTCASES == 'true'];then
-    cd ../contract/testcases;
-    ./test_start.sh;
-    fi
+  # - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
+  #   cd ../contract/testcases;
+  #   ./test_start.sh;
+  #   fi
 
   - mkdir -p ${BDD_LOG_PATH}
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then

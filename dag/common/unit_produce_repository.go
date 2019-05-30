@@ -410,6 +410,9 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 3. 更新每个mediator的得票数
 	for _, voteTally := range dag.mediatorVoteTally {
 		med := dag.GetMediator(voteTally.candidate)
+		if med == nil {
+			log.Errorf("Cannot get mediator by:%s", voteTally.candidate.String())
+		}
 		med.TotalVotes = voteTally.votedCount
 		dag.stateRep.StoreMediator(med)
 	}

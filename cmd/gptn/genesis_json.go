@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/files"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
@@ -225,14 +224,15 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	isOpenSTD := ctx.Args().Get(1)
 	isOpenSTD = strings.ToUpper(isOpenSTD)
 	if isOpenSTD == "FALSE" {
-		newLogOutPath := []string{}
-		for _, p := range cfg.Log.OutputPaths {
-			if p == log.LogStdout {
-				continue
-			}
-			newLogOutPath = append(newLogOutPath, p)
-		}
-		cfg.Log.OutputPaths = newLogOutPath
+		//newLogOutPath := []string{}
+		//for _, p := range cfg.Log.OutputPaths {
+		//	if p == log.LogStdout {
+		//		continue
+		//	}
+		//	newLogOutPath = append(newLogOutPath, p)
+		//}
+		//cfg.Log.OutputPaths = newLogOutPath
+		cfg.Log.LoggerLvl = "INFO"
 	}
 	// 修改默认的Jury配置
 	if len(mediators) > 0 {
