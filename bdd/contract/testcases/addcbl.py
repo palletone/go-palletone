@@ -52,7 +52,9 @@ class createToken():
             return result
 
     def ccinvoketx_create(self, senderAddr, recieverAddr, contractAddr, tokenAmount):
-
+        print senderAddr
+        print recieverAddr
+              
         data = {
             "jsonrpc": "2.0",
             "method": "contract_ccinvoketxPass",
