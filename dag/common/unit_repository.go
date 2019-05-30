@@ -1450,6 +1450,8 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	//读取之前的奖励统计值
 	addrMap, err := rep.statedb.GetContractStatesByPrefix(contractId, constants.RewardAddressPrefix)
 	if err != nil {
+		log.Errorf("GetContractStates(%v) By Prefix(%v) is error",
+			syscontract.CoinbaseContractAddress.Str(), RewardAddressPrefix)
 		return nil, 0, err
 	}
 	rewards := map[common.Address][]modules.AmountAsset{}

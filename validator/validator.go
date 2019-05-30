@@ -72,7 +72,6 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 	defer validate.setUtxoQuery(oldUtxoQuery)
 
 	var coinbase *modules.Transaction
-
 	for txIndex, tx := range txs {
 		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
@@ -168,7 +167,14 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) err
 	if code == TxValidationCode_VALID {
 		return nil
 	}
-	log.Debugf("Tx[%s] validate not pass!", tx.Hash().String())
+
+	log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
+		tx.Hash().String(), validationCode_name[int32(code)])
+	//log.DebugDynamic(func() string {
+	//	txj, _ := json.Marshal(tx)
+	//	return string(txj)
+	//})
+
 	return NewValidateError(code)
 }
 

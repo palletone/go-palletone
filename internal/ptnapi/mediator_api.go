@@ -86,7 +86,7 @@ func (a *PublicMediatorAPI) IsInList(addStr string) (bool, error) {
 	return a.Dag().IsMediator(mediator), nil
 }
 
-func (a *PublicMediatorAPI) GetList() []string {
+func (a *PublicMediatorAPI) ListAll() []string {
 	addStrs := make([]string, 0)
 	mas := a.Dag().GetMediators()
 
@@ -115,7 +115,7 @@ func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
 	return a.Dag().LookupMediatorInfo()
 }
 
-func (a *PublicMediatorAPI) GetActives() []string {
+func (a *PublicMediatorAPI) ListActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.Dag().GetActiveMediators()
 
@@ -339,7 +339,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	}
 
 	// 调用系统合约
-	cArgs := [][]byte{[]byte(modules.MediatorApplyQuitMediator)}
+	cArgs := [][]byte{[]byte(modules.MediatorApplyQuitList)}
 	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
 		nil, syscontract.DepositContractAddress, cArgs, 0)

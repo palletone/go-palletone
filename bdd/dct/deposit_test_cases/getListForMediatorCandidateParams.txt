@@ -5,15 +5,8 @@ Resource          publicParams.txt
 
 *** Keywords ***
 getListForMediatorCandidate
-    [Arguments]    ${address}
     ${one}    Create List    GetListForMediatorCandidate
     ${two}    Create List    ${one}
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForMediatorCandidate    ${two}
-    ${respContentJson}    to json    ${resp.content}
-    #    get Length    ${respContentJson['result']}
-    #    Run Keyword If    ${resultLen} == 0    Create List    list is nil
-    #    Run Keyword If    ${resultLen} == 0    Create List    ${address}
-    #    Run Keyword If    ${resultLen} != 0    Evaluate    [addressList['address'] for addressList in ${respContentJson['result']}]
-    ${resultDic}    Evaluate    demjson.decode(u'${respContentJson['result']}')    demjson
-    ${isIn}    Get From Dictionary    ${resultDic}    ${address}
-    [Return]    ${isIn}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForMediatorCandidate    ${two}
+    ${addressMap}    To Json    ${result}
+    [Return]    ${addressMap}

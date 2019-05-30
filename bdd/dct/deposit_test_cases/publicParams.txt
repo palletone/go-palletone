@@ -6,6 +6,7 @@ Resource          developerApplyCashbackParams.txt
 Resource          developerPayToDepositContractParams.txt
 Resource          getAgreeForBecomeMediatorListParams.txt
 Resource          getBecomeMediatorApplyListParams.txt
+Resource          getMediatorDepositWithAddrParams.txt
 Resource          getCandidateBalanceWithAddrParams.txt
 Resource          getListForCashbackApplicationParams.txt
 Resource          getListForDeveloperCandidateParams.txt
@@ -30,3 +31,4 @@ ${Url}            http://127.0.0.1:8545
 ${depositContractAddress}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
 ${amount}         1000000000
 ${fee}            1000000000
+${medDepositAmount}    200000000000
