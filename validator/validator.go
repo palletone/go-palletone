@@ -69,7 +69,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 	defer validate.setUtxoQuery(oldUtxoQuery)
 
 	var coinbase *modules.Transaction
-	ads:=[]*modules.Addition{}
+	ads := []*modules.Addition{}
 	for txIndex, tx := range txs {
 		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
@@ -77,13 +77,13 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			return TxValidationCode_DUPLICATE_TXID
 		}
 		if txIndex == 0 {
-			coinbase=tx
+			coinbase = tx
 			continue
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
 		//TODO Devin
-		txCode, txFee := validate.validateTx(tx,  true, unitTime)
+		txCode, txFee := validate.validateTx(tx, true, unitTime)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 
@@ -99,9 +99,9 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 		//validate.utxoquery = newUtxoQuery
 	}
 	//验证第一条交易
-	if len(txs)>0 {
+	if len(txs) > 0 {
 		//手续费应该与其他交易付出的手续费相等
-		return	validate.validateCoinbase(coinbase,ads)
+		return validate.validateCoinbase(coinbase, ads)
 
 		//allIncome := uint64(0)
 		//outputs := coinbase.TxMessages[0].Payload.(*modules.PaymentPayload).Outputs
@@ -125,15 +125,18 @@ return all transactions' fee
 //	code := validate.validateTransactions(txs)
 //	return NewValidateError(code)
 //}
-func (validate *Validate) validateCoinbase(tx *modules.Transaction,ads []*modules.Addition) ValidationCode{
+
+func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modules.Addition) ValidationCode {
 	return TxValidationCode_VALID
 }
-func (validate *Validate) ValidateTx(tx *modules.Transaction,  isFullTx bool) error {
+
+func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) error {
 	code, _ := validate.validateTx(tx, isFullTx, time.Now().Unix())
 	if code == TxValidationCode_VALID {
 		return nil
 	}
-	log.Debugf("Tx[%s] validate not pass!", tx.Hash().String())
+	log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
+		tx.Hash().String(), validationCode_name[int32(code)])
 	return NewValidateError(code)
 }
 

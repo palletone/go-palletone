@@ -339,7 +339,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	}
 
 	// 调用系统合约
-	cArgs := [][]byte{[]byte(modules.MediatorApplyQuitMediator)}
+	cArgs := [][]byte{[]byte(modules.MediatorApplyQuitList)}
 	fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
 		nil, syscontract.DepositContractAddress, cArgs, 0)

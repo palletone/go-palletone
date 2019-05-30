@@ -26,13 +26,13 @@ import (
 )
 
 const (
-	ApplyMediator             = "ApplyBecomeMediator"
-	IsApproved                = "IsSelected"
-	MediatorPayDeposit        = "MediatorPayToDepositContract"
-	MediatorList              = "MediatorList"
-	GetMediatorDeposit        = "GetMediatorDeposit"
-	MediatorWithdrawDeposit   = "MediatorApplyCashback"
-	MediatorApplyQuitMediator = "MediatorApplyQuitMediator"
+	ApplyMediator           = "ApplyBecomeMediator"
+	IsApproved              = "IsSelected"
+	MediatorPayDeposit      = "MediatorPayToDepositContract"
+	MediatorList            = "MediatorList"
+	GetMediatorDeposit      = "GetMediatorDeposit"
+	MediatorWithdrawDeposit = "MediatorApplyCashback"
+	MediatorApplyQuitList   = "MediatorApplyQuitMediator"
 )
 
 type MediatorInfo struct {
