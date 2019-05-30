@@ -23,7 +23,7 @@ section unlock his account succed
 section revoke user certificate succed
     Log    "section revoke user certificate succed"
     ${args}=    Create List    ${addCRLMethod}    ${sectionRevokeUserCRLBytes}
-    ${params}=    Create List    ${sectionCertHolder}    ${sectionCertHolder}    1    1    ${certContractAddr}
+    ${params}=    genInvoketxParams    ${sectionCertHolder}    ${sectionCertHolder}    1    1    ${certContractAddr}
     ...    ${args}    ${null}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    addCRL
     Dictionary Should Contain Key    ${respJson}    result

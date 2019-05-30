@@ -30,8 +30,8 @@ type ITxPool interface {
 	// AddRemote(tx *modules.Transaction) error
 	Stop()
 
-	AddLocal(tx *modules.TxPoolTransaction) error
-	AddLocals(txs []*modules.TxPoolTransaction) []error
+	AddLocal(tx *modules.Transaction) error
+	AddLocals(txs []*modules.Transaction) []error
 	AddSequenTx(tx *modules.Transaction) error
 	AddSequenTxs(txs []*modules.Transaction) error
 	AllHashs() []*common.Hash

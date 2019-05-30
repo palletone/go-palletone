@@ -53,7 +53,6 @@ var DefaultConfig = Config{
 	PartitionForkUnitHeight:      0,
 	//PtnAssetHex:                  modules.CoreAsset.AssetId.String(),
 	//PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
-	IsRewardCoin:      false,
 	AddrTxsIndex:      false,
 	Token721TxIndex:   true,
 	TextFileHashIndex: false,
@@ -101,7 +100,7 @@ type Config struct {
 	GenesisHash             string
 	PartitionForkUnitHeight int
 
-	IsRewardCoin    bool
+
 	AddrTxsIndex    bool
 	Token721TxIndex bool
 

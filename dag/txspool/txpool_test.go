@@ -238,7 +238,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	t1 := time.Now()
 	fmt.Println("addlocals start.... ", t1)
-	pool.AddLocals(txpool_txs)
+	pool.AddLocals(txs)
 	pendingTxs, _ := pool.pending()
 	pending := 0
 	p_txs := make([]*modules.TxPoolTransaction, 0)

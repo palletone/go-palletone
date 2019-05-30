@@ -2,66 +2,124 @@ os: linux
 dist: xenial
 sudo: required
 language:
-    - go
+  - go
 go:
     - 1.12.5
     - 1.10.8
 env:
-    global:
-        - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
-        - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
-        - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
-        - CREATE_TRANS_DIR=createTrans
-        - CCINVOKE_DIR=ccinvoke
-        - VOTECONTRACT_DIR=voteContract
-        - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
-        - DEPOSIT_DIR=deposit
-        - LOG_NAME=log.html
-        - REPORT_NAME=report.html
-        - FTP_URL=ftp://${USER}:${PASSWORD}@98.142.130.141/master
-        - CURL_CMD=curl --ftp-create-dirs -T
-        - GO111MODULE=on
+  global:
+    - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
+    - GAS_TOKEN_ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/GasToken/node/log/all.log
+    - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
+    - DEPOSIT_LOG_PATH=/home/votravis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
+    - CREATE_TRANS_DIR=createTrans
+    - CCINVOKE_DIR=ccinvoke
+    - VOTECONTRACT_DIR=voteContract
+    - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
+    - DEPOSIT_DIR=deposit
+    - GAS_TOKEN_DIR=gasToken
+    - LOG_NAME=log.html
+    - REPORT_NAME=report.html
+##########  control testcase  ##############
+    - IS_RUN_DEPOSIT=true
+    - IS_RUN_CREATE_TRANS=true
+    - IS_RUN_CCINVOKE=true
+    - IS_RUN_DIGITAL=true
+    - IS_RUN_VOTE=true
+    - IS_RUN_GASTOKEN=true
+    - GO111MODULE=on
+#    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
-    - go build ./cmd/gptn
-    - make gptn
-    #- $GOPATH/bin/goveralls -service=travis-ci
-    - cp gptn bdd/node
-    - cd bdd/node
-    - chmod +x gptn
-    - python init.py
-    - nohup ./gptn &
-    - sleep 15
-    - netstat -ap | grep gptn
-    - cd ../dct
-    - mkdir -p ${BDD_LOG_PATH}
-#    - ./deposit_test.sh 4
-    - python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ../testcase/createTrans
-    - python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ../testcase/crtCoinContract
-    - python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/
-    - python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert
+  - go build ./cmd/gptn
+  - make gptn
+  #- $GOPATH/bin/goveralls -service=travis-ci
+  - cp gptn bdd/node
+  - mkdir bdd/GasToken/node
+  - cp gptn bdd/GasToken/node
+  - cd bdd/node
+  - chmod +x gptn
+  - python init.py
+  - nohup ./gptn &
+  - sleep 15
+  - netstat -ap | grep gptn
+  - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+    cd ../dct;
+    ./deposit_test.sh 4;
+    fi
+
+  - mkdir -p ${BDD_LOG_PATH}
+  - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
+    python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ../testcase/createTrans;
+    fi
+
+  - if [ $IS_RUN_CCINVOKE == 'true' ]; then
+    python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ../testcase/crtCoinContract;
+    fi
+
+  - if [ $IS_RUN_VOTE == 'true' ]; then
+    python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/;
+    fi
+
+  - if [ $IS_RUN_DIGITAL == 'true' ]; then
+    python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
+    fi
+
+  - if [ $IS_RUN_GASTOKEN == 'true' ]; then
+    cd ../GasToken;
+    chmod +x ./init_gas_token.sh;
+    ./init_gas_token.sh;
+    sleep 15;
+    python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
+    fi
 
 after_script:
-    - killall gptn
-    # upload all log
-    - ${CURL_CMD} ${ALL_LOG_PATH} ${FTP_URL}/all.log -v
-#    # upload deposit log
-#    - ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${LOG_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${LOG_NAME}
-#    - ${CURL_CMD} ${DEPOSIT_LOG_PATH}/${REPORT_NAME} ${FTP_URL}/${DEPOSIT_DIR}/${REPORT_NAME}
-    # upload create transactions log and report
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${LOG_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${LOG_NAME} -v
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${CREATE_TRANS_DIR}/${REPORT_NAME} ${FTP_URL}/${CREATE_TRANS_DIR}/${REPORT_NAME} -v
-    # upload ccinvoke log and report
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${LOG_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${LOG_NAME} -v
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${CCINVOKE_DIR}/${REPORT_NAME} ${FTP_URL}/${CCINVOKE_DIR}/${REPORT_NAME} -v
-    # upload voteContract log and report
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${VOTECONTRACT_DIR}/${LOG_NAME} ${FTP_URL}/${VOTECONTRACT_DIR}/${LOG_NAME} -v
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${VOTECONTRACT_DIR}/${REPORT_NAME} ${FTP_URL}/${VOTECONTRACT_DIR}/${REPORT_NAME} -v
-    # upload digital identity log and report
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${LOG_NAME} -v
-    - ${CURL_CMD} ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} ${FTP_URL}/${DIGITAL_IDENTITY_DIR}/${REPORT_NAME} -v
-    # echo ftp address
-    - echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/master', but you should quit VPN first"
+  - killall gptn
+  - sleep 2
+#  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+  # upload all log
+  - curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
+
+  # upload deposit log
+  - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DEPOSIT_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DEPOSIT_DIR/${REPORT_NAME} -v;
+    fi
+
+  # upload create transactions log and report
+  - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/${REPORT_NAME} -v;
+    fi
+
+  # upload ccinvoke log and report
+  - if [ $IS_RUN_CCINVOKE == 'true' ]; then
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CCINVOKE_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CCINVOKE_DIR/${REPORT_NAME} -v;
+    fi
+
+  # upload voteContract log and report
+  - if [ $IS_RUN_VOTE == 'true' ]; then
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} -v;
+    fi
+
+  # upload digital identity log and report
+  - if [ $IS_RUN_DIGITAL == 'true' ]; then
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -v;
+    fi
+
+  - if [ $IS_RUN_GASTOKEN == 'true' ]; then
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/$LOG_NAME -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/gastoken_all.log -T ${GAS_TOKEN_ALL_LOG_PATH} -v;
+    fi
+
+  # echo ftp address
+  - "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/palletone"
+  - "If you want to open it in explorer, you should close VPN first."
+  - "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
 
 before_install:
     - go get github.com/mattn/goveralls
@@ -72,32 +130,30 @@ before_install:
     - source ./gomockgen.sh
 
 install:
-    - python -V
-    - whereis python
-    - which python
-    - sudo -H pip install --upgrade pip
-    - sudo -H pip install robotframework==2.8.5
-    - sudo -H pip install requests
-    - sudo -H pip install robotframework-requests
-    - sudo -H pip install demjson
-    - sudo -H pip install pexpect
-    - sudo -H apt-get install expect
-    #- sudo -H apt-get install jq tcl tk
+  - python -V
+  - whereis python
+  - which python
+  - sudo -H pip install --upgrade pip
+  - sudo -H pip install robotframework==2.8.5
+  - sudo -H pip install requests
+  - sudo -H pip install robotframework-requests
+  - sudo -H pip install demjson
+  - sudo -H pip install pexpect
+  - sudo -H apt-get install expect
+  #- sudo -H apt-get install jq tcl tk
 
 addons:
-    apt:
-        update: true
+  apt:
+    update: true
 
 deploy:
-    skip_cleanup: true
-    provider:
-    on:
-        branch: all
+  skip_cleanup: true
+#    provider:
+#    all_branches: true
 
 notifications:
-    email:
-        recipients:
-            - elva1087penny@163.com
-        on_success: always # default: change
-        on_failure: always
-
+  email:
+    recipients:
+      - travisreport@163.com
+    on_success: always # default: change
+    on_failure: always

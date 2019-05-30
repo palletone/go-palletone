@@ -39,17 +39,20 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
+
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
-
 	"sync"
+
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/dag/parameter"
 )
 
 type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
+	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -389,7 +392,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
+func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	rep.lock.RLock()
 	begin := time.Now()
 
@@ -438,35 +441,28 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	log.Infof("txpool.GetSortedTxs cost time %s, include txs:[%#x]", time.Since(begin), txIds)
 	// step5. compute minner income: transaction fees + interest
 
-	//交易费用--
-	ads, err := ComputeTxFees(mAddr, poolTxs)
+	//交易费用(包含利息)
+	ads, err := rep.ComputeTxFeesAllocate(mAddr, poolTxs)
 	if err != nil {
 		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error())
 		return nil, err
 	}
-	// @Jay TODO
-	//保证金利息--
-	//addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-	//awardAd, err := rep.ComputeAwardsFees(&addr, poolTxs)
-	//if err != nil && awardAd != nil {
-	//	ads = append(ads, awardAd)
-	//}
-	//利息奖励--
-	rewardAd := ComputeRewardsFees(mAddr, assetId.ToAsset())
-	if rewardAd != nil {
+
+	//出块奖励
+	rewardAd := rep.ComputeGenerateUnitReward(mAddr, assetId.ToAsset())
+	if rewardAd != nil&& rewardAd.Amount>0 {
 		ads = append(ads, rewardAd)
 	}
 
 	outAds := arrangeAdditionFeeList(ads)
-	coinbase, rewards, err := CreateCoinbase(outAds, t)
+	coinbase, rewards, err := rep.CreateCoinbase(outAds, chainIndex.Index)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-	// 若配置增发，或者该单元包含有效交易（rewards>0），则将增发奖励和交易费全发给该mediator。
 	txs := make(modules.Transactions, 0)
-	if rewards > 0 || dagconfig.DagConfig.IsRewardCoin {
-		log.Debug("=======================Is rewards && coinbase tx info ================", "IsReward", dagconfig.DagConfig.IsRewardCoin, "amount", rewards, "hash", coinbase.Hash().String())
+	if len(outAds)>0 {
+		log.Debug("=======================Is rewards && coinbase tx info ================",  "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	}
 
@@ -511,14 +507,6 @@ func (rep *UnitRepository) CreateUnit(mAddr *common.Address, txpool txspool.ITxP
 	//units = append(units, unit)
 	return unit, nil
 }
-
-//func ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
-//	fee := uint64(0)
-//	for _, tx := range txs {
-//		fee += tx.TxFee.Amount
-//	}
-//	return fee, nil
-//}
 
 func checkReadSetValid(dag storage.IStateDb, contractId []byte, readSet []modules.ContractReadSet) bool {
 	for _, rd := range readSet {
@@ -605,83 +593,50 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 	return nil
 }
 
-func ComputeTxFees(m *common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
-	if m == nil {
-		return nil, errors.New("ComputeTxFees param is nil")
-	}
+func  (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
+
 	ads := make([]*modules.Addition, 0)
 	for _, tx := range txs {
 		if tx.Tx == nil || tx.TxFee == nil {
 			continue
 		}
-		a := &modules.Addition{
-			Amount: tx.TxFee.Amount,
-			Asset:  *tx.TxFee.Asset,
+		allowcate,err:= tx.Tx.GetTxFeeAllocate(rep.utxoRepository.GetUtxoEntry,time.Now().Unix(),tokenengine.GetScriptSigners,m)
+		if err!=nil{
+			return nil, err
 		}
-
-		if !tx.Tx.IsContractTx() || tx.Tx.IsSystemContract() {
-			a.Addr = *m
+		for _,a:=range allowcate {
 			ads = append(ads, a)
-			continue
 		}
-		addrs := tx.Tx.GetContractTxSignatureAddress()
-		nm := len(addrs)
-		if nm <= 0 {
-			a.Addr = *m
-			ads = append(ads, a)
-			continue
-		}
-		jAll := a.Amount * 6 / 10       //all jury
-		j := jAll / uint64(nm)          //single jury
-		mAll := a.Amount - j*uint64(nm) //mediator
-
-		if mAll > a.Amount {
-			log.Error("ComputeTxFees", "computer err, mAll=", mAll, "a.mount=", a.Amount)
-			continue
-		}
-		for _, add := range addrs {
-			am := &modules.Addition{
-				Asset: *tx.TxFee.Asset,
-			}
-			am.Amount = j //jury fee= all * 0.6/nm
-			am.Addr = add
-			//log.Info("ComputeTxFees", "i", i, "am.Amount", am.Amount, "nm", nm, "add", add)
-			ads = append(ads, am)
-		}
-		a.Amount = mAll //mediator fee = all * 0.4
-		a.Addr = *m
-		ads = append(ads, a)
 	}
 
 	return ads, nil
 }
 
-//利息奖励,Mediator
-func ComputeRewardsFees(m *common.Address, asset *modules.Asset) *modules.Addition {
+//,Mediator奖励
+func (rep *UnitRepository) ComputeGenerateUnitReward(m common.Address, asset *modules.Asset) *modules.Addition {
 	a := &modules.Addition{
-		Addr:   *m,
-		Amount: ComputeRewards(),
-		Asset:  *asset,
+		Addr: m,
 	}
-
+	a.Amount = ComputeGenerateUnitReward()
+	a.Asset = asset
 	return a
 }
 
 //获取保证金利息
-func (rep *UnitRepository) ComputeAwardsFees(addr *common.Address, poolTxs []*modules.TxPoolTransaction) (*modules.Addition, error) {
-	if poolTxs == nil {
-		return nil, errors.New("ComputeAwardsFees param is nil")
-	}
-	awardAd, err := rep.utxoRepository.ComputeAwards(poolTxs, rep.dagdb)
-	if err != nil {
-		log.Error(err.Error())
-		return nil, err
-	}
-	if awardAd != nil {
-		awardAd.Addr = *addr
-	}
-	return awardAd, nil
-}
+//func (rep *UnitRepository) ComputeAwardsFees(addr *common.Address, poolTxs []*modules.TxPoolTransaction) (*modules.Addition, error) {
+//	if poolTxs == nil {
+//		return nil, errors.New("ComputeAwardsFees param is nil")
+//	}
+//	awardAd, err := rep.utxoRepository.ComputeAwards(poolTxs, rep.dagdb)
+//	if err != nil {
+//		log.Error(err.Error())
+//		return nil, err
+//	}
+//	if awardAd != nil {
+//		awardAd.Addr = *addr
+//	}
+//	return awardAd, nil
+//}
 
 func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
 	if len(ads) <= 0 {
@@ -1429,30 +1384,131 @@ To get unit information by its ChainIndex
 创建coinbase交易
 To create coinbase transaction
 */
-func CreateCoinbase(ads []*modules.Addition, t time.Time) (*modules.Transaction, uint64, error) {
+func (rep *UnitRepository) CreateCoinbase(ads []*modules.Addition, height uint64) (*modules.Transaction, uint64, error) {
+	if height%parameter.CurrentSysParameters.RewardHeight == 0 {
+		return rep.createCoinbasePayment(ads)
+	} else {
+		return rep.createCoinbaseState(ads)
+	}
+}
+func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*modules.Transaction, uint64, error) {
+	log.Debug("create a statedb record to write mediator and jury income")
 	totalIncome := uint64(0)
-	payload := modules.PaymentPayload{}
-
+	payload := modules.ContractInvokePayload{}
+	contractId := syscontract.CoinbaseContractAddress.Bytes()
+	payload.ContractId = contractId
+	//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
+	//key为奖励地址，Value为[]AmountAsset
 	if len(ads) != 0 {
 		for _, v := range ads {
-			script := tokenengine.GenerateLockScript(v.Addr)
-			additionalOutput := modules.Output{
-				Value:    v.Amount,
-				Asset:    &v.Asset,
-				PkScript: script,
+			key := RewardAddressPrefix + v.Addr.String()
+			data, _, err := rep.statedb.GetContractState(contractId, key)
+			income := []modules.AmountAsset{}
+			if err == nil { //之前有奖励
+				rlp.DecodeBytes(data, &income)
 			}
-			payload.Outputs = append(payload.Outputs, &additionalOutput)
-
+			newValue := addIncome(income, v.Amount,v.Asset)
+			newData, _ := rlp.EncodeToBytes(newValue)
+			ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: newData}
+			payload.WriteSet = append(payload.WriteSet, ws)
 			totalIncome += v.Amount
 		}
 	}
 	msg := &modules.Message{
-		App:     modules.APP_PAYMENT,
+		App:     modules.APP_CONTRACT_INVOKE,
 		Payload: &payload,
 	}
 	coinbase := new(modules.Transaction)
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	return coinbase, totalIncome, nil
+}
+func addIncome(income []modules.AmountAsset, newAmount uint64, asset *modules.Asset) []modules.AmountAsset {
+	newValue := []modules.AmountAsset{}
+	hasOldValue := false
+	for _, aa := range income {
+		if aa.Asset.Equal(asset) {
+			aa.Amount += newAmount
+			hasOldValue = true
+		}
+		newValue = append(newValue, aa)
+	}
+	if !hasOldValue {
+		newValue = append(newValue, modules.AmountAsset{Amount:newAmount,Asset:asset,})
+	}
+	return newValue
+}
+
+const RewardAddressPrefix = "Addr:"
+
+func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modules.Transaction, uint64, error) {
+	log.Debug("create a payment to reward mediator and jury")
+	totalIncome := uint64(0)
+
+	contractId := syscontract.CoinbaseContractAddress.Bytes()
+
+	//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
+	//key为奖励地址，Value为[]AmountAsset
+	//读取之前的奖励统计值
+	addrMap, err := rep.statedb.GetContractStatesByPrefix(contractId, RewardAddressPrefix)
+	if err != nil {
+		return nil, 0, err
+	}
+	rewards := map[common.Address][]modules.AmountAsset{}
+	for key, v := range addrMap {
+		addr := string(key[len(RewardAddressPrefix):])
+		incomeAddr, _ := common.StringToAddress(addr)
+		aa := []modules.AmountAsset{}
+		rlp.DecodeBytes(v.Value, &aa)
+		rewards[incomeAddr] = aa
+	}
+	//附加最新的奖励
+	for _, ad := range ads {
+
+		reward, ok := rewards[ad.Addr]
+		if !ok {
+			reward = []modules.AmountAsset{}
+		}
+		reward = addIncome(reward, ad.Amount,ad.Asset)
+		rewards[ad.Addr] = reward
+		totalIncome += ad.Amount
+	}
+	//所有奖励转换成PaymentPayload
+	msg := createCoinbasePaymentMsg(rewards)
+	coinbase := new(modules.Transaction)
+	coinbase.TxMessages = append(coinbase.TxMessages, msg)
+	//清空历史奖励的记账值
+	payload := &modules.ContractInvokePayload{}
+	payload.ContractId = contractId
+	for addr, _ := range rewards {
+		key := RewardAddressPrefix + addr.String()
+		ws := modules.ContractWriteSet{IsDelete: true, Key: key}
+		payload.WriteSet = append(payload.WriteSet, ws)
+	}
+	msg1 := &modules.Message{
+		App:     modules.APP_CONTRACT_INVOKE,
+		Payload: payload,
+	}
+	coinbase.TxMessages = append(coinbase.TxMessages, msg1)
+	return coinbase, totalIncome, nil
+}
+func createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
+	coinbasePayment := &modules.PaymentPayload{}
+	for addr, v := range rewards {
+		script := tokenengine.GenerateLockScript(addr)
+		for _, reward := range v {
+			additionalOutput := modules.Output{
+				Value:    reward.Amount,
+				Asset:    reward.Asset,
+				PkScript: script,
+			}
+			coinbasePayment.Outputs = append(coinbasePayment.Outputs, &additionalOutput)
+		}
+	}
+	msg := &modules.Message{
+		App:     modules.APP_PAYMENT,
+		Payload: coinbasePayment,
+	}
+	return msg
 }
 
 /**

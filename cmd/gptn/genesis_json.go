@@ -292,6 +292,7 @@ func createExampleGenesis() *core.Genesis {
 		DepositRate:               core.DefaultDepositRate,
 		TxCoinYearRate:            core.DefaultTxCoinYearRate,
 		GenerateUnitReward:        core.DefaultGenerateUnitReward,
+		RewardHeight:              core.DefaultRewardHeight,
 		FoundationAddress:         core.DefaultFoundationAddress,
 		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
 		DepositAmountForJury:      core.DefaultDepositAmountForJury,
