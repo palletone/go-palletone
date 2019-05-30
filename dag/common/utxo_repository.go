@@ -571,7 +571,7 @@ func (repository *UtxoRepository) ComputeAwards(txs []*modules.TxPoolTransaction
 	} else {
 		addition := new(modules.Addition)
 		//first tx's asset
-		addition.Asset = *txs[0].Tx.Asset()
+		addition.Asset = txs[0].Tx.Asset()
 		addition.Amount = awards
 		return addition, nil
 	}
@@ -632,10 +632,10 @@ func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*module
 计算Mediator的利息
 To compute mediator interest for packaging one unit
 */
-func ComputeRewards() uint64 {
+func ComputeGenerateUnitReward() uint64 {
 	var rewards uint64
-	if dagconfig.DagConfig.IsRewardCoin {
+
 		rewards = parameter.CurrentSysParameters.GenerateUnitReward
-	}
+
 	return rewards
 }

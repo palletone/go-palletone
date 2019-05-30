@@ -118,7 +118,7 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 }
 
 func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(txspool.TxtoTxpoolTx(b.ptn.txPool, signedTx))
+	return b.ptn.txPool.AddLocal(signedTx)
 }
 
 func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
@@ -605,7 +605,9 @@ func (b *PtnApiBackend) UpdateJuryAccount(addr common.Address, pwd string) bool 
 func (b *PtnApiBackend) GetJuryAccount() []common.Address {
 	return b.ptn.contractPorcessor.GetJuryAccount()
 }
-
+func (b *PtnApiBackend) SaveCommon(key, val []byte) error {
+	return b.ptn.dag.SaveCommon(key, val)
+}
 func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 	return b.ptn.dag.GetCommon(key)
 }

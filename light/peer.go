@@ -428,7 +428,7 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer, headhash common.Hash) error {
+func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer, headhash common.Hash, assetids [][][]byte) error {
 	//p.lock.Lock()
 	//defer p.lock.Unlock()
 	p.lightlock.RLock()
@@ -440,6 +440,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	send = send.add("headNum", *number)
 	send = send.add("headHash", headhash)
 	send = send.add("genesisHash", genesis)
+	send = send.add("assetids", assetids)
 
 	if server != nil {
 		send = send.add("serveHeaders", nil)
@@ -529,10 +530,20 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 
 	if err := recv.get("fullnode", nil); err != nil {
 		p.fullnode = false
-		log.Debug("Light Palletone peer->Handshake peer is light node")
 	} else {
 		p.fullnode = true
-		log.Debug("Light Palletone peer->Handshake peer is full node")
+	}
+	var rAssetIds [][][]byte
+	if err := recv.get("assetids", &rAssetIds); err != nil {
+		return err
+	}
+	for _, data := range rAssetIds {
+		var hash common.Hash
+		var number modules.ChainIndex
+		hash.SetBytes(data[0])
+		number.SetBytes(data[1])
+		log.Debug("Light PalletOne Handshake all assetids", "assetid", number.AssetID, "index", number.Index)
+		p.lightpeermsg[number.AssetID] = &announceData{Hash: hash, Number: number}
 	}
 	p.lightpeermsg[rNum.AssetID] = &announceData{Hash: rHash, Number: rNum}
 	return nil

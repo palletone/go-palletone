@@ -431,7 +431,7 @@ func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Tran
 
 	// 4. 将 tx 放入 pool
 	txPool := p.TxPool()
-	err = txPool.AddLocal(txspool.TxtoTxpoolTx(txPool, tx))
+	err = txPool.AddLocal(tx)
 	if err != nil {
 		return err
 	}

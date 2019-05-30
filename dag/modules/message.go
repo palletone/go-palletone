@@ -27,8 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 
 	"bytes"
-
-	"github.com/shopspring/decimal"
 )
 
 type MessageType byte
@@ -402,26 +400,6 @@ type InvokeTokens struct {
 func (i *InvokeTokens) String() string {
 	data, _ := json.Marshal(i)
 	return string(data)
-}
-
-//金额和资�?
-type AmountAsset struct {
-	Amount uint64 `json:"amount"`
-	Asset  *Asset `json:"asset"`
-}
-
-func (aa *AmountAsset) String() string {
-
-	number := assetAmt2DecimalAmt(aa.Asset, aa.Amount)
-	return number.String() + aa.Asset.String()
-}
-func assetAmt2DecimalAmt(asset *Asset, amount uint64) decimal.Decimal {
-	dec := asset.GetDecimal()
-	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))
-	for i := 0; i < int(dec); i++ {
-		d = d.Div(decimal.New(10, 0))
-	}
-	return d
 }
 
 type TokenPayOut struct {

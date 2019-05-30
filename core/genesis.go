@@ -23,18 +23,18 @@ import (
 	"strconv"
 
 	"github.com/btcsuite/btcutil/base58"
-	"go.dedis.ch/kyber/v3"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"go.dedis.ch/kyber/v3"
 )
 
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type SystemConfig struct {
-	TxCoinYearRate     string `json:"txCoinYearRate"`     //交易币天的年利率
-	GenerateUnitReward string `json:"generateUnitReward"` //每生产一个单元，奖励多少Dao的PTN
-	FoundationAddress  string `json:"foundationAddress"`  //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
-
+	TxCoinYearRate            string `json:"txCoinYearRate"`           //交易币天的年利率
+	GenerateUnitReward        string `json:"generateUnitReward"`       //每生产一个单元，奖励多少Dao的PTN
+	FoundationAddress         string `json:"foundationAddress"`        //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
+	RewardHeight              uint64 `json:"reward_height"`            //每多少高度进行一次奖励的派发
 	DepositRate               string `json:"depositRate"`              //保证金的年利率
 	DepositAmountForMediator  string `json:"depositAmountForMediator"` //保证金的数量
 	DepositAmountForJury      string `json:"depositAmountForJury"`

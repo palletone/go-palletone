@@ -140,6 +140,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 	}
 	mediator.ApplyQuitTime = time.Now().Unix() / DTimeDuration
 	mediator.Status = Quit
+	mediator.Balance = 0
 	//  获取退出列表
 	quitList, err := GetList(stub, ListForApplyQuitMediator)
 	if err != nil {

@@ -87,6 +87,7 @@ type Backend interface {
 	// dag's get common
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
+	SaveCommon(key, val []byte) error
 	// Get Contract Api
 	GetContract(hex_id string) (*modules.Contract, error)
 
