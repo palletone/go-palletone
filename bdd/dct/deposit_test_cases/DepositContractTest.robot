@@ -15,27 +15,27 @@ Business_01
     [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点申请退出候选列表-》进入退出列表-》基金会同意。此时，所有列表为空
     ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表
     log    ${result}
-    @{addressMap1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
-    log    @{addressMap1}
-    Dictionary Should Contain Key    @{addressMap1}    ${mediatorAddr_01}
+    ${addressMap1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
+    log    ${addressMap1}
+    Dictionary Should Contain Key    ${addressMap1}    ${mediatorAddr_01}
     ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理列表里的节点（同意）
     log    ${result}
-    @{addressMap2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
-    log    @{addressMap2}
-    Dictionary Should Contain Key    @{addressMap2}    ${mediatorAddr_01}
+    ${addressMap2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
+    log    ${addressMap2}
+    Dictionary Should Contain Key    ${addressMap2}    ${mediatorAddr_01}
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金（大于或等于保证金数量）,需要200000000000及以上
     log    ${result}
-    @{addressMap3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
-    log    @{addressMap3}
-    Dictionary Should Contain Key    @{addressMap3}    ${mediatorAddr_01}
+    ${addressMap3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
+    log    ${addressMap3}
+    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
     ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil    #有余额
     ${result}    applyQuitMediator    ${mediatorAddr_01}    #该节点申请退出mediator候选列表
     log    ${result}
-    @{addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
-    log    @{addressMap4}
-    Dictionary Should Contain Key    @{addressMap4}    ${mediatorAddr_01}
+    ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
+    log    ${addressMap4}
+    Dictionary Should Contain Key    ${addressMap4}    ${mediatorAddr_01}
     ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
     ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
@@ -43,16 +43,16 @@ Business_01
     Should Be Equal    ${result}    balance is nil    #账户地址不存在
     ${result}    getBecomeMediatorApplyList    #为空
     log    ${result}
-    Dictionary Should Not Contain Key    @{result}    ${mediatorAddr_01}
+    Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
     ${result}    getAgreeForBecomeMediatorList    #为空
     log    ${result}
-    Dictionary Should Not Contain Key    @{result}    ${mediatorAddr_01}
+    Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
     ${result}    getListForMediatorCandidate    #为空
     log    ${result}
-    Dictionary Should Not Contain Key    @{result}    ${mediatorAddr_01}
+    Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
     ${result}    getQuitMediatorApplyList    #为空
     log    ${result}
-    Dictionary Should Not Contain Key    @{result}    ${mediatorAddr_01}
+    Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
 
 Business_02
     [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》社区节点申请没收改地址所以保证金-》基金会同意，此时，只有同意列表不为空，其他的为空。
