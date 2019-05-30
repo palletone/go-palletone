@@ -22,15 +22,13 @@ import (
 	//"encoding/binary"
 	"errors"
 	"fmt"
-	"sync"
-	"time"
-
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
+	"sync"
 )
 
 var (
@@ -39,13 +37,10 @@ var (
 	errNotRegistered     = errors.New("peer is not registered")
 )
 
-const maxResponseErrors = 50 // number of invalid responses tolerated (makes the protocol less brittle but still avoids spam)
-
-const (
-	announceTypeNone = iota
-	announceTypeSimple
-	announceTypeSigned
-)
+type peerMsg struct {
+	head   common.Hash
+	number *modules.ChainIndex
+}
 
 type peer struct {
 	*p2p.Peer
@@ -60,13 +55,11 @@ type peer struct {
 
 	id string
 
-	//headInfo *announceData
-	lock sync.RWMutex
+	headInfo peerMsg
+	lock     sync.RWMutex
 
 	announceChn chan announceData
-	//sendQueue   *execQueue
 
-	//      *poolEntry
 	hasBlock       func(common.Hash, uint64) bool
 	responseErrors int
 
@@ -102,59 +95,30 @@ func (p *peer) queueSend(f func()) {
 }
 
 // Info gathers and returns a collection of metadata known about a peer.
-func (p *peer) Info() *ptn.PeerInfo {
+func (p *peer) Info(asssetId modules.AssetId) *ptn.PeerInfo {
+	hash, number := p.HeadAndNumber(asssetId)
+	var index uint64
+	if number != nil {
+		index = number.Index
+	}
 	return &ptn.PeerInfo{
 		Version: p.version,
-		Index:   uint64(0),
-		Head:    fmt.Sprintf("%x", p.Head()),
+		Index:   index,
+		Head:    fmt.Sprintf("%x", hash),
 	}
 }
 
 // Head retrieves a copy of the current head (most recent) hash of the peer.
-func (p *peer) Head() (hash common.Hash) {
+func (p *peer) Head(assetId modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
+	return p.HeadAndNumber(assetId)
+}
+
+func (p *peer) HeadAndNumber(assetId modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	//copy(hash[:], p.headInfo.Hash[:])
-	return hash
-}
-
-func (p *peer) HeadAndNumber() (hash common.Hash, number *modules.ChainIndex) {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-
-	//copy(hash[:], p.headInfo.Hash[:])
-	//return hash, &p.headInfo.Number
-	return common.Hash{}, nil
-}
-
-//func (p *peer) headBlockInfo() blockInfo {
-//	p.lock.RLock()
-//	defer p.lock.RUnlock()
-//
-//	return blockInfo{Hash: p.headInfo.Hash, Number: &p.headInfo.Number /*, Td: p.headInfo.Td*/}
-//}
-
-// waitBefore implements distPeer interface
-func (p *peer) waitBefore(maxCost uint64) (time.Duration, float64) {
-	//return p.fcServer.CanSend(maxCost)
-	return 0, 0
-}
-
-func sendRequest(w p2p.MsgWriter, msgcode, reqID, cost uint64, data interface{}) error {
-	type req struct {
-		ReqID uint64
-		Data  interface{}
-	}
-	return p2p.Send(w, msgcode, req{reqID, data})
-}
-
-func sendResponse(w p2p.MsgWriter, msgcode, reqID, bv uint64, data interface{}) error {
-	type resp struct {
-		ReqID, BV uint64
-		Data      interface{}
-	}
-	return p2p.Send(w, msgcode, resp{reqID, bv, data})
+	copy(hash[:], p.headInfo.head[:])
+	return hash, p.headInfo.number
 }
 
 // HasBlock checks if the peer has a given block
@@ -181,127 +145,47 @@ func (p *peer) SendCurrentHeader(headers []*modules.Header) error {
 	return p2p.Send(p.rw, CurrentHeaderMsg, headers)
 }
 
-/*
-// SendBlockHeaders sends a batch of block headers to the remote peer.
-func (p *peer) SendUnitHeaders(reqID, bv uint64, headers []*modules.Header) error {
-	return sendResponse(p.rw, BlockHeadersMsg, reqID, bv, headers)
-}
-
-// SendBlockBodiesRLP sends a batch of block contents to the remote peer from
-// an already RLP encoded format.
-func (p *peer) SendBlockBodiesRLP(reqID, bv uint64, bodies []rlp.RawValue) error {
-	return sendResponse(p.rw, BlockBodiesMsg, reqID, bv, bodies)
-}
-
-// SendCodeRLP sends a batch of arbitrary internal data, corresponding to the
-// hashes requested.
-func (p *peer) SendCode(reqID, bv uint64, data [][]byte) error {
-	return sendResponse(p.rw, CodeMsg, reqID, bv, data)
-}
-
-func (p *peer) SendRawUTXOs(reqID, bv uint64, utxos [][][]byte) error {
-	return p2p.Send(p.rw, UTXOsMsg, utxos)
-}
-
-// SendProofs sends a batch of legacy LES/1 merkle proofs, corresponding to the ones requested.
-func (p *peer) SendRawProofs(reqID, bv uint64, proofs [][][]byte) error {
-	return p2p.Send(p.rw, ProofsMsg, proofs)
-}
-func (p *peer) SendProofs(reqID, bv uint64, proof proofsRespData) error {
-	return p2p.Send(p.rw, ProofsMsg, proof)
-}
-
-// SendProofsV2 sends a batch of merkle proofs, corresponding to the ones requested.
-func (p *peer) SendProofsV2(reqID, bv uint64, proofs les.NodeList) error {
-	return sendResponse(p.rw, ProofsV2Msg, reqID, bv, proofs)
-}
-
-// SendHeaderProofs sends a batch of legacy LES/1 header proofs, corresponding to the ones requested.
-func (p *peer) SendHeaderProofs(reqID, bv uint64, proofs []ChtResp) error {
-	return sendResponse(p.rw, HeaderProofsMsg, reqID, bv, proofs)
-}
-
-//
-//// SendHelperTrieProofs sends a batch of HelperTrie proofs, corresponding to the ones requested.
-func (p *peer) SendHelperTrieProofs(reqID, bv uint64, resp HelperTrieResps) error {
-	return sendResponse(p.rw, HelperTrieProofsMsg, reqID, bv, resp)
-}
-
-// RequestHeadersByHash fetches a batch of blocks' headers corresponding to the
-// specified header query, based on the hash of an origin block.
-func (p *peer) RequestHeadersByHash(reqID, cost uint64, origin common.Hash, amount int, skip int, reverse bool) error {
+func (p *peer) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
 	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+}
+func (p *peer) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
+	log.Debug("Fetching batch of headers", "count", amount, "index", origin.Index, "skip", skip, "reverse", reverse)
+	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
-// RequestHeadersByNumber fetches a batch of blocks' headers corresponding to the
-// specified header query, based on the number of an origin block.
-func (p *peer) RequestHeadersByNumber(reqID, cost uint64, origin modules.ChainIndex, amount int, skip int, reverse bool) error {
-	log.Debug("Fetching batch of headers", "count", amount, "fromnum", origin, "skip", skip, "reverse", reverse)
-	//return nil
-	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+// SendBlockHeaders sends a batch of block headers to the remote peer.
+func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
+	return p2p.Send(p.rw, BlockHeadersMsg, headers)
 }
 
-// RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
-// specified.
-func (p *peer) RequestBodies(reqID, cost uint64, hashes []common.Hash) error {
-	log.Debug("Fetching batch of block bodies", "count", len(hashes))
-	return sendRequest(p.rw, GetBlockBodiesMsg, reqID, cost, hashes)
+//interface
+func (p *peer) RequestBodies([]common.Hash) error {
+	return nil
+}
+func (p *peer) RequestNodeData([]common.Hash) error {
+	return nil
 }
 
-func (p *peer) RequestUTXOs(reqID, cost uint64, addr string) error {
-	log.Debug("Fetching batch of utxos", "addr", addr)
-	return p2p.Send(p.rw, GetUTXOsMsg, addr)
+func (p *peer) RequestNodeDataHead(modules.AssetId) (common.Hash, *modules.ChainIndex) {
+	return common.Hash{}, nil
+}
+func (p *peer) RequestNodeDataRequestHeadersByHash(common.Hash, int, int, bool) error {
+	return nil
+}
+func (p *peer) RequestNodeDataRequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error {
+	return nil
+}
+func (p *peer) RequestNodeDataRequestDagHeadersByHash(common.Hash, int, int, bool) error {
+	return nil
+}
+func (p *peer) RequestNodeDataRequestLeafNodes() error {
+	return nil
+}
+func (p *peer) RequestLeafNodes() error {
+	return nil
 }
 
-// RequestProofs fetches a batch of merkle proofs from a remote node.
-func (p *peer) RequestProofs(reqID, cost uint64, reqs []ProofReq) error {
-	log.Debug("Fetching batch of proofs", "count", len(reqs))
-	return p2p.Send(p.rw, GetProofsMsg, reqs)
-}
-
-// RequestHelperTrieProofs fetches a batch of HelperTrie merkle proofs from a remote node.
-func (p *peer) RequestHelperTrieProofs(reqID, cost uint64, reqs []HelperTrieReq) error {
-	log.Debug("Fetching batch of HelperTrie proofs", "count", len(reqs))
-	//return nil
-	switch p.version {
-	case lpv1:
-		reqsV1 := make([]ChtReq, len(reqs))
-		for i, req := range reqs {
-			if req.Type != htCanonical || req.AuxReq != auxHeader || len(req.Key) != 8 {
-				return fmt.Errorf("Request invalid in LES/1 mode")
-			}
-			blockNum := binary.BigEndian.Uint64(req.Key)
-			// convert HelperTrie request to old CHT request
-			reqsV1[i] = ChtReq{ChtNum: (req.TrieIdx + 1) * (les.CHTFrequencyClient / les.CHTFrequencyServer), BlockNum: blockNum, FromLevel: req.FromLevel}
-		}
-		return sendRequest(p.rw, GetHeaderProofsMsg, reqID, cost, reqsV1)
-	case lpv2:
-		return sendRequest(p.rw, GetHelperTrieProofsMsg, reqID, cost, reqs)
-	default:
-		panic(nil)
-	}
-}
-
-// RequestTxStatus fetches a batch of transaction status records from a remote node.
-func (p *peer) RequestTxStatus(reqID, cost uint64, txHashes []common.Hash) error {
-	log.Debug("Requesting transaction status", "count", len(txHashes))
-	return sendRequest(p.rw, GetTxStatusMsg, reqID, cost, txHashes)
-}
-
-// SendTxStatus sends a batch of transactions to be added to the remote transaction pool.
-func (p *peer) SendTxs(reqID, cost uint64, txs modules.Transactions) error {
-	log.Debug("Fetching batch of transactions", "count", len(txs))
-	switch p.version {
-	case lpv1:
-		return p2p.Send(p.rw, SendTxMsg, txs) // old message format does not include reqID
-	case lpv2:
-		return sendRequest(p.rw, SendTxV2Msg, reqID, cost, txs)
-	default:
-		panic(nil)
-	}
-}
-*/
 type keyValueEntry struct {
 	Key   string
 	Value rlp.RawValue
@@ -440,6 +324,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	}
 
 	log.Debug("Cors Handshake", "p.ID()", p.ID(), "genesis", rGenesis, "network", rNetwork, "version", rVersion, "gastoken", rGastoken)
+	p.headInfo = peerMsg{head: rHash, number: &rNum}
 	return nil
 }
 
@@ -452,10 +337,10 @@ func (p *peer) String() string {
 
 // peerSetNotify is a callback interface to notify services about added or
 // removed peers
-type peerSetNotify interface {
-	registerPeer(*peer)
-	unregisterPeer(*peer)
-}
+//type peerSetNotify interface {
+//	registerPeer(*peer)
+//	unregisterPeer(*peer)
+//}
 
 // peerSet represents the collection of active peers currently participating in
 // the Light Ethereum sub-protocol.
@@ -539,13 +424,13 @@ func (ps *peerSet) BestPeer() *peer {
 
 	var (
 		bestPeer *peer
-		//bestTd   uint64
+		bestTd   uint64
 	)
-	//for _, p := range ps.peers {
-	//	if number := p.headInfo.Number; bestPeer == nil || number.Index > bestTd {
-	//		bestPeer, bestTd = p, number.Index
-	//	}
-	//}
+	for _, p := range ps.peers {
+		if number := p.headInfo.number; bestPeer == nil || number.Index > bestTd {
+			bestPeer, bestTd = p, number.Index
+		}
+	}
 	return bestPeer
 }
 
@@ -563,20 +448,20 @@ func (ps *peerSet) AllPeers() []*peer {
 	return list
 }
 
-func (ps *peerSet) PeersWithoutHeader(hash common.Hash) []*peer {
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-
-	list := make([]*peer, len(ps.peers))
-	i := 0
-	for _, peer := range ps.peers {
-		if peer.Head().String() != hash.String() {
-			list[i] = peer
-			i++
-		}
-	}
-	return list
-}
+//func (ps *peerSet) PeersWithoutHeader(hash common.Hash) []*peer {
+//	ps.lock.RLock()
+//	defer ps.lock.RUnlock()
+//
+//	list := make([]*peer, len(ps.peers))
+//	i := 0
+//	for _, peer := range ps.peers {
+//		if peer.Head().String() != hash.String() {
+//			list[i] = peer
+//			i++
+//		}
+//	}
+//	return list
+//}
 
 // Close disconnects all peers.
 // No new peers can be registered after Close has returned.

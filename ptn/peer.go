@@ -158,31 +158,6 @@ func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
 	p.peermsg[number.AssetID] = msg
 }
 
-//func (p *peer) LightHead(assetID modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
-//	p.lightlock.RLock()
-//	defer p.lightlock.RUnlock()
-//
-//	msg, ok := p.lightpeermsg[assetID]
-//	if ok {
-//		copy(hash[:], msg.head[:])
-//		number = msg.number
-//	}
-//	return hash, number
-//}
-
-//func (p *peer) SetLightHead(hash common.Hash, number *modules.ChainIndex) {
-//	p.lightlock.Lock()
-//	defer p.lightlock.Unlock()
-//
-//	msg, ok := p.lightpeermsg[number.AssetID]
-//
-//	if (ok && number.Index > msg.number.Index) || !ok {
-//		copy(msg.head[:], hash[:])
-//		msg.number = number
-//	}
-//	p.lightpeermsg[number.AssetID] = msg
-//}
-
 // MarkBlock marks a block as known for the peer, ensuring that the block will
 // never be propagated to this particular peer.
 func (p *peer) MarkUnit(hash common.Hash) {
@@ -336,10 +311,10 @@ func (p *peer) RequestHeadersByHash(origin common.Hash, amount int, skip int, re
 
 // RequestDagHeadersByHash fetches a batch of blocks' headers corresponding to the
 // specified header query, based on the hash of an origin block.
-func (p *peer) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return nil
-}
+//func (p *peer) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
+//	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
+//	return nil
+//}
 
 func (p *peer) RequestLeafNodes() error {
 	//GetLeafNodes

@@ -523,20 +523,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	defer msg.Discard()
 
-	//SubProtocols compare
-	//if len(p.Caps()) > 0 {
-	//	partition := pm.SubProtocols[0].Name == p.Caps()[0].Name
-	//	//if !partition && (msg.Code != GetBlockHeadersMsg || msg.Code != BlockHeadersMsg) {
-	//	if !partition && msg.Code != GetBlockHeadersMsg {
-	//		log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
-	//		return nil
-	//	}
-	//	if !partition && msg.Code != BlockHeadersMsg {
-	//		log.Debug("ProtocolManager handleMsg SubProtocols partition compare")
-	//		return nil
-	//	}
-	//}
-
 	// Handle the message depending on its contents
 	switch {
 	case msg.Code == StatusMsg:
