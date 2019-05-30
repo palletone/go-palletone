@@ -92,7 +92,7 @@ script:
 
   - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
     cd ../contract/testcases;
-    chmod +x ./test_start.sh;
+    chmod +x ./*.sh;
     ./test_start.sh;
     fi
 
