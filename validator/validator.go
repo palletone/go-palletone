@@ -24,8 +24,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 )
 
 type Validate struct {
@@ -57,9 +60,9 @@ func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
 	validate.utxoquery = q
 }
 
-//逐条验证每一个Tx，并返回总手续费
-func (validate *Validate) validateTransactions(txs modules.Transactions, unitTime int64) ValidationCode {
-	fee := uint64(0)
+//逐条验证每一个Tx，并返回总手续费的分配情况，然后与Coinbase进行比较
+func (validate *Validate) validateTransactions(txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
+	ads := []*modules.Addition{}
 
 	oldUtxoQuery := validate.utxoquery
 
@@ -69,7 +72,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 	defer validate.setUtxoQuery(oldUtxoQuery)
 
 	var coinbase *modules.Transaction
-	ads:=[]*modules.Addition{}
+
 	for txIndex, tx := range txs {
 		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
@@ -77,20 +80,21 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			return TxValidationCode_DUPLICATE_TXID
 		}
 		if txIndex == 0 {
-			coinbase=tx
+			coinbase = tx
 			continue
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-		//TODO Devin
-		txCode, txFee := validate.validateTx(tx,  true, unitTime)
+
+		txCode, txFeeAllocate := validate.validateTx(tx, true, unitTime)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 
 			return txCode
 		}
-		//txFee, _ := tx.GetTxFee(validate.utxoquery.GetUtxoEntry, unitTime)
-		fee += txFee.Amount
+		for _, a := range txFeeAllocate {
+			ads = append(ads, a)
+		}
 
 		for outPoint, utxo := range tx.GetNewUtxos() {
 			unitUtxo.Store(outPoint, utxo)
@@ -99,21 +103,54 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 		//validate.utxoquery = newUtxoQuery
 	}
 	//验证第一条交易
-	if len(txs)>0 {
+	if len(txs) > 0 {
+		//附加上出块奖励
+		a := &modules.Addition{
+			Addr:   unitAuthor,
+			Amount: parameter.CurrentSysParameters.GenerateUnitReward,
+			Asset:  dagconfig.DagConfig.GetGasToken().ToAsset(),
+		}
+		ads = append(ads, a)
+		out := arrangeAdditionFeeList(ads, unitAuthor)
 		//手续费应该与其他交易付出的手续费相等
-		return	validate.validateCoinbase(coinbase,ads)
+		coinbaseValidateResult := validate.validateCoinbase(coinbase, out)
+		if coinbaseValidateResult == TxValidationCode_VALID {
+			log.Debugf("Validate coinbase[%s] pass", coinbase.Hash().String())
+		}
+		return coinbaseValidateResult
 
-		//allIncome := uint64(0)
-		//outputs := coinbase.TxMessages[0].Payload.(*modules.PaymentPayload).Outputs
-		//for _, output := range outputs {
-		//	allIncome += output.Value
-		//}
-		//if allIncome != fee+reward {
-		//	log.Warnf("Unit has an incorrect coinbase, expect income=%d,actual=%d", fee+reward, allIncome)
-		//	return TxValidationCode_INVALID_FEE
-		//}
 	}
 	return TxValidationCode_VALID
+}
+func arrangeAdditionFeeList(ads []*modules.Addition, mediatorAddr common.Address) []*modules.Addition {
+	if len(ads) <= 0 {
+		return nil
+	}
+	out := make([]*modules.Addition, 0)
+	for _, a := range ads {
+		ok := false
+		b := &modules.Addition{}
+		for _, b = range out {
+			if ok, _ = a.IsEqualStyle(b); ok {
+				break
+			}
+		}
+		if ok {
+			b.Amount += a.Amount
+			continue
+		}
+		out = append(out, a)
+	}
+	for _, o := range out {
+		if o.Addr.IsZero() {
+			o.Addr = mediatorAddr
+		}
+	}
+	if len(out) < 1 {
+		return nil
+	} else {
+		return out
+	}
 }
 
 /**
@@ -125,10 +162,8 @@ return all transactions' fee
 //	code := validate.validateTransactions(txs)
 //	return NewValidateError(code)
 //}
-func (validate *Validate) validateCoinbase(tx *modules.Transaction,ads []*modules.Addition) ValidationCode{
-	return TxValidationCode_VALID
-}
-func (validate *Validate) ValidateTx(tx *modules.Transaction,  isFullTx bool) error {
+
+func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) error {
 	code, _ := validate.validateTx(tx, isFullTx, time.Now().Unix())
 	if code == TxValidationCode_VALID {
 		return nil

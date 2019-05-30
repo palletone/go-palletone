@@ -149,7 +149,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 		return NewValidateError(UNIT_STATE_INVALID_HEADER_TXROOT)
 	}
 	// step2. check transactions in unit
-	code := validate.validateTransactions(unit.Txs, unit.Timestamp())
+	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), unit.Author())
 	if code != TxValidationCode_VALID {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), code)
 		log.Debug(msg)

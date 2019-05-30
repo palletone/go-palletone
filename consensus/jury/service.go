@@ -22,12 +22,11 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"strconv"
 	"sync"
 	"time"
-	"strconv"
 
 	"encoding/json"
-	"go.dedis.ch/kyber/v3"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -36,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
@@ -45,7 +45,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/core"
+	"go.dedis.ch/kyber/v3"
 )
 
 const (
@@ -86,7 +86,6 @@ type iDag interface {
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
@@ -95,6 +94,8 @@ type iDag interface {
 	GetContract(contractId []byte) (*modules.Contract, error)
 	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 }
 
 type Juror struct {
@@ -633,7 +634,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Mediator, true", shortId(reqId.String()))
 			return true
 		} else if !isSysContract && isJury {
-			if !p.contractReqAddrCheck(tx, true){
+			if !p.contractReqAddrCheck(tx, true) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, stop, false", shortId(reqId.String()))
 				break
 			}
@@ -646,7 +647,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			if !p.contractReqAddrCheck(tx, true){
+			if !p.contractReqAddrCheck(tx, true) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, stop, false", shortId(reqId.String()))
 				break
 			}
@@ -837,7 +838,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
@@ -865,8 +866,8 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 func (p *Processor) contractReqAddrCheck(tx *modules.Transaction, check bool) bool { //contract stop only
 	if check {
 		//只检查合约交易Stop请求地址与合同部署创建者地址是否相同
-		if contractType , err := getContractTxType(tx); err == nil{
-			if contractType != modules.APP_CONTRACT_STOP_REQUEST{
+		if contractType, err := getContractTxType(tx); err == nil {
+			if contractType != modules.APP_CONTRACT_STOP_REQUEST {
 				return true
 			}
 		}

@@ -48,6 +48,8 @@ type IStateQuery interface {
 	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 }
 type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
