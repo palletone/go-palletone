@@ -45,7 +45,7 @@ type ITxPool interface {
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
 	Queued() ([]*modules.TxPoolTransaction, error)
-	SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error
+	SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error
 	ResetPendingTxs(txs []*modules.Transaction) error
 	SendStoredTxs(hashs []common.Hash) error
 	DiscardTxs(hashs []common.Hash) error
@@ -54,7 +54,7 @@ type ITxPool interface {
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
+	GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize)
 	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
 	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
 	Stats() (int, int, int)

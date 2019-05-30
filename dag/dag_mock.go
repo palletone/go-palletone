@@ -52,6 +52,18 @@ func (mr *MockIDagMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIDag)(nil).Close))
 }
 
+// SaveCommon mocks base method
+func (m *MockIDag) SaveCommon(key, val []byte) error {
+	ret := m.ctrl.Call(m, "SaveCommon", key, val)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveCommon indicates an expected call of SaveCommon
+func (mr *MockIDagMockRecorder) SaveCommon(key, val interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommon", reflect.TypeOf((*MockIDag)(nil).SaveCommon), key, val)
+}
+
 // GetCommon mocks base method
 func (m *MockIDag) GetCommon(key []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
@@ -458,7 +470,7 @@ func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *g
 }
 
 // CreateUnit mocks base method
-func (m *MockIDag) CreateUnit(mAddr *common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
+func (m *MockIDag) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUnit", mAddr, txpool, t)
 	ret0, _ := ret[0].(*modules.Unit)

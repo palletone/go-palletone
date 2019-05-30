@@ -205,17 +205,17 @@ func (mr *MockITxPoolMockRecorder) Queued() *gomock.Call {
 }
 
 // SetPendingTxs mocks base method
-func (m *MockITxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
+func (m *MockITxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetPendingTxs", unit_hash, txs)
+	ret := m.ctrl.Call(m, "SetPendingTxs", unit_hash, num, txs)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetPendingTxs indicates an expected call of SetPendingTxs
-func (mr *MockITxPoolMockRecorder) SetPendingTxs(unit_hash, txs interface{}) *gomock.Call {
+func (mr *MockITxPoolMockRecorder) SetPendingTxs(unit_hash, num, txs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPendingTxs", reflect.TypeOf((*MockITxPool)(nil).SetPendingTxs), unit_hash, txs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPendingTxs", reflect.TypeOf((*MockITxPool)(nil).SetPendingTxs), unit_hash, num, txs)
 }
 
 // ResetPendingTxs mocks base method
@@ -290,18 +290,18 @@ func (mr *MockITxPoolMockRecorder) SubscribeTxPreEvent(arg0 interface{}) *gomock
 }
 
 // GetSortedTxs mocks base method
-func (m *MockITxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
+func (m *MockITxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSortedTxs", hash)
+	ret := m.ctrl.Call(m, "GetSortedTxs", hash, index)
 	ret0, _ := ret[0].([]*modules.TxPoolTransaction)
 	ret1, _ := ret[1].(common.StorageSize)
 	return ret0, ret1
 }
 
 // GetSortedTxs indicates an expected call of GetSortedTxs
-func (mr *MockITxPoolMockRecorder) GetSortedTxs(hash interface{}) *gomock.Call {
+func (mr *MockITxPoolMockRecorder) GetSortedTxs(hash, index interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSortedTxs", reflect.TypeOf((*MockITxPool)(nil).GetSortedTxs), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSortedTxs", reflect.TypeOf((*MockITxPool)(nil).GetSortedTxs), hash, index)
 }
 
 // Get mocks base method

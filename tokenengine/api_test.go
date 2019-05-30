@@ -561,6 +561,11 @@ func TestUserContractPayout(t *testing.T) {
 	err = ScriptValidate(lockScript, mockPickupJuryRedeemScript, tx, 0, 1)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 
+	addrs,err:= GetScriptSigners(tx,0,0)
+	assert.Nil(t,err)
+	for _,addr:=range addrs{
+		t.Logf("Signed address:%s",addr.String())
+	}
 }
 func TestMergeContractUnlockScript(t *testing.T) {
 	sign1 := []byte("111111111111")
