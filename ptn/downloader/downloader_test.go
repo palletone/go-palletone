@@ -1945,7 +1945,7 @@ func (ftp *floodingTestPeer) RequestNodeData(hashes []common.Hash) error {
 	return ftp.peer.RequestNodeData(hashes)
 }
 func (ftp *floodingTestPeer) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	return ftp.peer.RequestDagHeadersByHash(origin, amount, skip, reverse)
+	return nil //ftp.peer.RequestDagHeadersByHash(origin, amount, skip, reverse)
 }
 func (ftp *floodingTestPeer) RequestLeafNodes() error {
 	return ftp.peer.RequestLeafNodes()
