@@ -6,6 +6,7 @@ Resource          developerApplyCashbackParams.txt
 Resource          developerPayToDepositContractParams.txt
 Resource          getAgreeForBecomeMediatorListParams.txt
 Resource          getBecomeMediatorApplyListParams.txt
+Resource          getMediatorDepositWithAddrParams.txt
 Resource          getCandidateBalanceWithAddrParams.txt
 Resource          getListForCashbackApplicationParams.txt
 Resource          getListForDeveloperCandidateParams.txt
