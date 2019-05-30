@@ -46,7 +46,7 @@ Business_01
     Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
     ${result}    getAgreeForBecomeMediatorList    #为空
     log    ${result}
-    Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
+    Dictionary Should Contain Key    ${result}    ${mediatorAddr_01}
     ${result}    getListForMediatorCandidate    #为空
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
