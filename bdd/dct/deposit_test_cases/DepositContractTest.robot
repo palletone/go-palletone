@@ -40,7 +40,7 @@ Business_01
     log    ${result}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should Be Equal    ${result}    0    #账户地址不存在
+    Should Be Equal    ${mDeposit}    0    #账户地址不存在
     ${result}    getBecomeMediatorApplyList    #为空
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
