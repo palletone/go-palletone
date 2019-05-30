@@ -45,16 +45,18 @@ script:
   - nohup ./gptn &
   - sleep 15
   - netstat -ap | grep gptn
-  - "into bdd path, all testcases is here"
-  - cd ${BASE_DIR}/bd
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-    ./dct/deposit_test.sh 4;
+    cd ../dct;
+    ./deposit_test.sh 4;
     fi
 
   - if [ $IS_RUN_TESTCONTRACTCASES == 'true'];then
-    ./contract/testcases/test_start.sh;
+    cd ../contract/testcases;
+    ./test_start.sh;
     fi
 
+  - "into bdd path, all testcases is here"
+  - cd ${BASE_DIR}/bdd
   - mkdir -p ${BDD_LOG_PATH}
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
     python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
@@ -73,10 +75,11 @@ script:
     fi
 
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-    chmod +x ./GasToken/init_gas_token.sh;
-    ./GasToken/init_gas_token.sh;
+    cd ./GasToken;
+    chmod +x ./init_gas_token.sh;
+    ./init_gas_token.sh;
     sleep 15;
-    python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./GasToken/testcases;
+    python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
 
 after_script:
