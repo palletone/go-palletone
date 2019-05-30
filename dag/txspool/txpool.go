@@ -495,7 +495,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if tx == nil || tx.Tx == nil {
 		return errors.New("This transaction is invalide.")
 	}
-	err := pool.txValidator.ValidateTx(tx.Tx,  true)
+	err := pool.txValidator.ValidateTx(tx.Tx, true)
 	return err
 }
 
@@ -701,7 +701,7 @@ func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
 // promoteTx adds a transaction to the pending (processable) list of transactions.
 //
 // Note, this method assumes the pool lock is held!
-func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, number uint64, index int) {
+func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, number, index uint64) {
 	// Try to insert the transaction into the pending queue
 	tx_hash := tx.Tx.Hash()
 	interTx, has := pool.all.Load(tx_hash)
@@ -1524,10 +1524,10 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 }
 func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error {
 	for i, tx := range txs {
-		if tx.Messages()[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+		if i == 0 { // coinbase
 			continue
 		}
-		err := pool.setPendingTx(unit_hash, tx, num, i)
+		err := pool.setPendingTx(unit_hash, tx, num, uint64(i))
 		if err != nil {
 			return err
 		}
@@ -1537,7 +1537,7 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modu
 	}
 	return nil
 }
-func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction, number uint64, index int) error {
+func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction, number, index uint64) error {
 	hash := tx.Hash()
 	if pool.isTransactionInPool(hash) {
 		// in orphan pool
@@ -1703,7 +1703,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	indexL := make(map[int]common.Hash)
 	for i, tx := range list {
 		hash := tx.Tx.Hash()
-		tx.Index = i
+		tx.Index = uint64(i)
 		indexL[i] = hash
 		m[hash] = tx
 	}
@@ -1713,7 +1713,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		if tx, has := m[t_hash]; has {
 			delete(m, t_hash)
 			list = append(list, tx)
-			go pool.promoteTx(hash, tx, index, i)
+			go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
 	// if time.Since(t2) > time.Second*1 {

@@ -48,7 +48,7 @@ script:
     cd ../dct;
     ./deposit_test.sh 4;
     fi
-    
+
   - if [ $IS_RUN_TESTCONTRACTCASES == 'true'];then
     cd ../contract/testcases;
     ./test_start.sh

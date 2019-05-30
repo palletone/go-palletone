@@ -689,7 +689,7 @@ func (s *PublicBlockChainAPI) rpcOutputBlock(b *types.Block, inclTx bool, fullTx
 */
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
 type RPCTransaction struct {
-	UnitHash common.Hash `json:"unit_Hash"`
+	//UnitHash common.Hash `json:"unit_Hash"`
 	//From      common.Address `json:"from"`
 	UnitIndex uint64      `json:"unit_index"`
 	Hash      common.Hash `json:"hash"`
@@ -704,10 +704,11 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex
 		Hash: tx.Hash(),
 	}
 	if blockHash != (common.Hash{}) {
-		result.UnitHash = blockHash
+		//result.UnitHash = blockHash
 		result.UnitIndex = unitIndex
 		result.TransactionIndex = hexutil.Uint(index)
 	}
+	result.UnitIndex = unitIndex
 	return result
 }
 
@@ -716,7 +717,7 @@ func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
 		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, uint64(tx.Index))
 	}
-	return newRPCTransaction(tx.Tx, common.Hash{}, 0, 0)
+	return newRPCTransaction(tx.Tx, common.Hash{}, -1, 0)
 }
 
 /*

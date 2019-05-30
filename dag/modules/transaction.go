@@ -115,7 +115,7 @@ type TxPoolTransaction struct {
 	IsOrphan     bool
 	Discarded    bool         // will remove
 	TxFee        *AmountAsset `json:"tx_fee"`
-	Index        int          `json:"index"` // index 是该Unit位置。
+	Index        uint64       `json:"index"` // index 是该Unit位置。
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time
@@ -404,6 +404,7 @@ type Transaction struct {
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
+
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
 	for _, msg := range tx.TxMessages {
@@ -665,9 +666,9 @@ func (tx *Transaction) InvokeContractId() []byte {
 }
 
 type Addition struct {
-	Addr        common.Address `json:"address"`
-	Amount uint64 `json:"amount"`
-	Asset  *Asset `json:"asset"`
+	Addr   common.Address `json:"address"`
+	Amount uint64         `json:"amount"`
+	Asset  *Asset         `json:"asset"`
 }
 
 type OutPoint struct {
@@ -796,67 +797,68 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	}
 	return -1
 }
-func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, unitTime int64,getSignerFunc GetScriptSignersFunc ,mediatorAddr common.Address) ([]*Addition,error){
-	fee,err:=tx.GetTxFee(queryUtxoFunc,unitTime)
-	result:=[]*Addition{}
-	if err!=nil{
-		return nil,err
+func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, unitTime int64, getSignerFunc GetScriptSignersFunc, mediatorAddr common.Address) ([]*Addition, error) {
+	fee, err := tx.GetTxFee(queryUtxoFunc, unitTime)
+	result := []*Addition{}
+	if err != nil {
+		return nil, err
 	}
-	if fee.Amount==0{
+	if fee.Amount == 0 {
 		return result, nil
 	}
-	isResultMsg:=false
-	jury:=[]common.Address{}
-	for msgIdx,msg:=range tx.TxMessages{
-		if msg.App.IsRequest(){
-			isResultMsg=true
+	isResultMsg := false
+	jury := []common.Address{}
+	for msgIdx, msg := range tx.TxMessages {
+		if msg.App.IsRequest() {
+			isResultMsg = true
 			continue
 		}
-		if isResultMsg && msg.App==APP_SIGNATURE{
+		if isResultMsg && msg.App == APP_SIGNATURE {
 			payload := msg.Payload.(*SignaturePayload)
 			for _, sig := range payload.Signatures {
 				jury = append(jury, crypto.PubkeyBytesToAddress(sig.PubKey))
 			}
 		}
-		if isResultMsg && msg.App==APP_PAYMENT {
+		if isResultMsg && msg.App == APP_PAYMENT {
 			payment := msg.Payload.(*PaymentPayload)
-			if !payment.IsCoinbase(){
-				jury,err= getSignerFunc(tx,msgIdx,0)
-				if err!=nil{
-					return nil, errors.New("Parse unlock script to get signers error:"+err.Error())
+			if !payment.IsCoinbase() {
+				jury, err = getSignerFunc(tx, msgIdx, 0)
+				if err != nil {
+					return nil, errors.New("Parse unlock script to get signers error:" + err.Error())
 				}
 			}
 		}
 	}
-	if isResultMsg{//合约执行，Fee需要分配给Jury
-		juryAmount:=float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
-		juryAllocatedAmt:=uint64(0)
-		juryCount:=float64(len(jury))
-		for _,jurior:=range jury{
-			jIncome:=&Addition{
+	if isResultMsg { //合约执行，Fee需要分配给Jury
+		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
+		juryAllocatedAmt := uint64(0)
+		juryCount := float64(len(jury))
+		for _, jurior := range jury {
+			jIncome := &Addition{
 				Addr:   jurior,
-				Amount:uint64( juryAmount/juryCount),
+				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
 			}
-			juryAllocatedAmt+=jIncome.Amount
-			result=append(result,jIncome)
+			juryAllocatedAmt += jIncome.Amount
+			result = append(result, jIncome)
 		}
-		mediatorIncome:=&Addition{
+		mediatorIncome := &Addition{
 			Addr:   mediatorAddr,
-			Amount: fee.Amount-juryAllocatedAmt,
+			Amount: fee.Amount - juryAllocatedAmt,
 			Asset:  fee.Asset,
 		}
-		result=append(result,mediatorIncome)
-	}else{//没有合约执行，全部分配给Mediator
-		mediatorIncome:=&Addition{
+		result = append(result, mediatorIncome)
+	} else { //没有合约执行，全部分配给Mediator
+		mediatorIncome := &Addition{
 			Addr:   mediatorAddr,
 			Amount: fee.Amount,
 			Asset:  fee.Asset,
 		}
-		result=append(result,mediatorIncome)
+		result = append(result, mediatorIncome)
 	}
-	return result,nil
+	return result, nil
 }
+
 //判断一个交易是否是完整交易，如果是普通转账交易就是完整交易，
 //如果是合约请求交易，那么带了结果Msg的就是完整交易
 //func (tx *Transaction) IsFullTx() bool{
