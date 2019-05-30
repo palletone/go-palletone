@@ -81,7 +81,7 @@ type LightPeer interface {
 	Head(modules.AssetId) (common.Hash, *modules.ChainIndex)
 	RequestHeadersByHash(common.Hash, int, int, bool) error
 	RequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error
-	RequestDagHeadersByHash(common.Hash, int, int, bool) error
+	//RequestDagHeadersByHash(common.Hash, int, int, bool) error
 	RequestLeafNodes() error
 }
 
@@ -89,7 +89,6 @@ type LightPeer interface {
 type Peer interface {
 	LightPeer
 	RequestBodies([]common.Hash) error
-	//RequestReceipts([]common.Hash) error
 	RequestNodeData([]common.Hash) error
 }
 
@@ -116,9 +115,10 @@ func (w *lightPeerWrapper) RequestReceipts([]common.Hash) error {
 func (w *lightPeerWrapper) RequestNodeData([]common.Hash) error {
 	panic("RequestNodeData not supported in light client mode sync")
 }
-func (w *lightPeerWrapper) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	return w.peer.RequestDagHeadersByHash(origin, amount, skip, reverse)
-}
+
+//func (w *lightPeerWrapper) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
+//	return w.peer.RequestDagHeadersByHash(origin, amount, skip, reverse)
+//}
 func (w *lightPeerWrapper) RequestLeafNodes() error {
 	return w.peer.RequestLeafNodes()
 }
@@ -169,7 +169,7 @@ func (p *peerConnection) FetchHeaders(from uint64, count int, assetId modules.As
 	index := &modules.ChainIndex{
 		AssetID: assetId,
 		//IsMain:  true,
-		Index:   from,
+		Index: from,
 	}
 
 	// Issue the header retrieval request (absolut upwards without gaps)

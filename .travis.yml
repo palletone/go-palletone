@@ -12,7 +12,7 @@ env:
     - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
     - GAS_TOKEN_ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/GasToken/node/log/all.log
     - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
-    - DEPOSIT_LOG_PATH=/home/votravis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
+    - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
     - CREATE_TRANS_DIR=createTrans
     - CCINVOKE_DIR=ccinvoke
     - VOTECONTRACT_DIR=voteContract
@@ -52,10 +52,11 @@ script:
 
   - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
     cd ../contract/testcases;
+    chmod +x ./test_start.sh;
     ./test_start.sh;
     fi
 
-  - "into bdd path, all testcases is here"
+  # into bdd path, all testcases is here
   - cd ${BASE_DIR}/bdd
   - mkdir -p ${BDD_LOG_PATH}
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
