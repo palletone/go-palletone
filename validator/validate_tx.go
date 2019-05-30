@@ -331,6 +331,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			return TxValidationCode_INVALID_COINBASE
 		}
 		//Check statedb should clear
+		if len(addrMap)>0{
 		clearStateInvoke := tx.TxMessages[1].Payload.(*modules.ContractInvokePayload)
 		if !bytes.Equal(clearStateInvoke.ContractId, contractId) {
 			log.Error("Coinbase contract id not correct")
@@ -340,6 +341,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			log.Error("Clear statedb not match")
 			return TxValidationCode_INVALID_COINBASE
 		}
+	}
 		return TxValidationCode_VALID
 	}
 	if tx.TxMessages[0].App == modules.APP_CONTRACT_INVOKE { //Account模型记账
