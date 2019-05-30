@@ -157,11 +157,11 @@ func (a *announceData) checkSignature(pubKey *ecdsa.PublicKey) error {
 	//}
 }
 
-type blockInfo struct {
-	Hash   common.Hash         // Hash of one particular block being announced
-	Number *modules.ChainIndex // Number of one particular block being announced
-	//Td     *big.Int            // Total difficulty of one particular block being announced
-}
+//type blockInfo struct {
+//	Hash   common.Hash         // Hash of one particular block being announced
+//	Number *modules.ChainIndex // Number of one particular block being announced
+//	//Td     *big.Int            // Total difficulty of one particular block being announced
+//}
 
 // getBlockHeadersData represents a block header query.
 type getBlockHeadersData struct {
