@@ -92,10 +92,11 @@ script:
 
   - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
     cd ../contract/testcases;
+    chmod +x ./test_start.sh;
     ./test_start.sh;
     fi
 
-  - "into bdd path, all testcases is here"
+  # into bdd path, all testcases is here
   - cd ${BASE_DIR}/bdd
   - mkdir -p ${BDD_LOG_PATH}
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
@@ -123,7 +124,7 @@ script:
     fi
   # ---- docker test ------
   - if [ $IS_RUN_USER_CONTRACT == 'true' ]; then
-    bundle exec rake test;
+    echo "docker test";
     fi
   # ---- end of docker test -----
 
