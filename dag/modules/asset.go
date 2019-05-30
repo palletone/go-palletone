@@ -151,6 +151,9 @@ func (asset *Asset) SetBytes(data []byte) error {
 func (asset *Asset) IsSameAssetId(another *Asset) bool {
 	return bytes.Equal(asset.AssetId.Bytes(), another.AssetId.Bytes())
 }
+func (asset *Asset) Equal(another *Asset) bool {
+	return bytes.Equal(asset.Bytes(), another.Bytes())
+}
 func (asset *Asset) IsSimilar(similar *Asset) bool {
 	if !bytes.Equal(asset.AssetId.Bytes(), similar.AssetId.Bytes()) {
 		return false

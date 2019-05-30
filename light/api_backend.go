@@ -109,7 +109,7 @@ func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
 //}
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(txspool.TxtoTxpoolTx(b.ptn.txPool, signedTx))
+	return b.ptn.txPool.AddLocal(signedTx)
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
@@ -136,7 +136,7 @@ func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
 	return 0, 0, 0
 }
 
-func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
+func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
 	return nil, nil
 	//return b.ptn.txPool.Content()
 }
@@ -266,6 +266,10 @@ func (b *LesApiBackend) SendConsensus(ctx context.Context) error {
 // wallet api
 //WalletTokens(address string) (map[string]*modules.AccountToken, error)
 //WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
+
+func (b *LesApiBackend) SaveCommon(key, val []byte) error {
+	return nil
+}
 
 // dag's get common
 func (b *LesApiBackend) GetCommon(key []byte) ([]byte, error) {

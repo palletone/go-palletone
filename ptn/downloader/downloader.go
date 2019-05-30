@@ -414,7 +414,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return errTooOld
 	}
 
-	log.Debug("Synchronising with the network", "peer", p.id, "ptn", p.version, "head", hash, "index", index, "mode", d.mode)
+	log.Debug("Synchronising with the network", "peer", p.id, "assetid", assetId, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start), "peer", p.id)
 	}(time.Now())
@@ -1661,6 +1661,22 @@ func (d *Downloader) requestTTL() time.Duration {
 	return ttl
 }
 
+func (d *Downloader) DeliverAllToken(id string, headers []*modules.Header) error {
+	ttl := d.requestTTL()
+	timeout := time.After(ttl)
+	select {
+	//case <-d.cancelCh:
+	//	return errCancelBlockFetch
+	case d.headerCh <- &headerPack{id, headers}:
+		return nil
+	case <-timeout:
+		log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", id)
+		return errTimeout
+	}
+
+	return nil
+}
+
 func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 	log.Debug("Retrieving remote all token", "peer", id)
 
@@ -1677,8 +1693,8 @@ func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 	timeout := time.After(ttl)
 	for {
 		select {
-		case <-d.cancelCh:
-			return nil, errCancelBlockFetch
+		//case <-d.cancelCh:
+		//	return nil, errCancelBlockFetch
 
 		case packet := <-d.headerCh:
 			// Discard anything not from the origin peer

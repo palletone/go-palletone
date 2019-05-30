@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -61,7 +60,7 @@ func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
 //逐条验证每一个Tx，并返回总手续费
 func (validate *Validate) validateTransactions(txs modules.Transactions, unitTime int64) ValidationCode {
 	fee := uint64(0)
-	needCheckCoinbase := false
+
 	oldUtxoQuery := validate.utxoquery
 
 	unitUtxo := new(sync.Map)
@@ -70,19 +69,21 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 	defer validate.setUtxoQuery(oldUtxoQuery)
 
 	var coinbase *modules.Transaction
+	ads:=[]*modules.Addition{}
 	for txIndex, tx := range txs {
+		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
 		if validate.checkTxIsExist(tx) {
 			return TxValidationCode_DUPLICATE_TXID
 		}
-		if txIndex == 0 && tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
-			needCheckCoinbase = true
-			coinbase = tx
+		if txIndex == 0 {
+			coinbase=tx
 			continue
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-		txCode, txFee := validate.validateTx(tx, txIndex == 0, true, unitTime)
+		//TODO Devin
+		txCode, txFee := validate.validateTx(tx,  true, unitTime)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 
@@ -98,20 +99,19 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 		//validate.utxoquery = newUtxoQuery
 	}
 	//验证第一条交易
-	if needCheckCoinbase {
+	if len(txs)>0 {
 		//手续费应该与其他交易付出的手续费相等
-		reward := ComputeRewards()
-		//TODO PTN增发的情况
+		return	validate.validateCoinbase(coinbase,ads)
 
-		allIncome := uint64(0)
-		outputs := coinbase.TxMessages[0].Payload.(*modules.PaymentPayload).Outputs
-		for _, output := range outputs {
-			allIncome += output.Value
-		}
-		if allIncome != fee+reward {
-			log.Warnf("Unit has an incorrect coinbase, expect income=%d,actual=%d", fee+reward, allIncome)
-			return TxValidationCode_INVALID_FEE
-		}
+		//allIncome := uint64(0)
+		//outputs := coinbase.TxMessages[0].Payload.(*modules.PaymentPayload).Outputs
+		//for _, output := range outputs {
+		//	allIncome += output.Value
+		//}
+		//if allIncome != fee+reward {
+		//	log.Warnf("Unit has an incorrect coinbase, expect income=%d,actual=%d", fee+reward, allIncome)
+		//	return TxValidationCode_INVALID_FEE
+		//}
 	}
 	return TxValidationCode_VALID
 }
@@ -125,15 +125,11 @@ return all transactions' fee
 //	code := validate.validateTransactions(txs)
 //	return NewValidateError(code)
 //}
-func ComputeRewards() uint64 {
-	var rewards uint64
-	if dagconfig.DagConfig.IsRewardCoin {
-		rewards = uint64(modules.DAO)
-	}
-	return rewards
+func (validate *Validate) validateCoinbase(tx *modules.Transaction,ads []*modules.Addition) ValidationCode{
+	return TxValidationCode_VALID
 }
-func (validate *Validate) ValidateTx(tx *modules.Transaction, isCoinbase, isFullTx bool) error {
-	code, _ := validate.validateTx(tx, isCoinbase, isFullTx, time.Now().Unix())
+func (validate *Validate) ValidateTx(tx *modules.Transaction,  isFullTx bool) error {
+	code, _ := validate.validateTx(tx, isFullTx, time.Now().Unix())
 	if code == TxValidationCode_VALID {
 		return nil
 	}

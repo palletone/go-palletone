@@ -235,7 +235,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		log.Info("Journal path:" + config.Journal)
 		pool.journal = newTxJournal(config.Journal)
 
-		if err := pool.journal.load(pool.AddLocal); err != nil {
+		if err := pool.journal.load(pool.addLocal); err != nil {
 			log.Warn("Failed to load transaction journal", "err", err)
 		}
 		if err := pool.journal.rotate(pool.local()); err != nil {
@@ -359,23 +359,23 @@ func (pool *TxPool) stats() (int, int, int) {
 
 // Content retrieves the data content of the transaction pool, returning all the
 // pending as well as queued transactions, grouped by account and sorted by nonce.
-func (pool *TxPool) Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
-	pending := make(map[common.Hash]*modules.Transaction)
-	queue := make(map[common.Hash]*modules.Transaction)
+func (pool *TxPool) Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
+	pending := make(map[common.Hash]*modules.TxPoolTransaction)
+	queue := make(map[common.Hash]*modules.TxPoolTransaction)
 
 	alltxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
 	for hash, tx := range alltxs {
 		if tx.Pending {
-			pending[hash] = tx.Tx
+			pending[hash] = tx
 		}
 		if !tx.Pending && !tx.Confirmed {
-			queue[hash] = tx.Tx
+			queue[hash] = tx
 		}
 	}
 	for hash, tx := range orphanTxs {
 		if !tx.Pending {
-			queue[hash] = tx.Tx
+			queue[hash] = tx
 		}
 	}
 	return pending, queue
@@ -495,7 +495,7 @@ func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error 
 	if tx == nil || tx.Tx == nil {
 		return errors.New("This transaction is invalide.")
 	}
-	err := pool.txValidator.ValidateTx(tx.Tx, false, true)
+	err := pool.txValidator.ValidateTx(tx.Tx, true)
 	return err
 }
 
@@ -701,7 +701,7 @@ func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
 // promoteTx adds a transaction to the pending (processable) list of transactions.
 //
 // Note, this method assumes the pool lock is held!
-func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
+func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, number, index uint64) {
 	// Try to insert the transaction into the pending queue
 	tx_hash := tx.Tx.Hash()
 	interTx, has := pool.all.Load(tx_hash)
@@ -711,7 +711,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 				// An older transaction was better, discard this
 				this.Pending = true
 				this.Discarded = true
-				pool.all.Store(hash, this)
+				pool.all.Store(tx_hash, this)
 				//pool.priority_sorted.Removed()
 				return
 			}
@@ -725,14 +725,20 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction) {
 	tx.Discarded = false
 	tx.Confirmed = false
 	tx.UnitHash = hash
-	pool.all.Store(hash, tx)
+	tx.UnitIndex = number
+	tx.Index = index
+	pool.all.Store(tx_hash, tx)
 }
 
 // AddLocal enqueues a single transaction into the pool if it is valid, marking
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
-func (pool *TxPool) AddLocal(tx *modules.TxPoolTransaction) error {
-	//tx.SetPriorityLvl(tx.GetPriorityLvl())
+func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
+	pool_tx := TxtoTxpoolTx(pool, tx)
+	return pool.addLocal(pool_tx)
+}
+func (pool *TxPool) addLocal(tx *modules.TxPoolTransaction) error {
+
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
 
@@ -750,8 +756,12 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 // AddLocals enqueues a batch of transactions into the pool if they are valid,
 // marking the senders as a local ones in the mean time, ensuring they go around
 // the local pricing constraints.
-func (pool *TxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
-	return pool.addTxs(txs, !pool.config.NoLocals)
+func (pool *TxPool) AddLocals(txs []*modules.Transaction) []error {
+	pool_txs := make([]*modules.TxPoolTransaction, 0)
+	for _, tx := range txs {
+		pool_txs = append(pool_txs, TxtoTxpoolTx(pool, tx))
+	}
+	return pool.addTxs(pool_txs, !pool.config.NoLocals)
 }
 
 // AddRemotes enqueues a batch of transactions into the pool if they are valid.
@@ -1512,12 +1522,12 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 	// not in pool
 	return nil
 }
-func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
-	for _, tx := range txs {
-		if tx.Messages()[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error {
+	for i, tx := range txs {
+		if i == 0 { // coinbase
 			continue
 		}
-		err := pool.setPendingTx(unit_hash, tx)
+		err := pool.setPendingTx(unit_hash, tx, num, uint64(i))
 		if err != nil {
 			return err
 		}
@@ -1527,7 +1537,7 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transact
 	}
 	return nil
 }
-func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction) error {
+func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction, number, index uint64) error {
 	hash := tx.Hash()
 	if pool.isTransactionInPool(hash) {
 		// in orphan pool
@@ -1538,6 +1548,7 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction)
 			otx.Confirmed = false
 			otx.Discarded = false
 			otx.IsOrphan = true
+			otx.Index = index
 			pool.orphans.Store(hash, otx)
 		} else {
 			// in all pool
@@ -1546,6 +1557,7 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction)
 			tx.Pending = true
 			tx.Confirmed = false
 			tx.Discarded = false
+			tx.Index = index
 			pool.all.Store(hash, tx)
 			return nil
 		}
@@ -1554,7 +1566,7 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction)
 	p_tx := TxtoTxpoolTx(pool, tx)
 	// 将该交易的输入输出缓存到交易池
 	pool.addCache(p_tx)
-	pool.promoteTx(unit_hash, p_tx)
+	pool.promoteTx(unit_hash, p_tx, number, index)
 	return nil
 }
 func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
@@ -1605,7 +1617,7 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 
 /******  end utxoSet  *****/
 // GetSortedTxs returns 根据优先级返回list
-func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
+func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
@@ -1674,6 +1686,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 			//  更改孤儿交易的状态
 			tx.Pending = true
 			tx.UnitHash = hash
+			tx.UnitIndex = index
 			go pool.all.Store(txhash, tx)
 			go pool.orphans.Delete(txhash)
 			//pool.orphans.Store(tx.Tx.Hash(), tx)
@@ -1690,17 +1703,17 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction
 	indexL := make(map[int]common.Hash)
 	for i, tx := range list {
 		hash := tx.Tx.Hash()
-		tx.Index = i
+		tx.Index = uint64(i)
 		indexL[i] = hash
 		m[hash] = tx
 	}
 	list = make([]*modules.TxPoolTransaction, 0)
 	for i := 0; i < len(indexL); i++ {
-		hash, _ := indexL[i]
-		if tx, has := m[hash]; has {
-			delete(m, hash)
+		t_hash, _ := indexL[i]
+		if tx, has := m[t_hash]; has {
+			delete(m, t_hash)
 			list = append(list, tx)
-			go pool.promoteTx(hash, tx)
+			go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
 	// if time.Since(t2) > time.Second*1 {

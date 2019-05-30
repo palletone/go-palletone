@@ -13,42 +13,42 @@ ${anotherAddr}    ${EMPTY}
 *** Test Cases ***
 Business_01
     [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点申请退出候选列表-》进入退出列表-》基金会同意。此时，所有列表为空
-    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表
+    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #${mediatorAddr_01}节点申请加入列表
     log    ${result}
-    @{addressList1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
-    log    @{addressList1}
-    Should Be True    '${mediatorAddr_01}' in @{addressList1}
-    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    0    #基金会处理列表里的节点（同意）
+    ${isIn}    getBecomeMediatorApplyList    ${mediatorAddr_01}    #${mediatorAddr_01}是否在申请列表里面
+    log    ${isIn}
+    Should Be Equal As Strings    ${isIn}    True    #为true
+    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理列表里的节点（同意）
     log    ${result}
-    @{addressList2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
-    log    @{addressList2}
-    Should Be True    '${mediatorAddr_01}' in @{addressList2}
+    ${isIn}    getAgreeForBecomeMediatorList    ${mediatorAddr_01}    #${mediatorAddr_01}是否在同意列表里面
+    log    ${isIn}
+    Should Be Equal As Strings    ${isIn}    True    #为true
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    200000000000    #在同意列表里的节点，可以交付保证金（大于或等于保证金数量）,需要200000000000及以上
     log    ${result}
-    @{addressList3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
-    log    @{addressList3}
-    Should Be True    '${mediatorAddr_01}' in @{addressList3}
-    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    ${isIn}    getListForMediatorCandidate    ${mediatorAddr_01}    #${mediatorAddr_01}是否在候选列表里面
+    log    ${isIn}
+    Should Be Equal As Strings    ${isIn}    True    #为true
+    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil    #有余额
     ${result}    applyQuitMediator    ${mediatorAddr_01}    #该节点申请退出mediator候选列表
     log    ${result}
-    @{addressList4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
-    log    @{addressList4}
-    Should Be True    '${mediatorAddr_01}' in @{addressList4}
-    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    #基金会处理退出候选列表里的节点（同意）
+    ${isIn}    getQuitMediatorApplyList    ${mediatorAddr_01}    #获取申请mediator列表里的节点（不为空）
+    log    ${isIn}
+    Should Be Equal As Strings    ${isIn}    True    #为true
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
-    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${result}
-    Should Be Equal    ${result}    balance is nil    #账户地址不存在
-    ${result}    getBecomeMediatorApplyList    #为空
-    log    ${result}
-    ${result}    getAgreeForBecomeMediatorList    #为空
-    log    ${result}
-    ${result}    getListForMediatorCandidate    #为空
-    log    ${result}
-    ${result}    getQuitMediatorApplyList    #为空
-    log    ${result}
+    #    ${result}    balance is nil    #账户地址不存在
+    #    getBecomeMediatorApplyList    ${mediatorAddr_01}
+    #    ${result}
+    #    getAgreeForBecomeMediatorList    ${mediatorAddr_01}
+    #    ${result}
+    #    getListForMediatorCandidate    ${mediatorAddr_01}
+    #    ${result}
+    #    getQuitMediatorApplyList    ${mediatorAddr_01}
+    #    ${result}
 
 Business_02
     [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》社区节点申请没收改地址所以保证金-》基金会同意，此时，只有同意列表不为空，其他的为空。
@@ -67,7 +67,7 @@ Business_02
     @{addressList3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
     log    @{addressList3}
     Should Be True    '${mediatorAddr_02}' in @{addressList3}
-    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
+    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil    #有余额
     ${result}    applyForForfeitureDeposit    ${anotherAddr}    ${mediatorAddr_02}    200000000000    Mediator    #某个地址申请没收该节点保证金（全部）
@@ -76,7 +76,7 @@ Business_02
     log    ${result}
     ${result}    handleForForfeitureApplication    ${foundationAddr}    ok    #基金会处理（同意），这是会移除mediator出候选列表
     log    ${result}
-    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
+    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${result}
     Should Be Equal    ${result}    balance is nil    #为空
     ${result}    getBecomeMediatorApplyList    #为空

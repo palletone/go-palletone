@@ -131,17 +131,17 @@ type TxDesc struct {
 type txPool interface {
 	// AddRemotes should add the given transactions to the pool.
 	Stop()
-	AddLocal(tx *modules.TxPoolTransaction) error
-	AddLocals(txs []*modules.TxPoolTransaction) []error
+	AddLocal(tx *modules.Transaction) error
+	AddLocals(txs []*modules.Transaction) []error
 	AddSequenTx(tx *modules.Transaction) error
 	AddSequenTxs(txs []*modules.Transaction) error
 	AllHashs() []*common.Hash
 	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
-	Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
+	Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction)
 	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
 	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
 	Stats() (int, int, int)
-	GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize)
+	GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize)
 	SendStoredTxs(hashs []common.Hash) error
 	DiscardTxs(hashs []common.Hash) error
 	//DiscardTx(hash common.Hash) error
@@ -153,7 +153,7 @@ type txPool interface {
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
 	Queued() ([]*modules.TxPoolTransaction, error)
-	SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error
+	SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error
 	ResetPendingTxs(txs []*modules.Transaction) error
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.

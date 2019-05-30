@@ -131,18 +131,18 @@ func (p *testTxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
 	return true, nil
 }
 
-func (p *testTxPool) AddLocal(tx *modules.TxPoolTransaction) error {
+func (p *testTxPool) AddLocal(tx *modules.Transaction) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	p.pool = append(p.pool, tx.Tx)
+	p.pool = append(p.pool, tx)
 	if p.added != nil {
 		p.added <- p.pool
 	}
 	return nil
 }
 
-func (p *testTxPool) AddLocals(txs []*modules.TxPoolTransaction) []error {
+func (p *testTxPool) AddLocals(txs []*modules.Transaction) []error {
 	errs := make([]error, 0)
 	for _, tx := range txs {
 		errs = append(errs, p.AddLocal(tx))
@@ -198,7 +198,7 @@ func (p *testTxPool) AddSequenTxs(txs []*modules.Transaction) error {
 	return nil
 }
 
-func (p *testTxPool) Content() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction) {
+func (p *testTxPool) Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
 	return nil, nil
 }
 
@@ -216,7 +216,7 @@ func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 func (p *testTxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return nil, nil
 }
-func (p *testTxPool) GetSortedTxs(hash common.Hash) ([]*modules.TxPoolTransaction, common.StorageSize) {
+func (p *testTxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize) {
 	return nil, 0
 }
 func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
@@ -272,7 +272,7 @@ func (p *testTxPool) DiscardTxs(hashs []common.Hash) error {
 func (p *testTxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 	return nil
 }
-func (p *testTxPool) SetPendingTxs(unit_hash common.Hash, txs []*modules.Transaction) error {
+func (p *testTxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error {
 	return nil
 }
 
@@ -374,7 +374,7 @@ func (p *testPeer) close() {
 }
 
 func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
-	dag, _ := dag.NewDagForTest(Memdb, nil)
+	dag, _ := dag.NewDagForTest(Memdb)
 	genesisUnit := newGenesisForTest(dag.Db)
 	newDag(dag.Db, genesisUnit, unitAccount)
 	return dag, nil

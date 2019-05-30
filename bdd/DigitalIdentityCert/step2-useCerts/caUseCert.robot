@@ -22,7 +22,7 @@ ca unlock account succed
 ca uses debug contract to test getRequesterCert without error
     Log    "ca uses debug contract to test getRequesterCert without error"
     ${args}=    Create List    ${getRequesterCertMethod}
-    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    1    1    ${debugContractAddr}
+    ${params}=    genInvoketxParams    ${caCertHolder}    ${caCertHolder}    1    1    ${debugContractAddr}
     ...    ${args}    ${caCertID}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    getRequesterCert
     Dictionary Should Contain Key    ${respJson}    result
@@ -30,7 +30,7 @@ ca uses debug contract to test getRequesterCert without error
 ca uses debug contract to test checkRequesterCert without error
     Log    "ca uses debug contract to test checkRequesterCert without error"
     ${args}=    Create List    ${checkRequesterCertMethod}
-    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    1    1    ${debugContractAddr}
+    ${params}=    genInvoketxParams    ${caCertHolder}    ${caCertHolder}    1    1    ${debugContractAddr}
     ...    ${args}    ${caCertID}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    checkRequesterCert
     Dictionary Should Contain Key    ${respJson}    result

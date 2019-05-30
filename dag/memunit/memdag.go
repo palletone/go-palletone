@@ -350,7 +350,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			//update txpool's tx status to pending
 			if len(unit.Txs) > 0 {
 				log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
-				txpool.SetPendingTxs(unit.Hash(), unit.Txs)
+				txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
 			}
 			//增加了单元后检查是否满足稳定单元的条件
 			if !chain.checkStableCondition(txpool) {
@@ -418,7 +418,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	for _, unit := range newUnstableUnits {
 		if len(unit.Txs) > 0 {
 			log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
-			txpool.SetPendingTxs(unit.Hash(), unit.Txs)
+			txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
 		}
 	}
 	//基于新主链的单元和稳定单元，重新构建Tempdb

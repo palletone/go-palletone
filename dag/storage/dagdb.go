@@ -98,7 +98,8 @@ type IDagDb interface {
 	// common geter
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
-
+	// common saver
+	SaveCommon(key, val []byte) error
 	// get txhash  and save index
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
@@ -110,6 +111,11 @@ type IDagDb interface {
 func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {
 	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
 	return dagdb.db.Has(key)
+}
+
+/* ----- common saver ----- */
+func (dagdb *DagDb) SaveCommon(key, val []byte) error {
+	return dagdb.db.Put(key, val)
 }
 
 /* ----- common geter ----- */

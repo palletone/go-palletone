@@ -31,22 +31,14 @@ import (
 	"math"
 )
 
-//Coinbase可以没有输入，就算有输入也没有Preoutpoint
-func (validate *Validate) validateCoinbase(payment *modules.PaymentPayload) ValidationCode {
-	return TxValidationCode_VALID
-}
-
 //验证一个Payment
 //Validate a payment message
 //1. Amount correct
 //2. Asset must be equal
 //3. Unlock correct
 func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
-	payment *modules.PaymentPayload, isCoinbase bool, usedUtxo map[string]bool) ValidationCode {
+	payment *modules.PaymentPayload, usedUtxo map[string]bool) ValidationCode {
 
-	if isCoinbase {
-		return validate.validateCoinbase(payment)
-	}
 	if payment.LockTime > 0 {
 		// TODO check locktime
 	}
@@ -159,9 +151,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		if !asset.IsSameAssetId(asset0) {
 			return TxValidationCode_INVALID_ASSET
 		}
-		if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
-			return TxValidationCode_INVALID_AMOUNT
-		}
+		//if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
+		//	return TxValidationCode_INVALID_AMOUNT
+		//}
 	}
 	return TxValidationCode_VALID
 }

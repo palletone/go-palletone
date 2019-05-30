@@ -66,7 +66,7 @@ func (engine *DPOSEngine) Engine() int {
 	}
 	when := time.Time{}
 
-	newUnit, err1 := engine.dag.CreateUnit(&address, engine.txpool, when)
+	newUnit, err1 := engine.dag.CreateUnit(address, engine.txpool, when)
 	if err1 != nil {
 		log.Debug("Test P2P", "DPOSEngine->Engine CreateUnit err", err1)
 		return -2

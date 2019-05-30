@@ -70,7 +70,7 @@ type Backend interface {
 
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (int, int, int)
-	TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
+	TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction)
 	Queued() ([]*modules.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 
@@ -87,6 +87,7 @@ type Backend interface {
 	// dag's get common
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
+	SaveCommon(key, val []byte) error
 	// Get Contract Api
 	GetContract(hex_id string) (*modules.Contract, error)
 

@@ -31,6 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
+	"strings"
+	"encoding/hex"
 )
 
 const (
@@ -208,7 +210,51 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 	}
 	return vm.Execute()
 }
+//对于一个多签或者合约解锁脚本，获得到底哪些用户参与了签名
+func GetScriptSigners(tx *modules.Transaction, msgIdx, inputIndex int) ([]common.Address, error) {
+	signatures:=[][]byte{}
+	pubkeys:=[][]byte{}
+	var redeem []byte
+	var hashType byte
+	script:=tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
+	scriptStr,_:= txscript.DisasmString(script)
+	ops := strings.Fields(scriptStr)
+	for i,op:=range ops {
+		if op=="0" {
+			continue
+		}
+		if i+1==len(ops) { //last one, redeem
+			redeem,_=hex.DecodeString(op)
+			redeemStr,_:= txscript.DisasmString(redeem)
+			log.Debug(redeemStr)
+			rops := strings.Fields(redeemStr)
+			for j,rop:=range rops{
+				if j>0&&j<len(rops)-2{
+					pubkey,_:= hex.DecodeString(rop)
+					pubkeys=append(pubkeys,pubkey)
+				}
+			}
 
+		}else{//signature
+			s,_:=hex.DecodeString(op)
+			hashType=s[len(s)-1]
+			signatures=append(signatures,s[0:len(s)-1])
+		}
+	}
+	acc := &account{}
+	hash,_:= CalcSignatureHash(tx,uint32(hashType),msgIdx,inputIndex,redeem)
+	//根据签名，找到对应的pubkey
+	result:=[]common.Address{}
+	for _,sign:=range signatures{
+		for _,pubkey:=range pubkeys{
+			if pass,_:=acc.Verify(pubkey,sign,hash);pass{
+				addr:= crypto.PubkeyBytesToAddress(pubkey)
+				result=append(result,addr)
+			}
+		}
+	}
+	return result,nil
+}
 //对交易中的Payment类型中的某个Input生成解锁脚本
 //func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey, juryVersion int) ([]byte, error) {
 //	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
