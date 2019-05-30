@@ -4,7 +4,7 @@
 #cd ../../cmd/gptn && go build
 cd ../../
 #rm -rf ./bdd/GasToken/node/*
-#cp ./cmd/gptn/gptn ./bdd/GasToken/node
+cp ./cmd/gptn/gptn ./bdd/GasToken/node
 cd ./bdd/GasToken/node
 chmod +x gptn
 

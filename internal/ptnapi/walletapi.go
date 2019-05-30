@@ -173,7 +173,7 @@ func (s *PublicWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, g
 func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN uint64,
 	utxosPTN map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, []*modules.UtxoWithOutPoint, error) {
 	if len(utxosPTN) == 0 {
-		return nil, nil, fmt.Errorf("No PTN utxo")
+		return nil, nil, fmt.Errorf("No PTN Utxo or No Token Utxo")
 	}
 
 	//PTN
