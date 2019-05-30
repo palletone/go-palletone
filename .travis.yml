@@ -27,13 +27,13 @@ env:
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     # ------- control testcases ---------
-    - IS_RUN_DEPOSIT=false
-    - IS_RUN_TESTCONTRACTCASES=false
-    - IS_RUN_CREATE_TRANS=false
-    - IS_RUN_CCINVOKE=false
-    - IS_RUN_DIGITAL=false
-    - IS_RUN_VOTE=false
-    - IS_RUN_GASTOKEN=false
+    - IS_RUN_DEPOSIT=true
+    - IS_RUN_TESTCONTRACTCASES=true
+    - IS_RUN_CREATE_TRANS=true
+    - IS_RUN_CCINVOKE=true
+    - IS_RUN_DIGITAL=true
+    - IS_RUN_VOTE=true
+    - IS_RUN_GASTOKEN=true
     - IS_RUN_USER_CONTRACT=true
     - GO111MODULE=on
     # ------ end of control testcases -------
@@ -54,6 +54,7 @@ before_install:
       docker run -d -p 127.0.0.1:80:4567 carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec foreman start;"
       docker ps -a;
       docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test";
+      docker ps -a;
       fi
     #------- end of docker setting ----
 
@@ -83,39 +84,37 @@ script:
   - nohup ./gptn &
   - sleep 15
   - netstat -ap | grep gptn
+  - cd  ${BASE_DIR}/bdd  # into bdd path, all testcases path
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-    cd ../dct;
-    ./deposit_test.sh 4;
+    ./dct/deposit_test.sh 4;
     fi
 
   - if [ $IS_RUN_TESTCONTRACTCASES == 'true'];then
-    cd ../contract/testcases;
-    ./test_start.sh;
+    ./contract/testcases/test_start.sh;
     fi
 
   - mkdir -p ${BDD_LOG_PATH}
   - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ../testcase/createTrans;
+    python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
     fi
 
   - if [ $IS_RUN_CCINVOKE == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ../testcase/crtCoinContract;
+    python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ./testcase/crtCoinContract;
     fi
 
   - if [ $IS_RUN_VOTE == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ../testcase/voteContract/;
+    python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract/;
     fi
 
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ../DigitalIdentityCert;
+    python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
     fi
 
   - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-    cd ../GasToken;
-    chmod +x ./init_gas_token.sh;
-    ./init_gas_token.sh;
+    chmod +x ./GasToken/init_gas_token.sh;
+    ./GasToken/init_gas_token.sh;
     sleep 15;
-    python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
+    python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./GasToken/testcases;
     fi
   # ---- docker test ------
   - if [ $IS_RUN_USER_CONTRACT == 'true' ]; then
