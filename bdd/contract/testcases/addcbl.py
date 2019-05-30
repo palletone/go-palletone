@@ -56,8 +56,7 @@ class createToken():
             "jsonrpc": "2.0",
             "method": "contract_ccinvoketxPass",
             "params":
-                [senderAddr, recieverAddr, "10", "1", contractAddr, [self.funcName, self.assetId, str(tokenAmount)],
-                 "1", 6000000, ""],
+                [senderAddr, recieverAddr, "10", "1", contractAddr, [self.funcName, self.assetId, str(tokenAmount)],"1", 6000000, ""],
             "id": 1
         }
         data = json.dumps(data)
