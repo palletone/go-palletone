@@ -63,7 +63,7 @@ type PalletOne interface {
 	AdapterBroadcast(event AdapterEvent)
 
 	//GetLocalMediators() []common.Address
-	IsLocalActiveMediator(add common.Address) bool
+	//IsLocalActiveMediator(add common.Address) bool
 	LocalHaveActiveMediator() bool
 
 	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
@@ -243,26 +243,26 @@ func (p *Processor) localHaveActiveJury() bool {
 	return false
 }
 
-func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
-	if len(p.local) < 1 {
-		return nil, errors.New("getLocalNodeInfo, no local account")
-	}
-	nodes := make([]*nodeInfo, 0)
-	for addr, _ := range p.local {
-		nodeType := 0
-		if p.ptn.IsLocalActiveMediator(addr) {
-			nodeType = TMediator
-		} else if p.isLocalActiveJury(addr) {
-			nodeType = TJury
-		}
-		node := &nodeInfo{
-			addr:  addr,
-			ntype: nodeType,
-		}
-		nodes = append(nodes, node)
-	}
-	return nodes, nil
-}
+//func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
+//	if len(p.local) < 1 {
+//		return nil, errors.New("getLocalNodeInfo, no local account")
+//	}
+//	nodes := make([]*nodeInfo, 0)
+//	for addr, _ := range p.local {
+//		nodeType := 0
+//		if p.ptn.IsLocalActiveMediator(addr) {
+//			nodeType = TMediator
+//		} else if p.isLocalActiveJury(addr) {
+//			nodeType = TJury
+//		}
+//		node := &nodeInfo{
+//			addr:  addr,
+//			ntype: nodeType,
+//		}
+//		nodes = append(nodes, node)
+//	}
+//	return nodes, nil
+//}
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
 	req := p.mtx[reqId]

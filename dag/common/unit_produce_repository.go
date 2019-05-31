@@ -366,7 +366,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 
 	// 保证活跃mediator的总数必须大于MinimumMediatorCount
 	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
-	countInSystem := dag.getActiveMediatorCount()
+	countInSystem := dag.getDesiredActiveMediatorCount()
 	mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
 
 	mediatorLen := dag.mediatorVoteTally.Len()
@@ -403,7 +403,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	return isActiveMediatorsChanged(gp)
 }
 
-func (d *UnitProduceRepository) getActiveMediatorCount() int {
+func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	activeMediatorCountStr, _, _ := d.stateRep.GetConfig("ActiveMediatorCount")
 	activeMediatorCount, _ := strconv.ParseUint(string(activeMediatorCountStr), 10, 16)
 

@@ -77,7 +77,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Success(resultByte)
 	case "getWithoutVoteResult":
 		log.Info("Start getWithoutVoteResult Invoke")
-		resultByte, err := stub.GetState(modules.SysParam)
+		resultByte, err := stub.GetState(modules.DesiredSysParams)
 		if err != nil {
 			jsonResp := "{\"Error\":\"getWithoutVoteResult err: " + err.Error() + "\"}"
 			return shim.Success([]byte(jsonResp))
@@ -479,25 +479,27 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	modify := &modules.FoundModify{}
 	modify.Key = args[0]
 	modify.Value = args[1]
-	resultBytes, err := stub.GetState(modules.SysParam)
+
+	resultBytes, err := stub.GetState(modules.DesiredSysParams)
 	if err != nil {
 		return nil, err
 	}
+
 	var modifies []*modules.FoundModify
-	if resultBytes == nil {
-		modifies = append(modifies, modify)
-	} else {
+	if resultBytes != nil {
 		err := json.Unmarshal(resultBytes, &modifies)
 		if err != nil {
 			return nil, err
 		}
-		modifies = append(modifies, modify)
 	}
+
+	modifies = append(modifies, modify)
 	modifyByte, err := json.Marshal(modifies)
-	err = stub.PutState(modules.SysParam, modifyByte)
+	err = stub.PutState(modules.DesiredSysParams, modifyByte)
 	if err != nil {
 		return nil, err
 	}
+
 	return []byte(modifyByte), nil
 }
 

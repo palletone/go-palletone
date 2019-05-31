@@ -63,8 +63,8 @@ const (
 )
 
 const (
-	SysParam  = "sysParam"
-	SysParams = "sysParams"
+	DesiredSysParams = "sysParam"
+	SysParams        = "sysParams"
 )
 
 func (mt MessageType) IsRequest() bool {

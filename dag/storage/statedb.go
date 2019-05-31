@@ -107,7 +107,6 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 
 // ######################### GET IMPL END ###########################
 
-
 func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.JuryList)
@@ -163,7 +162,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 			}
 		}
 		//将基金会当前单独修改的制为nil
-		err = statedb.SaveSysConfig(modules.SysParam, nil, version)
+		err = statedb.SaveSysConfig(modules.DesiredSysParams, nil, version)
 		if err != nil {
 			return err
 		}
@@ -202,7 +201,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 }
 
 func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error) {
-	val, _, err := statedb.GetSysConfig(modules.SysParam)
+	val, _, err := statedb.GetSysConfig(modules.DesiredSysParams)
 	if err != nil {
 		return nil, err
 	}
