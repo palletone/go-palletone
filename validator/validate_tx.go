@@ -96,6 +96,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 				}
 				//检查一个Tx是否包含了发币的Payment，如果有，那么检查是否是系统合约调用的结果
 				if msgIdx != 0 && payment.IsCoinbase() && !isSysContractCall {
+					log.Error("Invalid Coinbase message")
 					return TxValidationCode_INVALID_COINBASE, nil
 				}
 			}
@@ -331,17 +332,17 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			return TxValidationCode_INVALID_COINBASE
 		}
 		//Check statedb should clear
-		if len(addrMap)>0{
-		clearStateInvoke := tx.TxMessages[1].Payload.(*modules.ContractInvokePayload)
-		if !bytes.Equal(clearStateInvoke.ContractId, contractId) {
-			log.Error("Coinbase contract id not correct")
-			return TxValidationCode_INVALID_COINBASE
+		if len(addrMap) > 0 {
+			clearStateInvoke := tx.TxMessages[1].Payload.(*modules.ContractInvokePayload)
+			if !bytes.Equal(clearStateInvoke.ContractId, contractId) {
+				log.Error("Coinbase contract id not correct")
+				return TxValidationCode_INVALID_COINBASE
+			}
+			if !compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
+				log.Error("Clear statedb not match")
+				return TxValidationCode_INVALID_COINBASE
+			}
 		}
-		if !compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
-			log.Error("Clear statedb not match")
-			return TxValidationCode_INVALID_COINBASE
-		}
-	}
 		return TxValidationCode_VALID
 	}
 	if tx.TxMessages[0].App == modules.APP_CONTRACT_INVOKE { //Account模型记账
@@ -366,6 +367,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		if compareRewardAndWriteset(rewards, invoke.WriteSet) {
 			return TxValidationCode_VALID
 		} else {
+			log.Error("Coinbase contract write set not correct")
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}
