@@ -41,7 +41,7 @@ var listCC list.List
 
 func listAdd(cc *TempCC) error {
 	if cc != nil {
-		//fmt.Printf("==name[%s]", cc.name)
+		log.Debug("listAdd", "TempCC", cc)
 		listCC.PushBack(*cc)
 	}
 	return nil
@@ -149,7 +149,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	}
 
 	if cfg.DebugTest {
-		log.Info("enter contract debug test")
+		log.Info("enter contract debug test", "templateId",tpid )
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
 	} else {
@@ -228,7 +228,6 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		log.Error("getTxSimulator err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
-	//btxId, err := hex.DecodeString(txId)
 	txHash := common.HexToHash(txId)
 	depId := crypto.RequestIdToContractAddress(txHash) //common.NewAddress(btxId[:20], common.ContractHash)
 	usrccName := depId.String()                        //+ "_" + txId
@@ -467,7 +466,7 @@ func GetAllContainers(client *docker.Client) {
 					return
 				}
 				txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
-				//log.Infof("==============需要重启====容器名称为-->%s,---->%s", name, hex.EncodeToString(contractAddr.Bytes21()))
+				log.Infof("==============需要重启====容器名称为-->%s,---->%s", name, hex.EncodeToString(contractAddr.Bytes21()))
 				_, err = StartChaincodeContainert(dag, "palletone", contractAddr.Bytes21(), txid)
 				if err != nil {
 					log.Infof("startChaincodeContainert err: %s", err.Error())

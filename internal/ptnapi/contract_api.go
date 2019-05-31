@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 var (
@@ -62,24 +63,36 @@ func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname string, ccpath
 	return hexutil.Bytes(templateId), err
 }
 
-func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (hexutil.Bytes, error) {
+func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string,  timeout uint32) (*ContractDeployRsp, error) {
 	tempId, _ := hex.DecodeString(templateId)
-	txid := "123"
+	rd, err := crypto.GetRandomBytes(32)
+	txid := util.RlpHash(rd)
 
-	log.Info("Ccdeploy:", "templateId", templateId, "txid", txid)
+	log.Info("Ccdeploy:", "templateId", templateId, "txid", txid.String(), "timeout", timeout)
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		log.Info("Ccdeploy", "param index:", i, "arg", arg)
 	}
-	deployId, err := s.b.ContractDeploy(tempId, txid, args, 30*time.Second)
-	return hexutil.Bytes(deployId), err
+	_, err = s.b.ContractDeploy(tempId, txid.String(), args, time.Duration(timeout)*time.Second)
+	if err != nil {
+		log.Debug("Ccdeploy", "ContractDeploy err", err)
+	}
+	contractAddr := crypto.RequestIdToContractAddress(txid)
+	log.Info("-----Ccdeploy:", "txid", txid, "contractAddr", contractAddr.String())
+	rsp := &ContractDeployRsp{
+		ReqId:      "",
+		ContractId: contractAddr.String(),
+	}
+	return rsp, nil
 }
 
-func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
+func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string, timeout uint32) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
-	txid := "123"
-	log.Info("Ccinvoke" + contractId.String() + ":" + txid)
+	//contractId, _ := hex.DecodeString(contractAddr)
+	rd, err := crypto.GetRandomBytes(32)
+	txid := util.RlpHash(rd)
+	log.Info("Ccinvoke", "contractId", contractId, "txid", txid.String(), "timeout", timeout)
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -89,16 +102,17 @@ func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, p
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-	rsp, err := s.b.ContractInvoke(contractId.Bytes(), txid, fullArgs, 0)
+	rsp, err := s.b.ContractInvoke(contractId.Bytes(), txid.String(), fullArgs, time.Duration(timeout)*time.Second)
 	log.Info("Ccinvoke", "rsp", rsp)
 	return string(rsp), err
 }
 
-func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, param []string) (string, error) {
+func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, param []string, timeout uint32) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
-	txid := "123"
-	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
-	log.Info("Ccquery", "contractId", contractId.String(), "txid", txid)
+	//contractId, _ := hex.DecodeString(contractAddr)
+	rd, err := crypto.GetRandomBytes(32)
+	txid := util.RlpHash(rd)
+	log.Info("Ccquery", "contractId", contractId, "txid", txid.String())
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
@@ -107,7 +121,7 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, pa
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid[:], fullArgs, 0)
+	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid.String(), fullArgs, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return "", err
 	}
@@ -115,13 +129,15 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, pa
 }
 
 func (s *PublicContractAPI) Ccstop(ctx context.Context, contractAddr string) error {
-	contractId, _ := hex.DecodeString(contractAddr)
+	contractId, _ := common.StringToAddress(contractAddr)
+	//contractId, _ := hex.DecodeString(contractAddr)
 	txid := "123"
 	log.Info("Ccstop:", "contractId", contractId, "txid", txid)
-	err := s.b.ContractStop(contractId, txid, false)
+	err := s.b.ContractStop(contractId.Bytes(), txid, false)
 	return err
 }
 
+//contract tx
 func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version string, addr []string) (*ContractInstallRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -232,7 +248,7 @@ func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to,
 
 func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Info("---enter DepositContractQuery---")
-	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param)
+	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, 0)
 }
 
 func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, certID string, timeout string) (*ContractDeployRsp, error) {
@@ -345,25 +361,6 @@ func (s *PublicContractAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmo
 	return hex.EncodeToString(reqId[:]), err
 }
 
-func (s *PublicContractAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return errors.New("unlock duration too large")
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
-	ks := s.b.GetKeyStore()
-	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
-	if err != nil {
-		errors.New("get addr by outpoint is err")
-		return err
-	}
-	return nil
-}
-
 func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, deleteImage string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -387,6 +384,24 @@ func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, d
 	return hex.EncodeToString(reqId[:]), err
 }
 
+func (s *PublicContractAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
+	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var d time.Duration
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return errors.New("unlock duration too large")
+	} else {
+		d = time.Duration(*duration) * time.Second
+	}
+	ks := s.b.GetKeyStore()
+	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	if err != nil {
+		errors.New("get addr by outpoint is err")
+		return err
+	}
+	return nil
+}
 func (s *PublicContractAPI) ListAllContractTemplates(ctx context.Context) ([]*ptnjson.ContractTemplateJson, error) {
 	return s.b.GetAllContractTpl()
 }
