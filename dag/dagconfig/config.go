@@ -100,7 +100,6 @@ type Config struct {
 	GenesisHash             string
 	PartitionForkUnitHeight int
 
-
 	AddrTxsIndex    bool
 	Token721TxIndex bool
 

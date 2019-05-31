@@ -215,24 +215,39 @@ func (pm *ProtocolManager) PullSync() {
 	log.Debug("Enter Cors ProtocolManager PullSync")
 	defer log.Debug("End Cors ProtocolManager PullSync")
 
-	if atomic.LoadUint32(&pm.corsSync) == 0 {
-		atomic.StoreUint32(&pm.corsSync, 1)
-		pm.pullSync()
-		log.Info("Cors Pull Sync OK")
-		atomic.StoreUint32(&pm.corsSync, 0)
-	}
-}
-
-func (pm *ProtocolManager) pullSync() {
 	peer := pm.peers.BestPeer()
-
 	if peer == nil {
 		return
 	}
+	//TODO modify get from getMainChain
 	if peer.headInfo.number.AssetID != modules.PTNCOIN {
-		log.Debug("Cors PalletOne ProtocolManager pullSync", "peer assetid", peer.headInfo.number.AssetID)
+		log.Debug("Cors PalletOne ProtocolManager PullSync", "peer assetid", peer.headInfo.number.AssetID)
 		return
 	}
+
+	if atomic.LoadUint32(&pm.corsSync) == 0 {
+		atomic.StoreUint32(&pm.corsSync, 1)
+		pm.pullSync(peer)
+		log.Info("Cors Pull Sync OK")
+		atomic.StoreUint32(&pm.corsSync, 0)
+	}
+
+	if header := pm.dag.CurrentHeader(modules.PTNCOIN); header != nil {
+		pm.server.SendEvents(header)
+	} else {
+		log.Debug("Cors PalletOne ProtocolManager PullSync ptn CurrentHeader is nil")
+	}
+}
+
+func (pm *ProtocolManager) pullSync(peer *peer) {
+	//peer := pm.peers.BestPeer()
+	//if peer == nil {
+	//	return
+	//}
+	//if peer.headInfo.number.AssetID != modules.PTNCOIN {
+	//	log.Debug("Cors PalletOne ProtocolManager pullSync", "peer assetid", peer.headInfo.number.AssetID)
+	//	return
+	//}
 	lheader := pm.dag.CurrentHeader(modules.PTNCOIN)
 	hash, number := peer.HeadAndNumber(modules.PTNCOIN)
 	if lheader.Number.Index >= number.Index {
