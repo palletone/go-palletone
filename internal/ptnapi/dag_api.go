@@ -29,6 +29,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -44,14 +45,21 @@ type PublicDagAPI struct {
 func NewPublicDagAPI(b Backend) *PublicDagAPI {
 	return &PublicDagAPI{b}
 }
-func (s *PublicDagAPI) SaveCommon(ctx context.Context, key string, val interface{}) error {
-	value, err := json.Marshal(val)
-	if err != nil {
-		return err
-	}
-	return s.b.SaveCommon([]byte(key), value)
-}
 
+func (s *PublicDagAPI) GetHexCommon(ctx context.Context, key string) (string, error) {
+	key_bytes, err0 := hexutil.Decode(key)
+	if err0 != nil {
+		log.Info("getCommon by Hex error", "error", err0)
+		return "", err0
+	}
+	//log.Info("GetCommon by hex info.", "key", string(key_bytes), "bytes", key_bytes)
+	items, err := s.b.GetCommon(key_bytes[:])
+	if err != nil {
+		return "", err
+	}
+	hex := hexutil.Encode(items)
+	return hex, nil
+}
 func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error) {
 	// key to bytes
 	return s.b.GetCommon([]byte(key))
