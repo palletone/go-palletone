@@ -129,7 +129,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	// todo albert·gou 待合并
 	dag.RefreshSysParameters()
 
 	ptn := &PalletOne{
