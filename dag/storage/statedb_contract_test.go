@@ -135,19 +135,14 @@ func TestStateDb_GetSysParamWithoutVote(t *testing.T) {
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
-	modifies := []*modules.FoundModify{}
-	modify := &modules.FoundModify{}
-	modify.Key = "key1"
-	modify.Value = "val1"
-	modifies = append(modifies, modify)
-	modify1 := &modules.FoundModify{}
-	modify1.Key = "key2"
-	modify1.Value = "val2"
-	modifies = append(modifies, modify1)
+	modifies := make(map[string]string)
+	modifies["key1"] = "val1"
+	modifies["key2"] = "val2"
+
 	modifiesByte, _ := json.Marshal(modifies)
 	//[{\"Key\":\"depositAmountForJury\",\"Value\":\"9000000\"}]
-	//err := statedb.SaveContractState(syscontract.SysConfigContractAddress.Bytes21(), "sysParam", modifiesByte, version)
-	err := statedb.SaveSysConfig("sysParam", modifiesByte, version)
+	//err := statedb.SaveContractState(syscontract.SysConfigContractAddress.Bytes21(), modules.DesiredSysParams, modifiesByte, version)
+	err := statedb.SaveSysConfig(modules.DesiredSysParams, modifiesByte, version)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -155,8 +150,7 @@ func TestStateDb_GetSysParamWithoutVote(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	t.Logf("----%#v\n", modifies[0])
-	t.Logf("----%#v\n", modifies[1])
+	t.Logf("----%#v\n", modifies)
 }
 
 func TestStateDb_GetSysParamsWithVotes(t *testing.T) {
@@ -196,7 +190,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
 
-	sysParam, _, err := statedb.GetSysConfig("sysParam")
+	sysParam, _, err := statedb.GetSysConfig(modules.DesiredSysParams)
 	// if err != nil {
 	// 	t.Log(err.Error())
 	// }
@@ -231,17 +225,11 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	modifies := []*modules.FoundModify{}
-	modify := &modules.FoundModify{}
-	modify.Key = "key1"
-	modify.Value = "val1"
-	modifies = append(modifies, modify)
-	modify1 := &modules.FoundModify{}
-	modify1.Key = "key2"
-	modify1.Value = "val2"
-	modifies = append(modifies, modify1)
+	modifies := make(map[string]string)
+	modifies["key1"] = "val1"
+	modifies["key2"] = "val2"
 	modifiesByte, _ := json.Marshal(modifies)
-	err = statedb.SaveSysConfig("sysParam", modifiesByte, version)
+	err = statedb.SaveSysConfig(modules.DesiredSysParams, modifiesByte, version)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -315,7 +303,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	}
 	t.Logf("DepositAmountForMediator=%s\n", depositAmountForMediator)
 
-	sysParam, _, err = statedb.GetSysConfig("sysParam")
+	sysParam, _, err = statedb.GetSysConfig(modules.DesiredSysParams)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -340,17 +328,11 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 		t.Log("update sysParams success")
 	}
 
-	modifies5 := []*modules.FoundModify{}
-	modify5 := &modules.FoundModify{}
-	modify5.Key = "key1"
-	modify5.Value = "5"
-	modifies5 = append(modifies5, modify5)
-	modify6 := &modules.FoundModify{}
-	modify6.Key = "key2"
-	modify6.Value = "5"
-	modifies5 = append(modifies5, modify6)
+	modifies5 := make(map[string]string)
+	modifies5["key1"] = "val1"
+	modifies5["key2"] = "val2"
 	modifiesByte5, _ := json.Marshal(modifies5)
-	err = statedb.SaveSysConfig("sysParam", modifiesByte5, version)
+	err = statedb.SaveSysConfig(modules.DesiredSysParams, modifiesByte5, version)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -373,7 +355,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 		t.Error(err.Error())
 	}
 	t.Logf("key2=%s\n", val2)
-	sysParam, _, err = statedb.GetSysConfig("sysParam")
+	sysParam, _, err = statedb.GetSysConfig(modules.DesiredSysParams)
 	if err != nil {
 		t.Error(err.Error())
 	}

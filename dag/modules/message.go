@@ -63,7 +63,7 @@ const (
 )
 
 const (
-	DesiredSysParams = "sysParam"
+	DesiredSysParams = "desiredSysParams"
 	SysParams        = "sysParams"
 )
 
@@ -879,12 +879,6 @@ func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
 	//	return false
 	//}
 	//return true
-}
-
-//foundation modify sys param
-type FoundModify struct {
-	Key   string
-	Value string
 }
 
 type SysTokenIDInfo struct {

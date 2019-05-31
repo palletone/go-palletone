@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -155,8 +156,8 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 	}
 	//获取当前的version
 	if len(modifies) > 0 {
-		for _, v := range modifies {
-			err = statedb.SaveSysConfig(v.Key, []byte(v.Value), version)
+		for k, v := range modifies {
+			err = statedb.SaveSysConfig(k, []byte(v), version)
 			if err != nil {
 				return err
 			}
@@ -200,23 +201,22 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 	return nil
 }
 
-func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error) {
+func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
+	var res map[string]string
+
 	val, _, err := statedb.GetSysConfig(modules.DesiredSysParams)
 	if err != nil {
+		log.Debugf(err.Error())
 		return nil, err
 	}
-	var modifies []*modules.FoundModify
-	if val == nil {
+
+	err = json.Unmarshal(val, &res)
+	if err != nil {
+		log.Debugf(err.Error())
 		return nil, err
-	} else if len(val) > 0 {
-		err := json.Unmarshal(val, &modifies)
-		if err != nil {
-			return nil, err
-		}
-		return modifies, nil
-	} else {
-		return nil, nil
 	}
+
+	return res, nil
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
