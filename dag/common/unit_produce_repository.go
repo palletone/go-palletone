@@ -404,10 +404,27 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 }
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
-	activeMediatorCountStr, _, _ := d.stateRep.GetConfig("ActiveMediatorCount")
-	activeMediatorCount, _ := strconv.ParseUint(string(activeMediatorCountStr), 10, 16)
+	activeMediatorStr, _, _ := d.stateRep.GetConfig("ActiveMediatorCount")
+	activeMediator, _ := strconv.ParseUint(string(activeMediatorStr), 10, 16)
 
-	return int(activeMediatorCount)
+	desiredSysParams, err := d.stateRep.GetSysParamWithoutVote()
+	if err != nil {
+		return int(activeMediator)
+	}
+
+	var desiredActiveMediatorStr string
+	desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediator]
+	if !ok {
+		return int(activeMediator)
+	}
+
+	desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+	if err != nil {
+		return int(activeMediator)
+	}
+	activeMediator = desiredActiveMediator
+
+	return int(activeMediator)
 }
 
 func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Unit) {

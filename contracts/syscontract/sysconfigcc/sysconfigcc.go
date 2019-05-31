@@ -434,6 +434,13 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		}
 	}
 
+	if args[0] == modules.DesiredActiveMediator {
+		_, err := strconv.ParseUint(args[1], 10, 16)
+		if err != nil {
+			return nil, fmt.Errorf("can not convert to integer")
+		}
+	}
+
 	modifies[args[0]] = args[1]
 	modifyByte, err := json.Marshal(modifies)
 	err = stub.PutState(modules.DesiredSysParams, modifyByte)

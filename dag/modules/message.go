@@ -63,8 +63,9 @@ const (
 )
 
 const (
-	DesiredSysParams = "desiredSysParams"
-	SysParams        = "sysParams"
+	DesiredSysParams      = "desiredSysParams"
+	SysParams             = "sysParams"
+	DesiredActiveMediator = "ActiveMediatorCount"
 )
 
 func (mt MessageType) IsRequest() bool {
