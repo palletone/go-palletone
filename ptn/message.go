@@ -96,7 +96,6 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 					}
 					number--
 				} else {
-					//log.Info("========GetBlockHeadersMsg========", "number", number, "err:", err)
 					unknown = true
 					break
 				}
