@@ -76,26 +76,26 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccdeploy',
         	call: 'contract_ccdeploy',
-        	params: 2, //templateId, args []string ---->["init", "a", "1", "b", 10]
-			inputFormatter: [null, null]
+        	params: 3, //templateId, args []string ---->["init", "a", "1", "b", 10], timeout uint32
+			inputFormatter: [null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvoke',
         	call: 'contract_ccinvoke',
-        	params: 2, // contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null]
+        	params: 3, // contractAddr, args[]string------>["fun", "key", "value"], timeout uint32
+			inputFormatter: [null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccquery',
 			call: 'contract_ccquery',
-			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
-			inputFormatter: [null,null]
+			params: 3, //contractAddr,args[]string---->["func","arg1","arg2","..."], timeout uint32
+			inputFormatter: [null,null, null]
 		}),
 		new web3._extend.Method({
-			name: 'ccstoptx',
-        	call: 'contract_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
+			name: 'ccstop',
+        	call: 'contract_ccstop',
+        	params: 1, //contractId
+			inputFormatter: [null]
 		}),
 
 		new web3._extend.Method({
