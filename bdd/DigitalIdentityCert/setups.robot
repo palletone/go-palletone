@@ -22,7 +22,7 @@ newAccounts
 
 queryCAHolder
     ${args}=    Create List    getRootCAHoler
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}   ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    getCAHolder
     Dictionary Should Contain Key    ${respJson}    result
     Set Global Variable    ${caCertHolder}    ${respJson["result"]}

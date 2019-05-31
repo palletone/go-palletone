@@ -31,7 +31,7 @@ section revoke user certificate succed
 section can query his issued crl file
     Log    "section can query his issued crl file"
     ${args}=    Create List    ${queryCRLMethod}    ${sectionCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCRL
     Dictionary Should Contain Key    ${respJson}    result
     ${bytes}=    Evaluate    ${respJson['result']}
@@ -39,7 +39,7 @@ section can query his issued crl file
 
 user certificate revocation time is before now
     ${args}=    Create List    ${getHolderCertMethod}    ${userCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCert
     Dictionary Should Contain Key    ${respJson}    result
     ${resultDict}=    Evaluate    ${respJson["result"]}

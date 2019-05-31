@@ -21,7 +21,7 @@ addCert
 queryCert
     [Arguments]    ${certHolder}
     ${args}=    Create List    getHolderCertIDs    ${certHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCert
     [Return]    ${respJson}
 
