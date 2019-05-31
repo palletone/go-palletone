@@ -35,4 +35,4 @@ account1=`echo $account1 | sed 's/\"//g'`
 #echo $account1
 python ./addcbl.py $account0 $account1
 
-killall gptn
+#killall gptn
