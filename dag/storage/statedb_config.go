@@ -87,6 +87,9 @@ func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
 		return nil, err
 	}
 	mainChain := &modules.MainChain{}
-	json.Unmarshal(data, &mainChain)
+	err = json.Unmarshal(data, mainChain)
+	if err != nil {
+		return nil, err
+	}
 	return mainChain, nil
 }
