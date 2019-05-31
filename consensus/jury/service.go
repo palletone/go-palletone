@@ -62,8 +62,9 @@ type PalletOne interface {
 	ElectionBroadcast(event ElectionEvent)
 	AdapterBroadcast(event AdapterEvent)
 
-	GetLocalMediators() []common.Address
+	//GetLocalMediators() []common.Address
 	IsLocalActiveMediator(add common.Address) bool
+	LocalHaveActiveMediator() bool
 
 	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
 }
@@ -229,6 +230,16 @@ func (p *Processor) isLocalActiveJury(add common.Address) bool {
 	if _, ok := p.local[add]; ok {
 		return p.dag.IsActiveJury(add)
 	}
+	return false
+}
+
+func (p *Processor) localHaveActiveJury() bool {
+	for addr, _ := range p.local {
+		if p.isLocalActiveJury(addr) {
+			return true
+		}
+	}
+
 	return false
 }
 
@@ -608,25 +619,31 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 
 func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules.Transaction, ele []modules.ElectionInf) bool {
 	if tx == nil {
+		log.Errorf("tx is nil")
 		return false
 	}
+
 	reqId := tx.RequestHash()
 	isSysContract := tx.IsSystemContract()
-	isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
-		isM = false
-		isJ = false
-		for addr, _ := range p.local {
-			if p.ptn.IsLocalActiveMediator(addr) {
-				//log.Debugf("[%s]contractEventExecutable, is Mediator, addr[%s]:", shortId(reqId.String()), addr.String())
-				isM = true
-			}
-			if true == p.isLocalActiveJury(addr) {
-				//log.Debugf("[%s]contractEventExecutable, is Jury, addr:", shortId(reqId.String()), addr.String())
-				isJ = true
-			}
-		}
-		return isM, isJ
-	}(p.local)
+
+	isMediator := p.ptn.LocalHaveActiveMediator()
+	isJury := p.localHaveActiveJury()
+
+	//isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
+	//	isM = false
+	//	isJ = false
+	//	for addr, _ := range p.local {
+	//		if p.ptn.IsLocalActiveMediator(addr) {
+	//			//log.Debugf("[%s]contractEventExecutable, is Mediator, addr[%s]:", shortId(reqId.String()), addr.String())
+	//			isM = true
+	//		}
+	//		if true == p.isLocalActiveJury(addr) {
+	//			//log.Debugf("[%s]contractEventExecutable, is Jury, addr:", shortId(reqId.String()), addr.String())
+	//			isJ = true
+	//		}
+	//	}
+	//	return isM, isJ
+	//}(p.local)
 
 	switch event {
 	case CONTRACT_EVENT_EXEC:
