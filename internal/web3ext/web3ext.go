@@ -32,7 +32,6 @@ var Modules = map[string]string{
 	"rpc":        RPC_JS,
 	"wallet":     Wallet_JS,
 	"txpool":     TxPool_JS,
-	"contract":   Contract_JS,
 }
 
 const Admin_JS = `
@@ -900,111 +899,6 @@ web3._extend({
 });
 `
 
-const Contract_JS = `
-web3._extend({
-	property: 'contract',
-	methods: [
-	   //ccTx
-		new web3._extend.Method({
-			name: 'ccinstalltx',
-        	call: 'contract_ccinstalltx',
-        	params: 8, //from, to , daoAmount, daoFee , tplName, path, version
-			inputFormatter: [null, null, null,null, null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccdeploytx',
-        	call: 'contract_ccdeploytx',
-        	params: 6, //from, to , daoAmount, daoFee , templateId , args  
-			inputFormatter: [null, null, null,null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccinvoketx',
-        	call: 'contract_ccinvoketx',
-        	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid, timeout
-			inputFormatter: [null, null, null,null, null, null, null, null]
-		}),
-        new web3._extend.Method({
-			name: 'ccinvoketxPass',
-			call: 'contract_ccinvoketxPass',
-			params: 9, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration, certid
-			inputFormatter: [null, null, null,null, null, null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccinvokeToken',
-        	call: 'contract_ccinvokeToken',
-        	params: 9, //from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null, null,null, null, null,null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccstoptx',
-        	call: 'contract_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
-		}),
-
-		//cc
-		new web3._extend.Method({
-			name: 'ccinstall',
-        	call: 'contract_ccinstall',
-        	params: 3, //ccName string, ccPath string, ccVersion string
-			inputFormatter: [null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccdeploy',
-        	call: 'contract_ccdeploy',
-        	params: 2, //templateId, args []string ---->["init", "a", "1", "b", 10]
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccinvoke',
-        	call: 'contract_ccinvoke',
-        	params: 2, // contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccquery',
-			call: 'contract_ccquery',
-			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
-			inputFormatter: [null,null]
-		}),
-		new web3._extend.Method({
-			name: 'ccstoptx',
-        	call: 'contract_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
-		}),
-
-		new web3._extend.Method({
-			name: 'depositContractInvoke',
-        	call: 'contract_depositContractInvoke',
-        	params: 5, //from, to, daoAmount, daoFee,param[]string
-			inputFormatter: [null, null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'depositContractQuery',
-        	call: 'contract_depositContractQuery',
-        	params: 1, //param[]string
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'getContractsByTpl',
-        	call: 'contract_getContractsByTpl',
-        	params: 1, //param[]string
-			inputFormatter: [null]
-		}),
-	],
-	properties: [
-		new web3._extend.Property({
-			name: 'listAllContractTemplates',
-			getter: 'contract_listAllContractTemplates'
-		}),
-		new web3._extend.Property({
-			name: 'listAllContracts',
-			getter: 'contract_listAllContracts'
-		}),
-	]
-});
-`
 const RPC_JS = `
 web3._extend({
 	property: 'rpc',
