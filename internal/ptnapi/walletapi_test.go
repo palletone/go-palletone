@@ -77,7 +77,7 @@ func TestJsSign(t *testing.T) {
 	privateKey := "L3KxwagZok1yvVaNEg3dkhx2Wft8zoszxgDz8JyvvQDzH2y53ryL"
 	h := hexutil.Encode([]byte("L3KxwagZok1yvVaNEg3dkhx2Wft8zoszxgDz8JyvvQDzH2y53ryL"))
 	t.Log(h)
-	signature ,_:=  hexutil.Decode("0x11a566e95a3e38d9e0b7115c11513a9b6e4b0ea5989cd1edd549fae11e8422053683ea3e5bce5d8415476ea94d2e1dbaee7f9e4f2166ff5e17601409a7d61a491c")
+	signature, _ := hexutil.Decode("0x11a566e95a3e38d9e0b7115c11513a9b6e4b0ea5989cd1edd549fae11e8422053683ea3e5bce5d8415476ea94d2e1dbaee7f9e4f2166ff5e17601409a7d61a491c")
 	prvKey, _ := crypto.FromWIF(privateKey)
 	pubKey := prvKey.PublicKey
 	pubKeyBytes := crypto.CompressPubkey(&pubKey)
