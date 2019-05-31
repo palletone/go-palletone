@@ -20,6 +20,10 @@
 
 package web3ext
 
+func init() {
+	Modules["debug"] = Debug_JS
+}
+
 const Debug_JS = `
 web3._extend({
 	property: 'debug',

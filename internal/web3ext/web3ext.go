@@ -24,7 +24,6 @@ var Modules = map[string]string{
 	"admin":      Admin_JS,
 	"chequebook": Chequebook_JS,
 	"clique":     Clique_JS,
-	"debug":      Debug_JS,
 	"ptn":        Ptn_JS,
 	"dag":        Dag_JS,
 	"net":        Net_JS,
