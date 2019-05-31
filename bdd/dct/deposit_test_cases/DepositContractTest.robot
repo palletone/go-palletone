@@ -12,13 +12,13 @@ ${anotherAddr}    ${EMPTY}
 
 *** Test Cases ***
 Business_01
-    [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点申请退出候选列表-》进入退出列表-》基金会同意。此时，所有列表为空
+    [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
     ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表
     log    ${result}
     ${addressMap1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
     log    ${addressMap1}
     Dictionary Should Contain Key    ${addressMap1}    ${mediatorAddr_01}
-    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理列表里的节点（同意）
+    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    ok   #基金会处理列表里的节点（同意）
     log    ${result}
     ${addressMap2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
     log    ${addressMap2}
@@ -30,13 +30,22 @@ Business_01
     Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should Not Be Equal    ${mDeposit["balance"]}    0    #有余额
+    Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}      #增加保证金
+    log    ${result}
+    ${result}    mediatorApplyCashback    ${mediatorAddr_01}    ${medDepositAmount}      #申请退出部分保证金
+    log    ${result}
+    ${addressMap5}    getListForCashbackApplication
+    log    ${addressMap5}
+    Dictionary Should Contain Key    ${addressMap5}    ${mediatorAddr_01}       #mediatorAddr_01
+    ${result}    handleForMediatorApplyCashback    ${foundationAddr}    ${mediatorAddr_01}   ok    #基金会处理退保证金列表里的节点（同意）
+    log    ${result}
     ${result}    applyQuitMediator    ${mediatorAddr_01}    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
     log    ${addressMap4}
     Dictionary Should Contain Key    ${addressMap4}    ${mediatorAddr_01}
-    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理退出候选列表里的节点（同意）
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}   ok    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}

@@ -2245,6 +2245,21 @@ func (api *PrivateDebugAPI) QueryDbByPrefix(keyString string, keyHex string) []*
 	}
 	return result
 }
+func (api *PrivateDebugAPI) SaveCommon(keyHex string, valueHex string) error {
+	if keyHex == "" || valueHex == "" {
+		return fmt.Errorf("saveCommon does not supported empty strings.")
+	}
+	key, err0 := hexutil.Decode(keyHex)
+	if err0 != nil {
+		return err0
+	}
+	value, err1 := hexutil.Decode(valueHex)
+	if err1 != nil {
+		return err1
+	}
+	//log.Info("saveCommon info", "key", string(key), "key_b", key)
+	return api.b.SaveCommon(key[:], value[:])
+}
 
 // PublicNetAPI offers network related RPC methods
 type PublicNetAPI struct {

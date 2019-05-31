@@ -4,32 +4,9 @@ Resource          publicParams.txt
 *** Variables ***
 
 *** Keywords ***
-获取提取保证金申请列表所需参数
-    ${one}    Create List    GetListForCashbackApplication
-    ${two}    Create List    ${one}
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForCashbackApplication    ${two}
-    ${respContentJson}    to json    ${resp.content}
-    log    ${respContentJson['result']}
-    ${addresses}    Evaluate    [addresses['cashback_address'] for addresses in ${respContentJson['result']}]
-    ${times}    Evaluate    [times['cashback_time'] for times in ${respContentJson['result']}]
-    #    ${addresses}
-    #    ${times}
-    #    get Length    ${addresses}
-    #    set variable if    ${arrayLen} != 0    ${addresses}[0]
-    #    set variable if    ${arrayLen} != 0    ${times}[0]
-    #    set variable if    ${arrayLen} == 0    ""
-    #    set variable if    ${arrayLen} == 0    0
-    #    Evaluate    str(${time0})
-    ${address0}    Evaluate    ${addresses}[0]
-    ${strTime}    Evaluate    str(${times}[0])
-    [Return]    ${address0}    ${strTime}
-
 getListForCashbackApplication
     ${one}    Create List    GetListForCashbackApplication
     ${two}    Create List    ${one}
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForCashbackApplication    ${two}
-    ${respContentJson}    to json    ${resp.content}
-    log    ${respContentJson['result']}
-    ${addresses}    Evaluate    [addresses['cashback_address'] for addresses in ${respContentJson['result']}]
-    ${result}    Set Variable    ${addresses}
-    [Return]    ${result}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForCashbackApplication    ${two}
+    ${addressMap}    To Json    ${result}
+    [Return]    ${addressMap}

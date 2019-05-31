@@ -1192,7 +1192,8 @@ func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
 }
 func (d *Dag) SaveCommon(key, val []byte) error {
-	return d.unstableUnitRep.SaveCommon(key, val)
+	return d.stableUnitRep.SaveCommon(key, val)
+	//return d.unstableUnitRep.SaveCommon(key, val)
 }
 
 //func (d *Dag) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {

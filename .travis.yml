@@ -23,7 +23,7 @@ env:
     - REPORT_NAME=report.html
 ##########  control testcase  ##############
     - IS_RUN_DEPOSIT=true
-    - IS_RUN_TESTCONTRACTCASES=false
+    - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
     - IS_RUN_CCINVOKE=true
     - IS_RUN_DIGITAL=true

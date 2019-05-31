@@ -532,12 +532,9 @@ func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion 
 }
 
 func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error) {
-	//depid := []byte{0x4, 0x5, 0x6}
 	log.Debugf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
-
-	//depid, _, err := cc.Deploy("palletone", templateId, txid, args, timeout)
-	depid, _, err := b.ptn.contract.Deploy(rwset.RwM, "palletone", templateId, txid, args, timeout)
-	return depid, err
+	_, payload, err := b.ptn.contract.Deploy(rwset.RwM, "palletone", templateId, txid, args, timeout)
+	return payload.ContractId, err
 }
 
 func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {

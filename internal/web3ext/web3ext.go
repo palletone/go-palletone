@@ -24,7 +24,6 @@ var Modules = map[string]string{
 	"admin":      Admin_JS,
 	"chequebook": Chequebook_JS,
 	"clique":     Clique_JS,
-	"debug":      Debug_JS,
 	"ptn":        Ptn_JS,
 	"dag":        Dag_JS,
 	"net":        Net_JS,
@@ -32,7 +31,6 @@ var Modules = map[string]string{
 	"rpc":        RPC_JS,
 	"wallet":     Wallet_JS,
 	"txpool":     TxPool_JS,
-	"contract":   Contract_JS,
 }
 
 const Admin_JS = `
@@ -168,6 +166,11 @@ web3._extend({
 			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
+            name: 'getHexCommon',
+            call: 'dag_getHexCommon',
+            params: 1,
+        }),
+		new web3._extend.Method({
             name: 'getCommon',
             call: 'dag_getCommon',
             params: 1,
@@ -291,234 +294,6 @@ web3._extend({
 	]
 });
 `
-const Debug_JS = `
-web3._extend({
-	property: 'debug',
-	methods: [
-		new web3._extend.Method({
-			name: 'ccinvoke',
-			call: 'debug_ccinvoke',
-			params: 4
-		}),	
-	new web3._extend.Method({
-			name: 'printBlock',
-			call: 'debug_printBlock',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'getBlockRlp',
-			call: 'debug_getBlockRlp',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'setHead',
-			call: 'debug_setHead',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'queryDbByKey',
-			call: 'debug_queryDbByKey',
-			params: 2
-		}),
-		new web3._extend.Method({
-			name: 'queryDbByPrefix',
-			call: 'debug_queryDbByPrefix',
-			params: 2
-		}),
-		new web3._extend.Method({
-			name: 'seedHash',
-			call: 'debug_seedHash',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'dumpBlock',
-			call: 'debug_dumpBlock',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'chaindbProperty',
-			call: 'debug_chaindbProperty',
-			params: 1,
-			outputFormatter: console.log
-		}),
-		new web3._extend.Method({
-			name: 'chaindbCompact',
-			call: 'debug_chaindbCompact',
-		}),
-		new web3._extend.Method({
-			name: 'metrics',
-			call: 'debug_metrics',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'verbosity',
-			call: 'debug_verbosity',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'vmodule',
-			call: 'debug_vmodule',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'backtraceAt',
-			call: 'debug_backtraceAt',
-			params: 1,
-		}),
-		new web3._extend.Method({
-			name: 'stacks',
-			call: 'debug_stacks',
-			params: 0,
-			outputFormatter: console.log
-		}),
-		new web3._extend.Method({
-			name: 'freeOSMemory',
-			call: 'debug_freeOSMemory',
-			params: 0,
-		}),
-		new web3._extend.Method({
-			name: 'setGCPercent',
-			call: 'debug_setGCPercent',
-			params: 1,
-		}),
-		new web3._extend.Method({
-			name: 'memStats',
-			call: 'debug_memStats',
-			params: 0,
-		}),
-		new web3._extend.Method({
-			name: 'gcStats',
-			call: 'debug_gcStats',
-			params: 0,
-		}),
-		new web3._extend.Method({
-			name: 'cpuProfile',
-			call: 'debug_cpuProfile',
-			params: 2
-		}),
-		new web3._extend.Method({
-			name: 'startCPUProfile',
-			call: 'debug_startCPUProfile',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'stopCPUProfile',
-			call: 'debug_stopCPUProfile',
-			params: 0
-		}),
-		new web3._extend.Method({
-			name: 'goTrace',
-			call: 'debug_goTrace',
-			params: 2
-		}),
-		new web3._extend.Method({
-			name: 'startGoTrace',
-			call: 'debug_startGoTrace',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'stopGoTrace',
-			call: 'debug_stopGoTrace',
-			params: 0
-		}),
-		new web3._extend.Method({
-			name: 'blockProfile',
-			call: 'debug_blockProfile',
-			params: 2
-		}),
-		new web3._extend.Method({
-			name: 'setBlockProfileRate',
-			call: 'debug_setBlockProfileRate',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'writeBlockProfile',
-			call: 'debug_writeBlockProfile',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'mutexProfile',
-			call: 'debug_mutexProfile',
-			params: 2
-		}),
-		new web3._extend.Method({
-			name: 'setMutexProfileRate',
-			call: 'debug_setMutexProfileRate',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'writeMutexProfile',
-			call: 'debug_writeMutexProfile',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'writeMemProfile',
-			call: 'debug_writeMemProfile',
-			params: 1
-		}),
-		new web3._extend.Method({
-			name: 'traceBlock',
-			call: 'debug_traceBlock',
-			params: 2,
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'traceBlockFromFile',
-			call: 'debug_traceBlockFromFile',
-			params: 2,
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'traceBlockByNumber',
-			call: 'debug_traceBlockByNumber',
-			params: 2,
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'traceBlockByHash',
-			call: 'debug_traceBlockByHash',
-			params: 2,
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'traceTransaction',
-			call: 'debug_traceTransaction',
-			params: 2,
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'preimage',
-			call: 'debug_preimage',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'getBadBlocks',
-			call: 'debug_getBadBlocks',
-			params: 0,
-		}),
-		new web3._extend.Method({
-			name: 'storageRangeAt',
-			call: 'debug_storageRangeAt',
-			params: 5,
-		}),
-		new web3._extend.Method({
-			name: 'getModifiedAccountsByNumber',
-			call: 'debug_getModifiedAccountsByNumber',
-			params: 2,
-			inputFormatter: [null, null],
-		}),
-		new web3._extend.Method({
-			name: 'getModifiedAccountsByHash',
-			call: 'debug_getModifiedAccountsByHash',
-			params: 2,
-			inputFormatter:[null, null],
-		}),
-	],
-	properties: []
-});
-`
-
 const Personal_JS = `
 web3._extend({
 	property: 'personal',
@@ -900,111 +675,6 @@ web3._extend({
 });
 `
 
-const Contract_JS = `
-web3._extend({
-	property: 'contract',
-	methods: [
-	   //ccTx
-		new web3._extend.Method({
-			name: 'ccinstalltx',
-        	call: 'contract_ccinstalltx',
-        	params: 8, //from, to , daoAmount, daoFee , tplName, path, version
-			inputFormatter: [null, null, null,null, null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccdeploytx',
-        	call: 'contract_ccdeploytx',
-        	params: 6, //from, to , daoAmount, daoFee , templateId , args  
-			inputFormatter: [null, null, null,null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccinvoketx',
-        	call: 'contract_ccinvoketx',
-        	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid, timeout
-			inputFormatter: [null, null, null,null, null, null, null, null]
-		}),
-        new web3._extend.Method({
-			name: 'ccinvoketxPass',
-			call: 'contract_ccinvoketxPass',
-			params: 9, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration, certid
-			inputFormatter: [null, null, null,null, null, null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccinvokeToken',
-        	call: 'contract_ccinvokeToken',
-        	params: 9, //from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null, null,null, null, null,null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccstoptx',
-        	call: 'contract_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
-		}),
-
-		//cc
-		new web3._extend.Method({
-			name: 'ccinstall',
-        	call: 'contract_ccinstall',
-        	params: 3, //ccName string, ccPath string, ccVersion string
-			inputFormatter: [null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccdeploy',
-        	call: 'contract_ccdeploy',
-        	params: 2, //templateId, args []string ---->["init", "a", "1", "b", 10]
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccinvoke',
-        	call: 'contract_ccinvoke',
-        	params: 2, // contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'ccquery',
-			call: 'contract_ccquery',
-			params: 2, //contractAddr,args[]string---->["func","arg1","arg2","..."]
-			inputFormatter: [null,null]
-		}),
-		new web3._extend.Method({
-			name: 'ccstoptx',
-        	call: 'contract_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
-		}),
-
-		new web3._extend.Method({
-			name: 'depositContractInvoke',
-        	call: 'contract_depositContractInvoke',
-        	params: 5, //from, to, daoAmount, daoFee,param[]string
-			inputFormatter: [null, null, null, null, null]
-		}),
-		new web3._extend.Method({
-			name: 'depositContractQuery',
-        	call: 'contract_depositContractQuery',
-        	params: 1, //param[]string
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'getContractsByTpl',
-        	call: 'contract_getContractsByTpl',
-        	params: 1, //param[]string
-			inputFormatter: [null]
-		}),
-	],
-	properties: [
-		new web3._extend.Property({
-			name: 'listAllContractTemplates',
-			getter: 'contract_listAllContractTemplates'
-		}),
-		new web3._extend.Property({
-			name: 'listAllContracts',
-			getter: 'contract_listAllContracts'
-		}),
-	]
-});
-`
 const RPC_JS = `
 web3._extend({
 	property: 'rpc',

@@ -171,7 +171,7 @@ I_get_a_TransferToken_result
 I_set_Ccquery_params_to_Normal
     [Arguments]    ${contractId}    ${methodType}    ${PreTokenId}
     ${methodType}    Create List    ${methodType}    ${PreTokenId}
-    ${transList}    Create List    ${contractId}    ${methodType}
+    ${transList}    Create List    ${contractId}    ${methodType}    ${0}
     [Return]    ${transList}
 
 I_post_a_Ccquery_request
