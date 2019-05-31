@@ -17,6 +17,7 @@ Resource          getQuitMediatorApplyListParams.txt
 Resource          handleForApplyBecomeMediatorParams.txt
 Resource          handleForApplyForQuitMediatorParams.txt
 Resource          handleForCashbackApplicationParams.txt
+Resource          handleForMediatorApplyCashbackParams.txt
 Resource          handleForForfeitureApplicationParams.txt
 Resource          juryApplyCashbackParams.txt
 Resource          juryPayToDepositContractParams.txt
@@ -29,6 +30,6 @@ ${depositContractQuery}    contract_depositContractQuery
 ${depositContractInvoke}    contract_depositContractInvoke
 ${Url}            http://127.0.0.1:8545
 ${depositContractAddress}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
-${amount}         1000000000
-${fee}            1000000000
+${amount}         0
+${fee}            10
 ${medDepositAmount}    200000000000

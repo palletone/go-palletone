@@ -13,7 +13,6 @@ mediator申请退还保证金所需参数
 mediatorApplyCashback
     [Arguments]    ${mediatorAddr}    ${cashAmount}
     ${mediator申请退还保证金所需参数 }    mediator申请退还保证金所需参数    ${mediatorAddr}    ${cashAmount}
-    ${resp}    创建公用的POST请求    ${depositContractInvoke}    MediatorApplyCashback    ${mediator申请退还保证金所需参数}
-    ${result}    Set Variable    ${resp.content}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    MediatorApplyCashback    ${mediator申请退还保证金所需参数}
     sleep    8
     [Return]    ${result}
