@@ -77,7 +77,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Success(resultByte)
 	case "getWithoutVoteResult":
 		log.Info("Start getWithoutVoteResult Invoke")
-		resultByte, err := stub.GetState(modules.DesiredSysParams)
+		resultByte, err := stub.GetState(modules.DesiredSysParamsWithoutVote)
 		if err != nil {
 			jsonResp := "{\"Error\":\"getWithoutVoteResult err: " + err.Error() + "\"}"
 			return shim.Success([]byte(jsonResp))
@@ -419,7 +419,7 @@ func (s *SysConfigChainCode) getAllSysParamsConf(stub shim.ChaincodeStubInterfac
 }
 
 func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	resultBytes, err := stub.GetState(modules.DesiredSysParams)
+	resultBytes, err := stub.GetState(modules.DesiredSysParamsWithoutVote)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -434,7 +434,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		}
 	}
 
-	if args[0] == modules.DesiredActiveMediator {
+	if args[0] == modules.DesiredActiveMediatorCount {
 		_, err := strconv.ParseUint(args[1], 10, 16)
 		if err != nil {
 			return nil, fmt.Errorf("can not convert to integer")
@@ -443,7 +443,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 
 	modifies[args[0]] = args[1]
 	modifyByte, err := json.Marshal(modifies)
-	err = stub.PutState(modules.DesiredSysParams, modifyByte)
+	err = stub.PutState(modules.DesiredSysParamsWithoutVote, modifyByte)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -471,7 +471,7 @@ func getSymbols(stub shim.ChaincodeStubInterface) *SysTokenInfo {
 	tkInfo := SysTokenInfo{}
 	//TODO
 	//tkInfoBytes, _ := stub.GetState(symbolsKey + assetID)
-	tkInfoBytes, _ := stub.GetState(modules.SysParams)
+	tkInfoBytes, _ := stub.GetState(modules.DesiredSysParamsWithVote)
 	if len(tkInfoBytes) == 0 {
 		return nil
 	}
@@ -487,7 +487,7 @@ func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(modules.SysParams, val)
+	err = stub.PutState(modules.DesiredSysParamsWithVote, val)
 	return err
 }
 

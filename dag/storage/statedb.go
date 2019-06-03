@@ -162,8 +162,8 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 				return err
 			}
 		}
-		//将基金会当前单独修改的制为nil
-		err = statedb.SaveSysConfig(modules.DesiredSysParams, nil, version)
+		//将基金会当前单独修改的重置为nil
+		err = statedb.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
 		if err != nil {
 			return err
 		}
@@ -193,8 +193,8 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 			}
 		}
 	}
-	//将基金会当前投票修改的制为nil
-	err = statedb.SaveSysConfig(modules.SysParams, nil, version)
+	//将基金会当前投票修改的重置为nil
+	err = statedb.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 	var res map[string]string
 
-	val, _, err := statedb.GetSysConfig(modules.DesiredSysParams)
+	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithoutVote)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -220,7 +220,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
-	val, _, err := statedb.GetSysConfig(modules.SysParams)
+	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithVote)
 	if err != nil {
 		return nil, err
 	}
