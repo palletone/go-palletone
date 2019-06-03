@@ -225,7 +225,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	sysTokenIDInfo.TotalSupply = 20
 	sysTokenIDInfo.LeastNum = 10
 	sysSupportResult.TopicIndex = 1
-	sysSupportResult.TopicTitle = "DepositAmountForMediator"
+	sysSupportResult.TopicTitle = modules.DepositAmountForMediator
 	sysVoteResult1 := &modules.SysVoteResult{}
 	sysVoteResult1.SelectOption = "2000"
 	sysVoteResult1.Num = 13
@@ -235,7 +235,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	sysSupportResult.VoteResults = []*modules.SysVoteResult{sysVoteResult1, sysVoteResult2}
 	sysTokenIDInfo.SupportResults = []*modules.SysSupportResult{sysSupportResult}
 	infoByte, _ := json.Marshal(sysTokenIDInfo)
-	err = statedb.SaveSysConfig("DepositAmountForMediator", []byte("1000"), version)
+	err = statedb.SaveSysConfig(modules.DepositAmountForMediator, []byte("1000"), version)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -255,7 +255,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 		t.Error(err.Error())
 	}
 	t.Logf("key2=%s\n", val1)
-	depositAmountForMediator, _, err := statedb.GetSysConfig("DepositAmountForMediator")
+	depositAmountForMediator, _, err := statedb.GetSysConfig(modules.DepositAmountForMediator)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -278,7 +278,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 		t.Error(err.Error())
 	}
 	t.Logf("key2=%s\n", val2)
-	depositAmountForMediator, _, err = statedb.GetSysConfig("DepositAmountForMediator")
+	depositAmountForMediator, _, err = statedb.GetSysConfig(modules.DepositAmountForMediator)
 	if err != nil {
 		t.Error(err.Error())
 	}

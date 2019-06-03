@@ -66,6 +66,7 @@ const (
 	DesiredSysParamsWithoutVote = "desiredSysParamsWithoutVote"
 	DesiredSysParamsWithVote    = "desiredSysParamsWithVote"
 	DesiredActiveMediator       = "ActiveMediatorCount"
+	DepositAmountForMediator    = "DepositAmountForMediator"
 )
 
 func (mt MessageType) IsRequest() bool {
