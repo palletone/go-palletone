@@ -242,9 +242,23 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	//init support
 	var supports []SysTopicSupports
 	for _, oneTopic := range voteTopics {
+		// 检查
+		checkFlag := false
+		if oneTopic.TopicTitle == modules.DesiredActiveMediatorCount {
+			checkFlag = true
+		}
+
 		var oneSupport SysTopicSupports
 		oneSupport.TopicTitle = oneTopic.TopicTitle
 		for _, oneOption := range oneTopic.SelectOptions {
+			// 检查
+			if checkFlag {
+				_, err := strconv.ParseUint(oneOption, 10, 16)
+				if err != nil {
+					return nil, fmt.Errorf("can not convert to integer")
+				}
+			}
+
 			oneResult := &modules.SysVoteResult{}
 			oneResult.SelectOption = oneOption
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)

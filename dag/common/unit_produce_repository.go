@@ -404,16 +404,18 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 }
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
-	activeMediatorStr, _, _ := d.stateRep.GetConfig("ActiveMediatorCount")
+	// 获取之前的设置
+	activeMediatorStr, _, _ := d.stateRep.GetConfig(modules.DesiredActiveMediatorCount)
 	activeMediator, _ := strconv.ParseUint(string(activeMediatorStr), 10, 16)
 
+	// 获取基金会直接修改的设置
 	desiredSysParams, err := d.stateRep.GetSysParamWithoutVote()
 	if err != nil {
 		return int(activeMediator)
 	}
 
 	var desiredActiveMediatorStr string
-	desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediator]
+	desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediatorCount]
 	if !ok {
 		return int(activeMediator)
 	}
@@ -423,6 +425,8 @@ func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 		return int(activeMediator)
 	}
 	activeMediator = desiredActiveMediator
+
+	// todo 获取通过投票修改的设置
 
 	return int(activeMediator)
 }

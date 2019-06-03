@@ -65,7 +65,7 @@ const (
 const (
 	DesiredSysParamsWithoutVote = "desiredSysParamsWithoutVote"
 	DesiredSysParamsWithVote    = "desiredSysParamsWithVote"
-	DesiredActiveMediator       = "ActiveMediatorCount"
+	DesiredActiveMediatorCount  = "ActiveMediatorCount"
 	DepositAmountForMediator    = "DepositAmountForMediator"
 )
 

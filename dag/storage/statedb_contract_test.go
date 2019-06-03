@@ -200,7 +200,7 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	err = statedb.SaveSysConfig("FoundationAddress", []byte("P1--------xxxxxxxxxxxxxxxxx"), version)
+	err = statedb.SaveSysConfig(modules.DepositAmountForMediator, []byte("1000"), version)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -235,10 +235,6 @@ func TestStateDb_UpdateSysParams(t *testing.T) {
 	sysSupportResult.VoteResults = []*modules.SysVoteResult{sysVoteResult1, sysVoteResult2}
 	sysTokenIDInfo.SupportResults = []*modules.SysSupportResult{sysSupportResult}
 	infoByte, _ := json.Marshal(sysTokenIDInfo)
-	err = statedb.SaveSysConfig(modules.DepositAmountForMediator, []byte("1000"), version)
-	if err != nil {
-		t.Error(err.Error())
-	}
 	err = statedb.SaveSysConfig(modules.DesiredSysParamsWithVote, infoByte, version)
 	if err != nil {
 		t.Error(err.Error())
