@@ -433,6 +433,14 @@ func (s *SysConfigChainCode) getAllSysParamsConf(stub shim.ChaincodeStubInterfac
 }
 
 func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	// 检查参数
+	if args[0] == modules.DesiredActiveMediatorCount {
+		_, err := strconv.ParseUint(args[1], 10, 16)
+		if err != nil {
+			return nil, fmt.Errorf("can not convert to integer")
+		}
+	}
+
 	resultBytes, err := stub.GetState(modules.DesiredSysParamsWithoutVote)
 	if err != nil {
 		log.Debugf(err.Error())
@@ -448,11 +456,8 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		}
 	}
 
-	if args[0] == modules.DesiredActiveMediatorCount {
-		_, err := strconv.ParseUint(args[1], 10, 16)
-		if err != nil {
-			return nil, fmt.Errorf("can not convert to integer")
-		}
+	if modifies == nil {
+		modifies = make(map[string]string)
 	}
 
 	modifies[args[0]] = args[1]
@@ -496,6 +501,7 @@ func getSymbols(stub shim.ChaincodeStubInterface) *SysTokenInfo {
 	}
 	return &tkInfo
 }
+
 func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 	val, err := json.Marshal(tkInfo)
 	if err != nil {
