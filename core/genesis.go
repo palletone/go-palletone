@@ -50,14 +50,14 @@ type SystemConfig struct {
 	UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
 
 	//对中间容器的相关资源限制
-	TempUccMemory     string `json"temp_ucc_memory"`
-	TempUccMemorySwap string `json"temp_ucc_memory_swap"`
-	TempUccCpuShares  string `json"temp_ucc_cpu_shares"`
-	TempUccCpuQuota   string `json"temp_ucc_cpu_quota"`
+	TempUccMemory     string `json:"temp_ucc_memory"`
+	TempUccMemorySwap string `json:"temp_ucc_memory_swap"`
+	TempUccCpuShares  string `json:"temp_ucc_cpu_shares"`
+	TempUccCpuQuota   string `json:"temp_ucc_cpu_quota"`
 
 	//contract about
-	ContractSignatureNum string `json"contract_signature_num"`
-	ContractElectionNum  string `json"contract_election_num"`
+	ContractSignatureNum string `json:"contract_signature_num"`
+	ContractElectionNum  string `json:"contract_election_num"`
 
 	ActiveMediatorCount string `json:"activeMediatorCount"`
 }
