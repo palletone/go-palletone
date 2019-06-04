@@ -94,6 +94,8 @@ type IDag interface {
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription
+	PostChainEvents(events []interface{})
+
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
