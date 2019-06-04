@@ -23,13 +23,13 @@ package dag
 import (
 	"time"
 
-	"go.dedis.ch/kyber/v3"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"go.dedis.ch/kyber/v3"
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
@@ -177,10 +177,6 @@ func (dag *Dag) IsMediator(address common.Address) bool {
 	return dag.unstableStateRep.IsMediator(address)
 }
 
-func (dag *Dag) ActiveMediators() map[common.Address]bool {
-	return dag.GetGlobalProp().ActiveMediators
-}
-
 func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 	return dag.GetGlobalProp().ChainParameters.CurrentFees
 }
@@ -231,7 +227,7 @@ func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
 }
 
 func (d *Dag) JuryCount() int {
-//	return 100 //todo test
+	//	return 100 //todo test
 
 	juryList, err := d.unstableStateRep.GetJuryCandidateList()
 	if err != nil {

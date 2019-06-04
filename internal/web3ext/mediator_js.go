@@ -111,7 +111,11 @@ web3._extend({
 			call: 'mediator_lookupMediatorInfo',
 			params: 0,
 		}),
-
+		new web3._extend.Method({
+			name: 'isActive',
+			call: 'mediator_isActive',
+			params: 1,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

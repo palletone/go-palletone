@@ -182,4 +182,5 @@ type IDag interface {
 
 	MediatorVotedResults() map[string]uint64
 	LookupMediatorInfo() []*modules.MediatorInfo
+	IsActiveMediator(add common.Address) bool
 }
