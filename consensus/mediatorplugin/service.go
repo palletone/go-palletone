@@ -24,9 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
-	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -39,6 +36,9 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
 )
 
 // PalletOne wraps all methods required for producing unit.
@@ -68,8 +68,6 @@ type iDag interface {
 
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
 		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
-
-	ActiveMediators() map[common.Address]bool
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool

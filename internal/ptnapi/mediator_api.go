@@ -115,6 +115,15 @@ func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
 	return a.Dag().LookupMediatorInfo()
 }
 
+func (a *PublicMediatorAPI) IsActive(addStr string) (bool, error) {
+	mediator, err := common.StringToAddress(addStr)
+	if err != nil {
+		return false, err
+	}
+
+	return a.Dag().IsActiveMediator(mediator), nil
+}
+
 func (a *PublicMediatorAPI) ListActives() []string {
 	addStrs := make([]string, 0)
 	ms := a.Dag().GetActiveMediators()
