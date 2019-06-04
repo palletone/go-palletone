@@ -298,7 +298,19 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 			pm.txpool.SetPendingTxs(hash, u.NumberU64(), u.Transactions())
 		}
 
-		return pm.dag.InsertDag(blocks, pm.txpool)
+		account, err := pm.dag.InsertDag(blocks, pm.txpool)
+		if err == nil {
+			go func() {
+				var (
+					events = make([]interface{}, 0, 2)
+				)
+				events = append(events, modules.ChainHeadEvent{blocks[0]})
+				events = append(events, modules.ChainEvent{blocks[0], blocks[0].UnitHash})
+				pm.dag.PostChainEvents(events)
+			}()
+		}
+		return account, err
+
 	}
 	return fetcher.New(pm.dag.IsHeaderExist, validatorFn, pm.BroadcastUnit, heighter, inserter, pm.removePeer)
 }
