@@ -4,7 +4,7 @@ sudo: required
 language:
   - go
 go:
-    - 1.10.8
+    #- 1.10.8
     - 1.12.5
 env:
   global:
