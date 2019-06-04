@@ -1,5 +1,4 @@
 *** Settings ***
-Default Tags      normal
 Library           RequestsLibrary
 Library           Collections
 Library           demjson
@@ -16,7 +15,7 @@ ${result_code}    \f[a-z0-9]*
 ${result}         amounts is empty
 
 *** Test Cases ***
-getBalance_Normal
+Scenario: 20Contract - GetBalance
     [Tags]    normal
     [Template]    normalGetBalance
     ${address}

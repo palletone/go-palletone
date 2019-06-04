@@ -14,7 +14,8 @@ env:
     - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
     - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
     - CREATE_TRANS_DIR=createTrans
-    - CCINVOKE_DIR=ccinvoke
+    - CONTRACT20_DIR=crt20Contract
+    - CONTRACT721_DIR=crt721Contract
     - VOTECONTRACT_DIR=voteContract
     - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
     - DEPOSIT_DIR=deposit
@@ -25,7 +26,8 @@ env:
     - IS_RUN_DEPOSIT=true
     - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
-    - IS_RUN_CCINVOKE=true
+    - IS_RUN_20CONTRACT=true
+    - IS_RUN_721CONTRACT=true
     - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
@@ -45,6 +47,8 @@ script:
   - nohup ./gptn &
   - sleep 15
   - netstat -ap | grep gptn
+  
+
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
     cd ../dct;
     ./deposit_test.sh 4;
@@ -56,6 +60,7 @@ script:
     ./test_start.sh;
     fi
 
+  
   # into bdd path, all testcases is here
   - cd ${BASE_DIR}/bdd
   - mkdir -p ${BDD_LOG_PATH}
@@ -63,14 +68,19 @@ script:
     python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
     fi
 
-  - if [ $IS_RUN_CCINVOKE == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${CCINVOKE_DIR} -i normal ./testcase/crtCoinContract;
+  - if [ $IS_RUN_20CONTRACT == 'true' ]; then
+    python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
     fi
-
+    
+  - if [ $IS_RUN_721CONTRACT == 'true' ]; then
+    python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT721_DIR} -i normal ./testcase/crt721Contract;
+    fi
+    
   - if [ $IS_RUN_VOTE == 'true' ]; then
-    python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract/;
+    python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;
     fi
-
+    
+    
   - if [ $IS_RUN_DIGITAL == 'true' ]; then
     python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
     fi
@@ -82,11 +92,12 @@ script:
     sleep 15;
     python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
+    
 
 after_script:
   - killall gptn
   - sleep 2
-#  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
+  #  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
   # upload all log
   - curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
 
@@ -103,9 +114,15 @@ after_script:
     fi
 
   # upload ccinvoke log and report
-  - if [ $IS_RUN_CCINVOKE == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CCINVOKE_DIR/$LOG_NAME -v;
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CCINVOKE_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CCINVOKE_DIR/${REPORT_NAME} -v;
+  - if [ $IS_RUN_20CONTRACT == 'true' ]; then
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT20_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT20_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT20_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT20_DIR/${REPORT_NAME} -v;
+    fi
+    
+  # upload 721contract log and report
+  - if [ $IS_RUN_721CONTRACT == 'true' ]; then
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT721_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT721_DIR/$LOG_NAME -v;
+    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT721_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT721_DIR/${REPORT_NAME} -v;
     fi
 
   # upload voteContract log and report
