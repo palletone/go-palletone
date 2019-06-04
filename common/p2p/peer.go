@@ -298,9 +298,9 @@ func (p *Peer) handle(msg Msg) error {
 func countMatchingProtocols(protocols []Protocol, caps []Cap) int {
 	n := 0
 	for _, cap := range caps {
-		log.Debug("countMatchingProtocols", "cap.Name", cap.Name, "cap.Version", cap.Version)
+		//log.Debug("countMatchingProtocols", "cap.Name", cap.Name, "cap.Version", cap.Version)
 		for _, proto := range protocols {
-			log.Debug("countMatchingProtocols", "proto.Name", proto.Name, "proto.Version", proto.Version)
+			//log.Debug("countMatchingProtocols", "proto.Name", proto.Name, "proto.Version", proto.Version)
 			if proto.Name == cap.Name && proto.Version == cap.Version {
 				n++
 			}
@@ -318,9 +318,9 @@ func matchProtocols(protocols []Protocol, caps []Cap, rw MsgReadWriter) map[stri
 
 outer:
 	for _, cap := range caps {
-		log.Debug("p2p matchProtocols", "cap.Name", cap.Name, "cap.Version", cap.Version)
+		//log.Debug("p2p matchProtocols", "cap.Name", cap.Name, "cap.Version", cap.Version)
 		for _, proto := range protocols {
-			log.Debug("p2p matchProtocols", "proto.Name", proto.Name, "proto.Version", proto.Version)
+			//log.Debug("p2p matchProtocols", "proto.Name", proto.Name, "proto.Version", proto.Version)
 			if proto.Name == cap.Name && proto.Version == cap.Version {
 				// If an old protocol version matched, revert it
 				if old := result[cap.Name]; old != nil {
@@ -339,7 +339,7 @@ outer:
 
 func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error) {
 	p.wg.Add(len(p.running))
-	log.Debug("Peer->startProtocols", "len(p.running)", len(p.running))
+	//log.Debug("Peer->startProtocols", "len(p.running)", len(p.running))
 	for _, proto := range p.running {
 		proto := proto
 		proto.closed = p.closed

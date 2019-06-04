@@ -1403,10 +1403,12 @@ func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*module
 	if len(ads) != 0 {
 		for _, v := range ads {
 			key := constants.RewardAddressPrefix + v.Addr.String()
-			data, _, err := rep.statedb.GetContractState(contractId, key)
+			data, version, err := rep.statedb.GetContractState(contractId, key)
 			income := []modules.AmountAsset{}
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
+				rs := modules.ContractReadSet{Key: key, Version: version, Value: data}
+				payload.ReadSet = append(payload.ReadSet, rs)
 			}
 			newValue := addIncome(income, v.Amount, v.Asset)
 			newData, _ := rlp.EncodeToBytes(newValue)
@@ -1482,7 +1484,11 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	payload.ContractId = contractId
 	for addr, _ := range rewards {
 		key := constants.RewardAddressPrefix + addr.String()
-		ws := modules.ContractWriteSet{IsDelete: true, Key: key}
+		data, version, _ := rep.statedb.GetContractState(contractId, key)
+		rs := modules.ContractReadSet{Key: key, Version: version, Value: data}
+		payload.ReadSet = append(payload.ReadSet, rs)
+		empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
+		ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: empty}
 		payload.WriteSet = append(payload.WriteSet, ws)
 	}
 	msg1 := &modules.Message{

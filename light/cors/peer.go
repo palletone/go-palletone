@@ -328,10 +328,10 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 			break
 		}
 		if flag != 1 && len(pcs) > 0 {
-			return errResp(ErrRequestRejected, "Not Accessed")
+			return errResp(ErrRequestRejected, "Not Accessed,p.id:%v", p.id)
 		}
 	} else {
-		return errResp(ErrRequestRejected, "Not Registered")
+		return errResp(ErrRequestRejected, "Not Registered,p.id:%v", p.id)
 	}
 
 	log.Debug("Cors Handshake", "p.ID()", p.ID(), "genesis", rGenesis, "network", rNetwork, "version", rVersion, "gastoken", rGastoken)

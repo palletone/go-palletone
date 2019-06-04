@@ -1665,8 +1665,8 @@ func (d *Downloader) DeliverAllToken(id string, headers []*modules.Header) error
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)
 	select {
-	//case <-d.cancelCh:
-	//	return errCancelBlockFetch
+	case <-d.cancelCh:
+		return errCancelBlockFetch
 	case d.headerCh <- &headerPack{id, headers}:
 		return nil
 	case <-timeout:
@@ -1693,8 +1693,8 @@ func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 	timeout := time.After(ttl)
 	for {
 		select {
-		//case <-d.cancelCh:
-		//	return nil, errCancelBlockFetch
+		case <-d.cancelCh:
+			return nil, errCancelBlockFetch
 
 		case packet := <-d.headerCh:
 			// Discard anything not from the origin peer

@@ -227,11 +227,10 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	if pm.lightSync {
-		pm.fetcher.Start()
-		defer pm.fetcher.Stop()
-		defer pm.downloader.Terminate()
 		go func() {
-
+			go pm.fetcher.Start()
+			defer pm.fetcher.Stop()
+			defer pm.downloader.Terminate()
 			forceSync := time.Tick(forceSyncCycle)
 			for {
 				select {
@@ -243,7 +242,6 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 					log.Debug("Cors PalletOne ProtocolManager start force push cors sync")
 
 					go pm.StartCorsSync()
-					go pm.PullSync()
 
 				case <-pm.noMorePeers:
 					return
@@ -293,8 +291,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	//	return p2p.DiscTooManyPeers
 	//}
 
-	log.Debug("Enter Cors Palletone peer connected", "name", p.Name())
-	defer log.Debug("End Cors Palletone peer connected", "name", p.Name())
+	log.Debug("Enter Cors Palletone peer connected", "id", p.ID())
+	defer log.Debug("End Cors Palletone peer connected", "id", p.ID())
 
 	// Execute the Cors handshake
 	genesis, err := pm.dag.GetGenesisUnit()
@@ -367,7 +365,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			log.Debug("Light PalletOne message handling failed", "err", err)
+			log.Debug("Cors PalletOne message handling failed", "err", err)
 			return err
 		}
 	}
