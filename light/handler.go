@@ -408,7 +408,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 					p.lightpeermsg[announce.Number.AssetID] = &announce
 					p.lightlock.Unlock()
 
-					if announce.Number.AssetID != modules.PTNCOIN {
+					//if announce.Number.AssetID != modules.PTNCOIN {
+					if pm.assetId != announce.Number.AssetID {
 						//log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
 						p.SendRawAnnounce(data)
 					} else {
