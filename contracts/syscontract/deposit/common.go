@@ -137,7 +137,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 	//  对mediator的特殊处理
 	if role == Mediator {
 		//  获取保证金下限
-		depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
+		depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
 		if err != nil {
 			return err
 		}
@@ -537,7 +537,7 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 	//  如果时没收mediator则，要么没收所有，要么没收后，该节点的保证金还在规定的下限之上
 	if strings.Compare(role, Mediator) == 0 {
 		//
-		amount, err := stub.GetSystemConfig(DepositAmountForMediator)
+		amount, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
 		if err != nil {
 			return shim.Error(err.Error())
 		}

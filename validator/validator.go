@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -115,6 +117,11 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 		coinbaseValidateResult := validate.validateCoinbase(coinbase, out)
 		if coinbaseValidateResult == TxValidationCode_VALID {
 			log.Debugf("Validate coinbase[%s] pass", coinbase.Hash().String())
+		} else {
+			log.DebugDynamic(func() string {
+				data, _ := json.Marshal(coinbase)
+				return fmt.Sprintf("Coinbase[%s] invalid, content: %s", coinbase.Hash().String(), string(data))
+			})
 		}
 		return coinbaseValidateResult
 

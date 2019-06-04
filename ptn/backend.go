@@ -129,7 +129,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	// todo albert·gou 待合并
 	dag.RefreshSysParameters()
 
 	ptn := &PalletOne{
@@ -287,8 +286,13 @@ func (s *PalletOne) AdapterBroadcast(event jury.AdapterEvent) {
 func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
 }
+
 func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {
 	return s.mediatorPlugin.IsLocalActiveMediator(addr)
+}
+
+func (s *PalletOne) LocalHaveActiveMediator() bool {
+	return s.mediatorPlugin.LocalHaveActiveMediator()
 }
 
 // Protocols implements node.Service, returning all the currently configured

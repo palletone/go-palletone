@@ -21,10 +21,14 @@
 package common
 
 import (
+	"strconv"
+
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -69,6 +73,8 @@ type IStateRepository interface {
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 
 	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
+	RefreshSysParameters()
+	GetSysParamWithoutVote() (map[string]string, error)
 }
 
 type StateRepository struct {
@@ -92,9 +98,15 @@ func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *
 func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 	return rep.statedb.GetSysConfig(name)
 }
+
 func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetAllSysConfig()
 }
+
+func (rep *StateRepository) GetSysParamWithoutVote() (map[string]string, error) {
+	return rep.statedb.GetSysParamWithoutVote()
+}
+
 func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesById(id)
 }
@@ -219,4 +231,22 @@ func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, er
 
 func (rep *StateRepository) GetAccountVotedMediators(addr common.Address) map[string]bool {
 	return rep.statedb.GetAccountVotedMediators(addr)
+}
+
+func (rep *StateRepository) RefreshSysParameters() {
+	deposit, _, _ := rep.GetConfig("DepositRate")
+	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
+	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
+	log.Debugf("Load SysParameter DepositContractInterest value:%f",
+		parameter.CurrentSysParameters.DepositContractInterest)
+
+	txCoinYearRateStr, _, _ := rep.GetConfig("TxCoinYearRate")
+	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
+	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
+	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
+
+	generateUnitRewardStr, _, _ := rep.GetConfig("GenerateUnitReward")
+	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
+	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
+	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
 }

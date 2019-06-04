@@ -99,12 +99,12 @@ func (p *Processor) processAdapterRequestEvent(msgType uint32, reqEvt *AdapterRe
 	log.Info("processAdapterRequestEvent")
 
 	//if not this contract's jury, just return
-	if !p.checkJury(reqEvt) {
-		localMediators := p.ptn.GetLocalMediators()
-		if len(localMediators) == 0 {
-			return nil, nil
-		} //mediator continue process
-	}
+	//if !p.checkJury(reqEvt) {
+	//	localMediators := p.ptn.GetLocalMediators()
+	//	if len(localMediators) == 0 {
+	//		return nil, nil
+	//	} //mediator continue process
+	//}
 
 	//check
 	isValid := checkValid(reqEvt)

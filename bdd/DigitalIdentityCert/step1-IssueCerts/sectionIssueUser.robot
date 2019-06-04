@@ -29,7 +29,7 @@ section issues intermediate certificate name cert2 to user succeed
 user can query his certificate in db
     Log    "user can query his certificate in db"
     ${args}=    Create List    ${getHolderCertMethod}    ${userCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCert
     Dictionary Should Contain Key    ${respJson}    result
     ${resultDict}=    Evaluate    ${respJson["result"]}

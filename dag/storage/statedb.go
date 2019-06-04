@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -107,7 +108,6 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 
 // ######################### GET IMPL END ###########################
 
-
 func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.JuryList)
@@ -156,14 +156,14 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 	}
 	//获取当前的version
 	if len(modifies) > 0 {
-		for _, v := range modifies {
-			err = statedb.SaveSysConfig(v.Key, []byte(v.Value), version)
+		for k, v := range modifies {
+			err = statedb.SaveSysConfig(k, []byte(v), version)
 			if err != nil {
 				return err
 			}
 		}
-		//将基金会当前单独修改的制为nil
-		err = statedb.SaveSysConfig(modules.SysParam, nil, version)
+		//将基金会当前单独修改的重置为nil
+		err = statedb.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
 		if err != nil {
 			return err
 		}
@@ -193,35 +193,34 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 			}
 		}
 	}
-	//将基金会当前投票修改的制为nil
-	err = statedb.SaveSysConfig(modules.SysParams, nil, version)
+	//将基金会当前投票修改的重置为nil
+	err = statedb.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (statedb *StateDb) GetSysParamWithoutVote() ([]*modules.FoundModify, error) {
-	val, _, err := statedb.GetSysConfig(modules.SysParam)
+func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
+	var res map[string]string
+
+	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithoutVote)
 	if err != nil {
+		log.Debugf(err.Error())
 		return nil, err
 	}
-	var modifies []*modules.FoundModify
-	if val == nil {
+
+	err = json.Unmarshal(val, &res)
+	if err != nil {
+		log.Debugf(err.Error())
 		return nil, err
-	} else if len(val) > 0 {
-		err := json.Unmarshal(val, &modifies)
-		if err != nil {
-			return nil, err
-		}
-		return modifies, nil
-	} else {
-		return nil, nil
 	}
+
+	return res, nil
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
-	val, _, err := statedb.GetSysConfig(modules.SysParams)
+	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithVote)
 	if err != nil {
 		return nil, err
 	}

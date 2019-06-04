@@ -62,8 +62,9 @@ type PalletOne interface {
 	ElectionBroadcast(event ElectionEvent)
 	AdapterBroadcast(event AdapterEvent)
 
-	GetLocalMediators() []common.Address
-	IsLocalActiveMediator(add common.Address) bool
+	//GetLocalMediators() []common.Address
+	//IsLocalActiveMediator(add common.Address) bool
+	LocalHaveActiveMediator() bool
 
 	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
 }
@@ -232,26 +233,36 @@ func (p *Processor) isLocalActiveJury(add common.Address) bool {
 	return false
 }
 
-func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
-	if len(p.local) < 1 {
-		return nil, errors.New("getLocalNodeInfo, no local account")
-	}
-	nodes := make([]*nodeInfo, 0)
+func (p *Processor) localHaveActiveJury() bool {
 	for addr, _ := range p.local {
-		nodeType := 0
-		if p.ptn.IsLocalActiveMediator(addr) {
-			nodeType = TMediator
-		} else if p.isLocalActiveJury(addr) {
-			nodeType = TJury
+		if p.isLocalActiveJury(addr) {
+			return true
 		}
-		node := &nodeInfo{
-			addr:  addr,
-			ntype: nodeType,
-		}
-		nodes = append(nodes, node)
 	}
-	return nodes, nil
+
+	return false
 }
+
+//func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
+//	if len(p.local) < 1 {
+//		return nil, errors.New("getLocalNodeInfo, no local account")
+//	}
+//	nodes := make([]*nodeInfo, 0)
+//	for addr, _ := range p.local {
+//		nodeType := 0
+//		if p.ptn.IsLocalActiveMediator(addr) {
+//			nodeType = TMediator
+//		} else if p.isLocalActiveJury(addr) {
+//			nodeType = TJury
+//		}
+//		node := &nodeInfo{
+//			addr:  addr,
+//			ntype: nodeType,
+//		}
+//		nodes = append(nodes, node)
+//	}
+//	return nodes, nil
+//}
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
 	req := p.mtx[reqId]
@@ -608,25 +619,31 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 
 func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules.Transaction, ele []modules.ElectionInf) bool {
 	if tx == nil {
+		log.Errorf("tx is nil")
 		return false
 	}
+
 	reqId := tx.RequestHash()
 	isSysContract := tx.IsSystemContract()
-	isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
-		isM = false
-		isJ = false
-		for addr, _ := range p.local {
-			if p.ptn.IsLocalActiveMediator(addr) {
-				//log.Debugf("[%s]contractEventExecutable, is Mediator, addr[%s]:", shortId(reqId.String()), addr.String())
-				isM = true
-			}
-			if true == p.isLocalActiveJury(addr) {
-				//log.Debugf("[%s]contractEventExecutable, is Jury, addr:", shortId(reqId.String()), addr.String())
-				isJ = true
-			}
-		}
-		return isM, isJ
-	}(p.local)
+
+	isMediator := p.ptn.LocalHaveActiveMediator()
+	isJury := p.localHaveActiveJury()
+
+	//isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
+	//	isM = false
+	//	isJ = false
+	//	for addr, _ := range p.local {
+	//		if p.ptn.IsLocalActiveMediator(addr) {
+	//			//log.Debugf("[%s]contractEventExecutable, is Mediator, addr[%s]:", shortId(reqId.String()), addr.String())
+	//			isM = true
+	//		}
+	//		if true == p.isLocalActiveJury(addr) {
+	//			//log.Debugf("[%s]contractEventExecutable, is Jury, addr:", shortId(reqId.String()), addr.String())
+	//			isJ = true
+	//		}
+	//	}
+	//	return isM, isJ
+	//}(p.local)
 
 	switch event {
 	case CONTRACT_EVENT_EXEC:

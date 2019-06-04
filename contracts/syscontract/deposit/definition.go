@@ -27,7 +27,6 @@ const (
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
 	ListForAgreeBecomeMediator = "ListForAgreeBecomeMediator"
 	ListForApplyQuitMediator   = "ListForApplyQuitMediator"
-	DepositAmountForMediator   = "DepositAmountForMediator"
 	DepositAmountForJury       = "DepositAmountForJury"
 	DepositAmountForDeveloper  = "DepositAmountForDeveloper"
 	DepositPeriod              = "DepositPeriod"

@@ -42,7 +42,6 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -851,23 +850,8 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 	return all, err
 }
 
-// todo albert·gou 待合并
 func (d *Dag) RefreshSysParameters() {
-	deposit, _, _ := d.GetConfig("DepositRate")
-	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
-	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
-	log.Debugf("Load SysParameter DepositContractInterest value:%f",
-		parameter.CurrentSysParameters.DepositContractInterest)
-
-	txCoinYearRateStr, _, _ := d.GetConfig("TxCoinYearRate")
-	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
-	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
-	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
-
-	generateUnitRewardStr, _, _ := d.GetConfig("GenerateUnitReward")
-	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
-	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
-	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+	d.unstableStateRep.RefreshSysParameters()
 }
 
 //func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
@@ -1414,12 +1398,15 @@ func (d *Dag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 func (d *Dag) GetMinFee() (*modules.AmountAsset, error) {
 	return d.unstableStateRep.GetMinFee()
 }
+
 func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
 	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
 }
+
 func (d *Dag) Close() {
 	d.unstableUnitProduceRep.Close()
 }
+
 func (dag *Dag) MediatorVotedResults() map[string]uint64 {
 	return dag.unstableUnitProduceRep.MediatorVotedResults()
 }

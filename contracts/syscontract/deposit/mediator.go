@@ -237,7 +237,7 @@ func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit
 func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("starting entering mediatorPayToDepositContract func.")
 	//  获取保证金下线，在状态数据库中
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
+	depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
 	if err != nil {
 		log.Error("get deposit amount for mediator err: ", "error", err)
 		return shim.Error(err.Error())
@@ -389,7 +389,7 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr common.Addres
 	//	return err
 	//}
 	//
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
+	depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
 	if err != nil {
 		log.Error("get deposit amount for mediator err: ", "error", err)
 		return err

@@ -45,7 +45,8 @@ type UtxoJson struct {
 }
 
 func (utxo *UtxoJson) GetAmount() uint64 {
-	return utxo.AmountWithInterest
+	return utxo.Amount
+	//return utxo.AmountWithInterest
 }
 
 //type AssetJson struct {
