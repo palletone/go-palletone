@@ -4,7 +4,7 @@ sudo: required
 language:
   - go
 go:
-    #- 1.10.8
+    - 1.10.8
     - 1.12.5
 env:
   global:
@@ -32,6 +32,7 @@ env:
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
     - GO111MODULE=on
+    - IS_UPLOAD = FALSE
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 script:
@@ -48,7 +49,6 @@ script:
   - sleep 15
   - netstat -ap | grep gptn
   
-
   - if [ $IS_RUN_DEPOSIT == 'true' ]; then
     cd ../dct;
     ./deposit_test.sh 4;
@@ -60,7 +60,6 @@ script:
     ./test_start.sh;
     fi
 
-  
   # into bdd path, all testcases is here
   - cd ${BASE_DIR}/bdd
   - mkdir -p ${BDD_LOG_PATH}
@@ -93,7 +92,6 @@ script:
     python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
     fi
     
-
 after_script:
   - killall gptn
   - sleep 2
