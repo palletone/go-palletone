@@ -147,23 +147,6 @@ func (p *peer) HeadAndNumber(assetid modules.AssetId) (hash common.Hash, number 
 	return hash, nil
 }
 
-//func (p *peer) headBlockInfo(assetid modules.AssetId) blockInfo {
-//	p.lightlock.RLock()
-//	defer p.lightlock.RUnlock()
-//	if v, ok := p.lightpeermsg[assetid]; ok {
-//		return blockInfo{Hash: v.Hash, Number: &v.Number}
-//	}
-//	return blockInfo{}
-//}
-
-// Td retrieves the current total difficulty of a peer.
-//func (p *peer) Td() *big.Int {
-//	p.lock.RLock()
-//	defer p.lock.RUnlock()
-//
-//	return new(big.Int).Set(p.headInfo.Td)
-//}
-
 // waitBefore implements distPeer interface
 func (p *peer) waitBefore(maxCost uint64) (time.Duration, float64) {
 	return p.fcServer.CanSend(maxCost)
@@ -204,11 +187,6 @@ func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
 	return hasBlock != nil && hasBlock(hash, number)
 }
 
-// SendAnnounce announces the availability of a number of blocks through
-// a hash notification.
-//func (p *peer) SendAnnounce(request announceData) error {
-//	return p2p.Send(p.rw, AnnounceMsg, request)
-//}
 func (p *peer) SendRawAnnounce(request []byte /*announceData*/) error {
 	return p2p.Send(p.rw, AnnounceMsg, request)
 }
@@ -221,18 +199,6 @@ func (p *peer) SendUnitHeaders(reqID, bv uint64, headers []*modules.Header) erro
 func (p *peer) SendLeafNodes(reqID, bv uint64, headers []*modules.Header) error {
 	return sendResponse(p.rw, LeafNodesMsg, reqID, bv, headers)
 }
-
-// SendBlockBodiesRLP sends a batch of block contents to the remote peer from
-// an already RLP encoded format.
-//func (p *peer) SendBlockBodiesRLP(reqID, bv uint64, bodies []rlp.RawValue) error {
-//	return sendResponse(p.rw, BlockBodiesMsg, reqID, bv, bodies)
-//}
-
-// SendCodeRLP sends a batch of arbitrary internal data, corresponding to the
-// hashes requested.
-//func (p *peer) SendCode(reqID, bv uint64, data [][]byte) error {
-//	return sendResponse(p.rw, CodeMsg, reqID, bv, data)
-//}
 
 func (p *peer) SendRawUTXOs(reqID, bv uint64, utxos [][][]byte) error {
 	return p2p.Send(p.rw, UTXOsMsg, utxos)
@@ -250,27 +216,6 @@ func (p *peer) SendProofs(reqID, bv uint64, proof proofsRespData) error {
 	//return sendResponse(p.rw, ProofsV1Msg, reqID, bv, proofs)
 }
 
-// SendProofsV2 sends a batch of merkle proofs, corresponding to the ones requested.
-//func (p *peer) SendProofsV2(reqID, bv uint64, proofs les.NodeList) error {
-//	return sendResponse(p.rw, ProofsV2Msg, reqID, bv, proofs)
-//}
-
-// SendHeaderProofs sends a batch of legacy LES/1 header proofs, corresponding to the ones requested.
-//func (p *peer) SendHeaderProofs(reqID, bv uint64, proofs []ChtResp) error {
-//	return sendResponse(p.rw, HeaderProofsMsg, reqID, bv, proofs)
-//}
-
-//
-//// SendHelperTrieProofs sends a batch of HelperTrie proofs, corresponding to the ones requested.
-//func (p *peer) SendHelperTrieProofs(reqID, bv uint64, resp HelperTrieResps) error {
-//	return sendResponse(p.rw, HelperTrieProofsMsg, reqID, bv, resp)
-//}
-
-// SendTxStatus sends a batch of transaction status records, corresponding to the ones requested.
-//func (p *peer) SendTxStatus(reqID, bv uint64, stats []txStatus) error {
-//	return sendResponse(p.rw, TxStatusMsg, reqID, bv, stats)
-//}
-
 // RequestHeadersByHash fetches a batch of blocks' headers corresponding to the
 // specified header query, based on the hash of an origin block.
 func (p *peer) RequestHeadersByHash(reqID, cost uint64, origin common.Hash, amount int, skip int, reverse bool) error {
@@ -286,65 +231,16 @@ func (p *peer) RequestHeadersByNumber(reqID, cost uint64, origin modules.ChainIn
 	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
-// RequestBodies fetches a batch of blocks' bodies corresponding to the hashes
-// specified.
-//func (p *peer) RequestBodies(reqID, cost uint64, hashes []common.Hash) error {
-//	log.Debug("Fetching batch of block bodies", "count", len(hashes))
-//	return sendRequest(p.rw, GetBlockBodiesMsg, reqID, cost, hashes)
-//}
-
 func (p *peer) RequestUTXOs(reqID, cost uint64, addr string) error {
 	log.Debug("Fetching batch of utxos", "addr", addr)
 	return p2p.Send(p.rw, GetUTXOsMsg, addr)
 }
-
-// RequestCode fetches a batch of arbitrary data from a node's known state
-// data, corresponding to the specified hashes.
-//func (p *peer) RequestCode(reqID, cost uint64, reqs []CodeReq) error {
-//	log.Debug("Fetching batch of codes", "count", len(reqs))
-//	return sendRequest(p.rw, GetCodeMsg, reqID, cost, reqs)
-//}
-
-// RequestReceipts fetches a batch of transaction receipts from a remote node.
-//func (p *peer) RequestReceipts(reqID, cost uint64, hashes []common.Hash) error {
-//	log.Debug("Fetching batch of receipts", "count", len(hashes))
-//	return sendRequest(p.rw, GetReceiptsMsg, reqID, cost, hashes)
-//}
 
 // RequestProofs fetches a batch of merkle proofs from a remote node.
 func (p *peer) RequestProofs(reqID, cost uint64, reqs []ProofReq) error {
 	log.Debug("Fetching batch of proofs", "count", len(reqs))
 	return p2p.Send(p.rw, GetProofsMsg, reqs)
 }
-
-// RequestHelperTrieProofs fetches a batch of HelperTrie merkle proofs from a remote node.
-//func (p *peer) RequestHelperTrieProofs(reqID, cost uint64, reqs []HelperTrieReq) error {
-//	log.Debug("Fetching batch of HelperTrie proofs", "count", len(reqs))
-//	//return nil
-//	switch p.version {
-//	case lpv1:
-//		reqsV1 := make([]ChtReq, len(reqs))
-//		for i, req := range reqs {
-//			if req.Type != htCanonical || req.AuxReq != auxHeader || len(req.Key) != 8 {
-//				return fmt.Errorf("Request invalid in LES/1 mode")
-//			}
-//			blockNum := binary.BigEndian.Uint64(req.Key)
-//			// convert HelperTrie request to old CHT request
-//			reqsV1[i] = ChtReq{ChtNum: (req.TrieIdx + 1) * (les.CHTFrequencyClient / les.CHTFrequencyServer), BlockNum: blockNum, FromLevel: req.FromLevel}
-//		}
-//		return sendRequest(p.rw, GetHeaderProofsMsg, reqID, cost, reqsV1)
-//	case lpv2:
-//		return sendRequest(p.rw, GetHelperTrieProofsMsg, reqID, cost, reqs)
-//	default:
-//		panic(nil)
-//	}
-//}
-
-// RequestTxStatus fetches a batch of transaction status records from a remote node.
-//func (p *peer) RequestTxStatus(reqID, cost uint64, txHashes []common.Hash) error {
-//	log.Debug("Requesting transaction status", "count", len(txHashes))
-//	return sendRequest(p.rw, GetTxStatusMsg, reqID, cost, txHashes)
-//}
 
 // SendTxStatus sends a batch of transactions to be added to the remote transaction pool.
 func (p *peer) SendTxs(reqID, cost uint64, txs modules.Transactions) error {

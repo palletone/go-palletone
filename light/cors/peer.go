@@ -162,28 +162,36 @@ func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
 
 //interface
 func (p *peer) RequestBodies([]common.Hash) error {
+	log.Debug("=========================================RequestBodies")
 	return nil
 }
 func (p *peer) RequestNodeData([]common.Hash) error {
+	log.Debug("=========================================RequestNodeData")
 	return nil
 }
 
 func (p *peer) RequestNodeDataHead(modules.AssetId) (common.Hash, *modules.ChainIndex) {
+	log.Debug("=========================================RequestNodeDataHead")
 	return common.Hash{}, nil
 }
 func (p *peer) RequestNodeDataRequestHeadersByHash(common.Hash, int, int, bool) error {
+	log.Debug("=========================================RequestNodeDataRequestHeadersByHash")
 	return nil
 }
 func (p *peer) RequestNodeDataRequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error {
+	log.Debug("=========================================RequestNodeDataRequestHeadersByNumber")
 	return nil
 }
 func (p *peer) RequestNodeDataRequestDagHeadersByHash(common.Hash, int, int, bool) error {
+	log.Debug("=========================================RequestNodeDataRequestDagHeadersByHash")
 	return nil
 }
 func (p *peer) RequestNodeDataRequestLeafNodes() error {
+	log.Debug("=========================================RequestNodeDataRequestLeafNodes")
 	return nil
 }
 func (p *peer) RequestLeafNodes() error {
+	log.Debug("=========================================RequestLeafNodes")
 	return nil
 }
 
@@ -346,13 +354,6 @@ func (p *peer) String() string {
 	)
 }
 
-// peerSetNotify is a callback interface to notify services about added or
-// removed peers
-//type peerSetNotify interface {
-//	registerPeer(*peer)
-//	unregisterPeer(*peer)
-//}
-
 // peerSet represents the collection of active peers currently participating in
 // the Light Ethereum sub-protocol.
 type peerSet struct {
@@ -458,21 +459,6 @@ func (ps *peerSet) AllPeers() []*peer {
 	}
 	return list
 }
-
-//func (ps *peerSet) PeersWithoutHeader(hash common.Hash) []*peer {
-//	ps.lock.RLock()
-//	defer ps.lock.RUnlock()
-//
-//	list := make([]*peer, len(ps.peers))
-//	i := 0
-//	for _, peer := range ps.peers {
-//		if peer.Head().String() != hash.String() {
-//			list[i] = peer
-//			i++
-//		}
-//	}
-//	return list
-//}
 
 // Close disconnects all peers.
 // No new peers can be registered after Close has returned.

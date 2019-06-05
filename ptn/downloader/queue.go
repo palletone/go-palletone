@@ -416,7 +416,7 @@ func (q *queue) countProcessableItems() int {
 func (q *queue) ReserveHeaders(p *peerConnection, count int) *fetchRequest {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-
+	log.Debug("Enter queue ReserveHeaders", "q.headerTaskQueue.Size()", q.headerTaskQueue.Size())
 	// Short circuit if the peer's already downloading something (sanity check to
 	// not corrupt state)
 	if _, ok := q.headerPendPool[p.id]; ok {
@@ -447,6 +447,7 @@ func (q *queue) ReserveHeaders(p *peerConnection, count int) *fetchRequest {
 		From: send,
 		Time: time.Now(),
 	}
+	log.Debug("End queue ReserveHeaders", "len(skip)", len(skip), "send", send, "q.headerTaskQueue.Size()", q.headerTaskQueue.Size())
 	q.headerPendPool[p.id] = request
 	return request
 }
