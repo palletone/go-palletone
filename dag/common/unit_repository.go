@@ -1233,10 +1233,12 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		Height:  height,
 		TxIndex: txIndex,
 	}
-	err := rep.statedb.SaveContractStates(payload.ContractId, payload.WriteSet, version)
-	if err != nil {
-		log.Errorf("save contract[%x] init writeset error:%s", payload.ContractId, err.Error())
-		return false
+	if len(payload.WriteSet) > 0 {
+		err := rep.statedb.SaveContractStates(payload.ContractId, payload.WriteSet, version)
+		if err != nil {
+			log.Errorf("save contract[%x] init writeset error:%s", payload.ContractId, err.Error())
+			return false
+		}
 	}
 	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
 	// save contract name
@@ -1245,16 +1247,18 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	//	return false
 	//}
 	contract := modules.NewContract(payload, requester, uint64(unitTime))
-	err = rep.statedb.SaveContract(contract)
+	err := rep.statedb.SaveContract(contract)
 	if err != nil {
 		log.Errorf("Save contract[%x] error:%s", payload.ContractId, err.Error())
 		return false
 	}
-	//save contract election
-	err = rep.statedb.SaveContractJury(payload.ContractId, payload.EleList, version)
-	if err != nil {
-		log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
-		return false
+	if len(payload.EleList) > 0 {
+		//save contract election
+		err = rep.statedb.SaveContractJury(payload.ContractId, payload.EleList, version)
+		if err != nil {
+			log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
+			return false
+		}
 	}
 	//eleBytes, err := rlp.EncodeToBytes(payload.EleList)
 	//if err == nil {

@@ -86,6 +86,12 @@ type Genesis struct {
 	InitialTimestamp          int64                    `json:"initialTimestamp"`
 	InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
 	InitialMediatorCandidates []*InitialMediator       `json:"initialMediatorCandidates"`
+	SystemContracts           []SysContract            `json:"systemContracts"`
+}
+type SysContract struct {
+	Address common.Address `json:"address"`
+	Name    string         `json:"name"`
+	Active  bool           `json:"active"`
 }
 
 func (g *Genesis) GetTokenAmount() uint64 {

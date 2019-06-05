@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -159,6 +160,7 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.InitialActiveMediators = uint16(initMediatorCount)
 	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
 
+	genesisState.SystemContracts = initSysContracts()
 	//配置测试的基金会地址及密码
 	//account, _, err = createExampleAccount(ctx)
 	//if err != nil {
@@ -201,7 +203,19 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	return nil
 }
+func initSysContracts() []core.SysContract {
+	list := []core.SysContract{}
+	list = append(list, core.SysContract{Address: syscontract.CreateTokenContractAddress, Name: "PRC20", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.CreateToken721ContractAddress, Name: "PRC721", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.SysConfigContractAddress, Name: "System Config Manager", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.PartitionContractAddress, Name: "Partition Manager", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.DepositContractAddress, Name: "Deposit Manager", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.DigitalIdentityContractAddress, Name: "Digital Identity", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.VoteTokenContractAddress, Name: "Vote", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.TestContractAddress, Name: "Test", Active: true})
 
+	return list
+}
 func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg := new(FullConfig)
 	configPath := getConfigPath(ctx)
