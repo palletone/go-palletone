@@ -88,6 +88,12 @@ type Genesis struct {
 	InitialMediatorCandidates []*InitialMediator `json:"initialMediatorCandidates"`
 }
 
+type SysContract struct {
+	Address common.Address `json:"address"`
+	Name    string         `json:"name"`
+	Active  bool           `json:"active"`
+}
+
 func (g *Genesis) GetTokenAmount() uint64 {
 	amount, err := strconv.ParseInt(g.TokenAmount, 10, 64)
 	if err != nil {

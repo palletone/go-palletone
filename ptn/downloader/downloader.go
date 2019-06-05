@@ -120,6 +120,7 @@ type Downloader struct {
 	committed       int32
 
 	// Channels
+	allTokenCh chan dataPack
 	headerCh   chan dataPack // [ptn/62] Channel receiving inbound block headers
 	bodyCh     chan dataPack // [ptn/62] Channel receiving inbound block bodies
 	receiptCh  chan dataPack // [ptn/63] Channel receiving inbound receipts
@@ -198,6 +199,7 @@ func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightD
 		dag:           dag,
 		txpool:        txpool,
 		dropPeer:      dropPeer,
+		allTokenCh:    make(chan dataPack, 1),
 		headerCh:      make(chan dataPack, 1),
 		bodyCh:        make(chan dataPack, 1),
 		receiptCh:     make(chan dataPack, 1),
@@ -1661,21 +1663,21 @@ func (d *Downloader) requestTTL() time.Duration {
 	return ttl
 }
 
-//func (d *Downloader) DeliverAllToken(id string, headers []*modules.Header) error {
-//	ttl := d.requestTTL()
-//	timeout := time.After(ttl)
-//	select {
-//	case <-d.cancelCh:
-//		return errCancelBlockFetch
-//	case d.headerCh <- &headerPack{id, headers}:
-//		return nil
-//	case <-timeout:
-//		log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", id)
-//		return errTimeout
-//	}
-//
-//	return nil
-//}
+func (d *Downloader) DeliverAllToken(id string, headers []*modules.Header) error {
+	ttl := d.requestTTL()
+	timeout := time.After(ttl)
+	select {
+	case <-d.cancelCh:
+		return errCancelBlockFetch
+	case d.allTokenCh <- &headerPack{id, headers}:
+		return nil
+	case <-timeout:
+		log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", id)
+		return errTimeout
+	}
+
+	return nil
+}
 
 func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 	log.Debug("Retrieving remote all token", "peer", id)
@@ -1695,7 +1697,7 @@ func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 		case <-d.cancelCh:
 			return nil, errCancelBlockFetch
 
-		case packet := <-d.headerCh:
+		case packet := <-d.allTokenCh:
 			// Discard anything not from the origin peer
 			if packet.PeerId() != p.id {
 				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())

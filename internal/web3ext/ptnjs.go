@@ -184,7 +184,7 @@ web3._extend({
 				return formatted;
 			}
 		}),
-		new web3._extend.Property({
+	new web3._extend.Property({
 			name: 'listSysConfig',
 			getter: 'ptn_listSysConfig'
 		}),
