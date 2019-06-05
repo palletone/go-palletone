@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,7 +43,6 @@ import (
 	com "github.com/palletone/go-palletone/vm/common"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
-	"strconv"
 )
 
 var (

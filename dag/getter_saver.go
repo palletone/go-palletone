@@ -247,3 +247,12 @@ func (d *Dag) IsActiveJury(addr common.Address) bool {
 
 	return d.unstableStateRep.IsJury(addr)
 }
+
+func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+	return d.unstableStateRep.GetConfig(name)
+}
+
+func (d *Dag) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
+	return d.unstableStateRep.GetAllConfig()
+
+}
