@@ -19,7 +19,6 @@ func (pm *ProtocolManager) CorsHeaderMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	if pm.fetcher != nil {
-		//TODO start lps broadcast
 		for _, header := range headers {
 			log.Trace("CorsHeaderMsg message content", "assetid:", header.Number.AssetID, "index:", header.Number.Index)
 			pm.fetcher.Enqueue(p, header)
@@ -38,7 +37,6 @@ func (pm *ProtocolManager) CorsHeadersMsg(msg p2p.Msg, p *peer) error {
 	log.Debug("CorsHeadersMsg message length", "len(headers)", len(headers))
 	if pm.fetcher != nil {
 		for _, header := range headers {
-			//log.Trace("CorsHeadersMsg message content", "header:", header)
 			pm.fetcher.Enqueue(p, header)
 		}
 		if len(headers) < MaxHeaderFetch {

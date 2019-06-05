@@ -70,8 +70,8 @@ func (pm *ProtocolManager) StartCorsSync() (string, error) {
 	go func() {
 		time.Sleep(time.Duration(3) * time.Second)
 		if pm.peers.Len() >= pm.mainchainpeers()/2+1 {
-			pm.PushSync()
 			pm.PullSync()
+			pm.PushSync()
 		}
 	}()
 

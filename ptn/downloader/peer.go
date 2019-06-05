@@ -201,29 +201,6 @@ func (p *peerConnection) FetchBodies(request *fetchRequest) error {
 	return nil
 }
 
-// FetchReceipts sends a receipt retrieval request to the remote peer.
-func (p *peerConnection) FetchReceipts(request *fetchRequest) error {
-	/*
-		// Sanity check the protocol version
-		if p.version < 63 {
-			panic(fmt.Sprintf("body fetch [ptn/63+] requested on ptn/%d", p.version))
-		}
-		// Short circuit if the peer is already fetching
-		if !atomic.CompareAndSwapInt32(&p.receiptIdle, 0, 1) {
-			return errAlreadyFetching
-		}
-		p.receiptStarted = time.Now()
-
-		// Convert the header set to a retrievable slice
-		hashes := make([]common.Hash, 0, len(request.Headers))
-		for _, header := range request.Headers {
-			hashes = append(hashes, header.Hash())
-		}
-		go p.peer.RequestReceipts(hashes)
-	*/
-	return nil
-}
-
 // FetchNodeData sends a node state data retrieval request to the remote peer.
 func (p *peerConnection) FetchNodeData(hashes []common.Hash) error {
 	// Sanity check the protocol version
@@ -318,15 +295,6 @@ func (p *peerConnection) BlockCapacity(targetRTT time.Duration) int {
 	//	"targetRTT:", targetRTT, "MaxBlockFetch:", MaxBlockFetch)
 	return capacity
 }
-
-// ReceiptCapacity retrieves the peers receipt download allowance based on its
-// previously discovered throughput.
-//func (p *peerConnection) ReceiptCapacity(targetRTT time.Duration) int {
-//	p.lock.RLock()
-//	defer p.lock.RUnlock()
-
-//	return int(math.Min(1+math.Max(1, p.receiptThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxReceiptFetch)))
-//}
 
 // NodeDataCapacity retrieves the peers state download allowance based on its
 // previously discovered throughput.

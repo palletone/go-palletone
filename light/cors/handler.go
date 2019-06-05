@@ -213,8 +213,15 @@ func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) 
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
 func (pm *ProtocolManager) removePeer(id string) {
-	pm.peers.Unregister(id)
+	peer := pm.peers.Peer(id)
+	if peer == nil {
+		return
+	}
 	pm.downloader.UnregisterPeer(id)
+	pm.peers.Unregister(id)
+	if peer != nil {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+	}
 }
 
 func (pm *ProtocolManager) mainchainpeers() int {
@@ -228,7 +235,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 	if pm.lightSync {
 		go func() {
-			go pm.fetcher.Start()
+			pm.fetcher.Start()
 			defer pm.fetcher.Stop()
 			defer pm.downloader.Terminate()
 			forceSync := time.Tick(forceSyncCycle)
@@ -287,9 +294,9 @@ func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgRea
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
-	//if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-	//	return p2p.DiscTooManyPeers
-	//}
+	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+		return p2p.DiscTooManyPeers
+	}
 
 	log.Debug("Enter Cors Palletone peer connected", "id", p.ID())
 	defer log.Debug("End Cors Palletone peer connected", "id", p.ID())
@@ -329,21 +336,11 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	defer pm.removePeer(p.id)
 
-	if err := pm.downloader.RegisterPeer(p.id, p.version, p); err != nil {
-		return err
-	}
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
 	if pm.lightSync {
-		p.lock.Lock()
-		//head := p.headInfo
-		p.lock.Unlock()
-		if pm.fetcher != nil {
-			//pm.fetcher.announce(p, head)
+		if err := pm.downloader.RegisterLightPeer(p.id, p.version, p); err != nil {
+			return err
 		}
-
-		//if p.poolEntry != nil {
-		//	pm.serverPool.registered(p.poolEntry)
-		//}
 	}
 
 	stop := make(chan struct{})
@@ -385,8 +382,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
 	defer msg.Discard()
-
-	//var deliverMsg *Msg
 
 	// Handle the message depending on its contents
 	switch msg.Code {
@@ -454,6 +449,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	}
 }
 
+/*
 type downloaderPeerNotify ProtocolManager
 
 type peerConnection struct {
@@ -488,3 +484,4 @@ func (p *peerConnection) RequestLeafNodes() error {
 	return nil
 	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
 }
+*/

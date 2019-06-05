@@ -1086,7 +1086,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 						log.Debug("Stalling delivery, dropping", "type", kind)
 						if d.dropPeer == nil {
 							// The dropPeer method is nil when `--copydb` is used for a local copy.
-							// Timeouts can occur if e.g. compaction hits at the wrong time, and can be ignored
+							// Timeouts caDownloader fetchPartsn occur if e.g. compaction hits at the wrong time, and can be ignored
 							log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", pid)
 						} else {
 							d.dropPeer(pid)
@@ -1661,21 +1661,21 @@ func (d *Downloader) requestTTL() time.Duration {
 	return ttl
 }
 
-func (d *Downloader) DeliverAllToken(id string, headers []*modules.Header) error {
-	ttl := d.requestTTL()
-	timeout := time.After(ttl)
-	select {
-	case <-d.cancelCh:
-		return errCancelBlockFetch
-	case d.headerCh <- &headerPack{id, headers}:
-		return nil
-	case <-timeout:
-		log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", id)
-		return errTimeout
-	}
-
-	return nil
-}
+//func (d *Downloader) DeliverAllToken(id string, headers []*modules.Header) error {
+//	ttl := d.requestTTL()
+//	timeout := time.After(ttl)
+//	select {
+//	case <-d.cancelCh:
+//		return errCancelBlockFetch
+//	case d.headerCh <- &headerPack{id, headers}:
+//		return nil
+//	case <-timeout:
+//		log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", id)
+//		return errTimeout
+//	}
+//
+//	return nil
+//}
 
 func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 	log.Debug("Retrieving remote all token", "peer", id)
@@ -1687,7 +1687,6 @@ func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 	}
 
 	go p.peer.RequestLeafNodes()
-	//go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
 
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)

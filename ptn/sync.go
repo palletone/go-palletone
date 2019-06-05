@@ -175,24 +175,6 @@ func (pm *ProtocolManager) syncall() {
 	pm.synchronise(peer, pm.mainAssetId)
 }
 
-/*
-func (pm *ProtocolManager) lightsync(peer *peer) {
-	if peer == nil {
-		log.Debug("ProtocolManager lightsync peer is nil")
-		return
-	}
-	leafnodes, err := pm.lightdownloader.FetchAllToken(peer.id)
-	if err != nil {
-		log.Info("sync get all leaf nodes", "counts leaf nodes", len(leafnodes), "err:", err)
-		return
-	}
-
-	for _, header := range leafnodes {
-		//TODO
-		pm.lightsynchronise(peer, header.ChainIndex().AssetID)
-	}
-}
-*/
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	// Short circuit if no peers are available

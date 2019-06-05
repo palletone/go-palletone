@@ -160,7 +160,6 @@ func (f *LightFetcher) loop() {
 	// Iterate the block fetching until a quit is requested
 	//fetchTimer := time.NewTimer(0)
 	//completeTimer := time.NewTimer(0)
-	log.Debug("Cors PalletOne LightFetcher loop")
 	for {
 		//TODO Clean up any expired block fetches
 		// Import any queued blocks that could potentially fit
@@ -249,7 +248,7 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 }
 
 // enqueue schedules a new future import operation, if the block to be imported
-// has not yet been seen.0x441bcce0f43bd46060b9e4f25462243ec40dd2a9f067b95fae840e99bd8a8c47
+// has not yet been seen.
 func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 	log.Debug("Enter LightFetcher enqueue", "peer id", p.id, "header index:", header.Index())
 	defer log.Debug("End LightFetcher enqueue")
