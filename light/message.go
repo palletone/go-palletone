@@ -394,13 +394,13 @@ func (pm *ProtocolManager) LeafNodesMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	log.Debug("Light PalletOne ProtocolManager->LeafNodesMsg", "p.id", p.id, "len(headers)", len(resp.Headers), "headers", resp.Headers)
-	//err := pm.downloader.DeliverAllToken(p.id, resp.Headers)
-	//if err != nil {
-	//	log.Debug("Failed to deliver headers", "err", err.Error())
-	//}
-	err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
+	err := pm.downloader.DeliverAllToken(p.id, resp.Headers)
 	if err != nil {
-		log.Debug(fmt.Sprint(err))
+		log.Debug("Failed to deliver headers", "err", err.Error())
 	}
+	//err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
+	//if err != nil {
+	//	log.Debug(fmt.Sprint(err))
+	//}
 	return err
 }
