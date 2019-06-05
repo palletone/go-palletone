@@ -49,7 +49,7 @@ Change supply of contract
     ${ccList}    Create List    ${changeSupplyMethod}    ${preTokenId}    ${reciever}
     ${result}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    5
+    sleep    4
     [Return]    ${result}
 
 Assert the supplyAddr
