@@ -7,15 +7,16 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
+${preTokenId}     CA072
 
 *** Test Cases ***
-Scenario: Vote Contract - Create Token
-    [Documentation]    Verify Sender's PTN
-    ${geneAdd}    Given Get genesis address
-    ${PTN1}    ${result1}    And Request getbalance before create token    ${geneAdd}
-    ${ret}    When Create token of vote contract    ${geneAdd}
+Feature: 721 Contract - Create token
+    [Documentation]    Scenario: Verify Sender's TokenId
+    Given Get genesis address
+    ${PTN1}    ${result1}    And Request getbalance before create token
+    ${ret}    When Create token of vote contract
     ${GAIN}    And Calculate gain of recieverAdd    ${PTN1}
-    ${PTN2}    ${result2}    And Request getbalance after create token    ${geneAdd}
+    ${PTN2}    ${result2}    And Request getbalance after create token
     Then Assert gain of reciever    ${PTN1}    ${PTN2}    ${GAIN}
 
 *** Keywords ***
@@ -24,26 +25,20 @@ Get genesis address
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
     sleep    3
-    [Return]    ${geneAdd}
 
 Request getbalance before create token
-    [Arguments]    ${geneAdd}
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     sleep    5
     [Return]    ${PTN1}    ${result1}
 
 Create token of vote contract
-    [Arguments]    ${geneAdd}
-    ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
-    ...    ${commonVoteInfo}
-    ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
-    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
-    ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
-    log    ${resp.content}
-    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
-    Should Contain    ${resp.content}['id']    1    msg="id:failed"
-    ${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
-    [Return]    ${ret}
+    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
+    ...    ${721MetaBefore}    ${geneAdd}
+    ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ...    ${721ContractId}    ${ccList}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    [Return]    ${jsonRes['result']}
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
@@ -53,9 +48,14 @@ Calculate gain of recieverAdd
     [Return]    ${GAIN}
 
 Request getbalance after create token
-    [Arguments]    ${geneAdd}
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     sleep    5
+    ${queryResult}    ccqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
+    ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
+    : FOR    ${num}    IN RANGE    len(${countList})
+    \    ${voteToken}    Get From Dictionary    ${result2['result']}    ${tokenCommonId}-${countList[${num}]}
+    \    log    ${tokenCommonId}-${countList[${num}]}
+    \    Should Be Equal As Numbers    ${voteToken}    1
     [Return]    ${PTN2}    ${result2}
 
 Assert gain of reciever

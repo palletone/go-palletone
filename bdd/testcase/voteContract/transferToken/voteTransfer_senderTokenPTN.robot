@@ -9,8 +9,8 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-Feature: Vote Contract - Transfer Token
-    [Documentation]    Scenario: Verify Sender's PTN and VOTE value
+Scenario: Vote Contract - Transfer Token
+    [Documentation]    Verify Sender's PTN and VOTE value
     ${geneAdd}    Given Get genesis address
     When Transfer token of vote contract    ${geneAdd}
     ${PTN1}    ${result1}    ${item1}    ${key}    And Request getbalance before create token    ${geneAdd}

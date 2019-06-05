@@ -7,10 +7,11 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
+${preTokenId}     CA070
 
 *** Test Cases ***
-Scenario: Vote Contract - Create Token
-    [Documentation]    Verify Reciever's PTN
+Feature: 721 Contract - Create token
+    [Documentation]    Scenario: Verify Reciever's PTN
     ${PTN1}    ${result1}    Given Request getbalance before create token
     ${ret}    When Create token of vote contract
     ${PTNGAIN}    And Calculate gain of recieverAdd    ${PTN1}
@@ -28,17 +29,13 @@ Request getbalance before create token
     [Return]    ${PTN1}    ${result1}
 
 Create token of vote contract
-    #${geneAdd}    getGeneAdd    ${host}
-    ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
-    ...    ${commonVoteInfo}
-    ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
-    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
-    ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
-    log    ${resp.content}
-    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
-    Should Contain    ${resp.content}['id']    1    msg="id:failed"
-    ${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
-    [Return]    ${ret}
+    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
+    ...    ${721MetaBefore}    ${geneAdd}
+    ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ...    ${721ContractId}    ${ccList}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    [Return]    ${jsonRes['result']}
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}

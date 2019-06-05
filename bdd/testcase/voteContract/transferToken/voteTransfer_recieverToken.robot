@@ -9,7 +9,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-Vote Contract - Transfer Token
+Scenario: Vote Contract - Transfer Token
     [Documentation]    Verify Reciever's Transfer PTN
     ${geneAdd}    Given Get genesis address
     #${ret}    When Create token of vote contract    ${geneAdd}

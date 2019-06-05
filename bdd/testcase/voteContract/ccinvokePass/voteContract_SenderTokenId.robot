@@ -9,7 +9,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-createTokenVerifySenderPTN
+Scenario: Vote Contract - Create Token
     [Documentation]    Verify Sender's PTN
     ${geneAdd}    Given Get genesis address
     ${PTN1}    ${result1}    And Request getbalance before create token    ${geneAdd}

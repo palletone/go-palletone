@@ -1,5 +1,5 @@
 *** Settings ***
-Default Tags      nomal
+Default Tags      normal
 Library           ../../utilFunc/createToken.py
 Resource          ../../utilKwd/utilVariables.txt
 Resource          ../../utilKwd/normalKwd.txt
@@ -7,12 +7,8 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
+${preTokenId}     QA053
 
 *** Test Cases ***
-Scenario: 20Contract - Create Transaction
-    [Tags]    normal
-    ${geneAdd}    getGeneAdd    ${host}
-    Set Suite Variable    ${geneAdd}    ${geneAdd}
-    ${result}    normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
-
-*** Keywords ***
+Scenario: 20Contract - Ccquery
+    normalCcqueryById    ${20ContractId}    ${TokenInfoMethod}    ${preTokenId}
