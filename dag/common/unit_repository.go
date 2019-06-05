@@ -779,36 +779,37 @@ func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Tr
 To generate config payload for genesis unit
 */
 func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([]*modules.ContractInvokePayload, error) {
-	writeSets := []modules.ContractWriteSet{}
+	//writeSets := []modules.ContractWriteSet{}
 	digitalWriteSets := []modules.ContractWriteSet{}
 
 	tt := reflect.TypeOf(*genesisConf)
-	vv := reflect.ValueOf(*genesisConf)
+	//vv := reflect.ValueOf(*genesisConf)
 
 	for i := 0; i < tt.NumField(); i++ {
 		// modified by Albert·Gou, 不是交易，已在其他地方处理
-		if strings.Contains(tt.Field(i).Name, "Initial") ||
-			strings.Contains(tt.Field(i).Name, "Immutable") {
-			continue
-		}
+		//if strings.Contains(tt.Field(i).Name, "Initial") ||
+		//	strings.Contains(tt.Field(i).Name, "Immutable") {
+		//	continue
+		//}
 
-		if strings.Compare(tt.Field(i).Name, "SystemConfig") == 0 {
-			t := reflect.TypeOf(genesisConf.SystemConfig)
-			v := reflect.ValueOf(genesisConf.SystemConfig)
-			for k := 0; k < t.NumField(); k++ {
-				sk := t.Field(k).Name
-				if strings.Contains(sk, "Initial") {
-					sk = strings.Replace(sk, "Initial", "", -1)
-				}
-
-				//writeSets.ConfigSet = append(writeSets.ConfigSet,
-				//	modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
-				writeSets = append(writeSets,
-					modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
-			}
-			sysConfByte, _ := json.Marshal(genesisConf.SystemConfig)
-			writeSets = append(writeSets, modules.ContractWriteSet{Key: "sysConf", Value: []byte(sysConfByte)})
-		} else if strings.Compare(tt.Field(i).Name, "DigitalIdentityConfig") == 0 {
+		//if strings.Compare(tt.Field(i).Name, "SystemConfig") == 0 {
+		//	t := reflect.TypeOf(genesisConf.SystemConfig)
+		//	v := reflect.ValueOf(genesisConf.SystemConfig)
+		//	for k := 0; k < t.NumField(); k++ {
+		//		sk := t.Field(k).Name
+		//		if strings.Contains(sk, "Initial") {
+		//			sk = strings.Replace(sk, "Initial", "", -1)
+		//		}
+		//
+		//		//writeSets.ConfigSet = append(writeSets.ConfigSet,
+		//		//	modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(v.Field(k).Interface())})
+		//		writeSets = append(writeSets,
+		//			modules.ContractWriteSet{Key: sk, Value: []byte(v.Field(k).String())})
+		//	}
+		//	sysConfByte, _ := json.Marshal(genesisConf.SystemConfig)
+		//	writeSets = append(writeSets, modules.ContractWriteSet{Key: "sysConf", Value: []byte(sysConfByte)})
+		//} else
+		if strings.Compare(tt.Field(i).Name, "DigitalIdentityConfig") == 0 {
 			// 2019.4.12
 			t := reflect.TypeOf(genesisConf.DigitalIdentityConfig)
 			v := reflect.ValueOf(genesisConf.DigitalIdentityConfig)
@@ -819,25 +820,26 @@ func GenGenesisConfigPayload(genesisConf *core.Genesis, asset *modules.Asset) ([
 			}
 			digitalConfByte, _ := json.Marshal(genesisConf.DigitalIdentityConfig)
 			digitalWriteSets = append(digitalWriteSets, modules.ContractWriteSet{Key: "digitalConf", Value: []byte(digitalConfByte)})
-		} else {
-			sk := tt.Field(i).Name
-			if strings.Contains(sk, "Initial") {
-				sk = strings.Replace(sk, "Initial", "", -1)
-			}
-			writeSets = append(writeSets,
-				modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
 		}
+		//else {
+		//	sk := tt.Field(i).Name
+		//	if strings.Contains(sk, "Initial") {
+		//		sk = strings.Replace(sk, "Initial", "", -1)
+		//	}
+		//	writeSets = append(writeSets,
+		//		modules.ContractWriteSet{Key: sk, Value: modules.ToPayloadMapValueBytes(vv.Field(i).Interface())})
+		//}
 	}
 
-	writeSets = append(writeSets,
-		modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
+	//writeSets = append(writeSets,
+	//	modules.ContractWriteSet{Key: modules.FIELD_GENESIS_ASSET, Value: modules.ToPayloadMapValueBytes(*asset)})
 
 	contractInvokePayloads := []*modules.ContractInvokePayload{}
 	// generate systemcontract invoke payload
-	sysconfigPayload := &modules.ContractInvokePayload{}
-	sysconfigPayload.ContractId = syscontract.SysConfigContractAddress.Bytes()
-	sysconfigPayload.WriteSet = writeSets
-	contractInvokePayloads = append(contractInvokePayloads, sysconfigPayload)
+	//sysconfigPayload := &modules.ContractInvokePayload{}
+	//sysconfigPayload.ContractId = syscontract.SysConfigContractAddress.Bytes()
+	//sysconfigPayload.WriteSet = writeSets
+	//contractInvokePayloads = append(contractInvokePayloads, sysconfigPayload)
 
 	// generate digital identity contract invoke pyaload
 	digitalPayload := &modules.ContractInvokePayload{

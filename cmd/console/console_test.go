@@ -86,9 +86,9 @@ type tester struct {
 }
 
 func DevGenesisBlock() *core.Genesis {
-	SystemConfig := core.SystemConfig{
-		DepositRate: "0.02",
-	}
+	//SystemConfig := core.SystemConfig{
+	//	DepositRate: "0.02",
+	//}
 
 	initParams := core.NewChainParams()
 
@@ -104,7 +104,7 @@ func DevGenesisBlock() *core.Genesis {
 		//InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultMediatorCount,
 			core.DefaultMediator),
-		SystemConfig: SystemConfig,
+		//SystemConfig: SystemConfig,
 	}
 }
 

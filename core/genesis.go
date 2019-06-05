@@ -77,7 +77,7 @@ type Genesis struct {
 	ChainID               uint64                   `json:"chainId"`
 	TokenHolder           string                   `json:"tokenHolder"`
 	Text                  string                   `json:"text"`
-	SystemConfig          SystemConfig             `json:"systemConfig"`
+	//SystemConfig          SystemConfig             `json:"systemConfig"`
 	DigitalIdentityConfig DigitalIdentityConfig    `json:"digitalIdentityConfig"`
 	ParentUnitHash        common.Hash              `json:"parentUnitHash"`
 	ParentUnitHeight      int64                    `json:"parentUnitHeight"`

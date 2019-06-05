@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/palletone/go-palletone/cmd/console"
@@ -149,7 +148,7 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	genesisState := createExampleGenesis()
 	genesisState.TokenHolder = account
-	genesisState.SystemConfig.FoundationAddress = genesisState.TokenHolder
+	genesisState.InitialParameters.FoundationAddress = genesisState.TokenHolder
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
 
 	// set root ca holder
@@ -288,31 +287,31 @@ func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error
 
 // createExampleGenesis, create the genesis state of new chain with the specified account
 func createExampleGenesis() *core.Genesis {
-	SystemConfig := core.SystemConfig{
-		DepositRate:               core.DefaultDepositRate,
-		TxCoinYearRate:            core.DefaultTxCoinYearRate,
-		GenerateUnitReward:        core.DefaultGenerateUnitReward,
-		RewardHeight:              core.DefaultRewardHeight,
-		FoundationAddress:         core.DefaultFoundationAddress,
-		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
-		DepositAmountForJury:      core.DefaultDepositAmountForJury,
-		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
-		DepositPeriod:             core.DefaultDepositPeriod,
-		UccMemory:                 core.DefaultUccMemory,
-		UccMemorySwap:             core.DefaultUccMemorySwap,
-		UccCpuShares:              core.DefaultUccCpuShares,
-		UccCpuPeriod:              core.DefaultCpuPeriod,
-		UccCpuQuota:               core.DefaultUccCpuQuota,
-		UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
-		TempUccMemory:             core.DefaultTempUccMemory,
-		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
-		TempUccCpuShares:          core.DefaultTempUccCpuShares,
-		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
-		ContractSignatureNum:      core.DefaultContractSignatureNum,
-		ContractElectionNum:       core.DefaultContractElectionNum,
-
-		ActiveMediatorCount: strconv.FormatUint(core.DefaultMediatorCount, 10),
-	}
+	//SystemConfig := core.SystemConfig{
+	//	DepositRate:               core.DefaultDepositRate,
+	//	TxCoinYearRate:            core.DefaultTxCoinYearRate,
+	//	GenerateUnitReward:        core.DefaultGenerateUnitReward,
+	//	RewardHeight:              core.DefaultRewardHeight,
+	//	FoundationAddress:         core.DefaultFoundationAddress,
+	//	DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
+	//	DepositAmountForJury:      core.DefaultDepositAmountForJury,
+	//	DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
+	//	DepositPeriod:             core.DefaultDepositPeriod,
+	//	UccMemory:                 core.DefaultUccMemory,
+	//	UccMemorySwap:             core.DefaultUccMemorySwap,
+	//	UccCpuShares:              core.DefaultUccCpuShares,
+	//	UccCpuPeriod:              core.DefaultCpuPeriod,
+	//	UccCpuQuota:               core.DefaultUccCpuQuota,
+	//	UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
+	//	TempUccMemory:             core.DefaultTempUccMemory,
+	//	TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
+	//	TempUccCpuShares:          core.DefaultTempUccCpuShares,
+	//	TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+	//	ContractSignatureNum:      core.DefaultContractSignatureNum,
+	//	ContractElectionNum:       core.DefaultContractElectionNum,
+	//
+	//	ActiveMediatorCount: strconv.FormatUint(core.DefaultMediatorCount, 10),
+	//}
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
 		RootCAHolder: core.DefaultFoundationAddress,
@@ -326,11 +325,11 @@ func createExampleGenesis() *core.Genesis {
 		Version:     configure.Version,
 		TokenAmount: core.DefaultTokenAmount,
 		//TokenDecimal:              core.DefaultTokenDecimal,
-		ChainID:               core.DefaultChainID,
-		TokenHolder:           core.DefaultTokenHolder,
-		ParentUnitHeight:      -1,
-		Text:                  core.DefaultText,
-		SystemConfig:          SystemConfig,
+		ChainID:          core.DefaultChainID,
+		TokenHolder:      core.DefaultTokenHolder,
+		ParentUnitHeight: -1,
+		Text:             core.DefaultText,
+		//SystemConfig:          SystemConfig,
 		DigitalIdentityConfig: DigitalIdentityConfig,
 		InitialParameters:     initParams,
 		ImmutableParameters:   core.NewImmutChainParams(),
