@@ -56,7 +56,7 @@ contract ethmultisig {
   address private addrC;
   mapping(string => uint8) private reqHistory; 
   
-  event Deposit(address token, address user, uint amount, string reqid);
+  event Deposit(address token, address user, uint amount, string ptnaddr);
   event Withdraw(address token, address user, address recver, uint amount, string reqid, uint confirmvalue, string state);
   
   modifier isAdmin() {//debug
