@@ -9,8 +9,8 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-Feature: Vote Contract- Create token
-    [Documentation]    Scenario: Verify Sender's PTN
+Scenario: Vote Contract - Create Token
+    [Documentation]    Verify Sender's PTN
     ${geneAdd}    Given Get genesis address
     ${PTN1}    ${result1}    And Request getbalance before create token    ${geneAdd}
     ${ret}    When Create token of vote contract    ${geneAdd}

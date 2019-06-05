@@ -24,22 +24,20 @@ import (
 	"encoding/json"
 	"time"
 
-	"go.dedis.ch/kyber/v3/sign/bls"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
-// @author Albert·Gou
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit)
 	return unitState
 }
 
-// author Albert·Gou
 func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GetGlobalProp().IsActiveMediator(add)
 }

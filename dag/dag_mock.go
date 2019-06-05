@@ -52,18 +52,6 @@ func (mr *MockIDagMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIDag)(nil).Close))
 }
 
-// SaveCommon mocks base method
-func (m *MockIDag) SaveCommon(key, val []byte) error {
-	ret := m.ctrl.Call(m, "SaveCommon", key, val)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveCommon indicates an expected call of SaveCommon
-func (mr *MockIDagMockRecorder) SaveCommon(key, val interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommon", reflect.TypeOf((*MockIDag)(nil).SaveCommon), key, val)
-}
-
 // GetCommon mocks base method
 func (m *MockIDag) GetCommon(key []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
@@ -91,6 +79,20 @@ func (m *MockIDag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 func (mr *MockIDagMockRecorder) GetCommonByPrefix(prefix interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommonByPrefix", reflect.TypeOf((*MockIDag)(nil).GetCommonByPrefix), prefix)
+}
+
+// SaveCommon mocks base method
+func (m *MockIDag) SaveCommon(key, val []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveCommon", key, val)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveCommon indicates an expected call of SaveCommon
+func (mr *MockIDagMockRecorder) SaveCommon(key, val interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommon", reflect.TypeOf((*MockIDag)(nil).SaveCommon), key, val)
 }
 
 // IsEmpty mocks base method
@@ -661,6 +663,18 @@ func (m *MockIDag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subsc
 func (mr *MockIDagMockRecorder) SubscribeChainEvent(ch interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainEvent), ch)
+}
+
+// PostChainEvents mocks base method
+func (m *MockIDag) PostChainEvents(events []interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PostChainEvents", events)
+}
+
+// PostChainEvents indicates an expected call of PostChainEvents
+func (mr *MockIDagMockRecorder) PostChainEvents(events interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostChainEvents", reflect.TypeOf((*MockIDag)(nil).PostChainEvents), events)
 }
 
 // GetTrieSyncProgress mocks base method
@@ -1535,4 +1549,18 @@ func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo {
 func (mr *MockIDagMockRecorder) LookupMediatorInfo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupMediatorInfo", reflect.TypeOf((*MockIDag)(nil).LookupMediatorInfo))
+}
+
+// IsActiveMediator mocks base method
+func (m *MockIDag) IsActiveMediator(add common.Address) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsActiveMediator", add)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsActiveMediator indicates an expected call of IsActiveMediator
+func (mr *MockIDagMockRecorder) IsActiveMediator(add interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsActiveMediator", reflect.TypeOf((*MockIDag)(nil).IsActiveMediator), add)
 }

@@ -9,14 +9,14 @@ setPostRequest
     ${resp}    Post Request    trans    ${host}    data=${data}    headers=${headers}
     [Return]    ${resp}
 
-assertInvalid
-    [Arguments]    ${resp}    ${error_code}    ${error_message}
-    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
-    Should Contain    ${resp.content}['id']    1    msg="id:failed"
-    Should Contain    ${resp.content}['error']['code']    ${error_code}    msg="error_code:failed"
-    Should Contain    ${resp.content}['error']['message']    ${error_message}    msg="error_message:failed"
+newAccount
+    ${transList}    Create List    ${pwd}
+    ${resp}    setPostRequest    ${host}    ${newAccount}    ${transList}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    [Return]    ${jsonRes}
 
-assertBalanceInvalid
+assertErrorMessage
     [Arguments]    ${resp}    ${error_code}    ${error_message}
     #${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     #${jsonRes}    To Json    ${jsonRes}
@@ -67,7 +67,8 @@ voteTransToken
     ${result}    getBalance    ${listAccounts[0]}
     sleep    5
     ${voteToken}    getTokenId    ${voteId}    ${result}
-    Transfer token of vote contract    ${listAccounts[0]}
+    Request transfer token of vote    ${listAccounts[0]}
     sleep    4
+    Set Suite Variable    ${listAccounts}    ${listAccounts}
     Set Suite Variable    ${voteToken}    ${voteToken}
     [Return]    ${listAccounts}    ${voteToken}

@@ -1,19 +1,18 @@
 *** Settings ***
-Library           RequestsLibrary
-Library           Collections
+Default Tags      nomal
+Library           ../../utilFunc/createToken.py
+Resource          ../../utilKwd/utilVariables.txt
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${host}           http://localhost:8545/
-${geneAdd}        P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv
-${recieverAdd}    P11LKXXsDuKUdo3cJEy7uMnqnvw4kwHPs8
-@{transList}      ${geneAdd}    ${recieverAdd}    10    2
-${result_code}    \f[a-z0-9]*
 
 *** Test Cases ***
-crtTrans normal
+Scenario: 20Contract - Create Transaction
     [Tags]    normal
-    [Template]    normalCrtTrans
-    ${result_code}
+    ${geneAdd}    getGeneAdd    ${host}
+    Set Suite Variable    ${geneAdd}    ${geneAdd}
+    ${result}    normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+
+*** Keywords ***

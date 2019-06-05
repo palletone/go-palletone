@@ -39,7 +39,7 @@ class createToken(object):
     def getTokenIdFromTokens(self,address,preToken):
         result = self.getBalance(address)
         tokenId,value = self.getTokenStarts(preToken,result)
-        return key,value
+        return tokenId,value
 
     def geneNickname(self):
         nickname = "qa"+str(random.randint(100,999))
@@ -61,7 +61,7 @@ class createToken(object):
                 #print self.tempToken,self.tempvalue
         return self.tempToken,self.tempValue
 
-    def ccinvoketxPass(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
+    def ccinvokeCreateToken(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
         data = {
                 "jsonrpc":"2.0",
                 "method":"contract_ccinvoketxPass",
@@ -74,15 +74,14 @@ class createToken(object):
         result1 = json.loads(response.content)
         return result1
 
-    def ccinvoketx(self,*params):
-        geneAdd = self.listAccounts()
-        n = self.paramGroups(geneAdd,13,*params)
-        #'''
+    def ccinvokePass(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,*params):
+        print params[0]
+        print "Request method is: "+ params[0][0]
         data = {
                 "jsonrpc":"2.0",
                 "method":"contract_ccinvoketxPass",
-                "params":
-                    n,
+                "params":[
+                    senderAddr, recieverAddr, senderAmount, poundage, contractId, params[0],"1",60000000,""],
                 "id":1
             }
         data = json.dumps(data)
@@ -90,7 +89,6 @@ class createToken(object):
         result1 = json.loads(response.content)
         print result1
         return result1
-        #'''
 
     def ccinvoketx_apply(self,senderAddr,recieverAddr,senderAmount,poundage,tokenAmount):
         print self.nickname
@@ -126,12 +124,12 @@ class createToken(object):
             response = requests.post(url=self.domain, data=data, headers=self.headers)
             result1 = json.loads(response.content)
             try:
-                result = result1['result']
+                return result1['result']
             except KeyError:
                 print "Request transferToken failed.\n" + str(result1)
             else:
-                print 'transferToken Result: ' + str(result) + '\n'
-                return result
+                print 'transferToken Result: ' + str(result1['error']) + '\n'
+                return result1['error']
 
     def listAccounts(self):
         data = {
@@ -161,7 +159,6 @@ class createToken(object):
         print result1['result']
         return result1['result']
 
-
     def personalUnlockAccount(self,addr):
         data = {
             "jsonrpc": "2.0",
@@ -176,29 +173,12 @@ class createToken(object):
         print result1['result']
         return result1['result']
 
-    def paramGroups(self,dynamic,number,*params):
-        if len(params) < number:
-            paramsList = []
-            paramsList.append(dynamic)
-            print  paramsList
-            for n in params:
-                # paramsList.append(n)
-                print n
-            paramsList.extend(n)
-            print paramsList
-            return paramsList
-        else:
-            for n in params:
-                # paramsList.append(n)
-                print n
-            return n
-
     def ccqueryById(self,contranctId,methodType,preTokenId):
         data = {
                 "jsonrpc":"2.0",
                 "method":"contract_ccquery",
                 "params":
-                    [contranctId,[methodType,preTokenId]],
+                    [contranctId,[methodType,preTokenId],0],
                 "id":1
             }
         data = json.dumps(data)
@@ -217,6 +197,47 @@ class createToken(object):
                 ext.message
                 print "assert failed.\n"
 
+    def getTxByReqId(self,reqId):
+        data = {
+                "jsonrpc":"2.0",
+                "method":"dag_getTxByReqId",
+                "params":
+                    [reqId],
+                "id":1
+            }
+        data = json.dumps(data)
+        response = requests.post(url=self.domain, data=data, headers=self.headers)
+        result1 = json.loads(response.content)
+        return result1
+
+    def ccqueryVoteResult(self,result,CreateAddr,AssetID):
+        #result = "{\"IsVoteEnd\":false,\"CreateAddr\":\"P14432ABS64C2qDxJSqs4xQ9ZdXL2Zc46a7\",\"TotalSupply\":2000,\"SupportResults\":[{\"TopicIndex\":1,\"TopicTitle\":\"vote your love blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn0\",\"Num\":1},{\"SelectOption\":\"btc0\",\"Num\":0},{\"SelectOption\":\"eth0\",\"Num\":0},{\"SelectOption\":\"eos0\",\"Num\":0}]},{\"TopicIndex\":2,\"TopicTitle\":\"vote your hate blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn1\",\"Num\":2},{\"SelectOption\":\"btc1\",\"Num\":2},{\"SelectOption\":\"eth1\",\"Num\":0},{\"SelectOption\":\"eos1\",\"Num\":0}]}],\"AssetID\":\"VOTE+0GF8VT5B9G1IAT6QRRX\"}"
+        result = json.loads(result)
+        expectList = [2000,
+                      AssetID,
+                      False,
+                      [{u'VoteResults': [{u'Num': 1, u'SelectOption': u'ptn0'}, {u'Num': 0, u'SelectOption': u'btc0'}, {u'Num': 0, u'SelectOption': u'eth0'}, {u'Num': 0, u'SelectOption': u'eos0'}], u'TopicIndex': 1, u'TopicTitle': u'vote your love blockchain'}, {u'VoteResults': [{u'Num': 2, u'SelectOption': u'ptn1'}, {u'Num': 2, u'SelectOption': u'btc1'}, {u'Num': 0, u'SelectOption': u'eth1'}, {u'Num': 0, u'SelectOption': u'eos1'}], u'TopicIndex': 2, u'TopicTitle': u'vote your hate blockchain'}],
+                      CreateAddr
+                      ]
+        keyList = []
+        valueList = []
+        print "There is key,value of dictionary:"
+        for key in result:
+            #print key,result[key]
+            keyList.append(key)
+            valueList.append(result[key])
+        print valueList
+        for n in range(len(expectList)):
+            self.assertDict(result,keyList,expectList,n)
+        return result
+
+    def assertDict(self,result,keyList,expectList,n):
+        keyword = keyList[n]
+        try:
+            assert result[keyword] == expectList[n]
+        except AssertionError:
+            print keyword+" wrong: Actual is "+str(result[keyword])+".Expect is "+str(expectList[n])
+
     def voteExist(self,voteId,dict):
         data = json.dumps(dict)
         if voteId in data:
@@ -226,8 +247,22 @@ class createToken(object):
             print self.vote_value
         return self.vote_value
 
+    def jsonLoads(self,dict,*keys):
+        data = json.loads(dict)
+        #print data['Symbol']
+        keysList = []
+        for n in range(len(keys)):
+            keysList.append(data[keys[n]])
+        if n > 0:
+            print keysList[0],keysList[1]
+            return keysList[0],keysList[1]
+        else:
+            return keysList[0]
+
 if __name__ == '__main__':
     pass
+    #dict = '{"Symbol":"CA001","CreateAddr":"P1LQ8dg9EWWnZMp8dfCTAHJic1F55awfrGt","TokenType":1,"TotalSupply":10,"SupplyAddr":"P1LQ8dg9EWWnZMp8dfCTAHJic1F55awfrGt","AssetID":"CA001+09P56EF11ID5BRZ80W9","TokenIDs":["1","10","2","3","4","5","6","7","8","9"]}'
     #voteId = "VOTE+0G7N1MFOXE1DYRHFXUP"
     #dict = {"id":1,"jsonrpc":"2.0","result":{"PTN":"0.00003","VOTE+0G7N1MFOXE1DYRHFXUP":"1000"}}
-    #result = createToken().voteExist(voteId,dict)
+    #createToken().jsonLoads(dict,'AssetID','TokenIDs')
+    #createToken().ccinvokePass()

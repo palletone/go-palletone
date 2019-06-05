@@ -9,8 +9,8 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-Feature: Create Token
-    [Documentation]    Scenario: Verify Reciever's PTN
+Scenario: Vote Contract - Create Token
+    [Documentation]    Verify Reciever's PTN
     ${PTN1}    ${result1}    Given Request getbalance before create token
     ${ret}    When Create token of vote contract
     ${PTNGAIN}    And Calculate gain of recieverAdd    ${PTN1}

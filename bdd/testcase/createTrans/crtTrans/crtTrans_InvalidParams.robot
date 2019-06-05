@@ -1,8 +1,6 @@
 *** Settings ***
-Force Tags        invalidAdd
 Default Tags      invalidAdd
-Library           RequestsLibrary
-Library           Collections
+Resource          ../../utilKwd/utilVariables.txt
 Resource          ../../utilKwd/invalidKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
@@ -10,7 +8,6 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_cmdCreateTransaction
 
 *** Test Cases ***
 senderInvalid1
