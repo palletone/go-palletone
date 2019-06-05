@@ -74,18 +74,18 @@ type Genesis struct {
 	TokenAmount string `json:"tokenAmount"`
 	//TokenDecimal              uint32                   `json:"tokenDecimal"`
 	//DecimalUnit               string                   `json:"decimal_unit"`
-	ChainID                   uint64                   `json:"chainId"`
-	TokenHolder               string                   `json:"tokenHolder"`
-	Text                      string                   `json:"text"`
-	SystemConfig              SystemConfig             `json:"systemConfig"`
-	DigitalIdentityConfig     DigitalIdentityConfig    `json:"digitalIdentityConfig"`
-	ParentUnitHash            common.Hash              `json:"parentUnitHash"`
-	ParentUnitHeight          int64                    `json:"parentUnitHeight"`
-	InitialParameters         ChainParameters          `json:"initialParameters"`
-	ImmutableParameters       ImmutableChainParameters `json:"immutableChainParameters"`
-	InitialTimestamp          int64                    `json:"initialTimestamp"`
-	InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
-	InitialMediatorCandidates []*InitialMediator       `json:"initialMediatorCandidates"`
+	ChainID               uint64                   `json:"chainId"`
+	TokenHolder           string                   `json:"tokenHolder"`
+	Text                  string                   `json:"text"`
+	SystemConfig          SystemConfig             `json:"systemConfig"`
+	DigitalIdentityConfig DigitalIdentityConfig    `json:"digitalIdentityConfig"`
+	ParentUnitHash        common.Hash              `json:"parentUnitHash"`
+	ParentUnitHeight      int64                    `json:"parentUnitHeight"`
+	InitialParameters     ChainParameters          `json:"initialParameters"`
+	ImmutableParameters   ImmutableChainParameters `json:"immutableChainParameters"`
+	InitialTimestamp      int64                    `json:"initialTimestamp"`
+	//InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
+	InitialMediatorCandidates []*InitialMediator `json:"initialMediatorCandidates"`
 }
 
 func (g *Genesis) GetTokenAmount() uint64 {

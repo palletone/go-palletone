@@ -156,7 +156,7 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.DigitalIdentityConfig.RootCAHolder = genesisState.TokenHolder
 
 	initMediatorCount := len(mcs)
-	genesisState.InitialActiveMediators = uint16(initMediatorCount)
+	genesisState.InitialParameters.ActiveMediatorCount = uint8(initMediatorCount)
 	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
 
 	//配置测试的基金会地址及密码
@@ -326,16 +326,16 @@ func createExampleGenesis() *core.Genesis {
 		Version:     configure.Version,
 		TokenAmount: core.DefaultTokenAmount,
 		//TokenDecimal:              core.DefaultTokenDecimal,
-		ChainID:                   core.DefaultChainID,
-		TokenHolder:               core.DefaultTokenHolder,
-		ParentUnitHeight:          -1,
-		Text:                      core.DefaultText,
-		SystemConfig:              SystemConfig,
-		DigitalIdentityConfig:     DigitalIdentityConfig,
-		InitialParameters:         initParams,
-		ImmutableParameters:       core.NewImmutChainParams(),
-		InitialTimestamp:          gen.InitialTimestamp(initParams.MediatorInterval),
-		InitialActiveMediators:    core.DefaultMediatorCount,
+		ChainID:               core.DefaultChainID,
+		TokenHolder:           core.DefaultTokenHolder,
+		ParentUnitHeight:      -1,
+		Text:                  core.DefaultText,
+		SystemConfig:          SystemConfig,
+		DigitalIdentityConfig: DigitalIdentityConfig,
+		InitialParameters:     initParams,
+		ImmutableParameters:   core.NewImmutChainParams(),
+		InitialTimestamp:      gen.InitialTimestamp(initParams.MediatorInterval),
+		//InitialActiveMediators:    core.DefaultMediatorCount,
 		InitialMediatorCandidates: initialMediatorCandidates(mediators, core.DefaultNodeInfo),
 	}
 }
