@@ -49,11 +49,12 @@ Change supply of contract
     ${ccList}    Create List    ${changeSupplyMethod}    ${preTokenId}    ${reciever}
     ${result}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    2
+    sleep    5
     [Return]    ${result}
 
 Assert the supplyAddr
     ${queryResult}    ccqueryById    ${20ContractId}    ${TokenInfoMethod}    ${preTokenId}
+    sleep    1
     ${SupplyAddr}    jsonLoads    ${queryResult['result']}    SupplyAddr
     Should Be Equal As Strings    ${reciever}    ${SupplyAddr}
 

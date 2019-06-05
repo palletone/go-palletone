@@ -35,7 +35,7 @@ Request getbalance before create transaction
 
 Request getbalance after create transaction
     [Arguments]    ${PTNGAIN}
-    Sleep    2
+    Sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
     Sleep    5
     Should Be Equal As Numbers    ${PTNGAIN}    ${PTN2}
