@@ -524,8 +524,7 @@ func signTx(contractAddr, reqid, ethAddr string, ethAmount uint64, stub shim.Cha
 	//
 	result, err := stub.OutChainTransaction("eth", reqBytes)
 	if err != nil {
-
-		return "", errors.New(fmt.Sprintf("calSigETH Chaincode result error ==== ===== ", err.Error()))
+		return "", errors.New("calSigETH error")
 	}
 	//
 	var sigResult Keccak256HashPackedSigResult
