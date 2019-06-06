@@ -463,7 +463,7 @@ func (ps *peerSet) HeaderIdlePeers() ([]*peerConnection, int) {
 		return p.headerThroughput
 	}
 	//return ps.idlePeers(62, 64, idle, throughput)
-	return ps.idlePeers(0, 2, idle, throughput)
+	return ps.idlePeers(0, 10, idle, throughput)
 }
 
 // BodyIdlePeers retrieves a flat list of all the currently body-idle peers within
@@ -478,7 +478,7 @@ func (ps *peerSet) BodyIdlePeers() ([]*peerConnection, int) {
 		return p.blockThroughput
 	}
 	//return ps.idlePeers(62, 64, idle, throughput)
-	return ps.idlePeers(0, 2, idle, throughput)
+	return ps.idlePeers(0, 10, idle, throughput)
 }
 
 // ReceiptIdlePeers retrieves a flat list of all the currently receipt-idle peers

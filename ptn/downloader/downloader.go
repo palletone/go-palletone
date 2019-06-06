@@ -597,7 +597,14 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	height := latest.Index()
 	token := latest.Number.AssetID
 	// Figure out the valid ancestor range to prevent rewrite attacks
-	floor, ceil := int64(-1), d.lightdag.CurrentHeader(token).Number.Index
+	floor := int64(-1)
+	ceil := uint64(0)
+	lheader := d.lightdag.CurrentHeader(token)
+	if lheader == nil {
+		log.Debug("Downloader findAncestor CurrentHeader is nil", "assetid", assetId)
+	} else {
+		ceil = lheader.Number.Index
+	}
 
 	//if d.mode == FullSync {
 	//	ceil = d.dag.CurrentUnit().NumberU64()
@@ -627,8 +634,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	log.Debug("Downloader", "findAncestor RequestHeadersByNumber from:", from, "count:", count)
 	index := &modules.ChainIndex{
 		AssetID: assetId,
-		//IsMain:  true,
-		Index: uint64(from),
+		Index:   uint64(from),
 	}
 
 	go p.peer.RequestHeadersByNumber(index, count, 15, false)

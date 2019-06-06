@@ -110,6 +110,9 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		log.Debug("Light PalletOne synchronise is not need sync", "local index", lheader.Number.Index, "peer index", number.Index)
 		return
 	}
+	if lheader == nil {
+		log.Debug("Light PalletOne synchronise local header is nil", "assetid", assetId)
+	}
 
 	if atomic.LoadUint32(&pm.fastSync) == 0 {
 		log.Debug("Light PalletOne synchronising")
