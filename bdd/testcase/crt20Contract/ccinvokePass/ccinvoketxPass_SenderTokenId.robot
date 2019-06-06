@@ -23,9 +23,9 @@ Request getbalance before create token
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    3
-    ${PTN1}    ${result}    normalGetBalance    ${geneAdd}
     sleep    2
+    ${PTN1}    ${result}    normalGetBalance    ${geneAdd}
+    sleep    3
     [Return]    ${PTN1}
 
 Request normal CcinvokePass

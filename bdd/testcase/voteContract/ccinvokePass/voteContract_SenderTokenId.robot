@@ -47,6 +47,7 @@ Create token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
+	sleep    3
     ${totoalGain}    Evaluate    int(${amount})+int(${tokenDecimal})
     ${GAIN}    countRecieverPTN    ${totoalGain}
     sleep    4

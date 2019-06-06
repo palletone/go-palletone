@@ -41,8 +41,9 @@ Transfer token of vote contract
 Request getbalance before create token
     sleep    3
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
-    sleep    4
+    sleep    5
     ${key}    getTokenId    ${voteId}    ${result1['result']}
+	sleep    2
     #${PTN1}    Get From Dictionary    ${result1['result']}    PTN
     ${item1}    Get From Dictionary    ${result1['result']}    ${key}
     [Return]    ${PTN1}    ${result1}    ${item1}    ${key}
@@ -53,9 +54,10 @@ Request transfer token
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}
+	sleep    4
     ${item'}    Evaluate    ${item1}-${PTNAmount}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNPoundage}')    decimal
-    sleep    4
+    sleep    2
     [Return]    ${PTN'}    ${item'}
 
 Request getbalance after create token

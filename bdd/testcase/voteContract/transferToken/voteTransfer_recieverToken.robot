@@ -48,6 +48,7 @@ Calculate gain of recieverAdd
     [Arguments]    ${item1}
     sleep    4
     ${item1}    Evaluate    ${item1}+${PTNAmount}
+	sleep    1
     [Return]    ${item1}
 
 Request getbalance after create token
