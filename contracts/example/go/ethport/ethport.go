@@ -529,7 +529,7 @@ func updateFee(fee uint64, stub shim.ChaincodeStubInterface) {
 		feeCur, _ = strconv.ParseUint(string(result), 10, 64)
 	}
 	fee += feeCur
-	feeStr := fmt.Sprintf("%s", fee)
+	feeStr := fmt.Sprintf("%d", fee)
 	err := stub.PutState(symbolsWithdrawFee, []byte(feeStr))
 	if err != nil {
 		log.Debugf("updateFee failed: " + err.Error())
