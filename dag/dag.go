@@ -453,6 +453,8 @@ func (d *Dag) refreshPartitionMemDag() {
 		} else {
 			mainChainMemDag.SetStableThreshold(threshold) //可能更新了该数字
 		}
+	} else {
+		log.Info("Don't have main chain config for partition")
 	}
 	partitions, err := d.stableStateRep.GetPartitionChains()
 	if err != nil {
@@ -500,8 +502,7 @@ func (d *Dag) initDataForPartition(partition *modules.PartitionChain) {
 	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
 	if !exist {
 		log.Debugf("Init partition[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
-		d.stableUnitRep.SaveHeader(pHeader)
-		d.stablePropRep.SetNewestUnit(pHeader)
+		d.stableUnitRep.SaveNewestHeader(pHeader)
 	}
 }
 func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
@@ -509,8 +510,7 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
 	if !exist {
 		log.Debugf("Init main chain[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
-		d.stableUnitRep.SaveHeader(pHeader)
-		d.stablePropRep.SetNewestUnit(pHeader)
+		d.stableUnitRep.SaveNewestHeader(pHeader)
 	}
 }
 func NewDag(db ptndb.Database) (*Dag, error) {
