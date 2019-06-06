@@ -57,8 +57,8 @@ const (
 
 	DefaultJuryAddr = "P16bXzewsexHwhGYdt1c1qbzjBirCqDg8mN"
 
-	DefaultMaxMediatorCount    = 255
-	DefaultMediatorCount       = 5 //21
+	DefaultMaxMediatorCount    = 30
+	DefaultActiveMediatorCount = 5 //21
 	DefaultMinMediatorCount    = 5 //21
 	DefaultMinMediatorInterval = 1
 

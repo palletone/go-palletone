@@ -141,7 +141,7 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	mcs := createExampleMediators(ctx, core.DefaultMediatorCount)
+	mcs := createExampleMediators(ctx, core.DefaultActiveMediatorCount)
 	nodeStr, err := getNodeInfo(ctx)
 	if err != nil {
 		return err

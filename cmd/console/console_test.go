@@ -102,7 +102,7 @@ func DevGenesisBlock() *core.Genesis {
 		ImmutableParameters: core.NewImmutChainParams(),
 		InitialTimestamp:    gen.InitialTimestamp(initParams.MediatorInterval),
 		//InitialActiveMediators: core.DefaultMediatorCount,
-		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultMediatorCount,
+		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultActiveMediatorCount,
 			core.DefaultMediator),
 		//SystemConfig: SystemConfig,
 	}

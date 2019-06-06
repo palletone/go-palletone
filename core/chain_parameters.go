@@ -104,7 +104,7 @@ func NewChainParams() ChainParameters {
 		TempUccCpuQuota:           DefaultTempUccCpuQuota,
 		ContractSignatureNum:      DefaultContractSignatureNum,
 		ContractElectionNum:       DefaultContractElectionNum,
-		ActiveMediatorCount:       DefaultMediatorCount,
+		ActiveMediatorCount:       DefaultActiveMediatorCount,
 		MaximumMediatorCount:      DefaultMaxMediatorCount,
 		MediatorInterval:          DefaultMediatorInterval,
 		MaintenanceInterval:       DefaultMaintenanceInterval,

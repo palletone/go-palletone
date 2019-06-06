@@ -271,7 +271,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		ImmutableParameters:   core.NewImmutChainParams(),
 		InitialTimestamp:      InitialTimestamp(initParams.MediatorInterval),
 		//InitialActiveMediators: core.DefaultMediatorCount,
-		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
+		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultActiveMediatorCount,
 			core.DefaultMediator),
 	}
 }
@@ -320,7 +320,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		ImmutableParameters:   core.NewImmutChainParams(),
 		InitialTimestamp:      InitialTimestamp(initParams.MediatorInterval),
 		//InitialActiveMediators: core.DefaultMediatorCount,
-		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
+		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultActiveMediatorCount,
 			core.DefaultMediator),
 	}
 }

@@ -193,6 +193,10 @@ func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetConfig(name)
 }
 
+//func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+//	return d.unstableStateRep.GetConfig(name)
+//}
+
 //func (d *Dag) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
 //	return d.unstableStateRep.GetAllConfig()
 //
