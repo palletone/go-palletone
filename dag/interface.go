@@ -80,7 +80,7 @@ type IDag interface {
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit() (*modules.Unit, error)
 
-	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
@@ -188,4 +188,5 @@ type IDag interface {
 
 	GetChainParameters() *core.ChainParameters
 	GetImmutableChainParameters() *core.ImmutableChainParameters
+	GetConfig(name string) ([]byte, error)
 }

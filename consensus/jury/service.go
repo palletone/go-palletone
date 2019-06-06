@@ -88,7 +88,7 @@ type iDag interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
-	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
@@ -97,6 +97,8 @@ type iDag interface {
 	GetMinFee() (*modules.AmountAsset, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+
+	GetConfig(name string) ([]byte, error)
 }
 
 type Juror struct {
@@ -578,13 +580,15 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		}
 		//检查指定节点模式下，是否为jjh请求地址
 		if e.Etype == 1 {
-			jjhAd, _, err := p.dag.GetConfig(modules.FoundationAddress)
-			if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
+			jjhAd, err := p.dag.GetConfig(modules.FoundationAddress)
+			if err == nil && string(jjhAd) == reqAddr.Str() {
+				//if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
 				log.Debugf("[%s]isValidateElection, e.Etype == 1, ok, contractId[%s]", shortId(reqId.String()), string(contractId))
 				continue
 			} else {
 				log.Debugf("[%s]isValidateElection, e.Etype == 1, but not jjh request addr, contractId[%s]", shortId(reqId.String()), string(contractId))
-				log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), string(reqAddr[:]), string(jjhAd))
+				//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), string(reqAddr[:]), string(jjhAd))
+				log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), string(jjhAd))
 
 				//continue //todo test
 				return false

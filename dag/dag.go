@@ -1360,7 +1360,7 @@ func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
 	return bc.unstableStateRep.GetMainChain()
 }
 func (d *Dag) GetCoinYearRate() float64 {
-	data, _, err := d.GetConfig("TxCoinYearRate")
+	data, err := d.GetConfig("TxCoinYearRate")
 	if err != nil {
 		log.Warn("Cannot read system config by key :TxCoinYearRate")
 		return 0

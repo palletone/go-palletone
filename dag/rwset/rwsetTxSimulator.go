@@ -57,7 +57,7 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 }
 
 func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
-	val, _, err := s.dag.GetConfig(name)
+	val, err := s.dag.GetConfig(name)
 	if err != nil {
 		return nil, err
 	}

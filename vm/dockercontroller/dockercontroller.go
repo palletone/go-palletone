@@ -113,7 +113,7 @@ func GetInt64FromDb(key string) int64 {
 	//DefaultUccCpuQuota  = "25000"//限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
 	//DefaultUccCpuSetCpus  = "0-3"//限制使用某些CPUS  "1,3"  "0-3"
 	dag, err := comm.GetCcDagHand()
-	resultStr, _, err := dag.GetConfig(key)
+	resultStr, err := dag.GetConfig(key)
 	if err != nil {
 		log.Infof("dag.GetConfig err: %s", err.Error())
 		return 0
