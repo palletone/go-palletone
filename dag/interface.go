@@ -81,7 +81,7 @@ type IDag interface {
 	GetGenesisUnit() (*modules.Unit, error)
 
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
-	GetAllConfig() (map[string]*modules.ContractStateValue, error)
+	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -186,6 +186,6 @@ type IDag interface {
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
 
-	GetChainParameters() core.ChainParameters
-	GetImmutableChainParameters() core.ImmutableChainParameters
+	GetChainParameters() *core.ChainParameters
+	GetImmutableChainParameters() *core.ImmutableChainParameters
 }

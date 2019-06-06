@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -131,10 +132,14 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr st
 	return result, err
 }
 
-func (s *PublicBlockChainAPI) ListSysConfig(ctx context.Context) ([]*ptnjson.ConfigJson, error) {
+//func (s *PublicBlockChainAPI) ListSysConfig(ctx context.Context) ([]*ptnjson.ConfigJson, error) {
+//
+//	result, err := s.b.GetAllSysConfig()
+//	return result, err
+//}
 
-	result, err := s.b.GetAllSysConfig()
-	return result, err
+func (s *PublicBlockChainAPI) ListSysConfig() (*core.ChainParameters, error) {
+	return s.b.GetChainParameters(), nil
 }
 
 //func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {

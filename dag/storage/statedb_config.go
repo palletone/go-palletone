@@ -48,10 +48,11 @@ func (statedb *StateDb) GetSysConfig(name string) ([]byte, *modules.StateVersion
 	id := syscontract.SysConfigContractAddress.Bytes()
 	return statedb.GetContractState(id, name)
 }
-func (statedb *StateDb) GetAllSysConfig() (map[string]*modules.ContractStateValue, error) {
-	id := syscontract.SysConfigContractAddress.Bytes()
-	return statedb.GetContractStatesById(id)
-}
+
+//func (statedb *StateDb) GetAllSysConfig() (map[string]*modules.ContractStateValue, error) {
+//	id := syscontract.SysConfigContractAddress.Bytes()
+//	return statedb.GetContractStatesById(id)
+//}
 
 /**
 存储配置信息

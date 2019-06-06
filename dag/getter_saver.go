@@ -181,13 +181,22 @@ func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
 	return dag.GetGlobalProp().ChainParameters.CurrentFees
 }
 
-func (dag *Dag) GetChainParameters() core.ChainParameters {
-	return dag.GetGlobalProp().ChainParameters
+func (dag *Dag) GetChainParameters() *core.ChainParameters {
+	return &dag.GetGlobalProp().ChainParameters
 }
 
-func (dag *Dag) GetImmutableChainParameters() core.ImmutableChainParameters {
-	return dag.GetGlobalProp().ImmutableParameters
+func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
+	return &dag.GetGlobalProp().ImmutableParameters
 }
+
+func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+	return d.unstableStateRep.GetConfig(name)
+}
+
+//func (d *Dag) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
+//	return d.unstableStateRep.GetAllConfig()
+//
+//}
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 
@@ -246,13 +255,4 @@ func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
 
 	return d.unstableStateRep.IsJury(addr)
-}
-
-func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	return d.unstableStateRep.GetConfig(name)
-}
-
-func (d *Dag) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
-	return d.unstableStateRep.GetAllConfig()
-
 }

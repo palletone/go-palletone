@@ -86,6 +86,7 @@ type Genesis struct {
 	InitialTimestamp      int64                    `json:"initialTimestamp"`
 	//InitialActiveMediators    uint16                   `json:"initialActiveMediators"`
 	InitialMediatorCandidates []*InitialMediator `json:"initialMediatorCandidates"`
+	SystemContracts           []SysContract      `json:"systemContracts"`
 }
 
 type SysContract struct {

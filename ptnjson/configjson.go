@@ -20,21 +20,16 @@
 
 package ptnjson
 
-import (
-	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/dag/modules"
-)
+//type ConfigJson struct {
+//	Key      string `json:"key"`
+//	Value    string `json:"value"`
+//	ValueHex string `json:"value_hex"`
+//}
 
-type ConfigJson struct {
-	Key      string `json:"key"`
-	Value    string `json:"value"`
-	ValueHex string `json:"value_hex"`
-}
-
-func ConvertAllSysConfigToJson(configs map[string]*modules.ContractStateValue) []*ConfigJson {
-	result := []*ConfigJson{}
-	for k, v := range configs {
-		result = append(result, &ConfigJson{Key: k, Value: string(v.Value), ValueHex: hexutil.Encode(v.Value)})
-	}
-	return result
-}
+//func ConvertAllSysConfigToJson(configs map[string]*modules.ContractStateValue) []*ConfigJson {
+//	result := []*ConfigJson{}
+//	for k, v := range configs {
+//		result = append(result, &ConfigJson{Key: k, Value: string(v.Value), ValueHex: hexutil.Encode(v.Value)})
+//	}
+//	return result
+//}

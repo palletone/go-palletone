@@ -35,7 +35,7 @@ import (
 type IStateRepository interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
-	GetAllConfig() (map[string]*modules.ContractStateValue, error)
+	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
@@ -99,9 +99,9 @@ func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersio
 	return rep.statedb.GetSysConfig(name)
 }
 
-func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
-	return rep.statedb.GetAllSysConfig()
-}
+//func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
+//	return rep.statedb.GetAllSysConfig()
+//}
 
 func (rep *StateRepository) GetSysParamWithoutVote() (map[string]string, error) {
 	return rep.statedb.GetSysParamWithoutVote()
