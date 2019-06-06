@@ -318,7 +318,7 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash) {
 
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	defer func(start time.Time) {
-		log.Debugf("MemDag[%s] AddUnit cost time: %v ,index: %d", dagconfig.DagConfig.GetGasToken().String(),
+		log.Debugf("MemDag[%s] AddUnit cost time: %v ,index: %d", chain.token.String(),
 			time.Since(start), unit.NumberU64())
 	}(time.Now())
 
