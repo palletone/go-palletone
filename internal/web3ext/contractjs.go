@@ -65,7 +65,6 @@ web3._extend({
         	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
 			inputFormatter: [null, null, null, null, null, null]
 		}),
-
 		//cc
 		new web3._extend.Method({
 			name: 'ccinstall',
@@ -97,7 +96,6 @@ web3._extend({
         	params: 1, //contractId
 			inputFormatter: [null]
 		}),
-
 		new web3._extend.Method({
 			name: 'depositContractInvoke',
         	call: 'contract_depositContractInvoke',

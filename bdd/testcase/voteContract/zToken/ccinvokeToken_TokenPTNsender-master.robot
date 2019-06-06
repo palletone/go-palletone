@@ -43,11 +43,12 @@ Ccinvoke token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}
+	sleep    4
     ${item'}    Evaluate    ${item1}-${gain}
     ${totalGain}    Evaluate    int(${PTNPoundage})+int(${PTNAmount})
     ${GAIN}    countRecieverPTN    ${totalGain}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
-    sleep    3
+    sleep    2
     [Return]    ${PTN'}    ${item'}
 
 Request getbalance after create token

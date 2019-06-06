@@ -8,15 +8,9 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 
-${PTN}            \d+
-${result_code}    \f[a-z0-9]*
-${result_hex}     \f[a-z0-9]*
-${result_txid}    \0[a-z0-9]{60,70}
-${sendResult}     [a-z0-9]*
-
 *** Test Cases ***
-Scenario: 20Contract - Send Transaction
-    [Documentation]    Verify Sender's PTN
+Scenario: createTrans - Send Transaction
+    [Documentation]    Verify PTN after sending
     [Tags]    normal
     ${PTN1}    Given Request getbalance before create transaction
     ${ret1}    And normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
