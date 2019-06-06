@@ -58,14 +58,14 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 	//		return shim.Error(jsonResp)
 	//	}
 	//	return shim.Success(res)
-	case "getSysParamValByKey":
-		log.Info("Start getSysParamValByKey Invoke")
-		resultByte, err := s.getSysParamValByKey(stub, args)
-		if err != nil {
-			jsonResp := "{\"Error\":\"getSysParamValByKey err: " + err.Error() + "\"}"
-			return shim.Error(jsonResp)
-		}
-		return shim.Success(resultByte)
+	//case "getSysParamValByKey":
+	//	log.Info("Start getSysParamValByKey Invoke")
+	//	resultByte, err := s.getSysParamValByKey(stub, args)
+	//	if err != nil {
+	//		jsonResp := "{\"Error\":\"getSysParamValByKey err: " + err.Error() + "\"}"
+	//		return shim.Error(jsonResp)
+	//	}
+	//	return shim.Success(resultByte)
 	case "updateSysParamWithoutVote":
 		log.Info("Start updateSysParamWithoutVote Invoke")
 		resultByte, err := s.updateSysParamWithoutVote(stub, args)
@@ -470,19 +470,20 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	return []byte(modifyByte), nil
 }
 
-func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	if len(args) != 1 {
-		jsonResp := "{\"Error\":\" need 1 args (AssetID String)\"}"
-		return nil, fmt.Errorf(jsonResp)
-	}
-	val, err := stub.GetSystemConfig(args[0])
-	//val, err := stub.GetState(args[0])
-	if err != nil {
-		return nil, err
-	}
-	jsonResp := "{\"" + args[0] + "\":\"" + string(val) + "\"}"
-	return []byte(jsonResp), nil
-}
+//func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+//	if len(args) != 1 {
+//		jsonResp := "{\"Error\":\" need 1 args (AssetID String)\"}"
+//		return nil, fmt.Errorf(jsonResp)
+//	}
+//	val, err := stub.GetSystemConfig(args[0])
+//	//val, err := stub.GetState(args[0])
+//	if err != nil {
+//		return nil, err
+//	}
+//	// 并不是所有的配置的string类型
+//	jsonResp := "{\"" + args[0] + "\":\"" + string(val) + "\"}"
+//	return []byte(jsonResp), nil
+//}
 
 func getSymbols(stub shim.ChaincodeStubInterface) *SysTokenInfo {
 	//

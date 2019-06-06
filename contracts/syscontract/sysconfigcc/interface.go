@@ -30,7 +30,7 @@ type SysParamsConfInterface interface {
 	//基金会发起更新某个系统参数（不需要投票）
 	updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
 	//通过键获取值
-	getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
+	//getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
 
 	//通过投票方式来修改系统参数
 	//首先，提供查询投票当前结果
