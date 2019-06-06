@@ -188,7 +188,7 @@ func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 		log.Error("Save Header error", err.Error())
 		return err
 	}
-	log.Debugf("DB[%s] Save header for unit: %#x", reflect.TypeOf(dagdb.db).String(), uHash.Bytes())
+	log.Debugf("DB[%s](%p) Save header for unit: %#x", reflect.TypeOf(dagdb.db).String(), dagdb, uHash.Bytes())
 	return nil
 }
 
@@ -552,7 +552,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 
 func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
-	log.Debugf("DB[%s] Get Header by unit hash:%s", reflect.TypeOf(dagdb.db).String(), hash.String())
+	log.Debugf("DB[%s](%p) Get Header by unit hash:%s", reflect.TypeOf(dagdb.db).String(), dagdb, hash.String())
 	header := new(modules.Header)
 	err := RetrieveFromRlpBytes(dagdb.db, key, header)
 	if err != nil {

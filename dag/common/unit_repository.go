@@ -59,6 +59,7 @@ type IUnitRepository interface {
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
+	SaveNewestHeader(header *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
@@ -172,6 +173,13 @@ func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*
 }
 func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
 	return rep.dagdb.SaveHeader(header)
+}
+func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
+	err := rep.dagdb.SaveHeader(header)
+	if err != nil {
+		return err
+	}
+	return rep.propdb.SetNewestUnit(header)
 }
 func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
 	return rep.dagdb.SaveHeaders(headers)

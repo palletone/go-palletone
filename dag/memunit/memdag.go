@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	common2 "github.com/palletone/go-palletone/dag/common"
-	//"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -194,18 +193,12 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 			chain.removeUnitAndChildren(funit.Hash())
 		}
 	}
-	if chain.saveHeaderOnly {
-		chain.ldbunitRep.SaveHeader(unit.UnitHeader)
-		chain.ldbPropRep.SetNewestUnit(unit.UnitHeader)
-	} else {
-		//Save stable unit to ldb
-		//chain.ldbunitRep.SaveUnit(unit, false)
-		chain.ldbUnitProduceRep.PushUnit(unit)
-		//txpool flag tx as packaged
-		if len(unit.Txs) > 0 {
-			log.Debugf("Set tx[%x] status to confirm", unit.Txs.GetTxIds())
-			txpool.SendStoredTxs(unit.Txs.GetTxIds())
-		}
+	chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+
+	if !chain.saveHeaderOnly && len(unit.Txs) > 0 {
+		log.Debugf("Set tx[%x] status to confirm in txpool", unit.Txs.GetTxIds())
+		txpool.SendStoredTxs(unit.Txs.GetTxIds())
+
 	}
 	log.Debugf("Remove unit[%s] from chainUnits", hash.String())
 	//remove new stable unit
@@ -260,7 +253,7 @@ func (chain *MemDag) rebuildTempdb() {
 	chain.tempdb.Clear()
 	unstableUnits := chain.getMainChainUnits()
 	for _, unit := range unstableUnits {
-		chain.saveUnit2TempDb(unit)
+		chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
 	}
 }
 
@@ -291,13 +284,13 @@ func (chain *MemDag) getMainChainUnits() []*modules.Unit {
 }
 
 //判断当前设置是保存Header还是Unit，将对应的对象保存到Tempdb数据库
-func (chain *MemDag) saveUnit2TempDb(unit *modules.Unit) {
-	log.Debugf("Save unit[%s] to tempdb", unit.Hash().String())
+func (chain *MemDag) saveUnitToDb(unitRep common2.IUnitRepository, produceRep common2.IUnitProduceRepository, unit *modules.Unit) {
+	log.Debugf("Save unit[%s] to db", unit.Hash().String())
 	if chain.saveHeaderOnly {
-		chain.tempdbunitRep.SaveHeader(unit.Header())
+		unitRep.SaveNewestHeader(unit.Header())
 	} else {
 		//chain.tempdbunitRep.SaveUnit(unit, false)
-		chain.tempUnitProduceRep.PushUnit(unit)
+		produceRep.PushUnit(unit)
 	}
 }
 
@@ -354,7 +347,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			}
 			//增加了单元后检查是否满足稳定单元的条件
 			if !chain.checkStableCondition(txpool) {
-				chain.saveUnit2TempDb(unit)
+				chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
 				//这个单元不是稳定单元，需要加入Tempdb
 			} else {
 				log.Debugf("unit[%s] checkStableCondition =true", unit.Hash().String())
