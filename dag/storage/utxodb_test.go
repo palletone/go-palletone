@@ -52,7 +52,7 @@ func TestGetUtxos(t *testing.T) {
 	utxodb.SaveUtxoEntity(key, utxo)
 
 	utxos, err := utxodb.GetAllUtxos()
-	if err!=nil{
+	if err != nil {
 		log.Debugf("get all utxo error:%s", err)
 	}
 	for key, u := range utxos {
@@ -73,7 +73,7 @@ func TestGetUtxos(t *testing.T) {
 	//	}
 	//}
 	//
-	//result1 := utxodb.GetPrefix(constants.AddrOutPoint_Prefix)
+	//result1 := utxodb.GetPrefix(constants.ADDR_OUTPOINT_PREFIX)
 	//for key, b := range result1 {
 	//	log.Debugf("result:", key)
 	//	out := new(modules.OutPoint)

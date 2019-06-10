@@ -77,13 +77,13 @@ type IIndexDb interface {
 //}
 
 func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) error {
-	key := append(constants.AddrTransactionsHash_Prefix, address.Bytes()...)
+	key := append(constants.ADDR_TXID_PREFIX, address.Bytes()...)
 	key = append(key, txid[:]...)
 	log.Debugf("Index address[%s] and tx[%s]", address.String(), txid.String())
 	return db.db.Put(key, txid[:])
 }
 func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error) {
-	prefix := append(constants.AddrTransactionsHash_Prefix, address.Bytes()...)
+	prefix := append(constants.ADDR_TXID_PREFIX, address.Bytes()...)
 	data := getprefix(db.db, prefix)
 	var result []common.Hash
 	for _, v := range data {
@@ -94,14 +94,14 @@ func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error
 	return result, nil
 }
 func (db *IndexDb) SaveTokenTxId(asset *modules.Asset, txid common.Hash) error {
-	key := append(constants.TokenTxHash_Prefix, asset.Bytes()...)
+	key := append(constants.TOKEN_TXID_PREFIX, asset.Bytes()...)
 	key = append(key, txid[:]...)
 	log.Debugf("Index Token[%s] and tx[%s]", asset.String(), txid.String())
 	return db.db.Put(key, txid[:])
 }
 
 func (db *IndexDb) GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error) {
-	prefix := append(constants.TokenTxHash_Prefix, asset.Bytes()...)
+	prefix := append(constants.TOKEN_TXID_PREFIX, asset.Bytes()...)
 	data := getprefix(db.db, prefix)
 	var result []common.Hash
 	for _, v := range data {
@@ -143,7 +143,7 @@ func (db *IndexDb) GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error) {
 //	return froms, nil
 //}
 //func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
-//	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
+//	out_key := append(constants.OUTPOINT_ADDR_PREFIX, outpoint.ToKey()...)
 //	data, err := db.db.Get(out_key[:])
 //	if len(data) <= 0 {
 //		return "", errors.New(fmt.Sprintf("address is null. outpoint_key(%s)", outpoint.ToKey()))
@@ -156,16 +156,16 @@ func (db *IndexDb) GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error) {
 //	return str, err0
 //}
 
-//save filehash key:IDX_FileHash_Txid   value:Txid
+//save filehash key:IDX_MAIN_DATA_TXID   value:Txid
 func (db *IndexDb) SaveMainDataTxId(filehash []byte, txid common.Hash) error {
-	key := append(constants.IDX_FileHash_Txid, []byte(filehash)...)
+	key := append(constants.IDX_MAIN_DATA_TXID, []byte(filehash)...)
 	key = append(key, []byte(txid.String())...)
 
 	return db.db.Put(key, txid[:])
 }
 
 func (db *IndexDb) GetMainDataTxIds(filehash []byte) ([]common.Hash, error) {
-	key := append(constants.IDX_FileHash_Txid, []byte(filehash)...)
+	key := append(constants.IDX_MAIN_DATA_TXID, []byte(filehash)...)
 	data := getprefix(db.db, key)
 	var result []common.Hash
 	for _, v := range data {

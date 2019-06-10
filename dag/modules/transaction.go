@@ -21,6 +21,7 @@ package modules
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -1085,6 +1086,10 @@ func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+func (a *Addition) Key() string {
+	b := append(a.Addr.Bytes21(), a.Asset.Bytes()...)
+	return hex.EncodeToString(b)
 }
 
 type SequeueTxPoolTxs []*TxPoolTransaction
