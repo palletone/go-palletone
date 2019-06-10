@@ -415,13 +415,14 @@ func rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs
 }
 func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
+	empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
 	for addr, _ := range rewards {
 		addrKey := constants.RewardAddressPrefix + addr.String()
 		for _, w := range writeset {
-			if !w.IsDelete {
-				return false
-			}
-			if w.Key == addrKey {
+			// if !w.IsDelete {
+			// 	return false
+			// }
+			if w.Key == addrKey && bytes.Equal(w.Value, empty) {
 				comparedCount++
 			}
 		}
