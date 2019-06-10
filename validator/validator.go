@@ -94,6 +94,9 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			return txCode
 		}
 		for _, a := range txFeeAllocate {
+			if a.Addr.IsZero() {
+				a.Addr = unitAuthor
+			}
 			ads = append(ads, a)
 		}
 
@@ -112,7 +115,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			Asset:  dagconfig.DagConfig.GetGasToken().ToAsset(),
 		}
 		ads = append(ads, a)
-		out := arrangeAdditionFeeList(ads, unitAuthor)
+		out := arrangeAdditionFeeList(ads)
 		//手续费应该与其他交易付出的手续费相等
 		coinbaseValidateResult := validate.validateCoinbase(coinbase, out)
 		if coinbaseValidateResult == TxValidationCode_VALID {
@@ -128,35 +131,29 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 	}
 	return TxValidationCode_VALID
 }
-func arrangeAdditionFeeList(ads []*modules.Addition, mediatorAddr common.Address) []*modules.Addition {
+
+func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
 	if len(ads) <= 0 {
 		return nil
 	}
-	out := make([]*modules.Addition, 0)
+	out := make(map[string]*modules.Addition)
 	for _, a := range ads {
-		ok := false
-		b := &modules.Addition{}
-		for _, b = range out {
-			if ok, _ = a.IsEqualStyle(b); ok {
-				break
-			}
-		}
+		key := a.Key()
+		b, ok := out[key]
 		if ok {
 			b.Amount += a.Amount
-			continue
-		}
-		out = append(out, a)
-	}
-	for _, o := range out {
-		if o.Addr.IsZero() {
-			o.Addr = mediatorAddr
+		} else {
+			out[key] = a
 		}
 	}
 	if len(out) < 1 {
 		return nil
-	} else {
-		return out
 	}
+	result := []*modules.Addition{}
+	for _, v := range out {
+		result = append(result, v)
+	}
+	return result
 }
 
 /**
