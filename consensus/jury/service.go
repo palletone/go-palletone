@@ -629,22 +629,6 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	isMediator := p.ptn.LocalHaveActiveMediator()
 	isJury := p.localHaveActiveJury()
 
-	//isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
-	//	isM = false
-	//	isJ = false
-	//	for addr, _ := range p.local {
-	//		if p.ptn.IsLocalActiveMediator(addr) {
-	//			//log.Debugf("[%s]contractEventExecutable, is Mediator, addr[%s]:", shortId(reqId.String()), addr.String())
-	//			isM = true
-	//		}
-	//		if true == p.isLocalActiveJury(addr) {
-	//			//log.Debugf("[%s]contractEventExecutable, is Jury, addr:", shortId(reqId.String()), addr.String())
-	//			isJ = true
-	//		}
-	//	}
-	//	return isM, isJ
-	//}(p.local)
-
 	switch event {
 	case CONTRACT_EVENT_EXEC:
 		if isSysContract && isMediator {

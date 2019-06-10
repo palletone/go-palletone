@@ -47,7 +47,6 @@ type AdapterInf struct {
 }
 type MsgSigCollect struct {
 	OneMsgAllSig map[string]JuryMsgSig
-	//recvTime    time.Time
 }
 type JuryMsgSig struct {
 	Signature []byte
