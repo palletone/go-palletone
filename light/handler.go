@@ -256,6 +256,9 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 		if p == nil {
 			continue
 		}
+		if !p.fullnode && header.Number.AssetID != pm.assetId {
+			continue
+		}
 		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
 		switch p.announceType {
 		case announceTypeNone:

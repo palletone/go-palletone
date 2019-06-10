@@ -99,6 +99,10 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		return
 	}
 
+	if pm.lightSync && pm.assetId != assetId {
+		return
+	}
+
 	headhash, number := peer.HeadAndNumber(assetId)
 	if common.EmptyHash(headhash) || number == nil {
 		log.Debug("Light PalletOne synchronise is nil", "assetId", assetId)
