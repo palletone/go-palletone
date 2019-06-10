@@ -73,6 +73,14 @@ contract ethmultisig {
     addrD = addrd;
   }
 
+  function setaddrs(address addra, address addrb, address addrc, address addrd) public isAdmin {//debug
+    admin = msg.sender;//debug
+    addrA = addra;
+    addrB = addrb;
+    addrC = addrc;
+    addrD = addrd;
+  }
+
   function setoneconfirm(uint8[] addrconfirms, address addr, address[] owners) private pure {
       for (uint8 i=0; i < 4;i++) {
           if (addr != owners[i]) {
