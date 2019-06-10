@@ -130,7 +130,7 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 func makeGlobalPropHistoryKey(gp *modules.GlobalPropertyHistory) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, gp.EffectiveTime)
-	return append(constants.GLOBALPROPERTY_HISTORY_PREFIX, b...)
+	return append(constants.GLOBAL_PROPERTY_HISTORY_PREFIX, b...)
 }
 
 func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error {
@@ -145,7 +145,7 @@ func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHisto
 }
 
 func (propdb *PropertyDb) RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error) {
-	kv := getprefix(propdb.db, constants.GLOBALPROPERTY_HISTORY_PREFIX)
+	kv := getprefix(propdb.db, constants.GLOBAL_PROPERTY_HISTORY_PREFIX)
 	result := make([]*modules.GlobalPropertyHistory, 0)
 	for _, v := range kv {
 		gp := &modules.GlobalPropertyHistory{}

@@ -58,16 +58,16 @@ type IUtxoDb interface {
 // ###################### UTXO index for Address ######################
 // key: outpoint_prefix + addr + outpoint's Bytes
 func (utxodb *UtxoDb) saveUtxoOutpoint(address common.Address, outpoint *modules.OutPoint) error {
-	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+	key := append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
 
 	// save outpoint tofind address
-	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
+	out_key := append(constants.OUTPOINT_ADDR_PREFIX, outpoint.ToKey()...)
 	StoreToRlpBytes(utxodb.db, out_key, address.String())
 	return StoreToRlpBytes(utxodb.db, key, outpoint)
 }
 func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Address, outpoint *modules.OutPoint) error {
-	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+	key := append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
 	return StoreToRlpBytes(batch, key, outpoint)
 	//val, err := rlp.EncodeToBytes(outpoint)
@@ -77,12 +77,12 @@ func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Ad
 	//return batch.Put(key, val)
 }
 func (utxodb *UtxoDb) deleteUtxoOutpoint(address common.Address, outpoint *modules.OutPoint) error {
-	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+	key := append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
 	return utxodb.db.Delete(key)
 }
 func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, error) {
-	data := getprefix(db.db, append(constants.AddrOutPoint_Prefix, address.Bytes()...))
+	data := getprefix(db.db, append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...))
 	outpoints := make([]modules.OutPoint, 0)
 	for _, b := range data {
 		out := new(modules.OutPoint)
@@ -253,7 +253,7 @@ func (db *UtxoDb) ClearUtxo() error {
 	if err != nil {
 		return err
 	}
-	err = clearByPrefix(db.db, constants.AddrOutPoint_Prefix)
+	err = clearByPrefix(db.db, constants.ADDR_OUTPOINT_PREFIX)
 	if err != nil {
 		return err
 	}

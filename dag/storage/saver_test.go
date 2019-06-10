@@ -20,94 +20,14 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"strconv"
+
 	"testing"
-	"time"
 
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/ptndb"
 )
-
-func TestSaveJoint(t *testing.T) {
-	Dbconn, _ := ptndb.NewMemDatabase()
-	if Dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
-
-	log.Println(strconv.FormatInt(time.Now().Unix(), 10))
-	var p []common.Hash
-	//log.Println("assets:", ty[0].String(), ty[1].String())
-	p = append(p, common.HexToHash("123"), common.HexToHash("456"))
-	h := modules.NewHeader(p, uint64(111), []byte("hello"))
-	txs := make(modules.Transactions, 0)
-	u := modules.NewUnit(h, txs)
-	err := SaveJoint(Dbconn, &modules.Joint{Unit: u},
-		func() { log.Println("ok") })
-	log.Println("error:", err)
-}
-
-func TestAddUnitKey(t *testing.T) {
-	// Dbconn := ReNewDbConn(dagconfig.DbPath)
-	Dbconn, _ := ptndb.NewMemDatabase()
-	if Dbconn == nil {
-		fmt.Println("Connect mem db error.")
-		return
-	}
-	keys := []string{"unit1231526522017", "unit1231526521834"}
-
-	value := []int{123456, 987654}
-	for i, v := range keys {
-		log.Println("key: ", v, "value: ", value[i])
-		if err := Dbconn.Put([]byte(v), ConvertBytes(value[i])); err != nil {
-			log.Println("put error", err)
-			t.Fatal("error2")
-		}
-		log.Println("this value:", string(ConvertBytes(value[i])))
-	}
-
-	log.Println("success")
-}
-
-func TestGetUnitKeys(t *testing.T) {
-	Dbconn, _ := ptndb.NewMemDatabase()
-	if Dbconn == nil {
-		fmt.Println("Connect mem db error.")
-		return
-	}
-	t0 := time.Now()
-
-	keys := GetUnitKeys(Dbconn)
-	var this []string
-	for i, v := range keys {
-		var exist bool
-		for j := i + 1; j < len(keys); j++ {
-			if v == keys[j] {
-				log.Println("j:", j)
-				exist = true
-				log.Println("equal", v)
-				break
-			}
-		}
-		if !exist {
-			// logger.Println("i:", i)
-			this = append(this, v)
-		}
-	}
-
-	err := AddUnitKeys(Dbconn, "unit1231526521834")
-	if errors.New("key is already exist.").Error() == err.Error() {
-		log.Println("success test add unit", keys) // this
-	} else {
-		log.Println("failed test add  unit ")
-	}
-	log.Println("times:", (time.Now().UnixNano()-t0.UnixNano())/1e6)
-}
 
 func TestDBBatch(t *testing.T) {
 	Dbconn, _ := ptndb.NewMemDatabase()

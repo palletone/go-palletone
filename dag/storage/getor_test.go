@@ -33,8 +33,8 @@ import (
 )
 
 func TestUnitNumberIndex(t *testing.T) {
-	key1 := fmt.Sprintf("%s_%s_%d", constants.UNIT_HASH_NUMBER_Prefix, modules.BTCCOIN.String(), 10000)
-	key2 := fmt.Sprintf("%s_%s_%d", constants.UNIT_HASH_NUMBER_Prefix, modules.PTNCOIN.String(), 678934)
+	key1 := fmt.Sprintf("%s_%s_%d", constants.UNIT_HASH_NUMBER_PREFIX, modules.BTCCOIN.String(), 10000)
+	key2 := fmt.Sprintf("%s_%s_%d", constants.UNIT_HASH_NUMBER_PREFIX, modules.PTNCOIN.String(), 678934)
 
 	if key1 != "nh_btcoin_10000" {
 		log.Debug("not equal.", "key1", key1)
@@ -43,25 +43,26 @@ func TestUnitNumberIndex(t *testing.T) {
 		log.Debug("not equal.", "key2", key2)
 	}
 }
-func TestGetCurrentChainIndex(t *testing.T) {
-	//dbconn := ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/gptn/leveldb/")
-	dbconn, _ := ptndb.NewMemDatabase()
-	if dbconn == nil {
-		fmt.Println("Connect to db error.")
-		return
-	}
 
-	prefix_db := dbconn.NewIteratorWithPrefix([]byte(constants.CURRENTCHAININDEX_PREFIX))
-	for prefix_db.Next() {
-		key := prefix_db.Key()
-		fmt.Println("key:", string(key))
-		value := prefix_db.Value()
-		chain_index := new(modules.ChainIndex)
-		err := rlp.DecodeBytes(value, &chain_index)
-		fmt.Println("value:", err, chain_index.String(), chain_index.AssetID, chain_index.Index)
-
-	}
-}
+//func TestGetCurrentChainIndex(t *testing.T) {
+//	//dbconn := ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/gptn/leveldb/")
+//	dbconn, _ := ptndb.NewMemDatabase()
+//	if dbconn == nil {
+//		fmt.Println("Connect to db error.")
+//		return
+//	}
+//
+//	prefix_db := dbconn.NewIteratorWithPrefix([]byte(constants.CURRENTCHAININDEX_PREFIX))
+//	for prefix_db.Next() {
+//		key := prefix_db.Key()
+//		fmt.Println("key:", string(key))
+//		value := prefix_db.Value()
+//		chain_index := new(modules.ChainIndex)
+//		err := rlp.DecodeBytes(value, &chain_index)
+//		fmt.Println("value:", err, chain_index.String(), chain_index.AssetID, chain_index.Index)
+//
+//	}
+//}
 
 func TestGetBody(t *testing.T) {
 	// dbconn := ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
