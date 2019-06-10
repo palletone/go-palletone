@@ -18,15 +18,13 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"time"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
 )
 
 //  申请加入
@@ -84,7 +82,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 
 	// 保存账户信息
 	md := NewMediatorDeposit()
-	md.ApplyEnterTime = time.Now().Unix() / DTimeDuration
+	md.ApplyEnterTime = TimeStr()
 	md.Status = Apply
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), md)
 	if err != nil {
@@ -138,7 +136,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	mediator.ApplyQuitTime = time.Now().Unix() / DTimeDuration
+	mediator.ApplyQuitTime = TimeStr()
 	mediator.Status = Quitting
 	//  获取退出列表
 	quitList, err := GetList(stub, ListForApplyQuitMediator)
@@ -174,7 +172,9 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 
 func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit, nodeAddr common.Address) error {
 	//  计算币龄收益
-	endTime := md.LastModifyTime * DTimeDuration
+	//endTime := md.LastModifyTime * DTimeDuration
+	//endTime, _ := time.Parse(Layout, md.LastModifyTime)
+	endTime := StrToTime(md.LastModifyTime)
 	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
@@ -182,7 +182,7 @@ func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit
 		return err
 	}
 	//
-	awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
+	awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
 	//  本金+利息
 	md.Balance += awards
 	invokeTokens := new(modules.AmountAsset)
@@ -298,13 +298,15 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 
 		//  处理数据
-		md.EnterTime = time.Now().Unix() / DTimeDuration
+		md.EnterTime = TimeStr()
 		md.Balance += invokeTokens.Amount
-		md.LastModifyTime = time.Now().Unix() / DTimeDuration
+		md.LastModifyTime = TimeStr()
 	} else {
 		//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		//  获取上次加入最后更改的时间
-		endTime := md.LastModifyTime * DTimeDuration
+		//endTime := md.LastModifyTime * DTimeDuration
+		//endTime, _ := time.Parse(Layout, md.LastModifyTime)
+		endTime := StrToTime(md.LastModifyTime)
 		//  获取保证金的年利率
 		depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 		if err != nil {
@@ -312,18 +314,18 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		//  计算币龄收益
-		awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
+		awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
 		md.Balance += awards
 		//  处理数据
 		md.Balance += invokeTokens.Amount
-		md.LastModifyTime = time.Now().Unix() / DTimeDuration
+		md.LastModifyTime = TimeStr()
 	}
 
 	//  退出后，再交付的状态
 	if md.Status == Quited {
 		md.Status = Agree
-		md.AgreeTime = time.Now().Unix() / DTimeDuration
-		md.ApplyQuitTime = 0
+		md.AgreeTime = TimeStr()
+		md.ApplyQuitTime = ""
 	}
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
@@ -471,7 +473,9 @@ func cashbackSomeMediatorDeposit(stub shim.ChaincodeStubInterface, cashbackAddr 
 		log.Error("stub.PayOutToken err: ", "error", err)
 		return err
 	}
-	endTime := md.LastModifyTime * DTimeDuration
+	//endTime := md.LastModifyTime * DTimeDuration
+	//endTime, _ := time.Parse(Layout, md.LastModifyTime)
+	endTime := StrToTime(md.LastModifyTime)
 	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
@@ -479,8 +483,8 @@ func cashbackSomeMediatorDeposit(stub shim.ChaincodeStubInterface, cashbackAddr 
 		return err
 	}
 	//
-	awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
-	md.LastModifyTime = time.Now().Unix() / DTimeDuration
+	awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
+	md.LastModifyTime = TimeStr()
 	//  加上利息奖励
 	md.Balance += awards
 	//  减去提取部分

@@ -71,7 +71,7 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 	cashback := &Cashback{}
 	cashback.CashbackTokens = invokeTokens
 	cashback.Role = role
-	cashback.CashbackTime = time.Now().Unix() / DTimeDuration
+	cashback.CashbackTime = TimeStr()
 	// 判断列表是否为空
 	if listForCashback == nil {
 		listForCashback = make(map[string]*Cashback)
@@ -198,7 +198,9 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		log.Error("stub.PayOutToken err: ", "error", err)
 		return err
 	}
-	endTime := balance.LastModifyTime * DTimeDuration
+	//endTime := balance.LastModifyTime * DTimeDuration
+	//endTime, _ := time.Parse(Layout, balance.LastModifyTime)
+	endTime := StrToTime(balance.LastModifyTime)
 	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
@@ -206,8 +208,8 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 		return err
 	}
 	//
-	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
-	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRate)
+	balance.LastModifyTime = TimeStr()
 	//  加上利息奖励
 	balance.Balance += awards
 	//  减去提取部分
@@ -265,14 +267,16 @@ func cashbackSomeDeposit(role string, stub shim.ChaincodeStubInterface, cashback
 
 //处理申请提保证金请求并移除列表
 func cashbackAllDeposit(role string, stub shim.ChaincodeStubInterface, cashbackAddr common.Address, invokeTokens *modules.AmountAsset, balance *DepositBalance) error {
-	endTime := balance.LastModifyTime * DTimeDuration
+	//endTime := balance.LastModifyTime * DTimeDuration
+	//endTime, _ := time.Parse(Layout, balance.LastModifyTime)
+	endTime := StrToTime(balance.LastModifyTime)
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
 	}
 	//  计算币龄收益
-	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRate)
 	//  本金+利息
 	invokeTokens.Amount += awards
 	//  调用从合约把token转到请求地址
@@ -304,7 +308,7 @@ func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr common
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
+	balance.LastModifyTime = TimeStr()
 	balance.Balance -= cashbackValue.CashbackTokens.Amount
 
 	err = SaveNodeBalance(stub, cashbackAddr.String(), balance)
@@ -488,7 +492,7 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 	forfeiture.ApplyAddress = invokeAddr.String()
 	forfeiture.Extra = extra
 	forfeiture.ForfeitureRole = role
-	forfeiture.ApplyTime = time.Now().Unix() / DTimeDuration
+	forfeiture.ApplyTime = TimeStr()
 	//  判断被没收时，该节点是否在相应的候选列表当中
 	listForForfeiture, err := GetListForForfeiture(stub)
 	if err != nil {
@@ -651,15 +655,17 @@ func forfertureAndMoveList(role string, stub shim.ChaincodeStubInterface, founda
 	}
 	//计算一部分的利息
 	//获取币龄
-	endTime := balance.LastModifyTime * DTimeDuration
+	//endTime := balance.LastModifyTime * DTimeDuration
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
+	//endTime, _ := time.Parse(Layout, balance.LastModifyTime)
+	endTime := StrToTime(balance.LastModifyTime)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRate)
 	//fmt.Println("awards ", awards)
-	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
+	balance.LastModifyTime = TimeStr()
 	//加上利息奖励
 	balance.Balance += awards
 	//减去提取部分
@@ -682,15 +688,17 @@ func forfeitureSomeDeposit(stub shim.ChaincodeStubInterface, foundationAddr stri
 		return err
 	}
 	//  计算当前币龄奖励
-	endTime := balance.LastModifyTime * DTimeDuration
+	//endTime := balance.LastModifyTime * DTimeDuration
+	//endTime, _ := time.Parse(Layout, balance.LastModifyTime)
+	endTime := StrToTime(balance.LastModifyTime)
 	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
-	balance.LastModifyTime = time.Now().Unix() / DTimeDuration
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRate)
+	balance.LastModifyTime = TimeStr()
 	//  加上利息奖励
 	balance.Balance += awards
 	//  减去提取部分
@@ -779,4 +787,15 @@ func DelNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string) error 
 		return err
 	}
 	return nil
+}
+
+func StrToTime(strT string) time.Time {
+	t, _ := time.Parse(Layout2, strT[:19])
+	return t
+}
+
+func TimeStr() string {
+	timeStr := time.Now().UTC().Format(Layout1)
+	tt, _ := time.Parse(Layout1, timeStr)
+	return tt.String()
 }

@@ -20,6 +20,7 @@ log.txt
 */**/*dapps*
 build/_vendor/pkg
 *.exe
+outchain.toml
 #*
 .#*
 *#

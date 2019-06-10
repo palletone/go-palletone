@@ -46,5 +46,8 @@ func New(text string) error {
 
 //是数据库中找不到对应数据的Error
 func IsNotFoundError(err error) bool {
+	if err==nil{
+		return false
+	}
 	return err.Error() == LDB_NOT_FOUND
 }

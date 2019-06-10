@@ -14,6 +14,39 @@
 //
 package deposit
 
+import (
+	"fmt"
+	"testing"
+	"time"
+)
+
+func TestTime(t *testing.T) {
+	// 通过当前时间格式化
+	now := time.Now().UTC()
+	fmt.Println(now)
+	l1 := now.Format("2006-01-02 15")
+	fmt.Println(l1)
+	l2 := now.Format("2006-01-02 15:04")
+	fmt.Println(l2)
+	l3 := now.Format("2006-01-02 15:04:05")
+	fmt.Println(l3)
+	//
+	t1, _ := time.Parse("2006-01-02 15", l1)
+	fmt.Println(t1)
+	t2, _ := time.Parse("2006-01-02 15:04", l2)
+	fmt.Println(t2)
+	t3, _ := time.Parse("2006-01-02 15:04:05", l3)
+	fmt.Println(t3)
+	fmt.Println(t1.String())
+}
+
+func TestStrToTime(t *testing.T) {
+	ts := TimeStr()
+	fmt.Println(ts)
+	st := StrToTime(ts)
+	fmt.Println(st)
+}
+
 //
 //import (
 //	"fmt"
