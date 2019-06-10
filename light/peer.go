@@ -325,10 +325,8 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
 func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server *LesServer, headhash common.Hash, assetids [][][]byte) error {
-	//p.lock.Lock()
-	//defer p.lock.Unlock()
-	p.lightlock.RLock()
-	defer p.lightlock.RUnlock()
+	p.lightlock.Lock()
+	defer p.lightlock.Unlock()
 
 	var send keyValueList
 	send = send.add("protocolVersion", uint64(p.version))
@@ -576,6 +574,8 @@ func (ps *peerSet) BestPeer(assetid modules.AssetId) *peer {
 		bestTd   uint64
 	)
 	for _, p := range ps.peers {
+		p.lightlock.RLock()
+		defer p.lightlock.RUnlock()
 		if v, ok := p.lightpeermsg[assetid]; ok {
 			if number := v.Number; bestPeer == nil || number.Index > bestTd {
 				bestPeer, bestTd = p, number.Index
@@ -592,6 +592,8 @@ func (ps *peerSet) AllPeers(assetid modules.AssetId) []*peer {
 
 	list := []*peer{}
 	for _, peer := range ps.peers {
+		peer.lightlock.RLock()
+		defer peer.lightlock.RUnlock()
 		if _, ok := peer.lightpeermsg[assetid]; ok {
 			list = append(list, peer)
 		}
