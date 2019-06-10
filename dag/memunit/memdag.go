@@ -132,6 +132,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
 	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep, chain.tempPropRep, chain.tempUnitProduceRep
 }
+
 //func (chain *MemDag) SetUnstableRepositories(tunitRep common2.IUnitRepository, tutxoRep common2.IUtxoRepository, tstateRep common2.IStateRepository, tpropRep common2.IPropRepository, tUnitProduceRep common2.IUnitProduceRepository) {
 //	chain.tempdbunitRep = tunitRep
 //	chain.tempUtxoRep = tutxoRep
@@ -139,14 +140,12 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 //	chain.tempPropRep = tpropRep
 //	chain.tempUnitProduceRep = tUnitProduceRep
 //}
-func (chain *MemDag) GetHeaderByHash(hash common.Hash) (*modules.Header, error){
+func (chain *MemDag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return chain.tempdbunitRep.GetHeaderByHash(hash)
 }
-func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error){
+func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	return chain.tempdbunitRep.GetHeaderByNumber(number)
 }
-
-
 
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error {
 	chain.lock.Lock()
@@ -258,7 +257,7 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 
 //清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
 func (chain *MemDag) rebuildTempdb() {
-	log.Debugf("MemDag[%s] clear tempdb and rebuild data",chain.token.String())
+	log.Debugf("MemDag[%s] clear tempdb and rebuild data", chain.token.String())
 	chain.tempdb.Clear()
 	unstableUnits := chain.getMainChainUnits()
 	for _, unit := range unstableUnits {
@@ -351,7 +350,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			chain.setLastMainchainUnit(unit)
 			//update txpool's tx status to pending
 			if len(unit.Txs) > 0 {
-				log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
+				//log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
 				txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
 			}
 			//增加了单元后检查是否满足稳定单元的条件

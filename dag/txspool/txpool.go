@@ -600,7 +600,9 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 
 	// 计算交易费和优先级
-	tx.TxFee, _ = pool.GetTxFee(tx.Tx)
+	if tx.TxFee == nil {
+		tx.TxFee, _ = pool.GetTxFee(tx.Tx)
+	}
 	tx.Priority_lvl = tx.GetPriorityLvl()
 
 	utxoview, err := pool.FetchInputUtxos(tx.Tx)
@@ -820,7 +822,10 @@ func (pool *TxPool) addSequenTx(p_tx *modules.TxPoolTransaction) error {
 	}
 
 	// 计算交易费和优先级
-	p_tx.TxFee, _ = pool.GetTxFee(p_tx.Tx)
+	if p_tx.TxFee == nil {
+		p_tx.TxFee, _ = pool.GetTxFee(p_tx.Tx)
+	}
+
 	p_tx.Priority_lvl = p_tx.GetPriorityLvl()
 
 	utxoview, err := pool.FetchInputUtxos(p_tx.Tx)
@@ -935,7 +940,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
-	log.Debugf("Try to add tx[%s] to txpool local:%t", tx.Tx.Hash().String(), local)
+	//log.Debugf("Try to add tx[%s] to txpool local:%t", tx.Tx.Hash().String(), local)
 	// Try to inject the transaction and update any state
 	replace, err := pool.add(tx, local)
 	if err != nil {

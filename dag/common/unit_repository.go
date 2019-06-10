@@ -501,7 +501,6 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 
 	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
-	log.Infof("core.DeriveSha cost time %s", time.Since(begin))
 	// step9. generate genesis unit header
 	header.TxsIllegal = illegalTxs
 	header.TxRoot = root
@@ -1404,7 +1403,7 @@ func (rep *UnitRepository) CreateCoinbase(ads []*modules.Addition, height uint64
 	}
 }
 func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*modules.Transaction, uint64, error) {
-	log.Debug("create a statedb record to write mediator and jury income")
+	//log.Debug("create a statedb record to write mediator and jury income")
 	totalIncome := uint64(0)
 	payload := modules.ContractInvokePayload{}
 	contractId := syscontract.CoinbaseContractAddress.Bytes()
