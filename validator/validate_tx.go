@@ -65,24 +65,24 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 	for msgIdx, msg := range tx.TxMessages {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
-			return TxValidationCode_UNKNOWN_TX_TYPE, nil
+			return TxValidationCode_UNKNOWN_TX_TYPE, txFee
 		}
 		// validate tx size
 		if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
 			log.Debug("Tx size is to big.")
-			return TxValidationCode_NOT_COMPARE_SIZE, nil
+			return TxValidationCode_NOT_COMPARE_SIZE, txFee
 		}
 
 		// validate transaction signature
 		if validateTxSignature(tx) == false {
-			return TxValidationCode_BAD_CREATOR_SIGNATURE, nil
+			return TxValidationCode_BAD_CREATOR_SIGNATURE, txFee
 		}
 		// validate every type payload
 		switch msg.App {
 		case modules.APP_PAYMENT:
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
-				return TxValidationCode_INVALID_PAYMMENTLOAD, nil
+				return TxValidationCode_INVALID_PAYMMENTLOAD, txFee
 			}
 			//如果是合约执行结果中的Payment，只有是完整交易的情况下才检查解锁脚本
 			if msgIdx > requestMsgIndex && !isFullTx {
@@ -93,71 +93,71 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 					if validateCode == TxValidationCode_ORPHAN {
 						isOrphanTx = true
 					} else {
-						return validateCode, nil
+						return validateCode, txFee
 					}
 				}
 				//检查一个Tx是否包含了发币的Payment，如果有，那么检查是否是系统合约调用的结果
 				if msgIdx != 0 && payment.IsCoinbase() && !isSysContractCall {
 					log.Error("Invalid Coinbase message")
-					return TxValidationCode_INVALID_COINBASE, nil
+					return TxValidationCode_INVALID_COINBASE, txFee
 				}
 			}
 		case modules.APP_CONTRACT_TPL:
 			payload, _ := msg.Payload.(*modules.ContractTplPayload)
 			validateCode := validate.validateContractTplPayload(payload)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode, nil
+				return validateCode, txFee
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			payload, _ := msg.Payload.(*modules.ContractDeployPayload)
 			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode, nil
+				return validateCode, txFee
 			}
 		case modules.APP_CONTRACT_INVOKE:
 			payload, _ := msg.Payload.(*modules.ContractInvokePayload)
 			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode, nil
+				return validateCode, txFee
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
-				return TxValidationCode_INVALID_MSG, nil
+				return TxValidationCode_INVALID_MSG, txFee
 			}
 			hasRequestMsg = true
 			requestMsgIndex = msgIdx
 			payload, _ := msg.Payload.(*modules.ContractInstallRequestPayload)
 			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
-				return TxValidationCode_INVALID_CONTRACT, nil
+				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
-				return TxValidationCode_INVALID_MSG, nil
+				return TxValidationCode_INVALID_MSG, txFee
 			}
 			hasRequestMsg = true
 			requestMsgIndex = msgIdx
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
 			if len(payload.TplId) == 0 || payload.Timeout < 0 {
-				return TxValidationCode_INVALID_CONTRACT, nil
+				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 
 			validateCode := validate.validateContractdeploy(payload.TplId)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode, nil
+				return validateCode, txFee
 			}
 
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
-				return TxValidationCode_INVALID_MSG, nil
+				return TxValidationCode_INVALID_MSG, txFee
 			}
 			hasRequestMsg = true
 			requestMsgIndex = msgIdx
 			payload, _ := msg.Payload.(*modules.ContractInvokeRequestPayload)
 			// 验证ContractId有效性
 			if len(payload.ContractId) <= 0 {
-				return TxValidationCode_INVALID_CONTRACT, nil
+				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 			contractId := payload.ContractId
 			if common.IsSystemContractAddress(contractId) {
@@ -166,25 +166,25 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			payload, _ := msg.Payload.(*modules.ContractStopRequestPayload)
 			if len(payload.ContractId) == 0 {
-				return TxValidationCode_INVALID_CONTRACT, nil
+				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 			// 验证ContractId有效性
 			if len(payload.ContractId) <= 0 {
-				return TxValidationCode_INVALID_CONTRACT, nil
+				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 			requestMsgIndex = msgIdx
 		case modules.APP_CONTRACT_STOP:
 			payload, _ := msg.Payload.(*modules.ContractStopPayload)
 			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode, nil
+				return validateCode, txFee
 			}
 		case modules.APP_SIGNATURE:
 			// 签名验证
 			payload, _ := msg.Payload.(*modules.SignaturePayload)
 			validateCode := validate.validateContractSignature(payload.Signatures[:], tx)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode, nil
+				return validateCode, txFee
 			}
 
 			//case modules.APP_CONFIG:
@@ -192,17 +192,17 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 			payload, _ := msg.Payload.(*modules.DataPayload)
 			validateCode := validate.validateDataPayload(payload)
 			if validateCode != TxValidationCode_VALID {
-				return validateCode, nil
+				return validateCode, txFee
 			}
 
 		case modules.APP_ACCOUNT_UPDATE:
 
 		default:
-			return TxValidationCode_UNKNOWN_TX_TYPE, nil
+			return TxValidationCode_UNKNOWN_TX_TYPE, txFee
 		}
 	}
 	if isOrphanTx {
-		return TxValidationCode_ORPHAN, nil
+		return TxValidationCode_ORPHAN, txFee
 	}
 	return TxValidationCode_VALID, txFee
 }

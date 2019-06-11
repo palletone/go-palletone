@@ -52,8 +52,12 @@ func ConvertTxPoolTx2PendingJson(tx *modules.TxPoolTransaction) *TxPoolPendingJs
 			amount += out.Value
 		}
 	}
-	txfee := tx.TxFee.Amount
-	return &TxPoolPendingJson{TxHash: tx.Tx.Hash().String(), CreationDate: tx.CreationDate, Fee: txfee, Asset: tx.TxFee.Asset.String(), Amount: amount}
+	txfee := tx.GetTxFee().Uint64()
+	var asset_str string
+	if tx.TxFee != nil {
+		asset_str = tx.TxFee[0].Asset.String()
+	}
+	return &TxPoolPendingJson{TxHash: tx.Tx.Hash().String(), CreationDate: tx.CreationDate, Fee: txfee, Asset: asset_str, Amount: amount}
 }
 
 func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPoolTxJson {

@@ -264,7 +264,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					templateId: reqPay.TplId,
 					txid:       tx.RequestHash().String(), //  hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes()),
 					args:       reqPay.Args,
-					timeout:    time.Duration(reqPay.Timeout)*time.Second,
+					timeout:    time.Duration(reqPay.Timeout) * time.Second,
 				}
 				deployResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
@@ -292,7 +292,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					deployId: reqPay.ContractId,
 					args:     reqPay.Args,
 					txid:     tx.RequestHash().String(),
-					timeout:  time.Duration(reqPay.Timeout)*time.Second,
+					timeout:  time.Duration(reqPay.Timeout) * time.Second,
 				}
 
 				fullArgs, err := handleMsg0(tx, dag, req.args)
@@ -509,7 +509,7 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 }
 
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
-	err := p.validator.ValidateTx(tx,  false)
+	_, err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
 	}
