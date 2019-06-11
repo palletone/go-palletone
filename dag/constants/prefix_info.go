@@ -22,7 +22,7 @@ package constants
 // prefix info
 //各个Entity的Prefix应该都是2小写字母，不可重复
 var (
-	UNIT_PREFIX               = []byte("ut") // unit_prefix + mci + hash
+	//UNIT_PREFIX               = []byte("ut") // unit_prefix + mci + hash
 	HEADER_PREFIX             = []byte("uh") // prefix + hash
 	HEADER_HEIGTH_PREFIX      = []byte("hh") // prefix + height:hash
 	UNIT_HASH_NUMBER_PREFIX   = []byte("hn")
