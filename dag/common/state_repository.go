@@ -34,8 +34,7 @@ import (
 
 type IStateRepository interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
-	GetConfig(name string) ([]byte, *modules.StateVersion, error)
-	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
+	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
@@ -72,9 +71,12 @@ type IStateRepository interface {
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 
-	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	RefreshSysParameters()
 	GetSysParamWithoutVote() (map[string]string, error)
+	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
+	SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error
+	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 }
 
 type StateRepository struct {
@@ -95,6 +97,10 @@ func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *
 	return rep.statedb.GetContractState(id, field)
 }
 
+func (rep *StateRepository) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
+	return rep.statedb.SaveSysConfig(key, val, ver)
+}
+
 // todo albert·gou
 func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 	return rep.statedb.GetSysConfig(name)
@@ -106,6 +112,10 @@ func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersio
 
 func (rep *StateRepository) GetSysParamWithoutVote() (map[string]string, error) {
 	return rep.statedb.GetSysParamWithoutVote()
+}
+
+func (rep *StateRepository) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
+	return rep.statedb.GetSysParamsWithVotes()
 }
 
 func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
