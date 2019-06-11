@@ -325,7 +325,7 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 	}
 	ele := &elector{
 		num:      uint(p.electionNum),
-		total:    20, // uint64(p.dag.JuryCount()), // 100 todo dynamic acquisition
+		total:    uint64(p.dag.JuryCount()), // 100 todo dynamic acquisition
 		addr:     account.Address,
 		password: account.Password,
 		ks:       p.ptn.GetKeyStore(),

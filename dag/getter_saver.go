@@ -227,7 +227,7 @@ func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
 }
 
 func (d *Dag) JuryCount() int {
-	//	return 100 //todo test
+	return 20 //todo test
 
 	juryList, err := d.unstableStateRep.GetJuryCandidateList()
 	if err != nil {
