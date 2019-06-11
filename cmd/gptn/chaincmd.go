@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	//"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/modules"
 	// "github.com/palletone/go-palletone/dag/txspool"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -164,7 +164,10 @@ func initGenesis(ctx *cli.Context) error {
 		utils.Fatalf("Failed to InitPropertyDB: %v", err)
 		return err
 	}
-
-	log.Infof("gptn init success")
+	dv := new(modules.DataVersion)
+	dv.Name = "Gptn"
+	dv.Version = ctx.App.Version
+	dag.StoreDataVersion(dv)
+	log.Infof("gptn init success,version[%s]", dv.Version)
 	return nil
 }

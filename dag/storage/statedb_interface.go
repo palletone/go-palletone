@@ -88,7 +88,9 @@ type IStateDb interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
-
+	GetDataVersion() (*modules.DataVersion, error)
+	SaveDataVersion(dv *modules.DataVersion) error
+	
 	UpdateSysParams(ver *modules.StateVersion) error
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
@@ -98,4 +100,5 @@ type IStateDb interface {
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error
+
 }

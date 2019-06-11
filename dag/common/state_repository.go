@@ -70,6 +70,8 @@ type IStateRepository interface {
 	//获得一个合约的陪审团列表
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
+	GetDataVersion() (*modules.DataVersion, error)
+	StoreDataVersion(dv *modules.DataVersion) error
 
 	RefreshSysParameters()
 	GetSysParamWithoutVote() (map[string]string, error)
@@ -261,4 +263,11 @@ func (rep *StateRepository) RefreshSysParameters() {
 	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+}
+
+func (rep *StateRepository) GetDataVersion() (*modules.DataVersion, error) {
+	return rep.statedb.GetDataVersion()
+}
+func (rep *StateRepository) StoreDataVersion(dv *modules.DataVersion) error {
+	return rep.statedb.SaveDataVersion(dv)
 }

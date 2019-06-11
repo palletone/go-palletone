@@ -1432,3 +1432,10 @@ func (d *Dag) Close() {
 func (dag *Dag) MediatorVotedResults() map[string]uint64 {
 	return dag.unstableUnitProduceRep.MediatorVotedResults()
 }
+
+func (dag *Dag) StoreDataVersion(dv *modules.DataVersion) error {
+	return dag.stableStateRep.StoreDataVersion(dv)
+}
+func (dag *Dag) GetDataVersion() (*modules.DataVersion, error) {
+	return dag.stableStateRep.GetDataVersion()
+}
