@@ -22,6 +22,8 @@ package validator
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
@@ -355,6 +357,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
 			}
+			log.DebugDynamic(func() string {
+				data, _ := json.Marshal(income)
+				return "Coinbase History reward:" + string(data)
+			})
+			log.Debugf("Add reward %d%s to %s", v.Amount, v.Asset.String(), v.Addr.String())
 			newValue := addIncome(income, v.Amount, v.Asset)
 			rewards[v.Addr] = newValue
 		}
@@ -408,13 +415,14 @@ func rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs
 }
 func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
+	empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
 	for addr, _ := range rewards {
 		addrKey := constants.RewardAddressPrefix + addr.String()
 		for _, w := range writeset {
-			if !w.IsDelete {
-				return false
-			}
-			if w.Key == addrKey {
+			// if !w.IsDelete {
+			// 	return false
+			// }
+			if w.Key == addrKey && bytes.Equal(w.Value, empty) {
 				comparedCount++
 			}
 		}
@@ -432,6 +440,7 @@ func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, 
 		if rewardExist(addr, reward, writeset) {
 			comparedCount++
 		} else {
+
 			return false
 		}
 
@@ -453,6 +462,10 @@ func rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modul
 			for _, a := range aa {
 				for _, b := range dbAa {
 					if a.Asset.Equal(b.Asset) && a.Amount != b.Amount {
+						log.DebugDynamic(func() string {
+							data, _ := json.Marshal(dbAa)
+							return fmt.Sprintf("Coinbase rewardExist false, a[%d] b[%d], db writeset:%s", a.Amount, b.Amount, string(data))
+						})
 						return false
 					}
 				}

@@ -100,7 +100,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		if hashMode {
 			origin, _ = pm.dag.GetHeaderByHash(query.Origin.Hash)
 		} else {
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number.Index)
+			log.Debug("ProtocolManager GetBlockHeadersMsg", "assetid", query.Origin.Number.AssetID, " index", query.Origin.Number.Index)
 			origin, _ = pm.dag.GetHeaderByNumber(&query.Origin.Number)
 		}
 

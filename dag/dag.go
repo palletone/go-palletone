@@ -181,8 +181,8 @@ func (d *Dag) GetUnstableUnits() []*modules.Unit {
 }
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	uHeader, err := d.unstableUnitRep.GetHeaderByHash(hash)
-	if errors.IsNotFoundError(err){
-		uHeader,err=d.getHeaderByHashFromPMemDag(hash)
+	if errors.IsNotFoundError(err) {
+		uHeader, err = d.getHeaderByHashFromPMemDag(hash)
 	}
 	if err != nil {
 		log.Debug("GetHeaderByHash failed", "error", err.Error())
@@ -190,31 +190,31 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	}
 	return uHeader, nil
 }
-func (d *Dag) getHeaderByHashFromPMemDag(hash common.Hash) (*modules.Header, error){
-	for _,memdag:=range d.PartitionMemDag{
-		h,e:= memdag.GetHeaderByHash(hash)
-		if e==nil{
-			return h,e
+func (d *Dag) getHeaderByHashFromPMemDag(hash common.Hash) (*modules.Header, error) {
+	for _, memdag := range d.PartitionMemDag {
+		h, e := memdag.GetHeaderByHash(hash)
+		if e == nil {
+			return h, e
 		}
 	}
-	return nil,errors.ErrNotFound
+	return nil, errors.ErrNotFound
 }
-func (d *Dag) getHeaderByNumberFromPMemDag(number *modules.ChainIndex) (*modules.Header, error){
-	for _,memdag:=range d.PartitionMemDag{
-		h,e:= memdag.GetHeaderByNumber(number)
-		if e==nil{
-			return h,e
+func (d *Dag) getHeaderByNumberFromPMemDag(number *modules.ChainIndex) (*modules.Header, error) {
+	for _, memdag := range d.PartitionMemDag {
+		h, e := memdag.GetHeaderByNumber(number)
+		if e == nil {
+			return h, e
 		}
 	}
-	return nil,errors.ErrNotFound
+	return nil, errors.ErrNotFound
 }
 func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	uHeader, err := d.unstableUnitRep.GetHeaderByNumber(number)
-	if errors.IsNotFoundError(err){
-		uHeader,err=d.getHeaderByNumberFromPMemDag(number)
+	if errors.IsNotFoundError(err) {
+		uHeader, err = d.getHeaderByNumberFromPMemDag(number)
 	}
 	if err != nil {
-		log.Info("GetHeaderByNumber failed ", "error:", err, "hash", number.String())
+		log.Info("GetHeaderByNumber failed ", "error:", err, "number", number.String())
 		return nil, err
 	}
 	return uHeader, nil
@@ -1313,14 +1313,14 @@ func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 	for _, header := range headers {
 		log.Debug("===InsertLightHeader===", "header index:", header.Index(), "assetid", header.Number.AssetID)
 	}
-	count,err:= d.InsertHeaderDag(headers)
+	count, err := d.InsertHeaderDag(headers)
 	//Debug code:
 	//if headers[len(headers)-1].Number.Index==uint64(310) {
 	//	hash := common.HexToHash("c9a364d0330c463942f101f98b9e07f3f48a651152c1b28f243a240eae7cd87e")
 	//	h, e := d.GetHeaderByHash(hash)
 	//	log.Debugf("310 header:%s,err:%v", h.Hash().String(), e)
 	//}
-	return count,err
+	return count, err
 }
 
 //All leaf nodes for dag downloader.

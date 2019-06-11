@@ -249,13 +249,13 @@ func (pm *ProtocolManager) pullSync(peer *peer) {
 	//	return
 	//}
 	lheader := pm.dag.CurrentHeader(modules.PTNCOIN)
-	hash, number := peer.HeadAndNumber(modules.PTNCOIN)
-	if lheader.Number.Index >= number.Index {
-		log.Debug("Cors PalletOne ProtocolManager pullSync is not need sync", "local index", lheader.Number.Index, "peer index", number.Index)
-		return
-	}
+	//hash, number := peer.HeadAndNumber(modules.PTNCOIN)
+	//if lheader.Number.Index >= number.Index {
+	//	log.Debug("Cors PalletOne ProtocolManager pullSync is not need sync", "local index", lheader.Number.Index, "peer index", number.Index)
+	//	return
+	//}
 
-	if err := pm.downloader.Synchronise(peer.id, hash, number.Index, downloader.LightSync, modules.PTNCOIN); err != nil {
+	if err := pm.downloader.Synchronise(peer.id, lheader.Hash(), lheader.Number.Index, downloader.LightSync, modules.PTNCOIN); err != nil {
 		log.Debug("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}

@@ -143,7 +143,7 @@ func (p *Processor) electionEventIsProcess(event *ElectionEvent, addr *common.Ad
 		return reqId, true
 	}
 	//jury node
-	if p.isLocalActiveJury(*addr) {
+	if p.isLocalActiveJury(*addr) {//localHaveActiveJury()
 		return reqId, true
 	}
 	return reqId, false
@@ -325,7 +325,7 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 	}
 	ele := &elector{
 		num:      uint(p.electionNum),
-		total:    100, // uint64(p.dag.JuryCount()), // 100 todo dynamic acquisition
+		total:    uint64(p.dag.JuryCount()), // 100 todo dynamic acquisition
 		addr:     account.Address,
 		password: account.Password,
 		ks:       p.ptn.GetKeyStore(),
