@@ -124,14 +124,14 @@ func (d *Dag) GetMediator(add common.Address) *core.Mediator {
 	return med
 }
 
-func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	d.unstableStateRep.StoreMediator(med)
-	return
-}
+//func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
+//	if !onlyStore {
+//		// todo 更新缓存
+//	}
+//
+//	d.unstableStateRep.StoreMediator(med)
+//	return
+//}
 
 func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
 	return dag.unstablePropRep.GetSlotAtTime(when)

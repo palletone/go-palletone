@@ -21,6 +21,8 @@
 package common
 
 import (
+	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -319,67 +321,103 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 	return
 }
 
-//func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion) error {
-//	//基金会单独修改的
-//	var err error
-//	modifies, err := dag.stateRep.GetSysParamWithoutVote()
-//	if err != nil {
-//		return err
-//	}
-//	//基金会发起投票的
-//	info, err := dag.stateRep.GetSysParamsWithVotes()
-//	if err != nil {
-//		return err
-//	}
-//	if modifies == nil && info == nil {
-//		return nil
-//	}
-//	//获取当前的version
-//	if len(modifies) > 0 {
-//		for k, v := range modifies {
-//			err = statedb.SaveSysConfig(k, []byte(v), version)
-//			if err != nil {
-//				return err
-//			}
-//		}
-//		//将基金会当前单独修改的重置为nil
-//		err = statedb.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
-//		if err != nil {
-//			return err
-//		}
-//	}
-//	if info == nil {
-//		return nil
-//	}
-//	//foundAddr, _, err := statedb.GetSysConfig(modules.FoundationAddress)
-//	//if err != nil {
-//	//	return err
-//	//}
-//	//if info.CreateAddr != string(foundAddr) {
-//	//	return fmt.Errorf("only foundation can call this function")
-//	//}
-//	if !info.IsVoteEnd {
-//		return nil
-//	}
-//	for _, v1 := range info.SupportResults {
-//		for _, v2 := range v1.VoteResults {
-//			//TODO
-//			if v2.Num >= info.LeastNum {
-//				err = statedb.SaveSysConfig(v1.TopicTitle, []byte(v2.SelectOption), version)
-//				if err != nil {
-//					return err
-//				}
-//				break
-//			}
-//		}
-//	}
-//	//将基金会当前投票修改的重置为nil
-//	err = statedb.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
+func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion) error {
+	//基金会单独修改的
+	modifies, err := dag.stateRep.GetSysParamWithoutVote()
+	if err != nil {
+		return err
+	}
+
+	//基金会发起投票的
+	info, err := dag.stateRep.GetSysParamsWithVotes()
+	if err != nil {
+		return err
+	}
+
+	if modifies == nil && info == nil {
+		return nil
+	}
+
+	// 获取当前的链参数
+	gp, err := dag.propRep.RetrieveGlobalProp()
+	if err != nil {
+		return err
+	}
+
+	if len(modifies) > 0 {
+		for k, v := range modifies {
+			err = updateChainParameter(&gp.ChainParameters, k, v)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if info != nil && info.IsVoteEnd {
+		for _, v1 := range info.SupportResults {
+			for _, v2 := range v1.VoteResults {
+				if v2.Num >= info.LeastNum {
+					err = updateChainParameter(&gp.ChainParameters, v1.TopicTitle, v2.SelectOption)
+					if err != nil {
+						return err
+					}
+					break
+				}
+			}
+		}
+	}
+
+	err = dag.propRep.StoreGlobalProp(gp)
+	if err != nil {
+		return err
+	}
+
+	//将基金会当前单独修改的重置为nil
+	err = dag.stateRep.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
+	if err != nil {
+		return err
+	}
+
+	//将基金会当前投票修改的重置为nil
+	err = dag.stateRep.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func updateChainParameter(cp *core.ChainParameters, field, value string) error {
+	vv := reflect.ValueOf(cp)
+
+	vn := vv.FieldByName(field)
+	if !vn.IsValid() {
+		return fmt.Errorf("no such field: %v", field)
+	}
+
+	switch vn.Kind() {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		uv, err := strconv.ParseUint(value, 10, 64)
+		if err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
+		vn.SetUint(uv)
+	case reflect.String:
+		vn.SetString(value)
+	case reflect.Float64, reflect.Float32:
+		fv, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
+		vn.SetFloat(fv)
+	default:
+		fmt.Errorf("unknown type: %v", vn.Type().String())
+	}
+
+	return nil
+}
 
 // 获取账户相关投票数据的直方图
 func (dag *UnitProduceRepository) performAccountMaintenance() {

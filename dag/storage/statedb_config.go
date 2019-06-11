@@ -37,8 +37,10 @@ func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.State
 	id := syscontract.SysConfigContractAddress.Bytes()
 	err := saveContractState(statedb.db, id, key, val, ver)
 	if err != nil {
+		log.Error(err.Error())
 		return err
 	}
+
 	return nil
 }
 
@@ -110,14 +112,16 @@ func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
 	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithVote)
 	if err != nil {
+		log.Error(err.Error())
 		return nil, err
 	}
 	info := &modules.SysTokenIDInfo{}
 	if val == nil {
 		return nil, err
 	} else if len(val) > 0 {
-		err := json.Unmarshal(val, info)
+		err = json.Unmarshal(val, info)
 		if err != nil {
+			log.Error(err.Error())
 			return nil, err
 		}
 		return info, nil
