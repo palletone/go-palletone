@@ -449,20 +449,6 @@ func (mr *MockIDagMockRecorder) GetGenesisUnit() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGenesisUnit", reflect.TypeOf((*MockIDag)(nil).GetGenesisUnit))
 }
 
-// GetConfig mocks base method
-func (m *MockIDag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	ret := m.ctrl.Call(m, "GetConfig", name)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(*modules.StateVersion)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetConfig indicates an expected call of GetConfig
-func (mr *MockIDagMockRecorder) GetConfig(name interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockIDag)(nil).GetConfig), name)
-}
-
 // GetContractState mocks base method
 func (m *MockIDag) GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error) {
 	ret := m.ctrl.Call(m, "GetContractState", contractid, field)
@@ -1364,4 +1350,17 @@ func (m *MockIDag) GetImmutableChainParameters() *core.ImmutableChainParameters 
 // GetImmutableChainParameters indicates an expected call of GetImmutableChainParameters
 func (mr *MockIDagMockRecorder) GetImmutableChainParameters() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImmutableChainParameters", reflect.TypeOf((*MockIDag)(nil).GetImmutableChainParameters))
+}
+
+// GetConfig mocks base method
+func (m *MockIDag) GetConfig(name string) ([]byte, error) {
+	ret := m.ctrl.Call(m, "GetConfig", name)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfig indicates an expected call of GetConfig
+func (mr *MockIDagMockRecorder) GetConfig(name interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockIDag)(nil).GetConfig), name)
 }

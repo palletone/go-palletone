@@ -95,6 +95,7 @@ func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *
 	return rep.statedb.GetContractState(id, field)
 }
 
+// todo albert·gou
 func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 	return rep.statedb.GetSysConfig(name)
 }
@@ -233,6 +234,7 @@ func (rep *StateRepository) GetAccountVotedMediators(addr common.Address) map[st
 	return rep.statedb.GetAccountVotedMediators(addr)
 }
 
+// todo albert·gou
 func (rep *StateRepository) RefreshSysParameters() {
 	deposit, _, _ := rep.GetConfig("DepositRate")
 	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)

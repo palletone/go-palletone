@@ -403,6 +403,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	return isActiveMediatorsChanged(gp)
 }
 
+// todo albert·gou
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	// 获取之前的设置
 	activeMediatorStr, _, _ := d.stateRep.GetConfig(modules.DesiredActiveMediatorCount)

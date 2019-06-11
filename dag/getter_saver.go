@@ -193,12 +193,17 @@ func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
 
 func (d *Dag) GetConfig(name string) ([]byte, error) {
 	chainParameters := *d.GetChainParameters()
-	tt := reflect.TypeOf(chainParameters)
 	vv := reflect.ValueOf(chainParameters)
-	for i := 0; i < tt.NumField(); i++ {
-		if tt.Field(i).Name == name {
-			return []byte(vv.Field(i).String()), nil
-		}
+	//tt := reflect.TypeOf(chainParameters)
+	//for i := 0; i < tt.NumField(); i++ {
+	//	if tt.Field(i).Name == name {
+	//		return []byte(vv.Field(i).String()), nil
+	//	}
+	//}
+
+	vn := vv.FieldByName(name)
+	if vn.IsValid() {
+		return []byte(vn.String()), nil
 	}
 
 	return nil, fmt.Errorf("no such field: %v", name)
