@@ -516,16 +516,17 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 	}
 
 	txPTx := &modules.TxPoolTransaction{
-		Tx: &tx,
-		TxFee: &modules.AmountAsset{
-			Amount: amount,
-			Asset: &modules.Asset{
-				AssetId: aid,
-			},
-		},
+		Tx:    &tx,
+		TxFee: make([]*modules.Addition, 0),
 	}
+	txPTx.TxFee = append(txPTx.TxFee, &modules.Addition{
+		Amount: amount,
+		Asset: &modules.Asset{
+			AssetId: aid,
+		}})
 	return txPTx
 }
+
 //
 //func TestComputeTxFees(t *testing.T) {
 //	m, _ := common.StringToAddress("P1K7JsRvDc5THJe6TrtfdRNxp6ZkNiboy9z")

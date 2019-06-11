@@ -233,9 +233,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 	pool_tx := new(modules.TxPoolTransaction)
 
 	for i, tx := range txs {
-		p_tx := TxtoTxpoolTx(pool, tx)
-		p_tx.GetTxFee()
-		p_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
+		p_tx := TxtoTxpoolTx(tx)
+		//p_tx.GetTxFee()
+		//p_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
 		txpool_txs = append(txpool_txs, p_tx)
 		if i == len(txs)-1 {
 			pool_tx = p_tx

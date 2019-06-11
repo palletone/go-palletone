@@ -114,12 +114,13 @@ type TxPoolTransaction struct {
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool         // will remove
-	TxFee        *AmountAsset `json:"tx_fee"`
-	Index        uint64       `json:"index"` // index 是该Unit位置。
-	Extra        []byte
-	Tag          uint64
-	Expiration   time.Time
+	Discarded    bool // will remove
+	//TxFee        *AmountAsset `json:"tx_fee"`
+	TxFee      []*Addition `json:"tx_fee"`
+	Index      uint64      `json:"index"` // index 是该Unit位置。
+	Extra      []byte
+	Tag        uint64
+	Expiration time.Time
 	//该Tx依赖于哪些TxId作为先决条件
 	DependOnTxs []common.Hash
 }
@@ -168,10 +169,12 @@ func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
 func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 	var fee uint64
 	if tx.TxFee != nil {
-		fee = tx.TxFee.Amount
+		for _, ad := range tx.TxFee {
+			fee += ad.Amount
+		}
 	} else {
 		fee = 20 // 20dao
-		tx.TxFee = &AmountAsset{Amount: 20, Asset: tx.Tx.Asset()}
+		//tx.TxFee = &AmountAsset{Amount: 20, Asset: tx.Tx.Asset()}
 	}
 	return big.NewInt(int64(fee))
 }
@@ -408,6 +411,7 @@ type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]commo
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
+	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*PaymentPayload)
 		if !ok {
@@ -440,7 +444,7 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*A
 
 				interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
 				if interest > 0 {
-					log.Debugf("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
+					log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
 					inAmount += interest
 				}
 			}

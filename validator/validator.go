@@ -166,20 +166,16 @@ return all transactions' fee
 //	return NewValidateError(code)
 //}
 
-func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) error {
-	code, _ := validate.validateTx(tx, isFullTx, time.Now().Unix())
+func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, error) {
+	code, addition := validate.validateTx(tx, isFullTx, time.Now().Unix())
 	if code == TxValidationCode_VALID {
-		return nil
+		return addition, nil
 	}
 
 	log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
 		tx.Hash().String(), validationCode_name[int32(code)])
-	//log.DebugDynamic(func() string {
-	//	txj, _ := json.Marshal(tx)
-	//	return string(txj)
-	//})
 
-	return NewValidateError(code)
+	return addition, NewValidateError(code)
 }
 
 // todo
