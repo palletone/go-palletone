@@ -63,6 +63,7 @@ var (
 	GLOBALPROPERTY_KEY         = []byte("gpGlobalProperty")
 	DYNAMIC_GLOBALPROPERTY_KEY = []byte("dpDynamicGlobalProperty")
 	MEDIATOR_SCHEDULE_KEY      = []byte("msMediatorSchedule")
+	DATA_VERSION_KEY           = []byte("gptnversion")
 
 	//filehash
 	IDX_MAIN_DATA_TXID  = []byte("md") //Old value: mda

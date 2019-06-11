@@ -75,6 +75,8 @@ type IStateRepository interface {
 	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	RefreshSysParameters()
 	GetSysParamWithoutVote() (map[string]string, error)
+	GetDataVersion() (*modules.DataVersion, error)
+	StoreDataVersion(dv *modules.DataVersion) error
 }
 
 type StateRepository struct {
@@ -249,4 +251,11 @@ func (rep *StateRepository) RefreshSysParameters() {
 	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+}
+
+func (rep *StateRepository) GetDataVersion() (*modules.DataVersion, error) {
+	return rep.statedb.GetDataVersion()
+}
+func (rep *StateRepository) StoreDataVersion(dv *modules.DataVersion) error {
+	return rep.statedb.SaveDataVersion(dv)
 }

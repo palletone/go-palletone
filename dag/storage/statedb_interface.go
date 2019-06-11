@@ -96,4 +96,6 @@ type IStateDb interface {
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 	GetSysParamWithoutVote() (map[string]string, error)
+	GetDataVersion() (*modules.DataVersion, error)
+	SaveDataVersion(dv *modules.DataVersion) error
 }
