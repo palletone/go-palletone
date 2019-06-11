@@ -516,32 +516,53 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 	request := &Transaction{}
 	request.CertId = tx.CertId
 	for _, msg := range tx.TxMessages {
-		switch {
-		case msg.App < APP_CONTRACT_TPL_REQUEST:
+		if msg.App.IsRequest() {
+
+			if msg.App == APP_CONTRACT_TPL_REQUEST {
+				payload := new(ContractInstallRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+
+			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
+				payload := new(ContractDeployRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+				payload := new(ContractInvokeRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+
+			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
+				payload := new(ContractStopRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			}
+			return request
+		} else {
 			if msg.App == APP_PAYMENT {
 				payload := new(PaymentPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_TPL {
-				payload := new(ContractTplPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_DEPLOY {
-				payload := new(ContractDeployPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_INVOKE {
-				payload := new(ContractInvokePayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_STOP {
-				payload := new(ContractStopPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_SIGNATURE {
-				payload := new(SignaturePayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_CONTRACT_TPL {
+				// 	payload := new(ContractTplPayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_CONTRACT_DEPLOY {
+				// 	payload := new(ContractDeployPayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_CONTRACT_INVOKE {
+				// 	payload := new(ContractInvokePayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_CONTRACT_STOP {
+				// 	payload := new(ContractStopPayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_SIGNATURE {
+				// 	payload := new(SignaturePayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
 				//} else if msg.App == APP_CONFIG {
 				//	payload := new(ConfigPayload)
 				//	obj.DeepCopy(payload, msg.Payload)
@@ -554,39 +575,12 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(AccountStateUpdatePayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			}
-
-		case msg.App >= APP_CONTRACT_TPL_REQUEST, msg.App <= APP_CONTRACT_STOP_REQUEST:
-			if msg.App == APP_CONTRACT_TPL_REQUEST {
-				payload := new(ContractInstallRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-				goto LOOP
-			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
-				payload := new(ContractDeployRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-				//break
-				goto LOOP
-			} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
-				payload := new(ContractInvokeRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-				goto LOOP
-			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
-				payload := new(ContractStopRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-				goto LOOP
-			}
-		default:
-			{
-				log.Debug(fmt.Sprintf("GetRequestTx don't support appcode:%d", int(msg.App)))
+			} else {
+				log.Error("Invalid tx message")
+				return nil
 			}
 		}
 	}
-LOOP:
-	fmt.Println("goto loop.")
 	return request
 }
 
