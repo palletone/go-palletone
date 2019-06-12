@@ -125,35 +125,14 @@ func processAddressMethodETH(chaincodeID string, outChainAddr *pb.OutChainAddres
 		return ethAdaptor.CreateMultiSigAddress(&createMultiSigAddressParams)
 
 	case "GetJuryETHAddr":
-		var getJuryAddressParams GetJuryAddressParams
-		err := json.Unmarshal(outChainAddr.Params, &getJuryAddressParams)
-		if err != nil {
-			return "", fmt.Errorf("GetJuryETHAddr params error : %s", err.Error())
-		}
-		log.Debug(modName, "GetJuryETHAddr PublicKeys ==== ==== ", getJuryAddressParams.Addresses)
-
-		var addrArray []string
-		needJuryAddresses := getJuryAddressParams.N - len(getJuryAddressParams.Addresses)
-		if needJuryAddresses > 0 {
-			addresses, err := ClolletJuryETHAddressesTest(chaincodeID)
-			if err != nil {
-				return "", err
-			}
-			if len(addresses) == 0 || needJuryAddresses > len(addresses) {
-				return "", errors.New("Collect Jury Pubkeys error.")
-			}
-			for i := 0; i < needJuryAddresses; i++ {
-				addrArray = append(addrArray, addresses[i])
-			}
-		} else {
-			return "", errors.New("params N error or Jury Addresses not be reserved.")
-		}
-
-		addrArrayJson, err := json.Marshal(addrArray)
+		addrs, err := ClolletJuryETHAddressesTest(chaincodeID)
 		if err != nil {
 			return "", err
 		}
-		return string(addrArrayJson), nil
+		if len(addrs) == 0 {
+			return "", errors.New("Collect Jury address error.")
+		}
+		return addrs[0], nil
 	}
 
 	return "", errors.New("Unspport out chain Address method.")
