@@ -564,8 +564,8 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.propRep.StoreDynGlobalProp(dgp)
 
-	time := time.Unix(int64(nextMaintenanceTime), 0)
-	log.Debugf("nextMaintenanceTime: %v", time.Format("2006-01-02 15:04:05"))
+	tt := time.Unix(int64(nextMaintenanceTime), 0)
+	log.Debugf("nextMaintenanceTime: %v", tt.Format("2006-01-02 15:04:05"))
 
 	return
 }

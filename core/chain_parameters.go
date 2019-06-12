@@ -78,7 +78,11 @@ type ChainParameters struct {
 	MaintenanceSkipSlots uint8 `json:"maintenanceSkipSlots"`
 
 	// 目前的操作交易费，current schedule of fees
-	CurrentFees FeeSchedule `json:"currentFees"`
+	MediatorCreateFee        uint64 `json:"mediatorCreateFee"`
+	AccountUpdateFee         uint64 `json:"accountUpdateFee"`
+	TransferPtnBaseFee       uint64 `json:"transferPtnBaseFee"`
+	TransferPtnPricePerKByte uint64 `json:"transferPtnPricePerKByte"`
+	//CurrentFees              FeeSchedule `json:"currentFees"`
 }
 
 func NewChainParams() ChainParameters {
@@ -109,35 +113,39 @@ func NewChainParams() ChainParameters {
 		MediatorInterval:          DefaultMediatorInterval,
 		MaintenanceInterval:       DefaultMaintenanceInterval,
 		MaintenanceSkipSlots:      DefaultMaintenanceSkipSlots,
-		CurrentFees:               newFeeSchedule(),
+		MediatorCreateFee:         DefaultMediatorCreateFee,
+		AccountUpdateFee:          DefaultAccountUpdateFee,
+		TransferPtnBaseFee:        DefaultTransferPtnBaseFee,
+		TransferPtnPricePerKByte:  DefaultTransferPtnPricePerKByte,
+		//CurrentFees:               newFeeSchedule(),
 	}
 }
 
 // 操作交易费计划
-type FeeSchedule struct {
-	// mediator 创建费用
-	MediatorCreateFee uint64                `json:"mediatorCreateFee"`
-	AccountUpdateFee  uint64                `json:"accountUpdateFee"`
-	TransferFee       TransferFeeParameters `json:"transferPtnFee"`
-}
+//type FeeSchedule struct {
+//	// mediator 创建费用
+//	MediatorCreateFee uint64                `json:"mediatorCreateFee"`
+//	AccountUpdateFee  uint64                `json:"accountUpdateFee"`
+//	TransferFee       TransferFeeParameters `json:"transferPtnFee"`
+//}
 
-func newFeeSchedule() (f FeeSchedule) {
-	f.MediatorCreateFee = DefaultMediatorCreateFee
-	f.AccountUpdateFee = DefaultAccountUpdateFee
-	f.TransferFee = newTransferFeeParameters()
-
-	return
-}
+//func newFeeSchedule() (f FeeSchedule) {
+//	f.MediatorCreateFee = DefaultMediatorCreateFee
+//	f.AccountUpdateFee = DefaultAccountUpdateFee
+//	f.TransferFee = newTransferFeeParameters()
+//
+//	return
+//}
 
 // 转账交易费
-type TransferFeeParameters struct {
-	BaseFee       uint64 `json:"baseFee"`
-	PricePerKByte uint64 `json:"pricePerKByte"`
-}
+//type TransferFeeParameters struct {
+//	BaseFee       uint64 `json:"baseFee"`
+//	PricePerKByte uint64 `json:"pricePerKByte"`
+//}
 
-func newTransferFeeParameters() (tf TransferFeeParameters) {
-	tf.BaseFee = DefaultTransferPtnBaseFee
-	tf.PricePerKByte = DefaultTransferPtnPricePerKByte
-
-	return
-}
+//func newTransferFeeParameters() (tf TransferFeeParameters) {
+//	tf.BaseFee = DefaultTransferPtnBaseFee
+//	tf.PricePerKByte = DefaultTransferPtnPricePerKByte
+//
+//	return
+//}

@@ -173,7 +173,7 @@ type IDag interface {
 
 	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	CurrentFeeSchedule() core.FeeSchedule
+	//CurrentFeeSchedule() core.FeeSchedule
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 
 	IsMediator(address common.Address) bool

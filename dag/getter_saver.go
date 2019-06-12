@@ -179,9 +179,9 @@ func (dag *Dag) IsMediator(address common.Address) bool {
 	return dag.unstableStateRep.IsMediator(address)
 }
 
-func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
-	return dag.GetGlobalProp().ChainParameters.CurrentFees
-}
+//func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
+//	return dag.GetGlobalProp().ChainParameters.CurrentFees
+//}
 
 func (dag *Dag) GetChainParameters() *core.ChainParameters {
 	return &dag.GetGlobalProp().ChainParameters

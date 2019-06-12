@@ -1208,18 +1208,6 @@ func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, txPool inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, txPool)
 }
 
-// CurrentFeeSchedule mocks base method
-func (m *MockIDag) CurrentFeeSchedule() core.FeeSchedule {
-	ret := m.ctrl.Call(m, "CurrentFeeSchedule")
-	ret0, _ := ret[0].(core.FeeSchedule)
-	return ret0
-}
-
-// CurrentFeeSchedule indicates an expected call of CurrentFeeSchedule
-func (mr *MockIDagMockRecorder) CurrentFeeSchedule() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentFeeSchedule", reflect.TypeOf((*MockIDag)(nil).CurrentFeeSchedule))
-}
-
 // GetDynGlobalProp mocks base method
 func (m *MockIDag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 	ret := m.ctrl.Call(m, "GetDynGlobalProp")
