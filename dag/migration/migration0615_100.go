@@ -32,10 +32,10 @@ type Migration0615_100 struct {
 	propdb  ptndb.Database
 }
 
-func (m *Migration0615_100) GetOldVersion() string {
+func (m *Migration0615_100) FromVersion() string {
 	return "0.6.15"
 }
-func (m *Migration0615_100) GetUpgradeVersion() string {
+func (m *Migration0615_100) ToVersion() string {
 	return "1.0.0"
 }
 func (m *Migration0615_100) ExecuteUpgrade() error {

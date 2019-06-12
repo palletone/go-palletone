@@ -257,6 +257,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	//	// some validity checks.
 	//	//only support mainnet
 	//	var params *chaincfg.Params
+        var ppscript []byte
 	for _, addramt := range c.Amounts {
 		encodedAddr := addramt.Address
 		ptnAmt := addramt.Amount
@@ -289,6 +290,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		}
 		// Create a new script which pays to the provided address.
 		pkScript := tokenengine.GenerateLockScript(addr)
+                ppscript = pkScript
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
 		if err != nil {
@@ -322,7 +324,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 			continue
 		}
 		for inputindex, _ := range payload.Inputs {
-			hashforsign, err := tokenengine.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex, inputindex, nil)
+			hashforsign, err := tokenengine.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex, inputindex, ppscript)
 			if err != nil {
 				return "", err
 			}
