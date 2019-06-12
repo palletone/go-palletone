@@ -25,9 +25,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -136,4 +138,24 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 	//	}
 	//}
 	return false
+}
+
+func (statedb *StateDb) GetDataVersion() (*modules.DataVersion, error) {
+	data, err := statedb.db.Get(constants.DATA_VERSION_KEY)
+	if err != nil {
+		return nil, err
+	}
+	data_version := new(modules.DataVersion)
+	if err := rlp.DecodeBytes(data, data_version); err != nil {
+		return nil, err
+	}
+	return data_version, nil
+}
+
+func (statedb *StateDb) SaveDataVersion(dv *modules.DataVersion) error {
+	data, err := rlp.EncodeToBytes(dv)
+	if err != nil {
+		return err
+	}
+	return statedb.db.Put(constants.DATA_VERSION_KEY, data)
 }

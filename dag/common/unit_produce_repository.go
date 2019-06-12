@@ -348,6 +348,7 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 		for k, v := range modifies {
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
+				log.Errorf(err.Error())
 				return err
 			}
 		}
@@ -359,6 +360,7 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 				if v2.Num >= info.LeastNum {
 					err = updateChainParameter(&gp.ChainParameters, v1.TopicTitle, v2.SelectOption)
 					if err != nil {
+						log.Errorf(err.Error())
 						return err
 					}
 					break
@@ -389,17 +391,14 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 
 func updateChainParameter(cp *core.ChainParameters, field, value string) error {
 	vv := reflect.ValueOf(cp)
-
 	vn := vv.FieldByName(field)
-	if !vn.IsValid() {
-		return fmt.Errorf("no such field: %v", field)
-	}
 
 	switch vn.Kind() {
+	case reflect.Invalid:
+		return fmt.Errorf("no such field: %v", field)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		uv, err := strconv.ParseUint(value, 10, 64)
 		if err != nil {
-			log.Errorf(err.Error())
 			return err
 		}
 		vn.SetUint(uv)
@@ -408,12 +407,11 @@ func updateChainParameter(cp *core.ChainParameters, field, value string) error {
 	case reflect.Float64, reflect.Float32:
 		fv, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			log.Errorf(err.Error())
 			return err
 		}
 		vn.SetFloat(fv)
 	default:
-		fmt.Errorf("unknown type: %v", vn.Type().String())
+		return fmt.Errorf("unexpected type: %v", vn.Type().String())
 	}
 
 	return nil
