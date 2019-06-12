@@ -331,6 +331,7 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
 }
 
+// todo albert·gou
 func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) {
 	log.Debugf("update chain parameters")
 
@@ -344,67 +345,71 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 	return
 }
 
-func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion) error {
-	//基金会单独修改的
-	modifies, err := dag.stateRep.GetSysParamWithoutVote()
-	if err != nil {
-		return err
-	}
+// 获取通过投票修改系统参数的结果
+func (dag *UnitProduceRepository) getSysParamsWithVote() map[string]string {
+	res := make(map[string]string)
 
-	//基金会发起投票的
 	info, err := dag.stateRep.GetSysParamsWithVotes()
-	if err != nil {
-		return err
-	}
-
-	if modifies == nil && info == nil {
-		return nil
-	}
-
-	// 获取当前的链参数
-	gp, err := dag.propRep.RetrieveGlobalProp()
-	if err != nil {
-		return err
-	}
-
-	if len(modifies) > 0 {
-		for k, v := range modifies {
-			err = updateChainParameter(&gp.ChainParameters, k, v)
-			if err != nil {
-				log.Errorf(err.Error())
-				return err
-			}
-		}
-	}
-
-	if info != nil && info.IsVoteEnd {
+	if err == nil && info.IsVoteEnd {
 		for _, v1 := range info.SupportResults {
 			for _, v2 := range v1.VoteResults {
 				if v2.Num >= info.LeastNum {
-					err = updateChainParameter(&gp.ChainParameters, v1.TopicTitle, v2.SelectOption)
-					if err != nil {
-						log.Errorf(err.Error())
-						return err
-					}
+					res[v1.TopicTitle] = v2.SelectOption
 					break
 				}
 			}
 		}
 	}
 
+	return res
+}
+
+func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion) error {
+	// 获取当前的链参数
+	gp, err := dag.propRep.RetrieveGlobalProp()
+	if err != nil {
+		return err
+	}
+
+	//基金会单独修改的
+	modifies, err := dag.stateRep.GetSysParamWithoutVote()
+	if err == nil {
+		for k, v := range modifies {
+			err = updateChainParameter(&gp.ChainParameters, k, v)
+			if err != nil {
+				log.Errorf(err.Error())
+				//return err
+				continue
+			}
+		}
+
+		//将基金会当前单独修改的重置为nil
+		err = dag.stateRep.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
+		//if err != nil {
+		//	return err
+		//}
+	}
+
+	//基金会发起投票的
+	infos := dag.getSysParamsWithVote()
+	if len(infos) > 0 {
+		for k, v := range infos {
+			err = updateChainParameter(&gp.ChainParameters, k, v)
+			if err != nil {
+				log.Errorf(err.Error())
+				//return err
+				continue
+			}
+		}
+
+		//将基金会当前投票修改的重置为nil
+		err = dag.stateRep.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
+		//if err != nil {
+		//	return err
+		//}
+	}
+
 	err = dag.propRep.StoreGlobalProp(gp)
-	if err != nil {
-		return err
-	}
-
-	//将基金会当前单独修改的重置为nil
-	err = dag.stateRep.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
-	if err != nil {
-		return err
-	}
-
-	//将基金会当前投票修改的重置为nil
-	err = dag.stateRep.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
 	if err != nil {
 		return err
 	}
@@ -524,31 +529,32 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	return isActiveMediatorsChanged(gp)
 }
 
-// todo albert·gou
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	// 获取之前的设置
-	activeMediatorStr, _, _ := d.stateRep.GetConfig(modules.DesiredActiveMediatorCount)
-	activeMediator, _ := strconv.ParseUint(string(activeMediatorStr), 10, 16)
+	//activeMediatorStr, _, _ := d.stateRep.GetConfig(modules.DesiredActiveMediatorCount)
+	//activeMediator, _ := strconv.ParseUint(string(activeMediatorStr), 10, 16)
+	activeMediator := d.propRep.GetChainParameters().ActiveMediatorCount
 
 	// 获取基金会直接修改的设置
 	desiredSysParams, err := d.stateRep.GetSysParamWithoutVote()
-	if err != nil {
-		return int(activeMediator)
+	if err == nil {
+		desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediatorCount]
+		if ok {
+			desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+			if err == nil {
+				activeMediator = uint8(desiredActiveMediator)
+			}
+		}
 	}
 
-	var desiredActiveMediatorStr string
-	desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediatorCount]
-	if !ok {
-		return int(activeMediator)
+	// 获取通过投票修改的设置
+	infos := d.getSysParamsWithVote()
+	if desiredActiveMediatorStr, ok := infos[modules.DesiredActiveMediatorCount]; ok {
+		desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+		if err == nil {
+			activeMediator = uint8(desiredActiveMediator)
+		}
 	}
-
-	desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
-	if err != nil {
-		return int(activeMediator)
-	}
-	activeMediator = desiredActiveMediator
-
-	// todo 获取通过投票修改的设置
 
 	return int(activeMediator)
 }

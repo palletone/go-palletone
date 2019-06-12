@@ -77,7 +77,7 @@ type IStateRepository interface {
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error
-	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 }
 
@@ -103,10 +103,9 @@ func (rep *StateRepository) SaveSysConfig(key string, val []byte, ver *modules.S
 	return rep.statedb.SaveSysConfig(key, val, ver)
 }
 
-// todo albert·gou
-func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	return rep.statedb.GetSysConfig(name)
-}
+//func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+//	return rep.statedb.GetSysConfig(name)
+//}
 
 //func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
 //	return rep.statedb.GetAllSysConfig()
@@ -248,18 +247,18 @@ func (rep *StateRepository) GetAccountVotedMediators(addr common.Address) map[st
 
 // todo albert·gou
 func (rep *StateRepository) RefreshSysParameters() {
-	deposit, _, _ := rep.GetConfig("DepositRate")
+	deposit, _, _ := rep.statedb.GetSysConfig("DepositRate")
 	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
 	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
 	log.Debugf("Load SysParameter DepositContractInterest value:%f",
 		parameter.CurrentSysParameters.DepositContractInterest)
 
-	txCoinYearRateStr, _, _ := rep.GetConfig("TxCoinYearRate")
+	txCoinYearRateStr, _, _ := rep.statedb.GetSysConfig("TxCoinYearRate")
 	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
 	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
 	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
 
-	generateUnitRewardStr, _, _ := rep.GetConfig("GenerateUnitReward")
+	generateUnitRewardStr, _, _ := rep.statedb.GetSysConfig("GenerateUnitReward")
 	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)

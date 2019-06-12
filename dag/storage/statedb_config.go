@@ -115,19 +115,22 @@ func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 		log.Error(err.Error())
 		return nil, err
 	}
+
 	info := &modules.SysTokenIDInfo{}
-	if val == nil {
+	//if val == nil {
+	//	return nil, err
+	//} else if len(val) > 0 {
+
+	err = json.Unmarshal(val, info)
+	if err != nil {
+		log.Error(err.Error())
 		return nil, err
-	} else if len(val) > 0 {
-		err = json.Unmarshal(val, info)
-		if err != nil {
-			log.Error(err.Error())
-			return nil, err
-		}
-		return info, nil
-	} else {
-		return nil, nil
 	}
+	return info, nil
+
+	//} else {
+	//	return nil, nil
+	//}
 }
 
 func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
