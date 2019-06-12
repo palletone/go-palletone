@@ -355,7 +355,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	}
 	unitHash := unit.Hash()
 	if pm.IsExistInCache(unitHash.Bytes()) {
-		log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
+		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
 		return nil
 	}
 	// append by Albert·Gou
@@ -440,7 +440,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 		txHash := tx.Hash()
 		if pm.IsExistInCache(txHash.Bytes()) {
-			log.Debugf("Received tx(%s) again, ignore it", txHash.String())
+			//log.Debugf("Received tx(%s) again, ignore it", txHash.String())
 			return nil
 		}
 		if tx.IsContractTx() {
@@ -573,6 +573,11 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===ContractMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
+	if pm.IsExistInCache(event.Hash().Bytes()) {
+		//log.Debugf("Received event(%v) again, ignore it", event.Hash().String())
+		return nil
+	}
+
 	reqId := event.Tx.RequestHash()
 	log.Infof("[%s]===ContractMsg===, event type[%v]", reqId.String()[0:8], event.CType)
 	err := pm.contractProc.ProcessContractEvent(&event)
