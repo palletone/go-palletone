@@ -21,7 +21,7 @@
 package migration
 
 type IMigration interface {
-	GetOldVersion() string
-	GetUpgradeVersion() string
+	FromVersion() string
+	ToVersion() string
 	ExecuteUpgrade() error
 }
