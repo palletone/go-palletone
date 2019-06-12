@@ -362,6 +362,7 @@ func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInte
 		str2 := strArray[2]
 		bigInt := new(big.Int)
 		bigInt.SetString(str2, 10)
+		bigInt = bigInt.Div(bigInt, big.NewInt(10000000000)) //ethToken's decimal is 8
 		//
 		depositInfo = append(depositInfo, DepositETHInfo{geteventresult.Txhashs[i], bigInt.Uint64()})
 	}
@@ -443,8 +444,8 @@ func _withdrawPrepare(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	if len(args) > 1 {
 		ethFee, _ = strconv.ParseUint(args[1], 10, 64)
 	}
-	if ethFee <= 100000000000000 { //0.0001eth
-		ethFee = 100000000000000
+	if ethFee <= 10000 { //0.0001eth
+		ethFee = 10000
 	}
 	//
 	ethTokenAsset := getETHTokenAsset(stub)
@@ -571,6 +572,7 @@ func calSig(contractAddr, reqid, ethAddr string, ethAmount uint64, stub shim.Cha
 	paramsArray = append(paramsArray, contractAddr)
 	paramsArray = append(paramsArray, ethAddr)
 	ethAmountStr := fmt.Sprintf("%d", ethAmount)
+	ethAmountStr = ethAmountStr + "0000000000"
 	paramsArray = append(paramsArray, ethAmountStr)
 	paramsArray = append(paramsArray, reqid)
 	paramsJson, err := json.Marshal(paramsArray)

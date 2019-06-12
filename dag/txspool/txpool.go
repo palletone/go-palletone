@@ -492,13 +492,12 @@ func (pool *TxPool) local() map[common.Hash]*modules.TxPoolTransaction {
 
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
-func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) error {
+func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) ([]*modules.Addition, error) {
 	// 交易池不需要验证交易存不存在。
 	if tx == nil || tx.Tx == nil {
-		return errors.New("This transaction is invalide.")
+		return nil, errors.New("This transaction is invalide.")
 	}
-	err := pool.txValidator.ValidateTx(tx.Tx, true)
-	return err
+	return pool.txValidator.ValidateTx(tx.Tx, true)
 }
 
 // This function MUST be called with the txpool lock held (for reads).
@@ -516,9 +515,12 @@ func (pool *TxPool) isTransactionInPool(hash common.Hash) bool {
 func (pool *TxPool) IsTransactionInPool(hash common.Hash) bool {
 	return pool.isTransactionInPool(hash)
 }
+func (pool *TxPool) setPriorityLvl(tx *modules.TxPoolTransaction) {
+	tx.Priority_lvl = tx.GetPriorityLvl()
+}
 
 //
-func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransaction {
+func TxtoTxpoolTx(tx *modules.Transaction) *modules.TxPoolTransaction {
 	txpool_tx := new(modules.TxPoolTransaction)
 	txpool_tx.Tx = tx
 
@@ -535,15 +537,7 @@ func TxtoTxpoolTx(txpool ITxPool, tx *modules.Transaction) *modules.TxPoolTransa
 	}
 
 	txpool_tx.CreationDate = time.Now()
-	// 孤兒交易和非孤兒的交易費分开计算。
-	if ok, err := txpool.ValidateOrphanTx(tx); ok || err != nil {
-		// 孤兒交易的交易费暂时设置20dao, 以便计算优先级
-		txpool_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
-	} else {
-		txpool_tx.TxFee, _ = txpool.GetTxFee(tx)
-	}
-	txpool_tx.Priority_lvl = txpool_tx.GetPriorityLvl()
-
+	//fee, err := txpool.GetTxFee(tx)
 	return txpool_tx
 }
 
@@ -590,20 +584,21 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 
 	// If the transaction fails basic validation, discard it
-	if err := pool.validateTx(tx, local); err != nil {
+	if addition, err := pool.validateTx(tx, local); err != nil {
 		log.Trace("Discarding invalid transaction", "hash", hash, "err", err.Error())
 		return false, err
+	} else {
+		if tx.TxFee != nil {
+			tx.TxFee = make([]*modules.Addition, 0)
+		}
+		tx.TxFee = append(tx.TxFee, addition...)
 	}
 
 	if err := pool.checkPoolDoubleSpend(tx); err != nil {
 		return false, err
 	}
-
-	// 计算交易费和优先级
-	if tx.TxFee == nil {
-		tx.TxFee, _ = pool.GetTxFee(tx.Tx)
-	}
-	tx.Priority_lvl = tx.GetPriorityLvl()
+	// 计算优先级
+	pool.setPriorityLvl(tx)
 
 	utxoview, err := pool.FetchInputUtxos(tx.Tx)
 	if err != nil {
@@ -708,6 +703,12 @@ func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
 func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, number, index uint64) {
 	// Try to insert the transaction into the pending queue
 	tx_hash := tx.Tx.Hash()
+	if tx.TxFee == nil {
+		if amount, err := pool.GetTxFee(tx.Tx); err == nil {
+			tx.TxFee = append(tx.TxFee, &modules.Addition{Amount: amount.Amount, Asset: amount.Asset})
+		}
+	}
+	pool.setPriorityLvl(tx)
 	interTx, has := pool.all.Load(tx_hash)
 	if has {
 		if this, ok := interTx.(*modules.TxPoolTransaction); ok {
@@ -738,11 +739,10 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
 func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
-	pool_tx := TxtoTxpoolTx(pool, tx)
+	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addLocal(pool_tx)
 }
 func (pool *TxPool) addLocal(tx *modules.TxPoolTransaction) error {
-
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
 
@@ -753,7 +753,7 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}
-	pool_tx := TxtoTxpoolTx(pool, tx)
+	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addTx(pool_tx, false)
 }
 
@@ -763,7 +763,7 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 func (pool *TxPool) AddLocals(txs []*modules.Transaction) []error {
 	pool_txs := make([]*modules.TxPoolTransaction, 0)
 	for _, tx := range txs {
-		pool_txs = append(pool_txs, TxtoTxpoolTx(pool, tx))
+		pool_txs = append(pool_txs, TxtoTxpoolTx(tx))
 	}
 	return pool.addTxs(pool_txs, !pool.config.NoLocals)
 }
@@ -774,12 +774,12 @@ func (pool *TxPool) AddLocals(txs []*modules.Transaction) []error {
 func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
 	pool_txs := make([]*modules.TxPoolTransaction, 0)
 	for _, tx := range txs {
-		pool_txs = append(pool_txs, TxtoTxpoolTx(pool, tx))
+		pool_txs = append(pool_txs, TxtoTxpoolTx(tx))
 	}
 	return pool.addTxs(pool_txs, false)
 }
 func (pool *TxPool) AddSequenTx(tx *modules.Transaction) error {
-	p_tx := TxtoTxpoolTx(pool, tx)
+	p_tx := TxtoTxpoolTx(tx)
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 	return pool.addSequenTx(p_tx)
@@ -788,7 +788,7 @@ func (pool *TxPool) AddSequenTxs(txs []*modules.Transaction) error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 	for _, tx := range txs {
-		p_tx := TxtoTxpoolTx(pool, tx)
+		p_tx := TxtoTxpoolTx(tx)
 		if err := pool.addSequenTx(p_tx); err != nil {
 			return err
 		}
@@ -812,21 +812,22 @@ func (pool *TxPool) addSequenTx(p_tx *modules.TxPoolTransaction) error {
 	}
 
 	// If the transaction fails basic validation, discard it
-	if err := pool.validateTx(p_tx, false); err != nil {
+	if addition, err := pool.validateTx(p_tx, false); err != nil {
 		log.Trace("Discarding invalid transaction", "hash", hash, "err", err.Error())
 		return err
+	} else {
+		if p_tx.TxFee != nil {
+			p_tx.TxFee = make([]*modules.Addition, 0)
+		}
+		p_tx.TxFee = append(p_tx.TxFee, addition...)
 	}
 
 	if err := pool.checkPoolDoubleSpend(p_tx); err != nil {
 		return err
 	}
 
-	// 计算交易费和优先级
-	if p_tx.TxFee == nil {
-		p_tx.TxFee, _ = pool.GetTxFee(p_tx.Tx)
-	}
-
-	p_tx.Priority_lvl = p_tx.GetPriorityLvl()
+	// 计算优先级
+	pool.setPriorityLvl(p_tx)
 
 	utxoview, err := pool.FetchInputUtxos(p_tx.Tx)
 	if err != nil {
@@ -924,7 +925,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
-	p_tx := TxtoTxpoolTx(pool, tx)
+	p_tx := TxtoTxpoolTx(tx)
 	err = pool.checkPoolDoubleSpend(p_tx)
 	if err != nil {
 		log.Info("txpool check PoolDoubleSpend", "error", err, "p_tx", txHash.String())
@@ -1570,7 +1571,7 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction,
 		}
 	}
 	// add in pool
-	p_tx := TxtoTxpoolTx(pool, tx)
+	p_tx := TxtoTxpoolTx(tx)
 	// 将该交易的输入输出缓存到交易池
 	pool.addCache(p_tx)
 	pool.promoteTx(unit_hash, p_tx, number, index)
@@ -1618,7 +1619,7 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 	if err != nil {
 		log.Info(err.Error())
 	}
-	pool.add(TxtoTxpoolTx(pool, tx), !pool.config.NoLocals)
+	pool.add(TxtoTxpoolTx(tx), !pool.config.NoLocals)
 	return nil
 }
 

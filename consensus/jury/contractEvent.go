@@ -51,22 +51,26 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 		return nil
 	}
 	log.Debugf("[%s]ProcessContractEvent, event type:%v ", shortId(reqId.String()), event.CType)
-
+	broadcast := false
+	var err error
 	switch event.CType {
 	case CONTRACT_EVENT_EXEC:
-		return p.contractExecEvent(event.Tx, event.Ele)
+		broadcast, err = p.contractExecEvent(event.Tx, event.Ele)
 	case CONTRACT_EVENT_SIG:
-		return p.contractSigEvent(event.Tx, event.Ele)
+		broadcast, err = p.contractSigEvent(event.Tx, event.Ele)
 	case CONTRACT_EVENT_COMMIT:
-		return p.contractCommitEvent(event.Tx)
+		broadcast, err = p.contractCommitEvent(event.Tx)
 	}
-	return nil
+	if broadcast {
+		go p.ptn.ContractBroadcast(*event, false)
+	}
+	return err
 }
 
-func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.ElectionInf) error {
+func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.ElectionInf) (broadcast bool, err error) {
 	reqId := tx.RequestHash()
 	if _, ok := p.mtx[reqId]; ok {
-		return nil
+		return false, nil
 	}
 
 	p.locker.Lock()
@@ -84,17 +88,10 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 	if !tx.IsSystemContract() { //系统合约在UNIT构建前执行
 		go p.runContractReq(reqId, ele)
 	}
-	//broadcast contract request transaction event
-	event := &ContractEvent{
-		Ele:   ele,
-		CType: CONTRACT_EVENT_EXEC,
-		Tx:    tx,
-	}
-	go p.ptn.ContractBroadcast(*event, false)
-	return nil
+	return true, nil
 }
 
-func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.ElectionInf) error {
+func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.ElectionInf) (broadcast bool, err error) {
 	reqId := tx.RequestHash()
 	if _, ok := p.mtx[reqId]; !ok {
 		//log.Debug("contractSigEvent", "local not find reqId,create it", reqId)
@@ -110,12 +107,16 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 		p.locker.Unlock()
 
 		go p.runContractReq(reqId, ele)
-		return nil
+		return true, nil
 	}
 	ctx := p.mtx[reqId]
-	ctx.rcvTx = append(ctx.rcvTx, tx)
-	//如果是jury，将接收到tx与本地执行后的tx进行对比，相同则添加签名到sigTx，如果满足三个签名且签名值最小则广播tx，否则函数返回
 
+	if checkTxReceived(ctx.rcvTx, tx) {
+		return false, nil
+	}
+	ctx.rcvTx = append(ctx.rcvTx, tx)
+
+	//如果是jury，将接收到tx与本地执行后的tx进行对比，相同则添加签名到sigTx，如果满足三个签名且签名值最小则广播tx，否则函数返回
 	if ok, err := checkAndAddTxSigMsgData(ctx.sigTx, tx); err == nil && ok {
 		if getTxSigNum(ctx.sigTx) >= p.contractSigNum {
 			if localIsMinSignature(ctx.sigTx) { //todo
@@ -126,12 +127,12 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 			}
 		}
 	} else if err != nil {
-		return err
+		return true, err
 	}
-	return nil
+	return true, nil
 }
 
-func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
+func (p *Processor) contractCommitEvent(tx *modules.Transaction) (broadcast bool, err error) {
 	reqId := tx.RequestHash()
 	p.locker.Lock()
 	defer p.locker.Unlock()
@@ -144,11 +145,11 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) error {
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 	} else if p.mtx[reqId].rstTx != nil {
-		log.Infof("[%s]contractCommitEvent, rstTx already receive", shortId(reqId.String()))
-		return nil //rstTx already receive
+		log.Debugf("[%s]contractCommitEvent, rstTx already receive", shortId(reqId.String()))
+		return false, nil //rstTx already receive
 	}
 	p.mtx[reqId].valid = true
 	p.mtx[reqId].rstTx = tx
 
-	return nil
+	return true, nil
 }

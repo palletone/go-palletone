@@ -186,14 +186,14 @@ func (p *testTxPool) AddRemotes(txs []*modules.Transaction) []error {
 func (p *testTxPool) AddSequenTx(tx *modules.Transaction) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	p.sequenPool.Add(txspool.TxtoTxpoolTx(p, tx))
+	p.sequenPool.Add(txspool.TxtoTxpoolTx(tx))
 	return nil
 }
 func (p *testTxPool) AddSequenTxs(txs []*modules.Transaction) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	for _, tx := range txs {
-		p.sequenPool.Add(txspool.TxtoTxpoolTx(p, tx))
+		p.sequenPool.Add(txspool.TxtoTxpoolTx(tx))
 	}
 	return nil
 }
