@@ -517,6 +517,22 @@ func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	return err == nil
 }
 
+func checkTxReceived(all []*modules.Transaction, tx *modules.Transaction) bool{
+	if len(all) < 1 {
+		return false
+	}
+	if tx == nil {
+		return true
+	}
+	inHash := tx.Hash()
+	for _, local := range all {
+		if bytes.Equal(inHash.Bytes(), local.Hash().Bytes()){
+			return true
+		}
+	}
+	return false
+}
+
 func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType modules.MessageType) bool {
 	if msgsA == nil || msgsB == nil {
 		log.Error("msgsCompare", "param is nil")

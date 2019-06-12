@@ -63,7 +63,7 @@ var DefaultConfig = Config{
 		},
 		Eth: ETH{
 			NetID:         1,
-			Rawurl:        "/home/pallet/data/eth/gethtest/geth.ipc",
+			Rawurl:        "https://ropsten.infura.io/",
 			ChaincodeKeys: map[string]string{},
 			AddressKeys:   map[string]string{},
 		},
