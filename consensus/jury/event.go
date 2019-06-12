@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 type ContractEventType uint8
@@ -63,6 +64,10 @@ type ContractEvent struct {
 
 	CType ContractEventType
 	Tx    *modules.Transaction
+}
+
+func (ce *ContractEvent) Hash() common.Hash{
+	return util.RlpHash(ce)
 }
 
 //Election
