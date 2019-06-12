@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
@@ -86,10 +87,20 @@ func (pm *ProtocolManager) PushSync() {
 		index, _ := pm.pushSync()
 		log.Info("Cors Push Sync OK", "index", index)
 		atomic.StoreUint32(&pm.corsSync, 0)
+
+		//if len(headers) > 0 {
+		//	ps := pm.peers.AllPeers()
+		//	for _, p := range ps {
+		//		p.SetHead(headers[0])
+		//	}
+		//}
+
+	} else {
+		log.Debug("Cors ProtocolManager PushSyncing")
 	}
 }
 
-func (pm *ProtocolManager) pushSync() (uint64, error) {
+func (pm *ProtocolManager) pushSync() (uint64, []*modules.Header) {
 	var (
 		bytes   common.StorageSize
 		headers []*modules.Header
@@ -100,7 +111,7 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 	pheader, err := pm.fetchHeader()
 	if err != nil {
 		log.Debug("Cors ProtocolManager", "pushSync fetchHeader err", err)
-		return 0, err
+		return 0, nil
 	}
 
 	flag = 0
@@ -152,21 +163,7 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 			time.Sleep(waitPushSync)
 		}
 	}
-	return index, nil
-}
-
-// requestTTL returns the current timeout allowance for a single download request
-// to finish under.
-func (pm *ProtocolManager) requestTTL() time.Duration {
-	var (
-		rtt  = time.Duration(atomic.LoadUint64(&pm.rttEstimate))
-		conf = float64(atomic.LoadUint64(&pm.rttConfidence)) / 1000000.0
-	)
-	ttl := time.Duration(ttlScaling) * time.Duration(float64(rtt)/conf)
-	if ttl > ttlLimit {
-		ttl = ttlLimit
-	}
-	return ttl
+	return index, headers
 }
 
 func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
@@ -174,15 +171,23 @@ func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
 	rand.Seed(time.Now().UnixNano())
 	peers := pm.peers.AllPeers()
 	log.Debug("Cors ProtocolManager fetchHeader", "len(peers)", len(peers))
+	if len(peers) <= 0 {
+		return nil, errors.New("peer is nil")
+	}
 	x := rand.Intn(len(peers))
 	p := peers[x]
 	log.Debug("Retrieving remote all token", "peer", p.ID())
 	var number modules.ChainIndex
 	number.AssetID = pm.assetId
-	go p.RequestCurrentHeader(number)
+	go func() {
+		if err := p.RequestCurrentHeader(number); err != nil {
+			log.Error("Cors ProtocolManager fetchHeader RequestCurrentHeader err", err, "number", number)
+		}
+	}()
 
-	ttl := pm.requestTTL()
-	timeout := time.After(ttl)
+	forceSync := time.NewTicker(forceSyncCycle)
+	defer forceSync.Stop()
+
 	for {
 		select {
 		case <-pm.quitSync:
@@ -203,8 +208,8 @@ func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
 			log.Debug("Remote leaf nodes", "counts", len(headers), "peer", packet.PeerId())
 			return headers[0], nil
 
-		case <-timeout:
-			log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", p.id)
+		case <-forceSync.C:
+			log.Debug("Waiting for head header timed out", "elapsed", 10, "peer", p.id)
 			return nil, errTimeout
 		}
 	}
@@ -230,10 +235,16 @@ func (pm *ProtocolManager) PullSync() {
 		pm.pullSync(peer)
 		log.Info("Cors Pull Sync OK")
 		atomic.StoreUint32(&pm.corsSync, 0)
+	} else {
+		log.Debug("Cors ProtocolManager PullSyncing")
 	}
 
 	if header := pm.dag.CurrentHeader(modules.PTNCOIN); header != nil {
 		pm.server.SendEvents(header)
+		//ps := pm.peers.AllPeers()
+		//for _, p := range ps {
+		//	p.SetHead(header)
+		//}
 	} else {
 		log.Debug("Cors PalletOne ProtocolManager PullSync ptn CurrentHeader is nil")
 	}
