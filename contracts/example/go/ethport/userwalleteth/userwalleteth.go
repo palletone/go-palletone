@@ -387,16 +387,17 @@ func deploy(gasPrice, gasLimit, addr1, addr2, addr3, addr4, privateKey string) e
 		fmt.Println(resultTx)
 	}
 	//parse result
-	var genInvokeContractTXResult adaptor.GenInvokeContractTXResult
-	err = json.Unmarshal([]byte(resultTx), &genInvokeContractTXResult)
+	var genDeployContractTXResult adaptor.GenDeployContractTXResult
+	err = json.Unmarshal([]byte(resultTx), &genDeployContractTXResult)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+	fmt.Println("ContractAddr:", genDeployContractTXResult.ContractAddr)
 
 	//2.sign tx
 	var signTransactionParams adaptor.ETHSignTransactionParams
 	signTransactionParams.PrivateKeyHex = privateKey
-	signTransactionParams.TransactionHex = genInvokeContractTXResult.TransactionHex
+	signTransactionParams.TransactionHex = genDeployContractTXResult.TransactionHex
 	resultSign, err := ethadaptor.SignTransaction(&signTransactionParams)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -428,10 +429,10 @@ func deploy(gasPrice, gasLimit, addr1, addr2, addr3, addr4, privateKey string) e
 
 func helper() {
 	fmt.Println("functions : send, withdraw")
-	fmt.Println("Params : deploy, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethPrivateKey")
-	fmt.Println("Params : setaddrs, contractAddr, value, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethPrivateKey")
+	fmt.Println("Params : deploy, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethAddr4, ethPrivateKey")
+	fmt.Println("Params : setaddrs, contractAddr, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethAddr4, ethPrivateKey")
 	fmt.Println("Params : deposit, contractAddr, value, gasPrice, gasLimit, ptnAddr, ethPrivateKey")
-	fmt.Println("Params : withdraw, contractAddr, gasPrice, gasLimit, ethAddr, amount, reqid, sig1, sig2, ethPrivateKey")
+	fmt.Println("Params : withdraw, contractAddr, gasPrice, gasLimit, ethAddr, amount, reqid, sig1, sig2, sig3, ethPrivateKey")
 }
 func main() {
 	f, err := os.Open(gWalletFile)
@@ -468,7 +469,7 @@ func main() {
 		}
 	case "setaddrs": //set jury addrs to multisigContract
 		if len(args) < 10 {
-			fmt.Println("Params : setaddrs, contractAddr, value, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethAddr4, ethPrivateKey")
+			fmt.Println("Params : setaddrs, contractAddr, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethAddr4, ethPrivateKey")
 			return
 		}
 		err := setJuryAddrs(args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9])
