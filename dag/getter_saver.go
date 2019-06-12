@@ -184,7 +184,7 @@ func (dag *Dag) IsMediator(address common.Address) bool {
 //}
 
 func (dag *Dag) GetChainParameters() *core.ChainParameters {
-	return &dag.GetGlobalProp().ChainParameters
+	return dag.unstablePropRep.GetChainParameters()
 }
 
 func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
@@ -219,7 +219,6 @@ func (d *Dag) GetConfig(name string) ([]byte, error) {
 //}
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-
 	unit, err := dag.unstableUnitRep.GetUnit(hash)
 
 	if err != nil {
@@ -274,5 +273,5 @@ func (d *Dag) GetActiveJuries() []common.Address {
 func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
 
-	return d.unstableStateRep.IsJury(addr)
+	//return d.unstableStateRep.IsJury(addr)
 }

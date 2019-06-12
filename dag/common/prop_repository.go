@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -55,6 +56,12 @@ type IPropRepository interface {
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetChainParameters() *core.ChainParameters
+}
+
+func (pRep *PropRepository) GetChainParameters() *core.ChainParameters {
+	gp, _ := pRep.db.RetrieveGlobalProp()
+	return &gp.ChainParameters
 }
 
 func (pRep *PropRepository) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {

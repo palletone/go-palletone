@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 )
 
 type IUnitProduceRepository interface {
@@ -306,6 +307,28 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 	for _, eventFunc := range dag.observers {
 		go eventFunc(eventArg)
 	}
+}
+
+func (dag *UnitProduceRepository) RefreshSysParameters() {
+	cp := dag.propRep.GetChainParameters()
+	//deposit, _, _ := rep.GetConfig("DepositRate")
+	deposit := cp.DepositRate
+	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
+	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
+	log.Debugf("Load SysParameter DepositContractInterest value:%f",
+		parameter.CurrentSysParameters.DepositContractInterest)
+
+	//txCoinYearRateStr, _, _ := rep.GetConfig("TxCoinYearRate")
+	txCoinYearRateStr := cp.TxCoinYearRate
+	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
+	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
+	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
+
+	//generateUnitRewardStr, _, _ := rep.GetConfig("GenerateUnitReward")
+	generateUnitRewardStr := cp.GenerateUnitReward
+	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
+	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
+	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
 }
 
 func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) {
