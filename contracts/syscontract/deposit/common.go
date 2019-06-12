@@ -68,10 +68,6 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 	if err != nil {
 		return err
 	}
-	cashback := &Cashback{}
-	cashback.CashbackTokens = invokeTokens
-	cashback.Role = role
-	cashback.CashbackTime = TimeStr()
 	// 判断列表是否为空
 	if listForCashback == nil {
 		listForCashback = make(map[string]*Cashback)
@@ -80,8 +76,13 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 			return fmt.Errorf("node is exist in the list")
 		}
 	}
-	listForCashback[invokeAddr.String()] = cashback
+	cashback := &Cashback{}
+	cashback.CashbackTokens = invokeTokens
+	cashback.Role = role
+	cashback.CashbackTime = TimeStr()
+
 	//  保存退还列表
+	listForCashback[invokeAddr.String()] = cashback
 	err = SaveListForCashback(stub, listForCashback)
 	if err != nil {
 		return err
@@ -90,13 +91,9 @@ func addListAndPutStateForCashback(role string, stub shim.ChaincodeStubInterface
 }
 
 func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []string) error {
+	//  判断参数是否正确
 	if len(args) != 1 {
 		return fmt.Errorf("%s", "arg need one parameter")
-	}
-	//  获取请求调用地址
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		return err
 	}
 	//  转换保证金数量
 	ptnAccount, err := strconv.ParseUint(args[0], 10, 64)
@@ -112,6 +109,11 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		Amount: ptnAccount,
 		Asset:  fees.Asset,
 	}
+	//  获取请求调用地址
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return err
+	}
 
 	var balance uint64
 	if role == Mediator {
@@ -119,12 +121,21 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		if md == nil {
 			return fmt.Errorf("%s", "mediator balance is nil")
 		}
+		if !isOverDeadline(stub, md.EnterTime) {
+			return fmt.Errorf("does not over deadline")
+		}
 		balance = md.Balance
 	} else {
 		//  先获取账户信息
 		deposit, _ := GetNodeBalance(stub, invokeAddr.String())
 		if deposit == nil {
 			return fmt.Errorf("%s", "balance is nil")
+		}
+		//  如果jury或者Dev 已经加入了候选列表，需要判断是否超过质押期限
+		if deposit.EnterTime != "" {
+			if !isOverDeadline(stub, deposit.EnterTime) {
+				return fmt.Errorf("does not over deadline")
+			}
 		}
 		balance = deposit.Balance
 	}
@@ -798,4 +809,27 @@ func TimeStr() string {
 	timeStr := time.Now().UTC().Format(Layout1)
 	tt, _ := time.Parse(Layout1, timeStr)
 	return tt.String()
+}
+
+// 判读是否超过了抵押日期
+func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
+	//  判断是否超过了质押周期
+	depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
+	if err != nil {
+		log.Error("get deposit period err: ", "error", err)
+		return false
+	}
+	//
+	day, err := strconv.Atoi(depositPeriod)
+	if err != nil {
+		log.Error("strconv.Atoi err: ", "error", err)
+		return false
+	}
+	nowT := time.Now().UTC()
+	enterT := StrToTime(enterTime)
+	duration := nowT.Sub(enterT).Hours()
+	if int(duration)/24 < day {
+		return false
+	}
+	return true
 }

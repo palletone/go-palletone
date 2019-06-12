@@ -4,7 +4,7 @@ Resource          publicParams.txt
 *** Keywords ***
 基金会处理mediator申请退还保证金所需参数
     [Arguments]    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
-    ${1}        Create List     HandleForMediatorApplyCashback      ${mediatorAddr}        ${isAgree}
+    ${1}    Create List    HandleForMediatorApplyCashback    ${mediatorAddr}    ${isAgree}
     ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
     [Return]    ${one}
 
