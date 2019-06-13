@@ -35,13 +35,13 @@ env:
 
 matrix:
   include:
-#    - os: linux
-#      dist: xenial
-#      go: 1.10.8
-#      script:
-#        - go build ./cmd/gptn
-#        - make gptn
-#        - $GOPATH/bin/goveralls -service=travis-ci
+    - os: linux
+      dist: xenial
+      go: 1.10.8
+      script:
+        - go build ./cmd/gptn
+        - make gptn
+        - $GOPATH/bin/goveralls -service=travis-ci
 
     #- os: linux
     #  dist: xenial
