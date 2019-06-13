@@ -22,11 +22,18 @@ package migration
 import "github.com/palletone/go-palletone/common/ptndb"
 
 func NewMigrations(db ptndb.Database) map[string]IMigration {
+	// 将所有待升级的migration版本，在这里实例化。
 	migrations := make(map[string]IMigration)
+	/* version: 0615 */
 	m_0615 := NewMigration0615_100(db)
-	if ver := m_0615.ToVersion(); ver != "" {
+	if ver := m_0615.FromVersion(); ver != "" {
 		migrations[ver] = m_0615
 	}
+	/* version: 0615 end*/
+
+	/* version: 1.0.0-beta */
+
+	/* version: 1.0.0-beta end */
 	return migrations
 }
 func NewMigration0615_100(db ptndb.Database) *Migration0615_100 {
