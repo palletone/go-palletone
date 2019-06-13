@@ -90,15 +90,14 @@ type IStateDb interface {
 	IsInJuryCandidateList(address common.Address) bool
 	GetDataVersion() (*modules.DataVersion, error)
 	SaveDataVersion(dv *modules.DataVersion) error
-	
+
 	UpdateSysParams(ver *modules.StateVersion) error
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
-	GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
 	//GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error
-
 }

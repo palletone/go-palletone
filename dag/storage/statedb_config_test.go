@@ -35,10 +35,10 @@ func MockStateMemDb() *StateDb {
 	return statedb
 }
 func TestStateDb_GetPartitionChains(t *testing.T) {
-	db:=MockStateMemDb()
-	partitions,err:= db.GetPartitionChains()
-	assert.Nil(t,err)
-	assert.Equal(t,0,len(partitions))
+	db := MockStateMemDb()
+	partitions, err := db.GetPartitionChains()
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(partitions))
 }
 
 func TestSaveAndGetConfig(t *testing.T) {
@@ -47,7 +47,7 @@ func TestSaveAndGetConfig(t *testing.T) {
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	err := db.SaveSysConfig("key1", nil, version)
 	assert.Nil(t, err)
-	data, version, err := db.GetSysConfig("key1")
+	data, version, err := db.getSysConfig("key1")
 	assert.Nil(t, err)
 	t.Log(data)
 	// assert.Nil(t, data)

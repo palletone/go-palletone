@@ -48,7 +48,7 @@ func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.State
 获取配置信息
 get config information
 */
-func (statedb *StateDb) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
+func (statedb *StateDb) getSysConfig(name string) ([]byte, *modules.StateVersion, error) {
 	id := syscontract.SysConfigContractAddress.Bytes()
 	return statedb.GetContractState(id, name)
 }
@@ -58,43 +58,10 @@ func (statedb *StateDb) GetSysConfig(name string) ([]byte, *modules.StateVersion
 //	return statedb.GetContractStatesById(id)
 //}
 
-func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
-	assetId := dagconfig.DagConfig.GetGasToken()
-	return &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}, nil
-}
-func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) {
-	id := syscontract.PartitionContractAddress.Bytes()
-	rows, err := statedb.GetContractStatesByPrefix(id, "PC")
-	result := []*modules.PartitionChain{}
-	if err != nil {
-		return result, nil
-	}
-
-	for _, v := range rows {
-		partition := &modules.PartitionChain{}
-		json.Unmarshal(v.Value, &partition)
-		result = append(result, partition)
-	}
-	return result, nil
-}
-func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
-	id := syscontract.PartitionContractAddress.Bytes()
-	data, _, err := statedb.GetContractState(id, "MainChain")
-	if err != nil {
-		return nil, err
-	}
-	mainChain := &modules.MainChain{}
-	err = json.Unmarshal(data, mainChain)
-	if err != nil {
-		return nil, err
-	}
-	return mainChain, nil
-}
-
 func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 	var res map[string]string
 
-	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithoutVote)
+	val, _, err := statedb.getSysConfig(modules.DesiredSysParamsWithoutVote)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -110,7 +77,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
-	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithVote)
+	val, _, err := statedb.getSysConfig(modules.DesiredSysParamsWithVote)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -193,4 +160,37 @@ func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
 		return err
 	}
 	return nil
+}
+
+func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
+	assetId := dagconfig.DagConfig.GetGasToken()
+	return &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}, nil
+}
+func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) {
+	id := syscontract.PartitionContractAddress.Bytes()
+	rows, err := statedb.GetContractStatesByPrefix(id, "PC")
+	result := []*modules.PartitionChain{}
+	if err != nil {
+		return result, nil
+	}
+
+	for _, v := range rows {
+		partition := &modules.PartitionChain{}
+		json.Unmarshal(v.Value, &partition)
+		result = append(result, partition)
+	}
+	return result, nil
+}
+func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
+	id := syscontract.PartitionContractAddress.Bytes()
+	data, _, err := statedb.GetContractState(id, "MainChain")
+	if err != nil {
+		return nil, err
+	}
+	mainChain := &modules.MainChain{}
+	err = json.Unmarshal(data, mainChain)
+	if err != nil {
+		return nil, err
+	}
+	return mainChain, nil
 }
