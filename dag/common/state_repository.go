@@ -60,7 +60,7 @@ type IStateRepository interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
-	UpdateSysParams(ver *modules.StateVersion) error
+	//UpdateSysParams(ver *modules.StateVersion) error
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 	//获得一个合约的陪审团列表
@@ -73,7 +73,7 @@ type IStateRepository interface {
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error
-	GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
 	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 }
 
@@ -99,9 +99,9 @@ func (rep *StateRepository) SaveSysConfig(key string, val []byte, ver *modules.S
 	return rep.statedb.SaveSysConfig(key, val, ver)
 }
 
-func (rep *StateRepository) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
-	return rep.statedb.GetSysConfig(name)
-}
+//func (rep *StateRepository) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
+//	return rep.statedb.GetSysConfig(name)
+//}
 
 //func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
 //	return rep.statedb.GetAllSysConfig()
@@ -209,9 +209,9 @@ func (rep *StateRepository) IsJury(address common.Address) bool {
 	return rep.statedb.IsInJuryCandidateList(address)
 }
 
-func (rep *StateRepository) UpdateSysParams(ver *modules.StateVersion) error {
-	return rep.statedb.UpdateSysParams(ver)
-}
+//func (rep *StateRepository) UpdateSysParams(ver *modules.StateVersion) error {
+//	return rep.statedb.UpdateSysParams(ver)
+//}
 
 func (rep *StateRepository) GetPartitionChains() ([]*modules.PartitionChain, error) {
 	return rep.statedb.GetPartitionChains()

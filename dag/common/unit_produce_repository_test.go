@@ -104,27 +104,16 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	t.Logf("%v=%v\n", modules.DesiredMediatorInterval, cp2.MediatorInterval)
 
 	// 检查是否重置为nil
-	sysParam, _, err := upRep.stateRep.GetSysConfig(modules.DesiredSysParamsWithoutVote)
-	if err != nil {
+	sysParam, err := upRep.stateRep.GetSysParamWithoutVote()
+	if sysParam != nil {
 		t.Error(err.Error())
-	}
-	if sysParam == nil {
-		t.Log("update sysParam success")
-	} else if len(sysParam) > 0 {
-		t.Logf("%#v\n", sysParam)
-		t.Error("update sysParam fail")
 	} else {
 		t.Log("update sysParams success")
 	}
-	sysParams, _, err := upRep.stateRep.GetSysConfig(modules.DesiredSysParamsWithVote)
-	if err != nil {
+
+	sysParams, err := upRep.stateRep.GetSysParamsWithVotes()
+	if sysParams != nil {
 		t.Error(err.Error())
-	}
-	if sysParams == nil {
-		t.Log("update sysParams success")
-	} else if len(sysParams) > 0 {
-		t.Logf("%#v\n", sysParams)
-		t.Error("update sysParams fail")
 	} else {
 		t.Log("update sysParams success")
 	}

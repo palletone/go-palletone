@@ -353,7 +353,6 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
 }
 
-// todo albert·gou
 func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) {
 	log.Debugf("update chain parameters")
 
@@ -361,8 +360,9 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 		Height:  nextUnit.Number(),
 		TxIndex: ^uint32(0),
 	}
-	dag.stateRep.UpdateSysParams(version)
+	//dag.stateRep.UpdateSysParams(version)
 	//dag.stateRep.RefreshSysParameters()
+	dag.UpdateSysParams(version)
 	dag.RefreshSysParameters()
 
 	return
@@ -373,7 +373,7 @@ func (dag *UnitProduceRepository) getSysParamsWithVote() map[string]string {
 	res := make(map[string]string)
 
 	info, err := dag.stateRep.GetSysParamsWithVotes()
-	if err == nil && info.IsVoteEnd {
+	if err == nil  && info.IsVoteEnd {
 		for _, v1 := range info.SupportResults {
 			for _, v2 := range v1.VoteResults {
 				if v2.Num >= info.LeastNum {
