@@ -38,13 +38,13 @@ env:
 
 matrix:
   include:
-    - os: linux
-      dist: xenial
-      go: 1.10.8
-      script:
-        - go build ./cmd/gptn
-        - make gptn
-        - $GOPATH/bin/goveralls -service=travis-ci
+#    - os: linux
+#      dist: xenial
+#      go: 1.10.8
+#      script:
+#        - go build ./cmd/gptn
+#        - make gptn
+#        - $GOPATH/bin/goveralls -service=travis-ci
 
     #- os: linux
     #  dist: xenial
@@ -127,8 +127,9 @@ matrix:
 #          python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
 #          fi
 
-    - if: $IS_RUN_DEPOSIT = 'true'
+    -
       os: linux
+      if: env(IS_RUN_USER_CONTRACT) = true
       dist: xenial
       go: 1.12.5
       script:
