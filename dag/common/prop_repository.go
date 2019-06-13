@@ -60,8 +60,7 @@ type IPropRepository interface {
 }
 
 func (pRep *PropRepository) GetChainParameters() *core.ChainParameters {
-	gp, _ := pRep.db.RetrieveGlobalProp()
-	return &gp.ChainParameters
+	return pRep.db.GetChainParameters()
 }
 
 func (pRep *PropRepository) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {

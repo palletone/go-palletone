@@ -545,7 +545,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
@@ -629,7 +629,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := validator.NewValidate(dagDb, utxoRep, stateDb, nil)
 	propRep := dagcommon.NewPropRepository(propDb)
@@ -665,7 +665,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	propDb := storage.NewPropertyDb(db)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 

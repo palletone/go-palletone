@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -54,6 +55,12 @@ type IPropertyDb interface {
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetChainParameters() *core.ChainParameters
+}
+
+func (propdb *PropertyDb) GetChainParameters() *core.ChainParameters {
+	gp, _ := propdb.RetrieveGlobalProp()
+	return &gp.ChainParameters
 }
 
 // modified by Yiran

@@ -121,8 +121,9 @@ type UnitRepository struct {
 //}
 type AfterSysContractStateChangeEventFunc func(event *modules.SysContractStateChangeEvent)
 
-func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb, propdb storage.IPropertyDb) *UnitRepository {
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb,
+	propdb storage.IPropertyDb) *UnitRepository {
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb)
 	//val := validator.NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, utxoRepository: utxoRep, propdb: propdb}
 }
@@ -133,7 +134,7 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb)
 	//val := validator.NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, utxoRepository: utxoRep}
 }
