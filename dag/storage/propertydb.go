@@ -59,7 +59,11 @@ type IPropertyDb interface {
 }
 
 func (propdb *PropertyDb) GetChainParameters() *core.ChainParameters {
-	gp, _ := propdb.RetrieveGlobalProp()
+	gp, err := propdb.RetrieveGlobalProp()
+	if err != nil {
+		return nil
+	}
+
 	return &gp.ChainParameters
 }
 

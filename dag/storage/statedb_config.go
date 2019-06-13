@@ -48,7 +48,7 @@ func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.State
 获取配置信息
 get config information
 */
-func (statedb *StateDb) getSysConfig(name string) ([]byte, *modules.StateVersion, error) {
+func (statedb *StateDb) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
 	id := syscontract.SysConfigContractAddress.Bytes()
 	return statedb.GetContractState(id, name)
 }
@@ -61,7 +61,7 @@ func (statedb *StateDb) getSysConfig(name string) ([]byte, *modules.StateVersion
 func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 	var res map[string]string
 
-	val, _, err := statedb.getSysConfig(modules.DesiredSysParamsWithoutVote)
+	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithoutVote)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -77,7 +77,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
-	val, _, err := statedb.getSysConfig(modules.DesiredSysParamsWithVote)
+	val, _, err := statedb.GetSysConfig(modules.DesiredSysParamsWithVote)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err

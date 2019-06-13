@@ -95,7 +95,7 @@ type IStateDb interface {
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
-	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
+	GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
 	//GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)

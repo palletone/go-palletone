@@ -73,7 +73,7 @@ type IStateRepository interface {
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error
-	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
 	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 }
 
@@ -99,9 +99,9 @@ func (rep *StateRepository) SaveSysConfig(key string, val []byte, ver *modules.S
 	return rep.statedb.SaveSysConfig(key, val, ver)
 }
 
-//func (rep *StateRepository) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-//	return rep.statedb.GetSysConfig(name)
-//}
+func (rep *StateRepository) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
+	return rep.statedb.GetSysConfig(name)
+}
 
 //func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
 //	return rep.statedb.GetAllSysConfig()

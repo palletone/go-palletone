@@ -29,11 +29,13 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type IUnitProduceRepository interface {
@@ -61,7 +63,26 @@ type UnitProduceRepository struct {
 
 type AfterChainMaintenanceEventFunc func(event *modules.ChainMaintenanceEvent)
 
-func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, stateRep IStateRepository) *UnitProduceRepository {
+func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository,
+	stateRep IStateRepository) *UnitProduceRepository {
+	return &UnitProduceRepository{
+		unitRep:  unitRep,
+		propRep:  propRep,
+		stateRep: stateRep,
+	}
+}
+
+func NewUnitProduceRepository4Db(db ptndb.Database) *UnitProduceRepository {
+	dagDb := storage.NewDagDb(db)
+	utxoDb := storage.NewUtxoDb(db)
+	stateDb := storage.NewStateDb(db)
+	idxDb := storage.NewIndexDb(db)
+	propDb := storage.NewPropertyDb(db)
+
+	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	propRep := NewPropRepository(propDb)
+	stateRep := NewStateRepository(stateDb)
+
 	return &UnitProduceRepository{
 		unitRep:  unitRep,
 		propRep:  propRep,
@@ -420,7 +441,7 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 }
 
 func updateChainParameter(cp *core.ChainParameters, field, value string) error {
-	vv := reflect.ValueOf(cp)
+	vv := reflect.ValueOf(cp).Elem()
 	vn := vv.FieldByName(field)
 
 	switch vn.Kind() {
