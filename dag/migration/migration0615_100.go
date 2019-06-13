@@ -37,7 +37,7 @@ func (m *Migration0615_100) FromVersion() string {
 	return "0.6.15"
 }
 func (m *Migration0615_100) ToVersion() string {
-	return "1.0.1-beta"
+	return "1.0.0-beta"
 }
 func (m *Migration0615_100) ExecuteUpgrade() error {
 	err := RenameKey(m.propdb, []byte("GlobalProperty"), []byte("gpGlobalProperty"))

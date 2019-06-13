@@ -514,12 +514,30 @@ func startMigration(dag *dag.Dag) error {
 	log.Infof("the old version:%s", old_vertion.Version)
 	// 获取当前gptn版本号
 	now_version := configure.Version
-	if old_vertion.Version != now_version {
-		log.Infof("start migration,upgrade gtpn vertion[%s] to [%s]", old_vertion.Version, now_version)
+	next_version := old_vertion.Version
+	if next_version != now_version {
+		log.Infof("start migration,upgrade gtpn vertion[%s] to [%s]", next_version, now_version)
 		// migrations
 		mig_versions := migration.NewMigrations(dag.Db)
-		if mig, has := mig_versions[now_version]; has {
-			mig.ExecuteUpgrade()
+		for {
+			if mig, has := mig_versions[next_version]; has {
+				if err := mig.ExecuteUpgrade(); err != nil {
+					return err
+				}
+				next_version = mig.ToVersion()
+				data_version := new(modules.DataVersion)
+				data_version.Name = "gptn"
+				data_version.Version = next_version
+				dag.StoreDataVersion(data_version)
+			}
+			if next_version == now_version {
+				break
+			}
+			// 版本升级超时处理
+			if now := time.Now(); now.After(t.Add(1 * time.Minute)) {
+				log.Infof("upgrade gptn failed. error: timeout[%s]", time.Since(t))
+				break
+			}
 		}
 		return nil
 	}
