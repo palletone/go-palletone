@@ -241,10 +241,10 @@ func (pm *ProtocolManager) PullSync() {
 
 	if header := pm.dag.CurrentHeader(modules.PTNCOIN); header != nil {
 		pm.server.SendEvents(header)
-		//ps := pm.peers.AllPeers()
-		//for _, p := range ps {
-		//	p.SetHead(header)
-		//}
+		ps := pm.peers.AllPeers()
+		for _, p := range ps {
+			p.SetHead(header)
+		}
 	} else {
 		log.Debug("Cors PalletOne ProtocolManager PullSync ptn CurrentHeader is nil")
 	}
