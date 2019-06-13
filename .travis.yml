@@ -1,8 +1,5 @@
 language:
   - go
-  - ruby
-
-services: docker
 sudo: required
 env:
   global:
@@ -33,7 +30,7 @@ env:
     - IS_RUN_MEDIATOR_VOTE=false
     - GO111MODULE=on
     - IS_UPLOAD=true
-    - IS_RUN_USER_CONTRACT=true
+    - IS_RUN_USER_CONTRACT=false
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 matrix:
@@ -127,11 +124,11 @@ matrix:
 #          python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
 #          fi
 
-    -
-      os: linux
+    - os: linux
       if: env(IS_RUN_USER_CONTRACT) = true
       dist: xenial
       go: 1.12.5
+      services: docker
       script:
         - make gptn
         - cd ./cmd/deployment
