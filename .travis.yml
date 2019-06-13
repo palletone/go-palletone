@@ -140,7 +140,7 @@ matrix:
 after_script:
   - killall gptn
   - sleep 2
-  - if [ $IS_UPLOAD == 'true']; then
+  if: |
     # upload all log
     curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v;
 
