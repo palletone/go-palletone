@@ -27,8 +27,8 @@ type NothingMigration struct {
 	from, to string
 }
 
-func NothingMigration(from, to string) *NothingMgiration {
-	return &NothingMgiration{from: from, to: to}
+func NewNothingMigration(from, to string) *NothingMigration {
+	return &NothingMigration{from: from, to: to}
 }
 func (m *NothingMigration) FromVersion() string {
 	return m.from
