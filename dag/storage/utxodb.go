@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"reflect"
 )
 
 type UtxoDb struct {
@@ -58,16 +59,16 @@ type IUtxoDb interface {
 // ###################### UTXO index for Address ######################
 // key: outpoint_prefix + addr + outpoint's Bytes
 func (utxodb *UtxoDb) saveUtxoOutpoint(address common.Address, outpoint *modules.OutPoint) error {
-	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+	key := append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
 
 	// save outpoint tofind address
-	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
+	out_key := append(constants.OUTPOINT_ADDR_PREFIX, outpoint.ToKey()...)
 	StoreToRlpBytes(utxodb.db, out_key, address.String())
 	return StoreToRlpBytes(utxodb.db, key, outpoint)
 }
 func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Address, outpoint *modules.OutPoint) error {
-	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+	key := append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
 	return StoreToRlpBytes(batch, key, outpoint)
 	//val, err := rlp.EncodeToBytes(outpoint)
@@ -77,12 +78,12 @@ func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Ad
 	//return batch.Put(key, val)
 }
 func (utxodb *UtxoDb) deleteUtxoOutpoint(address common.Address, outpoint *modules.OutPoint) error {
-	key := append(constants.AddrOutPoint_Prefix, address.Bytes()...)
+	key := append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
 	return utxodb.db.Delete(key)
 }
 func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, error) {
-	data := getprefix(db.db, append(constants.AddrOutPoint_Prefix, address.Bytes()...))
+	data := getprefix(db.db, append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...))
 	outpoints := make([]modules.OutPoint, 0)
 	for _, b := range data {
 		out := new(modules.OutPoint)
@@ -174,7 +175,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	//data, err := utxodb.db.Get(key)
 	if err != nil {
-		log.Error("get utxo entry failed", "error", err, "outpoint", outpoint.String())
+		log.Errorf("DB[%s] get utxo entry failed, error:%s,outpoint:%s", reflect.TypeOf(utxodb.db).String(), err.Error(), outpoint.String())
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}
@@ -253,7 +254,7 @@ func (db *UtxoDb) ClearUtxo() error {
 	if err != nil {
 		return err
 	}
-	err = clearByPrefix(db.db, constants.AddrOutPoint_Prefix)
+	err = clearByPrefix(db.db, constants.ADDR_OUTPOINT_PREFIX)
 	if err != nil {
 		return err
 	}

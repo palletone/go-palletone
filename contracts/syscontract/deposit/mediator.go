@@ -18,15 +18,13 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"time"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
 )
 
 //  申请加入
@@ -43,19 +41,10 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		log.Error("Stub.GetInvokeAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-
-	//  获取同意列表
-	agreeList, err := GetList(stub, ListForAgreeBecomeMediator)
-	if err != nil {
-		log.Error("Stub.GetAgreeForBecomeMediatorList err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	if agreeList != nil {
-		//  判断是否已经申请过，并且通过了申请
-		if agreeList[invokeAddr.String()] {
-			log.Error("Node is exist in the agree list.")
-			return shim.Error("Node is exist in the agree list.")
-		}
+	//  判断该地址是否是第一次申请
+	mdeposit, _ := GetMediatorDeposit(stub, invokeAddr.String())
+	if mdeposit != nil {
+		return shim.Error(invokeAddr.String() + " has applied for become mediator")
 	}
 	//  获取申请列表
 	becomeList, err := GetList(stub, ListForApplyBecomeMediator)
@@ -67,13 +56,8 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	if becomeList == nil {
 		log.Info("Stub.GetBecomeMediatorApplyList: list is nil")
 		becomeList = make(map[string]bool)
-	} else {
-		//  判断是否已经申请过了
-		if becomeList[invokeAddr.String()] {
-			log.Debug("Node is exist in the become list.")
-			return shim.Error("Node is exist in the become list.")
-		}
 	}
+
 	becomeList[invokeAddr.String()] = true
 	//  保存列表
 	err = saveList(stub, ListForApplyBecomeMediator, becomeList)
@@ -84,7 +68,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 
 	// 保存账户信息
 	md := NewMediatorDeposit()
-	md.ApplyEnterTime = time.Now().Unix() / DTimeDuration
+	md.ApplyEnterTime = TimeStr()
 	md.Status = Apply
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), md)
 	if err != nil {
@@ -118,6 +102,22 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
+	//  判断该地址是否为空并是否在候选列表中
+	mediator, err := GetMediatorDeposit(stub, invokeAddr.Str())
+	if err != nil {
+		log.Error("get node balance err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+	if mediator == nil {
+		return shim.Error(invokeAddr.String() + " is nil")
+	}
+	if mediator.Status == Quitting {
+		return shim.Error("was in the list")
+	}
+	//  判断是否超过质押日期
+	if !isOverDeadline(stub, mediator.EnterTime) {
+		return shim.Error("does not over deadline")
+	}
 	//  获取候选列表
 	candidateList, err := GetList(stub, modules.MediatorList)
 	if err != nil {
@@ -132,16 +132,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		log.Error("node is not exist in the candidate list")
 		return shim.Error("node is not exist in the candidate list")
 	}
-	//  获取节点信息
-	mediator, err := GetMediatorDeposit(stub, invokeAddr.Str())
-	if err != nil {
-		log.Error("get node balance err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	mediator.ApplyQuitTime = time.Now().Unix() / DTimeDuration
-	mediator.Status = Quit
-	mediator.Balance = 0
-	//  获取退出列表
+	//  加入在退出列表
 	quitList, err := GetList(stub, ListForApplyQuitMediator)
 	if err != nil {
 		log.Error("get quit list err: ", "error", err)
@@ -149,20 +140,16 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 	}
 	if quitList == nil {
 		quitList = make(map[string]bool)
-		quitList[invokeAddr.String()] = true
-	} else {
-		if quitList[invokeAddr.String()] {
-			log.Error("node is exist in the quit list")
-			return shim.Error("node is exist in the quit list")
-		}
-		quitList[invokeAddr.String()] = true
 	}
+	quitList[invokeAddr.String()] = true
 	//  保存退出列表
 	err = saveList(stub, ListForApplyQuitMediator, quitList)
 	if err != nil {
 		log.Error("save quit list err: ", "error", err)
 		return shim.Error(err.Error())
 	}
+	mediator.ApplyQuitTime = TimeStr()
+	mediator.Status = Quitting
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), mediator)
 	if err != nil {
@@ -175,7 +162,9 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 
 func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit, nodeAddr common.Address) error {
 	//  计算币龄收益
-	endTime := md.LastModifyTime * DTimeDuration
+	//endTime := md.LastModifyTime * DTimeDuration
+	//endTime, _ := time.Parse(Layout, md.LastModifyTime)
+	endTime := StrToTime(md.LastModifyTime)
 	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
@@ -183,7 +172,7 @@ func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit
 		return err
 	}
 	//
-	awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
+	awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
 	//  本金+利息
 	md.Balance += awards
 	invokeTokens := new(modules.AmountAsset)
@@ -221,9 +210,22 @@ func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit
 		log.Error("MarshalAndPutStateForMediatorList err:", "error", err)
 		return err
 	}
-
+	//  移除jury候选列表
+	jl, err := GetList(stub, GetListForJuryCandidate)
+	if err != nil {
+		return err
+	}
+	delete(jl, nodeAddr.String())
+	err = saveList(stub, GetListForJuryCandidate, jl)
+	if err != nil {
+		return err
+	}
 	//  更新
-	md.Status = Quit
+	md.Status = Quited
+	md.Balance = 0
+	md.EnterTime = ""
+	md.LastModifyTime = ""
+	md.AgreeTime = ""
 	//  保存
 	err = SaveMediatorDeposit(stub, nodeAddr.Str(), md)
 	if err != nil {
@@ -236,16 +238,10 @@ func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit
 //mediator 交付保证金：
 func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("starting entering mediatorPayToDepositContract func.")
-	//  获取保证金下线，在状态数据库中
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
+	//  判断是否是交付保证金到保证金合约地址
+	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
-		log.Error("get deposit amount for mediator err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	//  转换保证金数量
-	depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
-	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		log.Error("get deposit invoke tokens err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  获取交付地址
@@ -254,32 +250,29 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  判断是否是交付保证金到保证金合约地址
-	invokeTokens, err := isContainDepositContractAddr(stub)
-	if err != nil {
-		log.Error("get deposit invoke tokens err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	//  获取同意列表
-	agreeList, err := GetList(stub, ListForAgreeBecomeMediator)
-	if err != nil {
-		log.Error("get agree list err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	//  判断是否已经通过了申请
-	if agreeList == nil {
-		log.Error("agree list is nil")
-		return shim.Error("agree list is nil")
-	}
-	//  判断是否已经通过了申请
-	if !agreeList[invokeAddr.String()] {
-		log.Error("node is not exist in the agree list,you should apply for it.")
-		return shim.Error("node is not exist in the agree list,you should apply for it.")
-	}
-	//  获取保证金账户信息
+	//  判断是否已经申请了
 	md, err := GetMediatorDeposit(stub, invokeAddr.String())
 	if err != nil {
 		log.Error("get node balance err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+	if md == nil {
+		return shim.Error(invokeAddr.String() + " does not apply for mediator")
+	}
+	//  判断是否已经获得同意状态
+	if md.Status != Agree {
+		return shim.Error(invokeAddr.String() + "does not in the agree list")
+	}
+	//  获取保证金下线，在状态数据库中
+	depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
+	if err != nil {
+		log.Error("get deposit amount for mediator err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+	//  转换保证金数量
+	depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
+	if err != nil {
+		log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  第一次交付
@@ -296,15 +289,29 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-
+		//  自动加入jury候选列表
+		jl, err := GetList(stub, GetListForJuryCandidate)
+		if err != nil {
+			return shim.Error("get jury candidate list err " + err.Error())
+		}
+		if jl == nil {
+			jl = make(map[string]bool)
+		}
+		jl[invokeAddr.String()] = true
+		err = saveList(stub, GetListForJuryCandidate, jl)
+		if err != nil {
+			return shim.Error("save jury list err " + err.Error())
+		}
 		//  处理数据
-		md.EnterTime = time.Now().Unix() / DTimeDuration
+		md.EnterTime = TimeStr()
 		md.Balance += invokeTokens.Amount
-		md.LastModifyTime = time.Now().Unix() / DTimeDuration
+		md.LastModifyTime = TimeStr()
 	} else {
 		//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		//  获取上次加入最后更改的时间
-		endTime := md.LastModifyTime * DTimeDuration
+		//endTime := md.LastModifyTime * DTimeDuration
+		//endTime, _ := time.Parse(Layout, md.LastModifyTime)
+		endTime := StrToTime(md.LastModifyTime)
 		//  获取保证金的年利率
 		depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 		if err != nil {
@@ -312,18 +319,18 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		//  计算币龄收益
-		awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
+		awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
 		md.Balance += awards
 		//  处理数据
 		md.Balance += invokeTokens.Amount
-		md.LastModifyTime = time.Now().Unix() / DTimeDuration
+		md.LastModifyTime = TimeStr()
 	}
 
-	//  退出后，再交付的状态
-	if md.Status == Quit {
+	//  TODO 退出后，再交付的状态
+	if md.Status == Quited {
 		md.Status = Agree
-		md.AgreeTime = time.Now().Unix() / DTimeDuration
-		md.ApplyQuitTime = 0
+		md.AgreeTime = TimeStr()
+		md.ApplyQuitTime = ""
 	}
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
@@ -389,7 +396,7 @@ func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr common.Addres
 	//	return err
 	//}
 	//
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig(DepositAmountForMediator)
+	depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
 	if err != nil {
 		log.Error("get deposit amount for mediator err: ", "error", err)
 		return err
@@ -471,7 +478,9 @@ func cashbackSomeMediatorDeposit(stub shim.ChaincodeStubInterface, cashbackAddr 
 		log.Error("stub.PayOutToken err: ", "error", err)
 		return err
 	}
-	endTime := md.LastModifyTime * DTimeDuration
+	//endTime := md.LastModifyTime * DTimeDuration
+	//endTime, _ := time.Parse(Layout, md.LastModifyTime)
+	endTime := StrToTime(md.LastModifyTime)
 	//
 	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
@@ -479,8 +488,8 @@ func cashbackSomeMediatorDeposit(stub shim.ChaincodeStubInterface, cashbackAddr 
 		return err
 	}
 	//
-	awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRate)
-	md.LastModifyTime = time.Now().Unix() / DTimeDuration
+	awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
+	md.LastModifyTime = TimeStr()
 	//  加上利息奖励
 	md.Balance += awards
 	//  减去提取部分

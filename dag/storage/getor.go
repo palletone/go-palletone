@@ -115,7 +115,7 @@ func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 
 // GetAdddrTransactionsHash
 func GetAddrTransactionsHash(db DatabaseReader, addr string) ([]common.Hash, error) {
-	data, err := db.Get(append(constants.AddrTransactionsHash_Prefix, []byte(addr)...))
+	data, err := db.Get(append(constants.ADDR_TXID_PREFIX, []byte(addr)...))
 	if err != nil {
 		return []common.Hash{}, err
 	}

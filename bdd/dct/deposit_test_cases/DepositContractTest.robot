@@ -12,43 +12,56 @@ ${anotherAddr}    ${EMPTY}
 
 *** Test Cases ***
 Business_01
-    [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点申请退出候选列表-》进入退出列表-》基金会同意。此时，所有列表为空
-    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #${mediatorAddr_01}节点申请加入列表
+    [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
+    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表
     log    ${result}
-    ${isIn}    getBecomeMediatorApplyList    ${mediatorAddr_01}    #${mediatorAddr_01}是否在申请列表里面
-    log    ${isIn}
-    Should Be Equal As Strings    ${isIn}    True    #为true
-    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理列表里的节点（同意）
+    ${addressMap1}    getBecomeMediatorApplyList    #获取申请加入列表的节点（不为空）
+    log    ${addressMap1}
+    Dictionary Should Contain Key    ${addressMap1}    ${mediatorAddr_01}
+    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    ok   #基金会处理列表里的节点（同意）
     log    ${result}
-    ${isIn}    getAgreeForBecomeMediatorList    ${mediatorAddr_01}    #${mediatorAddr_01}是否在同意列表里面
-    log    ${isIn}
-    Should Be Equal As Strings    ${isIn}    True    #为true
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    200000000000    #在同意列表里的节点，可以交付保证金（大于或等于保证金数量）,需要200000000000及以上
+    ${addressMap2}    getAgreeForBecomeMediatorList    #获取同意列表的节点（不为空）
+    log    ${addressMap2}
+    Dictionary Should Contain Key    ${addressMap2}    ${mediatorAddr_01}
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金（大于或等于保证金数量）,需要200000000000及以上
     log    ${result}
-    ${isIn}    getListForMediatorCandidate    ${mediatorAddr_01}    #${mediatorAddr_01}是否在候选列表里面
-    log    ${isIn}
-    Should Be Equal As Strings    ${isIn}    True    #为true
-    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    ${addressMap3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
+    log    ${addressMap3}
+    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    log    ${mDeposit}
+    Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}      #增加保证金
     log    ${result}
-    Should Not Be Equal    ${result}    balance is nil    #有余额
+    ${result}    mediatorApplyCashback    ${mediatorAddr_01}    ${medDepositAmount}      #申请退出部分保证金
+    log    ${result}
+    ${addressMap5}    getListForCashbackApplication
+    log    ${addressMap5}
+    Dictionary Should Contain Key    ${addressMap5}    ${mediatorAddr_01}       #mediatorAddr_01
+    ${result}    handleForMediatorApplyCashback    ${foundationAddr}    ${mediatorAddr_01}   ok    #基金会处理退保证金列表里的节点（同意）
+    log    ${result}
     ${result}    applyQuitMediator    ${mediatorAddr_01}    #该节点申请退出mediator候选列表
     log    ${result}
-    ${isIn}    getQuitMediatorApplyList    ${mediatorAddr_01}    #获取申请mediator列表里的节点（不为空）
-    log    ${isIn}
-    Should Be Equal As Strings    ${isIn}    True    #为true
-    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    #基金会处理退出候选列表里的节点（同意）
+    ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
+    log    ${addressMap4}
+    Dictionary Should Contain Key    ${addressMap4}    ${mediatorAddr_01}
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}   ok    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
-    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
+    log    ${mDeposit}
+    Should Be Equal    ${mDeposit["balance"]}    ${0}    #账户地址不存在
+    ${result}    getBecomeMediatorApplyList    #为空
     log    ${result}
-    #    ${result}    balance is nil    #账户地址不存在
-    #    getBecomeMediatorApplyList    ${mediatorAddr_01}
-    #    ${result}
-    #    getAgreeForBecomeMediatorList    ${mediatorAddr_01}
-    #    ${result}
-    #    getListForMediatorCandidate    ${mediatorAddr_01}
-    #    ${result}
-    #    getQuitMediatorApplyList    ${mediatorAddr_01}
-    #    ${result}
+    Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
+    ${result}    getAgreeForBecomeMediatorList    #为空
+    log    ${result}
+    Dictionary Should Contain Key    ${result}    ${mediatorAddr_01}
+    ${result}    getListForMediatorCandidate    #为空
+    log    ${result}
+    Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
+    ${result}    getQuitMediatorApplyList    #为空
+    log    ${result}
+    Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
 
 Business_02
     [Documentation]    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》社区节点申请没收改地址所以保证金-》基金会同意，此时，只有同意列表不为空，其他的为空。
@@ -67,7 +80,7 @@ Business_02
     @{addressList3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
     log    @{addressList3}
     Should Be True    '${mediatorAddr_02}' in @{addressList3}
-    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
+    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil    #有余额
     ${result}    applyForForfeitureDeposit    ${anotherAddr}    ${mediatorAddr_02}    200000000000    Mediator    #某个地址申请没收该节点保证金（全部）
@@ -76,7 +89,7 @@ Business_02
     log    ${result}
     ${result}    handleForForfeitureApplication    ${foundationAddr}    ok    #基金会处理（同意），这是会移除mediator出候选列表
     log    ${result}
-    ${result}    getCandidateBalanceWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
+    ${result}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${result}
     Should Be Equal    ${result}    balance is nil    #为空
     ${result}    getBecomeMediatorApplyList    #为空
@@ -96,6 +109,7 @@ Business_03
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil
     ${resul}    getListForJuryCandidate    #为空
+    Dictionary Should Not Contain Key    ${resul}    ${juryAddr_01}
     log    ${resul}
 
 Business_04
@@ -106,6 +120,7 @@ Business_04
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil
     ${result}    getListForDeveloperCandidate    #获取developer候选列表里的节点，不为空
+    Dictionary Should Contain Key    ${result}    ${developerAddr_01}
     log    ${result}
 
 Business_06

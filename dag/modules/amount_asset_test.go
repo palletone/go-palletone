@@ -21,6 +21,7 @@
 package modules
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -32,4 +33,10 @@ func TestAmountAsset_Bytes(t *testing.T) {
 	t.Logf("%x", data)
 	aa2 := BytesToAmountAsset(data)
 	assert.Equal(t, aa, aa2)
+}
+func TestAmountAssetRlp(t *testing.T) {
+	array := []AmountAsset{}
+	data, err := rlp.EncodeToBytes(array)
+	assert.Nil(t, err)
+	t.Logf("%x", data)
 }

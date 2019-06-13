@@ -30,7 +30,7 @@ type Validator interface {
 	//验证一个交易是否是合法交易
 	//isCoinbase
 	//isFullTx这个交易是完整的可打包的交易，还是陪审团没处理或者正在处理中的交易
-	ValidateTx(tx *modules.Transaction, isFullTx bool) error
+	ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, error)
 	//验证一个Unit中的所有交易是否是合法交易
 	//ValidateTransactions(txs modules.Transactions) error
 	//除了群签名外，验证Unit是否是合法Unit,包括其中的所有交易都会逐一验证
@@ -48,6 +48,8 @@ type IStateQuery interface {
 	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 }
 type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)

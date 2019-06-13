@@ -23,7 +23,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -160,7 +159,6 @@ func (f *LightFetcher) loop() {
 	// Iterate the block fetching until a quit is requested
 	//fetchTimer := time.NewTimer(0)
 	//completeTimer := time.NewTimer(0)
-
 	for {
 		//TODO Clean up any expired block fetches
 		// Import any queued blocks that could potentially fit
@@ -206,46 +204,26 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 
 	// Run the import on a new thread
 	log.Debug("Importing propagated block insert DAG", "peer", p.id, "number", header.Index(), "hash", hash)
-	go func() {
-		defer func() { f.done <- hash }()
-
-		// If the parent's unknown, abort insertion
-		//TODO must recover
-		//parentsHash := header.ParentsHash
-		//for _, parentHash := range parentsHash {
-		//	had, _ := f.getHeaderByHash(parentHash)
-		//	if had == nil {
-		//		log.Debug("Unknown parent of propagated block", "peer", peer, "number", header.Number.Index, "hash", hash, "parent", parentHash)
-		//		return
-		//	}
-		//}
-
-		// Quickly validate the header and propagate the block if it passes
-		switch err := f.verifyHeader(header); err {
-		case nil:
-			// All ok, quickly propagate to our peers
-			go f.broadcastHeader(p, header, true)
-
-		case dagerrors.ErrFutureBlock:
-			// Weird future block, don't fail, but neither propagate
-
-		default:
-			// Something went very wrong, drop the peer
-			log.Debug("Propagated block verification failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
-			f.dropPeer(p.id)
-			return
-		}
-
-		// Run the actual import and log any issues
-		if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
-			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
-			return
-		}
-		//p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
-		// If import succeeded, broadcast the block
-		go f.broadcastHeader(p, header, false)
-
-	}()
+	defer func() { f.done <- hash }()
+	// Run the actual import and log any issues
+	if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
+		log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
+		return
+	}
+	//p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
+	// If import succeeded, broadcast the block
+	go f.broadcastHeader(p, header, false)
+	//go func() {
+	//	defer func() { f.done <- hash }()
+	//	// Run the actual import and log any issues
+	//	if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
+	//		log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
+	//		return
+	//	}
+	//	//p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
+	//	// If import succeeded, broadcast the block
+	//	go f.broadcastHeader(p, header, false)
+	//}()
 }
 
 // enqueue schedules a new future import operation, if the block to be imported
@@ -282,8 +260,8 @@ func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 
 // Enqueue tries to fill gaps the the fetcher's future import queue.
 func (f *LightFetcher) Enqueue(p *peer, header *modules.Header) error {
-	log.Debug("Enter CorsFetcher Enqueue", "peer id", p.id, "header index:", header.Index())
-	defer log.Debug("End CorsFetcher Enqueue")
+	//log.Debug("Enter CorsFetcher Enqueue", "peer id", p.id, "header index:", header.Index())
+	//defer log.Debug("End CorsFetcher Enqueue")
 	op := &inject{
 		origin: p,
 		header: header,
@@ -294,11 +272,4 @@ func (f *LightFetcher) Enqueue(p *peer, header *modules.Header) error {
 	case <-f.quit:
 		return errTerminated
 	}
-}
-
-func (f *LightFetcher) Insert(p *peer, header *modules.Header) error {
-	log.Debug("Enter CorsFetcher Insert", "peer id", p.id, "header index:", header.Index())
-	defer log.Debug("End CorsFetcher Insert")
-	f.insert(p, header)
-	return nil
 }

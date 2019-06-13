@@ -120,6 +120,7 @@ type Downloader struct {
 	committed       int32
 
 	// Channels
+	allTokenCh chan dataPack
 	headerCh   chan dataPack // [ptn/62] Channel receiving inbound block headers
 	bodyCh     chan dataPack // [ptn/62] Channel receiving inbound block bodies
 	receiptCh  chan dataPack // [ptn/63] Channel receiving inbound receipts
@@ -198,6 +199,7 @@ func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightD
 		dag:           dag,
 		txpool:        txpool,
 		dropPeer:      dropPeer,
+		allTokenCh:    make(chan dataPack, 1),
 		headerCh:      make(chan dataPack, 1),
 		bodyCh:        make(chan dataPack, 1),
 		receiptCh:     make(chan dataPack, 1),
@@ -549,7 +551,12 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.AssetId) (*m
 
 	// Request the advertised remote head block and wait for the response
 	headerHash, _ := p.peer.Head(assetId)
-	go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
+	//go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
+	go func() {
+		if err := p.peer.RequestHeadersByHash(headerHash, 1, 0, false); err != nil {
+			log.Debug("Downloader fetchHeight RequestHeadersByHash", "err", err, "assetid", assetId, "hash", headerHash)
+		}
+	}()
 
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)
@@ -595,7 +602,14 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	height := latest.Index()
 	token := latest.Number.AssetID
 	// Figure out the valid ancestor range to prevent rewrite attacks
-	floor, ceil := int64(-1), d.lightdag.CurrentHeader(token).Number.Index
+	floor := int64(-1)
+	ceil := uint64(0)
+	lheader := d.lightdag.CurrentHeader(token)
+	if lheader == nil {
+		log.Debug("Downloader findAncestor CurrentHeader is nil", "assetid", assetId)
+	} else {
+		ceil = lheader.Number.Index
+	}
 
 	//if d.mode == FullSync {
 	//	ceil = d.dag.CurrentUnit().NumberU64()
@@ -625,8 +639,7 @@ func (d *Downloader) findAncestor(p *peerConnection, latest *modules.Header, ass
 	log.Debug("Downloader", "findAncestor RequestHeadersByNumber from:", from, "count:", count)
 	index := &modules.ChainIndex{
 		AssetID: assetId,
-		//IsMain:  true,
-		Index: uint64(from),
+		Index:   uint64(from),
 	}
 
 	go p.peer.RequestHeadersByNumber(index, count, 15, false)
@@ -1086,7 +1099,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 						log.Debug("Stalling delivery, dropping", "type", kind)
 						if d.dropPeer == nil {
 							// The dropPeer method is nil when `--copydb` is used for a local copy.
-							// Timeouts can occur if e.g. compaction hits at the wrong time, and can be ignored
+							// Timeouts caDownloader fetchPartsn occur if e.g. compaction hits at the wrong time, and can be ignored
 							log.Warn("Downloader wants to drop peer, but peerdrop-function is not set", "peer", pid)
 						} else {
 							d.dropPeer(pid)
@@ -1665,9 +1678,7 @@ func (d *Downloader) DeliverAllToken(id string, headers []*modules.Header) error
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)
 	select {
-	//case <-d.cancelCh:
-	//	return errCancelBlockFetch
-	case d.headerCh <- &headerPack{id, headers}:
+	case d.allTokenCh <- &headerPack{id, headers}:
 		return nil
 	case <-timeout:
 		log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", id)
@@ -1687,16 +1698,12 @@ func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 	}
 
 	go p.peer.RequestLeafNodes()
-	//go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
 
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)
 	for {
 		select {
-		//case <-d.cancelCh:
-		//	return nil, errCancelBlockFetch
-
-		case packet := <-d.headerCh:
+		case packet := <-d.allTokenCh:
 			// Discard anything not from the origin peer
 			if packet.PeerId() != p.id {
 				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
@@ -1714,10 +1721,6 @@ func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
 		case <-timeout:
 			log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", p.id)
 			return nil, errTimeout
-
-		case <-d.bodyCh:
-		case <-d.receiptCh:
-			// Out of bounds delivery, ignore
 		}
 	}
 }

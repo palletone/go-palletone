@@ -52,7 +52,8 @@ const (
 	DefaultMediator = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
 	DefaultNodeInfo = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
 		"684d348e88722b259f31abcccd4d0eaae0f52eeb85e1eb5342b862@127.0.0.1:30303"
-	DefaultInitPubKey = "Dsn4gF2xpsM79R6kBfsR1joZD4BoPfBGREJGStCAz1bFfUnB5QXBGbNfudxyCWz6uWZZ8c43BYWkxiezyF5uifhv1diiykrxzgFhLMSAvppx34RjJwzjmXAXnYMuQX3Jy2P3ygehcKmATAyXQCVoXde6Xo3tkA2Jv8Zb8zDcdGjbFyd"
+	DefaultInitPubKey = "2SvBCoCHWA8Zg2Q8v2onmaTeZj6YmWLbp6mzoCZeDwiUcmuqFwd8fZXCfdmEhTodbWaSJ8T7MvjQiZkn4S9VTQnKDr" +
+		"EkETt84Sr58vmjVdhdXNjjzqn8j6oHzvduxGo4UjWB66wd1GFXKoz5XD8hcPDzCyGVqZLjb7wu2pkJxeG1Mt3"
 
 	DefaultJuryAddr = "P16bXzewsexHwhGYdt1c1qbzjBirCqDg8mN"
 

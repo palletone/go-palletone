@@ -49,8 +49,10 @@ type IMemDag interface {
 	GetChainUnits() map[common.Hash]*modules.Unit
 	SetStableThreshold(threshold int)
 	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository)
-	SetUnstableRepositories(tunitRep common2.IUnitRepository, tutxoRep common2.IUtxoRepository, tstateRep common2.IStateRepository, tpropRep common2.IPropRepository, tUnitProduceRep common2.IUnitProduceRepository)
+	//SetUnstableRepositories(tunitRep common2.IUnitRepository, tutxoRep common2.IUtxoRepository, tstateRep common2.IStateRepository, tpropRep common2.IPropRepository, tUnitProduceRep common2.IUnitProduceRepository)
 	SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error
+	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
+	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 }
 
 //type IPartitionMemDag interface {

@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
+
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -172,7 +173,16 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		}
 		tx.TxMessages = append(tx.TxMessages, newMsg)
 	}
-
+	//Init system contract
+	for _, sc := range genesis.SystemContracts {
+		newMsg := &modules.Message{
+			App:     modules.APP_CONTRACT_DEPLOY,
+			Payload: &modules.ContractDeployPayload{ContractId: sc.Address.Bytes(), Name: sc.Name},
+		}
+		if sc.Active {
+			tx.TxMessages = append(tx.TxMessages, newMsg)
+		}
+	}
 	// step4, generate inital mediator info payload
 	//initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
 	//tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)

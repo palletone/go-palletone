@@ -22,12 +22,11 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"strconv"
 	"sync"
 	"time"
-	"strconv"
 
 	"encoding/json"
-	"go.dedis.ch/kyber/v3"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -36,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
@@ -45,7 +45,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/core"
+	"go.dedis.ch/kyber/v3"
 )
 
 const (
@@ -62,8 +62,9 @@ type PalletOne interface {
 	ElectionBroadcast(event ElectionEvent)
 	AdapterBroadcast(event AdapterEvent)
 
-	GetLocalMediators() []common.Address
-	IsLocalActiveMediator(add common.Address) bool
+	//GetLocalMediators() []common.Address
+	//IsLocalActiveMediator(add common.Address) bool
+	LocalHaveActiveMediator() bool
 
 	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
 }
@@ -86,7 +87,6 @@ type iDag interface {
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
@@ -95,6 +95,8 @@ type iDag interface {
 	GetContract(contractId []byte) (*modules.Contract, error)
 	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
+	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 }
 
 type Juror struct {
@@ -231,26 +233,36 @@ func (p *Processor) isLocalActiveJury(add common.Address) bool {
 	return false
 }
 
-func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
-	if len(p.local) < 1 {
-		return nil, errors.New("getLocalNodeInfo, no local account")
-	}
-	nodes := make([]*nodeInfo, 0)
+func (p *Processor) localHaveActiveJury() bool {
 	for addr, _ := range p.local {
-		nodeType := 0
-		if p.ptn.IsLocalActiveMediator(addr) {
-			nodeType = TMediator
-		} else if p.isLocalActiveJury(addr) {
-			nodeType = TJury
+		if p.isLocalActiveJury(addr) {
+			return true
 		}
-		node := &nodeInfo{
-			addr:  addr,
-			ntype: nodeType,
-		}
-		nodes = append(nodes, node)
 	}
-	return nodes, nil
+
+	return false
 }
+
+//func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
+//	if len(p.local) < 1 {
+//		return nil, errors.New("getLocalNodeInfo, no local account")
+//	}
+//	nodes := make([]*nodeInfo, 0)
+//	for addr, _ := range p.local {
+//		nodeType := 0
+//		if p.ptn.IsLocalActiveMediator(addr) {
+//			nodeType = TMediator
+//		} else if p.isLocalActiveJury(addr) {
+//			nodeType = TJury
+//		}
+//		node := &nodeInfo{
+//			addr:  addr,
+//			ntype: nodeType,
+//		}
+//		nodes = append(nodes, node)
+//	}
+//	return nodes, nil
+//}
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
 	req := p.mtx[reqId]
@@ -607,25 +619,15 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 
 func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules.Transaction, ele []modules.ElectionInf) bool {
 	if tx == nil {
+		log.Errorf("tx is nil")
 		return false
 	}
+
 	reqId := tx.RequestHash()
 	isSysContract := tx.IsSystemContract()
-	isMediator, isJury := func(acs map[common.Address]*JuryAccount) (isM bool, isJ bool) {
-		isM = false
-		isJ = false
-		for addr, _ := range p.local {
-			if p.ptn.IsLocalActiveMediator(addr) {
-				//log.Debugf("[%s]contractEventExecutable, is Mediator, addr[%s]:", shortId(reqId.String()), addr.String())
-				isM = true
-			}
-			if true == p.isLocalActiveJury(addr) {
-				//log.Debugf("[%s]contractEventExecutable, is Jury, addr:", shortId(reqId.String()), addr.String())
-				isJ = true
-			}
-		}
-		return isM, isJ
-	}(p.local)
+
+	isMediator := p.ptn.LocalHaveActiveMediator()
+	isJury := p.localHaveActiveJury()
 
 	switch event {
 	case CONTRACT_EVENT_EXEC:
@@ -633,7 +635,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Mediator, true", shortId(reqId.String()))
 			return true
 		} else if !isSysContract && isJury {
-			if !p.contractReqAddrCheck(tx, true){
+			if !p.contractReqAddrCheck(tx, true) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, stop, false", shortId(reqId.String()))
 				break
 			}
@@ -646,7 +648,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			if !p.contractReqAddrCheck(tx, true){
+			if !p.contractReqAddrCheck(tx, true) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, stop, false", shortId(reqId.String()))
 				break
 			}
@@ -837,7 +839,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
@@ -865,8 +867,8 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 func (p *Processor) contractReqAddrCheck(tx *modules.Transaction, check bool) bool { //contract stop only
 	if check {
 		//只检查合约交易Stop请求地址与合同部署创建者地址是否相同
-		if contractType , err := getContractTxType(tx); err == nil{
-			if contractType != modules.APP_CONTRACT_STOP_REQUEST{
+		if contractType, err := getContractTxType(tx); err == nil {
+			if contractType != modules.APP_CONTRACT_STOP_REQUEST {
 				return true
 			}
 		}

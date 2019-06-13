@@ -45,6 +45,7 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/parameter"
 )
 
@@ -58,6 +59,7 @@ type IUnitRepository interface {
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
+	SaveNewestHeader(header *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
@@ -171,6 +173,13 @@ func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*
 }
 func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
 	return rep.dagdb.SaveHeader(header)
+}
+func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
+	err := rep.dagdb.SaveHeader(header)
+	if err != nil {
+		return err
+	}
+	return rep.propdb.SetNewestUnit(header)
 }
 func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
 	return rep.dagdb.SaveHeaders(headers)
@@ -450,19 +459,20 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 
 	//出块奖励
 	rewardAd := rep.ComputeGenerateUnitReward(mAddr, assetId.ToAsset())
-	if rewardAd != nil&& rewardAd.Amount>0 {
+	if rewardAd != nil && rewardAd.Amount > 0 {
 		ads = append(ads, rewardAd)
 	}
 
 	outAds := arrangeAdditionFeeList(ads)
+
 	coinbase, rewards, err := rep.CreateCoinbase(outAds, chainIndex.Index)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 	txs := make(modules.Transactions, 0)
-	if len(outAds)>0 {
-		log.Debug("=======================Is rewards && coinbase tx info ================",  "amount", rewards, "hash", coinbase.Hash().String())
+	if len(outAds) > 0 {
+		log.Debug("=======================Is rewards && coinbase tx info ================", "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	}
 
@@ -491,7 +501,6 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 
 	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
-	log.Infof("core.DeriveSha cost time %s", time.Since(begin))
 	// step9. generate genesis unit header
 	header.TxsIllegal = illegalTxs
 	header.TxRoot = root
@@ -593,18 +602,18 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 	return nil
 }
 
-func  (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
+func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
 	for _, tx := range txs {
 		if tx.Tx == nil || tx.TxFee == nil {
 			continue
 		}
-		allowcate,err:= tx.Tx.GetTxFeeAllocate(rep.utxoRepository.GetUtxoEntry,time.Now().Unix(),tokenengine.GetScriptSigners,m)
-		if err!=nil{
+		allowcate, err := tx.Tx.GetTxFeeAllocate(rep.utxoRepository.GetUtxoEntry, time.Now().Unix(), tokenengine.GetScriptSigners, m)
+		if err != nil {
 			return nil, err
 		}
-		for _,a:=range allowcate {
+		for _, a := range allowcate {
 			ads = append(ads, a)
 		}
 	}
@@ -642,26 +651,24 @@ func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
 	if len(ads) <= 0 {
 		return nil
 	}
-	out := make([]*modules.Addition, 0)
+	out := make(map[string]*modules.Addition)
 	for _, a := range ads {
-		ok := false
-		b := &modules.Addition{}
-		for _, b = range out {
-			if ok, _ = a.IsEqualStyle(b); ok {
-				break
-			}
-		}
+		key := a.Key()
+		b, ok := out[key]
 		if ok {
 			b.Amount += a.Amount
-			continue
+		} else {
+			out[key] = a
 		}
-		out = append(out, a)
 	}
 	if len(out) < 1 {
 		return nil
-	} else {
-		return out
 	}
+	result := []*modules.Addition{}
+	for _, v := range out {
+		result = append(result, v)
+	}
+	return result
 }
 
 func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
@@ -1232,10 +1239,12 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		Height:  height,
 		TxIndex: txIndex,
 	}
-	err := rep.statedb.SaveContractStates(payload.ContractId, payload.WriteSet, version)
-	if err != nil {
-		log.Errorf("save contract[%x] init writeset error:%s", payload.ContractId, err.Error())
-		return false
+	if len(payload.WriteSet) > 0 {
+		err := rep.statedb.SaveContractStates(payload.ContractId, payload.WriteSet, version)
+		if err != nil {
+			log.Errorf("save contract[%x] init writeset error:%s", payload.ContractId, err.Error())
+			return false
+		}
 	}
 	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
 	// save contract name
@@ -1244,16 +1253,18 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	//	return false
 	//}
 	contract := modules.NewContract(payload, requester, uint64(unitTime))
-	err = rep.statedb.SaveContract(contract)
+	err := rep.statedb.SaveContract(contract)
 	if err != nil {
 		log.Errorf("Save contract[%x] error:%s", payload.ContractId, err.Error())
 		return false
 	}
-	//save contract election
-	err = rep.statedb.SaveContractJury(payload.ContractId, payload.EleList, version)
-	if err != nil {
-		log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
-		return false
+	if len(payload.EleList) > 0 {
+		//save contract election
+		err = rep.statedb.SaveContractJury(payload.ContractId, payload.EleList, version)
+		if err != nil {
+			log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
+			return false
+		}
 	}
 	//eleBytes, err := rlp.EncodeToBytes(payload.EleList)
 	//if err == nil {
@@ -1392,7 +1403,7 @@ func (rep *UnitRepository) CreateCoinbase(ads []*modules.Addition, height uint64
 	}
 }
 func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*modules.Transaction, uint64, error) {
-	log.Debug("create a statedb record to write mediator and jury income")
+	//log.Debug("create a statedb record to write mediator and jury income")
 	totalIncome := uint64(0)
 	payload := modules.ContractInvokePayload{}
 	contractId := syscontract.CoinbaseContractAddress.Bytes()
@@ -1401,13 +1412,15 @@ func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*module
 	//key为奖励地址，Value为[]AmountAsset
 	if len(ads) != 0 {
 		for _, v := range ads {
-			key := RewardAddressPrefix + v.Addr.String()
-			data, _, err := rep.statedb.GetContractState(contractId, key)
+			key := constants.RewardAddressPrefix + v.Addr.String()
+			data, version, err := rep.statedb.GetContractState(contractId, key)
 			income := []modules.AmountAsset{}
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
+				rs := modules.ContractReadSet{Key: key, Version: version, Value: data}
+				payload.ReadSet = append(payload.ReadSet, rs)
 			}
-			newValue := addIncome(income, v.Amount,v.Asset)
+			newValue := addIncome(income, v.Amount, v.Asset)
 			newData, _ := rlp.EncodeToBytes(newValue)
 			ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: newData}
 			payload.WriteSet = append(payload.WriteSet, ws)
@@ -1433,12 +1446,10 @@ func addIncome(income []modules.AmountAsset, newAmount uint64, asset *modules.As
 		newValue = append(newValue, aa)
 	}
 	if !hasOldValue {
-		newValue = append(newValue, modules.AmountAsset{Amount:newAmount,Asset:asset,})
+		newValue = append(newValue, modules.AmountAsset{Amount: newAmount, Asset: asset})
 	}
 	return newValue
 }
-
-const RewardAddressPrefix = "Addr:"
 
 func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modules.Transaction, uint64, error) {
 	log.Debug("create a payment to reward mediator and jury")
@@ -1449,13 +1460,15 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
 	//key为奖励地址，Value为[]AmountAsset
 	//读取之前的奖励统计值
-	addrMap, err := rep.statedb.GetContractStatesByPrefix(contractId, RewardAddressPrefix)
+	addrMap, err := rep.statedb.GetContractStatesByPrefix(contractId, constants.RewardAddressPrefix)
 	if err != nil {
+		log.Errorf("GetContractStates(%v) By Prefix(%v) is error",
+			syscontract.CoinbaseContractAddress.Str(), constants.RewardAddressPrefix)
 		return nil, 0, err
 	}
 	rewards := map[common.Address][]modules.AmountAsset{}
 	for key, v := range addrMap {
-		addr := string(key[len(RewardAddressPrefix):])
+		addr := string(key[len(constants.RewardAddressPrefix):])
 		incomeAddr, _ := common.StringToAddress(addr)
 		aa := []modules.AmountAsset{}
 		rlp.DecodeBytes(v.Value, &aa)
@@ -1468,7 +1481,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 		if !ok {
 			reward = []modules.AmountAsset{}
 		}
-		reward = addIncome(reward, ad.Amount,ad.Asset)
+		reward = addIncome(reward, ad.Amount, ad.Asset)
 		rewards[ad.Addr] = reward
 		totalIncome += ad.Amount
 	}
@@ -1480,8 +1493,12 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	payload := &modules.ContractInvokePayload{}
 	payload.ContractId = contractId
 	for addr, _ := range rewards {
-		key := RewardAddressPrefix + addr.String()
-		ws := modules.ContractWriteSet{IsDelete: true, Key: key}
+		key := constants.RewardAddressPrefix + addr.String()
+		data, version, _ := rep.statedb.GetContractState(contractId, key)
+		rs := modules.ContractReadSet{Key: key, Version: version, Value: data}
+		payload.ReadSet = append(payload.ReadSet, rs)
+		empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
+		ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: empty}
 		payload.WriteSet = append(payload.WriteSet, ws)
 	}
 	msg1 := &modules.Message{

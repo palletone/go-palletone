@@ -70,17 +70,19 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 				return shim.Error(err.Error())
 			}
 			isJury = true
-			balance.EnterTime = time.Now().Unix() / DTimeDuration
+			balance.EnterTime = TimeStr()
 		}
 		balance.Balance += invokeTokens.Amount
-		balance.LastModifyTime = time.Now().Unix() / DTimeDuration
+		balance.LastModifyTime = TimeStr()
 	} else {
 		//  账户已存在，进行信息的更新操作
 		if balance.Balance >= depositAmountsForJury {
 			//  原来就是jury
 			isJury = true
 			//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
-			endTime := balance.LastModifyTime * DTimeDuration
+			//endTime := balance.LastModifyTime * DTimeDuration
+			//endTime, _ := time.Parse(Layout, balance.LastModifyTime)
+			endTime := StrToTime(balance.LastModifyTime)
 			//  获取保证金年利率
 			depositRate, err := stub.GetSystemConfig(modules.DepositRate)
 			if err != nil {
@@ -88,12 +90,12 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 				return shim.Error(err.Error())
 			}
 			//  计算币龄收益
-			awards := award.GetAwardsWithCoins(balance.Balance, endTime, depositRate)
+			awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRate)
 			balance.Balance += awards
 		}
 		//  处理交付保证金数据
 		balance.Balance += invokeTokens.Amount
-		balance.LastModifyTime = time.Now().Unix() / DTimeDuration
+		balance.LastModifyTime = TimeStr()
 	}
 	if !isJury {
 		//  判断交了保证金后是否超过了jury
@@ -104,7 +106,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
 			}
-			balance.EnterTime = time.Now().Unix() / DTimeDuration
+			balance.EnterTime = TimeStr()
 		}
 	}
 	err = SaveNodeBalance(stub, invokeAddr.String(), balance)
@@ -180,7 +182,9 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Ad
 	//  判断是否退出列表
 	if result == 0 {
 		//  加入列表时的时间
-		startTime := time.Unix(balance.EnterTime*DTimeDuration, 0).UTC().YearDay()
+		//enterTime, _ := time.Parse(Layout, balance.EnterTime)
+		enterTime := StrToTime(balance.EnterTime)
+		startTime := time.Unix(enterTime.Unix(), 0).UTC().YearDay()
 		//  当前退出时间
 		endTime := time.Now().UTC().YearDay()
 		//  判断是否已到期

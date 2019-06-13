@@ -48,16 +48,16 @@ library LSafeMath {
 
 contract ethmultisig {
   using LSafeMath for uint;
-  
+
   address private admin;//debug   
-  
+
   address private addrA;
   address private addrB;
   address private addrC;
   address private addrD;
   mapping(string => uint8) private reqHistory; 
-  
-  event Deposit(address token, address user, uint amount, string reqid);
+
+  event Deposit(address token, address user, uint amount, string ptnaddr);
   event Withdraw(address token, address user, address recver, uint amount, string reqid, uint confirmvalue, string state);
   
   modifier isAdmin() {//debug
@@ -66,6 +66,14 @@ contract ethmultisig {
   }
 
   constructor(address addra, address addrb, address addrc, address addrd) public {
+    admin = msg.sender;//debug
+    addrA = addra;
+    addrB = addrb;
+    addrC = addrc;
+    addrD = addrd;
+  }
+
+  function setaddrs(address addra, address addrb, address addrc, address addrd) public isAdmin {//debug
     admin = msg.sender;//debug
     addrA = addra;
     addrB = addrb;
@@ -98,7 +106,7 @@ contract ethmultisig {
         setoneconfirm(addrconfirms, addr, owners);
     }
   }
-  
+
   function calconfirm(uint8[] addrconfirms) private pure returns (uint8) {
     uint8[] memory weights = new uint8[](4);
     weights[0] = 1;
@@ -112,21 +120,21 @@ contract ethmultisig {
     }
     return confirms;
   }
-  
+
   function getconfirm(address[] owners, bytes32 tranhash, bytes sigstr1, bytes sigstr2, bytes sigstr3) private pure returns (uint8)  {
     uint8[] memory addrconfirms = new uint8[](4);
-    
+
     setallconfirms(addrconfirms, tranhash, owners, sigstr1, sigstr2, sigstr3);
-    
+
     uint8 confirms = 0;
     confirms = calconfirm(addrconfirms);
     return confirms;  
   }
-  
+
   function deposit(string ptnaddr) public payable {
     emit Deposit(0, msg.sender, msg.value, ptnaddr);
   }
-  
+
   function withdraw(address recver, uint amount, string reqid, bytes sigstr1, bytes sigstr2, bytes sigstr3) public {
     require(reqHistory[reqid] == 0);
     
@@ -139,9 +147,9 @@ contract ethmultisig {
     uint8 confirms = 0;
     bytes32 tranhash = keccak256(abi.encodePacked(address(this), recver, amount, reqid));//hash
     confirms = getconfirm(owners, tranhash, sigstr1, sigstr2, sigstr3);
-    
+
     require(confirms >= 3);
-    
+
     reqHistory[reqid] = 1;
     recver.transfer(amount);
     emit Withdraw(0, msg.sender, recver, amount, reqid, confirms, "withdraw");
@@ -188,6 +196,7 @@ contract ethmultisig {
       return ecrecover(hash, v, r, s);
     }
   }
+
   function getaddr(bytes32 tranhash, bytes sigstr) private pure returns (address) {
     return recover(tranhash, sigstr);
   }

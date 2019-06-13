@@ -99,11 +99,25 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		return
 	}
 
+	if pm.lightSync && pm.assetId != assetId {
+		return
+	}
+
 	headhash, number := peer.HeadAndNumber(assetId)
 	if common.EmptyHash(headhash) || number == nil {
 		log.Debug("Light PalletOne synchronise is nil", "assetId", assetId)
 		return
 	}
+
+	lheader := pm.dag.CurrentHeader(assetId)
+	if lheader != nil && lheader.Number.Index >= number.Index {
+		log.Debug("Light PalletOne synchronise is not need sync", "local index", lheader.Number.Index, "peer index", number.Index)
+		return
+	}
+	if lheader == nil {
+		log.Debug("Light PalletOne synchronise local header is nil", "assetid", assetId)
+	}
+
 	if atomic.LoadUint32(&pm.fastSync) == 0 {
 		log.Debug("Light PalletOne synchronising")
 		return

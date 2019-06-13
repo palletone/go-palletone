@@ -9,8 +9,8 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-Feature: Vote Contract- Create token
-    [Documentation]    Scenario: Verify Sender's PTN
+Scenario: Vote Contract - Create Token
+    [Documentation]    Verify Sender's PTN
     ${geneAdd}    Given Get genesis address
     ${PTN1}    ${result1}    And Request getbalance before create token    ${geneAdd}
     ${ret}    When Create token of vote contract    ${geneAdd}
@@ -23,7 +23,7 @@ Get genesis address
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    3
+    sleep    2
     [Return]    ${geneAdd}
 
 Request getbalance before create token
@@ -47,6 +47,7 @@ Create token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
+	sleep    3
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${GAIN}    countRecieverPTN    ${invokeGain}
     sleep    4

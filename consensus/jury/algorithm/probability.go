@@ -30,7 +30,7 @@ import (
 //expectedNum 期望数量
 //weight 设置固定数值,即返回概率值*weight,返回值落在0  --   expectedNum/Total*weight之间的数值
 func Selected(expectedNum uint, weight, total uint64, vrf []byte) int {
-	if expectedNum < 3 {
+	if total < 21 {
 		return 1 //todo test, is danger
 	}
 

@@ -29,7 +29,7 @@ power issues intermediate certificate name cert2 to section succeed
 section can query his certificate in db
     Log    "section can query his certificate in ledger"
     ${args}=    Create List    ${getHolderCertMethod}    ${sectionCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCert
     Dictionary Should Contain Key    ${respJson}    result
     ${resultDict}=    Evaluate    ${respJson["result"]}

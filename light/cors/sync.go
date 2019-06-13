@@ -18,14 +18,16 @@ package cors
 
 import (
 	"fmt"
+	"math/rand"
+	"sync/atomic"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"math/rand"
-	"sync/atomic"
-	"time"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 // dataPack is a data message returned by a peer for some query.
@@ -59,9 +61,9 @@ func (pm *ProtocolManager) StartCorsSync() (string, error) {
 	for _, peer := range mainchain.Peers {
 		node, err := discover.ParseNode(peer)
 		if err != nil {
-			return fmt.Sprintf("Cors ProtocolManager StartCorsSync invalid pnode: %v", err), err
+			log.Debugf("Cors ProtocolManager StartCorsSync invalid pnode: %v", err)
+			continue
 		}
-		//log.Debug("Cors ProtocolManager StartCorsSync", "peer:", peer)
 		pm.server.corss.AddPeer(node)
 	}
 	pm.mclock.RUnlock()
@@ -69,25 +71,36 @@ func (pm *ProtocolManager) StartCorsSync() (string, error) {
 	go func() {
 		time.Sleep(time.Duration(3) * time.Second)
 		if pm.peers.Len() >= pm.mainchainpeers()/2+1 {
-			pm.Sync()
+			pm.PullSync()
+			pm.PushSync()
 		}
 	}()
 
 	return "OK", nil
 }
 
-func (pm *ProtocolManager) Sync() {
-	log.Debug("Enter Cors ProtocolManager Sync")
-	defer log.Debug("End Cors ProtocolManager Sync")
+func (pm *ProtocolManager) PushSync() {
+	log.Debug("Enter Cors ProtocolManager PushSync")
+	defer log.Debug("End Cors ProtocolManager PushSync")
 	if atomic.LoadUint32(&pm.corsSync) == 0 {
 		atomic.StoreUint32(&pm.corsSync, 1)
 		index, _ := pm.pushSync()
-		log.Info("Cors Sync OK", "index", index)
+		log.Info("Cors Push Sync OK", "index", index)
 		atomic.StoreUint32(&pm.corsSync, 0)
+
+		//if len(headers) > 0 {
+		//	ps := pm.peers.AllPeers()
+		//	for _, p := range ps {
+		//		p.SetHead(headers[0])
+		//	}
+		//}
+
+	} else {
+		log.Debug("Cors ProtocolManager PushSyncing")
 	}
 }
 
-func (pm *ProtocolManager) pushSync() (uint64, error) {
+func (pm *ProtocolManager) pushSync() (uint64, []*modules.Header) {
 	var (
 		bytes   common.StorageSize
 		headers []*modules.Header
@@ -98,7 +111,7 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 	pheader, err := pm.fetchHeader()
 	if err != nil {
 		log.Debug("Cors ProtocolManager", "pushSync fetchHeader err", err)
-		return 0, err
+		return 0, nil
 	}
 
 	flag = 0
@@ -150,21 +163,7 @@ func (pm *ProtocolManager) pushSync() (uint64, error) {
 			time.Sleep(waitPushSync)
 		}
 	}
-	return index, nil
-}
-
-// requestTTL returns the current timeout allowance for a single download request
-// to finish under.
-func (pm *ProtocolManager) requestTTL() time.Duration {
-	var (
-		rtt  = time.Duration(atomic.LoadUint64(&pm.rttEstimate))
-		conf = float64(atomic.LoadUint64(&pm.rttConfidence)) / 1000000.0
-	)
-	ttl := time.Duration(ttlScaling) * time.Duration(float64(rtt)/conf)
-	if ttl > ttlLimit {
-		ttl = ttlLimit
-	}
-	return ttl
+	return index, headers
 }
 
 func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
@@ -172,15 +171,23 @@ func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
 	rand.Seed(time.Now().UnixNano())
 	peers := pm.peers.AllPeers()
 	log.Debug("Cors ProtocolManager fetchHeader", "len(peers)", len(peers))
+	if len(peers) <= 0 {
+		return nil, errors.New("peer is nil")
+	}
 	x := rand.Intn(len(peers))
 	p := peers[x]
 	log.Debug("Retrieving remote all token", "peer", p.ID())
 	var number modules.ChainIndex
 	number.AssetID = pm.assetId
-	go p.RequestCurrentHeader(number)
+	go func() {
+		if err := p.RequestCurrentHeader(number); err != nil {
+			log.Error("Cors ProtocolManager fetchHeader RequestCurrentHeader err", err, "number", number)
+		}
+	}()
 
-	ttl := pm.requestTTL()
-	timeout := time.After(ttl)
+	forceSync := time.NewTicker(forceSyncCycle)
+	defer forceSync.Stop()
+
 	for {
 		select {
 		case <-pm.quitSync:
@@ -201,10 +208,66 @@ func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
 			log.Debug("Remote leaf nodes", "counts", len(headers), "peer", packet.PeerId())
 			return headers[0], nil
 
-		case <-timeout:
-			log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", p.id)
+		case <-forceSync.C:
+			log.Debug("Waiting for head header timed out", "elapsed", 10, "peer", p.id)
 			return nil, errTimeout
 		}
 	}
 	return nil, nil
+}
+
+func (pm *ProtocolManager) PullSync() {
+	log.Debug("Enter Cors ProtocolManager PullSync")
+	defer log.Debug("End Cors ProtocolManager PullSync")
+
+	peer := pm.peers.BestPeer()
+	if peer == nil {
+		return
+	}
+	//TODO modify get from getMainChain
+	if peer.headInfo.number.AssetID != modules.PTNCOIN {
+		log.Debug("Cors PalletOne ProtocolManager PullSync", "peer assetid", peer.headInfo.number.AssetID)
+		return
+	}
+
+	if atomic.LoadUint32(&pm.corsSync) == 0 {
+		atomic.StoreUint32(&pm.corsSync, 1)
+		pm.pullSync(peer)
+		log.Info("Cors Pull Sync OK")
+		atomic.StoreUint32(&pm.corsSync, 0)
+	} else {
+		log.Debug("Cors ProtocolManager PullSyncing")
+	}
+
+	if header := pm.dag.CurrentHeader(modules.PTNCOIN); header != nil {
+		pm.server.SendEvents(header)
+		//ps := pm.peers.AllPeers()
+		//for _, p := range ps {
+		//	p.SetHead(header)
+		//}
+	} else {
+		log.Debug("Cors PalletOne ProtocolManager PullSync ptn CurrentHeader is nil")
+	}
+}
+
+func (pm *ProtocolManager) pullSync(peer *peer) {
+	//peer := pm.peers.BestPeer()
+	//if peer == nil {
+	//	return
+	//}
+	//if peer.headInfo.number.AssetID != modules.PTNCOIN {
+	//	log.Debug("Cors PalletOne ProtocolManager pullSync", "peer assetid", peer.headInfo.number.AssetID)
+	//	return
+	//}
+	lheader := pm.dag.CurrentHeader(modules.PTNCOIN)
+	//hash, number := peer.HeadAndNumber(modules.PTNCOIN)
+	//if lheader.Number.Index >= number.Index {
+	//	log.Debug("Cors PalletOne ProtocolManager pullSync is not need sync", "local index", lheader.Number.Index, "peer index", number.Index)
+	//	return
+	//}
+
+	if err := pm.downloader.Synchronise(peer.id, lheader.Hash(), lheader.Number.Index, downloader.LightSync, modules.PTNCOIN); err != nil {
+		log.Debug("ptn sync downloader.", "Synchronise err:", err)
+		return
+	}
 }

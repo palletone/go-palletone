@@ -21,6 +21,7 @@ package modules
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -113,12 +114,13 @@ type TxPoolTransaction struct {
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool         // will remove
-	TxFee        *AmountAsset `json:"tx_fee"`
-	Index        uint64       `json:"index"` // index 是该Unit位置。
-	Extra        []byte
-	Tag          uint64
-	Expiration   time.Time
+	Discarded    bool // will remove
+	//TxFee        *AmountAsset `json:"tx_fee"`
+	TxFee      []*Addition `json:"tx_fee"`
+	Index      uint64      `json:"index"` // index 是该Unit位置。
+	Extra      []byte
+	Tag        uint64
+	Expiration time.Time
 	//该Tx依赖于哪些TxId作为先决条件
 	DependOnTxs []common.Hash
 }
@@ -167,10 +169,12 @@ func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
 func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 	var fee uint64
 	if tx.TxFee != nil {
-		fee = tx.TxFee.Amount
+		for _, ad := range tx.TxFee {
+			fee += ad.Amount
+		}
 	} else {
 		fee = 20 // 20dao
-		tx.TxFee = &AmountAsset{Amount: 20, Asset: tx.Tx.Asset()}
+		//tx.TxFee = &AmountAsset{Amount: 20, Asset: tx.Tx.Asset()}
 	}
 	return big.NewInt(int64(fee))
 }
@@ -407,6 +411,7 @@ type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]commo
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
+	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*PaymentPayload)
 		if !ok {
@@ -439,7 +444,7 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*A
 
 				interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
 				if interest > 0 {
-					log.Debugf("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
+					log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
 					inAmount += interest
 				}
 			}
@@ -515,32 +520,53 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 	request := &Transaction{}
 	request.CertId = tx.CertId
 	for _, msg := range tx.TxMessages {
-		switch {
-		case msg.App < APP_CONTRACT_TPL_REQUEST:
+		if msg.App.IsRequest() {
+
+			if msg.App == APP_CONTRACT_TPL_REQUEST {
+				payload := new(ContractInstallRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+
+			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
+				payload := new(ContractDeployRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+				payload := new(ContractInvokeRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+
+			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
+				payload := new(ContractStopRequestPayload)
+				obj.DeepCopy(payload, msg.Payload)
+				request.AddMessage(NewMessage(msg.App, payload))
+			}
+			return request
+		} else {
 			if msg.App == APP_PAYMENT {
 				payload := new(PaymentPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_TPL {
-				payload := new(ContractTplPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_DEPLOY {
-				payload := new(ContractDeployPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_INVOKE {
-				payload := new(ContractInvokePayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_STOP {
-				payload := new(ContractStopPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_SIGNATURE {
-				payload := new(SignaturePayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_CONTRACT_TPL {
+				// 	payload := new(ContractTplPayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_CONTRACT_DEPLOY {
+				// 	payload := new(ContractDeployPayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_CONTRACT_INVOKE {
+				// 	payload := new(ContractInvokePayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_CONTRACT_STOP {
+				// 	payload := new(ContractStopPayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
+				// } else if msg.App == APP_SIGNATURE {
+				// 	payload := new(SignaturePayload)
+				// 	obj.DeepCopy(payload, msg.Payload)
+				// 	request.AddMessage(NewMessage(msg.App, payload))
 				//} else if msg.App == APP_CONFIG {
 				//	payload := new(ConfigPayload)
 				//	obj.DeepCopy(payload, msg.Payload)
@@ -553,39 +579,12 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(AccountStateUpdatePayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-			}
-
-		case msg.App >= APP_CONTRACT_TPL_REQUEST, msg.App <= APP_CONTRACT_STOP_REQUEST:
-			if msg.App == APP_CONTRACT_TPL_REQUEST {
-				payload := new(ContractInstallRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-				goto LOOP
-			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
-				payload := new(ContractDeployRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-				//break
-				goto LOOP
-			} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
-				payload := new(ContractInvokeRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-				goto LOOP
-			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
-				payload := new(ContractStopRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
-				goto LOOP
-			}
-		default:
-			{
-				log.Debug(fmt.Sprintf("GetRequestTx don't support appcode:%d", int(msg.App)))
+			} else {
+				log.Error("Invalid tx message")
+				return nil
 			}
 		}
 	}
-LOOP:
-	fmt.Println("goto loop.")
 	return request
 }
 
@@ -1085,6 +1084,10 @@ func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+func (a *Addition) Key() string {
+	b := append(a.Addr.Bytes21(), a.Asset.Bytes()...)
+	return hex.EncodeToString(b)
 }
 
 type SequeueTxPoolTxs []*TxPoolTransaction

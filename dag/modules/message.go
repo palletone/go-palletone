@@ -63,8 +63,10 @@ const (
 )
 
 const (
-	SysParam  = "sysParam"
-	SysParams = "sysParams"
+	DesiredSysParamsWithoutVote = "desiredSysParamsWithoutVote"
+	DesiredSysParamsWithVote    = "desiredSysParamsWithVote"
+	DesiredActiveMediatorCount  = "ActiveMediatorCount"
+	DepositAmountForMediator    = "DepositAmountForMediator"
 )
 
 func (mt MessageType) IsRequest() bool {
@@ -879,12 +881,6 @@ func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
 	//	return false
 	//}
 	//return true
-}
-
-//foundation modify sys param
-type FoundModify struct {
-	Key   string
-	Value string
 }
 
 type SysTokenIDInfo struct {

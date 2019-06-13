@@ -45,6 +45,7 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	if count > 0 {
 		return errors.New("Contract[" + common.Bytes2Hex(contract.ContractId) + "]'s state existed!")
 	}
+	log.Debugf("Save contract[%x]", contract.ContractId)
 	err := StoreToRlpBytes(statedb.db, key, contract)
 	if err != nil {
 		return err

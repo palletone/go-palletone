@@ -26,9 +26,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 /**
@@ -38,7 +38,7 @@ value: transaction struct rlp encoding bytes
 func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	// save transaction
 	txHash := tx.Hash()
-	log.Debugf("Try to save tx[%s]", txHash.String())
+	//log.Debugf("Try to save tx[%s]", txHash.String())
 	//Save tx to db
 	key := append(constants.TRANSACTION_PREFIX, txHash.Bytes()...)
 	err := StoreToRlpBytes(dagdb.db, key, tx)
@@ -58,19 +58,20 @@ func (dagdb *DagDb) saveReqIdByTx(tx *modules.Transaction) error {
 	txhash := tx.Hash()
 	reqid := tx.RequestHash()
 	log.Debugf("Save RequestId[%s] map to TxId[%s]", reqid.String(), txhash.String())
-	key := append(constants.ReqIdPrefix, reqid.Bytes()...)
+	key := append(constants.REQID_TXID_PREFIX, reqid.Bytes()...)
 	return dagdb.db.Put(key, txhash.Bytes())
 }
-func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction,error){
-	kvs:= getprefix(dagdb.db,constants.TRANSACTION_PREFIX)
-	result:=make([]*modules.Transaction,len(kvs))
-	for _,v:=range kvs{
+func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction, error) {
+	kvs := getprefix(dagdb.db, constants.TRANSACTION_PREFIX)
+	result := make([]*modules.Transaction, len(kvs))
+	for _, v := range kvs {
 		tx := new(modules.Transaction)
-		rlp.DecodeBytes(v,tx)
-		result=append(result,tx)
+		rlp.DecodeBytes(v, tx)
+		result = append(result, tx)
 	}
-	return result,nil
+	return result, nil
 }
+
 //
 //func (dagdb *DagDb) saveOutputByAddr(addr string, hash common.Hash, msgindex int, output *modules.Output) error {
 //	if hash == (common.Hash{}) {
@@ -165,7 +166,7 @@ func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction,error){
 //	if outpoint == nil {
 //		return "", fmt.Errorf("outpoint_key is nil ")
 //	}
-//	out_key := append(constants.OutPointAddr_Prefix, outpoint.ToKey()...)
+//	out_key := append(constants.OUTPOINT_ADDR_PREFIX, outpoint.ToKey()...)
 //	data, err := dagdb.db.Get(out_key[:])
 //	if len(data) <= 0 {
 //		return "", fmt.Errorf("address is null. outpoint_key(%s)", outpoint.ToKey())
@@ -221,7 +222,7 @@ func (dagdb *DagDb) IsTransactionExist(hash common.Hash) (bool, error) {
 }
 
 func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
-	key := append(constants.ReqIdPrefix, reqid.Bytes()...)
+	key := append(constants.REQID_TXID_PREFIX, reqid.Bytes()...)
 	txid := common.Hash{}
 	val, err := dagdb.db.Get(key)
 	if err != nil {

@@ -9,8 +9,8 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-Feature: Create Token
-    [Documentation]    Scenario: Verify Reciever's PTN
+Scenario: Vote Contract - Create Token
+    [Documentation]    Verify Reciever's PTN
     ${PTN1}    ${result1}    Given Request getbalance before create token
     ${ret}    When Create token of vote contract
     ${PTNGAIN}    And Calculate gain of recieverAdd    ${PTN1}
@@ -42,6 +42,7 @@ Create token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
+	sleep    3
     ${gain1}    countRecieverPTN    ${PTNAmount}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${gain1}')    decimal
     sleep    4

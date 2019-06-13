@@ -78,7 +78,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	//TODO add PostChainEvents
 	go func() {
 		var (
-			events = make([]interface{}, 0, 1)
+			events = make([]interface{}, 0, 2)
 		)
 		events = append(events, modules.ChainHeadEvent{sign_unit})
 		events = append(events, modules.ChainEvent{sign_unit, sign_unit.UnitHash})

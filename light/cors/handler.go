@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptn/downloader"
 	"time"
 )
 
@@ -77,10 +78,10 @@ type ProtocolManager struct {
 
 	genesis *modules.Unit
 
-	//downloader *downloader.Downloader
-	fetcher  *LightFetcher
-	peers    *peerSet
-	maxPeers int
+	downloader *downloader.Downloader
+	fetcher    *LightFetcher
+	peers      *peerSet
+	maxPeers   int
 
 	SubProtocols []p2p.Protocol
 
@@ -157,7 +158,7 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
 				if p := manager.peers.Peer(id.TerminalString()); p != nil {
-					return p.Info()
+					return p.Info(manager.assetId)
 				}
 				return nil
 			},
@@ -169,6 +170,7 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 
 	if manager.lightSync {
 		manager.fetcher = manager.newLightFetcher()
+		manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, manager.removePeer, nil, dag, nil)
 	}
 	log.Debug("End NewCorsProtocolManager", "len(manager.SubProtocols)", len(manager.SubProtocols))
 	return manager, nil
@@ -211,7 +213,15 @@ func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) 
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
 func (pm *ProtocolManager) removePeer(id string) {
+	peer := pm.peers.Peer(id)
+	if peer == nil {
+		return
+	}
+	pm.downloader.UnregisterPeer(id)
 	pm.peers.Unregister(id)
+	if peer != nil {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+	}
 }
 
 func (pm *ProtocolManager) mainchainpeers() int {
@@ -226,6 +236,8 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	if pm.lightSync {
 		go func() {
 			pm.fetcher.Start()
+			defer pm.fetcher.Stop()
+			defer pm.downloader.Terminate()
 			forceSync := time.Tick(forceSyncCycle)
 			for {
 				select {
@@ -282,12 +294,12 @@ func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgRea
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
-	//if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-	//	return p2p.DiscTooManyPeers
-	//}
+	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+		return p2p.DiscTooManyPeers
+	}
 
-	log.Debug("Enter Cors Palletone peer connected", "name", p.Name())
-	defer log.Debug("End Cors Palletone peer connected", "name", p.Name())
+	log.Debug("Enter Cors Palletone peer connected", "id", p.ID())
+	defer log.Debug("End Cors Palletone peer connected", "id", p.ID())
 
 	// Execute the Cors handshake
 	genesis, err := pm.dag.GetGenesisUnit()
@@ -304,8 +316,14 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		number = head.Number
 		headhash = head.Hash()
 	}
-	if err := p.Handshake(number, genesis.Hash(), headhash, pm.assetId); err != nil {
-		log.Debug("Cors Palletone handshake failed", "err", err)
+
+	pcs, err := pm.dag.GetPartitionChains()
+	if err != nil {
+		log.Debug("Cors PalletOne ProtocolManager handle GetPartitionChains", "err", err)
+	}
+
+	if err := p.Handshake(number, genesis.Hash(), headhash, pm.assetId, pcs); err != nil {
+		log.Debug("Cors PalletOne handshake failed", "err", err)
 		return err
 	}
 	//if rw, ok := p.rw.(*meteredMsgReadWriter); ok {
@@ -316,21 +334,13 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		log.Error("Cors Palletone peer registration failed", "err", err)
 		return err
 	}
-	defer func() {
-		pm.removePeer(p.id)
-	}()
+	defer pm.removePeer(p.id)
+
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
 	if pm.lightSync {
-		p.lock.Lock()
-		//head := p.headInfo
-		p.lock.Unlock()
-		if pm.fetcher != nil {
-			//pm.fetcher.announce(p, head)
+		if err := pm.downloader.RegisterLightPeer(p.id, p.version, p); err != nil {
+			return err
 		}
-
-		//if p.poolEntry != nil {
-		//	pm.serverPool.registered(p.poolEntry)
-		//}
 	}
 
 	stop := make(chan struct{})
@@ -352,7 +362,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			log.Debug("Light PalletOne message handling failed", "err", err)
+			log.Debug("Cors PalletOne message handling failed", "err", err)
 			return err
 		}
 	}
@@ -373,8 +383,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	}
 	defer msg.Discard()
 
-	//var deliverMsg *Msg
-
 	// Handle the message depending on its contents
 	switch msg.Code {
 	case StatusMsg:
@@ -384,70 +392,22 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	// Block header query, collect the requested headers and reply
 	case CorsHeaderMsg:
-		var headers []*modules.Header
-		if err := msg.Decode(&headers); err != nil {
-			log.Info("msg.Decode", "err:", err)
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-
-		if pm.fetcher != nil {
-			//TODO start lps broadcast
-			for _, header := range headers {
-				log.Trace("CorsHeaderMsg message content", "assetid:", header.Number.AssetID, "index:", header.Number.Index)
-				pm.fetcher.Enqueue(p, header)
-			}
-		}
+		return pm.CorsHeaderMsg(msg, p)
 
 	case CorsHeadersMsg:
-		var headers []*modules.Header
-		if err := msg.Decode(&headers); err != nil {
-			log.Info("msg.Decode", "err:", err)
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
+		return pm.CorsHeadersMsg(msg, p)
 
-		log.Debug("CorsHeadersMsg message length", "len(headers)", len(headers))
-		if pm.fetcher != nil {
-			for _, header := range headers {
-				//log.Trace("CorsHeadersMsg message content", "header:", header)
-				pm.fetcher.Enqueue(p, header)
-			}
-			if len(headers) < MaxHeaderFetch {
-				pm.bdlock.Lock() //TODO modify
-				log.Info("CorsHeadersMsg message needboradcast", "assetid", headers[len(headers)-1].Number.AssetID,
-					"index", headers[len(headers)-1].Number.Index)
-				pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
-				pm.bdlock.Unlock()
-			}
-		}
 	case GetCurrentHeaderMsg:
-		var number modules.ChainIndex
-		if err := msg.Decode(&number); err != nil {
-			log.Info("msg.Decode", "err:", err)
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
+		return pm.GetCurrentHeaderMsg(msg, p)
 
-		header := pm.dag.CurrentHeader(number.AssetID)
-		log.Trace("GetCurrentHeaderMsg message content", "number", number.AssetID, "header", header)
-		var headers []*modules.Header
-		headers = append(headers, header)
-		return p.SendCurrentHeader(headers)
 	case CurrentHeaderMsg:
-		var headers []*modules.Header
-		if err := msg.Decode(&headers); err != nil {
-			log.Info("msg.Decode", "err:", err)
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
+		return pm.CurrentHeaderMsg(msg, p)
 
-		log.Trace("CurrentHeaderMsg message content", "len(headers)", len(headers))
-		if len(headers) != 1 {
-			log.Info("CurrentHeaderMsg len err", "len(headers)", len(headers))
-			return errResp(ErrDecode, "msg %v: %v", msg, "len is err")
-		}
-		if headers[0].Number.AssetID.String() != pm.assetId.String() {
-			log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].Number.AssetID.String(), "local", pm.assetId.String())
-			return errBadPeer
-		}
-		pm.headerCh <- &headerPack{p.id, headers}
+	case GetBlockHeadersMsg:
+		return pm.GetBlockHeadersMsg(msg, p)
+
+	case BlockHeadersMsg:
+		return pm.BlockHeadersMsg(msg, p)
 
 	default:
 		log.Trace("Received unknown message", "code", msg.Code)
@@ -489,6 +449,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	}
 }
 
+/*
 type downloaderPeerNotify ProtocolManager
 
 type peerConnection struct {
@@ -498,7 +459,7 @@ type peerConnection struct {
 
 func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	//return common.Hash{}, nil
-	return pc.peer.HeadAndNumber()
+	return pc.peer.HeadAndNumber(assetId)
 }
 
 func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
@@ -523,3 +484,4 @@ func (p *peerConnection) RequestLeafNodes() error {
 	return nil
 	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
 }
+*/

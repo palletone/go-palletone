@@ -30,11 +30,13 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestValidate_ValidateUnitTxs(t *testing.T) {
+	parameter.CurrentSysParameters.GenerateUnitReward = 0
 	//构造一个Unit包含3个Txs，
 	//0是Coinbase，收集3Dao手续费
 	//1是普通Tx，100->99 付1Dao手续费，产生1Utxo
@@ -46,9 +48,32 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 	txs := modules.Transactions{tx0, tx1, tx2}
 
 	utxoQuery := &mockUtxoQuery{}
-	validate := NewValidate(nil, utxoQuery, nil,nil)
-	code := validate.validateTransactions(txs, time.Now().Unix())
+	mockStatedbQuery := &mockStatedbQuery{}
+	validate := NewValidate(nil, utxoQuery, mockStatedbQuery, nil)
+	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
+	code := validate.validateTransactions(txs, time.Now().Unix(), addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
+}
+
+type mockStatedbQuery struct {
+}
+
+func (q *mockStatedbQuery) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	return nil, nil
+}
+
+//获得系统配置的最低手续费要求
+func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
+	return &modules.AmountAsset{Asset: modules.NewPTNAsset(), Amount: uint64(1)}, nil
+}
+func (q *mockStatedbQuery) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+	return nil, nil
+}
+func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
+	return nil, nil, nil
+}
+func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	return map[string]*modules.ContractStateValue{}, nil
 }
 
 type mockUtxoQuery struct {
@@ -195,7 +220,7 @@ func TestValidate_ValidateHeader(t *testing.T) {
 	tx := newTx1(t)
 
 	header := newHeader(modules.Transactions{tx})
-	v := NewValidate(nil, nil, nil,nil)
+	v := NewValidate(nil, nil, nil, nil)
 	vresult := v.validateHeaderExceptGroupSig(header)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)

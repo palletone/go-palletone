@@ -169,6 +169,12 @@ func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error) {
 func (ud *UnitDag4Test) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
 	return nil, nil
 }
+func (ud *UnitDag4Test) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
+	return nil, nil, nil
+}
+func (ud *UnitDag4Test) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	return nil, nil
+}
 
 // create txs
 func createTxs(address string) []*modules.Transaction {
@@ -227,9 +233,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 	pool_tx := new(modules.TxPoolTransaction)
 
 	for i, tx := range txs {
-		p_tx := TxtoTxpoolTx(pool, tx)
-		p_tx.GetTxFee()
-		p_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
+		p_tx := TxtoTxpoolTx(tx)
+		//p_tx.GetTxFee()
+		//p_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
 		txpool_txs = append(txpool_txs, p_tx)
 		if i == len(txs)-1 {
 			pool_tx = p_tx

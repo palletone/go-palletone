@@ -271,8 +271,8 @@ func TestIDType16Hex(t *testing.T) {
 	fmt.Println("ptn hex:", PTNCOIN.String())
 	fmt.Println("ptn hex:", PTNCOIN)
 	fmt.Println("btc hex:", BTCCOIN.String())
-	key := fmt.Sprintf("%s_%s_1_%d", constants.UNIT_HASH_NUMBER_Prefix, "abc", 100)
-	slice := strings.Split(key, fmt.Sprintf("%s_%s_1_", constants.UNIT_HASH_NUMBER_Prefix, "abc"))
+	key := fmt.Sprintf("%s_%s_1_%d", constants.UNIT_HASH_NUMBER_PREFIX, "abc", 100)
+	slice := strings.Split(key, fmt.Sprintf("%s_%s_1_", constants.UNIT_HASH_NUMBER_PREFIX, "abc"))
 	fmt.Println("result:", len(slice), "0:", slice[0], "1:", slice[1])
 
 	var tx Transaction

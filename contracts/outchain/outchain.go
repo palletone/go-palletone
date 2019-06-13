@@ -63,7 +63,7 @@ var DefaultConfig = Config{
 		},
 		Eth: ETH{
 			NetID:         1,
-			Rawurl:        "/home/pallet/data/eth/gethtest/geth.ipc",
+			Rawurl:        "https://ropsten.infura.io/",
 			ChaincodeKeys: map[string]string{},
 			AddressKeys:   map[string]string{},
 		},
@@ -107,17 +107,17 @@ var tomlSettings = toml.Config{
 	},
 }
 
-//func init() {
-//	f, err := os.Open(configPath)
-//	if err != nil && os.IsNotExist(err) {
-//		saveConfigTest() // save default config
-//	} else {
-//		f.Close()
-//	}
-//
-//	//load config
-//	GetConfigTest()
-//}
+func init() {
+	f, err := os.Open(configPath)
+	if err != nil && os.IsNotExist(err) {
+		saveConfigTest() // save default config
+	} else {
+		f.Close()
+	}
+
+	//load config
+	GetConfigTest()
+}
 
 func makeDefaultConfig() Config {
 	return DefaultConfig

@@ -6,14 +6,13 @@ Resource          publicParams.txt
 *** Keywords ***
 申请加入Mediator候选节点所需参数
     [Arguments]    ${mediatorAddr}
-    ${one}    Create List    ApplyBecomeMediator    {\"applyInfo\": \"{公司名称:互链云网（北京）科技有限公司,公司邮箱:contract@palletone,key:value}\", \"account\":\"P1PTTAkktHv8hYT3PqcBuiAShvQ6wre1jop\", \"initPubKey\":\"C4hrmHMeeNRcfhfGVWD9f8p6qFG54GSTyEC2fkA29xvXUAKYJScnsTb2EjPiMrNAhpfbWmjHUyvTnFbvfuyWuBvj5XECGbEG3U7XuLHktmeLou54DfU2HDm4mG1tFp6kvPr6skadUrWutTvWqkHKJQB8pgTDz3zDGMVtMFCbC24uRsL\", \"node\":\"pnode://a18ea75c80aa99eee8e3840a62d9a3dc6c7ccfbd271d53365034009ca10d8423c6381999cf649b92b497a1f0cef3539f92fc222737faf9af7ce31dace3b360ae@127.0.0.1:30303\"}
+    ${one}    Create List    ApplyBecomeMediator    {\"applyInfo\":\"key: value\"}
     ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
     [Return]    ${two}
 
 applyBecomeMediator
     [Arguments]    ${mediatorAddr}
     ${params}    申请加入Mediator候选节点所需参数    ${mediatorAddr}
-    ${resp}    创建公用的POST请求    ${depositContractInvoke}    ApplyBecomeMediator    ${params}
-    ${result}    Set Variable    ${resp.content}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    ApplyBecomeMediator    ${params}
     sleep    8
     [Return]    ${result}

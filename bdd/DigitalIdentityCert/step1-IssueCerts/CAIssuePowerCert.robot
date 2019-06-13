@@ -17,7 +17,7 @@ CAIssueIntermedate
 ca certificate exists
     Log    "ca certificate exists"
     ${args}=    Create List    getRootCAHoler
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     # send post
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCAHolder
     # check result
@@ -40,7 +40,7 @@ ca issues intermediate certificate name cert1 to power succeed
 
 power can query his certificate in db
     ${args}=    Create List    ${getHolderCertMethod}    ${powerCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCert
     Dictionary Should Contain Key    ${respJson}    result
     ${resultDict}=    Evaluate    ${respJson["result"]}

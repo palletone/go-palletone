@@ -9,23 +9,24 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-Feature: Vote Contract - Transfer Token
-    [Documentation]    Scenario: Verify Sender's PTN and VOTE value
-    ${geneAdd}    Given Get genesis address
-    When Transfer token of vote contract    ${geneAdd}
-    ${PTN1}    ${result1}    ${item1}    ${key}    And Request getbalance before create token    ${geneAdd}
+Scenario: Vote Contract - Transfer Token
+    [Documentation]    Verify Sender's PTN and VOTE value
+    Given Get genesis address
+    When Transfer token of vote contract
+    ${PTN1}    ${result1}    ${item1}    ${key}    And Request getbalance before create token
     And Request transfer token
     ${PTN'}    ${item'}    And Calculate gain of recieverAdd    ${PTN1}    ${item1}
-    ${PTN2}    ${item2}    And Request getbalance after create token    ${geneAdd}    ${key}
+    ${PTN2}    ${item2}    And Request getbalance after create token    ${key}
     Then Assert gain of reciever    ${PTN'}    ${PTN2}    ${item'}    ${item2}
 
 *** Keywords ***
 Get genesis address
     ${geneAdd}    getGeneAdd    ${host}
-    [Return]    ${geneAdd}
+    Set Suite Variable    ${geneAdd}    ${geneAdd}
+    personalUnlockAccount    ${geneAdd}
+    sleep    3
 
 Transfer token of vote contract
-    [Arguments]    ${geneAdd}
     ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
     ...    ${commonVoteInfo}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
@@ -38,11 +39,11 @@ Transfer token of vote contract
     [Return]    ${ret}
 
 Request getbalance before create token
-    [Arguments]    ${geneAdd}
     sleep    3
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
-    sleep    4
+    sleep    5
     ${key}    getTokenId    ${voteId}    ${result1['result']}
+	sleep    2
     #${PTN1}    Get From Dictionary    ${result1['result']}    PTN
     ${item1}    Get From Dictionary    ${result1['result']}    ${key}
     [Return]    ${PTN1}    ${result1}    ${item1}    ${key}
@@ -53,13 +54,14 @@ Request transfer token
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}
+	sleep    4
     ${item'}    Evaluate    ${item1}-${PTNAmount}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNPoundage}')    decimal
-    sleep    4
+    sleep    2
     [Return]    ${PTN'}    ${item'}
 
 Request getbalance after create token
-    [Arguments]    ${geneAdd}    ${key}
+    [Arguments]    ${key}
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     sleep    4
     #${PTN2}    Get From Dictionary    ${result2['result']}    PTN

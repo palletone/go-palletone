@@ -3,7 +3,7 @@ import subprocess
 import pexpect
 from time import sleep
 
-os.chdir("/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node")
+# os.chdir("/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node")
 child = pexpect.spawn(command="./gptn newgenesis \"\" false",maxread=3000)
 child.expect("Do you want to create a new account as the holder of the token")
 child.sendline("y")

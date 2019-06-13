@@ -13,7 +13,6 @@ Jury交付保证金所需参数
 juryPayToDepositContract
     [Arguments]    ${juryAddr}    ${depositAmounts}
     ${Jury交付保证金所需参数}    Jury交付保证金所需参数    ${juryAddr}    ${depositAmounts}
-    ${resp}    创建公用的POST请求    ${depositContractInvoke}    JuryPayToDepositContract    ${Jury交付保证金所需参数}
-    ${result}    Set Variable    ${resp.content}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    JuryPayToDepositContract    ${Jury交付保证金所需参数}
     sleep    8
     [Return]    ${result}

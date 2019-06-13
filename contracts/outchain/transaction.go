@@ -188,6 +188,15 @@ func processTransactionMethodETH(chaincodeID string, outChainTX *pb.OutChainTran
 		var ethAdaptor adaptoreth.AdaptorETH
 		ethAdaptor.NetID = cfg.Ada.Eth.NetID
 		return ethAdaptor.Keccak256HashPackedSig(&sigParams)
+	case "RecoverAddr":
+		var recoverParams adaptor.RecoverParams
+		err := json.Unmarshal(outChainTX.Params, &recoverParams)
+		if err != nil {
+			return "", fmt.Errorf("RecoverAddr params error : %s", err.Error())
+		}
+		var ethAdaptor adaptoreth.AdaptorETH
+		ethAdaptor.NetID = cfg.Ada.Eth.NetID
+		return ethAdaptor.RecoverAddr(&recoverParams)
 	case "GetEventByAddress":
 		var getEventByAddressParams adaptor.GetEventByAddressParams
 		err := json.Unmarshal(outChainTX.Params, &getEventByAddressParams)

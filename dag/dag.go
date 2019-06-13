@@ -42,7 +42,6 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -182,18 +181,41 @@ func (d *Dag) GetUnstableUnits() []*modules.Unit {
 }
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	uHeader, err := d.unstableUnitRep.GetHeaderByHash(hash)
+	if errors.IsNotFoundError(err) {
+		uHeader, err = d.getHeaderByHashFromPMemDag(hash)
+	}
 	if err != nil {
-		log.Debug("Current unit when get unit header", "error", err.Error())
+		log.Debug("GetHeaderByHash failed", "error", err.Error())
 		return nil, err
 	}
 	return uHeader, nil
 }
-
+func (d *Dag) getHeaderByHashFromPMemDag(hash common.Hash) (*modules.Header, error) {
+	for _, memdag := range d.PartitionMemDag {
+		h, e := memdag.GetHeaderByHash(hash)
+		if e == nil {
+			return h, e
+		}
+	}
+	return nil, errors.ErrNotFound
+}
+func (d *Dag) getHeaderByNumberFromPMemDag(number *modules.ChainIndex) (*modules.Header, error) {
+	for _, memdag := range d.PartitionMemDag {
+		h, e := memdag.GetHeaderByNumber(number)
+		if e == nil {
+			return h, e
+		}
+	}
+	return nil, errors.ErrNotFound
+}
 func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	uHeader, err1 := d.unstableUnitRep.GetHeaderByNumber(number)
-	if err1 != nil {
-		log.Info("getChainUnit when GetHeaderByNumber failed ", "error:", err1, "hash", number.String())
-		return nil, err1
+	uHeader, err := d.unstableUnitRep.GetHeaderByNumber(number)
+	if errors.IsNotFoundError(err) {
+		uHeader, err = d.getHeaderByNumberFromPMemDag(number)
+	}
+	if err != nil {
+		log.Info("GetHeaderByNumber failed ", "error:", err, "number", number.String())
+		return nil, err
 	}
 	return uHeader, nil
 }
@@ -449,11 +471,13 @@ func (d *Dag) refreshPartitionMemDag() {
 			d.initDataForMainChainHeader(mainChain)
 			log.Debugf("Init main chain mem dag for:%s", mainChain.GasToken.String())
 			pmemdag := memunit.NewMemDag(mainChain.GasToken, threshold, true, db, unitRep, propRep, d.stableStateRep)
-			pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
 			d.PartitionMemDag[mainChain.GasToken] = pmemdag
 		} else {
 			mainChainMemDag.SetStableThreshold(threshold) //可能更新了该数字
 		}
+	} else {
+		log.Info("Don't have main chain config for partition")
 	}
 	partitions, err := d.stableStateRep.GetPartitionChains()
 	if err != nil {
@@ -471,7 +495,7 @@ func (d *Dag) refreshPartitionMemDag() {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
 			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
-			pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
 			partitionMemdag[ptoken] = pmemdag
 		}
 
@@ -487,7 +511,7 @@ func (d *Dag) refreshPartitionMemDag() {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
 			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep)
-			pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
 			d.PartitionMemDag[ptoken] = pmemdag
 		} else {
 			partitonMemDag.SetStableThreshold(threshold) //可能更新了该数字
@@ -501,8 +525,7 @@ func (d *Dag) initDataForPartition(partition *modules.PartitionChain) {
 	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
 	if !exist {
 		log.Debugf("Init partition[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
-		d.stableUnitRep.SaveHeader(pHeader)
-		d.stablePropRep.SetNewestUnit(pHeader)
+		d.stableUnitRep.SaveNewestHeader(pHeader)
 	}
 }
 func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
@@ -510,8 +533,7 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
 	if !exist {
 		log.Debugf("Init main chain[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
-		d.stableUnitRep.SaveHeader(pHeader)
-		d.stablePropRep.SetNewestUnit(pHeader)
+		d.stableUnitRep.SaveNewestHeader(pHeader)
 	}
 }
 func NewDag(db ptndb.Database) (*Dag, error) {
@@ -851,23 +873,8 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 	return all, err
 }
 
-// todo albert·gou 待合并
 func (d *Dag) RefreshSysParameters() {
-	deposit, _, _ := d.GetConfig("DepositRate")
-	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
-	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
-	log.Debugf("Load SysParameter DepositContractInterest value:%f",
-		parameter.CurrentSysParameters.DepositContractInterest)
-
-	txCoinYearRateStr, _, _ := d.GetConfig("TxCoinYearRate")
-	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
-	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
-	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
-
-	generateUnitRewardStr, _, _ := d.GetConfig("GenerateUnitReward")
-	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
-	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
-	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+	d.unstableStateRep.RefreshSysParameters()
 }
 
 //func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
@@ -1192,7 +1199,8 @@ func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
 }
 func (d *Dag) SaveCommon(key, val []byte) error {
-	return d.unstableUnitRep.SaveCommon(key, val)
+	return d.stableUnitRep.SaveCommon(key, val)
+	//return d.unstableUnitRep.SaveCommon(key, val)
 }
 
 //func (d *Dag) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
@@ -1311,9 +1319,16 @@ func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 	log.Debug("===InsertLightHeader===", "numbers:", len(headers))
 	for _, header := range headers {
-		log.Debug("===InsertLightHeader===", "header index:", header.Index())
+		log.Debug("===InsertLightHeader===", "header index:", header.Index(), "assetid", header.Number.AssetID)
 	}
-	return d.InsertHeaderDag(headers)
+	count, err := d.InsertHeaderDag(headers)
+	//Debug code:
+	//if headers[len(headers)-1].Number.Index==uint64(310) {
+	//	hash := common.HexToHash("c9a364d0330c463942f101f98b9e07f3f48a651152c1b28f243a240eae7cd87e")
+	//	h, e := d.GetHeaderByHash(hash)
+	//	log.Debugf("310 header:%s,err:%v", h.Hash().String(), e)
+	//}
+	return count, err
 }
 
 //All leaf nodes for dag downloader.
@@ -1413,12 +1428,22 @@ func (d *Dag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 func (d *Dag) GetMinFee() (*modules.AmountAsset, error) {
 	return d.unstableStateRep.GetMinFee()
 }
+
 func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
 	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
 }
+
 func (d *Dag) Close() {
 	d.unstableUnitProduceRep.Close()
 }
+
 func (dag *Dag) MediatorVotedResults() map[string]uint64 {
 	return dag.unstableUnitProduceRep.MediatorVotedResults()
+}
+
+func (dag *Dag) StoreDataVersion(dv *modules.DataVersion) error {
+	return dag.stableStateRep.StoreDataVersion(dv)
+}
+func (dag *Dag) GetDataVersion() (*modules.DataVersion, error) {
+	return dag.stableStateRep.GetDataVersion()
 }

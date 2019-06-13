@@ -31,7 +31,7 @@ ca revoke power certificate succed
 ca can query his issued crl file
     Log    "ca can query his issued crl file"
     ${args}=    Create List    ${queryCRLMethod}    ${caCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCRL
     Dictionary Should Contain Key    ${respJson}    result
     ${bytes}=    Evaluate    ${respJson['result']}
@@ -43,7 +43,7 @@ power and section certificate revocation time is before now
 
 power certificate revocation time is before now
     ${args}=    Create List    ${getHolderCertMethod}    ${powerCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCert
     Dictionary Should Contain Key    ${respJson}    result
     ${resultDict}=    Evaluate    ${respJson["result"]}
@@ -61,7 +61,7 @@ power certificate revocation time is before now
 
 section certificate revocation time is before now
     ${args}=    Create List    ${getHolderCertMethod}    ${sectionCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}
+    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${queryMethod}    ${params}    queryCert
     Dictionary Should Contain Key    ${respJson}    result
     ${resultDict}=    Evaluate    ${respJson["result"]}

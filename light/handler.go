@@ -256,6 +256,9 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 		if p == nil {
 			continue
 		}
+		if !p.fullnode && header.Number.AssetID != pm.assetId {
+			continue
+		}
 		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
 		switch p.announceType {
 		case announceTypeNone:
@@ -408,7 +411,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 					p.lightpeermsg[announce.Number.AssetID] = &announce
 					p.lightlock.Unlock()
 
-					if announce.Number.AssetID != modules.PTNCOIN {
+					//if announce.Number.AssetID != modules.PTNCOIN {
+					if pm.assetId != announce.Number.AssetID {
 						//log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
 						p.SendRawAnnounce(data)
 					} else {
