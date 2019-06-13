@@ -30,7 +30,7 @@ env:
     - IS_RUN_MEDIATOR_VOTE=false
     - GO111MODULE=on
     - IS_UPLOAD=false
-    - IS_RUN_USER_CONTRACT=false
+    - IS_RUN_USER_CONTRACT=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 matrix:
