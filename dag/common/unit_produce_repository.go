@@ -43,6 +43,7 @@ type IUnitProduceRepository interface {
 	Close()
 	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
+	RefreshSysParameters()
 }
 
 type UnitProduceRepository struct {
@@ -340,7 +341,8 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 		TxIndex: ^uint32(0),
 	}
 	dag.stateRep.UpdateSysParams(version)
-	dag.stateRep.RefreshSysParameters()
+	//dag.stateRep.RefreshSysParameters()
+	dag.RefreshSysParameters()
 
 	return
 }

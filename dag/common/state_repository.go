@@ -21,14 +21,10 @@
 package common
 
 import (
-	"strconv"
-
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -73,7 +69,7 @@ type IStateRepository interface {
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
 
-	RefreshSysParameters()
+	//RefreshSysParameters()
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error
@@ -245,24 +241,23 @@ func (rep *StateRepository) GetAccountVotedMediators(addr common.Address) map[st
 	return rep.statedb.GetAccountVotedMediators(addr)
 }
 
-// todo albert·gou
-func (rep *StateRepository) RefreshSysParameters() {
-	deposit, _, _ := rep.statedb.GetSysConfig("DepositRate")
-	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
-	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
-	log.Debugf("Load SysParameter DepositContractInterest value:%f",
-		parameter.CurrentSysParameters.DepositContractInterest)
-
-	txCoinYearRateStr, _, _ := rep.statedb.GetSysConfig("TxCoinYearRate")
-	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
-	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
-	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
-
-	generateUnitRewardStr, _, _ := rep.statedb.GetSysConfig("GenerateUnitReward")
-	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
-	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
-	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
-}
+//func (rep *StateRepository) RefreshSysParameters() {
+//	deposit, _, _ := rep.statedb.GetSysConfig("DepositRate")
+//	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
+//	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
+//	log.Debugf("Load SysParameter DepositContractInterest value:%f",
+//		parameter.CurrentSysParameters.DepositContractInterest)
+//
+//	txCoinYearRateStr, _, _ := rep.statedb.GetSysConfig("TxCoinYearRate")
+//	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
+//	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
+//	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
+//
+//	generateUnitRewardStr, _, _ := rep.statedb.GetSysConfig("GenerateUnitReward")
+//	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
+//	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
+//	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+//}
 
 func (rep *StateRepository) GetDataVersion() (*modules.DataVersion, error) {
 	return rep.statedb.GetDataVersion()
