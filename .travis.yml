@@ -141,13 +141,13 @@ after_script:
   - killall gptn
   - sleep 2
   - if [ $IS_UPLOAD == 'true' ]; then
-    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v;
+        # upload deposit log
+        if [ $IS_RUN_DEPOSIT == 'true' ]; then
+          curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $DEPOSIT_LOG_PATH/${LOG_NAME} -v;
+          curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $DEPOSIT_LOG_PATH/${REPORT_NAME} -v;
+        fi
     fi
-#      # upload deposit log
-#      if [ $$IS_RUN_DEPOSIT == 'true' ]; then
-#        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $DEPOSIT_LOG_PATH/${LOG_NAME} -v;
-#        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $DEPOSIT_LOG_PATH/${REPORT_NAME} -v;
-#      fi
 #    # upload create transactions log and report
 #    if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
 #    curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/$LOG_NAME -v;
