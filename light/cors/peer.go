@@ -122,11 +122,11 @@ func (p *peer) HeadAndNumber(assetId modules.AssetId) (hash common.Hash, number 
 	return hash, p.headInfo.number
 }
 
-//func (p *peer) SetHead(header *modules.Header) {
-//	p.lock.Lock()
-//	defer p.lock.Unlock()
-//	p.headInfo = peerMsg{head: header.Hash(), number: header.Number}
-//}
+func (p *peer) SetHead(header *modules.Header) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.headInfo = peerMsg{head: header.Hash(), number: header.Number}
+}
 
 // HasBlock checks if the peer has a given block
 func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
