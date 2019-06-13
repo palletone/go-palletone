@@ -63,7 +63,9 @@ matrix:
         - make gptn
         - cp gptn bdd/node
         - mkdir bdd/GasToken/node
+        - mkdir bdd/mediator-vote/node
         - cp gptn bdd/GasToken/node
+        - cp gptn bdd/mediator-vote/node
         - cd bdd/node
         - chmod +x gptn
         - python init.py
