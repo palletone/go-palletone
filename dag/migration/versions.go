@@ -17,37 +17,18 @@
  *  * @date 2018-2019
  *
  */
-
 package migration
 
-import (
-	"github.com/palletone/go-palletone/common/ptndb"
-)
+import "github.com/palletone/go-palletone/common/ptndb"
 
-type Migration0615_100 struct {
-	//mdag  dag.IDag
-	dagdb   ptndb.Database
-	idxdb   ptndb.Database
-	utxodb  ptndb.Database
-	statedb ptndb.Database
-	propdb  ptndb.Database
-}
-
-func (m *Migration0615_100) FromVersion() string {
-	return "0.6.15"
-}
-func (m *Migration0615_100) ToVersion() string {
-	return "1.0.1-beta"
-}
-func (m *Migration0615_100) ExecuteUpgrade() error {
-	err := RenameKey(m.propdb, []byte("GlobalProperty"), []byte("gpGlobalProperty"))
-	if err != nil {
-		return err
+func NewMigrations(db ptndb.Database) map[string]IMigration {
+	migrations := make(map[string]IMigration)
+	m_0615 := NewMigration0615_100(db)
+	if ver := m_0615.ToVersion(); ver != "" {
+		migrations[ver] = m_0615
 	}
-	//err = RenamePrefix(m.dagdb, []byte("uht"), []byte("hh"))
-	err = RenamePrefix(m.dagdb, []byte("testmigration"), []byte("migration"))
-	if err != nil {
-		return err
-	}
-	return nil
+	return migrations
+}
+func NewMigration0615_100(db ptndb.Database) *Migration0615_100 {
+	return &Migration0615_100{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
 }

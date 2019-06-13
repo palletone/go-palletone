@@ -1352,3 +1352,28 @@ func (m *MockIDag) GetConfig(name string) ([]byte, error) {
 func (mr *MockIDagMockRecorder) GetConfig(name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockIDag)(nil).GetConfig), name)
 }
+
+// GetDataVersion mocks base method
+func (m *MockIDag) GetDataVersion() (*modules.DataVersion, error) {
+	ret := m.ctrl.Call(m, "GetDataVersion")
+	ret0, _ := ret[0].(*modules.DataVersion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDataVersion indicates an expected call of GetDataVersion
+func (mr *MockIDagMockRecorder) GetDataVersion() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataVersion", reflect.TypeOf((*MockIDag)(nil).GetDataVersion))
+}
+
+// StoreDataVersion mocks base method
+func (m *MockIDag) StoreDataVersion(dv *modules.DataVersion) error {
+	ret := m.ctrl.Call(m, "StoreDataVersion", dv)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StoreDataVersion indicates an expected call of StoreDataVersion
+func (mr *MockIDagMockRecorder) StoreDataVersion(dv interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreDataVersion", reflect.TypeOf((*MockIDag)(nil).StoreDataVersion), dv)
+}

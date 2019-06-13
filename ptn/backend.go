@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -40,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/migration"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -50,6 +52,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
+	"time"
 )
 
 type LesServer interface {
@@ -130,6 +133,8 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	dag.RefreshSysParameters()
+	// start migration
+	startMigration(dag)
 
 	ptn := &PalletOne{
 		config:         config,
@@ -495,4 +500,28 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *s
 	res.Warning = ptnapi.DefaultResult
 
 	return res, nil
+}
+func startMigration(dag *dag.Dag) error {
+	// 获取旧的gptn版本号
+	t := time.Now()
+	defer func(t1 time.Time) {
+		log.Infof("exec migration spent time:%s", time.Since(t1))
+	}(t)
+	old_vertion, err := dag.GetDataVersion()
+	if err != nil {
+		return err
+	}
+	log.Infof("the old version:%s", old_vertion.Version)
+	// 获取当前gptn版本号
+	now_version := configure.Version
+	if old_vertion.Version != now_version {
+		log.Infof("start migration,upgrade gtpn vertion[%s] to [%s]", old_vertion.Version, now_version)
+		// migrations
+		mig_versions := migration.NewMigrations(dag.Db)
+		if mig, has := mig_versions[now_version]; has {
+			mig.ExecuteUpgrade()
+		}
+		return nil
+	}
+	return nil
 }

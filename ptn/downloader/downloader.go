@@ -551,7 +551,12 @@ func (d *Downloader) fetchHeight(p *peerConnection, assetId modules.AssetId) (*m
 
 	// Request the advertised remote head block and wait for the response
 	headerHash, _ := p.peer.Head(assetId)
-	go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
+	//go p.peer.RequestHeadersByHash(headerHash, 1, 0, false)
+	go func() {
+		if err := p.peer.RequestHeadersByHash(headerHash, 1, 0, false); err != nil {
+			log.Debug("Downloader fetchHeight RequestHeadersByHash", "err", err, "assetid", assetId, "hash", headerHash)
+		}
+	}()
 
 	ttl := d.requestTTL()
 	timeout := time.After(ttl)

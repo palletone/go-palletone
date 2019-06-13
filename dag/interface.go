@@ -189,4 +189,7 @@ type IDag interface {
 	GetChainParameters() *core.ChainParameters
 	GetImmutableChainParameters() *core.ImmutableChainParameters
 	GetConfig(name string) ([]byte, error)
+	
+	GetDataVersion() (*modules.DataVersion, error)
+	StoreDataVersion(dv *modules.DataVersion) error
 }
