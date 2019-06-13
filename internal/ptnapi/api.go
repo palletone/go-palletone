@@ -1611,7 +1611,7 @@ func SignRawTransaction(icmd interface{}, pubKeyFn tokenengine.AddressGetPubKey,
 	//log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
 
 	var hashType uint32
-	switch *cmd.Flags {
+	switch strings.ToUpper(*cmd.Flags) {
 	case "ALL":
 		hashType = tokenengine.SigHashAll
 	case "NONE":

@@ -17,37 +17,19 @@
  *  * @date 2018-2019
  *
  */
-
 package migration
 
 import (
-	"github.com/palletone/go-palletone/common/ptndb"
+	"fmt"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"testing"
 )
 
-type Migration0615_100 struct {
-	//mdag  dag.IDag
-	dagdb   ptndb.Database
-	idxdb   ptndb.Database
-	utxodb  ptndb.Database
-	statedb ptndb.Database
-	propdb  ptndb.Database
-}
-
-func (m *Migration0615_100) FromVersion() string {
-	return "0.6.15"
-}
-func (m *Migration0615_100) ToVersion() string {
-	return "1.0.0-beta"
-}
-func (m *Migration0615_100) ExecuteUpgrade() error {
-	err := RenameKey(m.propdb, []byte("GlobalProperty"), []byte("gpGlobalProperty"))
-	if err != nil {
-		return err
-	}
-	//err = RenamePrefix(m.dagdb, []byte("uht"), []byte("hh"))
-	err = RenamePrefix(m.dagdb, []byte("testmigration"), []byte("migration"))
-	if err != nil {
-		return err
-	}
-	return nil
+func TestStrToHex(t *testing.T) {
+	str := "testmigration_key"
+	val := "testmigration_value"
+	hex := hexutil.Encode([]byte(str))
+	val_hex := hexutil.Encode([]byte(val))
+	fmt.Println(hex)
+	fmt.Println(val_hex)
 }

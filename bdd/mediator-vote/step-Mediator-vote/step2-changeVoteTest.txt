@@ -1,0 +1,44 @@
+*** Settings ***
+Library           Collections
+Resource          ../pubVariables.robot
+Resource          ../pubFuncs.robot
+Resource          ../setups.robot
+
+*** Test Cases ***
+mediatorvote
+    Given wait for transaction being packaged
+    When user second vote
+    and view vote results
+    Then mediator has to change vote
+
+*** Keywords ***
+wait for transaction being packaged
+    Log    wait for transaction being packaged
+    Sleep    5
+
+user second vote
+    #Log    "vote second mediator account    succeed"
+    ${args}=    Create List    ${mediatorHolder2}
+    ${params}=    Create List    ${userAccount}    ${args}
+    ${resp}=    sendRpcPost    ${voteMediator}    ${params}    vote mediator
+    log    ${resp}
+
+view vote results
+    wait for transaction being packaged
+    ${args}=    Create List
+    ${params}=    Create List
+    ${resp}=    sendRpcPost    ${mediatorVoteResults}    ${params}    view mediator results
+    ${resultAddrs}=    Get From Dictionary    ${resp}    result
+    Dictionary Should Contain Key    ${resp}    result
+    Log    The result of the first vote    INFO
+    Log    ${mediator1Result}    INFO
+    ${voteResult1}    set variable    ${resultAddrs['${mediatorHolder1}']}
+    ${voteResult2}    set variable    ${resultAddrs['${mediatorHolder2}']}
+    run keyword if    ${voteResult1}!=${mediator1Result}    log    success
+    Set Global Variable    ${mediator1Result}    ${voteResult1}
+    Set Global Variable    ${mediator2Result}    ${voteResult2}
+    Log    ${mediator1Result}    INFO
+    Log    ${mediator2Result}    INFO
+
+mediator has to change vote
+    Log    mediator has to changed INFO

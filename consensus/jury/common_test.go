@@ -41,3 +41,24 @@ func TestSortSigs(t *testing.T) {
 		fmt.Printf("%d %x\n", i, sigOrder[i])
 	}
 }
+
+func TestDeleOneMax(t *testing.T) {
+	sigStrs := []string{"1f9d8bb450ccd6b3b7e0d3348a21845ac324d926f1ffd71e7c54615787d462e74d6f9611eade3f78a371b3561dc4af303e39ff4da3c1f67d7f0b61da5049237201",
+		"a2f880d5520e128fc00f2265da2c5830d6df7e6c9d62a1ee9b3e47695c630d113b9349cede0b12ded199a8fdb49791499e27fa6e700c4028f8459e4fe938bb0d00",
+		"1f9d8bb450ccd6b3b7e0d3348a21845ac324d926f1ffd71e7c54615787d462e74d6f9611eade3f78a371b3561dc4af303e39ff4da3c1f67d7f0b61da5049237201",
+		"a2f880d5520e128fc00f2265da2c5830d6df7e6c9d62a1ee9b3e47695c630d113b9349cede0b12ded199a8fdb49791499e27fa6e700c4028f8459e4fe938bb0d00",
+	}
+	sigs := [][]byte{}
+	for i := range sigStrs {
+		sigs = append(sigs, common.Hex2Bytes(sigStrs[i]))
+	}
+
+	delNum := 2
+	for delNum > 0 {
+		sigs = DeleOneMax(sigs)
+		delNum--
+	}
+	for i := range sigs {
+		fmt.Printf("%d %x\n", i, sigs[i])
+	}
+}
