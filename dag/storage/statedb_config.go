@@ -33,7 +33,7 @@ import (
 )
 
 //var CONF_PREFIX = append(constants.CONTRACT_STATE_PREFIX, scc.SysConfigContractAddress.Bytes()...)
-func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
+func (statedb *StateDb) SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error {
 	//SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion)
 	id := syscontract.SysConfigContractAddress.Bytes()
 	err := saveContractState(statedb.db, id, key, val, ver)
@@ -49,7 +49,7 @@ func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.State
 获取配置信息
 get config information
 */
-func (statedb *StateDb) getSysConfig(name string) ([]byte, *modules.StateVersion, error) {
+func (statedb *StateDb) getSysConfigContract(name string) ([]byte, *modules.StateVersion, error) {
 	id := syscontract.SysConfigContractAddress.Bytes()
 	return statedb.GetContractState(id, name)
 }
@@ -60,7 +60,7 @@ func (statedb *StateDb) getSysConfig(name string) ([]byte, *modules.StateVersion
 //}
 
 func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
-	val, _, err := statedb.getSysConfig(modules.DesiredSysParamsWithoutVote)
+	val, _, err := statedb.getSysConfigContract(modules.DesiredSysParamsWithoutVote)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -81,7 +81,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 }
 
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
-	val, _, err := statedb.getSysConfig(modules.DesiredSysParamsWithVote)
+	val, _, err := statedb.getSysConfigContract(modules.DesiredSysParamsWithVote)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err

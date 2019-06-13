@@ -99,5 +99,5 @@ type IStateDb interface {
 	//GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
-	SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error
+	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
 }

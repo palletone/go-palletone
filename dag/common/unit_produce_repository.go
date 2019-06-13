@@ -407,7 +407,7 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 		}
 
 		//将基金会当前单独修改的重置为nil
-		err = dag.stateRep.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
+		err = dag.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithoutVote, nil, version)
 		//if err != nil {
 		//	return err
 		//}
@@ -426,7 +426,7 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 		}
 
 		//将基金会当前投票修改的重置为nil
-		err = dag.stateRep.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
+		err = dag.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithVote, nil, version)
 		//if err != nil {
 		//	return err
 		//}

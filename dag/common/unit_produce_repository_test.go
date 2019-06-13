@@ -51,7 +51,7 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	modifies := make(map[string]string)
 	modifies[modules.DesiredActiveMediatorCount] = "5"
 	modifiesByte, _ := json.Marshal(modifies)
-	err = upRep.stateRep.SaveSysConfig(modules.DesiredSysParamsWithoutVote, modifiesByte, version)
+	err = upRep.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithoutVote, modifiesByte, version)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -76,7 +76,7 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	sysSupportResult.VoteResults = []*modules.SysVoteResult{sysVoteResult1, sysVoteResult2}
 	sysTokenIDInfo.SupportResults = []*modules.SysSupportResult{sysSupportResult}
 	infoByte, _ := json.Marshal(sysTokenIDInfo)
-	err = upRep.stateRep.SaveSysConfig(modules.DesiredSysParamsWithVote, infoByte, version)
+	err = upRep.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithVote, infoByte, version)
 	if err != nil {
 		t.Error(err.Error())
 	}
