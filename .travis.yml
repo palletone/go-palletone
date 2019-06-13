@@ -14,6 +14,7 @@ env:
     - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
     - DEPOSIT_DIR=deposit
     - GAS_TOKEN_DIR=gasToken
+    - MEDIATOR_VOTE_DIR=meidatorvote
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
 ##########  control testcase  ##############
@@ -25,6 +26,7 @@ env:
     - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
+    - IS_RUN_MEDIATOR_VOTE=true
     - GO111MODULE=on
     - IS_UPLOAD = FALSE
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]' 
@@ -107,6 +109,14 @@ matrix:
           ./init_gas_token.sh;
           sleep 15;
           python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
+          fi
+
+        - if [ $IS_RUN_MEDIATOR_VOTE == 'true' ]; then
+          cd ../mediator-vote;
+          chmod +x ./init.sh;
+          ./init.sh;
+          sleep 15;
+          python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
           fi
      
 after_script:
