@@ -140,7 +140,7 @@ matrix:
 after_script:
   - killall gptn
   - sleep 2
-  if: |
+  - if [ $IS_UPLOAD == 'true']; then
     # upload all log
     curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v;
 
@@ -187,9 +187,9 @@ after_script:
     fi
 
     # echo ftp address
-    "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/palletone"
-    "If you want to open it in explorer, you should close VPN first."
-    "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
+    echo "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/palletone";
+    echo "If you want to open it in explorer, you should close VPN first.";
+    echo "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view";
   fi
 
 before_install:
