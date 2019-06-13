@@ -20,34 +20,23 @@
 
 package migration
 
-import (
-	"github.com/palletone/go-palletone/common/ptndb"
-)
+import ()
 
-type Migration0615_100 struct {
-	//mdag  dag.IDag
-	dagdb   ptndb.Database
-	idxdb   ptndb.Database
-	utxodb  ptndb.Database
-	statedb ptndb.Database
-	propdb  ptndb.Database
+//如果从一个版本升级到另一个版本，数据库不需要做任何更改时，使用该实例
+type NothingMigration struct {
+	from, to string
 }
 
-func (m *Migration0615_100) FromVersion() string {
-	return "0.6.15"
+func NewNothingMigration(from, to string) *NothingMigration {
+	return &NothingMigration{from: from, to: to}
 }
-func (m *Migration0615_100) ToVersion() string {
-	return "1.0.0-beta"
+func (m *NothingMigration) FromVersion() string {
+	return m.from
 }
-func (m *Migration0615_100) ExecuteUpgrade() error {
-	err := RenameKey(m.propdb, []byte("GlobalProperty"), []byte("gpGlobalProperty"))
-	if err != nil {
-		return err
-	}
-	//err = RenamePrefix(m.dagdb, []byte("uht"), []byte("hh"))
-	err = RenamePrefix(m.dagdb, []byte("testmigration"), []byte("migration"))
-	if err != nil {
-		return err
-	}
+func (m *NothingMigration) ToVersion() string {
+	return m.to
+}
+func (m *NothingMigration) ExecuteUpgrade() error {
+
 	return nil
 }
