@@ -331,7 +331,7 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		//	DepositPeriod:             0,
 		//}
 		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, keyForSystemConfig.Key)
-		payloadBytes, err := txContext.txsimulator.GetConfig(keyForSystemConfig.Key)
+		//payloadBytes, err := txContext.txsimulator.GetConfig(keyForSystemConfig.Key)
 
 		//fmt.Println("keyForSystemConfig.Key = ", keyForSystemConfig.Key)
 		//if strings.Compare("DepositAmountForJury", keyForSystemConfig.Key) == 0 {
@@ -351,6 +351,8 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		//}
 		//chaincodeID := handler.getCCRootName()
 		log.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
+
+		payloadBytes, err := txContext.txsimulator.GetChainParameters()
 		if err != nil {
 			log.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}

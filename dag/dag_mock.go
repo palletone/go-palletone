@@ -1328,19 +1328,6 @@ func (mr *MockIDagMockRecorder) GetImmutableChainParameters() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImmutableChainParameters", reflect.TypeOf((*MockIDag)(nil).GetImmutableChainParameters))
 }
 
-// GetConfig mocks base method
-func (m *MockIDag) GetConfig(name string) ([]byte, error) {
-	ret := m.ctrl.Call(m, "GetConfig", name)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetConfig indicates an expected call of GetConfig
-func (mr *MockIDagMockRecorder) GetConfig(name interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockIDag)(nil).GetConfig), name)
-}
-
 // GetDataVersion mocks base method
 func (m *MockIDag) GetDataVersion() (*modules.DataVersion, error) {
 	ret := m.ctrl.Call(m, "GetDataVersion")

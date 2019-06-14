@@ -21,8 +21,6 @@
 package dag
 
 import (
-	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -191,23 +189,23 @@ func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
 	return &dag.GetGlobalProp().ImmutableParameters
 }
 
-func (d *Dag) GetConfig(name string) ([]byte, error) {
-	chainParameters := *d.GetChainParameters()
-	vv := reflect.ValueOf(chainParameters)
-	//tt := reflect.TypeOf(chainParameters)
-	//for i := 0; i < tt.NumField(); i++ {
-	//	if tt.Field(i).Name == name {
-	//		return []byte(vv.Field(i).String()), nil
-	//	}
-	//}
-
-	vn := vv.FieldByName(name)
-	if vn.IsValid() {
-		return []byte(vn.String()), nil
-	}
-
-	return nil, fmt.Errorf("no such field: %v", name)
-}
+//func (d *Dag) GetConfig(name string) ([]byte, error) {
+//	chainParameters := *d.GetChainParameters()
+//	vv := reflect.ValueOf(chainParameters)
+//	//tt := reflect.TypeOf(chainParameters)
+//	//for i := 0; i < tt.NumField(); i++ {
+//	//	if tt.Field(i).Name == name {
+//	//		return []byte(vv.Field(i).String()), nil
+//	//	}
+//	//}
+//
+//	vn := vv.FieldByName(name)
+//	if vn.IsValid() {
+//		return []byte(vn.String()), nil
+//	}
+//
+//	return nil, fmt.Errorf("no such field: %v", name)
+//}
 
 //func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
 //	return d.unstableStateRep.GetConfig(name)

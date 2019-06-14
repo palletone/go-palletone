@@ -21,14 +21,15 @@ package rwset
 
 import (
 	"errors"
-
 	"fmt"
+	"sort"
+
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"sort"
 )
 
 type RwSetTxSimulator struct {
@@ -53,17 +54,19 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	unit := idag.GetCurrentUnit(gasToken)
 	cIndex := unit.Header().Number
 	log.Debugf("constructing new tx simulator txid = [%s]", hash.String())
-	return &RwSetTxSimulator{chainIndex: cIndex, txid: hash, rwsetBuilder: rwsetBuilder, write_cache: make(map[string][]byte), dag: idag}
+	return &RwSetTxSimulator{chainIndex: cIndex, txid: hash, rwsetBuilder: rwsetBuilder,
+		write_cache: make(map[string][]byte), dag: idag}
 }
 
-func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
-	//val, err := s.dag.GetConfig(name)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//return val, nil
+func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
+	cp := s.dag.GetChainParameters()
 
-	return s.dag.GetConfig(name)
+	data, err := rlp.EncodeToBytes(cp)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 // GetState implements method in interface `ledger.TxSimulator`

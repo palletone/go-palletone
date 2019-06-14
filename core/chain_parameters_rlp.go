@@ -86,11 +86,13 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.TxCoinYearRate = float64(TxCoinYearRate)
+
 	DepositRate, err := strconv.ParseFloat(cpt.DepositRate, 64)
 	if err != nil {
 		return err
 	}
 	cp.DepositRate = float64(DepositRate)
+
 	DepositPeriod, err := strconv.ParseInt(cpt.DepositPeriod, 10, 64)
 	if err != nil {
 		return err
@@ -102,21 +104,25 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.UccMemory = int64(UccMemory)
+
 	UccMemorySwap, err := strconv.ParseInt(cpt.UccMemorySwap, 10, 64)
 	if err != nil {
 		return err
 	}
 	cp.UccMemorySwap = int64(UccMemorySwap)
+
 	UccCpuShares, err := strconv.ParseInt(cpt.UccCpuShares, 10, 64)
 	if err != nil {
 		return err
 	}
 	cp.UccCpuShares = int64(UccCpuShares)
+
 	UccCpuQuota, err := strconv.ParseInt(cpt.UccCpuQuota, 10, 64)
 	if err != nil {
 		return err
 	}
 	cp.UccCpuQuota = int64(UccCpuQuota)
+
 	UccCpuPeriod, err := strconv.ParseInt(cpt.UccCpuPeriod, 10, 64)
 	if err != nil {
 		return err
@@ -128,16 +134,19 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.TempUccMemory = int64(TempUccMemory)
+
 	TempUccMemorySwap, err := strconv.ParseInt(cpt.TempUccMemorySwap, 10, 64)
 	if err != nil {
 		return err
 	}
 	cp.TempUccMemorySwap = int64(TempUccMemorySwap)
+
 	TempUccCpuShares, err := strconv.ParseInt(cpt.TempUccCpuShares, 10, 64)
 	if err != nil {
 		return err
 	}
 	cp.TempUccCpuShares = int64(TempUccCpuShares)
+
 	TempUccCpuQuota, err := strconv.ParseInt(cpt.TempUccCpuQuota, 10, 64)
 	if err != nil {
 		return err
@@ -149,6 +158,7 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.ContractSignatureNum = int(ContractSignatureNum)
+
 	ContractElectionNum, err := strconv.ParseInt(cpt.ContractElectionNum, 10, 64)
 	if err != nil {
 		return err
