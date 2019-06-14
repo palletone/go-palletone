@@ -5,6 +5,9 @@
 package dag
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
 	event "github.com/palletone/go-palletone/common/event"
@@ -13,8 +16,6 @@ import (
 	core "github.com/palletone/go-palletone/core"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -1356,6 +1357,7 @@ func (mr *MockIDagMockRecorder) GetDataVersion() *gomock.Call {
 
 // StoreDataVersion mocks base method
 func (m *MockIDag) StoreDataVersion(dv *modules.DataVersion) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreDataVersion", dv)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1363,5 +1365,6 @@ func (m *MockIDag) StoreDataVersion(dv *modules.DataVersion) error {
 
 // StoreDataVersion indicates an expected call of StoreDataVersion
 func (mr *MockIDagMockRecorder) StoreDataVersion(dv interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreDataVersion", reflect.TypeOf((*MockIDag)(nil).StoreDataVersion), dv)
 }

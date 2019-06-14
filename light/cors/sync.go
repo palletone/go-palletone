@@ -115,10 +115,10 @@ func (pm *ProtocolManager) pushSync() (uint64, []*modules.Header) {
 	}
 
 	flag = 0
-	if pheader.Number.Index <= fsMinFullBlocks {
+	if pheader.Number.Index <= maxQueueDist {
 		index = 0
 	} else {
-		index = pheader.Number.Index - fsMinFullBlocks
+		index = pheader.Number.Index - maxQueueDist
 	}
 
 	log.Debug("Cors ProtocolManager", "pheader.index", pheader.Number.Index, "push index", index, "pushSync fetchHeader header", pheader)

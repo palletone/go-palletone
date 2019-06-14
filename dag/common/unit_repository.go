@@ -1420,7 +1420,7 @@ func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*module
 			income := []modules.AmountAsset{}
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
-				rs := modules.ContractReadSet{Key: key, Version: version, Value: data}
+				rs := modules.ContractReadSet{Key: key, Version: version}
 				payload.ReadSet = append(payload.ReadSet, rs)
 			}
 			newValue := addIncome(income, v.Amount, v.Asset)
@@ -1497,8 +1497,8 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	payload.ContractId = contractId
 	for addr, _ := range rewards {
 		key := constants.RewardAddressPrefix + addr.String()
-		data, version, _ := rep.statedb.GetContractState(contractId, key)
-		rs := modules.ContractReadSet{Key: key, Version: version, Value: data}
+		_, version, _ := rep.statedb.GetContractState(contractId, key)
+		rs := modules.ContractReadSet{Key: key, Version: version}
 		payload.ReadSet = append(payload.ReadSet, rs)
 		empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
 		ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: empty}

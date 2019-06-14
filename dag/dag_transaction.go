@@ -359,14 +359,10 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 		return nil, 0, err
 	}
 
-	writeVote := modules.ContractWriteSet{
-		false,
-		constants.VOTED_MEDIATORS,
-		msb,
-	}
+	writeVote := modules.AccountStateWriteSet{false, constants.VOTED_MEDIATORS, msb}
 
 	accountUpdate := &modules.AccountStateUpdatePayload{
-		[]modules.ContractWriteSet{writeVote},
+		[]modules.AccountStateWriteSet{writeVote},
 	}
 
 	msg := &modules.Message{

@@ -210,9 +210,10 @@ func (msg *Message) CompareMessages(inMsg *Message) bool {
 }
 
 type ContractWriteSet struct {
-	IsDelete bool   `json:"is_delete"`
-	Key      string `json:"key"`
-	Value    []byte `json:"value"`
+	IsDelete   bool   `json:"is_delete"`
+	Key        string `json:"key"`
+	Value      []byte `json:"value"`
+	ContractId []byte `json:"contract_id"`
 }
 
 func NewWriteSet(key string, value []byte) *ContractWriteSet {
@@ -381,9 +382,9 @@ type ElectionInf struct {
 }
 
 type ContractReadSet struct {
-	Key     string        `json:"key"`
-	Version *StateVersion `json:"version"`
-	Value   []byte        `json:"value"`
+	Key        string        `json:"key"`
+	Version    *StateVersion `json:"version"`
+	ContractId []byte        `json:"contract_id"`
 }
 
 //请求合约信息
@@ -517,9 +518,13 @@ type DataPayload struct {
 
 //一个地址对应的个人StateDB空间
 type AccountStateUpdatePayload struct {
-	WriteSet []ContractWriteSet `json:"write_set"`
+	WriteSet []AccountStateWriteSet `json:"write_set"`
 }
-
+type AccountStateWriteSet struct {
+	IsDelete bool   `json:"is_delete"`
+	Key      string `json:"key"`
+	Value    []byte `json:"value"`
+}
 type FileInfo struct {
 	UnitHash    common.Hash `json:"unit_hash"`
 	UintHeight  uint64      `json:"unit_index"`
@@ -599,7 +604,7 @@ func (a *ContractReadSet) Equal(b *ContractReadSet) bool {
 	if b == nil {
 		return false
 	}
-	if !strings.EqualFold(a.Key, b.Key) || !bytes.Equal(a.Value, b.Value) {
+	if !strings.EqualFold(a.Key, b.Key) || !bytes.Equal(a.ContractId, b.ContractId) {
 		return false
 	}
 	if a.Version != nil && b.Version != nil {

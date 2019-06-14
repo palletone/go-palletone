@@ -373,7 +373,7 @@ func (handler *Handler) callPeerWithChaincodeMsg(msg *pb.ChaincodeMessage, chann
 func (handler *Handler) handleGetState(collection string, key string, contractid []byte, channelId string, txid string) ([]byte, error) {
 	// Construct payload for GET_STATE
 
-	payloadBytes, _ := proto.Marshal(&pb.GetState{Collection: collection, Key: key})
+	payloadBytes, _ := proto.Marshal(&pb.GetState{Collection: collection, ContractId: contractid, Key: key})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STATE)
@@ -400,12 +400,12 @@ func (handler *Handler) handleGetState(collection string, key string, contractid
 
 // TODO: Implement a method to get multiple keys at a time [FAB-1244]
 // handleGetState communicates with the peer to fetch the requested state information from the ledger.
-func (handler *Handler) handelGetStateByPrefix(prefix string, contractid []byte, channelId string, txid string) ([]*modules.KeyValue, error) {
+func (handler *Handler) handelGetStateByPrefix(prefix string, contractId []byte, channelId string, txid string) ([]*modules.KeyValue, error) {
 	// Construct payload for GET_STATE
 
-	payloadBytes, _ := proto.Marshal(&pb.GetStateByPrefix{Prefix: prefix})
+	payloadBytes, _ := proto.Marshal(&pb.GetStateByPrefix{ContractId: contractId, Prefix: prefix})
 
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE_BY_PREFIX, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractid}
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE_BY_PREFIX, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STATE_BY_PREFIX)
 
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
@@ -581,11 +581,11 @@ func (handler *Handler) handleSupplyToken(assetId []byte, uniqueId []byte, amt u
 
 // TODO: Implement a method to set multiple keys at a time [FAB-1244]
 // handlePutState communicates with the peer to put state information into the ledger.
-func (handler *Handler) handlePutState(collection string, key string, value []byte, channelId string, txid string) error {
+func (handler *Handler) handlePutState(collection string, contractId []byte, key string, value []byte, channelId string, txid string) error {
 	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.PutState{Collection: collection, Key: key, Value: value})
+	payloadBytes, _ := proto.Marshal(&pb.PutState{Collection: collection, ContractId: contractId, Key: key, Value: value})
 
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_PUT_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_PUT_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_PUT_STATE)
 
 	// Execute the request and get response
@@ -759,11 +759,11 @@ func (handler *Handler) handleRecvJury(collection string, msgType uint32, consul
 }
 
 // handleDelState communicates with the peer to delete a key from the state in the ledger.
-func (handler *Handler) handleDelState(collection string, key string, channelId string, txid string) error {
+func (handler *Handler) handleDelState(collection string, contractId []byte, key string, channelId string, txid string) error {
 	//payloadBytes, _ := proto.Marshal(&pb.GetState{Collection: collection, Key: key})
-	payloadBytes, _ := proto.Marshal(&pb.DelState{Collection: collection, Key: key})
+	payloadBytes, _ := proto.Marshal(&pb.DelState{Collection: collection, ContractId: contractId, Key: key})
 
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_DEL_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_DEL_STATE, Payload: payloadBytes, Txid: txid, ChannelId: channelId, ContractId: contractId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_DEL_STATE)
 
 	// Execute the request and get response
