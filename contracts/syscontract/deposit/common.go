@@ -134,15 +134,21 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 	//  对mediator的特殊处理
 	if role == Mediator {
 		//  获取保证金下限
-		depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
+		//depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
+		//if err != nil {
+		//	return err
+		//}
+		////  转换
+		//depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
+		//if err != nil {
+		//	return err
+		//}
+		cp, err := stub.GetSystemConfig()
 		if err != nil {
+			log.Error("strconv.ParseUint err:", "error", err)
 			return err
 		}
-		//  转换
-		depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
-		if err != nil {
-			return err
-		}
+		depositAmountsForMediator := cp.DepositAmountForMediator
 		//  判断退还后是否还在保证金下线之上
 		if balance-invokeTokens.Amount < depositAmountsForMediator {
 			return fmt.Errorf("%s", "can not cashback some")
@@ -543,17 +549,23 @@ func TimeStr() string {
 // 判读是否超过了抵押日期
 func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
 	//  判断是否超过了质押周期
-	depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
+	//depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
+	//if err != nil {
+	//	log.Error("get deposit period err: ", "error", err)
+	//	return false
+	//}
+	////
+	//day, err := strconv.Atoi(depositPeriod)
+	//if err != nil {
+	//	log.Error("strconv.Atoi err: ", "error", err)
+	//	return false
+	//}
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("get deposit period err: ", "error", err)
+		log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
-	//
-	day, err := strconv.Atoi(depositPeriod)
-	if err != nil {
-		log.Error("strconv.Atoi err: ", "error", err)
-		return false
-	}
+	day := cp.DepositPeriod
 	nowT := time.Now().UTC()
 	enterT := StrToTime(enterTime)
 	duration := nowT.Sub(enterT).Hours()
@@ -567,16 +579,22 @@ func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
 func caculateAwards(stub shim.ChaincodeStubInterface, balance uint64, lastModifyTime string) uint64 {
 	endTime := StrToTime(lastModifyTime)
 	//  获取保证金年利率
-	depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
+	//depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
+	//if err != nil {
+	//	log.Error("get deposit rate err: ", "error", err)
+	//	return 0
+	//}
+	//depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
+	//if err != nil {
+	//	log.Errorf("string to float64 error: %s", err.Error())
+	//	return 0
+	//}
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("get deposit rate err: ", "error", err)
+		log.Error("strconv.ParseUint err:", "error", err)
 		return 0
 	}
-	depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
-	if err != nil {
-		log.Errorf("string to float64 error: %s", err.Error())
-		return 0
-	}
+	depositRateFloat64 := cp.DepositRate
 	//  计算币龄收益
 	return award.GetAwardsWithCoins(balance, endTime.Unix(), depositRateFloat64)
 }
@@ -590,11 +608,12 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 		return false
 	}
 	//  获取
-	foundationAddress, err := stub.GetSystemConfig(modules.FoundationAddress)
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("get foundation address err: ", "error", err)
+		log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
+	foundationAddress := cp.FoundationAddress
 	// 判断当前请求的是否为基金会
 	if invokeAddr.String() != foundationAddress {
 		log.Error("please use foundation address")

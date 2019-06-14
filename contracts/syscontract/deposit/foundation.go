@@ -22,7 +22,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
 )
 
 //同意申请没收请求
@@ -55,17 +54,20 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 	result := md.Balance - forfeiture.ApplyTokens.Amount
 	//  判断是否需要移除列表
 	//  获取保证金下线，在状态数据库中
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
-	if err != nil {
-		log.Error("get deposit amount for mediator err: ", "error", err)
-		return err
-	}
-	//  转换保证金数量
-	depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
+	//depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
+	//if err != nil {
+	//	log.Error("get deposit amount for mediator err: ", "error", err)
+	//	return err
+	//}
+	////  转换保证金数量
+	//depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
+
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
 		log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
+	depositAmountsForMediator := cp.DepositAmountForMediator
 	//  需要移除列表forfeiture.ApplyTokens.Amount
 	if result < depositAmountsForMediator {
 		//  调用从合约把token转到请求地址
@@ -117,17 +119,24 @@ func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 	if node == nil {
 		return fmt.Errorf("node is nil")
 	}
-	depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
+	//depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
+	//if err != nil {
+	//	log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+	//	return err
+	//}
+	////转换
+	//depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
+	//if err != nil {
+	//	log.Error("Strconv.ParseUint err:", "error", err)
+	//	return err
+	//}
+
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+		log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
-	//转换
-	depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return err
-	}
+	depositAmountsForJury := cp.DepositAmountForJury
 	//计算余额
 	result := node.Balance - forfeiture.ApplyTokens.Amount
 	//判断是否没收全部，即在列表中移除该节点
@@ -176,17 +185,24 @@ func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA st
 	if node == nil {
 		return fmt.Errorf("node is nil")
 	}
-	depositAmountsForDevStr, err := stub.GetSystemConfig(DepositAmountForDeveloper)
+	//depositAmountsForDevStr, err := stub.GetSystemConfig(DepositAmountForDeveloper)
+	//if err != nil {
+	//	log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+	//	return err
+	//}
+	////转换
+	//depositAmountsForDev, err := strconv.ParseUint(depositAmountsForDevStr, 10, 64)
+	//if err != nil {
+	//	log.Error("Strconv.ParseUint err:", "error", err)
+	//	return err
+	//}
+
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+		log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
-	//转换
-	depositAmountsForDev, err := strconv.ParseUint(depositAmountsForDevStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return err
-	}
+	depositAmountsForDev := cp.DepositAmountForDeveloper
 	//计算余额
 	result := node.Balance - forfeiture.ApplyTokens.Amount
 	//判断是否没收全部，即在列表中移除该节点

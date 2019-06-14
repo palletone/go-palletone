@@ -31,6 +31,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -787,25 +788,35 @@ func (handler *Handler) handleDelState(collection string, contractId []byte, key
 	return errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
 
-func (handler *Handler) handleGetSystemConfig(key, channelId, txid string) (string, error) {
+func (handler *Handler) handleGetSystemConfig(channelId, txid string) (*core.ChainParameters, error) {
+	//func (handler *Handler) handleGetSystemConfig(key, channelId, txid string) (string, error) {
 	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST, Payload: payloadBytes, ChannelId: channelId, Txid: txid}
+	//payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
+	payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{})
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST, Payload: payloadBytes,
+		ChannelId: channelId, Txid: txid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST)
+
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
-
 	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("[%s]error GetDepositConfig ", msg.Txid))
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error GetDepositConfig ", msg.Txid))
 	}
+
 	//正确返回
 	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
 		//Success response
-		log.Debugf("[%s]Received %s. Successfully get deposit config", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return string(responseMsg.Payload), nil
+		log.Debugf("[%s]Received %s. Successfully get deposit config", shorttxid(responseMsg.Txid),
+			pb.ChaincodeMessage_RESPONSE)
+
+		cp := &core.ChainParameters{}
+		err = rlp.DecodeBytes(responseMsg.Payload, cp)
+		return cp, nil
 	}
+
 	// Incorrect chaincode message received
-	return "", errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
+	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s",
+		shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE)
 }
 
 func (handler *Handler) handleGetContractAllState(channelId, txid string, contractid []byte) (map[string]*modules.ContractStateValue, error) {
