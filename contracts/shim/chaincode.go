@@ -56,6 +56,7 @@ import (
 var key string
 var cert string
 var GlobalStateContractId = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var ERROR_ONLY_SYS_CONTRACT = errors.New("Only system contract can call this function.")
 
 const (
 	minUnicodeRuneValue   = 0            //U+0000
@@ -422,6 +423,9 @@ func (stub *ChaincodeStub) PutGlobalState(key string, value []byte) error {
 	if key == "" {
 		return errors.New("key must not be an empty string")
 	}
+	if !common.IsSystemContractAddress(stub.ContractId) {
+		return ERROR_ONLY_SYS_CONTRACT
+	}
 	// Access public data by setting the collection to empty string
 	collection := ""
 	return stub.handler.handlePutState(collection, GlobalStateContractId, key, value, stub.ChannelId, stub.TxID)
@@ -435,6 +439,9 @@ func (stub *ChaincodeStub) DelState(key string) error {
 	return stub.handler.handleDelState(collection, nil, key, stub.ChannelId, stub.TxID)
 }
 func (stub *ChaincodeStub) DelGlobalState(key string) error {
+	if !common.IsSystemContractAddress(stub.ContractId) {
+		return ERROR_ONLY_SYS_CONTRACT
+	}
 	return stub.handler.handleDelState("", GlobalStateContractId, key, stub.ChannelId, stub.TxID)
 
 }
@@ -606,8 +613,6 @@ func (stub *ChaincodeStub) GetContractID() ([]byte, string) {
 func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset) ([]*modules.InvokeTokens, error) {
 	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
-
-var ERROR_ONLY_SYS_CONTRACT = errors.New("Only system contract can call this function.")
 
 func (stub *ChaincodeStub) DefineToken(tokenType byte, define []byte, creator string) error {
 	if !common.IsSystemContractAddress(stub.ContractId) {
