@@ -206,7 +206,7 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 func (rep *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	missedUnits := rep.propRep.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
-		log.Errorf("Trying to push double-produced unit onto current unit?!")
+		log.Debugf("Trying to push double-produced unit onto current unit?!")
 		return 0
 	}
 
@@ -443,6 +443,12 @@ func updateChainParameter(cp *core.ChainParameters, field, value string) error {
 	vn := vv.FieldByName(field)
 
 	switch vn.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		iv, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		vn.SetInt(iv)
 	case reflect.Invalid:
 		return fmt.Errorf("no such field: %v", field)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
