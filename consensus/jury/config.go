@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	DefaultContractSigNum   = 2
+	DefaultContractSigNum   = 2 //todo
 	DefaultElectionNum      = 2
 	DefaultPassword         = "password"
 	ContractElectionTimeOut = 5 * time.Second //second

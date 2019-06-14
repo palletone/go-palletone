@@ -359,7 +359,7 @@ func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInte
 		}
 		//confirm
 		if geteventresult.Blocknums[i]+10 > endBlockNum {
-			log.Debugf("geteventresult.Blocknums[i] %d, endBlockNum", geteventresult.Blocknums[i], endBlockNum)
+			log.Debugf("geteventresult.Blocknums[i] %d, endBlockNum %d", geteventresult.Blocknums[i], endBlockNum)
 			continue
 		}
 		//deposit amount, example : 500000000000000000
