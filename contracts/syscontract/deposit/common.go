@@ -473,14 +473,19 @@ func forfertureAndMoveList(role string, stub shim.ChaincodeStubInterface, founda
 	//计算一部分的利息
 	//获取币龄
 	//endTime := balance.LastModifyTime * DTimeDuration
-	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
+	depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
 	//endTime, _ := time.Parse(Layout, balance.LastModifyTime)
 	endTime := StrToTime(balance.LastModifyTime)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRate)
+	depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
+	if err != nil {
+		log.Errorf("string to float64 error: %s", err.Error())
+		return err
+	}
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRateFloat64)
 	//fmt.Println("awards ", awards)
 	balance.LastModifyTime = TimeStr()
 	//加上利息奖励
@@ -509,12 +514,17 @@ func forfeitureSomeDeposit(stub shim.ChaincodeStubInterface, foundationAddr stri
 	//endTime, _ := time.Parse(Layout, balance.LastModifyTime)
 	endTime := StrToTime(balance.LastModifyTime)
 	//
-	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
+	depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("stub.GetSystemConfig err:", "error", err)
 		return err
 	}
-	awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRate)
+	depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
+	if err != nil {
+		log.Errorf("string to float64 error: %s", err.Error())
+		return err
+	}
+	awards := award.GetAwardsWithCoins(balance.Balance, endTime.Unix(), depositRateFloat64)
 	balance.LastModifyTime = TimeStr()
 	//  加上利息奖励
 	balance.Balance += awards
@@ -644,13 +654,18 @@ func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
 func caculateAwards(stub shim.ChaincodeStubInterface, balance uint64, lastModifyTime string) uint64 {
 	endTime := StrToTime(lastModifyTime)
 	//  获取保证金年利率
-	depositRate, err := stub.GetSystemConfig(modules.DepositRate)
+	depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
 	if err != nil {
 		log.Error("get deposit rate err: ", "error", err)
 		return 0
 	}
+	depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
+	if err != nil {
+		log.Errorf("string to float64 error: %s", err.Error())
+		return 0
+	}
 	//  计算币龄收益
-	return award.GetAwardsWithCoins(balance, endTime.Unix(), depositRate)
+	return award.GetAwardsWithCoins(balance, endTime.Unix(), depositRateFloat64)
 }
 
 //  判断是否基金会发起的

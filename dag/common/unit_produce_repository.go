@@ -335,8 +335,8 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 	cp := dag.propRep.GetChainParameters()
 
 	//deposit, _, _ := rep.GetConfig("DepositRate")
-	depositYearRate, _ := strconv.ParseFloat(cp.DepositRate, 64)
-	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
+	//depositYearRate, _ := strconv.ParseFloat(deposit, 64)
+	parameter.CurrentSysParameters.DepositContractInterest = cp.DepositRate / 365
 	log.Debugf("Load SysParameter DepositContractInterest value:%f",
 		parameter.CurrentSysParameters.DepositContractInterest)
 

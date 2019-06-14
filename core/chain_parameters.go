@@ -35,7 +35,7 @@ func NewImmutChainParams() ImmutableChainParameters {
 //变量名一定要大些，否则外部无法访问，导致无法进行json编码和解码
 type ChainParameters struct {
 	TxCoinYearRate     float64 `json:"txCoinYearRate"`     //交易币天的年利率
-	DepositRate        string  `json:"depositRate"`        //保证金的年利率
+	DepositRate        float64 `json:"depositRate"`        //保证金的年利率
 	GenerateUnitReward uint64  `json:"generateUnitReward"` //每生产一个单元，奖励多少Dao的PTN
 
 	FoundationAddress         string `json:"foundationAddress"`        //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等

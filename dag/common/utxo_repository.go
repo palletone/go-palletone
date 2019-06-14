@@ -614,11 +614,11 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				//3.通过单元获取头部信息中的时间戳
 				timestamp := int64(txlookup.Timestamp)
 				//depositRate, _, err := repository.statedb.GetSysConfig(modules.DepositRate)
+				//if err != nil {
+				//	return 0, err
+				//}
 				depositRate := repository.propDb.GetChainParameters().DepositRate
-				if err != nil {
-					return 0, err
-				}
-				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp, string(depositRate))
+				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp, depositRate)
 				awards += award
 			}
 			return awards, nil

@@ -292,13 +292,18 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//endTime, _ := time.Parse(Layout, md.LastModifyTime)
 		endTime := StrToTime(md.LastModifyTime)
 		//  获取保证金的年利率
-		depositRate, err := stub.GetSystemConfig(modules.DepositRate)
+		depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
 		if err != nil {
 			log.Error("get depositRate config err: ", "error", err)
 			return shim.Error(err.Error())
 		}
+		depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
+		if err != nil {
+			log.Errorf("string to float64 error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
 		//  计算币龄收益
-		awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
+		awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRateFloat64)
 		md.Balance += awards
 		//  处理数据
 		md.Balance += invokeTokens.Amount
