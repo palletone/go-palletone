@@ -5,16 +5,16 @@
 package dag
 
 import (
-	"github.com/golang/mock/gomock"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/contracts/list"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"reflect"
-	"time"
+	gomock "github.com/golang/mock/gomock"
+	common "github.com/palletone/go-palletone/common"
+	event "github.com/palletone/go-palletone/common/event"
+	discover "github.com/palletone/go-palletone/common/p2p/discover"
+	list "github.com/palletone/go-palletone/contracts/list"
+	core "github.com/palletone/go-palletone/core"
+	modules "github.com/palletone/go-palletone/dag/modules"
+	txspool "github.com/palletone/go-palletone/dag/txspool"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -1565,20 +1565,6 @@ func (mr *MockIDagMockRecorder) IsActiveMediator(add interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsActiveMediator", reflect.TypeOf((*MockIDag)(nil).IsActiveMediator), add)
 }
 
-// StoreDataVersion mocks base method
-func (m *MockIDag) StoreDataVersion(dv *modules.DataVersion) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoreDataVersion", dv)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// StoreDataVersion indicates an expected call of StoreDataVersion
-func (mr *MockIDagMockRecorder) StoreDataVersion(dv interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreDataVersion", reflect.TypeOf((*MockIDag)(nil).StoreDataVersion), dv)
-}
-
 // GetDataVersion mocks base method
 func (m *MockIDag) GetDataVersion() (*modules.DataVersion, error) {
 	m.ctrl.T.Helper()
@@ -1592,4 +1578,18 @@ func (m *MockIDag) GetDataVersion() (*modules.DataVersion, error) {
 func (mr *MockIDagMockRecorder) GetDataVersion() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataVersion", reflect.TypeOf((*MockIDag)(nil).GetDataVersion))
+}
+
+// StoreDataVersion mocks base method
+func (m *MockIDag) StoreDataVersion(dv *modules.DataVersion) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoreDataVersion", dv)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StoreDataVersion indicates an expected call of StoreDataVersion
+func (mr *MockIDagMockRecorder) StoreDataVersion(dv interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreDataVersion", reflect.TypeOf((*MockIDag)(nil).StoreDataVersion), dv)
 }

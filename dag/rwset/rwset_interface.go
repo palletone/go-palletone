@@ -17,12 +17,12 @@ type TxSimulator interface {
 	GetState(contractid []byte, ns string, key string) ([]byte, error)
 	GetStatesByPrefix(contractid []byte, ns string, prefix string) ([]*modules.KeyValue, error)
 	GetTimestamp(ns string, rangeNumber uint32) ([]byte, error)
-	SetState(ns string, key string, value []byte) error
+	SetState(contractid []byte, ns string, key string, value []byte) error
 	GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (map[modules.Asset]uint64, error)
 	PayOutToken(ns string, address string, token *modules.Asset, amount uint64, lockTime uint32) error
 	DefineToken(ns string, tokenType int32, define []byte, creator string) error
 	SupplyToken(ns string, assetId, uniqueId []byte, amt uint64, creator string) error
-	DeleteState(ns string, key string) error
+	DeleteState(contractid []byte, ns string, key string) error
 	GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error)
 	GetRwData(ns string) ([]*KVRead, []*KVWrite, error)
 	GetPayOutData(ns string) ([]*modules.TokenPayOut, error)
