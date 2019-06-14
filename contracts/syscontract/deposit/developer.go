@@ -20,7 +20,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
-	"strconv"
 )
 
 func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
