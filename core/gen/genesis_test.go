@@ -21,7 +21,8 @@ import (
 )
 
 func TestDefaultGenesisBlock(t *testing.T) {
-	amount := DefaultGenesisBlock().GetTokenAmount()
+	//amount := DefaultGenesisBlock().GetTokenAmount()
+	amount := DefaultGenesisBlock().TokenAmount
 	if amount != 100000000000000000 {
 		t.Errorf("wrong mainnet genesis amount, got %v, want %v", amount, 100000000000000000)
 	}

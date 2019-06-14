@@ -40,10 +40,10 @@ type ChainParameters struct {
 
 	FoundationAddress         string `json:"foundationAddress"`        //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	RewardHeight              uint64 `json:"reward_height"`            //每多少高度进行一次奖励的派发
-	DepositAmountForMediator  string `json:"depositAmountForMediator"` //保证金的数量
-	DepositAmountForJury      string `json:"depositAmountForJury"`
-	DepositAmountForDeveloper string `json:"depositAmountForDeveloper"`
-	DepositPeriod             string `json:"depositPeriod"` //保证金周期
+	DepositAmountForMediator  uint64 `json:"depositAmountForMediator"` //保证金的数量
+	DepositAmountForJury      uint64 `json:"depositAmountForJury"`
+	DepositAmountForDeveloper uint64 `json:"depositAmountForDeveloper"`
+	DepositPeriod             int    `json:"depositPeriod"` //保证金周期
 
 	//对启动用户合约容器的相关资源的限制
 	UccMemory     int64  `json:"ucc_memory"`       //物理内存  104857600  100m

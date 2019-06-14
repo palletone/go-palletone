@@ -21,17 +21,17 @@
 package core
 
 const (
-	DefaultTokenAmount = "100000000000000000"
+	DefaultTokenAmount = 100000000000000000
 	//DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
 	DefaultDepositRate               = 0.02
 	DefaultTxCoinYearRate            = 0.01
 	DefaultRewardHeight              = 50
 	DefaultGenerateUnitReward        = 100000000
-	DefaultDepositPeriod             = "0"
-	DefaultDepositAmountForMediator  = "200000000000"
-	DefaultDepositAmountForJury      = "100000000000"
-	DefaultDepositAmountForDeveloper = "80000000000"
+	DefaultDepositPeriod             = 0
+	DefaultDepositAmountForMediator  = 200000000000
+	DefaultDepositAmountForJury      = 100000000000
+	DefaultDepositAmountForDeveloper = 80000000000
 	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
 	DefaultUccMemory     = 1073741824 //物理内存  1073741824  1G

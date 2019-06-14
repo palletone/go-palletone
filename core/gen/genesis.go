@@ -138,7 +138,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	pkscript := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	asset, _ := modules.StringToAsset(genesis.GasToken)
 	txout := &modules.Output{
-		Value:    genesis.GetTokenAmount(),
+		//Value:    genesis.GetTokenAmount(),
+		Value:    genesis.TokenAmount,
 		Asset:    asset,
 		PkScript: pkscript,
 	}

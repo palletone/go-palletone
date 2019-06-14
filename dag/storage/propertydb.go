@@ -99,7 +99,9 @@ func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty)
 
 func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 	log.Debugf("DB[%s] Save global property to db.", reflect.TypeOf(propdb.db).String())
-	err := StoreToRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	// todo albert·gou
+	//err := StoreToRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	err := StoreToJsonBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Store global properties error: %v", err.Error())
 	}
@@ -109,7 +111,9 @@ func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 
 func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
 	gp := &modules.GlobalProperty{}
-	err := RetrieveFromRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	// todo albert·gou
+	//err := RetrieveFromRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
+	err := StoreToJsonBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Retrieve global properties error: %v", err.Error())
 	}
