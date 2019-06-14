@@ -145,7 +145,7 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 		//}
 		cp, err := stub.GetSystemConfig()
 		if err != nil {
-			log.Error("strconv.ParseUint err:", "error", err)
+			//log.Error("strconv.ParseUint err:", "error", err)
 			return err
 		}
 		depositAmountsForMediator := cp.DepositAmountForMediator
@@ -562,7 +562,7 @@ func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
 	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
 	day := cp.DepositPeriod
@@ -591,7 +591,7 @@ func caculateAwards(stub shim.ChaincodeStubInterface, balance uint64, lastModify
 	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return 0
 	}
 	depositRateFloat64 := cp.DepositRate
@@ -610,7 +610,7 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	//  获取
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
 	foundationAddress := cp.FoundationAddress

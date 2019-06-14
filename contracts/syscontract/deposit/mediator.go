@@ -242,7 +242,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	depositAmountsForMediator := cp.DepositAmountForMediator
@@ -287,7 +287,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//}
 		cp, err := stub.GetSystemConfig()
 		if err != nil {
-			log.Error("strconv.ParseUint err:", "error", err)
+			//log.Error("strconv.ParseUint err:", "error", err)
 			return shim.Error(err.Error())
 		}
 		depositRateFloat64 := cp.DepositRate

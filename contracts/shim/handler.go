@@ -800,7 +800,7 @@ func (handler *Handler) handleGetSystemConfig(channelId, txid string) (*core.Cha
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error GetDepositConfig ", msg.Txid))
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error GetSystemConfig ", msg.Txid))
 	}
 
 	//正确返回
@@ -811,6 +811,10 @@ func (handler *Handler) handleGetSystemConfig(channelId, txid string) (*core.Cha
 
 		cp := &core.ChainParameters{}
 		err = rlp.DecodeBytes(responseMsg.Payload, cp)
+		if err != nil {
+			log.Error("DecodeBytes ChainParameters err:", "error", err)
+			return nil, err
+		}
 		return cp, nil
 	}
 

@@ -44,7 +44,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	depositAmountsForDev := cp.DepositAmountForDeveloper
@@ -133,7 +133,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr comm
 	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
 	depositAmountsForDev := cp.DepositAmountForDeveloper

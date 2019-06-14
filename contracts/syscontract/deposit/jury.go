@@ -45,7 +45,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
 	depositAmountsForJury := cp.DepositAmountForJury
@@ -132,7 +132,7 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Ad
 	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
 	depositAmountsForJury := cp.DepositAmountForJury

@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	dm "github.com/palletone/go-palletone/dag/modules"
 	"strconv"
-	"github.com/palletone/go-palletone/common/log"
 )
 
 type PartitionMgr struct {
@@ -140,7 +139,7 @@ func hasPermission(stub shim.ChaincodeStubInterface) bool {
 	//foundationAddress, _ := stub.GetSystemConfig(dm.FoundationAddress)
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
 	foundationAddress := cp.FoundationAddress

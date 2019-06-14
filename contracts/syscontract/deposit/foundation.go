@@ -64,7 +64,7 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
 	depositAmountsForMediator := cp.DepositAmountForMediator
@@ -133,7 +133,7 @@ func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
 	depositAmountsForJury := cp.DepositAmountForJury
@@ -199,7 +199,7 @@ func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA st
 
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
 	depositAmountsForDev := cp.DepositAmountForDeveloper
