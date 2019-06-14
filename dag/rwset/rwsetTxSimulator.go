@@ -72,7 +72,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	}
 	if value, has := s.write_cache[key]; has {
 		if s.rwsetBuilder != nil {
-			s.rwsetBuilder.AddToReadSet(ns, key, nil)
+			s.rwsetBuilder.AddToReadSet(contractid, ns, key, nil)
 		}
 		return value, nil
 	}
@@ -85,7 +85,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		//		//return nil, errors.New(errstr)
 	}
 	if s.rwsetBuilder != nil {
-		s.rwsetBuilder.AddToReadSet(ns, key, ver)
+		s.rwsetBuilder.AddToReadSet(contractid, ns, key, ver)
 	}
 	log.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]---ver[%v]", ns, key, val, ver)
 
@@ -111,7 +111,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 		kv := &modules.KeyValue{Key: key, Value: row.Value}
 		result = append(result, kv)
 		if s.rwsetBuilder != nil {
-			s.rwsetBuilder.AddToReadSet(ns, key, row.Version)
+			s.rwsetBuilder.AddToReadSet(contractid, ns, key, row.Version)
 		}
 	}
 
@@ -136,7 +136,7 @@ func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, 
 
 	return []byte(fmt.Sprintf("%d", timeHeader.Time)), nil
 }
-func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
+func (s *RwSetTxSimulator) SetState(contractId []byte, ns string, key string, value []byte) error {
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
@@ -144,14 +144,14 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 		return errors.New("pvtdata Queries Performed")
 	}
 	//todo ValidateKeyValue
-	s.rwsetBuilder.AddToWriteSet(ns, key, value)
+	s.rwsetBuilder.AddToWriteSet(contractId, ns, key, value)
 	s.write_cache[key] = value
 	return nil
 }
 
 // DeleteState implements method in interface `ledger.TxSimulator`
-func (s *RwSetTxSimulator) DeleteState(ns string, key string) error {
-	return s.SetState(ns, key, nil)
+func (s *RwSetTxSimulator) DeleteState(contractId []byte, ns string, key string) error {
+	return s.SetState(contractId, ns, key, nil)
 }
 
 func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {

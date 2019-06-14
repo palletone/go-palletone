@@ -55,6 +55,7 @@ import (
 
 var key string
 var cert string
+var GlobalStateContractId = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 const (
 	minUnicodeRuneValue   = 0            //U+0000
@@ -395,6 +396,15 @@ func (stub *ChaincodeStub) GetState(key string) ([]byte, error) {
 	collection := ""
 	return stub.handler.handleGetState(collection, key, stub.ContractId, stub.ChannelId, stub.TxID)
 }
+func (stub *ChaincodeStub) GetGlobalState(key string) ([]byte, error) {
+	return stub.handler.handleGetState("", key, GlobalStateContractId, stub.ChannelId, stub.TxID)
+
+}
+func (stub *ChaincodeStub) GetContractState(contractAddr common.Address, key string) ([]byte, error) {
+	contractId := contractAddr.Bytes()
+	return stub.handler.handleGetState("", key, contractId, stub.ChannelId, stub.TxID)
+}
+
 func (stub *ChaincodeStub) GetStateByPrefix(prefix string) ([]*modules.KeyValue, error) {
 	return stub.handler.handelGetStateByPrefix(prefix, stub.ContractId, stub.ChannelId, stub.TxID)
 }
@@ -406,14 +416,27 @@ func (stub *ChaincodeStub) PutState(key string, value []byte) error {
 	}
 	// Access public data by setting the collection to empty string
 	collection := ""
-	return stub.handler.handlePutState(collection, key, value, stub.ChannelId, stub.TxID)
+	return stub.handler.handlePutState(collection, nil, key, value, stub.ChannelId, stub.TxID)
+}
+func (stub *ChaincodeStub) PutGlobalState(key string, value []byte) error {
+	if key == "" {
+		return errors.New("key must not be an empty string")
+	}
+	// Access public data by setting the collection to empty string
+	collection := ""
+	return stub.handler.handlePutState(collection, GlobalStateContractId, key, value, stub.ChannelId, stub.TxID)
+
 }
 
 // DelState documentation can be found in interfaces.go
 func (stub *ChaincodeStub) DelState(key string) error {
 	// Access public data by setting the collection to empty string
 	collection := ""
-	return stub.handler.handleDelState(collection, key, stub.ChannelId, stub.TxID)
+	return stub.handler.handleDelState(collection, nil, key, stub.ChannelId, stub.TxID)
+}
+func (stub *ChaincodeStub) DelGlobalState(key string) error {
+	return stub.handler.handleDelState("", GlobalStateContractId, key, stub.ChannelId, stub.TxID)
+
 }
 
 // Query documentation can be found in interfaces.go

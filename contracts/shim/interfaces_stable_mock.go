@@ -202,6 +202,36 @@ func (mr *MockChaincodeStubInterfaceMockRecorder) GetState(key interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetState), key)
 }
 
+// GetGlobalState mocks base method
+func (m *MockChaincodeStubInterface) GetGlobalState(key string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGlobalState", key)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetGlobalState indicates an expected call of GetGlobalState
+func (mr *MockChaincodeStubInterfaceMockRecorder) GetGlobalState(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetGlobalState), key)
+}
+
+// GetContractState mocks base method
+func (m *MockChaincodeStubInterface) GetContractState(contractAddr common.Address, key string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContractState", contractAddr, key)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContractState indicates an expected call of GetContractState
+func (mr *MockChaincodeStubInterfaceMockRecorder) GetContractState(contractAddr, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetContractState), contractAddr, key)
+}
+
 // GetStateByPrefix mocks base method
 func (m *MockChaincodeStubInterface) GetStateByPrefix(prefix string) ([]*modules.KeyValue, error) {
 	m.ctrl.T.Helper()
@@ -229,6 +259,20 @@ func (m *MockChaincodeStubInterface) PutState(key string, value []byte) error {
 func (mr *MockChaincodeStubInterfaceMockRecorder) PutState(key, value interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).PutState), key, value)
+}
+
+// PutGlobalState mocks base method
+func (m *MockChaincodeStubInterface) PutGlobalState(key string, value []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PutGlobalState", key, value)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PutGlobalState indicates an expected call of PutGlobalState
+func (mr *MockChaincodeStubInterfaceMockRecorder) PutGlobalState(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutGlobalState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).PutGlobalState), key, value)
 }
 
 // OutChainAddress mocks base method
@@ -318,6 +362,20 @@ func (m *MockChaincodeStubInterface) DelState(key string) error {
 func (mr *MockChaincodeStubInterfaceMockRecorder) DelState(key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).DelState), key)
+}
+
+// DelGlobalState mocks base method
+func (m *MockChaincodeStubInterface) DelGlobalState(key string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DelGlobalState", key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DelGlobalState indicates an expected call of DelGlobalState
+func (mr *MockChaincodeStubInterfaceMockRecorder) DelGlobalState(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelGlobalState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).DelGlobalState), key)
 }
 
 // GetTxTimestamp mocks base method
