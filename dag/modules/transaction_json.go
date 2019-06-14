@@ -49,10 +49,10 @@ type idxTextPayload struct {
 	*DataPayload
 }
 
-type idxMediatorCreateOperation struct {
-	Index int
-	*MediatorCreateOperation
-}
+//type idxMediatorCreateOperation struct {
+//	Index int
+//	*MediatorCreateOperation
+//}
 
 type idxAccountUpdateOperation struct {
 	Index int
@@ -109,10 +109,10 @@ type txJsonTemp struct {
 	Illegal  bool
 	Payment  []*idxPaymentPayload
 	//Config                  []*idxConfigPayload
-	Text                    []*idxTextPayload
-	MediatorCreateOperation []*idxMediatorCreateOperation
-	AccountUpdateOperation  []*idxAccountUpdateOperation
-	Signature               []*idxSignaturePayload
+	Text []*idxTextPayload
+	//MediatorCreateOperation []*idxMediatorCreateOperation
+	AccountUpdateOperation []*idxAccountUpdateOperation
+	Signature              []*idxSignaturePayload
 
 	ContractInstallRequest []*idxContractInstallRequestPayload
 	ContractDeployRequest  []*idxContractDeployRequestPayload
@@ -142,25 +142,25 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 		} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			temp.ContractInvokeRequest = append(temp.ContractInvokeRequest,
 				&idxContractInvokeRequestPayload{
-					Index: idx,
+					Index:                        idx,
 					ContractInvokeRequestPayload: msg.Payload.(*ContractInvokeRequestPayload),
 				})
 		} else if msg.App == APP_CONTRACT_TPL_REQUEST {
 			temp.ContractInstallRequest = append(temp.ContractInstallRequest,
 				&idxContractInstallRequestPayload{
-					Index: idx,
+					Index:                         idx,
 					ContractInstallRequestPayload: msg.Payload.(*ContractInstallRequestPayload),
 				})
 		} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
 			temp.ContractDeployRequest = append(temp.ContractDeployRequest,
 				&idxContractDeployRequestPayload{
-					Index: idx,
+					Index:                        idx,
 					ContractDeployRequestPayload: msg.Payload.(*ContractDeployRequestPayload),
 				})
 		} else if msg.App == APP_CONTRACT_STOP_REQUEST {
 			temp.ContractStopRequest = append(temp.ContractStopRequest,
 				&idxContractStopRequestPayload{
-					Index: idx,
+					Index:                      idx,
 					ContractStopRequestPayload: msg.Payload.(*ContractStopRequestPayload),
 				})
 		} else if msg.App == APP_DATA {
