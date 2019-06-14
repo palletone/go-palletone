@@ -15,7 +15,6 @@
 package deposit
 
 import (
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -63,7 +62,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		//  可以加入列表
 		if invokeTokens.Amount >= depositAmountsForJury {
 			//  加入候选列表
-			err = addCandaditeList(invokeAddr, stub, modules.JuryList)
+			err = addCandaditeList(stub, invokeAddr, modules.JuryList)
 			if err != nil {
 				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
@@ -87,7 +86,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		//  判断此时交了保证金后是否超过了jury
 		if balance.Balance >= depositAmountsForJury {
 			//  加入候选列表
-			err = addCandaditeList(invokeAddr, stub, modules.JuryList)
+			err = addCandaditeList(stub, invokeAddr, modules.JuryList)
 			if err != nil {
 				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
@@ -111,37 +110,6 @@ func juryApplyCashback(stub shim.ChaincodeStubInterface, args []string) peer.Res
 		return shim.Error(err.Error())
 	}
 	return shim.Success([]byte(nil))
-}
-
-func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, balance *DepositBalance) error {
-	//  获取请求列表
-	listForCashback, err := GetListForCashback(stub)
-	if err != nil {
-		log.Error("Stub.GetListForCashback err:", "error", err)
-		return err
-	}
-	if listForCashback == nil {
-		log.Error("listForCashback is nil.")
-		return fmt.Errorf("%s", "listForCashback is nil.")
-	}
-	if _, ok := listForCashback[cashbackAddr.String()]; !ok {
-		log.Error("node is not exist in the list.")
-		return fmt.Errorf("%s", "node is not exist in the list.")
-	}
-	cashbackNode := listForCashback[cashbackAddr.String()]
-	delete(listForCashback, cashbackAddr.String())
-	//更新列表
-	err = SaveListForCashback(stub, listForCashback)
-	if err != nil {
-		log.Error("saveListForCashback err:", "error", err)
-		return err
-	}
-	err = handleJuryDepositCashback(stub, cashbackAddr, cashbackNode, balance)
-	if err != nil {
-		log.Error("HandleJuryDepositCashback err:", "error", err)
-		return err
-	}
-	return nil
 }
 
 //Jury已在列表中,并发起退钱申请，需要判断是否需要删除该节点，移除列表等

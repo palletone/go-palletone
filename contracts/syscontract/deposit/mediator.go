@@ -16,7 +16,6 @@
 package deposit
 
 import (
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
@@ -49,7 +48,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(invokeAddr.String() + " has applied for become mediator")
 	}
 	//  获取申请列表
-	becomeList, err := GetList(stub, ListForApplyBecomeMediator)
+	becomeList, err := getList(stub, ListForApplyBecomeMediator)
 	if err != nil {
 		log.Error("Stub.GetBecomeMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
@@ -108,7 +107,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("does not over deadline")
 	}
 	//  获取候选列表
-	candidateList, err := GetList(stub, modules.MediatorList)
+	candidateList, err := getList(stub, modules.MediatorList)
 	if err != nil {
 		log.Error("get candidate list err: ", "error", err)
 		return shim.Error(err.Error())
@@ -122,7 +121,7 @@ func mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("node is not exist in the candidate list")
 	}
 	//  加入在退出列表
-	quitList, err := GetList(stub, ListForApplyQuitMediator)
+	quitList, err := getList(stub, ListForApplyQuitMediator)
 	if err != nil {
 		log.Error("get quit list err: ", "error", err)
 		return shim.Error(err.Error())
@@ -170,33 +169,15 @@ func deleteMediatorDeposit(stub shim.ChaincodeStubInterface, md *MediatorDeposit
 		return err
 	}
 
-	//  获取候选列表
-	candidateList, err := GetList(stub, modules.MediatorList)
+	//  移除列表
+	err = moveCandidate(modules.MediatorList, nodeAddr.String(), stub)
 	if err != nil {
-		log.Error("Stub.GetCandidateListForMediator err:", "error", err)
+		log.Error("MoveCandidate err:", "error", err)
 		return err
 	}
-	//
-	if candidateList == nil {
-		log.Error("Stub.GetCandidateListForMediator:list is nil.")
-		return fmt.Errorf("%s", "Stub.GetCandidateListForMediator:list is nil.")
-	}
-	//  移除
-	delete(candidateList, nodeAddr.String())
-	//
-	err = saveList(stub, modules.MediatorList, candidateList)
+	err = moveCandidate(modules.JuryList, nodeAddr.String(), stub)
 	if err != nil {
-		log.Error("MarshalAndPutStateForMediatorList err:", "error", err)
-		return err
-	}
-	//  移除jury候选列表
-	jl, err := GetList(stub, modules.JuryList)
-	if err != nil {
-		return err
-	}
-	delete(jl, nodeAddr.String())
-	err = saveList(stub, modules.JuryList, jl)
-	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
 		return err
 	}
 	//  更新
@@ -238,6 +219,12 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	if md == nil {
 		return shim.Error(invokeAddr.String() + " does not apply for mediator")
 	}
+	//  TODO 退出后，再交付的状态
+	if md.Status == Quited {
+		md.Status = Agree
+		md.AgreeTime = TimeStr()
+		md.ApplyQuitTime = ""
+	}
 	//  判断是否已经获得同意状态
 	if md.Status != Agree {
 		return shim.Error(invokeAddr.String() + "does not in the agree list")
@@ -263,28 +250,19 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error("Payment amount is not enough.")
 		}
 		//  加入候选列表
-		err = addCandidateListAndPutStateForMediator(stub, invokeAddr)
+		err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
 		if err != nil {
 			log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 			return shim.Error(err.Error())
 		}
 		//  自动加入jury候选列表
-		jl, err := GetList(stub, modules.JuryList)
+		err = addCandaditeList(stub, invokeAddr, modules.JuryList)
 		if err != nil {
-			return shim.Error("get jury candidate list err " + err.Error())
-		}
-		if jl == nil {
-			jl = make(map[string]bool)
-		}
-		jl[invokeAddr.String()] = true
-		err = saveList(stub, modules.JuryList, jl)
-		if err != nil {
-			return shim.Error("save jury list err " + err.Error())
+			log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+			return shim.Error(err.Error())
 		}
 		//  处理数据
 		md.EnterTime = TimeStr()
-		md.Balance += invokeTokens.Amount
-		md.LastModifyTime = TimeStr()
 	} else {
 		//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		//  获取上次加入最后更改的时间
@@ -301,16 +279,9 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
 		md.Balance += awards
 		//  处理数据
-		md.Balance += invokeTokens.Amount
-		md.LastModifyTime = TimeStr()
 	}
-
-	//  TODO 退出后，再交付的状态
-	if md.Status == Quited {
-		md.Status = Agree
-		md.AgreeTime = TimeStr()
-		md.ApplyQuitTime = ""
-	}
+	md.Balance += invokeTokens.Amount
+	md.LastModifyTime = TimeStr()
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
 	if err != nil {
@@ -319,34 +290,6 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	}
 
 	return shim.Success([]byte(nil))
-}
-
-//  加入候选列表并保存
-func addCandidateListAndPutStateForMediator(stub shim.ChaincodeStubInterface,
-	addr common.Address) error {
-	//  获取节点候选列表
-	candidateList, err := GetList(stub, modules.MediatorList)
-	if err != nil {
-		log.Error("get mediator candidate list err: ", "error", err)
-		return err
-	}
-	//  判断是否为空
-	if candidateList == nil {
-		candidateList = make(map[string]bool)
-	} else {
-		if candidateList[addr.String()] {
-			log.Error("node was in the candidate list.")
-			return fmt.Errorf("%s", "node was in the candidate list.")
-		}
-	}
-	candidateList[addr.String()] = true
-	//  保存候选列表
-	err = saveList(stub, modules.MediatorList, candidateList)
-	if err != nil {
-		log.Error("save candidate list err: ", "error", err)
-		return err
-	}
-	return nil
 }
 
 //申请提取保证金
@@ -359,93 +302,6 @@ func mediatorApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.R
 	}
 	log.Info("end entering mediatorApplyCashback func")
 	return shim.Success([]byte(nil))
-}
-
-func handleMediator(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, md *MediatorDeposit) error {
-	//
-	//depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
-	//if err != nil {
-	//	log.Error("get deposit period err: ", "error", err)
-	//	return err
-	//}
-	////
-	//day, err := strconv.Atoi(depositPeriod)
-	//if err != nil {
-	//	log.Error("strconv.Atoi err: ", "error", err)
-	//	return err
-	//}
-	//
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
-	if err != nil {
-		log.Error("get deposit amount for mediator err: ", "error", err)
-		return err
-	}
-	//  转换
-	depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
-	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
-		return err
-	}
-	//  获取提取列表
-	listForCashback, err := GetListForCashback(stub)
-	if err != nil {
-		log.Error("get list for cashback err: ", "error", err)
-		return err
-	}
-	if listForCashback == nil {
-		log.Error("get list for cashback: list is nil")
-		return fmt.Errorf("%s", "get list for cashback: list is nil")
-	}
-	if _, ok := listForCashback[cashbackAddr.String()]; !ok {
-		log.Error("node is not exist in the list")
-		return fmt.Errorf("%s", "node is not exist in the list")
-	}
-	//  退出信息
-	cashbackNode := listForCashback[cashbackAddr.String()]
-	delete(listForCashback, cashbackAddr.String())
-	//更新列表
-	err = SaveListForCashback(stub, listForCashback)
-	if err != nil {
-		return err
-	}
-	//  计算余额
-	result := md.Balance - cashbackNode.CashbackTokens.Amount
-	//  判断是否全部退
-	//if result == 0 {
-	//	//  加入候选列表的时的时间
-	//	ent, err := strconv.ParseInt(md.EnterTime, 10, 64)
-	//	startTime := time.Unix(ent*DTimeDuration, 0).UTC().YearDay()
-	//	//  当前时间
-	//	endTime := time.Now().UTC().YearDay()
-	//	//  判断是否已超过规定周期
-	//	if endTime-startTime >= day {
-	//		//  退出全部，即删除cashback
-	//		err = deleteNode(stub, md, cashbackAddr)
-	//		if err != nil {
-	//			log.Error("deleteNode err: ", "error", err)
-	//			return err
-	//		}
-	//	} else {
-	//		//  没有超过周期，不能退出
-	//		log.Error("not exceeding the valid time,can not quit.")
-	//		return fmt.Errorf("%s", "not exceeding the valid time,can not quit.")
-	//	}
-	//} else if result < depositAmountsForMediator {
-	//  说明退款后，余额少于规定数量
-	// 判断退款后，余额是否少于规定数量
-	if result < depositAmountsForMediator {
-		log.Error("can not cashback some")
-		return fmt.Errorf("%s", "can not cashback some")
-	} else {
-		//TODO 这是只退一部分钱，剩下余额还是在规定范围之内
-		err = cashbackSomeMediatorDeposit(stub, cashbackAddr, cashbackNode, md)
-		if err != nil {
-			log.Error("cashbackSomeDeposit err: ", "error", err)
-			return err
-		}
-	}
-
-	return nil
 }
 
 //  提取一部分保证金

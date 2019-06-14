@@ -223,7 +223,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	// 查看是否申请Mediator通过
 	case modules.IsApproved:
 		log.Info("Enter DepositChaincode Contract " + modules.IsApproved + " Invoke")
-		mediatorRegisterInfo, err := GetList(stub, ListForAgreeBecomeMediator)
+		mediatorRegisterInfo, err := getList(stub, ListForAgreeBecomeMediator)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -237,7 +237,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看是否在候选列表中
 	case IsInMediatorCandidateList:
 		log.Info("Enter DepositChaincode Contract " + IsInMediatorCandidateList + " Invoke")
-		mediatorRegisterInfo, err := GetList(stub, modules.MediatorList)
+		mediatorRegisterInfo, err := getList(stub, modules.MediatorList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -251,7 +251,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看是否在退出列表中
 	case IsInMediatorQuitList:
 		log.Info("Enter DepositChaincode Contract " + IsInMediatorQuitList + " Invoke")
-		list, err := GetList(stub, ListForApplyQuitMediator)
+		list, err := getList(stub, ListForApplyQuitMediator)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -283,7 +283,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看jury是否在候选列表中
 	case IsInJuryCandidateList:
 		log.Info("Enter DepositChaincode Contract " + IsInJuryCandidateList + " Invoke")
-		jByte, err := GetList(stub, modules.JuryList)
+		jByte, err := getList(stub, modules.JuryList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -297,7 +297,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看developer是否在候选列表中
 	case IsInDeveloperCandidateList:
 		log.Info("Enter DepositChaincode Contract " + IsInDeveloperCandidateList + " Invoke")
-		dByte, err := GetList(stub, DeveloperList)
+		dByte, err := getList(stub, DeveloperList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
