@@ -33,7 +33,8 @@ import (
 func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
 	//SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion)
 	id := syscontract.SysConfigContractAddress.Bytes()
-	err := saveContractState(statedb.db, id, key, val, ver)
+	write := modules.NewWriteSet(key, val)
+	err := statedb.SaveContractState(id, write, ver)
 	if err != nil {
 		return err
 	}

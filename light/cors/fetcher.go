@@ -107,11 +107,9 @@ type LightFetcher struct {
 	queued map[common.Hash]*inject // Set of already queued blocks (to dedupe imports)
 
 	// Callbacks
-	verifyHeader     headerVerifierFn    // Checks if a block's headers have a valid proof of work
 	broadcastHeader  headerBroadcasterFn // Broadcasts a block to connected peers
 	insertHeader     headerInsertFn      // Injects a batch of blocks into the chain
 	dropPeer         peerDropFn          // Drops a peer for misbehaving
-	getHeaderByHash  headerRetrievalFn   // Retrieves a block from the local chain
 	lightChainHeight lightChainHeightFn  // Retrieves the current chain's height
 }
 
@@ -124,20 +122,16 @@ func NewLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightCh
 		headerFilter: make(chan chan *headerFilterTask),
 		done:         make(chan common.Hash),
 		quit:         make(chan struct{}),
-		//announces:        make(map[string]int),
-		//announced:        make(map[common.Hash][]*announce),
-		//fetching:         make(map[common.Hash]*announce),
-		//fetched:          make(map[common.Hash][]*announce),
-		//completing:       make(map[common.Hash]*announce),
-		queue:            prque.New(),
-		queues:           make(map[string]int),
-		queued:           make(map[common.Hash]*inject),
-		verifyHeader:     verifyHeader,
+
+		queue:  prque.New(),
+		queues: make(map[string]int),
+		queued: make(map[common.Hash]*inject),
+		//verifyHeader:     verifyHeader,
 		broadcastHeader:  broadcastHeader,
 		insertHeader:     insertHeader,
 		lightChainHeight: lightChainHeight,
-		getHeaderByHash:  getHeaderByHash,
-		dropPeer:         dropPeer,
+		//getHeaderByHash:  getHeaderByHash,
+		dropPeer: dropPeer,
 	}
 }
 
@@ -201,29 +195,18 @@ func (f *LightFetcher) forgetBlock(hash common.Hash) {
 // the phase states accordingly.
 func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 	hash := header.Hash()
-
-	// Run the import on a new thread
-	//log.Debug("Importing propagated block insert DAG", "peer", p.id, "number", header.Index(), "hash", hash)
-	//defer func() { f.done <- hash }()
-	//// Run the actual import and log any issues
-	//if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
-	//	log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
-	//	return
-	//}
-	////p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
-	//// If import succeeded, broadcast the block
-	//go f.broadcastHeader(p, header, false)
-	time.Sleep(time.Duration(10) * time.Millisecond)
 	go func() {
 		defer func() { f.done <- hash }()
 		// Run the actual import and log any issues
 		if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
-			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
+			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Number, "hash", hash, "err", err)
 			return
 		}
-		//p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
 		// If import succeeded, broadcast the block
-		go f.broadcastHeader(p, header, false)
+		go func() {
+			time.Sleep(time.Duration(5) * time.Millisecond)
+			f.broadcastHeader(p, header, false)
+		}()
 	}()
 }
 
@@ -241,11 +224,11 @@ func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 	}
 	log.Debug("Cors Fetcher propagated block, current allowance", "count", count, "limit", blockLimit)
 	// Discard any past or too distant blocks
-	//heightChain := int64(f.lightChainHeight(header.Number.AssetID))
-	//if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
-	//	log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(), "heightChain", heightChain, "distance", dist)
-	//	return
-	//}
+	heightChain := int64(f.lightChainHeight(header.Number.AssetID))
+	if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
+		log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(), "heightChain", heightChain, "distance", dist)
+		return
+	}
 	// Schedule the block for future importing
 	if _, ok := f.queued[hash]; !ok {
 		op := &inject{

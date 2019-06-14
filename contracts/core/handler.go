@@ -1465,7 +1465,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			if isCollectionSet(putState.Collection) {
 				//err = txContext.txsimulator.SetPrivateData(chaincodeID, putState.Collection, putState.Key, putState.Value)
 			} else {
-				err = txContext.txsimulator.SetState(chaincodeID, putState.Key, putState.Value)
+				err = txContext.txsimulator.SetState(putState.ContractId, chaincodeID, putState.Key, putState.Value)
 			}
 		} else if msg.Type.String() == pb.ChaincodeMessage_DEL_STATE.String() {
 			// Invoke ledger to delete state
@@ -1487,7 +1487,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			if isCollectionSet(delState.Collection) {
 				//err = txContext.txsimulator.DeletePrivateData(chaincodeID, delState.Collection, delState.Key)
 			} else {
-				err = txContext.txsimulator.DeleteState(chaincodeID, delState.Key)
+				err = txContext.txsimulator.DeleteState(delState.ContractId, chaincodeID, delState.Key)
 			}
 		} else if msg.Type.String() == pb.ChaincodeMessage_INVOKE_CHAINCODE.String() {
 			log.Debugf("[%s] C-call-C", shorttxid(msg.Txid))
