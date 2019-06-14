@@ -189,6 +189,16 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	//	contractEleNum = num
 	//}
 
+	cp := dag.GetChainParameters()
+	contractSigNum := cp.ContractSignatureNum
+	if contractSigNum < 1 {
+		contractSigNum = core.DefaultContractSignatureNum
+	}
+	contractEleNum := cp.ContractElectionNum
+	if contractEleNum < 1 {
+		contractEleNum = core.DefaultContractElectionNum
+	}
+
 	validator := validator.NewValidate(dag, dag, dag, nil)
 	p := &Processor{
 		name:           "contractProcessor",

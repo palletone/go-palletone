@@ -34,11 +34,12 @@ func NewImmutChainParams() ImmutableChainParameters {
 // ChainParameters 区块链网络参数结构体的定义
 //变量名一定要大些，否则外部无法访问，导致无法进行json编码和解码
 type ChainParameters struct {
-	TxCoinYearRate            string `json:"txCoinYearRate"`           //交易币天的年利率
-	GenerateUnitReward        string `json:"generateUnitReward"`       //每生产一个单元，奖励多少Dao的PTN
+	TxCoinYearRate     float64 `json:"txCoinYearRate"`     //交易币天的年利率
+	DepositRate        string  `json:"depositRate"`        //保证金的年利率
+	GenerateUnitReward uint64  `json:"generateUnitReward"` //每生产一个单元，奖励多少Dao的PTN
+
 	FoundationAddress         string `json:"foundationAddress"`        //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 	RewardHeight              uint64 `json:"reward_height"`            //每多少高度进行一次奖励的派发
-	DepositRate               string `json:"depositRate"`              //保证金的年利率
 	DepositAmountForMediator  string `json:"depositAmountForMediator"` //保证金的数量
 	DepositAmountForJury      string `json:"depositAmountForJury"`
 	DepositAmountForDeveloper string `json:"depositAmountForDeveloper"`
@@ -59,8 +60,8 @@ type ChainParameters struct {
 	TempUccCpuQuota   string `json:"temp_ucc_cpu_quota"`
 
 	//contract about
-	ContractSignatureNum string `json:"contract_signature_num"`
-	ContractElectionNum  string `json:"contract_election_num"`
+	ContractSignatureNum int `json:"contract_signature_num"`
+	ContractElectionNum  int `json:"contract_election_num"`
 
 	// 活跃mediator的数量。 number of active mediators
 	ActiveMediatorCount uint8 `json:"activeMediatorCount"`

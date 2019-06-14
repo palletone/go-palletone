@@ -25,9 +25,9 @@ const (
 	//DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
 	DefaultDepositRate               = "0.02"
-	DefaultTxCoinYearRate            = "0.01"
+	DefaultTxCoinYearRate            = 0.01
 	DefaultRewardHeight              = 50
-	DefaultGenerateUnitReward        = "100000000"
+	DefaultGenerateUnitReward        = 100000000
 	DefaultDepositPeriod             = "0"
 	DefaultDepositAmountForMediator  = "200000000000"
 	DefaultDepositAmountForJury      = "100000000000"
@@ -62,8 +62,8 @@ const (
 	DefaultMinMediatorCount    = 5 //21
 	DefaultMinMediatorInterval = 1
 
-	DefaultContractSignatureNum = "3"
-	DefaultContractElectionNum  = "4"
+	DefaultContractSignatureNum = 3
+	DefaultContractElectionNum  = 4
 
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
 		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +

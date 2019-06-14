@@ -333,23 +333,21 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 
 func (dag *UnitProduceRepository) RefreshSysParameters() {
 	cp := dag.propRep.GetChainParameters()
+
 	//deposit, _, _ := rep.GetConfig("DepositRate")
-	deposit := cp.DepositRate
-	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
+	depositYearRate, _ := strconv.ParseFloat(cp.DepositRate, 64)
 	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
 	log.Debugf("Load SysParameter DepositContractInterest value:%f",
 		parameter.CurrentSysParameters.DepositContractInterest)
 
 	//txCoinYearRateStr, _, _ := rep.GetConfig("TxCoinYearRate")
-	txCoinYearRateStr := cp.TxCoinYearRate
-	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
-	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
+	//txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
+	parameter.CurrentSysParameters.TxCoinDayInterest = cp.TxCoinYearRate / 365
 	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
 
 	//generateUnitRewardStr, _, _ := rep.GetConfig("GenerateUnitReward")
-	generateUnitRewardStr := cp.GenerateUnitReward
-	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
-	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
+	//generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
+	parameter.CurrentSysParameters.GenerateUnitReward = cp.GenerateUnitReward
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
 }
 
@@ -373,7 +371,7 @@ func (dag *UnitProduceRepository) getSysParamsWithVote() map[string]string {
 	res := make(map[string]string)
 
 	info, err := dag.stateRep.GetSysParamsWithVotes()
-	if err == nil  && info.IsVoteEnd {
+	if err == nil && info.IsVoteEnd {
 		for _, v1 := range info.SupportResults {
 			for _, v2 := range v1.VoteResults {
 				if v2.Num >= info.LeastNum {

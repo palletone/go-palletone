@@ -22,7 +22,6 @@ package dag
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -1390,16 +1389,17 @@ func (bc *Dag) GetPartitionChains() ([]*modules.PartitionChain, error) {
 func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
 	return bc.unstableStateRep.GetMainChain()
 }
-func (d *Dag) GetCoinYearRate() float64 {
-	//data, err := d.GetConfig("TxCoinYearRate")
-	//if err != nil {
-	//	log.Warn("Cannot read system config by key :TxCoinYearRate")
-	//	return 0
-	//}
-	data := d.GetChainParameters().TxCoinYearRate
-	rate, _ := strconv.ParseFloat(string(data), 64)
-	return rate
-}
+
+//func (d *Dag) GetCoinYearRate() float64 {
+//	//data, err := d.GetConfig("TxCoinYearRate")
+//	//if err != nil {
+//	//	log.Warn("Cannot read system config by key :TxCoinYearRate")
+//	//	return 0
+//	//}
+//	data := d.GetChainParameters().TxCoinYearRate
+//	rate, _ := strconv.ParseFloat(string(data), 64)
+//	return rate
+//}
 
 // SubscribeChainSideEvent registers a subscription of ChainSideEvent.
 //func (bc *Dag) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {
