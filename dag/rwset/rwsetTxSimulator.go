@@ -57,11 +57,13 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 }
 
 func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
-	val, err := s.dag.GetConfig(name)
-	if err != nil {
-		return nil, err
-	}
-	return val, nil
+	//val, err := s.dag.GetConfig(name)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return val, nil
+
+	return s.dag.GetConfig(name)
 }
 
 // GetState implements method in interface `ledger.TxSimulator`

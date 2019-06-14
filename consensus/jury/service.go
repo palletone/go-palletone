@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
-	"strconv"
 	"sync"
 	"time"
 
@@ -98,7 +97,8 @@ type iDag interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
-	GetConfig(name string) ([]byte, error)
+	//GetConfig(name string) ([]byte, error)
+	GetChainParameters() *core.ChainParameters
 }
 
 type Juror struct {
@@ -178,16 +178,16 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	}
 
 	//get contract system config
-	contractSigNum := getSystemContractConfig(dag, modules.ContractSignatureNum)
-	if contractSigNum < 1 {
-		num, _ := strconv.Atoi(core.DefaultContractSignatureNum)
-		contractSigNum = num
-	}
-	contractEleNum := getSystemContractConfig(dag, modules.ContractElectionNum)
-	if contractEleNum < 1 {
-		num, _ := strconv.Atoi(core.DefaultContractElectionNum)
-		contractEleNum = num
-	}
+	//contractSigNum := getSystemContractConfig(dag, modules.ContractSignatureNum)
+	//if contractSigNum < 1 {
+	//	num, _ := strconv.Atoi(core.DefaultContractSignatureNum)
+	//	contractSigNum = num
+	//}
+	//contractEleNum := getSystemContractConfig(dag, modules.ContractElectionNum)
+	//if contractEleNum < 1 {
+	//	num, _ := strconv.Atoi(core.DefaultContractElectionNum)
+	//	contractEleNum = num
+	//}
 
 	validator := validator.NewValidate(dag, dag, dag, nil)
 	p := &Processor{
@@ -580,15 +580,19 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		}
 		//检查指定节点模式下，是否为jjh请求地址
 		if e.Etype == 1 {
-			jjhAd, err := p.dag.GetConfig(modules.FoundationAddress)
-			if err == nil && string(jjhAd) == reqAddr.Str() {
+			jjhAd := p.dag.GetChainParameters().FoundationAddress
+			if jjhAd == reqAddr.Str() {
+				//jjhAd, err := p.dag.GetConfig(modules.FoundationAddress)
+				//if err == nil && string(jjhAd) == reqAddr.Str() {
 				//if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
 				log.Debugf("[%s]isValidateElection, e.Etype == 1, ok, contractId[%s]", shortId(reqId.String()), string(contractId))
 				continue
 			} else {
-				log.Debugf("[%s]isValidateElection, e.Etype == 1, but not jjh request addr, contractId[%s]", shortId(reqId.String()), string(contractId))
+				log.Debugf("[%s]isValidateElection, e.Etype == 1, but not jjh request addr, contractId[%s]",
+					shortId(reqId.String()), string(contractId))
 				//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), string(reqAddr[:]), string(jjhAd))
-				log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), string(jjhAd))
+				//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), string(jjhAd))
+				log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
 
 				//continue //todo test
 				return false

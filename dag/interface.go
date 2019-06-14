@@ -166,7 +166,7 @@ type IDag interface {
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
-	GetCoinYearRate() float64
+	//GetCoinYearRate() float64
 
 	RefreshAddrTxIndex() error
 	GetMinFee() (*modules.AmountAsset, error)

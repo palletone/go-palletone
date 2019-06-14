@@ -1391,11 +1391,12 @@ func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
 	return bc.unstableStateRep.GetMainChain()
 }
 func (d *Dag) GetCoinYearRate() float64 {
-	data, err := d.GetConfig("TxCoinYearRate")
-	if err != nil {
-		log.Warn("Cannot read system config by key :TxCoinYearRate")
-		return 0
-	}
+	//data, err := d.GetConfig("TxCoinYearRate")
+	//if err != nil {
+	//	log.Warn("Cannot read system config by key :TxCoinYearRate")
+	//	return 0
+	//}
+	data := d.GetChainParameters().TxCoinYearRate
 	rate, _ := strconv.ParseFloat(string(data), 64)
 	return rate
 }

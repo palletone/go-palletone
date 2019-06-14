@@ -55,11 +55,11 @@ const (
 )
 
 const (
-	FoundationAddress    = "FoundationAddress"
-	JuryList             = "JuryList"
-	DepositRate          = "DepositRate"
-	ContractSignatureNum = "ContractSignatureNum"
-	ContractElectionNum  = "ContractElectionNum"
+	FoundationAddress = "FoundationAddress"
+	JuryList          = "JuryList"
+	DepositRate       = "DepositRate"
+	//ContractSignatureNum = "ContractSignatureNum"
+	//ContractElectionNum  = "ContractElectionNum"
 )
 
 const (

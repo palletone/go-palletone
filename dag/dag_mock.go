@@ -1157,18 +1157,6 @@ func (mr *MockIDagMockRecorder) GetMainChain() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMainChain", reflect.TypeOf((*MockIDag)(nil).GetMainChain))
 }
 
-// GetCoinYearRate mocks base method
-func (m *MockIDag) GetCoinYearRate() float64 {
-	ret := m.ctrl.Call(m, "GetCoinYearRate")
-	ret0, _ := ret[0].(float64)
-	return ret0
-}
-
-// GetCoinYearRate indicates an expected call of GetCoinYearRate
-func (mr *MockIDagMockRecorder) GetCoinYearRate() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCoinYearRate", reflect.TypeOf((*MockIDag)(nil).GetCoinYearRate))
-}
-
 // RefreshAddrTxIndex mocks base method
 func (m *MockIDag) RefreshAddrTxIndex() error {
 	ret := m.ctrl.Call(m, "RefreshAddrTxIndex")
