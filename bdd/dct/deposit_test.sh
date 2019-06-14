@@ -61,13 +61,15 @@ developer_01=`echo ${developerAddr_01//\"/}`
 
 anotherAddr=`echo $list | jq ".[9]"`
 another1=`echo ${anotherAddr//\"/}`
-echo $mdi_01
+echo "mdi_01" $mdi_01
 echo "----0000"
-echo $found
+echo "found" $found
+echo "juryA_01" $jury_01
+echo "devA_01" $developer_01
 pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found --test Business_01 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found --test Business_02 ./deposit_test_cases/DepositContractTest.robot
-#pybot -d ./log -v juryAddr:$jury_01 --test Business_03 ./deposit_test_cases/DepositContractTest.robot
-#pybot -d ./log -v developerAddr:$developer_01 --test Business_04 ./deposit_test_cases/DepositContractTest.robot
+pybot -d ./log -v juryAddr_01:$jury_01 -v foundationAddr:$found --test Business_03 ./deposit_test_cases/DepositContractTest.robot
+pybot -d ./log -v developerAddr_01:$developer_01 -v foundationAddr:$found --test Business_04 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v juryAddr:$jury_01 -v foundationAddr:$found --test Business_06 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v developerAddr:$developer_01 --test Business_07 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_02:$mdi_02 --test Business_05 ./deposit_test_cases/DepositContractTest.robot

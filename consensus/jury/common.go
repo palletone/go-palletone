@@ -67,7 +67,7 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 }
 func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
 	count := len(jury)
-	needed := byte(math.Ceil(float64(count) * 2 / 3))
+	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
 	for _, jurior := range jury {
 		pubKeys = append(pubKeys, jurior.PublicKey)
@@ -109,6 +109,25 @@ func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
 	tx.TxMessages = msgs
 }
 
+func DeleOneMax(signs [][]byte) [][]byte {
+	n := len(signs)
+	maxSig := signs[0]
+	max := 0
+	for i := 1; i < n; i++ {
+		if bytes.Compare(maxSig, signs[i]) < 0 {
+			max = i
+		}
+	}
+	var signsNew [][]byte
+	for i := 0; i < max; i++ {
+		signsNew = append(signsNew, signs[i])
+	}
+	for i := max + 1; i < n; i++ {
+		signsNew = append(signsNew, signs[i])
+	}
+	return signsNew
+}
+
 func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 	//get all pubkey of redeem
 	redeemStr, _ := tokenengine.DisasmString(redeem)
@@ -122,7 +141,7 @@ func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 		pubkeyBytes = append(pubkeyBytes, common.Hex2Bytes(pubkeyStrs[i]))
 	}
 
-	//order
+	//select sign by public key
 	signsNew := make([][]byte, len(pubkeyBytes))
 	for i := range pubkeys {
 		for j := range pubkeyBytes {
@@ -132,12 +151,22 @@ func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 			}
 		}
 	}
+	//get order signs by public key
 	signsOrder := [][]byte{}
 	for i := range signsNew {
 		if len(signsNew[i]) > 0 {
 			signsOrder = append(signsOrder, signsNew[i])
 		}
 	}
+
+	//delete max for leave needed min
+	needed, _ := strconv.Atoi(pubkeyStrs[0])
+	delNum := len(signsOrder) - needed
+	for delNum > 0 {
+		signsOrder = DeleOneMax(signsOrder)
+		delNum--
+	}
+
 	return signsOrder
 }
 
@@ -517,7 +546,7 @@ func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	return err == nil
 }
 
-func checkTxReceived(all []*modules.Transaction, tx *modules.Transaction) bool{
+func checkTxReceived(all []*modules.Transaction, tx *modules.Transaction) bool {
 	if len(all) < 1 {
 		return false
 	}
@@ -526,7 +555,7 @@ func checkTxReceived(all []*modules.Transaction, tx *modules.Transaction) bool{
 	}
 	inHash := tx.Hash()
 	for _, local := range all {
-		if bytes.Equal(inHash.Bytes(), local.Hash().Bytes()){
+		if bytes.Equal(inHash.Bytes(), local.Hash().Bytes()) {
 			return true
 		}
 	}

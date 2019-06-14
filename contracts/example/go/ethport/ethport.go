@@ -284,7 +284,7 @@ func getHight(stub shim.ChaincodeStubInterface) (string, string, error) {
 		return "", "", errors.New("{\"Error\":\"Failed to parse eth height\"}")
 	}
 	curBefore30d := curHeight - 172800 // 30 days
-	curHeight -= 6
+	//curHeight -= 6
 
 	curBefore30dStr := strconv.FormatUint(curBefore30d, 10)
 	curHeightStr := strconv.FormatUint(curHeight, 10)
@@ -305,7 +305,7 @@ type ETHTransaction_getevent struct { //GetEventByAddressParams
 
 type GetEventByAddressResult struct {
 	Events    []string `json:"events"`
-	Txhashs   []string `json:"sigHashs"`
+	Txhashs   []string `json:"txhashs"`
 	Blocknums []uint64 `json:"blocknums"`
 }
 
@@ -318,8 +318,10 @@ type DepositETHInfo struct {
 func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInterface) ([]DepositETHInfo, error) {
 	startHeight, endHeight, err := getHight(stub)
 	if err != nil {
+		log.Debugf("getHight failed %s", err.Error())
 		return nil, err
 	}
+	log.Debugf("startHeight %s, endHeight %s", startHeight, endHeight)
 	//get doposit event log
 	getevent := ETHTransaction_getevent{Method: "GetEventByAddress"} // GetJuryAddress
 	getevent.ContractABI = contractABI
@@ -352,10 +354,12 @@ func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInte
 		//Event example : ["0x0000000000000000000000000000000000000000","0x7d7116a8706ae08baa7f4909e26728fa7a5f0365",500000000000000000,"P1DXLJmJh9j3LFNUZ7MmfLVNWHoLzDUHM9A"]
 		strArray := strings.Split(event, ",")
 		if len(strArray) != 4 {
+			log.Debugf("len(strArray) %d", len(strArray))
 			continue
 		}
 		//confirm
 		if geteventresult.Blocknums[i]+10 > endBlockNum {
+			log.Debugf("geteventresult.Blocknums[i] %d, endBlockNum %d", geteventresult.Blocknums[i], endBlockNum)
 			continue
 		}
 		//deposit amount, example : 500000000000000000
@@ -367,6 +371,7 @@ func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInte
 		depositInfo = append(depositInfo, DepositETHInfo{geteventresult.Txhashs[i], bigInt.Uint64()})
 	}
 	if len(depositInfo) == 0 {
+		log.Debugf("len(depositInfo) is 0")
 		return nil, nil
 	}
 
@@ -392,6 +397,7 @@ func _getETHToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if depositInfo == nil || err != nil {
 		return shim.Success([]byte("You need deposit"))
 	}
+	log.Debugf("len(depositInfo) is %d", len(depositInfo))
 	//
 	ethAmount := uint64(0)
 	for i := range depositInfo {
@@ -409,7 +415,7 @@ func _getETHToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	if ethAmount == 0 {
-		return shim.Success([]byte("You need deposit"))
+		return shim.Success([]byte("You need deposit or need wait confirm"))
 	}
 	//
 	ethTokenAsset := getETHTokenAsset(stub)
@@ -437,7 +443,7 @@ type WithdrawPrepare struct {
 func _withdrawPrepare(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 1 {
-		return shim.Error("need 1 args (ethAddr, [ethFee(>100000000000000)])")
+		return shim.Error("need 1 args (ethAddr, [ethFee(>10000)])")
 	}
 	ethAddr := args[0]
 	ethFee := uint64(0)
@@ -579,6 +585,7 @@ func calSig(contractAddr, reqid, ethAddr string, ethAmount uint64, stub shim.Cha
 	if err != nil {
 		return "", "", err
 	}
+	log.Debugf("paramsJson %s", string(paramsJson))
 
 	ethTX := ETHTransaction_Keccak256HashPackedSig{"Keccak256HashPackedSig", string(paramTypesJson), string(paramsJson)}
 	reqBytes, err := json.Marshal(ethTX)
@@ -691,7 +698,7 @@ func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if err != nil {
 		return shim.Success([]byte("calSig failed: " + err.Error()))
 	}
-	log.Debugf("sig:%s", sig)
+	log.Debugf("hash: %s, sig: %s", hash, sig)
 
 	//
 	reqidNew := stub.GetTxID()
