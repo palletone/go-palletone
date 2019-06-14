@@ -49,6 +49,11 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		log.Trace("Valid announcement signature")
 	}
 
+	if pm.IsExistInCache(req.Header.Hash().Bytes()) {
+		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
+		return nil
+	}
+
 	log.Debug("Light PalletOne Announce message content", "p.id", p.id, "assetid", req.Header.Number.AssetID, "index", req.Header.Number.Index, "hash", req.Header.Hash())
 
 	if pm.lightSync || pm.assetId != req.Header.Number.AssetID {

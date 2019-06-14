@@ -26,6 +26,7 @@ import (
 	"sync"
 
 	"encoding/json"
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -34,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -129,6 +131,8 @@ type ProtocolManager struct {
 
 	//cors
 	corss *p2p.Server
+
+	receivedCache palletcache.ICache
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
@@ -137,21 +141,22 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}, protocolname string) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		lightSync:    lightSync,
-		eventMux:     mux,
-		assetId:      gasToken,
-		genesis:      genesis,
-		quitSync:     quitSync,
-		dag:          dag,
-		networkId:    networkId,
-		txpool:       txpool,
-		protocolname: protocolname,
-		peers:        peers,
-		newPeerCh:    make(chan *peer),
-		wg:           new(sync.WaitGroup),
-		noMorePeers:  make(chan struct{}),
-		validation:   NewValidation(dag),
-		utxosync:     NewUtxosSync(dag),
+		lightSync:     lightSync,
+		eventMux:      mux,
+		assetId:       gasToken,
+		genesis:       genesis,
+		quitSync:      quitSync,
+		dag:           dag,
+		networkId:     networkId,
+		txpool:        txpool,
+		protocolname:  protocolname,
+		peers:         peers,
+		newPeerCh:     make(chan *peer),
+		wg:            new(sync.WaitGroup),
+		noMorePeers:   make(chan struct{}),
+		validation:    NewValidation(dag),
+		utxosync:      NewUtxosSync(dag),
+		receivedCache: freecache.NewCache(5 * 1024 * 1024),
 	}
 
 	// Initiate a sub-protocol for every implemented version we can handle
@@ -249,29 +254,32 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 }
 
 func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
-	log.Info("Light PalletOne ProtocolManager BroadcastLightHeader", "index:", header.Index(), "sub protocal name:", header.Number.AssetID.String())
-	peers := pm.peers.PeersWithoutHeader(header.Number.AssetID, header.Hash())
+	//peers := pm.peers.PeersWithoutHeader(header.Number.AssetID, header.Hash())
+	peers := pm.peers.AllPeers(header.Number.AssetID)
 	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
+	log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "index:", header.Index(), "assetId:", header.Number.AssetID.String(), "len(peers)", len(peers))
 	for _, p := range peers {
 		if p == nil {
 			continue
 		}
 		if !p.fullnode && header.Number.AssetID != pm.assetId {
+			log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "p.id", p.id)
 			continue
 		}
-		log.Debug("Light Palletone", "BroadcastLightHeader announceType", p.announceType)
-		switch p.announceType {
-		case announceTypeNone:
-			select {
-			case p.announceChn <- announce:
-			default:
-				pm.removePeer(p.id)
-			}
-		case announceTypeSimple:
-
-		case announceTypeSigned:
-
-		}
+		//log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "announceType", p.announceType)
+		p.announceChn <- announce
+		//switch p.announceType {
+		//case announceTypeNone:
+		//	select {
+		//	case p.announceChn <- announce:
+		//	default:
+		//		pm.removePeer(p.id)
+		//	}
+		//case announceTypeSimple:
+		//
+		//case announceTypeSigned:
+		//
+		//}
 	}
 	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
 	return
@@ -339,6 +347,14 @@ func (pm *ProtocolManager) getcorsinfo() [][][]byte {
 	return datas
 }
 
+func (pm *ProtocolManager) IsExistInCache(id []byte) bool {
+	_, err := pm.receivedCache.Get(id)
+	if err != nil { //Not exist, add it!
+		pm.receivedCache.Set(id, nil, 60*5)
+	}
+	return err == nil
+}
+
 // handle is the callback invoked to manage the life cycle of a les peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
@@ -400,7 +416,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
-				log.Debug("Light Palletone ProtocolManager->handle", "announce", announce)
+				log.Debug("Light Palletone ProtocolManager->handle", "assetId", announce.Header.Number.AssetID, "index", announce.Header.Number.Index)
 				data, err := json.Marshal(announce.Header)
 				if err != nil {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
@@ -413,7 +429,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 					//if announce.Number.AssetID != modules.PTNCOIN {
 					if pm.assetId != announce.Number.AssetID {
-						//log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
+						log.Debug("Light PalletOne ProtocolManager SendRawAnnounce", "assetid", announce.Number.AssetID, "index", announce.Number.Index)
 						p.SendRawAnnounce(data)
 					} else {
 						if !p.fullnode {
