@@ -125,8 +125,14 @@ path=`echo $GOPATH`
 src=/src/github.com/palletone/go-palletone/build/bin/gptn
 fullpath=$path$src
 cp $fullpath .
-read -p "Please input the numbers of nodes you want: " n;  
- 
+
+n=
+if [ -n "$1" ]; then
+    n=$1
+else
+    read -p "Please input the numbers of nodes you want: " n;
+fi
+
 LoopDeploy $n;
 
 json="node1/ptn-genesis.json"
