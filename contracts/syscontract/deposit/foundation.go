@@ -209,22 +209,16 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 		log.Error("args need two parameters.")
 		return shim.Error("args need two parameters.")
 	}
-	//  基金会地址
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("Stub.GetInvokeAddress err", "error", err)
-		return shim.Error(err.Error())
-	}
-	//
-	foundationAddress, err := stub.GetSystemConfig(modules.FoundationAddress)
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with FoundationAddress err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	//  判断没收请求地址是否是基金会地址
-	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
+	//  判断是否基金会发起的
+	if !isFoundationInvoke(stub) {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
+	}
+	//  判断是否基金会发起的
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		log.Error("get invoke address err: ", "error", err)
+		return shim.Error(err.Error())
 	}
 	//获取传入参数信息
 	addr := args[0]
@@ -267,19 +261,8 @@ func handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []st
 		log.Error("args need two parameters")
 		return shim.Error("args need two parameters")
 	}
-	//  基金会地址
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("Stub.GetInvokeAddress err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	//  判断没收请求地址是否是基金会地址
-	foundationAddress, err := stub.GetSystemConfig(modules.FoundationAddress)
-	if err != nil {
-		log.Error("stub.GetSystemConfig with FoundationAddress err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
+	//  判断是否基金会发起的
+	if !isFoundationInvoke(stub) {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
@@ -323,30 +306,19 @@ func handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []st
 
 //对Developer退保证金的处理
 func handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *DepositBalance) error {
-	//
-	depositAmountsForDeveloperStr, err := stub.GetSystemConfig(DepositAmountForDeveloper)
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForDeveloper err:", "error", err)
-		return err
-	}
-	//  转换
-	depositAmountsForDeveloper, err := strconv.ParseUint(depositAmountsForDeveloperStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return err
-	}
-	if balance.Balance >= depositAmountsForDeveloper {
+	//  如果在列表中，还要判断退出这部分钱后，是否需要移除候选列表
+	if balance.EnterTime != "" {
 		//  已在列表中
 		err := handleDeveloperFromList(stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
-			log.Error("HandleDeveloperFromList err:", "error", err)
+			log.Error("HandleJuryFromList err:", "error", err)
 			return err
 		}
 	} else {
 		////TODO 不在列表中,没有奖励，直接退
 		err := handleCommonJuryOrDev(stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
-			log.Error("handleCommonJuryOrDev err:", "error", err)
+			log.Error("HandleCommonJuryOrDev err:", "error", err)
 			return err
 		}
 	}
@@ -356,29 +328,22 @@ func handleDeveloperDepositCashback(stub shim.ChaincodeStubInterface, cashbackAd
 //基金会处理
 func handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("handleForJuryApplyCashback")
+	//  判断是否基金会发起的
+	if !isFoundationInvoke(stub) {
+		log.Error("please use foundation address")
+		return shim.Error("please use foundation address")
+	}
 	//  地址，申请时间，是否同意
 	if len(args) != 2 {
 		log.Error("args need two parameters")
 		return shim.Error("args need two parameters")
 	}
-	//  基金会地址
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("Stub.GetInvokeAddress err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	//  判断没收请求地址是否是基金会地址
-	foundationAddress, err := stub.GetSystemConfig(modules.FoundationAddress)
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with FoundationAddress err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	if strings.Compare(invokeAddr.String(), foundationAddress) != 0 {
-		log.Error("please use foundation address")
-		return shim.Error("please use foundation address")
-	}
+	isOk := args[1]
 	//  获取一下该用户下的账簿情况
-	addr, _ := common.StringToAddress(args[0])
+	addr, err := common.StringToAddress(args[0])
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	balance, err := GetNodeBalance(stub, addr.String())
 	if err != nil {
 		log.Error("stub.GetDepositBalance err: ", "error", err)
@@ -389,15 +354,14 @@ func handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string)
 		log.Error("balance is nil.")
 		return shim.Error("balance is nil.")
 	}
-	isOk := args[1]
-	if strings.Compare(isOk, Ok) == 0 {
+	if isOk == Ok {
 		//  对余额处理
 		err = handleJury(stub, addr, balance)
 		if err != nil {
 			log.Error("handleJury err", "error", err)
 			return shim.Error(err.Error())
 		}
-	} else if strings.Compare(isOk, No) == 0 {
+	} else if isOk == No {
 		//  移除提取申请列表
 		err = moveAndPutStateFromCashbackList(stub, addr)
 		if err != nil {
@@ -413,20 +377,8 @@ func handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string)
 
 //对Jury退保证金的处理
 func handleJuryDepositCashback(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *DepositBalance) error {
-	//
-	depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
-	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
-		return err
-	}
-	//  转换
-	depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return err
-	}
-	//
-	if balance.Balance >= depositAmountsForJury {
+	//  如果在列表中，还要判断退出这部分钱后，是否需要移除候选列表
+	if balance.EnterTime != "" {
 		//  已在列表中
 		err := handleJuryFromList(stub, cashbackAddr, cashbackValue, balance)
 		if err != nil {
@@ -452,19 +404,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("args need two parameters")
 	}
 	//  判断是否基金会发起的
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	//  获取
-	foundationAddress, err := stub.GetSystemConfig(modules.FoundationAddress)
-	if err != nil {
-		log.Error("get foundation address err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	// 判断当前请求的是否为基金会
-	if invokeAddr.String() != foundationAddress {
+	if !isFoundationInvoke(stub) {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
@@ -541,23 +481,10 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 //处理退出 参数：同意或不同意，节点的地址
 func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("Start enter handleForApplyQuitMediator func")
-	//基金会
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("Stub.GetInvokeAddress err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	foundationAddress, err := stub.GetSystemConfig(modules.FoundationAddress)
-	if err != nil {
-		//fmt.Println(err.Error())
-		log.Error("Stub.GetSystemConfig with FoundationAddress err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	//foundationAddress = "P129MFVxaLP4N9FZxYQJ3QPJks4gCeWsF9p"
-	log.Info("Stub.GetSystemConfig with FoundationAddress:", "value", foundationAddress)
-	if invokeAddr.String() != foundationAddress {
-		log.Error("Please use foundation address.")
-		return shim.Success([]byte("Please use foundation address."))
+	//  判断是否基金会发起的
+	if !isFoundationInvoke(stub) {
+		log.Error("please use foundation address")
+		return shim.Error("please use foundation address")
 	}
 	//参数
 	if len(args) != 2 {
@@ -616,19 +543,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("handleForMediatorApplyCashback")
 	//  判断是否基金会发起的
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	//  获取
-	foundationAddress, err := stub.GetSystemConfig(modules.FoundationAddress)
-	if err != nil {
-		log.Error("get foundation address err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	// 判断当前请求的是否为基金会
-	if invokeAddr.String() != foundationAddress {
+	if !isFoundationInvoke(stub) {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
@@ -679,17 +594,6 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 	}
 	//  判断处理结果
 	if isOk == Ok {
-		//  对余额处理
-		//err = handleMediator(stub, addr, md)
-		//if err != nil {
-		//	log.Error("handle mediator err: ", "error", err)
-		//	return shim.Error(err.Error())
-		//}
-		////  判断是否超过了质押周期
-		//if !isOverDeadline(stub, md.EnterTime) {
-		//	log.Errorf("does not over deadline")
-		//	return shim.Error("does not over deadline")
-		//}
 		//TODO 这是只退一部分钱，剩下余额还是在规定范围之内
 		err = cashbackSomeMediatorDeposit(stub, addr, cashbackNode, md)
 		if err != nil {
@@ -698,11 +602,11 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 		}
 	} else if isOk == No {
 		//移除提取申请列表
-		//err = moveAndPutStateFromCashbackList(stub, addr)
-		//if err != nil {
-		//	log.Error("moveAndPutStateFromCashbackList err:", "error", err)
-		//	return shim.Error(err.Error())
-		//}
+		err = moveAndPutStateFromCashbackList(stub, addr)
+		if err != nil {
+			log.Error("moveAndPutStateFromCashbackList err:", "error", err)
+			return shim.Error(err.Error())
+		}
 	} else {
 		log.Error("please enter ok or no")
 		return shim.Error("please enter ok or no")

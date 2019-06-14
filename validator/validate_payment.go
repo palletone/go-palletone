@@ -159,7 +159,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 }
 func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
 	count := len(jury)
-	needed := byte(math.Ceil(float64(count) * 2 / 3))
+	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
 	for _, jurior := range jury {
 		pubKeys = append(pubKeys, jurior.PublicKey)

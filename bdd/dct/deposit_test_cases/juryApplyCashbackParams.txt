@@ -13,7 +13,6 @@ jury申请退还保证金所需参数
 juryApplyCashback
     [Arguments]    ${juryAddr}    ${cashAmounts}
     ${jury申请退还保证金所需参数}    jury申请退还保证金所需参数    ${juryAddr}    ${cashAmounts}
-    ${resp}    创建公用的POST请求    ${depositContractInvoke}    JuryApplyCashback    ${jury申请退还保证金所需参数}
-    ${result}    Set Variable    ${resp.content}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    JuryApplyCashback    ${jury申请退还保证金所需参数}
     sleep    8
     [Return]    ${result}
