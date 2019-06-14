@@ -200,30 +200,18 @@ func (f *LightFetcher) forgetBlock(hash common.Hash) {
 // block's number is at the same height as the current import phase, it updates
 // the phase states accordingly.
 func (f *LightFetcher) insert(p *peer, header *modules.Header) {
+	time.Sleep(time.Duration(5) * time.Millisecond)
 	hash := header.Hash()
-
-	// Run the import on a new thread
-	log.Debug("Importing propagated block insert DAG", "peer", p.id, "number", header.Index(), "hash", hash)
-	defer func() { f.done <- hash }()
-	// Run the actual import and log any issues
-	if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
-		log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
-		return
-	}
-	//p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
-	// If import succeeded, broadcast the block
-	go f.broadcastHeader(p, header, false)
-	//go func() {
-	//	defer func() { f.done <- hash }()
-	//	// Run the actual import and log any issues
-	//	if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
-	//		log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
-	//		return
-	//	}
-	//	//p.headInfo = &announceData{Hash: header.Hash(), Number: *header.Number}
-	//	// If import succeeded, broadcast the block
-	//	go f.broadcastHeader(p, header, false)
-	//}()
+	go func() {
+		defer func() { f.done <- hash }()
+		// Run the actual import and log any issues
+		if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
+			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
+			return
+		}
+		// If import succeeded, broadcast the block
+		go f.broadcastHeader(p, header, false)
+	}()
 }
 
 // enqueue schedules a new future import operation, if the block to be imported

@@ -40,11 +40,16 @@ func (pm *ProtocolManager) CorsHeadersMsg(msg p2p.Msg, p *peer) error {
 			pm.fetcher.Enqueue(p, header)
 		}
 		if len(headers) < MaxHeaderFetch {
-			pm.bdlock.Lock() //TODO modify
+			pm.bdlock.Lock()
 			log.Info("CorsHeadersMsg message needboradcast", "assetid", headers[len(headers)-1].Number.AssetID,
 				"index", headers[len(headers)-1].Number.Index)
 			pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
 			pm.bdlock.Unlock()
+
+			ps := pm.peers.AllPeers()
+			for _, p := range ps {
+				p.SetHead(headers[len(headers)-1])
+			}
 		}
 	}
 	return nil
