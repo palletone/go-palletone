@@ -612,7 +612,7 @@ func printTxInfo(tx *modules.Transaction) {
 				fmt.Printf("WriteSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.Value)
 			}
 			for idx, v := range p.ReadSet {
-				fmt.Printf("ReadSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.Value)
+				fmt.Printf("ReadSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.ContractId)
 			}
 		} else if app == modules.APP_SIGNATURE {
 			p := pay.(*modules.SignaturePayload)
