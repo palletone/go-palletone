@@ -23,13 +23,14 @@ package partitioncc
 import (
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	dm "github.com/palletone/go-palletone/dag/modules"
-	"strconv"
 )
 
 type PartitionMgr struct {

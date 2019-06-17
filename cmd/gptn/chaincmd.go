@@ -168,6 +168,6 @@ func initGenesis(ctx *cli.Context) error {
 	dv.Name = "Gptn"
 	dv.Version = ctx.App.Version
 	dag.StoreDataVersion(dv)
-	log.Infof("gptn init success,version[%s]", dv.Version)
+	log.Infof("gptn(version[%s]) init success", dv.Version)
 	return nil
 }

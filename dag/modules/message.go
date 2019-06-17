@@ -65,9 +65,8 @@ const (
 const (
 	DesiredSysParamsWithoutVote = "desiredSysParamsWithoutVote"
 	DesiredSysParamsWithVote    = "desiredSysParamsWithVote"
-	DesiredActiveMediatorCount  = "ActiveMediatorCount"
-	DesiredMediatorInterval     = "MediatorInterval"
-	DepositAmountForMediator    = "DepositAmountForMediator"
+	// todo albert·gou 待删除
+	DesiredActiveMediatorCount = "ActiveMediatorCount"
 )
 
 func (mt MessageType) IsRequest() bool {

@@ -38,10 +38,11 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	}
 	upRep := NewUnitProduceRepository4Db(db)
 
-	// 初始化2个链参数
+	// 初始化若干个链参数
 	gp := modules.NewGlobalProp()
 	gp.ChainParameters.ActiveMediatorCount = 3
-	gp.ChainParameters.MediatorInterval = 5
+	gp.ChainParameters.FoundationAddress = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	gp.ChainParameters.TxCoinYearRate = 0.01
 	err = upRep.propRep.StoreGlobalProp(gp)
 	if err != nil {
 		t.Error(err.Error())
@@ -49,7 +50,8 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 
 	// 1, 不通过投票修改参数
 	modifies := make(map[string]string)
-	modifies[modules.DesiredActiveMediatorCount] = "5"
+	modifies["TxCoinYearRate"] = "0.02"
+	modifies["FoundationAddress"] = "P16bXzewsexHwhGYdt1c1qbzjBirCqDg8mN"
 	modifiesByte, _ := json.Marshal(modifies)
 	err = upRep.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithoutVote, modifiesByte, version)
 	if err != nil {
@@ -66,12 +68,12 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	sysTokenIDInfo.TotalSupply = 20
 	sysTokenIDInfo.LeastNum = 10
 	sysSupportResult.TopicIndex = 1
-	sysSupportResult.TopicTitle = modules.DesiredMediatorInterval
+	sysSupportResult.TopicTitle = modules.DesiredActiveMediatorCount
 	sysVoteResult1 := &modules.SysVoteResult{}
-	sysVoteResult1.SelectOption = "3"
+	sysVoteResult1.SelectOption = "5"
 	sysVoteResult1.Num = 13
 	sysVoteResult2 := &modules.SysVoteResult{}
-	sysVoteResult2.SelectOption = "2"
+	sysVoteResult2.SelectOption = "7"
 	sysVoteResult2.Num = 7
 	sysSupportResult.VoteResults = []*modules.SysVoteResult{sysVoteResult1, sysVoteResult2}
 	sysTokenIDInfo.SupportResults = []*modules.SysSupportResult{sysSupportResult}
@@ -87,7 +89,8 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 		t.Error("cp1 is nil")
 	}
 	t.Logf("%v=%v\n", modules.DesiredActiveMediatorCount, cp1.ActiveMediatorCount)
-	t.Logf("%v=%v\n", modules.DesiredMediatorInterval, cp1.MediatorInterval)
+	t.Logf("%v=%v\n", "TxCoinYearRate", cp1.TxCoinYearRate)
+	t.Logf("%v=%v\n", "FoundationAddress", cp1.FoundationAddress)
 
 	// 换届更新参数
 	err = upRep.UpdateSysParams(version)
@@ -101,7 +104,8 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 		t.Error("cp2 is nil")
 	}
 	t.Logf("%v=%v\n", modules.DesiredActiveMediatorCount, cp2.ActiveMediatorCount)
-	t.Logf("%v=%v\n", modules.DesiredMediatorInterval, cp2.MediatorInterval)
+	t.Logf("%v=%v\n", "TxCoinYearRate", cp2.TxCoinYearRate)
+	t.Logf("%v=%v\n", "FoundationAddress", cp2.FoundationAddress)
 
 	// 检查是否重置为nil
 	sysParam, err := upRep.stateRep.GetSysParamWithoutVote()

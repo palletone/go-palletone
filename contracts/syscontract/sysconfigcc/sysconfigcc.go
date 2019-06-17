@@ -242,6 +242,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	var supports []SysTopicSupports
 	for _, oneTopic := range voteTopics {
 		// 检查
+		// todo albert·gou
 		checkFlag := false
 		if oneTopic.TopicTitle == modules.DesiredActiveMediatorCount {
 			checkFlag = true
@@ -433,6 +434,7 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 
 func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	// 检查参数
+	// todo albert·gou
 	if args[0] == modules.DesiredActiveMediatorCount {
 		_, err := strconv.ParseUint(args[1], 10, 16)
 		if err != nil {

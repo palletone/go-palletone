@@ -317,7 +317,6 @@ func (s *PublicBlockChainAPI) Forking(ctx context.Context, rate uint64) uint64 {
 }
 
 //Query leveldb
-
 func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]byte*/ {
 	log.Info("PublicBlockChainAPI", "GetPrefix condition:", condition)
 	pre := s.b.GetPrefix(condition)
@@ -344,6 +343,7 @@ func (s *PublicBlockChainAPI) CcstartChaincodeContainer(ctx context.Context, dep
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
 	return s.b.DecodeTx(hex)
 }
+
 func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {
 	return s.b.EncodeTx(json)
 }
