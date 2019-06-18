@@ -152,6 +152,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	//	atomic.StoreUint32(&pm.fastSync, 1)
 	//}
 
+
 	header := pm.dag.CurrentHeader(assetId)
 	if header != nil && header.Number.Index > 0 {
 		go pm.BroadcastLightHeader(header)
