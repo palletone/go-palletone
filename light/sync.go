@@ -156,4 +156,5 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	if header != nil && header.Number.Index > 0 {
 		go pm.BroadcastLightHeader(header)
 	}
+
 }
