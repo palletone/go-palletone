@@ -149,8 +149,8 @@ type Processor struct {
 	lockVrf map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
 
 	quit         chan struct{}
-	locker       *sync.Mutex
-	errMsgEnable bool //package contract execution error information into the transaction
+	locker       *sync.Mutex //locker       *sync.Mutex  RWMutex
+	errMsgEnable bool        //package contract execution error information into the transaction
 
 	electionNum    int
 	contractSigNum int
@@ -277,21 +277,28 @@ func (p *Processor) localHaveActiveJury() bool {
 //}
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
+	p.locker.Lock()
 	req := p.mtx[reqId]
 	if req == nil {
+		p.locker.Unlock()
 		return fmt.Errorf("runContractReq param is nil, reqId[%s]", reqId)
 	}
-	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, req.reqTx, elf, p.errMsgEnable)
+	reqTx := req.reqTx.Clone()
+	p.locker.Unlock()
+
+	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, &reqTx, elf, p.errMsgEnable) //contract exec long time...
 	if err != nil {
 		log.Errorf("[%s]runContractReq, runContractCmd reqTx, err：%s", shortId(reqId.String()), err.Error())
 		return err
 	}
-	tx, err := gen.GenContractTransction(req.reqTx, msgs)
+	tx, err := gen.GenContractTransction(&reqTx, msgs)
 	if err != nil {
 		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
 		return err
 	}
 
+	p.locker.Lock()
+	defer p.locker.Unlock()
 	//如果系统合约，直接添加到缓存池
 	//如果用户合约，需要签名，添加到缓存池并广播
 	if tx.IsSystemContract() {
@@ -857,7 +864,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
