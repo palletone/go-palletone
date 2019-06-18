@@ -359,9 +359,9 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			}
 			log.DebugDynamic(func() string {
 				data, _ := json.Marshal(income)
-				return "Coinbase History reward:" + string(data)
+				return v.Addr.String() + " Coinbase History reward:" + string(data)
 			})
-			log.Debugf("Add reward %d%s to %s", v.Amount, v.Asset.String(), v.Addr.String())
+			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
 			newValue := addIncome(income, v.Amount, v.Asset)
 			rewards[v.Addr] = newValue
 		}
