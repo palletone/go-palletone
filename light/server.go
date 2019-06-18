@@ -103,13 +103,13 @@ func (s *LesServer) StartCorsSync() (string, error) {
 }
 
 // Start starts the LES server
-func (s *LesServer) Start(srvr *p2p.Server, corss *p2p.Server) {
+func (s *LesServer) Start(srvr *p2p.Server, corss *p2p.Server, syncCh chan bool) {
 	s.srv = srvr
 	if s.protocolname == configure.CORSProtocol {
 		s.corss = corss
 	}
 
-	s.protocolManager.Start(s.config.LightPeers, s.corss)
+	s.protocolManager.Start(s.config.LightPeers, s.corss, syncCh)
 	s.privateKey = srvr.PrivateKey
 	s.protocolManager.blockLoop()
 	s.loopCors()

@@ -290,9 +290,9 @@ func (pm *ProtocolManager) removePeer(id string) {
 	pm.peers.Unregister(id)
 }
 
-func (pm *ProtocolManager) Start(maxPeers int, corss *p2p.Server) {
+func (pm *ProtocolManager) Start(maxPeers int, corss *p2p.Server, syncCh chan bool) {
 	pm.maxPeers = maxPeers
-	go pm.syncer()
+	go pm.syncer(syncCh)
 
 	if pm.lightSync {
 		pm.validation.Start()

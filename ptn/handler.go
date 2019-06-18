@@ -335,14 +335,14 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 }
 
-func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int) {
+func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan bool) {
 	pm.srvr = srvr
 	pm.maxPeers = maxPeers
 
 	// start sync handlers
 	//定时与相邻个体进行全链的强制同步,syncer()首先启动fetcher成员，然后进入一个无限循环，
 	//每次循环中都会向相邻peer列表中“最优”的那个peer作一次区块全链同步
-	go pm.syncer()
+	go pm.syncer(syncCh)
 
 	//txsyncLoop负责把pending的交易发送给新建立的连接。
 	//txsyncLoop负责每个新连接的初始事务同步。
