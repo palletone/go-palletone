@@ -430,6 +430,8 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 		//}
 	}
 
+	// todo albert·gou 修改实际活跃mediator数量
+
 	err = dag.propRep.StoreGlobalProp(gp)
 	if err != nil {
 		return err
