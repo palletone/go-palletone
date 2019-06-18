@@ -85,6 +85,33 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 
+func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
+	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 0, Status: 0, CreateAddr: tkInfo.CreateAddr,
+		TotalSupply: tkInfo.TotalSupply, SupplyAddr: tkInfo.SupplyAddr, AssetID: tkInfo.AssetID}
+	val, err := json.Marshal(gTkInfo)
+	if err != nil {
+		return err
+	}
+	err = stub.PutGlobalState(dm.GlobalPrefix+gTkInfo.Symbol, val)
+	return err
+}
+
+func getGlobal(stub shim.ChaincodeStubInterface, symbol string) *dm.GlobalTokenInfo {
+	//
+	gTkInfo := dm.GlobalTokenInfo{}
+	tkInfoBytes, _ := stub.GetGlobalState(dm.GlobalPrefix + symbol)
+	if len(tkInfoBytes) == 0 {
+		return nil
+	}
+	//
+	err := json.Unmarshal(tkInfoBytes, &gTkInfo)
+	if err != nil {
+		return nil
+	}
+
+	return &gTkInfo
+}
+
 func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	val, err := json.Marshal(tkInfo)
 	if err != nil {
@@ -319,8 +346,12 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
 	}
-	//TODO
-	stub.PutGlobalState("Tokens_"+assetID.String(), createJson)
+	//add global state
+	err = setGlobal(stub, &info)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return shim.Error(jsonResp)
+	}
 	return shim.Success(createJson)
 }
 
@@ -333,9 +364,21 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//symbol
 	symbol := strings.ToUpper(args[0])
 	//check name is exist or not
+	gTkInfo := getGlobal(stub, symbol)
+	if gTkInfo == nil {
+		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//check status
+	if gTkInfo.Status != 0 {
+		jsonResp := "{\"Error\":\"Status is frozen\"}"
+		return shim.Error(jsonResp)
+	}
+
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
+		jsonResp := "{\"Error\":\"Token not exist in contract\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -433,6 +476,12 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		}
 	}
 
+	err = setGlobal(stub, tkInfo)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return shim.Error(jsonResp)
+	}
+
 	return shim.Success([]byte(""))
 }
 
@@ -479,11 +528,11 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 type TokenIDInfo struct {
 	Symbol      string
 	CreateAddr  string
-	TokenType   uint8
+	TokenType   uint8 //no
 	TotalSupply uint64
 	SupplyAddr  string
 	AssetID     string
-	TokenIDs    []string
+	TokenIDs    []string //no
 }
 
 func existTokenID(args []string, stub shim.ChaincodeStubInterface) pb.Response {

@@ -131,6 +131,9 @@ func (id AssetId) GetAssetType() AssetType {
 	t := (id[0] & 0xc) >> 2
 	return AssetType(t)
 }
+func (id AssetId) GetDecimal() byte {
+	return id[4] & 0x1f
+}
 func (id AssetId) ToAsset() *Asset {
 	return &Asset{AssetId: id}
 }

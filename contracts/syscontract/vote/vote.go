@@ -98,6 +98,33 @@ func (v *Vote) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 
+func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
+	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 0, Status: 0, CreateAddr: tkInfo.CreateAddr,
+		TotalSupply: tkInfo.TotalSupply, SupplyAddr: tkInfo.SupplyAddr, AssetID: tkInfo.AssetID}
+	val, err := json.Marshal(gTkInfo)
+	if err != nil {
+		return err
+	}
+	err = stub.PutGlobalState(dm.GlobalPrefix+gTkInfo.Symbol, val)
+	return err
+}
+
+func getGlobal(stub shim.ChaincodeStubInterface, symbol string) *dm.GlobalTokenInfo {
+	//
+	gTkInfo := dm.GlobalTokenInfo{}
+	tkInfoBytes, _ := stub.GetGlobalState(dm.GlobalPrefix + symbol)
+	if len(tkInfoBytes) == 0 {
+		return nil
+	}
+	//
+	err := json.Unmarshal(tkInfoBytes, &gTkInfo)
+	if err != nil {
+		return nil
+	}
+
+	return &gTkInfo
+}
+
 func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	val, err := json.Marshal(tkInfo)
 	if err != nil {
@@ -229,6 +256,13 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	err = stub.DefineToken(byte(dm.AssetType_VoteToken), createJson, createAddr.String())
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//add global state
+	err = setGlobal(stub, &info)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
 		return shim.Error(jsonResp)
 	}
 
