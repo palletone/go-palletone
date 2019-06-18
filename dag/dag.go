@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
+	"github.com/palletone/go-palletone/dag/migration"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -544,6 +545,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
+	checkDbMigration(db, stateDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	propRep := dagcommon.NewPropRepository(propDb)
@@ -606,6 +608,49 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	dag.refreshPartitionMemDag()
 	return dag, nil
 }
+func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
+	// 获取旧的gptn版本号
+	t := time.Now()
+	defer func(t1 time.Time) {
+		log.Infof("exec migration spent time:%s", time.Since(t1))
+	}(t)
+	old_vertion, err := stateDb.GetDataVersion()
+	if err != nil {
+		old_vertion = &modules.DataVersion{Version: "0.6.15"}
+	}
+	log.Infof("the old version:%s", old_vertion.Version)
+	// 获取当前gptn版本号
+	now_version := configure.Version
+	next_version := old_vertion.Version
+	if next_version != now_version {
+		log.Infof("start migration,upgrade gtpn vertion[%s] to [%s]", next_version, now_version)
+		// migrations
+		mig_versions := migration.NewMigrations(db)
+		for {
+			if mig, has := mig_versions[next_version]; has {
+				if err := mig.ExecuteUpgrade(); err != nil {
+					return err
+				}
+				next_version = mig.ToVersion()
+				data_version := new(modules.DataVersion)
+				data_version.Name = "gptn"
+				data_version.Version = next_version
+				stateDb.SaveDataVersion(data_version)
+			}
+			if next_version == now_version {
+				break
+			}
+			// 版本升级超时处理
+			if now := time.Now(); now.After(t.Add(1 * time.Minute)) {
+				log.Infof("upgrade gptn failed. error: timeout[%s]", time.Since(t))
+				break
+			}
+		}
+		return nil
+	}
+	return nil
+}
+
 func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateChangeEvent) {
 	log.Debug("Process AfterSysContractStateChangeEvent")
 	if bytes.Equal(arg.ContractId, syscontract.PartitionContractAddress.Bytes()) {

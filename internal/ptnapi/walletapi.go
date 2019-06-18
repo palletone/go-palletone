@@ -78,11 +78,13 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
-
-	if !fee.IsPositive() {
-		return "", fmt.Errorf("fee is ZERO ")
+        if !fee.GreaterThanOrEqual(decimal.New(1, 0)){
+		return "", fmt.Errorf("fee cannot less than 1 PTN ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
+        if daoAmount <= 100000000{
+            return "", fmt.Errorf("amount cannot less than 1 dao ")
+        }
 	utxos, _ := convertUtxoMap2Utxos(allutxos)
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
 	if err != nil {
