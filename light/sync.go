@@ -36,29 +36,43 @@ const (
 
 // syncer is responsible for periodically synchronising with the network, both
 // downloading hashes and blocks as well as handling the announcement handler.
-func (pm *ProtocolManager) syncer() {
+func (pm *ProtocolManager) syncer(syncCh chan bool) {
 	// Start and ensure cleanup of sync mechanisms
 	pm.fetcher.Start()
 	defer pm.fetcher.Stop()
 	defer pm.downloader.Terminate()
 
 	// Wait for different events to fire synchronisation operations
-	forceSync := time.Tick(forceSyncCycle)
-	for {
-		select {
-		case <-pm.newPeerCh:
-			// Make sure we have peers to select from, then sync
-			if pm.peers.Len() < minDesiredPeerCount {
-				break
+	if pm.lightSync {
+		forceSync := time.Tick(forceSyncCycle)
+		for {
+			select {
+			case <-pm.newPeerCh:
+				// Make sure we have peers to select from, then sync
+				if pm.peers.Len() < minDesiredPeerCount {
+					break
+				}
+				go pm.syncall()
+
+			case <-forceSync:
+				// Force a sync even if not enough peers are present
+				go pm.syncall()
+
+			case <-pm.noMorePeers:
+				return
 			}
-			go pm.syncall() //pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
+		}
+	} else {
+		for {
+			select {
+			case <-pm.newPeerCh:
+				// Make sure we have peers to select from, then sync
+			case <-syncCh:
+				go pm.syncall()
 
-		case <-forceSync:
-			// Force a sync even if not enough peers are present
-			go pm.syncall() //pm.synchronise(pm.peers.BestPeer(pm.assetId), pm.assetId)
-
-		case <-pm.noMorePeers:
-			return
+			case <-pm.noMorePeers:
+				return
+			}
 		}
 	}
 }
@@ -82,7 +96,7 @@ func (pm *ProtocolManager) syncall() {
 	}
 	//log.Debug("Light PalletOne syncall FetchAllToken", "len(headers)", len(headers), "headers", headers)
 	for _, header := range headers {
-		log.Debug("Light PalletOne syncall FetchAllToken", "asset", header.Number.AssetID, "index", header.Number.Index)
+		log.Debug("Light PalletOne syncall synchronise", "asset", header.Number.AssetID, "index", header.Number.Index)
 		pm.synchronise(p, header.Number.AssetID)
 	}
 }
@@ -142,4 +156,5 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 	if header != nil && header.Number.Index > 0 {
 		go pm.BroadcastLightHeader(header)
 	}
+
 }

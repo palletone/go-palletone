@@ -20,6 +20,8 @@
 package core
 
 import (
+	"strconv"
+
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -66,10 +68,10 @@ type DigitalIdentityConfig struct {
 }
 
 type Genesis struct {
-	Version  string `json:"version"`
-	GasToken string `json:"gasToken"`
-	//TokenAmount  uint64       `json:"tokenAmount"`
-	TokenAmount uint64 `json:"tokenAmount"`
+	Version     string `json:"version"`
+	GasToken    string `json:"gasToken"`
+	TokenAmount string `json:"tokenAmount"`
+	//TokenAmount uint64 `json:"tokenAmount"`
 	//TokenDecimal              uint32                   `json:"tokenDecimal"`
 	//DecimalUnit               string                   `json:"decimal_unit"`
 	ChainID     uint64 `json:"chainId"`
@@ -93,14 +95,14 @@ type SysContract struct {
 	Active  bool           `json:"active"`
 }
 
-//func (g *Genesis) GetTokenAmount() uint64 {
-//	amount, err := strconv.ParseInt(g.TokenAmount, 10, 64)
-//	if err != nil {
-//		log.Error("genesis", "get token amount err:", err)
-//		return uint64(0)
-//	}
-//	return uint64(amount)
-//}
+func (g *Genesis) GetTokenAmount() uint64 {
+	amount, err := strconv.ParseInt(g.TokenAmount, 10, 64)
+	if err != nil {
+		log.Error("genesis", "get token amount err:", err)
+		return uint64(0)
+	}
+	return uint64(amount)
+}
 
 type MediatorInfoBase struct {
 	AddStr     string `json:"account"`
