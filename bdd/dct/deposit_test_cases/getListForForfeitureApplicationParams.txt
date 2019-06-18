@@ -25,6 +25,5 @@ Resource          publicParams.txt
 getListForForfeitureApplication
     ${one}    Create List    GetListForForfeitureApplication
     ${two}    Create List    ${one}
-    ${resp}    创建公用的POST请求    ${depositContractQuery}    GetListForForfeitureApplication    ${two}
-    ${result}    Set Variable    ${resp.content}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForForfeitureApplication    ${two}
     [Return]    ${result}

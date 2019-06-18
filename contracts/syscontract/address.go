@@ -37,6 +37,7 @@ var (
 	//4系统参数维护合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRS71ZEM
 	SysConfigContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000041C")
+
 	//5产块奖励合约
 	CoinbaseContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000051C")
 

@@ -21,16 +21,21 @@
 package common
 
 import (
+	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type IUnitProduceRepository interface {
@@ -40,6 +45,7 @@ type IUnitProduceRepository interface {
 	Close()
 	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
+	RefreshSysParameters()
 }
 
 type UnitProduceRepository struct {
@@ -57,7 +63,26 @@ type UnitProduceRepository struct {
 
 type AfterChainMaintenanceEventFunc func(event *modules.ChainMaintenanceEvent)
 
-func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository, stateRep IStateRepository) *UnitProduceRepository {
+func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository,
+	stateRep IStateRepository) *UnitProduceRepository {
+	return &UnitProduceRepository{
+		unitRep:  unitRep,
+		propRep:  propRep,
+		stateRep: stateRep,
+	}
+}
+
+func NewUnitProduceRepository4Db(db ptndb.Database) *UnitProduceRepository {
+	dagDb := storage.NewDagDb(db)
+	utxoDb := storage.NewUtxoDb(db)
+	stateDb := storage.NewStateDb(db)
+	idxDb := storage.NewIndexDb(db)
+	propDb := storage.NewPropertyDb(db)
+
+	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	propRep := NewPropRepository(propDb)
+	stateRep := NewStateRepository(stateDb)
+
 	return &UnitProduceRepository{
 		unitRep:  unitRep,
 		propRep:  propRep,
@@ -181,7 +206,7 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 func (rep *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) uint64 {
 	missedUnits := rep.propRep.GetSlotAtTime(time.Unix(unit.Timestamp(), 0))
 	if missedUnits == 0 {
-		log.Errorf("Trying to push double-produced unit onto current unit?!")
+		log.Debugf("Trying to push double-produced unit onto current unit?!")
 		return 0
 	}
 
@@ -306,6 +331,26 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 	}
 }
 
+func (dag *UnitProduceRepository) RefreshSysParameters() {
+	cp := dag.propRep.GetChainParameters()
+
+	//deposit, _, _ := rep.GetConfig("DepositRate")
+	//depositYearRate, _ := strconv.ParseFloat(deposit, 64)
+	parameter.CurrentSysParameters.DepositContractInterest = cp.DepositRate / 365
+	log.Debugf("Load SysParameter DepositContractInterest value:%f",
+		parameter.CurrentSysParameters.DepositContractInterest)
+
+	//txCoinYearRateStr, _, _ := rep.GetConfig("TxCoinYearRate")
+	//txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
+	parameter.CurrentSysParameters.TxCoinDayInterest = cp.TxCoinYearRate / 365
+	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
+
+	//generateUnitRewardStr, _, _ := rep.GetConfig("GenerateUnitReward")
+	//generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
+	parameter.CurrentSysParameters.GenerateUnitReward = cp.GenerateUnitReward
+	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+}
+
 func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) {
 	log.Debugf("update chain parameters")
 
@@ -313,10 +358,118 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 		Height:  nextUnit.Number(),
 		TxIndex: ^uint32(0),
 	}
-	dag.stateRep.UpdateSysParams(version)
-	dag.stateRep.RefreshSysParameters()
+	//dag.stateRep.UpdateSysParams(version)
+	//dag.stateRep.RefreshSysParameters()
+	dag.UpdateSysParams(version)
+	dag.RefreshSysParameters()
 
 	return
+}
+
+// 获取通过投票修改系统参数的结果
+func (dag *UnitProduceRepository) getSysParamsWithVote() map[string]string {
+	res := make(map[string]string)
+
+	info, err := dag.stateRep.GetSysParamsWithVotes()
+	if err == nil && info.IsVoteEnd {
+		for _, v1 := range info.SupportResults {
+			for _, v2 := range v1.VoteResults {
+				if v2.Num >= info.LeastNum {
+					res[v1.TopicTitle] = v2.SelectOption
+					break
+				}
+			}
+		}
+	}
+
+	return res
+}
+
+func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion) error {
+	// 获取当前的链参数
+	gp, err := dag.propRep.RetrieveGlobalProp()
+	if err != nil {
+		return err
+	}
+
+	//基金会单独修改的
+	modifies, err := dag.stateRep.GetSysParamWithoutVote()
+	if err == nil {
+		for k, v := range modifies {
+			err = updateChainParameter(&gp.ChainParameters, k, v)
+			if err != nil {
+				log.Errorf(err.Error())
+				//return err
+				continue
+			}
+		}
+
+		//将基金会当前单独修改的重置为nil
+		err = dag.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithoutVote, nil, version)
+		//if err != nil {
+		//	return err
+		//}
+	}
+
+	//基金会发起投票的
+	infos := dag.getSysParamsWithVote()
+	if len(infos) > 0 {
+		for k, v := range infos {
+			err = updateChainParameter(&gp.ChainParameters, k, v)
+			if err != nil {
+				log.Errorf(err.Error())
+				//return err
+				continue
+			}
+		}
+
+		//将基金会当前投票修改的重置为nil
+		err = dag.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithVote, nil, version)
+		//if err != nil {
+		//	return err
+		//}
+	}
+
+	err = dag.propRep.StoreGlobalProp(gp)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func updateChainParameter(cp *core.ChainParameters, field, value string) error {
+	vv := reflect.ValueOf(cp).Elem()
+	vn := vv.FieldByName(field)
+
+	switch vn.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		iv, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		vn.SetInt(iv)
+	case reflect.Invalid:
+		return fmt.Errorf("no such field: %v", field)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		uv, err := strconv.ParseUint(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		vn.SetUint(uv)
+	case reflect.String:
+		vn.SetString(value)
+	case reflect.Float64, reflect.Float32:
+		fv, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return err
+		}
+		vn.SetFloat(fv)
+	default:
+		return fmt.Errorf("unexpected type: %v", vn.Type().String())
+	}
+
+	return nil
 }
 
 // 获取账户相关投票数据的直方图
@@ -405,28 +558,30 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	// 获取之前的设置
-	activeMediatorStr, _, _ := d.stateRep.GetConfig(modules.DesiredActiveMediatorCount)
-	activeMediator, _ := strconv.ParseUint(string(activeMediatorStr), 10, 16)
+	//activeMediatorStr, _, _ := d.stateRep.GetConfig(modules.DesiredActiveMediatorCount)
+	//activeMediator, _ := strconv.ParseUint(string(activeMediatorStr), 10, 16)
+	activeMediator := d.propRep.GetChainParameters().ActiveMediatorCount
 
 	// 获取基金会直接修改的设置
 	desiredSysParams, err := d.stateRep.GetSysParamWithoutVote()
-	if err != nil {
-		return int(activeMediator)
+	if err == nil {
+		desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediatorCount]
+		if ok {
+			desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+			if err == nil {
+				activeMediator = uint8(desiredActiveMediator)
+			}
+		}
 	}
 
-	var desiredActiveMediatorStr string
-	desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediatorCount]
-	if !ok {
-		return int(activeMediator)
+	// 获取通过投票修改的设置
+	infos := d.getSysParamsWithVote()
+	if desiredActiveMediatorStr, ok := infos[modules.DesiredActiveMediatorCount]; ok {
+		desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+		if err == nil {
+			activeMediator = uint8(desiredActiveMediator)
+		}
 	}
-
-	desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
-	if err != nil {
-		return int(activeMediator)
-	}
-	activeMediator = desiredActiveMediator
-
-	// todo 获取通过投票修改的设置
 
 	return int(activeMediator)
 }
@@ -465,8 +620,8 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.propRep.StoreDynGlobalProp(dgp)
 
-	time := time.Unix(int64(nextMaintenanceTime), 0)
-	log.Debugf("nextMaintenanceTime: %v", time.Format("2006-01-02 15:04:05"))
+	tt := time.Unix(int64(nextMaintenanceTime), 0)
+	log.Debugf("nextMaintenanceTime: %v", tt.Format("2006-01-02 15:04:05"))
 
 	return
 }

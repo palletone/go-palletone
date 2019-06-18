@@ -22,7 +22,6 @@ package dag
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -272,7 +271,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		}
 
 		timestamp := time.Unix(u.Timestamp(), 0)
-		log.Infof("InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
+		log.Debugf("InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
@@ -545,7 +544,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
@@ -629,7 +628,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	validate := validator.NewValidate(dagDb, utxoRep, stateDb, nil)
 	propRep := dagcommon.NewPropRepository(propDb)
@@ -665,7 +664,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	propDb := storage.NewPropertyDb(db)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
@@ -874,7 +873,8 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 }
 
 func (d *Dag) RefreshSysParameters() {
-	d.unstableStateRep.RefreshSysParameters()
+	//d.unstableStateRep.RefreshSysParameters()
+	d.unstableUnitProduceRep.RefreshSysParameters()
 }
 
 //func (d *Dag) SaveUtxoView(view *txspool.UtxoViewpoint) error {
@@ -890,14 +890,6 @@ func (d *Dag) GetAddrTransactions(addr common.Address) ([]*modules.TransactionWi
 func (d *Dag) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetContractState(id, field)
 	//return d.statedb.GetContractState(common.HexToAddress(id), field)
-}
-
-func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-	return d.unstableStateRep.GetConfig(name)
-}
-func (d *Dag) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
-	return d.unstableStateRep.GetAllConfig()
-
 }
 
 //get contract all state
@@ -1397,15 +1389,17 @@ func (bc *Dag) GetPartitionChains() ([]*modules.PartitionChain, error) {
 func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
 	return bc.unstableStateRep.GetMainChain()
 }
-func (d *Dag) GetCoinYearRate() float64 {
-	data, _, err := d.GetConfig("TxCoinYearRate")
-	if err != nil {
-		log.Warn("Cannot read system config by key :TxCoinYearRate")
-		return 0
-	}
-	rate, _ := strconv.ParseFloat(string(data), 64)
-	return rate
-}
+
+//func (d *Dag) GetCoinYearRate() float64 {
+//	//data, err := d.GetConfig("TxCoinYearRate")
+//	//if err != nil {
+//	//	log.Warn("Cannot read system config by key :TxCoinYearRate")
+//	//	return 0
+//	//}
+//	data := d.GetChainParameters().TxCoinYearRate
+//	rate, _ := strconv.ParseFloat(string(data), 64)
+//	return rate
+//}
 
 // SubscribeChainSideEvent registers a subscription of ChainSideEvent.
 //func (bc *Dag) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {

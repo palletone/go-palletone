@@ -53,16 +53,16 @@ func validateGenesis(genesis *core.Genesis) {
 	minMediatorInterval := int64(genesis.ImmutableParameters.MinMediatorInterval)
 	fcAssert(mediatorInterval >= minMediatorInterval, "mediator interval cannot less than min interval.")
 
-	mediatorCandidateCount := uint16(len(genesis.InitialMediatorCandidates))
+	mediatorCandidateCount := uint8(len(genesis.InitialMediatorCandidates))
 	fcAssert(mediatorCandidateCount != 0, "Cannot start a chain with zero mediators.")
 
-	initialActiveMediator := genesis.InitialActiveMediators
+	initialActiveMediator := genesis.InitialParameters.ActiveMediatorCount
 	fcAssert(initialActiveMediator <= mediatorCandidateCount,
 		"initial active mediators cannot larger than the number of candidate mediators.")
 
 	fcAssert((initialActiveMediator&1) == 1, "initial active mediator count must be odd.")
 
-	minMediatorCount := uint16(genesis.ImmutableParameters.MinimumMediatorCount)
+	minMediatorCount := genesis.ImmutableParameters.MinimumMediatorCount
 	fcAssert(initialActiveMediator >= minMediatorCount,
 		"initial active mediators must be larger than min mediator count.")
 

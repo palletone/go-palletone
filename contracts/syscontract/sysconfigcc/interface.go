@@ -22,16 +22,15 @@ package sysconfigcc
 
 import (
 	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type SysParamsConfInterface interface {
 	//获取全部系统参数配置信息
-	getAllSysParamsConf(stub shim.ChaincodeStubInterface) (map[string]*modules.ContractStateValue, error)
+	//getAllSysParamsConf(stub shim.ChaincodeStubInterface) (map[string]*modules.ContractStateValue, error)
 	//基金会发起更新某个系统参数（不需要投票）
 	updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
 	//通过键获取值
-	getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
+	//getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
 
 	//通过投票方式来修改系统参数
 	//首先，提供查询投票当前结果

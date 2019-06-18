@@ -21,14 +21,15 @@ package rwset
 
 import (
 	"errors"
-
 	"fmt"
+	"sort"
+
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"sort"
 )
 
 type RwSetTxSimulator struct {
@@ -53,15 +54,19 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	unit := idag.GetCurrentUnit(gasToken)
 	cIndex := unit.Header().Number
 	log.Debugf("constructing new tx simulator txid = [%s]", hash.String())
-	return &RwSetTxSimulator{chainIndex: cIndex, txid: hash, rwsetBuilder: rwsetBuilder, write_cache: make(map[string][]byte), dag: idag}
+	return &RwSetTxSimulator{chainIndex: cIndex, txid: hash, rwsetBuilder: rwsetBuilder,
+		write_cache: make(map[string][]byte), dag: idag}
 }
 
-func (s *RwSetTxSimulator) GetConfig(name string) ([]byte, error) {
-	val, _, err := s.dag.GetConfig(name)
+func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
+	cp := s.dag.GetChainParameters()
+
+	data, err := rlp.EncodeToBytes(cp)
 	if err != nil {
 		return nil, err
 	}
-	return val, nil
+
+	return data, nil
 }
 
 // GetState implements method in interface `ledger.TxSimulator`
@@ -72,7 +77,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	}
 	if value, has := s.write_cache[key]; has {
 		if s.rwsetBuilder != nil {
-			s.rwsetBuilder.AddToReadSet(ns, key, nil)
+			s.rwsetBuilder.AddToReadSet(contractid, ns, key, nil)
 		}
 		return value, nil
 	}
@@ -85,7 +90,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		//		//return nil, errors.New(errstr)
 	}
 	if s.rwsetBuilder != nil {
-		s.rwsetBuilder.AddToReadSet(ns, key, ver)
+		s.rwsetBuilder.AddToReadSet(contractid, ns, key, ver)
 	}
 	log.Debugf("RW:GetState,ns[%s]--key[%s]---value[%s]---ver[%v]", ns, key, val, ver)
 
@@ -111,7 +116,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 		kv := &modules.KeyValue{Key: key, Value: row.Value}
 		result = append(result, kv)
 		if s.rwsetBuilder != nil {
-			s.rwsetBuilder.AddToReadSet(ns, key, row.Version)
+			s.rwsetBuilder.AddToReadSet(contractid, ns, key, row.Version)
 		}
 	}
 
@@ -136,7 +141,7 @@ func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, 
 
 	return []byte(fmt.Sprintf("%d", timeHeader.Time)), nil
 }
-func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
+func (s *RwSetTxSimulator) SetState(contractId []byte, ns string, key string, value []byte) error {
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
@@ -144,14 +149,14 @@ func (s *RwSetTxSimulator) SetState(ns string, key string, value []byte) error {
 		return errors.New("pvtdata Queries Performed")
 	}
 	//todo ValidateKeyValue
-	s.rwsetBuilder.AddToWriteSet(ns, key, value)
+	s.rwsetBuilder.AddToWriteSet(contractId, ns, key, value)
 	s.write_cache[key] = value
 	return nil
 }
 
 // DeleteState implements method in interface `ledger.TxSimulator`
-func (s *RwSetTxSimulator) DeleteState(ns string, key string) error {
-	return s.SetState(ns, key, nil)
+func (s *RwSetTxSimulator) DeleteState(contractId []byte, ns string, key string) error {
+	return s.SetState(contractId, ns, key, nil)
 }
 
 func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {

@@ -207,7 +207,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 
 	log.Debug("Set active mediators...")
 	// Set active mediators
-	for i := uint16(0); i < genesis.InitialActiveMediators; i++ {
+	for i := uint8(0); i < genesis.InitialParameters.ActiveMediatorCount; i++ {
 		initMed := genesis.InitialMediatorCandidates[i]
 		addr, err := core.StrToMedAdd(initMed.AddStr)
 		if err != nil {

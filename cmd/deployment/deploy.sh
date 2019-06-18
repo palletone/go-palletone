@@ -71,15 +71,18 @@ function replacejson()
     jq -r . t.json >> $1
     rm t.json
 
+    add=`cat $1 | jq ".initialParameters.activeMediatorCount = $length"`
 
+: << !
     add=`cat $1 | 
-       jq "to_entries | 
-       map(if .key == \"initialActiveMediators\" 
+      jq "to_entries | 
+      map(if .key == \"initialActiveMediators\" 
           then . + {\"value\":$length} 
           else . 
           end
          ) | 
       from_entries"`
+!
 
     rm $1
     echo $add >> temp.json
@@ -125,8 +128,14 @@ path=`echo $GOPATH`
 src=/src/github.com/palletone/go-palletone/build/bin/gptn
 fullpath=$path$src
 cp $fullpath .
-read -p "Please input the numbers of nodes you want: " n;  
- 
+
+n=
+if [ -n "$1" ]; then
+    n=$1
+else
+    read -p "Please input the numbers of nodes you want: " n;
+fi
+
 LoopDeploy $n;
 
 json="node1/ptn-genesis.json"

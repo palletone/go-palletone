@@ -15,14 +15,12 @@
 package deposit
 
 import (
-	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
 )
 
 func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
@@ -34,17 +32,23 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		return shim.Error(err.Error())
 	}
 	//  获取jury交付保证金的下线
-	depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
+	//depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
+	//if err != nil {
+	//	log.Error("get deposit amount for jury err: ", "error", err)
+	//	return shim.Error(err.Error())
+	//}
+	////  转换
+	//depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
+	//if err != nil {
+	//	log.Error("strconv.ParseUint err: ", "error", err)
+	//	return shim.Error(err.Error())
+	//}
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("get deposit amount for jury err: ", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  转换
-	depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
-	if err != nil {
-		log.Error("strconv.ParseUint err: ", "error", err)
-		return shim.Error(err.Error())
-	}
+	depositAmountsForJury := cp.DepositAmountForJury
 	//  交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -63,7 +67,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		//  可以加入列表
 		if invokeTokens.Amount >= depositAmountsForJury {
 			//  加入候选列表
-			err = addCandaditeList(invokeAddr, stub, modules.JuryList)
+			err = addCandaditeList(stub, invokeAddr, modules.JuryList)
 			if err != nil {
 				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
@@ -87,7 +91,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		//  判断此时交了保证金后是否超过了jury
 		if balance.Balance >= depositAmountsForJury {
 			//  加入候选列表
-			err = addCandaditeList(invokeAddr, stub, modules.JuryList)
+			err = addCandaditeList(stub, invokeAddr, modules.JuryList)
 			if err != nil {
 				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
@@ -113,50 +117,25 @@ func juryApplyCashback(stub shim.ChaincodeStubInterface, args []string) peer.Res
 	return shim.Success([]byte(nil))
 }
 
-func handleJury(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, balance *DepositBalance) error {
-	//  获取请求列表
-	listForCashback, err := GetListForCashback(stub)
-	if err != nil {
-		log.Error("Stub.GetListForCashback err:", "error", err)
-		return err
-	}
-	if listForCashback == nil {
-		log.Error("listForCashback is nil.")
-		return fmt.Errorf("%s", "listForCashback is nil.")
-	}
-	if _, ok := listForCashback[cashbackAddr.String()]; !ok {
-		log.Error("node is not exist in the list.")
-		return fmt.Errorf("%s", "node is not exist in the list.")
-	}
-	cashbackNode := listForCashback[cashbackAddr.String()]
-	delete(listForCashback, cashbackAddr.String())
-	//更新列表
-	err = SaveListForCashback(stub, listForCashback)
-	if err != nil {
-		log.Error("saveListForCashback err:", "error", err)
-		return err
-	}
-	err = handleJuryDepositCashback(stub, cashbackAddr, cashbackNode, balance)
-	if err != nil {
-		log.Error("HandleJuryDepositCashback err:", "error", err)
-		return err
-	}
-	return nil
-}
-
 //Jury已在列表中,并发起退钱申请，需要判断是否需要删除该节点，移除列表等
 func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *DepositBalance) error {
-	depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
+	//depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
+	//if err != nil {
+	//	log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+	//	return err
+	//}
+	////  转换
+	//depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
+	//if err != nil {
+	//	log.Error("Strconv.ParseUint err:", "error", err)
+	//	return err
+	//}
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
-	//  转换
-	depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
-	if err != nil {
-		log.Error("Strconv.ParseUint err:", "error", err)
-		return err
-	}
+	depositAmountsForJury := cp.DepositAmountForJury
 	//  这里计算这一次操作的币龄利息
 	awards := caculateAwards(stub, balance.Balance, balance.LastModifyTime)
 	//  剩下的余额

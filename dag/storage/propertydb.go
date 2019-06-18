@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -54,6 +55,16 @@ type IPropertyDb interface {
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetChainParameters() *core.ChainParameters
+}
+
+func (propdb *PropertyDb) GetChainParameters() *core.ChainParameters {
+	gp, err := propdb.RetrieveGlobalProp()
+	if err != nil {
+		return nil
+	}
+
+	return &gp.ChainParameters
 }
 
 // modified by Yiran
@@ -97,12 +108,12 @@ func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 }
 
 func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
-
 	gp := &modules.GlobalProperty{}
 	err := RetrieveFromRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Errorf("Retrieve global properties error: %v", err.Error())
 	}
+
 	return gp, err
 }
 

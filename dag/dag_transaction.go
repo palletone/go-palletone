@@ -315,7 +315,8 @@ func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string,
 
 func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 	size := float64(modules.CalcDateSize(data))
-	pricePerKByte := dag.CurrentFeeSchedule().TransferFee.PricePerKByte
+	pricePerKByte := dag.GetChainParameters().TransferPtnPricePerKByte
+	//pricePerKByte := dag.CurrentFeeSchedule().TransferFee.PricePerKByte
 
 	return uint64(size * float64(pricePerKByte) / 1024)
 }
@@ -358,14 +359,10 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 		return nil, 0, err
 	}
 
-	writeVote := modules.ContractWriteSet{
-		false,
-		constants.VOTED_MEDIATORS,
-		msb,
-	}
+	writeVote := modules.AccountStateWriteSet{false, constants.VOTED_MEDIATORS, msb}
 
 	accountUpdate := &modules.AccountStateUpdatePayload{
-		[]modules.ContractWriteSet{writeVote},
+		[]modules.AccountStateWriteSet{writeVote},
 	}
 
 	msg := &modules.Message{
@@ -374,7 +371,8 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 	}
 
 	// 2. 组装 tx
-	fee := dag.CurrentFeeSchedule().AccountUpdateFee
+	//fee := dag.CurrentFeeSchedule().AccountUpdateFee
+	fee := dag.GetChainParameters().AccountUpdateFee
 	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, txPool)
 	if err != nil {
 		return nil, 0, err
@@ -385,7 +383,8 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 
 func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	fee := dag.CurrentFeeSchedule().TransferFee.BaseFee
+	//fee := dag.CurrentFeeSchedule().TransferFee.BaseFee
+	fee := dag.GetChainParameters().TransferPtnBaseFee
 	var tx *modules.Transaction
 	var err error
 

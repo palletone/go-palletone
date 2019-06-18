@@ -287,7 +287,7 @@ func newTestContractInvokeResult() *ContractInvokePayload {
 	version := &StateVersion{&ChainIndex{PTNCOIN, 100}, 2}
 	read1 := ContractReadSet{"A", version, []byte("This is value")}
 	readset := []ContractReadSet{read1}
-	write1 := ContractWriteSet{false, "Key1", []byte("This is value2")}
+	write1 := ContractWriteSet{IsDelete: false, Key: "Key1", Value: []byte("This is value2")}
 	wset := []ContractWriteSet{write1}
 
 	pay := &ContractInvokePayload{

@@ -53,9 +53,10 @@ func (m *KVRWSet) GetWrites() map[string]*KVWrite {
 }
 
 type KVRead struct {
-	key     string                `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	version *modules.StateVersion `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
-	value   []byte                `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	key        string                `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	version    *modules.StateVersion `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
+	value      []byte                `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	ContractId []byte                `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
 }
 
 func (m *KVRead) Reset()                    { m = new(KVRead) }
@@ -85,9 +86,10 @@ func (m *KVRead) GetValue() []byte {
 
 // KVWrite captures a write (update/delete) operation performed during transaction simulation
 type KVWrite struct {
-	key      string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	isDelete bool   `protobuf:"varint,2,opt,name=is_delete,json=isDelete" json:"is_delete,omitempty"`
-	value    []byte `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	key        string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	isDelete   bool   `protobuf:"varint,2,opt,name=is_delete,json=isDelete" json:"is_delete,omitempty"`
+	value      []byte `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	ContractId []byte `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
 }
 
 func (m *KVWrite) Reset()                    { m = new(KVWrite) }
@@ -122,10 +124,10 @@ type Version struct {
 }
 
 // NewKVRead helps constructing proto message kvrwset.KVRead
-func NewKVRead(key string, version *modules.StateVersion) *KVRead {
-	return &KVRead{key: key, version: version}
+func NewKVRead(contractId []byte, key string, version *modules.StateVersion) *KVRead {
+	return &KVRead{key: key, version: version, ContractId: contractId}
 }
 
-func newKVWrite(key string, value []byte) *KVWrite {
-	return &KVWrite{key: key, isDelete: value == nil, value: value}
+func newKVWrite(contractId []byte, key string, value []byte) *KVWrite {
+	return &KVWrite{key: key, isDelete: value == nil, value: value, ContractId: contractId}
 }

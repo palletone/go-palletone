@@ -24,19 +24,25 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //var CONF_PREFIX = append(constants.CONTRACT_STATE_PREFIX, scc.SysConfigContractAddress.Bytes()...)
-func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.StateVersion) error {
+func (statedb *StateDb) SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error {
 	//SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion)
 	id := syscontract.SysConfigContractAddress.Bytes()
-	err := saveContractState(statedb.db, id, key, val, ver)
+	write := modules.NewWriteSet(key, val)
+	err := statedb.SaveContractState(id, write, ver)
 	if err != nil {
+		log.Error(err.Error())
 		return err
 	}
+
 	return nil
 }
 
@@ -44,23 +50,120 @@ func (statedb *StateDb) SaveSysConfig(key string, val []byte, ver *modules.State
 获取配置信息
 get config information
 */
-func (statedb *StateDb) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
+func (statedb *StateDb) getSysConfigContract(name string) ([]byte, *modules.StateVersion, error) {
 	id := syscontract.SysConfigContractAddress.Bytes()
 	return statedb.GetContractState(id, name)
 }
-func (statedb *StateDb) GetAllSysConfig() (map[string]*modules.ContractStateValue, error) {
-	id := syscontract.SysConfigContractAddress.Bytes()
-	return statedb.GetContractStatesById(id)
+
+//func (statedb *StateDb) GetAllSysConfig() (map[string]*modules.ContractStateValue, error) {
+//	id := syscontract.SysConfigContractAddress.Bytes()
+//	return statedb.GetContractStatesById(id)
+//}
+
+func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
+	val, _, err := statedb.getSysConfigContract(modules.DesiredSysParamsWithoutVote)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil, err
+	}
+
+	if val == nil || len(val) == 0 {
+		return nil, fmt.Errorf("data is nil")
+	}
+
+	var res map[string]string
+	err = json.Unmarshal(val, &res)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil, err
+	}
+
+	return res, nil
 }
 
-/**
-存储配置信息
-*/
-//func (statedb *StateDb) SaveConfig(confs []modules.ContractWriteSet, stateVersion *modules.StateVersion) error {
-//	id := syscontract.SysConfigContractAddress.Bytes21()
-//	log.Debugf("Save config into contract[%x]'s statedb", id)
-//	return statedb.SaveContractStates(id, confs, stateVersion)
+func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
+	val, _, err := statedb.getSysConfigContract(modules.DesiredSysParamsWithVote)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	if val == nil || len(val) == 0 {
+		return nil, fmt.Errorf("data is nil")
+	}
+
+	info := &modules.SysTokenIDInfo{}
+	err = json.Unmarshal(val, info)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	return info, nil
+}
+
+//func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
+//	//基金会单独修改的
+//	var err error
+//	modifies, err := statedb.GetSysParamWithoutVote()
+//	if err != nil {
+//		return err
+//	}
+//	//基金会发起投票的
+//	info, err := statedb.GetSysParamsWithVotes()
+//	if err != nil {
+//		return err
+//	}
+//	if modifies == nil && info == nil {
+//		return nil
+//	}
+//	//获取当前的version
+//	if len(modifies) > 0 {
+//		for k, v := range modifies {
+//			err = statedb.SaveSysConfig(k, []byte(v), version)
+//			if err != nil {
+//				return err
+//			}
+//		}
+//		//将基金会当前单独修改的重置为nil
+//		err = statedb.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	if info == nil {
+//		return nil
+//	}
+//	//foundAddr, _, err := statedb.GetSysConfig(modules.FoundationAddress)
+//	//if err != nil {
+//	//	return err
+//	//}
+//	//if info.CreateAddr != string(foundAddr) {
+//	//	return fmt.Errorf("only foundation can call this function")
+//	//}
+//	if !info.IsVoteEnd {
+//		return nil
+//	}
+//	for _, v1 := range info.SupportResults {
+//		for _, v2 := range v1.VoteResults {
+//			//TODO
+//			if v2.Num >= info.LeastNum {
+//				err = statedb.SaveSysConfig(v1.TopicTitle, []byte(v2.SelectOption), version)
+//				if err != nil {
+//					return err
+//				}
+//				break
+//			}
+//		}
+//	}
+//	//将基金会当前投票修改的重置为nil
+//	err = statedb.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
 //}
+
 func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
 	assetId := dagconfig.DagConfig.GetGasToken()
 	return &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}, nil
