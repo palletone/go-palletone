@@ -74,7 +74,7 @@ func (s *CorsServer) StartCorsSync() (string, error) {
 }
 
 // Start starts the LES server
-func (s *CorsServer) Start(srvr *p2p.Server, corss *p2p.Server) {
+func (s *CorsServer) Start(srvr *p2p.Server, corss *p2p.Server, syncCh chan bool) {
 	s.protocolManager.Start(s.config.LightPeers)
 	s.privateKey = corss.PrivateKey
 	s.corss = corss

@@ -27,8 +27,6 @@ import (
 )
 
 type IStateDb interface {
-	GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
-	GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	//Contract statedb
 	SaveContract(contract *modules.Contract) error
@@ -61,8 +59,8 @@ type IStateDb interface {
 	GetContractStopReq(reqId []byte) (*modules.ContractStopRequestPayload, error)
 	GetContractSignature(reqId []byte) (*modules.SignaturePayload, error)
 
-	SaveAccountState(address common.Address, write *modules.ContractWriteSet, version *modules.StateVersion) error
-	SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet, version *modules.StateVersion) error
+	SaveAccountState(address common.Address, write *modules.AccountStateWriteSet, version *modules.StateVersion) error
+	SaveAccountStates(address common.Address, writeset []modules.AccountStateWriteSet, version *modules.StateVersion) error
 	GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error)
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
 	UpdateAccountBalance(addr common.Address, addAmount int64) error
@@ -90,12 +88,16 @@ type IStateDb interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
-
-	UpdateSysParams(ver *modules.StateVersion) error
-
-	GetPartitionChains() ([]*modules.PartitionChain, error)
-	GetMainChain() (*modules.MainChain, error)
-	GetSysParamWithoutVote() (map[string]string, error)
 	GetDataVersion() (*modules.DataVersion, error)
 	SaveDataVersion(dv *modules.DataVersion) error
+
+	//UpdateSysParams(ver *modules.StateVersion) error
+	GetPartitionChains() ([]*modules.PartitionChain, error)
+	GetMainChain() (*modules.MainChain, error)
+
+	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
+	GetSysParamWithoutVote() (map[string]string, error)
+	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
+	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
 }

@@ -40,21 +40,24 @@ type UtxoRepository struct {
 	utxodb  storage.IUtxoDb
 	idxdb   storage.IIndexDb
 	statedb storage.IStateDb
+	propDb  storage.IPropertyDb
 }
 
-func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb) *UtxoRepository {
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
+func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb,
+	propDb storage.IPropertyDb) *UtxoRepository {
+	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
 }
 func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
 	//dagdb := storage.NewDagDb(db)
 	utxodb := storage.NewUtxoDb(db)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
+	propDb := storage.NewPropertyDb(db)
 	//propdb := storage.NewPropertyDb(db)
 	//utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
 	//val := NewValidate(dagdb, utxodb, utxoRep, statedb)
 
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb}
+	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
 }
 
 type IUtxoRepository interface {
@@ -610,11 +613,12 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				//header, _ := dagdb.GetHeaderByHash(unitHash)
 				//3.通过单元获取头部信息中的时间戳
 				timestamp := int64(txlookup.Timestamp)
-				depositRate, _, err := repository.statedb.GetSysConfig(modules.DepositRate)
-				if err != nil {
-					return 0, err
-				}
-				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp, string(depositRate))
+				//depositRate, _, err := repository.statedb.GetSysConfig(modules.DepositRate)
+				//if err != nil {
+				//	return 0, err
+				//}
+				depositRate := repository.propDb.GetChainParameters().DepositRate
+				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp, depositRate)
 				awards += award
 			}
 			return awards, nil
@@ -635,7 +639,7 @@ To compute mediator interest for packaging one unit
 func ComputeGenerateUnitReward() uint64 {
 	var rewards uint64
 
-		rewards = parameter.CurrentSysParameters.GenerateUnitReward
+	rewards = parameter.CurrentSysParameters.GenerateUnitReward
 
 	return rewards
 }

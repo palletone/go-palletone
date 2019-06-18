@@ -44,7 +44,7 @@ func NewRWSetBuilder() *RWSetBuilder {
 	return &RWSetBuilder{make(map[string]*nsPubRwBuilder)}
 }
 
-func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *modules.StateVersion) {
+func (b *RWSetBuilder) AddToReadSet(contractId []byte, ns string, key string, version *modules.StateVersion) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.readMap == nil {
 		nsPubRwBuilder.readMap = make(map[string]*KVRead)
@@ -65,7 +65,7 @@ func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *modules.Stat
 		}
 	}
 	// ReadSet
-	nsPubRwBuilder.readMap[key] = NewKVRead(key, version)
+	nsPubRwBuilder.readMap[key] = NewKVRead(contractId, key, version)
 }
 func (b *RWSetBuilder) AddTokenPayOut(ns string, addr string, asset *modules.Asset, amount uint64, lockTime uint32) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
@@ -77,12 +77,12 @@ func (b *RWSetBuilder) AddTokenPayOut(ns string, addr string, asset *modules.Ass
 	nsPubRwBuilder.tokenPayOut = append(nsPubRwBuilder.tokenPayOut, pay)
 
 }
-func (b *RWSetBuilder) AddToWriteSet(ns string, key string, value []byte) {
+func (b *RWSetBuilder) AddToWriteSet(contractId []byte, ns string, key string, value []byte) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.writeMap == nil {
 		nsPubRwBuilder.writeMap = make(map[string]*KVWrite)
 	}
-	nsPubRwBuilder.writeMap[key] = newKVWrite(key, value)
+	nsPubRwBuilder.writeMap[key] = newKVWrite(contractId, key, value)
 }
 func (b *RWSetBuilder) GetTokenPayOut(ns string) []*modules.TokenPayOut {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)

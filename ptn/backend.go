@@ -56,7 +56,7 @@ import (
 )
 
 type LesServer interface {
-	Start(srvr *p2p.Server, corss *p2p.Server)
+	Start(srvr *p2p.Server, corss *p2p.Server, syncCh chan bool)
 	Stop()
 	Protocols() []p2p.Protocol
 	CorsProtocols() []p2p.Protocol
@@ -103,6 +103,7 @@ type PalletOne struct {
 
 	//cors
 	corsServer LesServer
+	syncCh     chan bool
 }
 
 func (p *PalletOne) AddLesServer(ls LesServer) {
@@ -144,8 +145,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		networkId:      config.NetworkId,
 		dag:            dag,
 		unitDb:         db,
-		//bloomRequests:  make(chan chan *bloombits.Retrieval),
-		//bloomIndexer:   NewBloomIndexer(db, BloomBitsBlocks),
+		syncCh:         make(chan bool, 1),
 	}
 	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
 
@@ -184,7 +184,6 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	}
 
 	gasToken := config.Dag.GetGasToken()
-	//ptn.bloomIndexer.Start(dag, gasToken)
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
 		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
@@ -265,11 +264,8 @@ func (s *PalletOne) NetVersion() uint64                 { return s.networkId }
 func (s *PalletOne) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
 func (s *PalletOne) Dag() dag.IDag                      { return s.dag }
 func (s *PalletOne) UnitDb() ptndb.Database             { return s.unitDb }
-
 func (s *PalletOne) ContractProcessor() *jury.Processor { return s.contractPorcessor }
 func (s *PalletOne) ProManager() *ProtocolManager       { return s.protocolManager }
-
-//func (s *PalletOne) GetLesServer() LesServer            { return s.lesServer }
 
 func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 	s.protocolManager.ContractReqLocalSend(event)
@@ -308,7 +304,6 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 	}
 	protocols := append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
 	return protocols
-	//return append(protocols, s.corsServer.CorsProtocols()...)
 }
 
 func (s *PalletOne) CorsProtocols() []p2p.Protocol {
@@ -325,20 +320,9 @@ func (s *PalletOne) CorsServer() LesServer {
 // Start implements node.Service, starting all internal goroutines needed by the
 // PalletOne protocol implementation.
 func (s *PalletOne) Start(srvr *p2p.Server, corss *p2p.Server) error {
-	// Start the bloom bits servicing goroutines
-	//s.startBloomHandlers()
-
 	// Start the RPC service
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.NetVersion())
-
-	// Figure out a max peers count based on the server limits
-	//maxPeers := srvr.MaxPeers
-
-	// Start the networking layer and the light server if requested
-	//s.protocolManager.Start(srvr, maxPeers)
-
 	s.contractPorcessor.Start(srvr)
-
 	s.mediatorPlugin.Start(srvr)
 
 	maxPeers := srvr.MaxPeers
@@ -349,13 +333,14 @@ func (s *PalletOne) Start(srvr *p2p.Server, corss *p2p.Server) error {
 		maxPeers -= s.config.LightPeers
 	}
 	// Start the networking layer and the light server if requested
-	s.protocolManager.Start(srvr, maxPeers)
 	if s.lesServer != nil {
-		s.lesServer.Start(srvr, corss)
+		s.lesServer.Start(srvr, corss, s.syncCh)
 	}
 	if s.corsServer != nil {
-		s.corsServer.Start(srvr, corss)
+		s.corsServer.Start(srvr, corss, s.syncCh)
 	}
+
+	s.protocolManager.Start(srvr, maxPeers, s.syncCh)
 	return nil
 }
 

@@ -76,7 +76,7 @@ matrix:
         - netstat -ap | grep gptn
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
           cd ../dct;
-          ./deposit_test.sh 4;
+          ./deposit_test.sh 5;
           fi
 
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then

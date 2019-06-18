@@ -39,7 +39,7 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	key := "Name"
 	devin := []byte("Devin Zeng")
 	version := &modules.StateVersion{TxIndex: 2, Height: modules.NewChainIndex(modules.PTNCOIN, 123)}
-	writeSet := &modules.ContractWriteSet{IsDelete: false, Key: key, Value: devin}
+	writeSet := &modules.AccountStateWriteSet{IsDelete: false, Key: key, Value: devin}
 	statedb.SaveAccountState(addr, writeSet, version)
 
 	state, err := statedb.GetAccountState(addr, key)

@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 
@@ -71,26 +70,26 @@ func TestGenesisUnit(t *testing.T) {
 
 }
 
-func TestGenGenesisConfigPayload(t *testing.T) {
-	var genesisConf core.Genesis
-	genesisConf.SystemConfig.DepositRate = "0.02"
-
-	genesisConf.InitialParameters.MediatorInterval = 10
-
-	payloads, err := GenGenesisConfigPayload(&genesisConf, &modules.Asset{})
-
-	if err != nil {
-		log.Debug("TestGenGenesisConfigPayload", "err", err)
-	}
-	for _, payload := range payloads {
-
-		for _, w := range payload.WriteSet {
-			k := w.Key
-			v := w.Value
-			log.Debug("Key:", k, v)
-		}
-	}
-}
+//func TestGenGenesisConfigPayload(t *testing.T) {
+//	var genesisConf core.Genesis
+//	genesisConf.InitialParameters.DepositRate = "0.02"
+//
+//	genesisConf.InitialParameters.MediatorInterval = 10
+//
+//	payloads, err := GenGenesisConfigPayload(&genesisConf, &modules.Asset{})
+//
+//	if err != nil {
+//		log.Debug("TestGenGenesisConfigPayload", "err", err)
+//	}
+//	for _, payload := range payloads {
+//
+//		for _, w := range payload.WriteSet {
+//			k := w.Key
+//			v := w.Value
+//			log.Debug("Key:", k, v)
+//		}
+//	}
+//}
 
 func TestSaveUnit(t *testing.T) {
 	rep := mockUnitRepository()

@@ -39,12 +39,12 @@ func (gp *GlobalProperty) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 
-	getGP(gpt, gp)
+	gpt.getGP(gp)
 	return nil
 }
 
 func (gp *GlobalProperty) EncodeRLP(w io.Writer) error {
-	temp := getGPT(gp)
+	temp := gp.getGPT()
 	return rlp.Encode(w, temp)
 }
 
@@ -57,7 +57,7 @@ type globalProperty struct {
 	PrecedingMediators []common.Address
 }
 
-func getGPT(gp *GlobalProperty) *globalProperty {
+func (gp *GlobalProperty) getGPT() *globalProperty {
 	ajs := make([]common.Address, 0)
 	ams := make([]common.Address, 0)
 	pms := make([]common.Address, 0)
@@ -84,7 +84,7 @@ func getGPT(gp *GlobalProperty) *globalProperty {
 	return gpt
 }
 
-func getGP(gpt *globalProperty, gp *GlobalProperty) {
+func (gpt *globalProperty) getGP(gp *GlobalProperty) {
 	ajs := make(map[common.Address]bool)
 	ams := make(map[common.Address]bool)
 	pms := make(map[common.Address]bool)

@@ -219,7 +219,7 @@ func (s *LightPalletone) Start(srvr *p2p.Server, corss *p2p.Server) error {
 	log.Debug("Light client mode is an experimental feature")
 	s.netRPCService = ptnapi.NewPublicNetAPI(srvr, s.networkId)
 	//s.protocolManager.Start(s.config.LightPeers, corss)
-	s.protocolManager.Start(3, corss)
+	s.protocolManager.Start(s.config.LightPeers, corss, nil)
 
 	s.txCh = make(chan modules.TxPreEvent, txChanSize)
 	s.txSub = s.txPool.SubscribeTxPreEvent(s.txCh)
@@ -230,17 +230,7 @@ func (s *LightPalletone) Start(srvr *p2p.Server, corss *p2p.Server) error {
 // Stop implements node.Service, terminating all internal goroutines used by the
 // Ethereum protocol.
 func (s *LightPalletone) Stop() error {
-	//s.odr.Stop()
-	//if s.bloomIndexer != nil {
-	//	s.bloomIndexer.Close()
-	//}
-	//if s.chtIndexer != nil {
-	//	s.chtIndexer.Close()
-	//}
-	//if s.bloomTrieIndexer != nil {
-	//	s.bloomTrieIndexer.Close()
-	//}
-	//s.blockchain.Stop()
+
 	s.protocolManager.Stop()
 	s.txPool.Stop()
 	s.txSub.Unsubscribe() // quits txBroadcastLoop

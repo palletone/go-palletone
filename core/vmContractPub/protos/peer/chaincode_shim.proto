@@ -90,9 +90,11 @@ message ChaincodeMessage {
 message GetState {
     string key = 1;
     string collection = 2;
+    bytes contractId=3;
 }
 message GetStateByPrefix {
     string prefix = 1;
+    bytes contractId=2;
 }
 message GetTimestamp {
     uint32 rangeNumber = 1;
@@ -102,11 +104,13 @@ message PutState {
     string key = 1;
     bytes value = 2;
     string collection = 3;
+    bytes contractId=4;
 }
 
 message DelState {
     string key = 1;
     string collection = 2;
+    bytes contractId=3;
 }
 
 message GetStateByRange {

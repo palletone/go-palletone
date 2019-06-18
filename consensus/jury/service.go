@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
-	"strconv"
 	"sync"
 	"time"
 
@@ -88,7 +87,7 @@ type iDag interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
-	GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
@@ -97,6 +96,9 @@ type iDag interface {
 	GetMinFee() (*modules.AmountAsset, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+
+	//GetConfig(name string) ([]byte, error)
+	GetChainParameters() *core.ChainParameters
 }
 
 type Juror struct {
@@ -147,8 +149,8 @@ type Processor struct {
 	lockVrf map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
 
 	quit         chan struct{}
-	locker       *sync.Mutex
-	errMsgEnable bool //package contract execution error information into the transaction
+	locker       *sync.Mutex //locker       *sync.Mutex  RWMutex
+	errMsgEnable bool        //package contract execution error information into the transaction
 
 	electionNum    int
 	contractSigNum int
@@ -176,15 +178,25 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	}
 
 	//get contract system config
-	contractSigNum := getSystemContractConfig(dag, modules.ContractSignatureNum)
+	//contractSigNum := getSystemContractConfig(dag, modules.ContractSignatureNum)
+	//if contractSigNum < 1 {
+	//	num, _ := strconv.Atoi(core.DefaultContractSignatureNum)
+	//	contractSigNum = num
+	//}
+	//contractEleNum := getSystemContractConfig(dag, modules.ContractElectionNum)
+	//if contractEleNum < 1 {
+	//	num, _ := strconv.Atoi(core.DefaultContractElectionNum)
+	//	contractEleNum = num
+	//}
+
+	cp := dag.GetChainParameters()
+	contractSigNum := cp.ContractSignatureNum
 	if contractSigNum < 1 {
-		num, _ := strconv.Atoi(core.DefaultContractSignatureNum)
-		contractSigNum = num
+		contractSigNum = core.DefaultContractSignatureNum
 	}
-	contractEleNum := getSystemContractConfig(dag, modules.ContractElectionNum)
+	contractEleNum := cp.ContractElectionNum
 	if contractEleNum < 1 {
-		num, _ := strconv.Atoi(core.DefaultContractElectionNum)
-		contractEleNum = num
+		contractEleNum = core.DefaultContractElectionNum
 	}
 
 	validator := validator.NewValidate(dag, dag, dag, nil)
@@ -265,21 +277,28 @@ func (p *Processor) localHaveActiveJury() bool {
 //}
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
+	p.locker.Lock()
 	req := p.mtx[reqId]
 	if req == nil {
+		p.locker.Unlock()
 		return fmt.Errorf("runContractReq param is nil, reqId[%s]", reqId)
 	}
-	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, req.reqTx, elf, p.errMsgEnable)
+	reqTx := req.reqTx.Clone()
+	p.locker.Unlock()
+
+	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, &reqTx, elf, p.errMsgEnable) //contract exec long time...
 	if err != nil {
 		log.Errorf("[%s]runContractReq, runContractCmd reqTx, err：%s", shortId(reqId.String()), err.Error())
 		return err
 	}
-	tx, err := gen.GenContractTransction(req.reqTx, msgs)
+	tx, err := gen.GenContractTransction(&reqTx, msgs)
 	if err != nil {
 		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
 		return err
 	}
 
+	p.locker.Lock()
+	defer p.locker.Unlock()
 	//如果系统合约，直接添加到缓存池
 	//如果用户合约，需要签名，添加到缓存池并广播
 	if tx.IsSystemContract() {
@@ -578,13 +597,19 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		}
 		//检查指定节点模式下，是否为jjh请求地址
 		if e.Etype == 1 {
-			jjhAd, _, err := p.dag.GetConfig(modules.FoundationAddress)
-			if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
+			jjhAd := p.dag.GetChainParameters().FoundationAddress
+			if jjhAd == reqAddr.Str() {
+				//jjhAd, err := p.dag.GetConfig(modules.FoundationAddress)
+				//if err == nil && string(jjhAd) == reqAddr.Str() {
+				//if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
 				log.Debugf("[%s]isValidateElection, e.Etype == 1, ok, contractId[%s]", shortId(reqId.String()), string(contractId))
 				continue
 			} else {
-				log.Debugf("[%s]isValidateElection, e.Etype == 1, but not jjh request addr, contractId[%s]", shortId(reqId.String()), string(contractId))
-				log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), string(reqAddr[:]), string(jjhAd))
+				log.Debugf("[%s]isValidateElection, e.Etype == 1, but not jjh request addr, contractId[%s]",
+					shortId(reqId.String()), string(contractId))
+				//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), string(reqAddr[:]), string(jjhAd))
+				//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), string(jjhAd))
+				log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
 
 				//continue //todo test
 				return false
@@ -839,7 +864,7 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 	}
 	//add election node form vrf request
 	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-		p.lockVrf[contractId] = []modules.ElectionInf{}                           //清空
+		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
 		if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil { //todo ,Single-threaded timeout wait mode
 			return nil, err
 		}
