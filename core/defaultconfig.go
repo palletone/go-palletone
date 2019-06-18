@@ -21,7 +21,7 @@
 package core
 
 const (
-	DefaultTokenAmount = 100000000000000000
+	DefaultTokenAmount = "100000000000000000"
 	//DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
 	DefaultDepositRate               = 0.02
