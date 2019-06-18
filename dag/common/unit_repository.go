@@ -1388,12 +1388,18 @@ func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*module
 				rlp.DecodeBytes(data, &income)
 				rs := modules.ContractReadSet{Key: key, Version: version}
 				payload.ReadSet = append(payload.ReadSet, rs)
+				log.DebugDynamic(func() string {
+					jsdata, _ := json.Marshal(income)
+					return "Get history reward for key:" + key + " Value:" + string(jsdata)
+				})
+			}else{
+				log.Debugf("%s Don't have history reward create it.",key)
 			}
 			newValue := addIncome(income, v.Amount, v.Asset)
 			newData, _ := rlp.EncodeToBytes(newValue)
 			log.DebugDynamic(func() string {
-				data, _ := json.Marshal(newValue)
-				return "Create coinbase write set for key:" + key + " Value:" + string(data)
+				jsdata, _ := json.Marshal(newValue)
+				return "Create coinbase write set for key:" + key + " Value:" + string(jsdata)
 			})
 			ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: newData}
 			payload.WriteSet = append(payload.WriteSet, ws)
