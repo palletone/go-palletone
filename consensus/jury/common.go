@@ -705,16 +705,16 @@ func shortId(id string) string {
 	return id[0:8]
 }
 
-func getSystemContractConfig(dag iDag, key string) int {
-	resultStr, _, err := dag.GetConfig(key)
-	if err != nil {
-		log.Debugf("getSystemContractConfig, dag.GetConfig err: %s", err.Error())
-		return 0
-	}
-	resultInt, err := strconv.Atoi(string(resultStr))
-	if err != nil {
-		log.Debugf("strconv.ParseInt err: %s", err.Error())
-		return 0
-	}
-	return resultInt
-}
+//func getSystemContractConfig(dag iDag, key string) int {
+//	resultStr, err := dag.GetConfig(key)
+//	if err != nil {
+//		log.Debugf("getSystemContractConfig, dag.GetConfig err: %s", err.Error())
+//		return 0
+//	}
+//	resultInt, err := strconv.Atoi(string(resultStr))
+//	if err != nil {
+//		log.Debugf("strconv.ParseInt err: %s", err.Error())
+//		return 0
+//	}
+//	return resultInt
+//}

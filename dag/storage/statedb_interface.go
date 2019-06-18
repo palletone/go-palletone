@@ -27,8 +27,6 @@ import (
 )
 
 type IStateDb interface {
-	GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
-	GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
 	GetPrefix(prefix []byte) map[string][]byte
 	//Contract statedb
 	SaveContract(contract *modules.Contract) error
@@ -90,12 +88,16 @@ type IStateDb interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
-
-	UpdateSysParams(ver *modules.StateVersion) error
-
-	GetPartitionChains() ([]*modules.PartitionChain, error)
-	GetMainChain() (*modules.MainChain, error)
-	GetSysParamWithoutVote() (map[string]string, error)
 	GetDataVersion() (*modules.DataVersion, error)
 	SaveDataVersion(dv *modules.DataVersion) error
+
+	//UpdateSysParams(ver *modules.StateVersion) error
+	GetPartitionChains() ([]*modules.PartitionChain, error)
+	GetMainChain() (*modules.MainChain, error)
+
+	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
+	GetSysParamWithoutVote() (map[string]string, error)
+	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
+	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
 }

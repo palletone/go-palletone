@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
@@ -98,8 +99,13 @@ func (b *LesApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*m
 func (b *LesApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return nil
 }
-func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
-	return nil, nil
+
+//func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
+//	return nil, nil
+//}
+
+func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
+	return nil
 }
 
 //func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {

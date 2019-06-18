@@ -41,7 +41,8 @@ func mockUtxoRepository() *UtxoRepository {
 	utxodb := storage.NewUtxoDb(db)
 	idxdb := storage.NewIndexDb(db)
 	statedb := storage.NewStateDb(db)
-	return NewUtxoRepository(utxodb, idxdb, statedb)
+	propDb := storage.NewPropertyDb(db)
+	return NewUtxoRepository(utxodb, idxdb, statedb, propDb)
 }
 
 func TestUpdateUtxo(t *testing.T) {

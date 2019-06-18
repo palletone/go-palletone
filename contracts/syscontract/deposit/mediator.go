@@ -22,7 +22,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
 )
 
 //  申请加入
@@ -230,17 +229,23 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error(invokeAddr.String() + "does not in the agree list")
 	}
 	//  获取保证金下线，在状态数据库中
-	depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
+	//depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
+	//if err != nil {
+	//	log.Error("get deposit amount for mediator err: ", "error", err)
+	//	return shim.Error(err.Error())
+	//}
+	////  转换保证金数量
+	//depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
+	//if err != nil {
+	//	log.Error("strconv.ParseUint err:", "error", err)
+	//	return shim.Error(err.Error())
+	//}
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		log.Error("get deposit amount for mediator err: ", "error", err)
+		//log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  转换保证金数量
-	depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
-	if err != nil {
-		log.Error("strconv.ParseUint err:", "error", err)
-		return shim.Error(err.Error())
-	}
+	depositAmountsForMediator := cp.DepositAmountForMediator
 	//  第一次交付
 	if md.Balance == 0 {
 		//  判断保证金是否足够(Mediator第一次交付必须足够)
@@ -270,13 +275,24 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//endTime, _ := time.Parse(Layout, md.LastModifyTime)
 		endTime := StrToTime(md.LastModifyTime)
 		//  获取保证金的年利率
-		depositRate, err := stub.GetSystemConfig(modules.DepositRate)
+		//depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
+		//if err != nil {
+		//	log.Error("get depositRate config err: ", "error", err)
+		//	return shim.Error(err.Error())
+		//}
+		//depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
+		//if err != nil {
+		//	log.Errorf("string to float64 error: %s", err.Error())
+		//	return shim.Error(err.Error())
+		//}
+		cp, err := stub.GetSystemConfig()
 		if err != nil {
-			log.Error("get depositRate config err: ", "error", err)
+			//log.Error("strconv.ParseUint err:", "error", err)
 			return shim.Error(err.Error())
 		}
+		depositRateFloat64 := cp.DepositRate
 		//  计算币龄收益
-		awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRate)
+		awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRateFloat64)
 		md.Balance += awards
 		//  处理数据
 	}

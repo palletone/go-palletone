@@ -23,7 +23,7 @@ if [ $index -eq 0 ] ; then
     account=${account:0:35}
     account=`echo ${account///}`
 
-    add=`echo $add | jq ".systemConfig.foundationAddress = \"$account\""`
+    add=`echo $add | jq ".initialParameters.foundationAddress = \"$account\""`
 
 fi
 

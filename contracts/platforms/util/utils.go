@@ -28,14 +28,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
-	"github.com/palletone/go-palletone/vm/dockercontroller"
-	"time"
 )
 
 //var log = flogging.MustGetLogger("util")
@@ -182,11 +182,21 @@ func DockerBuild(opts DockerBuildOptions) error {
 	// Create an ephemeral container, armed with our Env/Cmd
 	//创建一个暂时的容器用于链码编译
 	//-----------------------------------------------------------------------------------
+	dag, err := comm.GetCcDagHand()
+	if err != nil {
+		log.Debugf("load GetCcDagHand: %s", err.Error())
+	}
+	cp := dag.GetChainParameters()
+
 	hostConfig := &docker.HostConfig{
-		Memory:     dockercontroller.GetInt64FromDb("TempUccMemory"),     //1GB
-		MemorySwap: dockercontroller.GetInt64FromDb("TempUccMemorySwap"), //1GB
-		CPUShares:  dockercontroller.GetInt64FromDb("TempUccCpuShares"),
-		CPUQuota:   dockercontroller.GetInt64FromDb("TempUccCpuQuota"),
+		//Memory:     dockercontroller.GetInt64FromDb("TempUccMemory"),     //1GB
+		//MemorySwap: dockercontroller.GetInt64FromDb("TempUccMemorySwap"), //1GB
+		//CPUShares:  dockercontroller.GetInt64FromDb("TempUccCpuShares"),
+		//CPUQuota:   dockercontroller.GetInt64FromDb("TempUccCpuQuota"),
+		Memory:     cp.TempUccMemory,     //1GB
+		MemorySwap: cp.TempUccMemorySwap, //1GB
+		CPUShares:  cp.TempUccCpuShares,
+		CPUQuota:   cp.TempUccCpuQuota,
 	}
 	log.Infof("client.CreateContainer")
 	container, err := client.CreateContainer(docker.CreateContainerOptions{

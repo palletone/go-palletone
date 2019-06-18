@@ -19,7 +19,6 @@ package gen
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -139,7 +138,8 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	pkscript := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
 	asset, _ := modules.StringToAsset(genesis.GasToken)
 	txout := &modules.Output{
-		Value:    genesis.GetTokenAmount(),
+		Value: genesis.GetTokenAmount(),
+		//Value:    genesis.TokenAmount,
 		Asset:    asset,
 		PkScript: pkscript,
 	}
@@ -230,27 +230,27 @@ func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) 
 
 // DefaultGenesisBlock returns the PalletOne main net genesis block.
 func DefaultGenesisBlock() *core.Genesis {
-	SystemConfig := core.SystemConfig{
-		DepositRate:               core.DefaultDepositRate,
-		FoundationAddress:         core.DefaultFoundationAddress,
-		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
-		DepositAmountForJury:      core.DefaultDepositAmountForJury,
-		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
-		DepositPeriod:             core.DefaultDepositPeriod,
-		UccMemory:                 core.DefaultUccMemory,
-		UccMemorySwap:             core.DefaultUccMemorySwap,
-		UccCpuShares:              core.DefaultUccCpuShares,
-		UccCpuPeriod:              core.DefaultCpuPeriod,
-		UccCpuQuota:               core.DefaultUccCpuQuota,
-		UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
-		TempUccMemory:             core.DefaultTempUccMemory,
-		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
-		TempUccCpuShares:          core.DefaultTempUccCpuShares,
-		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
-		ContractSignatureNum:      core.DefaultContractSignatureNum,
-		ContractElectionNum:       core.DefaultContractElectionNum,
-		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
-	}
+	//SystemConfig := core.SystemConfig{
+	//	DepositRate:               core.DefaultDepositRate,
+	//	FoundationAddress:         core.DefaultFoundationAddress,
+	//	DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
+	//	DepositAmountForJury:      core.DefaultDepositAmountForJury,
+	//	DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
+	//	DepositPeriod:             core.DefaultDepositPeriod,
+	//	UccMemory:                 core.DefaultUccMemory,
+	//	UccMemorySwap:             core.DefaultUccMemorySwap,
+	//	UccCpuShares:              core.DefaultUccCpuShares,
+	//	UccCpuPeriod:              core.DefaultCpuPeriod,
+	//	UccCpuQuota:               core.DefaultUccCpuQuota,
+	//	UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
+	//	TempUccMemory:             core.DefaultTempUccMemory,
+	//	TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
+	//	TempUccCpuShares:          core.DefaultTempUccCpuShares,
+	//	TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+	//	ContractSignatureNum:      core.DefaultContractSignatureNum,
+	//	ContractElectionNum:       core.DefaultContractElectionNum,
+	//	ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
+	//}
 
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
@@ -263,43 +263,43 @@ func DefaultGenesisBlock() *core.Genesis {
 		Version:     configure.Version,
 		TokenAmount: core.DefaultTokenAmount,
 		//TokenDecimal:           core.DefaultTokenDecimal,
-		ParentUnitHeight:       -1,
-		ChainID:                1,
-		TokenHolder:            core.DefaultTokenHolder,
-		SystemConfig:           SystemConfig,
-		DigitalIdentityConfig:  DigitalIdentityConfig,
-		InitialParameters:      initParams,
-		ImmutableParameters:    core.NewImmutChainParams(),
-		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
-		InitialActiveMediators: core.DefaultMediatorCount,
-		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
+		ParentUnitHeight: -1,
+		ChainID:          1,
+		TokenHolder:      core.DefaultTokenHolder,
+		//SystemConfig:          SystemConfig,
+		DigitalIdentityConfig: DigitalIdentityConfig,
+		InitialParameters:     initParams,
+		ImmutableParameters:   core.NewImmutChainParams(),
+		InitialTimestamp:      InitialTimestamp(initParams.MediatorInterval),
+		//InitialActiveMediators: core.DefaultMediatorCount,
+		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultActiveMediatorCount,
 			core.DefaultMediator),
 	}
 }
 
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *core.Genesis {
-	SystemConfig := core.SystemConfig{
-		DepositRate:               core.DefaultDepositRate,
-		FoundationAddress:         core.DefaultFoundationAddress,
-		DepositAmountForJury:      core.DefaultDepositAmountForJury,
-		DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
-		DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
-		DepositPeriod:             core.DefaultDepositPeriod,
-		UccMemory:                 core.DefaultUccMemory,
-		UccMemorySwap:             core.DefaultUccMemorySwap,
-		UccCpuShares:              core.DefaultUccCpuShares,
-		UccCpuPeriod:              core.DefaultCpuPeriod,
-		UccCpuQuota:               core.DefaultUccCpuQuota,
-		UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
-		TempUccMemory:             core.DefaultTempUccMemory,
-		TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
-		TempUccCpuShares:          core.DefaultTempUccCpuShares,
-		TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
-		ContractSignatureNum:      core.DefaultContractSignatureNum,
-		ContractElectionNum:       core.DefaultContractElectionNum,
-		ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
-	}
+	//SystemConfig := core.SystemConfig{
+	//	DepositRate:               core.DefaultDepositRate,
+	//	FoundationAddress:         core.DefaultFoundationAddress,
+	//	DepositAmountForJury:      core.DefaultDepositAmountForJury,
+	//	DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
+	//	DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
+	//	DepositPeriod:             core.DefaultDepositPeriod,
+	//	UccMemory:                 core.DefaultUccMemory,
+	//	UccMemorySwap:             core.DefaultUccMemorySwap,
+	//	UccCpuShares:              core.DefaultUccCpuShares,
+	//	UccCpuPeriod:              core.DefaultCpuPeriod,
+	//	UccCpuQuota:               core.DefaultUccCpuQuota,
+	//	UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
+	//	TempUccMemory:             core.DefaultTempUccMemory,
+	//	TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
+	//	TempUccCpuShares:          core.DefaultTempUccCpuShares,
+	//	TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
+	//	ContractSignatureNum:      core.DefaultContractSignatureNum,
+	//	ContractElectionNum:       core.DefaultContractElectionNum,
+	//	ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
+	//}
 
 	DigitalIdentityConfig := core.DigitalIdentityConfig{
 		// default root ca holder, 默认是基金会地址
@@ -312,16 +312,16 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		Version:     configure.Version,
 		TokenAmount: core.DefaultTokenAmount,
 		//TokenDecimal:           core.DefaultTokenDecimal,
-		ParentUnitHeight:       -1,
-		ChainID:                1,
-		TokenHolder:            core.DefaultTokenHolder,
-		SystemConfig:           SystemConfig,
-		DigitalIdentityConfig:  DigitalIdentityConfig,
-		InitialParameters:      initParams,
-		ImmutableParameters:    core.NewImmutChainParams(),
-		InitialTimestamp:       InitialTimestamp(initParams.MediatorInterval),
-		InitialActiveMediators: core.DefaultMediatorCount,
-		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultMediatorCount,
+		ParentUnitHeight: -1,
+		ChainID:          1,
+		TokenHolder:      core.DefaultTokenHolder,
+		//SystemConfig:          SystemConfig,
+		DigitalIdentityConfig: DigitalIdentityConfig,
+		InitialParameters:     initParams,
+		ImmutableParameters:   core.NewImmutChainParams(),
+		InitialTimestamp:      InitialTimestamp(initParams.MediatorInterval),
+		//InitialActiveMediators: core.DefaultMediatorCount,
+		InitialMediatorCandidates: InitialMediatorCandidates(core.DefaultActiveMediatorCount,
 			core.DefaultMediator),
 	}
 }
