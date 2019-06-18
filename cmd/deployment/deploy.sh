@@ -71,15 +71,18 @@ function replacejson()
     jq -r . t.json >> $1
     rm t.json
 
+    add=`cat $1 | jq ".initialParameters.activeMediatorCount = $length"`
 
+: << !
     add=`cat $1 | 
-       jq "to_entries | 
-       map(if .key == \"initialActiveMediators\" 
+      jq "to_entries | 
+      map(if .key == \"initialActiveMediators\" 
           then . + {\"value\":$length} 
           else . 
           end
          ) | 
       from_entries"`
+!
 
     rm $1
     echo $add >> temp.json
