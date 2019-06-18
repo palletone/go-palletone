@@ -94,7 +94,7 @@ func TestCalculateAwardsForDepositContractNodes(t *testing.T) {
 	coinDayUint64 := GetCoinDay(10000, startTime.UTC(), endTime)
 	//币龄：4349000
 	//获取币龄收益
-	awards := CalculateAwardsForDepositContractNodes(coinDayUint64,"0.02")
+	awards := CalculateAwardsForDepositContractNodes(coinDayUint64, 0.02)
 	if awards != 2 {
 		t.Errorf("failed,want 2,but get %d", awards)
 	} else {

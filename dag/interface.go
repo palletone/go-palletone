@@ -80,8 +80,8 @@ type IDag interface {
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit() (*modules.Unit, error)
 
-	GetConfig(name string) ([]byte, *modules.StateVersion, error)
-	GetAllConfig() (map[string]*modules.ContractStateValue, error)
+	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
+	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -166,14 +166,14 @@ type IDag interface {
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
-	GetCoinYearRate() float64
+	//GetCoinYearRate() float64
 
 	RefreshAddrTxIndex() error
 	GetMinFee() (*modules.AmountAsset, error)
 
 	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	CurrentFeeSchedule() core.FeeSchedule
+	//CurrentFeeSchedule() core.FeeSchedule
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 
 	IsMediator(address common.Address) bool
@@ -185,6 +185,11 @@ type IDag interface {
 	MediatorVotedResults() map[string]uint64
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
+
+	GetChainParameters() *core.ChainParameters
+	GetImmutableChainParameters() *core.ImmutableChainParameters
+	//GetConfig(name string) ([]byte, error)
+
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
 }

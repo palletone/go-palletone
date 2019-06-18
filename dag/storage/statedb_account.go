@@ -114,7 +114,7 @@ func (statedb *StateDb) GetAccountState(address common.Address, statekey string)
 	return &modules.ContractStateValue{Value: data, Version: version}, nil
 }
 
-func (statedb *StateDb) SaveAccountState(address common.Address, write *modules.ContractWriteSet,
+func (statedb *StateDb) SaveAccountState(address common.Address, write *modules.AccountStateWriteSet,
 	version *modules.StateVersion) error {
 	key := append(accountKey(address), write.Key...)
 
@@ -152,7 +152,7 @@ func (statedb *StateDb) GetAllAccountStates(address common.Address) (map[string]
 	return result, err
 }
 
-func (statedb *StateDb) SaveAccountStates(address common.Address, writeset []modules.ContractWriteSet,
+func (statedb *StateDb) SaveAccountStates(address common.Address, writeset []modules.AccountStateWriteSet,
 	version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
 

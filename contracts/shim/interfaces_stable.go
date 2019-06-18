@@ -22,6 +22,7 @@ package shim
 import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -95,6 +96,8 @@ type ChaincodeStubInterface interface {
 	// consider data modified by PutState that has not been committed.
 	// If the key does not exist in the state database, (nil, nil) is returned.
 	GetState(key string) ([]byte, error)
+	GetGlobalState(key string) ([]byte, error)
+	GetContractState(contractAddr common.Address, key string) ([]byte, error)
 	GetStateByPrefix(prefix string) ([]*modules.KeyValue, error)
 
 	// PutState puts the specified `key` and `value` into the transaction's
@@ -105,6 +108,7 @@ type ChaincodeStubInterface interface {
 	// composite keys, which internally get prefixed with 0x00 as composite
 	// key namespace.
 	PutState(key string, value []byte) error
+	PutGlobalState(key string, value []byte) error
 
 	OutChainAddress(outChainName string, params []byte) ([]byte, error)
 	OutChainTransaction(outChainName string, params []byte) ([]byte, error)
@@ -123,6 +127,7 @@ type ChaincodeStubInterface interface {
 	// the transaction proposal. The `key` and its value will be deleted from
 	// the ledger when the transaction is validated and successfully committed.
 	DelState(key string) error
+	DelGlobalState(key string) error
 
 	// GetTxTimestamp returns the timestamp when the transaction was created. This
 	// is taken from the transaction ChannelHeader, therefore it will indicate the
@@ -136,7 +141,8 @@ type ChaincodeStubInterface interface {
 	SetEvent(name string, payload []byte) error
 
 	//获取合约的一些配置参数
-	GetSystemConfig(filed string) (value string, err error)
+	//GetSystemConfig(filed string) (value string, err error)
+	GetSystemConfig() (cp *core.ChainParameters, err error)
 	//获取支付合约的 from 地址
 	GetInvokeAddress() (invokeAddr common.Address, err error)
 	//获取支付ptn数量

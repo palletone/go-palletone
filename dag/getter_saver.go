@@ -122,14 +122,14 @@ func (d *Dag) GetMediator(add common.Address) *core.Mediator {
 	return med
 }
 
-func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
-	if !onlyStore {
-		// todo 更新缓存
-	}
-
-	d.unstableStateRep.StoreMediator(med)
-	return
-}
+//func (d *Dag) SaveMediator(med *core.Mediator, onlyStore bool) {
+//	if !onlyStore {
+//		// todo 更新缓存
+//	}
+//
+//	d.unstableStateRep.StoreMediator(med)
+//	return
+//}
 
 func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
 	return dag.unstablePropRep.GetSlotAtTime(when)
@@ -177,20 +177,46 @@ func (dag *Dag) IsMediator(address common.Address) bool {
 	return dag.unstableStateRep.IsMediator(address)
 }
 
-func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
-	return dag.GetGlobalProp().ChainParameters.CurrentFees
+//func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
+//	return dag.GetGlobalProp().ChainParameters.CurrentFees
+//}
+
+func (dag *Dag) GetChainParameters() *core.ChainParameters {
+	return dag.unstablePropRep.GetChainParameters()
 }
 
-func (dag *Dag) GetChainParameters() core.ChainParameters {
-	return dag.GetGlobalProp().ChainParameters
+func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
+	return &dag.GetGlobalProp().ImmutableParameters
 }
 
-func (dag *Dag) GetImmutableChainParameters() core.ImmutableChainParameters {
-	return dag.GetGlobalProp().ImmutableParameters
-}
+//func (d *Dag) GetConfig(name string) ([]byte, error) {
+//	chainParameters := *d.GetChainParameters()
+//	vv := reflect.ValueOf(chainParameters)
+//	//tt := reflect.TypeOf(chainParameters)
+//	//for i := 0; i < tt.NumField(); i++ {
+//	//	if tt.Field(i).Name == name {
+//	//		return []byte(vv.Field(i).String()), nil
+//	//	}
+//	//}
+//
+//	vn := vv.FieldByName(name)
+//	if vn.IsValid() {
+//		return []byte(vn.String()), nil
+//	}
+//
+//	return nil, fmt.Errorf("no such field: %v", name)
+//}
+
+//func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
+//	return d.unstableStateRep.GetConfig(name)
+//}
+
+//func (d *Dag) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
+//	return d.unstableStateRep.GetAllConfig()
+//
+//}
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-
 	unit, err := dag.unstableUnitRep.GetUnit(hash)
 
 	if err != nil {
@@ -245,5 +271,5 @@ func (d *Dag) GetActiveJuries() []common.Address {
 func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo for test
 
-	return d.unstableStateRep.IsJury(addr)
+	//return d.unstableStateRep.IsJury(addr)
 }

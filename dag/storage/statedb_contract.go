@@ -30,7 +30,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -90,12 +89,18 @@ func (statedb *StateDb) GetContractIdsByTpl(tplId []byte) ([][]byte, error) {
 
 func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
 	version *modules.StateVersion) error {
-	key := getContractStateKey(contractId, ws.Key)
+	cid := contractId
+	if ws.ContractId != nil {
+		cid = ws.ContractId
+	}
+	key := getContractStateKey(cid, ws.Key)
 	if ws.IsDelete {
 		return statedb.db.Delete(key)
 	}
-
-	return saveContractState(statedb.db, contractId, ws.Key, ws.Value, version)
+	if err := storeBytesWithVersion(statedb.db, key, version, ws.Value); err != nil {
+		return err
+	}
+	return nil
 }
 
 func getContractStateKey(id []byte, field string) []byte {
@@ -132,16 +137,16 @@ func (statedb *StateDb) SaveContractJury(contractId []byte, jury []modules.Elect
 保存合约属性信息,合约属性有CONTRACT_STATE_PREFIX+contractId+key 作为Key
 To save contract
 */
-func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, version *modules.StateVersion) error {
-	key := getContractStateKey(id, field)
-
-	log.Debugf("Try to save contract state with key:%v, version:%x", field, version.Bytes())
-	if err := storeBytesWithVersion(db, key, version, value); err != nil {
-		log.Error("Save contract state error", err.Error())
-		return err
-	}
-	return nil
-}
+//func saveContractState(db ptndb.Putter, id []byte, field string, value []byte, version *modules.StateVersion) error {
+//	key := getContractStateKey(id, field)
+//
+//	log.Debugf("Try to save contract state with key:%v, version:%x", field, version.Bytes())
+//	if err := storeBytesWithVersion(db, key, version, value); err != nil {
+//		log.Error("Save contract state error", err.Error())
+//		return err
+//	}
+//	return nil
+//}
 
 func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
@@ -150,7 +155,11 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 	//	return fmt.Sprintf("save contract(%v) StateVersion: %v", contractAddress.Str(), version.String())
 	//})
 	for _, write := range wset {
-		key := getContractStateKey(id, write.Key)
+		cid := id
+		if write.ContractId != nil {
+			cid = write.ContractId
+		}
+		key := getContractStateKey(cid, write.Key)
 		//log.Debugf("Save Contract State key: %x, string key:%s", key, string(key))
 
 		if write.IsDelete {
@@ -170,39 +179,6 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 
 	return nil
 }
-
-// Get contract key's value
-// func GetContractKeyValue(db DatabaseReader, id common.Hash, key string) (interface{}, error) {
-// 	var val interface{}
-// 	if common.EmptyHash(id) {
-// 		return nil, errors.New("the filed not defined")
-// 	}
-// 	con_bytes, err := db.Get(append(constants.CONTRACT_PREFIX, id[:]...))
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	contract := new(modules.Contract)
-// 	err = rlp.DecodeBytes(con_bytes, contract)
-// 	if err != nil {
-// 		log.Errorf("err:", err)
-// 		return nil, err
-// 	}
-// 	obj := reflect.ValueOf(contract)
-// 	myref := obj.Elem()
-// 	typeOftype := myref.Type()
-
-// 	for i := 0; i < myref.NumField(); i++ {
-// 		filed := myref.Field(i)
-// 		if typeOftype.Field(i).Name == key {
-// 			val = filed.Interface()
-// 			log.Errorf("", i, ". ", typeOftype.Field(i).Name, " ", filed.Type(), "=: ", filed.Interface())
-// 			break
-// 		} else if i == myref.NumField()-1 {
-// 			val = nil
-// 		}
-// 	}
-// 	return val, nil
-// }
 
 /**
 获取合约全部属性

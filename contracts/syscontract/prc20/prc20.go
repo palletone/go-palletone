@@ -188,7 +188,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
 	}
-
+	//TODO
+	stub.PutGlobalState("Tokens_"+assetID.String(), createJson)
 	return shim.Success(createJson)
 }
 
