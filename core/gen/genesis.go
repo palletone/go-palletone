@@ -252,11 +252,12 @@ func DefaultGenesisBlock() *core.Genesis {
 	//	ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
 	//}
 
-	DigitalIdentityConfig := core.DigitalIdentityConfig{
-		// default root ca holder, 默认是基金会地址
-		RootCAHolder: core.DefaultFoundationAddress,
-		RootCABytes:  core.DefaultRootCABytes,
-	}
+	//DigitalIdentityConfig := core.DigitalIdentityConfig{
+	//	// default root ca holder, 默认是基金会地址
+	//	RootCAHolder: core.DefaultFoundationAddress,
+	//	RootCABytes:  core.DefaultRootCABytes,
+	//}
+
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
@@ -267,7 +268,7 @@ func DefaultGenesisBlock() *core.Genesis {
 		ChainID:          1,
 		TokenHolder:      core.DefaultTokenHolder,
 		//SystemConfig:          SystemConfig,
-		DigitalIdentityConfig: DigitalIdentityConfig,
+		DigitalIdentityConfig: core.DefaultDigitalIdentityConfig(),
 		InitialParameters:     initParams,
 		ImmutableParameters:   core.NewImmutChainParams(),
 		InitialTimestamp:      InitialTimestamp(initParams.MediatorInterval),
@@ -301,11 +302,12 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 	//	ActiveMediatorCount:       strconv.FormatUint(core.DefaultMediatorCount, 10),
 	//}
 
-	DigitalIdentityConfig := core.DigitalIdentityConfig{
-		// default root ca holder, 默认是基金会地址
-		RootCAHolder: core.DefaultFoundationAddress,
-		RootCABytes:  core.DefaultRootCABytes,
-	}
+	//DigitalIdentityConfig := core.DigitalIdentityConfig{
+	//	// default root ca holder, 默认是基金会地址
+	//	RootCAHolder: core.DefaultFoundationAddress,
+	//	RootCABytes:  core.DefaultRootCABytes,
+	//}
+
 	initParams := core.NewChainParams()
 
 	return &core.Genesis{
@@ -316,7 +318,7 @@ func DefaultTestnetGenesisBlock() *core.Genesis {
 		ChainID:          1,
 		TokenHolder:      core.DefaultTokenHolder,
 		//SystemConfig:          SystemConfig,
-		DigitalIdentityConfig: DigitalIdentityConfig,
+		DigitalIdentityConfig: core.DefaultDigitalIdentityConfig(),
 		InitialParameters:     initParams,
 		ImmutableParameters:   core.NewImmutChainParams(),
 		InitialTimestamp:      InitialTimestamp(initParams.MediatorInterval),
