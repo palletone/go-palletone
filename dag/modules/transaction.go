@@ -411,7 +411,7 @@ type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]commo
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
-	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
+	//	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*PaymentPayload)
 		if !ok {
@@ -444,7 +444,7 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*A
 
 				interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
 				if interest > 0 {
-					log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
+					//	log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
 					inAmount += interest
 				}
 			}

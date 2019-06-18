@@ -37,7 +37,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
 	t0 := time.Now()
 	defer func(start time.Time) {
-		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
+		log.Infof("GenerateUnit cost time: %v", time.Since(start))
 	}(t0)
 
 	// 1. 判断是否满足生产的若干条件
