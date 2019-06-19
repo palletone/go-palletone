@@ -1354,9 +1354,9 @@ func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 	return uint64(0)
 }
 func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
-	log.Debug("===InsertLightHeader===", "numbers:", len(headers))
+	log.Debug("Dag InsertLightHeader numbers", "", len(headers))
 	for _, header := range headers {
-		log.Debug("===InsertLightHeader===", "header index:", header.Index(), "assetid", header.Number.AssetID)
+		log.Debug("Dag InsertLightHeader info", "header index:", header.Index(), "assetid", header.Number.AssetID)
 	}
 	count, err := d.InsertHeaderDag(headers)
 	//Debug code:
