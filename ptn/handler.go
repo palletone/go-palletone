@@ -506,13 +506,9 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		return err
 	}
 
-	//if err := pm.lightdownloader.RegisterLightPeer(p.id, p.version, p); err != nil {
-	//	return err
-	//}
-
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	pm.syncTransactions(p)
+	//pm.syncTransactions(p)
 
 	// main loop. handle incoming messages.
 	for {
