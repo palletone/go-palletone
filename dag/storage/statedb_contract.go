@@ -96,6 +96,7 @@ func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.Contrac
 	}
 	key := getContractStateKey(cid, ws.Key)
 	if ws.IsDelete {
+		log.Debugf("Delete contract state by key:[%s]", ws.Key)
 		return statedb.db.Delete(key)
 	}
 	if err := storeBytesWithVersion(statedb.db, key, version, ws.Value); err != nil {
@@ -165,7 +166,9 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 
 		if write.IsDelete {
 			batch.Delete(key)
+			log.Debugf("Delete contract state by key:[%s]", write.Key)
 		} else {
+			log.Debugf("Save contract state by key:[%s],value:%x", write.Key, write.Value)
 			if err := storeBytesWithVersion(batch, key, version, write.Value); err != nil {
 				return err
 			}
@@ -240,7 +243,7 @@ To get contract or contract template one field
 func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 
 	key := getContractStateKey(id, field)
-	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(),key, field)
+	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(), key, field)
 	data, version, err := retrieveWithVersion(statedb.db, key)
 	return data, version, err
 }
