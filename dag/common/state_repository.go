@@ -60,7 +60,7 @@ type IStateRepository interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
-	//UpdateSysParams(ver *modules.StateVersion) error
+
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 	//获得一个合约的陪审团列表
@@ -69,7 +69,6 @@ type IStateRepository interface {
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
 
-	//RefreshSysParameters()
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
@@ -209,10 +208,6 @@ func (rep *StateRepository) IsJury(address common.Address) bool {
 	return rep.statedb.IsInJuryCandidateList(address)
 }
 
-//func (rep *StateRepository) UpdateSysParams(ver *modules.StateVersion) error {
-//	return rep.statedb.UpdateSysParams(ver)
-//}
-
 func (rep *StateRepository) GetPartitionChains() ([]*modules.PartitionChain, error) {
 	return rep.statedb.GetPartitionChains()
 }
@@ -240,24 +235,6 @@ func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, er
 func (rep *StateRepository) GetAccountVotedMediators(addr common.Address) map[string]bool {
 	return rep.statedb.GetAccountVotedMediators(addr)
 }
-
-//func (rep *StateRepository) RefreshSysParameters() {
-//	deposit, _, _ := rep.statedb.GetSysConfig("DepositRate")
-//	depositYearRate, _ := strconv.ParseFloat(string(deposit), 64)
-//	parameter.CurrentSysParameters.DepositContractInterest = depositYearRate / 365
-//	log.Debugf("Load SysParameter DepositContractInterest value:%f",
-//		parameter.CurrentSysParameters.DepositContractInterest)
-//
-//	txCoinYearRateStr, _, _ := rep.statedb.GetSysConfig("TxCoinYearRate")
-//	txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
-//	parameter.CurrentSysParameters.TxCoinDayInterest = txCoinYearRate / 365
-//	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
-//
-//	generateUnitRewardStr, _, _ := rep.statedb.GetSysConfig("GenerateUnitReward")
-//	generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
-//	parameter.CurrentSysParameters.GenerateUnitReward = generateUnitReward
-//	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
-//}
 
 func (rep *StateRepository) GetDataVersion() (*modules.DataVersion, error) {
 	return rep.statedb.GetDataVersion()

@@ -918,7 +918,6 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 }
 
 func (d *Dag) RefreshSysParameters() {
-	//d.unstableStateRep.RefreshSysParameters()
 	d.unstableUnitProduceRep.RefreshSysParameters()
 }
 

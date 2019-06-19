@@ -358,8 +358,7 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 		Height:  nextUnit.Number(),
 		TxIndex: ^uint32(0),
 	}
-	//dag.stateRep.UpdateSysParams(version)
-	//dag.stateRep.RefreshSysParameters()
+
 	dag.UpdateSysParams(version)
 	dag.RefreshSysParameters()
 
@@ -399,7 +398,6 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
 				log.Errorf(err.Error())
-				//return err
 				continue
 			}
 		}
@@ -418,16 +416,15 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
 				log.Errorf(err.Error())
-				//return err
 				continue
 			}
 		}
 
 		//将基金会当前投票修改的重置为nil
 		err = dag.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithVote, nil, version)
-		//if err != nil {
-		//	return err
-		//}
+		if err != nil {
+			log.Errorf(err.Error())
+		}
 	}
 
 	// todo albert·gou 修改实际活跃mediator数量
