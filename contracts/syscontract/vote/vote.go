@@ -100,7 +100,7 @@ func (v *Vote) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 0, Status: 0, CreateAddr: tkInfo.CreateAddr,
-		TotalSupply: tkInfo.TotalSupply, SupplyAddr: tkInfo.SupplyAddr, AssetID: tkInfo.AssetID}
+		TotalSupply: tkInfo.TotalSupply, SupplyAddr: "", AssetID: tkInfo.AssetID}
 	val, err := json.Marshal(gTkInfo)
 	if err != nil {
 		return err

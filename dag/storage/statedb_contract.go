@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"reflect"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -237,7 +238,9 @@ func (statedb *StateDb) GetContractStatesByPrefix(id []byte, prefix string) (map
 To get contract or contract template one field
 */
 func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
+
 	key := getContractStateKey(id, field)
+	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(),key, field)
 	data, version, err := retrieveWithVersion(statedb.db, key)
 	return data, version, err
 }
