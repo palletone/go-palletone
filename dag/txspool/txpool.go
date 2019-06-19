@@ -1035,7 +1035,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
-						if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
+						if addrs, err := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, tokenengine.GetAddressFromScript); err == nil {
 							for _, addr := range addrs {
 								addr1 := addr.String()
 								txs[addr1] = append(txs[addr1], tx)
