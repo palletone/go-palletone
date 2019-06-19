@@ -28,6 +28,7 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"sync"
 	"time"
 
 	"bytes"
@@ -1090,50 +1091,66 @@ func (a *Addition) Key() string {
 	return hex.EncodeToString(b)
 }
 
-type SequeueTxPoolTxs []*TxPoolTransaction
+type SequeueTxPoolTxs struct {
+	seqtxs []*TxPoolTransaction
+	mu     sync.RWMutex
+}
 
 // add
+func (seqTxs *SequeueTxPoolTxs) Len() int {
+	seqTxs.mu.RLock()
+	defer seqTxs.mu.RUnlock()
+	return len((*seqTxs).seqtxs)
+}
 func (seqTxs *SequeueTxPoolTxs) Add(newPoolTx *TxPoolTransaction) {
-	*seqTxs = append(*seqTxs, newPoolTx)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 }
 
 // add priority
 func (seqTxs *SequeueTxPoolTxs) AddPriority(newPoolTx *TxPoolTransaction) {
-	if len(*seqTxs) == 0 {
-		*seqTxs = append(*seqTxs, newPoolTx)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	if seqTxs.Len() == 0 {
+		(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 	} else {
 		added := false
-		for i, item := range *seqTxs {
+		for i, item := range (*seqTxs).seqtxs {
 			if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
-				*seqTxs = append((*seqTxs)[:i], append(SequeueTxPoolTxs{newPoolTx}, (*seqTxs)[i:]...)...)
+				(*seqTxs).seqtxs = append((*seqTxs).seqtxs[:i], append([]*TxPoolTransaction{newPoolTx}, (*seqTxs).seqtxs[i:]...)...)
 				added = true
 				break
 			}
 		}
 		if !added {
-			*seqTxs = append(*seqTxs, newPoolTx)
+			(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 		}
 	}
 }
 
 // get
 func (seqTxs *SequeueTxPoolTxs) Get() *TxPoolTransaction {
-	if len(*seqTxs) <= 0 {
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	if seqTxs.Len() <= 0 {
 		return nil
 	}
-	if len(*seqTxs) == 1 {
-		first := (*seqTxs)[0]
-		*seqTxs = make([]*TxPoolTransaction, 0)
+	if seqTxs.Len() == 1 {
+		first := (*seqTxs).seqtxs[0]
+		(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
 		return first
 	}
-	first, rest := (*seqTxs)[0], (*seqTxs)[1:]
-	*seqTxs = rest
+	first, rest := (*seqTxs).seqtxs[0], (*seqTxs).seqtxs[1:]
+	(*seqTxs).seqtxs = rest
 	return first
 }
 
 // get all
 func (seqTxs *SequeueTxPoolTxs) All() []*TxPoolTransaction {
-	items := (*seqTxs)[:]
-	*seqTxs = make([]*TxPoolTransaction, 0)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	items := (*seqTxs).seqtxs[:]
+	(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
 	return items
 }

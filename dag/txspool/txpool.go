@@ -343,6 +343,7 @@ func (pool *TxPool) stats() (int, int, int) {
 	p_count, q_count := 0, 0
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
+	seq_txs := pool.sequenTxs.All()
 	for _, tx := range poolTxs {
 		if tx.Pending {
 			p_count++
@@ -352,6 +353,11 @@ func (pool *TxPool) stats() (int, int, int) {
 		}
 	}
 	for _, tx := range orphanTxs {
+		if !tx.Pending {
+			q_count++
+		}
+	}
+	for _, tx := range seq_txs {
 		if !tx.Pending {
 			q_count++
 		}
@@ -1167,6 +1173,7 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	}
 	tx := inter.(*modules.TxPoolTransaction)
 	pool.all.Delete(hash)
+	pool.orphans.Delete(hash)
 	pool.priority_sorted.Removed()
 
 	if tx != nil {
@@ -1629,11 +1636,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	t0 := time.Now()
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
-
 	// get sequenTxs
 	stxs := pool.GetSequenTxs()
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
@@ -1655,18 +1659,18 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			break
 		} else {
 			if !tx.Pending {
-				if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
-					continue
-				}
+				//if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
+				//	continue
+				//}
 				// add precusorTxs 获取该交易的前驱交易列表
 				p_txs, _ := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
-				if len(p_txs) > 0 {
-					for _, ptx := range p_txs {
-						if has, _ := pool.unit.IsTransactionExist(ptx.Tx.Hash()); !has {
-							list = append(list, ptx)
-							total += ptx.Tx.Size()
-						}
-					}
+				for _, ptx := range p_txs {
+					//if has, _ := pool.unit.IsTransactionExist(ptx.Tx.Hash()); !has {
+					//	list = append(list, ptx)
+					//	total += ptx.Tx.Size()
+					//}
+					list = append(list, ptx)
+					total += ptx.Tx.Size()
 				}
 				list = append(list, tx)
 				total += tx.Tx.Size()
@@ -1683,6 +1687,9 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	if len(or_list) > 1 {
 		sort.Sort(or_list)
 	}
+	// pool rlock
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
 	for _, tx := range or_list {
 		txhash := tx.Tx.Hash()
 		if has, _ := pool.unit.IsTransactionExist(txhash); has {
@@ -1716,10 +1723,15 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		m[hash] = tx
 	}
 	list = make([]*modules.TxPoolTransaction, 0)
+
 	for i := 0; i < len(indexL); i++ {
 		t_hash, _ := indexL[i]
 		if tx, has := m[t_hash]; has {
 			delete(m, t_hash)
+			if has, _ := pool.unit.IsTransactionExist(t_hash); has {
+				go pool.DeleteTxByHash(t_hash)
+				continue
+			}
 			list = append(list, tx)
 			go pool.promoteTx(hash, tx, index, uint64(i))
 		}
@@ -1766,15 +1778,7 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs, orpha
 	}
 	return pretxs, nil
 }
-
-//func (pool *TxPool) GetSequenTx() *modules.TxPoolTransaction {
-//	pool.mu.Lock()
-//	defer pool.mu.Unlock()
-//	return pool.sequenTxs.Get()
-//}
 func (pool *TxPool) GetSequenTxs() []*modules.TxPoolTransaction {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
 	return pool.getSequenTxs()
 }
 func (pool *TxPool) getSequenTxs() []*modules.TxPoolTransaction {
