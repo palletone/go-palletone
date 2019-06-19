@@ -310,9 +310,15 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	//symbol
 	symbol := strings.ToUpper(args[0])
 	//check name is exist or not
-	tkInfo := getSymbols(stub, symbol)
-	if tkInfo == nil {
+	gTkInfo := getGlobal(stub, symbol)
+	if gTkInfo == nil {
 		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//check status
+	if gTkInfo.Status != 0 {
+		jsonResp := "{\"Error\":\"Status is frozen\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -326,18 +332,29 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error(jsonResp)
 	}
 	//check supply address
-	if invokeAddr.String() != tkInfo.SupplyAddr {
+	if invokeAddr.String() != gTkInfo.SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//set supply address
-	tkInfo.SupplyAddr = newSupplyAddr
-	err = setSymbols(stub, tkInfo)
+	gTkInfo.SupplyAddr = newSupplyAddr
+
+	info := TokenInfo{gTkInfo.Symbol, gTkInfo.CreateAddr, gTkInfo.TotalSupply, uint64(gTkInfo.AssetID.GetDecimal()),
+		gTkInfo.SupplyAddr, gTkInfo.AssetID}
+
+	err = setSymbols(stub, &info)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
 		return shim.Error(jsonResp)
 	}
+
+	err = setGlobal(stub, &info)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return shim.Error(jsonResp)
+	}
+
 	return shim.Success([]byte(""))
 }
 

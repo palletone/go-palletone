@@ -7,6 +7,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
@@ -92,6 +93,23 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	// Decode the complex header query
 	log.Debug("===Enter Light GetBlockHeadersMsg===")
 	defer log.Debug("===End Ligth GetBlockHeadersMsg===")
+
+	access := false
+	if pcs, err := pm.dag.GetPartitionChains(); err == nil {
+		for _, pc := range pcs {
+			for _, pr := range pc.Peers {
+				if node, err := discover.ParseNode(pr); err == nil {
+					if node.ID.String() == p.id {
+						access = true
+					}
+				}
+			}
+		}
+	}
+	if !access {
+		log.Error("Cors ProtocolManager GetBlockHeadersMsg do not access", "p.id", p.id)
+		return errResp(ErrRequestRejected, "%v: %v", msg, "forbidden access")
+	}
 
 	var query getBlockHeadersData
 	if err := msg.Decode(&query); err != nil {

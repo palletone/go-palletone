@@ -109,22 +109,6 @@ func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	return err
 }
 
-func getGlobal(stub shim.ChaincodeStubInterface, symbol string) *dm.GlobalTokenInfo {
-	//
-	gTkInfo := dm.GlobalTokenInfo{}
-	tkInfoBytes, _ := stub.GetGlobalState(dm.GlobalPrefix + symbol)
-	if len(tkInfoBytes) == 0 {
-		return nil
-	}
-	//
-	err := json.Unmarshal(tkInfoBytes, &gTkInfo)
-	if err != nil {
-		return nil
-	}
-
-	return &gTkInfo
-}
-
 func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	val, err := json.Marshal(tkInfo)
 	if err != nil {
