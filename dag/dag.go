@@ -270,16 +270,18 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-
+		t1 := time.Now()
 		timestamp := time.Unix(u.Timestamp(), 0)
-		log.Debugf("InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
+		log.Debugf("Start InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
 		if err := d.Memdag.AddUnit(u, txpool); err != nil {
 			//return count, err
+			log.Errorf("Memdag addUnit[%s] error:%s", u.UnitHash.String(), err.Error())
 			return count, nil
 		}
+		log.Infof("InsertDag[%s] spent time:%s", u.UnitHash.String(), time.Since(t1))
 		count += 1
 	}
 
@@ -918,7 +920,6 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 }
 
 func (d *Dag) RefreshSysParameters() {
-	//d.unstableStateRep.RefreshSysParameters()
 	d.unstableUnitProduceRep.RefreshSysParameters()
 }
 

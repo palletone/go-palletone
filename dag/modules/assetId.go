@@ -175,7 +175,7 @@ func SetIdTypeByHex(id string) (AssetId, error) {
 	copy(id_type[0:], bytes)
 	return id_type, nil
 }
-func (assetId *AssetId) MarshalJSON() ([]byte, error) {
+func (assetId AssetId) MarshalJSON() ([]byte, error) {
 	return json.Marshal(assetId.String())
 }
 func (assetId *AssetId) UnmarshalJSON(data []byte) error {
