@@ -78,13 +78,13 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
-        if !fee.GreaterThanOrEqual(decimal.New(1, 0)){
+	if !fee.GreaterThanOrEqual(decimal.New(1, 0)) {
 		return "", fmt.Errorf("fee cannot less than 1 PTN ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
-        if daoAmount <= 100000000{
-            return "", fmt.Errorf("amount cannot less than 1 dao ")
-        }
+	if daoAmount <= 100000000 {
+		return "", fmt.Errorf("amount cannot less than 1 dao ")
+	}
 	utxos, _ := convertUtxoMap2Utxos(allutxos)
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
 	if err != nil {
@@ -259,7 +259,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	//	// some validity checks.
 	//	//only support mainnet
 	//	var params *chaincfg.Params
-        var ppscript []byte
+	var ppscript []byte
 	for _, addramt := range c.Amounts {
 		encodedAddr := addramt.Address
 		ptnAmt := addramt.Amount
@@ -292,7 +292,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		}
 		// Create a new script which pays to the provided address.
 		pkScript := tokenengine.GenerateLockScript(addr)
-                ppscript = pkScript
+		ppscript = pkScript
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
 		if err != nil {
@@ -1184,6 +1184,36 @@ func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid string) (s
 func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash string) (string, error) {
 	result, err := s.getFileInfo(filehash)
 	return result, err
+}
+
+func (s *PublicWalletAPI) GetOneTokenInfo(ctx context.Context, symbol string) (string, error) {
+	GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	fmt.Println(modules.GlobalPrefix + strings.ToUpper(symbol))
+	result, _, err := s.b.GetContractState(GlobalStateContractId, modules.GlobalPrefix+strings.ToUpper(symbol))
+	return string(result), err
+}
+
+func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
+	GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	result, err := s.b.GetContractStatesByPrefix(GlobalStateContractId, modules.GlobalPrefix)
+	if nil == result || nil != err {
+		return err.Error(), err
+	}
+	var all []modules.GlobalTokenInfo
+	for key, val := range result {
+		fmt.Println(key, val.Value)
+		var oneToken modules.GlobalTokenInfo
+		err := json.Unmarshal(val.Value, &oneToken)
+		if nil == err {
+			all = append(all, oneToken)
+		}
+	}
+	allToken, err := json.Marshal(all)
+	if nil != err {
+		return err.Error(), err
+	}
+
+	return string(allToken), err
 }
 
 //contract command
