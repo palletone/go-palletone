@@ -76,7 +76,7 @@ matrix:
         - netstat -ap | grep gptn
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
           cd ../dct;
-          ./deposit_test.sh 5;
+          ./deposit_test.sh 4;
           fi
 
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
@@ -131,6 +131,7 @@ matrix:
       script:
         - make gptn
         - cd ./cmd/deployment
+        - rm node* -rf
         - chmod +x ./deploy.sh
         - chmod +x ./start.sh
         - ./deploy.sh 3
@@ -192,6 +193,7 @@ after_script:
       "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
     fi
 
+
 before_install:
   - go get github.com/mattn/goveralls
   - go get -u github.com/palletone/adaptor
@@ -216,11 +218,6 @@ install:
 addons:
   apt:
     update: true
-
-# deploy:
-#   skip_cleanup: true
-#    provider:
-#    all_branches: true
 
 notifications:
   email:
