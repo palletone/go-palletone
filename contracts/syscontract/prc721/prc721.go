@@ -494,6 +494,18 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	//symbol
 	symbol := strings.ToUpper(args[0])
 	//check name is exist or not
+	gTkInfo := getGlobal(stub, symbol)
+	if gTkInfo == nil {
+		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//check status
+	if gTkInfo.Status != 0 {
+		jsonResp := "{\"Error\":\"Status is frozen\"}"
+		return shim.Error(jsonResp)
+	}
+
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
 		jsonResp := "{\"Error\":\"Token not exist\"}"
@@ -522,6 +534,13 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
 		return shim.Error(jsonResp)
 	}
+
+	err = setGlobal(stub, tkInfo)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return shim.Error(jsonResp)
+	}
+
 	return shim.Success([]byte(""))
 }
 
