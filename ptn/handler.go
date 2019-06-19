@@ -273,6 +273,8 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		return dagerrors.ErrFutureBlock
 	}
 	heighter := func(assetId modules.AssetId) uint64 {
+		log.Debug("Enter PalletOne Fetcher heighter")
+		defer log.Debug("End PalletOne Fetcher heighter")
 		unit := pm.dag.GetCurrentUnit(assetId)
 		if unit != nil {
 			return unit.NumberU64()

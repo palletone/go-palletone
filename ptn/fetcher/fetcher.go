@@ -207,6 +207,8 @@ func (f *Fetcher) Notify(peer string, hash common.Hash, number *modules.ChainInd
 
 // Enqueue tries to fill gaps the the fetcher's future import queue.
 func (f *Fetcher) Enqueue(peer string, unit *modules.Unit) error {
+	log.Debug("Enter PalletOne Fetcher Enqueue", "unit hash", unit.Hash())
+	defer log.Debug("End PalletOne Fetcher Enqueue", "unit hash", unit.Hash())
 	op := &inject{
 		origin: peer,
 		unit:   unit,
@@ -610,6 +612,8 @@ func (f *Fetcher) rescheduleComplete(complete *time.Timer) {
 // enqueue schedules a new future import operation, if the block to be imported
 // has not yet been seen.
 func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
+	log.Debug("Enter PalletOne Fetcher enqueue", "unit hash", block.Hash())
+	defer log.Debug("End PalletOne Fetcher enqueue", "unit hash", block.Hash())
 	hash := block.Hash()
 	// Ensure the peer isn't DOSing us
 	count := f.queues[peer] + 1
