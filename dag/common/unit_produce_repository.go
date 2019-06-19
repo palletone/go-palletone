@@ -395,6 +395,10 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	modifies, err := dag.stateRep.GetSysParamWithoutVote()
 	if err == nil {
 		for k, v := range modifies {
+			if k == modules.DesiredActiveMediatorCount {
+				continue // 已更新，不需要处理
+			}
+
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
 				log.Errorf(err.Error())
@@ -413,6 +417,10 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	infos := dag.getSysParamsWithVote()
 	if len(infos) > 0 {
 		for k, v := range infos {
+			if k == modules.DesiredActiveMediatorCount {
+				continue // 已更新，不需要处理
+			}
+
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
 				log.Errorf(err.Error())
@@ -426,8 +434,6 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 			log.Errorf(err.Error())
 		}
 	}
-
-	// todo albert·gou 修改实际活跃mediator数量
 
 	err = dag.propRep.StoreGlobalProp(gp)
 	if err != nil {
@@ -546,6 +552,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
 	gp.PrecedingMediators = gp.ActiveMediators
 	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
+	gp.ChainParameters.ActiveMediatorCount = uint8(mediatorCount)
 	for index := 0; index < mediatorCount; index++ {
 		voteTally := dag.mediatorVoteTally[index]
 		gp.ActiveMediators[voteTally.candidate] = true

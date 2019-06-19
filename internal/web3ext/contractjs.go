@@ -109,12 +109,12 @@ web3._extend({
 			inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-			name: 'depositContractInvoke',
+			name: 'sysConfigContractInvoke',
         	call: 'contract_sysConfigContractInvoke',
         	params: 5, // from, to, daoAmount, daoFee, param[]string
 		}),
 		new web3._extend.Method({
-			name: 'depositContractQuery',
+			name: 'sysConfigContractQuery',
         	call: 'contract_sysConfigContractQuery',
         	params: 1, // param[]string
 		}),
