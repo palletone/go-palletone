@@ -33,109 +33,112 @@ env:
     - IS_RUN_USER_CONTRACT=false
     - RUN_GO1.10.8=false
     - RUN_GO1.11=false
-    - RUN_GO1.12.5=true
+    - RUN_GO1.12.5=false
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
+os: linux
+dist: xenial
+go: 1.12.5
 
-matrix:
-  include:
-    - os: linux
-      if: env(RUN_GO1.10.8) = true
-      dist: xenial
-      go: 1.10.8
-      script:
-        - go build ./cmd/gptn
-        - make gptn
-        - $GOPATH/bin/goveralls -service=travis-ci
-
-    - os: linux
-      if: env(RUN_GO1.11) = true
-      dist: xenial
-      go: 1.11
-      script:
-        - go build ./cmd/gptn
-        - make gptn
-        - $GOPATH/bin/goveralls -service=travis-ci
-
-    - os: linux
-      if: env(RUN_GO1.12.5) = true
-      dist: xenial
-      go: 1.12.5
-      script:
-        - go build ./cmd/gptn
-        - make gptn
-        - cp gptn bdd/node
-        - mkdir bdd/GasToken/node
-        - mkdir bdd/mediator-vote/node
-        - cp gptn bdd/GasToken/node
-        - cp gptn bdd/mediator-vote/node
-        - cd bdd/node
-        - chmod +x gptn
-        - python init.py
-        - nohup ./gptn &
-        - sleep 15
-        - netstat -ap | grep gptn
-        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-          cd ../dct;
-          ./deposit_test.sh 4;
-          fi
-
-        - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
-          cd ../contract/testcases;
-          chmod +x ./test_start.sh;
-          ./test_start.sh;
-          fi
-        # into bdd path, all testcases is here
-        - cd ${BASE_DIR}/bdd
-        - mkdir -p ${BDD_LOG_PATH}
-        - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
-          fi
-
-        - if [ $IS_RUN_20CONTRACT == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
-          fi
-
-        - if [ $IS_RUN_721CONTRACT == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT721_DIR} -i normal ./testcase/crt721Contract;
-          fi
-
-        - if [ $IS_RUN_VOTE == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;
-          fi
-
-        - if [ $IS_RUN_DIGITAL == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
-          fi
-
-        - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-          cd ./GasToken;
-          chmod +x ./init_gas_token.sh;
-          ./init_gas_token.sh;
-          sleep 15;
-          python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
-          fi
-
-        - if [ $IS_RUN_MEDIATOR_VOTE == 'true' ]; then
-          cd ../mediator-vote;
-          chmod +x ./init.sh;
-          ./init.sh;
-          sleep 15;
-          python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
-          fi
-
-    - os: linux
-      if: env(IS_RUN_USER_CONTRACT) = true
-      dist: xenial
-      go: 1.12.5
-      services: docker
-      script:
-        - make gptn
-        - cd ./cmd/deployment
-        - rm node* -rf
-        - chmod +x ./deploy.sh
-        - chmod +x ./start.sh
-        - ./deploy.sh 3
-        - ./start.sh 3
+#matrix:
+#  include:
+#    - os: linux
+#      if: env(RUN_GO1.10.8) = true
+#      dist: xenial
+#      go: 1.10.8
+#      script:
+#        - go build ./cmd/gptn
+#        - make gptn
+#        - $GOPATH/bin/goveralls -service=travis-ci
+#
+#    - os: linux
+#      if: env(RUN_GO1.11) = true
+#      dist: xenial
+#      go: 1.11
+#      script:
+#        - go build ./cmd/gptn
+#        - make gptn
+#        - $GOPATH/bin/goveralls -service=travis-ci
+#
+#    - os: linux
+#      if: env(RUN_GO1.12.5) = true
+#      dist: xenial
+#      go: 1.12.5
+#      script:
+#        - go build ./cmd/gptn
+#        - make gptn
+#        - cp gptn bdd/node
+#        - mkdir bdd/GasToken/node
+#        - mkdir bdd/mediator-vote/node
+#        - cp gptn bdd/GasToken/node
+#        - cp gptn bdd/mediator-vote/node
+#        - cd bdd/node
+#        - chmod +x gptn
+#        - python init.py
+#        - nohup ./gptn &
+#        - sleep 15
+#        - netstat -ap | grep gptn
+#        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+#          cd ../dct;
+#          ./deposit_test.sh 4;
+#          fi
+#
+#        - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
+#          cd ../contract/testcases;
+#          chmod +x ./test_start.sh;
+#          ./test_start.sh;
+#          fi
+#        # into bdd path, all testcases is here
+#        - cd ${BASE_DIR}/bdd
+#        - mkdir -p ${BDD_LOG_PATH}
+#        - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
+#          python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
+#          fi
+#
+#        - if [ $IS_RUN_20CONTRACT == 'true' ]; then
+#          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
+#          fi
+#
+#        - if [ $IS_RUN_721CONTRACT == 'true' ]; then
+#          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT721_DIR} -i normal ./testcase/crt721Contract;
+#          fi
+#
+#        - if [ $IS_RUN_VOTE == 'true' ]; then
+#          python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;
+#          fi
+#
+#        - if [ $IS_RUN_DIGITAL == 'true' ]; then
+#          python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
+#          fi
+#
+#        - if [ $IS_RUN_GASTOKEN == 'true' ]; then
+#          cd ./GasToken;
+#          chmod +x ./init_gas_token.sh;
+#          ./init_gas_token.sh;
+#          sleep 15;
+#          python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
+#          fi
+#
+#        - if [ $IS_RUN_MEDIATOR_VOTE == 'true' ]; then
+#          cd ../mediator-vote;
+#          chmod +x ./init.sh;
+#          ./init.sh;
+#          sleep 15;
+#          python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
+#          fi
+#
+#    - os: linux
+#      if: env(IS_RUN_USER_CONTRACT) = true
+#      dist: xenial
+#      go: 1.12.5
+#      services: docker
+#      script:
+#        - make gptn
+#        - cd ./cmd/deployment
+#        - rm node* -rf
+#        - chmod +x ./deploy.sh
+#        - chmod +x ./start.sh
+#        - ./deploy.sh 3
+#        - ./start.sh 3
 
 after_script:
   - killall gptn
@@ -145,7 +148,7 @@ after_script:
       # uplaod all log
       curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://39.105.191.26/pub/ -T ${ALL_LOG_PATH} -v;
       pwd;
-      bdd/upload2Ftp.sh ${CERT} ${PASSWORD} ${ALL_LOG_PATH};
+      bdd/upload2Ftp.sh ${CERT} ${PASSWORD} /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/upload2Ftp.sh;
 
       # upload deposit log
       if [ $IS_RUN_DEPOSIT == 'true' ]; then
@@ -197,25 +200,25 @@ after_script:
   - echo "done travis"
 
 
-before_install:
-  - go get github.com/mattn/goveralls
-  - go get -u github.com/palletone/adaptor
-  - go get -u github.com/palletone/btc-adaptor
-  - go get -u github.com/palletone/eth-adaptor
-  - source ./build/goget_by_version.sh
-  - source ./gomockgen.sh
+#before_install:
+#  - go get github.com/mattn/goveralls
+#  - go get -u github.com/palletone/adaptor
+#  - go get -u github.com/palletone/btc-adaptor
+#  - go get -u github.com/palletone/eth-adaptor
+#  - source ./build/goget_by_version.sh
+#  - source ./gomockgen.sh
 
 install:
-  - python -V
-  - whereis python
-  - which python
-  - sudo -H pip install --upgrade pip
-  - sudo -H pip install robotframework==2.8.5
-  - sudo -H pip install requests
-  - sudo -H pip install robotframework-requests
-  - sudo -H pip install demjson
-  - sudo -H pip install pexpect
-  - sudo -H apt-get install expect
+#  - python -V
+#  - whereis python
+#  - which python
+#  - sudo -H pip install --upgrade pip
+#  - sudo -H pip install robotframework==2.8.5
+#  - sudo -H pip install requests
+#  - sudo -H pip install robotframework-requests
+#  - sudo -H pip install demjson
+#  - sudo -H pip install pexpect
+#  - sudo -H apt-get install expect
   - sudo -H apt-get install lftp
   - chmod +x bdd/upload2Ftp.sh
   #- sudo -H apt-get install jq tcl tk
