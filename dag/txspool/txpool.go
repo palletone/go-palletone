@@ -316,7 +316,7 @@ func (pool *TxPool) loop() {
 			}
 			// delete tx
 		case <-deleteTxTimer.C:
-			go pool.DeleteTx()
+			pool.DeleteTx()
 
 			// quit
 		case <-orphanExpireScan.C:
@@ -1167,6 +1167,7 @@ func (pool *TxPool) DeleteTx() error {
 }
 
 func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
+
 	inter, has := pool.all.Load(hash)
 	if !has {
 		return errors.New(fmt.Sprintf("the tx(%s) isn't exist in pool.", hash.String()))
@@ -1185,14 +1186,14 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 						if input.PreviousOutPoint == nil {
 							continue
 						}
-						go pool.outpoints.Delete(*input.PreviousOutPoint)
+						pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 					// delete outputs's utxo
 					preout := modules.OutPoint{TxHash: hash}
 					for j := range payment.Outputs {
 						preout.MessageIndex = uint32(i)
 						preout.OutIndex = uint32(j)
-						go pool.deleteOrphanTxOutputs(preout)
+						pool.deleteOrphanTxOutputs(preout)
 					}
 				}
 			}
@@ -1225,7 +1226,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 				for _, input := range payment.Inputs {
 					// 排除手续费的输入为nil
 					if input.PreviousOutPoint != nil {
-						go pool.outpoints.Delete(*input.PreviousOutPoint)
+						pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 				}
 				// delete outputs's utxo
@@ -1273,7 +1274,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 					for _, input := range msg.Inputs {
-						go pool.outpoints.Delete(*input.PreviousOutPoint)
+						pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 				}
 			}
@@ -1285,9 +1286,9 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 }
 func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
 	if interTx, has := pool.all.Load(hash); has {
-		go pool.removeTransaction(interTx.(*modules.TxPoolTransaction), removeRedeemers)
+		pool.removeTransaction(interTx.(*modules.TxPoolTransaction), removeRedeemers)
 	} else {
-		go pool.removeTx(hash)
+		pool.removeTx(hash)
 	}
 }
 
@@ -1303,7 +1304,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 			for _, input := range inputs.Inputs {
 				if tx, ok := pool.outpoints.Load(*input.PreviousOutPoint); ok {
 					ptx := tx.(*modules.TxPoolTransaction)
-					go pool.removeTransaction(ptx, true)
+					pool.removeTransaction(ptx, true)
 				}
 			}
 		}
@@ -1693,7 +1694,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	for _, tx := range or_list {
 		txhash := tx.Tx.Hash()
 		if has, _ := pool.unit.IsTransactionExist(txhash); has {
-			go pool.orphans.Delete(txhash)
+			pool.orphans.Delete(txhash)
 			continue
 		}
 		ok, err := pool.ValidateOrphanTx(tx.Tx)
@@ -1702,8 +1703,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			tx.Pending = true
 			tx.UnitHash = hash
 			tx.UnitIndex = index
-			go pool.all.Store(txhash, tx)
-			go pool.orphans.Delete(txhash)
+			pool.all.Store(txhash, tx)
+			pool.orphans.Delete(txhash)
 			//pool.orphans.Store(tx.Tx.Hash(), tx)
 			list = append(list, tx)
 			total += tx.Tx.Size()
@@ -1729,7 +1730,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		if tx, has := m[t_hash]; has {
 			delete(m, t_hash)
 			if has, _ := pool.unit.IsTransactionExist(t_hash); has {
-				go pool.DeleteTxByHash(t_hash)
+				pool.DeleteTxByHash(t_hash)
 				continue
 			}
 			list = append(list, tx)
