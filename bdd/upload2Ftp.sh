@@ -5,7 +5,9 @@ USER=$1
 PASS=$2
 LCD=$3
 RCD=pub
-
+echo $USER
+echo $PASS
+echo $LCD
 lftp -u $USER,$PASS $HOST << EOF
 cd $RCD
 put $LCD
