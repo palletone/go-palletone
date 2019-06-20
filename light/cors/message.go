@@ -99,7 +99,8 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		for _, pc := range pcs {
 			for _, pr := range pc.Peers {
 				if node, err := discover.ParseNode(pr); err == nil {
-					if node.ID.String() == p.id {
+					log.Debug("Cors ProtocolManager GetBlockHeadersMsg", "node.ID.String()", node.ID.String())
+					if node.ID.TerminalString() == p.id {
 						access = true
 					}
 				}
