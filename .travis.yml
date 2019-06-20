@@ -142,6 +142,9 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
+        - # upload all logs
+        - cd ${BASE_DIR}
+        - ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} ${ALL_LOG_PATH} all.log;
       install:
         # - python -V
         # - whereis python
@@ -153,6 +156,8 @@ matrix:
         - sudo -H pip install demjson
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
         #- sudo -H apt-get install jq tcl tk
 
   #  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
