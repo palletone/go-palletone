@@ -302,6 +302,13 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		return nil, fmt.Errorf(jsonResp)
 	}
 
+	//add global state
+	err = setGlobal(stub, &info)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return nil, fmt.Errorf(jsonResp)
+	}
+
 	return createJson, nil //test
 }
 
@@ -479,6 +486,17 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 //	jsonResp := "{\"" + args[0] + "\":\"" + string(val) + "\"}"
 //	return []byte(jsonResp), nil
 //}
+
+func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
+	gTkInfo := modules.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 4, Status: 0, CreateAddr: tkInfo.CreateAddr,
+		TotalSupply: tkInfo.TotalSupply, SupplyAddr: "", AssetID: tkInfo.AssetID}
+	val, err := json.Marshal(gTkInfo)
+	if err != nil {
+		return err
+	}
+	err = stub.PutGlobalState(modules.GlobalPrefix+gTkInfo.Symbol, val)
+	return err
+}
 
 func getSymbols(stub shim.ChaincodeStubInterface) *SysTokenInfo {
 	//

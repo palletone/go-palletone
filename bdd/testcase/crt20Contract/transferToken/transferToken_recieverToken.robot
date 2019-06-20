@@ -31,7 +31,7 @@ Request normal CcinvokePass
     [Return]    ${ret}
 
 Request getbalance after create token
-    sleep    3
+    sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     sleep    4
     ${key}    getTokenId    ${preTokenId}    ${result2['result']}
@@ -45,5 +45,6 @@ Assert gain
     sleep    4
     ${item1}    Evaluate    ${item}+${gain}
     ${RecPTN2}    ${RecResult2}    normalGetBalance    ${recieverAdd}
+	sleep    5
     ${item2}    Get From Dictionary    ${RecResult2['result']}    ${key}
     Should Be Equal As Numbers    ${item2}    ${item1}

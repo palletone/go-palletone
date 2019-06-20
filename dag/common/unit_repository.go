@@ -603,14 +603,37 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 	return nil
 }
 
+type tempTxs struct {
+	txs []*modules.Transaction
+	rep IUtxoRepository
+}
+
+func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
+	for _, tx := range txs.txs {
+		utxos := tx.GetNewUtxos()
+		for o, u := range utxos {
+			allUtxo[o] = u
+		}
+	}
+	if utxo, ok := allUtxo[*outpoint]; ok {
+		return utxo, nil
+	}
+	return txs.rep.GetUtxoEntry(outpoint)
+}
 func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
+	txs2 := []*modules.Transaction{}
+	for _, tx := range txs {
+		txs2 = append(txs2, tx.Tx)
+	}
+	tempTxs := &tempTxs{txs: txs2, rep: rep.utxoRepository}
 	for _, tx := range txs {
 		if tx.Tx == nil || tx.TxFee == nil {
 			continue
 		}
-		allowcate, err := tx.Tx.GetTxFeeAllocate(rep.utxoRepository.GetUtxoEntry, time.Now().Unix(), tokenengine.GetScriptSigners, m)
+		allowcate, err := tx.Tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, time.Now().Unix(), tokenengine.GetScriptSigners, m)
 		if err != nil {
 			return nil, err
 		}
@@ -904,6 +927,8 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-3)
 	}
 	// step2. traverse transactions and save them
+	// tempTxs := &tempTxs{txs: unit.Txs, rep: rep.utxoRepository}
+
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		err := rep.saveTx4Unit(unit, txIndex, tx)
@@ -1392,8 +1417,8 @@ func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*module
 					jsdata, _ := json.Marshal(income)
 					return "Get history reward for key:" + key + " Value:" + string(jsdata)
 				})
-			}else{
-				log.Debugf("%s Don't have history reward create it.",key)
+			} else {
+				log.Debugf("%s Don't have history reward create it.", key)
 			}
 			newValue := addIncome(income, v.Amount, v.Asset)
 			newData, _ := rlp.EncodeToBytes(newValue)

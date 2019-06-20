@@ -36,7 +36,7 @@ Request normal CcinvokePass
     [Return]    ${ret}
 
 Calculate gain
-	sleep    3
+    sleep    3
     ${PTNGAIN}    Evaluate    ${PTNAmount}+${PTNPoundage}
     ${PTNGAIN}    countRecieverPTN    ${PTNGAIN}
     [Return]    ${PTNGAIN}
@@ -48,9 +48,9 @@ Request getbalance after create token
     \    log    ${key}
     ${count}    evaluate    int(pow(10,-${tokenDecimal})*${tokenAmount})
     #log    ${result2['result']}
-	sleep    1
+    sleep    1
     ${item}    getTokenId    ${preTokenId}    ${result2['result']}
-	sleep    3
+    sleep    3
     ${key}    Get From Dictionary    ${result2['result']}    ${item}
     [Return]    ${count}    ${key}
 

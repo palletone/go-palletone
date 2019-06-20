@@ -101,6 +101,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 		}
 
 		for outPoint, utxo := range tx.GetNewUtxos() {
+			log.Debugf("Add tx utxo for key:%s", outPoint.String())
 			unitUtxo.Store(outPoint, utxo)
 		}
 		//newUtxoQuery.unitUtxo = unitUtxo

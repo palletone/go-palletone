@@ -32,9 +32,9 @@ CcinvokePass normal
 
 Request getbalance before create token
     ${result1}    getBalance    ${geneAdd}
-    sleep    4
+    sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result1}
-    sleep    1
+    sleep    2
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     sleep    1
     ${coinToken1}    Get From Dictionary    ${result1}    ${key}
@@ -50,13 +50,13 @@ Create token of vote contract
 Calculate gain of recieverAdd
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${GAIN}    countRecieverPTN    ${invokeGain}
-    sleep    3
+    sleep    4
     [Return]    ${GAIN}
 
 Request getbalance after create token
     [Arguments]    ${geneAdd}    ${key}    ${GAIN}
     ${result2}    getBalance    ${geneAdd}
-    sleep    4
+    sleep    5
     ${coinToken2}    Get From Dictionary    ${result2}    ${key}
     sleep    1
     ${PTN2}    Get From Dictionary    ${result2}    PTN
