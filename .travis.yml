@@ -223,9 +223,9 @@ install:
   - chmod +x bdd/upload2Ftp.sh
   #- sudo -H apt-get install jq tcl tk
 
-#addons:
-#  apt:
-#    update: true
+addons:
+  apt:
+    update: true
 
 notifications:
   email:
