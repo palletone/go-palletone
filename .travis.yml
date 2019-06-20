@@ -136,8 +136,6 @@ matrix:
         - chmod +x ./start.sh
         - ./deploy.sh 3
         - ./start.sh 3
-        - cd ../../
-        - chmod +x bdd/upload2Ftp.sh
 
 after_script:
   - killall gptn
@@ -218,6 +216,7 @@ install:
   - sudo -H pip install pexpect
   - sudo -H apt-get install expect
   - sudo -H apt-get install lftp
+  - chmod +x bdd/upload2Ftp.sh
   #- sudo -H apt-get install jq tcl tk
 
 addons:
