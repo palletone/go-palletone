@@ -28,6 +28,7 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"sync"
 	"time"
 
 	"bytes"
@@ -412,7 +413,7 @@ type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]commo
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
-	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
+	//	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*PaymentPayload)
 		if !ok {
@@ -445,7 +446,7 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*A
 
 				interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
 				if interest > 0 {
-					log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
+					//	log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
 					inAmount += interest
 				}
 			}
@@ -688,6 +689,22 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 		result = append(result, k)
 	}
 	return result, nil
+}
+
+//获取该交易的发起人地址
+func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (common.Address, error) {
+	msg0 := tx.TxMessages[0]
+	if msg0.App != APP_PAYMENT {
+		return common.Address{}, errors.New("Coinbase or Invalid Tx, first message must be a payment")
+	}
+	pay := msg0.Payload.(*PaymentPayload)
+
+	utxo, err := queryUtxoFunc(pay.Inputs[0].PreviousOutPoint)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return getAddrFunc(utxo.PkScript)
+
 }
 
 type Addition struct {
@@ -1116,50 +1133,66 @@ func (a *Addition) Key() string {
 	return hex.EncodeToString(b)
 }
 
-type SequeueTxPoolTxs []*TxPoolTransaction
+type SequeueTxPoolTxs struct {
+	seqtxs []*TxPoolTransaction
+	mu     sync.RWMutex
+}
 
 // add
+func (seqTxs *SequeueTxPoolTxs) Len() int {
+	seqTxs.mu.RLock()
+	defer seqTxs.mu.RUnlock()
+	return len((*seqTxs).seqtxs)
+}
 func (seqTxs *SequeueTxPoolTxs) Add(newPoolTx *TxPoolTransaction) {
-	*seqTxs = append(*seqTxs, newPoolTx)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 }
 
 // add priority
 func (seqTxs *SequeueTxPoolTxs) AddPriority(newPoolTx *TxPoolTransaction) {
-	if len(*seqTxs) == 0 {
-		*seqTxs = append(*seqTxs, newPoolTx)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	if seqTxs.Len() == 0 {
+		(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 	} else {
 		added := false
-		for i, item := range *seqTxs {
+		for i, item := range (*seqTxs).seqtxs {
 			if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
-				*seqTxs = append((*seqTxs)[:i], append(SequeueTxPoolTxs{newPoolTx}, (*seqTxs)[i:]...)...)
+				(*seqTxs).seqtxs = append((*seqTxs).seqtxs[:i], append([]*TxPoolTransaction{newPoolTx}, (*seqTxs).seqtxs[i:]...)...)
 				added = true
 				break
 			}
 		}
 		if !added {
-			*seqTxs = append(*seqTxs, newPoolTx)
+			(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 		}
 	}
 }
 
 // get
 func (seqTxs *SequeueTxPoolTxs) Get() *TxPoolTransaction {
-	if len(*seqTxs) <= 0 {
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	if seqTxs.Len() <= 0 {
 		return nil
 	}
-	if len(*seqTxs) == 1 {
-		first := (*seqTxs)[0]
-		*seqTxs = make([]*TxPoolTransaction, 0)
+	if seqTxs.Len() == 1 {
+		first := (*seqTxs).seqtxs[0]
+		(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
 		return first
 	}
-	first, rest := (*seqTxs)[0], (*seqTxs)[1:]
-	*seqTxs = rest
+	first, rest := (*seqTxs).seqtxs[0], (*seqTxs).seqtxs[1:]
+	(*seqTxs).seqtxs = rest
 	return first
 }
 
 // get all
 func (seqTxs *SequeueTxPoolTxs) All() []*TxPoolTransaction {
-	items := (*seqTxs)[:]
-	*seqTxs = make([]*TxPoolTransaction, 0)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	items := (*seqTxs).seqtxs[:]
+	(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
 	return items
 }

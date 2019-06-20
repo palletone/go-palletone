@@ -128,18 +128,26 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 	return &PrivateMediatorAPI{mp}
 }
 
-func (a *PrivateMediatorAPI) StartProduce() {
+func (a *PrivateMediatorAPI) StartProduce() bool {
 	if !a.producingEnabled {
 		a.producingEnabled = true
 		go a.ScheduleProductionLoop()
+
+		return true
 	}
+
+	return false
 }
 
-func (a *PrivateMediatorAPI) StopProduce() {
+func (a *PrivateMediatorAPI) StopProduce() bool {
 	if a.producingEnabled {
 		a.producingEnabled = false
 		go func() {
 			a.stopProduce <- struct{}{}
 		}()
+
+		return true
 	}
+
+	return false
 }

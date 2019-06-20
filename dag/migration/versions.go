@@ -32,7 +32,8 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 	/* version: 0615 end*/
 
 	/* version: 1.0.0-beta */
-
+	m_100_beta := NewNothingMigration("1.0.0-beta", "1.0.1-beta")
+	migrations[m_100_beta.FromVersion()] = m_100_beta
 	/* version: 1.0.0-beta end */
 	return migrations
 }

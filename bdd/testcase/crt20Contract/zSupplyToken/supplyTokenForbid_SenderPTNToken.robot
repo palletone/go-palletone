@@ -53,7 +53,7 @@ Create token of vote contract
     [Return]    ${ret}
 
 Calculate gain of recieverAdd
-	sleep    2
+    sleep    2
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${GAIN}    countRecieverPTN    ${invokeGain}
     sleep    3
@@ -74,7 +74,7 @@ Assert gain of reciever
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}
     Should Be Equal As Numbers    ${coinToken1}    ${coinToken2}
-	sleep    1
+    sleep    1
     ${result}    getTxByReqId    ${ret}
     ${jsonRes}    Evaluate    demjson.encode(${result})    demjson
     #${jsonRes}    To Json    ${jsonRes}

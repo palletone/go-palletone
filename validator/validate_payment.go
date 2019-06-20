@@ -21,6 +21,7 @@
 package validator
 
 import (
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -62,6 +63,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			log.Debugf("msgIdx %d, GetResultTx 1", msgIdx)
 		}
 
+		statusValid := false
 		for inputIdx, in := range payment.Inputs {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
@@ -89,6 +91,17 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 				//input asset must be same
 				if !asset.IsSimilar(utxo.Asset) {
 					return TxValidationCode_INVALID_ASSET
+				}
+			}
+
+			//check token status
+			if msgIdx != 0 {
+				if !statusValid {
+					ret := validate.checkTokenStatus(asset)
+					if TxValidationCode_VALID != ret {
+						return ret
+					}
+					statusValid = true
 				}
 			}
 			totalInput += utxo.Amount
@@ -157,6 +170,24 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	}
 	return TxValidationCode_VALID
 }
+
+func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode {
+	globalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	result, _, err := validate.statequery.GetContractState(globalStateContractId, modules.GlobalPrefix+asset.AssetId.GetSymbol())
+	if nil != err {
+		return TxValidationCode_INVALID_ASSET
+	}
+	var tokenInfo modules.GlobalTokenInfo
+	err = json.Unmarshal(result, &tokenInfo)
+	if nil != err {
+		return TxValidationCode_INVALID_ASSET
+	}
+	if tokenInfo.Status != 0 {
+		return TxValidationCode_INVALID_TOKEN_STATUS
+	}
+	return TxValidationCode_VALID
+}
+
 func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
 	count := len(jury)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))

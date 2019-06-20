@@ -89,13 +89,13 @@ matrix:
           python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
           fi
 
-        - if [ $IS_RUN_20CONTRACT == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
-          fi
+        #- if [ $IS_RUN_20CONTRACT == 'true' ]; then
+        #  python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
+        #  fi
             
-        - if [ $IS_RUN_721CONTRACT == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT721_DIR} -i normal ./testcase/crt721Contract;
-          fi
+        #- if [ $IS_RUN_721CONTRACT == 'true' ]; then
+        #  python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT721_DIR} -i normal ./testcase/crt721Contract;
+        #  fi
             
         - if [ $IS_RUN_VOTE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;

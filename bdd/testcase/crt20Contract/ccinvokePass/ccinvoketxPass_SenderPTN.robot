@@ -36,7 +36,7 @@ Request normal CcinvokePass
     [Return]    ${ret}
 
 Calculate gain
-	sleep    3
+    sleep    3
     ${PTNGAIN}    Evaluate    ${PTNAmount}+${PTNPoundage}
     ${PTNGAIN}    countRecieverPTN    ${PTNGAIN}
     [Return]    ${PTNGAIN}
