@@ -37,7 +37,8 @@ var DefaultConfig = Config{
 	HTTPVirtualHosts: []string{"localhost"},
 	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
-	WSModules:        []string{"net", "web3", "dag", "mediator", "contract"},
+	WSModules:        []string{"net", "web3", "dag"},
+	WSExposeAll:      false,
 }
 
 // DefaultDataDir is the default data directory to use for the databases and other
