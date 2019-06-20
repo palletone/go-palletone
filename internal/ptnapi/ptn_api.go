@@ -132,13 +132,13 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr st
 	return result, err
 }
 
-//func (s *PublicBlockChainAPI) ListSysConfig(ctx context.Context) ([]*ptnjson.ConfigJson, error) {
-//
-//	result, err := s.b.GetAllSysConfig()
-//	return result, err
-//}
+func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {
+	cp := s.b.GetChainParameters()
 
-func (s *PublicBlockChainAPI) ListSysConfig() (*core.ChainParameters, error) {
+	return ptnjson.ConvertAllSysConfigToJson(cp), nil
+}
+
+func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error) {
 	return s.b.GetChainParameters(), nil
 }
 
