@@ -428,7 +428,7 @@ func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, t
 	param []string) (string, error) {
 	log.Info("---enter SysConfigContractInvoke---")
 
-	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(),
+	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.SysConfigContractAddress.String(),
 		param, "", "0")
 
 	return rsp.ReqId, err
