@@ -31,7 +31,7 @@ env:
     - GO111MODULE=on
     - IS_UPLOAD=true
     - IS_RUN_USER_CONTRACT=true
-    - RUN_GO1.10.8=false
+    - RUN_GO1.10.8=true
     - RUN_GO1.11=false
     - RUN_GO1.12.5=false
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
