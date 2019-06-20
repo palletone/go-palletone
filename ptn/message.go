@@ -370,9 +370,14 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		log.Debugf(errStr)
 		return fmt.Errorf(errStr)
 	}
-	for _, tx := range unit.Txs {
-		log.Debug("NewBlockMsg", "unit hash", unit.UnitHash.String(), "txReq", tx.RequestHash().String(), "tx", tx.Hash().String())
-	}
+	log.DebugDynamic(func() string {
+		txids := []common.Hash{}
+		for _, tx := range unit.Txs {
+			txids = append(txids, tx.Hash())
+		}
+		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.UnitHash.String(), txids)
+	})
+
 	rwset.Init()
 	var temptxs modules.Transactions
 	index := 0
