@@ -9,6 +9,7 @@ echo $USER
 echo $PASS
 echo $LCD
 lftp -u $USER,$PASS $HOST << EOF
+echo "this is a test"
 cd $RCD
 put $LCD
 EOF
