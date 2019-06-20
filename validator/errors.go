@@ -61,6 +61,7 @@ const (
 	TxValidationCode_INVALID_CONTRACT             ValidationCode = 33
 	TxValidationCode_INVALID_DATAPAYLOAD          ValidationCode = 34
 	TxValidationCode_INVALID_DOUBLE_SPEND         ValidationCode = 35
+	TxValidationCode_INVALID_TOKEN_STATUS         ValidationCode = 36
 	TxValidationCode_ORPHAN                       ValidationCode = 998
 	TxValidationCode_NOT_COMPARE_SIZE             ValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON         ValidationCode = 256
