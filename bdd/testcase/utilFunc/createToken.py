@@ -7,9 +7,10 @@ import string
 from time import sleep
 
 class createToken(object):
-
+    #host = 'http://192.168.0.128:8545/'
+    host = 'http://localhost:8545/'
     def __init__(self):
-        self.domain = 'http://localhost:8545/'
+        self.domain = createToken.host
         self.headers = {'Content-Type':'application/json'}
         self.tempToken = ''
         self.tempValue = ''
@@ -18,7 +19,7 @@ class createToken(object):
     def runTest(self):
         pass
 
-    def getBalance(self,address):
+    def getBalance(self,address,domain=host):
         data = {
             "jsonrpc": "2.0",
             "method": "ptn_getBalance",
@@ -26,7 +27,8 @@ class createToken(object):
             "id": 1
         }
         data = json.dumps(data)
-        response = requests.post(url=self.domain, data=data, headers=self.headers)
+        print "Current URL:"+domain
+        response = requests.post(url=domain, data=data, headers=self.headers)
         result1 = json.loads(response.content)
         try:
             result =result1['result']
@@ -52,6 +54,8 @@ class createToken(object):
             if key.startswith(nickname):
                 self.tempToken = key
         return self.tempToken
+
+
 
     def getTokenStarts(self, nickname, dict):
         for key in dict.keys():
@@ -210,13 +214,13 @@ class createToken(object):
         result1 = json.loads(response.content)
         return result1
 
-    def ccqueryVoteResult(self,result,CreateAddr,AssetID):
-        #result = "{\"IsVoteEnd\":false,\"CreateAddr\":\"P14432ABS64C2qDxJSqs4xQ9ZdXL2Zc46a7\",\"TotalSupply\":2000,\"SupportResults\":[{\"TopicIndex\":1,\"TopicTitle\":\"vote your love blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn0\",\"Num\":1},{\"SelectOption\":\"btc0\",\"Num\":0},{\"SelectOption\":\"eth0\",\"Num\":0},{\"SelectOption\":\"eos0\",\"Num\":0}]},{\"TopicIndex\":2,\"TopicTitle\":\"vote your hate blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn1\",\"Num\":2},{\"SelectOption\":\"btc1\",\"Num\":2},{\"SelectOption\":\"eth1\",\"Num\":0},{\"SelectOption\":\"eos1\",\"Num\":0}]}],\"AssetID\":\"VOTE+0GF8VT5B9G1IAT6QRRX\"}"
+    def ccqueryVoteResult(self,result,CreateAddr,AssetID,TokenAmount):
         result = json.loads(result)
-        expectList = [2000,
+        expectList = [
+                      int(TokenAmount),
                       AssetID,
                       False,
-                      [{u'VoteResults': [{u'Num': 1, u'SelectOption': u'ptn0'}, {u'Num': 0, u'SelectOption': u'btc0'}, {u'Num': 0, u'SelectOption': u'eth0'}, {u'Num': 0, u'SelectOption': u'eos0'}], u'TopicIndex': 1, u'TopicTitle': u'vote your love blockchain'}, {u'VoteResults': [{u'Num': 2, u'SelectOption': u'ptn1'}, {u'Num': 2, u'SelectOption': u'btc1'}, {u'Num': 0, u'SelectOption': u'eth1'}, {u'Num': 0, u'SelectOption': u'eos1'}], u'TopicIndex': 2, u'TopicTitle': u'vote your hate blockchain'}],
+                      [{u'VoteResults': [{u'Num': 1, u'SelectOption': u'ptn0'}, {u'Num': 0, u'SelectOption': u'btc0'}, {u'Num': 0, u'SelectOption': u'eth0'}, {u'Num': 0, u'SelectOption': u'eos0'}], u'TopicIndex': 1, u'TopicTitle': u'vote your love blockchain'}, {u'VoteResults': [{u'Num': 1, u'SelectOption': u'ptn1'}, {u'Num': 1, u'SelectOption': u'btc1'}, {u'Num': 0, u'SelectOption': u'eth1'}, {u'Num': 0, u'SelectOption': u'eos1'}], u'TopicIndex': 2, u'TopicTitle': u'vote your hate blockchain'}],
                       CreateAddr
                       ]
         keyList = []
@@ -227,16 +231,16 @@ class createToken(object):
             keyList.append(key)
             valueList.append(result[key])
         print valueList
-        for n in range(len(expectList)):
-            self.assertDict(result,keyList,expectList,n)
+        for k in range(len(expectList)):
+            self.assertDict(result,keyList,expectList,k)
         return result
 
-    def assertDict(self,result,keyList,expectList,n):
-        keyword = keyList[n]
+    def assertDict(self,result,keyList,expectList,key):
+        keyword = keyList[key]
         try:
-            assert result[keyword] == expectList[n]
+            assert result[keyword] == expectList[key]
         except AssertionError:
-            print keyword+" wrong: Actual is "+str(result[keyword])+".Expect is "+str(expectList[n])
+            print keyword+" false: Actual is "+str(result[keyword])+".Expect is "+str(expectList[key])
 
     def voteExist(self,voteId,dict):
         data = json.dumps(dict)
@@ -259,10 +263,21 @@ class createToken(object):
         else:
             return keysList[0]
 
+    def getTokenIdByNum(self, nickname, dict, num=1):
+        num=int(num)
+        calculate = 0
+        for key in dict.keys():
+            if key.startswith(nickname):
+                calculate = calculate + 1
+                if calculate==num:
+                    print key
+                    return key
+
 if __name__ == '__main__':
     pass
-    #dict = '{"Symbol":"CA001","CreateAddr":"P1LQ8dg9EWWnZMp8dfCTAHJic1F55awfrGt","TokenType":1,"TotalSupply":10,"SupplyAddr":"P1LQ8dg9EWWnZMp8dfCTAHJic1F55awfrGt","AssetID":"CA001+09P56EF11ID5BRZ80W9","TokenIDs":["1","10","2","3","4","5","6","7","8","9"]}'
-    #voteId = "VOTE+0G7N1MFOXE1DYRHFXUP"
-    #dict = {"id":1,"jsonrpc":"2.0","result":{"PTN":"0.00003","VOTE+0G7N1MFOXE1DYRHFXUP":"1000"}}
-    #createToken().jsonLoads(dict,'AssetID','TokenIDs')
-    #createToken().ccinvokePass()
+    #createToken().assertDict()
+    #dict = "{\"IsVoteEnd\":false,\"CreateAddr\":\"P1D4GXUcrcT7tAhMPvTxTQk7vQQSJkiad54\",\"TotalSupply\":60000,\"SupportResults\":[{\"TopicIndex\":1,\"TopicTitle\":\"vote your love blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn0\",\"Num\":1},{\"SelectOption\":\"btc0\",\"Num\":0},{\"SelectOption\":\"eth0\",\"Num\":0},{\"SelectOption\":\"eos0\",\"Num\":0}]},{\"TopicIndex\":2,\"TopicTitle\":\"vote your hate blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn1\",\"Num\":1},{\"SelectOption\":\"btc1\",\"Num\":1},{\"SelectOption\":\"eth1\",\"Num\":0},{\"SelectOption\":\"eos1\",\"Num\":0}]}],\"AssetID\":\"VOTE+0GWEXZZNEM91F1MJL3X\"}"
+    #data = createToken().ccqueryVoteResult(dict,CreateAddr='P1D4GXUcrcT7tAhMPvTxTQk7vQQSJkiad54',AssetID='VOTE+0GWEXZZNEM91F1MJL3X',TokenAmount=60000)
+    dict = '{"VOTE+0GB77ABWKPPOPZW3TVP": "8000", "PTN": "16000.002241", "VOTE+0GEXCOMQDBK5XK9W7XF": "60000", "VOTE+0GK301J75JEKVBJTAS4": "60000"}'
+    dict = json.loads(dict)
+    data = createToken().getTokenIdByNum('VOTE', dict,3)

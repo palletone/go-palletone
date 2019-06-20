@@ -24,7 +24,7 @@ Get genesis address
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    3
+    sleep    2
 
 Transfer token of vote contract
     ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
@@ -39,12 +39,10 @@ Transfer token of vote contract
     [Return]    ${ret}
 
 Request getbalance before create token
-    sleep    3
+    sleep    4
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     sleep    5
     ${key}    getTokenId    ${voteId}    ${result1['result']}
-	sleep    2
-    #${PTN1}    Get From Dictionary    ${result1['result']}    PTN
     ${item1}    Get From Dictionary    ${result1['result']}    ${key}
     [Return]    ${PTN1}    ${result1}    ${item1}    ${key}
 
@@ -54,7 +52,7 @@ Request transfer token
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}
-	sleep    4
+    sleep    4
     ${item'}    Evaluate    ${item1}-${PTNAmount}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNPoundage}')    decimal
     sleep    2
@@ -63,8 +61,7 @@ Calculate gain of recieverAdd
 Request getbalance after create token
     [Arguments]    ${key}
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
-    sleep    4
-    #${PTN2}    Get From Dictionary    ${result2['result']}    PTN
+    sleep    5
     ${item2}    Get From Dictionary    ${result2['result']}    ${key}
     [Return]    ${PTN2}    ${item2}
 

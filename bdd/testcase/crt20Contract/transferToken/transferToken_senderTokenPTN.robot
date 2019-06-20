@@ -11,8 +11,8 @@ ${preTokenId}     QA055
 ${result_code}    [a-z0-9]{64}
 
 *** Test Cases ***
-transferToken_senderTokenPTN
-    [Documentation]    ${preTokenId} must be a new one
+Scenario: 20Contract - Transfer Token
+    [Documentation]    verify sender's PTN and token
     [Tags]    normal
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}

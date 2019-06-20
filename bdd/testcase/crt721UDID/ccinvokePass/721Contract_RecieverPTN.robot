@@ -7,32 +7,29 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${preTokenId}     CA071
+${preTokenId}     CA080
 
 *** Test Cases ***
 Feature: 721 Contract - Create token
-    [Documentation]    Scenario: Verify Sender's PTN
-    Given Get genesis address
-    ${PTN1}    ${result1}    And Request getbalance before create token
+    [Documentation]    Scenario: Verify Reciever's PTN
+    ${PTN1}    ${result1}    Given Request getbalance before create token
     ${ret}    When Create token of vote contract
-    ${GAIN}    And Calculate gain of recieverAdd    ${PTN1}
+    ${PTNGAIN}    And Calculate gain of recieverAdd    ${PTN1}
     ${PTN2}    ${result2}    And Request getbalance after create token
-    Then Assert gain of reciever    ${PTN1}    ${PTN2}    ${GAIN}
+    Then Assert gain of reciever    ${PTN2}    ${PTNGAIN}
 
 *** Keywords ***
-Get genesis address
+Request getbalance before create token
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    3
-
-Request getbalance before create token
-    ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
+    sleep    2
+    ${PTN1}    ${result1}    normalGetBalance    ${recieverAdd}
     sleep    5
     [Return]    ${PTN1}    ${result1}
 
 Create token of vote contract
-    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
+    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${UDIDToken}    ${721TokenAmount}
     ...    ${721MetaBefore}    ${geneAdd}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
@@ -42,17 +39,17 @@ Create token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
-    ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
-    ${GAIN}    countRecieverPTN    ${invokeGain}
     sleep    4
-    [Return]    ${GAIN}
+    ${gain1}    countRecieverPTN    ${PTNAmount}
+    ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${gain1}')    decimal
+    sleep    4
+    [Return]    ${PTNGAIN}
 
 Request getbalance after create token
-    ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
-    sleep    5
+    ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
+    sleep    4
     [Return]    ${PTN2}    ${result2}
 
 Assert gain of reciever
-    [Arguments]    ${PTN1}    ${PTN2}    ${GAIN}
-    ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
+    [Arguments]    ${PTN2}    ${PTNGAIN}
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}

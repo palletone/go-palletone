@@ -34,7 +34,7 @@ Send the new address PTN
     ${ret1}    And normalCrtTrans    ${geneAdd}    ${reciever}    100000    ${PTNPoundage}
     ${ret2}    And normalSignTrans    ${ret1}    ${signType}    ${pwd}
     ${ret3}    And normalSendTrans    ${ret2}
-    sleep    3
+
 
 CcinvokePass normal
     ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
@@ -96,9 +96,8 @@ Supply token of 721 contract after change supply
     [Return]    ${jsonRes['result']}
 
 Request getbalance after change supply
-    sleep    10
     ${PTN3}    ${result3}    normalGetBalance    ${reciever}
-    sleep    7
+    sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result3['result']}
     log    ${key}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}
@@ -125,6 +124,7 @@ Genesis address supply token of 721 contract
     [Return]    ${jsonRes['result']}
 
 Request getbalance after genesis supply token
+    sleep    4
     ${PTN4}    ${result4}    normalGetBalance    ${geneAdd}
     sleep    4
     ${key}    getTokenId    ${preTokenId}    ${result4['result']}
@@ -134,4 +134,5 @@ Request getbalance after genesis supply token
     log    len(${countList})
     ${len}    Evaluate    len(${countList})+1
     Should Not Contain    ${result4['result']}    ${tokenCommonId}-11
+    sleep    3
     [Return]    ${PTN4}

@@ -34,9 +34,9 @@ CcinvokePass normal
     ...    ${721MetaBefore}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    sleep    4
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
+    sleep    4
     [Return]    ${jsonRes['result']}
 
 Request getbalance before create token
@@ -56,6 +56,7 @@ Spply token of 721 contract
 
 Calculate gain
     [Arguments]    ${PTN1}
+    sleep    3
     ${GAIN}    countRecieverPTN    ${PTNPoundage}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
     sleep    2
@@ -64,7 +65,7 @@ Calculate gain
 Request getbalance after transfer token
     #normalCcqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
     ${PTN2}    ${result2}    normalGetBalance    ${reciever}
-    sleep    4
+    sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result2['result']}
     log    ${key}
     #${queryResult}    ccqueryById    ${721ContractId}    ${existToken}    ${key}

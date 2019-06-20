@@ -45,6 +45,6 @@ Assert gain
     sleep    4
     ${item1}    Evaluate    ${item}+${gain}
     ${RecPTN2}    ${RecResult2}    normalGetBalance    ${recieverAdd}
-	sleep    5
+    sleep    5
     ${item2}    Get From Dictionary    ${RecResult2['result']}    ${key}
     Should Be Equal As Numbers    ${item2}    ${item1}

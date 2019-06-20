@@ -20,16 +20,54 @@
 
 package ptnjson
 
-//type ConfigJson struct {
-//	Key      string `json:"key"`
-//	Value    string `json:"value"`
-//	ValueHex string `json:"value_hex"`
-//}
+import (
+	"fmt"
+	"github.com/palletone/go-palletone/core"
+	"reflect"
+	"strconv"
+)
 
-//func ConvertAllSysConfigToJson(configs map[string]*modules.ContractStateValue) []*ConfigJson {
-//	result := []*ConfigJson{}
-//	for k, v := range configs {
-//		result = append(result, &ConfigJson{Key: k, Value: string(v.Value), ValueHex: hexutil.Encode(v.Value)})
-//	}
-//	return result
-//}
+type ConfigJson struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+	//ValueHex string `json:"value_hex"`
+}
+
+func ConvertAllSysConfigToJson(configs *core.ChainParameters) []*ConfigJson {
+	result := make([]*ConfigJson, 0)
+
+	tt := reflect.TypeOf(*configs)
+	vv := reflect.ValueOf(*configs)
+	for i := 0; i < vv.NumField(); i++ {
+		if i == 0 {
+			st := tt.Field(i).Type
+			sv := vv.Field(i)
+			for j := 0; j < st.NumField(); j++ {
+				result = append(result, &ConfigJson{Key: st.Field(j).Name, Value: toString(sv.Field(j))})
+			}
+		}
+
+		result = append(result, &ConfigJson{Key: tt.Field(i).Name, Value: toString(vv.Field(i))})
+	}
+
+	return result
+}
+
+func toString(v reflect.Value) string {
+	switch v.Kind() {
+	case reflect.Invalid:
+		return "invalid field"
+	case reflect.Int, reflect.Int8, reflect.Int16,
+		reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(v.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16,
+		reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return strconv.FormatUint(v.Uint(), 10)
+	case reflect.Float64, reflect.Float32:
+		return strconv.FormatFloat(v.Float(), 'f', -1, 64)
+	case reflect.String:
+		return v.String()
+	default:
+		return fmt.Sprintf("unexpected type: %v", v.Type().String())
+	}
+}

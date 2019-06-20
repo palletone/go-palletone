@@ -2,11 +2,17 @@
 Library           RequestsLibrary
 Library           Collections
 Library           /usr/lib/python2.7/decimal.py
-#Library           D:/Python2.7/Lib/decimal.py
 
 *** Variables ***
-# settings
-${host}           http://localhost:8545/
+#settings
+${port1}    8545
+${port2}    8565
+${port3}    8575
+#${domain}    192.168.0.128
+${host}        http://localhost:${port1}/
+#${host}         http://${domain}:${port1}/
+#${mutiHost1}    http://${domain}:${port2}/
+#${mutiHost2}    http://${domain}:${port3}/
 ${id}    ${1}
 
 # methods
@@ -41,17 +47,19 @@ ${signType}    ALL
 ${PTNAmount}     4000
 ${PTNPoundage}     1
 ${tokenDecimal}    1
-${tokenAmount}    55000
+${tokenAmount}    60000
 ${supplyTokenAmount}    1500000000
 ${note}    evidence
 ${voteId}    VOTE
 ${voteTime}    2023-12-31 20:00:00
 ${commonVoteInfo}    [{\"TopicTitle\":\"vote your love blockchain\",\"SelectOptions\":[\"ptn0\",\"btc0\",\"eth0\",\"eos0\"],\"SelectMax\":1},{\"TopicTitle\":\"vote your hate blockchain\",\"SelectOptions\":[\"ptn1\",\"btc1\",\"eth1\",\"eos1\"],\"SelectMax\":2}]
 ${destructionAdd}    P1111111111111111111114oLvT2
-${supportInfo}    ["support", "[{\"TopicIndex\":1,\"SelectIndexs\":[1]},{\"TopicIndex\":2,\"SelectIndexs\":[1,2]}]"]
+${supportSection}    [{\"TopicIndex\":1,\"SelectIndexs\":[1]},{\"TopicIndex\":2,\"SelectIndexs\":[1,2]}]
 ${721MetaBefore}    [{\"TokenID\":\"\",\"MetaData\":\"metadata1\"},{\"TokenID\":\"\",\"MetaData\":\"metadata2\"},{\"TokenID\":\"\",\"MetaData\":\"metadata3\"},{\"TokenID\":\"\",\"MetaData\":\"metadata4\"},{\"TokenID\":\"\",\"MetaData\":\"metadata5\"}]
 ${721MetaAfter}    [{\"TokenID\":\"\",\"MetaData\":\"metadata6\"},{\"TokenID\":\"\",\"MetaData\":\"metadata7\"},{\"TokenID\":\"\",\"MetaData\":\"metadata8\"},{\"TokenID\":\"\",\"MetaData\":\"metadata9\"},{\"TokenID\":\"\",\"MetaData\":\"metadata10\"}]
 ${amount}         2000
+${votePTN}        1000
+${voteAmount}    2
 ${gain}    2
 ${pwd}            1
 ${duration}       ${600000000}
