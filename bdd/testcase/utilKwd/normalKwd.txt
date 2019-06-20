@@ -1,0 +1,112 @@
+*** Keywords ***
+Request create transaction
+    [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
+    ${transList}    Create List    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
+    ${resp}    setPostRequest    ${host}    ptn_cmdCreateTransaction    ${transList}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    Should Contain    ${jsonRes['jsonrpc']}    2.0    msg="jsonrpc:failed"
+    Should Contain    str(${jsonRes['id']})    1    msg="id:failed"
+    #${ret}    Should Match Regexp    ${jsonRes['result']}    ${result_code}    msg="result:does't match Result expression"
+    [Return]    ${jsonRes}
+
+Request sign transaction
+    [Arguments]    ${crtRet}    ${signType}    ${pwd}
+    ${transList}    Create List    ${crtRet}    ${signType}    ${pwd}
+    ${resp}    setPostRequest    ${host}    ptn_signRawTransaction    ${transList}
+    #${type}    Evaluate    type(${resp.content})
+    #${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    #${jsonRes}    To Json    ${jsonRes}
+    #Should Contain    ${jsonRes['jsonrpc']}    2.0    msg="jsonrpc:failed"
+    #Should Contain    str(${jsonRes['id']})    1    msg="id:failed"
+    #log    ${resp}
+    Should Contain    ${resp.content}['jsonrpc']    2.0    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    [Return]    ${resp}
+
+Request send transaction
+    [Arguments]    ${ret}
+    ${sendList}    Create List    ${ret}
+    ${resp}    setPostRequest    ${host}    ptn_sendRawTransaction    ${sendList}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    #Should Match Regexp    ${resp.content}['result']    ${sendResult}    msg="result:does't match expression"
+    [Return]    ${resp}
+
+Request transfer token
+    [Arguments]    ${preTokenId}
+    ${geneAdd}    listAccounts
+    ${result}    getBalance    ${geneAdd}
+    ${tokenId}    ${value}    getTokenStarts    ${preTokenId}    ${result}
+    ${type}    Evaluate    type(${result})
+    ${ccList}    Create List    ${tokenId}    ${geneAdd}    ${recieverAdd}    2    1
+    ...    description    1    ${6000000}
+    ${resp}    setPostRequest    ${host}    wallet_transferToken    ${ccList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${ret}    Should Match Regexp    ${resp.content}['result']    ${result_code}    msg="result:does't match Result expression"
+    [Return]    ${ret}
+
+Request getBalance
+    [Arguments]    ${address}    ${host}
+    ${address}    Create List    ${address}
+    ${resp}    setPostRequest    ${host}    ptn_getBalance    ${address}
+    #${type}    Evaluate    type(${resp.content})
+    log    ${resp.content}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    Should Contain    ${jsonRes['jsonrpc']}    2.0    msg="jsonrpc:failed"
+    Should Contain    str(${jsonRes['id']})    1    msg="id:failed"
+    ${strResult}    Evaluate    str(${jsonRes['result']})
+    ${PTN}    Run Keyword If    ${strResult}=={}    Set Variable    ${0}
+    ...    ELSE    Set Variable    ${jsonRes['result']['PTN']}
+    [Return]    ${PTN}    ${jsonRes}
+
+Request Ccquery
+    [Arguments]    ${contractId}    ${methodType}    ${PreTokenId}
+    ${methodType}    Create List    ${methodType}    ${PreTokenId}
+    ${transList}    Create List    ${contractId}    ${methodType}    ${0}
+    ${resp}    setPostRequest    ${host}    contract_ccquery    ${transList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    #Should Match Regexp    ${resp.content}['result']    ${preTokenId}    msg="Symbol:does't match"
+    #Should Match Regexp    ${resp.content}['result']    ${tokenAmount}    msg="TotalSupply:does't match"
+    #Should Match Regexp    ${resp.content}['result']    P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw    msg="SupplyAddr:does't match"
+    [Return]    ${resp}
+
+Request GetTxByReqId
+    [Arguments]    ${txHash}
+    ${ccList}    Create List    ${txHash}['info']
+    ${resp}    setPostRequest    ${host}    dag_getTxByHash    ${ccList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
+    [Return]    ${ret}
+
+Request transfer token of vote
+    [Arguments]    ${geneAdd}
+    ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
+    ...    ${commonVoteInfo}
+    ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
+    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
+    [Return]    ${ret}
+
+Request CcinvokePass
+    [Arguments]    ${commonResultCode}    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}
+    ...    ${ccList}
+    #${ret}    ccinvokePass    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}
+    #...    ${ccList}
+    ${ccinvokeList}    Create List    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}
+    ...    ${ccList}    ${pwd}    ${duration}    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccinvokeList}
+    Should Contain    ${resp.content}['jsonrpc']    2.0    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    [Return]    ${resp}

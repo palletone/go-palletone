@@ -99,9 +99,9 @@ matrix:
           python -m robot.run -d ${BDD_LOG_PATH}/${SEQENCE721_DIR} -i normal ./testcase/crt721Seqence;
           fi
          
-        #- if [ $IS_RUN_721UDID == 'true' ]; then
-        #  python -m robot.run -d ${BDD_LOG_PATH}/${UDID721_DIR} -i normal ./testcase/crt721UDID;
-        #  fi
+        - if [ $IS_RUN_721UDID == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${UDID721_DIR} -i normal ./testcase/crt721UDID;
+          fi
          
         - if [ $IS_RUN_VOTE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;

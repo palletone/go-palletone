@@ -1,0 +1,138 @@
+*** Keywords ***
+InvalidCrtTrans
+    [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}    ${error_code}    ${error_message}
+    ${jsonRes}    Request create transaction    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
+    #${type}    Evaluate    type(${jsonRes['error']['code']})
+    assertErrorMessage    ${jsonRes}    ${error_code}    ${error_message}
+    [Return]    ${jsonRes}
+
+InvalidSignTrans
+    [Arguments]    ${crtRet}    ${signType}    ${pwd}    ${error_code}    ${error_message}
+    ${resp}    Request sign transaction    ${crtRet}    ${signType}    ${pwd}
+    log    ${resp.content}
+    ${code}    Should Match Regexp    ${resp.content}['error']['code']    ${error_code}    msg="result:does't match Result expression"
+    ${message}    Should Match Regexp    ${resp.content}['error']['message']    ${error_message}    msg="result:does't match Result expression"
+    [Return]    ${resp.content}['error']
+
+
+InvalidSendTrans
+    [Arguments]    ${i}    ${error_code}    ${error_message}
+    ${result}    Given I set sendTrans result    ${i}
+    ${resp}    When I post a sendTrans request    ${result}
+    Then I get a code and a message    ${resp}    ${error_code}    ${error_message}
+
+invalidGetbalance
+    [Arguments]    ${i}    ${error_code}    ${error_message}
+    ${result}    Given I set getBalance params    ${i}
+    ${resp}    When I post a getBalance request    ${result}
+    Then I get a Getbalance code and a message    ${resp}    ${error_code}    ${error_message}
+
+InvalidCcinvoke
+    [Arguments]    ${senderAmount}    ${poundage}    ${contractId}    ${tokenType}    ${tokenId}    ${evidence}
+    ...    ${tokenDecimal}    ${tokenAmount}    ${pwd}    ${expiredTime}    ${certiId}    ${error_code}
+    ...    ${error_message}    ${senderAdd}    ${recieverAdd}    ${recieverAdd1}
+    ${ccTokenList}    Create List    ${tokenType}    ${tokenId}    ${evidence}    ${tokenDecimal}    ${tokenAmount}
+    ...    ${recieverAdd1}
+    ${ccList}    Create List    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}
+    ...    ${ccTokenList}    ${pwd}    ${expiredTime}    ${certiId}
+    ${resp}    setPostRequest    ${host}    contract_ccinvoketxPass    ${ccList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    assertInvalid    ${resp}    ${error_code}    ${error_message}
+    [Return]    ${resultCrt}
+
+InvalidTransferToken
+    [Arguments]    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}
+    ...    ${error_code}    ${error_message}    ${senderAdd}    ${recieverAdd}
+    ${ret}    Given I_set_TransferToken_params    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}
+    ...    ${locktime}    ${senderAdd}    ${recieverAdd}
+    ${resp}    When I_post_TransferToken_request    ${ret}
+    ${resultCrt}    Then I_get_the_TransferToken_result    ${resp}    ${error_code}    ${error_message}
+    [Return]    ${resultCrt}
+	
+InvalidCcqueryById
+
+setInvalidSignPass
+    [Arguments]    ${crtResult}    ${i}    ${error_code}    ${error_message}
+    ${result}    Given I set signTrans password    ${crtResult}    ${i}
+    ${resp}    When I post a signTrans request    ${result}
+    Then I get a code and a message    ${resp}
+
+setCrtInvalidSign
+    [Arguments]    ${i}    ${error_code}    ${error_message}
+    ${crtResult}    normalCrtTrans    ${result_code}
+    ${result}    Given I set signTrans password    ${crtResult}    ${i}
+    ${resp}    When I post a signTrans request    ${result}
+    Then I get a code and a message    ${resp}
+
+I set Params which is less than required
+    @{transList}    Create List    P1FRZ2AVgCd2TwS5SYDy1ehe8YaXYn86J7U    P1MhaR76qdVPJMJhUYMhfzdEoVndvmEWMUX    10
+    [Return]    @{transList}
+
+I set Params which is more than required
+    @{transList}    Create List    P1FRZ2AVgCd2TwS5SYDy1ehe8YaXYn86J7U    P1MhaR76qdVPJMJhUYMhfzdEoVndvmEWMUX    10    2    4
+    [Return]    @{transList}
+
+I set signTrans result
+    [Arguments]    ${i}    ${range}    ${pwd}
+    @{transList}    Create List    ${i}    ${range}    ${pwd}
+    [Return]    @{transList}
+
+I set signTrans password
+    [Arguments]    ${crtResult}
+    ${transList}    Create List    ${crtResult}    ALL
+    ${resp}    setPostRequest    ${host}    ${method}    ${transList}
+    [Return]    ${resp}
+
+I set sendTrans result
+    [Arguments]    ${i}
+    @{transList}    Create List    ${i}
+    ${resp}    setPostRequest    ${host}    ${method}    @{transList}
+    [Return]    ${resp}
+
+
+
+I_set_TransferToken_params
+    [Arguments]    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}
+    ...    ${senderAdd}    ${recieverAdd}
+    ${ccList}    Create List    ${tokenId}    ${senderAdd}    ${recieverAdd}    ${tokenAmount}    ${tokenFee}
+    ...    ${desc}    ${pwd}    ${locktime}
+    ${resp}    setPostRequest    ${host}    wallet_transferToken    ${ccList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    assertInvalid    ${resp}    ${error_code}    ${error_message}
+
+I_set_TransferToken_params_to_Normal
+    [Arguments]    ${preTokenId}
+    ${geneAdd}    listAccounts
+    ${result}    getBalance    ${geneAdd}
+    ${tokenId}    ${value}    getTokenStarts    ${preTokenId}    ${result}
+    ${type}    Evaluate    type(${result})
+    ${ccList}    Create List    ${tokenId}    ${geneAdd}    ${recieverAdd}    2    1
+    ...    description    1    ${6000000}
+    ${resp}    setPostRequest    ${host}    wallet_transferToken    ${ccList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${ret}    Should Match Regexp    ${resp.content}['error']['code']    ${result_code}    msg="result:does't match Result expression"
+    Request Ccquery
+    [Return]    ${ret}
+	
+	
+I set getBalance params
+    [Arguments]    ${i}
+    ${transList}    Create List    ${i}
+    ${resp}    setPostRequest    ${host}    ${method}    ${transList}
+    log    ${resp.content}
+    assertBalanceInvalid    ${resp}    ${error_code}    ${error_message}
+	
+	
+Request Ccquery result error
+    [Arguments]    ${error_code}    ${error_message}    ${resp}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    Should Contain    ${resp.content}['error']['code']    ${error_code}    msg="code:failed"
+    Should Contain    ${resp.content}['error']['message']    ${error_message}    msg="message:failed"

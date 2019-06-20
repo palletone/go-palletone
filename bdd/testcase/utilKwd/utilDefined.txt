@@ -1,0 +1,86 @@
+*** Settings ***
+
+*** Keywords ***
+setPostRequest
+    [Arguments]    ${host}    ${method}    ${transList}
+    ${headers}    Create Dictionary    Content-Type=application/json    Connection=close
+    ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${transList}    id=${1}
+    Create Session    trans    ${host}
+    ${resp}    Post Request    trans    ${host}    data=${data}    headers=${headers}
+    [Return]    ${resp}
+
+newAccount
+    #[Arguments]    ${host}=${host}
+    ${transList}    Create List    ${pwd}
+    ${resp}    setPostRequest    ${host}    ${newAccount}    ${transList}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    [Return]    ${jsonRes}
+
+assertErrorMessage
+    [Arguments]    ${resp}    ${error_code}    ${error_message}
+    #${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    #${jsonRes}    To Json    ${jsonRes}
+    #${strResult}    Evaluate    str(${jsonRes['error']})
+    Should Contain    ${resp.content}['error']['code']    ${error_code}    msg="error_code:failed"
+    Should Contain    ${resp.content}['error']['message']    ${error_message}    msg="error_message:failed"
+    [Return]    ${resp}
+
+geneTokenId
+    ${nickname}    evaluate    random.randint(100,999)    random
+    ${nickname}    evaluate    'qa'+str(${nickname})
+    [Return]    ${nickname}
+
+getGeneAdd
+    [Arguments]    ${host}
+    ${list}    Create List    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
+    log    ${resp.content}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    #${log}    evaluate    str(${resp.content}['result'][0])
+    [Return]    ${jsonRes['result'][0]}
+
+getMultiNodeGeneAdd
+    [Arguments]    ${host}
+    ${list}    Create List    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
+    log    ${resp.content}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    #${log}    evaluate    str(${resp.content}['result'][1])
+    [Return]    ${jsonRes['result'][1]}
+
+getlistAccounts
+    [Arguments]    ${host}=${host}
+    ${list}    Create List    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
+    log    ${resp.content}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    Set Suite Variable    ${listAccounts}    ${jsonRes['result']}
+    [Return]    ${listAccounts}
+
+preTransToken
+    ${listAccounts}    getlistAccounts
+    ${result}    getBalance    ${listAccounts[0]}
+    ${tokenId}    ${value}    getTokenStarts    QA001    ${result}
+    Set Suite Variable    ${tokenId}    ${tokenId}
+    [Return]    ${listAccounts}    ${tokenId}
+
+countRecieverPTN
+    [Arguments]    ${Amount}
+    ${quantity}    evaluate    ${Amount}*0.00000001
+    ${quantity}    evaluate    decimal.Decimal('${quantity}')    decimal
+    [Return]    ${quantity}
+
+voteTransToken
+    ${listAccounts}    getlistAccounts
+    ${result}    getBalance    ${listAccounts[0]}
+    sleep    5
+    ${voteToken}    getTokenId    ${voteId}    ${result}
+    Request transfer token of vote    ${listAccounts[0]}
+    sleep    4
+    Set Suite Variable    ${listAccounts}    ${listAccounts}
+    Set Suite Variable    ${voteToken}    ${voteToken}
+    [Return]    ${listAccounts}    ${voteToken}
