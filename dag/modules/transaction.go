@@ -690,6 +690,22 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 	return result, nil
 }
 
+//获取该交易的发起人地址
+func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (common.Address, error) {
+	msg0 := tx.TxMessages[0]
+	if msg0.App != APP_PAYMENT {
+		return common.Address{}, errors.New("Coinbase or Invalid Tx, first message must be a payment")
+	}
+	pay := msg0.Payload.(*PaymentPayload)
+
+	utxo, err := queryUtxoFunc(pay.Inputs[0].PreviousOutPoint)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return getAddrFunc(utxo.PkScript)
+
+}
+
 type Addition struct {
 	Addr   common.Address `json:"address"`
 	Amount uint64         `json:"amount"`
