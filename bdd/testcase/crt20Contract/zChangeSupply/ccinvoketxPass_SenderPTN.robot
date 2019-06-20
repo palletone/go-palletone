@@ -39,23 +39,23 @@ Request ccinvokePass and transferToken
     ...    ${ccList}
     sleep    5
     ${result1}    getBalance    ${geneAdd}
-    sleep    4
+    sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result1}
     sleep    2
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${reciever}    2000    ${PTNPoundage}
     ...    ${evidence}    ${duration}
 
 Change supply of contract
-    sleep    4
+    sleep    5
     ${ccList}    Create List    ${changeSupplyMethod}    ${preTokenId}    ${reciever}
     ${result}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    4
+    sleep    5
     [Return]    ${result}
 
 Assert the supplyAddr
     ${queryResult}    ccqueryById    ${20ContractId}    ${TokenInfoMethod}    ${preTokenId}
-    sleep    1
+    sleep    3
     ${SupplyAddr}    jsonLoads    ${queryResult['result']}    SupplyAddr
     Should Be Equal As Strings    ${reciever}    ${SupplyAddr}
 

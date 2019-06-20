@@ -53,10 +53,10 @@ Create token of vote contract
     [Return]    ${ret}
 
 Calculate gain of recieverAdd
-    sleep    2
+    sleep    5
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${GAIN}    countRecieverPTN    ${invokeGain}
-    sleep    3
+    sleep    2
     [Return]    ${GAIN}
 
 Request getbalance after create token

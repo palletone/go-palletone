@@ -29,6 +29,7 @@ Request getbalance before create token
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     sleep    4
     ${key}    getTokenId    ${voteId}    ${result1['result']}
+    sleep    2
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
     sleep    5
     #${dicRes}    Evaluate    demjson.encode(${result2})    demjson
@@ -38,7 +39,7 @@ Request getbalance before create token
     #\    log    ${keys}
     #${strResult}    Evaluate    str(${jsonRes})
     ${item1}    voteExist    ${key}    ${result2}
-    sleep    2
+    sleep    3
     [Return]    ${key}    ${item1}
 
 Request transfer token
@@ -47,7 +48,7 @@ Request transfer token
 
 Calculate gain of recieverAdd
     [Arguments]    ${item1}
-    sleep    4
+    sleep    5
     ${item1}    Evaluate    ${item1}+${PTNAmount}
     [Return]    ${item1}
 
@@ -56,7 +57,7 @@ Request getbalance after create token
     ${result2}    getBalance    ${recieverAdd}
     sleep    5
     ${item2}    Get From Dictionary    ${result2}    ${key}
-    sleep    2
+    sleep    4
     [Return]    ${item2}
 
 Assert gain of reciever
