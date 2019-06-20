@@ -908,7 +908,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	// weed out duplicates.
 	if pool.isTransactionInPool(txHash) {
 		str := fmt.Sprintf("already have transaction %s", txHash.String())
-		log.Info("txpool", "info", str)
+		log.Debug("txpool", "info", str)
 		return nil, nil, nil
 	}
 
@@ -1736,7 +1736,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
-	// if time.Since(t2) > time.Second*1 {
 	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
 
 	return list, total
@@ -1749,8 +1748,8 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs, orpha
 			if ok {
 				for _, input := range payment.Inputs {
 					if input.PreviousOutPoint != nil {
-						utxo, err := pool.GetUtxoEntry(input.PreviousOutPoint)
-						if utxo.IsSpent() {
+						utxo, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
+						if err == nil && utxo != nil {
 							continue
 						}
 						if err != nil { //  若该utxo在db里找不到
