@@ -146,7 +146,7 @@ after_script:
     if [ $IS_UPLOAD == 'true' ]; then
       # uplaod all log
 #      curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v;
-      bdd/upload2Ftp.sh ${CERT} ${PASSWORD} ${ALL_LOG_PATH}
+#      bdd/upload2Ftp.sh ${CERT} ${PASSWORD} ${ALL_LOG_PATH}
 
       # upload deposit log
       if [ $IS_RUN_DEPOSIT == 'true' ]; then
