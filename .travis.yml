@@ -148,7 +148,7 @@ after_script:
       # uplaod all log
       curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://39.105.191.26/pub/ -T ${ALL_LOG_PATH} -v;
       pwd;
-      bdd/upload2Ftp.sh ${CERT} ${PASSWORD} /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/upload2Ftp.sh;
+      bdd/upload2Ftp.sh certbdd 123456 /home/travis/gopath/src/github.com/palletone/go-palletone/README.md;
 
       # upload deposit log
       if [ $IS_RUN_DEPOSIT == 'true' ]; then
@@ -225,7 +225,7 @@ install:
 
 addons:
   apt:
-    update: true
+    update: false
 
 notifications:
   email:
