@@ -27,17 +27,18 @@ Request getbalance before create token
     [Arguments]    ${geneAdd}
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     sleep    5
-    ${key}    getTokenId    ${voteId}    ${result1['result']}
+    ${key}    getTokenIdByNum    ${voteId}    ${result1['result']}    2
     sleep    2
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
     sleep    5
     ${PTN2P}    voteExist    PTN    ${result2}
+    sleep    2
     [Return]    ${PTN2P}    ${key}
 
 Create token of vote contract
     [Arguments]    ${geneAdd}
-    ${supportList}    Create List    ${supportInfo}
-    ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${destructionAdd}    ${PTNAmount}    ${PTNPoundage}
+    ${supportList}    Create List    support    ${supportSection}
+    ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${destructionAdd}    ${votePTN}    ${PTNPoundage}
     ...    ${key}    ${gain}    ${voteContractId}    ${supportList}
     ${resp}    setPostRequest    ${host}    ${invokeTokenMethod}    ${ccList}
     log    ${resp.content}
@@ -45,7 +46,8 @@ Create token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN2P}
-    ${GAIN}    countRecieverPTN    int(${PTNAmount})
+    ${GAIN}    countRecieverPTN    int(${votePTN})
+    sleep    4
     ${PTN2'}    Evaluate    decimal.Decimal('${PTN2P}')+decimal.Decimal('${GAIN}')    decimal
     sleep    3
     [Return]    ${PTN2'}
@@ -59,3 +61,5 @@ Request getbalance after create token
 Assert gain of reciever
     [Arguments]    ${PTN2'}    ${PTN2}
     Should Be Equal As Strings    ${PTN2}    ${PTN2'}
+    ${response}    normalCcqueryById    ${voteContractId}    getVoteResult    ${key}
+    ccqueryVoteResult    ${response}    ${geneAdd}    ${key}    ${tokenAmount}

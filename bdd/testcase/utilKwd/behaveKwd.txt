@@ -9,7 +9,7 @@ normalCrtTrans
 normalSignTrans
     [Arguments]    ${crtRet}    ${signType}    ${pwd}
     ${resp}    Request sign transaction    ${crtRet}    ${signType}    ${pwd}
-	sleep    2
+    sleep    2
     ${hex}    Should Match Regexp    ${resp.content}['result']['hex']    ${result_hex}    msg="hex:does't match Result expression"
     ${txid}    Should Match Regexp    ${resp.content}['result']['txid']    ${result_txid}    msg="txid:does't match Result expression"
     [Return]    ${hex}
@@ -18,7 +18,7 @@ normalSendTrans
     [Arguments]    ${resp}
     ${resp}    Request send transaction    ${resp}
     sleep    3
-    ${ret}    Should Match Regexp    ${resp.content}['result']    ${sendResult}   msg="result:does't match Result expression"
+    ${ret}    Should Match Regexp    ${resp.content}['result']    ${sendResult}    msg="result:does't match Result expression"
     [Return]    ${ret}
 
 normalCcinvokePass
@@ -46,15 +46,18 @@ normalGetTxByReqId
     [Return]    ${resultCrt}
 
 normalGetBalance
-    [Arguments]    ${address}
-    ${PTN}    ${RESULT}    Request getBalance    ${address}
+    [Arguments]    ${address}    ${host}=${host}
+    ${PTN}    ${RESULT}    Request getBalance    ${address}    ${host}
     #Should Match Regexp    ${RESULT}    result    msg="TotalSupply:does't match"
     [Return]    ${PTN}    ${RESULT}
 
 normalCcqueryById
     [Arguments]    ${contractId}    ${methodType}    ${preTokenId}
     ${resp}    Request Ccquery    ${contractId}    ${methodType}    ${preTokenId}
-    [Return]    ${resp}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    log    ${jsonRes['result']}
+    [Return]    ${jsonRes['result']}
 
 normalVoteTransfer
     [Arguments]    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}

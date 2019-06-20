@@ -23,7 +23,7 @@ Scenario: 20Contract - Create Token
 *** Keywords ***
 Request getbalance before create token
     ${PTN1}    ${result}    normalGetBalance    ${recieverAdd}
-    sleep    1
+    sleep    4
     [Return]    ${PTN1}
 
 Request normal CcinvokePass
@@ -31,11 +31,11 @@ Request normal CcinvokePass
     ...    ${listAccounts[0]}
     ${ret}    normalCcinvokePass    ${commonResultCode}    ${listAccounts[0]}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    3
     [Return]    ${ret}
 
 Calculate gain
     [Arguments]    ${PTN1}
+    sleep    5
     ${gain1}    countRecieverPTN    ${PTNAmount}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${gain1}')    decimal
     sleep    2

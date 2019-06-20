@@ -27,9 +27,10 @@ Get genesis address
 Request getbalance before create token
     [Arguments]    ${geneAdd}
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
+    sleep    4
     ${key}    getTokenId    ${voteId}    ${result1['result']}
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
-    sleep    4
+    sleep    5
     #${dicRes}    Evaluate    demjson.encode(${result2})    demjson
     #log    type(${dicRes})
     #${jsonRes}    To Json    ${dicRes}
@@ -37,7 +38,7 @@ Request getbalance before create token
     #\    log    ${keys}
     #${strResult}    Evaluate    str(${jsonRes})
     ${item1}    voteExist    ${key}    ${result2}
-    sleep    4
+    sleep    2
     [Return]    ${key}    ${item1}
 
 Request transfer token
@@ -48,15 +49,14 @@ Calculate gain of recieverAdd
     [Arguments]    ${item1}
     sleep    4
     ${item1}    Evaluate    ${item1}+${PTNAmount}
-	sleep    1
     [Return]    ${item1}
 
 Request getbalance after create token
     [Arguments]    ${key}
     ${result2}    getBalance    ${recieverAdd}
-    sleep    4
+    sleep    5
     ${item2}    Get From Dictionary    ${result2}    ${key}
-    sleep    4
+    sleep    2
     [Return]    ${item2}
 
 Assert gain of reciever

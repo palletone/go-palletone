@@ -49,7 +49,7 @@ Request transfer token
     [Return]    ${ret}
 
 Request getBalance
-    [Arguments]    ${address}
+    [Arguments]    ${address}    ${host}
     ${address}    Create List    ${address}
     ${resp}    setPostRequest    ${host}    ptn_getBalance    ${address}
     #${type}    Evaluate    type(${resp.content})

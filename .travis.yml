@@ -9,7 +9,8 @@ env:
     - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
     - CREATE_TRANS_DIR=createTrans
     - CONTRACT20_DIR=crt20Contract
-    - CONTRACT721_DIR=crt721Contract
+    - SEQENCE721_DIR=crt721Seqence
+    - UDID721_DIR=crt721UDID
     - VOTECONTRACT_DIR=voteContract
     - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
     - DEPOSIT_DIR=deposit
@@ -22,7 +23,8 @@ env:
     - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
     - IS_RUN_20CONTRACT=true
-    - IS_RUN_721CONTRACT=true
+    - IS_RUN_721SEQENCE=true
+    - IS_RUN_721UDID=true
     - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
@@ -39,22 +41,21 @@ matrix:
       script:
         - go build ./cmd/gptn
         - make gptn
-        - $GOPATH/bin/goveralls -service=travis-ci
-        
+        - $GOPATH/bin/goveralls -service=travis-ci   
     #- os: linux
     #  dist: xenial
-    #  go: 1.11
+    #  go: 1.11.x
     #  script:
     #    - go build ./cmd/gptn
     #    - make gptn
-    #    - $GOPATH/bin/goveralls -service=travis-ci
+    #    - go test ./...       
     #- os: linux
     #  dist: xenial
     #  go: 1.12.5
     #  script:
     #    - go build ./cmd/gptn
     #    - make gptn
-    #    - $GOPATH/bin/goveralls -service=travis-ci
+    #    - go test ./...          
     - os: linux
       dist: xenial
       go: 1.12.5
@@ -82,6 +83,7 @@ matrix:
           chmod +x ./test_start.sh;
           ./test_start.sh;
           fi
+          
         # into bdd path, all testcases is here
         - cd ${BASE_DIR}/bdd
         - mkdir -p ${BDD_LOG_PATH}
@@ -93,10 +95,14 @@ matrix:
           python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
           fi
             
-        - if [ $IS_RUN_721CONTRACT == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT721_DIR} -i normal ./testcase/crt721Contract;
+        - if [ $IS_RUN_721SEQENCE == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${SEQENCE721_DIR} -i normal ./testcase/crt721Seqence;
           fi
-            
+         
+        - if [ $IS_RUN_721UDID == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${UDID721_DIR} -i normal ./testcase/crt721UDID;
+          fi
+         
         - if [ $IS_RUN_VOTE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;
           fi
@@ -147,9 +153,9 @@ after_script:
   #  fi
     
   # upload 721contract log and report
-  #- if [ $IS_RUN_721CONTRACT == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT721_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT721_DIR/$LOG_NAME -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT721_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT721_DIR/${REPORT_NAME} -v;
+  #- if [ $IS_RUN_721SEQENCE == 'true' ]; then
+  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$SEQENCE721_DIR/$LOG_NAME -T $BDD_LOG_PATH/$SEQENCE721_DIR/$LOG_NAME -v;
+  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$SEQENCE721_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$SEQENCE721_DIR/${REPORT_NAME} -v;
   #  fi
 
   # upload voteContract log and report

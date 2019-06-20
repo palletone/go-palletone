@@ -10,7 +10,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 ${preTokenId}     QA056
 
 *** Test Cases ***
-Scenario: Change Supply Token
+Scenario: 20Contract - Change Supply Token
     [Documentation]    Verify SupplyAdd And Transfer Token
     Given Send PTN to recieverAdd
     And Request ccinvokePass and transferToken
@@ -37,15 +37,16 @@ Request ccinvokePass and transferToken
     ...    ${geneAdd}
     normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}    ${20ContractId}
     ...    ${ccList}
-    sleep    3
-    ${result1}    getBalance    ${geneAdd}
     sleep    5
+    ${result1}    getBalance    ${geneAdd}
+    sleep    4
     ${key}    getTokenId    ${preTokenId}    ${result1}
     sleep    2
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${reciever}    2000    ${PTNPoundage}
     ...    ${evidence}    ${duration}
 
 Change supply of contract
+    sleep    4
     ${ccList}    Create List    ${changeSupplyMethod}    ${preTokenId}    ${reciever}
     ${result}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
@@ -62,7 +63,7 @@ Request getbalance before create token
     ${result1}    getBalance    ${reciever}
     sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result1}
-    sleep    1
+    sleep    2
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     sleep    1
     ${coinToken1}    Get From Dictionary    ${result1}    ${key}
