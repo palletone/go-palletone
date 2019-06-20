@@ -35,11 +35,11 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
-	"github.com/palletone/go-palletone/common/util"
 )
 
 var (
@@ -63,7 +63,7 @@ func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname string, ccpath
 	return hexutil.Bytes(templateId), err
 }
 
-func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string,  timeout uint32) (*ContractDeployRsp, error) {
+func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string, timeout uint32) (*ContractDeployRsp, error) {
 	tempId, _ := hex.DecodeString(templateId)
 	rd, err := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
@@ -208,47 +208,6 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 		ContractId: contractAddr.String(),
 	}
 	return rsp, err
-}
-
-func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
-	param []string) (string, error) {
-	log.Info("---enter DepositContractInvoke---")
-	// append by albert·gou
-	if param[0] == modules.ApplyMediator {
-		//return "", fmt.Errorf("please use mediator.apply()")
-		var args MediatorCreateArgs
-		err := json.Unmarshal([]byte(param[1]), &args)
-		if err != nil {
-			return "", fmt.Errorf("param error(%v), please use mediator.apply()", err.Error())
-		} else {
-			// 参数补全
-			args.setDefaults(from)
-
-			// 参数验证
-			err := args.Validate()
-			if err != nil {
-				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
-			}
-
-			// 参数序列化
-			argsB, err := json.Marshal(args)
-			if err != nil {
-				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
-			}
-
-			param[1] = string(argsB)
-		}
-	}
-
-	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(),
-		param, "", "0")
-
-	return rsp.ReqId, err
-}
-
-func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
-	log.Info("---enter DepositContractQuery---")
-	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, 0)
 }
 
 func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, certID string, timeout string) (*ContractDeployRsp, error) {
@@ -402,16 +361,79 @@ func (s *PublicContractAPI) unlockKS(addr common.Address, password string, durat
 	}
 	return nil
 }
+
 func (s *PublicContractAPI) ListAllContractTemplates(ctx context.Context) ([]*ptnjson.ContractTemplateJson, error) {
 	return s.b.GetAllContractTpl()
 }
+
 func (s *PublicContractAPI) ListAllContracts(ctx context.Context) ([]*ptnjson.ContractJson, error) {
 	return s.b.GetAllContracts()
 }
+
 func (s *PublicContractAPI) GetContractsByTpl(ctx context.Context, tplId string) ([]*ptnjson.ContractJson, error) {
 	id, err := hex.DecodeString(tplId)
 	if err != nil {
 		return nil, err
 	}
 	return s.b.GetContractsByTpl(id)
+}
+
+func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
+	param []string) (string, error) {
+	log.Info("---enter DepositContractInvoke---")
+	// append by albert·gou
+	if param[0] == modules.ApplyMediator {
+		//return "", fmt.Errorf("please use mediator.apply()")
+		var args MediatorCreateArgs
+		err := json.Unmarshal([]byte(param[1]), &args)
+		if err != nil {
+			return "", fmt.Errorf("param error(%v), please use mediator.apply()", err.Error())
+		} else {
+			// 参数补全
+			args.setDefaults(from)
+
+			// 参数验证
+			err := args.Validate()
+			if err != nil {
+				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
+			}
+
+			// 参数序列化
+			argsB, err := json.Marshal(args)
+			if err != nil {
+				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
+			}
+
+			param[1] = string(argsB)
+		}
+	}
+
+	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(),
+		param, "", "0")
+
+	return rsp.ReqId, err
+}
+
+func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
+	log.Info("---enter DepositContractQuery---")
+	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, 0)
+}
+
+func (s *PublicContractAPI) SysConfigContractQuery(ctx context.Context, param []string) (string, error) {
+	log.Info("---enter SysConfigContractQuery---")
+	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, 0)
+}
+
+func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
+	param []string) (string, error) {
+	log.Info("---enter SysConfigContractInvoke---")
+
+	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(),
+		param, "", "0")
+
+	return rsp.ReqId, err
+}
+
+func (s *PublicContractAPI) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
+	return s.b.GetContractState(contractid, key)
 }
