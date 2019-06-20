@@ -195,6 +195,7 @@ after_script:
       "If you want to open it in explorer, you should close VPN first."
       "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
     fi
+  - echo "done travis"
 
 
 before_install:
