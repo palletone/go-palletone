@@ -171,14 +171,6 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	return txOutReply, nil
 }
 
-//func (b *PtnApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
-//	configs, err := b.Dag().GetAllConfig()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return ptnjson.ConvertAllSysConfigToJson(configs), nil
-//}
-
 func (b *PtnApiBackend) GetChainParameters() *core.ChainParameters {
 	return b.Dag().GetChainParameters()
 }

@@ -100,10 +100,6 @@ func (b *LesApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return nil
 }
 
-//func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
-//	return nil, nil
-//}
-
 func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
