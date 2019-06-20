@@ -29,7 +29,7 @@ env:
     - IS_RUN_GASTOKEN=false
     - IS_RUN_MEDIATOR_VOTE=false
     - GO111MODULE=on
-    - IS_UPLOAD=false
+    - IS_UPLOAD=true
     - IS_RUN_USER_CONTRACT=true
     - RUN_GO1.10.8=false
     - RUN_GO1.11=false
@@ -143,7 +143,8 @@ after_script:
   - |
     if [ $IS_UPLOAD == 'true' ]; then
       # uplaod all log
-      curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v;
+#      curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v;
+      ./upload2Ftp.sh ${CERT} ${PASSWORD} ${ALL_LOG_PATH}
 
       # upload deposit log
       if [ $IS_RUN_DEPOSIT == 'true' ]; then
@@ -213,6 +214,7 @@ install:
   - sudo -H pip install demjson
   - sudo -H pip install pexpect
   - sudo -H apt-get install expect
+  - sudo apt-get install lftp
   #- sudo -H apt-get install jq tcl tk
 
 addons:
