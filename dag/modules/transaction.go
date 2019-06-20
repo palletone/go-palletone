@@ -407,6 +407,7 @@ type Transaction struct {
 	Illegal    bool       `json:"Illegal"` // not hash, 1:no valid, 0:ok
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
+type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
@@ -662,6 +663,31 @@ func (tx *Transaction) InvokeContractId() []byte {
 		}
 	}
 	return nil
+}
+
+//获取该交易的所有From地址
+func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
+	addrMap := map[common.Address]bool{}
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_PAYMENT {
+			pay := msg.Payload.(*PaymentPayload)
+			for _, input := range pay.Inputs {
+				if input.PreviousOutPoint != nil {
+					utxo, err := queryUtxoFunc(input.PreviousOutPoint)
+					if err != nil {
+						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
+					}
+					addr, _ := getAddrFunc(utxo.PkScript)
+					addrMap[addr] = true
+				}
+			}
+		}
+	}
+	result := []common.Address{}
+	for k, _ := range addrMap {
+		result = append(result, k)
+	}
+	return result, nil
 }
 
 type Addition struct {

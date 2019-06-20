@@ -281,7 +281,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			log.Errorf("Memdag addUnit[%s] error:%s", u.UnitHash.String(), err.Error())
 			return count, nil
 		}
-		log.Infof("InsertDag[%s] spent time:%s", u.UnitHash.String(), time.Since(t1))
+		log.Infof("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
 		count += 1
 	}
 

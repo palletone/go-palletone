@@ -433,3 +433,7 @@ func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, t
 
 	return rsp.ReqId, err
 }
+
+func (s *PublicContractAPI) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
+	return s.b.GetContractState(contractid, key)
+}
