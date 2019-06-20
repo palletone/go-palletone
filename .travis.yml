@@ -31,7 +31,7 @@ env:
     - GO111MODULE=on
     - IS_UPLOAD=true
     - IS_RUN_USER_CONTRACT=false
-    - RUN_GO1.10.8=true
+    - RUN_GO1.10.8=false
     - RUN_GO1.11=false
     - RUN_GO1.12.5=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
@@ -143,53 +143,53 @@ after_script:
   - |
     if [ $IS_UPLOAD == 'true' ]; then
       # uplaod all log
-      # curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v;
+      # curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://39.105.191.26/pub/ -T ${ALL_LOG_PATH} -v;
       bdd/upload2Ftp.sh ${CERT} ${PASSWORD} ${ALL_LOG_PATH}
 
       # upload deposit log
       if [ $IS_RUN_DEPOSIT == 'true' ]; then
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $DEPOSIT_LOG_PATH/${LOG_NAME} -v;
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $DEPOSIT_LOG_PATH/${REPORT_NAME} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$DEPOSIT_DIR/$LOG_NAME -T $DEPOSIT_LOG_PATH/${LOG_NAME} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $DEPOSIT_LOG_PATH/${REPORT_NAME} -v;
       fi
 
       # upload create transactions log and report
       if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/$LOG_NAME -v;
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/${REPORT_NAME} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$CREATE_TRANS_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/$LOG_NAME -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$CREATE_TRANS_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/${REPORT_NAME} -v;
       fi
 
       # upload 20contract log and report
       if [ $IS_RUN_20CONTRACT == 'true' ]; then
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT20_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT20_DIR/$LOG_NAME -v;
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT20_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT20_DIR/${REPORT_NAME} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$CONTRACT20_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT20_DIR/$LOG_NAME -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$CONTRACT20_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT20_DIR/${REPORT_NAME} -v;
       fi
 
       # upload 721contract log and report
       if [ $IS_RUN_721CONTRACT == 'true' ]; then
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT721_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT721_DIR/$LOG_NAME -v;
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT721_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT721_DIR/${REPORT_NAME} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$CONTRACT721_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT721_DIR/$LOG_NAME -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$CONTRACT721_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT721_DIR/${REPORT_NAME} -v;
       fi
 
       # upload voteContract log and report
       if [ $IS_RUN_VOTE == 'true' ]; then
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/$LOG_NAME -v;
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$VOTECONTRACT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/$LOG_NAME -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$VOTECONTRACT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} -v;
       fi
 
       # upload digital identity log and report
       if [ $IS_RUN_DIGITAL == 'true' ]; then
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -v;
       fi
 
       if [ $IS_RUN_GASTOKEN == 'true' ]; then
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/$LOG_NAME -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/$LOG_NAME -v;
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} -v;
-        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/gastoken_all.log -T ${GAS_TOKEN_ALL_LOG_PATH} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$GAS_TOKEN_DIR/$LOG_NAME -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/$LOG_NAME -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/$GAS_TOKEN_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} -v;
+        curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://39.105.191.26/pub/gastoken_all.log -T ${GAS_TOKEN_ALL_LOG_PATH} -v;
       fi
 
       # echo ftp address
-      "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/palletone"
+      "The path of all bdd log in vsftpd is 'ftp://39.105.191.26/palletone"
       "If you want to open it in explorer, you should close VPN first."
       "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
     fi
