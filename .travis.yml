@@ -33,7 +33,7 @@ env:
     - IS_RUN_USER_CONTRACT=false
     - RUN_GO1.10.8=true
     - RUN_GO1.11=false
-    - RUN_GO1.12.5=false
+    - RUN_GO1.12.5=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 matrix:
