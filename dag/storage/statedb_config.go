@@ -84,7 +84,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
 	val, _, err := statedb.getSysConfigContract(modules.DesiredSysParamsWithVote)
 	if err != nil {
-		log.Error(err.Error())
+		log.Debugf(err.Error())
 		return nil, err
 	}
 
@@ -95,79 +95,18 @@ func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	info := &modules.SysTokenIDInfo{}
 	err = json.Unmarshal(val, info)
 	if err != nil {
-		log.Error(err.Error())
+		log.Debugf(err.Error())
 		return nil, err
 	}
 
 	return info, nil
 }
 
-//func (statedb *StateDb) UpdateSysParams(version *modules.StateVersion) error {
-//	//基金会单独修改的
-//	var err error
-//	modifies, err := statedb.GetSysParamWithoutVote()
-//	if err != nil {
-//		return err
-//	}
-//	//基金会发起投票的
-//	info, err := statedb.GetSysParamsWithVotes()
-//	if err != nil {
-//		return err
-//	}
-//	if modifies == nil && info == nil {
-//		return nil
-//	}
-//	//获取当前的version
-//	if len(modifies) > 0 {
-//		for k, v := range modifies {
-//			err = statedb.SaveSysConfig(k, []byte(v), version)
-//			if err != nil {
-//				return err
-//			}
-//		}
-//		//将基金会当前单独修改的重置为nil
-//		err = statedb.SaveSysConfig(modules.DesiredSysParamsWithoutVote, nil, version)
-//		if err != nil {
-//			return err
-//		}
-//	}
-//	if info == nil {
-//		return nil
-//	}
-//	//foundAddr, _, err := statedb.GetSysConfig(modules.FoundationAddress)
-//	//if err != nil {
-//	//	return err
-//	//}
-//	//if info.CreateAddr != string(foundAddr) {
-//	//	return fmt.Errorf("only foundation can call this function")
-//	//}
-//	if !info.IsVoteEnd {
-//		return nil
-//	}
-//	for _, v1 := range info.SupportResults {
-//		for _, v2 := range v1.VoteResults {
-//			//TODO
-//			if v2.Num >= info.LeastNum {
-//				err = statedb.SaveSysConfig(v1.TopicTitle, []byte(v2.SelectOption), version)
-//				if err != nil {
-//					return err
-//				}
-//				break
-//			}
-//		}
-//	}
-//	//将基金会当前投票修改的重置为nil
-//	err = statedb.SaveSysConfig(modules.DesiredSysParamsWithVote, nil, version)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
-
 func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
 	assetId := dagconfig.DagConfig.GetGasToken()
 	return &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}, nil
 }
+
 func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) {
 	id := syscontract.PartitionContractAddress.Bytes()
 	rows, err := statedb.GetContractStatesByPrefix(id, "PC")
@@ -183,6 +122,7 @@ func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) 
 	}
 	return result, nil
 }
+
 func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
 	id := syscontract.PartitionContractAddress.Bytes()
 	data, _, err := statedb.GetContractState(id, "MainChain")

@@ -170,7 +170,7 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
 	index := header.Number
 	timestamp := uint32(header.Time)
-	data := &modules.UnitProperty{hash, index, timestamp}
+	data := &modules.UnitProperty{Hash: hash, Index: index, Timestamp: timestamp}
 	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
 	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(), hash.String(), index.String())
 

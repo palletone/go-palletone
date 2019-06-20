@@ -23,14 +23,16 @@ package sysconfigcc
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/modules"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type SysConfigChainCode struct {
@@ -241,22 +243,13 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	//init support
 	var supports []SysTopicSupports
 	for _, oneTopic := range voteTopics {
-		// 检查
-		// todo albert·gou
-		checkFlag := false
-		if oneTopic.TopicTitle == modules.DesiredActiveMediatorCount {
-			checkFlag = true
-		}
-
-		var oneSupport SysTopicSupports
-		oneSupport.TopicTitle = oneTopic.TopicTitle
+		oneSupport := SysTopicSupports{TopicTitle: oneTopic.TopicTitle}
 		for _, oneOption := range oneTopic.SelectOptions {
-			// 检查
-			if checkFlag {
-				_, err := strconv.ParseUint(oneOption, 10, 16)
-				if err != nil {
-					return nil, fmt.Errorf("can not convert to integer")
-				}
+			// 检查参数
+			err := core.CheckSysConfigArgs(oneSupport.TopicTitle, oneOption)
+			if err != nil {
+				log.Debugf(err.Error())
+				return nil, err
 			}
 
 			oneResult := &modules.SysVoteResult{}
@@ -433,13 +426,13 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 //}
 
 func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	field, value := args[0], args[1]
+
 	// 检查参数
-	// todo albert·gou
-	if args[0] == modules.DesiredActiveMediatorCount {
-		_, err := strconv.ParseUint(args[1], 10, 16)
-		if err != nil {
-			return nil, fmt.Errorf("can not convert to integer")
-		}
+	err := core.CheckSysConfigArgs(field, value)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil, err
 	}
 
 	resultBytes, err := stub.GetState(modules.DesiredSysParamsWithoutVote)
@@ -461,7 +454,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		modifies = make(map[string]string)
 	}
 
-	modifies[args[0]] = args[1]
+	modifies[field] = value
 	modifyByte, err := json.Marshal(modifies)
 	err = stub.PutState(modules.DesiredSysParamsWithoutVote, modifyByte)
 	if err != nil {

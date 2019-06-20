@@ -533,3 +533,10 @@ func (b *LesApiBackend) GetAllContracts() ([]*ptnjson.ContractJson, error) {
 func (b *LesApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error) {
 	return nil, nil
 }
+
+func (b *LesApiBackend) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
+	return nil, nil, nil
+}
+func (b *LesApiBackend) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	return nil, nil
+}

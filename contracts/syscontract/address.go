@@ -26,6 +26,7 @@ var (
 	//1保证金合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
 	DepositContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000011C")
+
 	//2创币合约PRC20
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 	CreateTokenContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000021C")
@@ -44,12 +45,15 @@ var (
 	//7创币合约PRC721
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRijspoq
 	CreateToken721ContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000071C")
+
 	//8数字身份管理合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
 	DigitalIdentityContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000081C")
+
 	//9分区管理合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRxVdGDZ
 	PartitionContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000091C")
+
 	//15测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf
 	TestContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000F1C")
