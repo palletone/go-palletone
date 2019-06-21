@@ -61,6 +61,9 @@ type mockStatedbQuery struct {
 func (q *mockStatedbQuery) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }
+func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
+	return nil
+}
 
 //获得系统配置的最低手续费要求
 func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
