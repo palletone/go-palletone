@@ -117,6 +117,24 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 		return
 	}
 
+	if pm.assetId != assetId {
+		access := false
+		if pcs, err := pm.dag.GetPartitionChains(); err == nil {
+			for _, pc := range pcs {
+				for _, token := range pc.CrossChainTokens {
+					if token == assetId {
+						access = true
+					}
+				}
+			}
+		} else {
+			return
+		}
+		if !access {
+			return
+		}
+	}
+
 	headhash, number := peer.HeadAndNumber(assetId)
 	if common.EmptyHash(headhash) || number == nil {
 		log.Debug("Light PalletOne synchronise is nil", "assetId", assetId)

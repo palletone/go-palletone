@@ -44,6 +44,7 @@ var DefaultConfig = Config{
 	NetworkId:     1,
 	LightServ:     10,
 	LightPeers:    10,
+	CorsPeers:     5,
 	DatabaseCache: 768,
 	TrieCache:     256,
 	TrieTimeout:   5 * time.Minute,
@@ -86,6 +87,10 @@ type Config struct {
 	// Light client options
 	LightServ  int `toml:",omitempty"` // Maximum percentage of time allowed for serving LES requests
 	LightPeers int `toml:",omitempty"` // Maximum number of LES client peers
+
+	// Cors client options
+	//CorsServ  int `toml:",omitempty"` // Maximum percentage of time allowed for serving LES requests
+	CorsPeers int `toml:",omitempty"` // Maximum number of LES client peers
 
 	// Database options
 	SkipBcVersionCheck bool `toml:"-"`
