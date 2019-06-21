@@ -88,10 +88,12 @@ installContractTpl
     [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplName}    ${tplPath}
     ...    ${tplVersion}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplName}
-    ...    ${tplPath}    ${tplVersion}
+    ...    ${tplPath}    ${tplVersion}    ${null}
     ${respJson}=    sendRpcPost    ${host}    ${installMethod}    ${params}    InstallContractTpl
-    Dictionary Should Contain Key    ${respJson}    reqId
-    Dictionary Should Contain Key    ${respJson}    tplId
+    Dictionary Should Contain Key    ${respJson}    result
+    ${result}=    Get From Dictionary    ${respJson}    result
+    Dictionary Should Contain Key    ${result}    reqId
+    Dictionary Should Contain Key    ${result}    tplId
     [Return]    ${respJson}
 
 deployContract
@@ -99,8 +101,10 @@ deployContract
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplId}
     ...    ${args}
     ${respJson}=    sendRpcPost    ${host}    ${deployMethod}    ${params}    DeployContract
-    Dictionary Should Contain Key    ${respJson}    ContractId
-    Dictionary Should Contain Key    ${respJson}    reqId
+    Dictionary Should Contain Key    ${respJson}    result
+    ${result}=    Get From Dictionary    ${respJson}    result
+    Dictionary Should Contain Key    ${result}    ContractId
+    Dictionary Should Contain Key    ${result}    reqId
     [Return]    ${respJson}
 
 invokeContract
@@ -108,8 +112,10 @@ invokeContract
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}
     ...    ${args}
     ${respJson}=    sendRpcPost    ${host}    ${invokeMethod}    ${params}    InvokeContract
-    Dictionary Should Contain Key    ${respJson}    ContractId
-    Dictionary Should Contain Key    ${respJson}    reqId
+    Dictionary Should Contain Key    ${respJson}    result
+    ${result}=    Get From Dictionary    ${respJson}    result
+    Dictionary Should Contain Key    ${result}    ContractId
+    Dictionary Should Contain Key    ${result}    reqId
     [Return]    ${respJson}
 
 queryContract
@@ -121,7 +127,7 @@ queryContract
 getCurrentUnitHeight
     [Arguments]    ${host}
     # query current unit height
-    ${respJson}=    senRpcPost    ${host}    admin_nodeInfo    ${null}    QueryCurrentUnitHeight
+    ${respJson}=    sendRpcPost    ${host}    admin_nodeInfo    ${null}    QueryCurrentUnitHeight
     ${protocols}=    Get From Dictionary    ${respJson}    protocols
     ${ptnInfo}=    Get From Dictionary    ${protocols}    PTN
     ${height}=    Get From Dictionary    ${ptnInfo}    Index
@@ -148,8 +154,9 @@ Wait for unit abount contract to be confirmed by unit height
     [Arguments]    ${reqId}
     # query the height of unit including tpl install tx
     ${params}=    Create List    ${reqId}
-    ${respJson}=    senRpcPost    ${host}    dag_getTxByReqId    ${params}    QueryContractReqStats
-    ${info}=    Get From Dictionary    ${respJson}    info
+    ${respJson}=    sendRpcPost    ${host}    dag_getTxByReqId    ${params}    QueryContractReqStats
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${info}=    Get From Dictionary    ${result}    info
     ${unitHeight}=    Get From Dictionary    ${info}    unit_height
     ${waitTimes}=    Set Variable    ${8}
     : FOR    ${t}    IN RANGE    ${waitTimes}

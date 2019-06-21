@@ -224,7 +224,7 @@ install:
 
 addons:
   apt:
-    update: false
+    update: true
 
 notifications:
   email:

@@ -14,8 +14,8 @@ lftp -u $USER,$PASS $HOST << EOF
 #mkdir $RCD
 #cd $RCD
 #ls
-#echo "222222"
-put $LCD
+echo "222222"
+put $LCD $RNAME
 bye
 EOF
 echo "script end at `date "+%Y-%m-%d %H:%M:%S"`"
