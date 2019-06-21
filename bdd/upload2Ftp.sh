@@ -7,6 +7,7 @@ LCD=$3
 RCD=$4
 RNAME=$5
 lftp -u $USER,$PASS $HOST << EOF
+cd pub
 mkdir $RCD
 cd $RCD
 put $LCD $RNAME
