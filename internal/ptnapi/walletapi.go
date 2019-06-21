@@ -32,13 +32,22 @@ import (
 func (s *PublicWalletAPI) Forking(ctx context.Context, rate uint64) uint64 {
 	return forking(ctx, s.b)
 }
-
+func (s *PrivateWalletAPI) Forking(ctx context.Context, rate uint64) uint64 {
+	return forking(ctx, s.b)
+}
 type PublicWalletAPI struct {
+	b Backend
+}
+
+type PrivateWalletAPI struct {
 	b Backend
 }
 
 func NewPublicWalletAPI(b Backend) *PublicWalletAPI {
 	return &PublicWalletAPI{b}
+}
+func NewPrivateWalletAPI(b Backend) *PrivateWalletAPI {
+	return &PrivateWalletAPI{b}
 }
 func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
