@@ -14,4 +14,5 @@ mkdir $RCD
 cd $RCD
 put $LCD $RNAME
 bye
+echo "done put"
 EOF
