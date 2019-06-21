@@ -16,6 +16,9 @@
 package deposit
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
@@ -29,9 +32,26 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	log.Info("Start entering apply for become mediator func")
 	//  检查参数
 	if len(args) != 1 {
-		log.Error("Arg need only one parameter.")
-		return shim.Error("Arg need only one parameter.")
+		errStr := "Arg need only one parameter."
+		log.Error(errStr)
+		return shim.Error(errStr)
 	}
+
+	var mco modules.MediatorCreateOperation
+	err := json.Unmarshal([]byte(args[0]), &mco)
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
+	err = mco.Validate()
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
 	//  获取请求地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {

@@ -21,16 +21,18 @@
 package validator
 
 import (
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"time"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type Validator interface {
 	//验证一个交易是否是合法交易
 	//isCoinbase
 	//isFullTx这个交易是完整的可打包的交易，还是陪审团没处理或者正在处理中的交易
-	ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, error)
+	ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error)
 	//验证一个Unit中的所有交易是否是合法交易
 	//ValidateTransactions(txs modules.Transactions) error
 	//除了群签名外，验证Unit是否是合法Unit,包括其中的所有交易都会逐一验证
@@ -40,9 +42,11 @@ type Validator interface {
 	ValidateUnitGroupSign(h *modules.Header) error
 	CheckTxIsExist(tx *modules.Transaction) bool
 }
+
 type IUtxoQuery interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 }
+
 type IStateQuery interface {
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	//获得系统配置的最低手续费要求
@@ -50,14 +54,18 @@ type IStateQuery interface {
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetMediators() map[common.Address]bool
 }
+
 type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 }
+
 type IPropQuery interface {
 	GetSlotAtTime(when time.Time) uint32
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
+	GetChainParameters() *core.ChainParameters
 }
