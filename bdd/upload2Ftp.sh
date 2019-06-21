@@ -6,6 +6,8 @@ PASS=$2
 LCD=$3
 RCD=$4
 RNAME=$5
+echo $USER
+echo $PASS
 lftp -u $USER,$PASS $HOST << EOF
 cd pub
 mkdir $RCD

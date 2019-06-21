@@ -1,5 +1,4 @@
-language:
-  - go
+language: go
 sudo: required
 env:
   global:
