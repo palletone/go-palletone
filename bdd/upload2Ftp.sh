@@ -4,10 +4,10 @@ HOST=39.105.191.26
 USER=$1
 PASS=$2
 LCD=$3
-RNAME=$4
-RCD=pub
+RCD=$4
+RNAME=$5
 lftp -u $USER,$PASS $HOST << EOF
-echo "this is a test"
+mkdir $RCD
 cd $RCD
 put $LCD $RNAME
 EOF
