@@ -7,6 +7,7 @@ env:
     - GAS_TOKEN_ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/GasToken/node/log/all.log
     - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
     - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
+    - FTPHOST=39.105.191.26
     - CREATE_TRANS_DIR=createTrans
     - CONTRACT20_DIR=crt20Contract
     - CONTRACT721_DIR=crt721Contract
@@ -147,7 +148,7 @@ after_script:
       # uplaod all log
       pwd;
       ./bdd/upload2Ftp.sh ${CERT} ${PASSWORD} /home/travis/gopath/src/github.com/palletone/go-palletone/README.md ${DEPOSIT_DIR} README.md;
-      #./bdd/upload2Ftp.sh ${CERT} ${PASSWORD} /home/travis/gopath/src/github.com/palletone/go-palletone/README.md README.md;
+      lftp -e "cd pub; mkdir ${DEPOSIT_DIR}; cd ${DEPOSIT_DIR}; put /home/travis/gopath/src/github.com/palletone/go-palletone/README.md -o readme.txt; exit" -u ${CERT},${PASSWORD} ${FTPHOST}
 
       # upload deposit log
       if [ $IS_RUN_DEPOSIT == 'true' ]; then
