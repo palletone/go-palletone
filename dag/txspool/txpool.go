@@ -104,6 +104,7 @@ type dags interface {
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetMediators() map[common.Address]bool
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
