@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
+	"github.com/palletone/go-palletone/dag/migration"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -269,16 +270,18 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-
+		t1 := time.Now()
 		timestamp := time.Unix(u.Timestamp(), 0)
-		log.Debugf("InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
+		log.Debugf("Start InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
 		if err := d.Memdag.AddUnit(u, txpool); err != nil {
 			//return count, err
+			log.Errorf("Memdag addUnit[%s] error:%s", u.UnitHash.String(), err.Error())
 			return count, nil
 		}
+		log.Infof("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
 		count += 1
 	}
 
@@ -544,6 +547,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
+	checkDbMigration(db, stateDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	propRep := dagcommon.NewPropRepository(propDb)
@@ -606,6 +610,49 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	dag.refreshPartitionMemDag()
 	return dag, nil
 }
+func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
+	// 获取旧的gptn版本号
+	t := time.Now()
+	defer func(t1 time.Time) {
+		log.Infof("exec migration spent time:%s", time.Since(t1))
+	}(t)
+	old_vertion, err := stateDb.GetDataVersion()
+	if err != nil {
+		old_vertion = &modules.DataVersion{Version: "0.6.15"}
+	}
+	log.Infof("the old version:%s", old_vertion.Version)
+	// 获取当前gptn版本号
+	now_version := configure.Version
+	next_version := old_vertion.Version
+	if next_version != now_version {
+		log.Infof("start migration,upgrade gtpn vertion[%s] to [%s]", next_version, now_version)
+		// migrations
+		mig_versions := migration.NewMigrations(db)
+		for {
+			if mig, has := mig_versions[next_version]; has {
+				if err := mig.ExecuteUpgrade(); err != nil {
+					return err
+				}
+				next_version = mig.ToVersion()
+				data_version := new(modules.DataVersion)
+				data_version.Name = "gptn"
+				data_version.Version = next_version
+				stateDb.SaveDataVersion(data_version)
+			}
+			if next_version == now_version {
+				break
+			}
+			// 版本升级超时处理
+			if now := time.Now(); now.After(t.Add(1 * time.Minute)) {
+				log.Infof("upgrade gptn failed. error: timeout[%s]", time.Since(t))
+				break
+			}
+		}
+		return nil
+	}
+	return nil
+}
+
 func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateChangeEvent) {
 	log.Debug("Process AfterSysContractStateChangeEvent")
 	if bytes.Equal(arg.ContractId, syscontract.PartitionContractAddress.Bytes()) {
@@ -873,7 +920,6 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 }
 
 func (d *Dag) RefreshSysParameters() {
-	//d.unstableStateRep.RefreshSysParameters()
 	d.unstableUnitProduceRep.RefreshSysParameters()
 }
 
@@ -1309,9 +1355,9 @@ func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 	return uint64(0)
 }
 func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
-	log.Debug("===InsertLightHeader===", "numbers:", len(headers))
+	log.Debug("Dag InsertLightHeader numbers", "", len(headers))
 	for _, header := range headers {
-		log.Debug("===InsertLightHeader===", "header index:", header.Index(), "assetid", header.Number.AssetID)
+		log.Debug("Dag InsertLightHeader info", "header index:", header.Index(), "assetid", header.Number.AssetID)
 	}
 	count, err := d.InsertHeaderDag(headers)
 	//Debug code:

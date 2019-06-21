@@ -159,7 +159,6 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.InitialParameters.ActiveMediatorCount = uint8(initMediatorCount)
 	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
 
-	genesisState.SystemContracts = initSysContracts()
 	//配置测试的基金会地址及密码
 	//account, _, err = createExampleAccount(ctx)
 	//if err != nil {
@@ -203,7 +202,7 @@ func createGenesisJson(ctx *cli.Context) error {
 	return nil
 }
 func initSysContracts() []core.SysContract {
-	list := []core.SysContract{}
+	list := make([]core.SysContract, 0)
 	list = append(list, core.SysContract{Address: syscontract.CreateTokenContractAddress, Name: "PRC20", Active: true})
 	list = append(list, core.SysContract{Address: syscontract.CreateToken721ContractAddress, Name: "PRC721", Active: true})
 	list = append(list, core.SysContract{Address: syscontract.SysConfigContractAddress, Name: "System Config Manager", Active: true})
@@ -238,7 +237,7 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	isOpenSTD := ctx.Args().Get(1)
 	isOpenSTD = strings.ToUpper(isOpenSTD)
 	if isOpenSTD == "FALSE" {
-		newLogOutPath := []string{}
+		newLogOutPath := make([]string, 0)
 		for _, p := range cfg.Log.OutputPaths {
 			if p == log.LogStdout {
 				continue
@@ -326,30 +325,33 @@ func createExampleGenesis() *core.Genesis {
 	//
 	//	ActiveMediatorCount: strconv.FormatUint(core.DefaultMediatorCount, 10),
 	//}
-	DigitalIdentityConfig := core.DigitalIdentityConfig{
-		// default root ca holder, 默认是基金会地址
-		RootCAHolder: core.DefaultFoundationAddress,
-		RootCABytes:  core.DefaultRootCABytes,
-	}
+
+	//DigitalIdentityConfig := core.DigitalIdentityConfig{
+	//	// default root ca holder, 默认是基金会地址
+	//	RootCAHolder: core.DefaultFoundationAddress,
+	//	RootCABytes:  core.DefaultRootCABytes,
+	//}
+
 	initParams := core.NewChainParams()
 	mediators := []*mp.MediatorConf{mp.DefaultMediatorConf()}
 
 	return &core.Genesis{
-		GasToken:    dagconfig.DefaultToken, //core.DefaultAlias,
 		Version:     configure.Version,
+		GasToken:    dagconfig.DefaultToken, //core.DefaultAlias,
 		TokenAmount: core.DefaultTokenAmount,
 		//TokenDecimal:              core.DefaultTokenDecimal,
-		ChainID:          core.DefaultChainID,
-		TokenHolder:      core.DefaultTokenHolder,
-		ParentUnitHeight: -1,
-		Text:             core.DefaultText,
+		ChainID:     core.DefaultChainID,
+		TokenHolder: core.DefaultTokenHolder,
+		Text:        core.DefaultText,
 		//SystemConfig:          SystemConfig,
-		DigitalIdentityConfig: DigitalIdentityConfig,
+		DigitalIdentityConfig: core.DefaultDigitalIdentityConfig(),
+		ParentUnitHeight:      -1,
 		InitialParameters:     initParams,
 		ImmutableParameters:   core.NewImmutChainParams(),
 		InitialTimestamp:      gen.InitialTimestamp(initParams.MediatorInterval),
 		//InitialActiveMediators:    core.DefaultMediatorCount,
 		InitialMediatorCandidates: initialMediatorCandidates(mediators, core.DefaultNodeInfo),
+		SystemContracts:           initSysContracts(),
 	}
 }
 

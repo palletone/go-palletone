@@ -358,8 +358,7 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 		Height:  nextUnit.Number(),
 		TxIndex: ^uint32(0),
 	}
-	//dag.stateRep.UpdateSysParams(version)
-	//dag.stateRep.RefreshSysParameters()
+
 	dag.UpdateSysParams(version)
 	dag.RefreshSysParameters()
 
@@ -396,10 +395,13 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	modifies, err := dag.stateRep.GetSysParamWithoutVote()
 	if err == nil {
 		for k, v := range modifies {
+			if k == modules.DesiredActiveMediatorCount {
+				continue // 已更新，不需要处理
+			}
+
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
 				log.Errorf(err.Error())
-				//return err
 				continue
 			}
 		}
@@ -415,19 +417,22 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	infos := dag.getSysParamsWithVote()
 	if len(infos) > 0 {
 		for k, v := range infos {
+			if k == modules.DesiredActiveMediatorCount {
+				continue // 已更新，不需要处理
+			}
+
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
 				log.Errorf(err.Error())
-				//return err
 				continue
 			}
 		}
 
 		//将基金会当前投票修改的重置为nil
 		err = dag.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithVote, nil, version)
-		//if err != nil {
-		//	return err
-		//}
+		if err != nil {
+			log.Errorf(err.Error())
+		}
 	}
 
 	err = dag.propRep.StoreGlobalProp(gp)
@@ -547,6 +552,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
 	gp.PrecedingMediators = gp.ActiveMediators
 	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
+	gp.ChainParameters.ActiveMediatorCount = uint8(mediatorCount)
 	for index := 0; index < mediatorCount; index++ {
 		voteTally := dag.mediatorVoteTally[index]
 		gp.ActiveMediators[voteTally.candidate] = true

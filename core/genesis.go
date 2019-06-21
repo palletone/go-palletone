@@ -67,6 +67,14 @@ type DigitalIdentityConfig struct {
 	RootCABytes  string `json:"rootCABytes"`  // ROOT CA证书内容
 }
 
+func DefaultDigitalIdentityConfig() DigitalIdentityConfig {
+	return DigitalIdentityConfig{
+		// default root ca holder, 默认是基金会地址
+		RootCAHolder: DefaultFoundationAddress,
+		RootCABytes:  DefaultRootCABytes,
+	}
+}
+
 type Genesis struct {
 	Version     string `json:"version"`
 	GasToken    string `json:"gasToken"`

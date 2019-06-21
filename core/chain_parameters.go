@@ -19,6 +19,12 @@
 
 package core
 
+import (
+	"fmt"
+	"reflect"
+	"strconv"
+)
+
 type ImmutableChainParameters struct {
 	MinimumMediatorCount uint8 `json:"minMediatorCount"`
 	MinMediatorInterval  uint8 `json:"minMediatorInterval"`
@@ -133,6 +139,28 @@ type ChainParameters struct {
 	//contract about
 	ContractSignatureNum int `json:"contract_signature_num"`
 	ContractElectionNum  int `json:"contract_election_num"`
+}
+
+func CheckSysConfigArgs(field, value string) error {
+	var err error
+	vn := reflect.ValueOf(ChainParameters{}).FieldByName(field)
+
+	switch vn.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		_, err = strconv.ParseInt(value, 10, 64)
+	case reflect.Invalid:
+		err = fmt.Errorf("no such field: %v", field)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		_, err = strconv.ParseUint(value, 10, 64)
+	case reflect.String:
+		err = nil
+	case reflect.Float64, reflect.Float32:
+		_, err = strconv.ParseFloat(value, 64)
+	default:
+		err = fmt.Errorf("unexpected type: %v", vn.Type().String())
+	}
+
+	return err
 }
 
 // 操作交易费计划

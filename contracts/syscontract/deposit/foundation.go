@@ -505,8 +505,8 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("please use foundation address")
 	}
 	//  判断处理地址是否申请过
-	isOk := args[0]
-	addr, err := common.StringToAddress(args[1])
+	isOk := args[1]
+	addr, err := common.StringToAddress(args[0])
 	if err != nil {
 		log.Error("string to address err: ", "error", err)
 		return shim.Error(err.Error())

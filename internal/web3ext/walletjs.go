@@ -97,7 +97,19 @@ const Wallet_JS = `
 			call: 'wallet_getFileInfoByFileHash',
 			params: 1,
 			inputFormatter: [null]
-		}),		
+		}),	
+		new web3._extend.Method({
+			name: 'getOneTokenInfo',
+			call: 'wallet_getOneTokenInfo',
+			params: 1,
+			inputFormatter: [null]
+		}),	
+		new web3._extend.Method({
+			name: 'getAllTokenInfo',
+			call: 'wallet_getAllTokenInfo',
+			params: 1,
+			inputFormatter: [null]
+		}),	
  	]
  });
  `

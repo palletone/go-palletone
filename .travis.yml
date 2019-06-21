@@ -9,7 +9,8 @@ env:
     - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
     - CREATE_TRANS_DIR=createTrans
     - CONTRACT20_DIR=crt20Contract
-    - CONTRACT721_DIR=crt721Contract
+    - SEQENCE721_DIR=crt721Seqence
+    - UDID721_DIR=crt721UDID
     - VOTECONTRACT_DIR=voteContract
     - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
     - DEPOSIT_DIR=deposit
@@ -22,45 +23,57 @@ env:
     - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
     - IS_RUN_20CONTRACT=true
-    - IS_RUN_721CONTRACT=true
+    - IS_RUN_721SEQENCE=true
+    - IS_RUN_721UDID=true
     - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
     - GO111MODULE=on
-    - IS_UPLOAD = FALSE
+    - IS_UPLOAD=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]' 
 
 matrix:
   include:
     - os: linux
       dist: xenial
-      go: 1.10.8
+      go: 1.10.x
+      env: UT
+      script:
+        - go get github.com/mattn/goveralls
+        - go build ./cmd/gptn
+        - make gptn
+        - $GOPATH/bin/goveralls -service=travis-ci   
+    - os: linux
+      dist: xenial
+      go: 1.11.x
+      env: UT
       script:
         - go build ./cmd/gptn
         - make gptn
-        - $GOPATH/bin/goveralls -service=travis-ci
-        
-    #- os: linux
-    #  dist: xenial
-    #  go: 1.11
-    #  script:
-    #    - go build ./cmd/gptn
-    #    - make gptn
-    #    - $GOPATH/bin/goveralls -service=travis-ci
-    #- os: linux
-    #  dist: xenial
-    #  go: 1.12.5
-    #  script:
-    #    - go build ./cmd/gptn
-    #    - make gptn
-    #    - $GOPATH/bin/goveralls -service=travis-ci
+        - go test ./...       
+    - os: linux
+      dist: xenial
+      go: 1.12.x
+      env: UT
+      script:
+        - go build ./cmd/gptn
+        - make gptn
+        - go test ./...      
+    - os: osx
+      go: 1.12.x
+      env: UT
+      script:
+        - go build ./cmd/gptn
+        - make gptn
+        - go test ./...        
     - os: linux
       dist: xenial
       go: 1.12.5
+      env: one_node_bdd
       script:
         - go build ./cmd/gptn
-        - make gptn
+        # - make gptn
         - cp gptn bdd/node
         - mkdir bdd/GasToken/node
         - mkdir bdd/mediator-vote/node
@@ -82,6 +95,7 @@ matrix:
           chmod +x ./test_start.sh;
           ./test_start.sh;
           fi
+          
         # into bdd path, all testcases is here
         - cd ${BASE_DIR}/bdd
         - mkdir -p ${BDD_LOG_PATH}
@@ -93,10 +107,14 @@ matrix:
           python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
           fi
             
-        - if [ $IS_RUN_721CONTRACT == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT721_DIR} -i normal ./testcase/crt721Contract;
+        - if [ $IS_RUN_721SEQENCE == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${SEQENCE721_DIR} -i normal ./testcase/crt721Seqence;
           fi
-            
+         
+        - if [ $IS_RUN_721UDID == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${UDID721_DIR} -i normal ./testcase/crt721UDID;
+          fi
+         
         - if [ $IS_RUN_VOTE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;
           fi
@@ -120,10 +138,78 @@ matrix:
           sleep 15;
           python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
           fi
-     
-after_script:
-  - killall gptn
-  - sleep 2
+      after_script:
+        - killall gptn
+        - sleep 2
+        - # upload all logs
+        - cd ${BASE_DIR}
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} ${ALL_LOG_PATH} all.log;
+
+            # upload deposit log
+            if [ $IS_RUN_DEPOSIT == 'true' ]; then
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DEPOSIT_LOG_PATH/${LOG_NAME} ${DEPOSIT_DIR}_${LOG_NAME};
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DEPOSIT_LOG_PATH/${REPORT_NAME} ${DEPOSIT_DIR}_${REPORT_NAME};
+            fi
+
+            # upload create transactions log and report
+            if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DEPOSIT_LOG_PATH/${LOG_NAME} ${CREATE_TRANS_DIR}_${LOG_NAME};
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DEPOSIT_LOG_PATH/${REPORT_NAME} ${CREATE_TRANS_DIR}_${REPORT_NAME};
+            fi
+
+            # upload 20contract log and report
+            if [ $IS_RUN_20CONTRACT == 'true' ]; then
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$CONTRACT20_DIR/${LOG_NAME} ${CONTRACT20_DIR}_${LOG_NAME};
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$CONTRACT20_DIR/${REPORT_NAME} ${CONTRACT20_DIR}_${REPORT_NAME};
+            fi
+
+            # upload 721contract log and report
+            if [ $IS_RUN_721CONTRACT == 'true' ]; then
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$CONTRACT721_DIR/${LOG_NAME} ${CONTRACT721_DIR}_${LOG_NAME};
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$CONTRACT721_DIR/${REPORT_NAME} ${CONTRACT721_DIR}_${REPORT_NAME};
+            fi
+
+            # upload voteContract log and report
+            if [ $IS_RUN_VOTE == 'true' ]; then
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$VOTECONTRACT_DIR/${LOG_NAME} ${VOTECONTRACT_DIR}_${LOG_NAME};
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} ${VOTECONTRACT_DIR}_${REPORT_NAME};
+            fi
+
+            # upload digital identity log and report
+            if [ $IS_RUN_DIGITAL == 'true' ]; then
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${LOG_NAME} ${DIGITAL_IDENTITY_DIR}_${LOG_NAME};
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} ${DIGITAL_IDENTITY_DIR}_${REPORT_NAME};
+            fi
+
+            if [ $IS_RUN_GASTOKEN == 'true' ]; then
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$GAS_TOKEN_DIR/${LOG_NAME} ${GAS_TOKEN_DIR}_${LOG_NAME};
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} ${GAS_TOKEN_DIR}_${REPORT_NAME};
+              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} ${GAS_TOKEN_ALL_LOG_PATH} gastoken_all.log;
+            fi
+
+            # echo ftp address
+            "The path of all bdd log in vsftpd is 'ftp://39.105.191.26/palletone"
+            "If you want to open it in explorer, you should close VPN first."
+            "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
+          fi
+      install:
+        # - python -V
+        # - whereis python
+        # - which python
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
+        #- sudo -H apt-get install jq tcl tk
+
   #  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
   # upload all log
   #- curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
@@ -145,11 +231,11 @@ after_script:
   #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT20_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT20_DIR/$LOG_NAME -v;
   #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT20_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT20_DIR/${REPORT_NAME} -v;
   #  fi
-    
+
   # upload 721contract log and report
-  #- if [ $IS_RUN_721CONTRACT == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT721_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT721_DIR/$LOG_NAME -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT721_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT721_DIR/${REPORT_NAME} -v;
+  #- if [ $IS_RUN_721SEQENCE == 'true' ]; then
+  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$SEQENCE721_DIR/$LOG_NAME -T $BDD_LOG_PATH/$SEQENCE721_DIR/$LOG_NAME -v;
+  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$SEQENCE721_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$SEQENCE721_DIR/${REPORT_NAME} -v;
   #  fi
 
   # upload voteContract log and report
@@ -176,25 +262,13 @@ after_script:
   #- "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
 
 before_install:
-    - go get github.com/mattn/goveralls
     - go get -u github.com/palletone/adaptor
     - go get -u github.com/palletone/btc-adaptor
     - go get -u github.com/palletone/eth-adaptor
     - source ./build/goget_by_version.sh
     - source ./gomockgen.sh
 
-install:
-  - python -V
-  - whereis python
-  - which python
-  - sudo -H pip install --upgrade pip
-  - sudo -H pip install robotframework==2.8.5
-  - sudo -H pip install requests
-  - sudo -H pip install robotframework-requests
-  - sudo -H pip install demjson
-  - sudo -H pip install pexpect
-  - sudo -H apt-get install expect
-  #- sudo -H apt-get install jq tcl tk
+
 
 addons:
   apt:

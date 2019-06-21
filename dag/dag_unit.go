@@ -37,7 +37,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
 	t0 := time.Now()
 	defer func(start time.Time) {
-		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
+		log.Infof("GenerateUnit cost time: %v", time.Since(start))
 	}(t0)
 
 	// 1. 判断是否满足生产的若干条件
@@ -67,9 +67,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%#x], spent time: %s",
+	log.Infof("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s",
 		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
-		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.GetTxIds(), time.Since(t0).String())
+		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
 	dag.Memdag.AddUnit(sign_unit, txpool)

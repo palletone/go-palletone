@@ -322,7 +322,8 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 		return err
 	}
 	// 3. 启动 HTTP，用于 HTTP 的交互通信
-	if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, n.config.HTTPVirtualHosts); err != nil {
+	if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors,
+		n.config.HTTPVirtualHosts); err != nil {
 		log.Error("startRPC startHTTP err:", err.Error())
 		n.stopIPC()
 		n.stopInProc()

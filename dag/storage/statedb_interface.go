@@ -91,7 +91,6 @@ type IStateDb interface {
 	GetDataVersion() (*modules.DataVersion, error)
 	SaveDataVersion(dv *modules.DataVersion) error
 
-	//UpdateSysParams(ver *modules.StateVersion) error
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 

@@ -10,8 +10,8 @@ Resource          ../../utilKwd/behaveKwd.txt
 ${preTokenId}     QA058
 
 *** Test Cases ***
-Feature: Vote Contract- Create token
-    [Documentation]    Scenario: Verify Sender's PTN
+Scenario: 20Contract- Supply token
+    [Documentation]    Verify Sender's PTN
     Given CcinvokePass normal
     ${PTN1}    ${key}    ${coinToken1}    And Request getbalance before create token    ${geneAdd}
     ${ret}    When Create token of vote contract    ${geneAdd}
@@ -53,10 +53,10 @@ Create token of vote contract
     [Return]    ${ret}
 
 Calculate gain of recieverAdd
-	sleep    2
+    sleep    5
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${GAIN}    countRecieverPTN    ${invokeGain}
-    sleep    3
+    sleep    2
     [Return]    ${GAIN}
 
 Request getbalance after create token
@@ -74,7 +74,7 @@ Assert gain of reciever
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}
     Should Be Equal As Numbers    ${coinToken1}    ${coinToken2}
-	sleep    1
+    sleep    1
     ${result}    getTxByReqId    ${ret}
     ${jsonRes}    Evaluate    demjson.encode(${result})    demjson
     #${jsonRes}    To Json    ${jsonRes}

@@ -603,14 +603,37 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 	return nil
 }
 
+type tempTxs struct {
+	txs []*modules.Transaction
+	rep IUtxoRepository
+}
+
+func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
+	for _, tx := range txs.txs {
+		utxos := tx.GetNewUtxos()
+		for o, u := range utxos {
+			allUtxo[o] = u
+		}
+	}
+	if utxo, ok := allUtxo[*outpoint]; ok {
+		return utxo, nil
+	}
+	return txs.rep.GetUtxoEntry(outpoint)
+}
 func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
+	txs2 := []*modules.Transaction{}
+	for _, tx := range txs {
+		txs2 = append(txs2, tx.Tx)
+	}
+	tempTxs := &tempTxs{txs: txs2, rep: rep.utxoRepository}
 	for _, tx := range txs {
 		if tx.Tx == nil || tx.TxFee == nil {
 			continue
 		}
-		allowcate, err := tx.Tx.GetTxFeeAllocate(rep.utxoRepository.GetUtxoEntry, time.Now().Unix(), tokenengine.GetScriptSigners, m)
+		allowcate, err := tx.Tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, time.Now().Unix(), tokenengine.GetScriptSigners, m)
 		if err != nil {
 			return nil, err
 		}
@@ -904,6 +927,8 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-3)
 	}
 	// step2. traverse transactions and save them
+	// tempTxs := &tempTxs{txs: unit.Txs, rep: rep.utxoRepository}
+
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		err := rep.saveTx4Unit(unit, txIndex, tx)
@@ -1173,29 +1198,6 @@ func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Mess
 }
 
 /**
-保存配置交易
-save config payload
-*/
-//func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Message, height *modules.ChainIndex, txIndex uint32) bool {
-//	var pl interface{}
-//	pl = msg.Payload
-//	payload, ok := pl.(*modules.ConfigPayload)
-//	if ok == false {
-//		return false
-//	}
-//	version := modules.StateVersion{
-//		Height:  height,
-//		TxIndex: txIndex,
-//	}
-//	if err := rep.statedb.SaveConfig(payload.ConfigSet, &version); err != nil {
-//		errMsg := fmt.Sprintf("To save config payload error: %s", err)
-//		log.Error(errMsg)
-//		return false
-//	}
-//	return true
-//}
-
-/**
 保存合约调用状态
 To save contract invoke state
 */
@@ -1221,7 +1223,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
 		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
 		for _, eventFunc := range rep.observers {
-			go eventFunc(eventArg)
+			eventFunc(eventArg)
 		}
 	}
 	return true
@@ -1249,12 +1251,7 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			return false
 		}
 	}
-	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
-	// save contract name
-	//write := &modules.ContractWriteSet{Key: "ContractName", Value: []byte(payload.Name)}
-	//if rep.statedb.SaveContractState(payload.ContractId, write, version) != nil {
-	//	return false
-	//}
+
 	contract := modules.NewContract(payload, requester, uint64(unitTime))
 	err := rep.statedb.SaveContract(contract)
 	if err != nil {
@@ -1269,17 +1266,6 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			return false
 		}
 	}
-	//eleBytes, err := rlp.EncodeToBytes(payload.EleList)
-	//if err == nil {
-	//	log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
-	//	writeElectionList := &modules.ContractWriteSet{Key: "ElectionList", Value: eleBytes}
-	//
-	//	if rep.statedb.SaveContractState(payload.ContractId, writeElectionList, version) != nil {
-	//		return false
-	//	}
-	//} else {
-	//	return false
-	//}
 
 	return true
 }
@@ -1399,6 +1385,11 @@ To get unit information by its ChainIndex
 To create coinbase transaction
 */
 func (rep *UnitRepository) CreateCoinbase(ads []*modules.Addition, height uint64) (*modules.Transaction, uint64, error) {
+	log.DebugDynamic(func() string {
+		data, _ := json.Marshal(ads)
+		return "Try to create coinbase for fee allocation:" + string(data)
+	})
+
 	if height%parameter.CurrentSysParameters.RewardHeight == 0 {
 		return rep.createCoinbasePayment(ads)
 	} else {
@@ -1422,9 +1413,19 @@ func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*module
 				rlp.DecodeBytes(data, &income)
 				rs := modules.ContractReadSet{Key: key, Version: version}
 				payload.ReadSet = append(payload.ReadSet, rs)
+				log.DebugDynamic(func() string {
+					jsdata, _ := json.Marshal(income)
+					return "Get history reward for key:" + key + " Value:" + string(jsdata)
+				})
+			} else {
+				log.Debugf("%s Don't have history reward create it.", key)
 			}
 			newValue := addIncome(income, v.Amount, v.Asset)
 			newData, _ := rlp.EncodeToBytes(newValue)
+			log.DebugDynamic(func() string {
+				jsdata, _ := json.Marshal(newValue)
+				return "Create coinbase write set for key:" + key + " Value:" + string(jsdata)
+			})
 			ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: newData}
 			payload.WriteSet = append(payload.WriteSet, ws)
 			totalIncome += v.Amount

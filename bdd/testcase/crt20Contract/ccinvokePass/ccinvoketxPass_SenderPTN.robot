@@ -17,6 +17,7 @@ Scenario: 20Contract - Create Token
     ${PTNGAIN}    And Calculate gain
     ${PTN2}    And Request getbalance after create token
     Then Assert gain    ${PTN1}    ${PTN2}    ${PTNGAIN}
+    
 
 *** Keywords ***
 Request getbalance before create token
@@ -25,7 +26,7 @@ Request getbalance before create token
     personalUnlockAccount    ${geneAdd}
     sleep    2
     ${PTN1}    ${result}    normalGetBalance    ${geneAdd}
-    sleep    1
+    sleep    5
     [Return]    ${PTN1}
 
 Request normal CcinvokePass
@@ -36,7 +37,7 @@ Request normal CcinvokePass
     [Return]    ${ret}
 
 Calculate gain
-	sleep    3
+    sleep    3
     ${PTNGAIN}    Evaluate    ${PTNAmount}+${PTNPoundage}
     ${PTNGAIN}    countRecieverPTN    ${PTNGAIN}
     [Return]    ${PTNGAIN}
@@ -50,3 +51,4 @@ Assert gain
     [Arguments]    ${PTN1}    ${PTN2}    ${PTNGAIN}
     ${GAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNGAIN}')    decimal
     Should Be Equal As Strings    ${PTN2}    ${GAIN}
+    sleep    3

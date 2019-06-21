@@ -10,6 +10,7 @@ setPostRequest
     [Return]    ${resp}
 
 newAccount
+    #[Arguments]    ${host}=${host}
     ${transList}    Create List    ${pwd}
     ${resp}    setPostRequest    ${host}    ${newAccount}    ${transList}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
@@ -40,7 +41,18 @@ getGeneAdd
     #${log}    evaluate    str(${resp.content}['result'][0])
     [Return]    ${jsonRes['result'][0]}
 
+getMultiNodeGeneAdd
+    [Arguments]    ${host}
+    ${list}    Create List    ${EMPTY}
+    ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
+    log    ${resp.content}
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
+    #${log}    evaluate    str(${resp.content}['result'][1])
+    [Return]    ${jsonRes['result'][1]}
+
 getlistAccounts
+    [Arguments]    ${host}=${host}
     ${list}    Create List    ${EMPTY}
     ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
     log    ${resp.content}

@@ -57,6 +57,9 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 func (dagdb *DagDb) saveReqIdByTx(tx *modules.Transaction) error {
 	txhash := tx.Hash()
 	reqid := tx.RequestHash()
+	if txhash==reqid{
+		return nil
+	}
 	log.Debugf("Save RequestId[%s] map to TxId[%s]", reqid.String(), txhash.String())
 	key := append(constants.REQID_TXID_PREFIX, reqid.Bytes()...)
 	return dagdb.db.Put(key, txhash.Bytes())

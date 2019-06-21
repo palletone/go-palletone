@@ -9,7 +9,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Variables ***
 
 *** Test Cases ***
-Scenario: 20Contract - Create Transaction
+Scenario: createTrans - Create Transaction
     [Tags]    normal
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}

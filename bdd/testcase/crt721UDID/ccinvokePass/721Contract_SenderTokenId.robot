@@ -7,7 +7,7 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${preTokenId}     CA072
+${preTokenId}     CA082
 
 *** Test Cases ***
 Feature: 721 Contract - Create token
@@ -28,17 +28,17 @@ Get genesis address
 
 Request getbalance before create token
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
-    sleep    6
+    sleep    5
     [Return]    ${PTN1}    ${result1}
 
 Create token of vote contract
-    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
+    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${UDIDToken}    ${721TokenAmount}
     ...    ${721MetaBefore}    ${geneAdd}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
-	sleep    3
+    sleep    3
     [Return]    ${jsonRes['result']}
 
 Calculate gain of recieverAdd
@@ -52,7 +52,7 @@ Request getbalance after create token
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     sleep    5
     ${queryResult}    ccqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
-	sleep    1
+    sleep    1
     ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
     : FOR    ${num}    IN RANGE    len(${countList})
     \    ${voteToken}    Get From Dictionary    ${result2['result']}    ${tokenCommonId}-${countList[${num}]}

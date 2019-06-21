@@ -32,7 +32,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinstalltx',
         	call: 'contract_ccinstalltx',
-        	params: 7, //from, to , daoAmount, daoFee , tplName, path, version
+        	params: 8, //from, to , daoAmount, daoFee , tplName, path, version
 			inputFormatter: [null, null, null,null, null, null, null, null]
 		}),
 		new web3._extend.Method({
@@ -99,14 +99,24 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'depositContractInvoke',
         	call: 'contract_depositContractInvoke',
-        	params: 5, //from, to, daoAmount, daoFee,param[]string
+        	params: 5, // from, to, daoAmount, daoFee, param[]string
 			inputFormatter: [null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'depositContractQuery',
         	call: 'contract_depositContractQuery',
-        	params: 1, //param[]string
+        	params: 1, // param[]string
 			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'sysConfigContractInvoke',
+        	call: 'contract_sysConfigContractInvoke',
+        	params: 5, // from, to, daoAmount, daoFee, param[]string
+		}),
+		new web3._extend.Method({
+			name: 'sysConfigContractQuery',
+        	call: 'contract_sysConfigContractQuery',
+        	params: 1, // param[]string
 		}),
 		new web3._extend.Method({
 			name: 'getContractsByTpl',

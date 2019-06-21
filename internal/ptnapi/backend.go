@@ -127,7 +127,6 @@ type Backend interface {
 
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
-	//GetAllSysConfig() ([]*ptnjson.ConfigJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
@@ -163,6 +162,10 @@ type Backend interface {
 	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
 	GetAllContracts() ([]*ptnjson.ContractJson, error)
 	GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error)
+
+	//get contract key
+	GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
 	//SPV
 	GetProofTxInfoByHash(txhash string) ([][]byte, error)

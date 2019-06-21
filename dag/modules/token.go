@@ -25,6 +25,19 @@ import (
 	"time"
 )
 
+const GlobalPrefix = "Tokens_"
+
+//定义所有Token的基本信息
+type GlobalTokenInfo struct {
+	Symbol      string
+	TokenType   uint8 //1:prc20 2:prc721 3:vote 4:SysVote
+	Status      uint8
+	CreateAddr  string
+	TotalSupply uint64
+	SupplyAddr  string
+	AssetID     AssetId
+}
+
 //定义一种全新的Token
 type TokenDefine struct {
 	TokenDefineJson []byte         `json:"token_define_json"`

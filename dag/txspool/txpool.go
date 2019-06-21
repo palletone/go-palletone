@@ -316,7 +316,7 @@ func (pool *TxPool) loop() {
 			}
 			// delete tx
 		case <-deleteTxTimer.C:
-			go pool.DeleteTx()
+			pool.DeleteTx()
 
 			// quit
 		case <-orphanExpireScan.C:
@@ -343,6 +343,7 @@ func (pool *TxPool) stats() (int, int, int) {
 	p_count, q_count := 0, 0
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
+	seq_txs := pool.sequenTxs.All()
 	for _, tx := range poolTxs {
 		if tx.Pending {
 			p_count++
@@ -352,6 +353,11 @@ func (pool *TxPool) stats() (int, int, int) {
 		}
 	}
 	for _, tx := range orphanTxs {
+		if !tx.Pending {
+			q_count++
+		}
+	}
+	for _, tx := range seq_txs {
 		if !tx.Pending {
 			q_count++
 		}
@@ -902,7 +908,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, isNew, rateL
 	// weed out duplicates.
 	if pool.isTransactionInPool(txHash) {
 		str := fmt.Sprintf("already have transaction %s", txHash.String())
-		log.Info("txpool", "info", str)
+		log.Debug("txpool", "info", str)
 		return nil, nil, nil
 	}
 
@@ -1035,7 +1041,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
-						if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
+						if addrs, err := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, tokenengine.GetAddressFromScript); err == nil {
 							for _, addr := range addrs {
 								addr1 := addr.String()
 								txs[addr1] = append(txs[addr1], tx)
@@ -1161,12 +1167,14 @@ func (pool *TxPool) DeleteTx() error {
 }
 
 func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
+
 	inter, has := pool.all.Load(hash)
 	if !has {
 		return errors.New(fmt.Sprintf("the tx(%s) isn't exist in pool.", hash.String()))
 	}
 	tx := inter.(*modules.TxPoolTransaction)
 	pool.all.Delete(hash)
+	pool.orphans.Delete(hash)
 	pool.priority_sorted.Removed()
 
 	if tx != nil {
@@ -1178,14 +1186,14 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 						if input.PreviousOutPoint == nil {
 							continue
 						}
-						go pool.outpoints.Delete(*input.PreviousOutPoint)
+						pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 					// delete outputs's utxo
 					preout := modules.OutPoint{TxHash: hash}
 					for j := range payment.Outputs {
 						preout.MessageIndex = uint32(i)
 						preout.OutIndex = uint32(j)
-						go pool.deleteOrphanTxOutputs(preout)
+						pool.deleteOrphanTxOutputs(preout)
 					}
 				}
 			}
@@ -1218,7 +1226,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 				for _, input := range payment.Inputs {
 					// 排除手续费的输入为nil
 					if input.PreviousOutPoint != nil {
-						go pool.outpoints.Delete(*input.PreviousOutPoint)
+						pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 				}
 				// delete outputs's utxo
@@ -1266,7 +1274,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 					for _, input := range msg.Inputs {
-						go pool.outpoints.Delete(*input.PreviousOutPoint)
+						pool.outpoints.Delete(*input.PreviousOutPoint)
 					}
 				}
 			}
@@ -1278,9 +1286,9 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 }
 func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
 	if interTx, has := pool.all.Load(hash); has {
-		go pool.removeTransaction(interTx.(*modules.TxPoolTransaction), removeRedeemers)
+		pool.removeTransaction(interTx.(*modules.TxPoolTransaction), removeRedeemers)
 	} else {
-		go pool.removeTx(hash)
+		pool.removeTx(hash)
 	}
 }
 
@@ -1296,7 +1304,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 			for _, input := range inputs.Inputs {
 				if tx, ok := pool.outpoints.Load(*input.PreviousOutPoint); ok {
 					ptx := tx.(*modules.TxPoolTransaction)
-					go pool.removeTransaction(ptx, true)
+					pool.removeTransaction(ptx, true)
 				}
 			}
 		}
@@ -1629,11 +1637,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	t0 := time.Now()
 	var total common.StorageSize
 	list := make([]*modules.TxPoolTransaction, 0)
-
 	// get sequenTxs
 	stxs := pool.GetSequenTxs()
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
 	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
@@ -1655,18 +1660,18 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			break
 		} else {
 			if !tx.Pending {
-				if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
-					continue
-				}
+				//if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
+				//	continue
+				//}
 				// add precusorTxs 获取该交易的前驱交易列表
 				p_txs, _ := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
-				if len(p_txs) > 0 {
-					for _, ptx := range p_txs {
-						if has, _ := pool.unit.IsTransactionExist(ptx.Tx.Hash()); !has {
-							list = append(list, ptx)
-							total += ptx.Tx.Size()
-						}
-					}
+				for _, ptx := range p_txs {
+					//if has, _ := pool.unit.IsTransactionExist(ptx.Tx.Hash()); !has {
+					//	list = append(list, ptx)
+					//	total += ptx.Tx.Size()
+					//}
+					list = append(list, ptx)
+					total += ptx.Tx.Size()
 				}
 				list = append(list, tx)
 				total += tx.Tx.Size()
@@ -1683,10 +1688,13 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	if len(or_list) > 1 {
 		sort.Sort(or_list)
 	}
+	// pool rlock
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
 	for _, tx := range or_list {
 		txhash := tx.Tx.Hash()
 		if has, _ := pool.unit.IsTransactionExist(txhash); has {
-			go pool.orphans.Delete(txhash)
+			pool.orphans.Delete(txhash)
 			continue
 		}
 		ok, err := pool.ValidateOrphanTx(tx.Tx)
@@ -1695,8 +1703,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			tx.Pending = true
 			tx.UnitHash = hash
 			tx.UnitIndex = index
-			go pool.all.Store(txhash, tx)
-			go pool.orphans.Delete(txhash)
+			pool.all.Store(txhash, tx)
+			pool.orphans.Delete(txhash)
 			//pool.orphans.Store(tx.Tx.Hash(), tx)
 			list = append(list, tx)
 			total += tx.Tx.Size()
@@ -1716,15 +1724,19 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		m[hash] = tx
 	}
 	list = make([]*modules.TxPoolTransaction, 0)
+
 	for i := 0; i < len(indexL); i++ {
 		t_hash, _ := indexL[i]
 		if tx, has := m[t_hash]; has {
 			delete(m, t_hash)
+			if has, _ := pool.unit.IsTransactionExist(t_hash); has {
+				pool.DeleteTxByHash(t_hash)
+				continue
+			}
 			list = append(list, tx)
 			go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
-	// if time.Since(t2) > time.Second*1 {
 	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
 
 	return list, total
@@ -1737,8 +1749,8 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs, orpha
 			if ok {
 				for _, input := range payment.Inputs {
 					if input.PreviousOutPoint != nil {
-						utxo, err := pool.GetUtxoEntry(input.PreviousOutPoint)
-						if utxo.IsSpent() {
+						utxo, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
+						if err == nil && utxo != nil {
 							continue
 						}
 						if err != nil { //  若该utxo在db里找不到
@@ -1766,15 +1778,7 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs, orpha
 	}
 	return pretxs, nil
 }
-
-//func (pool *TxPool) GetSequenTx() *modules.TxPoolTransaction {
-//	pool.mu.Lock()
-//	defer pool.mu.Unlock()
-//	return pool.sequenTxs.Get()
-//}
 func (pool *TxPool) GetSequenTxs() []*modules.TxPoolTransaction {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
 	return pool.getSequenTxs()
 }
 func (pool *TxPool) getSequenTxs() []*modules.TxPoolTransaction {
