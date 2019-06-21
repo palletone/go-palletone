@@ -20,6 +20,7 @@ ${newAccount}     personal_newAccount
 ${crtTransMethod}         ptn_cmdCreateTransaction
 ${signMethod}     ptn_signRawTransaction
 ${crtTokenMethod}    createToken
+${frozenTokenMethod}    frozenToken
 ${supplyTokenMethod}    supplyToken
 ${changeSupplyMethod}    changeSupplyAddr
 ${invokePsMethod}    contract_ccinvoketxPass

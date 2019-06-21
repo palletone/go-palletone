@@ -169,10 +169,10 @@ func getDockerHostConfig() *docker.HostConfig {
 		log.Debugf("load GetCcDagHand: %s", err.Error())
 	}
 	cp := dag.GetChainParameters()
-
+	capDrop := []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw", "kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"}
 	hostConfig = &docker.HostConfig{
 		CapAdd:       viper.GetStringSlice(dockerKey("CapAdd")),
-		CapDrop:      viper.GetStringSlice(dockerKey("CapDrop")),
+		CapDrop:      capDrop,
 		PortBindings: portBindings,
 		DNS:          viper.GetStringSlice(dockerKey("Dns")),
 		DNSSearch:    viper.GetStringSlice(dockerKey("DnsSearch")),
