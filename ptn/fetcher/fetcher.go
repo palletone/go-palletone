@@ -680,12 +680,15 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 			go f.broadcastBlock(block, true)
 
 		case dagerrors.ErrFutureBlock:
-		// Weird future block, don't fail, but neither propagate
-
+			// Weird future block, don't fail, but neither propagate
 		default:
 			// Something went very wrong, drop the peer
 			log.Warn("Propagated block verification failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
-			f.dropPeer(peer)
+			if err.Error() != "DOUBLE_SPEND" && err.Error() != "INVALID_HEADER_TIME" {
+				f.dropPeer(peer)
+			} else {
+				log.Infof("xxx test double spend tx , don't remove peer. error[%s]", err.Error())
+			}
 			return
 		}
 		// Run the actual import and log any issues
