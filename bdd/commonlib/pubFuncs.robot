@@ -156,6 +156,7 @@ Wait for unit abount contract to be confirmed by unit height
     ${params}=    Create List    ${reqId}
     ${respJson}=    sendRpcPost    ${host}    dag_getTxByReqId    ${params}    QueryContractReqStats
     ${result}=    Get From Dictionary    ${respJson}    result
+    ${result}=    To Json    ${result}
     ${info}=    Get From Dictionary    ${result}    info
     ${unitHeight}=    Get From Dictionary    ${info}    unit_height
     ${waitTimes}=    Set Variable    ${8}
