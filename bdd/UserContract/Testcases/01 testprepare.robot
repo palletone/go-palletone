@@ -7,7 +7,7 @@ Library           BuiltIn
 *** Test Cases ***
 testprepare
     queryTokenHolder
-    #startProduce
+    startProduce
 
 *** Keywords ***
 startProduce

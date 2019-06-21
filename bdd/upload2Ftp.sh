@@ -16,7 +16,7 @@ echo "------"
 #cd $RCD
 #ls
 #echo "222222"
-put $LCD -o $RNAME
+put $LCD $RNAME
 echo "done put"
 bye
 EOF
