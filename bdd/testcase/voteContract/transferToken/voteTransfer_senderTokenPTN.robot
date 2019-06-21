@@ -39,11 +39,12 @@ Transfer token of vote contract
     [Return]    ${ret}
 
 Request getbalance before create token
-    sleep    4
+    sleep    5
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     sleep    5
     ${key}    getTokenId    ${voteId}    ${result1['result']}
     ${item1}    Get From Dictionary    ${result1['result']}    ${key}
+    sleep    3
     [Return]    ${PTN1}    ${result1}    ${item1}    ${key}
 
 Request transfer token
@@ -63,6 +64,7 @@ Request getbalance after create token
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     sleep    5
     ${item2}    Get From Dictionary    ${result2['result']}    ${key}
+    sleep    3
     [Return]    ${PTN2}    ${item2}
 
 Assert gain of reciever
