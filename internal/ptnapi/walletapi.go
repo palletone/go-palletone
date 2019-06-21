@@ -118,7 +118,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	result, _ := WalletCreateTransaction(arg)
 	return result, nil
 }
-func (s *PublicWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, gasFee decimal.Decimal) (*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
+func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, gasFee decimal.Decimal) (*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
 	//参数检查
 	tokenAsset, err := modules.StringToAsset(tokenId)
 	if err != nil {
@@ -1028,7 +1028,7 @@ func RandFromString(value string) (decimal.Decimal, error) {
 	return result, nil
 }
 
-func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
+func (s *PrivateWalletAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
 	if duration == nil {
@@ -1046,13 +1046,13 @@ func (s *PublicWalletAPI) unlockKS(addr common.Address, password string, duratio
 	return nil
 }
 
-func (s *PublicWalletAPI) TransferPtn(ctx context.Context, from string, to string,
+func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	return s.TransferToken(ctx, gasToken, from, to, amount, fee, Extra, password, duration)
 }
 
-func (s *PublicWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
+func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
 	//ptn := dagconfig.DagConfig.GasToken
 	//if asset == ptn {
