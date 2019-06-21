@@ -9,13 +9,13 @@ RNAME=$5
 echo "script start at `date "+%Y-%m-%d %H:%M:%S"`"
 lftp -u $USER,$PASS $HOST << EOF
 echo "------"
-cd pub
-ls
-echo "1111111"
-mkdir $RCD
-cd $RCD
-ls
-echo "222222"
+#cd pub
+#ls
+#echo "1111111"
+#mkdir $RCD
+#cd $RCD
+#ls
+#echo "222222"
 put $LCD -o $RNAME
 echo "done put"
 bye
