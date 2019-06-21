@@ -63,6 +63,8 @@ func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return allToken(args, stub)
 	case "changeSupplyAddr":
 		return changeSupplyAddr(args, stub)
+	case "frozenToken":
+		return frozenToken(args, stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -355,6 +357,60 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error(jsonResp)
 	}
 
+	return shim.Success([]byte(""))
+}
+
+func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 1 {
+		return shim.Error("need 1 args (Symbol)")
+	}
+
+	//symbol
+	symbol := strings.ToUpper(args[0])
+	//check name is exist or not
+	gTkInfo := getGlobal(stub, symbol)
+	if gTkInfo == nil {
+		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//get invoke address
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	//check address
+	invokeAddrStr := invokeAddr.String()
+	ownerAddr := gTkInfo.SupplyAddr
+	if "" == ownerAddr {
+		ownerAddr = gTkInfo.CreateAddr
+	}
+	if invokeAddrStr != ownerAddr {
+		cp, err := stub.GetSystemConfig()
+		if err != nil {
+			jsonResp := "{\"Error\":\"GetSystemConfig() failed\"}"
+			return shim.Error(jsonResp)
+		}
+		if invokeAddrStr != cp.FoundationAddress {
+			jsonResp := "{\"Error\":\"Only the FoundationAddress or Owner can frozen token\"}"
+			return shim.Error(jsonResp)
+		}
+	}
+
+	//set status
+	gTkInfo.Status = 1
+	val, err := json.Marshal(gTkInfo)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Marshal gTkInfo failed\"}"
+		return shim.Error(jsonResp)
+	}
+	err = stub.PutGlobalState(dm.GlobalPrefix+gTkInfo.Symbol, val)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return shim.Error(jsonResp)
+	}
 	return shim.Success([]byte(""))
 }
 
