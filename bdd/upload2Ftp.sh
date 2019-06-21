@@ -8,8 +8,12 @@ RCD=$4
 RNAME=$5
 lftp -u $USER,$PASS $HOST << EOF
 cd pub
+ls
+echo "1111111"
 mkdir $RCD
 cd $RCD
+ls
+echo "222222"
 put $LCD $RNAME
 echo "done put"
 EOF
