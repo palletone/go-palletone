@@ -7,6 +7,7 @@ LCD=$3
 RCD=$4
 RNAME=$5
 lftp -u $USER,$PASS $HOST << EOF
+echo "------"
 cd pub
 ls
 echo "1111111"
@@ -16,4 +17,5 @@ ls
 echo "222222"
 put $LCD $RNAME
 echo "done put"
+bye
 EOF
