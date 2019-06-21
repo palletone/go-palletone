@@ -148,7 +148,7 @@ after_script:
       # uplaod all log
       # curl --ftp-create-dirs -u ${CERT}:${PASSWORD} ftp://39.105.191.26/pub/ -T ${ALL_LOG_PATH} -v;
       pwd;
-      ./bdd/upload2Ftp.sh ${CERT} ${PASSWORD} /home/travis/gopath/src/github.com/palletone/go-palletone/README.md README.md;
+      ./bdd/upload2Ftp.sh ${CERT} ${PASSWORD} /home/travis/gopath/src/github.com/palletone/go-palletone/README.md ${$DEPOSIT_LOG_PATH}_README.md;
 
       # upload deposit log
       if [ $IS_RUN_DEPOSIT == 'true' ]; then
@@ -223,9 +223,9 @@ install:
   - chmod +x bdd/upload2Ftp.sh
   #- sudo -H apt-get install jq tcl tk
 
-addons:
-  apt:
-    update: false
+#addons:
+#  apt:
+#    update: false
 
 notifications:
   email:
