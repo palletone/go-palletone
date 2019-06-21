@@ -26,9 +26,8 @@ Scenario: 20Contract - Transfer Token
     ${result1}    getBalance    ${GeneAdd}
     sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result1}
-    sleep    2
+    sleep    3
     ${PTN1}    Get From Dictionary    ${result1}    PTN
-    sleep    1
     ${item1}    Get From Dictionary    ${result1}    ${key}
     sleep    1
     ${tokenResult}    transferToken    ${key}    ${GeneAdd}    ${recieverAdd}    ${amount}    ${PTNPoundage}
