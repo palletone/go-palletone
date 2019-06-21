@@ -21,9 +21,11 @@
 package validator
 
 import (
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"time"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type Validator interface {
@@ -40,9 +42,11 @@ type Validator interface {
 	ValidateUnitGroupSign(h *modules.Header) error
 	CheckTxIsExist(tx *modules.Transaction) bool
 }
+
 type IUtxoQuery interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 }
+
 type IStateQuery interface {
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	//获得系统配置的最低手续费要求
@@ -50,14 +54,18 @@ type IStateQuery interface {
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetMediators() map[common.Address]bool
 }
+
 type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 }
+
 type IPropQuery interface {
 	GetSlotAtTime(when time.Time) uint32
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
+	GetChainParameters() *core.ChainParameters
 }
