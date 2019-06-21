@@ -444,13 +444,14 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
-	txIds := []common.Hash{}
-	for _, tx := range poolTxs {
-		txIds = append(txIds, tx.Tx.Hash())
-	}
-	log.Infof("txpool.GetSortedTxs cost time %s, include txs:[%#x]", time.Since(begin), txIds)
+	//txIds := []common.Hash{}
+	//for _, tx := range poolTxs {
+	//	txIds = append(txIds, tx.Tx.Hash())
+	//}
+	// log.Infof("txpool.GetSortedTxs cost time %s, txs[%#x]", time.Since(begin), txIds)
+	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// step5. compute minner income: transaction fees + interest
-
+	tt := time.Now()
 	//交易费用(包含利息)
 	ads, err := rep.ComputeTxFeesAllocate(mAddr, poolTxs)
 	if err != nil {
@@ -494,7 +495,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 			txs = append(txs, t)
 		}
 	}
-
+	log.Infof("create coinbase tx cost time %s", time.Since(tt))
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
