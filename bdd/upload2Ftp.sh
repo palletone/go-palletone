@@ -6,7 +6,8 @@ PASS=$2
 LCD=$3
 RCD=$4
 RNAME=$5
-lftp -e "set ftp:ssl-allow off;" -u $USER,$PASS $HOST << EOF
+echo "script start at `date "+%Y-%m-%d %H:%M:%S"`"
+lftp -u $USER,$PASS $HOST << EOF
 echo "------"
 cd pub
 ls
@@ -15,7 +16,8 @@ mkdir $RCD
 cd $RCD
 ls
 echo "222222"
-put $LCD $RNAME
+put $LCD -o $RNAME
 echo "done put"
 bye
 EOF
+echo "script end at `date "+%Y-%m-%d %H:%M:%S"`"
