@@ -96,7 +96,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 			//check token status
 			if msgIdx != 0 {
-				if !statusValid {
+				if !statusValid && asset.AssetId != modules.PTNCOIN {
 					ret := validate.checkTokenStatus(asset)
 					if TxValidationCode_VALID != ret {
 						return ret
