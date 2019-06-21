@@ -12,5 +12,4 @@ cd $RCD
 #cd $RCD
 put $LCD $RNAME
 echo "done put"
-bye
 EOF
