@@ -146,7 +146,8 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} ${ALL_LOG_PATH} log all.log;
+            # ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} ${ALL_LOG_PATH} log all.log;
+            lftp -e "cd pub; mkdir log; cd log; put ${ALL_LOG_PATH} -o all.log; exit" -u ${USER},${PASSWORD} 39.105.191.26
 
             # upload deposit log
             if [ $IS_RUN_DEPOSIT == 'true' ]; then
