@@ -9,4 +9,5 @@ RCD=pub
 lftp -u $USER,$PASS $HOST << EOF
 cd $RCD
 put $LCD $RNAME
+bye
 EOF

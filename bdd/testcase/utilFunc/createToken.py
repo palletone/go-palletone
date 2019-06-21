@@ -15,6 +15,8 @@ class createToken(object):
         self.tempToken = ''
         self.tempValue = ''
         self.vote_value = '0'
+        self.status = -1
+        self.supplyAddr = ''
 
     def runTest(self):
         pass
@@ -55,7 +57,16 @@ class createToken(object):
                 self.tempToken = key
         return self.tempToken
 
-
+    def getTokenStatus(self, tkInfo):
+        dict = json.loads(tkInfo)
+        if dict.has_key:
+          self.status = int(dict['Status'])
+        return self.status
+    def getTokenSupplyAddr(self, tkInfo):
+        dict = json.loads(tkInfo)
+        if dict.has_key:
+          self.supplyAddr = dict['SupplyAddr']
+        return self.supplyAddr
 
     def getTokenStarts(self, nickname, dict):
         for key in dict.keys():
@@ -122,6 +133,24 @@ class createToken(object):
                 "params": [
                     tokenId,senderAddr,recieverAddr,senderAmount,poundage,evidence,"1",unlocktime
                 ],
+                "id": 1
+            }
+            data=json.dumps(data)
+            response = requests.post(url=self.domain, data=data, headers=self.headers)
+            result1 = json.loads(response.content)
+            try:
+                return result1['result']
+            except KeyError:
+                print "Request transferToken failed.\n" + str(result1)
+            else:
+                print 'transferToken Result: ' + str(result1['error']) + '\n'
+                return result1['error']
+
+    def getOneTokenInfo(self,tokenSymbol):
+            data = {
+                "jsonrpc": "2.0",
+                "method": "wallet_getOneTokenInfo",
+                "params": [tokenSymbol],
                 "id": 1
             }
             data=json.dumps(data)
@@ -280,4 +309,14 @@ if __name__ == '__main__':
     #data = createToken().ccqueryVoteResult(dict,CreateAddr='P1D4GXUcrcT7tAhMPvTxTQk7vQQSJkiad54',AssetID='VOTE+0GWEXZZNEM91F1MJL3X',TokenAmount=60000)
     dict = '{"VOTE+0GB77ABWKPPOPZW3TVP": "8000", "PTN": "16000.002241", "VOTE+0GEXCOMQDBK5XK9W7XF": "60000", "VOTE+0GK301J75JEKVBJTAS4": "60000"}'
     dict = json.loads(dict)
-    data = createToken().getTokenIdByNum('VOTE', dict,3)
+    
+    ctObj = createToken()
+    
+    print ctObj.getTokenIdByNum('VOTE', dict,3)
+    
+    result = ctObj.getOneTokenInfo('btc')
+    result1 = json.loads(result)
+    print result1['Status']
+    
+    print ctObj.getTokenStatus(result)
+    

@@ -208,11 +208,20 @@ func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenID
 	} else if idType == dm.UniqueIdType_UserDefine {
 		for _, oneTokenMeta := range tokenIDMetas {
 			oneTokenIDByte, _ := hex.DecodeString(oneTokenMeta.TokenID)
-			if len(oneTokenIDByte) < 16 {
-				jsonResp := "{\"Error\":\"tokenIDMetas format invalid, must be hex string\"}"
+			if len(oneTokenIDByte) != 16 {
+				jsonResp := "{\"Error\":\"tokenIDMetas format invalid, must be 32 len hex string\"}"
 				return nil, jsonResp
 			}
 			nFdata := dm.NonFungibleMetaData{oneTokenIDByte}
+			nfDatas = append(nfDatas, nFdata)
+		}
+	} else if idType == dm.UniqueIdType_Ascii {
+		for _, oneTokenMeta := range tokenIDMetas {
+			if len(oneTokenMeta.TokenID) != 16 {
+				jsonResp := "{\"Error\":\"tokenIDMetas format invalid, len must be 16 ascii string\"}"
+				return nil, jsonResp
+			}
+			nFdata := dm.NonFungibleMetaData{[]byte(oneTokenMeta.TokenID)}
 			nfDatas = append(nfDatas, nFdata)
 		}
 	}
