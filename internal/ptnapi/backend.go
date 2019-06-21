@@ -230,12 +230,16 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Service:   NewPublicWalletAPI(apiBackend),
 			Public:    true,
 		}, {
+                       Namespace: "wallet",
+                       Version:   "1.0",
+                       Service:   NewPrivateWalletAPI(apiBackend),
+                       Public:    false,
+                }, {
 			Namespace: "contract",
 			Version:   "1.0",
 			Service:   NewPublicContractAPI(apiBackend),
 			Public:    true,
-		},
-		{
+		},{
 			Namespace: "mediator",
 			Version:   "1.0",
 			Service:   NewPrivateMediatorAPI(apiBackend),

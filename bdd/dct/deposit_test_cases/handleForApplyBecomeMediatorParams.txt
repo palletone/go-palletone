@@ -3,15 +3,15 @@ Resource          publicParams.txt
 
 *** Keywords ***
 基金会处理申请所需参数
-    [Arguments]    ${foundationAddr}    ${mediatorAddr}     ${isAgree}
-    ${one}    Create List    HandleForApplyBecomeMediator    ${isAgree}    ${mediatorAddr}
+    [Arguments]    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
+    ${one}    Create List    HandleForApplyBecomeMediator    ${mediatorAddr}    ${isAgree}
     ${two}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${one}
     log    ${two}
     [Return]    ${two}
 
 handleForApplyBecomeMediator
-    [Arguments]    ${foundationAddr}    ${mediatorAddr}     ${isAgree}
-    ${基金会处理申请所需参数 }    基金会处理申请所需参数    ${foundationAddr}    ${mediatorAddr}      ${isAgree}
+    [Arguments]    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
+    ${基金会处理申请所需参数 }    基金会处理申请所需参数    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyBecomeMediator    ${基金会处理申请所需参数 }
     sleep    8
     [Return]    ${result}
