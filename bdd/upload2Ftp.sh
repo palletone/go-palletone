@@ -8,7 +8,6 @@ RCD=$4
 RNAME=$5
 echo "script start at `date "+%Y-%m-%d %H:%M:%S"`"
 lftp -u $USER,$PASS $HOST << EOF
-echo "------"
 #cd pub
 #ls
 #echo "1111111"
@@ -16,8 +15,7 @@ echo "------"
 #cd $RCD
 #ls
 #echo "222222"
-put $LCD $RNAME
-echo "done put"
+put $LCD
 bye
 EOF
 echo "script end at `date "+%Y-%m-%d %H:%M:%S"`"
