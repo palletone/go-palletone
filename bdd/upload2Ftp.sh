@@ -11,4 +11,5 @@ cd pub
 mkdir $RCD
 cd $RCD
 put $LCD $RNAME
+bye
 EOF
