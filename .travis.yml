@@ -145,6 +145,7 @@ after_script:
   - |
     if [ $IS_UPLOAD == 'true' ]; then
       # uplaod all log
+      date -R;
       ./bdd/upload2Ftp.sh ${CERT} ${PASSWORD} /home/travis/gopath/src/github.com/palletone/go-palletone/README.md ${DEPOSIT_DIR} README.md;
 
       # upload deposit log
