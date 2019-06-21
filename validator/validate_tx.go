@@ -196,7 +196,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 			}
 
 		case modules.APP_ACCOUNT_UPDATE:
-
+// todo
 		default:
 			return TxValidationCode_UNKNOWN_TX_TYPE, txFee
 		}
