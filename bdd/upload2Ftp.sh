@@ -6,7 +6,7 @@ PASS=$2
 LCD=$3
 RCD=$4
 RNAME=$5
-lftp -u $USER,$PASS $HOST << EOF
+lftp -e "set ftp:ssl-allow off;" -u $USER,$PASS $HOST << EOF
 echo "------"
 cd pub
 ls
