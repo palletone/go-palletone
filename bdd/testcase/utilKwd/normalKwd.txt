@@ -48,6 +48,16 @@ Request transfer token
     ${ret}    Should Match Regexp    ${resp.content}['result']    ${result_code}    msg="result:does't match Result expression"
     [Return]    ${ret}
 
+Request getOneTokenInfo
+    [Arguments]    ${preTokenId}
+    ${ccList}    Create List    ${preTokenId}
+    ${resp}    setPostRequest    ${host}    wallet_getOneTokenInfo    ${ccList}
+    log    ${resp.content}
+    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
+    Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${ret}    Should Match Regexp    ${resp.content}['result']    ${result_code}    msg="result:does't match Result expression"
+    [Return]    ${ret}
+
 Request getBalance
     [Arguments]    ${address}    ${host}
     ${address}    Create List    ${address}
