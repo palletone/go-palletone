@@ -208,7 +208,7 @@ func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA st
 	//判断是否没收全部，即在列表中移除该节点
 	if result < depositAmountsForDev {
 		//  移除列表
-		err = moveCandidate(DeveloperList, forfeiture.ForfeitureAddress, stub)
+		err = moveCandidate(modules.DeveloperList, forfeiture.ForfeitureAddress, stub)
 		if err != nil {
 			return err
 		}

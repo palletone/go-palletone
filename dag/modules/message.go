@@ -57,6 +57,7 @@ const (
 const (
 	FoundationAddress = "FoundationAddress"
 	JuryList          = "JuryList"
+	DeveloperList     = "DeveloperList"
 	DepositRate       = "DepositRate"
 	//ContractSignatureNum = "ContractSignatureNum"
 	//ContractElectionNum  = "ContractElectionNum"

@@ -132,11 +132,31 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 	if _, ok := list[address.String()]; ok {
 		return true
 	}
-	//for _, v := range list {
-	//	if strings.Compare(v.String(), address.String()) == 0 {
-	//		return true
-	//	}
-	//}
+	return false
+}
+func (statedb *StateDb) GetDevCcCandidateList() (map[string]bool, error) {
+	depositeContractAddress := syscontract.DepositContractAddress
+	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.DeveloperList)
+	if err != nil {
+		return nil, fmt.Errorf("devCc candidate list is nil.")
+	}
+	//var candidateList []common.Address
+	candidateList := make(map[string]bool)
+	err = json.Unmarshal(val, &candidateList)
+	if err != nil {
+		return nil, err
+	}
+	return candidateList, nil
+}
+
+func (statedb *StateDb) IsInDevCcCandidateList(address common.Address) bool {
+	list, err := statedb.GetDevCcCandidateList()
+	if err != nil {
+		return false
+	}
+	if _, ok := list[address.String()]; ok {
+		return true
+	}
 	return false
 }
 

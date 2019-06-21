@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	ListForCashback            = "ListForCashback"
-	ListForForfeiture          = "ListForForfeiture"
-	DeveloperList              = "DeveloperList"
+	ListForCashback   = "ListForCashback"
+	ListForForfeiture = "ListForForfeiture"
+
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
 	ListForAgreeBecomeMediator = "ListForAgreeBecomeMediator"
 	ListForApplyQuitMediator   = "ListForApplyQuitMediator"
