@@ -151,37 +151,27 @@ func getDockerHostConfig() *docker.HostConfig {
 	}
 	networkMode := viper.GetString(dockerKey("NetworkMode"))
 	if networkMode == "" {
-		//networkMode = "bridge"
-		networkMode = "host"
+		networkMode = "bridge"
+		//networkMode = "host"
 	}
 	log.Debugf("docker container hostconfig NetworkMode: %s", networkMode)
-	portBindings := make(map[docker.Port][]docker.PortBinding)
-	hosts := strings.Split(contractcfg.GetConfig().ContractAddress, ":")
-
-	portBinding := docker.PortBinding{
-		HostIP:   hosts[0],
-		HostPort: hosts[1],
-	}
-	portBindings[docker.Port(hosts[1]+"/tcp")] = []docker.PortBinding{portBinding}
-
 	dag, err := comm.GetCcDagHand()
 	if err != nil {
 		log.Debugf("load GetCcDagHand: %s", err.Error())
 	}
 	cp := dag.GetChainParameters()
-
+	capDrop := []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw", "kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"}
 	hostConfig = &docker.HostConfig{
-		CapAdd:       viper.GetStringSlice(dockerKey("CapAdd")),
-		CapDrop:      viper.GetStringSlice(dockerKey("CapDrop")),
-		PortBindings: portBindings,
-		DNS:          viper.GetStringSlice(dockerKey("Dns")),
-		DNSSearch:    viper.GetStringSlice(dockerKey("DnsSearch")),
-		ExtraHosts:   viper.GetStringSlice(dockerKey("ExtraHosts")),
-		NetworkMode:  networkMode,
-		IpcMode:      viper.GetString(dockerKey("IpcMode")),
-		PidMode:      viper.GetString(dockerKey("PidMode")),
-		UTSMode:      viper.GetString(dockerKey("UTSMode")),
-		LogConfig:    logConfig,
+		CapAdd:      viper.GetStringSlice(dockerKey("CapAdd")),
+		CapDrop:     capDrop,
+		DNS:         viper.GetStringSlice(dockerKey("Dns")),
+		DNSSearch:   viper.GetStringSlice(dockerKey("DnsSearch")),
+		ExtraHosts:  viper.GetStringSlice(dockerKey("ExtraHosts")),
+		NetworkMode: networkMode,
+		IpcMode:     viper.GetString(dockerKey("IpcMode")),
+		PidMode:     viper.GetString(dockerKey("PidMode")),
+		UTSMode:     viper.GetString(dockerKey("UTSMode")),
+		LogConfig:   logConfig,
 
 		ReadonlyRootfs: viper.GetBool(dockerKey("ReadonlyRootfs")),
 		SecurityOpt:    viper.GetStringSlice(dockerKey("SecurityOpt")),

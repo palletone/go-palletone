@@ -158,7 +158,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 	//})
 	for _, write := range wset {
 		cid := id
-		if write.ContractId != nil {
+		if len(write.ContractId) != 0 {
 			cid = write.ContractId
 		}
 		key := getContractStateKey(cid, write.Key)
@@ -168,7 +168,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 			batch.Delete(key)
 			log.Debugf("Delete contract state by key:[%s]", write.Key)
 		} else {
-			log.Debugf("Save contract state by key:[%s],value:%x", write.Key, write.Value)
+			log.Debugf("Save contract state by key:[%s],value:%x;db key %x", write.Key, write.Value, key)
 			if err := storeBytesWithVersion(batch, key, version, write.Value); err != nil {
 				return err
 			}

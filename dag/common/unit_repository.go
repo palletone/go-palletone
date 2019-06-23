@@ -444,15 +444,20 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
-	txIds := []common.Hash{}
-	for _, tx := range poolTxs {
-		txIds = append(txIds, tx.Tx.Hash())
-	}
-	log.Infof("txpool.GetSortedTxs cost time %s, include txs:[%#x]", time.Since(begin), txIds)
+	//txIds := []common.Hash{}
+	//for _, tx := range poolTxs {
+	//	txIds = append(txIds, tx.Tx.Hash())
+	//}
+	// log.Infof("txpool.GetSortedTxs cost time %s, txs[%#x]", time.Since(begin), txIds)
+	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// step5. compute minner income: transaction fees + interest
-
+	tt := time.Now()
 	//交易费用(包含利息)
-	ads, err := rep.ComputeTxFeesAllocate(mAddr, poolTxs)
+	txs2 := []*modules.Transaction{}
+	for _, tx := range poolTxs {
+		txs2 = append(txs2, tx.Tx)
+	}
+	ads, err := rep.ComputeTxFeesAllocate(mAddr, txs2)
 	if err != nil {
 		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error())
 		return nil, err
@@ -494,7 +499,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 			txs = append(txs, t)
 		}
 	}
-
+	log.Infof("create coinbase tx cost time %s", time.Since(tt))
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
@@ -604,36 +609,26 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 }
 
 type tempTxs struct {
-	txs []*modules.Transaction
-	rep IUtxoRepository
+	allUtxo map[modules.OutPoint]*modules.Utxo
+	rep     IUtxoRepository
 }
 
 func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
-	for _, tx := range txs.txs {
-		utxos := tx.GetNewUtxos()
-		for o, u := range utxos {
-			allUtxo[o] = u
-		}
-	}
-	if utxo, ok := allUtxo[*outpoint]; ok {
+	if utxo, ok := txs.allUtxo[*outpoint]; ok {
 		return utxo, nil
 	}
 	return txs.rep.GetUtxoEntry(outpoint)
 }
-func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
+func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.Transaction) ([]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
-	txs2 := []*modules.Transaction{}
+	tempTxs := &tempTxs{allUtxo: make(map[modules.OutPoint]*modules.Utxo), rep: rep.utxoRepository}
 	for _, tx := range txs {
-		txs2 = append(txs2, tx.Tx)
-	}
-	tempTxs := &tempTxs{txs: txs2, rep: rep.utxoRepository}
-	for _, tx := range txs {
-		if tx.Tx == nil || tx.TxFee == nil {
-			continue
+		utxos := tx.GetNewUtxos()
+		for o, u := range utxos {
+			tempTxs.allUtxo[o] = u
 		}
-		allowcate, err := tx.Tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, time.Now().Unix(), tokenengine.GetScriptSigners, m)
+		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, time.Now().Unix(), tokenengine.GetScriptSigners, m)
 		if err != nil {
 			return nil, err
 		}

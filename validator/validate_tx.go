@@ -46,7 +46,8 @@ Tx的第一条Msg必须是Payment
 To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
-func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, unitTime int64) (ValidationCode, []*modules.Addition) {
+func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool,
+	unitTime int64) (ValidationCode, []*modules.Addition) {
 	if len(tx.TxMessages) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
@@ -187,7 +188,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 				return validateCode, txFee
 			}
 
-			//case modules.APP_CONFIG:
 		case modules.APP_DATA:
 			payload, _ := msg.Payload.(*modules.DataPayload)
 			validateCode := validate.validateDataPayload(payload)
@@ -196,6 +196,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 			}
 
 		case modules.APP_ACCOUNT_UPDATE:
+			return validate.validateVoteMediatorTx(msg.Payload), txFee
 
 		default:
 			return TxValidationCode_UNKNOWN_TX_TYPE, txFee
@@ -205,6 +206,56 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool, uni
 		return TxValidationCode_ORPHAN, txFee
 	}
 	return TxValidationCode_VALID, txFee
+}
+
+func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
+	accountUpdate, ok := payload.(*modules.AccountStateUpdatePayload)
+	if !ok {
+		log.Errorf("tx payload do not match type")
+		return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
+	}
+
+	for _, writeSet := range accountUpdate.WriteSet {
+		if writeSet.Key != constants.VOTED_MEDIATORS {
+			continue
+		}
+
+		var mediators map[string]bool
+		err := json.Unmarshal(writeSet.Value, &mediators)
+		if err != nil {
+			log.Errorf("writeSet value do not match key")
+			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
+		}
+
+		maxMediatorCount := int(v.propquery.GetChainParameters().MaximumMediatorCount)
+		mediatorCount := len(mediators)
+		if mediatorCount > maxMediatorCount {
+			log.Errorf("the number(%v) of mediators voting exceeded the maximum limit: %v",
+				mediatorCount, maxMediatorCount)
+			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
+		}
+
+		mp := v.statequery.GetMediators()
+		for mediatorStr, ok := range mediators {
+			if !ok {
+				log.Errorf("the value of map can only be true")
+				return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
+			}
+
+			mediator, err := common.StringToAddress(mediatorStr)
+			if err != nil {
+				log.Errorf("invalid account address: %v", mediatorStr)
+				return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
+			}
+
+			if !mp[mediator] {
+				log.Errorf("%v is not mediator", mediatorStr)
+				return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
+			}
+		}
+	}
+
+	return TxValidationCode_VALID
 }
 
 //验证手续费是否合法，并返回手续费的分配情况

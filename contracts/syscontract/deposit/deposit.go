@@ -160,7 +160,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  获取Contract Developer候选列表
 	case GetListForDeveloperCandidate:
 		log.Info("Enter DepositChaincode Contract " + GetListForDeveloperCandidate + " Invoke")
-		list, err := stub.GetState(DeveloperList)
+		list, err := stub.GetState(modules.DeveloperList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -297,7 +297,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看developer是否在候选列表中
 	case IsInDeveloperCandidateList:
 		log.Info("Enter DepositChaincode Contract " + IsInDeveloperCandidateList + " Invoke")
-		dByte, err := getList(stub, DeveloperList)
+		dByte, err := getList(stub, modules.DeveloperList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}

@@ -383,6 +383,13 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
 	//}
 
+	maxMediatorCount := int(a.Dag().GetChainParameters().MaximumMediatorCount)
+	mediatorCount := len(mediatorStrs)
+	if mediatorCount > maxMediatorCount {
+		return nil, fmt.Errorf("the number(%v) of mediators voting exceeded the maximum limit: %v",
+			mediatorCount, maxMediatorCount)
+	}
+
 	mp := make(map[string]bool)
 	for _, mediatorStr := range mediatorStrs {
 		mediator, err := common.StringToAddress(mediatorStr)
@@ -402,19 +409,19 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 		mp[mediatorStr] = true
 	}
 
-	// 1. 创建交易
+	// 创建交易
 	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp, a.TxPool())
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. 签名和发送交易
+	// 签名和发送交易
 	err = a.SignAndSendTransaction(voter, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. 返回执行结果
+	// 返回执行结果
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Account %v vote mediator(s) %v", voterStr, mediatorStrs)
 	res.TxHash = tx.Hash()

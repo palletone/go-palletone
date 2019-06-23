@@ -617,8 +617,9 @@ func (repository *UtxoRepository) ComputeTxAward(tx *modules.Transaction, dagdb 
 				//if err != nil {
 				//	return 0, err
 				//}
+				t1, _ := time.Parse("2006-01-02 15:04:05", time.Unix(timestamp, 0).UTC().Format("2006-01-02 15:04:05"))
 				depositRate := repository.propDb.GetChainParameters().DepositRate
-				award := award2.GetAwardsWithCoins(utxo.Amount, timestamp, depositRate)
+				award := award2.GetAwardsWithCoins(utxo.Amount, t1, depositRate)
 				awards += award
 			}
 			return awards, nil

@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"reflect"
 )
 
 type UtxoDb struct {
@@ -175,7 +174,6 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	//data, err := utxodb.db.Get(key)
 	if err != nil {
-		log.Errorf("DB[%s] get utxo entry failed, error:%s,outpoint:%s", reflect.TypeOf(utxodb.db).String(), err.Error(), outpoint.String())
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}

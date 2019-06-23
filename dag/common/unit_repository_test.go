@@ -724,3 +724,44 @@ func TestContractTxsIllegal(t *testing.T) {
 	}
 	//log.Debug("TestContractTxIllegal", "txs", txs)
 }
+
+// func TestCoinbase(t *testing.T) {
+// 	db, _ := ptndb.NewLDBDatabase("D:\\test\\node1\\palletone\\leveldb", 700, 1024)
+// 	rep := NewUnitRepository4Db(db)
+// 	addr, _ := common.StringToAddress("P19VvSXKfTwE7HwUAVNbJrdUJzCYu9tJCDv")
+// 	txs := readFile()
+// 	t.Logf("Tx Count:%d", len(txs))
+// 	tt := time.Now()
+// 	ads, _ := rep.ComputeTxFeesAllocate(addr, txs)
+// 	outAds := arrangeAdditionFeeList(ads)
+// 	coinbase, rewards, _ := rep.CreateCoinbase(outAds, 6)
+// 	t.Logf("create coinbase tx cost time %s", time.Since(tt))
+// 	js, _ := json.Marshal(coinbase)
+// 	t.Log(string(js))
+// 	t.Log(rewards)
+// }
+// func readFile() []*modules.Transaction {
+// 	txs := []*modules.Transaction{}
+// 	rw, err := os.Open("D:\\test\\node1\\geneSignResult.txt")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer rw.Close()
+// 	rb := bufio.NewReader(rw)
+// 	i := 0
+// 	for {
+// 		line, _, err := rb.ReadLine()
+// 		if err == io.EOF {
+// 			break
+// 		}
+// 		data, _ := hex.DecodeString(string(line))
+// 		tx := &modules.Transaction{}
+// 		rlp.DecodeBytes(data, tx)
+// 		txs = append(txs, tx)
+// 		i++
+// 		if i > 100000 {
+// 			return txs
+// 		}
+// 	}
+// 	return txs
+// }
