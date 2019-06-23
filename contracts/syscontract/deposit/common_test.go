@@ -41,10 +41,43 @@ func TestTime(t *testing.T) {
 }
 
 func TestStrToTime(t *testing.T) {
-	ts := TimeStr()
-	fmt.Println(ts)
-	st := StrToTime(ts)
-	fmt.Println(st)
+	startTime := "2019-06-23 01:38:54 +0000 UTC"
+	fmt.Println("startTime: ", startTime)
+	fmt.Println("nowTime:   ", time.Now().UTC())
+	st1 := StrToTime(startTime)
+	fmt.Println(time.Since(st1))
+	fmt.Println(int(time.Since(st1).Hours()))
+
+	startTime2 := "2019-06-23 01:00:00 +0000 UTC"
+	fmt.Println("startTime2: ", startTime2)
+	fmt.Println("nowTime2:   ", time.Now().UTC())
+	st2 := StrToTime(startTime2)
+	fmt.Println(time.Since(st2))
+	fmt.Println(int(time.Since(st2).Hours()))
+
+	startTime3 := "2019-06-22 01:00:00 +0000 UTC"
+	fmt.Println("startTime3: ", startTime3)
+	fmt.Println("nowTime3:   ", time.Now().UTC())
+	st3 := StrToTime(startTime3)
+	fmt.Println(time.Since(st3))
+	fmt.Println(int(time.Since(st3).Hours()))
+
+	startTime4 := "2019-06-13 01:00:00 +0000 UTC"
+	fmt.Println("startTime4: ", startTime4)
+	fmt.Println("nowTime4:   ", time.Now().UTC())
+	st4 := StrToTime(startTime4)
+	fmt.Println(time.Since(st4))
+	fmt.Println(int(time.Since(st4).Hours()))
+	fmt.Println(time.Now().Unix())
+	fmt.Println(time.Now().UTC().Unix())
+	fmt.Println(StrToTime(time.Unix(time.Now().Unix(), 0).UTC().Format("2006-01-02 15:04:05")))
+	t1, _ := time.Parse("2006-01-02 15:04:05", time.Unix(time.Now().Unix(), 0).UTC().Format("2006-01-02 15:04:05"))
+	fmt.Println(t1)
+	fmt.Println(t1.Unix())
+	//ts := TimeStr()
+	//fmt.Println(ts)
+	//st := StrToTime(ts)
+	//fmt.Println(st)
 }
 
 //

@@ -312,7 +312,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 		depositRateFloat64 := cp.DepositRate
 		//  计算币龄收益
-		awards := award.GetAwardsWithCoins(md.Balance, endTime.Unix(), depositRateFloat64)
+		awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRateFloat64)
 		md.Balance += awards
 		//  处理数据
 	}
