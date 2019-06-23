@@ -6,7 +6,6 @@ env:
     - ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/node/log/all.log
     - GAS_TOKEN_ALL_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/GasToken/node/log/all.log
     - BDD_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs
-    - DEPOSIT_LOG_PATH=/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/dct/log
     - CREATE_TRANS_DIR=createTrans
     - CONTRACT20_DIR=crt20Contract
     - SEQENCE721_DIR=crt721Seqence
@@ -146,53 +145,10 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            # ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} ${ALL_LOG_PATH} log all.log;
-            lftp -e "cd pub; mkdir log; cd log; put ${ALL_LOG_PATH} -o all.log; exit" -u ${USER},${PASSWORD} 39.105.191.26
-
-            # upload deposit log
-            if [ $IS_RUN_DEPOSIT == 'true' ]; then
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DEPOSIT_LOG_PATH/${LOG_NAME} ${DEPOSIT_DIR} ${LOG_NAME};
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DEPOSIT_LOG_PATH/${REPORT_NAME} ${DEPOSIT_DIR} ${REPORT_NAME};
-            fi
-
-            # upload create transactions log and report
-            if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DEPOSIT_LOG_PATH/${LOG_NAME} ${CREATE_TRANS_DIR} ${LOG_NAME};
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DEPOSIT_LOG_PATH/${REPORT_NAME} ${CREATE_TRANS_DIR} ${REPORT_NAME};
-            fi
-
-            # upload 20contract log and report
-            if [ $IS_RUN_20CONTRACT == 'true' ]; then
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$CONTRACT20_DIR/${LOG_NAME} ${CONTRACT20_DIR} ${LOG_NAME};
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$CONTRACT20_DIR/${REPORT_NAME} ${CONTRACT20_DIR} ${REPORT_NAME};
-            fi
-
-            # upload 721contract log and report
-            if [ $IS_RUN_721CONTRACT == 'true' ]; then
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$CONTRACT721_DIR/${LOG_NAME} ${CONTRACT721_DIR} ${LOG_NAME};
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$CONTRACT721_DIR/${REPORT_NAME} ${CONTRACT721_DIR} ${REPORT_NAME};
-            fi
-
-            # upload voteContract log and report
-            if [ $IS_RUN_VOTE == 'true' ]; then
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$VOTECONTRACT_DIR/${LOG_NAME} ${VOTECONTRACT_DIR} ${LOG_NAME};
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} ${VOTECONTRACT_DIR} ${REPORT_NAME};
-            fi
-
-            # upload digital identity log and report
-            if [ $IS_RUN_DIGITAL == 'true' ]; then
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${LOG_NAME} ${DIGITAL_IDENTITY_DIR} ${LOG_NAME};
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} ${DIGITAL_IDENTITY_DIR} ${REPORT_NAME};
-            fi
-
-            if [ $IS_RUN_GASTOKEN == 'true' ]; then
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$GAS_TOKEN_DIR/${LOG_NAME} ${GAS_TOKEN_DIR} ${LOG_NAME};
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} ${GAS_TOKEN_DIR} ${REPORT_NAME};
-              ./bdd/upload2Ftp.sh ${USER} ${PASSWORD} ${GAS_TOKEN_ALL_LOG_PATH} gastoken_all.log;
-            fi
+            ./bdd/upload2Ftp.sh ${FTP_PWD};
 
             # echo ftp address
-            echo "The path of all bdd log in vsftpd is 'ftp://39.105.191.26/palletone"
+            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
             echo "If you want to open it in explorer, you should close VPN first."
             echo "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
           fi
@@ -210,57 +166,6 @@ matrix:
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
         #- sudo -H apt-get install jq tcl tk
-
-  #  - echo "${SFTP_KEY}" | base64 --decode >/tmp/sftp_rsa
-  # upload all log
-  #- curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/ -T ${ALL_LOG_PATH} -v
-
-  # upload deposit log
-  #- if [ $IS_RUN_DEPOSIT == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/$LOG_NAME -T $DEPOSIT_LOG_PATH/${LOG_NAME} -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DEPOSIT_DIR/${REPORT_NAME} -T $DEPOSIT_LOG_PATH/${REPORT_NAME} -v;
-  #  fi
-
-  # upload create transactions log and report
-  #- if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/$LOG_NAME -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CREATE_TRANS_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CREATE_TRANS_DIR/${REPORT_NAME} -v;
-  #  fi
-
-  # upload 20contract log and report
-  #- if [ $IS_RUN_20CONTRACT == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT20_DIR/$LOG_NAME -T $BDD_LOG_PATH/$CONTRACT20_DIR/$LOG_NAME -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$CONTRACT20_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$CONTRACT20_DIR/${REPORT_NAME} -v;
-  #  fi
-
-  # upload 721contract log and report
-  #- if [ $IS_RUN_721SEQENCE == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$SEQENCE721_DIR/$LOG_NAME -T $BDD_LOG_PATH/$SEQENCE721_DIR/$LOG_NAME -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$SEQENCE721_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$SEQENCE721_DIR/${REPORT_NAME} -v;
-  #  fi
-
-  # upload voteContract log and report
-  #- if [ $IS_RUN_VOTE == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/$LOG_NAME -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/$LOG_NAME -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$VOTECONTRACT_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$VOTECONTRACT_DIR/${REPORT_NAME} -v;
-  #  fi
-
-  # upload digital identity log and report
-  #- if [ $IS_RUN_DIGITAL == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/$LOG_NAME -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/$LOG_NAME -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$DIGITAL_IDENTITY_DIR/${REPORT_NAME} -v;
-  #  fi
-
-  #- if [ $IS_RUN_GASTOKEN == 'true' ]; then
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/$LOG_NAME -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/$LOG_NAME -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/$GAS_TOKEN_DIR/${REPORT_NAME} -T $BDD_LOG_PATH/$GAS_TOKEN_DIR/${REPORT_NAME} -v;
-  #  curl --ftp-create-dirs -u ${USER}:${PASSWORD} ftp://98.142.130.141/pub/gastoken_all.log -T ${GAS_TOKEN_ALL_LOG_PATH} -v;
-  #  fi
-
-  # echo ftp address
-  #- "The path of all bdd log in vsftpd is 'ftp://98.142.130.141/palletone"
-  #- "If you want to open it in explorer, you should close VPN first."
-  #- "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
 
 before_install:
     - go get -u github.com/palletone/adaptor
