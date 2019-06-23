@@ -557,18 +557,8 @@ func PooltxToTx(pooltx *modules.TxPoolTransaction) *modules.Transaction {
 // If a newly added transaction is marked as local, its sending account will be
 // whitelisted, preventing any associated transaction from being dropped out of
 // the pool due to pricing constraints.
-var tx_num int
-var count int
-var tt time.Time
 
 func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error) {
-	if tx_num > 999 {
-		log.Infof("validate %d txs spent time[%s] ", tx_num, time.Since(tt))
-		tx_num = 0
-	}
-	if tx_num == 0 {
-		tt = time.Now()
-	}
 	msgs := tx.Tx.Messages()
 	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return true, nil
@@ -603,11 +593,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	//	}
 	//	tx.TxFee = append(tx.TxFee, addition...)
 	//}
-	tx_num++
-	count++
-	if count >= 10000 {
-		log.Info("count tx ", "count", count)
-	}
+
 	// 同一个utxo可以花费多次， 但最终只能确认一次。
 	//if err := pool.checkPoolDoubleSpend(tx); err != nil {
 	//	return false, err
