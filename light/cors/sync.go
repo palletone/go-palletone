@@ -87,14 +87,6 @@ func (pm *ProtocolManager) PushSync() {
 		index, _ := pm.pushSync()
 		log.Info("Cors Push Sync OK", "index", index)
 		atomic.StoreUint32(&pm.corsSync, 0)
-
-		//if len(headers) > 0 {
-		//	ps := pm.peers.AllPeers()
-		//	for _, p := range ps {
-		//		p.SetHead(headers[0])
-		//	}
-		//}
-
 	} else {
 		log.Debug("Cors ProtocolManager PushSyncing")
 	}
@@ -251,14 +243,8 @@ func (pm *ProtocolManager) PullSync() {
 }
 
 func (pm *ProtocolManager) pullSync(peer *peer) {
-	//peer := pm.peers.BestPeer()
-	//if peer == nil {
-	//	return
-	//}
-	//if peer.headInfo.number.AssetID != modules.PTNCOIN {
-	//	log.Debug("Cors PalletOne ProtocolManager pullSync", "peer assetid", peer.headInfo.number.AssetID)
-	//	return
-	//}
+	var hash common.Hash
+	var index uint64
 	lheader := pm.dag.CurrentHeader(modules.PTNCOIN)
 	//hash, number := peer.HeadAndNumber(modules.PTNCOIN)
 	//if lheader.Number.Index >= number.Index {
@@ -266,7 +252,12 @@ func (pm *ProtocolManager) pullSync(peer *peer) {
 	//	return
 	//}
 
-	if err := pm.downloader.Synchronise(peer.id, lheader.Hash(), lheader.Number.Index, downloader.LightSync, modules.PTNCOIN); err != nil {
+	if lheader != nil {
+		hash = lheader.Hash()
+		index = lheader.Number.Index
+	}
+
+	if err := pm.downloader.Synchronise(peer.id, hash, index, downloader.LightSync, modules.PTNCOIN); err != nil {
 		log.Debug("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}

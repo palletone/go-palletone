@@ -73,7 +73,7 @@ func (s *CorsServer) StartCorsSync() (string, error) {
 	return s.protocolManager.StartCorsSync()
 }
 
-// Start starts the LES server
+// Start starts the Cors server
 func (s *CorsServer) Start(srvr *p2p.Server, corss *p2p.Server, syncCh chan bool) {
 	s.protocolManager.Start(s.config.CorsPeers)
 	s.privateKey = corss.PrivateKey
@@ -99,6 +99,9 @@ func (s *CorsServer) SendEvents(header *modules.Header) {
 }
 
 func (pm *ProtocolManager) blockLoop() {
+	if pm.assetId == modules.PTNCOIN {
+		return
+	}
 	pm.wg.Add(1)
 	headCh := make(chan modules.ChainEvent, 10)
 	headSub := pm.dag.SubscribeChainEvent(headCh)
@@ -118,7 +121,7 @@ func (pm *ProtocolManager) blockLoop() {
 						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
 
 						for _, p := range peers {
-							log.Debug("Light Palletone", "ProtocolManager->blockLoop p.ID", p.ID())
+							log.Debug("Cors Palletone", "ProtocolManager->blockLoop p.ID", p.ID())
 							p.announceChn <- announce
 						}
 					}
