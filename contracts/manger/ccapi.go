@@ -149,7 +149,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	}
 
 	if cfg.DebugTest {
-		log.Info("enter contract debug test", "templateId",tpid )
+		log.Info("enter contract debug test", "templateId", tpid)
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
 	} else {
@@ -333,7 +333,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	if err != nil {
-		log.Errorf("ProcessProposal error[%v]", err)
+		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err
 	}
 	stopTm := time.Now()

@@ -336,7 +336,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req.args = newFullArgs
 				invokeResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					log.Error("runContractCmd ContractProcess", "ContractProcess error", err.Error())
+					log.Info("runContractCmd ContractProcess", "ContractProcess error", err.Error())
 					if errMsgEnable {
 						errMsg := createContractErrorPayloadMsg(modules.APP_CONTRACT_INVOKE_REQUEST, req, err.Error())
 						msgs = append(msgs, errMsg)
