@@ -271,28 +271,6 @@ func KeyToOutpoint(key []byte) *OutPoint {
 	return vout
 }
 
-type Output struct {
-	Value    uint64 `json:"value,string"`
-	PkScript []byte `json:"pk_script"`
-	Asset    *Asset `json:"asset"`
-}
-
-type Input struct {
-	SignatureScript  []byte    `json:"signature_script"`
-	Extra            []byte    `json:"extra" rlp:"nil"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
-	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
-}
-
-// NewTxIn returns a new ptn transaction input with the provided
-// previous outpoint point and signature script with a default sequence of
-// MaxTxInSequenceNum.
-func NewTxIn(prevOut *OutPoint, signatureScript []byte) *Input {
-	return &Input{
-		PreviousOutPoint: prevOut,
-		SignatureScript:  signatureScript,
-	}
-}
-
 type SpendProof struct {
 	Unit string `json:"unit"`
 }
