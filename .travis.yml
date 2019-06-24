@@ -43,41 +43,38 @@ matrix:
         - go build ./cmd/gptn
         - make gptn
         - $GOPATH/bin/goveralls -service=travis-ci   
-    - os: linux
-      dist: xenial
-      go: 1.11.x
-      env: UT
-      script:
-        - go build ./cmd/gptn
-        - make gptn
-        - go test ./...       
-    - os: linux
-      dist: xenial
-      go: 1.12.x
-      env: UT
-      script:
-        - go build ./cmd/gptn
-        - make gptn
-        - go test ./...      
-    - os: osx
-      go: 1.12.x
-      env: UT
-      script:
-        - go build ./cmd/gptn
-        - make gptn
-        - go test ./...        
+    # - os: linux
+    #   dist: xenial
+    #   go: 1.11.x
+    #   env: UT
+    #   script:
+    #     - go build ./cmd/gptn
+    #     - make gptn
+    #     - go test ./...       
+    # - os: linux
+    #   dist: xenial
+    #   go: 1.12.x
+    #   env: UT
+    #   script:
+    #     - go build ./cmd/gptn
+    #     - make gptn
+    #     - go test ./...      
+    # - os: osx
+    #   go: 1.12.x
+    #   env: UT
+    #   script:
+    #     - go build ./cmd/gptn
+    #     - make gptn
+    #     - go test ./...        
     - os: linux
       dist: xenial
       go: 1.12.5
       env: one_node_bdd
       script:
         - go build ./cmd/gptn
-        # - make gptn
         - cp gptn bdd/node
         - mkdir bdd/GasToken/node
-        - mkdir bdd/mediator-vote/node
         - cp gptn bdd/GasToken/node
-        - cp gptn bdd/mediator-vote/node
         - cd bdd/node
         - chmod +x gptn
         - python init.py
@@ -129,23 +126,16 @@ matrix:
           sleep 15;
           python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
           fi
-
-        - if [ $IS_RUN_MEDIATOR_VOTE == 'true' ]; then
-          cd ../mediator-vote;
-          chmod +x ./init.sh;
-          ./init.sh;
-          sleep 15;
-          python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
-          fi
       after_script:
         - killall gptn
         - sleep 2
-        - # upload all logs
         - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/oneNode_log.zip ./bdd/node/log/*
+        - zip -j ./bdd/logs/gasToken_log.zip ./bdd/GasToken/node/log/*
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD};
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
 
             # echo ftp address
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
@@ -153,9 +143,6 @@ matrix:
             echo "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
           fi
       install:
-        # - python -V
-        # - whereis python
-        # - which python
         - sudo -H pip install --upgrade pip
         - sudo -H pip install robotframework==2.8.5
         - sudo -H pip install requests
@@ -166,7 +153,43 @@ matrix:
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
         #- sudo -H apt-get install jq tcl tk
-
+    - os: linux
+      dist: xenial
+      go: 1.12.5
+      env: mediator_bdd
+      script:
+        - go build ./cmd/gptn
+        - mkdir bdd/mediator-vote/node
+        - cp gptn bdd/mediator-vote/node
+        - if [ $IS_RUN_MEDIATOR_VOTE == 'true' ]; then
+          cd ./bdd/mediator-vote;
+          chmod +x ./init.sh;
+          ./init.sh;
+          sleep 15;
+          python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
+          fi
+      after_script:
+        - killall gptn
+        - sleep 2
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/mediatorVote_log.zip ./bdd/mediator-vote/node/log/*
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
+          fi
+      install:
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
+        #- sudo -H apt-get install jq tcl tk
 before_install:
     - go get -u github.com/palletone/adaptor
     - go get -u github.com/palletone/btc-adaptor

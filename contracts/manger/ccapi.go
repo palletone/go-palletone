@@ -333,7 +333,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	if err != nil {
-		log.Errorf("ProcessProposal error[%v]", err)
+		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err
 	}
 	stopTm := time.Now()
