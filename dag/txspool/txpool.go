@@ -145,9 +145,9 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	GlobalSlots: 48192,
 	GlobalQueue: 12048,
 
-	Lifetime:        3 * time.Hour,    //未打包 交易最大存活时间
-	Removetime:      30 * time.Minute, // 已打包交易 存活时间
-	OrphanTTL:       20 * time.Minute, // 孤儿交易在交易池的存活时间
+	Lifetime:        3 * time.Hour,
+	Removetime:      30 * time.Minute,
+	OrphanTTL:       15 * time.Minute,
 	MaxOrphanTxs:    10000,
 	MaxOrphanTxSize: 2000000,
 }
@@ -1117,14 +1117,14 @@ func (pool *TxPool) DeleteTx() error {
 			continue
 		}
 		if tx.Confirmed {
-			if tx.CreationDate.Add(pool.config.Removetime).After(time.Now()) {
+			if tx.CreationDate.Add(pool.config.Removetime).Before(time.Now()) {
 				// delete
 				log.Debug("delete the confirmed tx.", "tx_hash", hash)
 				pool.DeleteTxByHash(hash)
 				continue
 			}
 		}
-		if tx.CreationDate.Add(pool.config.Lifetime).After(time.Now()) {
+		if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
 			// delete
 			log.Debug("delete the tx(overtime).", "tx_hash", hash)
 			pool.DeleteTxByHash(hash)
