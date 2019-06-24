@@ -36,7 +36,7 @@ CcinvokePass normal
 Request getbalance before create token
     #${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     ${result1}    getBalance    ${geneAdd}
-    sleep    4
+    sleep    2
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     sleep    1
     #${coinToken1}    Get From Dictionary    ${result1}    ${key}
@@ -51,7 +51,7 @@ Spply token of 721 contract
     [Return]    ${jsonRes['result']}
 
 Calculate gain
-    sleep    3
+    sleep    4
     ${PTNGAIN}    Evaluate    ${PTNAmount}+${PTNPoundage}
     ${PTNGAIN}    countRecieverPTN    ${PTNGAIN}
     sleep    2
@@ -60,7 +60,7 @@ Calculate gain
 Request getbalance after transfer token
     #normalCcqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
-    sleep    4
+    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result2['result']}
     log    {key}
     #${queryResult}    ccqueryById    ${721ContractId}    ${existToken}    ${key}
@@ -78,7 +78,7 @@ Request getbalance after transfer token
 Assert gain
     [Arguments]    ${PTN1}    ${PTN2}    ${PTNGAIN}
     #${result2}    getBalance    ${geneAdd}
-    #sleep    4
+    #sleep    2
     #${PTN2}    Get From Dictionary    ${result2}    PTN
     ${GAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNGAIN}')    decimal
     Should Be Equal As Numbers    ${PTN2}    ${GAIN}

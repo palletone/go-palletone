@@ -39,15 +39,13 @@ Create token of 721 contract
 Request getbalance before transfer token
     sleep    5
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
-    sleep    5
+    #sleep    1
     ${queryResult}    ccqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
-    sleep    1
     ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
-    sleep    1
-    ${key}    getTokenIdByNum    ${tokenCommonId}    ${result1['result']}    1
+    ${key}    getTokenIdByNum    ${tokenCommonId}    ${result1['result']}    2
     sleep    2
     ${voteToken}    Get From Dictionary    ${result1['result']}    ${key}
-    sleep    4
+    sleep    3
     [Return]    ${key}    ${voteToken}
 
 Request transfer token
@@ -59,7 +57,7 @@ Request transfer token
 Request getbalance after transfer token
     [Arguments]    ${key}
     ${PTN1}    ${result2}    normalGetBalance    ${recieverAdd}
-    sleep    5
+    #sleep    6
     ${voteToken2}    Get From Dictionary    ${result2['result']}    ${key}
     sleep    3
     [Return]    ${voteToken2}
@@ -67,4 +65,3 @@ Request getbalance after transfer token
 Assert gain
     [Arguments]    ${voteToken}    ${voteToken2}
     Should Be Equal As Strings    ${voteToken}    ${voteToken2}
-    sleep    2

@@ -22,8 +22,9 @@ Scenario: 20Contract - Create Token
 
 *** Keywords ***
 Request getbalance before create token
-    ${PTN1}    ${result}    normalGetBalance    ${recieverAdd}
     sleep    4
+    ${PTN1}    ${result}    normalGetBalance    ${recieverAdd}
+    sleep    1
     [Return]    ${PTN1}
 
 Request normal CcinvokePass
@@ -43,7 +44,7 @@ Calculate gain
 
 Request getbalance after create token
     ${PTN2}    ${result}    normalGetBalance    ${recieverAdd}
-    sleep    5
+    sleep    2
     [Return]    ${PTN2}
 
 Assert gain

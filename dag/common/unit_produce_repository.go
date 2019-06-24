@@ -448,14 +448,20 @@ func updateChainParameter(cp *core.ChainParameters, field, value string) error {
 	vn := vv.FieldByName(field)
 
 	switch vn.Kind() {
+	case reflect.Invalid:
+		return fmt.Errorf("no such field: %v", field)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		iv, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			return err
 		}
 		vn.SetInt(iv)
-	case reflect.Invalid:
-		return fmt.Errorf("no such field: %v", field)
+	case reflect.Bool:
+		iv, err := strconv.ParseBool(value)
+		if err != nil {
+			return err
+		}
+		vn.SetBool(iv)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		uv, err := strconv.ParseUint(value, 10, 64)
 		if err != nil {

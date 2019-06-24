@@ -55,9 +55,9 @@ Supply token of 721 contract before change supply
     [Return]    ${jsonRes['result']}
 
 Request getbalance after supply token
-	sleep    5
-    ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     sleep    5
+    ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
+    sleep    4
     #${key}    getTokenId    ${preTokenId}    ${result2['result']}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}
     ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
@@ -76,7 +76,7 @@ Change supply address to new address
 
 Request getbalance before supply token
     ${result1}    getBalance    ${reciever}
-    sleep    5
+    sleep    4
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     [Return]    ${PTN1}
 
@@ -98,7 +98,7 @@ Supply token of 721 contract after change supply
 
 Request getbalance after change supply
     ${PTN3}    ${result3}    normalGetBalance    ${reciever}
-    sleep    5
+    sleep    4
     #${key}    getTokenId    ${preTokenId}    ${result3['result']}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}
     ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
@@ -126,7 +126,7 @@ Genesis address supply token of 721 contract
     [Return]    ${jsonRes['result']}
 
 Request getbalance after genesis supply token
-	sleep    4
+    sleep    4
     ${PTN4}    ${result4}    normalGetBalance    ${geneAdd}
     sleep    4
     ${key}    getTokenId    ${preTokenId}    ${result4['result']}
@@ -136,5 +136,5 @@ Request getbalance after genesis supply token
     log    len(${countList})
     ${len}    Evaluate    len(${countList})+1
     Should Not Contain    ${result4['result']}    ${tokenCommonId}-11
-	sleep    3
+    sleep    3
     [Return]    ${PTN4}

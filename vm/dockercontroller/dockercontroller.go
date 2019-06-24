@@ -111,16 +111,17 @@ func getDockerHostConfig() *docker.HostConfig {
 		log.Debugf("load GetCcDagHand: %s", err.Error())
 	}
 	cp := dag.GetChainParameters()
+	icp := dag.GetImmutableChainParameters()
 	hostConfig = &docker.HostConfig{
-		CapDrop:        cp.UccCapDrop,
-		NetworkMode:    cp.UccNetworkMode,
+		CapDrop:        icp.UccCapDrop,
+		NetworkMode:    icp.UccNetworkMode,
 		Memory:         cp.UccMemory,
 		MemorySwap:     cp.UccMemorySwap,
-		OOMKillDisable: cp.UccOOMKillDisable,
+		OOMKillDisable: icp.UccOOMKillDisable,
 		CPUShares:      cp.UccCpuShares,
 		CPUQuota:       cp.UccCpuQuota,
 		CPUPeriod:      cp.UccCpuPeriod,
-		Privileged:     cp.UccPrivileged,
+		Privileged:     icp.UccPrivileged,
 	}
 	return hostConfig
 }

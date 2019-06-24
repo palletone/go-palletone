@@ -10,8 +10,8 @@ Resource          ../../utilKwd/behaveKwd.txt
 ${preTokenId}     CA082
 
 *** Test Cases ***
-Feature: 721 Contract - Create token
-    [Documentation]    Scenario: Verify Sender's TokenId
+Scenario: 721 UDID - Create token
+    [Documentation]    Verify Sender's TokenId
     Given Get genesis address
     ${PTN1}    ${result1}    And Request getbalance before create token
     ${ret}    When Create token of vote contract
@@ -38,7 +38,7 @@ Create token of vote contract
     ...    ${721ContractId}    ${ccList}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
-    sleep    3
+    sleep    6
     [Return]    ${jsonRes['result']}
 
 Calculate gain of recieverAdd
@@ -56,6 +56,7 @@ Request getbalance after create token
     ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
     : FOR    ${num}    IN RANGE    len(${countList})
     \    ${voteToken}    Get From Dictionary    ${result2['result']}    ${tokenCommonId}-${countList[${num}]}
+    \    sleep    1
     \    log    ${tokenCommonId}-${countList[${num}]}
     \    Should Be Equal As Numbers    ${voteToken}    1
     [Return]    ${PTN2}    ${result2}

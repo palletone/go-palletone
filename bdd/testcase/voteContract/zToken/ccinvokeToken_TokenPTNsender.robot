@@ -23,14 +23,14 @@ Scenario: Vote - Ccinvoke Token
 *** Keywords ***
 Get genesis address
     ${geneAdd}    getGeneAdd    ${host}
+    sleep    4
     [Return]    ${geneAdd}
 
 Request getbalance before create token
     #    [Arguments]    ${geneAdd}    ${voteToken}
     ${PTN1}    ${result1}    normalGetBalance    ${listAccounts[0]}
-    sleep    5
+    sleep    2
     #${key}    getTokenId    ${voteId}    ${result1['result']}
-    #sleep    2
     ${item1}    Get From Dictionary    ${result1['result']}    ${voteToken}
     [Return]    ${PTN1}    ${item1}
 
@@ -41,21 +41,21 @@ Ccinvoke token of vote contract
     ...    ${voteToken}    ${voteAmount}    ${voteContractId}    ${supportList}
     ${resp}    setPostRequest    ${host}    ${invokeTokenMethod}    ${ccList}
     log    ${resp.content}
+    sleep    5
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}
-    sleep    4
     ${item'}    Evaluate    ${item1}-${voteAmount}
     ${totalGain}    Evaluate    int(${PTNPoundage})+int(${votePTN})
     ${GAIN}    countRecieverPTN    ${totalGain}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
-    sleep    3
+    sleep    2
     [Return]    ${PTN'}    ${item'}
 
 Request getbalance after create token
     #[Arguments]    ${geneAdd}    ${voteToken}
     ${PTN2}    ${result2}    normalGetBalance    ${listAccounts[0]}
-    sleep    5
+    sleep    2
     ${item2}    Get From Dictionary    ${result2['result']}    ${voteToken}
     [Return]    ${PTN2}    ${item2}
 
