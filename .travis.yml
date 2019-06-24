@@ -18,16 +18,16 @@ env:
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
 ##########  control testcase  ##############
-    - IS_RUN_DEPOSIT=false
-    - IS_RUN_TESTCONTRACTCASES=false
-    - IS_RUN_CREATE_TRANS=false
-    - IS_RUN_20CONTRACT=false
-    - IS_RUN_721SEQENCE=false
+    - IS_RUN_DEPOSIT=true
+    - IS_RUN_TESTCONTRACTCASES=true
+    - IS_RUN_CREATE_TRANS=true
+    - IS_RUN_20CONTRACT=true
+    - IS_RUN_721SEQENCE=true
     - IS_RUN_721UDID=true
-    - IS_RUN_DIGITAL=false
-    - IS_RUN_VOTE=false
-    - IS_RUN_GASTOKEN=false
-    - IS_RUN_MEDIATOR_VOTE=false
+    - IS_RUN_DIGITAL=true
+    - IS_RUN_VOTE=true
+    - IS_RUN_GASTOKEN=true
+    - IS_RUN_MEDIATOR_VOTE=true
     - GO111MODULE=on
     - IS_UPLOAD=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]' 
