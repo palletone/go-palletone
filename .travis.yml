@@ -135,7 +135,7 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD};
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
 
             # echo ftp address
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
@@ -176,7 +176,7 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD};
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
           fi
       install:
