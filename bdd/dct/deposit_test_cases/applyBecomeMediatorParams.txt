@@ -14,5 +14,5 @@ applyBecomeMediator
     [Arguments]    ${mediatorAddr}
     ${params}    申请加入Mediator候选节点所需参数    ${mediatorAddr}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    ApplyBecomeMediator    ${params}
-    sleep    8
+    sleep    6
     [Return]    ${result}

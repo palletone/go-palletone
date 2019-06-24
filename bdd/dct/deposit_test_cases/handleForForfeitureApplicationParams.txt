@@ -12,5 +12,5 @@ handleForForfeitureApplication
     [Arguments]    ${foundationAddr}    ${addr}    ${isAgree}
     ${基金会处理没收请求所需参数}    基金会处理没收请求所需参数    ${foundationAddr}    ${addr}    ${isAgree}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForForfeitureApplication    ${基金会处理没收请求所需参数}
-    sleep    8
+    sleep    6
     [Return]    ${result}
