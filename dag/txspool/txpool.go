@@ -577,22 +577,22 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	}
 
 	// If the transaction fails basic validation, discard it
-	//if addition, code, err := pool.validateTx(tx, local); err != nil {
-	//	if code == validator.TxValidationCode_ORPHAN {
-	//		if ok, _ := pool.ValidateOrphanTx(tx.Tx); ok {
-	//			log.Debug("validated the orphanTx", "hash", hash.String())
-	//			pool.addOrphan(tx, 0)
-	//			return true, nil
-	//		}
-	//	}
-	//	log.Trace("Discarding invalid transaction", "hash", hash, "err", err.Error())
-	//	return false, err
-	//} else {
-	//	if tx.TxFee != nil {
-	//		tx.TxFee = make([]*modules.Addition, 0)
-	//	}
-	//	tx.TxFee = append(tx.TxFee, addition...)
-	//}
+	if addition, code, err := pool.validateTx(tx, local); err != nil {
+		if code == validator.TxValidationCode_ORPHAN {
+			if ok, _ := pool.ValidateOrphanTx(tx.Tx); ok {
+				log.Debug("validated the orphanTx", "hash", hash.String())
+				pool.addOrphan(tx, 0)
+				return true, nil
+			}
+		}
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err.Error())
+		return false, err
+	} else {
+		if tx.TxFee != nil {
+			tx.TxFee = make([]*modules.Addition, 0)
+		}
+		tx.TxFee = append(tx.TxFee, addition...)
+	}
 
 	// 同一个utxo可以花费多次， 但最终只能确认一次。
 	//if err := pool.checkPoolDoubleSpend(tx); err != nil {
