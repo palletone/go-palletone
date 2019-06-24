@@ -233,7 +233,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 	}
 	if res != nil {
 		if res.Status >= shim.ERROR {
-			log.Errorf("[%s][%s] simulateProposal() resulted in chaincode, response status %d for txid %s:%s",
+			log.Infof("[%s][%s] simulateProposal() resulted in chaincode, response status %d for txid %s:%s",
 				chainID, shorttxid(txid), res.Status, txid, res.Message)
 
 			resp := &pb.ProposalResponse{
