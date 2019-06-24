@@ -205,7 +205,6 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	if !chain.saveHeaderOnly && len(unit.Txs) > 0 {
 		log.Debugf("Set tx[%x] status to confirm in txpool", unit.Txs.GetTxIds())
 		txpool.SendStoredTxs(unit.Txs.GetTxIds())
-
 	}
 	log.Debugf("Remove unit[%s] from chainUnits", hash.String())
 	//remove new stable unit
@@ -402,26 +401,48 @@ func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
 func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPool) {
 	//token := newUnit.Number().AssetID
 	oldLastMainchainUnit := chain.lastMainChainUnit
-	log.Debugf("Switch main chain unit from %s to %s", oldLastMainchainUnit.Hash().String(), newUnit.Hash().String())
-
+	old_last_unit_hash := oldLastMainchainUnit.Hash()
+	log.Debugf("Switch main chain unit from %s to %s", old_last_unit_hash.String(), newUnit.Hash().String())
+	chain.setLastMainchainUnit(newUnit)
 	//reverse txpool tx status
-	unstableUnits := chain.getMainChainUnits()
-	for _, unit := range unstableUnits {
-		if unit.Hash() != oldLastMainchainUnit.Hash() {
-			txs := unit.Transactions()
-			if len(txs) > 0 {
-				log.Debugf("Reset unit[%#x] 's txs status to not pending", unit.UnitHash)
-				txpool.ResetPendingTxs(txs)
-			}
+	chain_units := chain.getChainUnits()
+	main_chain_units := chain.getMainChainUnits()
+	for _, m_u := range main_chain_units {
+		hash := m_u.Hash()
+		if _, has := chain_units[hash]; has {
+			delete(chain_units, hash)
 		}
 	}
-	chain.setLastMainchainUnit(newUnit)
+	for _, un_unit := range chain_units {
+		txs := un_unit.Transactions()
+		if len(txs) > 1 {
+			log.Debugf("Reset unit[%#x] 's txs status to not pending", un_unit.UnitHash)
+			txpool.ResetPendingTxs(txs)
+		}
+	}
+
+	//for _, unit := range main_chain_units {
+	//	txs := unit.Transactions()
+	//	if len(txs) > 1 {
+	//		log.Debugf("Reset unit[%#x] 's txs status to not pending", unit.UnitHash)
+	//		txpool.ResetPendingTxs(txs)
+	//	}
+	//}
+
 	//基于新主链，更新TxPool的状态
-	newUnstableUnits := chain.getMainChainUnits()
-	for _, unit := range newUnstableUnits {
-		if len(unit.Txs) > 0 {
-			log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
-			txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
+	//newUnstableUnits := chain.getMainChainUnits()
+	var last_index int
+	var to_set bool
+	for i, unit := range main_chain_units { // 只需要更新上个最新单元到最新单元之间的数据
+		if unit.Hash() == old_last_unit_hash {
+			last_index = i
+			to_set = true
+		}
+		if to_set && i > last_index {
+			if len(unit.Txs) > 0 {
+				log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
+				txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
+			}
 		}
 	}
 	//基于新主链的单元和稳定单元，重新构建Tempdb
