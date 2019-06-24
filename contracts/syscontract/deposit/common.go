@@ -566,10 +566,11 @@ func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
 		return false
 	}
 	day := cp.DepositPeriod
-	nowT := time.Now().UTC()
+	//nowT := time.Now().UTC()
 	enterT := StrToTime(enterTime)
-	duration := nowT.Sub(enterT).Hours()
-	if int(duration)/24 < day {
+	dur := int(time.Since(enterT).Hours())
+	//duration := nowT.Sub(enterT).Hours()
+	if dur/24 < day {
 		return false
 	}
 	return true
@@ -596,7 +597,7 @@ func caculateAwards(stub shim.ChaincodeStubInterface, balance uint64, lastModify
 	}
 	depositRateFloat64 := cp.DepositRate
 	//  计算币龄收益
-	return award.GetAwardsWithCoins(balance, endTime.Unix(), depositRateFloat64)
+	return award.GetAwardsWithCoins(balance, endTime, depositRateFloat64)
 }
 
 //  判断是否基金会发起的

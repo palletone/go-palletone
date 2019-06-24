@@ -211,14 +211,22 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		if parentHeader.Number.Index+1 != header.Number.Index {
 			return UNIT_STATE_INVALID_HEADER_NUMBER
 		}
-		vcode := validate.validateMediatorSchedule(header)
-		if vcode != TxValidationCode_VALID {
-			return vcode
-		}
+		//TODO temp remove mediator schedule validate
+		//vcode := validate.validateMediatorSchedule(header)
+		//if vcode != TxValidationCode_VALID {
+		//	return vcode
+		//}
 	}
 	return TxValidationCode_VALID
 }
 
 func (validate *Validate) ValidateHeader(h *modules.Header) error {
+	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(h)
+	if unitHeaderValidateResult != TxValidationCode_VALID &&
+		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
+		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
+		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
+		return NewValidateError(unitHeaderValidateResult)
+	}
 	return nil
 }

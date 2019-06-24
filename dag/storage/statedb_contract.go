@@ -158,7 +158,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 	//})
 	for _, write := range wset {
 		cid := id
-		if write.ContractId != nil && len(write.ContractId) != 0 {
+		if len(write.ContractId) != 0 {
 			cid = write.ContractId
 		}
 		key := getContractStateKey(cid, write.Key)

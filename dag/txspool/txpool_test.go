@@ -89,7 +89,9 @@ func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
 func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return ud.CurrentUnit(modules.PTNCOIN), nil
 }
-
+func (q *UnitDag4Test) GetMediators() map[common.Address]bool {
+	return nil
+}
 func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
 }

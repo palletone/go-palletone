@@ -57,6 +57,7 @@ const (
 const (
 	FoundationAddress = "FoundationAddress"
 	JuryList          = "JuryList"
+	DeveloperList     = "DeveloperList"
 	DepositRate       = "DepositRate"
 	//ContractSignatureNum = "ContractSignatureNum"
 	//ContractElectionNum  = "ContractElectionNum"
@@ -498,6 +499,7 @@ type ContractStopRequestPayload struct {
 type SignaturePayload struct {
 	Signatures []SignatureSet `json:"signature_set"` // the array of signature
 }
+
 type SignatureSet struct {
 	PubKey    []byte `json:"public_key"` //compress public key
 	Signature []byte `json:"signature"`  //
@@ -518,11 +520,13 @@ type DataPayload struct {
 type AccountStateUpdatePayload struct {
 	WriteSet []AccountStateWriteSet `json:"write_set"`
 }
+
 type AccountStateWriteSet struct {
 	IsDelete bool   `json:"is_delete"`
 	Key      string `json:"key"`
 	Value    []byte `json:"value"`
 }
+
 type FileInfo struct {
 	UnitHash    common.Hash `json:"unit_hash"`
 	UintHeight  uint64      `json:"unit_index"`
