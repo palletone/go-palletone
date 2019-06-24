@@ -39,7 +39,7 @@ const (
 	DefaultUccCpuShares      = 1024       //CPU占用率，相对的  CPU 利用率权重，默认为 1024
 	DefaultCpuPeriod         = 50000      // 限制CPU --cpu-period=50000 --cpu-quota=25000
 	DefaultUccCpuQuota       = 25000      //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
-	DefaultUccCpuSetCpus     = "0-3"      //限制使用某些CPUS  "1,3"  "0-3"
+	//DefaultUccCpuSetCpus     = "0-3"      //限制使用某些CPUS  "1,3"  "0-3"
 	DefaultUccPrivileged     = false      //防止容器以root权限运行
 	DefaultUccNetworkMode    = "bridge"   //容器运行网络模式
 	defaultUccOOMKillDisable = false      //是否内存使用量超过上限时系统杀死进程
