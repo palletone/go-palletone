@@ -149,7 +149,7 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 	}
 
 	if cfg.DebugTest {
-		log.Info("enter contract debug test", "templateId",tpid )
+		log.Info("enter contract debug test", "templateId", tpid)
 		tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, vers: ccVersion}
 		listAdd(tcc)
 	} else {
@@ -459,7 +459,7 @@ func GetAllContainers(client *docker.Client) {
 					log.Infof("db.GetCcDagHand err: %s", err.Error())
 					return
 				}
-				name := v.Names[0][17:52]
+				name := v.Names[0][23:58]
 				contractAddr, err := common.StringToAddress(name)
 				if err != nil {
 					log.Infof("common.StringToAddress err: %s", err.Error())

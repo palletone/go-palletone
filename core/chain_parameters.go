@@ -46,6 +46,10 @@ func NewChainParametersBase() ChainParametersBase {
 		DepositAmountForJury:      DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: DefaultDepositAmountForDeveloper,
 		UccCpuSetCpus:             DefaultUccCpuSetCpus,
+		UccPrivileged:             DefaultUccPrivileged,
+		UccCapDrop:                []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw", "kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"},
+		UccNetworkMode:            DefaultUccNetworkMode,
+		UccOOMKillDisable:         defaultUccOOMKillDisable,
 		ActiveMediatorCount:       DefaultActiveMediatorCount,
 		MaximumMediatorCount:      DefaultMaxMediatorCount,
 		MediatorInterval:          DefaultMediatorInterval,
@@ -69,7 +73,11 @@ type ChainParametersBase struct {
 	DepositAmountForJury      uint64 `json:"depositAmountForJury"`
 	DepositAmountForDeveloper uint64 `json:"depositAmountForDeveloper"`
 
-	UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
+	UccCpuSetCpus     string   `json:"ucc_cpu_set_cpus"`     //限制使用某些CPUS  "1,3"  "0-2"
+	UccPrivileged     bool     `json:"ucc_privileged"`       //  防止容器以root权限运行
+	UccCapDrop        []string `json:"ucc_cpa_drop"`         //  确保容器以最小权限运行
+	UccNetworkMode    string   `json:"ucc_network_mode"`     //  容器运行网络模式
+	UccOOMKillDisable bool     `json:"ucc_oom_kill_disable"` //是否内存使用量超过上限时系统杀死进程
 
 	// 活跃mediator的数量。 number of active mediators
 	ActiveMediatorCount uint8 `json:"activeMediatorCount"`
@@ -96,15 +104,16 @@ type ChainParametersBase struct {
 
 func NewChainParams() ChainParameters {
 	return ChainParameters{
-		ChainParametersBase:  NewChainParametersBase(),
-		DepositRate:          DefaultDepositRate,
-		TxCoinYearRate:       DefaultTxCoinYearRate,
-		DepositPeriod:        DefaultDepositPeriod,
-		UccMemory:            DefaultUccMemory,
-		UccMemorySwap:        DefaultUccMemorySwap,
-		UccCpuShares:         DefaultUccCpuShares,
-		UccCpuPeriod:         DefaultCpuPeriod,
-		UccCpuQuota:          DefaultUccCpuQuota,
+		ChainParametersBase: NewChainParametersBase(),
+		DepositRate:         DefaultDepositRate,
+		TxCoinYearRate:      DefaultTxCoinYearRate,
+		DepositPeriod:       DefaultDepositPeriod,
+		UccMemory:           DefaultUccMemory,
+		UccMemorySwap:       DefaultUccMemorySwap,
+		UccCpuShares:        DefaultUccCpuShares,
+		UccCpuPeriod:        DefaultCpuPeriod,
+		UccCpuQuota:         DefaultUccCpuQuota,
+
 		TempUccMemory:        DefaultTempUccMemory,
 		TempUccMemorySwap:    DefaultTempUccMemorySwap,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
