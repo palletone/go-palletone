@@ -459,7 +459,7 @@ func GetAllContainers(client *docker.Client) {
 					log.Infof("db.GetCcDagHand err: %s", err.Error())
 					return
 				}
-				name := v.Names[0][17:52]
+				name := v.Names[0][23:58]
 				contractAddr, err := common.StringToAddress(name)
 				if err != nil {
 					log.Infof("common.StringToAddress err: %s", err.Error())
