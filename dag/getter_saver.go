@@ -135,6 +135,10 @@ func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
 	return dag.unstablePropRep.GetSlotAtTime(when)
 }
 
+func (dag *Dag) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
+	return dag.unstablePropRep.GetNewestUnitTimestamp(token)
+}
+
 func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
 	return dag.unstablePropRep.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
 }
