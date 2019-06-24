@@ -147,7 +147,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 
 	Lifetime:        3 * time.Hour,
 	Removetime:      30 * time.Minute,
-	OrphanTTL:       15 * time.Minute,
+	OrphanTTL:       20 * time.Minute,
 	MaxOrphanTxs:    10000,
 	MaxOrphanTxSize: 2000000,
 }
