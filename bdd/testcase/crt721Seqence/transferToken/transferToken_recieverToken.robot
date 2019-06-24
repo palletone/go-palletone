@@ -36,6 +36,7 @@ Create token of 721 contract
     [Return]    ${jsonRes['result']}
 
 Request getbalance before transfer token
+    sleep    4
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     ${queryResult}    ccqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
     ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
