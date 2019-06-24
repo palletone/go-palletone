@@ -22,9 +22,9 @@ Request getbalance before create token
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    2
+    sleep    4
     ${PTN1}    ${result1}    normalGetBalance    ${recieverAdd}
-    sleep    5
+    sleep    2
     [Return]    ${PTN1}    ${result1}
 
 Create token of vote contract
@@ -42,7 +42,7 @@ Create token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
-    sleep    3
+    sleep    5
     ${gain1}    countRecieverPTN    ${PTNAmount}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${gain1}')    decimal
     sleep    2
@@ -50,7 +50,7 @@ Calculate gain of recieverAdd
 
 Request getbalance after create token
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
-    sleep    5
+    sleep    2
     [Return]    ${PTN2}    ${result2}
 
 Assert gain of reciever

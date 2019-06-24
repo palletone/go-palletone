@@ -41,7 +41,7 @@ CcinvokePass normal
     ...    ${721MetaBefore}    ${geneAdd}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    sleep    4
+    sleep    5
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
     [Return]    ${jsonRes['result']}
@@ -57,7 +57,7 @@ Supply token of 721 contract before change supply
 Request getbalance after supply token
     #normalCcqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
     ${PTN2}    ${result2}    normalGetBalance    ${reciever}
-    sleep    4
+    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result2['result']}
     log    ${key}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}
@@ -65,6 +65,7 @@ Request getbalance after supply token
     log    len(${countList})
     ${len}    Evaluate    len(${countList})+1
     Should Not Contain    ${result2['result']}    ${tokenCommonId}-6
+    sleep    4
     [Return]    ${PTN2}
 
 Change supply address to new address
@@ -75,7 +76,7 @@ Change supply address to new address
 
 Request getbalance before supply token
     ${result1}    getBalance    ${reciever}
-    sleep    5
+    sleep    2
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     [Return]    ${PTN1}
 
@@ -97,7 +98,7 @@ Supply token of 721 contract after change supply
 
 Request getbalance after change supply
     ${PTN3}    ${result3}    normalGetBalance    ${reciever}
-    sleep    5
+    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result3['result']}
     log    ${key}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}
@@ -126,7 +127,7 @@ Genesis address supply token of 721 contract
 Request getbalance after genesis supply token
     sleep    4
     ${PTN4}    ${result4}    normalGetBalance    ${geneAdd}
-    sleep    4
+    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result4['result']}
     log    ${key}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}
@@ -134,5 +135,4 @@ Request getbalance after genesis supply token
     log    len(${countList})
     ${len}    Evaluate    len(${countList})+1
     Should Not Contain    ${result4['result']}    ${tokenCommonId}-11
-    sleep    3
     [Return]    ${PTN4}

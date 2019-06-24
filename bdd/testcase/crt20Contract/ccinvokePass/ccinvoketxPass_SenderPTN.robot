@@ -24,9 +24,9 @@ Request getbalance before create token
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    2
+    sleep    4
     ${PTN1}    ${result}    normalGetBalance    ${geneAdd}
-    sleep    5
+    sleep    1
     [Return]    ${PTN1}
 
 Request normal CcinvokePass
@@ -37,18 +37,17 @@ Request normal CcinvokePass
     [Return]    ${ret}
 
 Calculate gain
-    sleep    3
+    sleep    5
     ${PTNGAIN}    Evaluate    ${PTNAmount}+${PTNPoundage}
     ${PTNGAIN}    countRecieverPTN    ${PTNGAIN}
     [Return]    ${PTNGAIN}
 
 Request getbalance after create token
     ${PTN2}    ${result}    normalGetBalance    ${geneAdd}
-    sleep    5
+    sleep    2
     [Return]    ${PTN2}
 
 Assert gain
     [Arguments]    ${PTN1}    ${PTN2}    ${PTNGAIN}
     ${GAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNGAIN}')    decimal
     Should Be Equal As Strings    ${PTN2}    ${GAIN}
-    sleep    3

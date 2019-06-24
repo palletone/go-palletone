@@ -22,11 +22,11 @@ Scenario: 20Contract - Transfer Token
     ...    ${geneAdd}
     ${ret}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    5
+    sleep    6
     ${result1}    getBalance    ${GeneAdd}
-    sleep    5
+    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result1}
-    sleep    3
+    sleep    2
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     ${item1}    Get From Dictionary    ${result1}    ${key}
     sleep    1
@@ -37,7 +37,7 @@ Scenario: 20Contract - Transfer Token
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNPoundage}')    decimal
     sleep    2
     ${result2}    getBalance    ${GeneAdd}
-    sleep    5
+    sleep    2
     ${PTN2}    Get From Dictionary    ${result2}    PTN
     ${item2}    Get From Dictionary    ${result2}    ${key}
     Should Be Equal As Numbers    ${item2}    ${item'}

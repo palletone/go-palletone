@@ -39,7 +39,7 @@ Request ccinvokePass and transferToken
     ...    ${ccList}
     sleep    5
     ${result1}    getBalance    ${geneAdd}
-    sleep    5
+    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result1}
     sleep    2
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${reciever}    2000    ${PTNPoundage}
@@ -50,20 +50,21 @@ Change supply of contract
     ${ccList}    Create List    ${changeSupplyMethod}    ${preTokenId}    ${reciever}
     ${result}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    5
+    sleep    6
     [Return]    ${result}
 
 Assert the supplyAddr
     ${queryResult}    ccqueryById    ${20ContractId}    ${TokenInfoMethod}    ${preTokenId}
-    sleep    3
+    sleep    2
     ${SupplyAddr}    jsonLoads    ${queryResult['result']}    SupplyAddr
+    sleep    3
     Should Be Equal As Strings    ${reciever}    ${SupplyAddr}
 
 Request getbalance before create token
     ${result1}    getBalance    ${reciever}
-    sleep    5
+    sleep    3
     ${key}    getTokenId    ${preTokenId}    ${result1}
-    sleep    2
+    sleep    3
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     sleep    1
     ${coinToken1}    Get From Dictionary    ${result1}    ${key}
@@ -76,15 +77,15 @@ Request supply token
     [Return]    ${ret}
 
 Calculate gain of recieverAdd
+    sleep    5
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${tokenAmount}    countRecieverPTN    ${invokeGain}
-    sleep    3
     [Return]    ${tokenAmount}
 
 Request getbalance after create token
     [Arguments]    ${geneAdd}    ${key}    ${tokenAmount}
     ${result2}    getBalance    ${reciever}
-    sleep    5
+    sleep    2
     ${coinToken2}    Get From Dictionary    ${result2}    ${key}
     sleep    1
     ${PTN2}    Get From Dictionary    ${result2}    PTN
