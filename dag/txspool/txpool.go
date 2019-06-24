@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -104,7 +105,12 @@ type dags interface {
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+
 	GetMediators() map[common.Address]bool
+	GetChainParameters() *core.ChainParameters
+	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
+	GetScheduledMediator(slotNum uint32) common.Address
+	GetSlotAtTime(when time.Time) uint32
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -232,7 +238,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 	}
 	pool.mu = new(sync.RWMutex)
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
-	pool.txValidator = validator.NewValidate(unit, pool, unit, nil)
+	pool.txValidator = validator.NewValidate(unit, pool, unit, unit)
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)

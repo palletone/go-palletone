@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -79,6 +80,7 @@ func NewUnitDag4Test() *UnitDag4Test {
 	ud := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), make(map[string]map[modules.OutPoint]*modules.Utxo)}
 	return ud
 }
+
 func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
 	return modules.NewUnit(&modules.Header{
 		Number: &modules.ChainIndex{AssetID: token},
@@ -89,9 +91,27 @@ func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
 func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return ud.CurrentUnit(modules.PTNCOIN), nil
 }
+
 func (q *UnitDag4Test) GetMediators() map[common.Address]bool {
 	return nil
 }
+
+func (q *UnitDag4Test) GetSlotAtTime(when time.Time) uint32 {
+	return 0
+}
+
+func (q *UnitDag4Test) GetScheduledMediator(slotNum uint32) common.Address {
+	return common.Address{}
+}
+
+func (q *UnitDag4Test) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
+	return 0, nil
+}
+
+func (q *UnitDag4Test) GetChainParameters() *core.ChainParameters {
+	return nil
+}
+
 func (ud *UnitDag4Test) StateAt(common.Hash) (*palletdb.MemDatabase, error) {
 	return ud.Db, nil
 }
