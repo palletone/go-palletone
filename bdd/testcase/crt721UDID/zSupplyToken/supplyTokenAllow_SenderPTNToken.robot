@@ -15,7 +15,7 @@ Scenario: 721 Contract - Supply token
     #${ret}    Given CcinvokePass normal
     Given CcinvokePass normal
     ${PTN1}    And Request getbalance before create token
-    ${ret}    When Spply token of 721 contract
+    ${ret}    When Supply token of 721 contract
     ${PTNGAIN}    Calculate gain
     ${PTN2}    Request getbalance after transfer token
     Then Assert gain    ${PTN1}    ${PTN2}    ${PTNGAIN}
@@ -28,21 +28,19 @@ CcinvokePass normal
     ...    ${721MetaBefore}    ${geneAdd}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    sleep    4
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
     [Return]    ${jsonRes['result']}
 
 Request getbalance before create token
     #${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
-    ${result1}    getBalance    ${geneAdd}
     sleep    4
+    ${result1}    getBalance    ${geneAdd}
     ${PTN1}    Get From Dictionary    ${result1}    PTN
-    #sleep    1
     #${coinToken1}    Get From Dictionary    ${result1}    ${key}
     [Return]    ${PTN1}
 
-Spply token of 721 contract
+Supply token of 721 contract
     ${ccList}    Create List    ${supplyTokenMethod}    ${preTokenId}    ${721TokenAmount}    ${721MetaAfter}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
@@ -53,13 +51,12 @@ Spply token of 721 contract
 Calculate gain
     ${PTNGAIN}    Evaluate    ${PTNAmount}+${PTNPoundage}
     ${PTNGAIN}    countRecieverPTN    ${PTNGAIN}
-    sleep    2
     [Return]    ${PTNGAIN}
 
 Request getbalance after transfer token
     #normalCcqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
-    ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     sleep    4
+    ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     #${key}    getTokenId    ${preTokenId}    ${result2['result']}
     #${queryResult}    ccqueryById    ${721ContractId}    ${existToken}    ${key}
     #Should Be Equal As Strings    ${queryResult['result']}    True
@@ -78,7 +75,6 @@ Request getbalance after transfer token
 Assert gain
     [Arguments]    ${PTN1}    ${PTN2}    ${PTNGAIN}
     #${result2}    getBalance    ${geneAdd}
-    #sleep    4
     #${PTN2}    Get From Dictionary    ${result2}    PTN
     ${GAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNGAIN}')    decimal
     Should Be Equal As Numbers    ${PTN2}    ${GAIN}

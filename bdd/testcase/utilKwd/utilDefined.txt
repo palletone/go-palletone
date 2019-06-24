@@ -77,7 +77,6 @@ countRecieverPTN
 voteTransToken
     ${listAccounts}    getlistAccounts
     ${result}    getBalance    ${listAccounts[0]}
-    sleep    5
     ${voteToken}    getTokenId    ${voteId}    ${result}
     Request transfer token of vote    ${listAccounts[0]}
     sleep    4
