@@ -151,7 +151,8 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 	return chain.tempdbunitRep.GetHeaderByNumber(number)
 }
 
-func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error {
+func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte,
+	txpool txspool.ITxPool) error {
 	//1. Set this unit as stable
 	unit, err := chain.getChainUnit(uHash)
 	if err != nil {
@@ -162,7 +163,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, gro
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
 	//2. Update unit.groupSign
 	header := unit.Header()
-	header.GroupPubKey = groupPubKey
+	//header.GroupPubKey = groupPubKey
 	header.GroupSign = groupSign
 	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
 	return chain.ldbunitRep.SaveHeader(header)
@@ -227,6 +228,7 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 	ustbHash := unit.Hash()
 	childrenCofirmAddrs[unit.Author()] = true
 	units := chain.getChainUnits()
+	// todo Albert·gou 待重做 优化逻辑
 	for i := 0; i < unstableCount; i++ {
 		u := units[ustbHash]
 		hs := unstableCofirmAddrs[ustbHash]
@@ -353,6 +355,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 				txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
 			}
 			//增加了单元后检查是否满足稳定单元的条件
+			// todo Albert·gou 待重做 优化逻辑
 			if !chain.checkStableCondition(txpool) {
 				chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
 				//这个单元不是稳定单元，需要加入Tempdb
