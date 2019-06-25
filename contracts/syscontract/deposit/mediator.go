@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -293,7 +292,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//  获取上次加入最后更改的时间
 		//endTime := md.LastModifyTime * DTimeDuration
 		//endTime, _ := time.Parse(Layout, md.LastModifyTime)
-		endTime := StrToTime(md.LastModifyTime)
+		// endTime := StrToTime(md.LastModifyTime)
 		//  获取保证金的年利率
 		//depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
 		//if err != nil {
@@ -305,15 +304,16 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//	log.Errorf("string to float64 error: %s", err.Error())
 		//	return shim.Error(err.Error())
 		//}
-		cp, err := stub.GetSystemConfig()
-		if err != nil {
-			//log.Error("strconv.ParseUint err:", "error", err)
-			return shim.Error(err.Error())
-		}
-		depositRateFloat64 := cp.DepositRate
-		//  计算币龄收益
-		awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRateFloat64)
-		md.Balance += awards
+		// cp, err := stub.GetSystemConfig()
+		// if err != nil {
+		// 	//log.Error("strconv.ParseUint err:", "error", err)
+		// 	return shim.Error(err.Error())
+		// }
+		//TODO
+		// depositRateFloat64 := cp.DepositRate
+		// //  计算币龄收益
+		// awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRateFloat64)
+		// md.Balance += awards
 		//  处理数据
 	}
 	md.Balance += invokeTokens.Amount

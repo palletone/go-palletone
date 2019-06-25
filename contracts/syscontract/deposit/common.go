@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/award"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -578,7 +578,7 @@ func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
 
 //  通过最后修改时间计算币龄收益
 func caculateAwards(stub shim.ChaincodeStubInterface, balance uint64, lastModifyTime string) uint64 {
-	endTime := StrToTime(lastModifyTime)
+	// endTime := StrToTime(lastModifyTime)
 	//  获取保证金年利率
 	//depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
 	//if err != nil {
@@ -590,14 +590,16 @@ func caculateAwards(stub shim.ChaincodeStubInterface, balance uint64, lastModify
 	//	log.Errorf("string to float64 error: %s", err.Error())
 	//	return 0
 	//}
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
-		return 0
-	}
-	depositRateFloat64 := cp.DepositRate
-	//  计算币龄收益
-	return award.GetAwardsWithCoins(balance, endTime, depositRateFloat64)
+	// cp, err := stub.GetSystemConfig()
+	// if err != nil {
+	// 	//log.Error("strconv.ParseUint err:", "error", err)
+	// 	return 0
+	// }
+	//TODO
+	return 0
+	// depositRateFloat64 := cp.DepositRate
+	// //  计算币龄收益
+	// return award.GetAwardsWithCoins(balance, endTime, depositRateFloat64)
 }
 
 //  判断是否基金会发起的
