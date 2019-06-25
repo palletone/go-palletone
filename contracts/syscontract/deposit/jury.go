@@ -31,6 +31,10 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		log.Error("isContainDepositContractAddr err: ", "error", err)
 		return shim.Error(err.Error())
 	}
+	err = saveVotes(stub, int64(invokeTokens.Amount))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	//  获取jury交付保证金的下线
 	//depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
 	//if err != nil {
@@ -79,10 +83,10 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	} else {
 		//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
 		//  如果在候选列表当中，即可享受利息
-		if balance.EnterTime != "" {
-			awards := caculateAwards(stub, balance.Balance, balance.LastModifyTime)
-			balance.Balance += awards
-		}
+		//if balance.EnterTime != "" {
+		//	awards := caculateAwards(stub, balance.Balance, balance.LastModifyTime)
+		//	balance.Balance += awards
+		//}
 		//  处理交付保证金数据
 		balance.Balance += invokeTokens.Amount
 	}
@@ -137,13 +141,13 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Ad
 	}
 	depositAmountsForJury := cp.DepositAmountForJury
 	//  这里计算这一次操作的币龄利息
-	awards := caculateAwards(stub, balance.Balance, balance.LastModifyTime)
+	//awards := caculateAwards(stub, balance.Balance, balance.LastModifyTime)
 	//  剩下的余额
 	result := balance.Balance - cashbackValue.CashbackTokens.Amount
 	// 需要删除节点和移除列表
 	if result == 0 {
 		//
-		cashbackValue.CashbackTokens.Amount += awards
+		//cashbackValue.CashbackTokens.Amount += awards
 		//  调用从合约把token转到请求地址
 		err := stub.PayOutToken(cashbackAddr.String(), cashbackValue.CashbackTokens, 0)
 		if err != nil {
@@ -185,7 +189,7 @@ func handleJuryFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Ad
 		return err
 	}
 	balance.Balance -= cashbackValue.CashbackTokens.Amount
-	balance.Balance += awards
+	//balance.Balance += awards
 	err = SaveNodeBalance(stub, cashbackAddr.String(), balance)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)

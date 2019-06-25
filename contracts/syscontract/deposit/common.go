@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -134,15 +133,6 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 	//  对mediator的特殊处理
 	if role == Mediator {
 		//  获取保证金下限
-		//depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
-		//if err != nil {
-		//	return err
-		//}
-		////  转换
-		//depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
-		//if err != nil {
-		//	return err
-		//}
 		cp, err := stub.GetSystemConfig()
 		if err != nil {
 			//log.Error("strconv.ParseUint err:", "error", err)
@@ -181,36 +171,8 @@ func applyCashbackList(role string, stub shim.ChaincodeStubInterface, args []str
 	return nil
 }
 
-//  从申请提取保证金列表中移除节点
-func moveAndPutStateFromCashbackList(stub shim.ChaincodeStubInterface, cashbackAddr common.Address) error {
-	//获取没收列表
-	listForCashback, err := GetListForCashback(stub)
-	if err != nil {
-		log.Error("stub.GetListForCashback err:", "error", err)
-		return err
-	}
-	if listForCashback == nil {
-		log.Error("listForCashback is nil")
-		return fmt.Errorf("%s", "listForCashback is nil")
-	}
-	if _, ok := listForCashback[cashbackAddr.String()]; !ok {
-		log.Error("node is not exist in the cashback list.")
-		return fmt.Errorf("%s", "node is not exist in the cashback list.")
-	}
-	delete(listForCashback, cashbackAddr.String())
-	err = SaveListForCashback(stub, listForCashback)
-	if err != nil {
-		log.Error("Stub.PutState err:", "error", err)
-		return err
-	}
-	return nil
-}
-
 //Jury or developer 可以随时退保证金，只是不在列表中的话，没有奖励
 func handleCommonJuryOrDev(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *DepositBalance) error {
-	//  这里计算这一次操作的币龄利息
-	awards := caculateAwards(stub, balance.Balance, balance.LastModifyTime)
-	balance.Balance += awards
 	//调用从合约把token转到请求地址
 	err := stub.PayOutToken(cashbackAddr.String(), cashbackValue.CashbackTokens, 0)
 	if err != nil {
@@ -459,6 +421,7 @@ func mediatorDepositKey(medAddr string) string {
 	return string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX) + medAddr
 }
 
+//  获取mediator
 func GetMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) (*MediatorDeposit, error) {
 	byte, err := stub.GetState(mediatorDepositKey(medAddr))
 	if err != nil || byte == nil {
@@ -474,12 +437,12 @@ func GetMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) (*Medi
 	return balance, nil
 }
 
+//  保存mediator
 func SaveMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string, balance *MediatorDeposit) error {
 	byte, err := json.Marshal(balance)
 	if err != nil {
 		return err
 	}
-
 	err = stub.PutState(mediatorDepositKey(medAddr), byte)
 	if err != nil {
 		return err
@@ -488,6 +451,7 @@ func SaveMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string, balan
 	return nil
 }
 
+//  删除mediator
 func DelMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) error {
 	err := stub.DelState(mediatorDepositKey(medAddr))
 	if err != nil {
@@ -497,6 +461,7 @@ func DelMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) error 
 	return nil
 }
 
+//  保存jury/dev
 func SaveNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balance *DepositBalance) error {
 	balanceByte, err := json.Marshal(balance)
 	if err != nil {
@@ -509,6 +474,7 @@ func SaveNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balan
 	return nil
 }
 
+//  获取jury/dev
 func GetNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string) (*DepositBalance, error) {
 	byte, err := stub.GetState(string(constants.DEPOSIT_BALANCE_PREFIX) + balanceAddr)
 	if err != nil {
@@ -525,6 +491,7 @@ func GetNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string) (*Depo
 	return balance, nil
 }
 
+//  删除jury/dev
 func DelNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string) error {
 	err := stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + balanceAddr)
 	if err != nil {
@@ -548,46 +515,18 @@ func TimeStr() string {
 
 // 判读是否超过了抵押日期
 func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
-	//  判断是否超过了质押周期
-	//depositPeriod, err := stub.GetSystemConfig(DepositPeriod)
-	//if err != nil {
-	//	log.Error("get deposit period err: ", "error", err)
-	//	return false
-	//}
-	////
-	//day, err := strconv.Atoi(depositPeriod)
-	//if err != nil {
-	//	log.Error("strconv.Atoi err: ", "error", err)
-	//	return false
-	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
 		//log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
 	day := cp.DepositPeriod
-	//nowT := time.Now().UTC()
 	enterT := StrToTime(enterTime)
 	dur := int(time.Since(enterT).Hours())
-	//duration := nowT.Sub(enterT).Hours()
 	if dur/24 < day {
 		return false
 	}
 	return true
-}
-
-//  通过最后修改时间计算币龄收益
-func caculateAwards(stub shim.ChaincodeStubInterface, balance uint64, lastModifyTime string) uint64 {
-	endTime := StrToTime(lastModifyTime)
-	//  获取保证金年利率
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
-		return 0
-	}
-	depositRateFloat64 := cp.DepositRate
-	//  计算币龄收益
-	return award.GetAwardsWithCoins(balance, endTime, depositRateFloat64)
 }
 
 //  判断是否基金会发起的
@@ -613,6 +552,7 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	return true
 }
 
+//  获取普通节点
 func getNor(stub shim.ChaincodeStubInterface, invokeA string) (*NorNodBal, error) {
 	b, err := stub.GetState(string(constants.DEPOSIT_NORMAL_PREFIX) + invokeA)
 	if err != nil {
@@ -628,6 +568,8 @@ func getNor(stub shim.ChaincodeStubInterface, invokeA string) (*NorNodBal, error
 	}
 	return nor, nil
 }
+
+//  保存普通节点
 func saveNor(stub shim.ChaincodeStubInterface, invokeA string, nor *NorNodBal) error {
 	b, err := json.Marshal(nor)
 	if err != nil {
@@ -640,34 +582,7 @@ func saveNor(stub shim.ChaincodeStubInterface, invokeA string, nor *NorNodBal) e
 	return nil
 }
 
-func getNorMap(stub shim.ChaincodeStubInterface) (map[string]*modules.AmountAsset, error) {
-	b, err := stub.GetState(NormalNodeList)
-	if err != nil {
-		return nil, err
-	}
-	if b == nil {
-		return nil, nil
-	}
-	norMap := make(map[string]*modules.AmountAsset)
-	err = json.Unmarshal(b, &norMap)
-	if err != nil {
-		return nil, err
-	}
-	return norMap, nil
-}
-
-func saveNorMap(stub shim.ChaincodeStubInterface, norMap map[string]*modules.AmountAsset) error {
-	b, err := json.Marshal(norMap)
-	if err != nil {
-		return err
-	}
-	err = stub.PutState(NormalNodeList, b)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
+//  获取普通节点提取PTN
 func getExtPtn(stub shim.ChaincodeStubInterface) (map[string]*extractPtn, error) {
 	b, err := stub.GetState(ExtractPtnList)
 	if err != nil {
@@ -684,6 +599,7 @@ func getExtPtn(stub shim.ChaincodeStubInterface) (map[string]*extractPtn, error)
 	return extP, nil
 }
 
+//  保存普通节点提取PTN
 func saveExtPtn(stub shim.ChaincodeStubInterface, extPtnL map[string]*extractPtn) error {
 	b, err := json.Marshal(extPtnL)
 	if err != nil {
@@ -696,11 +612,16 @@ func saveExtPtn(stub shim.ChaincodeStubInterface, extPtnL map[string]*extractPtn
 	return nil
 }
 
-func getPledgeVotes(stub shim.ChaincodeStubInterface) (int64, error) {
+//  获取当前PTN总量
+func getVotes(stub shim.ChaincodeStubInterface) (int64, error) {
 	b, err := stub.GetState(AllPledgeVotes)
 	if err != nil {
 		return 0, err
 	}
+	if b == nil {
+		return 0, nil
+	}
+	log.Info("11111111111111111111111111111111111111111=======")
 	votes, err := strconv.ParseInt(string(b), 10, 64)
 	if err != nil {
 		return 0, err
@@ -708,11 +629,81 @@ func getPledgeVotes(stub shim.ChaincodeStubInterface) (int64, error) {
 	return votes, nil
 }
 
-func savePledgeVotes(stub shim.ChaincodeStubInterface, votes int64) error {
-	str := strconv.FormatInt(votes, 10)
-	err := stub.PutState(AllPledgeVotes, []byte(str))
+//  保存PTN总量
+func saveVotes(stub shim.ChaincodeStubInterface, votes int64) error {
+	cur, err := getVotes(stub)
+	if err != nil {
+		return err
+	}
+	cur += votes
+	str := strconv.FormatInt(cur, 10)
+	err = stub.PutState(AllPledgeVotes, []byte(str))
 	if err != nil {
 		return err
 	}
 	return nil
+	return nil
+}
+
+//  每天计算各节点收益
+func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 0 {
+		return shim.Error("need 0 args")
+	}
+	//  判断是否是基金会
+	if !isFoundationInvoke(stub) {
+		return shim.Error("please use foundation address")
+	}
+	//  通过前缀获取所有mediator
+	mediators, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	//  通过前缀获取所有jury/dev
+	juryAndDevs, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	//  通过前缀获取所有普通节点
+	normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_NORMAL_PREFIX))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	//  获取每天总奖励
+	cp, err := stub.GetSystemConfig()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	depositExtraReward := cp.DepositExtraReward
+	//  获取当前总的质押数量
+	pledgeVotes, err := getVotes(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	rate := float64(depositExtraReward) / float64(pledgeVotes)
+	//  计算mediators
+	for _, m := range mediators {
+		mediatorDeposit := MediatorDeposit{}
+		_ = json.Unmarshal(m.Value, &mediators)
+		dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
+		mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
+		_ = SaveMediatorDeposit(stub, m.Key, &mediatorDeposit)
+	}
+	//  计算jury/dev
+	for _, jd := range juryAndDevs {
+		depositBalance := DepositBalance{}
+		_ = json.Unmarshal(jd.Value, &depositBalance)
+		dayAward := rate * float64(depositBalance.Balance)
+		depositBalance.Balance += uint64(dayAward)
+		_ = SaveNodeBalance(stub, jd.Key, &depositBalance)
+	}
+	//  计算normalNode
+	for _, nor := range normalNodes {
+		norNodBal := NorNodBal{}
+		_ = json.Unmarshal(nor.Value, &norNodBal)
+		dayAward := rate * float64(norNodBal.AmountAsset.Amount)
+		norNodBal.AmountAsset.Amount += uint64(dayAward)
+		_ = saveNor(stub, nor.Key, &norNodBal)
+	}
+	return shim.Success(nil)
 }
