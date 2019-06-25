@@ -7,7 +7,6 @@ function StartGPTN()
         nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml >> node$1/nohup.out &
     else
         nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml --noProduce --staleProduce  >> node$1/nohup.out &
-        #nohup ./gptn --datadir node$1/palletone --configfile node$1/ptn-config.toml --noProduce --staleProduce --allowConsecutive  >> node$1/nohup.out &
     fi
 }
 
@@ -19,7 +18,11 @@ function LoopStart()
     do  
     StartGPTN $count 
     let ++count;  
-    done  
+    done 
+    nohup ./gptn --datadir node_test4/palletone --configfile node_test4/ptn-config.toml >> node_test4/nohup.out &
+    nohup ./gptn --datadir node_test5/palletone --configfile node_test5/ptn-config.toml >> node_test5/nohup.out &
+    nohup ./gptn --datadir node_test6/palletone --configfile node_test6/ptn-config.toml >> node_test6/nohup.out &
+    nohup ./gptn --datadir node_test7/palletone --configfile node_test7/ptn-config.toml >> node_test7/nohup.out & 
     return 0;  
 }
 
