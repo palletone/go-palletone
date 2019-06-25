@@ -57,16 +57,16 @@ func toString(v reflect.Value) string {
 	switch v.Kind() {
 	case reflect.Invalid:
 		return "invalid field"
-	case reflect.Int, reflect.Int8, reflect.Int16,
-		reflect.Int32, reflect.Int64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return strconv.FormatInt(v.Int(), 10)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16,
-		reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+	case reflect.Bool:
+		return strconv.FormatBool(v.Bool())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return strconv.FormatUint(v.Uint(), 10)
-	case reflect.Float64, reflect.Float32:
-		return strconv.FormatFloat(v.Float(), 'f', -1, 64)
 	case reflect.String:
 		return v.String()
+	case reflect.Float64, reflect.Float32:
+		return strconv.FormatFloat(v.Float(), 'f', -1, 64)
 	default:
 		return fmt.Sprintf("unexpected type: %v", v.Type().String())
 	}
