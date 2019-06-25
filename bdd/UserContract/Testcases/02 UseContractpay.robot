@@ -45,6 +45,7 @@ User installs contract template
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
     ${tplId}=    Get From Dictionary    ${result}    tplId
+    Run Keyword If    '${tplId}'=='${EMPTY}'    Fail    "Install Contract Error"
     Set Global Variable    ${gTplId}    ${tplId}
     [Return]    ${reqId}
 
@@ -55,21 +56,27 @@ User deploys contract
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
     ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Run Keyword If    '${contractId}'=='${EMPTY}'    Fail    "Deploy Contract Error"
     Set Global Variable    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
 User put status into contractpay
-    ${args}=    Create List    put    Hello
+    ${args}=    Create List    put
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
 Get status from contractpay
-    ${args}=    Create List    get    Hello
+    ${args}=    Create List    get
     ${respJson}=    queryContract    ${gContractId}    ${args}
-    Log    ${respJson}
+    Dictionary Should Contain Key    ${respJson}    a
+    Dictionary Should Contain Key    ${respJson}    b
+    Dictionary Should Contain Key    ${respJson}    c
+    Dictionary Should Contain Key    ${respJson}    aa
 
 User transfer PTN to contractpay
     transferPtnTo    ${gContractId}    10000

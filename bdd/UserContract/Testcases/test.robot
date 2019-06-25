@@ -1,6 +1,9 @@
+*** Settings ***
+Library           Collections
+Library           BuiltIn
+
 *** Test Cases ***
 test
-    ${a}=    Set Variable    ${3}
-    ${b}=    Set Variable    ${6}
-    Run Keyword If    ${b}-${a}>3    Log    "11111"
-    ...    ELSE    Fail    "value error"
+    ${dict}=    Create Dictionary    a    1    b    2
+    ${status}    ${value}=    Run Keyword And Ignore Error    Get From Dictionary    ${dict}    result
+    Run Keyword If    '${status}' == 'PASS'    Log    "111"

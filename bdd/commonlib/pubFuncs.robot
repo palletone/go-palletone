@@ -110,7 +110,7 @@ deployContract
 invokeContract
     [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}    ${args}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}
-    ...    ${args}
+    ...    ${args}    ${null}    0
     ${respJson}=    sendRpcPost    ${host}    ${invokeMethod}    ${params}    InvokeContract
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
@@ -120,18 +120,19 @@ invokeContract
 
 queryContract
     [Arguments]    ${contractId}    ${args}
-    ${params}=    Create List    ${contractId}    ${args}
+    ${params}=    Create List    ${contractId}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${host}    ${queryMethod}    ${params}    QueryContract
     [Return]    ${respJson}
 
 getCurrentUnitHeight
     [Arguments]    ${host}
     # query current unit height
-    ${respJson}=    sendRpcPost    ${host}    admin_nodeInfo    ${null}    QueryCurrentUnitHeight
-    ${protocols}=    Get From Dictionary    ${respJson}    protocols
-    ${ptnInfo}=    Get From Dictionary    ${protocols}    PTN
-    ${height}=    Get From Dictionary    ${ptnInfo}    Index
-    [Return]    ${height}
+    ${params}=    Create List    PTN
+    ${respJson}=    sendRpcPost    ${host}    dag_getFastUnitIndex    ${params}    QueryCurrentUnitHeight
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${result}=    To Json    ${result}
+    ${stableIndex}=    Get From Dictionary    ${result}    stable_index
+    [Return]    ${stableIndex}
 
 sendRpcPost
     [Arguments]    ${host}    ${method}    ${params}    ${alias}
@@ -144,7 +145,7 @@ sendRpcPost
 
 wait for transaction being packaged
     Log    wait for transaction being packaged
-    Sleep    10
+    Sleep    10s
 
 Unlock token holder succeed
     unlockAccount    ${tokenHolder}
@@ -154,13 +155,22 @@ Wait for unit abount contract to be confirmed by unit height
     [Arguments]    ${reqId}
     # query the height of unit including tpl install tx
     ${params}=    Create List    ${reqId}
-    ${respJson}=    sendRpcPost    ${host}    dag_getTxByReqId    ${params}    QueryContractReqStats
-    ${result}=    Get From Dictionary    ${respJson}    result
+    # jury signature needs time to set agree
+    ${waitTimes}=    Set Variable    ${10}
+    ${unitHeight}=    Set Variable    999999999999999999999999999999999999
+    : FOR    ${t}    IN RANGE    ${waitTimes}
+    \    ${respJson}=    sendRpcPost    ${host}    dag_getTxByReqId    ${params}    QueryContractReqStats
+    \    ${status}    ${result}=    Run Keyword And Ignore Error    Get From Dictionary    ${respJson}    result
+    \    Exit For Loop If    '${status}' == 'PASS'
+    \    Run Keyword If    ${waitTimes}-${t}==1    Fail    "It takes too long for jury to signature"
+    \    Sleep    5s
     ${result}=    To Json    ${result}
     ${info}=    Get From Dictionary    ${result}    info
     ${unitHeight}=    Get From Dictionary    ${info}    unit_height
+    # query current unit height
     ${waitTimes}=    Set Variable    ${8}
     : FOR    ${t}    IN RANGE    ${waitTimes}
     \    ${height}=    getCurrentUnitHeight    ${host}    # query current unit height
     \    Run Keyword If    ${height}-${unitHeight}>3    Exit For Loop
     \    Run Keyword If    ${waitTimes}-${t}==1    Fail    "It takes too slow to confirm unit"
+    \    Sleep    3s
