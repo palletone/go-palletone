@@ -45,6 +45,7 @@ func (t *SampleSysCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	//best practice to do nothing (or very little) in Init.
 
 	//fmt.Println("***sample system contract init***")
+	stub.PutState("paystate1", []byte("paystate1"))
 	return shim.Success(nil)
 }
 

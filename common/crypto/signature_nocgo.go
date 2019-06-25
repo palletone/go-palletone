@@ -82,7 +82,6 @@ func Sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
 // The public key should be in compressed (33 bytes) or uncompressed (65 bytes) format.
 // The signature should have the 64 byte [R || S] format.
 func VerifySignature(pubkey, hash, signature []byte) bool {
-
 	key, err := btcec.ParsePubKey(pubkey, btcec.S256())
 	if err != nil {
 		log.Info("parsePubKey error:" + err.Error())

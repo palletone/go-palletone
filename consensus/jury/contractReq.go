@@ -43,7 +43,9 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		return common.Hash{}, nil, errors.New("ContractInstallReq request param len overflow")
 	}
 	addrHash := make([]common.Hash, 0)
-	for _, addr := range addrs {
+	//去重
+	resultAddress := getValidAddress(addrs)
+	for _, addr := range resultAddress {
 		addrHash = append(addrHash, util.RlpHash(addr))
 	}
 	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version, "addrHash", addrHash)
@@ -72,7 +74,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	templateId := tpl.(*modules.ContractTplPayload).TemplateId
 	log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, false)
 	return reqId, templateId, nil
 }
 
@@ -101,7 +103,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	log.Infof("[%s]ContractDeployReq ok, reqId[%s] templateId[%x],contractId[%s] ", shortId(reqId.String()), reqId.String(), templateId, contractId.String())
 
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{Ele: nil, CType: CONTRACT_EVENT_ELE, Tx: tx}, true)
 	return reqId, contractId, err
 }
 
@@ -189,7 +191,7 @@ func (p *Processor) ElectionVrfReq(id uint32) ([]byte, error) {
 		valid:  true,
 		adaInf: make(map[uint32]*AdapterInf),
 	}
-	p.ElectionRequest(reqId, time.Second*5)
+	//p.ElectionRequest(reqId, time.Second*5)
 
 	return nil, nil
 }
