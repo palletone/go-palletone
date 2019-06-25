@@ -61,6 +61,14 @@ const (
 	IsInJuryCandidateList           = "IsInJuryCandidateList"
 	IsInDeveloperCandidateList      = "IsInDeveloperCandidateList"
 	GetDeposit                      = "GetNodeBalance"
+	NormalNodePledgeVote            = "normalNodePledgeVote"
+	NormalNodeChangeVote            = "normalNodeChangeVote"
+	NormalNodeExtractVote           = "normalNodeExtractVote"
+	NormalNodeList                  = "normalNodeList"
+	ExtractPtnList                  = "extractPtnList"
+	HandleExtractVote               = "handleExtractVote"
+	HandleEachDayAward              = "handleEachDayAward"
+	AllPledgeVotes                  = "allPledgeVotes"
 
 	Apply    = "applying"
 	Agree    = "approved"
@@ -129,4 +137,14 @@ func NewMediatorDeposit() *MediatorDeposit {
 		ApplyEnterTime: TimeStr(),
 		Status:         Quited,
 	}
+}
+
+type NorNodBal struct {
+	AmountAsset  *modules.AmountAsset `json:"amount_asset"`
+	MediatorAddr string               `json:"mediator_address"`
+}
+
+type extractPtn struct {
+	Time   string               `json:"time"`   //提取质押时间
+	Amount *modules.AmountAsset `json:"amount"` //提取质押数量
 }

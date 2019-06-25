@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018-2019
@@ -21,7 +22,7 @@ package modules
 import "github.com/palletone/go-palletone/common"
 
 type ContractTemplate struct {
-	TplId	[]byte   `json:"tpl_id"`
+	TplId          []byte        `json:"tpl_id"`
 	TplName        string        `json:"tpl_name"`
 	TplDescription string        `json:"tpl_description"`
 	Path           string        `json:"install_path"`
@@ -29,19 +30,19 @@ type ContractTemplate struct {
 	Abi            string        `json:"abi"`
 	Language       string        `json:"language"`
 	AddrHash       []common.Hash `json:"addr_hash" rlp:"nil"`
-	Memory   uint16 `json:"memory"`
+	Memory         uint16        `json:"memory"`
 }
-func NewContractTemplate(req *ContractInstallRequestPayload, tpl *ContractTplPayload) *ContractTemplate{
-	return &ContractTemplate{
-		TplId:tpl.TemplateId,
-		TplName:req.TplName,
-		TplDescription:req.TplDescription,
-		Path:req.Path,
-		Version:req.Version,
-		Abi:req.Abi,
-		Language:req.Language,
-		AddrHash:req.AddrHash,
-		Memory:tpl.Memory,
 
+func NewContractTemplate(req *ContractInstallRequestPayload, tpl *ContractTplPayload) *ContractTemplate {
+	return &ContractTemplate{
+		TplId:          tpl.TemplateId,
+		TplName:        req.TplName,
+		TplDescription: req.TplDescription,
+		Path:           req.Path,
+		Version:        req.Version,
+		Abi:            req.Abi,
+		Language:       req.Language,
+		AddrHash:       req.AddrHash,
+		Memory:         tpl.Memory,
 	}
 }

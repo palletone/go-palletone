@@ -47,6 +47,7 @@ var (
 	REQID_TXID_PREFIX         = []byte("rq")
 	MEDIATOR_INFO_PREFIX      = []byte("mi")
 	DEPOSIT_BALANCE_PREFIX    = []byte("db")
+	DEPOSIT_NORMAL_PREFIX     = []byte("dn")
 
 	GLOBAL_PROPERTY_HISTORY_PREFIX = []byte("gh")
 

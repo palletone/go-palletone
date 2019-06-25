@@ -119,22 +119,22 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	}
 
 	for idx, val := range rd {
-		rdNew := md.ContractReadSet{
+		rs := md.ContractReadSet{
 			Key:        val.GetKey(),
 			Version:    val.GetVersion(),
 			ContractId: val.ContractId,
 		}
-		invoke.ReadSet = append(invoke.ReadSet, rdNew)
+		invoke.ReadSet = append(invoke.ReadSet, rs)
 		log.Infof("ReadSet: idx[%v], fun[%s], key[%s], val[%v]", idx, args[2], val.GetKey(), val.GetVersion())
 	}
 	for idx, val := range wt {
-		rd := md.ContractWriteSet{
+		ws := md.ContractWriteSet{
 			Key:        val.GetKey(),
 			Value:      val.GetValue(),
 			IsDelete:   val.GetIsDelete(),
 			ContractId: val.ContractId,
 		}
-		invoke.WriteSet = append(invoke.WriteSet, rd)
+		invoke.WriteSet = append(invoke.WriteSet, ws)
 		log.Infof("WriteSet: idx[%d], fun[%s], key[%s], val[%v], delete[%t]", idx, args[2], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
@@ -160,22 +160,22 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 	}
 
 	for idx, val := range rd {
-		rd := md.ContractReadSet{
+		rs := md.ContractReadSet{
 			Key:        val.GetKey(),
 			Version:    val.GetVersion(),
 			ContractId: val.ContractId,
 		}
-		deploy.ReadSet = append(deploy.ReadSet, rd)
+		deploy.ReadSet = append(deploy.ReadSet, rs)
 		log.Info("RwTxResult2DagDeployUnit", "ReadSet: idx", idx, "fun", args[2], "key", val.GetKey(), "val", *val.GetVersion())
 	}
 	for idx, val := range wt {
-		rd := md.ContractWriteSet{
+		ws := md.ContractWriteSet{
 			Key:        val.GetKey(),
 			Value:      val.GetValue(),
 			IsDelete:   val.GetIsDelete(),
 			ContractId: val.ContractId,
 		}
-		deploy.WriteSet = append(deploy.WriteSet, rd)
+		deploy.WriteSet = append(deploy.WriteSet, ws)
 		log.Info("RwTxResult2DagDeployUnit", "WriteSet: idx", idx, "fun", args[2], "key", val.GetKey(), "val", val.GetValue(), "delete", val.GetIsDelete())
 	}
 
