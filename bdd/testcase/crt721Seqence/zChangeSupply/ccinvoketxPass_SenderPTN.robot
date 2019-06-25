@@ -41,7 +41,6 @@ CcinvokePass normal
     ...    ${721MetaBefore}    ${geneAdd}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    sleep    5
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
     [Return]    ${jsonRes['result']}
@@ -56,8 +55,8 @@ Supply token of 721 contract before change supply
 
 Request getbalance after supply token
     #normalCcqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
+    sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${reciever}
-    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result2['result']}
     log    ${key}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}
@@ -65,18 +64,17 @@ Request getbalance after supply token
     log    len(${countList})
     ${len}    Evaluate    len(${countList})+1
     Should Not Contain    ${result2['result']}    ${tokenCommonId}-6
-    sleep    4
     [Return]    ${PTN2}
 
 Change supply address to new address
     ${ccList}    Create List    ${changeSupplyMethod}    ${preTokenId}    ${reciever}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${geneAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    sleep    5
+    
 
 Request getbalance before supply token
+    sleep    4
     ${result1}    getBalance    ${reciever}
-    sleep    2
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     [Return]    ${PTN1}
 
@@ -84,7 +82,6 @@ Calculate gain
     #${GAIN}    Evaluate    ${PTNAmount}-${PTNPoundage}
     ${PTNGAIN}    countRecieverPTN    ${PTNPoundage}
     #${PTNGAIN}    Evaluate    decimal.Decimal('${PTNAmount}')-decimal.Decimal('${PTNPoundage}')    decimal
-    sleep    2
     [Return]    ${PTNGAIN}
 
 Supply token of 721 contract after change supply
@@ -93,12 +90,11 @@ Supply token of 721 contract after change supply
     ...    ${721ContractId}    ${ccList}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
-    sleep    5
     [Return]    ${jsonRes['result']}
 
 Request getbalance after change supply
+    sleep    4
     ${PTN3}    ${result3}    normalGetBalance    ${reciever}
-    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result3['result']}
     log    ${key}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}
@@ -127,7 +123,6 @@ Genesis address supply token of 721 contract
 Request getbalance after genesis supply token
     sleep    4
     ${PTN4}    ${result4}    normalGetBalance    ${geneAdd}
-    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result4['result']}
     log    ${key}
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}

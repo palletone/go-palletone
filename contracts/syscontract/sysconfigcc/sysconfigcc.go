@@ -68,7 +68,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 	//		return shim.Error(jsonResp)
 	//	}
 	//	return shim.Success(resultByte)
-	case "updateSysParamWithoutVote":
+	case UpdateSysParamWithoutVote:
 		log.Info("Start updateSysParamWithoutVote Invoke")
 		resultByte, err := s.updateSysParamWithoutVote(stub, args)
 		if err != nil {
@@ -92,7 +92,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 			return shim.Success([]byte(jsonResp))
 		}
 		return shim.Success(resultByte)
-	case "createVotesTokens":
+	case CreateVotesTokens:
 		log.Info("Start createVotesTokens Invoke")
 		resultByte, err := s.createVotesTokens(stub, args)
 		if err != nil {

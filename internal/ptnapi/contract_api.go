@@ -37,6 +37,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -427,6 +429,33 @@ func (s *PublicContractAPI) SysConfigContractQuery(ctx context.Context, param []
 func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
 	param []string) (string, error) {
 	log.Info("---enter SysConfigContractInvoke---")
+
+	// 检查参数
+	if param[0] == sysconfigcc.UpdateSysParamWithoutVote {
+		field, value := param[0], param[1]
+		err := core.CheckSysConfigArgs(field, value)
+		if err != nil {
+			log.Debugf(err.Error())
+			return "", err
+		}
+	} else if param[0] == sysconfigcc.CreateVotesTokens {
+		var voteTopics []sysconfigcc.SysVoteTopic
+		err := json.Unmarshal([]byte(param[5]), &voteTopics)
+		if err != nil {
+			log.Debugf(err.Error())
+			return "", err
+		}
+
+		for _, oneTopic := range voteTopics {
+			for _, oneOption := range oneTopic.SelectOptions {
+				err := core.CheckSysConfigArgs(oneTopic.TopicTitle, oneOption)
+				if err != nil {
+					log.Debugf(err.Error())
+					return "", err
+				}
+			}
+		}
+	}
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.SysConfigContractAddress.String(),
 		param, "", "0")

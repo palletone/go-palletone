@@ -13,16 +13,12 @@ newAccounts
     # create a user for the poll
     ${user1}=    newAccount
     Set Global Variable    ${userAccount}    ${user1}
-    Sleep    1
     ${user2}=    newAccount
     Set Global Variable    ${userAccount2}    ${user2}
-    Sleep    1
     ${user3}=    newAccount
     Set Global Variable    ${userAccount3}    ${user3}
-    Sleep    1
     ${user4}=    newAccount
     Set Global Variable    ${userAccount4}    ${user4}
-    Sleep    1
     ${user5}=    newAccount
     Set Global Variable    ${userAccount5}    ${user5}
 

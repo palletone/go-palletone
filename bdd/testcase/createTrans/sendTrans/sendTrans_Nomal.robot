@@ -23,7 +23,6 @@ Request getbalance before create transaction
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     ${PTN1}    ${result1}    normalGetBalance    ${recieverAdd}
-    sleep    5
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${PTNAmount}')    decimal
     [Return]    ${PTNGAIN}
 
@@ -31,5 +30,4 @@ Request getbalance after create transaction
     [Arguments]    ${PTNGAIN}
     Sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
-    Sleep    5
     Should Be Equal As Numbers    ${PTNGAIN}    ${PTN2}
