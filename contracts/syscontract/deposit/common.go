@@ -580,16 +580,6 @@ func isOverDeadline(stub shim.ChaincodeStubInterface, enterTime string) bool {
 func caculateAwards(stub shim.ChaincodeStubInterface, balance uint64, lastModifyTime string) uint64 {
 	endTime := StrToTime(lastModifyTime)
 	//  获取保证金年利率
-	//depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
-	//if err != nil {
-	//	log.Error("get deposit rate err: ", "error", err)
-	//	return 0
-	//}
-	//depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
-	//if err != nil {
-	//	log.Errorf("string to float64 error: %s", err.Error())
-	//	return 0
-	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
 		//log.Error("strconv.ParseUint err:", "error", err)
@@ -621,4 +611,108 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 		return false
 	}
 	return true
+}
+
+func getNor(stub shim.ChaincodeStubInterface, invokeA string) (*NorNodBal, error) {
+	b, err := stub.GetState(string(constants.DEPOSIT_NORMAL_PREFIX) + invokeA)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	nor := &NorNodBal{}
+	err = json.Unmarshal(b, nor)
+	if err != nil {
+		return nil, err
+	}
+	return nor, nil
+}
+func saveNor(stub shim.ChaincodeStubInterface, invokeA string, nor *NorNodBal) error {
+	b, err := json.Marshal(nor)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(string(constants.DEPOSIT_NORMAL_PREFIX)+invokeA, b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getNorMap(stub shim.ChaincodeStubInterface) (map[string]*modules.AmountAsset, error) {
+	b, err := stub.GetState(NormalNodeList)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	norMap := make(map[string]*modules.AmountAsset)
+	err = json.Unmarshal(b, &norMap)
+	if err != nil {
+		return nil, err
+	}
+	return norMap, nil
+}
+
+func saveNorMap(stub shim.ChaincodeStubInterface, norMap map[string]*modules.AmountAsset) error {
+	b, err := json.Marshal(norMap)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(NormalNodeList, b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getExtPtn(stub shim.ChaincodeStubInterface) (map[string]*extractPtn, error) {
+	b, err := stub.GetState(ExtractPtnList)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	extP := make(map[string]*extractPtn)
+	err = json.Unmarshal(b, &extP)
+	if err != nil {
+		return nil, err
+	}
+	return extP, nil
+}
+
+func saveExtPtn(stub shim.ChaincodeStubInterface, extPtnL map[string]*extractPtn) error {
+	b, err := json.Marshal(extPtnL)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(ExtractPtnList, b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getPledgeVotes(stub shim.ChaincodeStubInterface) (int64, error) {
+	b, err := stub.GetState(AllPledgeVotes)
+	if err != nil {
+		return 0, err
+	}
+	votes, err := strconv.ParseInt(string(b), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return votes, nil
+}
+
+func savePledgeVotes(stub shim.ChaincodeStubInterface, votes int64) error {
+	str := strconv.FormatInt(votes, 10)
+	err := stub.PutState(AllPledgeVotes, []byte(str))
+	if err != nil {
+		return err
+	}
+	return nil
 }
