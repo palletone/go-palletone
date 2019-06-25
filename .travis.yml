@@ -30,6 +30,7 @@ env:
     - IS_RUN_MEDIATOR_VOTE=true
     - GO111MODULE=on
     - IS_UPLOAD=true
+    - IS_RUN_LIGHT=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]' 
 
 matrix:
@@ -125,6 +126,10 @@ matrix:
           ./init_gas_token.sh;
           sleep 15;
           python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
+          fi
+        - if [ $IS_RUN_LIGHT == 'true' ]; then
+          cd ../light;
+          #./test_start.sh 5;
           fi
       after_script:
         - killall gptn
