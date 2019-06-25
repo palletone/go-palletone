@@ -14,5 +14,5 @@ applyQuitMediator
     [Arguments]    ${mediatorAddr}
     ${申请退出Mediator候选节点所需参数}    申请退出Mediator候选节点所需参数    ${mediatorAddr}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    ApplyBecomeMediator    ${申请退出Mediator候选节点所需参数}
-    sleep    8
+    sleep    6
     [Return]    ${result}

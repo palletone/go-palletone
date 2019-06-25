@@ -15,7 +15,7 @@ Scenario: 721 Contract - Supply token
     #${ret1}    Given CcinvokePass normal
     Given CcinvokePass normal
     ${PTN1}    And Request getbalance before create token
-    ${ret2}    When Spply token of 721 contract
+    ${ret2}    When Supply token of 721 contract
     ${PTNGAIN}    Calculate gain    ${PTN1}
     ${PTN2}    Request getbalance after transfer token
     Then Assert gain    ${PTN2}    ${PTNGAIN}
@@ -36,36 +36,33 @@ CcinvokePass normal
     ...    ${721ContractId}    ${ccList}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
-    sleep    4
     [Return]    ${jsonRes['result']}
 
 Request getbalance before create token
     #${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
+    sleep    4
     ${result1}    getBalance    ${reciever}
-    sleep    2
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     [Return]    ${PTN1}
 
-Spply token of 721 contract
+Supply token of 721 contract
     ${ccList}    Create List    ${supplyTokenMethod}    ${preTokenId}    ${721TokenAmount}    ${721MetaAfter}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${reciever}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
-    sleep    4
     [Return]    ${jsonRes['result']}
 
 Calculate gain
     [Arguments]    ${PTN1}
     ${GAIN}    countRecieverPTN    ${PTNPoundage}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
-    sleep    1
     [Return]    ${PTNGAIN}
 
 Request getbalance after transfer token
     #normalCcqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
+    sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${reciever}
-    sleep    2
     ${key}    getTokenId    ${preTokenId}    ${result2['result']}
     log    ${key}
     #${queryResult}    ccqueryById    ${721ContractId}    ${existToken}    ${key}

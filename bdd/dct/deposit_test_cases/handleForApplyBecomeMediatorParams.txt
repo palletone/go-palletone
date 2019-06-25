@@ -13,5 +13,5 @@ handleForApplyBecomeMediator
     [Arguments]    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
     ${基金会处理申请所需参数 }    基金会处理申请所需参数    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyBecomeMediator    ${基金会处理申请所需参数 }
-    sleep    8
+    sleep    6
     [Return]    ${result}

@@ -14,5 +14,5 @@ developerApplyCashback
     [Arguments]    ${developerAddr}    ${cashAmounts}
     ${developer申请退还保证金所需参数}    developer申请退还保证金所需参数    ${developerAddr}    ${cashAmounts}
     ${resp}    创建公用的POST请求    ${depositContractInvoke}    DeveloperApplyCashback    ${developer申请退还保证金所需参数}
-    sleep    8
+    sleep    6
     [Return]    ${result}

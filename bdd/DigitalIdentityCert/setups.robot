@@ -32,18 +32,18 @@ transferPTNToIntermediateCertUsers
     # transfer PTN to power intermediate certificate holder
     transferPTN    ${powerCertHolder}
     Log    wait for tx being packaged into unit
-    Sleep    8    # should sleep, because transaction has not been packaged into unit
+    sleep    6    # should sleep, because transaction has not been packaged into unit
     ${balance}=    getBalance    ${powerCertHolder}
     Should Be Equal    ${balance}    ${amount}
     # transfer PTN to section intermediate certificate holder
     transferPTN    ${sectionCertHolder}
     Log    wait for tx being packaged into unit
-    Sleep    8    # should sleep, because transaction has not been packaged into unit
+    sleep    6    # should sleep, because transaction has not been packaged into unit
     ${balance}=    getBalance    ${sectionCertHolder}
     Should Be Equal    ${balance}    ${amount}
     # transfer PTN to user certificate holder
     transferPTN    ${userCertHolder}
     Log    wait for tx being packaged into unit
-    Sleep    8    # should sleep, because transaction has not been packaged into unit
+    sleep    6    # should sleep, because transaction has not been packaged into unit
     ${balance}=    getBalance    ${userCertHolder}
     Should Be Equal    ${balance}    ${amount}

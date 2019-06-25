@@ -397,7 +397,7 @@ func (cccid *CCContext) GetCanonicalName() string {
 
 func (cccid *CCContext) GetContainerName() string {
 	name := cccid.Name + ":" + cccid.Version
-	name = contractcfg.GetConfig().ContractAddress + ":" + name
+	name = name + ":" + contractcfg.GetConfig().ContractAddress
 	return strings.Replace(name, ":", "-", -1)
 }
 

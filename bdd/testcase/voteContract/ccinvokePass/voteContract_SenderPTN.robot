@@ -23,14 +23,11 @@ Get genesis address
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    2
     [Return]    ${geneAdd}
 
 Request getbalance before create token
     [Arguments]    ${geneAdd}
-    sleep    3
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
-    #sleep    2
     [Return]    ${PTN1}    ${result1}
 
 Create token of vote contract
@@ -48,21 +45,17 @@ Create token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
-    sleep    6
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${GAIN}    countRecieverPTN    ${invokeGain}
-    sleep    1
     [Return]    ${GAIN}
 
 Request getbalance after create token
     [Arguments]    ${geneAdd}
+    sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
-    sleep    2
     [Return]    ${PTN2}    ${result2}
 
 Assert gain of reciever
     [Arguments]    ${PTN1}    ${PTN2}    ${GAIN}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
-    sleep    2
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}
-    sleep    3
