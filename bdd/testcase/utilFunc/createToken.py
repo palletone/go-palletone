@@ -136,8 +136,10 @@ class createToken(object):
                 "id": 1
             }
             data=json.dumps(data)
+            print "Post data:"+str(data)
             response = requests.post(url=self.domain, data=data, headers=self.headers)
             result1 = json.loads(response.content)
+            print "Response:"+str(result1)
             try:
                 return result1['result']
             except KeyError:

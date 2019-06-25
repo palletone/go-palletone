@@ -78,4 +78,4 @@ queryTokenHolder
 
 wait for transaction being packaged
     Log    wait for transaction being packaged
-    Sleep    10
+    Sleep    6

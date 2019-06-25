@@ -25,7 +25,6 @@ Get genesis address
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    2
 
 Create token of 721 contract
     ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
@@ -37,28 +36,25 @@ Create token of 721 contract
     [Return]    ${jsonRes['result']}
 
 Request getbalance before transfer token
-    sleep    5
+    sleep    4
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
-    sleep    5
     ${queryResult}    ccqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
     ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
     Set Suite Variable    ${key}    ${tokenCommonId}-${subId}
     ${voteToken}    Get From Dictionary    ${result1['result']}    ${key}
-    sleep    2
     [Return]    ${key}    ${voteToken}
 
 Request transfer token
     [Arguments]    ${key}
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${recieverAdd}    1    ${PTNPoundage}
     ...    ${evidence}    ${duration}
-    sleep    5
+
 
 Request getbalance after transfer token
     [Arguments]    ${key}
+    sleep    4
     ${PTN1}    ${result2}    normalGetBalance    ${recieverAdd}
-    sleep    5
     ${voteToken2}    Get From Dictionary    ${result2['result']}    ${key}
-    sleep    2
     [Return]    ${voteToken2}
 
 Assert gain

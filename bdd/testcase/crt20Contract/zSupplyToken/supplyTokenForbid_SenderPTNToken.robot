@@ -26,17 +26,14 @@ CcinvokePass normal
     ${ccList}    Create List    ${crtTokenMethod}    ${evidence}    ${preTokenId}    ${tokenDecimal}    ${tokenAmount}
     ${ret}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    4
 
 Request getbalance before create token
     [Arguments]    ${geneAdd}
     #${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
+    sleep    4
     ${result1}    getBalance    ${geneAdd}
-    sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result1}
-    sleep    2
     ${PTN1}    Get From Dictionary    ${result1}    PTN
-    sleep    1
     ${coinToken1}    Get From Dictionary    ${result1}    ${key}
     [Return]    ${PTN1}    ${key}    ${coinToken1}
 
@@ -53,20 +50,16 @@ Create token of vote contract
     [Return]    ${ret}
 
 Calculate gain of recieverAdd
-    sleep    5
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${GAIN}    countRecieverPTN    ${invokeGain}
-    sleep    2
     [Return]    ${GAIN}
 
 Request getbalance after create token
     [Arguments]    ${geneAdd}    ${key}
+    sleep    4
     ${result2}    getBalance    ${geneAdd}
-    sleep    5
     ${coinToken2}    Get From Dictionary    ${result2}    ${key}
-    sleep    1
     ${PTN2}    Get From Dictionary    ${result2}    PTN
-    sleep    1
     [Return]    ${PTN2}    ${coinToken2}
 
 Assert gain of reciever
@@ -74,7 +67,6 @@ Assert gain of reciever
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}
     Should Be Equal As Numbers    ${coinToken1}    ${coinToken2}
-    sleep    1
     ${result}    getTxByReqId    ${ret}
     ${jsonRes}    Evaluate    demjson.encode(${result})    demjson
     #${jsonRes}    To Json    ${jsonRes}

@@ -26,14 +26,22 @@ import (
 )
 
 type ImmutableChainParameters struct {
-	MinimumMediatorCount uint8 `json:"minMediatorCount"`
-	MinMediatorInterval  uint8 `json:"minMediatorInterval"`
+	MinimumMediatorCount uint8    `json:"minMediatorCount"`
+	MinMediatorInterval  uint8    `json:"minMediatorInterval"`
+	UccPrivileged        bool     `json:"ucc_privileged"`       //  防止容器以root权限运行
+	UccCapDrop           []string `json:"ucc_cap_drop"`         //  确保容器以最小权限运行
+	UccNetworkMode       string   `json:"ucc_network_mode"`     //  容器运行网络模式
+	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"` //是否内存使用量超过上限时系统杀死进程
 }
 
 func NewImmutChainParams() ImmutableChainParameters {
 	return ImmutableChainParameters{
 		MinimumMediatorCount: DefaultMinMediatorCount,
 		MinMediatorInterval:  DefaultMinMediatorInterval,
+		UccPrivileged:        DefaultUccPrivileged,
+		UccCapDrop:           []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw", "kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"},
+		UccNetworkMode:       DefaultUccNetworkMode,
+		UccOOMKillDisable:    defaultUccOOMKillDisable,
 	}
 }
 
@@ -45,16 +53,16 @@ func NewChainParametersBase() ChainParametersBase {
 		DepositAmountForMediator:  DefaultDepositAmountForMediator,
 		DepositAmountForJury:      DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: DefaultDepositAmountForDeveloper,
-		UccCpuSetCpus:             DefaultUccCpuSetCpus,
-		ActiveMediatorCount:       DefaultActiveMediatorCount,
-		MaximumMediatorCount:      DefaultMaxMediatorCount,
-		MediatorInterval:          DefaultMediatorInterval,
-		MaintenanceInterval:       DefaultMaintenanceInterval,
-		MaintenanceSkipSlots:      DefaultMaintenanceSkipSlots,
-		MediatorCreateFee:         DefaultMediatorCreateFee,
-		AccountUpdateFee:          DefaultAccountUpdateFee,
-		TransferPtnBaseFee:        DefaultTransferPtnBaseFee,
-		TransferPtnPricePerKByte:  DefaultTransferPtnPricePerKByte,
+		//UccCpuSetCpus:             DefaultUccCpuSetCpus,
+		ActiveMediatorCount:      DefaultActiveMediatorCount,
+		MaximumMediatorCount:     DefaultMaxMediatorCount,
+		MediatorInterval:         DefaultMediatorInterval,
+		MaintenanceInterval:      DefaultMaintenanceInterval,
+		MaintenanceSkipSlots:     DefaultMaintenanceSkipSlots,
+		MediatorCreateFee:        DefaultMediatorCreateFee,
+		AccountUpdateFee:         DefaultAccountUpdateFee,
+		TransferPtnBaseFee:       DefaultTransferPtnBaseFee,
+		TransferPtnPricePerKByte: DefaultTransferPtnPricePerKByte,
 		//CurrentFees:               newFeeSchedule(),
 	}
 }
@@ -69,7 +77,7 @@ type ChainParametersBase struct {
 	DepositAmountForJury      uint64 `json:"depositAmountForJury"`
 	DepositAmountForDeveloper uint64 `json:"depositAmountForDeveloper"`
 
-	UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
+	//UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
 
 	// 活跃mediator的数量。 number of active mediators
 	ActiveMediatorCount uint8 `json:"activeMediatorCount"`
@@ -96,15 +104,16 @@ type ChainParametersBase struct {
 
 func NewChainParams() ChainParameters {
 	return ChainParameters{
-		ChainParametersBase:  NewChainParametersBase(),
-		DepositRate:          DefaultDepositRate,
-		TxCoinYearRate:       DefaultTxCoinYearRate,
-		DepositPeriod:        DefaultDepositPeriod,
-		UccMemory:            DefaultUccMemory,
-		UccMemorySwap:        DefaultUccMemorySwap,
-		UccCpuShares:         DefaultUccCpuShares,
-		UccCpuPeriod:         DefaultCpuPeriod,
-		UccCpuQuota:          DefaultUccCpuQuota,
+		ChainParametersBase: NewChainParametersBase(),
+		DepositRate:         DefaultDepositRate,
+		TxCoinYearRate:      DefaultTxCoinYearRate,
+		DepositPeriod:       DefaultDepositPeriod,
+		UccMemory:           DefaultUccMemory,
+		UccMemorySwap:       DefaultUccMemorySwap,
+		UccCpuShares:        DefaultUccCpuShares,
+		UccCpuPeriod:        DefaultCpuPeriod,
+		UccCpuQuota:         DefaultUccCpuQuota,
+
 		TempUccMemory:        DefaultTempUccMemory,
 		TempUccMemorySwap:    DefaultTempUccMemorySwap,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
@@ -146,10 +155,12 @@ func CheckSysConfigArgs(field, value string) error {
 	vn := reflect.ValueOf(ChainParameters{}).FieldByName(field)
 
 	switch vn.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		_, err = strconv.ParseInt(value, 10, 64)
 	case reflect.Invalid:
 		err = fmt.Errorf("no such field: %v", field)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		_, err = strconv.ParseInt(value, 10, 64)
+	case reflect.Bool:
+		_, err = strconv.ParseBool(value)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		_, err = strconv.ParseUint(value, 10, 64)
 	case reflect.String:

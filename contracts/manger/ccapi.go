@@ -183,7 +183,6 @@ func Install(dag dag.IDag, chainID string, ccName string, ccPath string, ccVersi
 func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
 	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
-
 	var mksupt Support = &SupportImpl{}
 	setChainId := "palletone"
 	setTimeOut := time.Duration(30) * time.Second
@@ -452,14 +451,13 @@ func GetAllContainers(client *docker.Client) {
 	}
 	if len(cons) > 0 {
 		for _, v := range cons {
-			//log.Infof("--------------------------%d,=======================%s,%s,%s", i, v.ID, v.Status, v.Names[0])
-			if strings.Contains(v.Names[0][1:], "PC") && strings.Contains(v.Status, "Exited") {
+			if strings.Contains(v.Names[0][1:3], "PC") && strings.Contains(v.Status, "Exited") {
 				dag, err := db.GetCcDagHand()
 				if err != nil {
 					log.Infof("db.GetCcDagHand err: %s", err.Error())
 					return
 				}
-				name := v.Names[0][17:52]
+				name := v.Names[0][1:36]
 				contractAddr, err := common.StringToAddress(name)
 				if err != nil {
 					log.Infof("common.StringToAddress err: %s", err.Error())

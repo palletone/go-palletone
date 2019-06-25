@@ -17,27 +17,21 @@ Scenario: 20Contract - Transfer Token
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    3
     ${ccList}    Create List    ${crtTokenMethod}    ${evidence}    ${preTokenId}    ${tokenDecimal}    ${tokenAmount}
     ...    ${geneAdd}
     ${ret}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    5
+    sleep    4
     ${result1}    getBalance    ${GeneAdd}
-    sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result1}
-    sleep    3
     ${PTN1}    Get From Dictionary    ${result1}    PTN
     ${item1}    Get From Dictionary    ${result1}    ${key}
-    sleep    1
     ${tokenResult}    transferToken    ${key}    ${GeneAdd}    ${recieverAdd}    ${amount}    ${PTNPoundage}
     ...    ${evidence}    ${duration}
-    sleep    5
+    sleep    4
     ${item'}    Evaluate    ${item1}-${amount}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNPoundage}')    decimal
-    sleep    2
     ${result2}    getBalance    ${GeneAdd}
-    sleep    5
     ${PTN2}    Get From Dictionary    ${result2}    PTN
     ${item2}    Get From Dictionary    ${result2}    ${key}
     Should Be Equal As Numbers    ${item2}    ${item'}

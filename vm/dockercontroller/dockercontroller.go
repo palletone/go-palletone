@@ -104,98 +104,25 @@ func getDockerClient() (dockerClient, error) {
 	return com.NewDockerClient()
 }
 
-//func GetInt64FromDb(key string) int64 {
-//	//DefaultUccMemory  = "104857600" //物理内存  104857600  100m
-//	//DefaultUccMemorySwap  = "104857600"//内存交换区，不设置默认为memory的两倍
-//	//DefaultUccCpuShare  = "1024"//CPU占用率，相对的  CPU 利用率权重，默认为 1024
-//	//DefaultCpuPeriod  = "50000"// 限制CPU --cpu-period=50000 --cpu-quota=25000
-//	//DefaultUccCpuQuota  = "25000"//限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
-//	//DefaultUccCpuSetCpus  = "0-3"//限制使用某些CPUS  "1,3"  "0-3"
-//	dag, err := comm.GetCcDagHand()
-//	resultStr, err := dag.GetConfig(key)
-//	if err != nil {
-//		log.Infof("dag.GetConfig err: %s", err.Error())
-//		return 0
-//	}
-//	resultInt64, err := strconv.ParseInt(string(resultStr), 10, 64)
-//	if err != nil {
-//		log.Infof("strconv.ParseInt err: %s", err.Error())
-//		return 0
-//	}
-//	return resultInt64
-//}
-
 //TODO
 func getDockerHostConfig() *docker.HostConfig {
-
-	if hostConfig != nil {
-		return hostConfig
-	}
-	dockerKey := func(key string) string {
-		return "vm.docker.hostConfig." + key
-	}
-	getInt64 := func(key string) int64 {
-		defer func() {
-			if err := recover(); err != nil {
-				log.Debugf("load vm.docker.hostConfig.%s failed, error: %v", key, err)
-			}
-		}()
-		n := viper.GetInt(dockerKey(key))
-		return int64(n)
-	}
-
-	var logConfig docker.LogConfig
-	err := viper.UnmarshalKey(dockerKey("LogConfig"), &logConfig)
-	if err != nil {
-		log.Debugf("load docker HostConfig.LogConfig failed, error: %s", err.Error())
-	}
-	networkMode := viper.GetString(dockerKey("NetworkMode"))
-	if networkMode == "" {
-		networkMode = "bridge"
-		//networkMode = "host"
-	}
-	log.Debugf("docker container hostconfig NetworkMode: %s", networkMode)
 	dag, err := comm.GetCcDagHand()
 	if err != nil {
 		log.Debugf("load GetCcDagHand: %s", err.Error())
 	}
 	cp := dag.GetChainParameters()
-	capDrop := []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw", "kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"}
+	icp := dag.GetImmutableChainParameters()
 	hostConfig = &docker.HostConfig{
-		CapAdd:      viper.GetStringSlice(dockerKey("CapAdd")),
-		CapDrop:     capDrop,
-		DNS:         viper.GetStringSlice(dockerKey("Dns")),
-		DNSSearch:   viper.GetStringSlice(dockerKey("DnsSearch")),
-		ExtraHosts:  viper.GetStringSlice(dockerKey("ExtraHosts")),
-		NetworkMode: networkMode,
-		IpcMode:     viper.GetString(dockerKey("IpcMode")),
-		PidMode:     viper.GetString(dockerKey("PidMode")),
-		UTSMode:     viper.GetString(dockerKey("UTSMode")),
-		LogConfig:   logConfig,
-
-		ReadonlyRootfs: viper.GetBool(dockerKey("ReadonlyRootfs")),
-		SecurityOpt:    viper.GetStringSlice(dockerKey("SecurityOpt")),
-		CgroupParent:   viper.GetString(dockerKey("CgroupParent")),
+		CapDrop:        icp.UccCapDrop,
+		NetworkMode:    icp.UccNetworkMode,
 		Memory:         cp.UccMemory,
 		MemorySwap:     cp.UccMemorySwap,
-		//Memory:         GetInt64FromDb("UccMemory"),
-		//MemorySwap:     GetInt64FromDb("UccMemorySwap"),
-		//Memory:           int64(104857600), //100mB
-		//MemorySwap:       int64(20971520),
-		MemorySwappiness: getInt64("MemorySwappiness"),
-		OOMKillDisable:   viper.GetBool(dockerKey("OomKillDisable")),
-		CPUShares:        cp.UccCpuShares,
-		//CPUShares:        GetInt64FromDb("UccCpuShares"),
-		CPUSet:     viper.GetString(dockerKey("Cpuset")),
-		CPUSetCPUs: viper.GetString(dockerKey("CpusetCPUs")),
-		CPUSetMEMs: viper.GetString(dockerKey("CpusetMEMs")),
-		CPUQuota:   cp.UccCpuQuota,
-		CPUPeriod:  cp.UccCpuPeriod,
-		//CPUQuota:    GetInt64FromDb("UccCpuQuota"),
-		//CPUPeriod:   GetInt64FromDb("UccCpuPeriod"),
-		BlkioWeight: getInt64("BlkioWeight"),
+		OOMKillDisable: icp.UccOOMKillDisable,
+		CPUShares:      cp.UccCpuShares,
+		CPUQuota:       cp.UccCpuQuota,
+		CPUPeriod:      cp.UccCpuPeriod,
+		Privileged:     icp.UccPrivileged,
 	}
-
 	return hostConfig
 }
 
@@ -603,7 +530,7 @@ func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	//} else if ccid.PeerID != "" {
 	//	name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
 	//}
-	name = contractcfg.GetConfig().ContractAddress + ":" + name
+	name = name + ":" + contractcfg.GetConfig().ContractAddress
 	// replace any invalid characters with "-" (either in network id, peer id, or in the
 	// entire name returned by any format function)
 	name = vmRegExp.ReplaceAllString(name, "-")
