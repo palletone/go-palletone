@@ -68,6 +68,7 @@ var (
 
 	//filehash
 	IDX_MAIN_DATA_TXID  = []byte("md") //Old value: mda
+	IDX_REF_DATA_PREFIX  = []byte("re")
 	RewardAddressPrefix = "Addr:"
 )
 
