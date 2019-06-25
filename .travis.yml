@@ -30,8 +30,7 @@ env:
     - IS_RUN_MEDIATOR_VOTE=true
     - GO111MODULE=on
     - IS_UPLOAD=true
-    - IS_RUN_LIGHT=true
-#    - 'SFTP_KEY=[base64-encoded-rsa-key]' 
+#    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 matrix:
   include:
@@ -43,7 +42,7 @@ matrix:
         - go get github.com/mattn/goveralls
         - go build ./cmd/gptn
         - make gptn
-        - $GOPATH/bin/goveralls -service=travis-ci   
+        - $GOPATH/bin/goveralls -service=travis-ci
     # - os: linux
     #   dist: xenial
     #   go: 1.11.x
@@ -51,7 +50,7 @@ matrix:
     #   script:
     #     - go build ./cmd/gptn
     #     - make gptn
-    #     - go test ./...       
+    #     - go test ./...
     # - os: linux
     #   dist: xenial
     #   go: 1.12.x
@@ -59,14 +58,14 @@ matrix:
     #   script:
     #     - go build ./cmd/gptn
     #     - make gptn
-    #     - go test ./...      
+    #     - go test ./...
     # - os: osx
     #   go: 1.12.x
     #   env: UT
     #   script:
     #     - go build ./cmd/gptn
     #     - make gptn
-    #     - go test ./...        
+    #     - go test ./...
     - os: linux
       dist: xenial
       go: 1.12.5
@@ -92,7 +91,7 @@ matrix:
           chmod +x ./test_start.sh;
           ./test_start.sh;
           fi
-          
+
         # into bdd path, all testcases is here
         - cd ${BASE_DIR}/bdd
         - mkdir -p ${BDD_LOG_PATH}
@@ -103,19 +102,19 @@ matrix:
         - if [ $IS_RUN_20CONTRACT == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
           fi
-            
+
         - if [ $IS_RUN_721SEQENCE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${SEQENCE721_DIR} -i normal ./testcase/crt721Seqence;
           fi
-         
+
         - if [ $IS_RUN_721UDID == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${UDID721_DIR} -i normal ./testcase/crt721UDID;
           fi
-         
+
         - if [ $IS_RUN_VOTE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;
           fi
-            
+
         - if [ $IS_RUN_DIGITAL == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
           fi
@@ -127,12 +126,6 @@ matrix:
           sleep 15;
           python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
           fi
-
-        - if [ $IS_RUN_LIGHT == 'true' ]; then
-          cd ../light;
-          #./test_start.sh 5;
-          fi
-
       after_script:
         - killall gptn
         - sleep 2
