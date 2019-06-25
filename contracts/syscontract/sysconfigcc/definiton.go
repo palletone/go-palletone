@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+const (
+	UpdateSysParamWithoutVote = "updateSysParamWithoutVote"
+	CreateVotesTokens         = "createVotesTokens"
+)
+
 //one topic
 type SysVoteTopic struct {
 	TopicTitle    string

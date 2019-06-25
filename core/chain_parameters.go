@@ -39,9 +39,10 @@ func NewImmutChainParams() ImmutableChainParameters {
 		MinimumMediatorCount: DefaultMinMediatorCount,
 		MinMediatorInterval:  DefaultMinMediatorInterval,
 		UccPrivileged:        DefaultUccPrivileged,
-		UccCapDrop:           []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw", "kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"},
-		UccNetworkMode:       DefaultUccNetworkMode,
-		UccOOMKillDisable:    defaultUccOOMKillDisable,
+		UccCapDrop: []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw",
+			"kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"},
+		UccNetworkMode:    DefaultUccNetworkMode,
+		UccOOMKillDisable: defaultUccOOMKillDisable,
 	}
 }
 
