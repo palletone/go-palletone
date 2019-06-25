@@ -409,3 +409,18 @@ Business_06
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Contain Key    ${resul}    ${developerAddr_02}    #候选列表无该地址
     log    ${resul}
+
+Business_07
+    [Documentation]    质押即挖矿
+    ${result}    normalNodePledgeVote    ${mediatorAddr_01}    10000000000    #质押100 0000 0000
+    log    ${result}
+    ${result}    NormalNode    ${mediatorAddr_01}
+    log    ${result}
+    ${result}    normalNodePledgeVote    ${mediatorAddr_01}    10000000000    #质押100 0000 0000
+    log    ${result}
+    ${result}    NormalNode    ${mediatorAddr_01}
+    log    ${result}
+    ${result}    normalNodeChangeVote    ${mediatorAddr_01}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    #质押100 0000 0000
+    log    ${result}
+    ${result}    NormalNode    ${mediatorAddr_01}
+    log    ${result}

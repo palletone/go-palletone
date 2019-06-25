@@ -108,6 +108,7 @@ func NewChainParams() ChainParameters {
 		DepositRate:         DefaultDepositRate,
 		TxCoinYearRate:      DefaultTxCoinYearRate,
 		DepositPeriod:       DefaultDepositPeriod,
+		DepositExtraReward:  DefaultDepositExtraReward,
 		UccMemory:           DefaultUccMemory,
 		UccMemorySwap:       DefaultUccMemorySwap,
 		UccCpuShares:        DefaultUccCpuShares,
@@ -128,9 +129,10 @@ func NewChainParams() ChainParameters {
 type ChainParameters struct {
 	ChainParametersBase
 
-	TxCoinYearRate float64 `json:"txCoinYearRate"` //交易币天的年利率
-	DepositRate    float64 `json:"depositRate"`    //保证金的年利率
-	DepositPeriod  int     `json:"depositPeriod"`  //保证金周期
+	TxCoinYearRate     float64 `json:"tx_coin_year_rate"` //交易币天的年利率
+	DepositRate        float64 `json:"deposit_rate"`      //保证金的年利率
+	DepositPeriod      int     `json:"deposit_period"`    //保证金周期
+	DepositExtraReward int64   `json:"deposit_extra_reward"`
 
 	//对启动用户合约容器的相关资源的限制
 	UccMemory     int64 `json:"ucc_memory"`      //物理内存  104857600  100m

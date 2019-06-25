@@ -61,4 +61,9 @@ type DepositInterface interface {
 	normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  普通节点提取质押PTN
 	normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
+
+	//
+	handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//
+	handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response
 }
