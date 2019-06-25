@@ -127,10 +127,12 @@ matrix:
           sleep 15;
           python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
           fi
+
         - if [ $IS_RUN_LIGHT == 'true' ]; then
           cd ../light;
           #./test_start.sh 5;
           fi
+
       after_script:
         - killall gptn
         - sleep 2
