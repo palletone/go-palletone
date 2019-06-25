@@ -52,6 +52,8 @@ type IIndexDb interface {
 
 	SaveMainDataTxId(maindata []byte, txid common.Hash) error
 	GetMainDataTxIds(maindata []byte) ([]common.Hash, error)
+	// SaveReferenceData(ref, maindata, extralData []byte, txid common.Hash) error
+	// QueryDataByReference(ref []byte) ([]common.Hash, error)
 }
 
 // ###################### SAVE IMPL START ######################
