@@ -420,13 +420,53 @@ Business_07
     [Documentation]    质押即挖矿
     ${result}    normalNodePledgeVote    ${mediatorAddr_01}    10000000000    #质押100 0000 0000
     log    ${result}
-    ${result}    NormalNode    ${mediatorAddr_01}
+    ${result}    NormalNode    ${mediatorAddr_01}    #10000000000    #P12d3JsgRspHNe1aeuyMyGkUxmeyT4qaMn9
+    log    ${result}
+    ${result}    normalNodePledgeVote    ${juryAddr_01}    10000000000    #质押100 0000 0000
+    log    ${result}
+    ${result}    NormalNode    ${juryAddr_01}    #10000000000    #P17iReuTwimA1tPKtnPRySz4jo7F36waAig
+    log    ${result}
+    #    normalNodeChangeVote    ${mediatorAddr_01}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    #质押100 0000 0000
+    #    ${result}
+    #    NormalNode    ${mediatorAddr_01}
+    #    ${result}
+    ${award}    handleEachDay    ${foundationAddr}    #第一次，没有计算
+    log    ${award}
+    ${result}    NormalNode    ${mediatorAddr_01}    #10000000000
+    log    ${result}
+    ${result}    NormalNode    ${juryAddr_01}    #10000000000
     log    ${result}
     ${result}    normalNodePledgeVote    ${mediatorAddr_01}    10000000000    #质押100 0000 0000
     log    ${result}
-    ${result}    NormalNode    ${mediatorAddr_01}
+    ${result}    normalNodePledgeVote    ${mediatorAddr_02}    10000000000    #质押100 0000 0000
     log    ${result}
-    ${result}    normalNodeChangeVote    ${mediatorAddr_01}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    #质押100 0000 0000
+    ${result}    normalNodePledgeVote    ${developerAddr_01}    10000000000    #质押100 0000 0000
     log    ${result}
-    ${result}    NormalNode    ${mediatorAddr_01}
+    ${result}    NormalNode    ${mediatorAddr_01}    #500020000000000
+    log    ${result}
+    ${result}    NormalNode    ${juryAddr_01}    #500010000000000
+    log    ${result}
+    ${result}    NormalNode    ${mediatorAddr_02}    #10000000000    #P1KwkTj47SpFVZSrGHe1uCTjz5azBwZnJw3
+    log    ${result}
+    ${result}    NormalNode    ${developerAddr_01}    #10000000000    #P18UtahtsgUE3cZeCg47542nHY1AFtmgVLA
+    log    ${result}
+    ${award}    handleEachDay    ${foundationAddr}    #第二次，开始计算上一次的
+    log    ${award}
+    ${result}    NormalNode    ${mediatorAddr_01}    #500010000000000
+    log    ${result}
+    ${result}    NormalNode    ${juryAddr_01}    #500010000000000
+    log    ${result}
+    ${result}    NormalNode    ${mediatorAddr_02}    #10000000000
+    log    ${result}
+    ${result}    NormalNode    ${developerAddr_01}    #10000000000
+    log    ${result}
+    ${award}    handleEachDay    ${foundationAddr}    #第二次，开始计算上一次的
+    log    ${award}
+    ${result}    NormalNode    ${mediatorAddr_01}    #500010000000000
+    log    ${result}
+    ${result}    NormalNode    ${juryAddr_01}    #500010000000000
+    log    ${result}
+    ${result}    NormalNode    ${mediatorAddr_02}    #10000000000
+    log    ${result}
+    ${result}    NormalNode    ${developerAddr_01}    #10000000000
     log    ${result}
