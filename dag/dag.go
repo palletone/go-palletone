@@ -583,8 +583,8 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		Memdag:                 unstableChain,
 		//PartitionMemDag:      partitionMemdag,
 	}
-	unitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
-	stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
+	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
+	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
 	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
 	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	if !dag.IsHeaderExist(hash) {
@@ -1266,7 +1266,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
 	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
-	d.Memdag.SetUnitGroupSign(unitHash/*, nil*/, groupSign, txpool)
+	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/, groupSign, txpool)
 
 	//TODO Group pub key????
 	// 将缓存池utxo更新到utxodb中
@@ -1486,9 +1486,11 @@ func (dag *Dag) MediatorVotedResults() map[string]uint64 {
 func (dag *Dag) StoreDataVersion(dv *modules.DataVersion) error {
 	return dag.stableStateRep.StoreDataVersion(dv)
 }
+
 func (dag *Dag) GetDataVersion() (*modules.DataVersion, error) {
 	return dag.stableStateRep.GetDataVersion()
 }
-func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error){
+
+func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return dag.stableUnitRep.QueryProofOfExistenceByReference(ref)
 }
