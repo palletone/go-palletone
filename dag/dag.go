@@ -71,10 +71,6 @@ type Dag struct {
 	Mutex           sync.RWMutex
 	Memdag          memunit.IMemDag                     // memory unit
 	PartitionMemDag map[modules.AssetId]memunit.IMemDag //其他分区的MemDag
-	// memutxo
-	// 按unit单元划分存储Utxo
-	//utxos_cache map[common.Hash]map[modules.OutPoint]*modules.Utxo
-	// utxos_cache1 sync.Map
 
 	applyLock sync.Mutex
 
@@ -104,7 +100,6 @@ func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
-	//main_token := dagconfig.DagConfig.GetGasToken()
 	return d.Memdag.GetLastMainChainUnit()
 }
 
@@ -1489,6 +1484,6 @@ func (dag *Dag) StoreDataVersion(dv *modules.DataVersion) error {
 func (dag *Dag) GetDataVersion() (*modules.DataVersion, error) {
 	return dag.stableStateRep.GetDataVersion()
 }
-func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error){
+func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return dag.stableUnitRep.QueryProofOfExistenceByReference(ref)
 }
