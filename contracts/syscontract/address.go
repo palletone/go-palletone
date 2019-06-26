@@ -40,6 +40,7 @@ var (
 	SysConfigContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000041C")
 
 	//5产块奖励合约
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRUp5qmM
 	CoinbaseContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000051C")
 
 	//7创币合约PRC721
