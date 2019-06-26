@@ -14,5 +14,5 @@ mediatorPayToDepositContract
     [Arguments]    ${mediatorAddr}    ${depositAmounts}
     ${Mediator交付保证金所需参数}    Mediator交付保证金所需参数    ${mediatorAddr}    ${depositAmounts}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    MediatorPayToDepositContract    ${Mediator交付保证金所需参数}
-    sleep    8
+    sleep    6
     [Return]    ${result}

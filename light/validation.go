@@ -15,7 +15,7 @@ import (
 const (
 	spvArriveTimeout = 500 * time.Millisecond // Time allowance before an announced block is explicitly requested
 	spvGatherSlack   = 100 * time.Millisecond // Interval used to collate almost-expired announces with fetches
-	spvReqTimeout    = 5 * time.Second        // Maximum allotted time to return an explicitly requested block
+	spvReqTimeout    = 30 * time.Second       // Maximum allotted time to return an explicitly requested block
 	spvMaxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
 	spvHashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
 	spvReqLimit      = 64                     // Maximum number of unique blocks a peer may have delivered

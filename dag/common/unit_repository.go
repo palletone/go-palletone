@@ -99,7 +99,7 @@ type IUnitRepository interface {
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
-
+	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc)
 	SaveCommon(key, val []byte) error
 }
@@ -411,11 +411,6 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 		log.Infof("CreateUnit cost time %s", time.Since(begin))
 	}()
 
-	//if txpool == nil || !common.IsValidAddress(mAddr.String()) || ks == nil {
-	//	log.Debug("UnitRepository", "CreateUnit txpool:", txpool, "mdAddr:", mAddr.String(), "ks:", ks)
-	//	return nil, fmt.Errorf("Create unit: nil address or txspool is not allowed")
-	//}
-
 	// step1. get mediator responsible for asset (for now is ptn)
 	assetId := dagconfig.DagConfig.GetGasToken()
 
@@ -423,7 +418,6 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// get current world_state index.
 	index := uint64(1)
 	//isMain := true
-	// chainIndex := modules.ChainIndex{AssetID: asset.AssetId, IsMain: isMain, Index: index}
 	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: assetId, Index: index + 1}
@@ -444,15 +438,20 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
-	txIds := []common.Hash{}
-	for _, tx := range poolTxs {
-		txIds = append(txIds, tx.Tx.Hash())
-	}
-	log.Infof("txpool.GetSortedTxs cost time %s, include txs:[%#x]", time.Since(begin), txIds)
+	//txIds := []common.Hash{}
+	//for _, tx := range poolTxs {
+	//	txIds = append(txIds, tx.Tx.Hash())
+	//}
+	// log.Infof("txpool.GetSortedTxs cost time %s, txs[%#x]", time.Since(begin), txIds)
+	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// step5. compute minner income: transaction fees + interest
-
+	tt := time.Now()
 	//交易费用(包含利息)
-	ads, err := rep.ComputeTxFeesAllocate(mAddr, poolTxs)
+	txs2 := []*modules.Transaction{}
+	for _, tx := range poolTxs {
+		txs2 = append(txs2, tx.Tx)
+	}
+	ads, err := rep.ComputeTxFeesAllocate(mAddr, txs2)
 	if err != nil {
 		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error())
 		return nil, err
@@ -494,7 +493,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 			txs = append(txs, t)
 		}
 	}
-
+	log.Infof("create coinbase tx cost time %s", time.Since(tt))
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
@@ -603,14 +602,27 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 	return nil
 }
 
-func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.TxPoolTransaction) ([]*modules.Addition, error) {
+type tempTxs struct {
+	allUtxo map[modules.OutPoint]*modules.Utxo
+	rep     IUtxoRepository
+}
+
+func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	if utxo, ok := txs.allUtxo[*outpoint]; ok {
+		return utxo, nil
+	}
+	return txs.rep.GetUtxoEntry(outpoint)
+}
+func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.Transaction) ([]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
+	tempTxs := &tempTxs{allUtxo: make(map[modules.OutPoint]*modules.Utxo), rep: rep.utxoRepository}
 	for _, tx := range txs {
-		if tx.Tx == nil || tx.TxFee == nil {
-			continue
+		utxos := tx.GetNewUtxos()
+		for o, u := range utxos {
+			tempTxs.allUtxo[o] = u
 		}
-		allowcate, err := tx.Tx.GetTxFeeAllocate(rep.utxoRepository.GetUtxoEntry, time.Now().Unix(), tokenengine.GetScriptSigners, m)
+		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, time.Now().Unix(), tokenengine.GetScriptSigners, m)
 		if err != nil {
 			return nil, err
 		}
@@ -904,6 +916,8 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-3)
 	}
 	// step2. traverse transactions and save them
+	// tempTxs := &tempTxs{txs: unit.Txs, rep: rep.utxoRepository}
+
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		err := rep.saveTx4Unit(unit, txIndex, tx)
@@ -950,6 +964,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	}
 	txHash := tx.Hash()
 	reqId := tx.RequestHash().Bytes()
+	unitHash:=unit.Hash()
 	unitTime := unit.Timestamp()
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
@@ -1009,7 +1024,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(txHash, msg); ok != true {
+			if ok := rep.saveDataPayload(unitHash,unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1150,50 +1165,35 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 save DataPayload data
 */
 
-func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Message) bool {
-	var pl interface{}
-	pl = msg.Payload
-
-	payload, ok := pl.(*modules.DataPayload)
-	if ok == false {
-		return false
-	}
+func (rep *UnitRepository) saveDataPayload(unitHash common.Hash,timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
 
 	if dagconfig.DagConfig.TextFileHashIndex {
 
-		err := rep.idxdb.SaveMainDataTxId(payload.MainData, txHash)
+		err := rep.idxdb.SaveMainDataTxId(dataPayload.MainData, txHash)
 		if err != nil {
 			log.Error("error savefilehash", "err", err)
 			return false
+		}
+		if len(dataPayload.Reference)>0{
+			poe:=&modules.ProofOfExistence{
+				MainData:dataPayload.MainData,
+				ExtraData:dataPayload.ExtraData,
+				Reference:dataPayload.Reference,
+				UnitHash:unitHash,
+				TxId:txHash,
+				Timestamp:uint64(timestamp),
+			}
+			err= rep.idxdb.SaveProofOfExistence(poe)
+			if err != nil {
+				log.Error("error SaveProofOfExistence", "err", err)
+				return false
+			}
 		}
 		return true
 	}
 	log.Debug("dagconfig textfileindex is false, don't build index for data")
 	return true
 }
-
-/**
-保存配置交易
-save config payload
-*/
-//func (rep *UnitRepository) saveConfigPayload(txHash common.Hash, msg *modules.Message, height *modules.ChainIndex, txIndex uint32) bool {
-//	var pl interface{}
-//	pl = msg.Payload
-//	payload, ok := pl.(*modules.ConfigPayload)
-//	if ok == false {
-//		return false
-//	}
-//	version := modules.StateVersion{
-//		Height:  height,
-//		TxIndex: txIndex,
-//	}
-//	if err := rep.statedb.SaveConfig(payload.ConfigSet, &version); err != nil {
-//		errMsg := fmt.Sprintf("To save config payload error: %s", err)
-//		log.Error(errMsg)
-//		return false
-//	}
-//	return true
-//}
 
 /**
 保存合约调用状态
@@ -1221,7 +1221,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
 		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
 		for _, eventFunc := range rep.observers {
-			go eventFunc(eventArg)
+			eventFunc(eventArg)
 		}
 	}
 	return true
@@ -1249,12 +1249,7 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			return false
 		}
 	}
-	//addr := common.NewAddress(payload.ContractId, common.ContractHash)
-	// save contract name
-	//write := &modules.ContractWriteSet{Key: "ContractName", Value: []byte(payload.Name)}
-	//if rep.statedb.SaveContractState(payload.ContractId, write, version) != nil {
-	//	return false
-	//}
+
 	contract := modules.NewContract(payload, requester, uint64(unitTime))
 	err := rep.statedb.SaveContract(contract)
 	if err != nil {
@@ -1269,17 +1264,6 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			return false
 		}
 	}
-	//eleBytes, err := rlp.EncodeToBytes(payload.EleList)
-	//if err == nil {
-	//	log.Debug("saveContractInitPayload", "contractId", payload.ContractId, "eleInfo", payload.EleList)
-	//	writeElectionList := &modules.ContractWriteSet{Key: "ElectionList", Value: eleBytes}
-	//
-	//	if rep.statedb.SaveContractState(payload.ContractId, writeElectionList, version) != nil {
-	//		return false
-	//	}
-	//} else {
-	//	return false
-	//}
 
 	return true
 }
@@ -1399,6 +1383,11 @@ To get unit information by its ChainIndex
 To create coinbase transaction
 */
 func (rep *UnitRepository) CreateCoinbase(ads []*modules.Addition, height uint64) (*modules.Transaction, uint64, error) {
+	log.DebugDynamic(func() string {
+		data, _ := json.Marshal(ads)
+		return "Try to create coinbase for fee allocation:" + string(data)
+	})
+
 	if height%parameter.CurrentSysParameters.RewardHeight == 0 {
 		return rep.createCoinbasePayment(ads)
 	} else {
@@ -1422,9 +1411,19 @@ func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*module
 				rlp.DecodeBytes(data, &income)
 				rs := modules.ContractReadSet{Key: key, Version: version}
 				payload.ReadSet = append(payload.ReadSet, rs)
+				log.DebugDynamic(func() string {
+					jsdata, _ := json.Marshal(income)
+					return "Get history reward for key:" + key + " Value:" + string(jsdata)
+				})
+			} else {
+				log.Debugf("%s Don't have history reward create it.", key)
 			}
 			newValue := addIncome(income, v.Amount, v.Asset)
 			newData, _ := rlp.EncodeToBytes(newValue)
+			log.DebugDynamic(func() string {
+				jsdata, _ := json.Marshal(newValue)
+				return "Create coinbase write set for key:" + key + " Value:" + string(jsdata)
+			})
 			ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: newData}
 			payload.WriteSet = append(payload.WriteSet, ws)
 			totalIncome += v.Amount
@@ -1706,4 +1705,7 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error {
 		rep.saveAddrTxIndex(tx.Hash(), tx)
 	}
 	return nil
+}
+func (rep *UnitRepository)  QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error){
+	return rep.idxdb.QueryProofOfExistenceByReference(ref)
 }

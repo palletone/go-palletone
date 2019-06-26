@@ -186,10 +186,14 @@ type IDag interface {
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
 
+	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
+	GetScheduledMediator(slotNum uint32) common.Address
+	GetSlotAtTime(when time.Time) uint32
 	GetChainParameters() *core.ChainParameters
 	GetImmutableChainParameters() *core.ImmutableChainParameters
 	//GetConfig(name string) ([]byte, error)
 
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
+	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 }

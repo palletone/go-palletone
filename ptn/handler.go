@@ -273,6 +273,8 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		return dagerrors.ErrFutureBlock
 	}
 	heighter := func(assetId modules.AssetId) uint64 {
+		log.Debug("Enter PalletOne Fetcher heighter")
+		defer log.Debug("End PalletOne Fetcher heighter")
 		unit := pm.dag.GetCurrentUnit(assetId)
 		if unit != nil {
 			return unit.NumberU64()
@@ -504,13 +506,9 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		return err
 	}
 
-	//if err := pm.lightdownloader.RegisterLightPeer(p.id, p.version, p); err != nil {
-	//	return err
-	//}
-
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	pm.syncTransactions(p)
+	//pm.syncTransactions(p)
 
 	// main loop. handle incoming messages.
 	for {
@@ -674,11 +672,14 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 
-func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
+func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent, local bool) {
 	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent), "data", event.Event.(jury.ElectionRequestEvent).Data)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendElectionEvent(event)
+	}
+	if local {
+		go pm.contractProc.ProcessElectionEvent(&event)
 	}
 }
 

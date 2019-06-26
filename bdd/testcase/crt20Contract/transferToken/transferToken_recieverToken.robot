@@ -21,7 +21,6 @@ Scenario: 20Contract - Transfer Token
 Request getbalance before create token
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
-    sleep    1
 
 Request normal CcinvokePass
     ${ccList}    Create List    ${crtTokenMethod}    ${evidence}    ${preTokenId}    ${tokenDecimal}    ${tokenAmount}
@@ -31,9 +30,8 @@ Request normal CcinvokePass
     [Return]    ${ret}
 
 Request getbalance after create token
-    sleep    3
-    ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     sleep    4
+    ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     ${key}    getTokenId    ${preTokenId}    ${result2['result']}
     ${item}    Set Variable    0
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${recieverAdd}    ${gain}    ${PTNPoundage}
@@ -42,8 +40,8 @@ Request getbalance after create token
 
 Assert gain
     [Arguments]    ${key}    ${item}
-    sleep    4
     ${item1}    Evaluate    ${item}+${gain}
+    sleep    4
     ${RecPTN2}    ${RecResult2}    normalGetBalance    ${recieverAdd}
     ${item2}    Get From Dictionary    ${RecResult2['result']}    ${key}
     Should Be Equal As Numbers    ${item2}    ${item1}

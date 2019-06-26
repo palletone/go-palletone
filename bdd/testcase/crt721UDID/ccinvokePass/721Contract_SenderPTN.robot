@@ -7,11 +7,11 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${preTokenId}     CA072
+${preTokenId}     CA081
 
 *** Test Cases ***
 Feature: 721 Contract - Create token
-    [Documentation]    Scenario: Verify Sender's TokenId
+    [Documentation]    Scenario: Verify Sender's PTN
     Given Get genesis address
     ${PTN1}    ${result1}    And Request getbalance before create token
     ${ret}    When Create token of vote contract
@@ -24,40 +24,29 @@ Get genesis address
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    2
 
 Request getbalance before create token
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
-    sleep    6
     [Return]    ${PTN1}    ${result1}
 
 Create token of vote contract
-    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
+    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${UDIDToken}    ${721TokenAmount}
     ...    ${721MetaBefore}    ${geneAdd}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
-	sleep    3
     [Return]    ${jsonRes['result']}
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
     ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
     ${GAIN}    countRecieverPTN    ${invokeGain}
-    sleep    2
     [Return]    ${GAIN}
 
 Request getbalance after create token
+    sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
-    sleep    5
-    ${queryResult}    ccqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
-	sleep    1
-    ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
-    : FOR    ${num}    IN RANGE    len(${countList})
-    \    ${voteToken}    Get From Dictionary    ${result2['result']}    ${tokenCommonId}-${countList[${num}]}
-    \    log    ${tokenCommonId}-${countList[${num}]}
-    \    Should Be Equal As Numbers    ${voteToken}    1
     [Return]    ${PTN2}    ${result2}
 
 Assert gain of reciever

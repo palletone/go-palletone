@@ -12,5 +12,5 @@ handleForCashbackApplication
     [Arguments]    ${foundationAddr}    ${handleWho}    ${addr}    ${isAgree}
     ${基金会处理申请保证金退还所需参数}    基金会处理申请保证金退还所需参数    ${foundationAddr}    ${handleWho}    ${addr}    ${isAgree}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyCashback    ${基金会处理申请保证金退还所需参数}
-    sleep    8
+    sleep    6
     [Return]    ${result}

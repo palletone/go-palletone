@@ -154,6 +154,7 @@ func defaultNodeConfig() node.Config {
 	cfg.HTTPModules = append(cfg.HTTPModules, "ptn" /*, "shh"*/)
 	cfg.WSModules = append(cfg.WSModules, "ptn" /*, "shh"*/)
 	cfg.IPCPath = "gptn.ipc"
+	cfg.WSExposeAll = false
 	return cfg
 }
 

@@ -174,6 +174,11 @@ web3._extend({
 			params: 2,
 			inputFormatter: [null,null]
 		}),
+		new web3._extend.Method({
+			name: 'listSysConfig',
+			call: 'ptn_listSysConfig'
+			params: 0,
+		}),
 	],
 
 	properties: [
@@ -189,9 +194,9 @@ web3._extend({
 				return formatted;
 			}
 		}),
-	new web3._extend.Property({
-			name: 'listSysConfig',
-			getter: 'ptn_listSysConfig'
+		new web3._extend.Property({
+			name: 'getChainParameters',
+			getter: 'ptn_getChainParameters'
 		}),
 	]
 });

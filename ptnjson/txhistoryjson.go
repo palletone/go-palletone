@@ -53,7 +53,7 @@ func ConvertTx2HistoryJson(tx *modules.TransactionWithUnitInfo, utxoQuery module
 			}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
-			json.Data = &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData)}
+			json.Data = &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData), Reference: string(data.Reference)}
 			//} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {
 			//	req := m.Payload.(*modules.ContractInstallRequestPayload)
 			//	json.InstallRequest = convertInstallRequest2Json(req)

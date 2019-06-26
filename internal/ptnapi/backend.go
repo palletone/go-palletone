@@ -84,7 +84,7 @@ type Backend interface {
 	// wallet api
 	//WalletTokens(address string) (map[string]*modules.AccountToken, error)
 	//WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
-
+	QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error)
 	// dag's get common
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
@@ -127,7 +127,6 @@ type Backend interface {
 
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
-	//GetAllSysConfig() ([]*ptnjson.ConfigJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
@@ -163,6 +162,10 @@ type Backend interface {
 	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
 	GetAllContracts() ([]*ptnjson.ContractJson, error)
 	GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error)
+
+	//get contract key
+	GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
 	//SPV
 	GetProofTxInfoByHash(txhash string) ([][]byte, error)
@@ -227,12 +230,16 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Service:   NewPublicWalletAPI(apiBackend),
 			Public:    true,
 		}, {
+                       Namespace: "wallet",
+                       Version:   "1.0",
+                       Service:   NewPrivateWalletAPI(apiBackend),
+                       Public:    false,
+                }, {
 			Namespace: "contract",
 			Version:   "1.0",
 			Service:   NewPublicContractAPI(apiBackend),
 			Public:    true,
-		},
-		{
+		},{
 			Namespace: "mediator",
 			Version:   "1.0",
 			Service:   NewPrivateMediatorAPI(apiBackend),

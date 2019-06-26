@@ -207,6 +207,8 @@ func (f *Fetcher) Notify(peer string, hash common.Hash, number *modules.ChainInd
 
 // Enqueue tries to fill gaps the the fetcher's future import queue.
 func (f *Fetcher) Enqueue(peer string, unit *modules.Unit) error {
+	log.Debug("Enter PalletOne Fetcher Enqueue", "unit hash", unit.Hash())
+	defer log.Debug("End PalletOne Fetcher Enqueue", "unit hash", unit.Hash())
 	op := &inject{
 		origin: peer,
 		unit:   unit,
@@ -610,6 +612,8 @@ func (f *Fetcher) rescheduleComplete(complete *time.Timer) {
 // enqueue schedules a new future import operation, if the block to be imported
 // has not yet been seen.
 func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
+	log.Debug("Enter PalletOne Fetcher enqueue", "unit hash", block.Hash())
+	defer log.Debug("End PalletOne Fetcher enqueue", "unit hash", block.Hash())
 	hash := block.Hash()
 	// Ensure the peer isn't DOSing us
 	count := f.queues[peer] + 1
@@ -676,12 +680,15 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 			go f.broadcastBlock(block, true)
 
 		case dagerrors.ErrFutureBlock:
-		// Weird future block, don't fail, but neither propagate
-
+			// Weird future block, don't fail, but neither propagate
 		default:
 			// Something went very wrong, drop the peer
 			log.Warn("Propagated block verification failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
-			f.dropPeer(peer)
+			if err.Error() != "DOUBLE_SPEND" && err.Error() != "INVALID_HEADER_TIME" {
+				f.dropPeer(peer)
+			} else {
+				log.Infof("xxx test double spend tx , don't remove peer. error[%s]", err.Error())
+			}
 			return
 		}
 		// Run the actual import and log any issues

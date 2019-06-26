@@ -55,7 +55,8 @@ func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []str
 }
 
 // StartWSEndpoint starts a websocket endpoint
-func StartWSEndpoint(endpoint string, apis []API, modules []string, wsOrigins []string, exposeAll bool) (net.Listener, *Server, error) {
+func StartWSEndpoint(endpoint string, apis []API, modules []string, wsOrigins []string,
+	exposeAll bool) (net.Listener, *Server, error) {
 
 	// Generate the whitelist based on the allowed modules
 	whitelist := make(map[string]bool)

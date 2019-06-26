@@ -1,11 +1,13 @@
+#!/usr/bin/expect
 #!/bin/bash
-
-HOST=39.105.191.26
-USER=$1
-PASS=$2
-LCD=$3
-RCD=$4
-RNAME=$5
-echo "script start at `date "+%Y-%m-%d %H:%M:%S"`"
-lftp -e "cd pub; mkdir $RCD; cd $RCD; put $LCD -o $RNAME;exit" -u $USER,$PASS $HOST
-echo "script end at `date "+%Y-%m-%d %H:%M:%S"`"
+set timeout 120
+set ftppwd [lindex $argv 0]
+set folder [lindex $argv 1]
+spawn lftp travis:$ftppwd@47.74.209.46
+expect "lftp"
+send "cd ${folder}\r"
+expect "cd"
+send "mirror -R /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs\r"  
+expect "transferred"
+send "exit\r"
+interact

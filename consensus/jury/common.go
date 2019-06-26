@@ -105,7 +105,7 @@ func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
 			msgs = append(msgs, msg)
 		}
 	}
-	log.Debug("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
+	log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
 	tx.TxMessages = msgs
 }
 
@@ -538,7 +538,7 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 }
 
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
-	_, err := p.validator.ValidateTx(tx, false)
+	_, _, err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
 	}
@@ -718,3 +718,20 @@ func shortId(id string) string {
 //	}
 //	return resultInt
 //}
+
+func getValidAddress(addrs []common.Address) ([]common.Address) {
+	result := make([]common.Address, 0)
+	for _, a := range addrs {
+		find := false
+		for _, b := range result {
+			if a.Equal(b) {
+				find = true
+			}
+		}
+		if !find {
+			result = append(result, a)
+		}
+	}
+	return result
+}
+

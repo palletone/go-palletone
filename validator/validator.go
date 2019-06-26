@@ -101,6 +101,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 		}
 
 		for outPoint, utxo := range tx.GetNewUtxos() {
+			log.Debugf("Add tx utxo for key:%s", outPoint.String())
 			unitUtxo.Store(outPoint, utxo)
 		}
 		//newUtxoQuery.unitUtxo = unitUtxo
@@ -116,6 +117,10 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 		}
 		ads = append(ads, a)
 		out := arrangeAdditionFeeList(ads)
+		log.DebugDynamic(func() string {
+			data, _ := json.Marshal(out)
+			return "Fee allocation:" + string(data)
+		})
 		//手续费应该与其他交易付出的手续费相等
 		coinbaseValidateResult := validate.validateCoinbase(coinbase, out)
 		if coinbaseValidateResult == TxValidationCode_VALID {
@@ -166,16 +171,16 @@ return all transactions' fee
 //	return NewValidateError(code)
 //}
 
-func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, error) {
+func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	code, addition := validate.validateTx(tx, isFullTx, time.Now().Unix())
 	if code == TxValidationCode_VALID {
-		return addition, nil
+		return addition, code, nil
 	}
 
-	log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
-		tx.Hash().String(), validationCode_name[int32(code)])
+	//log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
+	//	tx.Hash().String(), validationCode_name[int32(code)])
 
-	return addition, NewValidateError(code)
+	return addition, code, NewValidateError(code)
 }
 
 // todo

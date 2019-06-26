@@ -11,7 +11,7 @@ ${result_hex}     \f[a-z0-9]*
 ${result_txid}    \0[a-z0-9]{160,170}
 
 *** Test Cases ***
-Scenario: 20Contract - Sign Transaction
+Scenario: createTrans - Sign Transaction
     [Tags]    normal
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}

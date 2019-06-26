@@ -56,7 +56,9 @@ type LesApiBackend struct {
 func (b *LesApiBackend) CurrentBlock() *modules.Unit {
 	return &modules.Unit{}
 }
-
+func (b *LesApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error){
+	return nil, nil
+}
 func (b *LesApiBackend) SetHead(number uint64) {
 	//b.eth.protocolManager.downloader.Cancel()
 	//b.eth.blockchain.SetHead(number)
@@ -99,10 +101,6 @@ func (b *LesApiBackend) GetBlock(ctx context.Context, blockHash common.Hash) (*m
 func (b *LesApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return nil
 }
-
-//func (b *LesApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
-//	return nil, nil
-//}
 
 func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
@@ -531,5 +529,12 @@ func (b *LesApiBackend) GetAllContracts() ([]*ptnjson.ContractJson, error) {
 	return nil, nil
 }
 func (b *LesApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error) {
+	return nil, nil
+}
+
+func (b *LesApiBackend) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
+	return nil, nil, nil
+}
+func (b *LesApiBackend) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return nil, nil
 }

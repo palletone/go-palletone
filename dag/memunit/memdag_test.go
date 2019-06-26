@@ -21,7 +21,6 @@
 package memunit
 
 import (
-	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -35,14 +34,15 @@ import (
 	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"testing"
 )
 
 func TestMemDag_AddUnit(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+	//mockCtrl := gomock.NewController(t)
+	//defer mockCtrl.Finish()
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	txpool := txspool.NewMockITxPool(mockCtrl)
+	//txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -57,18 +57,18 @@ func TestMemDag_AddUnit(t *testing.T) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
-	gasToken := modules.PTNCOIN
+	gasToken := dagconfig.DagConfig.GetGasToken()
 	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
 	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 
-	err := memdag.AddUnit(newTestUnit(common.Hash{}, 0, key2), txpool)
+	err := memdag.AddUnit(newTestUnit(common.Hash{}, 0, key2), nil)
 	assert.Nil(t, err)
 }
 func BenchmarkMemDag_AddUnit(b *testing.B) {
-	mockCtrl := gomock.NewController(b)
-	defer mockCtrl.Finish()
+	//mockCtrl := gomock.NewController(b)
+	//defer mockCtrl.Finish()
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	txpool := txspool.NewMockITxPool(mockCtrl)
+	//txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -89,7 +89,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	parentHash := lastHeader.Hash()
 	for i := 0; i < b.N; i++ {
 		unit := newTestUnit(parentHash, uint64(i+1), key1)
-		err := memdag.AddUnit(unit, txpool)
+		err := memdag.AddUnit(unit, nil)
 		assert.Nil(b, err)
 		parentHash = unit.Hash()
 	}
@@ -117,7 +117,7 @@ func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey)
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
 	h.Number = &modules.ChainIndex{}
-	h.Number.AssetID = modules.PTNCOIN
+	h.Number.AssetID = dagconfig.DagConfig.GetGasToken()
 	h.Number.Index = height
 	h.Extra = make([]byte, 20)
 	h.ParentsHash = []common.Hash{parentHash}
@@ -135,11 +135,12 @@ func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey)
 
 //添加一个正常Unit，最新单元会更新，添加孤儿Unit，最新单元不会更新；补上了孤儿遗失的单元，那么孤儿单元不再是孤儿，会加到链上
 func TestMemDag_AddOrphanUnit(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+	//mockCtrl := gomock.NewController(t)
+	//defer mockCtrl.Finish()
 
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	txpool := txspool.NewMockITxPool(mockCtrl)
+	//txpool := txspool.NewMockITxPool(mockCtrl)
+	var txpool txspool.ITxPool
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -174,10 +175,11 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 
 //添加1,2单元后，再次添加2'最新单元不变，再添加3'则主链切换，最新单元更新为3'
 func TestMemDag_SwitchMainChain(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+	//mockCtrl := gomock.NewController(t)
+	//defer mockCtrl.Finish()
 	u0 := newTestUnit(common.Hash{}, 1, key1)
-	txpool := txspool.NewMockITxPool(mockCtrl)
+	//txpool := txspool.NewMockITxPool(mockCtrl)
+	var txpool txspool.ITxPool
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)

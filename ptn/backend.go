@@ -272,8 +272,8 @@ func (s *PalletOne) ContractBroadcast(event jury.ContractEvent, local bool) {
 	})
 	s.protocolManager.ContractBroadcast(event, local)
 }
-func (s *PalletOne) ElectionBroadcast(event jury.ElectionEvent) {
-	s.protocolManager.ElectionBroadcast(event)
+func (s *PalletOne) ElectionBroadcast(event jury.ElectionEvent, local bool) {
+	s.protocolManager.ElectionBroadcast(event, local)
 }
 func (s *PalletOne) AdapterBroadcast(event jury.AdapterEvent) {
 	s.protocolManager.AdapterBroadcast(event)
@@ -281,6 +281,10 @@ func (s *PalletOne) AdapterBroadcast(event jury.AdapterEvent) {
 
 func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
+}
+
+func (s *PalletOne) GetLocalActiveMediators() []common.Address {
+	return s.mediatorPlugin.GetLocalActiveMediators()
 }
 
 func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {

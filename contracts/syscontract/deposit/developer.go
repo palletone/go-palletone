@@ -20,6 +20,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
@@ -66,7 +67,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		//  可以加入列表
 		if invokeTokens.Amount >= depositAmountsForDev {
 			//  加入候选列表
-			err = addCandaditeList(stub, invokeAddr, DeveloperList)
+			err = addCandaditeList(stub, invokeAddr, modules.DeveloperList)
 			if err != nil {
 				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
@@ -90,7 +91,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		//  判断此时交了保证金后是否超过了jury
 		if balance.Balance >= depositAmountsForDev {
 			//  加入候选列表
-			err = addCandaditeList(stub, invokeAddr, DeveloperList)
+			err = addCandaditeList(stub, invokeAddr, modules.DeveloperList)
 			if err != nil {
 				log.Error("addCandaditeList err: ", "error", err)
 				return shim.Error(err.Error())
@@ -152,7 +153,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr comm
 			return err
 		}
 		//  移除出列表
-		err = moveCandidate(DeveloperList, cashbackAddr.String(), stub)
+		err = moveCandidate(modules.DeveloperList, cashbackAddr.String(), stub)
 		if err != nil {
 			log.Error("moveCandidate err:", "error", err)
 			return err
@@ -167,7 +168,7 @@ func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr comm
 		return nil
 	} else if result < depositAmountsForDev {
 		//  移除列表并更新
-		err = moveCandidate(DeveloperList, cashbackAddr.String(), stub)
+		err = moveCandidate(modules.DeveloperList, cashbackAddr.String(), stub)
 		if err != nil {
 			log.Error("moveCandidate err:", "error", err)
 			return err

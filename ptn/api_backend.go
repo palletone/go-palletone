@@ -171,14 +171,6 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	return txOutReply, nil
 }
 
-//func (b *PtnApiBackend) GetAllSysConfig() ([]*ptnjson.ConfigJson, error) {
-//	configs, err := b.Dag().GetAllConfig()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return ptnjson.ConvertAllSysConfigToJson(configs), nil
-//}
-
 func (b *PtnApiBackend) GetChainParameters() *core.ChainParameters {
 	return b.Dag().GetChainParameters()
 }
@@ -430,10 +422,18 @@ func (b *PtnApiBackend) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransact
 	return tx, err
 }
 
-// func (b *PtnApiBackend) GetTxsPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
-// 	tx, unit_hash := b.ptn.txPool.Get(hash)
-// 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
-// }
+func (b *PtnApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error){
+	poes, err := b.ptn.dag.QueryProofOfExistenceByReference([]byte(ref))
+	if err!=nil{
+		return nil,err
+	}
+	result:=[]*ptnjson.ProofOfExistenceJson{}
+	for _,poe:=range poes{
+		j:= ptnjson.ConvertProofOfExistence2Json(poe)
+		result=append(result,j)
+	}
+	return result,nil
+}
 
 func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return b.ptn.dag.GetHeaderByHash(hash)
@@ -759,4 +759,12 @@ func (b *PtnApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson
 		jsons = append(jsons, ptnjson.ConvertContract2Json(c))
 	}
 	return jsons, nil
+}
+
+func (b *PtnApiBackend) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
+	return b.ptn.dag.GetContractState(contractid, key)
+}
+
+func (b *PtnApiBackend) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	return b.ptn.dag.GetContractStatesByPrefix(contractid, prefix)
 }

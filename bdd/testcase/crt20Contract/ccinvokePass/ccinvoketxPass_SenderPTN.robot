@@ -17,15 +17,14 @@ Scenario: 20Contract - Create Token
     ${PTNGAIN}    And Calculate gain
     ${PTN2}    And Request getbalance after create token
     Then Assert gain    ${PTN1}    ${PTN2}    ${PTNGAIN}
+    
 
 *** Keywords ***
 Request getbalance before create token
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    2
     ${PTN1}    ${result}    normalGetBalance    ${geneAdd}
-    sleep    1
     [Return]    ${PTN1}
 
 Request normal CcinvokePass
@@ -36,14 +35,13 @@ Request normal CcinvokePass
     [Return]    ${ret}
 
 Calculate gain
-	sleep    3
     ${PTNGAIN}    Evaluate    ${PTNAmount}+${PTNPoundage}
     ${PTNGAIN}    countRecieverPTN    ${PTNGAIN}
     [Return]    ${PTNGAIN}
 
 Request getbalance after create token
+    sleep    4
     ${PTN2}    ${result}    normalGetBalance    ${geneAdd}
-    sleep    5
     [Return]    ${PTN2}
 
 Assert gain

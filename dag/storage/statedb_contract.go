@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"reflect"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -95,6 +96,7 @@ func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.Contrac
 	}
 	key := getContractStateKey(cid, ws.Key)
 	if ws.IsDelete {
+		log.Debugf("Delete contract state by key:[%s]", ws.Key)
 		return statedb.db.Delete(key)
 	}
 	if err := storeBytesWithVersion(statedb.db, key, version, ws.Value); err != nil {
@@ -156,7 +158,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 	//})
 	for _, write := range wset {
 		cid := id
-		if write.ContractId != nil {
+		if len(write.ContractId) != 0 {
 			cid = write.ContractId
 		}
 		key := getContractStateKey(cid, write.Key)
@@ -164,7 +166,9 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 
 		if write.IsDelete {
 			batch.Delete(key)
+			log.Debugf("Delete contract state by key:[%s]", write.Key)
 		} else {
+			log.Debugf("Save contract state by key:[%s],value:%x;db key %x", write.Key, write.Value, key)
 			if err := storeBytesWithVersion(batch, key, version, write.Value); err != nil {
 				return err
 			}
@@ -237,7 +241,9 @@ func (statedb *StateDb) GetContractStatesByPrefix(id []byte, prefix string) (map
 To get contract or contract template one field
 */
 func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
+
 	key := getContractStateKey(id, field)
+	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(), key, field)
 	data, version, err := retrieveWithVersion(statedb.db, key)
 	return data, version, err
 }

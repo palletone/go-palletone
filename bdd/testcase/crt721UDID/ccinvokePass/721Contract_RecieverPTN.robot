@@ -7,7 +7,7 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${preTokenId}     CA070
+${preTokenId}     CA080
 
 *** Test Cases ***
 Feature: 721 Contract - Create token
@@ -23,13 +23,11 @@ Request getbalance before create token
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     personalUnlockAccount    ${geneAdd}
-    sleep    2
     ${PTN1}    ${result1}    normalGetBalance    ${recieverAdd}
-    sleep    5
     [Return]    ${PTN1}    ${result1}
 
 Create token of vote contract
-    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
+    ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${UDIDToken}    ${721TokenAmount}
     ...    ${721MetaBefore}    ${geneAdd}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
@@ -41,12 +39,11 @@ Calculate gain of recieverAdd
     [Arguments]    ${PTN1}
     ${gain1}    countRecieverPTN    ${PTNAmount}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${gain1}')    decimal
-    sleep    4
     [Return]    ${PTNGAIN}
 
 Request getbalance after create token
-    ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
     sleep    4
+    ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
     [Return]    ${PTN2}    ${result2}
 
 Assert gain of reciever

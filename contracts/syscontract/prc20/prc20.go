@@ -63,10 +63,39 @@ func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return allToken(args, stub)
 	case "changeSupplyAddr":
 		return changeSupplyAddr(args, stub)
+	case "frozenToken":
+		return frozenToken(args, stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
 	}
+}
+
+func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
+	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 1, Status: 0, CreateAddr: tkInfo.CreateAddr,
+		TotalSupply: tkInfo.TotalSupply, SupplyAddr: tkInfo.SupplyAddr, AssetID: tkInfo.AssetID}
+	val, err := json.Marshal(gTkInfo)
+	if err != nil {
+		return err
+	}
+	err = stub.PutGlobalState(dm.GlobalPrefix+gTkInfo.Symbol, val)
+	return err
+}
+
+func getGlobal(stub shim.ChaincodeStubInterface, symbol string) *dm.GlobalTokenInfo {
+	//
+	gTkInfo := dm.GlobalTokenInfo{}
+	tkInfoBytes, _ := stub.GetGlobalState(dm.GlobalPrefix + symbol)
+	if len(tkInfoBytes) == 0 {
+		return nil
+	}
+	//
+	err := json.Unmarshal(tkInfoBytes, &gTkInfo)
+	if err != nil {
+		return nil
+	}
+
+	return &gTkInfo
 }
 
 func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
@@ -150,8 +179,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//check name is only or not
-	tkInfo := getSymbols(stub, fungible.Symbol)
-	if tkInfo != nil {
+	gTkInfo := getGlobal(stub, fungible.Symbol)
+	if gTkInfo != nil {
 		jsonResp := "{\"Error\":\"The symbol have been used\"}"
 		return shim.Error(jsonResp)
 	}
@@ -173,7 +202,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
 		fungible.Decimals, common.Hex2Bytes(txid[2:]), dm.UniqueIdType_Null)
-	info := TokenInfo{fungible.Symbol, createAddr.String(), totalSupply, decimals,
+	info := TokenInfo{fungible.Symbol, createAddr.String(), totalSupply, uint64(decimals),
 		fungible.SupplyAddress, assetID}
 
 	err = setSymbols(stub, &info)
@@ -188,8 +217,12 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Failed to call stub.DefineToken\"}"
 		return shim.Error(jsonResp)
 	}
-	//TODO
-	stub.PutGlobalState("Tokens_"+assetID.String(), createJson)
+	//add global state
+	err = setGlobal(stub, &info)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return shim.Error(jsonResp)
+	}
 	return shim.Success(createJson)
 }
 
@@ -202,9 +235,15 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//symbol
 	symbol := strings.ToUpper(args[0])
 	//check name is exist or not
-	tkInfo := getSymbols(stub, symbol)
-	if tkInfo == nil {
+	gTkInfo := getGlobal(stub, symbol)
+	if gTkInfo == nil {
 		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//check status
+	if gTkInfo.Status != 0 {
+		jsonResp := "{\"Error\":\"Status is frozen\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -218,7 +257,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Error(jsonResp)
 	}
-	if math.MaxInt64-tkInfo.TotalSupply < supplyAmount {
+	if math.MaxInt64-gTkInfo.TotalSupply < supplyAmount {
 		jsonResp := "{\"Error\":\"Too big, overflow\"}"
 		return shim.Error(jsonResp)
 	}
@@ -230,27 +269,37 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//check supply address
-	if invokeAddr.String() != tkInfo.SupplyAddr {
+	if invokeAddr.String() != gTkInfo.SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//call SupplyToken
-	assetID := tkInfo.AssetID
+	assetID := gTkInfo.AssetID
 	err = stub.SupplyToken(assetID.Bytes(),
-		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, tkInfo.SupplyAddr)
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, gTkInfo.SupplyAddr)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//add supply
-	tkInfo.TotalSupply += supplyAmount
-	err = setSymbols(stub, tkInfo)
+	gTkInfo.TotalSupply += supplyAmount
+
+	info := TokenInfo{gTkInfo.Symbol, gTkInfo.CreateAddr, gTkInfo.TotalSupply, uint64(assetID.GetDecimal()),
+		gTkInfo.SupplyAddr, assetID}
+	err = setSymbols(stub, &info)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
 		return shim.Error(jsonResp)
 	}
+
+	err = setGlobal(stub, &info)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return shim.Error(jsonResp)
+	}
+
 	return shim.Success([]byte(""))
 }
 
@@ -263,9 +312,15 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	//symbol
 	symbol := strings.ToUpper(args[0])
 	//check name is exist or not
-	tkInfo := getSymbols(stub, symbol)
-	if tkInfo == nil {
+	gTkInfo := getGlobal(stub, symbol)
+	if gTkInfo == nil {
 		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//check status
+	if gTkInfo.Status != 0 {
+		jsonResp := "{\"Error\":\"Status is frozen\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -279,16 +334,81 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error(jsonResp)
 	}
 	//check supply address
-	if invokeAddr.String() != tkInfo.SupplyAddr {
+	if invokeAddr.String() != gTkInfo.SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//set supply address
-	tkInfo.SupplyAddr = newSupplyAddr
-	err = setSymbols(stub, tkInfo)
+	gTkInfo.SupplyAddr = newSupplyAddr
+
+	info := TokenInfo{gTkInfo.Symbol, gTkInfo.CreateAddr, gTkInfo.TotalSupply, uint64(gTkInfo.AssetID.GetDecimal()),
+		gTkInfo.SupplyAddr, gTkInfo.AssetID}
+
+	err = setSymbols(stub, &info)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
+		return shim.Error(jsonResp)
+	}
+
+	err = setGlobal(stub, &info)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
+		return shim.Error(jsonResp)
+	}
+
+	return shim.Success([]byte(""))
+}
+
+func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+	//params check
+	if len(args) < 1 {
+		return shim.Error("need 1 args (Symbol)")
+	}
+
+	//symbol
+	symbol := strings.ToUpper(args[0])
+	//check name is exist or not
+	gTkInfo := getGlobal(stub, symbol)
+	if gTkInfo == nil {
+		jsonResp := "{\"Error\":\"Token not exist\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//get invoke address
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	//check address
+	invokeAddrStr := invokeAddr.String()
+	ownerAddr := gTkInfo.SupplyAddr
+	if "" == ownerAddr {
+		ownerAddr = gTkInfo.CreateAddr
+	}
+	if invokeAddrStr != ownerAddr {
+		cp, err := stub.GetSystemConfig()
+		if err != nil {
+			jsonResp := "{\"Error\":\"GetSystemConfig() failed\"}"
+			return shim.Error(jsonResp)
+		}
+		if invokeAddrStr != cp.FoundationAddress {
+			jsonResp := "{\"Error\":\"Only the FoundationAddress or Owner can frozen token\"}"
+			return shim.Error(jsonResp)
+		}
+	}
+
+	//set status
+	gTkInfo.Status = 1
+	val, err := json.Marshal(gTkInfo)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Marshal gTkInfo failed\"}"
+		return shim.Error(jsonResp)
+	}
+	err = stub.PutGlobalState(dm.GlobalPrefix+gTkInfo.Symbol, val)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to add global state\"}"
 		return shim.Error(jsonResp)
 	}
 	return shim.Success([]byte(""))

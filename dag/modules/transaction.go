@@ -28,9 +28,11 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"sync"
 	"time"
 
 	"bytes"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
@@ -407,65 +409,68 @@ type Transaction struct {
 	Illegal    bool       `json:"Illegal"` // not hash, 1:no valid, 0:ok
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
+type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
-	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
-	for _, msg := range tx.TxMessages {
-		payload, ok := msg.Payload.(*PaymentPayload)
-		if !ok {
-			continue
-		}
-		if payload.IsCoinbase() {
-			continue
-		}
-		inAmount := uint64(0)
-		outAmount := uint64(0)
-		for _, txin := range payload.Inputs {
-			utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
-			if utxo == nil {
-				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
-					txin.PreviousOutPoint.TxHash.String(),
-					txin.PreviousOutPoint.MessageIndex,
-					txin.PreviousOutPoint.OutIndex)
-			}
-			// check overflow
-			if inAmount+utxo.Amount > (1<<64 - 1) {
-				return nil, fmt.Errorf("Compute fees: txin total overflow")
-			}
-			inAmount += utxo.Amount
-			if unitTime > 0 {
-				//计算币龄利息
-				rate := parameter.CurrentSysParameters.TxCoinDayInterest
-				if bytes.Equal(utxo.PkScript, DepositContractLockScript) {
-					rate = parameter.CurrentSysParameters.DepositContractInterest
-				}
-
-				interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
-				if interest > 0 {
-					log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
-					inAmount += interest
-				}
-			}
-		}
-
-		for _, txout := range payload.Outputs {
-			// check overflow
-			if outAmount+txout.Value > (1<<64 - 1) {
-				return nil, fmt.Errorf("Compute fees: txout total overflow")
-			}
-			outAmount += txout.Value
-		}
-		if inAmount < outAmount {
-
-			return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
-		}
-		fees := inAmount - outAmount
-		return &AmountAsset{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
-
+	//	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
+	msg0 := tx.TxMessages[0]
+	if msg0.App != APP_PAYMENT {
+		return nil, errors.New("Tx message 0 must a payment payload")
 	}
-	return nil, fmt.Errorf("Compute fees: no payment payload")
+	payload := msg0.Payload.(*PaymentPayload)
+
+	if payload.IsCoinbase() {
+		return NewAmountAsset(0, NewPTNAsset()), nil
+	}
+	inAmount := uint64(0)
+	outAmount := uint64(0)
+	var feeAsset *Asset
+	for _, txin := range payload.Inputs {
+		utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
+		if utxo == nil {
+			return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+				txin.PreviousOutPoint.TxHash.String(),
+				txin.PreviousOutPoint.MessageIndex,
+				txin.PreviousOutPoint.OutIndex)
+		}
+		feeAsset = utxo.Asset
+		// check overflow
+		if inAmount+utxo.Amount > (1<<64 - 1) {
+			return nil, fmt.Errorf("Compute fees: txin total overflow")
+		}
+		inAmount += utxo.Amount
+		if unitTime > 0 {
+			//计算币龄利息
+			rate := parameter.CurrentSysParameters.TxCoinDayInterest
+			if bytes.Equal(utxo.PkScript, DepositContractLockScript) {
+				rate = parameter.CurrentSysParameters.DepositContractInterest
+			}
+
+			interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
+			if interest > 0 {
+				//	log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
+				inAmount += interest
+			}
+		}
+	}
+
+	for _, txout := range payload.Outputs {
+		// check overflow
+		if outAmount+txout.Value > (1<<64 - 1) {
+			return nil, fmt.Errorf("Compute fees: txout total overflow")
+		}
+		outAmount += txout.Value
+	}
+	if inAmount < outAmount {
+
+		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+	}
+	fees := inAmount - outAmount
+
+	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
+
 }
 
 //该Tx如果保存后，会产生的新的Utxo
@@ -662,6 +667,47 @@ func (tx *Transaction) InvokeContractId() []byte {
 		}
 	}
 	return nil
+}
+
+//获取该交易的所有From地址
+func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
+	addrMap := map[common.Address]bool{}
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_PAYMENT {
+			pay := msg.Payload.(*PaymentPayload)
+			for _, input := range pay.Inputs {
+				if input.PreviousOutPoint != nil {
+					utxo, err := queryUtxoFunc(input.PreviousOutPoint)
+					if err != nil {
+						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
+					}
+					addr, _ := getAddrFunc(utxo.PkScript)
+					addrMap[addr] = true
+				}
+			}
+		}
+	}
+	result := []common.Address{}
+	for k, _ := range addrMap {
+		result = append(result, k)
+	}
+	return result, nil
+}
+
+//获取该交易的发起人地址
+func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (common.Address, error) {
+	msg0 := tx.TxMessages[0]
+	if msg0.App != APP_PAYMENT {
+		return common.Address{}, errors.New("Coinbase or Invalid Tx, first message must be a payment")
+	}
+	pay := msg0.Payload.(*PaymentPayload)
+
+	utxo, err := queryUtxoFunc(pay.Inputs[0].PreviousOutPoint)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return getAddrFunc(utxo.PkScript)
+
 }
 
 type Addition struct {
@@ -1090,50 +1136,66 @@ func (a *Addition) Key() string {
 	return hex.EncodeToString(b)
 }
 
-type SequeueTxPoolTxs []*TxPoolTransaction
+type SequeueTxPoolTxs struct {
+	seqtxs []*TxPoolTransaction
+	mu     sync.RWMutex
+}
 
 // add
+func (seqTxs *SequeueTxPoolTxs) Len() int {
+	seqTxs.mu.RLock()
+	defer seqTxs.mu.RUnlock()
+	return len((*seqTxs).seqtxs)
+}
 func (seqTxs *SequeueTxPoolTxs) Add(newPoolTx *TxPoolTransaction) {
-	*seqTxs = append(*seqTxs, newPoolTx)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 }
 
 // add priority
 func (seqTxs *SequeueTxPoolTxs) AddPriority(newPoolTx *TxPoolTransaction) {
-	if len(*seqTxs) == 0 {
-		*seqTxs = append(*seqTxs, newPoolTx)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	if seqTxs.Len() == 0 {
+		(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 	} else {
 		added := false
-		for i, item := range *seqTxs {
+		for i, item := range (*seqTxs).seqtxs {
 			if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
-				*seqTxs = append((*seqTxs)[:i], append(SequeueTxPoolTxs{newPoolTx}, (*seqTxs)[i:]...)...)
+				(*seqTxs).seqtxs = append((*seqTxs).seqtxs[:i], append([]*TxPoolTransaction{newPoolTx}, (*seqTxs).seqtxs[i:]...)...)
 				added = true
 				break
 			}
 		}
 		if !added {
-			*seqTxs = append(*seqTxs, newPoolTx)
+			(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
 		}
 	}
 }
 
 // get
 func (seqTxs *SequeueTxPoolTxs) Get() *TxPoolTransaction {
-	if len(*seqTxs) <= 0 {
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	if seqTxs.Len() <= 0 {
 		return nil
 	}
-	if len(*seqTxs) == 1 {
-		first := (*seqTxs)[0]
-		*seqTxs = make([]*TxPoolTransaction, 0)
+	if seqTxs.Len() == 1 {
+		first := (*seqTxs).seqtxs[0]
+		(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
 		return first
 	}
-	first, rest := (*seqTxs)[0], (*seqTxs)[1:]
-	*seqTxs = rest
+	first, rest := (*seqTxs).seqtxs[0], (*seqTxs).seqtxs[1:]
+	(*seqTxs).seqtxs = rest
 	return first
 }
 
 // get all
 func (seqTxs *SequeueTxPoolTxs) All() []*TxPoolTransaction {
-	items := (*seqTxs)[:]
-	*seqTxs = make([]*TxPoolTransaction, 0)
+	seqTxs.mu.Lock()
+	defer seqTxs.mu.Unlock()
+	items := (*seqTxs).seqtxs[:]
+	(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
 	return items
 }

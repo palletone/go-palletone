@@ -12,6 +12,11 @@ func TestIDType16_String(t *testing.T) {
 	t.Log(NewPTNAsset().String())
 }
 
+func TestAssetId_GetDecimal(t *testing.T) {
+	ptn := NewPTNAsset()
+	t.Log(ptn.AssetId.GetDecimal())
+}
+
 func TestIDType16_Str(t *testing.T) {
 	ptn := NewPTNAsset()
 	t.Log(ptn.AssetId.String())

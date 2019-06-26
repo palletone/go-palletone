@@ -57,6 +57,7 @@ const (
 const (
 	FoundationAddress = "FoundationAddress"
 	JuryList          = "JuryList"
+	DeveloperList     = "DeveloperList"
 	DepositRate       = "DepositRate"
 	//ContractSignatureNum = "ContractSignatureNum"
 	//ContractElectionNum  = "ContractElectionNum"
@@ -65,8 +66,7 @@ const (
 const (
 	DesiredSysParamsWithoutVote = "desiredSysParamsWithoutVote"
 	DesiredSysParamsWithVote    = "desiredSysParamsWithVote"
-	// todo albert·gou 待删除
-	DesiredActiveMediatorCount = "ActiveMediatorCount"
+	DesiredActiveMediatorCount  = "ActiveMediatorCount"
 )
 
 func (mt MessageType) IsRequest() bool {
@@ -499,6 +499,7 @@ type ContractStopRequestPayload struct {
 type SignaturePayload struct {
 	Signatures []SignatureSet `json:"signature_set"` // the array of signature
 }
+
 type SignatureSet struct {
 	PubKey    []byte `json:"public_key"` //compress public key
 	Signature []byte `json:"signature"`  //
@@ -513,17 +514,20 @@ func (ss SignatureSet) String() string {
 type DataPayload struct {
 	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
+	Reference []byte `json:"reference"`
 }
 
 //一个地址对应的个人StateDB空间
 type AccountStateUpdatePayload struct {
 	WriteSet []AccountStateWriteSet `json:"write_set"`
 }
+
 type AccountStateWriteSet struct {
 	IsDelete bool   `json:"is_delete"`
 	Key      string `json:"key"`
 	Value    []byte `json:"value"`
 }
+
 type FileInfo struct {
 	UnitHash    common.Hash `json:"unit_hash"`
 	UintHeight  uint64      `json:"unit_index"`

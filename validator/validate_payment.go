@@ -21,6 +21,7 @@
 package validator
 
 import (
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -62,6 +63,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			log.Debugf("msgIdx %d, GetResultTx 1", msgIdx)
 		}
 
+		statusValid := false
 		for inputIdx, in := range payment.Inputs {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
@@ -89,6 +91,17 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 				//input asset must be same
 				if !asset.IsSimilar(utxo.Asset) {
 					return TxValidationCode_INVALID_ASSET
+				}
+			}
+
+			//check token status
+			if msgIdx != 0 {
+				if !statusValid && asset.AssetId != gasToken {
+					ret := validate.checkTokenStatus(asset)
+					if TxValidationCode_VALID != ret {
+						return ret
+					}
+					statusValid = true
 				}
 			}
 			totalInput += utxo.Amount
@@ -127,36 +140,57 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			}
 		}
 	}
-
-	if len(payment.Outputs) == 0 {
-		log.Error("payment output is null.", "payment.output", payment.Outputs)
-		return TxValidationCode_INVALID_PAYMMENT_OUTPUT
-	}
+	//有可能没有Output，全部付手续费去了
+	//if len(payment.Outputs) == 0 {
+	//	log.Error("payment output is null.", "payment.output", payment.Outputs)
+	//	return TxValidationCode_INVALID_PAYMMENT_OUTPUT
+	//}
 	totalOutput := uint64(0)
 	//Check payment
 	//rule:
 	//	1. all outputs have same asset id
-	asset0 := payment.Outputs[0].Asset
-	for _, out := range payment.Outputs {
-		if !asset0.IsSameAssetId(out.Asset) {
-			return TxValidationCode_INVALID_ASSET
+	if len(payment.Outputs)>0 {
+		asset0 := payment.Outputs[0].Asset
+		for _, out := range payment.Outputs {
+			if !asset0.IsSameAssetId(out.Asset) {
+				return TxValidationCode_INVALID_ASSET
+			}
+			totalOutput += out.Value
+			if totalOutput < out.Value || out.Value == 0 { //big number overflow
+				return TxValidationCode_INVALID_AMOUNT
+			}
 		}
-		totalOutput += out.Value
-		if totalOutput < out.Value || out.Value == 0 { //big number overflow
-			return TxValidationCode_INVALID_AMOUNT
+
+		if !isInputnil {
+			//Input Output asset mustbe same
+			if !asset.IsSameAssetId(asset0) {
+				return TxValidationCode_INVALID_ASSET
+			}
+			//if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
+			//	return TxValidationCode_INVALID_AMOUNT
+			//}
 		}
-	}
-	if !isInputnil {
-		//Input Output asset mustbe same
-		if !asset.IsSameAssetId(asset0) {
-			return TxValidationCode_INVALID_ASSET
-		}
-		//if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
-		//	return TxValidationCode_INVALID_AMOUNT
-		//}
 	}
 	return TxValidationCode_VALID
 }
+
+func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode {
+	globalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	result, _, err := validate.statequery.GetContractState(globalStateContractId, modules.GlobalPrefix+asset.AssetId.GetSymbol())
+	if nil != err {
+		return TxValidationCode_INVALID_ASSET
+	}
+	var tokenInfo modules.GlobalTokenInfo
+	err = json.Unmarshal(result, &tokenInfo)
+	if nil != err {
+		return TxValidationCode_INVALID_ASSET
+	}
+	if tokenInfo.Status != 0 {
+		return TxValidationCode_INVALID_TOKEN_STATUS
+	}
+	return TxValidationCode_VALID
+}
+
 func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
 	count := len(jury)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
