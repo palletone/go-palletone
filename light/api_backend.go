@@ -56,7 +56,9 @@ type LesApiBackend struct {
 func (b *LesApiBackend) CurrentBlock() *modules.Unit {
 	return &modules.Unit{}
 }
-
+func (b *LesApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error){
+	return nil, nil
+}
 func (b *LesApiBackend) SetHead(number uint64) {
 	//b.eth.protocolManager.downloader.Cancel()
 	//b.eth.blockchain.SetHead(number)

@@ -45,15 +45,6 @@ func (m *Migration0615_100) ToVersion() string {
 	return "1.0.0-beta"
 }
 func (m *Migration0615_100) ExecuteUpgrade() error {
-	//err := RenameKey(m.propdb, []byte("GlobalProperty"), []byte("gpGlobalProperty"))
-	//if err != nil {
-	//	return err
-	//}
-	////err = RenamePrefix(m.dagdb, []byte("uht"), []byte("hh"))
-	//err = RenamePrefix(m.dagdb, []byte("testmigration"), []byte("migration"))
-	//if err != nil {
-	//	return err
-	//}
 	data, _ := m.statedb.Get([]byte("gpGlobalProperty"))
 	gp := &GlobalProperty0615{}
 	err := rlp.DecodeBytes(data, gp)

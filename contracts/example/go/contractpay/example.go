@@ -39,6 +39,7 @@ type SimpleChaincode struct {
 // Init callback representing the invocation of a chaincode
 // This chaincode will manage two accounts A and B and will transfer X units from A to B upon invoke
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
+	stub.PutState("paystate0", []byte("paystate0"))
 	return shim.Success(nil)
 }
 

@@ -228,6 +228,10 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	// close tx simulator (系统合约)
 	rwset.RwM.CloseTxSimulator(rwset.ChainId, "")
 	rwset.RwM.Close()
+
+	//广播节点选取签名请求事件
+	go mp.ptn.ContractProcessor().BroadcastElectionSigRequestEvent()
+
 	var groupPubKey []byte = nil
 	if mp.groupSigningEnabled {
 		groupPubKey = mp.LocalMediatorPubKey(scheduledMediator)

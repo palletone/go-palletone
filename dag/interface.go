@@ -195,4 +195,5 @@ type IDag interface {
 
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
+	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 }

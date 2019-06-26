@@ -6,12 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	"time"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 // The values in those tests are from the Transaction Tests
@@ -366,7 +367,7 @@ func TestTransaction_GetTxFee(t *testing.T) {
 	tx := newTestTx()
 	utxoQueryFn := func(outpoint *OutPoint) (*Utxo, error) {
 		t := time.Now().AddDate(0, 0, -1).Unix()
-		return &Utxo{Amount: Ptn2Dao(11), Timestamp: uint64(t)}, nil
+		return &Utxo{Amount: Ptn2Dao(11), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
 	}
 	fee, err := tx.GetTxFee(utxoQueryFn, time.Now().Unix())
 	assert.Nil(t, err)
