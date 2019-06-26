@@ -9,7 +9,6 @@ import (
 	common "github.com/palletone/go-palletone/common"
 	event "github.com/palletone/go-palletone/common/event"
 	mediatorplugin "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	modules "github.com/palletone/go-palletone/dag/modules"
 	reflect "reflect"
 )
 
@@ -46,16 +45,6 @@ func (m *Mockproducer) SubscribeNewProducedUnitEvent(ch chan<- mediatorplugin.Ne
 // SubscribeNewProducedUnitEvent indicates an expected call of SubscribeNewProducedUnitEvent
 func (mr *MockproducerMockRecorder) SubscribeNewProducedUnitEvent(ch interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeNewProducedUnitEvent", reflect.TypeOf((*Mockproducer)(nil).SubscribeNewProducedUnitEvent), ch)
-}
-
-// AddToTBLSSignBufs mocks base method
-func (m *Mockproducer) AddToTBLSSignBufs(newUnit *modules.Unit) {
-	m.ctrl.Call(m, "AddToTBLSSignBufs", newUnit)
-}
-
-// AddToTBLSSignBufs indicates an expected call of AddToTBLSSignBufs
-func (mr *MockproducerMockRecorder) AddToTBLSSignBufs(newUnit interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToTBLSSignBufs", reflect.TypeOf((*Mockproducer)(nil).AddToTBLSSignBufs), newUnit)
 }
 
 // SubscribeSigShareEvent mocks base method

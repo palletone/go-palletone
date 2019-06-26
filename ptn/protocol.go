@@ -52,7 +52,7 @@ const (
 	BlockBodiesMsg     = 0x06
 	NewBlockMsg        = 0x07
 	NewBlockHeaderMsg  = 0x08
-	NewProducedUnitMsg = 0x09
+	//NewProducedUnitMsg = 0x09
 	VSSDealMsg         = 0x0a
 	VSSResponseMsg     = 0x0b
 	SigShareMsg        = 0x0c

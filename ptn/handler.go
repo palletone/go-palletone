@@ -576,11 +576,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.TxMsg(msg, p)
 
 		// append by Albert·Gou
-	case msg.Code == NewProducedUnitMsg:
-		// Retrieve and decode the propagated new produced unit
-		return pm.NewProducedUnitMsg(msg, p)
+	//case msg.Code == NewProducedUnitMsg:
+	//	// Retrieve and decode the propagated new produced unit
+	//	return pm.NewProducedUnitMsg(msg, p)
 
-		// append by Albert·Gou
+	// append by Albert·Gou
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
 
