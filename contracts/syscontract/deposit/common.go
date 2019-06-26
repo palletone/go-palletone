@@ -1096,16 +1096,17 @@ func handleAward(stub shim.ChaincodeStubInterface) error {
 		rate := float64(depositExtraReward) / float64(allM.Amount)
 		log.Infof("rate=%f", rate)
 		//  TODO 计算每个节点的收益
+		var allAmount uint64
 		for i, m := range allM.Member {
 			log.Infof("==2==> %d ", i)
 			dayAward := rate * float64(m.Amount)
 			log.Infof("m.Amount=%d", m.Amount)
 			log.Infof("dayAward=%f", dayAward)
 			m.Amount += uint64(dayAward)
+			allAmount += m.Amount
 			log.Infof("m.Amount+dayAward=%d", m.Amount)
 		}
 		//  将当前的awardnode 加入列表
-		var allAmount uint64
 		awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
 		if err != nil {
 			return err
@@ -1120,14 +1121,19 @@ func handleAward(stub shim.ChaincodeStubInterface) error {
 					return err
 				}
 				allAmount += awardNode.Amount
-				allM.Member = append(allM.Member, &awardNode)
+				//  判断里面是否存在
+				if isExist(&awardNode, allM.Member) {
+					log.Infof("update amount")
+				} else {
+					allM.Member = append(allM.Member, &awardNode)
+				}
 			}
 			err = delAwardNodes(stub, awards)
 			if err != nil {
 				return err
 			}
 		}
-		allM.Amount += allAmount
+		allM.Amount = allAmount
 		err = saveAllMember(stub, allM)
 		if err != nil {
 			return err
@@ -1139,4 +1145,15 @@ func handleAward(stub shim.ChaincodeStubInterface) error {
 	//	return fmt.Errorf(err.Error())
 	//}
 	return nil
+}
+
+func isExist(node *AwardNode, nodes []*AwardNode) bool {
+	for _, a := range nodes {
+		//  直接更新余额
+		if a.Address == node.Address {
+			a.Amount += node.Amount
+			return true
+		}
+	}
+	return false
 }
