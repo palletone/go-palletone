@@ -286,10 +286,9 @@ func (chain *MemDag) rebuildTempdb(last_unit *modules.Unit) {
 	log.Debugf("MemDag[%s] clear tempdb and rebuild data", chain.token.String())
 	// 删除stable unit ,保留从stable unit 到 last unit 之间的数据。
 	chain.tempdb.Clear()
-	unstableUnits := chain.getMainChainUnits()
-	unstablecount := chain.lastMainChainUnit.NumberU64() - last_unit.NumberU64()
-	to_save_hash := chain.lastMainChainUnit.Hash()
 	if last_unit != nil {
+		to_save_hash := chain.lastMainChainUnit.Hash()
+		unstablecount := chain.lastMainChainUnit.NumberU64() - last_unit.NumberU64()
 		// 保存last unit 到last main unit 之间的区块。
 		for i := 0; i < int(unstablecount); i++ {
 			u, has := chain.getChainUnits()[to_save_hash]
@@ -300,6 +299,7 @@ func (chain *MemDag) rebuildTempdb(last_unit *modules.Unit) {
 		}
 		return
 	}
+	unstableUnits := chain.getMainChainUnits()
 	for _, unit := range unstableUnits {
 		chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
 	}
