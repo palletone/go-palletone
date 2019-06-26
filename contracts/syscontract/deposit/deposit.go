@@ -21,6 +21,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -309,6 +310,46 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success([]byte("not in the jury candidate list"))
 
+		//  normalNode
+	case NormalNodePledgeVote:
+		log.Info("Enter DepositChaincode Contract " + NormalNodePledgeVote + " Invoke")
+		return d.normalNodePledgeVote(stub, args)
+	case NormalNodeChangeVote:
+		log.Info("Enter DepositChaincode Contract " + NormalNodeChangeVote + " Invoke")
+		return d.normalNodeChangeVote(stub, args)
+	//case NormalNodeExtractVote:
+	//	log.Info("Enter DepositChaincode Contract " + NormalNodeExtractVote + " Invoke")
+	//	return d.normalNodeExtractVote(stub, args)
+	//case HandleExtractVote:
+	//	log.Info("Enter DepositChaincode Contract " + HandleExtractVote + " Invoke")
+	//	return d.handleExtractVote(stub, args)
+	//case HandleEachDayAward:
+	//	log.Info("Enter DepositChaincode Contract " + HandleEachDayAward + " Invoke")
+	//	return d.handleEachDayAward(stub, args)
+	//case AllPledgeVotes:
+	//	b, err := stub.GetState(AllPledgeVotes)
+	//	if err != nil {
+	//		return shim.Error(err.Error())
+	//	}
+	//	return shim.Success(b)
+	//case ExtractPtnList:
+	//	b, err := stub.GetState(ExtractPtnList)
+	//	if err != nil {
+	//		return shim.Error(err.Error())
+	//	}
+	//	return shim.Success(b)
+	//case NormalNodeList:
+	//	b, err := stub.GetState(NormalNodeList)
+	//	if err != nil {
+	//		return shim.Error(err.Error())
+	//	}
+	//	return shim.Success(b)
+	case "normalNode":
+		b, err := stub.GetState(string(constants.DEPOSIT_NORMAL_PREFIX) + args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(b)
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -374,4 +415,25 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 
 func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return applyForForfeitureDeposit(stub, args)
+}
+
+//
+func (d DepositChaincode) normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return normalNodePledgeVote(stub, args)
+}
+
+func (d DepositChaincode) normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return normalNodeChangeVote(stub, args)
+}
+
+func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return normalNodeExtractVote(stub, args)
+}
+
+func (d DepositChaincode) handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleExtractVote(stub, args)
+}
+
+func (d DepositChaincode) handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleEachDayAward(stub, args)
 }

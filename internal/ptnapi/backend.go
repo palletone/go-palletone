@@ -84,7 +84,7 @@ type Backend interface {
 	// wallet api
 	//WalletTokens(address string) (map[string]*modules.AccountToken, error)
 	//WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
-
+	QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error)
 	// dag's get common
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte

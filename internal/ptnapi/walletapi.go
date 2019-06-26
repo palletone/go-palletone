@@ -1054,65 +1054,6 @@ func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to stri
 
 func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
-	//ptn := dagconfig.DagConfig.GasToken
-	//if asset == ptn {
-	//	fromAdd, err := common.StringToAddress(from)
-	//	if err != nil {
-	//		return common.Hash{}, fmt.Errorf("invalid account address: %v", from)
-	//	}
-	//	// 解锁账户
-	//	ks := fetchKeystore(s.b.AccountManager())
-	//	if !ks.IsUnlock(fromAdd) {
-	//		duration := 1 * time.Second
-	//		err = ks.TimedUnlock(accounts.Account{Address: fromAdd}, password, duration)
-	//		if err != nil {
-	//			return common.Hash{}, err
-	//		}
-	//	}
-	//	mp, err := s.b.TransferPtn(from, to, amount, &Extra)
-	//	return mp.TxHash, err
-	//}
-	//tokenAsset, err := modules.StringToAsset(asset)
-	//if err != nil {
-	//	return common.Hash{}, err
-	//}
-	//if !fee.IsPositive() {
-	//	return common.Hash{}, fmt.Errorf("fee is ZERO ")
-	//}
-	////
-	//fromAddr, err := common.StringToAddress(from)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//	return common.Hash{}, err
-	//}
-	//toAddr, err := common.StringToAddress(to)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//	return common.Hash{}, err
-	//}
-	////all utxos
-	//dbUtxos, err := s.b.GetAddrRawUtxos(from)
-	//if err != nil {
-	//	return common.Hash{}, err
-	//}
-	//poolTxs, err := s.b.GetPoolTxsByAddr(from)
-	//
-	//utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, asset)
-	//if err != nil {
-	//	return common.Hash{}, fmt.Errorf("Select utxo err")
-	//}
-	//utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
-	//if err != nil {
-	//	return common.Hash{}, fmt.Errorf("Select utxo err")
-	//}
-	//
-	//tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
-	//feeAmount := ptnjson.Ptn2Dao(fee)
-	//tx, usedUtxo, err := createTokenTx(fromAddr, toAddr, tokenAmount, feeAmount, utxosPTN, utxosToken, tokenAsset)
-	//if err != nil {
-	//	return common.Hash{}, err
-	//}
-
 	rawTx, usedUtxo, err := s.buildRawTransferTx(asset, from, to, amount, fee)
 	if err != nil {
 		return common.Hash{}, err
@@ -1140,6 +1081,53 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	fromAddr, err := common.StringToAddress(from)
 	err = s.unlockKS(fromAddr, password, duration)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	//3.
+	_, err = tokenengine.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	txJson, _ := json.Marshal(rawTx)
+	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
+	//4.
+	return submitTransaction(ctx, s.b, rawTx)
+}
+
+
+func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr string,
+	mainData, extraData,reference string, password string) (common.Hash, error) {
+	gasToken := dagconfig.DagConfig.GasToken
+	ptn1:=decimal.New(1,0)
+	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0,0), ptn1)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+		textPayload := new(modules.DataPayload)
+		textPayload.MainData = []byte(mainData)
+		textPayload.ExtraData = []byte(extraData)
+		textPayload.Reference = []byte(reference)
+		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
+
+	//lockscript
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		//TODO use keystore
+		ks := s.b.GetKeyStore()
+		return ks.GetPublicKey(addr)
+	}
+	//sign tx
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		ks := s.b.GetKeyStore()
+		return ks.SignHash(addr, hash)
+	}
+	utxoLockScripts := make(map[modules.OutPoint][]byte)
+	for _, utxo := range usedUtxo {
+		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
+	}
+	fromAddr, err := common.StringToAddress(addr)
+	err = s.unlockKS(fromAddr, password, nil)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1206,7 +1194,7 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	result, err := s.b.GetContractStatesByPrefix(GlobalStateContractId, modules.GlobalPrefix)
 	if nil == result || nil != err {
-		return err.Error(), err
+           return  "There is no PRC20 and PRC721 Token Yet",nil
 	}
 	var all []modules.GlobalTokenInfo
 	for key, val := range result {
@@ -1219,45 +1207,12 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	}
 	allToken, err := json.Marshal(all)
 	if nil != err {
-		return err.Error(), err
+		return "There is no PRC20 and PRC721 Token Yet",nil
 	}
 
 	return string(allToken), err
 }
 
-//contract command
-//install
-//func (s *PublicWalletAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
-//	log.Info("CcInstall:" + ccname + ":" + ccpath + "_" + ccversion)
-//
-//	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion)
-//	return hexutil.Bytes(templateId), err
-//}
-//func (s *PublicWalletAPI) Ccquery(ctx context.Context, deployId string, param []string) (string, error) {
-//	contractId, _ := common.StringToAddress(deployId)
-//	log.Info("-----Ccquery:", "contractId", contractId.String())
-//	args := make([][]byte, len(param))
-//	for i, arg := range param {
-//		args[i] = []byte(arg)
-//		fmt.Printf("index[%d],value[%s]\n", i, arg)
-//	}
-//	//参数前面加入msg0和msg1,这里为空
-//	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
-//	fullArgs = append(fullArgs, args...)
-//
-//	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
-//
-//	rsp, err := s.b.ContractQuery(contractId[:], txid[:], fullArgs, 0)
-//	if err != nil {
-//		return "", err
-//	}
-//	return string(rsp), nil
-//}
-//
-//func (s *PublicWalletAPI) Ccstop(ctx context.Context, deployId string, txid string) error {
-//	depId, _ := hex.DecodeString(deployId)
-//	log.Info("Ccstop:" + deployId + ":" + txid + "_")
-//	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
-//	err := s.b.ContractStop(depId, txid, false)
-//	return err
-//}
+func (s *PublicWalletAPI) GetProofOfExistencesByRef(ctx context.Context, reference string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	return s.b.QueryProofOfExistenceByReference(reference)
+}

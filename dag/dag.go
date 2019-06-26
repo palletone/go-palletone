@@ -1489,3 +1489,6 @@ func (dag *Dag) StoreDataVersion(dv *modules.DataVersion) error {
 func (dag *Dag) GetDataVersion() (*modules.DataVersion, error) {
 	return dag.stableStateRep.GetDataVersion()
 }
+func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error){
+	return dag.stableUnitRep.QueryProofOfExistenceByReference(ref)
+}

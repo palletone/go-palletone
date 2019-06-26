@@ -672,11 +672,14 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 
-func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent) {
+func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent, local bool) {
 	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent), "data", event.Event.(jury.ElectionRequestEvent).Data)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendElectionEvent(event)
+	}
+	if local {
+		go pm.contractProc.ProcessElectionEvent(&event)
 	}
 }
 
