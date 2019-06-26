@@ -80,6 +80,45 @@ func TestStrToTime(t *testing.T) {
 	//fmt.Println(st)
 }
 
+func TestStrToTime1(t *testing.T) {
+	t1 := time.Now().UTC()
+	fmt.Println(t1.Day())
+	t1 = time.Now()
+	fmt.Println(t1.Day())
+	//t1 := time.Now().UTC()
+	//time1 := time.Date(t1.Year(), t1.Month(), t1.Day(), 0, 0, 0, 0, t1.Location())
+	//time2 := time1.AddDate(0, 0, 1)
+	//fmt.Println(time2)
+	//fmt.Println(time.Now().UTC())
+	//fmt.Println()
+	//t1 = time.Now().UTC()
+	//time1 = time.Date(t1.Year(), t1.Month(), t1.Day(), 0, 0, 0, 0, t1.Location())
+	//time2 = time1.AddDate(0, 0, -1)
+	//fmt.Println(time2)
+	//fmt.Println(time.Now().UTC())
+	//fmt.Println()
+	//t1 = time.Now()
+	//time1 = time.Date(t1.Year(), t1.Month(), t1.Day(), 0, 0, 0, 0, t1.Location())
+	//time2 = time1.AddDate(0, 0, 1)
+	//fmt.Println(time2)
+	//fmt.Println(time.Now())
+	//fmt.Println()
+	//t1 = time.Now()
+	//time1 = time.Date(t1.Year(), t1.Month(), t1.Day(), 0, 0, 0, 0, t1.Location())
+	//time2 = time1.AddDate(0, 0, -1)
+	//fmt.Println(time2)
+	//fmt.Println(time.Now())
+	//fmt.Println()
+	//nTime := time.Now().UTC()
+	//yTime := nTime.AddDate(0, 0, -1)
+	//fmt.Println(yTime)
+	//fmt.Println()
+	//
+	//nTime = time.Now()
+	//yTime = nTime.AddDate(0, 0, -1)
+	//fmt.Println(yTime)
+}
+
 //
 //import (
 //	"fmt"

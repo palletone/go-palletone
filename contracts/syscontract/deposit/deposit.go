@@ -23,6 +23,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
 )
 
 type DepositChaincode struct {
@@ -326,12 +327,13 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//case HandleEachDayAward:
 	//	log.Info("Enter DepositChaincode Contract " + HandleEachDayAward + " Invoke")
 	//	return d.handleEachDayAward(stub, args)
-	//case AllPledgeVotes:
-	//	b, err := stub.GetState(AllPledgeVotes)
-	//	if err != nil {
-	//		return shim.Error(err.Error())
-	//	}
-	//	return shim.Success(b)
+	case AllPledgeVotes:
+		b, err := getVotes(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		st := strconv.FormatInt(b, 10)
+		return shim.Success([]byte(st))
 	//case ExtractPtnList:
 	//	b, err := stub.GetState(ExtractPtnList)
 	//	if err != nil {

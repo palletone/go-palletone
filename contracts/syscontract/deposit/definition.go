@@ -69,6 +69,7 @@ const (
 	HandleExtractVote               = "handleExtractVote"
 	HandleEachDayAward              = "handleEachDayAward"
 	AllPledgeVotes                  = "allPledgeVotes"
+	HandleEachDay                   = "handleEachDay"
 
 	Apply    = "applying"
 	Agree    = "approved"
