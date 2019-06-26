@@ -1206,7 +1206,7 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	result, err := s.b.GetContractStatesByPrefix(GlobalStateContractId, modules.GlobalPrefix)
 	if nil == result || nil != err {
-           return  "There is no PRC20 Token Yet",nil
+           return  "There is no PRC20 and PRC721 Token Yet",nil
 	}
 	var all []modules.GlobalTokenInfo
 	for key, val := range result {
@@ -1219,7 +1219,7 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	}
 	allToken, err := json.Marshal(all)
 	if nil != err {
-		return "There is no PRC20 Token Yet",nil
+		return "There is no PRC20 and PRC721 Token Yet",nil
 	}
 
 	return string(allToken), err
