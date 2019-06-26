@@ -31,7 +31,6 @@ env:
     - IS_RUN_MEDIATOR_VOTE=true
     - GO111MODULE=on
     - IS_UPLOAD=true
-#    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 
 matrix:
   include:
@@ -192,7 +191,6 @@ matrix:
     #        - chmod +x bdd/upload2Ftp.sh
     #        #- sudo -H apt-get install jq tcl tk
     - os: linux
-      env: user_contract_bdd
       dist: xenial
       go: 1.12.5
       services: docker
