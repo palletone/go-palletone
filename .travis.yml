@@ -199,6 +199,7 @@ matrix:
       script:
         - make gptn
         - make golang-baseimage-dev
+        - docker images
         - cd ./cmd/deployment
         - chmod +x ./deploy.sh
         - chmod +x ./start.sh
@@ -207,6 +208,7 @@ matrix:
         - sleep 10
         - cd $BASE_DIR
         - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
+        - docker stats
       after_script:
         - killall gptn
         - sleep 2
