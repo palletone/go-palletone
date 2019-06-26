@@ -24,12 +24,11 @@ const (
 	DefaultTokenAmount = "100000000000000000"
 	//DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
-	DefaultDepositRate               = 0.02
-	DefaultTxCoinYearRate            = 0.01
+	DefaultDepositDailyReward        = 2887450000000
+	DefaultTxCoinYearRate            = 0
 	DefaultRewardHeight              = 50
-	DefaultGenerateUnitReward        = 100000000
+	DefaultGenerateUnitReward        = 150000000
 	DefaultDepositPeriod             = 0
-	DefaultDepositExtraReward        = 1000000
 	DefaultDepositAmountForMediator  = 200000000000
 	DefaultDepositAmountForJury      = 100000000000
 	DefaultDepositAmountForDeveloper = 80000000000

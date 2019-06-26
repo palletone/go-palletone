@@ -164,9 +164,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		if !asset.IsSameAssetId(asset0) {
 			return TxValidationCode_INVALID_ASSET
 		}
-		//if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
-		//	return TxValidationCode_INVALID_AMOUNT
-		//}
+		if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
+			return TxValidationCode_INVALID_AMOUNT
+		}
 	}
 	return TxValidationCode_VALID
 }

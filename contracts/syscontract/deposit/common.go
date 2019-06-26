@@ -676,7 +676,7 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	depositExtraReward := cp.DepositExtraReward
+	depositExtraReward := cp.DepositDailyReward
 	//  获取当前总的质押数量
 	pledgeVotes, err := getVotes(stub)
 	if err != nil {
