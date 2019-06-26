@@ -55,17 +55,15 @@ func NewChainParametersBase() ChainParametersBase {
 		DepositAmountForMediator:  DefaultDepositAmountForMediator,
 		DepositAmountForJury:      DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: DefaultDepositAmountForDeveloper,
-		DepositExtraReward:        DefaultDepositExtraReward,
-		//UccCpuSetCpus:             DefaultUccCpuSetCpus,
-		ActiveMediatorCount:      DefaultActiveMediatorCount,
-		MaximumMediatorCount:     DefaultMaxMediatorCount,
-		MediatorInterval:         DefaultMediatorInterval,
-		MaintenanceInterval:      DefaultMaintenanceInterval,
-		MaintenanceSkipSlots:     DefaultMaintenanceSkipSlots,
-		MediatorCreateFee:        DefaultMediatorCreateFee,
-		AccountUpdateFee:         DefaultAccountUpdateFee,
-		TransferPtnBaseFee:       DefaultTransferPtnBaseFee,
-		TransferPtnPricePerKByte: DefaultTransferPtnPricePerKByte,
+		ActiveMediatorCount:       DefaultActiveMediatorCount,
+		MaximumMediatorCount:      DefaultMaxMediatorCount,
+		MediatorInterval:          DefaultMediatorInterval,
+		MaintenanceInterval:       DefaultMaintenanceInterval,
+		MaintenanceSkipSlots:      DefaultMaintenanceSkipSlots,
+		MediatorCreateFee:         DefaultMediatorCreateFee,
+		AccountUpdateFee:          DefaultAccountUpdateFee,
+		TransferPtnBaseFee:        DefaultTransferPtnBaseFee,
+		TransferPtnPricePerKByte:  DefaultTransferPtnPricePerKByte,
 		//CurrentFees:               newFeeSchedule(),
 	}
 }
@@ -80,7 +78,6 @@ type ChainParametersBase struct {
 	DepositAmountForMediator  uint64 `json:"depositAmountForMediator"` //保证金的数量
 	DepositAmountForJury      uint64 `json:"depositAmountForJury"`
 	DepositAmountForDeveloper uint64 `json:"depositAmountForDeveloper"`
-	DepositExtraReward        uint64 `json:"deposit_extra_reward"`
 
 	//UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
 

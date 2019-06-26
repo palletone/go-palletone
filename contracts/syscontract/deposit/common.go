@@ -1090,10 +1090,10 @@ func handleAward(stub shim.ChaincodeStubInterface) error {
 		if err != nil {
 			return err
 		}
-		depositExtraReward := cp.DepositExtraReward
-		log.Infof("depositExtraReward=%d", depositExtraReward)
+		depositDailyReward := cp.DepositDailyReward
+		log.Infof("depositDailyReward=%d", depositDailyReward)
 		log.Infof("AllAmount=%d", allM.Amount)
-		rate := float64(depositExtraReward) / float64(allM.Amount)
+		rate := float64(depositDailyReward) / float64(allM.Amount)
 		log.Infof("rate=%f", rate)
 		//  TODO 计算每个节点的收益
 		var allAmount uint64
