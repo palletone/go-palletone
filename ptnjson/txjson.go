@@ -139,6 +139,7 @@ type DataJson struct {
 	Number    int    `json:"row_number"`
 	MainData  string `json:"main_data"`
 	ExtraData string `json:"extra_data"`
+	Reference string `json:"reference"`
 }
 type AccountStateJson struct {
 	Number   int    `json:"row_number"`
@@ -176,7 +177,7 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 			}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
-			dataJson := &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData)}
+			dataJson := &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData), Reference: string(data.Reference)}
 			dataJson.Number = i
 			txjson.Data = append(txjson.Data, dataJson)
 		} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {

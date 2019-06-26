@@ -598,21 +598,19 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 		log.Info("===ElectionMsg===", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
+	if pm.IsExistInCache(evs.Hash().Bytes()) {
+		return nil
+	}
 	event, err := evs.ToElectionEvent()
 	if err != nil {
 		log.Debug("ElectionMsg, ToElectionEvent fail")
 		return nil
 	}
-	result, err := pm.contractProc.ProcessElectionEvent(event)
+	_, err = pm.contractProc.ProcessElectionEvent(event)
 	if err != nil {
 		log.Debug("ElectionMsg", "ProcessElectionEvent error:", err)
-	} else {
-		if event.EType == jury.ELECTION_EVENT_REQUEST {
-			if result != nil {
-				p.SendElectionEvent(*result)
-			}
-		}
 	}
+
 	return nil
 }
 

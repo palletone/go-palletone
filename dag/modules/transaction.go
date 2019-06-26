@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"bytes"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/award"
@@ -414,60 +415,62 @@ type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]commo
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
 	//	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
-	for _, msg := range tx.TxMessages {
-		payload, ok := msg.Payload.(*PaymentPayload)
-		if !ok {
-			continue
-		}
-		if payload.IsCoinbase() {
-			continue
-		}
-		inAmount := uint64(0)
-		outAmount := uint64(0)
-		for _, txin := range payload.Inputs {
-			utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
-			if utxo == nil {
-				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
-					txin.PreviousOutPoint.TxHash.String(),
-					txin.PreviousOutPoint.MessageIndex,
-					txin.PreviousOutPoint.OutIndex)
-			}
-			// check overflow
-			if inAmount+utxo.Amount > (1<<64 - 1) {
-				return nil, fmt.Errorf("Compute fees: txin total overflow")
-			}
-			inAmount += utxo.Amount
-			if unitTime > 0 {
-				//计算币龄利息
-				rate := parameter.CurrentSysParameters.TxCoinDayInterest
-				if bytes.Equal(utxo.PkScript, DepositContractLockScript) {
-					rate = parameter.CurrentSysParameters.DepositContractInterest
-				}
-
-				interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
-				if interest > 0 {
-					//	log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
-					inAmount += interest
-				}
-			}
-		}
-
-		for _, txout := range payload.Outputs {
-			// check overflow
-			if outAmount+txout.Value > (1<<64 - 1) {
-				return nil, fmt.Errorf("Compute fees: txout total overflow")
-			}
-			outAmount += txout.Value
-		}
-		if inAmount < outAmount {
-
-			return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
-		}
-		fees := inAmount - outAmount
-		return &AmountAsset{Amount: fees, Asset: payload.Outputs[0].Asset}, nil
-
+	msg0 := tx.TxMessages[0]
+	if msg0.App != APP_PAYMENT {
+		return nil, errors.New("Tx message 0 must a payment payload")
 	}
-	return nil, fmt.Errorf("Compute fees: no payment payload")
+	payload := msg0.Payload.(*PaymentPayload)
+
+	if payload.IsCoinbase() {
+		return NewAmountAsset(0, NewPTNAsset()), nil
+	}
+	inAmount := uint64(0)
+	outAmount := uint64(0)
+	var feeAsset *Asset
+	for _, txin := range payload.Inputs {
+		utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
+		if utxo == nil {
+			return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+				txin.PreviousOutPoint.TxHash.String(),
+				txin.PreviousOutPoint.MessageIndex,
+				txin.PreviousOutPoint.OutIndex)
+		}
+		feeAsset = utxo.Asset
+		// check overflow
+		if inAmount+utxo.Amount > (1<<64 - 1) {
+			return nil, fmt.Errorf("Compute fees: txin total overflow")
+		}
+		inAmount += utxo.Amount
+		if unitTime > 0 {
+			//计算币龄利息
+			rate := parameter.CurrentSysParameters.TxCoinDayInterest
+			if bytes.Equal(utxo.PkScript, DepositContractLockScript) {
+				rate = parameter.CurrentSysParameters.DepositContractInterest
+			}
+
+			interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
+			if interest > 0 {
+				//	log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
+				inAmount += interest
+			}
+		}
+	}
+
+	for _, txout := range payload.Outputs {
+		// check overflow
+		if outAmount+txout.Value > (1<<64 - 1) {
+			return nil, fmt.Errorf("Compute fees: txout total overflow")
+		}
+		outAmount += txout.Value
+	}
+	if inAmount < outAmount {
+
+		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+	}
+	fees := inAmount - outAmount
+
+	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
+
 }
 
 //该Tx如果保存后，会产生的新的Utxo

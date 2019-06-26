@@ -86,6 +86,16 @@ const Wallet_JS = `
 			params: 1,
 			inputFormatter: [null]
 		}),
+		new web3._extend.Method({
+			name: 'createProofOfExistenceTx',
+			call: 'wallet_createProofOfExistenceTx',
+			params: 5
+		}),
+		new web3._extend.Method({
+			name: 'getProofOfExistencesByRef',
+			call: 'wallet_getProofOfExistencesByRef',
+			params: 1
+		}),
         new web3._extend.Method({
 			name: 'getFileInfoByTxid',
 			call: 'wallet_getFileInfoByTxid',
