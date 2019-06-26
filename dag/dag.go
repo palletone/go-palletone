@@ -20,13 +20,12 @@
 package dag
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"bytes"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -258,15 +257,13 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		// all units must be continuous
 		if i > 0 && units[i].UnitHeader.Number.Index == units[i-1].UnitHeader.Number.Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
-				"parent unit number=%d, hash=%s; "+
-				"child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
 		if i > 0 && u.ContainsParent(units[i-1].UnitHash) == false {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
-				"parent unit number=%d, hash=%s; "+
-				"child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
@@ -281,7 +278,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			log.Errorf("Memdag addUnit[%s] error:%s", u.UnitHash.String(), err.Error())
 			return count, nil
 		}
-		log.Infof("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
+		log.Debug("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
 		count += 1
 	}
 
@@ -972,6 +969,7 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 	}
 	return nil
 }
+
 func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
 	var memdag memunit.IMemDag
 	gasToken := dagconfig.DagConfig.GetGasToken()
@@ -986,6 +984,7 @@ func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
 	return memdag, nil
 }
 
+// TODO 待优化, 目前只用来存创世unit
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists

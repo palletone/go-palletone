@@ -379,9 +379,16 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	err := chain.addUnit(unit, txpool)
-	log.Infof("MemDag[%s] AddUnit cost time: %v ,index: %d", chain.token.String(), time.Since(start), unit.NumberU64())
+	log.Debugf("MemDag[%s] AddUnit cost time: %v ,index: %d", chain.token.String(),
+		time.Since(start), unit.NumberU64())
+
+	if err == nil {
+		// todo albert 通知群签名
+	}
+
 	return err
 }
+
 func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
