@@ -62,7 +62,7 @@ numcommand=`ps -ef|grep gptn |wc -l`
 num=`echo $numcommand | sed -n '$p'| awk '{print $NF}'`
 
 if [ $num -eq 8 ];then
-    echo "============preset ok num"$num"============"
+    echo "============preset start ok num"$num"============"
 else
-    echo "============preset err num:"$num"============"
+    echo "============preset start err num:"$num"============"
 fi

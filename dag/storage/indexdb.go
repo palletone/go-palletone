@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type IndexDb struct {
@@ -52,6 +53,8 @@ type IIndexDb interface {
 
 	SaveMainDataTxId(maindata []byte, txid common.Hash) error
 	GetMainDataTxIds(maindata []byte) ([]common.Hash, error)
+	SaveProofOfExistence(poe *modules.ProofOfExistence) error
+	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 }
 
 // ###################### SAVE IMPL START ######################
@@ -174,4 +177,36 @@ func (db *IndexDb) GetMainDataTxIds(filehash []byte) ([]common.Hash, error) {
 		result = append(result, hash)
 	}
 	return result, nil
+}
+
+
+func (db *IndexDb) SaveProofOfExistence(poe *modules.ProofOfExistence) error{
+	if len(poe.Reference)==0{
+		log.Infof("tx[%s] Reference data is null, don't need index it.",poe.TxId.String())
+		return nil
+	}
+	key:=append( constants.IDX_REF_DATA_PREFIX,poe.Reference...)
+	key=append(key,poe.TxId.Bytes()...)
+
+	return StoreToRlpBytes(db.db,key,poe)
+
+}
+
+
+func (db *IndexDb) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error){
+	prefix:=append( constants.IDX_REF_DATA_PREFIX,ref...)
+	//prefixLen:=len(prefix)
+	iter := db.db.NewIteratorWithPrefix(prefix)
+	result := []*modules.ProofOfExistence{}
+	for iter.Next() {
+		//key := iter.Key()
+		value := iter.Value()
+		poe:=&modules.ProofOfExistence{}
+		err:=rlp.DecodeBytes(value,poe)
+		if err!=nil{
+			return nil,err
+		}
+		result=append(result,poe)
+	}
+	return result,nil
 }

@@ -105,7 +105,7 @@ func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
 			msgs = append(msgs, msg)
 		}
 	}
-	log.Debug("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
+	log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
 	tx.TxMessages = msgs
 }
 
@@ -336,7 +336,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req.args = newFullArgs
 				invokeResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					log.Info("runContractCmd ContractProcess", "ContractProcess error", err.Error())
+					log.Error("runContractCmd ContractProcess", "ContractProcess error", err.Error())
 					if errMsgEnable {
 						errMsg := createContractErrorPayloadMsg(modules.APP_CONTRACT_INVOKE_REQUEST, req, err.Error())
 						msgs = append(msgs, errMsg)
@@ -718,3 +718,20 @@ func shortId(id string) string {
 //	}
 //	return resultInt
 //}
+
+func getValidAddress(addrs []common.Address) ([]common.Address) {
+	result := make([]common.Address, 0)
+	for _, a := range addrs {
+		find := false
+		for _, b := range result {
+			if a.Equal(b) {
+				find = true
+			}
+		}
+		if !find {
+			result = append(result, a)
+		}
+	}
+	return result
+}
+
