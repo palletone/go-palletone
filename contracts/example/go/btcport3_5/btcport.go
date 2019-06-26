@@ -74,8 +74,8 @@ type JuryMsgAddr struct {
 	Answer  []byte
 }
 
-//Method:GetPubkey, return pubkey string
-type BTCAddress_GetPubkey struct {
+//Method:GetJuryBTCPubkey, return pubkey string
+type BTCAddress_GetJuryBTCPubkey struct {
 	Method string `json:"method"`
 }
 
@@ -140,15 +140,15 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	}
 
 	//
-	getPubkeyParams := BTCAddress_GetPubkey{Method: "GetPubkey"}
+	getPubkeyParams := BTCAddress_GetJuryBTCPubkey{Method: "GetJuryBTCPubkey"}
 	getPubkeyReqBytes, err := json.Marshal(getPubkeyParams)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	result, err := stub.OutChainAddress("btc", getPubkeyReqBytes)
 	if err != nil {
-		log.Debugf("OutChainAddress GetPubkey err: %s", err.Error())
-		return shim.Success([]byte("OutChainAddress GetPubkey failed"))
+		log.Debugf("OutChainAddress GetJuryBTCPubkey err: %s", err.Error())
+		return shim.Success([]byte("OutChainAddress GetJuryBTCPubkey failed"))
 	}
 
 	//
