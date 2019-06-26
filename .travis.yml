@@ -18,6 +18,7 @@ env:
     - USER_CONTRACT_DIR=user_contract_logs
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
+    - user_contract_bdd=on
 ##########  control testcase  ##############
     - IS_RUN_DEPOSIT=true
     - IS_RUN_TESTCONTRACTCASES=true
@@ -191,6 +192,7 @@ matrix:
     #        - chmod +x bdd/upload2Ftp.sh
     #        #- sudo -H apt-get install jq tcl tk
     - os: linux
+      env: user_contract_bdd
       dist: xenial
       go: 1.12.5
       services: docker
