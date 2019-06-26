@@ -514,6 +514,7 @@ func (ss SignatureSet) String() string {
 type DataPayload struct {
 	MainData  []byte `json:"main_data"`
 	ExtraData []byte `json:"extra_data"`
+	Reference []byte `json:"reference"`
 }
 
 //一个地址对应的个人StateDB空间

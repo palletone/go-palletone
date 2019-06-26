@@ -99,7 +99,7 @@ type IUnitRepository interface {
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
-
+	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc)
 	SaveCommon(key, val []byte) error
 }
@@ -964,6 +964,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	}
 	txHash := tx.Hash()
 	reqId := tx.RequestHash().Bytes()
+	unitHash:=unit.Hash()
 	unitTime := unit.Timestamp()
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
@@ -1023,7 +1024,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(txHash, msg); ok != true {
+			if ok := rep.saveDataPayload(unitHash,unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1164,21 +1165,29 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 save DataPayload data
 */
 
-func (rep *UnitRepository) saveDataPayload(txHash common.Hash, msg *modules.Message) bool {
-	var pl interface{}
-	pl = msg.Payload
-
-	payload, ok := pl.(*modules.DataPayload)
-	if ok == false {
-		return false
-	}
+func (rep *UnitRepository) saveDataPayload(unitHash common.Hash,timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
 
 	if dagconfig.DagConfig.TextFileHashIndex {
 
-		err := rep.idxdb.SaveMainDataTxId(payload.MainData, txHash)
+		err := rep.idxdb.SaveMainDataTxId(dataPayload.MainData, txHash)
 		if err != nil {
 			log.Error("error savefilehash", "err", err)
 			return false
+		}
+		if len(dataPayload.Reference)>0{
+			poe:=&modules.ProofOfExistence{
+				MainData:dataPayload.MainData,
+				ExtraData:dataPayload.ExtraData,
+				Reference:dataPayload.Reference,
+				UnitHash:unitHash,
+				TxId:txHash,
+				Timestamp:uint64(timestamp),
+			}
+			err= rep.idxdb.SaveProofOfExistence(poe)
+			if err != nil {
+				log.Error("error SaveProofOfExistence", "err", err)
+				return false
+			}
 		}
 		return true
 	}
@@ -1696,4 +1705,7 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error {
 		rep.saveAddrTxIndex(tx.Hash(), tx)
 	}
 	return nil
+}
+func (rep *UnitRepository)  QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error){
+	return rep.idxdb.QueryProofOfExistenceByReference(ref)
 }

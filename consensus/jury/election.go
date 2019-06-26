@@ -210,6 +210,7 @@ func (p *Processor) electionEventBroadcast(event *ElectionEvent) (recved bool, i
 			if e.sigReqEd {
 				return true, p.mel[reqId].invalid, nil
 			}
+			e.sigReqEd = true
 		}
 	case ELECTION_EVENT_SIG_RESULT:
 		evt := event.Event.(*ElectionSigResultEvent)
@@ -463,6 +464,7 @@ func (p *Processor) processElectionSigResultEvent(evt *ElectionSigResultEvent) e
 		return nil
 	}
 	mel.sigs = append(mel.sigs, evt.Sig)
+	log.Debugf("[%s]processElectionSigResultEvent,sig num=%d, add sig[%s], Threshold=%d", shortId(reqId.String()), len(mel.sigs), evt.Sig.String(), p.dag.ChainThreshold())
 	if len(mel.sigs) >= p.dag.ChainThreshold() {
 		event := ContractEvent{
 			CType: CONTRACT_EVENT_EXEC,
@@ -491,7 +493,7 @@ func (p *Processor) BroadcastElectionSigRequestEvent() {
 		}
 		if (len(mtx.eleInf) + len(ele.rcvEle)) >= p.electionNum {
 			se := p.selectElectionInf(mtx.eleInf, ele.rcvEle, p.electionNum)
-			mtx.eleInf = append(mtx.eleInf, se...)
+			mtx.eleInf = se
 			event := &ElectionSigRequestEvent{
 				ReqId: reqId,
 				Ele:   se,
