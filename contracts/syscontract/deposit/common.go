@@ -648,73 +648,340 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	if len(args) != 0 {
 		return shim.Error("need 0 args")
 	}
-	//  判断是否是基金会
-	if !isFoundationInvoke(stub) {
-		return shim.Error("please use foundation address")
-	}
-	//  判断当天是否处理过
-	if isHandled(stub) {
-		return shim.Error("had handled")
-	}
-	//  通过前缀获取所有mediator
-	mediators, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	//  通过前缀获取所有jury/dev
-	juryAndDevs, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	//  通过前缀获取所有普通节点
-	normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_NORMAL_PREFIX))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	//  获取每天总奖励
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	depositExtraReward := cp.DepositExtraReward
-	//  获取当前总的质押数量
-	pledgeVotes, err := getVotes(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	rate := float64(depositExtraReward) / float64(pledgeVotes)
-	//  计算mediators
-	for _, m := range mediators {
-		mediatorDeposit := MediatorDeposit{}
-		_ = json.Unmarshal(m.Value, &mediators)
-		dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
-		mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
-		_ = SaveMediatorDeposit(stub, m.Key, &mediatorDeposit)
-	}
-	//  计算jury/dev
-	for _, jd := range juryAndDevs {
-		depositBalance := DepositBalance{}
-		_ = json.Unmarshal(jd.Value, &depositBalance)
-		dayAward := rate * float64(depositBalance.Balance)
-		depositBalance.Balance += uint64(dayAward)
-		_ = SaveNodeBalance(stub, jd.Key, &depositBalance)
-	}
-	//  计算normalNode
-	for _, nor := range normalNodes {
-		norNodBal := NorNodBal{}
-		_ = json.Unmarshal(nor.Value, &norNodBal)
-		dayAward := rate * float64(norNodBal.AmountAsset.Amount)
-		norNodBal.AmountAsset.Amount += uint64(dayAward)
-		_ = saveNor(stub, nor.Key, &norNodBal)
-	}
-	nDay := time.Now().UTC().Day()
-	err = stub.PutState(HandleEachDay, []byte(strconv.Itoa(nDay)))
+	err := handleAward(stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	return shim.Success(nil)
+
+	////  判断是否是基金会
+	//if !isFoundationInvoke(stub) {
+	//	return shim.Error("please use foundation address")
+	//}
+	////
+	////  判断当天是否处理过
+	//if isHandled(stub) {
+	//	return shim.Error("had handled")
+	//}
+	////  通过前缀获取所有mediator
+	//mediators, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	////  通过前缀获取所有jury/dev
+	//juryAndDevs, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	////  通过前缀获取所有普通节点
+	//normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_NORMAL_PREFIX))
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	////  获取每天总奖励
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	//depositExtraReward := cp.DepositExtraReward
+	////  获取当前总的质押数量
+	//pledgeVotes, err := getVotes(stub)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	//rate := float64(depositExtraReward) / float64(pledgeVotes)
+	////  计算mediators
+	//for _, m := range mediators {
+	//	mediatorDeposit := MediatorDeposit{}
+	//	_ = json.Unmarshal(m.Value, &mediators)
+	//	dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
+	//	mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
+	//	_ = SaveMediatorDeposit(stub, m.Key, &mediatorDeposit)
+	//}
+	////  计算jury/dev
+	//for _, jd := range juryAndDevs {
+	//	depositBalance := DepositBalance{}
+	//	_ = json.Unmarshal(jd.Value, &depositBalance)
+	//	dayAward := rate * float64(depositBalance.Balance)
+	//	depositBalance.Balance += uint64(dayAward)
+	//	_ = SaveNodeBalance(stub, jd.Key, &depositBalance)
+	//}
+	////  计算normalNode
+	//for _, nor := range normalNodes {
+	//	norNodBal := NorNodBal{}
+	//	_ = json.Unmarshal(nor.Value, &norNodBal)
+	//	dayAward := rate * float64(norNodBal.AmountAsset.Amount)
+	//	norNodBal.AmountAsset.Amount += uint64(dayAward)
+	//	_ = saveNor(stub, nor.Key, &norNodBal)
+	//}
+	//nDay := time.Now().UTC().Day()
+	//err = stub.PutState(HandleEachDay, []byte(strconv.Itoa(nDay)))
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	//return shim.Success(nil)
 }
 
+//  每天计算各节点收益
+//func handleEachDayAward1(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	if len(args) != 0 {
+//		return shim.Error("need 0 args")
+//	}
+//	//  判断是否是基金会
+//	if !isFoundationInvoke(stub) {
+//		return shim.Error("please use foundation address")
+//	}
+//	//  判断当天是否处理过
+//	if isHandled(stub) {
+//		return shim.Error("had handled")
+//	}
+//	//  通过前缀获取所有mediator
+//	mediators, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	//  通过前缀获取所有jury/dev
+//	juryAndDevs, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	//  通过前缀获取所有普通节点
+//	normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_NORMAL_PREFIX))
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	//  获取集合全部
+//	allM, err := getAllMember(stub)
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	//  第一次,收集当前的质押情况
+//	if a == nil {
+//		a = &Award{}
+//		a.Amount = pledgeVotes
+//		//  计算mediators
+//		for _, me := range mediators {
+//			m := Member{}
+//			m.Key = mediatorDepositKey(me.Key)
+//			m.Value = me.Value
+//			m.Role = Mediator
+//			a.Member = append(a.Member, &m)
+//		}
+//		//  计算jury/dev
+//		for _, jd := range juryAndDevs {
+//			m := Member{}
+//			m.Key = string(constants.DEPOSIT_BALANCE_PREFIX) + jd.Key
+//			m.Value = jd.Value
+//			m.Role = JuryAndDev
+//			a.Member = append(a.Member, &m)
+//		}
+//		//  计算normalNode
+//		for _, nor := range normalNodes {
+//			m := Member{}
+//			m.Key = string(constants.DEPOSIT_NORMAL_PREFIX) + nor.Key
+//			m.Value = nor.Value
+//			m.Role = NormalNode
+//			a.Member = append(a.Member, &m)
+//		}
+//		err = saveMember(stub, a)
+//		if err != nil {
+//			return shim.Error(err.Error())
+//		}
+//		return shim.Success(nil)
+//	} else {
+//		//  获取每天总奖励
+//		cp, err := stub.GetSystemConfig()
+//		if err != nil {
+//			return shim.Error(err.Error())
+//		}
+//		depositExtraReward := cp.DepositExtraReward
+//		rate := float64(depositExtraReward) / float64(a.Amount)
+//		//  计算集合利息
+//		for i, m := range a.Member {
+//			fmt.Println(i)
+//			switch m.Role {
+//			case Mediator:
+//				mediatorDeposit := MediatorDeposit{}
+//				_ = json.Unmarshal(m.Value, &mediators)
+//				dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
+//				mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
+//				//  获取该节点
+//				//  添加利息
+//				//  放到集合统一更新
+//			case JuryAndDev:
+//			case NormalNode:
+//
+//			}
+//		}
+//		//  先计算前一天的收益，再累加当前的质押情况
+//
+//	}
+//
+//	//  计算mediators
+//	for _, m := range mediators {
+//		mediatorDeposit := MediatorDeposit{}
+//		_ = json.Unmarshal(m.Value, &mediators)
+//		dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
+//		mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
+//		_ = SaveMediatorDeposit(stub, m.Key, &mediatorDeposit)
+//	}
+//	//  计算jury/dev
+//	for _, jd := range juryAndDevs {
+//		depositBalance := DepositBalance{}
+//		_ = json.Unmarshal(jd.Value, &depositBalance)
+//		dayAward := rate * float64(depositBalance.Balance)
+//		depositBalance.Balance += uint64(dayAward)
+//		_ = SaveNodeBalance(stub, jd.Key, &depositBalance)
+//	}
+//	//  计算normalNode
+//	for _, nor := range normalNodes {
+//		norNodBal := NorNodBal{}
+//		_ = json.Unmarshal(nor.Value, &norNodBal)
+//		dayAward := rate * float64(norNodBal.AmountAsset.Amount)
+//		norNodBal.AmountAsset.Amount += uint64(dayAward)
+//		_ = saveNor(stub, nor.Key, &norNodBal)
+//	}
+//	nDay := time.Now().UTC().Day()
+//	err = stub.PutState(HandleEachDay, []byte(strconv.Itoa(nDay)))
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	return shim.Success(nil)
+//}
+
+func getAllMember1(stub shim.ChaincodeStubInterface) (map[string][]*Member, error) {
+	b, err := stub.GetState(MemberList)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	allM := make(map[string][]*Member)
+	err = json.Unmarshal(b, allM)
+	if err != nil {
+		return nil, err
+	}
+	return allM, nil
+}
+
+//func saveAllMember(stub shim.ChaincodeStubInterface, allM map[string][]*Member) error {
+//	b, err := json.Marshal(allM)
+//	if err != nil {
+//		return err
+//	}
+//	err = stub.PutState(MemberList, b)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
+
+func getNormalNodeFromAllMember(stub shim.ChaincodeStubInterface) ([]*NorNodBal, error) {
+	//mapAll, err := getAllMember(stub)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if normalNodes, ok := mapAll[NormalNode]; ok {
+	//	var norl []*NorNodBal
+	//	for i, nor := range normalNodes {
+	//		fmt.Println("===normalNode===>   ", i)
+	//		norNodBal := NorNodBal{}
+	//		_ = json.Unmarshal(nor.Value, &norNodBal)
+	//		norl = append(norl, &norNodBal)
+	//	}
+	//	return norl, nil
+	//}
+	return nil, nil
+}
+
+func getJuryAndDevFromAllMember(stub shim.ChaincodeStubInterface) ([]*DepositBalance, error) {
+	//mapAll, err := getAllMember(stub)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if juryAndDevs, ok := mapAll[JuryAndDev]; ok {
+	//	var jdl []*DepositBalance
+	//	for i, jd := range juryAndDevs {
+	//		fmt.Println("===jury and dev===>   ", i)
+	//		depositBalance := DepositBalance{}
+	//		_ = json.Unmarshal(jd.Value, &depositBalance)
+	//		jdl = append(jdl, &depositBalance)
+	//	}
+	//	return jdl, nil
+	//}
+	return nil, nil
+
+}
+
+func getMediatorsFromeAllMember(stub shim.ChaincodeStubInterface) ([]*MediatorDeposit, error) {
+	//mapAll, err := getAllMember(stub)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if mediators, ok := mapAll[deposit.Mediator]; ok {
+	//	var ml []*MediatorDeposit
+	//	for i, m := range mediators {
+	//		fmt.Println("===mediator===>   ", i)
+	//		mediatorDeposit := MediatorDeposit{}
+	//		_ = json.Unmarshal(m.Value, &mediatorDeposit)
+	//		ml = append(ml, &mediatorDeposit)
+	//	}
+	//	return ml, nil
+	//}
+	return nil, nil
+}
+
+//  从前缀地址列表中获取mediator
+//func getMediatorsFromList(stub shim.ChaincodeStubInterface) ([]*MediatorDeposit, error) {
+//	//  通过前缀获取所有mediator
+//	mediators, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
+//	if err != nil {
+//		return nil, err
+//	}
+//	if mediators == nil {
+//		return nil,nil
+//	}
+//	//  计算mediators
+//	for _, m := range mediators {
+//		mediatorDeposit := MediatorDeposit{}
+//		_ = json.Unmarshal(m.Value, &mediators)
+//		dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
+//		mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
+//		_ = SaveMediatorDeposit(stub, m.Key, &mediatorDeposit)
+//	}
+//}
+
+//
+
+//  TODO 这里计算利息相关代码
+
+func getAllMember(stub shim.ChaincodeStubInterface) (*Award, error) {
+	b, err := stub.GetState(MemberList)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	allM := &Award{}
+	err = json.Unmarshal(b, allM)
+	if err != nil {
+		return nil, err
+	}
+	return allM, nil
+}
+func saveAllMember(stub shim.ChaincodeStubInterface, allM *Award) error {
+	b, err := json.Marshal(allM)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(MemberList, b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func isHandled(stub shim.ChaincodeStubInterface) bool {
 	//  获取数据库
 	day, err := stub.GetState(HandleEachDay)
@@ -734,4 +1001,142 @@ func isHandled(stub shim.ChaincodeStubInterface) bool {
 		return true
 	}
 	return false
+}
+func saveAwardNode(stub shim.ChaincodeStubInterface, node *AwardNode) error {
+	b, err := json.Marshal(node)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(string(constants.DEPOSIT_AWARD_PREFIX)+node.Address, b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func delAwardNodes(stub shim.ChaincodeStubInterface, awardNodes []*modules.KeyValue) error {
+	for _, a := range awardNodes {
+		err := stub.DelState(a.Key)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getAwardNode(stub shim.ChaincodeStubInterface, addr string) (*AwardNode, error) {
+	b, err := stub.GetState(string(constants.DEPOSIT_AWARD_PREFIX) + addr)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	node := &AwardNode{}
+	err = json.Unmarshal(b, node)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+func handleAward(stub shim.ChaincodeStubInterface) error {
+	//  判断是否是基金会
+	if !isFoundationInvoke(stub) {
+		return fmt.Errorf("please use foundation address")
+	}
+	//
+	//  判断当天是否处理过
+	//if isHandled(stub) {
+	//	return fmt.Errorf("had handled")
+	//}
+	allM, err := getAllMember(stub)
+	if err != nil {
+		return err
+	}
+	if allM == nil {
+		allM = &Award{}
+		var allAmount uint64
+		//  将当前的awardnode 加入列表
+		awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
+		if err != nil {
+			return err
+		}
+		if awards != nil {
+			for i, a := range awards {
+				awardNode := AwardNode{}
+				err = json.Unmarshal(a.Value, &awardNode)
+				if err != nil {
+					return err
+				}
+				log.Infof("==1==> %d ", i)
+				allAmount += awardNode.Amount
+				allM.Member = append(allM.Member, &awardNode)
+			}
+			allM.Amount = allAmount
+			err = saveAllMember(stub, allM)
+			if err != nil {
+				return err
+			}
+			err = delAwardNodes(stub, awards)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		//  需要先计算集合里的收益
+		//  获取每天总奖励
+		cp, err := stub.GetSystemConfig()
+		if err != nil {
+			return err
+		}
+		depositExtraReward := cp.DepositExtraReward
+		log.Infof("depositExtraReward=%d", depositExtraReward)
+		log.Infof("AllAmount=%d", allM.Amount)
+		rate := float64(depositExtraReward) / float64(allM.Amount)
+		log.Infof("rate=%f", rate)
+		//  TODO 计算每个节点的收益
+		for i, m := range allM.Member {
+			log.Infof("==2==> %d ", i)
+			dayAward := rate * float64(m.Amount)
+			log.Infof("m.Amount=%d", m.Amount)
+			log.Infof("dayAward=%f", dayAward)
+			m.Amount += uint64(dayAward)
+			log.Infof("m.Amount+dayAward=%d", m.Amount)
+		}
+		//  将当前的awardnode 加入列表
+		var allAmount uint64
+		awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
+		if err != nil {
+			return err
+		}
+		if awards != nil {
+			for i, a := range awards {
+				//  TODO 需要判断集合里面是否已经存在该节点，目前不做判断
+				log.Infof("==3==> %d ", i)
+				awardNode := AwardNode{}
+				err = json.Unmarshal(a.Value, &awardNode)
+				if err != nil {
+					return err
+				}
+				allAmount += awardNode.Amount
+				allM.Member = append(allM.Member, &awardNode)
+			}
+			err = delAwardNodes(stub, awards)
+			if err != nil {
+				return err
+			}
+		}
+		allM.Amount += allAmount
+		err = saveAllMember(stub, allM)
+		if err != nil {
+			return err
+		}
+	}
+	//nDay := time.Now().UTC().Day()
+	//err = stub.PutState(HandleEachDay, []byte(strconv.Itoa(nDay)))
+	//if err != nil {
+	//	return fmt.Errorf(err.Error())
+	//}
+	return nil
 }

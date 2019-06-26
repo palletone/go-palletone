@@ -222,15 +222,24 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		log.Error("get deposit invoke tokens err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	err = saveVotes(stub, int64(invokeTokens.Amount))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
 	//  获取交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("get invoke address err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+	//  添加进入利息
+	node, err := getAwardNode(stub, invokeAddr.String())
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if node == nil {
+		node = &AwardNode{}
+	}
+	node.Address = invokeAddr.String()
+	node.Amount += invokeTokens.Amount
+	err = saveAwardNode(stub, node)
+	if err != nil {
 		return shim.Error(err.Error())
 	}
 	//  判断是否已经申请了
@@ -281,34 +290,6 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//  处理数据
 		md.EnterTime = TimeStr()
 	}
-	//else {
-	//	//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
-	//	//  获取上次加入最后更改的时间
-	//	//endTime := md.LastModifyTime * DTimeDuration
-	//	//endTime, _ := time.Parse(Layout, md.LastModifyTime)
-	//	endTime := StrToTime(md.LastModifyTime)
-	//	//  获取保证金的年利率
-	//	//depositRateStr, err := stub.GetSystemConfig(modules.DepositRate)
-	//	//if err != nil {
-	//	//	log.Error("get depositRate config err: ", "error", err)
-	//	//	return shim.Error(err.Error())
-	//	//}
-	//	//depositRateFloat64, err := strconv.ParseFloat(depositRateStr, 64)
-	//	//if err != nil {
-	//	//	log.Errorf("string to float64 error: %s", err.Error())
-	//	//	return shim.Error(err.Error())
-	//	//}
-	//	cp, err := stub.GetSystemConfig()
-	//	if err != nil {
-	//		//log.Error("strconv.ParseUint err:", "error", err)
-	//		return shim.Error(err.Error())
-	//	}
-	//	depositRateFloat64 := cp.DepositRate
-	//	//  计算币龄收益
-	//	//awards := award.GetAwardsWithCoins(md.Balance, endTime, depositRateFloat64)
-	//	md.Balance += awards
-	//	//  处理数据
-	//}
 	md.Balance += invokeTokens.Amount
 	md.LastModifyTime = TimeStr()
 	//  保存账户信息

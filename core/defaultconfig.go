@@ -29,7 +29,7 @@ const (
 	DefaultRewardHeight              = 50
 	DefaultGenerateUnitReward        = 100000000
 	DefaultDepositPeriod             = 0
-	DefaultDepositExtraReward        = 1000000
+	DefaultDepositExtraReward        = 1000000000000000
 	DefaultDepositAmountForMediator  = 200000000000
 	DefaultDepositAmountForJury      = 100000000000
 	DefaultDepositAmountForDeveloper = 80000000000

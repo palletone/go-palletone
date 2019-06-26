@@ -24,11 +24,7 @@ import (
 //  质押PTN投票mediator
 func normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	//  获取是否是保证金合约
-	invokeToken, err := isContainDepositContractAddr(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	err = saveVotes(stub, int64(invokeToken.Amount))
+	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -36,12 +32,26 @@ func normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Re
 		return shim.Error("need 1 arg")
 	}
 	//  获取请求地址
-	inAddr, err := stub.GetInvokeAddress()
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	//  添加进入利息
+	node, err := getAwardNode(stub, invokeAddr.String())
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if node == nil {
+		node = &AwardNode{}
+	}
+	node.Amount += invokeTokens.Amount
+	node.Address = invokeAddr.String()
+	err = saveAwardNode(stub, node)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	//  获取是否存在
-	nor, err := getNor(stub, inAddr.String())
+	nor, err := getNor(stub, invokeAddr.String())
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -49,12 +59,12 @@ func normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Re
 		nor = &NorNodBal{}
 		nor.AmountAsset = &modules.AmountAsset{}
 	}
-	nor.AmountAsset.Amount += invokeToken.Amount
-	nor.AmountAsset.Asset = invokeToken.Asset
+	nor.AmountAsset.Amount += invokeTokens.Amount
+	nor.AmountAsset.Asset = invokeTokens.Asset
 	mediatorAddr := args[0]
 	nor.MediatorAddr = mediatorAddr
 	//  保存
-	err = saveNor(stub, inAddr.String(), nor)
+	err = saveNor(stub, invokeAddr.String(), nor)
 	if err != nil {
 		return shim.Error(err.Error())
 	}

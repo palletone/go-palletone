@@ -31,22 +31,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		log.Error("isContainDepositContractAddr err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	err = saveVotes(stub, int64(invokeTokens.Amount))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	//  获取jury交付保证金的下线
-	//depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
-	//if err != nil {
-	//	log.Error("get deposit amount for jury err: ", "error", err)
-	//	return shim.Error(err.Error())
-	//}
-	////  转换
-	//depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
-	//if err != nil {
-	//	log.Error("strconv.ParseUint err: ", "error", err)
-	//	return shim.Error(err.Error())
-	//}
+
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
 		//log.Error("strconv.ParseUint err:", "error", err)
@@ -57,6 +42,20 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("get invoke address err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+	//  添加进入利息
+	node, err := getAwardNode(stub, invokeAddr.String())
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if node == nil {
+		node = &AwardNode{}
+	}
+	node.Amount += invokeTokens.Amount
+	node.Address = invokeAddr.String()
+	err = saveAwardNode(stub, node)
+	if err != nil {
 		return shim.Error(err.Error())
 	}
 	//获取账户

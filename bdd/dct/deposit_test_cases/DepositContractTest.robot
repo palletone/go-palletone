@@ -28,6 +28,8 @@ Business_01
     Dictionary Should Contain Key    ${addressMap2}    ${mediatorAddr_01}
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金（大于或等于保证金数量）,需要200000000000及以上
     log    ${result}
+    ${award}    handleEachDay    ${foundationAddr}
+    log    ${award}
     ${addressMap3}    getListForMediatorCandidate    #交付足够保证金后，可加入mediator候选列表（不为空）
     log    ${addressMap3}
     Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
@@ -39,6 +41,8 @@ Business_01
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #增加保证金
     log    ${result}
+    ${award1}    handleEachDay    ${foundationAddr}
+    log    ${award1}
     ${result}    mediatorApplyCashback    ${mediatorAddr_01}    ${medDepositAmount}    #申请退出部分保证金
     log    ${result}
     ${addressMap5}    getListForCashbackApplication
@@ -71,6 +75,8 @@ Business_01
     ${result}    getQuitMediatorApplyList    #为空
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}
+    ${award}    handleEachDay    ${foundationAddr}
+    log    ${award}
 
 Business_02
     [Documentation]    没收mediator节点

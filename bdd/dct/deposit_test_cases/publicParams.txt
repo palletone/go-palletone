@@ -27,6 +27,7 @@ Resource          postRequest.txt
 Resource          normalNodePledgeVote.txt
 Resource          NormalNode.txt
 Resource          normalNodeChangeVote.txt
+Resource          handleEachDay.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery

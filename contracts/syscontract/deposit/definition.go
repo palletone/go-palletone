@@ -30,6 +30,8 @@ const (
 	DepositPeriod              = "DepositPeriod"
 	Developer                  = "Developer"
 	Jury                       = "Jury"
+	JuryAndDev                 = "juryAndDev"
+	NormalNode                 = "normalNode"
 	Mediator                   = "Mediator"
 	Ok                         = "ok"
 	No                         = "no"
@@ -70,11 +72,11 @@ const (
 	HandleEachDayAward              = "handleEachDayAward"
 	AllPledgeVotes                  = "allPledgeVotes"
 	HandleEachDay                   = "handleEachDay"
-
-	Apply    = "applying"
-	Agree    = "approved"
-	Quitting = "quitting"
-	Quited   = "quited"
+	MemberList                      = "MemberList"
+	Apply                           = "applying"
+	Agree                           = "approved"
+	Quitting                        = "quitting"
+	Quited                          = "quited"
 	//  时间格式
 	//  Layout1 = "2006-01-02 15"
 	//  Layout2 = "2006-01-02 15:04"
@@ -148,4 +150,19 @@ type NorNodBal struct {
 type extractPtn struct {
 	Time   string               `json:"time"`   //提取质押时间
 	Amount *modules.AmountAsset `json:"amount"` //提取质押数量
+}
+
+type Award struct {
+	Amount uint64       `json:"amount"`
+	Member []*AwardNode `json:"member"`
+}
+
+type AwardNode struct {
+	Address string `json:"address"`
+	Amount  uint64 `json:"amount"`
+}
+
+type Member struct {
+	Key   string `json:"key"`
+	Value []byte `json;"value"`
 }

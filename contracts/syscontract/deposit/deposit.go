@@ -324,9 +324,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//case HandleExtractVote:
 	//	log.Info("Enter DepositChaincode Contract " + HandleExtractVote + " Invoke")
 	//	return d.handleExtractVote(stub, args)
-	//case HandleEachDayAward:
-	//	log.Info("Enter DepositChaincode Contract " + HandleEachDayAward + " Invoke")
-	//	return d.handleEachDayAward(stub, args)
+	case HandleEachDayAward:
+		log.Info("Enter DepositChaincode Contract " + HandleEachDayAward + " Invoke")
+		return d.handleEachDayAward(stub, args)
 	case AllPledgeVotes:
 		b, err := getVotes(stub)
 		if err != nil {

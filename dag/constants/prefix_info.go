@@ -48,6 +48,7 @@ var (
 	MEDIATOR_INFO_PREFIX      = []byte("mi")
 	DEPOSIT_BALANCE_PREFIX    = []byte("db")
 	DEPOSIT_NORMAL_PREFIX     = []byte("dn")
+	DEPOSIT_AWARD_PREFIX      = []byte("da")
 
 	GLOBAL_PROPERTY_HISTORY_PREFIX = []byte("gh")
 
