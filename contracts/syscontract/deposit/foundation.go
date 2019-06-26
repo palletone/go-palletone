@@ -22,7 +22,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 //同意申请没收请求
@@ -707,37 +706,37 @@ func handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []str
 }
 
 //  处理普通节点提取质押PTN
-func handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 0 {
-		return shim.Error("need 0 args")
-	}
-	//  判断是否是基金会
-	if !isFoundationInvoke(stub) {
-		return shim.Error("please use foundation address")
-	}
-	//  保存质押提取
-	extPtnLis, err := getExtPtn(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if extPtnLis == nil {
-		return shim.Error("list is nil")
-	}
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	day := cp.DepositPeriod
-	for k, v := range extPtnLis {
-		tim := StrToTime(v.Time)
-		dur := int(time.Since(tim).Hours())
-		if dur/24 < day {
-			continue
-		}
-		err := stub.PayOutToken(k, v.Amount, 0)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-	}
-	return shim.Success(nil)
-}
+//func handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	if len(args) != 0 {
+//		return shim.Error("need 0 args")
+//	}
+//	//  判断是否是基金会
+//	if !isFoundationInvoke(stub) {
+//		return shim.Error("please use foundation address")
+//	}
+//	//  保存质押提取
+//	extPtnLis, err := getExtPtn(stub)
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	if extPtnLis == nil {
+//		return shim.Error("list is nil")
+//	}
+//	cp, err := stub.GetSystemConfig()
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	day := cp.DepositPeriod
+//	for k, v := range extPtnLis {
+//		tim := StrToTime(v.Time)
+//		dur := int(time.Since(tim).Hours())
+//		if dur/24 < day {
+//			continue
+//		}
+//		err := stub.PayOutToken(k, v.Amount, 0)
+//		if err != nil {
+//			return shim.Error(err.Error())
+//		}
+//	}
+//	return shim.Success(nil)
+//}

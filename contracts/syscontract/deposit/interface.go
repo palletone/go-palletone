@@ -63,7 +63,7 @@ type DepositInterface interface {
 	normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 	//
-	handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//
 	handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response
 }

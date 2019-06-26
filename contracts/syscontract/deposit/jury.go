@@ -44,17 +44,8 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  添加进入利息
-	node, err := getAwardNode(stub, invokeAddr.String())
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if node == nil {
-		node = &AwardNode{}
-	}
-	node.Amount += invokeTokens.Amount
-	node.Address = invokeAddr.String()
-	err = saveAwardNode(stub, node)
+	//  添加进入质押记录
+	err = pledgeDeposit(stub, invokeAddr,invokeTokens.Amount)
 	if err != nil {
 		return shim.Error(err.Error())
 	}

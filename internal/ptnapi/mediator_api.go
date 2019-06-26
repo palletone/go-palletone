@@ -371,7 +371,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Vote(voterStr string, amount decimal.Decimal, mediatorStrs []string) (*TxExecuteResult, error) {
 	// 参数检查
 	voter, err := common.StringToAddress(voterStr)
 	if err != nil {
@@ -410,7 +410,8 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 创建交易
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp, a.TxPool())
+	amtDao:= ptnjson.Ptn2Dao(amount)
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter,amtDao, mp, a.TxPool())
 	if err != nil {
 		return nil, err
 	}

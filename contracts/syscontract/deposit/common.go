@@ -28,6 +28,8 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"errors"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 //  保存相关列表
@@ -553,29 +555,34 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 }
 
 //  获取普通节点
-func getNor(stub shim.ChaincodeStubInterface, invokeA string) (*NorNodBal, error) {
-	b, err := stub.GetState(string(constants.DEPOSIT_NORMAL_PREFIX) + invokeA)
+func getAccountMediatorVote(stub shim.ChaincodeStubInterface, invokeA string) ([]string, error) {
+	b, err := stub.GetState(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + invokeA)
 	if err != nil {
 		return nil, err
 	}
 	if b == nil {
 		return nil, nil
 	}
-	nor := &NorNodBal{}
-	err = json.Unmarshal(b, nor)
+	mediators := []string{}
+	err = json.Unmarshal(b, &mediators)
 	if err != nil {
 		return nil, err
 	}
-	return nor, nil
+	return mediators, nil
 }
 
 //  保存普通节点
-func saveNor(stub shim.ChaincodeStubInterface, invokeA string, nor *NorNodBal) error {
-	b, err := json.Marshal(nor)
+func saveMediatorVote(stub shim.ChaincodeStubInterface, invokeA string, mediators []string) error {
+	config,_:= stub.GetSystemConfig()
+	maxVote:= config.MaximumMediatorCount
+	if len(mediators)>int(maxVote){
+		return errors.New(fmt.Sprintf( "Too many mediators, must less or equal than %d",maxVote))
+	}
+	b, err := json.Marshal(mediators)
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(string(constants.DEPOSIT_NORMAL_PREFIX)+invokeA, b)
+	err = stub.PutState(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX)+invokeA, b)
 	if err != nil {
 		return err
 	}
@@ -648,7 +655,7 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	if len(args) != 0 {
 		return shim.Error("need 0 args")
 	}
-	err := handleAward(stub)
+	err := handleRewardAllocation(stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -674,7 +681,7 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	//	return shim.Error(err.Error())
 	//}
 	////  通过前缀获取所有普通节点
-	//normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_NORMAL_PREFIX))
+	//normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX))
 	//if err != nil {
 	//	return shim.Error(err.Error())
 	//}
@@ -746,42 +753,42 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 //		return shim.Error(err.Error())
 //	}
 //	//  通过前缀获取所有普通节点
-//	normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_NORMAL_PREFIX))
+//	normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX))
 //	if err != nil {
 //		return shim.Error(err.Error())
 //	}
 //	//  获取集合全部
-//	allM, err := getAllMember(stub)
+//	allM, err := getPledgeList(stub)
 //	if err != nil {
 //		return shim.Error(err.Error())
 //	}
 //	//  第一次,收集当前的质押情况
 //	if a == nil {
-//		a = &Award{}
+//		a = &PledgeList{}
 //		a.Amount = pledgeVotes
 //		//  计算mediators
 //		for _, me := range mediators {
-//			m := Member{}
+//			m := Members{}
 //			m.Key = mediatorDepositKey(me.Key)
 //			m.Value = me.Value
 //			m.Role = Mediator
-//			a.Member = append(a.Member, &m)
+//			a.Members = append(a.Members, &m)
 //		}
 //		//  计算jury/dev
 //		for _, jd := range juryAndDevs {
-//			m := Member{}
+//			m := Members{}
 //			m.Key = string(constants.DEPOSIT_BALANCE_PREFIX) + jd.Key
 //			m.Value = jd.Value
 //			m.Role = JuryAndDev
-//			a.Member = append(a.Member, &m)
+//			a.Members = append(a.Members, &m)
 //		}
 //		//  计算normalNode
 //		for _, nor := range normalNodes {
-//			m := Member{}
-//			m.Key = string(constants.DEPOSIT_NORMAL_PREFIX) + nor.Key
+//			m := Members{}
+//			m.Key = string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + nor.Key
 //			m.Value = nor.Value
 //			m.Role = NormalNode
-//			a.Member = append(a.Member, &m)
+//			a.Members = append(a.Members, &m)
 //		}
 //		err = saveMember(stub, a)
 //		if err != nil {
@@ -797,7 +804,7 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 //		depositExtraReward := cp.DepositExtraReward
 //		rate := float64(depositExtraReward) / float64(a.Amount)
 //		//  计算集合利息
-//		for i, m := range a.Member {
+//		for i, m := range a.Members {
 //			fmt.Println(i)
 //			switch m.Role {
 //			case Mediator:
@@ -865,7 +872,7 @@ func getAllMember1(stub shim.ChaincodeStubInterface) (map[string][]*Member, erro
 	return allM, nil
 }
 
-//func saveAllMember(stub shim.ChaincodeStubInterface, allM map[string][]*Member) error {
+//func savePledgeList(stub shim.ChaincodeStubInterface, allM map[string][]*Members) error {
 //	b, err := json.Marshal(allM)
 //	if err != nil {
 //		return err
@@ -878,7 +885,7 @@ func getAllMember1(stub shim.ChaincodeStubInterface) (map[string][]*Member, erro
 //}
 
 func getNormalNodeFromAllMember(stub shim.ChaincodeStubInterface) ([]*NorNodBal, error) {
-	//mapAll, err := getAllMember(stub)
+	//mapAll, err := getPledgeList(stub)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -896,7 +903,7 @@ func getNormalNodeFromAllMember(stub shim.ChaincodeStubInterface) ([]*NorNodBal,
 }
 
 func getJuryAndDevFromAllMember(stub shim.ChaincodeStubInterface) ([]*DepositBalance, error) {
-	//mapAll, err := getAllMember(stub)
+	//mapAll, err := getPledgeList(stub)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -915,7 +922,7 @@ func getJuryAndDevFromAllMember(stub shim.ChaincodeStubInterface) ([]*DepositBal
 }
 
 func getMediatorsFromeAllMember(stub shim.ChaincodeStubInterface) ([]*MediatorDeposit, error) {
-	//mapAll, err := getAllMember(stub)
+	//mapAll, err := getPledgeList(stub)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -953,34 +960,71 @@ func getMediatorsFromeAllMember(stub shim.ChaincodeStubInterface) ([]*MediatorDe
 //}
 
 //
+//获得质押列表的最后更新日期yyyyMMdd
+func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
+	date, err := stub.GetState(MemberListLastDate)
+	if err != nil {
+		return "", err
+	}
+	if date == nil {
+		return "", nil
+	}
+	return string(date),nil
+}
+//获得最新的质押列表
+func getPledgeList(stub shim.ChaincodeStubInterface) (*PledgeList, error) {
+	date, err := getLastPledgeListDate(stub)
+	if err != nil {
+		return nil, err
+	}
 
-//  TODO 这里计算利息相关代码
-
-func getAllMember(stub shim.ChaincodeStubInterface) (*Award, error) {
-	b, err := stub.GetState(MemberList)
+	b, err := stub.GetState(MemberList+date)
 	if err != nil {
 		return nil, err
 	}
 	if b == nil {
 		return nil, nil
 	}
-	allM := &Award{}
+	allM := &PledgeList{}
 	err = json.Unmarshal(b, allM)
 	if err != nil {
 		return nil, err
 	}
 	return allM, nil
 }
-func saveAllMember(stub shim.ChaincodeStubInterface, allM *Award) error {
+//查询历史上的所有质押列表记录
+func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*PledgeList, error) {
+	b, err := stub.GetStateByPrefix(MemberList)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	result:=[]*PledgeList{}
+	for _,kv:=range b{
+		allM := &PledgeList{}
+		err = json.Unmarshal(kv.Value, allM)
+		if err != nil {
+			return nil, err
+		}
+		result=append(result,allM)
+	}
+
+	return result, nil
+}
+//保存最新的质押列表
+func savePledgeList(stub shim.ChaincodeStubInterface, allM *PledgeList) error {
 	b, err := json.Marshal(allM)
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(MemberList, b)
+	err = stub.PutState(MemberList+allM.Date, b)
 	if err != nil {
 		return err
 	}
-	return nil
+	return stub.PutState(MemberListLastDate,[]byte(allM.Date))
+
 }
 func isHandled(stub shim.ChaincodeStubInterface) bool {
 	//  获取数据库
@@ -1002,7 +1046,7 @@ func isHandled(stub shim.ChaincodeStubInterface) bool {
 	}
 	return false
 }
-func saveAwardNode(stub shim.ChaincodeStubInterface, node *AwardNode) error {
+func savePledgeRecord(stub shim.ChaincodeStubInterface, node *AddressAmount) error {
 	b, err := json.Marshal(node)
 	if err != nil {
 		return err
@@ -1014,17 +1058,12 @@ func saveAwardNode(stub shim.ChaincodeStubInterface, node *AwardNode) error {
 	return nil
 }
 
-func delAwardNodes(stub shim.ChaincodeStubInterface, awardNodes []*modules.KeyValue) error {
-	for _, a := range awardNodes {
-		err := stub.DelState(a.Key)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func delPledgeRecord(stub shim.ChaincodeStubInterface, addr string) error {
+	 key:=string(constants.DEPOSIT_AWARD_PREFIX) + addr
+		return stub.DelState(key)
 }
 
-func getAwardNode(stub shim.ChaincodeStubInterface, addr string) (*AwardNode, error) {
+func getPledgeRecord(stub shim.ChaincodeStubInterface, addr string) (*AddressAmount, error) {
 	b, err := stub.GetState(string(constants.DEPOSIT_AWARD_PREFIX) + addr)
 	if err != nil {
 		return nil, err
@@ -1032,113 +1071,139 @@ func getAwardNode(stub shim.ChaincodeStubInterface, addr string) (*AwardNode, er
 	if b == nil {
 		return nil, nil
 	}
-	node := &AwardNode{}
+	node := &AddressAmount{}
 	err = json.Unmarshal(b, node)
 	if err != nil {
 		return nil, err
 	}
 	return node, nil
 }
-
-func handleAward(stub shim.ChaincodeStubInterface) error {
-	//  判断是否是基金会
-	if !isFoundationInvoke(stub) {
-		return fmt.Errorf("please use foundation address")
-	}
-	//
+func getToday(stub shim.ChaincodeStubInterface) string{
+	t,_:= stub.GetTxTimestamp(10)
+	ti:= time.Unix(t.Seconds,0)
+	return ti.Format("20060102")
+}
+//质押分红处理
+func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	//  判断当天是否处理过
-	//if isHandled(stub) {
-	//	return fmt.Errorf("had handled")
-	//}
-	allM, err := getAllMember(stub)
+	today:=getToday(stub)
+	lastDate,err:= getLastPledgeListDate(stub)
+
+	if lastDate==today {
+		return fmt.Errorf("had handled")
+	}
+	allM, err := getPledgeList(stub)
 	if err != nil {
 		return err
 	}
-	if allM == nil {
-		allM = &Award{}
-		var allAmount uint64
-		//  将当前的awardnode 加入列表
-		awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
-		if err != nil {
-			return err
-		}
-		if awards != nil {
-			for i, a := range awards {
-				awardNode := AwardNode{}
-				err = json.Unmarshal(a.Value, &awardNode)
-				if err != nil {
-					return err
-				}
-				log.Infof("==1==> %d ", i)
-				allAmount += awardNode.Amount
-				allM.Member = append(allM.Member, &awardNode)
-			}
-			allM.Amount = allAmount
-			err = saveAllMember(stub, allM)
-			if err != nil {
-				return err
-			}
-			err = delAwardNodes(stub, awards)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		//  需要先计算集合里的收益
-		//  获取每天总奖励
+	//计算分红
+	if allM != nil {
 		cp, err := stub.GetSystemConfig()
 		if err != nil {
 			return err
 		}
 		depositDailyReward := cp.DepositDailyReward
-		log.Infof("depositDailyReward=%d", depositDailyReward)
-		log.Infof("AllAmount=%d", allM.Amount)
-		rate := float64(depositDailyReward) / float64(allM.Amount)
-		log.Infof("rate=%f", rate)
-		//  TODO 计算每个节点的收益
-		var allAmount uint64
-		for i, m := range allM.Member {
-			log.Infof("==2==> %d ", i)
-			dayAward := rate * float64(m.Amount)
-			log.Infof("m.Amount=%d", m.Amount)
-			log.Infof("dayAward=%f", dayAward)
-			m.Amount += uint64(dayAward)
-			allAmount += m.Amount
-			log.Infof("m.Amount+dayAward=%d", m.Amount)
-		}
-		//  将当前的awardnode 加入列表
-		awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
-		if err != nil {
-			return err
-		}
-		if awards != nil {
-			for i, a := range awards {
-				//  TODO 需要判断集合里面是否已经存在该节点，目前不做判断
-				log.Infof("==3==> %d ", i)
-				awardNode := AwardNode{}
-				err = json.Unmarshal(a.Value, &awardNode)
-				if err != nil {
-					return err
-				}
-				allAmount += awardNode.Amount
-				//  判断里面是否存在
-				if isExist(&awardNode, allM.Member) {
-					log.Infof("update amount")
-				} else {
-					allM.Member = append(allM.Member, &awardNode)
-				}
+		allM= pledgeRewardAllocation(allM,depositDailyReward)
+	}else {
+		allM = &PledgeList{}
+	}
+	// 增加新的质押
+	awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
+	if err != nil {
+		return err
+	}
+	if awards != nil {
+		for _, a := range awards {
+			awardNode := AddressAmount{}
+			err = json.Unmarshal(a.Value, &awardNode)
+			if err != nil {
+				return err
 			}
-			err = delAwardNodes(stub, awards)
+			allM.Add(awardNode.Address,awardNode.Amount)
+			err = delPledgeRecord(stub,awardNode.Address)
 			if err != nil {
 				return err
 			}
 		}
-		allM.Amount = allAmount
-		err = saveAllMember(stub, allM)
+		err = savePledgeList(stub, allM)
 		if err != nil {
 			return err
 		}
 	}
+	//处理提币请求
+	extPtnLis, err := getExtPtn(stub)
+	if err != nil {
+		return err
+	}
+	gasToken:=dagconfig.DagConfig.GetGasToken().ToAsset()
+	for addr,v:=range extPtnLis{
+		withdrawAmt,_:= allM.Reduce(addr,v.Amount)
+		if withdrawAmt>0{
+			err := stub.PayOutToken(addr, modules.NewAmountAsset( v.Amount,gasToken), 0)
+			if err != nil {
+				return err
+			}
+			//TODO 打款完毕，记录流水日志
+		}
+	}
+	//清空提取请求列表
+	saveExtPtn(stub,make(map[string]*extractPtn))
+	//} else {
+	//	//  需要先计算集合里的收益
+	//	//  获取每天总奖励
+	//	cp, err := stub.GetSystemConfig()
+	//	if err != nil {
+	//		return err
+	//	}
+	//	depositDailyReward := cp.DepositDailyReward
+	//	log.Infof("depositDailyReward=%d", depositDailyReward)
+	//	log.Infof("AllAmount=%d", allM.TotalAmount)
+	//	rate := float64(depositDailyReward) / float64(allM.TotalAmount)
+	//	log.Infof("rate=%f", rate)
+	//	//  TODO 计算每个节点的收益
+	//	var allAmount uint64
+	//	for i, m := range allM.Members {
+	//		log.Infof("==2==> %d ", i)
+	//		dayAward := rate * float64(m.Amount)
+	//		log.Infof("m.Amount=%d", m.Amount)
+	//		log.Infof("dayAward=%f", dayAward)
+	//		m.Amount += uint64(dayAward)
+	//		allAmount += m.Amount
+	//		log.Infof("m.Amount+dayAward=%d", m.Amount)
+	//	}
+	//	//  将当前的awardnode 加入列表
+	//	awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
+	//	if err != nil {
+	//		return err
+	//	}
+	//	if awards != nil {
+	//		for i, a := range awards {
+	//			//  TODO 需要判断集合里面是否已经存在该节点，目前不做判断
+	//			log.Infof("==3==> %d ", i)
+	//			awardNode := AddressAmount{}
+	//			err = json.Unmarshal(a.Value, &awardNode)
+	//			if err != nil {
+	//				return err
+	//			}
+	//			allAmount += awardNode.Amount
+	//			//  判断里面是否存在
+	//			if isExist(&awardNode, allM.Members) {
+	//				log.Infof("update amount")
+	//			} else {
+	//				allM.Members = append(allM.Members, &awardNode)
+	//			}
+	//		}
+	//		err = delPledgeRecord(stub, awards)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
+	//	allM.TotalAmount = allAmount
+	//	err = savePledgeList(stub, allM)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 	//nDay := time.Now().UTC().Day()
 	//err = stub.PutState(HandleEachDay, []byte(strconv.Itoa(nDay)))
 	//if err != nil {
@@ -1147,7 +1212,7 @@ func handleAward(stub shim.ChaincodeStubInterface) error {
 	return nil
 }
 
-func isExist(node *AwardNode, nodes []*AwardNode) bool {
+func isExist(node *AddressAmount, nodes []*AddressAmount) bool {
 	for _, a := range nodes {
 		//  直接更新余额
 		if a.Address == node.Address {

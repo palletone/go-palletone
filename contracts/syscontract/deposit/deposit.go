@@ -311,22 +311,28 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success([]byte("not in the jury candidate list"))
 
-		//  normalNode
+		//  普通用户质押投票
 	case NormalNodePledgeVote:
 		log.Info("Enter DepositChaincode Contract " + NormalNodePledgeVote + " Invoke")
 		return d.normalNodePledgeVote(stub, args)
+		//修改质押投票的Mediator
 	case NormalNodeChangeVote:
 		log.Info("Enter DepositChaincode Contract " + NormalNodeChangeVote + " Invoke")
 		return d.normalNodeChangeVote(stub, args)
+		//TODO Devin提币质押申请（如果提币申请金额为0表示全部提现）
 	//case NormalNodeExtractVote:
 	//	log.Info("Enter DepositChaincode Contract " + NormalNodeExtractVote + " Invoke")
 	//	return d.normalNodeExtractVote(stub, args)
 	//case HandleExtractVote:
 	//	log.Info("Enter DepositChaincode Contract " + HandleExtractVote + " Invoke")
 	//	return d.handleExtractVote(stub, args)
+	//质押分红处理
 	case HandleEachDayAward:
 		log.Info("Enter DepositChaincode Contract " + HandleEachDayAward + " Invoke")
 		return d.handleEachDayAward(stub, args)
+		//TODO Devin 查询质押分红历史
+		//TODO Devin查询当前质押分红情况
+		//TODO Devin一个用户，怎么查看自己的流水账？
 	case AllPledgeVotes:
 		b, err := getVotes(stub)
 		if err != nil {
@@ -347,7 +353,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//	}
 	//	return shim.Success(b)
 	case "normalNode":
-		b, err := stub.GetState(string(constants.DEPOSIT_NORMAL_PREFIX) + args[0])
+		b, err := stub.GetState(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -432,9 +438,9 @@ func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface
 	return normalNodeExtractVote(stub, args)
 }
 
-func (d DepositChaincode) handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleExtractVote(stub, args)
-}
+//func (d DepositChaincode) handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	return handleExtractVote(stub, args)
+//}
 
 func (d DepositChaincode) handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return handleEachDayAward(stub, args)

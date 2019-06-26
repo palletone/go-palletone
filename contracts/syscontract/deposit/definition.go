@@ -16,6 +16,7 @@ package deposit
 
 import (
 	"github.com/palletone/go-palletone/dag/modules"
+	"errors"
 )
 
 const (
@@ -73,6 +74,7 @@ const (
 	AllPledgeVotes                  = "allPledgeVotes"
 	HandleEachDay                   = "handleEachDay"
 	MemberList                      = "MemberList"
+	MemberListLastDate                      = "MemberListLastDate"
 	Apply                           = "applying"
 	Agree                           = "approved"
 	Quitting                        = "quitting"
@@ -149,19 +151,51 @@ type NorNodBal struct {
 
 type extractPtn struct {
 	Time   string               `json:"time"`   //提取质押时间
-	Amount *modules.AmountAsset `json:"amount"` //提取质押数量
+	Amount uint64 `json:"amount"` //提取质押数量
 }
-
-type Award struct {
-	Amount uint64       `json:"amount"`
-	Member []*AwardNode `json:"member"`
+//质押列表
+type PledgeList struct {
+	TotalAmount uint64           `json:"total_amount"`
+	Date        string           `json:"date"` //质押列表所在的日期yyyyMMdd
+	Members     []*AddressAmount `json:"members"`
 }
-
-type AwardNode struct {
+//账户质押情况
+type AddressAmount struct {
 	Address string `json:"address"`
 	Amount  uint64 `json:"amount"`
 }
 
+func (pl *PledgeList)Add(addr string,amount uint64){
+	pl.TotalAmount+=amount
+	for _,p:=range pl.Members{
+		if p.Address==addr{
+			p.Amount+=amount
+			return
+		}
+	}
+	pl.Members=append(pl.Members,&AddressAmount{Address:addr,Amount:amount})
+}
+//从质押列表中提币，Amount 0表示全部提取
+func (pl *PledgeList) Reduce(addr string,amount uint64) (uint64, error){
+	for i,p:=range pl.Members{
+		if p.Address==addr{
+			if amount==0{
+				amount=p.Amount//如果是0表示全部提取
+			}
+			if p.Amount<amount{
+				return 0,errors.New("Not enough amount")
+			}
+			pl.TotalAmount-=amount
+			if p.Amount==amount{
+				pl.Members=append(pl.Members[:i],pl.Members[i+1:]...)
+				return amount, nil
+			}
+			p.Amount-=amount
+			return amount, nil
+		}
+	}
+	return 0,errors.New("Address not found")
+}
 type Member struct {
 	Key   string `json:"key"`
 	Value []byte `json;"value"`
