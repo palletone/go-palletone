@@ -192,7 +192,7 @@ matrix:
     #        - chmod +x bdd/upload2Ftp.sh
     #        #- sudo -H apt-get install jq tcl tk
     - os: linux
-      env: user_contract_bdd
+      #env: user_contract_bdd
       dist: xenial
       go: 1.12.5
       services: docker
