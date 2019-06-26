@@ -18,6 +18,7 @@
 package modules
 
 import (
+	"encoding/binary"
 	"strings"
 	"time"
 	"unsafe"
@@ -26,13 +27,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.dedis.ch/kyber/v3"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
+	"go.dedis.ch/kyber/v3"
 )
 
 // validate unit state
@@ -316,12 +317,12 @@ func (height *ChainIndex) String() string {
 //Index 8Bytes + AssetID 16Bytes
 func (height *ChainIndex) Bytes() []byte {
 	idx := make([]byte, 8)
-	littleEndian.PutUint64(idx, height.Index)
+	binary.LittleEndian.PutUint64(idx, height.Index)
 	return append(idx, height.AssetID.Bytes()...)
 }
 
 func (height *ChainIndex) SetBytes(data []byte) {
-	height.Index = littleEndian.Uint64(data[:8])
+	height.Index = binary.LittleEndian.Uint64(data[:8])
 	height.AssetID.SetBytes(data[8:])
 }
 

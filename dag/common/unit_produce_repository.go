@@ -336,9 +336,9 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 
 	//deposit, _, _ := rep.GetConfig("DepositRate")
 	//depositYearRate, _ := strconv.ParseFloat(deposit, 64)
-	parameter.CurrentSysParameters.DepositContractInterest = cp.DepositRate / 365
-	log.Debugf("Load SysParameter DepositContractInterest value:%f",
-		parameter.CurrentSysParameters.DepositContractInterest)
+	parameter.CurrentSysParameters.DepositDailyReward = cp.DepositDailyReward
+	log.Debugf("Load SysParameter DepositDailyReward value:%d",
+		parameter.CurrentSysParameters.DepositDailyReward)
 
 	//txCoinYearRateStr, _, _ := rep.GetConfig("TxCoinYearRate")
 	//txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)

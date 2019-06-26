@@ -50,6 +50,7 @@ func NewChainParametersBase() ChainParametersBase {
 	return ChainParametersBase{
 		GenerateUnitReward:        DefaultGenerateUnitReward,
 		RewardHeight:              DefaultRewardHeight,
+		DepositDailyReward:        DefaultDepositDailyReward,
 		FoundationAddress:         DefaultFoundationAddress,
 		DepositAmountForMediator:  DefaultDepositAmountForMediator,
 		DepositAmountForJury:      DefaultDepositAmountForJury,
@@ -70,8 +71,9 @@ func NewChainParametersBase() ChainParametersBase {
 }
 
 type ChainParametersBase struct {
-	GenerateUnitReward uint64 `json:"generateUnitReward"` //每生产一个单元，奖励多少Dao的PTN
-	RewardHeight       uint64 `json:"reward_height"`      //每多少高度进行一次奖励的派发
+	GenerateUnitReward uint64 `json:"generateUnitReward"`   //每生产一个单元，奖励多少Dao的PTN
+	DepositDailyReward uint64 `json:"deposit_daily_reward"` //保证金的日奖励额
+	RewardHeight       uint64 `json:"reward_height"`        //每多少高度进行一次奖励的派发
 
 	FoundationAddress string `json:"foundationAddress"` //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 
@@ -107,16 +109,14 @@ type ChainParametersBase struct {
 
 func NewChainParams() ChainParameters {
 	return ChainParameters{
-		ChainParametersBase: NewChainParametersBase(),
-		DepositRate:         DefaultDepositRate,
-		TxCoinYearRate:      DefaultTxCoinYearRate,
-		DepositPeriod:       DefaultDepositPeriod,
-		UccMemory:           DefaultUccMemory,
-		UccMemorySwap:       DefaultUccMemorySwap,
-		UccCpuShares:        DefaultUccCpuShares,
-		UccCpuPeriod:        DefaultCpuPeriod,
-		UccCpuQuota:         DefaultUccCpuQuota,
-
+		ChainParametersBase:  NewChainParametersBase(),
+		TxCoinYearRate:       DefaultTxCoinYearRate,
+		DepositPeriod:        DefaultDepositPeriod,
+		UccMemory:            DefaultUccMemory,
+		UccMemorySwap:        DefaultUccMemorySwap,
+		UccCpuShares:         DefaultUccCpuShares,
+		UccCpuPeriod:         DefaultCpuPeriod,
+		UccCpuQuota:          DefaultUccCpuQuota,
 		TempUccMemory:        DefaultTempUccMemory,
 		TempUccMemorySwap:    DefaultTempUccMemorySwap,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
