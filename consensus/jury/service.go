@@ -57,7 +57,7 @@ type PalletOne interface {
 	AdapterBroadcast(event AdapterEvent)
 
 	LocalHaveActiveMediator() bool
-
+	GetLocalActiveMediators() []common.Address
 	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
 }
 
@@ -824,6 +824,7 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	tpl, err := p.dag.GetContractTpl(tplId)
 	if err != nil {
 		log.Debugf("[%s]getContractAssignElectionList, getTemplateAddrHash fail,templateId[%x], fail:%s", shortId(reqId.String()), tplId, err.Error())
+		return nil, fmt.Errorf("[%s]getContractAssignElectionList, GetContractTpl fail", shortId(reqId.String()))
 	}
 	addrHash := tpl.AddrHash
 	if len(addrHash) >= p.electionNum {
