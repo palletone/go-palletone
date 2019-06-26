@@ -121,7 +121,9 @@ invokeContract
 queryContract
     [Arguments]    ${contractId}    ${args}
     ${params}=    Create List    ${contractId}    ${args}    ${0}
-    ${respJson}=    sendRpcPost    ${host}    ${queryMethod}    ${params}    QueryContract
+    Should Not Be Empty    ${juryHosts}
+    ${juryHost}=    Get From List    ${juryHosts}    0
+    ${respJson}=    sendRpcPost    ${juryHost}    ${queryMethod}    ${params}    QueryContract
     [Return]    ${respJson}
 
 getCurrentUnitHeight

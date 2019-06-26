@@ -3,6 +3,7 @@ Library           RequestsLibrary
 
 *** Variables ***
 ${host}           http://123.126.106.82:58645/
+${juryHosts}      Create List
 #${host}          http://localhost:8545/
 ${gastokenHost}    http://localhost:8545
 ${nodenum}        3

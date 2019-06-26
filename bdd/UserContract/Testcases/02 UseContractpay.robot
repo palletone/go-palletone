@@ -71,12 +71,11 @@ User put status into contractpay
     [Return]    ${reqId}
 
 Get status from contractpay
-    ${args}=    Create List    get
+    ${args}=    Create List    get    a
     ${respJson}=    queryContract    ${gContractId}    ${args}
-    Dictionary Should Contain Key    ${respJson}    a
-    Dictionary Should Contain Key    ${respJson}    b
-    Dictionary Should Contain Key    ${respJson}    c
-    Dictionary Should Contain Key    ${respJson}    aa
+    Dictionary Should Contain Key    ${respJson}    result
+    ${result}=    Get From Dictionary    ${respJson}    result
+    Should Be Equal    ${result}    aa
 
 User transfer PTN to contractpay
     transferPtnTo    ${gContractId}    10000
@@ -99,7 +98,6 @@ Use contractpay to transfer PTN to user2
 Query user2 balance
     [Arguments]    ${addr}
     ${args}=    Create List    balance    ${addr}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
-    ...    ${args}
-    Log    ${respJson}
-    # [Return]    ${reqId}
+    ${respJson}=    queryContract    ${gContractId}    ${args}
+    Dictionary Should Contain Key    ${respJson}    result
+    ${result}=    Get From Dictionary    ${respJson}    result
