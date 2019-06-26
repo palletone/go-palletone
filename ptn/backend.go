@@ -283,6 +283,10 @@ func (s *PalletOne) GetLocalMediators() []common.Address {
 	return s.mediatorPlugin.LocalMediators()
 }
 
+func (s *PalletOne) GetLocalActiveMediators() []common.Address {
+	return s.mediatorPlugin.GetLocalActiveMediators()
+}
+
 func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {
 	return s.mediatorPlugin.IsLocalActiveMediator(addr)
 }

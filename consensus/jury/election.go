@@ -393,25 +393,27 @@ func (p *Processor) processElectionSigRequestEvent(evt *ElectionSigRequestEvent)
 	if evt == nil {
 		return errors.New("processElectionSigRequestEvent, param is nil")
 	}
+	if !p.ptn.LocalHaveActiveMediator() {
+		return errors.New("processElectionSigRequestEvent, local no active mediator")
+	}
 	reqId := evt.ReqId
 	if !p.checkElectionSigRequestEventValid(evt) {
 		log.Debugf("[%s]processElectionSigRequestEvent, evt is invalid", shortId(reqId.String()))
 		return nil
 	}
-	//var signer common.Address
-	var account JuryAccount
-	for _, a := range p.local {
-		account.Address = a.Address
-		account.Password = a.Password
-		break //first one
+	mAddrs := p.ptn.GetLocalActiveMediators()
+	if len(mAddrs) < 1 {
+		log.Debugf("[%s]processElectionSigRequestEvent,LocalActiveMediators < 1", shortId(reqId.String()))
+		return  nil
 	}
+	mAddr := mAddrs[0] //first
 	ks := p.ptn.GetKeyStore()
-	pk, err := ks.GetPublicKey(account.Address)
+	pk, err := ks.GetPublicKey(mAddr)
 	if err != nil {
 		log.Debugf("[%s]processElectionSigRequestEvent, GetPublicKey fail", shortId(reqId.String()))
 		return nil
 	}
-	sig, err := ks.SigData(evt, account.Address)
+	sig, err := ks.SigData(evt, mAddr)
 	if err != nil {
 		log.Debugf("[%s]processElectionSigRequestEvent, SigData fail", shortId(reqId.String()))
 		return nil
