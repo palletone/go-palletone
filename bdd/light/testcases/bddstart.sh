@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#./preset.sh
-#sleep 25
+./preset.sh
+sleep 25
 
 listcommand=`./gptn --exec 'personal.listAccounts'  attach node1/palletone/gptn.ipc`
 list=`echo ${listcommand//^M/}`
@@ -31,28 +31,17 @@ echo $startProduce
 curl -H "Content-Type:application/json" -X POST -d  "{\"jsonrpc\":\"2.0\",\"method\":\"wallet_transferToken\",\"params\":[\"PTN\",$moneyaccount,$account5,\"100\",\"1\",\"1\",\"1\"],\"id\":1}" http://127.0.0.1:8545
 
 sleep 5
-#check light account5 balance in full node
-balancecommand=`curl -H "Content-Type:application/json" -X POST -d "{\"jsonrpc\":\"2.0\",\"method\":\"wallet_getBalance\",\"params\":[$account5],\"id\":1}" http://127.0.0.1:8585`
-balanceinfo=`echo $balancecommand`
-balance=`echo $balanceinfo | sed -n '$p'`
-b1=`echo $balance | jq '.result.PTN'`
-b2=`echo $b1`
-num="\"100\""
-if [ "$b2" = "$num" ];then 
-    echo "============transferToken account5 ok num"$b2"============"
-else
-    echo "============transferToken1 account5 num:"$b2"============"
-fi
 
 
 #ptn.syncUTXOByAddr("P19wzjSAfVKRY84pPQMsqJSxeVK7oTYEiXt") in light node5
 syncutxocommand=`./gptn --exec "ptn.syncUTXOByAddr($account5)"  attach node_test5/palletone/gptn5.ipc`
 syncutxoinfo=`echo $syncutxocommand`
 value="\"OK\""
+echo $syncutxoinfo
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account5 ok============"
 else
-    echo "============syncUTXOByAddr account5 err============"
+    echo "============syncUTXOByAddr account5 err:"$syncutxoinfo
 fi
 
 #ptn.getBalance in light node5
@@ -65,7 +54,7 @@ t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 100 ];then
     echo "============getBalance account5 ok============"
 else
-    echo "============getBalance account5 err============"
+    echo "============getBalance account5 err:"$t1
 fi
 
 
@@ -81,7 +70,7 @@ value="\"OK\""
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account6 ok============"
 else
-    echo "============syncUTXOByAddr account6 err============"
+    echo "============syncUTXOByAddr account6 err:"$syncutxoinfo
 fi
 
 
@@ -94,7 +83,7 @@ t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 80 ];then
     echo "============getBalance account6 ok============"
 else
-    echo "============getBalance account6 err============"
+    echo "============getBalance account6 err:"$t1
 fi
 
 
@@ -111,7 +100,7 @@ value="\"OK\""
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account7 ok============"
 else
-    echo "============syncUTXOByAddr account7 err============"
+    echo "============syncUTXOByAddr account7 err:"$syncutxoinfo
 fi
 
 
@@ -124,7 +113,7 @@ t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 50 ];then
     echo "============getBalance account7 ok============"
 else
-    echo "============getBalance account7 err============"
+    echo "============getBalance account7 err:"$t1
 fi
 
 
@@ -137,4 +126,16 @@ num=$[$lenght-2]
 t1=`echo ${temp:0:$num}`
 echo "=========consle getBalance==========="
 echo $t1
+#check light account5 balance in full node
+balancecommand=`curl -H "Content-Type:application/json" -X POST -d "{\"jsonrpc\":\"2.0\",\"method\":\"wallet_getBalance\",\"params\":[$account5],\"id\":1}" http://127.0.0.1:8585`
+balanceinfo=`echo $balancecommand`
+balance=`echo $balanceinfo | sed -n '$p'`
+b1=`echo $balance | jq '.result.PTN'`
+b2=`echo $b1`
+num="\"100\""
+if [ "$b2" = "$num" ];then 
+    echo "============transferToken account5 ok num"$b2"============"
+else
+    echo "============transferToken1 account5 num:"$b2"============"
+fi
 !
