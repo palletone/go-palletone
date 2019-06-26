@@ -114,6 +114,12 @@ type ChaincodeStubInterface interface {
 	OutChainTransaction(outChainName string, params []byte) ([]byte, error)
 	OutChainQuery(outChainName string, params []byte) ([]byte, error)
 
+	OutChainCall(outChainName string, method string, params []byte) ([]byte, error)
+
+	//OutChainUtil(outChainName string, params []byte) ([]byte, error)
+	//OutChainTokenOperation(outChainName string, params []byte) ([]byte, error)
+	//OutChainContractOperation(outChainName string, params []byte) ([]byte, error)
+
 	//retrun local jury's signature
 	SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
 	//return all jury's Address and Address,format:[]JuryMsgAddr

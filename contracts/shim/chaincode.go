@@ -477,6 +477,15 @@ func (stub *ChaincodeStub) OutChainQuery(outChainName string, params []byte) ([]
 	return stub.handler.handleOutQuery(collection, outChainName, params, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) OutChainCall(outChainName string, method string, params []byte) ([]byte, error) {
+	if outChainName == "" {
+		return nil, errors.New("outChainName must not be an empty string")
+	}
+	// Access public data by setting the collection to empty string
+	collection := ""
+	return stub.handler.handleOutCall(collection, outChainName, method, params, stub.ChannelId, stub.TxID)
+}
+
 func (stub *ChaincodeStub) SendJury(msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error) {
 	// Access public data by setting the collection to empty string
 	collection := ""
