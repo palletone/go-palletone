@@ -157,7 +157,7 @@ func (chain *MemDag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) 
 	unit, has := chain_units[hash]
 	if has {
 		return unit.Header(), nil
-	}chain.
+	}
 	return chain.tempdbunitRep.GetHeaderByHash(hash)
 }
 func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
@@ -284,11 +284,13 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 //清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
 func (chain *MemDag) rebuildTempdb(last_unit *modules.Unit) {
 	log.Debugf("MemDag[%s] clear tempdb and rebuild data", chain.token.String())
+	// 删除stable unit ,保留从stable unit 到 last unit 之间的数据。
 	chain.tempdb.Clear()
 	unstableUnits := chain.getMainChainUnits()
 	unstablecount := chain.lastMainChainUnit.NumberU64() - last_unit.NumberU64()
 	to_save_hash := chain.lastMainChainUnit.Hash()
 	if last_unit != nil {
+		// 保存last unit 到last main unit 之间的区块。
 		for i := 0; i < int(unstablecount); i++ {
 			u, has := chain.getChainUnits()[to_save_hash]
 			if has {
@@ -488,7 +490,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 		}
 	}
 	//基于新主链的单元和稳定单元，重新构建Tempdb
-	chain.rebuildTempdb(oldLastMainchainUnit)
+	chain.rebuildTempdb(nil)
 }
 
 //枚举每一个孤儿单元，如果发现有单元的ParentHash是指定Hash，那么这说明这不再是一个孤儿单元，
