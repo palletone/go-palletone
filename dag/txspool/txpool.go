@@ -723,7 +723,6 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 				this.Pending = true
 				this.Discarded = true
 				pool.all.Store(tx_hash, this)
-				//pool.priority_sorted.Removed()
 				return
 			}
 		} else {
@@ -1537,28 +1536,15 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modu
 }
 func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction, number, index uint64) error {
 	hash := tx.Hash()
-	if pool.isTransactionInPool(hash) {
-		// in orphan pool
-		if pool.isOrphanInPool(hash) {
-			interOtx, _ := pool.orphans.Load(hash)
-			otx := interOtx.(*modules.TxPoolTransaction)
-			otx.Pending = true
-			otx.Confirmed = false
-			otx.Discarded = false
-			otx.IsOrphan = true
-			otx.Index = index
-			pool.orphans.Store(hash, otx)
-		} else {
-			// in all pool
-			interTx, _ := pool.all.Load(hash)
-			tx := interTx.(*modules.TxPoolTransaction)
-			tx.Pending = true
-			tx.Confirmed = false
-			tx.Discarded = false
-			tx.Index = index
-			pool.all.Store(hash, tx)
-			return nil
-		}
+	// in all pool
+	if interTx, has := pool.all.Load(hash); has {
+		tx := interTx.(*modules.TxPoolTransaction)
+		tx.Pending = true
+		tx.Confirmed = false
+		tx.Discarded = false
+		tx.Index = index
+		pool.all.Store(hash, tx)
+		return nil
 	}
 	// add in pool
 	p_tx := TxtoTxpoolTx(tx)
@@ -1605,10 +1591,8 @@ func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 }
 func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 	hash := tx.Hash()
-	err := pool.DeleteTxByHash(hash)
-	if err != nil {
-		log.Info(err.Error())
-	}
+	pool.DeleteTxByHash(hash)
+
 	pool.add(TxtoTxpoolTx(tx), !pool.config.NoLocals)
 	return nil
 }
@@ -1629,7 +1613,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		total += tx.Tx.Size()
 	}
 	for {
-		if time.Since(t0) > time.Second*2 {
+		if time.Since(t0) > time.Millisecond*900 {
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
 			break
 		}

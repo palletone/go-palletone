@@ -275,12 +275,12 @@ func (p *Processor) localHaveActiveJury() bool {
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
 	p.locker.Lock()
-	req := p.mtx[reqId]
-	if req == nil {
+	ctx := p.mtx[reqId]
+	if ctx == nil {
 		p.locker.Unlock()
 		return fmt.Errorf("runContractReq param is nil, reqId[%s]", reqId)
 	}
-	reqTx := req.reqTx.Clone()
+	reqTx := ctx.reqTx.Clone()
 	p.locker.Unlock()
 
 	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, &reqTx, elf, p.errMsgEnable) //contract exec long time...
@@ -299,7 +299,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	//如果系统合约，直接添加到缓存池
 	//如果用户合约，需要签名，添加到缓存池并广播
 	if tx.IsSystemContract() {
-		req.rstTx = tx
+		ctx.rstTx = tx
 	} else {
 		account := p.getLocalAccount()
 		if account == nil {
@@ -311,11 +311,11 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 			log.Errorf("[%s]runContractReq, GenContractSigTransctions error:%s", shortId(reqId.String()), err.Error())
 			return fmt.Errorf("runContractReq, GenContractSigTransctions error, reqId[%s], err:%s", reqId, err.Error())
 		}
-		req.sigTx = sigTx
+		ctx.sigTx = sigTx
 		//如果rcvTx存在，则比较执行结果，并将结果附加到sigTx上,并删除rcvTx
-		if len(req.rcvTx) > 0 {
-			for _, rtx := range req.rcvTx {
-				ok, err := checkAndAddTxSigMsgData(req.sigTx, rtx)
+		if len(ctx.rcvTx) > 0 {
+			for _, rtx := range ctx.rcvTx {
+				ok, err := checkAndAddTxSigMsgData(ctx.sigTx, rtx)
 				if err != nil {
 					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData error:%s", shortId(reqId.String()), err.Error())
 				} else if ok {
@@ -324,22 +324,22 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData fail", shortId(reqId.String()))
 				}
 			}
-			req.rcvTx = nil
+			ctx.rcvTx = nil
 		}
 
-		sigNum := getTxSigNum(req.sigTx)
+		sigNum := getTxSigNum(ctx.sigTx)
 		log.Debugf("[%s]runContractReq sigNum %d, p.contractSigNum %d", shortId(reqId.String()), sigNum, p.contractSigNum)
 		if sigNum >= p.contractSigNum {
-			if localIsMinSignature(req.sigTx) {
+			if localIsMinSignature(ctx.sigTx) {
 				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
 				log.Infof("[%s]runContractReq, localIsMinSignature Ok!", shortId(reqId.String()))
-				processContractPayout(req.sigTx, elf)
-				go p.ptn.ContractBroadcast(ContractEvent{Ele: req.eleInf, CType: CONTRACT_EVENT_COMMIT, Tx: req.sigTx}, true)
+				processContractPayout(ctx.sigTx, elf)
+				go p.ptn.ContractBroadcast(ContractEvent{Ele: ctx.eleInf, CType: CONTRACT_EVENT_COMMIT, Tx: ctx.sigTx}, true)
 				return nil
 			}
 		}
 		//广播
-		go p.ptn.ContractBroadcast(ContractEvent{Ele: req.eleInf, CType: CONTRACT_EVENT_SIG, Tx: sigTx}, false)
+		go p.ptn.ContractBroadcast(ContractEvent{Ele: ctx.eleInf, CType: CONTRACT_EVENT_SIG, Tx: sigTx}, false)
 	}
 	return nil
 }
@@ -425,7 +425,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 			log.Debugf("[%s]GenContractSigTransactions, Add sign message[%s] to tx requestId[%s]", shortId(reqId.String()), sigSet.String(), reqId.String())
 			tx.TxMessages = append(tx.TxMessages, msgSig)
 		}
-		log.Debugf("[%s]GenContractSigTransactions, ok", shortId(reqId.String()))
+		log.Debugf("[%s]GenContractSigTransactions, ok, tx[%s]", shortId(reqId.String()), tx.Hash().String())
 	}
 	return tx, nil
 }
@@ -515,10 +515,10 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		return true
 	}
 	if p.checkTxReqIdIsExist(tx.RequestHash()) {
-		return true
+		return false
 	}
 	if p.validator.CheckTxIsExist(tx) {
-		return true
+		return false
 	}
 	if !p.checkTxValid(tx) {
 		log.Errorf("[%s]CheckContractTxValid checkTxValid fail", shortId(reqId.String()))
@@ -527,7 +527,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	//只检查invoke类型
 	if txType, err := getContractTxType(tx); err == nil {
 		if txType != modules.APP_CONTRACT_INVOKE_REQUEST {
-			return true
+			return false
 		}
 	}
 	//检查本阶段时候有合约执行权限

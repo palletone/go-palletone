@@ -161,6 +161,7 @@ type IDag interface {
 	HeadUnitHash() common.Hash
 
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
+	ValidateUnitExceptPayment(unit *modules.Unit) error
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
