@@ -124,9 +124,22 @@ func handleForApplyQuitJury(stub shim.ChaincodeStubInterface, args []string) pb.
 		log.Error("common.StringToAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	err = handleJury(stub, addr)
-	if err != nil {
-		return shim.Error(err.Error())
+	if args[1] == Ok {
+		err = handleJury(stub, addr)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+	} else {
+		//  移除退出列表
+		listForQuit, err := GetListForQuit(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		delete(listForQuit, addr.String())
+		err = SaveListForQuit(stub, listForQuit)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 	}
 	return shim.Success(nil)
 }
@@ -149,9 +162,22 @@ func handleForApplyQuitDev(stub shim.ChaincodeStubInterface, args []string) pb.R
 		log.Error("common.StringToAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	err = handleDev(stub, addr)
-	if err != nil {
-		return shim.Error(err.Error())
+	if args[1] == Ok {
+		err = handleDev(stub, addr)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+	} else {
+		//  移除退出列表
+		listForQuit, err := GetListForQuit(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		delete(listForQuit, addr.String())
+		err = SaveListForQuit(stub, listForQuit)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 	}
 	return shim.Success(nil)
 }
@@ -174,9 +200,22 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		log.Error("common.StringToAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	err = handleMediator(stub, addr)
-	if err != nil {
-		return shim.Error(err.Error())
+	if args[1] == Ok {
+		err = handleMediator(stub, addr)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+	} else {
+		//  移除退出列表
+		listForQuit, err := GetListForQuit(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		delete(listForQuit, addr.String())
+		err = SaveListForQuit(stub, listForQuit)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 	}
 	return shim.Success(nil)
 }

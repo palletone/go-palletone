@@ -246,7 +246,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看是否在退还列表中，并返回节点信息
 	case IsInCashbackList:
 		log.Info("Enter DepositChaincode Contract " + IsInCashbackList + " Invoke")
-		list, err := GetListForCashback(stub)
+		list, err := GetListForQuit(stub)
 		if err != nil {
 			return shim.Error(err.Error())
 		}

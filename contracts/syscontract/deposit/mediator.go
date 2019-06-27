@@ -217,12 +217,12 @@ func handleMediator(stub shim.ChaincodeStubInterface, quitAddr common.Address) e
 		return err
 	}
 	//  移除退出列表
-	listForCashback, err := GetListForCashback(stub)
+	listForQuit, err := GetListForQuit(stub)
 	if err != nil {
 		return err
 	}
-	delete(listForCashback, quitAddr.String())
-	err = SaveListForCashback(stub, listForCashback)
+	delete(listForQuit, quitAddr.String())
+	err = SaveListForQuit(stub, listForQuit)
 	if err != nil {
 		return err
 	}

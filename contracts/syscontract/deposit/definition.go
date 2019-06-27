@@ -31,31 +31,25 @@ const (
 	DepositPeriod              = "DepositPeriod"
 	Developer                  = "Developer"
 	Jury                       = "Jury"
-	JuryAndDev                 = "juryAndDev"
-	NormalNode                 = "normalNode"
-	Mediator                   = "Mediator"
-	Ok                         = "ok"
-	No                         = "no"
-	DTimeDuration              = 1800
+
+	Mediator      = "Mediator"
+	Ok            = "ok"
+	No            = "no"
+	DTimeDuration = 1800
 	//获取Mediator候选列表
 	GetListForMediatorCandidate = "GetListForMediatorCandidate"
 	GetQuitApplyList            = "GetQuitApplyList"
 	//查看是否在候选列表中
 	IsInMediatorCandidateList       = "IsInMediatorCandidateList"
-	GetQuitList                     = "GetQuitList"
 	GetAgreeForBecomeMediatorList   = "GetAgreeForBecomeMediatorList"
 	GetBecomeMediatorApplyList      = "GetBecomeMediatorApplyList"
 	GetListForDeveloperCandidate    = "GetListForDeveloperCandidate"
 	GetListForJuryCandidate         = "GetListForJuryCandidate"
 	GetListForForfeitureApplication = "GetListForForfeitureApplication"
-	GetListForCashbackApplication   = "GetListForCashbackApplication"
 	HandleForForfeitureApplication  = "HandleForForfeitureApplication"
 	ApplyForForfeitureDeposit       = "ApplyForForfeitureDeposit"
-	HandleForDeveloperApplyCashback = "HandleForDeveloperApplyCashback"
 	DeveloperApplyCashback          = "DeveloperApplyCashback"
-	HandleForJuryApplyCashback      = "HandleForJuryApplyCashback"
 	JuryApplyCashback               = "JuryApplyCashback"
-	HandleForMediatorApplyCashback  = "HandleForMediatorApplyCashback"
 	DeveloperPayToDepositContract   = "DeveloperPayToDepositContract"
 	JuryPayToDepositContract        = "JuryPayToDepositContract"
 	HandleForApplyQuitMediator      = "HandleForApplyQuitMediator"
@@ -94,10 +88,10 @@ const (
 )
 
 //申请退出
-type Cashback struct {
-	CashbackAddress string `json:"cashback_address"` //请求地址
-	Role            string `json:"role"`             //请求角色
-	CashbackTime    string `json:"cashback_time"`    //请求时间
+type QuitNode struct {
+	Address string `json:"address"` //请求地址
+	Role    string `json:"role"`    //请求角色
+	Time    string `json:"time"`    //请求时间
 }
 
 //申请没收保证金

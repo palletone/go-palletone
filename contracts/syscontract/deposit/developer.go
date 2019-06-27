@@ -97,12 +97,12 @@ func devApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Response
 //  处理
 func handleDev(stub shim.ChaincodeStubInterface, quitAddr common.Address) error {
 	//  移除退出列表
-	listForCashback, err := GetListForCashback(stub)
+	listForQuit, err := GetListForQuit(stub)
 	if err != nil {
 		return err
 	}
-	delete(listForCashback, quitAddr.String())
-	err = SaveListForCashback(stub, listForCashback)
+	delete(listForQuit, quitAddr.String())
+	err = SaveListForQuit(stub, listForQuit)
 	if err != nil {
 		return err
 	}

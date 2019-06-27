@@ -102,25 +102,6 @@ func normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.R
 	// }
 	//  保存质押提取
 	err = savePledgeWithdrawRecord(stub, modules.NewAddressAmount(inAddr.String(), ptnAccount))
-	//extPtnLis, err := getExtPtn(stub)
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-	//if extPtnLis == nil {
-	//	extPtnLis = make(map[string]*extractPtn)
-	//}
-	//if extPtn, ok := extPtnLis[inAddr.String()]; ok {
-	//	extPtn.Amount = ptnAccount
-	//} else {
-	//	extPtnLis[inAddr.String()] = &extractPtn{Amount: ptnAccount}
-	//}
-	////fees, err := stub.GetInvokeFees()
-	////if err != nil {
-	////	return shim.Error(err.Error())
-	////}
-	////extPtn.Time = TimeStr()
-	////  保存
-	//err = saveExtPtn(stub, extPtnLis)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
