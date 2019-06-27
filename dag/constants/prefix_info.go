@@ -35,20 +35,21 @@ var (
 	CONTRACT_TPL              = []byte("ct")
 	CONTRACT_TPL_CODE         = []byte("cc")
 	CONTRACT_DEPLOY           = []byte("cd")
-	CONTRACT_DEPLOY_REQ          = []byte("ce")
-	CONTRACT_STOP                = []byte("cp")
-	CONTRACT_STOP_REQ            = []byte("cq")
-	CONTRACT_INVOKE              = []byte("ci")
-	CONTRACT_INVOKE_REQ          = []byte("ck")
-	CONTRACT_SIGNATURE           = []byte("cn")
-	CONTRACT_PREFIX              = []byte("co")
-	CONTRACT_TPL_INSTANCE_MAP    = []byte("cm")
-	CONTRACT_JURY_PREFIX         = []byte("cj")
-	REQID_TXID_PREFIX            = []byte("rq")
-	MEDIATOR_INFO_PREFIX         = []byte("mi")
-	DEPOSIT_BALANCE_PREFIX       = []byte("db")
-	DEPOSIT_MEDIATOR_VOTE_PREFIX = []byte("dn")
-	DEPOSIT_AWARD_PREFIX         = []byte("da")
+	CONTRACT_DEPLOY_REQ       = []byte("ce")
+	CONTRACT_STOP             = []byte("cp")
+	CONTRACT_STOP_REQ         = []byte("cq")
+	CONTRACT_INVOKE           = []byte("ci")
+	CONTRACT_INVOKE_REQ       = []byte("ck")
+	CONTRACT_SIGNATURE        = []byte("cn")
+	CONTRACT_PREFIX           = []byte("co")
+	CONTRACT_TPL_INSTANCE_MAP = []byte("cm")
+	CONTRACT_JURY_PREFIX      = []byte("cj")
+	REQID_TXID_PREFIX         = []byte("rq")
+	MEDIATOR_INFO_PREFIX      = []byte("mi")
+	DEPOSIT_BALANCE_PREFIX    = []byte("db")
+	//DEPOSIT_MEDIATOR_VOTE_PREFIX = []byte("dn")
+	PLEDGE_DEPOSIT_PREFIX  = []byte("pd")
+	PLEDGE_WITHDRAW_PREFIX = []byte("pw")
 
 	GLOBAL_PROPERTY_HISTORY_PREFIX = []byte("gh")
 
@@ -69,7 +70,7 @@ var (
 
 	//filehash
 	IDX_MAIN_DATA_TXID  = []byte("md") //Old value: mda
-	IDX_REF_DATA_PREFIX  = []byte("re")
+	IDX_REF_DATA_PREFIX = []byte("re")
 	RewardAddressPrefix = "Addr:"
 )
 

@@ -202,25 +202,78 @@ func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 	}
 	return pledgeList, nil
 }
+
+//获得新的用户的质押申请列表
+func (rep *StateRepository) GetPledgeDepositApplyList() ([]*modules.AddressAmount, error) {
+	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(), string(constants.PLEDGE_DEPOSIT_PREFIX))
+	if err != nil {
+		return nil, err
+	}
+	result := []*modules.AddressAmount{}
+	for _, v := range states {
+		node := &modules.AddressAmount{}
+		err = json.Unmarshal(v.Value, node)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, node)
+	}
+	return result, nil
+}
+func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmount, error) {
+	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(), string(constants.PLEDGE_WITHDRAW_PREFIX))
+	if err != nil {
+		return nil, err
+	}
+	result := []*modules.AddressAmount{}
+	for _, v := range states {
+		node := &modules.AddressAmount{}
+		err = json.Unmarshal(v.Value, node)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, node)
+	}
+	return result, nil
+}
+
+//根据用户的新质押和提币申请，以及质押列表计算
+func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) {
+
+	pledgeList, err := rep.GetPledgeList()
+	if err != nil {
+		return nil, err
+	}
+	newDepositList, err := rep.GetPledgeDepositApplyList()
+	if err != nil {
+		return nil, err
+	}
+	newWithdrawList, err := rep.GetPledgeWithdrawApplyList()
+	if err != nil {
+		return nil, err
+	}
+	//Merge all
+	for _, deposit := range newDepositList {
+		pledgeList.Add(deposit.Address, deposit.Amount)
+	}
+	for _, withdraw := range newWithdrawList {
+		pledgeList.Reduce(withdraw.Address, withdraw.Amount)
+	}
+	return pledgeList, nil
+}
 func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error) {
 	mediatorVoteCount := make(map[string]uint64)
 
-	pledgeList, err := rep.GetPledgeList()
+	pledgeList, err := rep.GetPledgeListWithNew()
 	if err != nil {
 		log.Warn("GetPledgeList error" + err.Error())
 		return nil, err
 	}
 	for _, account := range pledgeList.Members {
 		// 遍历该账户投票的mediator
-		key := string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + account.Address
-		mdata, _, err := rep.GetContractState(syscontract.DepositContractAddress.Bytes(), key)
-		if err != nil {
-			log.Warnf("Get Account[%s] mediator vote result error:%s", account.Address, err.Error())
-			continue
-		}
-		mediators := []string{}
-		json.Unmarshal(mdata, &mediators)
-		for _, med := range mediators {
+		addr, _ := common.StringToAddress(account.Address)
+		mediators := rep.statedb.GetAccountVotedMediators(addr)
+		for med, _ := range mediators {
 			// 累加投票数量
 			mediatorVoteCount[med] += account.Amount
 		}

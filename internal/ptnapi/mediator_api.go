@@ -103,8 +103,8 @@ func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 	for address, _ := range a.Dag().GetMediators() {
 		mediatorVoteCount[address.String()] = 0
 	}
-	voteResult, _ := a.Dag().MediatorVotedResults()
-	for med, stake := range voteResult {
+	result, _ := a.Dag().MediatorVotedResults()
+	for med, stake := range result {
 		mediatorVoteCount[med] = stake
 	}
 
@@ -371,7 +371,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) Vote(voterStr string, amount decimal.Decimal, mediatorStrs []string) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxExecuteResult, error) {
 	// 参数检查
 	voter, err := common.StringToAddress(voterStr)
 	if err != nil {
@@ -410,14 +410,13 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, amount decimal.Decimal, media
 	}
 
 	// 创建交易
-	amtDao := ptnjson.Ptn2Dao(amount)
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, amtDao, mp, a.TxPool())
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp, a.TxPool())
 	if err != nil {
 		return nil, err
 	}
 
 	// 签名和发送交易
-	err = a.SignAndSendRequest(voter, tx)
+	err = a.SignAndSendTransaction(voter, tx)
 	if err != nil {
 		return nil, err
 	}

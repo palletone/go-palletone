@@ -24,13 +24,14 @@ import (
 	"fmt"
 	"math/big"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/contracts/syscontract"
 )
 
 type Txo4Greedy struct {
@@ -350,26 +351,33 @@ func (dag *Dag) CreateTokenTransaction(from, to, toToken common.Address, daoAmou
 	return tx, daoFee, nil
 }
 
-func (dag *Dag) GenVoteMediatorTx(voter common.Address, voteAmount uint64, mediators map[string]bool,
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
+	msb, err := json.Marshal(mediators)
+	if err != nil {
+		return nil, 0, err
+	}
 
-	invoke:=&modules.ContractInvokeRequestPayload{}
-	invoke.ContractId=syscontract.DepositContractAddress.Bytes()
-	invoke.Args=[][]byte{[]byte("normalNodePledgeVote")}
-	for k,_:=range mediators {
-		invoke.Args = append(invoke.Args, []byte(k))
+	writeVote := modules.AccountStateWriteSet{
+		IsDelete: false,
+		Key:      constants.VOTED_MEDIATORS,
+		Value:    msb,
+	}
+
+	accountUpdate := &modules.AccountStateUpdatePayload{
+		WriteSet: []modules.AccountStateWriteSet{writeVote},
 	}
 
 	msg := &modules.Message{
-		App:     modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: invoke,
+		App:     modules.APP_ACCOUNT_UPDATE,
+		Payload: accountUpdate,
 	}
 
 	// 2. 组装 tx
 	//fee := dag.CurrentFeeSchedule().AccountUpdateFee
 	fee := dag.GetChainParameters().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(voter, syscontract.DepositContractAddress, voteAmount, fee, nil, msg, txPool)
+	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, txPool)
 	if err != nil {
 		return nil, 0, err
 	}

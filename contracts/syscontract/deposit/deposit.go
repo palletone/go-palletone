@@ -21,7 +21,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/constants"
+
 	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 )
@@ -316,10 +316,10 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Info("Enter DepositChaincode Contract " + NormalNodePledgeVote + " Invoke")
 		return d.normalNodePledgeVote(stub, args)
 		//修改质押投票的Mediator
-	case NormalNodeChangeVote:
-		log.Info("Enter DepositChaincode Contract " + NormalNodeChangeVote + " Invoke")
-		return d.normalNodeChangeVote(stub, args)
-		//TODO Devin提币质押申请（如果提币申请金额为0表示全部提现）
+	//case NormalNodeChangeVote:
+	//	log.Info("Enter DepositChaincode Contract " + NormalNodeChangeVote + " Invoke")
+	//	return d.normalNodeChangeVote(stub, args)
+	//TODO Devin提币质押申请（如果提币申请金额为0表示全部提现）
 	//case NormalNodeExtractVote:
 	//	log.Info("Enter DepositChaincode Contract " + NormalNodeExtractVote + " Invoke")
 	//	return d.normalNodeExtractVote(stub, args)
@@ -343,29 +343,29 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case GetPledgeList:
 		log.Info("Enter DepositChaincode Contract " + GetPledgeList + " Invoke")
 		return d.getPledgeList(stub, args)
-	//case ExtractPtnList:
-	//	b, err := stub.GetState(ExtractPtnList)
-	//	if err != nil {
-	//		return shim.Error(err.Error())
-	//	}
-	//	return shim.Success(b)
-	//case NormalNodeList:
-	//	b, err := stub.GetState(NormalNodeList)
-	//	if err != nil {
-	//		return shim.Error(err.Error())
-	//	}
-	//	return shim.Success(b)
-	case "normalNode":
-		b, err := stub.GetState(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + args[0])
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(b)
+		//case ExtractPtnList:
+		//	b, err := stub.GetState(ExtractPtnList)
+		//	if err != nil {
+		//		return shim.Error(err.Error())
+		//	}
+		//	return shim.Success(b)
+		//case NormalNodeList:
+		//	b, err := stub.GetState(NormalNodeList)
+		//	if err != nil {
+		//		return shim.Error(err.Error())
+		//	}
+		//	return shim.Success(b)
+		//case "normalNode":
+		//	b, err := stub.GetState(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + args[0])
+		//	if err != nil {
+		//		return shim.Error(err.Error())
+		//	}
+		//	return shim.Success(b)
 	}
 	return shim.Error("please enter validate function name")
 }
 func (d *DepositChaincode) getPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	list, err := getPledgeList(stub)
+	list, err := getLastPledgeList(stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -440,9 +440,9 @@ func (d DepositChaincode) normalNodePledgeVote(stub shim.ChaincodeStubInterface,
 	return normalNodePledgeVote(stub, args)
 }
 
-func (d DepositChaincode) normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return normalNodeChangeVote(stub, args)
-}
+//func (d DepositChaincode) normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	return normalNodeChangeVote(stub, args)
+//}
 
 func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return normalNodeExtractVote(stub, args)

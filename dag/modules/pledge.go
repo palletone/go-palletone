@@ -35,6 +35,9 @@ type AddressAmount struct {
 	Amount  uint64 `json:"amount"`
 }
 
+func NewAddressAmount(addr string, amt uint64) *AddressAmount {
+	return &AddressAmount{Address: addr, Amount: amt}
+}
 func (pl *PledgeList) Add(addr string, amount uint64) {
 	pl.TotalAmount += amount
 	for _, p := range pl.Members {

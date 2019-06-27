@@ -36,7 +36,7 @@ import (
 //质押充币
 func pledgeDeposit(stub shim.ChaincodeStubInterface, addr common.Address, amount uint64) error {
 	addrStr := addr.String()
-	node, err := getPledgeRecord(stub, addrStr)
+	node, err := getPledgeDepositRecord(stub, addrStr)
 	if err != nil {
 		return err
 	}
@@ -45,12 +45,7 @@ func pledgeDeposit(stub shim.ChaincodeStubInterface, addr common.Address, amount
 	}
 	node.Amount += amount
 	node.Address = addrStr
-	return savePledgeRecord(stub, node)
-}
-
-//提币申请
-func pledgeWithdrawApply(stub shim.ChaincodeStubInterface, addr common.Address, amount uint64) {
-
+	return savePledgeDepositRecord(stub, node)
 }
 
 //质押分红,按持仓比例分固定金额
@@ -63,7 +58,4 @@ func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64)
 		newPledgeList.TotalAmount += newAmount
 	}
 	return newPledgeList
-}
-func tokenChangeLog(stub shim.ChaincodeStubInterface, addr common.Address, log string) {
-	//TODO
 }

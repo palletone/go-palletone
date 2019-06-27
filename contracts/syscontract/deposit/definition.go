@@ -72,7 +72,7 @@ const (
 	HandleEachDayAward              = "handleEachDayAward"
 	AllPledgeVotes                  = "allPledgeVotes"
 	HandleEachDay                   = "handleEachDay"
-	GetPledgeList                   = "getPledgeList"
+	GetPledgeList                   = "getLastPledgeList"
 
 	Apply    = "applying"
 	Agree    = "approved"

@@ -58,7 +58,7 @@ type DepositInterface interface {
 	//  普通节点质押PTN投票某个mediator
 	normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  普通节点修改所质押的mediator
-	normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  普通节点提取质押PTN
 	normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 

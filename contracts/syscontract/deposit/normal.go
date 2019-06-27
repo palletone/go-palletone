@@ -17,6 +17,7 @@ package deposit
 import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 	"strconv"
 )
 
@@ -39,39 +40,39 @@ func normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Re
 		return shim.Error(err.Error())
 	}
 	//记录投票情况
-	err = saveMediatorVote(stub, invokeAddr.String(), args)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
+	//err = saveMediatorVote(stub, invokeAddr.String(), args)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
 	return shim.Success(nil)
 }
 
 //  普通节点修改质押mediator
-func normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-
-	//  获取请求地址
-	inAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	////  获取是否存在
-	//nor, err := getNor(stub, inAddr.String())
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-	//if nor == nil {
-	//	return shim.Error("node was nil")
-	//}
-
-	//mediatorAddr := args[0]
-	//nor.MediatorAddr = mediatorAddr
-	//  保存
-	err = saveMediatorVote(stub, inAddr.String(), args)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
+//func normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//
+//	//  获取请求地址
+//	inAddr, err := stub.GetInvokeAddress()
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	////  获取是否存在
+//	//nor, err := getNor(stub, inAddr.String())
+//	//if err != nil {
+//	//	return shim.Error(err.Error())
+//	//}
+//	//if nor == nil {
+//	//	return shim.Error("node was nil")
+//	//}
+//
+//	//mediatorAddr := args[0]
+//	//nor.MediatorAddr = mediatorAddr
+//	//  保存
+//	err = saveMediatorVote(stub, inAddr.String(), args)
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	return shim.Success(nil)
+//}
 
 //  普通节点申请提取PTN
 func normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -100,25 +101,26 @@ func normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.R
 	// 	return shim.Error("PTN was not enough")
 	// }
 	//  保存质押提取
-	extPtnLis, err := getExtPtn(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if extPtnLis == nil {
-		extPtnLis = make(map[string]*extractPtn)
-	}
-	if extPtn, ok := extPtnLis[inAddr.String()]; ok {
-		extPtn.Amount = ptnAccount
-	} else {
-		extPtnLis[inAddr.String()] = &extractPtn{Amount: ptnAccount}
-	}
-	//fees, err := stub.GetInvokeFees()
+	err = savePledgeWithdrawRecord(stub, modules.NewAddressAmount(inAddr.String(), ptnAccount))
+	//extPtnLis, err := getExtPtn(stub)
 	//if err != nil {
 	//	return shim.Error(err.Error())
 	//}
-	//extPtn.Time = TimeStr()
-	//  保存
-	err = saveExtPtn(stub, extPtnLis)
+	//if extPtnLis == nil {
+	//	extPtnLis = make(map[string]*extractPtn)
+	//}
+	//if extPtn, ok := extPtnLis[inAddr.String()]; ok {
+	//	extPtn.Amount = ptnAccount
+	//} else {
+	//	extPtnLis[inAddr.String()] = &extractPtn{Amount: ptnAccount}
+	//}
+	////fees, err := stub.GetInvokeFees()
+	////if err != nil {
+	////	return shim.Error(err.Error())
+	////}
+	////extPtn.Time = TimeStr()
+	////  保存
+	//err = saveExtPtn(stub, extPtnLis)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
