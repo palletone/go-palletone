@@ -321,6 +321,21 @@ func (mr *MockChaincodeStubInterfaceMockRecorder) OutChainQuery(outChainName, pa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutChainQuery", reflect.TypeOf((*MockChaincodeStubInterface)(nil).OutChainQuery), outChainName, params)
 }
 
+// OutChainCall mocks base method
+func (m *MockChaincodeStubInterface) OutChainCall(outChainName, method string, params []byte) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutChainCall", outChainName, method, params)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OutChainCall indicates an expected call of OutChainCall
+func (mr *MockChaincodeStubInterfaceMockRecorder) OutChainCall(outChainName, method, params interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutChainCall", reflect.TypeOf((*MockChaincodeStubInterface)(nil).OutChainCall), outChainName, method, params)
+}
+
 // SendJury mocks base method
 func (m *MockChaincodeStubInterface) SendJury(msgType uint32, consultContent, myAnswer []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
