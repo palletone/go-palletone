@@ -30,17 +30,18 @@ import (
 	//"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/modules"
 	//"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //质押充币
 func pledgeDeposit(stub shim.ChaincodeStubInterface, addr common.Address, amount uint64) error {
-	addrStr:=addr.String()
+	addrStr := addr.String()
 	node, err := getPledgeRecord(stub, addrStr)
 	if err != nil {
 		return err
 	}
 	if node == nil {
-		node = &AddressAmount{}
+		node = &modules.AddressAmount{}
 	}
 	node.Amount += amount
 	node.Address = addrStr
@@ -53,13 +54,13 @@ func pledgeWithdrawApply(stub shim.ChaincodeStubInterface, addr common.Address, 
 }
 
 //质押分红,按持仓比例分固定金额
-func pledgeRewardAllocation(pledgeList *PledgeList,rewardAmount uint64) *PledgeList{
-	newPledgeList:=&PledgeList{TotalAmount:0,Members:[]*AddressAmount{}}
-	rewardPerDao:=float64(rewardAmount)/float64(pledgeList.TotalAmount)
-	for _,pledge:=range pledgeList.Members{
-		newAmount:=pledge.Amount+ uint64( rewardPerDao*float64(pledge.Amount))
-		newPledgeList.Members=append(newPledgeList.Members,&AddressAmount{Address:pledge.Address,Amount:newAmount})
-		newPledgeList.TotalAmount+=newAmount
+func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64) *modules.PledgeList {
+	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressAmount{}}
+	rewardPerDao := float64(rewardAmount) / float64(pledgeList.TotalAmount)
+	for _, pledge := range pledgeList.Members {
+		newAmount := pledge.Amount + uint64(rewardPerDao*float64(pledge.Amount))
+		newPledgeList.Members = append(newPledgeList.Members, &modules.AddressAmount{Address: pledge.Address, Amount: newAmount})
+		newPledgeList.TotalAmount += newAmount
 	}
 	return newPledgeList
 }

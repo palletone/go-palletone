@@ -881,21 +881,21 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 //	return shim.Success(nil)
 //}
 
-func getAllMember1(stub shim.ChaincodeStubInterface) (map[string][]*Member, error) {
-	b, err := stub.GetState(MemberList)
-	if err != nil {
-		return nil, err
-	}
-	if b == nil {
-		return nil, nil
-	}
-	allM := make(map[string][]*Member)
-	err = json.Unmarshal(b, allM)
-	if err != nil {
-		return nil, err
-	}
-	return allM, nil
-}
+//func getAllMember1(stub shim.ChaincodeStubInterface) (map[string][]*Member, error) {
+//	b, err := stub.GetState(MemberList)
+//	if err != nil {
+//		return nil, err
+//	}
+//	if b == nil {
+//		return nil, nil
+//	}
+//	allM := make(map[string][]*Member)
+//	err = json.Unmarshal(b, allM)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return allM, nil
+//}
 
 //func savePledgeList(stub shim.ChaincodeStubInterface, allM map[string][]*Members) error {
 //	b, err := json.Marshal(allM)
@@ -987,7 +987,7 @@ func getMediatorsFromeAllMember(stub shim.ChaincodeStubInterface) ([]*MediatorDe
 //
 //获得质押列表的最后更新日期yyyyMMdd
 func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
-	date, err := stub.GetState(MemberListLastDate)
+	date, err := stub.GetState(constants.PledgeListLastDate)
 	if err != nil {
 		return "", err
 	}
@@ -998,20 +998,20 @@ func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
 }
 
 //获得最新的质押列表
-func getPledgeList(stub shim.ChaincodeStubInterface) (*PledgeList, error) {
+func getPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, error) {
 	date, err := getLastPledgeListDate(stub)
 	if err != nil {
 		return nil, err
 	}
+	b, err := stub.GetState(constants.PledgeList + date)
 
-	b, err := stub.GetState(MemberList + date)
 	if err != nil {
 		return nil, err
 	}
 	if b == nil {
 		return nil, nil
 	}
-	allM := &PledgeList{}
+	allM := &modules.PledgeList{}
 	err = json.Unmarshal(b, allM)
 	if err != nil {
 		return nil, err
@@ -1020,17 +1020,19 @@ func getPledgeList(stub shim.ChaincodeStubInterface) (*PledgeList, error) {
 }
 
 //查询历史上的所有质押列表记录
-func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*PledgeList, error) {
-	b, err := stub.GetStateByPrefix(MemberList)
+func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*modules.PledgeList, error) {
+	b, err := stub.GetStateByPrefix(constants.PledgeList)
 	if err != nil {
 		return nil, err
 	}
 	if b == nil {
 		return nil, nil
 	}
-	result := []*PledgeList{}
+
+	result := []*modules.PledgeList{}
 	for _, kv := range b {
-		allM := &PledgeList{}
+		allM := &modules.PledgeList{}
+
 		err = json.Unmarshal(kv.Value, allM)
 		if err != nil {
 			return nil, err
@@ -1042,16 +1044,17 @@ func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*PledgeList,
 }
 
 //保存最新的质押列表
-func savePledgeList(stub shim.ChaincodeStubInterface, allM *PledgeList) error {
+func savePledgeList(stub shim.ChaincodeStubInterface, allM *modules.PledgeList) error {
 	b, err := json.Marshal(allM)
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(MemberList+allM.Date, b)
+	err = stub.PutState(constants.PledgeList+allM.Date, b)
 	if err != nil {
 		return err
 	}
-	return stub.PutState(MemberListLastDate, []byte(allM.Date))
+
+	return stub.PutState(constants.PledgeListLastDate, []byte(allM.Date))
 
 }
 func isHandled(stub shim.ChaincodeStubInterface) bool {
@@ -1074,7 +1077,7 @@ func isHandled(stub shim.ChaincodeStubInterface) bool {
 	}
 	return false
 }
-func savePledgeRecord(stub shim.ChaincodeStubInterface, node *AddressAmount) error {
+func savePledgeRecord(stub shim.ChaincodeStubInterface, node *modules.AddressAmount) error {
 	b, err := json.Marshal(node)
 	if err != nil {
 		return err
@@ -1091,7 +1094,7 @@ func delPledgeRecord(stub shim.ChaincodeStubInterface, addr string) error {
 	return stub.DelState(key)
 }
 
-func getPledgeRecord(stub shim.ChaincodeStubInterface, addr string) (*AddressAmount, error) {
+func getPledgeRecord(stub shim.ChaincodeStubInterface, addr string) (*modules.AddressAmount, error) {
 	b, err := stub.GetState(string(constants.DEPOSIT_AWARD_PREFIX) + addr)
 	if err != nil {
 		return nil, err
@@ -1099,22 +1102,27 @@ func getPledgeRecord(stub shim.ChaincodeStubInterface, addr string) (*AddressAmo
 	if b == nil {
 		return nil, nil
 	}
-	node := &AddressAmount{}
+	node := &modules.AddressAmount{}
 	err = json.Unmarshal(b, node)
 	if err != nil {
 		return nil, err
 	}
 	return node, nil
 }
+
 func getTiem(stub shim.ChaincodeStubInterface) string {
 	t, _ := stub.GetTxTimestamp(10)
 	ti := time.Unix(t.Seconds, 0)
 	return ti.Format(Layout2)
 }
+
 func getToday(stub shim.ChaincodeStubInterface) string {
 	t, _ := stub.GetTxTimestamp(10)
+
 	ti := time.Unix(t.Seconds, 0)
-	return ti.Format("20060102")
+	str := ti.Format("20060102")
+	log.Debugf("getToday GetTxTimestamp 10 result:%d, format string:%s", t.Seconds, str)
+	return str
 }
 
 //质押分红处理
@@ -1139,8 +1147,9 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 		depositDailyReward := cp.DepositDailyReward
 		allM = pledgeRewardAllocation(allM, depositDailyReward)
 	} else {
-		allM = &PledgeList{}
+		allM = &modules.PledgeList{}
 	}
+	allM.Date = today
 	// 增加新的质押
 	awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
 	if err != nil {
@@ -1148,7 +1157,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	}
 	if awards != nil {
 		for _, a := range awards {
-			awardNode := AddressAmount{}
+			awardNode := modules.AddressAmount{}
 			err = json.Unmarshal(a.Value, &awardNode)
 			if err != nil {
 				return err
@@ -1246,13 +1255,13 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	return nil
 }
 
-func isExist(node *AddressAmount, nodes []*AddressAmount) bool {
-	for _, a := range nodes {
-		//  直接更新余额
-		if a.Address == node.Address {
-			a.Amount += node.Amount
-			return true
-		}
-	}
-	return false
-}
+//func isExist(node *AddressAmount, nodes []*AddressAmount) bool {
+//	for _, a := range nodes {
+//		//  直接更新余额
+//		if a.Address == node.Address {
+//			a.Amount += node.Amount
+//			return true
+//		}
+//	}
+//	return false
+//}

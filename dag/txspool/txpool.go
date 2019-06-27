@@ -745,6 +745,10 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
 func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
+	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+		log.Infof("Tx[%s] is a request, do not allow add to txpool")
+		return nil
+	}
 	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addLocal(pool_tx)
 }
@@ -756,6 +760,10 @@ func (pool *TxPool) addLocal(tx *modules.TxPoolTransaction) error {
 // sender is not among the locally tracked ones, full pricing constraints will
 // apply.
 func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
+	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+		log.Infof("Tx[%s] is a request, do not allow add to txpool")
+		return nil
+	}
 	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}

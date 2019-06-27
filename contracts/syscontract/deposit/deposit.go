@@ -319,6 +319,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		st := strconv.FormatInt(b, 10)
 		return shim.Success([]byte(st))
+	case GetPledgeList:
+		log.Info("Enter DepositChaincode Contract " + GetPledgeList + " Invoke")
+		return d.getPledgeList(stub, args)
 	//case ExtractPtnList:
 	//	b, err := stub.GetState(ExtractPtnList)
 	//	if err != nil {
@@ -340,7 +343,14 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	}
 	return shim.Error("please enter validate function name")
 }
-
+func (d *DepositChaincode) getPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	list, err := getPledgeList(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	result, _ := json.Marshal(list)
+	return shim.Success(result)
+}
 func (d *DepositChaincode) applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return applyBecomeMediator(stub, args)
 }
