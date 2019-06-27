@@ -1479,11 +1479,12 @@ func (mr *MockIDagMockRecorder) GetMediatorInfo(address interface{}) *gomock.Cal
 }
 
 // MediatorVotedResults mocks base method
-func (m *MockIDag) MediatorVotedResults() map[string]uint64 {
+func (m *MockIDag) MediatorVotedResults() (map[string]uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MediatorVotedResults")
 	ret0, _ := ret[0].(map[string]uint64)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // MediatorVotedResults indicates an expected call of MediatorVotedResults
