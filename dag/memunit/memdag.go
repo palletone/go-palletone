@@ -251,7 +251,7 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 		}
 		childrenCofirmAddrs[u.Author()] = true
 
-		if len(hs) >= 4 { //chain.threshold
+		if len(hs) >= chain.threshold {
 			log.Debugf("Unit[%s] has enough confirm address count=%d, make it to stable.", ustbHash.String(), len(hs))
 			chain.setStableUnit(ustbHash, u.NumberU64(), txpool)
 			return true
