@@ -40,10 +40,10 @@ import (
 //3. Unlock correct
 func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
 	payment *modules.PaymentPayload, usedUtxo map[string]bool) ValidationCode {
-
-	if payment.LockTime > 0 {
-		// TODO check locktime
-	}
+	txId:=tx.Hash()
+	//if payment.LockTime > 0 {
+	//	// TODO check locktime
+	//}
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	var asset *modules.Asset
 	totalInput := uint64(0)
@@ -70,6 +70,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			if in == nil || in.PreviousOutPoint == nil {
 				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return TxValidationCode_INVALID_PAYMMENT_INPUT
+			}
+			if in.PreviousOutPoint.TxHash.IsZero(){
+				in.PreviousOutPoint.TxHash=txId
 			}
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {

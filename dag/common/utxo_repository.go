@@ -217,7 +217,7 @@ To create utxo according to outpus in transaction, and destory utxo according to
 */
 func (repository *UtxoRepository) UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
 	// update utxo
-	err := repository.destoryUtxo(payment.Inputs)
+	err := repository.destoryUtxo(txHash, payment.Inputs)
 	if err != nil {
 		return err
 	}
@@ -273,7 +273,7 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash, 
 销毁utxo
 destory utxo, delete from UTXO database
 */
-func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) error {
+func (repository *UtxoRepository) destoryUtxo(txid common.Hash, txins []*modules.Input) error {
 	for _, txin := range txins {
 		//TODO for download sync
 		if txin == nil {
@@ -282,6 +282,9 @@ func (repository *UtxoRepository) destoryUtxo(txins []*modules.Input) error {
 		outpoint := txin.PreviousOutPoint
 		if outpoint == nil || outpoint.IsEmpty() { //Coinbase
 			continue
+		}
+		if outpoint.TxHash.IsZero(){//TxHash为0，表示花费当前Tx产生的UTXO
+			outpoint.TxHash=txid
 		}
 		// get utxo info
 		utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
