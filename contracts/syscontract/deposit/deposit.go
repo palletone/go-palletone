@@ -297,18 +297,17 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Info("Enter DepositChaincode Contract " + PledgeWithdraw + " Invoke")
 		return processPledgeWithdraw(stub, args)
 
-	case QueryPledgeStatusByAddr:
+	case QueryPledgeStatusByAddr://查询某用户的质押状态
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeStatusByAddr + " Query")
 		return queryPledgeStatusByAddr(stub, args)
-	case QueryAllPledgeHistory:
-		log.Info("Enter DepositChaincode Contract " + QueryAllPledgeHistory + " Invoke")
+	case QueryAllPledgeHistory://查询质押分红历史
+		log.Info("Enter DepositChaincode Contract " + QueryAllPledgeHistory + " Query")
 		return queryAllPledgeHistory(stub, args)
-	//质押分红处理
-	case HandlePledgeReward:
+
+	case HandlePledgeReward://质押分红处理
 		log.Info("Enter DepositChaincode Contract " + HandlePledgeReward + " Invoke")
 		return handlePledgeReward(stub, args)
-		//TODO Devin 查询质押分红历史
-		//TODO Devin查询当前质押分红情况
+
 		//TODO Devin一个用户，怎么查看自己的流水账？
 	//case AllPledgeVotes:
 	//	b, err := getVotes(stub)
@@ -317,9 +316,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//	}
 	//	st := strconv.FormatInt(b, 10)
 	//	return shim.Success([]byte(st))
-	case GetPledgeList:
-		log.Info("Enter DepositChaincode Contract " + GetPledgeList + " Invoke")
-		return d.getPledgeList(stub, args)
+	case QueryPledgeList:
+		log.Info("Enter DepositChaincode Contract " + QueryPledgeList + " Query")
+		return d.queryPledgeList(stub, args)
 		//case ExtractPtnList:
 		//	b, err := stub.GetState(ExtractPtnList)
 		//	if err != nil {
@@ -341,14 +340,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	}
 	return shim.Error("please enter validate function name")
 }
-func (d *DepositChaincode) getPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	list, err := getLastPledgeList(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, _ := json.Marshal(list)
-	return shim.Success(result)
-}
+
 func (d *DepositChaincode) applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return applyBecomeMediator(stub, args)
 }

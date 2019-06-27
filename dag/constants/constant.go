@@ -50,7 +50,7 @@ var (
 	VOTED_MEDIATORS                       = "VotedMediators"
 
 	PledgeListLastDate = "PledgeListLastDate"
-	PledgeList         = "PledgeList"
+	PledgeList         = "PledgeList-"
 )
 
 func init() {

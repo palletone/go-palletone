@@ -68,7 +68,7 @@ const (
 	HandlePledgeReward         = "HandlePledgeReward"
 	AllPledgeVotes             = "allPledgeVotes"
 	HandleEachDay              = "handleEachDay"
-	GetPledgeList              = "getLastPledgeList"
+	QueryPledgeList            = "QueryPledgeList"
 	HandleForApplyQuitJury     = "HandleForApplyQuitJury"
 	HandleForApplyQuitDev      = "HandleForApplyQuitDev"
 	MemberList                 = "MemberList"
@@ -76,7 +76,7 @@ const (
 	Apply                      = "applying"
 	Agree                      = "approved"
 	Quitting                   = "quitting"
-	Quited                          = "quited"
+	Quited                     = "quited"
 
 	//  时间格式
 	//  Layout1 = "2006-01-02 15"

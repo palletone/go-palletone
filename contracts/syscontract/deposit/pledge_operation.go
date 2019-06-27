@@ -118,3 +118,11 @@ func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.R
 	data,_:= json.Marshal(history)
 	return shim.Success(data)
 }
+func (d *DepositChaincode) queryPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	list, err := getLastPledgeList(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	result, _ := json.Marshal(list)
+	return shim.Success(result)
+}
