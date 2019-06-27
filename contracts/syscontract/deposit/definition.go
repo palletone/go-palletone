@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	ListForCashback   = "ListForCashback"
-	ListForForfeiture = "ListForForfeiture"
-
+	ListForQuit                = "ListForQuit"
+	ListForForfeiture          = "ListForForfeiture"
+	JuryApplyQuit              = "JuryApplyQuit"
+	DeveloperApplyQuit         = "DeveloperApplyQuit"
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
 	ListForAgreeBecomeMediator = "ListForAgreeBecomeMediator"
 	ListForApplyQuitMediator   = "ListForApplyQuitMediator"
@@ -38,9 +39,10 @@ const (
 	DTimeDuration              = 1800
 	//获取Mediator候选列表
 	GetListForMediatorCandidate = "GetListForMediatorCandidate"
+	GetQuitApplyList            = "GetQuitApplyList"
 	//查看是否在候选列表中
 	IsInMediatorCandidateList       = "IsInMediatorCandidateList"
-	GetQuitMediatorApplyList        = "GetQuitMediatorApplyList"
+	GetQuitList                     = "GetQuitList"
 	GetAgreeForBecomeMediatorList   = "GetAgreeForBecomeMediatorList"
 	GetBecomeMediatorApplyList      = "GetBecomeMediatorApplyList"
 	GetListForDeveloperCandidate    = "GetListForDeveloperCandidate"
@@ -73,11 +75,15 @@ const (
 	AllPledgeVotes                  = "allPledgeVotes"
 	HandleEachDay                   = "handleEachDay"
 	GetPledgeList                   = "getLastPledgeList"
+	HandleForApplyQuitJury          = "HandleForApplyQuitJury"
+	HandleForApplyQuitDev           = "HandleForApplyQuitDev"
+	MemberList                      = "MemberList"
+	MemberListLastDate              = "MemberListLastDate"
+	Apply                           = "applying"
+	Agree                           = "approved"
+	Quitting                        = "quitting"
+	Quited                          = "quited"
 
-	Apply    = "applying"
-	Agree    = "approved"
-	Quitting = "quitting"
-	Quited   = "quited"
 	//  时间格式
 	//  Layout1 = "2006-01-02 15"
 	//  Layout2 = "2006-01-02 15:04"
@@ -87,12 +93,11 @@ const (
 	Layout2 = "2006-01-02 15:04:05"
 )
 
-//申请提保证金
+//申请退出
 type Cashback struct {
-	//CashbackAddress string               `json:"cashback_address"` //请求地址
-	CashbackTokens *modules.AmountAsset `json:"cashback_tokens"` //请求数量
-	Role           string               `json:"role"`            //请求角色
-	CashbackTime   string               `json:"cashback_time"`   //请求时间
+	CashbackAddress string `json:"cashback_address"` //请求地址
+	Role            string `json:"role"`             //请求角色
+	CashbackTime    string `json:"cashback_time"`    //请求时间
 }
 
 //申请没收保证金
@@ -138,8 +143,7 @@ type MediatorDeposit struct {
 
 func NewMediatorDeposit() *MediatorDeposit {
 	return &MediatorDeposit{
-		ApplyEnterTime: TimeStr(),
-		Status:         Quited,
+		Status: Quited,
 	}
 }
 
