@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -36,6 +37,10 @@ import (
 
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	return d.validate.ValidateUnitExceptGroupSig(unit)
+}
+
+func (d *Dag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
+	return d.Memdag.SubscribeToGroupSignEvent(ch)
 }
 
 func (d *Dag) IsActiveMediator(add common.Address) bool {

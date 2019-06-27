@@ -147,6 +147,9 @@ type ProtocolManager struct {
 
 	activeMediatorsUpdatedCh  chan modules.ActiveMediatorsUpdatedEvent
 	activeMediatorsUpdatedSub event.Subscription
+
+	toGroupSignCh  chan modules.ToGroupSignEvent
+	toGroupSignSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -401,6 +404,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.activeMediatorsUpdatedSub = pm.dag.SubscribeActiveMediatorsUpdatedEvent(pm.activeMediatorsUpdatedCh)
 	go pm.activeMediatorsUpdatedEventRecvLoop()
 
+	pm.toGroupSignCh = make(chan modules.ToGroupSignEvent)
+	pm.toGroupSignSub = pm.dag.SubscribeToGroupSignEvent(pm.toGroupSignCh)
+	go pm.toGroupSignEventRecvLoop()
+
 	if pm.consEngine != nil {
 		pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
@@ -420,6 +427,7 @@ func (pm *ProtocolManager) Stop() {
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
 	pm.activeMediatorsUpdatedSub.Unsubscribe()
+	pm.toGroupSignSub.Unsubscribe()
 	pm.contractSub.Unsubscribe()
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 	//pm.ceSub.Unsubscribe()

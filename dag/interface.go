@@ -127,6 +127,7 @@ type IDag interface {
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
+	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 
 	IsSynced() bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription

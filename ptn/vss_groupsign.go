@@ -30,7 +30,6 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 		select {
 		case event := <-self.newProducedUnitCh:
 			// 广播给其他活跃 mediator，进行验证并群签名
-			// todo Albert·gou
 			//if self.producer.IsEnabledGroupSign() {
 			//	self.BroadcastNewProducedUnit(event.Unit)
 			//}
@@ -39,6 +38,20 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
 		case <-self.newProducedUnitSub.Err():
+			return
+		}
+	}
+}
+
+func (pm *ProtocolManager) toGroupSignEventRecvLoop() {
+	for {
+		select {
+		// todo albert
+		//case event := <-pm.toGroupSignCh:
+		//	go pm.switchMediatorConnect(event.IsChanged)
+
+		// Err() channel will be closed when unsubscribing.
+		case <-pm.toGroupSignSub.Err():
 			return
 		}
 	}
@@ -74,7 +87,6 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 //			//}
 //			//pm.producer.AddToTBLSSignBufs(&unit)
 //
-//			// todo Albert·gou
 //			pm.producer.AddToTBLSSignBufs(newUnit)
 //			continue
 //		}

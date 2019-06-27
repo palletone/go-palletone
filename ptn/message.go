@@ -467,7 +467,6 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-// todo Albert·gou 待合并 NewBlockMsg
 //func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
 //	// Retrieve and decode the propagated new produced unit
 //	data := []byte{}
