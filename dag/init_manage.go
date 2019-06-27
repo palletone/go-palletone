@@ -37,7 +37,9 @@ func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	unitState := d.validate.ValidateUnitExceptGroupSig(unit)
 	return unitState
 }
-
+func (d *Dag) ValidateUnitExceptPayment(unit *modules.Unit) error {
+	return d.validate.ValidateUnitExceptPayment(unit)
+}
 func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GetGlobalProp().IsActiveMediator(add)
 }

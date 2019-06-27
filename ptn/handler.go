@@ -264,12 +264,11 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	validatorFn := func(unit *modules.Unit) error {
 		//return dagerrors.ErrFutureBlock
 		hash := unit.Hash()
-		log.Debugf("Importing propagated block insert DAG Enter ValidateUnitExceptGroupSig, unit: %s", hash.String())
-		defer log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s", hash.String())
-		verr := pm.dag.ValidateUnitExceptGroupSig(unit)
+		verr := pm.dag.ValidateUnitExceptPayment(unit)
 		if verr != nil && !validator.IsOrphanError(verr) {
 			return verr
 		}
+		log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s,validated: %v", hash.String(), verr)
 		return dagerrors.ErrFutureBlock
 	}
 	heighter := func(assetId modules.AssetId) uint64 {
